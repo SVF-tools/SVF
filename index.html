@@ -24,32 +24,88 @@
 
 <p>SVF is an interprocedural Static Value-Flow analysis on top of LLVM. It allows value-flow construction and pointer analysis to be performed in an iterative way, thereby providing an effective solution for both.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<h3>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h3>
+
+<blockquote>
+<p>Build LLVM and Clang version (if you already did this, just skip it and jump to step 5)</p>
+</blockquote>
+
+<p>1) Download <a href="http://llvm.org/releases/3.5.0/llvm-3.5.0.src.tar.xz">LLVM-3.5.0</a>, <a href="http://llvm.org/releases/3.5.0/cfe-3.5.0.src.tar.xz">clang-3.5.0</a></p>
+
+<p>2) Unzip LLVM and Clang source</p>
+
+<pre><code>tar xf llvm-3.5.0.tar.xz
+tar xf cfe-3.5.0.tar.xz
+$mv cfe-3.5.0.src llvm-3.5.0.src/tools/clang
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>3) create target build folder and make</p>
+
+<pre><code>mkdir llvm-3.5.0.obj
+cd llvm-3.5.0.obj
+../llvm-3.5,0.src/configure --enable-assertions
+make -j8  (or make -j8 ENABLE_OPTIMIZED=0 for debug version)
+</code></pre>
+
+<p>4) Add paths for LLVM and Clang</p>
+
+<pre><code>export LLVM_SRC=your_path_to_llvm-3.5.0.src
+export LLVM_OBJ=your_path_to_llvm-3.5.0.obj
+export PATH=$LLVM_OBJ/Release+Asserts/bin:$PATH
+</code></pre>
+
+<blockquote>
+<p>Build SVF</p>
+</blockquote>
+
+<p>5) Download SVF source code.</p>
+
+<p>6) Clean the previous build configuration files</p>
+
+<pre><code>make clean &amp;&amp; rm -rf Makefile.common &amp;&amp; rm -rf configure
+</code></pre>
+
+<p>7) Change configure to point to your LLVM Path</p>
+
+<pre><code>vi autoconf/configure.ac
+change value of LLVM_SRC_ROOT to $LLVM_SRC
+change value of LLVM_OBJ_ROOT to $LLVM_OBJ
+cd autoconf
+./AutoRegen.sh
+input your LLVM_SRC_ROOT and LLVM_OBJ_ROOT following the command line
+</code></pre>
+
+<p>8) Make and set up</p>
+
+<pre><code>. ./setup.sh
+./configure &amp;&amp; make 
+</code></pre>
+
+<blockquote>
+<p>Run SVF</p>
+</blockquote>
+
+<p>9) Run Andersen’s pointer analysis with an input bc file</p>
+
+<pre><code>wpa -ander text.bc 
+</code></pre>
+
+<p>9) Run value-flow analysis and flow-sensitive pointer analysis</p>
+
+<pre><code>wpa -fspta text.bc 
+</code></pre>
 
 <h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a id="command-lines" class="anchor" href="#command-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Command Lines</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a id="rather-drive-stick" class="anchor" href="#rather-drive-stick" aria-hidden="true"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<pre><code>wpa -help
+</code></pre>
 
 <h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a id="developer-guide" class="anchor" href="#developer-guide" aria-hidden="true"><span class="octicon octicon-link"></span></a>Developer Guide</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="https://help.github.com/pages">https://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>TODO</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/unsw-corg/SVF">SVF</a> is maintained by <a href="https://github.com/unsw-corg">unsw-corg</a>.</span>
