@@ -13,102 +13,62 @@
     <section class="page-header">
       <h1 class="project-name">SVF</h1>
       <h2 class="project-tagline">Static Value-Flow Analysis in LLVM</h2>
-      <a href="https://github.com/unsw-corg/SVF/wiki" class="btn">View Wiki on GitHub</a>
-      <a href="https://github.com/unsw-corg/SVF/zipball/master" class="btn">Download Source Code </a>
-      <a href="https://github.com/unsw-corg/SVF/tarball/master" class="btn">Download Virtual Machine Image</a>
+      <a href="https://github.com/unsw-corg/SVF" class="btn">View on GitHub</a>
+      <a href="https://github.com/unsw-corg/SVF/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/unsw-corg/SVF/tarball/master" class="btn">Download .tar.gz</a>
     </section>
 
     <section class="main-content">
-      <h3>
-<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
+      <h2>
+<a id="what-is-svf" class="anchor" href="#what-is-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is SVF?</h2>
 
 <p>SVF is an interprocedural Static Value-Flow analysis on top of LLVM. It allows value-flow construction and pointer analysis to be performed in an iterative way, thereby providing an effective solution for both.</p>
 
-<h3>
-<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h3>
+<h2>
+<a id="what-kind-of-analyses-does-svf-provide" class="anchor" href="#what-kind-of-analyses-does-svf-provide" aria-hidden="true"><span class="octicon octicon-link"></span></a>What kind of analyses does SVF provide?</h2>
 
-<blockquote>
-<p>Build LLVM and Clang version (if you already did this, just skip it and jump to step 5)</p>
-</blockquote>
+<ul>
+<li>Andersen's Pointer analysis and call graph construction</li>
+<li>Sparse Flow-sensitive Pointer Analysis</li>
+<li>Value-Flow dependence analysis</li>
+<li>Interprocedural memory SSA</li>
+<li>Detecting source-sink related bugs, such as memory leak, incorrect file-open close error.</li>
+</ul>
 
-<p>1) Download <a href="http://llvm.org/releases/3.5.0/llvm-3.5.0.src.tar.xz">LLVM-3.5.0</a>, <a href="http://llvm.org/releases/3.5.0/cfe-3.5.0.src.tar.xz">clang-3.5.0</a></p>
+<h2>
+<a id="how-to-setup-svf" class="anchor" href="#how-to-setup-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to setup SVF?</h2>
 
-<p>2) Unzip LLVM and Clang source</p>
+<p>Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/Setup-Guide#getting-started">this step by step guide</a> to setup SVF.</p>
 
-<pre><code>tar xf llvm-3.5.0.tar.xz
-tar xf cfe-3.5.0.tar.xz
-$mv cfe-3.5.0.src llvm-3.5.0.src/tools/clang
-</code></pre>
+<h2>
+<a id="how-to-run-svf" class="anchor" href="#how-to-run-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to run SVF?</h2>
 
-<p>3) create target build folder and make</p>
+<p>SVF takes LLVM IR as its input. Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#quick-start">this user guide</a> to run SVF with <a href="https://github.com/unsw-corg/SVF/wiki/Analyze-a-Simple-C-Program#an-example">a simple example</a> and generate the <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#analysis-outputs">outputs</a> of each analysis pass.</p>
 
-<pre><code>mkdir llvm-3.5.0.obj
-cd llvm-3.5.0.obj
-../llvm-3.5,0.src/configure --enable-assertions
-make -j8  (or make -j8 ENABLE_OPTIMIZED=0 for debug version)
-</code></pre>
+<h2>
+<a id="how-does-svf-work-internally" class="anchor" href="#how-does-svf-work-internally" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does SVF work internally</h2>
 
-<p>4) Add paths for LLVM and Clang</p>
+<p>Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/Technical-documentation">this wiki documentation</a> and the following publications to understand the internal working of SVF.</p>
 
-<pre><code>export LLVM_SRC=your_path_to_llvm-3.5.0.src
-export LLVM_OBJ=your_path_to_llvm-3.5.0.obj
-export PATH=$LLVM_OBJ/Release+Asserts/bin:$PATH
-</code></pre>
+<h2>
+<a id="publications" class="anchor" href="#publications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Publications</h2>
 
-<blockquote>
-<p>Build SVF</p>
-</blockquote>
+<p>Ding Ye, Yu Su, Yulei Sui, and Jingling Xue. WPBound: Enforcing Spatial Memory Safety Efficiently at Runtime with Weakest Preconditions, 25th IEEE International Symposium on Software Reliability Engineering (ISSRE'14)</p>
 
-<p>5) Download SVF source code.</p>
+<p>Sen Ye, Yulei Sui, and Jingling Xue. Region-based Selective Flow-Sensitive Pointer Analysis , 21th International Static Analysis Symposium (SAS'14) </p>
 
-<p>6) Clean the previous build configuration files</p>
+<p>Yulei Sui, Ding Ye, and Jingling Xue. Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis , IEEE Transactions on Software Engineering (TSE'14)</p>
 
-<pre><code>make clean &amp;&amp; rm -rf Makefile.common &amp;&amp; rm -rf configure
-</code></pre>
+<p>Ding Ye, Yulei Sui, and Jingling Xue. Accelerating Dynamic Detection of Uses of Undefined Values with Static Value-Flow Analysis , 12th Annual IEEE/ACM International Symposium on Code Generation and Optimization (CGO'14)</p>
 
-<p>7) Change configure to point to your LLVM Path</p>
+<p>Yulei Sui, Ding Ye, and Jingling Xue. Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis , 2012 International Symposium on Software Testing and Analysis (ISSTA'12)</p>
 
-<pre><code>vi autoconf/configure.ac
-change value of LLVM_SRC_ROOT to $LLVM_SRC
-change value of LLVM_OBJ_ROOT to $LLVM_OBJ
-cd autoconf
-./AutoRegen.sh
-input your LLVM_SRC_ROOT and LLVM_OBJ_ROOT following the command line
-</code></pre>
-
-<p>8) Make and set up</p>
-
-<pre><code>. ./setup.sh
-./configure &amp;&amp; make 
-</code></pre>
-
-<blockquote>
-<p>Run SVF</p>
-</blockquote>
-
-<p>9) Run Andersen’s pointer analysis with an input bc file</p>
-
-<pre><code>wpa -ander text.bc 
-</code></pre>
-
-<p>9) Run value-flow analysis and flow-sensitive pointer analysis</p>
-
-<pre><code>wpa -fspta text.bc 
-</code></pre>
-
-<h3>
-<a id="command-lines" class="anchor" href="#command-lines" aria-hidden="true"><span class="octicon octicon-link"></span></a>Command Lines</h3>
-
-<pre><code>wpa -help
-</code></pre>
-
-<h3>
-<a id="developer-guide" class="anchor" href="#developer-guide" aria-hidden="true"><span class="octicon octicon-link"></span></a>Developer Guide</h3>
-
-<p>TODO</p>
+<p>Yulei Sui, Sen Ye, Jingling Xue, and Pen-Chung Yew. SPAS: Scalable Path-Sensitive Pointer Analysis on Full-Sparse SSA,  9th Asian Symposium on Programming Languages and Systems (APLAS'11)</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/unsw-corg/SVF">SVF</a> is maintained by <a href="https://github.com/unsw-corg">unsw-corg</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
 
     </section>
