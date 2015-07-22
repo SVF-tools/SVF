@@ -33,8 +33,8 @@ so, subject to the following conditions:
       this list of conditions and the following disclaimers in the
       documentation and/or other materials provided with the distribution.
 
-    * Neither the names of the LLVM Team, University of Illinois at
-      Urbana-Champaign, nor the names of its contributors may be used to
+    * Neither the names of the CORG Team, University of New South Wales,
+      nor the names of its contributors may be used to
       endorse or promote products derived from this Software without specific
       prior written permission.
 
