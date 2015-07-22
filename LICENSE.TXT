@@ -33,7 +33,7 @@ so, subject to the following conditions:
       this list of conditions and the following disclaimers in the
       documentation and/or other materials provided with the distribution.
 
-    * Neither the names of the CORG Team, University of New South Wales,
+    * Neither the names of the CORG Team, the University of New South Wales,
       nor the names of its contributors may be used to
       endorse or promote products derived from this Software without specific
       prior written permission.
@@ -58,8 +58,8 @@ which apply to that code.
 
 The disclaimer of warranty in the University of Illinois Open Source License
 applies to all code in the SVF Distribution, and nothing in any of the
-other licenses gives permission to use the names of the LLVM Team or the
-University of Illinois to endorse or promote products derived from this
+other licenses gives permission to use the names of the CORG Team or the
+University of New South Wales to endorse or promote products derived from this
 Software.
 
 The following pieces of software have additional or alternate copyrights,
