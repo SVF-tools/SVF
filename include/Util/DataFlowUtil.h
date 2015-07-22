@@ -1,21 +1,11 @@
-/* SVF - Static Value-Flow Analysis Framework
-Copyright (C) 2015 Yulei Sui
-Copyright (C) 2015 Jingling Xue
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+//===- DataFlowUtil.h -- Helper functions for data-flow analysis--------------//
+//
+//                     SVF: Static Value-Flow Analysis
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
 
 /*
  * DataFlowUtil.h
@@ -125,6 +115,10 @@ public:
 
     /// Check whether two inloop scevs have same start and step
     static bool sameStartAndStep(llvm::ScalarEvolution* SE1, const llvm::SCEV *se1, llvm::ScalarEvolution* SE2,const llvm::SCEV *se2) {
+
+        if(se1 == se2)
+            return true;
+
         // We only handle AddRec here
         const llvm::SCEVAddRecExpr *addRec1 = llvm::dyn_cast<llvm::SCEVAddRecExpr>(se1);
         const llvm::SCEVAddRecExpr *addRec2 = llvm::dyn_cast<llvm::SCEVAddRecExpr>(se2);

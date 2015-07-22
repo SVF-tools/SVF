@@ -1,0 +1,20 @@
+Name: Yulei Sui
+Email: ysui@cse.unsw.edu.au
+Description: core design and implementation, primary developer
+
+Name: Jingling Xue
+Email: jingling@cse.unsw.edu.au
+Description: core design
+
+Name: Sen Ye
+Email: yes@cse.unsw.edu.au
+Description: memory model, flow-sensitive pointer analysis
+
+Name: Ding Ye
+Email: dye@cse.unsw.edu.au
+Description: data-race detector
+
+Name: Peng Di
+Email: pengd@cse.unsw.edu.au
+Description: MHP analysis
+

@@ -1,27 +1,17 @@
-/* SVF - Static Value-Flow Analysis Framework
-Copyright (C) 2015 Yulei Sui
-Copyright (C) 2015 Jingling Xue
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+//===- Andersen.h -- Field-sensitive Andersen's pointer analysis-------------//
+//
+//                     SVF: Static Value-Flow Analysis
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
 
 /*
  * Andersen.h
  *
- *  Created on: Jul 12, 2013
- *      Author: Yulei
+ *  Created on: Nov 12, 2013
+ *      Author: Yulei Sui
  */
 
 #ifndef ANDERSENPASS_H_
@@ -383,6 +373,8 @@ protected:
 
 /*
  * Lazy Cycle Detection based Andersen Analysis
+ * TODO: note that this implementaion is incomplete,
+ * and the algorithm may not be consistent with the one in paper
  */
 class AndersenLCD : public Andersen {
 
