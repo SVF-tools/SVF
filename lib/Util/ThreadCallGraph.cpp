@@ -76,9 +76,10 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
     }
 
     for (CallSiteSet::iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it) {
-        if(dyn_cast<Function>(tdAPI->getForkedFun(*it))==NULL) {
+    	const Value* forkedval=tdAPI->getForkedFun(*it);
+        if(dyn_cast<Function>(forkedval)==NULL) {
             PAG* pag = pta->getPAG();
-            const PointsTo& targets = pta->getPts(pag->getValueNode(*it));
+            const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));
             for (PointsTo::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++) {
                 if(ObjPN* objPN = dyn_cast<ObjPN>(pag->getPAGNode(*ii))) {
                     const MemObj* obj = pag->getObject(objPN);

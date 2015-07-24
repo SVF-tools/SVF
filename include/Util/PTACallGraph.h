@@ -82,7 +82,7 @@ public:
 
     void addInDirectCallSite(const llvm::Instruction* call) {
         assert((llvm::isa<llvm::CallInst>(call) || llvm::isa<llvm::InvokeInst>(call)) && "not a call or inovke??");
-        assert((NULL == analysisUtil::getCallee(call)) && "not an indirect callsite??");
+        assert((NULL == analysisUtil::getCallee(call) || NULL == llvm::dyn_cast<llvm::Function> (analysisUtil::getForkedFun(call))) && "not an indirect callsite??");
         indirectCalls.insert(call);
     }
     //@}
