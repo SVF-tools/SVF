@@ -36,7 +36,7 @@ public:
         releaseMemory();
         llvm::DominatorTree dt;
         dt.recalculate(fun);
-        getBase().Analyze(dt);
+        Analyze(dt);
         return false;
     }
 };

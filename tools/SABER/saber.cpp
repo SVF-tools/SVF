@@ -19,7 +19,7 @@
 
 #include <llvm/Support/CommandLine.h>	// for cl
 #include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
-#include <llvm/PassManager.h>		// pass manager
+#include <llvm/IR/LegacyPassManager.h>		// pass manager
 #include <llvm/Support/Signals.h>	// singal for command line
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
 #include <llvm/Support/ToolOutputFile.h> // for tool output file
@@ -67,19 +67,20 @@ int main(int argc, char ** argv) {
 	initializeInstrumentation(Registry);
 	initializeTarget(Registry);
 
-	PassManager Passes;
+	llvm::legacy::PassManager Passes;
 
 	SMDiagnostic Err;
-	std::auto_ptr<Module> M1;
 
-	M1.reset(ParseIRFile(InputFilename, Err, Context));
-	if (M1.get() == 0) {
-		Err.print(argv[0], errs());
-		return 1;
+	// Load the input module...
+	std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
+
+	if (!M1) {
+	  Err.print(argv[0], errs());
+	  return 1;
 	}
 
 	std::unique_ptr<tool_output_file> Out;
-	std::string ErrorInfo;
+	std::error_code ErrorInfo;
 
 	StringRef str(InputFilename);
 	InputFilename = str.rsplit('.').first;
@@ -89,8 +90,8 @@ int main(int argc, char ** argv) {
 			new tool_output_file(OutputFilename.c_str(), ErrorInfo,
 					sys::fs::F_None));
 
-	if (!ErrorInfo.empty()) {
-		errs() << ErrorInfo << '\n';
+	if (ErrorInfo) {
+		errs() << ErrorInfo.message() << '\n';
 		return 1;
 	}
 

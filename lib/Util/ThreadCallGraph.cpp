@@ -22,6 +22,15 @@ using namespace llvm;
 using namespace analysisUtil;
 
 /*!
+ * Constructor
+ */
+ThreadCallGraph::ThreadCallGraph(llvm::Module* module) :
+    PTACallGraph(module), tdAPI(ThreadAPI::getThreadAPI()) {
+    DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Building ThreadCallGraph\n"));
+    this->build(module);
+}
+
+/*!
  * Start building Thread Call Graph
  */
 void ThreadCallGraph::build(Module* m) {
@@ -76,7 +85,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
     }
 
     for (CallSiteSet::iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it) {
-    	const Value* forkedval=tdAPI->getForkedFun(*it);
+        const Value* forkedval=tdAPI->getForkedFun(*it);
         if(dyn_cast<Function>(forkedval)==NULL) {
             PAG* pag = pta->getPAG();
             const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));

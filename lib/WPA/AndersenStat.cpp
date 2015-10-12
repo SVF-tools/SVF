@@ -199,6 +199,8 @@ void AndersenStat::performStat() {
     PTNumStatMap[NumOfGeps] =  numOfGeps;
     PTNumStatMap[NumOfLoads] = consCG->getLoadCGEdges().size();
     PTNumStatMap[NumOfStores] = consCG->getStoreCGEdges().size();
+    PTNumStatMap["TotalLoadInst"] = pag->loadInstNum;
+    PTNumStatMap["TotalStoreInst"] = pag->storeInstNum;
 
     PTNumStatMap[NumOfProcessedAddrs] = Andersen::numOfProcessedAddr;
     PTNumStatMap[NumOfProcessedCopys] = Andersen::numOfProcessedCopy;

@@ -67,12 +67,12 @@ public:
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasAnalysis::AliasResult alias(const Location &LocA, const Location &LocB) {
+    virtual inline llvm::AliasResult alias(const llvm::MemoryLocation  &LocA, const llvm::MemoryLocation  &LocB) {
         return alias(LocA.Ptr, LocB.Ptr);
     }
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasAnalysis::AliasResult alias(const llvm::Value* V1,	const llvm::Value* V2);
+    virtual llvm::AliasResult alias(const llvm::Value* V1,	const llvm::Value* V2);
 
     /// We start from here
     virtual bool runOnModule(llvm::Module& module);

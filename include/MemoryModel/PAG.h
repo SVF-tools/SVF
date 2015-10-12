@@ -58,7 +58,6 @@ private:
     PAGEdge::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < PAG edge map
     NodeLocationSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
-    NodeToNodeMap FIObjMap;	///< Map a base node to its corresponding field-insensitive node
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
@@ -82,6 +81,8 @@ private:
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curInst(NULL) {
         symInfo = SymbolTableInfo::Symbolnfo();
+        storeInstNum = 0;
+        loadInstNum = 0;
     }
 
     /// Clean up memory
@@ -378,12 +379,20 @@ public:
     NodeID getGepValNode(const llvm::Value* val, const LocationSet& ls);
     /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
-    /// Get a field-insensitive obj PAG node according to base mem obj
-    NodeID getFIObjNode(const MemObj* obj);
     /// Get a field obj PAG node according to a mem obj and a given offset
     NodeID getGepObjNode(NodeID id, const LocationSet& ls) ;
     /// Get a field-insensitive obj PAG node according to a mem obj
-    NodeID getFIObjNode(NodeID id);
+    //@{
+    inline NodeID getFIObjNode(const MemObj* obj) const {
+        return obj->getSymId();
+    }
+    inline NodeID getFIObjNode(NodeID id) const {
+        PAGNode* node = pag->getPAGNode(id);
+        assert(llvm::isa<ObjPN>(node) && "need an object node");
+        ObjPN* obj = llvm::cast<ObjPN>(node);
+        return getFIObjNode(obj->getMemObj());
+    }
+    //@}
 
     /// Get black hole and constant id
     //@{
@@ -488,8 +497,8 @@ public:
     /// Add a memory obj node
     inline NodeID addObjNode(const llvm::Value* val, NodeID i) {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
-        LocationSet ls;
-        return addGepObjNode(mem, ls, i);
+        assert(mem->getSymId() == i && "not same object id?");
+        return addFIObjNode(mem, i);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const llvm::Function* val, NodeID i) {
@@ -610,6 +619,9 @@ public:
 
     /// Dump PAG
     void dump(std::string name);
+
+    Size_t storeInstNum;		///< total num of store instructions
+    Size_t loadInstNum;		///< total num of load instructions
 };
 
 namespace llvm {

@@ -110,6 +110,34 @@ public:
     virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
         return this->unionPts(getDFOutPtsSet(dstLoc,dstVar), getDFInPtsSet(srcLoc,srcVar));
     }
+    /// union (IN[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
+    /// no flag check.
+    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+        return this->updateDFInFromOut(srcLoc,srcVar,dstLoc,dstVar);
+    }
+    /// union (IN[dstLoc::dstVar], IN[srcLoc:srcVar]. It differs from the above method in that there's
+    /// no flag check.
+    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+        return this->updateDFInFromIn(srcLoc,srcVar,dstLoc,dstVar);
+    }
+    /// for each variable var in IN at loc, do updateDFOutFromIn(loc,var,loc,var)
+    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates)
+    {
+        bool changed = false;
+        if (this->hasDFInSet(loc)) {
+            /// Only variables has new pts from IN set need to be updated.
+            const PtsMap & ptsMap = getDFInPtsMap(loc);
+            for (typename PtsMap::const_iterator ptsIt = ptsMap.begin(), ptsEit = ptsMap.end(); ptsIt != ptsEit; ++ptsIt) {
+                const Key var = ptsIt->first;
+                /// Enable strong updates if it is required to do so
+                if (strongUpdates && var == singleton)
+                    continue;
+                if (updateDFOutFromIn(loc, var, loc, var))
+                    changed = true;
+            }
+        }
+        return changed;
+    }
     /// Update points-to of top-level pointers with IN[srcLoc:srcVar]
     virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) {
         return this->unionPts(dstVar, this->getDFInPtsSet(srcLoc,srcVar));
@@ -117,6 +145,8 @@ public:
     /// Update address-taken variables OUT[dstLoc:dstVar] with points-to of top-level pointers
     virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) {
         return (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar)));
+    }
+    virtual inline void clearAllDFOutUpdatedVar(LocID loc) {
     }
     //@}
 
@@ -156,9 +186,9 @@ public:
         /// dump points-to of top-level pointers
         PTData<Key,Data>::dumpPts(this->ptsMap);
         /// dump points-to of address-taken variables
-        std::string ErrInfo;
+        std::error_code ErrInfo;
         llvm::tool_output_file F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
-        if (ErrInfo.empty()) {
+        if (!ErrInfo) {
             llvm::raw_fd_ostream & osm = F.os();
             NodeBS locs;
             for(DFPtsMapconstIter it = dfInPtsMap.begin(), eit = dfInPtsMap.end(); it!=eit; ++it)
@@ -244,24 +274,6 @@ public:
         }
         return false;
     }
-    /// union (OUT[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
-    /// no flag check.
-    inline bool propDFOutToIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar))) {
-            setVarDFInSetUpdated(dstLoc,dstVar);
-            return true;
-        }
-        return false;
-    }
-    /// union (OUT[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
-    /// no flag check.
-    inline bool propDFInToIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar))) {
-            setVarDFInSetUpdated(dstLoc,dstVar);
-            return true;
-        }
-        return false;
-    }
     /// union (IN[dstLoc:dstVar], OUT[srcLoc:srcVar])
     inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
         if(varHasNewDFOutPts(srcLoc, srcVar) &&
@@ -279,6 +291,25 @@ public:
                 setVarDFOutSetUpdated(dstLoc,dstVar);
                 return true;
             }
+        }
+        return false;
+    }
+
+    /// union (IN[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
+    /// no flag check.
+    inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar))) {
+            setVarDFInSetUpdated(dstLoc,dstVar);
+            return true;
+        }
+        return false;
+    }
+    /// union (IN[dstLoc::dstVar], IN[srcLoc:srcVar]. It differs from the above method in that there's
+    /// no flag check.
+    inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar))) {
+            setVarDFInSetUpdated(dstLoc,dstVar);
+            return true;
         }
         return false;
     }

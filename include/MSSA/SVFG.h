@@ -32,6 +32,7 @@ class SVFG : public GenericSVFGGraphTy {
     friend class SVFGBuilder;
     friend class SaberSVFGBuilder;
     friend class DDASVFGBuilder;
+    friend class MTASVFGBuilder;
     friend class RcSvfgBuilder;
 
 public:
@@ -141,6 +142,7 @@ public:
     //@{
     SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind);
     SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind, CallSiteID csId);
+    SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind);
     //@}
 
     /// Get a SVFG edge according to src and dst
@@ -264,18 +266,19 @@ protected:
         removeGNode(node);
     }
 
-    /// Add intra def-use edges for top level pointers
+    /// Add direct def-use edges for top level pointers
     //@{
     SVFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
     SVFGEdge* addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     SVFGEdge* addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     //@}
 
-    /// Add intra def-use edges of a memory region between two statements,
+    /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
     SVFGEdge* addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId);
     SVFGEdge* addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId);
+    SVFGEdge* addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
     //@}
 
     /// Add inter VF edge from actual to formal parameters

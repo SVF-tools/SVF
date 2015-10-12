@@ -146,18 +146,14 @@ bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const llvm::Instruction* cs)
  */
 bool PAG::addGepEdge(NodeID src, NodeID dst, const LocationSet& ls) {
 
-    if(ls.getOffset() == 0 && ls.isConstantOffset())
-        return addCopyEdge(src,dst);
+    PAGNode* node = getPAGNode(src);
+    if (node->hasIncomingVariantGepEdge()) {
+        /// Since the offset from base to src is variant,
+        /// the new gep edge being created is also a VariantGepPE edge.
+        return addVariantGepEdge(src, dst);
+    }
     else {
-        PAGNode* node = getPAGNode(src);
-        if (node->hasIncomingVariantGepEdge()) {
-            /// Since the offset from base to src is variant,
-            /// the new gep edge being created is also a VariantGepPE edge.
-            return addVariantGepEdge(src, dst);
-        }
-        else {
-            return addNormalGepEdge(src, dst, ls);
-        }
+        return addNormalGepEdge(src, dst, ls);
     }
 }
 
@@ -266,23 +262,12 @@ NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls) {
     PAGNode* node = pag->getPAGNode(id);
     if (GepObjPN* gepNode = dyn_cast<GepObjPN>(node))
         return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
-    else if (FIObjPN* gepNode = dyn_cast<FIObjPN>(node))
-        return getFIObjNode(gepNode->getMemObj());
+    else if (FIObjPN* baseNode = dyn_cast<FIObjPN>(node))
+        return getGepObjNode(baseNode->getMemObj(), ls);
     else {
         assert(false && "new gep obj node kind?");
         return id;
     }
-}
-
-/*!
- * Get a field-insensitive obj PAG node according to a node id.
- */
-NodeID PAG::getFIObjNode(NodeID id)
-{
-    PAGNode* node = pag->getPAGNode(id);
-    assert(isa<ObjPN>(node) && "need an object node");
-    ObjPN* obj = cast<ObjPN>(node);
-    return getFIObjNode(obj->getMemObj());
 }
 
 /*!
@@ -310,24 +295,6 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls) {
 }
 
 /*!
- * Get a field-insensitive obj PAG node according to base mem obj.
- */
-NodeID PAG::getFIObjNode(const MemObj* obj)
-{
-    assert(obj->isFieldInsensitive() && "set this mem obj field-insensitive before you use it");
-
-    NodeID base = getObjectNode(obj);
-    NodeToNodeMap::const_iterator iter = FIObjMap.find(base);
-    if (iter == FIObjMap.end()) {
-        NodeID fiGepNodeID = addFIObjNode(obj, nodeNum);
-        return fiGepNodeID;
-    }
-    else {
-        return iter->second;
-    }
-}
-
-/*!
  * Add a field obj node, this method can only invoked by getGepObjNode
  */
 NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i) {
@@ -348,9 +315,7 @@ NodeID PAG::addFIObjNode(const MemObj* obj, NodeID i)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = getObjectNode(obj);
-    assert(0==FIObjMap.count(base)
-           && "this node should not be created before");
-    FIObjMap[base] = i;
+    memToFieldsMap[base].set(i);
     FIObjPN *node = new FIObjPN(obj->getRefVal(), i, obj);
     return addNode(node,i);
 }
@@ -686,17 +651,22 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
             return "color=green";
         } else if (isa<CopyPE>(edge)) {
             return "color=black";
-        } else if (isa<CallPE>(edge)) {
-            return "color=black,style=dashed";
-        } else if (isa<RetPE>(edge)) {
-            return "color=black,style=dotted";
         } else if (isa<GepPE>(edge)) {
             return "color=purple";
         } else if (isa<StorePE>(edge)) {
             return "color=blue";
         } else if (isa<LoadPE>(edge)) {
             return "color=red";
-        } else {
+        } else if (isa<TDForkPE>(edge)) {
+            return "color=Turquoise";
+        } else if (isa<TDJoinPE>(edge)) {
+            return "color=Turquoise";
+        } else if (isa<CallPE>(edge)) {
+            return "color=black,style=dashed";
+        } else if (isa<RetPE>(edge)) {
+            return "color=black,style=dotted";
+        }
+        else {
             assert(0 && "No such kind edge!!");
         }
     }

@@ -434,9 +434,9 @@ public:
     }
 
     /// Get target machine data layout
-    inline static llvm::DataLayout* getDataLayout() {
+    inline static llvm::DataLayout* getDataLayout(llvm::Module* mod = getModule()) {
         if(dl==NULL)
-            return dl = new llvm::DataLayout(getModule());
+            return dl = new llvm::DataLayout(mod);
         return dl;
     }
 

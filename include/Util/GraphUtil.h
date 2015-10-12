@@ -44,10 +44,10 @@ public:
         // Filename of the output dot file
         std::string Filename = GraphName + ".dot";
         O << "Writing '" << Filename << "'...";
-        std::string ErrInfo;
+        std::error_code ErrInfo;
         tool_output_file F(Filename.c_str(), ErrInfo, sys::fs::F_None);
 
-        if (ErrInfo.empty()) {
+        if (!ErrInfo) {
             // dump the ValueFlowGraph here
             WriteGraph(F.os(), GT, simple);
             F.os().close();

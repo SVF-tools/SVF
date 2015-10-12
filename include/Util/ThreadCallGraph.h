@@ -91,11 +91,7 @@ public:
     typedef std::map<const llvm::Instruction*, JoinEdgeSet> CallInstToJoinEdgesMap;
 
     /// Constructor
-    ThreadCallGraph(llvm::Module* module, ThreadAPI* tdapi) :
-        PTACallGraph(module), tdAPI(tdapi) {
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Building ThreadCallGraph\n"));
-        this->build(module);
-    }
+    ThreadCallGraph(llvm::Module* module);
     /// Destructor
     virtual ~ThreadCallGraph() {
     }

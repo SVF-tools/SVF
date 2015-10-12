@@ -71,7 +71,7 @@ WPAPass::~WPAPass() {
 bool WPAPass::runOnModule(llvm::Module& module)
 {
     /// initialization for llvm alias analyzer
-    InitializeAliasAnalysis(this);
+    InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
 
     for (u32_t i = 0; i< PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
@@ -118,9 +118,9 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-AliasAnalysis::AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
+llvm::AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
 
-    AliasAnalysis::AliasResult result = MayAlias;
+    llvm::AliasResult result = MayAlias;
 
     PAG* pag = _pta->getPAG();
 

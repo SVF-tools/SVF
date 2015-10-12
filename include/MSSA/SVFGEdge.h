@@ -29,9 +29,9 @@ typedef GenericEdge<SVFGNode> GenericSVFGEdgeTy;
 class SVFGEdge : public GenericSVFGEdgeTy {
 
 public:
-    /// six kinds of SVFG edge
+    /// seven kinds of SVFG edge
     enum SVFGEdgeK {
-        IntraDirect, IntraIndirect, DirCall, DirRet, IndCall, IndRet
+        IntraDirect, IntraIndirect, DirCall, DirRet, IndCall, IndRet, TheadMHPIndirect
     };
 
 public:
@@ -48,7 +48,7 @@ public:
         return getEdgeKind() == IntraDirect || getEdgeKind() == DirCall || getEdgeKind() == DirRet;
     }
     inline bool isIndirectVFGEdge() const {
-        return getEdgeKind() == IntraIndirect || getEdgeKind() == IndCall || getEdgeKind() == IndRet;
+        return getEdgeKind() == IntraIndirect || getEdgeKind() == IndCall || getEdgeKind() == IndRet || getEdgeKind() == TheadMHPIndirect;
     }
     inline bool isCallVFGEdge() const {
         return getEdgeKind() == DirCall || getEdgeKind() == IndCall;
@@ -70,6 +70,9 @@ public:
     }
     inline bool isIntraVFGEdge() const {
         return getEdgeKind() == IntraDirect || getEdgeKind() == IntraIndirect;
+    }
+    inline bool isThreadMHPIndirectVFGEdge() const {
+        return getEdgeKind() == TheadMHPIndirect;
     }
     //@}
     typedef GenericNode<SVFGNode,SVFGEdge>::GEdgeSetTy SVFGEdgeSetTy;
@@ -240,12 +243,14 @@ public:
     static inline bool classof(const SVFGEdge *edge) {
         return edge->getEdgeKind() == IntraIndirect  ||
                edge->getEdgeKind() == IndCall ||
-               edge->getEdgeKind() == IndRet;
+               edge->getEdgeKind() == IndRet ||
+               edge->getEdgeKind() == TheadMHPIndirect;
     }
     static inline bool classof(const GenericSVFGEdgeTy *edge) {
         return edge->getEdgeKind() == IntraIndirect  ||
                edge->getEdgeKind() == IndCall ||
-               edge->getEdgeKind() == IndRet;
+               edge->getEdgeKind() == IndRet ||
+               edge->getEdgeKind() == TheadMHPIndirect;
     }
     //@}
 };
@@ -330,6 +335,32 @@ public:
     }
     static inline bool classof(const GenericSVFGEdgeTy *edge) {
         return edge->getEdgeKind() == IndRet;
+    }
+    //@}
+};
+
+
+/*!
+ * MHP SVFG edge representing indirect value-flows between
+ * two memory access may-happen-in-parallel in multithreaded program
+ */
+class ThreadMHPIndSVFGEdge : public IndirectSVFGEdge {
+
+public:
+    ThreadMHPIndSVFGEdge(SVFGNode* s, SVFGNode* d): IndirectSVFGEdge(s,d,TheadMHPIndirect) {
+    }
+    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
+    static inline bool classof(const ThreadMHPIndSVFGEdge*) {
+        return true;
+    }
+    static inline bool classof(const IndirectSVFGEdge *edge) {
+        return edge->getEdgeKind() == TheadMHPIndirect;
+    }
+    static inline bool classof(const SVFGEdge *edge) {
+        return edge->getEdgeKind() == TheadMHPIndirect;
+    }
+    static inline bool classof(const GenericSVFGEdgeTy *edge) {
+        return edge->getEdgeKind() == TheadMHPIndirect;
     }
     //@}
 };

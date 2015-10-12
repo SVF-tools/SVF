@@ -157,8 +157,12 @@ public:
         assert(isTDJoin(inst) && "not a thread join function!");
         llvm::CallSite cs = getLLVMCallSite(inst);
         llvm::Value* join = cs.getArgument(0);
-        assert(llvm::isa<llvm::LoadInst>(join) && "the value of the first argument at join is not a load instruction?");
-        return llvm::cast<llvm::LoadInst>(join)->getPointerOperand();
+        if(llvm::isa<llvm::LoadInst>(join))
+            return llvm::cast<llvm::LoadInst>(join)->getPointerOperand();
+        else if(llvm::isa<llvm::Argument>(join))
+            return join;
+        assert(false && "the value of the first argument at join is not a load instruction?");
+        return NULL;
     }
     inline const llvm::Value* getJoinedThread(llvm::CallSite cs) const {
         return getJoinedThread(cs.getInstruction());

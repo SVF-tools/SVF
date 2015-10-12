@@ -184,7 +184,7 @@ void PAGBuilder::processCE(const Value *val) {
 NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, Size_t offset) {
 
     // if the global variable do not have any field needs to be initialized
-    if (offset == 0) {
+    if (offset == 0 && gvar->getInitializer()->getType()->isSingleValueType()) {
         return getValueNode(gvar);
     }
     /// if we did not find the constant expression in the program,
@@ -323,7 +323,7 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
  * Visit load instructions
  */
 void PAGBuilder::visitLoadInst(LoadInst &inst) {
-
+    pag->loadInstNum++;
     if (isa<PointerType>(inst.getType())) {
         DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
@@ -339,7 +339,7 @@ void PAGBuilder::visitLoadInst(LoadInst &inst) {
  * Visit store instructions
  */
 void PAGBuilder::visitStoreInst(StoreInst &inst) {
-
+    pag->storeInstNum++;
     // StoreInst itself should always not be a pointer type
     assert(!isa<PointerType>(inst.getType()));
 
@@ -514,9 +514,9 @@ void PAGBuilder::visitExtractValueInst(llvm::ExtractValueInst &inst) {
 }
 
 /*!
- * The ÔextractelementÔ instruction extracts a single scalar element from a vector at a specified index.
+ * The ï¿½extractelementï¿½ instruction extracts a single scalar element from a vector at a specified index.
  * TODO: for now we just assume the pointer after extraction points to blackhole
- * The first operand of an ÔextractelementÔ instruction is a value of vector type.
+ * The first operand of an ï¿½extractelementï¿½ instruction is a value of vector type.
  * The second operand is an index indicating the position from which to extract the element.
  *
  * <result> = extractelement <4 x i32> %vec, i32 0    ; yields i32
@@ -805,17 +805,21 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
         if(isThreadForkCall(inst)) {
             if(const Function* forkedFun = getLLVMFunction(getForkedFun(inst)) ) {
                 const Value* actualParm = getActualParmAtForkSite(inst);
-                assert((forkedFun->arg_size() <= 1) && "Size of formal parameter of start routine should be one");
-                if(forkedFun->arg_size() == 1) {
-                    const Argument& formalParm = forkedFun->getArgumentList().front();
+                /// pthread_create has 1 arg.
+                /// apr_thread_create has 2 arg.
+                assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
+                if(forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1) {
+                    const Argument* formalParm = &(forkedFun->getArgumentList().front());
                     /// Connect actual parameter to formal parameter of the start routine
-                    pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(&formalParm),inst);
+                    if(isa<PointerType>(actualParm->getType()) && isa<PointerType>(formalParm->getType()) )
+                        pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
                 }
             }
             /// If forkedFun does not pass to spawnee as function type but as void pointer
             /// remember to update inter-procedural callgraph/PAG/SVFG etc. when indirect call targets are resolved
             /// We don't connect the callgraph here, further investigation is need to hanle mod-ref during SVFG construction.
         }
+
         /// TODO: inter-procedural PAG edges for thread joins
     }
 }

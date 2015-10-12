@@ -34,7 +34,7 @@ const char* PTAStat:: TotalNumOfPointers = "TotalPointers";	///< PAG value nodes
 const char* PTAStat:: TotalNumOfObjects = "TotalObjects";	///< Total PAG object node
 const char* PTAStat:: TotalNumOfFieldObjects = "TotalFieldObjects";	///< Total PAG field object node
 const char* PTAStat:: MaxStructSize = "MaxStructSize";	///< Max struct size (bytes)
-const char* PTAStat:: TotalNumOfEdges = "TotalEdges";	///< Total PAG edge number
+const char* PTAStat:: TotalNumOfEdges = "TotalPAGEdges";	///< Total PAG edge number
 
 const char* PTAStat:: NumOfFunctionObjs = "FunctionObjs";	///< function numbers
 const char* PTAStat:: NumOfGlobalObjs = "GlobalObjs";	///< PAG global object node

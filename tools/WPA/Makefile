@@ -16,7 +16,7 @@ TOOLNAME=wpa
 # !!Should always consider the dependence of each library, the parent library should place at the end of the line
 USEDLIBS = wpa.a mssa.a
 
-LINK_COMPONENTS := bitreader bitwriter asmparser irreader instrumentation scalaropts ipo
+LINK_COMPONENTS := bitreader bitwriter asmparser irreader instrumentation scalaropts ipo codegen
 
 #LINK_COMPONENTS = all
 

@@ -19,6 +19,7 @@
 #include "Util/GraphUtil.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/PTAStat.h"
+#include "Util/ThreadCallGraph.h"
 
 using namespace llvm;
 using namespace analysisUtil;
@@ -58,6 +59,12 @@ static cl::opt<bool> UsePreCompFieldSensitive("preFieldSensitive", cl::init(true
 
 static cl::opt<bool> EnableAliasCheck("alias-check", cl::init(true),
                                       cl::desc("Enable alias check functions"));
+
+static cl::opt<bool> EnableThreadCallGraph("enable-tcg", cl::init(true),
+        cl::desc("Enable pointer analysis to use thread call graph"));
+
+static cl::opt<bool> INCDFPTData("incdata", cl::init(true),
+                                 cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
 PAG* PointerAnalysis::pag = NULL;
 llvm::Module* PointerAnalysis::mod = NULL;
@@ -128,7 +135,10 @@ void PointerAnalysis::initialize(Module& module) {
     mod = &module;
 
     /// initialise pta call graph
-    ptaCallGraph = new PTACallGraph(mod);
+    if(EnableThreadCallGraph)
+        ptaCallGraph = new ThreadCallGraph(mod);
+    else
+        ptaCallGraph = new PTACallGraph(mod);
     callGraphSCCDetection();
 }
 
@@ -176,11 +186,13 @@ void PointerAnalysis::dumpStat() {
         stat->performStat();
 }
 
+
 /*!
  * Finalize the analysis after solving
  * Given the alias results, verify whether it is correct or not using alias check functions
  */
 void PointerAnalysis::finalize() {
+
     /// Print statistics
     dumpStat();
 
@@ -239,6 +251,41 @@ void PointerAnalysis::dumpAllTypes()
     }
 }
 
+
+/*!
+ * Constructor
+ */
+BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type) {
+    if(type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenLCD_WPA) {
+        ptD = new PTDataTy();
+    }
+    else if (type == AndersenWaveDiff_WPA) {
+        ptD = new DiffPTDataTy();
+    }
+    else if (type == FSSPARSE_WPA) {
+        if(INCDFPTData)
+            ptD = new IncDFPTDataTy();
+        else
+            ptD = new DFPTDataTy();
+    }
+    else if (type == FlowS_DDA) {
+        ptD = new PTDataTy();
+    }
+    else
+        assert(false && "no points-to data available");
+}
+
+/*!
+ * Expand all fields of an aggregate in all points-to sets
+ */
+void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) {
+    expandedPts = pts;;
+    for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit) {
+        if(pag->getBaseObjNode(*pit)==*pit) {
+            expandedPts |= pag->getAllFieldsObjNode(*pit);
+        }
+    }
+}
 
 /*!
  * Dump points-to of each pag node
@@ -447,22 +494,22 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
                        && "arguments should be two pointers!!");
                 Value* V1 = call->getArgOperand(0);
                 Value* V2 = call->getArgOperand(1);
-                AliasAnalysis::AliasResult aliasRes = alias(V1, V2);
+                AliasResult aliasRes = alias(V1, V2);
 
                 bool checkSuccessful = false;
                 if (strcmp(fun, "MAYALIAS") == 0) {
-                    if (aliasRes == AliasAnalysis::MayAlias || aliasRes == AliasAnalysis::MustAlias)
+                    if (aliasRes == MayAlias || aliasRes == MustAlias)
                         checkSuccessful = true;
                 } else if (strcmp(fun, "NOALIAS") == 0) {
-                    if (aliasRes == AliasAnalysis::NoAlias)
+                    if (aliasRes == NoAlias)
                         checkSuccessful = true;
                 } else if (strcmp(fun, "MUSTALIAS") == 0) {
                     // change to must alias when our analysis support it
-                    if (aliasRes == AliasAnalysis::MayAlias || aliasRes == AliasAnalysis::MustAlias)
+                    if (aliasRes == MayAlias || aliasRes == MustAlias)
                         checkSuccessful = true;
                 } else if (strcmp(fun, "PARTIALALIAS") == 0) {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == AliasAnalysis::MayAlias)
+                    if (aliasRes == MayAlias)
                         checkSuccessful = true;
                 } else
                     assert(false && "not supported alias check!!");
@@ -498,16 +545,16 @@ void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
                        && "arguments should be two pointers!!");
                 Value* V1 = call->getArgOperand(0);
                 Value* V2 = call->getArgOperand(1);
-                AliasAnalysis::AliasResult aliasRes = alias(V1, V2);
+                AliasResult aliasRes = alias(V1, V2);
 
                 bool expectedFailure = false;
                 if (strcmp(fun, "EXPECTEDFAIL_MAYALIAS") == 0) {
                     // change to must alias when our analysis support it
-                    if (aliasRes == AliasAnalysis::NoAlias)
+                    if (aliasRes == NoAlias)
                         expectedFailure = true;
                 } else if (strcmp(fun, "EXPECTEDFAIL_NOALIAS") == 0) {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == AliasAnalysis::MayAlias || aliasRes == AliasAnalysis::PartialAlias || aliasRes == AliasAnalysis::MustAlias)
+                    if (aliasRes == MayAlias || aliasRes == PartialAlias || aliasRes == MustAlias)
                         expectedFailure = true;
                 } else
                     assert(false && "not supported alias check!!");
@@ -530,22 +577,33 @@ void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
 /*!
  * Return alias results based on our points-to/alias analysis
  */
-AliasAnalysis::AliasResult BVDataPTAImpl::alias(const AliasAnalysis::Location &LocA,
-        const AliasAnalysis::Location &LocB) {
+llvm::AliasResult BVDataPTAImpl::alias(const llvm::MemoryLocation &LocA,
+                                       const llvm::MemoryLocation &LocB) {
     return alias(LocA.Ptr, LocB.Ptr);
 }
 
 /*!
  * Return alias results based on our points-to/alias analysis
  */
-AliasAnalysis::AliasResult BVDataPTAImpl::alias(const Value* V1,
-        const Value* V2) {
+llvm::AliasResult BVDataPTAImpl::alias(const Value* V1,
+                                       const Value* V2) {
+    return alias(pag->getValueNode(V1),pag->getValueNode(V2));
+}
 
-    PointsTo& pts1 = getPts(pag->getValueNode(V1));
-    PointsTo& pts2 = getPts(pag->getValueNode(V2));
+/*!
+ * Return alias results based on our points-to/alias analysis
+ */
+llvm::AliasResult BVDataPTAImpl::alias(NodeID node1, NodeID node2) {
+
+    PointsTo& p1 = getPts(node1);
+    PointsTo& p2 = getPts(node2);
+    PointsTo pts1;
+    expandFIObjs(p1,pts1);
+    PointsTo pts2;
+    expandFIObjs(p2,pts2);
 
     if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2))
-        return AliasAnalysis::MayAlias;
+        return MayAlias;
     else
-        return AliasAnalysis::NoAlias;
+        return NoAlias;
 }

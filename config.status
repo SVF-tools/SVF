@@ -431,7 +431,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/Users/rockysui/Documents/projects/SVF1'
+ac_pwd='/Users/rockysui/Documents/projects/SVF'
 srcdir='.'
 test -n "$AWK" || AWK=awk
 # The default lists apply if the user does not specify any file.
@@ -519,7 +519,7 @@ _ASBOX
 #
 # INIT-COMMANDS
 #
-llvm_src="/home/ysui/llvm-3.5.0/llvm-3.5.0.src"
+llvm_src="/home/ysui/llvm-3.7.0/llvm-3.7.0.src"
 
 
 # Handling of arguments.
@@ -601,8 +601,8 @@ echo 'BEGIN {' >"$ac_tmp/subs1.awk" &&
 cat >>"$ac_tmp/subs1.awk" <<\_ACAWK &&
 S["LTLIBOBJS"]=""
 S["LIBOBJS"]=""
-S["LLVM_OBJ"]="/home/ysui/llvm-3.5.0/llvm-3.5.0.obj"
-S["LLVM_SRC"]="/home/ysui/llvm-3.5.0/llvm-3.5.0.src"
+S["LLVM_OBJ"]="/home/ysui/llvm-3.7.0/llvm-3.7.0.obj"
+S["LLVM_SRC"]="/home/ysui/llvm-3.7.0/llvm-3.7.0.src"
 S["target_alias"]=""
 S["host_alias"]=""
 S["build_alias"]=""

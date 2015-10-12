@@ -165,12 +165,15 @@ public:
     virtual void computeDDAPts(NodeID id) {}
 
     /// Interface exposed to users of our pointer analysis, given Location infos
-    virtual AliasAnalysis::AliasResult alias(const AliasAnalysis::Location &LocA,
-            const AliasAnalysis::Location &LocB) = 0;
+    virtual llvm::AliasResult alias(const llvm::MemoryLocation &LocA,
+                                    const llvm::MemoryLocation &LocB) = 0;
 
     /// Interface exposed to users of our pointer analysis, given Value infos
-    virtual AliasAnalysis::AliasResult alias(const llvm::Value* V1,
-            const llvm::Value* V2) = 0;
+    virtual llvm::AliasResult alias(const llvm::Value* V1,
+                                    const llvm::Value* V2) = 0;
+
+    /// Interface exposed to users of our pointer analysis, given PAGNodeID
+    virtual llvm::AliasResult alias(NodeID node1, NodeID node2) = 0;
 
 protected:
     /// Return all indirect callsites
@@ -344,18 +347,7 @@ public:
     typedef IncDFPTData<NodeID,PointsTo> IncDFPTDataTy;	/// Points-to data structure type
 
     /// Constructor
-    BVDataPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type) {
-        if(type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenLCD_WPA)
-            ptD = new PTDataTy();
-        else if (type == AndersenWaveDiff_WPA)
-            ptD = new DiffPTDataTy();
-        else if (type == FSSPARSE_WPA)
-            ptD = new IncDFPTDataTy();
-        else if (type == FlowS_DDA)
-            ptD = new PTDataTy();
-        else
-            assert(false && "no points-to data available");
-    }
+    BVDataPTAImpl(PointerAnalysis::PTATY type);
 
     /// Destructor
     virtual ~BVDataPTAImpl() {
@@ -413,18 +405,24 @@ protected:
     /// On the fly call graph construction
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges,llvm::CallGraph* callgraph = NULL);
 
+    /// Expand FI objects
+    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
+
 private:
     /// Points-to data
     PTDataTy* ptD;
 
 public:
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual AliasAnalysis::AliasResult alias(const AliasAnalysis::Location &LocA,
-            const AliasAnalysis::Location &LocB);
+    virtual llvm::AliasResult alias(const llvm::MemoryLocation  &LocA,
+                                    const llvm::MemoryLocation  &LocB);
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasAnalysis::AliasResult alias(const llvm::Value* V1,
-            const llvm::Value* V2);
+    virtual llvm::AliasResult alias(const llvm::Value* V1,
+                                    const llvm::Value* V2);
+
+    /// Interface expose to users of our pointer analysis, given PAGNodeID
+    virtual llvm::AliasResult alias(NodeID node1, NodeID node2);
 
     /// dump and debug, print out conditional pts
     //@{
@@ -568,6 +566,20 @@ protected:
     }
     //@}
 
+    /// Expand all fields of an aggregate in all points-to sets
+    void expandFIObjs(const CPtSet cpts, CPtSet& expandedCpts) {
+        expandedCpts = cpts;;
+        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
+            if(pag->getBaseObjNode(cit->get_id())==cit->get_id()) {
+                NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
+                for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it) {
+                    CVar cvar(cit->get_cond(),*it);
+                    expandedCpts.set(cvar);
+                }
+            }
+        }
+    }
+
     /// Normalize points-to information to BitVector/conditional representation
     virtual void NormalizePointsTo() {
         normalized = true;
@@ -610,27 +622,32 @@ public:
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasAnalysis::AliasResult alias(const AliasAnalysis::Location &LocA,
-            const AliasAnalysis::Location &LocB) {
+    virtual inline llvm::AliasResult alias(const llvm::MemoryLocation &LocA,
+                                           const llvm::MemoryLocation  &LocB) {
         return alias(LocA.Ptr, LocB.Ptr);
     }
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasAnalysis::AliasResult alias(const llvm::Value* V1, const llvm::Value* V2) {
-        NodeID p1 = pag->getValueNode(V1);
-        NodeID p2 = pag->getValueNode(V2);
-        PointsTo pts1 = getPts(p1);
-        PointsTo pts2 = getPts(p2);
-        const CPtSet& cpts1 = getCondPointsTo(p1);
-        const CPtSet& cpts2 = getCondPointsTo(p2);
+    virtual llvm::AliasResult alias(const llvm::Value* V1, const llvm::Value* V2) {
+        return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
+    }
+
+    /// Interface expose to users of our pointer analysis, given Value infos
+    virtual llvm::AliasResult alias(NodeID node1, NodeID node2) {
+        PointsTo pts1 = getPts(node1);
+        PointsTo pts2 = getPts(node2);
+        CPtSet cpts1;
+        expandFIObjs(getCondPointsTo(node1),cpts1);
+        CPtSet cpts2;
+        expandFIObjs(getCondPointsTo(node2),cpts2);
         if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2))
-            return AliasAnalysis::MayAlias;
+            return llvm::MayAlias;
         else if(this->getAnalysisTy()==PathS_DDA && contains(cpts1,cpts2) && contains(cpts2,cpts1)) {
-            return AliasAnalysis::MustAlias;
+            return llvm::MustAlias;
         }
         else if(overlap(cpts1,cpts2))
-            return AliasAnalysis::MayAlias;
+            return llvm::MayAlias;
         else
-            return AliasAnalysis::NoAlias;
+            return llvm::NoAlias;
     }
 
     /// Whether two conditions are compatible (to be implemented by child class)

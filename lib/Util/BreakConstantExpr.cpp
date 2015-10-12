@@ -123,7 +123,7 @@ convertGEP (ConstantExpr * CE, Instruction * InsertPt) {
     for (unsigned index = 1; index < CE->getNumOperands(); ++index) {
         Indices.push_back (CE->getOperand (index));
     }
-
+    ArrayRef<Value *> arrayIdices(Indices);
     //
     // Update the statistics.
     //
@@ -133,8 +133,8 @@ convertGEP (ConstantExpr * CE, Instruction * InsertPt) {
     //
     // Make the new GEP instruction.
     //
-    return (GetElementPtrInst::Create (CE->getOperand(0),
-                                       Indices,
+    return (GetElementPtrInst::Create (nullptr,CE->getOperand(0),
+                                       arrayIdices,
                                        CE->getName(),
                                        InsertPt));
 }

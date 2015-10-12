@@ -65,6 +65,13 @@ public:
         return fspta;
     }
 
+    /// Release flow-sensitive pointer analysis
+    static void releaseFSWPA() {
+        if (fspta)
+            delete fspta;
+        fspta = NULL;
+    }
+
     /// We start from here
     virtual bool runOnModule(llvm::Module& module) {
         /// start analysis
@@ -137,10 +144,10 @@ protected:
     bool propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, const SVFGNode* dst);
 
     inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
-        return getDFPTDataTy()->propDFOutToIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
     inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
-        return getDFPTDataTy()->propDFInToIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
+        return getDFPTDataTy()->updateAllDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
     //@}
 
@@ -193,6 +200,7 @@ protected:
     /// Return TRUE if this is a strong update STORE statement.
     bool isStrongUpdate(const SVFGNode* node, NodeID& singleton);
 
+    SVFG* svfg;
 private:
     ///Get points-to set for a node from data flow IN/OUT set at a statement.
     //@{
@@ -215,7 +223,6 @@ private:
     //@}
 
     static FlowSensitive* fspta;
-    SVFG* svfg;
     SVFGBuilder memSSA;
 
     /// Statistics.

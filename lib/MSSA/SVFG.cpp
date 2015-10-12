@@ -216,6 +216,7 @@ void SVFG::addSVFGNodesForTopLevelPtrs() {
     for(PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit!=epit; ++pit) {
         addIntraPHISVFGNode(pit->first,pit->second);
     }
+
 }
 
 /*
@@ -310,6 +311,27 @@ void SVFG::connectDirectSVFGEdges() {
         }
         /// Do not process FormalRetSVFGNode, as they are connected by copy within callee
         /// We assume one procedure only has unique return
+    }
+
+    /// connect direct value-flow edges (parameter passing) for thread fork/join
+    /// add fork edge
+    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
+                forks.end(); iter != eiter; ++iter) {
+        TDForkPE* forkedge = cast<TDForkPE>(*iter);
+        addActualParmSVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
+        const ActualParmSVFGNode* acutalParm = getActualParmSVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
+        const FormalParmSVFGNode* formalParm = getFormalParmSVFGNode(forkedge->getDstNode());
+        addInterVFEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
+    }
+    /// add join edge
+    PAGEdge::PAGEdgeSetTy& joins = getPAG()->getEdgeSet(PAGEdge::ThreadJoin);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = joins.begin(), eiter =
+                joins.end(); iter != eiter; ++iter) {
+        TDJoinPE* joinedge = cast<TDJoinPE>(*iter);
+        NodeID callsiteRev = getDef(joinedge->getDstNode());
+        const FormalRetSVFGNode* calleeRet = getFormalRetSVFGNode(joinedge->getSrcNode());
+        addRetDirectVFEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
     }
 }
 
@@ -442,6 +464,22 @@ SVFGEdge* SVFG::hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdg
         return NULL;
 }
 
+
+/*!
+ * Whether we has an thread SVFG edge
+ */
+SVFGEdge* SVFG::hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind) {
+    SVFGEdge edge(src,dst,kind);
+    SVFGEdge* outEdge = src->hasOutgoingEdge(&edge);
+    SVFGEdge* inEdge = dst->hasIncomingEdge(&edge);
+    if (outEdge && inEdge) {
+        assert(outEdge == inEdge && "edges not match");
+        return outEdge;
+    }
+    else
+        return NULL;
+}
+
 /*!
  * Whether we has an inter SVFG edge
  */
@@ -537,6 +575,23 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     }
     else {
         IntraIndSVFGEdge* indirectEdge = new IntraIndSVFGEdge(srcNode,dstNode);
+        indirectEdge->addPointsTo(cpts);
+        return (addSVFGEdge(indirectEdge) ? indirectEdge : NULL);
+    }
+}
+
+/*!
+ * Add def-use edges of a memory region between two may-happen-in-parallel statements for multithreaded program
+ */
+SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {
+    SVFGNode* srcNode = getSVFGNode(srcId);
+    SVFGNode* dstNode = getSVFGNode(dstId);
+    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirect)) {
+        assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
+        return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
+    }
+    else {
+        ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode,dstNode);
         indirectEdge->addPointsTo(cpts);
         return (addSVFGEdge(indirectEdge) ? indirectEdge : NULL);
     }
@@ -862,7 +917,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
             NodeID src = stmtNode->getPAGSrcNodeID();
             NodeID dst = stmtNode->getPAGDstNodeID();
             rawstr << dst << "<--" << src << "\n";
-            rawstr << getSourceLoc(stmtNode->getInst());
+            if(stmtNode->getInst()) {
+                rawstr << getSourceLoc(stmtNode->getInst());
+            }
+            else if(stmtNode->getPAGDstNode()->hasValue()) {
+                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
+            }
         }
         else if(PHISVFGNode* tphi = dyn_cast<PHISVFGNode>(node)) {
             rawstr << tphi->getRes()->getId() << " = PHI(";
@@ -927,7 +987,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
             NodeID src = stmtNode->getPAGSrcNodeID();
             NodeID dst = stmtNode->getPAGDstNodeID();
             rawstr << dst << "<--" << src << "\n";
-            rawstr << getSourceLoc(stmtNode->getInst());
+            if(stmtNode->getInst()) {
+                rawstr << getSourceLoc(stmtNode->getInst());
+            }
+            else if(stmtNode->getPAGDstNode()->hasValue()) {
+                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
+            }
         }
         else if(MSSAPHISVFGNode* mphi = dyn_cast<MSSAPHISVFGNode>(node)) {
             rawstr << "MR_" << mphi->getRes()->getMR()->getMRID()
