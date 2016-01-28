@@ -4,9 +4,9 @@ SVF Release License
 University of Illinois/NCSA
 Open Source License
 
-Copyright (c) 2013-2015 Yulei Sui
-Copyright (c) 2013-2015 Jingling Xue
-Copyright (c) 2013-2015 University of New South Wales, Australia.
+Copyright (c) 2013-2016 Yulei Sui
+Copyright (c) 2013-2016 Jingling Xue
+Copyright (c) 2013-2016 University of New South Wales, Australia.
 All rights reserved.
 
 Developed by:
