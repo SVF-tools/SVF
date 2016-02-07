@@ -9,9 +9,9 @@ See SVF [homepage](http://unsw-corg.github.io/SVF/), [wiki](https://github.com/u
 
 If you use SVF, you are asked to acknolwedge usage of our tool by citing some of our publications listed in the main page of this web site, especially the following two papers:
 
-<p>Yulei Sui and Jingling Xue. SVF: Interprocedural Static Value-Flow Analysis in LLVM (CC '16) </p>
+<p>Yulei Sui and Jingling Xue. [SVF: Interprocedural Static Value-Flow Analysis in LLVM](http://www.cse.unsw.edu.au/~ysui/papers/cc16.pdf) (CC '16) </p>
 
-<p>Yulei Sui, Ding Ye, and Jingling Xue. Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis , IEEE Transactions on Software Engineering (TSE'14)</p>
+<p>Yulei Sui, Ding Ye, and Jingling Xue. [Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis](http://www.cse.unsw.edu.au/~ysui/papers/tse14.pdf) , IEEE Transactions on Software Engineering (TSE'14)</p>
  
 
 
