@@ -6,12 +6,6 @@ SVF contains a third party software package [CUDD-2.5.0](http://vlsi.colorado.ed
 
 See SVF [homepage](http://unsw-corg.github.io/SVF/), [wiki](https://github.com/unsw-corg/SVF/wiki) and [doxygen](http://www.cse.unsw.edu.au/~corg/svf/doxygen/) for details.
 
-
-If you use SVF, you are asked to acknolwedge usage of our tool by citing some of our publications listed in the main page of this web site, especially the following two papers:
-
-Yulei Sui and Jingling Xue. [SVF: Interprocedural Static Value-Flow Analysis in LLVM](http://www.cse.unsw.edu.au/~ysui/papers/cc16.pdf) International Conference on Compiler Construction (CC '16)
-
-Yulei Sui, Ding Ye, and Jingling Xue. [Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis](http://www.cse.unsw.edu.au/~ysui/papers/tse14.pdf) , IEEE Transactions on Software Engineering (TSE'14)
  
 
 
