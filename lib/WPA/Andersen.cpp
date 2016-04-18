@@ -20,9 +20,9 @@
 
 #include <llvm/Support/CommandLine.h> // for tool output file
 
-
 using namespace llvm;
 using namespace analysisUtil;
+
 
 Size_t Andersen::numOfProcessedAddr = 0;
 Size_t Andersen::numOfProcessedCopy = 0;

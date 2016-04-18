@@ -36,8 +36,7 @@ ThreadCallGraph::ThreadCallGraph(llvm::Module* module) :
 void ThreadCallGraph::build(Module* m) {
     // create thread fork edges and record fork sites
     for (Module::const_iterator fi = m->begin(), efi = m->end(); fi != efi; ++fi) {
-        const Function* fun = fi;
-        for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II) {
+        for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDFork(inst)) {
                 addForksite(cast<CallInst>(inst));
@@ -54,8 +53,7 @@ void ThreadCallGraph::build(Module* m) {
     }
     // record join sites
     for (Module::const_iterator fi = m->begin(), efi = m->end(); fi != efi; ++fi) {
-        const Function* fun = fi;
-        for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II) {
+        for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDJoin(inst)) {
                 addJoinsite(cast<CallInst>(inst));

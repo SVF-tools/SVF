@@ -31,70 +31,69 @@
 using namespace llvm;
 
 static cl::opt<std::string> InputFilename(cl::Positional,
-		cl::desc("<input bitcode>"), cl::init("-"));
+        cl::desc("<input bitcode>"), cl::init("-"));
 
 
 int main(int argc, char ** argv) {
 
-	sys::PrintStackTraceOnErrorSignal();
-	llvm::PrettyStackTraceProgram X(argc, argv);
+    sys::PrintStackTraceOnErrorSignal();
+    llvm::PrettyStackTraceProgram X(argc, argv);
 
-	LLVMContext &Context = getGlobalContext();
+    LLVMContext &Context = getGlobalContext();
 
-	std::string OutputFilename;
+    std::string OutputFilename;
 
-	cl::ParseCommandLineOptions(argc, argv, "Whole Program Points-to Analysis\n");
-	sys::PrintStackTraceOnErrorSignal();
+    cl::ParseCommandLineOptions(argc, argv, "Whole Program Points-to Analysis\n");
+    sys::PrintStackTraceOnErrorSignal();
 
-	PassRegistry &Registry = *PassRegistry::getPassRegistry();
+    PassRegistry &Registry = *PassRegistry::getPassRegistry();
 
-	initializeCore(Registry);
-	initializeScalarOpts(Registry);
-	initializeIPO(Registry);
-	initializeAnalysis(Registry);
-	initializeIPA(Registry);
-	initializeTransformUtils(Registry);
-	initializeInstCombine(Registry);
-	initializeInstrumentation(Registry);
-	initializeTarget(Registry);
+    initializeCore(Registry);
+    initializeScalarOpts(Registry);
+    initializeIPO(Registry);
+    initializeAnalysis(Registry);
+    initializeTransformUtils(Registry);
+    initializeInstCombine(Registry);
+    initializeInstrumentation(Registry);
+    initializeTarget(Registry);
 
-	llvm::legacy::PassManager Passes;
+    llvm::legacy::PassManager Passes;
 
-	SMDiagnostic Err;
+    SMDiagnostic Err;
 
-	// Load the input module...
-	std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
+    // Load the input module...
+    std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
 
-	if (!M1) {
-	  Err.print(argv[0], errs());
-	  return 1;
-	}
+    if (!M1) {
+        Err.print(argv[0], errs());
+        return 1;
+    }
 
 
-	std::unique_ptr<tool_output_file> Out;
-	std::error_code ErrorInfo;
+    std::unique_ptr<tool_output_file> Out;
+    std::error_code ErrorInfo;
 
-	StringRef str(InputFilename);
-	InputFilename = str.rsplit('.').first;
-	OutputFilename = InputFilename + ".wpa";
+    StringRef str(InputFilename);
+    InputFilename = str.rsplit('.').first;
+    OutputFilename = InputFilename + ".wpa";
 
-	Out.reset(
-			new tool_output_file(OutputFilename.c_str(), ErrorInfo,
-					sys::fs::F_None));
+    Out.reset(
+        new tool_output_file(OutputFilename.c_str(), ErrorInfo,
+                             sys::fs::F_None));
 
-	if (ErrorInfo) {
-		errs() << ErrorInfo.message() << '\n';
-		return 1;
-	}
+    if (ErrorInfo) {
+        errs() << ErrorInfo.message() << '\n';
+        return 1;
+    }
 
-	Passes.add(new WPAPass());
+    Passes.add(new WPAPass());
 
-	Passes.add(createBitcodeWriterPass(Out->os()));
+    Passes.add(createBitcodeWriterPass(Out->os()));
 
-	Passes.run(*M1.get());
-	Out->keep();
+    Passes.run(*M1.get());
+    Out->keep();
 
-	return 0;
+    return 0;
 
 }
 

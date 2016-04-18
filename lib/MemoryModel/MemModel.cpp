@@ -601,30 +601,30 @@ void SymbolTableInfo::buildMemModel(llvm::Module& module) {
     // Add symbols for all the globals .
     for (Module::global_iterator I = module.global_begin(), E =
                 module.global_end(); I != E; ++I) {
-        collectSym(I);
+        collectSym(&*I);
     }
 
     // Add symbols for all the global aliases
     for (Module::alias_iterator I = module.alias_begin(), E =
                 module.alias_end(); I != E; I++) {
-        collectSym(I);
+        collectSym(&*I);
     }
 
     // Add symbols for all of the functions and the instructions in them.
     for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F) {
-        collectSym(F);
-        collectRet(F);
+        collectSym(&*F);
+        collectRet(&*F);
         if (F->getFunctionType()->isVarArg())
-            collectVararg(F);
+            collectVararg(&*F);
 
         // Add symbols for all formal parameters.
         for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
                 I != E; ++I) {
-            collectSym(I);
+            collectSym(&*I);
         }
 
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(F), E = inst_end(F); II != E; ++II) {
+        for (inst_iterator II = inst_begin(&*F), E = inst_end(&*F); II != E; ++II) {
             const Instruction *inst = &*II;
             collectSym(inst);
 

@@ -245,7 +245,7 @@ std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
         for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
             DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
             for (DISubprogram *SP : CUNode->getSubprograms()) {
-                if (F == SP->getFunction())
+                if (SP->describes(F))
                     rawstr << "in line: " << SP->getLine()
                            << " file: " << SP->getFilename();
             }

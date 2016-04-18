@@ -519,7 +519,7 @@ _ASBOX
 #
 # INIT-COMMANDS
 #
-llvm_src="/home/ysui/llvm-3.7.0/llvm-3.7.0.src"
+llvm_src="/home/ysui/llvm-3.8.0/llvm-3.8.0.src"
 
 
 # Handling of arguments.
@@ -601,8 +601,8 @@ echo 'BEGIN {' >"$ac_tmp/subs1.awk" &&
 cat >>"$ac_tmp/subs1.awk" <<\_ACAWK &&
 S["LTLIBOBJS"]=""
 S["LIBOBJS"]=""
-S["LLVM_OBJ"]="/home/ysui/llvm-3.7.0/llvm-3.7.0.obj"
-S["LLVM_SRC"]="/home/ysui/llvm-3.7.0/llvm-3.7.0.src"
+S["LLVM_OBJ"]="/home/ysui/llvm-3.8.0/llvm-3.8.0.obj"
+S["LLVM_SRC"]="/home/ysui/llvm-3.8.0/llvm-3.8.0.src"
 S["target_alias"]=""
 S["host_alias"]=""
 S["build_alias"]=""

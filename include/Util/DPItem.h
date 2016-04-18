@@ -147,7 +147,6 @@ public:
     }
 };
 
-typedef SmallVector16 CallStrCxt;
 /*!
  * Context Condition
  */

@@ -53,6 +53,7 @@ typedef std::deque<NodeID> NodeDeque;
 typedef llvm::SmallVector<u32_t,16> SmallVector16;
 typedef llvm::SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
+typedef SmallVector16 CallStrCxt;
 
 
 /// LLVM debug macros, define type of your DEBUG model of each pass

@@ -53,7 +53,6 @@ public:
 
     /// LLVM analysis usage
     virtual inline void getAnalysisUsage(llvm::AnalysisUsage &au) const {
-        AliasAnalysis::getAnalysisUsage(au);
         // declare your dependencies here.
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
@@ -61,8 +60,6 @@ public:
 
     /// Get adjusted analysis for alias analysis
     virtual inline void* getAdjustedAnalysisPointer(llvm::AnalysisID id) {
-        if (id == &AliasAnalysis::ID)
-            return (AliasAnalysis*)this;
         return this;
     }
 

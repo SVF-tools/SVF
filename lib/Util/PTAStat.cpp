@@ -177,6 +177,7 @@ void PTAStat::performStat() {
     generalNumMap[NumOfNonPtrObjs] = numOfScalar;
 
     generalNumMap[NumOfIndirectCallSites] = pag->getIndirectCallsites().size();
+    generalNumMap["TotalCallSite"] = pag->getCallSiteSet().size();
     generalNumMap["LocalVarInRecur"] = localVarInRecursion.count();
     bitcastInstStat();
     branchStat();

@@ -26,8 +26,8 @@ public:
         SB_FESIBLE = "FESIBLE_";
         SB_INFESIBLE = "INFESIBLE_";
 
-        MTA_DR_NOT_CHECK = "DRNOTCHECK_";
-        MTA_DR_CHECK = "DRCHECK_";
+        DR_NOT_CHECK = "DRNOTCHECK_";
+        DR_CHECK = "DRCHECK_";
     }
 
     /// Destructor
@@ -47,37 +47,37 @@ public:
     }
     //@}
 
-    /// MTA Has flag methods
+    /// Race Detection Has flag methods
     //@{
-    inline bool hasMTADRNotCheckFlag(llvm::Instruction *inst) const {
+    inline bool hasDRNotCheckFlag(llvm::Instruction *inst) const {
         //std::vector<llvm::Value *> values;
-        //return evalMDTag(inst, inst, MTA_DR_NOT_CHECK, values);
-        if (inst->getMetadata(MTA_DR_NOT_CHECK))
+        //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
+        if (inst->getMetadata(DR_NOT_CHECK))
             return true;
         else
             return false;
     }
-    inline bool hasMTADRNotCheckFlag(const llvm::Instruction *inst) const {
+    inline bool hasDRNotCheckFlag(const llvm::Instruction *inst) const {
         //std::vector<llvm::Value *> values;
-        //return evalMDTag(inst, inst, MTA_DR_NOT_CHECK, values);
-        if (inst->getMetadata(MTA_DR_NOT_CHECK))
+        //return evalMDTag(inst, inst, DR_NOT_CHECK, values);
+        if (inst->getMetadata(DR_NOT_CHECK))
             return true;
         else
             return false;
     }
 
-    inline bool hasMTADRCheckFlag(llvm::Instruction *inst) const {
+    inline bool hasDRCheckFlag(llvm::Instruction *inst) const {
         //std::vector<llvm::Value *> values;
-        //return evalMDTag(inst, inst, MTA_DR_CHECK, values);
-        if (inst->getMetadata(MTA_DR_CHECK))
+        //return evalMDTag(inst, inst, DR_CHECK, values);
+        if (inst->getMetadata(DR_CHECK))
             return true;
         else
             return false;
     }
-    inline bool hasMTADRCheckFlag(const llvm::Instruction *inst) const {
+    inline bool hasDRCheckFlag(const llvm::Instruction *inst) const {
         //std::vector<llvm::Value *> values;
-        //return evalMDTag(inst, inst, MTA_DR_CHECK, values);
-        if (inst->getMetadata(MTA_DR_CHECK))
+        //return evalMDTag(inst, inst, DR_CHECK, values);
+        if (inst->getMetadata(DR_CHECK))
             return true;
         else
             return false;
@@ -100,11 +100,14 @@ public:
     inline void addMDTag(llvm::Instruction *inst, llvm::Value *val, std::string str) {
         assert(!val->getType()->isVoidTy() && "expecting non-void value for MD!");
         std::vector<llvm::Value *> values;
+        //std::vector<llvm::Metadata *> metavalues;
         // add the flag if we did not see it before
         if (evalMDTag(inst, val, str, values) == false) {
+
             values.push_back(val);
-            llvm::ArrayRef<llvm::Value *> ar(values);
+            //llvm::ArrayRef<llvm::Metadata*> ar(metavalues);
             // FIXME: delete the old MDNode
+            inst->setMetadata(str, llvm::MDNode::get(inst->getContext(), llvm::None));
             //inst->setMetadata(str, llvm::MDNode::get(inst->getContext(), ar));
         }
     }
@@ -113,6 +116,7 @@ public:
     inline void removeMDTag(llvm::Instruction *inst, llvm::Value *val, std::string str) {
         assert(!val->getType()->isVoidTy() && "expecting non-void value for MD!");
         std::vector<llvm::Value *> values;
+
         // remove the flag if it is there
         if (evalMDTag(inst, val, str, values) == true) {
             llvm::ArrayRef<llvm::Value *> ar(values);
@@ -154,10 +158,10 @@ protected:
     const char* SB_INFESIBLE;
     //@}
 
-    /// MTA annotations
+    /// Race Detection annotations
     //@{
-    const char* MTA_DR_NOT_CHECK;
-    const char* MTA_DR_CHECK;
+    const char* DR_NOT_CHECK;
+    const char* DR_CHECK;
     //@}
 };
 

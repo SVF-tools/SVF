@@ -66,7 +66,7 @@ void PTACallGraph::buildCallGraph(llvm::Module* module) {
 
     /// create edges
     for (Module::iterator F = module->begin(), E = module->end(); F != E; ++F) {
-        for (inst_iterator II = inst_begin(F), E = inst_end(F); II != E; ++II) {
+        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
             const Instruction *inst = &*II;
             if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
                 if(getCallee(inst))

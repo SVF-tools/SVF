@@ -1676,8 +1676,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-LLVM_SRC_ROOT="/home/ysui/llvm-3.7.0/llvm-3.7.0.src"
-LLVM_OBJ_ROOT="/home/ysui/llvm-3.7.0/llvm-3.7.0.obj"
+LLVM_SRC_ROOT="/home/ysui/llvm-3.8.0/llvm-3.8.0.src"
+LLVM_OBJ_ROOT="/home/ysui/llvm-3.8.0/llvm-3.8.0.obj"
 
 ac_aux_dir=
 for ac_dir in $LLVM_SRC_ROOT/autoconf "$srcdir"/$LLVM_SRC_ROOT/autoconf; do

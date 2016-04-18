@@ -56,10 +56,10 @@ PAG* PAGBuilder::build(llvm::Module& module) {
             /// To be noted, we do not record arguments which are in declared function without body
             if(!analysisUtil::isExtCall(&fun)) {
                 pag->setCurrentLocation(NULL,&fun.getEntryBlock());
-                NodeID argValNodeId = pag->getValueNode(I);
+                NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
                 // or a dead function, we may create a black hole address edge for it
-                if(analysisUtil::ArgInNoCallerFunction(I)) {
+                if(analysisUtil::ArgInNoCallerFunction(&*I)) {
                     if(I->getType()->isPointerTy())
                         pag->addBlackHoleAddrEdge(argValNodeId);
                 }
@@ -253,7 +253,7 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
     /// initialize global variable
     for (Module::global_iterator I = module.global_begin(), E =
                 module.global_end(); I != E; ++I) {
-        GlobalVariable * gvar = I;
+        GlobalVariable * gvar = &*I;
         NodeID idx = getValueNode(gvar);
         NodeID obj = getObjectNode(gvar);
         pag->addAddrEdge(obj, idx);
@@ -268,7 +268,7 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
     /// initialize global functions
     for (Module::iterator I = module.begin(), E =
                 module.end(); I != E; ++I) {
-        Function * fun = I;
+        Function * fun = &*I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
@@ -563,7 +563,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
             DBOUT(DPAGBuild, outs() << " !! not enough args\n");
             break;
         }
-        const Value *AA = *itA, *FA = itF; //current actual/formal arg
+        const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
         //Non-ptr formal args don't need constraints.
         if (!isa<PointerType>(FA->getType()))
             continue;

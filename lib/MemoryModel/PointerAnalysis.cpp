@@ -219,6 +219,8 @@ void PointerAnalysis::finalize() {
 
     getPTACallGraph()->vefityCallGraph();
 
+    getPTACallGraph()->dump("callgraph_final");
+
     if(!pag->isBuiltFromFile() && EnableAliasCheck) {
         validateSuccessTests("MAYALIAS");
         validateSuccessTests("NOALIAS");

@@ -32,82 +32,81 @@
 using namespace llvm;
 
 static cl::opt<std::string> InputFilename(cl::Positional,
-		cl::desc("<input bitcode>"), cl::init("-"));
+        cl::desc("<input bitcode>"), cl::init("-"));
 
 static cl::opt<bool> LEAKCHECKER("leak", cl::init(false),
-		cl::desc("Memory Leak Detection"));
+                                 cl::desc("Memory Leak Detection"));
 
 static cl::opt<bool> FILECHECKER("fileck", cl::init(false),
-		cl::desc("File Open/Close Detection"));
+                                 cl::desc("File Open/Close Detection"));
 
 static cl::opt<bool> DFREECHECKER("dfree", cl::init(false),
-		cl::desc("Double Free Detection"));
+                                  cl::desc("Double Free Detection"));
 
 int main(int argc, char ** argv) {
 
-	sys::PrintStackTraceOnErrorSignal();
-	llvm::PrettyStackTraceProgram X(argc, argv);
+    sys::PrintStackTraceOnErrorSignal();
+    llvm::PrettyStackTraceProgram X(argc, argv);
 
-	LLVMContext &Context = getGlobalContext();
+    LLVMContext &Context = getGlobalContext();
 
-	std::string OutputFilename;
+    std::string OutputFilename;
 
-	cl::ParseCommandLineOptions(argc, argv, "Software Bug Check\n");
-	sys::PrintStackTraceOnErrorSignal();
+    cl::ParseCommandLineOptions(argc, argv, "Software Bug Check\n");
+    sys::PrintStackTraceOnErrorSignal();
 
-	PassRegistry &Registry = *PassRegistry::getPassRegistry();
+    PassRegistry &Registry = *PassRegistry::getPassRegistry();
 
-	initializeCore(Registry);
-	initializeScalarOpts(Registry);
-	initializeIPO(Registry);
-	initializeAnalysis(Registry);
-	initializeIPA(Registry);
-	initializeTransformUtils(Registry);
-	initializeInstCombine(Registry);
-	initializeInstrumentation(Registry);
-	initializeTarget(Registry);
+    initializeCore(Registry);
+    initializeScalarOpts(Registry);
+    initializeIPO(Registry);
+    initializeAnalysis(Registry);
+    initializeTransformUtils(Registry);
+    initializeInstCombine(Registry);
+    initializeInstrumentation(Registry);
+    initializeTarget(Registry);
 
-	llvm::legacy::PassManager Passes;
+    llvm::legacy::PassManager Passes;
 
-	SMDiagnostic Err;
+    SMDiagnostic Err;
 
-	// Load the input module...
-	std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
+    // Load the input module...
+    std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
 
-	if (!M1) {
-	  Err.print(argv[0], errs());
-	  return 1;
-	}
+    if (!M1) {
+        Err.print(argv[0], errs());
+        return 1;
+    }
 
-	std::unique_ptr<tool_output_file> Out;
-	std::error_code ErrorInfo;
+    std::unique_ptr<tool_output_file> Out;
+    std::error_code ErrorInfo;
 
-	StringRef str(InputFilename);
-	InputFilename = str.rsplit('.').first;
-	OutputFilename = InputFilename + ".saber";
+    StringRef str(InputFilename);
+    InputFilename = str.rsplit('.').first;
+    OutputFilename = InputFilename + ".saber";
 
-	Out.reset(
-			new tool_output_file(OutputFilename.c_str(), ErrorInfo,
-					sys::fs::F_None));
+    Out.reset(
+        new tool_output_file(OutputFilename.c_str(), ErrorInfo,
+                             sys::fs::F_None));
 
-	if (ErrorInfo) {
-		errs() << ErrorInfo.message() << '\n';
-		return 1;
-	}
+    if (ErrorInfo) {
+        errs() << ErrorInfo.message() << '\n';
+        return 1;
+    }
 
-	if(LEAKCHECKER)
-		Passes.add(new LeakChecker());
-	else if(FILECHECKER)
-		Passes.add(new FileChecker());
-	else if(DFREECHECKER)
-		Passes.add(new DoubleFreeChecker());
+    if(LEAKCHECKER)
+        Passes.add(new LeakChecker());
+    else if(FILECHECKER)
+        Passes.add(new FileChecker());
+    else if(DFREECHECKER)
+        Passes.add(new DoubleFreeChecker());
 
-	Passes.add(createBitcodeWriterPass(Out->os()));
+    Passes.add(createBitcodeWriterPass(Out->os()));
 
-	Passes.run(*M1.get());
-	Out->keep();
+    Passes.run(*M1.get());
+    Out->keep();
 
-	return 0;
+    return 0;
 
 }
 

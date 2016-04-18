@@ -34,7 +34,7 @@ static RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
         "Whole Program Pointer Analysis Pass");
 
 /// register this into alias analysis group
-static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
+///static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
 
 static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer analysis"),
         cl::values(
@@ -71,7 +71,7 @@ WPAPass::~WPAPass() {
 bool WPAPass::runOnModule(llvm::Module& module)
 {
     /// initialization for llvm alias analyzer
-    InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
+    //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
 
     for (u32_t i = 0; i< PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
