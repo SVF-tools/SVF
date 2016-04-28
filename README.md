@@ -6,6 +6,7 @@ SVF contains a third party software package [CUDD-2.5.0](http://vlsi.colorado.ed
 
 See SVF [homepage](http://unsw-corg.github.io/SVF/), [wiki](https://github.com/unsw-corg/SVF/wiki) and [doxygen](http://www.cse.unsw.edu.au/~corg/svf/doxygen/) for details.
 
+<br />
 If you use SVF, you are asked to acknolwedge usage of our tool by citing some of our publications listed in the main page of this web site, especially the following two papers:
 
 Yulei Sui and Jingling Xue. [SVF: Interprocedural Static Value-Flow Analysis in LLVM](http://www.cse.unsw.edu.au/~ysui/papers/cc16.pdf) Compiler Construction (CC '16) 
