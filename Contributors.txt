@@ -10,11 +10,4 @@ Name: Sen Ye
 Email: yes@cse.unsw.edu.au
 Description: memory model, flow-sensitive pointer analysis
 
-Name: Ding Ye
-Email: dye@cse.unsw.edu.au
-Description: data-race detector
-
-Name: Peng Di
-Email: pengd@cse.unsw.edu.au
-Description: MHP analysis
 
