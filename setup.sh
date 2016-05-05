@@ -2,7 +2,7 @@ echo "Setting up environment for PTA"
 
 
 #########PATH FOR LLVM (do not recommand to change it)##############                                                                 
-llvm_version=3.7.0
+llvm_version=3.8.0
 export LLVM_HOME=/home/ysui/llvm-$llvm_version
 export LLVM_SRC_ROOT=$LLVM_HOME/llvm-$llvm_version.src
 export LLVM_OBJ_ROOT=$LLVM_HOME/llvm-$llvm_version.obj
