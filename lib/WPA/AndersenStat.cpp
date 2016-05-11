@@ -124,7 +124,7 @@ void AndersenStat::statNullPtr() {
                 }
                 else {
                     _NumOfNullPtr++;
-                    rawstr << "##Null Pointer : (NodeID " << pagNode->getId();
+                    rawstr << "##Null Pointer : (NodeID " << pagNode->getId() << ")";
                     wrnMsg(rawstr.str());
                 }
             }
