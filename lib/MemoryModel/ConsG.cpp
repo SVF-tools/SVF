@@ -264,7 +264,7 @@ void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* ne
         addCopyCGEdge(srcId,newDstNodeID);
     }
     else if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)) {
-        const LocationSet& ls = gep->getLocationSet();
+        const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
         addNormalGepCGEdge(srcId,newDstNodeID,ls);
     }
