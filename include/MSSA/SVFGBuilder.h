@@ -30,11 +30,8 @@
 #ifndef ANDERSENMEMSSA_H_
 #define ANDERSENMEMSSA_H_
 
+#include "MSSA/SVFG.h"
 #include <llvm/Analysis/DominanceFrontier.h>
-
-class SVFG;
-class MemSSA;
-class BVDataPTAImpl;
 
 /*!
  * Dominator frontier used in MSSA
@@ -57,6 +54,11 @@ public:
 class SVFGBuilder {
 
 public:
+    typedef PointerAnalysis::CallSiteSet CallSiteSet;
+    typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
+    typedef PointerAnalysis::FunctionSet FunctionSet;
+    typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
+
     /// Constructor
     SVFGBuilder(): svfg(NULL) {}
 
@@ -70,10 +72,24 @@ public:
         return svfg;
     }
 
+    /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
+    inline void markValidVFEdge(SVFGEdgeSet& edges) {
+        for(SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
+            vfEdgesAtIndCallSite.erase(*it);
+    }
+    /// Return true if this is an VF Edge pre-connected by Andersen's analysis
+    inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge) {
+        return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge))!=vfEdgesAtIndCallSite.end();
+    }
+
 protected:
     virtual void createSVFG(MemSSA* mssa, SVFG* graph);
     virtual void releaseMemory(SVFG* graph);
+    /// Update call graph using pre-analysis points-to results
+    virtual void updateCallGraph(PointerAnalysis* pta);
 
+    /// SVFG Edges connected at indirect call/ret sites
+    SVFGEdgeSet vfEdgesAtIndCallSite;
     SVFG* svfg;
 };
 

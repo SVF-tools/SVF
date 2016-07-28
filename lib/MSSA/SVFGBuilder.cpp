@@ -34,6 +34,9 @@
 using namespace llvm;
 using namespace analysisUtil;
 
+static cl::opt<bool> IndCallWithPreAnalysis("svfgIndCallPreAna", cl::init(false),
+        cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
+
 /*!
  * Create SVFG
  */
@@ -83,9 +86,28 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
 
     createSVFG(&mssa, graph);
+
+    if(IndCallWithPreAnalysis)
+        updateCallGraph(mssa.getPTA());
+
     releaseMemory(graph);
 
     return false;
 }
 
 
+
+/// Update call graph using pre-analysis results
+void SVFGBuilder::updateCallGraph(PointerAnalysis* pta)
+{
+    CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
+    CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
+    for (; iter != eiter; iter++) {
+        llvm::CallSite newcs = iter->first;
+        const FunctionSet & functions = iter->second;
+        for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
+            const llvm::Function * func = *func_iter;
+            svfg->connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
+        }
+    }
+}
