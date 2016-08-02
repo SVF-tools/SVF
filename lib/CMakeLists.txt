@@ -49,5 +49,8 @@ set(SOURCES
 add_llvm_loadable_module(Svf ${SOURCES})
 add_llvm_Library(LLVMSvf ${SOURCES})
 
-add_dependencies(Svf intrinsics_gen)
-add_dependencies(LLVMSvf intrinsics_gen)
+
+if(DEFINED IN_SOURCE_BUILD)
+    add_dependencies(Svf intrinsics_gen)
+    add_dependencies(LLVMSvf intrinsics_gen)
+endif()

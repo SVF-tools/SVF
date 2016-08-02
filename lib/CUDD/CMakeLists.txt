@@ -97,5 +97,7 @@ set(SOURCES
 add_llvm_loadable_module(Cudd ${SOURCES})
 add_llvm_Library(LLVMCudd ${SOURCES})
 
-add_dependencies(Cudd intrinsics_gen)
-add_dependencies(LLVMCudd intrinsics_gen)
+if(DEFINED IN_SOURCE_BUILD)
+    add_dependencies(Cudd intrinsics_gen)
+    add_dependencies(LLVMCudd intrinsics_gen)
+endif()
