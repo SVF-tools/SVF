@@ -95,7 +95,10 @@ set(SOURCES
 )
 
 add_llvm_loadable_module(Cudd ${SOURCES})
-add_llvm_Library(LLVMCudd ${SOURCES})
+add_llvm_library(LLVMCudd ${SOURCES})
+
+set_target_properties(Cudd PROPERTIES COMPILE_FLAGS "-Wno-format -Wno-int-to-pointer-cast")
+set_target_properties(LLVMCudd PROPERTIES COMPILE_FLAGS "-Wno-format -Wno-int-to-pointer-cast")
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Cudd intrinsics_gen)
