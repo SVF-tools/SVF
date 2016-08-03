@@ -120,7 +120,7 @@ public:
         releaseMemory();
         llvm::DominatorTree dt;
         dt.recalculate(fun);
-        analyze(dt);
+        Analyze(dt);
         return false;
     }
 };
