@@ -17,5 +17,10 @@ Yulei Sui and Jingling Xue. [SVF: Interprocedural Static Value-Flow Analysis in 
 
 Yulei Sui, Ding Ye, and Jingling Xue. [Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis](http://www.cse.unsw.edu.au/~ysui/papers/tse14.pdf) , IEEE Transactions on Software Engineering (TSE'14) 
 
+<br />
+<b>Multiple full PhD scholarship available (plus tuition fee waiver). We are looking for students to continue to work on SVF in the area of program analysis for software security. Please contact me if you are interested (email: ysui@cse.unsw.edu.au).<b>
+
+
+
 
 
