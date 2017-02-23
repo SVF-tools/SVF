@@ -37,6 +37,7 @@
 #include <llvm/PassAnalysisSupport.h>	// analysis usage
 #include <llvm/Support/Debug.h>		// DEBUG TYPE
 
+class PTAType;
 /*!
  * Inclusion-based Pointer Analysis
  */
@@ -262,6 +263,15 @@ protected:
     virtual const std::string PTAName() const {
         return "AndersenWPA";
     }
+
+    /// match types for Gep Edges
+    virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge) {
+        return true;
+    }
+    /// add type for newly created GepObjNode
+    virtual void addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge) {
+        return;
+    }
 };
 
 /*
@@ -380,8 +390,12 @@ protected:
         else
             return false;
     }
-};
 
+    /// process "bitcast" CopyCGEdge
+    virtual void processCast(const ConstraintEdge *edge) {
+        return;
+    }
+};
 
 
 /*

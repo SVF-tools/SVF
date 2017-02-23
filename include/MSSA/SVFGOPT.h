@@ -58,7 +58,7 @@ class SVFGOPT : public SVFG {
 
 public:
     /// Constructor
-    SVFGOPT(PTACallGraph* cg) : SVFG(cg, OPTSVFGK) {
+    SVFGOPT() : SVFG(OPTSVFGK) {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor

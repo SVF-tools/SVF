@@ -368,7 +368,6 @@ void ConstraintGraph::removeDirectEdge(ConstraintEdge* edge) {
     delete edge;
 }
 
-
 /*!
  * Move incoming direct edges of a sub node which is outside SCC to its rep node
  * Remove incoming direct edges of a sub node which is inside SCC from its rep node
@@ -392,7 +391,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
         reTargetDstOfEdge(edge,rep);
     }
 
-    bool gepInsideSCC = false;
+    bool criticalGepInsideSCC = false;
     // if this edge is inside scc, then remove this edge and two end nodes
     while(!sccEdges.empty()) {
         ConstraintEdge* edge = sccEdges.back();
@@ -402,7 +401,11 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
             removeDirectEdge(edge);
         else if (isa<GepCGEdge>(edge)) {
             removeDirectEdge(edge);
-            gepInsideSCC = true;
+            // If the GEP is critical (i.e. may have a non-zero offset),
+            // then it brings impact on field-sensitivity.
+            if (!isZeroOffsettedGepCGEdge(edge)) {
+                criticalGepInsideSCC = true;
+            }
         }
         else if(isa<LoadCGEdge>(edge) || isa<StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
@@ -412,7 +415,7 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
         else
             assert(false && "no such edge");
     }
-    return gepInsideSCC;
+    return criticalGepInsideSCC;
 }
 
 /*!
@@ -439,7 +442,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
         nonSccEdges.pop_back();
         reTargetSrcOfEdge(edge,rep);
     }
-    bool gepInsideSCC = false;
+    bool criticalGepInsideSCC = false;
     // if this edge is inside scc, then remove this edge and two end nodes
     while(!sccEdges.empty()) {
         ConstraintEdge* edge = sccEdges.back();
@@ -449,7 +452,11 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
             removeDirectEdge(edge);
         else if (isa<GepCGEdge>(edge)) {
             removeDirectEdge(edge);
-            gepInsideSCC = true;
+            // If the GEP is critical (i.e. may have a non-zero offset),
+            // then it brings impact on field-sensitivity.
+            if (!isZeroOffsettedGepCGEdge(edge)) {
+                criticalGepInsideSCC = true;
+            }
         }
         else if(isa<LoadCGEdge>(edge) || isa<StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
@@ -459,7 +466,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
         else
             assert(false && "no such edge");
     }
-    return gepInsideSCC;
+    return criticalGepInsideSCC;
 }
 
 /*!

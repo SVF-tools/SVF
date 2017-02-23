@@ -100,8 +100,8 @@ public:
     //@{
     void visitGlobal(llvm::Module& module);
     void InitialGlobal(const llvm::GlobalVariable *gvar, llvm::Constant *C,
-                       Size_t offset);
-    NodeID getGlobalVarField(const llvm::GlobalVariable *gvar, Size_t offset);
+                       u32_t offset, u32_t fieldidx);
+    NodeID getGlobalVarField(const llvm::GlobalVariable *gvar, u32_t offset, u32_t fieldidx);
     //@}
 
     /// Process constant expression
@@ -119,7 +119,7 @@ public:
     /// Handle external call
     //@{
     virtual void handleExtCall(llvm::CallSite cs, const llvm::Function *F);
-    std::vector<LocationSet> getFlattenedFields(llvm::Value* v);
+    const llvm::Type *getBaseTypeAndFlattenedFields(llvm::Value* v, std::vector<LocationSet> &fields);
     void addComplexConsForExt(llvm::Value *D, llvm::Value *S,u32_t sz = 0);
     //@}
 

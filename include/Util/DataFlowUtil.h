@@ -45,7 +45,7 @@ public:
     PTASCEV():scev(NULL), start(NULL), step(NULL),ptr(NULL),inloop(false),tripcount(0) {}
 
     /// Constructor
-    PTASCEV(const llvm::Value* p, const llvm::SCEV* s, llvm::ScalarEvolution* SE): scev(s),start(NULL), step(NULL), ptr(p) {
+    PTASCEV(const llvm::Value* p, const llvm::SCEV* s, llvm::ScalarEvolution* SE): scev(s),start(NULL), step(NULL), ptr(p), inloop(false), tripcount(0) {
         if(const llvm::SCEVAddRecExpr* ar = llvm::dyn_cast<llvm::SCEVAddRecExpr>(s)) {
             if (const llvm::SCEVConstant *startExpr = llvm::dyn_cast<llvm::SCEVConstant>(ar->getStart()))
                 start = startExpr->getValue();

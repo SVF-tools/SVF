@@ -3,7 +3,7 @@
 //                          The SAFECode Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
-// GPLv3 Open Source License. See LICENSE.TXT for details.
+// the University of Illinois Open Source License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
 //

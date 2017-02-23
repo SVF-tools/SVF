@@ -157,10 +157,10 @@ bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const llvm::Instruction* cs)
  * Find the base node id of src and connect base node to dst node
  * Create gep offset:  (offset + baseOff <nested struct gep size>)
  */
-bool PAG::addGepEdge(NodeID src, NodeID dst, const LocationSet& ls) {
+bool PAG::addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep) {
 
     PAGNode* node = getPAGNode(src);
-    if (node->hasIncomingVariantGepEdge()) {
+    if (!constGep || node->hasIncomingVariantGepEdge()) {
         /// Since the offset from base to src is variant,
         /// the new gep edge being created is also a VariantGepPE edge.
         return addVariantGepEdge(src, dst);
@@ -200,56 +200,52 @@ bool PAG::addVariantGepEdge(NodeID src, NodeID dst) {
 }
 
 /*!
- * Add global Gep edge
- */
-bool PAG::addGlobalGepEdge(NodeID src, NodeID dst, const LocationSet& ls) {
-    const llvm::Instruction* cinst = curInst;
-    const llvm::BasicBlock* cbb = curBB;
-    setCurrentLocation(NULL,NULL);
-    bool added = addGepEdge(src, dst, ls);
-    setCurrentLocation(cinst,cbb);
-    return added;
-}
-
-
-/*!
  * Add global black hole address edge
  */
-bool PAG::addGlobalBlackHoleAddrEdge(NodeID node) {
-    const llvm::Instruction* cinst = curInst;
+bool PAG::addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
+    const llvm::Value* cval = curVal;
     const llvm::BasicBlock* cbb = curBB;
-    setCurrentLocation(NULL,NULL);
+    setCurrentLocation(int2Ptrce,NULL);
     bool added = addBlackHoleAddrEdge(node);
-    setCurrentLocation(cinst,cbb);
+    setCurrentLocation(cval,cbb);
     return added;
 }
 
 /*!
  * Add black hole Address edge for formal params
  */
-bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Function* func)
+bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg)
 {
-    const llvm::Instruction* cinst = curInst;
+    const llvm::Value* cval = curVal;
     const llvm::BasicBlock* cbb = curBB;
-    setCurrentLocation(NULL,&(func->getEntryBlock()));
+    setCurrentLocation(arg,&(arg->getParent()->getEntryBlock()));
     bool added = addBlackHoleAddrEdge(node);
-    setCurrentLocation(cinst,cbb);
+    setCurrentLocation(cval,cbb);
     return added;
 }
 
 
 /*!
  * Add a temp field value node according to base value and offset
- * FIXME: this node is after the initial node method, it is out of scope of symInfo table
- * The gep edge created are like constexpr (same edge may appear at multiple callsites)
- * so bb/inst of this edge may be rewritten several times, we treat it as global here.
+ * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls) {
+NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
     NodeID base = getBaseValNode(getValueNode(val));
     NodeLocationSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
     if (iter == GepValNodeMap.end()) {
-        NodeID gepNode= addGepValNode(stripConstantCasts(val),ls,nodeNum);
-        addGlobalGepEdge(base, gepNode, ls);
+        /*
+         * getGepValNode can only be called from two places:
+         * 1. PAGBuilder::addComplexConsForExt to handle external calls
+         * 2. PAGBuilder::getGlobalVarField to initialize global variable
+         * so curVal can only be
+         * 1. Instruction
+         * 2. GlobalVariable
+         */
+        assert((isa<Instruction>(curVal) || isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
+        const std::vector<FieldInfo> &fieldinfo = symInfo->getFlattenFieldInfoVec(baseType);
+        const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
+        NodeID gepNode= addGepValNode(val,ls,nodeNum,type,fieldidx);
+        addGepEdge(base, gepNode, ls, true);
         return gepNode;
     } else
         return iter->second;
@@ -258,14 +254,14 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls) {
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
  */
-NodeID PAG::addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i) {
+NodeID PAG::addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
     NodeID base = getBaseValNode(getValueNode(val));
     //assert(findPAGNode(i) == false && "this node should not be created before");
     assert(0==GepValNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
     GepValNodeMap[std::make_pair(base, ls)] = i;
-    GepValPN *node = new GepValPN(val, i, ls);
-    return addNode(node,i);
+    GepValPN *node = new GepValPN(val, i, ls, type, fieldidx);
+    return addValNode(val, node, i);
 }
 
 /*!
@@ -318,7 +314,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i) {
     GepObjNodeMap[std::make_pair(base, ls)] = i;
     GepObjPN *node = new GepObjPN(obj->getRefVal(), i, obj, ls);
     memToFieldsMap[base].set(i);
-    return addNode(node,i);
+    return addObjNode(obj->getRefVal(), node, i);
 }
 
 /*!
@@ -330,7 +326,7 @@ NodeID PAG::addFIObjNode(const MemObj* obj, NodeID i)
     NodeID base = getObjectNode(obj);
     memToFieldsMap[base].set(i);
     FIObjPN *node = new FIObjPN(obj->getRefVal(), i, obj);
-    return addNode(node,i);
+    return addObjNode(obj->getRefVal(), node, i);
 }
 
 
@@ -350,6 +346,43 @@ bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const l
     return PAGEdgeKindToSetMap[kind].find(&edge) != PAGEdgeKindToSetMap[kind].end();
 }
 
+/*
+ * curVal   <-------->  PAGEdge
+ * Instruction          Any Edge
+ * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
+ * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
+ *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
+ * ConstantPointerNull  CopyEdge  (3-->2 PAG::addNullPtrNode)
+ * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
+ *                      GepEdge   (PAGBuilder::getGlobalVarField)
+ * Function             AddrEdge  (PAGBuilder::visitGlobal)
+ * Constant             StoreEdge (PAGBuilder::InitialGlobal)
+ */
+void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
+    assert(curVal && "current Val is NULL?");
+    edge->setBB(curBB);
+    edge->setValue(curVal);
+    if (const Instruction *curInst = dyn_cast<Instruction>(curVal)) {
+        assert(curBB && "instruction does not have a basic block??");
+        inst2PAGEdgesMap[curInst].push_back(edge);
+    } else if (isa<Argument>(curVal)) {
+        assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
+        funToEntryPAGEdges[curBB->getParent()].insert(edge);
+    } else if (isa<ConstantExpr>(curVal)) {
+        if (!curBB)
+            globPAGEdgesSet.insert(edge);
+    } else if (isa<ConstantPointerNull>(curVal)) {
+        assert(edge->getSrcID() == 3 && edge->getDstID() == 2);
+        globPAGEdgesSet.insert(edge);
+    } else if (isa<GlobalVariable>(curVal) ||
+               isa<Function>(curVal) ||
+               isa<Constant>(curVal)) {
+        globPAGEdgesSet.insert(edge);
+    } else {
+        assert(false && "what else value can we have?");
+    }
+}
+
 /*!
  * Add a PAG edge into edge map
  */
@@ -363,19 +396,7 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
-    // PAG edges in a function
-    if(curInst) {
-        assert(curBB && "instruction does not have a basic block??");
-        inst2PAGEdgesMap[curInst].push_back(edge);
-        edge->setInst(curInst);
-    }
-    // global PAG edges
-    else {
-        if(curBB && (&curBB->getParent()->getEntryBlock() == curBB))
-            funToEntryPAGEdges[curBB->getParent()].insert(edge);
-        else
-            globPAGEdgesSet.insert(edge);
-    }
+    setCurrentBBAndValueForPAGEdge(edge);
     return true;
 
 }
@@ -528,7 +549,7 @@ bool PAG::isValidPointer(NodeID nodeId) const {
  * PAGEdge constructor
  */
 PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
-    GenericPAGEdgeTy(s,d,k),inst(NULL) {
+    GenericPAGEdgeTy(s,d,k),value(NULL),basicBlock(NULL) {
     edgeId = PAG::getPAG()->getTotalEdgeNum();
     PAG::getPAG()->incEdgeNum();
 }

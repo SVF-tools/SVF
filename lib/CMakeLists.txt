@@ -5,6 +5,7 @@ add_subdirectory(CUDD)
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
     Util/AnalysisUtil.cpp
+    Util/CPPUtil.cpp
     Util/DataFlowUtil.cpp
     Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
@@ -21,6 +22,7 @@ set(SOURCES
     MemoryModel/MemModel.cpp
     MemoryModel/PAGBuilder.cpp
     MemoryModel/PAG.cpp
+    MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
     MSSA/MemPartition.cpp
     MSSA/MemRegion.cpp

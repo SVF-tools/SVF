@@ -24,7 +24,7 @@
  * ThreadAPI.cpp
  *
  *  Created on: Jan 21, 2014
- *      Author: Yulei Sui
+ *      Author: Yulei Sui, dye
  */
 
 #ifndef THREADAPI_CPP_
@@ -78,6 +78,11 @@ static const ei_pair ei_pairs[]= {
     {"pthread_cond_destroy", ThreadAPI::TD_CONDVAR_DESTROY},
     {"pthread_mutex_init", ThreadAPI::TD_MUTEX_INI},
     {"pthread_mutex_destroy", ThreadAPI::TD_MUTEX_DESTROY},
+    {"pthread_barrier_init", ThreadAPI::TD_BAR_INIT},
+    {"pthread_barrier_wait", ThreadAPI::TD_BAR_WAIT},
+
+    // Hare APIs
+    {"hare_parallel_for", ThreadAPI::HARE_PAR_FOR},
 
     //This must be the last entry.
     {0, ThreadAPI::TD_DUMMY}
@@ -166,6 +171,12 @@ void ThreadAPI::statInit(StringMap<u32_t>& tdAPIStatMap) {
     tdAPIStatMap["pthread_mutex_init"] = 0;
 
     tdAPIStatMap["pthread_mutex_destroy"] = 0;
+
+    tdAPIStatMap["pthread_barrier_init"] = 0;
+
+    tdAPIStatMap["pthread_barrier_wait"] = 0;
+
+    tdAPIStatMap["hare_parallel_for"] = 0;
 }
 
 void ThreadAPI::performAPIStat(Module* module) {
@@ -243,6 +254,18 @@ void ThreadAPI::performAPIStat(Module* module) {
             }
             case TD_MUTEX_DESTROY: {
                 tdAPIStatMap["pthread_mutex_destroy"]++;
+                break;
+            }
+            case TD_BAR_INIT: {
+                tdAPIStatMap["pthread_barrier_init"]++;
+                break;
+            }
+            case TD_BAR_WAIT: {
+                tdAPIStatMap["pthread_barrier_wait"]++;
+                break;
+            }
+            case HARE_PAR_FOR: {
+                tdAPIStatMap["hare_parallel_for"]++;
                 break;
             }
             case TD_DUMMY: {

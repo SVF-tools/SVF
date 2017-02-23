@@ -89,8 +89,7 @@ public:
     virtual void initialize(llvm::Module& module) {
         ptaCallGraph = new PTACallGraph(&module);
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
-        svfg = new SVFGOPT(ptaCallGraph);
-        memSSA.build(svfg,ander);
+        svfg =  memSSA.buildSVFG(ander);
         setGraph(memSSA.getSVFG());
         AndersenWaveDiff::releaseAndersenWaveDiff();
         /// allocate control-flow graph branch conditions

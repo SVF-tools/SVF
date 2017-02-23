@@ -41,6 +41,11 @@
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/CallGraph.h>	// call graph
 
+class CHGraph;
+class CHNode;
+
+class TypeSystem;
+
 class PTAStat;
 /*
  * Pointer Analysis Base Class
@@ -116,6 +121,10 @@ protected:
     PTACallGraph* ptaCallGraph;
     /// SCC for CallGraph
     CallGraphSCC* callGraphSCC;
+    /// CHGraph
+    static CHGraph *chgraph;
+    /// TypeSystem
+    TypeSystem *typeSystem;
 
 public:
     /// Return number of resolved indirect call edges
@@ -199,6 +208,7 @@ protected:
     }
     /// Alias check functions to verify correctness of pointer analysis
     //@{
+    virtual void validateTests();
     virtual void validateSuccessTests(const char* fun);
     virtual void validateExpectedFailureTests(const char* fun);
     //@}
@@ -276,6 +286,11 @@ public:
         return print_stat;
     }
 
+    /// Whether print statistics
+    inline void disablePrintStat() {
+        print_stat = false;
+    }
+
     /// Get callees from an indirect callsite
     //@{
     inline CallEdgeMap& getIndCallMap() {
@@ -295,6 +310,13 @@ public:
 
     /// Resolve indirect call edges
     virtual void resolveIndCalls(llvm::CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,llvm::CallGraph* callgraph = NULL);
+    /// Match arguments for callsite at caller and callee
+    inline bool matchArgs(llvm::CallSite cs, const llvm::Function* callee) {
+        if(ThreadAPI::getThreadAPI()->isTDFork(cs))
+            return true;
+        else
+            return cs.arg_size() == callee->arg_size();
+    }
 
     /// CallGraph SCC related methods
     //@{
@@ -346,6 +368,28 @@ public:
     void printIndCSTargets();
     void dumpAllTypes();
     //@}
+
+    /// get CHGraph
+    CHGraph *getCHGraph() const {
+        return chgraph;
+    }
+
+    void getVFnsFromPts(llvm::CallSite cs,
+                        const PointsTo &target,
+                        std::set<const llvm::Function*> &vfns);
+    void connectVCallToVFns(llvm::CallSite cs,
+                            std::set<const llvm::Function*> &vfns,
+                            CallEdgeMap& newEdges,
+                            llvm::CallGraph* callgraph = NULL);
+    virtual void resolveCPPIndCalls(llvm::CallSite cs,
+                                    const PointsTo& target,
+                                    CallEdgeMap& newEdges,
+                                    llvm::CallGraph* callgraph = NULL);
+
+    /// get TypeSystem
+    const TypeSystem *getTypeSystem() const {
+        return typeSystem;
+    }
 };
 
 /*!
@@ -383,7 +427,22 @@ public:
     }
     //@}
 
+    /// Expand FI objects
+    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
+
+    /// Interface for analysis result storage on filesystem.
+    //@{
+    virtual void storeToFile();
+    virtual void loadFromFile();
+    //@}
+
 protected:
+
+    /// Update callgraph. This should be implemented by its subclass.
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+        assert(false && "Virtual function not implemented!");
+        return false;
+    }
 
     /// Get points-to data structure
     inline PTDataTy* getPTDataTy() const {
@@ -418,9 +477,6 @@ protected:
     /// On the fly call graph construction
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges,llvm::CallGraph* callgraph = NULL);
 
-    /// Expand FI objects
-    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
-
 private:
     /// Points-to data
     PTDataTy* ptD;
@@ -436,6 +492,9 @@ public:
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
     virtual llvm::AliasResult alias(NodeID node1, NodeID node2);
+
+    /// Interface expose to users of our pointer analysis, given two pts
+    virtual llvm::AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
     /// dump and debug, print out conditional pts
     //@{
@@ -501,6 +560,31 @@ public:
         ptD->clear();
     }
 
+    /// Whether cpts1 and cpts2 have overlap points-to targets
+    bool overlap(const CPtSet& cpts1, const CPtSet& cpts2) const {
+        for (typename CPtSet::const_iterator it1 = cpts1.begin(); it1 != cpts1.end(); ++it1) {
+            for (typename CPtSet::const_iterator it2 = cpts2.begin(); it2 != cpts2.end(); ++it2) {
+                if(isSameVar(*it1,*it2))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /// Expand all fields of an aggregate in all points-to sets
+    void expandFIObjs(const CPtSet& cpts, CPtSet& expandedCpts) {
+        expandedCpts = cpts;;
+        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
+            if(pag->getBaseObjNode(cit->get_id())==cit->get_id()) {
+                NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
+                for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it) {
+                    CVar cvar(cit->get_cond(),*it);
+                    expandedCpts.set(cvar);
+                }
+            }
+        }
+    }
+
 protected:
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
@@ -557,16 +641,6 @@ protected:
         }
         return true;
     }
-    /// Whether cpts1 and cpts2 have overlap points-to targets
-    bool overlap(const CPtSet& cpts1, const CPtSet& cpts2) const {
-        for (typename CPtSet::const_iterator it1 = cpts1.begin(); it1 != cpts1.end(); ++it1) {
-            for (typename CPtSet::const_iterator it2 = cpts2.begin(); it2 != cpts2.end(); ++it2) {
-                if(isSameVar(*it1,*it2))
-                    return true;
-            }
-        }
-        return false;
-    }
 
     /// Whether two pointers/objects are the same one by considering their conditions
     bool isSameVar(const CVar& var1, const CVar& var2) const {
@@ -578,20 +652,6 @@ protected:
         return isCondCompatible(var1.get_cond(),var2.get_cond(),singleton);
     }
     //@}
-
-    /// Expand all fields of an aggregate in all points-to sets
-    void expandFIObjs(const CPtSet cpts, CPtSet& expandedCpts) {
-        expandedCpts = cpts;;
-        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
-            if(pag->getBaseObjNode(cit->get_id())==cit->get_id()) {
-                NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
-                for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it) {
-                    CVar cvar(cit->get_cond(),*it);
-                    expandedCpts.set(cvar);
-                }
-            }
-        }
-    }
 
     /// Normalize points-to information to BitVector/conditional representation
     virtual void NormalizePointsTo() {
@@ -626,11 +686,12 @@ public:
     }
     /// Given a pointer return its bit vector points-to
     virtual inline PointsTo& getPts(NodeID ptr) {
-        assert(normalized && "Points-to has not been normalised");
+        assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
         return ptrToBVPtsMap[ptr];
     }
     /// Given a pointer return its conditional points-to
     virtual inline const CPtSet& getCondPointsTo(NodeID ptr) {
+        assert(normalized && "Pts of all context-vars have to be merged/normalized. Want to use getPts(CVar cvar)??");
         return ptrToCPtsMap[ptr];
     }
 
@@ -640,19 +701,24 @@ public:
         return alias(LocA.Ptr, LocB.Ptr);
     }
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual llvm::AliasResult alias(const llvm::Value* V1, const llvm::Value* V2) {
+    virtual inline llvm::AliasResult alias(const llvm::Value* V1, const llvm::Value* V2) {
         return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
     }
-
-    /// Interface expose to users of our pointer analysis, given Value infos
-    virtual llvm::AliasResult alias(NodeID node1, NodeID node2) {
-        PointsTo pts1 = getPts(node1);
-        PointsTo pts2 = getPts(node2);
+    /// Interface expose to users of our pointer analysis, given two pointers
+    virtual inline llvm::AliasResult alias(NodeID node1, NodeID node2) {
+        return alias(getCondPointsTo(node1),getCondPointsTo(node2));
+    }
+    /// Interface expose to users of our pointer analysis, given conditional variables
+    virtual llvm::AliasResult alias(const CVar& var1, const CVar& var2) {
+        return alias(getPts(var1),getPts(var2));
+    }
+    /// Interface expose to users of our pointer analysis, given two conditional points-to sets
+    virtual inline llvm::AliasResult alias(const CPtSet& pts1, const CPtSet& pts2) {
         CPtSet cpts1;
-        expandFIObjs(getCondPointsTo(node1),cpts1);
+        expandFIObjs(pts1,cpts1);
         CPtSet cpts2;
-        expandFIObjs(getCondPointsTo(node2),cpts2);
-        if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2))
+        expandFIObjs(pts2,cpts2);
+        if (containBlackHoleNode(cpts1) || containBlackHoleNode(cpts2))
             return llvm::MayAlias;
         else if(this->getAnalysisTy()==PathS_DDA && contains(cpts1,cpts2) && contains(cpts2,cpts1)) {
             return llvm::MustAlias;
@@ -662,7 +728,22 @@ public:
         else
             return llvm::NoAlias;
     }
-
+    /// Test blk node for cpts
+    inline bool containBlackHoleNode(const CPtSet& cpts) {
+        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
+            if(cit->get_id() == pag->getBlackHoleNode())
+                return true;
+        }
+        return false;
+    }
+    /// Test constant node for cpts
+    inline bool containConstantNode(const CPtSet& cpts) {
+        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
+            if(cit->get_id() == pag->getConstantNode())
+                return true;
+        }
+        return false;
+    }
     /// Whether two conditions are compatible (to be implemented by child class)
     virtual bool isCondCompatible(const Cond& cxt1, const Cond& cxt2, bool singleton) const = 0;
 

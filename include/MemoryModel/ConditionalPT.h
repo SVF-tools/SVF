@@ -55,7 +55,6 @@ public:
 
     ~CondVar() {}
 
-
     /**
      * Comparison between two elements.
      */
@@ -103,6 +102,10 @@ public:
         return rawstr.str();
     }
 
+    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const CondVar<Cond> &cvar) {
+        o << cvar.toString();
+        return o;
+    }
 private:
     Cond	m_cond;
     NodeID	m_id;

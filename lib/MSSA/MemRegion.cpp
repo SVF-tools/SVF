@@ -91,12 +91,29 @@ const MemRegion* MRGenerator::getMR(const PointsTo& cpts) const {
 
 
 /*!
+ * Collect globals for escape analysis
+ */
+void MRGenerator::collectGlobals() {
+    PAG* pag = pta->getPAG();
+    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
+        if(ObjPN* obj = dyn_cast<ObjPN>(nIter->second)) {
+            if (obj->getMemObj()->isGlobalObj()) {
+                allGlobals.set(nIter->getFirst());
+                allGlobals |= CollectPtsChain(nIter->getFirst());
+            }
+        }
+    }
+}
+
+/*!
  * Generate memory regions according to pointer analysis results
  * Attach regions on loads/stores
  */
 void MRGenerator::generateMRs() {
 
     DBOUT(DGENERAL, outs() << pasMsg("Generate Memory Regions \n"));
+
+    collectGlobals();
 
     callGraphSCC->find();
 
@@ -175,10 +192,9 @@ void MRGenerator::collectModRefForCall() {
     DBOUT(DGENERAL, outs() << pasMsg("\t\tCollect Callsite PointsTo \n"));
 
     /// collect points-to information for callsites
-    NodeToPTSSMap cachedPtsMap;
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it)
-        collectCallSitePts(*it,cachedPtsMap);
+        collectCallSitePts(*it);
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
 
@@ -385,7 +401,7 @@ void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist) {
 /*!
  * Get all objects might pass into callee from a callsite
  */
-void MRGenerator::collectCallSitePts(CallSite cs,NodeToPTSSMap& cachedPtsMap) {
+void MRGenerator::collectCallSitePts(CallSite cs) {
     NodeBS& pts = csToCallPtsMap[cs];
     WorkList worklist;
     if (pta->getPAG()->hasCallSiteArgsMap(cs)) {
@@ -401,7 +417,7 @@ void MRGenerator::collectCallSitePts(CallSite cs,NodeToPTSSMap& cachedPtsMap) {
         NodeID nodeId = worklist.pop();
         PointsTo& tmp = pta->getPts(nodeId);
         for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it) {
-            pts |= CollectPtsChain(*it,cachedPtsMap);
+            pts |= CollectPtsChain(*it);
         }
     }
 }
@@ -409,13 +425,13 @@ void MRGenerator::collectCallSitePts(CallSite cs,NodeToPTSSMap& cachedPtsMap) {
 /*!
  * Recurisively collect all points-to of the whole struct fields
  */
-NodeBS& MRGenerator::CollectPtsChain(NodeID id, NodeToPTSSMap& cachedPtsMap) {
+NodeBS& MRGenerator::CollectPtsChain(NodeID id) {
     NodeID baseId = pta->getPAG()->getBaseObjNode(id);
-    NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
-    if(it!=cachedPtsMap.end())
+    NodeToPTSSMap::iterator it = cachedPtsChainMap.find(baseId);
+    if(it!=cachedPtsChainMap.end())
         return it->second;
     else {
-        PointsTo& pts = cachedPtsMap[baseId];
+        PointsTo& pts = cachedPtsChainMap[baseId];
         pts |= pta->getPAG()->getFieldsAfterCollapse(baseId);
 
         WorkList worklist;
@@ -426,7 +442,7 @@ NodeBS& MRGenerator::CollectPtsChain(NodeID id, NodeToPTSSMap& cachedPtsMap) {
             NodeID nodeId = worklist.pop();
             PointsTo& tmp = pta->getPts(nodeId);
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it) {
-                pts |= CollectPtsChain(*it,cachedPtsMap);
+                pts |= CollectPtsChain(*it);
             }
         }
         return pts;
@@ -442,7 +458,7 @@ void MRGenerator::getGlobalsAndHeapFromPts(NodeBS& globs, const NodeBS& pts) {
     for(NodeBS::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it) {
         const MemObj* obj = pta->getPAG()->getObject(*it);
         assert(obj && "object not found!!");
-        if(obj->isGlobalObj() || obj->isHeap())
+        if(allGlobals.test(*it) || obj->isHeap())
             globs.set(*it);
     }
 }

@@ -204,6 +204,12 @@ private:
     /// Map a callsite to all its object might pass into its callees
     CallSiteToNodeBSMap csToCallPtsMap;
 
+    /// Map a pointer to its cached points-to chain;
+    NodeToPTSSMap cachedPtsChainMap;
+
+    /// All global variable PAG node ids
+    NodeBS allGlobals;
+
     /// Clean up memory
     void destroy();
 
@@ -217,10 +223,10 @@ private:
     const MemRegion* getMR(const PointsTo& cpts) const;
 
     //Get all objects might pass into callee from a callsite
-    void collectCallSitePts(llvm::CallSite cs,NodeToPTSSMap& cachedPtsMap);
+    void collectCallSitePts(llvm::CallSite cs);
 
     //Recursive collect points-to chain
-    NodeBS& CollectPtsChain(NodeID id, NodeToPTSSMap& cachePtsMap);
+    NodeBS& CollectPtsChain(NodeID id);
 
     inline NodeBS& getCallSitePts(llvm::CallSite cs) {
         return csToCallPtsMap[cs];
@@ -249,6 +255,9 @@ protected:
 
     /// Generate a memory region and put in into functions which use it
     void createMR(const llvm::Function* fun, const PointsTo& cpts);
+
+    /// Collect all global variables for later escape analysis
+    void collectGlobals();
 
     /// Generate regions for loads/stores
     virtual void collectModRefForLoadStore();

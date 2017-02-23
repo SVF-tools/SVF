@@ -217,6 +217,14 @@ public:
     /// Parameter passing
     void connectCaller2CalleeParams(llvm::CallSite cs, const llvm::Function *F, NodePairSet& cpySrcNodes);
 
+    /// Check if a given edge is a NormalGepCGEdge with 0 offset.
+    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const {
+        if (NormalGepCGEdge *normalGepCGEdge = llvm::dyn_cast<NormalGepCGEdge>(edge))
+            if (0 == normalGepCGEdge->getLocationSet().getOffset())
+                return true;
+        return false;
+    }
+
     /// Wrappers for invoking PAG methods
     //@{
     inline const PAG::CallSiteToFunPtrMap& getIndirectCallsites() const {

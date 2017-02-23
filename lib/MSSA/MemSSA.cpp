@@ -130,7 +130,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
     double renameStart = stat->getClk();
     SSARename(fun);
     double renameEnd = stat->getClk();
-    timeOfInsertingPHI += (renameEnd - renameStart)/TIMEINTERVAL;
+    timeOfSSARenaming += (renameEnd - renameStart)/TIMEINTERVAL;
 
 }
 

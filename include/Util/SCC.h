@@ -89,6 +89,9 @@ public:
         inline void addSubNodes(NodeID n)    {
             _subNodes.set(n);
         }
+        inline NodeBS& subNodes() {
+            return _subNodes;
+        }
         inline const NodeBS& subNodes() const   {
             return _subNodes;
         }
@@ -155,6 +158,11 @@ public:
         return it->second.subNodes();
     }
 
+    /// get all repNodeID
+    inline const NodeBS &getRepNodes() const {
+        return repNodes;
+    }
+
     const inline GraphType & graph() {
         return _graph;
     }
@@ -167,6 +175,7 @@ private:
     NodeToNodeMap            _D;
     GNodeStack             _SS;
     GNodeStack             _T;
+    NodeBS repNodes;
 
     inline bool visited(NodeID n)  {
         return _NodeSCCAuxInfo[n].visited();
@@ -184,6 +193,11 @@ private:
     inline void rep(NodeID n, NodeID r)  {
         _NodeSCCAuxInfo[n].rep(r);
         _NodeSCCAuxInfo[r].addSubNodes(n);
+        if (n != r) {
+            _NodeSCCAuxInfo[n].subNodes().clear();
+            repNodes.reset(n);
+            repNodes.set(r);
+        }
     }
 
     inline NodeID rep(NodeID n) {
@@ -246,6 +260,7 @@ private:
         _NodeSCCAuxInfo.clear();
         _I = 0;
         _D.clear();
+        repNodes.clear();
         while(!_SS.empty())
             _SS.pop();
         while(!_T.empty())

@@ -40,7 +40,9 @@ using namespace analysisUtil;
 static cl::opt<bool> CallGraphDotGraph("dump-callgraph", cl::init(false),
                                        cl::desc("Dump dot graph of Call Graph"));
 
-
+PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
+PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
+CallSiteID PTACallGraph::totalCallSiteNum = 1;
 
 bool PTACallGraphNode::isReachableFromProgEntry() const
 {

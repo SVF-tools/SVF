@@ -55,7 +55,7 @@ class PTACallGraphEdge : public GenericCallGraphEdgeTy {
 public:
     typedef std::set<const llvm::Instruction*> CallInstSet;
     enum CEDGEK {
-        CallRetEdge,TDForkEdge,TDJoinEdge
+        CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
     };
 private:
     CallInstSet directCalls;
@@ -186,9 +186,9 @@ private:
     CallEdgeMap indirectCallMap;
 
     /// Call site information
-    CallSiteToIdMap csToIdMap;	///< Map a pair of call instruction and callee to a callsite ID
-    IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
-    CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
+    static CallSiteToIdMap csToIdMap;	///< Map a pair of call instruction and callee to a callsite ID
+    static IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
+    static CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
 
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
@@ -208,7 +208,7 @@ private:
 public:
     /// Constructor
     PTACallGraph(llvm::Module* module)
-        : mod(module), totalCallSiteNum(1), callGraphNodeNum(0), numOfResolvedIndCallEdge(0) {
+        : mod(module), callGraphNodeNum(0), numOfResolvedIndCallEdge(0) {
         buildCallGraph(module);
     }
     /// Destructor
@@ -262,11 +262,12 @@ public:
     inline void addCallSite(llvm::CallSite cs, const llvm::Function* callee) {
         std::pair<llvm::CallSite, const llvm::Function*> newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
-        assert(it == csToIdMap.end() && "cannot add a callsite twice");
-
-        CallSiteID id = totalCallSiteNum++;
-        csToIdMap.insert(std::make_pair(newCS, id));
-        idToCSMap.insert(std::make_pair(id, newCS));
+        //assert(it == csToIdMap.end() && "cannot add a callsite twice");
+        if(it == csToIdMap.end()) {
+            CallSiteID id = totalCallSiteNum++;
+            csToIdMap.insert(std::make_pair(newCS, id));
+            idToCSMap.insert(std::make_pair(id, newCS));
+        }
     }
     inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* callee) const {
         CallSitePair newCS(std::make_pair(cs, callee));

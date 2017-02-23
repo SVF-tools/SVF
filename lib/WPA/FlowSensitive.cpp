@@ -44,8 +44,7 @@ void FlowSensitive::initialize(llvm::Module& module) {
     PointerAnalysis::initialize(module);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
-    svfg = new SVFGOPT(getPTACallGraph());
-    memSSA.build(svfg,ander);
+    svfg = memSSA.buildSVFG(ander);
     setGraph(svfg);
     AndersenWaveDiff::releaseAndersenWaveDiff();
 

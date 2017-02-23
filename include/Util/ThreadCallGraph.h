@@ -24,7 +24,7 @@
  * ThreadCallGraph.h
  *
  *  Created on: Jul 7, 2014
- *      Authors: Peng Di, Yulei Sui
+ *      Authors: Peng Di, Yulei Sui, Ding Ye
  */
 
 #ifndef RCG_H_
@@ -85,15 +85,43 @@ public:
 };
 
 /*!
+ * hare_parallel_for edge from fork site to the entry of a start routine function
+ */
+class HareParForEdge: public PTACallGraphEdge {
+
+public:
+    /// Constructor
+    HareParForEdge(PTACallGraphNode* s, PTACallGraphNode* d) :
+        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge) {
+    }
+    /// Destructor
+    virtual ~HareParForEdge() {
+    }
+
+    /// ClassOf
+    //@{
+    static inline bool classof(const HareParForEdge *edge) {
+        return true;
+    }
+    static inline bool classof(const PTACallGraphEdge *edge) {
+        return edge->getEdgeKind() == PTACallGraphEdge::HareParForEdge;
+    }
+    //@}
+
+    typedef GenericNode<PTACallGraphNode, HareParForEdge>::GEdgeSetTy ParForEdgeSet;
+};
+
+
+/*!
  * Thread sensitive call graph
  */
 class ThreadCallGraph: public PTACallGraph {
 
 public:
-    typedef std::set<const llvm::CallInst*> CallSiteSet;
     typedef std::set<const llvm::Instruction*> InstSet;
+    typedef InstSet CallSiteSet;
     typedef std::vector<const llvm::Instruction*> InstVector;
-    typedef std::map<const llvm::CallInst*, InstSet> CallToInstMap;
+    typedef std::map<const llvm::Instruction*, InstSet> CallToInstMap;
     typedef std::set<const llvm::BasicBlock*> BBSet;
     typedef std::vector<const llvm::BasicBlock*> BBVector;
     typedef std::map<const llvm::BasicBlock*, const llvm::Instruction*> BBToInstMap;
@@ -102,6 +130,8 @@ public:
     typedef std::map<const llvm::Instruction*, ForkEdgeSet> CallInstToForkEdgesMap;
     typedef ThreadJoinEdge::JoinEdgeSet JoinEdgeSet;
     typedef std::map<const llvm::Instruction*, JoinEdgeSet> CallInstToJoinEdgesMap;
+    typedef HareParForEdge::ParForEdgeSet ParForEdgeSet;
+    typedef std::map<const llvm::Instruction*, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
     ThreadCallGraph(llvm::Module* module);
@@ -159,13 +189,16 @@ public:
     }
     //@}
 
-    /// Whether a callsite is a fork or join
+    /// Whether a callsite is a fork or join or hare_parallel_for
     ///@{
-    inline bool isForksite(const llvm::CallInst* callInst) {
-        return forksites.find(callInst) != forksites.end();
+    inline bool isForksite(const llvm::Instruction* csInst) {
+        return forksites.find(csInst) != forksites.end();
     }
-    inline bool isJoinsite(const llvm::CallInst* callInst) {
-        return joinsites.find(callInst) != joinsites.end();
+    inline bool isJoinsite(const llvm::Instruction* csInst) {
+        return joinsites.find(csInst) != joinsites.end();
+    }
+    inline bool isParForSite(const llvm::Instruction* csInst) {
+        return parForSites.find(csInst) != parForSites.end();
     }
     ///
 
@@ -189,6 +222,16 @@ public:
     }
     //@}
 
+    /// hare_parallel_for sites iterators
+    //@{
+    inline CallSiteSet::iterator parForSitesBegin() const {
+        return parForSites.begin();
+    }
+    inline CallSiteSet::iterator parForSitesEnd() const {
+        return parForSites.end();
+    }
+    //@}
+
     /// Num of fork/join sites
     //@{
     inline u32_t getNumOfForksite() const {
@@ -196,6 +239,9 @@ public:
     }
     inline u32_t getNumOfJoinsite() const {
         return joinsites.size();
+    }
+    inline u32_t getNumOfParForSite() const {
+        return parForSites.size();
     }
     //@}
 
@@ -220,6 +266,15 @@ private:
             addCallGraphEdgeSetMap(inst,edge);
         }
     }
+
+    /// map call instruction to its CallGraphEdge map
+    inline void addHareParForEdgeSetMap(const llvm::Instruction* inst, HareParForEdge* edge) {
+        if(edge!=NULL) {
+            callinstToHareParForEdgesMap[inst].insert(edge);
+            addCallGraphEdgeSetMap(inst,edge);
+        }
+    }
+
     /// has thread join edge
     inline ThreadJoinEdge* hasThreadJoinEdge(const llvm::Instruction* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode) const {
         ThreadJoinEdge joinEdge(joinFunNode,threadRoutineFunNode);
@@ -243,18 +298,28 @@ private:
     void addDirectJoinEdge(const llvm::Instruction* call,const CallSiteSet& forksite);
     //@}
 
+    /// Add direct/indirect parallel for edges
+    //@{
+    void addDirectParForEdge(const llvm::Instruction* call);
+    void addIndirectParForEdge(const llvm::Instruction* call, const llvm::Function* callee);
+    //@}
+
     /// Start building Thread Call graph
     virtual void build(llvm::Module* m);
 
     /// Add fork sites which directly or indirectly create a thread
     //@{
-    inline bool addForksite(const llvm::CallInst* callInst) {
-        callinstToThreadForkEdgesMap[callInst];
-        return forksites.insert(callInst).second;
+    inline bool addForksite(const llvm::Instruction* csInst) {
+        callinstToThreadForkEdgesMap[csInst];
+        return forksites.insert(csInst).second;
     }
-    inline bool addJoinsite(const llvm::CallInst* callInst) {
-        callinstToThreadJoinEdgesMap[callInst];
-        return joinsites.insert(callInst).second;
+    inline bool addJoinsite(const llvm::Instruction* csInst) {
+        callinstToThreadJoinEdgesMap[csInst];
+        return joinsites.insert(csInst).second;
+    }
+    inline bool addParForSite(const llvm::Instruction* csInst) {
+        callinstToHareParForEdgesMap[csInst];
+        return parForSites.insert(csInst).second;
     }
     //@}
 
@@ -262,8 +327,10 @@ private:
     ThreadAPI* tdAPI;		///< Thread API
     CallSiteSet forksites; ///< all thread fork sites
     CallSiteSet joinsites; ///< all thread fork sites
+    CallSiteSet parForSites; ///< all parallel for sites
     CallInstToForkEdgesMap callinstToThreadForkEdgesMap; ///< Map a call instruction to its corresponding fork edges
     CallInstToJoinEdgesMap callinstToThreadJoinEdgesMap; ///< Map a call instruction to its corresponding join edges
+    CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
 };
 
 

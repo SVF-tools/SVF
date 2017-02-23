@@ -43,7 +43,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(PTACallGraph* cg, SVFGK k): totalSVFGNode(0), kind(k),mssa(NULL), ptaCallGraph(cg)  {
+SVFG::SVFG(SVFGK k): totalSVFGNode(0), kind(k),mssa(NULL) {
     stat = new SVFGStat(this);
 }
 
@@ -67,7 +67,7 @@ void SVFG::destroy() {
  */
 void SVFG::buildSVFG(MemSSA* m) {
     mssa = m;
-
+    stat->startClk();
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Top Level Node\n"));
 
     stat->TLVFNodeStart();
@@ -376,7 +376,7 @@ void SVFG::connectIndirectSVFGEdges() {
         }
         else if(const FormalINSVFGNode* formalIn = dyn_cast<FormalINSVFGNode>(node)) {
             PTACallGraphEdge::CallInstSet callInstSet;
-            getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
                 CallSite cs = analysisUtil::getLLVMCallSite(*it);
                 if(!mssa->hasMU(cs))
@@ -391,7 +391,7 @@ void SVFG::connectIndirectSVFGEdges() {
         else if(const FormalOUTSVFGNode* formalOut = dyn_cast<FormalOUTSVFGNode>(node)) {
             PTACallGraphEdge::CallInstSet callInstSet;
             const MemSSA::RETMU* retMu = formalOut->getRetMU();
-            getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
                 CallSite cs = analysisUtil::getLLVMCallSite(*it);
                 if(!mssa->hasCHI(cs))
@@ -433,7 +433,7 @@ void SVFG::connectIndirectSVFGEdges() {
  */
 void SVFG::connectFromGlobalToProgEntry()
 {
-    llvm::Module* mod = getPTACallGraph()->getModule();
+    llvm::Module* mod = mssa->getPTA()->getPTACallGraph()->getModule();
     const llvm::Function* mainFunc = analysisUtil::getProgEntryFunction(mod);
     FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
     if (formalIns.empty())

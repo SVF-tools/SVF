@@ -57,7 +57,8 @@ public:
     };
 
 private:
-    const llvm::Instruction* inst;	///< LLVM instruction
+    const llvm::Value* value;	///< LLVM value
+    const llvm::BasicBlock *basicBlock;   ///< LLVM BasicBlock
     EdgeID edgeId;					///< Edge ID
 public:
     static Size_t totalEdgeNum;		///< Total edge number
@@ -95,10 +96,19 @@ public:
     /// Get/set methods for llvm instruction
     //@{
     inline const llvm::Instruction* getInst() const {
-        return inst;
+        return llvm::dyn_cast<llvm::Instruction>(value);
     }
-    inline void setInst(const llvm::Instruction* i) {
-        inst = i;
+    inline void setValue(const llvm::Value *val) {
+        value = val;
+    }
+    inline const llvm::Value* getValue() const {
+        return value;
+    }
+    inline void setBB(const llvm::BasicBlock *bb) {
+        basicBlock = bb;
+    }
+    inline const llvm::BasicBlock* getBB() const {
+        return basicBlock;
     }
     //@}
 
@@ -289,7 +299,7 @@ public:
     {}
 
     /// offset of the gep edge
-    inline Size_t getOffset() const {
+    inline u32_t getOffset() const {
         return ls.getOffset();
     }
     inline const LocationSet& getLocationSet() const {
@@ -462,20 +472,20 @@ class TDJoinPE: public PAGEdge {
 private:
     TDJoinPE();                      ///< place holder
     TDJoinPE(const TDJoinPE &);  ///< place holder
-    void operator=(const RetPE &); ///< place holder
+    void operator=(const TDJoinPE &); ///< place holder
 
     const llvm::Instruction* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const RetPE *) {
+    static inline bool classof(const TDJoinPE *) {
         return true;
     }
     static inline bool classof(const PAGEdge *edge) {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge) {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     //@}
 

@@ -735,7 +735,6 @@ static const ei_pair ei_pairs[]= {
     {"memmove", ExtAPI::EFT_L_A0__A0R_A1R},
     {"bcopy", ExtAPI::EFT_A1R_A0R},
     {"iconv", ExtAPI::EFT_A3R_A1R_NS},
-
     {"strtod", ExtAPI::EFT_A1R_A0},
     {"strtof", ExtAPI::EFT_A1R_A0},
     {"strtol", ExtAPI::EFT_A1R_A0},
@@ -743,6 +742,7 @@ static const ei_pair ei_pairs[]= {
     {"strtoll", ExtAPI::EFT_A1R_A0},
     {"strtoul", ExtAPI::EFT_A1R_A0},
     {"readdir_r", ExtAPI::EFT_A2R_A1},
+
     //These also set arg1->pw_name etc. to new strings.
     {"getpwnam_r", ExtAPI::EFT_A4R_A1},
     {"getpwuid_r", ExtAPI::EFT_A4R_A1},
@@ -761,6 +761,10 @@ static const ei_pair ei_pairs[]= {
     {"XmbTextPropertyToTextList", ExtAPI::EFT_A2R_NEW},
     {"XQueryTree", ExtAPI::EFT_A4R_NEW},
     {"XGetWindowProperty", ExtAPI::EFT_A11R_NEW},
+
+    // C++ STL function
+    // std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+    {"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
 
     //This must be the last entry.
     {0, ExtAPI::EFT_NOOP}

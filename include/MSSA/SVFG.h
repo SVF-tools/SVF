@@ -87,6 +87,7 @@ public:
     typedef MemSSA::CALLMU CALLMU;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<StoreSVFGNode*> StoreNodeSet;
+    typedef std::map<const StorePE*,const StoreSVFGNode*> StorePEToSVFGNodeMap;
 
 protected:
     NodeID totalSVFGNode;
@@ -101,16 +102,16 @@ protected:
     FunctionToFormalINsMapTy funToFormalINMap;
     FunctionToFormalOUTsMapTy funToFormalOUTMap;
     StoreNodeSet globalStore;	///< set of global store SVFG nodes
+    StorePEToSVFGNodeMap storePEToSVFGNodeMap;	///< map store inst to store SVFGNode
     SVFGStat * stat;
     SVFGK kind;
     MemSSA* mssa;
-    PTACallGraph* ptaCallGraph;
 
     /// Clean up memory
     void destroy();
 
     /// Constructor
-    SVFG(PTACallGraph* cg, SVFGK k = ORIGSVFGK);
+    SVFG(SVFGK k = ORIGSVFGK);
 
     /// Start building SVFG
     virtual void buildSVFG(MemSSA* m);
@@ -173,16 +174,23 @@ public:
     /// Get callsite given a callsiteID
     //@{
     inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
-        return getPTACallGraph()->getCallSiteID(cs, func);
+        return mssa->getPTA()->getPTACallGraph()->getCallSiteID(cs, func);
     }
     inline llvm::CallSite getCallSite(CallSiteID id) const {
-        return getPTACallGraph()->getCallSite(id);
+        return mssa->getPTA()->getPTACallGraph()->getCallSite(id);
     }
     //@}
 
     /// Given a pagNode, return its definition site
     inline const SVFGNode* getDefSVFGNode(const PAGNode* pagNode) const {
         return getSVFGNode(getDef(pagNode));
+    }
+
+    /// Given a store pagEdge, return its SVFGNode
+    inline const SVFGNode* getStoreSVFGNode(const StorePE* store) const {
+        StorePEToSVFGNodeMap::const_iterator it = storePEToSVFGNodeMap.find(store);
+        assert(it!=storePEToSVFGNodeMap.end() && "SVFGNode not found?");
+        return it->second;
     }
 
     // Given a svfg node, return its left hand side top level pointer (PAGnode)
@@ -263,11 +271,6 @@ public:
     llvm::Instruction* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
 protected:
-    ///Return PTA callgraph
-    inline PTACallGraph* getPTACallGraph() const {
-        return ptaCallGraph;
-    }
-
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge) {
         edge->getDstNode()->removeIncomingEdge(edge);
@@ -487,6 +490,8 @@ protected:
     /// To be noted store does not create a new pointer, we do not set def for any PAG node
     void addStoreSVFGNode(StorePE* store) {
         StoreSVFGNode* sNode = new StoreSVFGNode(totalSVFGNode++,store);
+        assert(storePEToSVFGNodeMap.find(store)==storePEToSVFGNodeMap.end() && "should not insert twice!");
+        storePEToSVFGNodeMap[store] = sNode;
         addStmtSVFGNode(sNode);
         for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi) {
             setDef((*pi)->getResVer(),sNode);

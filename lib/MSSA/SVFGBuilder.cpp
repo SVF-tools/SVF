@@ -34,8 +34,13 @@
 using namespace llvm;
 using namespace analysisUtil;
 
-static cl::opt<bool> IndCallWithPreAnalysis("svfgIndCallPreAna", cl::init(false),
+static cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", cl::init(false),
         cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
+
+static cl::opt<bool> SingleVFG("singleVFG", cl::init(false),
+                               cl::desc("Create a single VFG shared by multiple analysis"));
+
+SVFGOPT* SVFGBuilder::globalSvfg = NULL;
 
 /*!
  * Create SVFG
@@ -46,6 +51,26 @@ void SVFGBuilder::createSVFG(MemSSA* mssa, SVFG* graph) {
     if(mssa->getPTA()->printStat())
         svfg->performStat();
     svfg->dump("FS_SVFG");
+}
+
+/// Create DDA SVFG
+SVFGOPT* SVFGBuilder::buildSVFG(BVDataPTAImpl* pta, bool withAOFI) {
+
+    if(SingleVFG) {
+        if(globalSvfg==NULL) {
+            /// Note that we use callgraph from andersen analysis here
+            globalSvfg = new SVFGOPT();
+            if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
+            build(globalSvfg,pta);
+        }
+        return globalSvfg;
+    }
+    else {
+        SVFGOPT* vfg = new SVFGOPT();
+        if (withAOFI) vfg->setTokeepActualOutFormalIn();
+        build(vfg,pta);
+        return vfg;
+    }
 }
 
 /*!
@@ -87,7 +112,7 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
 
     createSVFG(&mssa, graph);
 
-    if(IndCallWithPreAnalysis)
+    if(SVFGWithIndirectCall)
         updateCallGraph(mssa.getPTA());
 
     releaseMemory(graph);

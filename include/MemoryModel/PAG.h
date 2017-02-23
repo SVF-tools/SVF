@@ -85,14 +85,14 @@ private:
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
     const llvm::BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
-    const llvm::Instruction* curInst;	///< Current instruction during PAG construction when visiting the module
+    const llvm::Value* curVal;	///< Current Value during PAG construction when visiting the module
 
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
     /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curInst(NULL) {
+    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL) {
         symInfo = SymbolTableInfo::Symbolnfo();
         storeInstNum = 0;
         loadInstNum = 0;
@@ -150,9 +150,15 @@ public:
     /// Get/set methods to get control flow information of a PAGEdge
     //@{
     /// Set current basic block in order to keep track of control flow information
-    inline void setCurrentLocation(const llvm::Instruction* inst, const llvm::BasicBlock* bb) {
+    inline void setCurrentLocation(const llvm::Value* val, const llvm::BasicBlock* bb) {
         curBB = bb;
-        curInst = inst;
+        curVal = val;
+    }
+    inline const llvm::Value *getCurrentValue() const {
+        return curVal;
+    }
+    inline const llvm::BasicBlock *getCurrentBB() const {
+        return curBB;
     }
     /// Get Instruction to PAGEdge Map
     inline Inst2PAGEdgesMap& getInstToPAGEdgeMap() {
@@ -350,15 +356,15 @@ public:
     //@{
     ///getNode - Return the node corresponding to the specified pointer.
     inline NodeID getValueNode(const llvm::Value *V) {
-        return symInfo->getValSym(analysisUtil::stripConstantCasts(V));
+        return symInfo->getValSym(V);
     }
     inline bool hasValueNode(const llvm::Value* V) {
-        return symInfo->hasValSym(analysisUtil::stripConstantCasts(V));
+        return symInfo->hasValSym(V);
     }
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
     inline NodeID getObjectNode(const llvm::Value *V) {
-        return symInfo->getObjSym(analysisUtil::stripConstantCasts(V));
+        return symInfo->getObjSym(V);
     }
     /// getObject - return mem object id
     inline NodeID getObjectNode(const MemObj *mem) {
@@ -389,7 +395,7 @@ public:
         return symInfo->getVarargSym(func);
     }
     /// Get a field PAG Value node according to base value and offset
-    NodeID getGepValNode(const llvm::Value* val, const LocationSet& ls);
+    NodeID getGepValNode(const llvm::Value* val, const LocationSet& ls, const llvm::Type *baseType, u32_t fieldidx);
     /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Get a field obj PAG node according to a mem obj and a given offset
@@ -505,7 +511,7 @@ public:
     /// Add a value (pointer) node
     inline NodeID addValNode(const llvm::Value* val, NodeID i) {
         PAGNode *node = new ValPN(val,i);
-        return addNode(node,i);
+        return addValNode(val, node, i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const llvm::Value* val, NodeID i) {
@@ -516,7 +522,7 @@ public:
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const llvm::Function* val, NodeID i) {
         PAGNode *node = new RetPN(val,i);
-        return addNode(node,i);
+        return addRetNode(val, node, i);
     }
     /// Add a unique vararg node for a procedure
     inline NodeID addVarargNode(const llvm::Function* val, NodeID i) {
@@ -524,7 +530,7 @@ public:
         return addNode(node,i);
     }
     /// Add a temp field value node, this method can only invoked by getGepValNode
-    NodeID addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i);
+    NodeID addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx);
     /// Add a field obj node, this method can only invoked by getGepObjNode
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -537,30 +543,54 @@ public:
         return addDummyValNode(nodeNum);
     }
     inline NodeID addDummyValNode(NodeID i) {
-        return addNode(new DummyValPN(i),i);
+        return addValNode(NULL, new DummyValPN(i), i);
     }
     inline NodeID addDummyObjNode() {
         const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(nodeNum);
-        return addNode(new DummyObjPN(nodeNum,mem),nodeNum);
+        return addObjNode(NULL, new DummyObjPN(nodeNum,mem), nodeNum);
     }
     inline NodeID addBlackholeObjNode() {
-        return addNode(new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()),getBlackHoleNode());
+        return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }
     inline NodeID addConstantObjNode() {
-        return addNode(new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(NULL, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
     }
     inline NodeID addBlackholePtrNode() {
         return addDummyValNode(getBlkPtr());
     }
     inline NodeID addNullPtrNode() {
-        return addDummyValNode(getNullPtr());
+        NodeID nullPtr = addDummyValNode(getNullPtr());
+        /// let all undef value or non-determined pointers points-to black hole
+        llvm::LLVMContext &cxt = getModule()->getContext();
+        llvm::ConstantPointerNull *constNull = llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(cxt));
+        setCurrentLocation(constNull, NULL);
+        addBlackHoleAddrEdge(symInfo->blkPtrSymID());
+        return nullPtr;
     }
     //@}
+
+    /// Add a value (pointer) node
+    inline NodeID addValNode(const llvm::Value* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+    /// Add a memory obj node
+    inline NodeID addObjNode(const llvm::Value* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+    /// Add a unique return node for a procedure
+    inline NodeID addRetNode(const llvm::Function* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+    /// Add a unique vararg node for a procedure
+    inline NodeID addVarargNode(const llvm::Function* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
 
     /// Add an edge into PAG
     //@{
     /// Add a PAG edge
     bool addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge);
+    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     //// Return true if this edge exits
     bool hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
@@ -579,7 +609,7 @@ public:
     /// Add Return edge
     bool addRetEdge(NodeID src, NodeID dst, const llvm::Instruction* cs);
     /// Add Gep edge
-    bool addGepEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    bool addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
     bool addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Variant(Gep) edge
@@ -592,12 +622,10 @@ public:
 
     /// Add global edges
     //{@
-    /// Add global Gep edge
-    bool addGlobalGepEdge(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add global black hole Address edge
-    bool addGlobalBlackHoleAddrEdge(NodeID node);
+    bool addGlobalBlackHoleAddrEdge(NodeID node, const llvm::ConstantExpr *int2Ptrce);
     /// Add black hole Address edge for formal params
-    bool addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Function* func);
+    bool addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)

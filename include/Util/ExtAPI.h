@@ -71,6 +71,7 @@ public:
         EFT_A2R_NEW,
         EFT_A4R_NEW,
         EFT_A11R_NEW,
+        EFT_STD_RB_TREE_INSERT_AND_REBALANCE,  // Some complex effects
         EFT_OTHER         //not found in the list
     };
 private:

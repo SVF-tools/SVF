@@ -65,9 +65,17 @@ public:
         return bb;
     }
 
+    /// Overloading operator << for dumping SVFG node ID
+    //@{
+    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFGNode &node) {
+        o << "SVFGNode ID:" << node.getId();
+        return o;
+    }
+    //@}
 protected:
     const llvm::BasicBlock* bb;
 };
+
 
 /*!
  * SVFG node stands for a program statement
@@ -80,8 +88,7 @@ private:
 public:
     /// Constructor
     StmtSVFGNode(NodeID id, const PAGEdge* e, SVFGNodeK k): SVFGNode(id,k), pagEdge(e) {
-        if(e->getInst())
-            bb = e->getInst()->getParent();
+        bb = e->getBB();
     }
 
     /// PAGNode and PAGEdge

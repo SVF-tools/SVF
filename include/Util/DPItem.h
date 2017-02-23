@@ -32,7 +32,6 @@
 
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/ConditionalPT.h"
-#include "MSSA/SVFGNode.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>    // std::sort
 
@@ -95,13 +94,12 @@ public:
     }
 };
 
-class SVFGNode;
-typedef SVFGNode LocCond;
 
 /*!
  * FlowSensitive DPItem
  */
-class LocDPItem : public DPItem {
+template<class LocCond>
+class StmtDPItem : public DPItem {
 
 
 protected:
@@ -109,54 +107,54 @@ protected:
 
 public:
     /// Constructor
-    LocDPItem(NodeID c, const LocCond* locCond) : DPItem(c), curloc(locCond) {
+    StmtDPItem(NodeID c, const LocCond* locCond) : DPItem(c), curloc(locCond) {
     }
     /// Copy constructor
-    LocDPItem(const LocDPItem& dps) :
+    StmtDPItem(const StmtDPItem& dps) :
         DPItem(dps), curloc(dps.curloc) {
     }
     /// Destructor
-    virtual ~LocDPItem() {
+    virtual ~StmtDPItem() {
     }
     /// Get context
     inline const LocCond* getLoc() const {
-        return curloc;
+        return this->curloc;
     }
     /// Set location
     inline void setLoc(const LocCond* l) {
-        curloc = l;
+        this->curloc = l;
     }
     /// Set location and pointer id
     inline void setLocVar(const LocCond* l,NodeID v) {
-        curloc = l;
-        cur = v;
+        this->curloc = l;
+        this->cur = v;
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const LocDPItem& rhs) const {
-        if (cur != rhs.cur)
-            return cur < rhs.cur;
+    inline bool operator< (const StmtDPItem& rhs) const {
+        if (this->cur != rhs.cur)
+            return this->cur < rhs.cur;
         else
-            return curloc < rhs.curloc;
+            return this->curloc < rhs.curloc;
     }
     /// Overloading operator==
-    inline LocDPItem& operator= (const LocDPItem& rhs)  {
+    inline StmtDPItem& operator= (const StmtDPItem& rhs)  {
         if(*this!=rhs) {
             DPItem::operator=(rhs);
-            curloc = rhs.getLoc();
+            this->curloc = rhs.getLoc();
         }
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const LocDPItem& rhs) const {
-        return (cur == rhs.cur && curloc == rhs.getLoc());
+    inline bool operator== (const StmtDPItem& rhs) const {
+        return (this->cur == rhs.cur && this->curloc == rhs.getLoc());
     }
     /// Overloading operator!=
-    inline bool operator!= (const LocDPItem& rhs) const {
+    inline bool operator!= (const StmtDPItem& rhs) const {
         return !(*this==rhs);
     }
     inline void dump() const {
-        llvm::outs() << "svfg node " << curloc->getId()  << ", var " << cur << "\n";
+        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << "\n";
     }
 };
 
@@ -295,72 +293,74 @@ public:
  */
 typedef CondVar<ContextCond> CxtVar;
 typedef CondStdSet<CxtVar> CxtPtSet;
-class CxtLocDPItem : public LocDPItem {
+
+template<class LocCond>
+class CxtStmtDPItem : public StmtDPItem<LocCond> {
 private:
     ContextCond context;
 public:
     /// Constructor
-    CxtLocDPItem(const CxtVar& var, const LocCond* locCond) : LocDPItem(var.get_id(),locCond), context(var.get_cond()) {
+    CxtStmtDPItem(const CxtVar& var, const LocCond* locCond) : StmtDPItem<LocCond>(var.get_id(),locCond), context(var.get_cond()) {
     }
     /// Copy constructor
-    CxtLocDPItem(const CxtLocDPItem& dps) :
-        LocDPItem(dps), context(dps.context) {
+    CxtStmtDPItem(const CxtStmtDPItem<LocCond>& dps) :
+        StmtDPItem<LocCond>(dps), context(dps.context) {
     }
     /// Destructor
-    virtual ~CxtLocDPItem() {
+    virtual ~CxtStmtDPItem() {
     }
     /// Get context var
     inline CxtVar getCondVar() const {
-        CxtVar var(context,cur);
+        CxtVar var(this->context,this->cur);
         return var;
     }
     /// Get context
     inline const ContextCond& getCond() const {
-        return context;
+        return this->context;
     }
     /// Get context
     inline ContextCond& getCond() {
-        return context;
+        return this->context;
     }
     /// Push context
     inline bool pushContext(NodeID cxt) {
-        return context.pushContext(cxt);
+        return this->context.pushContext(cxt);
     }
 
     /// Match context
     inline bool matchContext(NodeID cxt) {
-        return context.matchContext(cxt);
+        return this->context.matchContext(cxt);
     }
 
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const CxtLocDPItem& rhs) const {
-        if (cur != rhs.cur)
-            return cur < rhs.cur;
-        else if(curloc != rhs.getLoc())
-            return curloc < rhs.getLoc();
+    inline bool operator< (const CxtStmtDPItem<LocCond>& rhs) const {
+        if (this->cur != rhs.cur)
+            return this->cur < rhs.cur;
+        else if(this->curloc != rhs.getLoc())
+            return this->curloc < rhs.getLoc();
         else
-            return context < rhs.context;
+            return this->context < rhs.context;
     }
     /// Overloading operator=
-    inline CxtLocDPItem& operator= (const CxtLocDPItem& rhs) {
+    inline CxtStmtDPItem<LocCond>& operator= (const CxtStmtDPItem<LocCond>& rhs) {
         if(*this!=rhs) {
-            LocDPItem::operator=(rhs);
-            context = rhs.getCond();
+            StmtDPItem<LocCond>::operator=(rhs);
+            this->context = rhs.getCond();
         }
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const CxtLocDPItem& rhs) const {
-        return (cur == rhs.cur && curloc == rhs.getLoc() && context == rhs.context);
+    inline bool operator== (const CxtStmtDPItem<LocCond>& rhs) const {
+        return (this->cur == rhs.cur && this->curloc == rhs.getLoc() && this->context == rhs.context);
     }
     /// Overloading operator==
-    inline bool operator!= (const CxtLocDPItem& rhs) const {
+    inline bool operator!= (const CxtStmtDPItem<LocCond>& rhs) const {
         return !(*this==rhs);
     }
     inline void dump() const {
-        llvm::outs() << "svfg node " << curloc->getId()  << ", var " << cur << " ";
-        llvm::outs() << context.toString()  <<"\n";
+        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
+        llvm::outs() << this->context.toString()  <<"\n";
     }
 };
 
@@ -519,78 +519,80 @@ public:
  */
 typedef CondVar<VFPathCond> VFPathVar;
 typedef CondStdSet<VFPathVar> VFPathPtSet;
-class PathDPItem : public LocDPItem {
+
+template<class LocCond>
+class PathStmtDPItem : public StmtDPItem<LocCond> {
 private:
     VFPathCond vfpath;
 public:
     typedef VFPathCond::PathCond PathCond;
 
     /// Constructor
-    PathDPItem(const VFPathVar& var, const LocCond* locCond) :
-        LocDPItem(var.get_id(),locCond), vfpath(var.get_cond()) {
+    PathStmtDPItem(const VFPathVar& var, const LocCond* locCond) :
+        StmtDPItem<LocCond>(var.get_id(),locCond), vfpath(var.get_cond()) {
     }
     /// Copy constructor
-    PathDPItem(const PathDPItem& dps) :
-        LocDPItem(dps),vfpath(dps.getCond()) {
+    PathStmtDPItem(const PathStmtDPItem<LocCond>& dps) :
+        StmtDPItem<LocCond>(dps),vfpath(dps.getCond()) {
     }
     /// Destructor
-    virtual ~PathDPItem() {
+    virtual ~PathStmtDPItem() {
     }
     inline VFPathVar getCondVar() const {
-        VFPathVar var(vfpath,cur);
+        VFPathVar var(this->vfpath,this->cur);
         return var;
     }
     /// Get value-flow paths
     inline const VFPathCond& getCond() const {
-        return vfpath;
+        return this->vfpath;
     }
     /// Get value-flow paths
     inline VFPathCond& getCond() {
-        return vfpath;
+        return this->vfpath;
     }
     /// Add a value-flow path (avoid adding duplicated paths)
     inline bool addVFPath(PathCondAllocator* allocator, PathCond* c, NodeID from, NodeID to) {
-        return vfpath.addPath(allocator,c,from,to);
+        return this->vfpath.addPath(allocator,c,from,to);
     }
     /// Push context
     inline bool pushContext(NodeID cxt) {
-        return vfpath.pushContext(cxt);
+        return this->vfpath.pushContext(cxt);
     }
     /// Match context
     bool matchContext(NodeID cxt) {
-        return vfpath.matchContext(cxt);
+        return this->vfpath.matchContext(cxt);
     }
 
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const PathDPItem& rhs) const {
-        if (cur != rhs.getCurNodeID())
-            return cur < rhs.getCurNodeID();
-        else if(curloc != rhs.getLoc())
-            return curloc < rhs.getLoc();
+    inline bool operator< (const PathStmtDPItem<LocCond>& rhs) const {
+        if (this->cur != rhs.getCurNodeID())
+            return this->cur < rhs.getCurNodeID();
+        else if(this->curloc != rhs.getLoc())
+            return this->curloc < rhs.getLoc();
         else
-            return vfpath < rhs.getCond();
+            return this->vfpath < rhs.getCond();
     }
     /// Overloading operator=
-    inline PathDPItem& operator= (const PathDPItem& rhs) {
+    inline PathStmtDPItem<LocCond>& operator= (const PathStmtDPItem<LocCond>& rhs) {
         if(*this!=rhs) {
-            LocDPItem::operator=(rhs);
-            vfpath = rhs.getCond();
+            StmtDPItem<LocCond>::operator=(rhs);
+            this->vfpath = rhs.getCond();
         }
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const PathDPItem& rhs) const {
-        return (cur == rhs.cur && curloc == rhs.getLoc() && vfpath==rhs.getCond());
+    inline bool operator== (const PathStmtDPItem<LocCond>& rhs) const {
+        return (this->cur == rhs.cur && this->curloc == rhs.getLoc() && this->vfpath==rhs.getCond());
     }
     /// Overloading operator!=
-    inline bool operator!= (const PathDPItem& rhs) const {
+    inline bool operator!= (const PathStmtDPItem<LocCond>& rhs) const {
         return !(*this==rhs);
     }
     /// Dump dpm info
     inline void dump() const {
-        llvm::outs() << "svfg node " << curloc->getId()  << ", var " << cur << " ";
-        llvm::outs() << vfpath.toString() << "\n";
+        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
+        llvm::outs() << this->vfpath.toString() << "\n";
     }
 };
 

@@ -29,6 +29,7 @@
 
 #include "MemoryModel/PAGBuilder.h"
 #include "Util/AnalysisUtil.h"
+#include "Util/CPPUtil.h"
 
 #include <fstream>	// for PAGBuilderFromFile
 #include <string>	// for PAGBuilderFromFile
@@ -68,7 +69,7 @@ PAG* PAGBuilder::build(llvm::Module& module) {
                 I != E; ++I) {
             /// To be noted, we do not record arguments which are in declared function without body
             if(!analysisUtil::isExtCall(&fun)) {
-                pag->setCurrentLocation(NULL,&fun.getEntryBlock());
+                pag->setCurrentLocation(&*I,&fun.getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
                 // or a dead function, we may create a black hole address edge for it
@@ -112,9 +113,6 @@ void PAGBuilder::initalNode() {
     pag->addConstantObjNode();
     pag->addBlackholePtrNode();
     pag->addNullPtrNode();
-
-    /// let all undef value or non-determined pointers points-to black hole
-    pag->addBlackHoleAddrEdge(symTable->blkPtrSymID());
 
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
                 symTable->valSyms().begin(); iter != symTable->valSyms().end();
@@ -167,8 +165,7 @@ bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls) {
  * Handle constant expression, and connect the gep edge
  */
 void PAGBuilder::processCE(const Value *val) {
-    if (const Constant* conVal = dyn_cast<Constant>(val)) {
-        const Value* ref = stripConstantCasts(conVal);
+    if (const Constant* ref = dyn_cast<Constant>(val)) {
         if (const ConstantExpr* gepce = isGepConstantExpr(ref)) {
             DBOUT(DPAGBuild,
                   outs() << "handle constant expression " << *ref << "\n");
@@ -176,16 +173,32 @@ void PAGBuilder::processCE(const Value *val) {
             LocationSet ls;
             bool constGep = computeGepOffset(gepce, ls);
             // must invoke pag methods here, otherwise it will be a dead recursion cycle
-            if (constGep)
-                pag->addGepEdge(pag->getValueNode(opnd), pag->getValueNode(gepce), ls);
-            else
-                pag->addVariantGepEdge(pag->getValueNode(opnd), pag->getValueNode(gepce));
+            const llvm::Value* cval = pag->getCurrentValue();
+            const llvm::BasicBlock* cbb = pag->getCurrentBB();
+            pag->setCurrentLocation(gepce, NULL);
+            /*
+             * The gep edge created are like constexpr (same edge may appear at multiple callsites)
+             * so bb/inst of this edge may be rewritten several times, we treat it as global here.
+             */
+            pag->addGepEdge(pag->getValueNode(opnd), pag->getValueNode(gepce), ls, constGep);
+            pag->setCurrentLocation(cval, cbb);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
+            processCE(opnd);
+        }
+        else if (const ConstantExpr* castce = isCastConstantExpr(ref)) {
+            DBOUT(DPAGBuild,
+                  outs() << "handle constant expression " << *ref << "\n");
+            const Constant* opnd = castce->getOperand(0);
+            const llvm::Value* cval = pag->getCurrentValue();
+            const llvm::BasicBlock* cbb = pag->getCurrentBB();
+            pag->setCurrentLocation(castce, NULL);
+            pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(castce));
+            pag->setCurrentLocation(cval, cbb);
             processCE(opnd);
         }
         // if we meet a int2ptr, then it points-to black hole
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref)) {
-            pag->addGlobalBlackHoleAddrEdge(pag->getValueNode(int2Ptrce));
+            pag->addGlobalBlackHoleAddrEdge(pag->getValueNode(int2Ptrce), int2Ptrce);
         }
     }
 }
@@ -194,7 +207,7 @@ void PAGBuilder::processCE(const Value *val) {
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, Size_t offset) {
+NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, u32_t fieldidx) {
 
     // if the global variable do not have any field needs to be initialized
     if (offset == 0 && gvar->getInitializer()->getType()->isSingleValueType()) {
@@ -202,8 +215,12 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, Size_t offset) 
     }
     /// if we did not find the constant expression in the program,
     /// then we need to create a gep node for this field
-    else
-        return pag->getGepValNode(gvar, LocationSet(offset));
+    else {
+        const Type *gvartype = gvar->getType();
+        while (const PointerType *ptype = dyn_cast<PointerType>(gvartype))
+            gvartype = ptype->getElementType();
+        return pag->getGepValNode(gvar, LocationSet(offset), gvartype, fieldidx);
+    }
 }
 
 /*For global variable initialization
@@ -218,39 +235,41 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, Size_t offset) 
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
 void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                               Size_t offset) {
+                               u32_t offset, u32_t fieldidx) {
     DBOUT(DPAGBuild,
           outs() << "global " << *gvar << " constant initializer: " << *C
           << "\n");
 
     if (C->getType()->isSingleValueType() && isa<PointerType>(C->getType())) {
-        const Value *C1 = stripConstantCasts(C);
-
-        NodeID src = getValueNode(C1);
+        NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
-        NodeID field = getGlobalVarField(gvar, offset);
+        pag->setCurrentLocation(gvar, NULL);
+        NodeID field = getGlobalVarField(gvar, offset, fieldidx);
 
-        if (isa<GlobalVariable>(C1) || isa<Function>(C1)) {
+        if (isa<GlobalVariable>(C) || isa<Function>(C)) {
+            pag->setCurrentLocation(C, NULL);
             pag->addStoreEdge(src, field);
-        } else if (isa<ConstantExpr>(C1)) {
+        } else if (isa<ConstantExpr>(C)) {
             // add gep edge of C1 itself is a constant expression
-            processCE(C1);
+            processCE(C);
+            pag->setCurrentLocation(C, NULL);
             pag->addStoreEdge(src, field);
         } else {
             //TODO:assert(false,"what else do we have");
         }
 
     } else if (isa<ConstantArray>(C)) {
-        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset);
+        if (cppUtil::isValVtbl(gvar) == false)
+            for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
+                InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset, i);
 
     } else if (isa<ConstantStruct>(C)) {
         const StructType *sty = cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
             SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
-            Size_t off = offsetvect[i];
-            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off);
+            u32_t off = offsetvect[i];
+            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off, i);
         }
 
     } else {
@@ -269,12 +288,13 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
         GlobalVariable * gvar = &*I;
         NodeID idx = getValueNode(gvar);
         NodeID obj = getObjectNode(gvar);
+        pag->setCurrentLocation(gvar, NULL);
         pag->addAddrEdge(obj, idx);
 
         if (gvar->hasDefinitiveInitializer()) {
             Constant *C = gvar->getInitializer();
             DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
-            InitialGlobal(gvar, C, 0);
+            InitialGlobal(gvar, C, 0, 0);
         }
     }
 
@@ -286,6 +306,7 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
         NodeID obj = getObjectNode(fun);
 
         DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName() << "\n");
+        pag->setCurrentLocation(fun, NULL);
         pag->addAddrEdge(obj, idx);
     }
 
@@ -389,10 +410,7 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
 
     LocationSet ls;
     bool constGep = computeGepOffset(&inst, ls);
-    if (constGep)
-        pag->addGepEdge(src, dst, ls);
-    else
-        pag->addVariantGepEdge(src, dst);
+    pag->addGepEdge(src, dst, ls, constGep);
 }
 
 /*!
@@ -465,10 +483,10 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     /// Collect callsite arguments and returns
     for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
-        pag->addCallSiteArgs(cs,pag->getPAGNode(pag->getValueNode(*itA)));
+        pag->addCallSiteArgs(cs,pag->getPAGNode(getValueNode(*itA)));
 
     if(!cs.getType()->isVoidTy())
-        pag->addCallSiteRets(cs,pag->getPAGNode(pag->getValueNode(cs.getInstruction())));
+        pag->addCallSiteRets(cs,pag->getPAGNode(getValueNode(cs.getInstruction())));
 
     const Function *callee = getCallee(cs);
 
@@ -589,7 +607,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
             pag->addCallEdge(srcAA, dstFA, cs.getInstruction());
         } else {
             // This is a int2ptr cast during parameter passing
-            pag->addFormalParamBlackHoleAddrEdge(dstFA, F);
+            pag->addFormalParamBlackHoleAddrEdge(dstFA, &*itF);
         }
     }
     //Any remaining actual args must be varargs.
@@ -618,10 +636,10 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
 
 
 /*!
- * Find the max possible offset of an object pointed to by (V).
+ * Find the base type and the max possible offset of an object pointed to by (V).
  */
-std::vector<LocationSet> PAGBuilder::getFlattenedFields(Value *V) {
-    return SymbolTableInfo::Symbolnfo()->getFlattenedFields(V);
+const Type *PAGBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<LocationSet> &fields) {
+    return SymbolTableInfo::Symbolnfo()->getBaseTypeAndFlattenedFields(V, fields);
 }
 
 /*!
@@ -637,8 +655,10 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
     std::vector<LocationSet> fields;
 
     //Get the max possible size of the copy, unless it was provided.
-    std::vector<LocationSet> srcFields = getFlattenedFields(S);
-    std::vector<LocationSet> dstFields = getFlattenedFields(D);
+    std::vector<LocationSet> srcFields;
+    std::vector<LocationSet> dstFields;
+    const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields);
+    const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields);
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
@@ -652,8 +672,8 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
 
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++) {
-        NodeID dField = pag->getGepValNode(D,fields[index]);
-        NodeID sField = pag->getGepValNode(S,fields[index]);
+        NodeID dField = pag->getGepValNode(D,fields[index],dtype,index);
+        NodeID sField = pag->getGepValNode(S,fields[index],stype,index);
         NodeID dummy = pag->addDummyValNode();
         pag->addLoadEdge(sField,dummy);
         pag->addStoreEdge(dummy,dField);
@@ -801,6 +821,30 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             case ExtAPI::EFT_NOOP:
             case ExtAPI::EFT_FREE:
                 break;
+            case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE: {
+                Value *vArg1 = cs.getArgument(1);
+                Value *vArg3 = cs.getArgument(3);
+
+                // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
+                // Now we calculate the offset from base to vArg3
+                NodeID vnArg3 = pag->getValueNode(vArg3);
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).getOffset();
+
+                // We get all flattened fields of base
+                std::vector<LocationSet> fields;
+                const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields);
+                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
+
+                // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
+                // Note that arg0 is aligned with "offset".
+                for (int i = offset + 1; i <= offset + 3; ++i) {
+                    NodeID vnD = pag->getGepValNode(vArg3, fields[i], type, i);
+                    NodeID vnS = getValueNode(vArg1);
+                    if(vnD && vnS)
+                        pag->addStoreEdge(vnS,vnD);
+                }
+                break;
+            }
             //default:
             case ExtAPI::EFT_OTHER: {
                 if(isa<PointerType>(inst->getType())) {
@@ -828,9 +872,34 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                         pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
                 }
             }
+            else {
+                /// handle indirect calls at pthread create APIs e.g., pthread_create(&t1, NULL, fp, ...);
+                ///const llvm::Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
+                ///if(!isa<Function>(fun))
+                ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
+            }
             /// If forkedFun does not pass to spawnee as function type but as void pointer
             /// remember to update inter-procedural callgraph/PAG/SVFG etc. when indirect call targets are resolved
             /// We don't connect the callgraph here, further investigation is need to hanle mod-ref during SVFG construction.
+        }
+
+        /// create inter-procedural PAG edges for hare_parallel_for calls
+        else if(isHareParForCall(inst)) {
+            if(const Function* taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)) ) {
+                /// The task function of hare_parallel_for has 3 args.
+                assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
+                const Value* actualParm = getTaskDataAtHareParForSite(inst);
+                const Argument* formalParm = &(taskFunc->getArgumentList().front());
+                /// Connect actual parameter to formal parameter of the start routine
+                if(isa<PointerType>(actualParm->getType()) && isa<PointerType>(formalParm->getType()) )
+                    pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
+            }
+            else {
+                /// handle indirect calls at hare_parallel_for (e.g., hare_parallel_for(..., fp, ...);
+                ///const llvm::Value* fun = ThreadAPI::getThreadAPI()->getForkedFun(inst);
+                ///if(!isa<Function>(fun))
+                ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
+            }
         }
 
         /// TODO: inter-procedural PAG edges for thread joins

@@ -43,7 +43,8 @@ void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
 {
     computeDiffPts(node->getId());
 
-    AndersenWave::handleCopyGep(node);
+    if (!getDiffPts(node->getId()).empty())
+        AndersenWave::handleCopyGep(node);
 }
 
 /*!
@@ -56,6 +57,7 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
     assert((isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
     PointsTo& srcDiffPts = getDiffPts(node);
+    processCast(edge);
     if(unionPts(dst,srcDiffPts)) {
         changed = true;
         pushIntoWorklist(dst);

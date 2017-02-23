@@ -234,8 +234,11 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             // TODO: after the node is set to field insensitive, handling invaraint gep edge may lose precision
             // because offset here are ignored, and it always return the base obj
             else if (const NormalGepCGEdge* normalGepEdge = dyn_cast<NormalGepCGEdge>(edge)) {
+                if (!matchType(edge->getSrcID(), ptd, normalGepEdge))
+                    continue;
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
+                addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
             }
             else {
                 assert(false && "new gep edge?");

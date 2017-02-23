@@ -652,10 +652,10 @@ public:
 
     /// Compute gep offset
     virtual bool computeGepOffset(const llvm::User *V, LocationSet& ls);
-    /// Get max offset
-    std::vector<LocationSet> getFlattenedFields(const llvm::Value *V);
+    /// Get the base type and max offset
+    const llvm::Type *getBaseTypeAndFlattenedFields(const llvm::Value *V, std::vector<LocationSet> &fields);
     /// Replace fields with flatten fields of T if the number of its fields is larger than msz.
-    Size_t getFields(std::vector<LocationSet>& fields, const llvm::Type* T, Size_t msz);
+    u32_t getFields(std::vector<LocationSet>& fields, const llvm::Type* T, u32_t msz);
     /// Collect type info
     void collectTypeInfo(const llvm::Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout

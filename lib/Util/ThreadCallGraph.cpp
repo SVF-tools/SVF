@@ -24,7 +24,7 @@
  * ThreadCallGraph.cpp
  *
  *  Created on: Jul 12, 2014
- *      Author: Yulei Sui, Peng Di
+ *      Author: Yulei Sui, Peng Di, Ding Ye
  */
 
 #include "Util/ThreadCallGraph.h"
@@ -52,7 +52,7 @@ void ThreadCallGraph::build(Module* m) {
         for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDFork(inst)) {
-                addForksite(cast<CallInst>(inst));
+                addForksite(inst);
                 const Function* forkee = dyn_cast<Function>(tdAPI->getForkedFun(inst));
                 if (forkee) {
                     addDirectForkEdge(inst);
@@ -62,6 +62,17 @@ void ThreadCallGraph::build(Module* m) {
                     addThreadForkEdgeSetMap(inst,NULL);
                 }
             }
+            else if (tdAPI->isHareParFor(inst)) {
+                addParForSite(inst);
+                const Function* taskFunc = dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
+                if (taskFunc) {
+                    addDirectParForEdge(inst);
+                }
+                // indirect call to the start routine function
+                else {
+                    addHareParForEdgeSetMap(inst,NULL);
+                }
+            }
         }
     }
     // record join sites
@@ -69,7 +80,7 @@ void ThreadCallGraph::build(Module* m) {
         for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDJoin(inst)) {
-                addJoinsite(cast<CallInst>(inst));
+                addJoinsite(inst);
             }
         }
     }
@@ -79,6 +90,7 @@ void ThreadCallGraph::build(Module* m) {
  * Update call graph using pointer analysis results
  * (1) resolve function pointers for non-fork calls
  * (2) resolve function pointers for fork sites
+ * (3) resolve function pointers for parallel_for sites
  */
 void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
 
@@ -95,8 +107,27 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
         }
     }
 
+    // Fork sites
     for (CallSiteSet::iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it) {
-        const Value* forkedval=tdAPI->getForkedFun(*it);
+        const Value* forkedval = tdAPI->getForkedFun(*it);
+        if(dyn_cast<Function>(forkedval)==NULL) {
+            PAG* pag = pta->getPAG();
+            const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));
+            for (PointsTo::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++) {
+                if(ObjPN* objPN = dyn_cast<ObjPN>(pag->getPAGNode(*ii))) {
+                    const MemObj* obj = pag->getObject(objPN);
+                    if(obj->isFunction()) {
+                        const Function* callee = cast<Function>(obj->getRefVal());
+                        this->addIndirectForkEdge(*it, callee);
+                    }
+                }
+            }
+        }
+    }
+
+    // parallel_for sites
+    for (CallSiteSet::iterator it = parForSitesBegin(), eit = parForSitesEnd(); it != eit; ++it) {
+        const Value* forkedval = tdAPI->getTaskFuncAtHareParForSite(*it);
         if(dyn_cast<Function>(forkedval)==NULL) {
             PAG* pag = pta->getPAG();
             const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));
@@ -191,7 +222,7 @@ void ThreadCallGraph::addDirectJoinEdge(const llvm::Instruction* call,const Call
 
     for (CallSiteSet::const_iterator it = forkset.begin(), eit = forkset.end(); it != eit; ++it) {
 
-        const CallInst* forksite = *it;
+        const Instruction* forksite = *it;
         const Function* threadRoutineFun = dyn_cast<Function>(tdAPI->getForkedFun(forksite));
         assert(threadRoutineFun && "thread routine function does not exist");
         PTACallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
@@ -207,5 +238,50 @@ void ThreadCallGraph::addDirectJoinEdge(const llvm::Instruction* call,const Call
 
             addThreadJoinEdgeSetMap(call, edge);
         }
+    }
+}
+
+/*!
+ * Add a direct ParFor edges
+ */
+void ThreadCallGraph::addDirectParForEdge(const llvm::Instruction* call) {
+
+    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+    const Function* taskFunc = dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(call));
+    assert(taskFunc && "callee does not exist");
+    PTACallGraphNode* callee = getCallGraphNode(taskFunc);
+
+    if (PTACallGraphEdge* callEdge = hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge)) {
+        callEdge->addDirectCallSite(call);
+        addThreadForkEdgeSetMap(call, cast<ThreadForkEdge>(callEdge));
+    } else {
+        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+
+        HareParForEdge* edge = new HareParForEdge(caller, callee);
+        edge->addDirectCallSite(call);
+
+        addEdge(edge);
+        addHareParForEdgeSetMap(call, edge);
+    }
+}
+
+/*!
+ * Add an indirect ParFor edge to update call graph
+ */
+void ThreadCallGraph::addIndirectParForEdge(const llvm::Instruction* call, const llvm::Function* calleefun) {
+    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+    PTACallGraphNode* callee = getCallGraphNode(calleefun);
+
+    if (PTACallGraphEdge* callEdge = hasGraphEdge(caller, callee, PTACallGraphEdge::HareParForEdge)) {
+        callEdge->addInDirectCallSite(call);
+        addHareParForEdgeSetMap(call, cast<HareParForEdge>(callEdge));
+    } else {
+        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+
+        HareParForEdge* edge = new HareParForEdge(caller, callee);
+        edge->addInDirectCallSite(call);
+
+        addEdge(edge);
+        addHareParForEdgeSetMap(call, edge);
     }
 }

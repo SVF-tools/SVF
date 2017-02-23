@@ -65,6 +65,12 @@ static cl::bits<WPAPass::AliasCheckRule> AliasRule(cl::desc("Select alias check 
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias"),
             clEnumValEnd));
 
+cl::opt<bool> StoreAnder("store-ander", cl::init(false),
+                              cl::desc("Store Andersen's analysis result to a file"));
+
+cl::opt<bool> LoadAnder("load-ander", cl::init(false),
+                              cl::desc("Load Andersen's analysis result from a file"));
+
 /*!
  * Destructor
  */

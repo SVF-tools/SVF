@@ -24,7 +24,7 @@
  * ThreadAPI.h
  *
  *  Created on: Jan 21, 2014
- *      Author: Yulei Sui
+ *      Author: Yulei Sui, dye
  */
 
 #ifndef THREADAPI_H_
@@ -57,7 +57,10 @@ public:
         TD_MUTEX_INI,	     /// initial a mutex variable
         TD_MUTEX_DESTROY,   /// initial a mutex variable
         TD_CONDVAR_INI,	   /// initial a mutex variable
-        TD_CONDVAR_DESTROY /// initial a mutex variable
+        TD_CONDVAR_DESTROY, /// initial a mutex variable
+        TD_BAR_INIT,        /// Barrier init
+        TD_BAR_WAIT,         /// Barrier wait
+        HARE_PAR_FOR
     };
 
     typedef llvm::StringMap<TD_TYPE> TDAPIMap;
@@ -108,13 +111,22 @@ public:
     inline bool isTDFork(const llvm::Instruction *inst) const {
         return getType(getCallee(inst)) == TD_FORK;
     }
-
     inline bool isTDFork(llvm::CallSite cs) const {
         return isTDFork(cs.getInstruction());
     }
     //@}
 
-    /// Return arguments/attributes of pthread_create
+    /// Return true if this call proceeds a hare_parallel_for
+    //@{
+    inline bool isHareParFor(const llvm::Instruction *inst) const {
+        return getType(getCallee(inst)) == HARE_PAR_FOR;
+    }
+    inline bool isHareParFor(llvm::CallSite cs) const {
+        return isTDFork(cs.getInstruction());
+    }
+    //@}
+
+    /// Return arguments/attributes of pthread_create / hare_parallel_for
     //@{
     /// Return the first argument of the call,
     /// Note that, it is the pthread_t pointer
@@ -150,13 +162,35 @@ public:
     }
     //@}
 
+    /// Get the task function (i.e., the 5th parameter) of the hare_parallel_for call
+    //@{
+    inline const llvm::Value* getTaskFuncAtHareParForSite(const llvm::Instruction *inst) const {
+        assert(isHareParFor(inst) && "not a hare_parallel_for function!");
+        llvm::CallSite cs = getLLVMCallSite(inst);
+        return cs.getArgument(4)->stripPointerCasts();
+    }
+    inline const llvm::Value* getTaskFuncAtHareParForSite(llvm::CallSite cs) const {
+        return getTaskFuncAtHareParForSite(cs.getInstruction());
+    }
+    //@}
+
+    /// Get the task data (i.e., the 6th parameter) of the hare_parallel_for call
+    //@{
+    inline const llvm::Value* getTaskDataAtHareParForSite(const llvm::Instruction *inst) const {
+        assert(isHareParFor(inst) && "not a hare_parallel_for function!");
+        llvm::CallSite cs = getLLVMCallSite(inst);
+        return cs.getArgument(5);
+    }
+    inline const llvm::Value* getTaskDataAtHareParForSite(llvm::CallSite cs) const {
+        return getTaskDataAtHareParForSite(cs.getInstruction());
+    }
+    //@}
 
     /// Return true if this call wait for a worker thread
     //@{
     inline bool isTDJoin(const llvm::Instruction *inst) const {
         return getType(getCallee(inst)) == TD_JOIN;
     }
-
     inline bool isTDJoin(llvm::CallSite cs) const {
         return isTDJoin(cs.getInstruction());
     }
@@ -236,6 +270,17 @@ public:
     }
     inline const llvm::Value* getLockVal(llvm::CallSite cs) const {
         return getLockVal(cs.getInstruction());
+    }
+    //@}
+
+    /// Return true if this call waits for a barrier
+    //@{
+    inline bool isTDBarWait(const llvm::Instruction *inst) const {
+        return getType(getCallee(inst)) == TD_BAR_WAIT;
+    }
+
+    inline bool isTDBarWait(llvm::CallSite cs) const {
+        return getType(getCallee(cs)) == TD_BAR_WAIT;
     }
     //@}
 

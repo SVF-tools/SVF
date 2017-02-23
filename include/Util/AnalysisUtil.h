@@ -24,7 +24,7 @@
  * AnalysisUtil.h
  *
  *  Created on: Apr 11, 2013
- *      Author: Yulei Sui
+ *      Author: Yulei Sui, dye
  */
 
 #ifndef AnalysisUtil_H_
@@ -199,6 +199,16 @@ inline bool isThreadForkCall(const llvm::Instruction *inst) {
 }
 //@}
 
+/// Return true if this is a hare_parallel_for call
+///@{
+inline bool isHareParForCall(const llvm::CallSite cs) {
+    return ThreadAPI::getThreadAPI()->isHareParFor(cs);
+}
+inline bool isHareParForCall(const llvm::Instruction *inst) {
+    return ThreadAPI::getThreadAPI()->isHareParFor(inst);
+}
+//@}
+
 /// Return true if this is a thread join call
 ///@{
 inline bool isThreadJoinCall(const llvm::CallSite cs) {
@@ -239,6 +249,16 @@ inline bool isLockReleaseCall(const llvm::Instruction *inst) {
 }
 //@}
 
+/// Return true if this is a barrier wait call
+//@{
+inline bool isBarrierWaitCall(const llvm::CallSite cs) {
+    return ThreadAPI::getThreadAPI()->isTDBarWait(cs);
+}
+inline bool isBarrierWaitCall(const llvm::Instruction *inst) {
+    return ThreadAPI::getThreadAPI()->isTDBarWait(inst);
+}
+//@}
+
 /// Return thread fork function
 //@{
 inline const llvm::Value* getForkedFun(const llvm::CallSite cs) {
@@ -256,6 +276,26 @@ inline const llvm::Value* getActualParmAtForkSite(const llvm::CallSite cs) {
 }
 inline const llvm::Value* getActualParmAtForkSite(const llvm::Instruction *inst) {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(inst);
+}
+//@}
+
+/// Return the task function of the parallel_for rountine
+//@{
+inline const llvm::Value* getTaskFuncAtHareParForSite(const llvm::CallSite cs) {
+    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
+}
+inline const llvm::Value* getTaskFuncAtHareParForSite(const llvm::Instruction *inst) {
+    return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(inst);
+}
+//@}
+
+/// Return the task data argument of the parallel_for rountine
+//@{
+inline const llvm::Value* getTaskDataAtHareParForSite(const llvm::CallSite cs) {
+    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(cs);
+}
+inline const llvm::Value* getTaskDataAtHareParForSite(const llvm::Instruction *inst) {
+    return ThreadAPI::getThreadAPI()->getTaskDataAtHareParForSite(inst);
 }
 //@}
 
@@ -379,6 +419,14 @@ inline const llvm::ConstantExpr *isInt2PtrConstantExpr(const llvm::Value *val) {
 inline const llvm::ConstantExpr *isPtr2IntConstantExpr(const llvm::Value *val) {
     if(const llvm::ConstantExpr* constExpr = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
         if(constExpr->getOpcode() == llvm::Instruction::PtrToInt)
+            return constExpr;
+    }
+    return NULL;
+}
+
+inline const llvm::ConstantExpr *isCastConstantExpr(const llvm::Value *val) {
+    if(const llvm::ConstantExpr* constExpr = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == llvm::Instruction::BitCast)
             return constExpr;
     }
     return NULL;
