@@ -10,4 +10,6 @@ Name: Sen Ye
 Email: yes@cse.unsw.edu.au
 Description: memory model, flow-sensitive pointer analysis
 
-
+Name: Xiaokang Fan
+Email: fanx@cse.unsw.edu.au
+Description: add support to analyze C++
