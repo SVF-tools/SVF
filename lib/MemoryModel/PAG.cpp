@@ -36,7 +36,7 @@
 using namespace llvm;
 using namespace analysisUtil;
 
-static cl::opt<bool> HANDLEVGEP("vgep", cl::init(false),
+static cl::opt<bool> HANDLEVGEP("vgep", cl::init(true),
                                 cl::desc("Hanle variant gep/field edge"));
 
 static cl::opt<bool> HANDBLACKHOLE("blk", cl::init(false),
@@ -188,6 +188,8 @@ bool PAG::addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls) {
  * Find the base node id of src and connect base node to dst node
  */
 bool PAG::addVariantGepEdge(NodeID src, NodeID dst) {
+    // Simply handling  Variant GEP as copy may cause unsoundness.
+    // For a pointer arithmetic "p = q + i", if q points to an object o, then p only points to o, but not any of o's fields.
     if (HANDLEVGEP == false)
         return addCopyEdge(src,dst);
 
