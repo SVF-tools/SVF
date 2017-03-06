@@ -1,6 +1,6 @@
 ## News
 
-* <b>Multiple full PhD scholarship available (plus tuition fee waiver). We are looking for students to continue to work on SVF in the area of program analysis for software security. Please contact me and/or Prof.Jingling if you are interested (email: ysui@cse.unsw.edu.au and jingling@cse.unsw.edu.au).</b>
+* <b>Multiple full PhD scholarship available (plus tuition fee waiver). We are looking for students to continue to work on SVF in the area of program analysis for software security. Please contact Dr. Yulei Sui if you are interested (email: ysui@cse.unsw.edu.au).</b>
 * <b>SVF now supports analysis for C++ programs.</b>
 
 <br />
