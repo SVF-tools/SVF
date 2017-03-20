@@ -43,7 +43,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(SVFGK k): totalSVFGNode(0), kind(k),mssa(NULL) {
+SVFG::SVFG(SVFGK k): totalSVFGNode(0), kind(k),mssa(NULL),pta(NULL) {
     stat = new SVFGStat(this);
 }
 
@@ -54,6 +54,7 @@ void SVFG::destroy() {
     delete stat;
     stat = NULL;
     mssa = NULL;
+    pta = NULL;
 }
 
 /*!
@@ -67,6 +68,7 @@ void SVFG::destroy() {
  */
 void SVFG::buildSVFG(MemSSA* m) {
     mssa = m;
+    pta = m->getPTA();
     stat->startClk();
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Top Level Node\n"));
 

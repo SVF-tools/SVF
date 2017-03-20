@@ -91,7 +91,7 @@ public:
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         svfg =  memSSA.buildSVFG(ander);
         setGraph(memSSA.getSVFG());
-        AndersenWaveDiff::releaseAndersenWaveDiff();
+        //AndersenWaveDiff::releaseAndersenWaveDiff();
         /// allocate control-flow graph branch conditions
         getPathAllocator()->allocate(module);
 

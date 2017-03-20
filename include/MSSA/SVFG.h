@@ -106,6 +106,7 @@ protected:
     SVFGStat * stat;
     SVFGK kind;
     MemSSA* mssa;
+    PointerAnalysis* pta;
 
     /// Clean up memory
     void destroy();
@@ -174,10 +175,10 @@ public:
     /// Get callsite given a callsiteID
     //@{
     inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
-        return mssa->getPTA()->getPTACallGraph()->getCallSiteID(cs, func);
+        return pta->getPTACallGraph()->getCallSiteID(cs, func);
     }
     inline llvm::CallSite getCallSite(CallSiteID id) const {
-        return mssa->getPTA()->getPTACallGraph()->getCallSite(id);
+        return pta->getPTACallGraph()->getCallSite(id);
     }
     //@}
 
@@ -440,11 +441,11 @@ protected:
     void connectFromGlobalToProgEntry();
 
     inline bool isPhiCopyEdge(const CopyPE* copy) const {
-        return mssa->getPAG()->isPhiNode(copy->getDstNode());
+        return pta->getPAG()->isPhiNode(copy->getDstNode());
     }
 
     inline bool isPhiCopyNode(const PAGNode* node) const {
-        return mssa->getPAG()->isPhiNode(node);
+        return pta->getPAG()->isPhiNode(node);
     }
 
     /// Add SVFG node

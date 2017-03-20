@@ -511,7 +511,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
 
     //ignore void and non-ptr return statements
     if (inst.getNumOperands()
-            && isa<PointerType>(inst.getOperand(0)->getType())) {
+            && (isa<PointerType>(inst.getOperand(0)->getType()))) {
 
         DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
@@ -538,6 +538,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
  * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
  */
 void PAGBuilder::visitExtractValueInst(llvm::ExtractValueInst &inst) {
+
     if (isa<PointerType>(inst.getType())) {
         NodeID dst = getValueNode(&inst);
         pag->addBlackHoleAddrEdge(dst);
@@ -580,8 +581,9 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
             // This is a int2ptr cast during parameter passing
             pag->addBlackHoleAddrEdge(dstrec);
         }
+
     } else {
-        DBOUT(DPAGBuild, outs() << "not a pointer ignored\n");
+        DBOUT(DPAGBuild, outs() << "not a pointer, ignored\n");
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
@@ -831,7 +833,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).getOffset();
 
                 // We get all flattened fields of base
-                std::vector<LocationSet> fields;
+                vector<LocationSet> fields;
                 const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields);
                 assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
@@ -840,6 +842,28 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 for (int i = offset + 1; i <= offset + 3; ++i) {
                     NodeID vnD = pag->getGepValNode(vArg3, fields[i], type, i);
                     NodeID vnS = getValueNode(vArg1);
+                    if(vnD && vnS)
+                        pag->addStoreEdge(vnS,vnD);
+                }
+                break;
+            }
+            case ExtAPI::EFT_STD_RB_TREE_INCREMENT: {
+                NodeID vnD = pag->getValueNode(inst);
+
+                Value *vArg = cs.getArgument(0);
+                NodeID vnArg = pag->getValueNode(vArg);
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).getOffset();
+
+                // We get all fields
+                const Type *type = vArg->getType();
+                vector<LocationSet> fields;
+                SymbolTableInfo::Symbolnfo()->getFields(fields, type, 0);
+                assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
+
+                // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
+                // Note that arg0 is aligned with "offset".
+                for (int i = offset + 1; i <= offset + 3; ++i) {
+                    NodeID vnS = pag->getGepValNode(vArg, fields[i], type, i);
                     if(vnD && vnS)
                         pag->addStoreEdge(vnS,vnD);
                 }

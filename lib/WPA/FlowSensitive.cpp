@@ -46,7 +46,7 @@ void FlowSensitive::initialize(llvm::Module& module) {
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
     svfg = memSSA.buildSVFG(ander);
     setGraph(svfg);
-    AndersenWaveDiff::releaseAndersenWaveDiff();
+    //AndersenWaveDiff::releaseAndersenWaveDiff();
 
     stat = new FlowSensitiveStat(this);
 }

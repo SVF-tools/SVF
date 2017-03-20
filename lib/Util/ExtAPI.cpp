@@ -265,7 +265,7 @@ static const ei_pair ei_pairs[]= {
     {"lchown", ExtAPI::EFT_NOOP},
     {"link", ExtAPI::EFT_NOOP},
     {"llvm.memset", ExtAPI::EFT_NOOP},
-// {"llvm.memset", ExtAPI::EFT_NOOP},
+    {"llvm.dbg", ExtAPI::EFT_NOOP},
     {"llvm.stackrestore", ExtAPI::EFT_NOOP},
     {"llvm.va_copy", ExtAPI::EFT_NOOP},
     {"llvm.va_end", ExtAPI::EFT_NOOP},
@@ -765,6 +765,10 @@ static const ei_pair ei_pairs[]= {
     // C++ STL function
     // std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
     {"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
+
+    // std::_Rb_tree_increment   and   std::_Rb_tree_decrement
+    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 
     //This must be the last entry.
     {0, ExtAPI::EFT_NOOP}
