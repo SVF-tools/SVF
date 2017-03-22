@@ -538,9 +538,12 @@ public:
             bb = inst->getParent();
         }
         else {
-            assert(llvm::isa<llvm::Argument>(val)&& "Phi svf node is not an instruction or an formal parameter??");
-            const llvm::Argument* arg = llvm::cast<llvm::Argument>(val);
-            bb = &arg->getParent()->getEntryBlock();
+            assert((llvm::isa<llvm::Argument>(val) || analysisUtil::isSelectConstantExpr(val))
+                   && "Phi svf node is not an instruction, a select constantExpr or an formal parameter??");
+            if(const llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(val))
+                bb = &arg->getParent()->getEntryBlock();
+            else
+                bb = NULL;	/// bb is null when we have a select constant expression
         }
     }
 

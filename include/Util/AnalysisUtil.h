@@ -431,6 +431,14 @@ inline const llvm::ConstantExpr *isCastConstantExpr(const llvm::Value *val) {
     }
     return NULL;
 }
+
+inline const llvm::ConstantExpr *isSelectConstantExpr(const llvm::Value *val) {
+    if(const llvm::ConstantExpr* constExpr = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == llvm::Instruction::Select)
+            return constExpr;
+    }
+    return NULL;
+}
 //@}
 
 /// Get basic block successor position

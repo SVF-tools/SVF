@@ -632,6 +632,7 @@ void SymbolTableInfo::buildMemModel(llvm::Module& module) {
     for (Module::alias_iterator I = module.alias_begin(), E =
                 module.alias_end(); I != E; I++) {
         collectSym(&*I);
+        collectSym((*I).getAliasee());
     }
 
     // Add symbols for all of the functions and the instructions in them.
@@ -856,8 +857,7 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
  */
 void SymbolTableInfo::handleCE(const Value *val) {
     if (const Constant* ref = dyn_cast<Constant>(val)) {
-        const ConstantExpr* ce = isGepConstantExpr(ref) == NULL ? isCastConstantExpr(ref) : isGepConstantExpr(ref);
-        if (ce != NULL) {
+        if (const ConstantExpr* ce = isGepConstantExpr(ref)) {
             DBOUT(DMemModelCE,
                   outs() << "handle constant expression " << *ref << "\n");
             collectVal(ce);
@@ -865,6 +865,24 @@ void SymbolTableInfo::handleCE(const Value *val) {
             // handle the recursive constant express case
             // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
             handleCE(ce->getOperand(0));
+        } else if (const ConstantExpr* ce = isCastConstantExpr(ref)) {
+            DBOUT(DMemModelCE,
+                  outs() << "handle constant expression " << *ref << "\n");
+            collectVal(ce);
+            collectVal(ce->getOperand(0));
+            // handle the recursive constant express case
+            // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
+            handleCE(ce->getOperand(0));
+        } else if (const ConstantExpr* ce = isSelectConstantExpr(ref)) {
+            DBOUT(DMemModelCE,
+                  outs() << "handle constant expression " << *ref << "\n");
+            collectVal(ce);
+            collectVal(ce->getOperand(0));
+            collectVal(ce->getOperand(1));
+            // handle the recursive constant express case
+            // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
+            handleCE(ce->getOperand(0));
+            handleCE(ce->getOperand(1));
         }
         // remember to handle the constant bit cast opnd after stripping casts off
         else {

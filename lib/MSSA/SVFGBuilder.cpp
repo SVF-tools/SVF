@@ -112,7 +112,7 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
 
     createSVFG(&mssa, graph);
 
-    if(SVFGWithIndirectCall)
+    if(SVFGWithIndirectCall || SVFGWithIndCall)
         updateCallGraph(mssa.getPTA());
 
     releaseMemory(graph);

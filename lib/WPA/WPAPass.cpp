@@ -66,10 +66,13 @@ static cl::bits<WPAPass::AliasCheckRule> AliasRule(cl::desc("Select alias check 
             clEnumValEnd));
 
 cl::opt<bool> StoreAnder("store-ander", cl::init(false),
-                              cl::desc("Store Andersen's analysis result to a file"));
+                         cl::desc("Store Andersen's analysis result to a file"));
 
 cl::opt<bool> LoadAnder("load-ander", cl::init(false),
-                              cl::desc("Load Andersen's analysis result from a file"));
+                        cl::desc("Load Andersen's analysis result from a file"));
+
+cl::opt<bool> anderSVFG("svfg", cl::init(false),
+                        cl::desc("Generate SVFG after Andersen's Analysis"));
 
 /*!
  * Destructor
@@ -117,8 +120,15 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
         _pta = new AndersenWave();
         break;
     case PointerAnalysis::AndersenWaveDiff_WPA:
+    {
         _pta = new AndersenWaveDiff();
+        if (anderSVFG) {
+            SVFGBuilder memSSA(true);
+            SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);
+            svfg->dump("ander_svfg");
+        }
         break;
+    }
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;

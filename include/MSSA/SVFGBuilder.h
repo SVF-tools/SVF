@@ -60,7 +60,7 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    SVFGBuilder(): svfg(NULL) {}
+    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(NULL), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
     virtual ~SVFGBuilder() {}
@@ -104,6 +104,8 @@ protected:
     /// SVFG Edges connected at indirect call/ret sites
     SVFGEdgeSet vfEdgesAtIndCallSite;
     SVFG* svfg;
+    /// SVFG with precomputed indirect call edges
+    bool SVFGWithIndCall;
 };
 
 #endif /* ANDERSENMEMSSA_H_ */

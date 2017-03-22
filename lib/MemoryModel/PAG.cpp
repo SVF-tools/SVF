@@ -354,7 +354,8 @@ bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const l
  * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
  * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
  *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
- * ConstantPointerNull  CopyEdge  (3-->2 PAG::addNullPtrNode)
+ * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr PAG::addNullPtrNode)
+ *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr PAG::addNullPtrNode)
  * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
  *                      GepEdge   (PAGBuilder::getGlobalVarField)
  * Function             AddrEdge  (PAGBuilder::visitGlobal)
@@ -374,7 +375,8 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
     } else if (isa<ConstantPointerNull>(curVal)) {
-        assert(edge->getSrcID() == 3 && edge->getDstID() == 2);
+        assert((edge->getSrcID() == NullPtr && edge->getDstID() == BlkPtr) ||
+               (edge->getSrcID() == BlackHole && edge->getDstID() == BlkPtr));
         globPAGEdgesSet.insert(edge);
     } else if (isa<GlobalVariable>(curVal) ||
                isa<Function>(curVal) ||
