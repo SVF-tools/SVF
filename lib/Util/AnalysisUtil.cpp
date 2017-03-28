@@ -318,9 +318,11 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
                 DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
                 for (DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
 		  DIGlobalVariable * DGV = GV->getVariable();
-		  const GlobalVariable *CDGV = dyn_cast<GlobalVariable>(DGV);
-		  if ( gvar == CDGV )
+
+		  /*
+		  if ( gvar == DGV )
                         rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+		  */
                 }
             }
         }

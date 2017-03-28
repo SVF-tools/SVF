@@ -174,10 +174,11 @@ public:
         llvm::Function* fun = const_cast<llvm::Function*>(f);
         FunToPostDTMap::iterator it = funToPDTMap.find(fun);
         if(it==funToPDTMap.end()) {
-            llvm::PostDominatorTree* postDT = new llvm::PostDominatorTree();
+            llvm::PostDominatorTreeWrapperPass* postDT = new llvm::PostDominatorTreeWrapperPass();
             postDT->runOnFunction(*fun);
-            funToPDTMap[fun] = postDT;
-            return postDT;
+	    llvm::PostDominatorTree * PDT = &(postDT->getPostDomTree());
+            funToPDTMap[fun] = PDT;
+            return PDT;
         }
         else
             return it->second;
@@ -225,7 +226,7 @@ public:
 
     virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const {
         AU.setPreservesAll();
-        AU.addRequired<llvm::DominanceFrontier>();
+        // AU.addRequired<llvm::DominanceFrontier>();
     }
 
 //	virtual bool runOnFunction(llvm::Function &m) {
