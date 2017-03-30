@@ -603,7 +603,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isCallSite(&inst) && isInstrinsicDbgInst(&inst)==false) {
+                if (isCallSite(&inst) && isExtCall(&inst)==false) {
                     CallSite cs = analysisUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {
@@ -615,7 +615,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                         }
                     }
 
-                    Out << inst << " CallSite: " << *cs.getInstruction() << "\n";
+                    Out << inst << "\n";
 
                     if(hasCHI(cs)) {
                         for (CHISet::iterator cit = getCHISet(cs).begin(), ecit = getCHISet(cs).end();

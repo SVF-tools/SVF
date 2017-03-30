@@ -607,6 +607,20 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
 }
 
+/*!
+ * Whether to handle variant gep/field edge
+ */
+void PAG::handleVGep(bool b) {
+    HANDLEVGEP = b;
+}
+
+/*!
+ * Whether to handle blackhole edge
+ */
+void PAG::handleBlackHole(bool b) {
+    HANDBLACKHOLE = b;
+}
+
 namespace llvm {
 /*!
  * Write value flow graph into dot file for debugging

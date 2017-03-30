@@ -771,6 +771,35 @@ static const ei_pair ei_pairs[]= {
 //    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 //    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 
+
+    /// string constructor: string (const char *s)
+    {"_ZNSsC1EPKcRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string constructor: string (const char *s, size_t n)
+    {"_ZNSsC1EPKcmRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string operator=: operator= (const char *s)
+    {"_ZNSsaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string constructor: string (const string &str)
+    {"_ZNSsC1ERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// string constructor: string (const string &str, size_t pos, size_t len)
+    {"_ZNSsC1ERKSsmm", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// string operator=: operator= (const string &str)
+    {"_ZNSsaSERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// std::operator<<: operator<< (const string &str)
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E", ExtAPI::CPP_EFT_A1R}, // c++98
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE", ExtAPI::CPP_EFT_A1R}, // c++11
+
     //This must be the last entry.
     {0, ExtAPI::EFT_NOOP}
 };

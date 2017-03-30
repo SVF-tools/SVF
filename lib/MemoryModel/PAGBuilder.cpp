@@ -895,6 +895,37 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 }
                 break;
             }
+            case ExtAPI::CPP_EFT_A0R_A1: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnD = pag->getValueNode(cs.getArgument(0));
+                    NodeID vnS = pag->getValueNode(cs.getArgument(1));
+                    pag->addStoreEdge(vnS, vnD);
+                }
+                break;
+            }
+            case ExtAPI::CPP_EFT_A0R_A1R: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnD = getValueNode(cs.getArgument(0));
+                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    assert(vnD && vnS && "dst or src not exist?");
+                    NodeID dummy = pag->addDummyValNode();
+                    pag->addLoadEdge(vnS,dummy);
+                    pag->addStoreEdge(dummy,vnD);
+                }
+                break;
+            }
+            case ExtAPI::CPP_EFT_A1R: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    assert(vnS && "src not exist?");
+                    NodeID dummy = pag->addDummyValNode();
+                    pag->addLoadEdge(vnS,dummy);
+                }
+                break;
+            }
             //default:
             case ExtAPI::EFT_OTHER: {
                 if(isa<PointerType>(inst->getType())) {

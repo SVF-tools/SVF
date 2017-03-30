@@ -73,6 +73,10 @@ public:
         EFT_A11R_NEW,
         EFT_STD_RB_TREE_INSERT_AND_REBALANCE,  // Some complex effects
         EFT_STD_RB_TREE_INCREMENT,  // Some complex effects
+
+        CPP_EFT_A0R_A1,   //stores arg1 into *arg0
+        CPP_EFT_A0R_A1R,  //copies *arg1 into *arg0
+        CPP_EFT_A1R,      //load arg1
         EFT_OTHER         //not found in the list
     };
 private:

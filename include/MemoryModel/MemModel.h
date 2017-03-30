@@ -405,10 +405,13 @@ private:
     /// Clean up memory
     void destroy();
 
+    /// Whether to model constants
+    bool modelConstants;
+
 protected:
     /// Constructor
     SymbolTableInfo() :
-        maxStruct(NULL), maxStSize(0) {
+        modelConstants(false), maxStruct(NULL), maxStSize(0) {
     }
 
 public:
@@ -431,6 +434,16 @@ public:
     }
     virtual ~SymbolTableInfo() {
         destroy();
+    }
+    //@}
+    
+    /// Set / Get modelConstants
+    //@{
+    void setModelConstants(bool _modelConstants) {
+        modelConstants = _modelConstants;
+    }
+    bool getModelConstants() const {
+        return modelConstants;
     }
     //@}
 

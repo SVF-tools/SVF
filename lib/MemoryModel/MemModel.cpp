@@ -56,6 +56,9 @@ static cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  cl::init(10000),
 static cl::opt<bool> LocMemModel("locMM", cl::init(false),
                                  cl::desc("Bytes/bits modeling of memory locations"));
 
+static cl::opt<bool> modelConsts("modelConsts", cl::init(false),
+                                 cl::desc("Modeling individual constant objects"));
+
 /*!
  * Get the symbol table instance
  */
@@ -65,6 +68,7 @@ SymbolTableInfo* SymbolTableInfo::Symbolnfo() {
             symlnfo = new LocSymTableInfo();
         else
             symlnfo = new SymbolTableInfo();
+        symlnfo->setModelConstants(modelConsts);
     }
     return symlnfo;
 }
@@ -776,7 +780,7 @@ void SymbolTableInfo::collectObj(const llvm::Value *val) {
     if (iter == objSymMap.end()) {
         // if the object pointed by the pointer is a constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if(isConstantObjSym(val)) {
+        if(isConstantObjSym(val) && !getModelConstants()) {
             objSymMap.insert(std::make_pair(val, constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
