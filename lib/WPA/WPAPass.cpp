@@ -120,15 +120,8 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
         _pta = new AndersenWave();
         break;
     case PointerAnalysis::AndersenWaveDiff_WPA:
-    {
         _pta = new AndersenWaveDiff();
-        if (anderSVFG) {
-            SVFGBuilder memSSA(true);
-            SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);
-            svfg->dump("ander_svfg");
-        }
         break;
-    }
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;
@@ -139,6 +132,11 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
 
     ptaVector.push_back(_pta);
     _pta->analyze(module);
+    if (anderSVFG) {
+        SVFGBuilder memSSA(true);
+        SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);
+        svfg->dump("ander_svfg");
+    }
 }
 
 
