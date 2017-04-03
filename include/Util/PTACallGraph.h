@@ -371,7 +371,7 @@ struct GraphTraits<Inverse<PTACallGraphNode *> > : public GraphTraits<Inverse<Ge
 };
 
 template<> struct GraphTraits<PTACallGraph*> : public GraphTraits<GenericGraph<PTACallGraphNode,PTACallGraphEdge>* > {
-  typedef PTACallGraph *NodeRef;
+  typedef PTACallGraphNode *NodeRef;
 };
 
 
