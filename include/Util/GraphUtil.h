@@ -33,7 +33,7 @@
 #include <llvm/Support/Debug.h> 		// for debug
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
 #include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/CommandLine.h> // for tool output file
+#include <llvm/Support/CommandLine.h>           // for tool output file
 #include <llvm/Support/GraphWriter.h>		// for graph write
 #include <llvm/Support/FileSystem.h>		// for file open flag
 
@@ -82,7 +82,8 @@ public:
                            const GraphType &GT) {
         ///Define the GTraits and node iterator for printing
         typedef GraphTraits<GraphType> GTraits;
-        typedef typename GTraits::NodeType NodeType;
+
+        typedef typename GTraits::NodeRef NodeRef;
         typedef typename GTraits::nodes_iterator node_iterator;
         typedef typename GTraits::ChildIteratorType child_iterator;
 
@@ -91,7 +92,7 @@ public:
         node_iterator I = GTraits::nodes_begin(GT);
         node_iterator E = GTraits::nodes_end(GT);
         for (; I != E; ++I) {
-            NodeType *Node = *I;
+            NodeRef *Node = *I;
             O << "node :" << Node << "'\n";
             child_iterator EI = GTraits::child_begin(Node);
             child_iterator EE = GTraits::child_end(Node);
