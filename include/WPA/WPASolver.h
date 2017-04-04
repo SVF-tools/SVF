@@ -122,11 +122,11 @@ protected:
 
     /// Propagation for the solving, to be implemented in the child class
     virtual void propagate(GNODE* v) {
-        child_iterator EI = GTraits::direct_child_begin(v);
-        child_iterator EE = GTraits::direct_child_end(v);
+        child_iterator EI = GTraits::direct_child_begin(*v);
+        child_iterator EE = GTraits::direct_child_end(*v);
         for (; EI != EE; ++EI) {
             if (propFromSrcToDst(*(EI.getCurrent())))
-                pushIntoWorklist(Node_Index(*EI));
+                pushIntoWorklist(Node_Index(EI));
         }
     }
     /// Propagate information from source to destination node, to be implemented in the child class
@@ -163,7 +163,7 @@ protected:
 
     /// Get node ID
     inline NodeID Node_Index(GNODE* node) {
-        return GTraits::getNodeID(node);
+        return GTraits::getNodeID(*node);
     }
 
 private:
