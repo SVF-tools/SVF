@@ -207,11 +207,11 @@ private:
         return _NodeSCCAuxInfo[n].inSCC();
     }
 
-    inline GNODE* Node(NodeID id) const {
+    inline GNODE Node(NodeID id) const {
         return GTraits::getNode(_graph, id);
     }
 
-    inline NodeID Node_Index(GNODE* node) const {
+    inline NodeID Node_Index(GNODE node) const {
         return GTraits::getNodeID(node);
     }
 

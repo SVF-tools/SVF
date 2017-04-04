@@ -39,7 +39,6 @@ class AndersenWaveDiff;
  * Flow sensitive whole program pointer analysis
  */
 typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
-
 class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl {
     friend class FlowSensitiveStat;
 private:
