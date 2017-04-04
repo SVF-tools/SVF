@@ -43,7 +43,7 @@ public:
 
     bool runOnDT(llvm::DominatorTree& dt) {
         releaseMemory();
-        getBase().analyze(dt);
+        analyze(dt);
         return false;
     }
 };

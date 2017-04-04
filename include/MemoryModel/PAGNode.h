@@ -341,8 +341,8 @@ public:
     /// Return name of a LLVM value
     const std::string getValueName() {
         if (value && value->hasName())
-            return value->getName().str() + "_" + llvm::utostr_32(getOffset());
-        return "offset_" + llvm::utostr_32(getOffset());
+            return value->getName().str() + "_" + llvm::utostr(getOffset());
+        return "offset_" + llvm::utostr(getOffset());
     }
 
     const llvm::Type *getType() const {
