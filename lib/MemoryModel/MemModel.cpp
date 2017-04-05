@@ -189,7 +189,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // Handling array types, skipe array handling here
         // We treat whole array as one, then we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
-        if(isa<ArrayType>(*gi))
+        if(isa<ArrayType>(gi.getIndexedType()))
             continue;
 
 
@@ -209,7 +209,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // These GEP instructions are simply making address computations from the base pointer address
         // e.g. idx1 = (char*) &MyVar + 4,  at this case gep only one offset index (idx)
 
-        if (isa<PointerType>(*gi)) {
+        if (isa<PointerType>(gi.getIndexedType())) {
             // If this is a pointer, we're likely accessing an array through this pointer.
             // idx gives the array index of which element is being accessed. But since this
             // is a field-index based memory model, we consider array as containing one
@@ -222,7 +222,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
 
         // Handling struct here
 
-        if (const StructType *ST = dyn_cast<StructType>(*gi)) {
+        if (const StructType *ST = gi.getStructTypeOrNull()) {
             assert(op && "non-const struct index in GEP");
             const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
             if ((unsigned)idx >= so.size()) {

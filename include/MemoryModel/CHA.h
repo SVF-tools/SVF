@@ -249,6 +249,7 @@ struct GraphTraits<Inverse<CHNode*> > : public GraphTraits<Inverse<GenericNode<C
 };
 
 template<> struct GraphTraits<CHGraph*> : public GraphTraits<GenericGraph<CHNode,CHEdge>* > {
+  typedef CHNode *NodeRef;
 };
 
 }
