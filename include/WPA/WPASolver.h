@@ -6,7 +6,7 @@
 // Copyright (C) <2013-2016>  <Jingling Xue>
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Gg12eneral Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
@@ -126,7 +126,7 @@ protected:
         child_iterator EE = GTraits::direct_child_end(*v);
         for (; EI != EE; ++EI) {
             if (propFromSrcToDst(*(EI.getCurrent())))
-                pushIntoWorklist(Node_Index(EI));
+                pushIntoWorklist(Node_Index(*EI));
         }
     }
     /// Propagate information from source to destination node, to be implemented in the child class
@@ -162,8 +162,8 @@ protected:
     }
 
     /// Get node ID
-    inline NodeID Node_Index(GNODE* node) {
-        return GTraits::getNodeID(*node);
+    inline NodeID Node_Index(GNODE node) {
+        return GTraits::getNodeID(node);
     }
 
 private:
