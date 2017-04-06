@@ -88,7 +88,7 @@ public:
     virtual bool runOnModule(llvm::Module& module);
 
     /// PTA name
-    virtual inline const char* getPassName() const {
+    virtual inline llvm::StringRef getPassName() const {
         return "WPAPass";
     }
 
