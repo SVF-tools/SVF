@@ -39,6 +39,7 @@
 
 #include "MemoryModel/PointerAnalysis.h"
 #include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Pass.h>
 
 
@@ -46,7 +47,9 @@
  * Whole program pointer analysis.
  * This class performs various pointer analysis on the given module.
  */
-class WPAPass: public llvm::ModulePass, public llvm::AliasAnalysis {
+// excised ", public llvm::AliasAnalysis" as that has a very light interface
+// and I want to see what breaks.
+class WPAPass: public llvm::ModulePass {
     typedef std::vector<PointerAnalysis*> PTAVector;
 
 public:
@@ -59,8 +62,10 @@ public:
         Precise			///< return alias result by the most precise pta
     };
 
-    /// Constructor
-    WPAPass() : llvm::ModulePass(ID), llvm::AliasAnalysis() {}
+    /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
+    WPAPass() : llvm::ModulePass(ID) {
+ 
+    }
     /// Destructor
     ~WPAPass();
 
