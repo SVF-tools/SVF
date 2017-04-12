@@ -491,7 +491,7 @@ public:
 
     static bool isBlackholeSym(const llvm::Value *val);
 
-    static bool isConstantObjSym(const llvm::Value *val);
+    bool isConstantObjSym(const llvm::Value *val);
 
     static inline bool isBlkPtr(NodeID id) {
         return (id == BlkPtr);

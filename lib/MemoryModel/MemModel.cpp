@@ -413,7 +413,7 @@ void ObjTypeInfo::init(const Value* val) {
     }
     else if(isa<GlobalVariable>(val)) {
         setFlag(GLOBVAR_OBJ);
-        if(cast<GlobalVariable>(val)->isConstant())
+        if(SymbolTableInfo::Symbolnfo()->isConstantObjSym(val))
             setFlag(CONST_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
@@ -849,8 +849,21 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
     if (const GlobalVariable* v = dyn_cast<GlobalVariable>(val)) {
         if (cppUtil::isValVtbl(const_cast<GlobalVariable*>(v)))
             return false;
-        else
+        else if (!v->hasInitializer())
+            return true;
+        else {
+            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
+            const std::vector<FieldInfo> &fields = stInfo->getFlattenFieldInfoVec();
+            for (std::vector<FieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it) {
+                const FieldInfo &field = *it;
+                const Type *elemTy = field.getFlattenElemTy();
+                assert(!isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
+                if (isa<PointerType>(elemTy))
+                    return false;
+            }
+
             return v->isConstant();
+        }
     }
     return false;
 }
