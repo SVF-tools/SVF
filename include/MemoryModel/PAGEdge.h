@@ -33,6 +33,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "MemoryModel/GenericGraph.h"
+#include "Util/AnalysisUtil.h"
 
 #include <llvm/IR/CallSite.h>	// for callsite
 #include <llvm/ADT/STLExtras.h>			// for mapped_iter
@@ -112,9 +113,22 @@ public:
     }
     //@}
 
+    /// Compute the unique edgeFlag value from edge kind and call site Instruction.
+    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const llvm::Instruction* cs) {
+        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
+        u64_t label = (iter != inst2LabelMap.end()) ?
+                      iter->second : callEdgeLabelCounter++;
+        return (label << EdgeKindMaskBits) | k;
+    }
+
     typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
     typedef llvm::DenseMap<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
+
+private:
+    typedef llvm::DenseMap<const llvm::Instruction*, u32_t> Inst2LabelMap;
+    static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
+    static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
 };
 
 

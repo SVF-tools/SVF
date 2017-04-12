@@ -335,8 +335,7 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) {
  * It includes the points-to data, and the PAG offset nodes, which
  * are created when solving Andersen's constraints.
  */
-void BVDataPTAImpl::storeToFile() {
-    string filename = "anders.res";
+void BVDataPTAImpl::writeToFile(const string& filename) {
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
@@ -398,14 +397,13 @@ void BVDataPTAImpl::storeToFile() {
  * It populates BVDataPTAImpl with the points-to data, and updates PAG with
  * the PAG offset nodes created during Andersen's solving stage.
  */
-void BVDataPTAImpl::loadFromFile() {
-    string filename = "anders.res";
+bool BVDataPTAImpl::readFromFile(const string& filename) {
     outs() << "Loading pointer analysis results from '" << filename << "'...";
 
     ifstream F(filename.c_str());
     if (!F.is_open()) {
         outs() << "  error opening file for reading!\n";
-        return;
+        return false;
     }
 
     // Read analysis results from file
@@ -460,6 +458,8 @@ void BVDataPTAImpl::loadFromFile() {
 
     F.close();
     outs() << "\n";
+
+    return true;
 }
 
 /*!

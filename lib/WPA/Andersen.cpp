@@ -55,6 +55,12 @@ double Andersen::timeOfProcessLoadStore = 0;
 double Andersen::timeOfUpdateCallGraph = 0;
 
 
+static cl::opt<string> WriteAnder("write-ander",  cl::init(""),
+                                  cl::desc("Write Andersen's analysis results to a file"));
+static cl::opt<string> ReadAnder("read-ander",  cl::init(""),
+                                 cl::desc("Read Andersen's analysis results from a file"));
+
+
 /*!
  * We start from here
  */
@@ -64,6 +70,54 @@ bool Andersen::runOnModule(llvm::Module& module) {
     analyze(module);
     return false;
 }
+
+/*!
+ * Andersen analysis
+ */
+void Andersen::analyze(llvm::Module& module) {
+    /// Initialization for the Solver
+    initialize(module);
+
+    bool readResultsFromFile = false;
+    if(!ReadAnder.empty())
+        readResultsFromFile = this->readFromFile(ReadAnder);
+
+    if(!readResultsFromFile) {
+        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Start Solving Constraints\n"));
+
+        processAllAddr();
+
+        do {
+            numOfIteration++;
+
+            if(0 == numOfIteration % OnTheFlyIterBudgetForStat) {
+                dumpStat();
+            }
+
+            reanalyze = false;
+
+            /// Start solving constraints
+            solve();
+
+            double cgUpdateStart = stat->getClk();
+            if (updateCallGraph(getIndirectCallsites()))
+                reanalyze = true;
+            double cgUpdateEnd = stat->getClk();
+            timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+
+        } while (reanalyze);
+
+        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Finish Solving Constraints\n"));
+
+        /// finalize the analysis
+        finalize();
+    }
+
+    if(!WriteAnder.empty())
+        this->writeToFile(WriteAnder);
+}
+
+
 
 /*!
  * Start constraint solving

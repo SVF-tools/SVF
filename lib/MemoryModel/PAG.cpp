@@ -42,6 +42,10 @@ static cl::opt<bool> HANDLEVGEP("vgep", cl::init(true),
 static cl::opt<bool> HANDBLACKHOLE("blk", cl::init(false),
                                    cl::desc("Hanle blackhole edge"));
 
+
+u64_t PAGEdge::callEdgeLabelCounter = 0;
+PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
+
 PAG* PAG::pag = NULL;
 
 

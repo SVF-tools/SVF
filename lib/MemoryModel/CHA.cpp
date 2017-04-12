@@ -41,6 +41,7 @@
 #include <llvm/IR/DebugInfo.h> // for debuginfo like DILocation
 #include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
 #include "Util/GraphUtil.h"
+#include "Util/AnalysisUtil.h"
 
 using namespace llvm;
 using namespace cppUtil;

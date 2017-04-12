@@ -436,7 +436,7 @@ public:
         destroy();
     }
     //@}
-    
+
     /// Set / Get modelConstants
     //@{
     void setModelConstants(bool _modelConstants) {
