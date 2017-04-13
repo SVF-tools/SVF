@@ -50,7 +50,8 @@ set(SOURCES
 
 add_llvm_loadable_module(Svf ${SOURCES})
 add_llvm_Library(LLVMSvf ${SOURCES})
-
+llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
+target_link_libraries(LLVMSvf ${llvm_libs})
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Svf intrinsics_gen)
