@@ -30,6 +30,7 @@
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
 
+#include <llvm-c/Core.h> // for LLVMGetGlobalContext()
 #include <llvm/Support/CommandLine.h>	// for cl
 #include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
 #include <llvm/IR/LegacyPassManager.h>		// pass manager
@@ -59,15 +60,16 @@ static cl::opt<bool> DFREECHECKER("dfree", cl::init(false),
 
 int main(int argc, char ** argv) {
 
-    sys::PrintStackTraceOnErrorSignal();
+    sys::PrintStackTraceOnErrorSignal(argv[0]);
     llvm::PrettyStackTraceProgram X(argc, argv);
 
-    LLVMContext &Context = getGlobalContext();
+    LLVMOpaqueContext * WrappedContextRef = LLVMGetGlobalContext();
+    LLVMContext &Context = *unwrap(WrappedContextRef);
 
     std::string OutputFilename;
 
     cl::ParseCommandLineOptions(argc, argv, "Software Bug Check\n");
-    sys::PrintStackTraceOnErrorSignal();
+    sys::PrintStackTraceOnErrorSignal(argv[0]);
 
     PassRegistry &Registry = *PassRegistry::getPassRegistry();
 
