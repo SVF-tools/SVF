@@ -39,7 +39,8 @@
 #include <llvm/Support/PrettyStackTrace.h> // for pass list
 #include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/ReaderWriter.h>		// for createBitcodeWriterPass
+
+#include <llvm/Bitcode/BitcodeWriterPass.h> // for createBitcodeWriterPass
 
 
 using namespace llvm;
