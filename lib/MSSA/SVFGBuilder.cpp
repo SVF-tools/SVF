@@ -85,7 +85,7 @@ void SVFGBuilder::releaseMemory(SVFG* vfg) {
  */
 bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
 
-    MemSSA mssa(pta);
+    MemSSA* mssa = new MemSSA(pta);
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
@@ -102,20 +102,21 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
         dt.recalculate(fun);
         df.runOnDT(dt);
 
-        mssa.buildMemSSA(fun, &df, &dt);
+        mssa->buildMemSSA(fun, &df, &dt);
     }
 
-    mssa.performStat();
-    mssa.dumpMSSA();
+    mssa->performStat();
+    mssa->dumpMSSA();
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
 
-    createSVFG(&mssa, graph);
+    createSVFG(mssa, graph);
 
     if(SVFGWithIndirectCall || SVFGWithIndCall)
-        updateCallGraph(mssa.getPTA());
+        updateCallGraph(mssa->getPTA());
 
-    releaseMemory(graph);
+    //delete MSSA when required (on-call)
+    //releaseMemory(graph);
 
     return false;
 }
