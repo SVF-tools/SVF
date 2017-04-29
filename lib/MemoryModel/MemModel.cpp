@@ -548,24 +548,30 @@ void MemObj::init() {
  * Initial the memory object here
  */
 void MemObj::init(const Value *val) {
+    const PointerType *refTy = NULL;
 
-    /// Only create objects which pointed by the Pointer Type?
-    if (const PointerType * refty = dyn_cast<PointerType>(val->getType())) {
-        Type* objty = refty->getElementType();
+    const Instruction *I = dyn_cast<Instruction>(val);
 
+    // We consider two types of objects (1) heap objects (2) alloca and global objects
+    // (1) A heap object from a callsite
+    if (I && isCallSite(I))
+        refTy = getRefTypeOfHeapAlloc(I);
+    // (2) Other cases (e.g., alloca, global, etc.)
+    else
+        refTy = dyn_cast<PointerType>(val->getType());
+
+    if (refTy) {
+        Type *objTy = refTy->getElementType();
         if(LocMemModel)
-            typeInfo = new LocObjTypeInfo(val, objty, maxFieldNumLimit);
+            typeInfo = new LocObjTypeInfo(val, objTy, maxFieldNumLimit);
         else
-            typeInfo = new ObjTypeInfo(val, objty, maxFieldNumLimit);
+            typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
         typeInfo->init(val);
     } else {
-        wrnMsg("try to create a non-pointer value at callsite.");
+        wrnMsg("try to create a heap object with a non-pointer type.");
         wrnMsg(val->getName());
         wrnMsg("(" + getSourceLoc(val) + ")");
-        assert(false && "creation of object pointed by a non-pointer type ");
-        /// FIXME:: check function summary for this handling
-        ///assert(isa<Instruction>(val) && isHeapAllocOrStaticExtCall(cast<Instruction>(val))
-        ///		&& "non-pointer type should only from incorrect library summary!!");
+        assert(false && "Heap object must be held by a pointer-typed ref value.");
     }
 }
 

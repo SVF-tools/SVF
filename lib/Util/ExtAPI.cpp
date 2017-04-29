@@ -556,6 +556,7 @@ static const ei_pair ei_pairs[]= {
     {"aligned_alloc", ExtAPI::EFT_ALLOC},
     {"memalign", ExtAPI::EFT_ALLOC},
     {"valloc", ExtAPI::EFT_ALLOC},
+    {"SRE_LockCreate", ExtAPI::EFT_ALLOC},
 
     {"\01mmap64", ExtAPI::EFT_NOSTRUCT_ALLOC},
     //FIXME: this is like realloc but with arg1.
@@ -759,6 +760,7 @@ static const ei_pair ei_pairs[]= {
     {"scandir", ExtAPI::EFT_A1R_NEW},
     {"XGetRGBColormaps", ExtAPI::EFT_A2R_NEW},
     {"XmbTextPropertyToTextList", ExtAPI::EFT_A2R_NEW},
+    {"SRE_SplSpecCreate", ExtAPI::EFT_A2R_NEW},
     {"XQueryTree", ExtAPI::EFT_A4R_NEW},
     {"XGetWindowProperty", ExtAPI::EFT_A11R_NEW},
 

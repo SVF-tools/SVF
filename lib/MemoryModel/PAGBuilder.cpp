@@ -715,10 +715,34 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
  */
 void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
     const Instruction* inst = cs.getInstruction();
-    if (isHeapAllocExtCall(inst)) {
-        NodeID val = getValueNode(inst);
+    if (isHeapAllocExtCall(cs)) {
+        int arg_pos = getHeapAllocHoldingArgPosition(callee);
         NodeID obj = getObjectNode(inst);
-        pag->addAddrEdge(obj, val);
+        // case 1: ret = new obj
+        if (-1 == arg_pos) {
+            if(isa<PointerType>(inst->getType())) {
+                NodeID vnRet = getValueNode(inst);
+                if (vnRet && obj) {
+                    pag->addAddrEdge(obj, vnRet);
+                }
+            } else {
+                wrnMsg("alloc type func do not return pointer type");
+            }
+        }
+        // case 2: *arg = new obj
+        else if (arg_pos >= 0) {
+            const Value *arg = cs.getArgument(arg_pos);
+            if (arg->getType()->isPointerTy()) {
+                NodeID vnArg = getValueNode(arg);
+                NodeID dummy = pag->addDummyValNode();
+                if (vnArg && dummy && obj) {
+                    pag->addAddrEdge(obj, dummy);
+                    pag->addStoreEdge(dummy, vnArg);
+                }
+            } else {
+                wrnMsg("Arg receiving new object must be pointer type");
+            }
+        }
     }
     else if(isStaticExtCall(inst)) {
         NodeID val = getValueNode(inst);
