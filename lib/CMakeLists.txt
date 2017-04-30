@@ -51,12 +51,18 @@ set(SOURCES
 add_llvm_loadable_module(Svf ${SOURCES})
 add_llvm_Library(LLVMSvf ${SOURCES})
 
-# It seems that the Svf library needs to explictly require the CUDD alloc/init/etc so LLVMCudd
-link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
+if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
+   # It seems that the Svf library needs to explictly require the CUDD alloc/init/etc so LLVMCudd
+   link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
+   llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
+   target_link_libraries(LLVMSvf ${llvm_libs})
+   target_link_libraries(Svf LLVMCudd ${llvm_libs})
+else()
+   llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
+   target_link_libraries(LLVMSvf ${llvm_libs})
+   target_link_libraries(Svf ${llvm_libs})
+endif()
 
-llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
-target_link_libraries(LLVMSvf ${llvm_libs})
-target_link_libraries(Svf LLVMCudd ${llvm_libs})
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Svf intrinsics_gen)
