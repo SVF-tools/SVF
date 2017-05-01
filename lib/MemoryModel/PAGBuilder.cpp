@@ -715,22 +715,18 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
  */
 void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
     const Instruction* inst = cs.getInstruction();
-    if (isHeapAllocExtCall(cs)) {
-        int arg_pos = getHeapAllocHoldingArgPosition(callee);
+    if (isHeapAllocOrStaticExtCall(cs)) {
         NodeID obj = getObjectNode(inst);
         // case 1: ret = new obj
-        if (-1 == arg_pos) {
-            if(isa<PointerType>(inst->getType())) {
-                NodeID vnRet = getValueNode(inst);
-                if (vnRet && obj) {
-                    pag->addAddrEdge(obj, vnRet);
-                }
-            } else {
-                wrnMsg("alloc type func do not return pointer type");
-            }
+        if (isHeapAllocExtCallViaRet(cs) || isStaticExtCall(cs)) {
+            NodeID val = getValueNode(inst);
+            NodeID obj = getObjectNode(inst);
+            pag->addAddrEdge(obj, val);
         }
         // case 2: *arg = new obj
-        else if (arg_pos >= 0) {
+        else {
+            assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
+            int arg_pos = getHeapAllocHoldingArgPosition(callee);
             const Value *arg = cs.getArgument(arg_pos);
             if (arg->getType()->isPointerTy()) {
                 NodeID vnArg = getValueNode(arg);
@@ -743,11 +739,6 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 wrnMsg("Arg receiving new object must be pointer type");
             }
         }
-    }
-    else if(isStaticExtCall(inst)) {
-        NodeID val = getValueNode(inst);
-        NodeID obj = getObjectNode(inst);
-        pag->addAddrEdge(obj, val);
     }
     else {
         if(isExtCall(callee)) {
@@ -857,7 +848,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             case ExtAPI::EFT_A2R_NEW:
             case ExtAPI::EFT_A4R_NEW:
             case ExtAPI::EFT_A11R_NEW: {
-                //TODO:: handle case here
+                assert(!"Alloc via arg cases are not handled here.");
                 break;
             }
             case ExtAPI::EFT_ALLOC:

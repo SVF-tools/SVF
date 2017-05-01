@@ -106,8 +106,8 @@ inline bool isExtCall(const llvm::Instruction *inst) {
 //@{
 /// note that these two functions are not suppose to be used externally
 inline bool isHeapAllocExtFunViaRet(const llvm::Function *fun) {
-    return fun && (ExtAPI::getExtAPI()->is_alloc(fun) ||
-                   ExtAPI::getExtAPI()->is_arg_alloc(fun) || ExtAPI::getExtAPI()->is_realloc(fun));
+    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
+            || ExtAPI::getExtAPI()->is_realloc(fun));
 }
 inline bool isHeapAllocExtFunViaArg(const llvm::Function *fun) {
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
@@ -142,7 +142,6 @@ inline bool isHeapAllocExtCall(const llvm::Instruction *inst) {
 //@}
 
 /// Get the position of argument that holds an allocated heap object.
-/// Return -1 if none of arguments holds an allocated heap object.
 //@{
 inline int getHeapAllocHoldingArgPosition(const llvm::Function *fun) {
     return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
@@ -226,32 +225,32 @@ inline ExtAPI::extf_t extCallTy(const llvm::Function* fun) {
     return ExtAPI::getExtAPI()->get_type(fun);
 }
 
-
-/// Get the reference type of heap object from a heap allocation site.
+/// Get the reference type of heap/static object from an allocation site.
 //@{
-inline const llvm::PointerType *getRefTypeOfHeapAlloc(const llvm::CallSite cs) {
+inline const llvm::PointerType *getRefTypeOfHeapAllocOrStatic(const llvm::CallSite cs) {
     const llvm::PointerType *refType = NULL;
-    int argPos = getHeapAllocHoldingArgPosition(cs);
-    // Case 1: object held by *argument, we should get its element type.
-    if (0 < argPos) {
+    // Case 1: heap object held by *argument, we should get its element type.
+    if (isHeapAllocExtCallViaArg(cs)) {
+        int argPos = getHeapAllocHoldingArgPosition(cs);
         const llvm::Value *arg = cs.getArgument(argPos);
         if (const llvm::PointerType *argType = llvm::dyn_cast<llvm::PointerType>(arg->getType()))
             refType = llvm::dyn_cast<llvm::PointerType>(argType->getElementType());
     }
-    // Case 2: object held by return value.
-    else
+    // Case 2: heap/static object held by return value.
+    else {
+        assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
+                && "Must be heap alloc via ret, or static allocation site");
         refType = llvm::dyn_cast<llvm::PointerType>(cs.getType());
-    assert(refType && "Heap object must be held by a pointer-typed value.");
+    }
+    assert(refType && "Allocated object must be held by a pointer-typed value.");
     return refType;
 }
 
-inline const llvm::PointerType *getRefTypeOfHeapAlloc(const llvm::Instruction *inst) {
-    assert(isHeapAllocOrStaticExtCall(inst) && "Must be a heap alloc ext call or static global alloc call.");
+inline const llvm::PointerType *getRefTypeOfHeapAllocOrStatic(const llvm::Instruction *inst) {
     llvm::CallSite cs(const_cast<llvm::Instruction*>(inst));
-    return getRefTypeOfHeapAlloc(cs);
+    return getRefTypeOfHeapAllocOrStatic(cs);
 }
 //@}
-
 
 /// Return true if this is a thread creation call
 ///@{

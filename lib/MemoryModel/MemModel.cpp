@@ -552,11 +552,11 @@ void MemObj::init(const Value *val) {
 
     const Instruction *I = dyn_cast<Instruction>(val);
 
-    // We consider two types of objects (1) heap objects (2) alloca and global objects
-    // (1) A heap object from a callsite
+    // We consider two types of objects:
+    // (1) A heap/static object from a callsite
     if (I && isCallSite(I))
-        refTy = getRefTypeOfHeapAlloc(I);
-    // (2) Other cases (e.g., alloca, global, etc.)
+        refTy = getRefTypeOfHeapAllocOrStatic(I);
+    // (2) Other objects (e.g., alloca, global, etc.)
     else
         refTy = dyn_cast<PointerType>(val->getType());
 
@@ -568,10 +568,10 @@ void MemObj::init(const Value *val) {
             typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
         typeInfo->init(val);
     } else {
-        wrnMsg("try to create a heap object with a non-pointer type.");
+        wrnMsg("try to create an object with a non-pointer type.");
         wrnMsg(val->getName());
         wrnMsg("(" + getSourceLoc(val) + ")");
-        assert(false && "Heap object must be held by a pointer-typed ref value.");
+        assert(false && "Memory object must be held by a pointer-typed ref value.");
     }
 }
 
