@@ -189,7 +189,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // Handling array types, skipe array handling here
         // We treat whole array as one, then we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
-        if(isa<ArrayType>(gi.getIndexedType()))
+        if(isa<ArrayType>(gi.isBoundedSequential()))
             continue;
 
 
