@@ -57,6 +57,9 @@ static cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  cl::init(10000),
 static cl::opt<bool> LocMemModel("locMM", cl::init(false),
                                  cl::desc("Bytes/bits modeling of memory locations"));
 
+static cl::opt<bool> modelConsts("modelConsts", cl::init(false),
+                                 cl::desc("Modeling individual constant objects"));
+
 /*!
  * Get the symbol table instance
  */
@@ -66,6 +69,7 @@ SymbolTableInfo* SymbolTableInfo::Symbolnfo() {
             symlnfo = new LocSymTableInfo();
         else
             symlnfo = new SymbolTableInfo();
+        symlnfo->setModelConstants(modelConsts);
     }
     return symlnfo;
 }
@@ -408,7 +412,7 @@ void ObjTypeInfo::init(const Value* val) {
     }
     else if(isa<GlobalVariable>(val)) {
         setFlag(GLOBVAR_OBJ);
-        if(cast<GlobalVariable>(val)->isConstant())
+        if(SymbolTableInfo::Symbolnfo()->isConstantObjSym(val))
             setFlag(CONST_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
@@ -543,24 +547,30 @@ void MemObj::init() {
  * Initial the memory object here
  */
 void MemObj::init(const Value *val) {
+    const PointerType *refTy = NULL;
 
-    /// Only create objects which pointed by the Pointer Type?
-    if (const PointerType * refty = dyn_cast<PointerType>(val->getType())) {
-        Type* objty = refty->getElementType();
+    const Instruction *I = dyn_cast<Instruction>(val);
 
+    // We consider two types of objects:
+    // (1) A heap/static object from a callsite
+    if (I && isCallSite(I))
+        refTy = getRefTypeOfHeapAllocOrStatic(I);
+    // (2) Other objects (e.g., alloca, global, etc.)
+    else
+        refTy = dyn_cast<PointerType>(val->getType());
+
+    if (refTy) {
+        Type *objTy = refTy->getElementType();
         if(LocMemModel)
-            typeInfo = new LocObjTypeInfo(val, objty, maxFieldNumLimit);
+            typeInfo = new LocObjTypeInfo(val, objTy, maxFieldNumLimit);
         else
-            typeInfo = new ObjTypeInfo(val, objty, maxFieldNumLimit);
+            typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
         typeInfo->init(val);
     } else {
-        wrnMsg("try to create a non-pointer value at callsite.");
+        wrnMsg("try to create an object with a non-pointer type.");
         wrnMsg(val->getName());
         wrnMsg("(" + getSourceLoc(val) + ")");
-        assert(false && "creation of object pointed by a non-pointer type ");
-        /// FIXME:: check function summary for this handling
-        ///assert(isa<Instruction>(val) && isHeapAllocOrStaticExtCall(cast<Instruction>(val))
-        ///		&& "non-pointer type should only from incorrect library summary!!");
+        assert(false && "Memory object must be held by a pointer-typed ref value.");
     }
 }
 
@@ -631,6 +641,7 @@ void SymbolTableInfo::buildMemModel(llvm::Module& module) {
     for (Module::alias_iterator I = module.alias_begin(), E =
                 module.alias_end(); I != E; I++) {
         collectSym(&*I);
+        collectSym((*I).getAliasee());
     }
 
     // Add symbols for all of the functions and the instructions in them.
@@ -774,7 +785,7 @@ void SymbolTableInfo::collectObj(const llvm::Value *val) {
     if (iter == objSymMap.end()) {
         // if the object pointed by the pointer is a constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if(isConstantObjSym(val)) {
+        if(isConstantObjSym(val) && !getModelConstants()) {
             objSymMap.insert(std::make_pair(val, constantSymID()));
         }
         // otherwise, we will create an object for each abstract memory location
@@ -843,8 +854,21 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
     if (const GlobalVariable* v = dyn_cast<GlobalVariable>(val)) {
         if (cppUtil::isValVtbl(const_cast<GlobalVariable*>(v)))
             return false;
-        else
+        else if (!v->hasInitializer())
+            return true;
+        else {
+            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
+            const std::vector<FieldInfo> &fields = stInfo->getFlattenFieldInfoVec();
+            for (std::vector<FieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it) {
+                const FieldInfo &field = *it;
+                const Type *elemTy = field.getFlattenElemTy();
+                assert(!isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
+                if (isa<PointerType>(elemTy))
+                    return false;
+            }
+
             return v->isConstant();
+        }
     }
     return false;
 }
@@ -855,8 +879,7 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
  */
 void SymbolTableInfo::handleCE(const Value *val) {
     if (const Constant* ref = dyn_cast<Constant>(val)) {
-        const ConstantExpr* ce = isGepConstantExpr(ref) == NULL ? isCastConstantExpr(ref) : isGepConstantExpr(ref);
-        if (ce != NULL) {
+        if (const ConstantExpr* ce = isGepConstantExpr(ref)) {
             DBOUT(DMemModelCE,
                   outs() << "handle constant expression " << *ref << "\n");
             collectVal(ce);
@@ -864,6 +887,24 @@ void SymbolTableInfo::handleCE(const Value *val) {
             // handle the recursive constant express case
             // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
             handleCE(ce->getOperand(0));
+        } else if (const ConstantExpr* ce = isCastConstantExpr(ref)) {
+            DBOUT(DMemModelCE,
+                  outs() << "handle constant expression " << *ref << "\n");
+            collectVal(ce);
+            collectVal(ce->getOperand(0));
+            // handle the recursive constant express case
+            // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
+            handleCE(ce->getOperand(0));
+        } else if (const ConstantExpr* ce = isSelectConstantExpr(ref)) {
+            DBOUT(DMemModelCE,
+                  outs() << "handle constant expression " << *ref << "\n");
+            collectVal(ce);
+            collectVal(ce->getOperand(0));
+            collectVal(ce->getOperand(1));
+            // handle the recursive constant express case
+            // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
+            handleCE(ce->getOperand(0));
+            handleCE(ce->getOperand(1));
         }
         // remember to handle the constant bit cast opnd after stripping casts off
         else {

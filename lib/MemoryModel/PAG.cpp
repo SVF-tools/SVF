@@ -42,6 +42,10 @@ static cl::opt<bool> HANDLEVGEP("vgep", cl::init(true),
 static cl::opt<bool> HANDBLACKHOLE("blk", cl::init(false),
                                    cl::desc("Hanle blackhole edge"));
 
+
+u64_t PAGEdge::callEdgeLabelCounter = 0;
+PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
+
 PAG* PAG::pag = NULL;
 
 
@@ -354,7 +358,8 @@ bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const l
  * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
  * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
  *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
- * ConstantPointerNull  CopyEdge  (3-->2 PAG::addNullPtrNode)
+ * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr PAG::addNullPtrNode)
+ *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr PAG::addNullPtrNode)
  * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
  *                      GepEdge   (PAGBuilder::getGlobalVarField)
  * Function             AddrEdge  (PAGBuilder::visitGlobal)
@@ -374,7 +379,8 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
     } else if (isa<ConstantPointerNull>(curVal)) {
-        assert(edge->getSrcID() == 3 && edge->getDstID() == 2);
+        assert((edge->getSrcID() == NullPtr && edge->getDstID() == BlkPtr) ||
+               (edge->getSrcID() == BlackHole && edge->getDstID() == BlkPtr));
         globPAGEdgesSet.insert(edge);
     } else if (isa<GlobalVariable>(curVal) ||
                isa<Function>(curVal) ||
@@ -603,6 +609,20 @@ PAGNode::PAGNode(const llvm::Value* val, NodeID i, PNODEK k) :
  */
 void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
+}
+
+/*!
+ * Whether to handle variant gep/field edge
+ */
+void PAG::handleVGep(bool b) {
+    HANDLEVGEP = b;
+}
+
+/*!
+ * Whether to handle blackhole edge
+ */
+void PAG::handleBlackHole(bool b) {
+    HANDBLACKHOLE = b;
 }
 
 namespace llvm {

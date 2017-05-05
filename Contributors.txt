@@ -12,4 +12,4 @@ Description: memory model, flow-sensitive pointer analysis
 
 Name: Xiaokang Fan
 Email: fanx@cse.unsw.edu.au
-Description: add support to analyze C++
+Description: add support to analyze C++ programs and library summarization

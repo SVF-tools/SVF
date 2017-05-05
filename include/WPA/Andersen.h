@@ -89,39 +89,7 @@ public:
     virtual bool runOnModule(llvm::Module& module);
 
     /// Andersen analysis
-    virtual inline void analyze(llvm::Module& module) {
-        /// Initialization for the Solver
-        initialize(module);
-
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Start Solving Constraints\n"));
-
-        processAllAddr();
-
-        do {
-            numOfIteration++;
-
-            if(0 == numOfIteration % OnTheFlyIterBudgetForStat) {
-                dumpStat();
-            }
-
-            reanalyze = false;
-
-            /// Start solving constraints
-            solve();
-
-            double cgUpdateStart = stat->getClk();
-            if (updateCallGraph(getIndirectCallsites()))
-                reanalyze = true;
-            double cgUpdateEnd = stat->getClk();
-            timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-        } while (reanalyze);
-
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Finish Solving Constraints\n"));
-
-        /// finalize the analysis
-        finalize();
-    }
+    void analyze(llvm::Module& module);
 
     /// Initialize analysis
     virtual inline void initialize(llvm::Module& module) {
@@ -139,8 +107,7 @@ public:
     /// Finalize analysis
     virtual inline void finalize() {
         /// dump constraint graph if PAGDotGraph flag is enabled
-        if(dumpGraph())
-            consCG->dump();
+        consCG->dump();
         /// sanitize field insensitive obj
         /// TODO: Fields has been collapsed during Andersen::collapseField().
         //	sanitizePts();

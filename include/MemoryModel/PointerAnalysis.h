@@ -432,8 +432,8 @@ public:
 
     /// Interface for analysis result storage on filesystem.
     //@{
-    virtual void storeToFile();
-    virtual void loadFromFile();
+    virtual void writeToFile(const std::string& filename);
+    virtual bool readFromFile(const std::string& filename);
     //@}
 
 protected:

@@ -547,7 +547,8 @@ void ConstraintGraph::connectCaller2CalleeParams(llvm::CallSite cs, const llvm::
  * Dump constraint graph
  */
 void ConstraintGraph::dump() {
-    GraphPrinter::WriteGraphToFile(llvm::outs(), "consCG_final", this);
+    if(ConsCGDotGraph)
+        GraphPrinter::WriteGraphToFile(llvm::outs(), "consCG_final", this);
 }
 
 /*!

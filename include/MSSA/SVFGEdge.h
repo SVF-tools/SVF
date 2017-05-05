@@ -89,6 +89,11 @@ public:
     }
     //@}
     typedef GenericNode<SVFGNode,SVFGEdge>::GEdgeSetTy SVFGEdgeSetTy;
+
+    /// Compute the unique edgeFlag value from edge kind and CallSiteID.
+    static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs) {
+        return (cs << EdgeKindMaskBits) | k;
+    }
 };
 
 

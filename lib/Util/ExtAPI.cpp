@@ -556,6 +556,7 @@ static const ei_pair ei_pairs[]= {
     {"aligned_alloc", ExtAPI::EFT_ALLOC},
     {"memalign", ExtAPI::EFT_ALLOC},
     {"valloc", ExtAPI::EFT_ALLOC},
+    {"SRE_LockCreate", ExtAPI::EFT_ALLOC},
 
     {"\01mmap64", ExtAPI::EFT_NOSTRUCT_ALLOC},
     //FIXME: this is like realloc but with arg1.
@@ -759,16 +760,47 @@ static const ei_pair ei_pairs[]= {
     {"scandir", ExtAPI::EFT_A1R_NEW},
     {"XGetRGBColormaps", ExtAPI::EFT_A2R_NEW},
     {"XmbTextPropertyToTextList", ExtAPI::EFT_A2R_NEW},
+    {"SRE_SplSpecCreate", ExtAPI::EFT_A2R_NEW},
     {"XQueryTree", ExtAPI::EFT_A4R_NEW},
     {"XGetWindowProperty", ExtAPI::EFT_A11R_NEW},
 
-    // C++ STL function
+    // C++ STL functions
     // std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
     {"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
 
     // std::_Rb_tree_increment   and   std::_Rb_tree_decrement
-    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
-    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+    // TODO: the following side effects seem not to be necessary
+//    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+//    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+
+
+    /// string constructor: string (const char *s)
+    {"_ZNSsC1EPKcRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string constructor: string (const char *s, size_t n)
+    {"_ZNSsC1EPKcmRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string operator=: operator= (const char *s)
+    {"_ZNSsaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+
+    /// string constructor: string (const string &str)
+    {"_ZNSsC1ERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// string constructor: string (const string &str, size_t pos, size_t len)
+    {"_ZNSsC1ERKSsmm", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// string operator=: operator= (const string &str)
+    {"_ZNSsaSERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+
+    /// std::operator<<: operator<< (const string &str)
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E", ExtAPI::CPP_EFT_A1R}, // c++98
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE", ExtAPI::CPP_EFT_A1R}, // c++11
 
     //This must be the last entry.
     {0, ExtAPI::EFT_NOOP}

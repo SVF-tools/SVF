@@ -135,6 +135,7 @@ public:
 
     /// Clear MSSA
     inline void clearMSSA() {
+        delete mssa;
         mssa = NULL;
     }
 

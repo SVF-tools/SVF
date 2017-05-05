@@ -48,7 +48,7 @@ public:
 
     /// Destructor
     ~BddCondManager() {
-        delete m_bdd_mgr;
+        Cudd_Quit(m_bdd_mgr);
     }
     /// Create new BDD condition
     inline DdNode* createNewCond(unsigned i) {

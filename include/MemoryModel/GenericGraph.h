@@ -30,7 +30,8 @@
 #ifndef GENERICGRAPH_H_
 #define GENERICGRAPH_H_
 
-#include "Util/AnalysisUtil.h"
+#include "Util/BasicTypes.h"
+#include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/STLExtras.h>			// for mapped_iter
 
 
@@ -73,13 +74,7 @@ public:
         return dst->getId();
     }
     inline GEdgeKind getEdgeKind() const {
-        return (0x0000000f & edgeFlag);
-    }
-    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const llvm::Instruction* cs) {
-        return (reinterpret_cast<u64_t>(cs) << 0x04) | k;
-    }
-    static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs) {
-        return (cs << 0x04) | k;
+        return (EdgeKindMask & edgeFlag);
     }
     NodeType* getSrcNode() const {
         return src;
@@ -108,6 +103,10 @@ public:
                 && rhs->getDstID() == this->getDstID());
     }
     //@}
+
+protected:
+    static constexpr unsigned char EdgeKindMaskBits = 4;  ///< We use the lower 4 bits to denote edge kind
+    static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
 };
 
 
@@ -122,7 +121,7 @@ public:
     typedef EdgeTy EdgeType;
     /// Edge kind
     typedef s32_t GNodeK;
-    typedef std::set<EdgeType*, typename GenericEdge<NodeType>::equalGEdge> GEdgeSetTy;
+    typedef std::set<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
     /// Edge iterator
     ///@{
     typedef typename GEdgeSetTy::iterator iterator;

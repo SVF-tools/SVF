@@ -104,19 +104,55 @@ inline bool isExtCall(const llvm::Instruction *inst) {
 
 /// Return true if the call is a heap allocator/reallocator
 //@{
-/// note that this function is not suppose to be used externally
-inline bool isHeapAllocExtFun(const llvm::Function *fun) {
-    return fun && (ExtAPI::getExtAPI()->is_alloc(fun) || ExtAPI::getExtAPI()->is_realloc(fun));
+/// note that these two functions are not suppose to be used externally
+inline bool isHeapAllocExtFunViaRet(const llvm::Function *fun) {
+    return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
+            || ExtAPI::getExtAPI()->is_realloc(fun));
+}
+inline bool isHeapAllocExtFunViaArg(const llvm::Function *fun) {
+    return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
+}
+
+/// interfaces to be used externally
+inline bool isHeapAllocExtCallViaRet(const llvm::CallSite cs) {
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
+    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
+}
+
+inline bool isHeapAllocExtCallViaRet(const llvm::Instruction *inst) {
+    bool isPtrTy = inst->getType()->isPointerTy();
+    return isPtrTy && isHeapAllocExtFunViaRet(getCallee(inst));
+}
+
+inline bool isHeapAllocExtCallViaArg(const llvm::CallSite cs) {
+    return isHeapAllocExtFunViaArg(getCallee(cs));
+}
+
+inline bool isHeapAllocExtCallViaArg(const llvm::Instruction *inst) {
+    return isHeapAllocExtFunViaArg(getCallee(inst));
 }
 
 inline bool isHeapAllocExtCall(const llvm::CallSite cs) {
-    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFun(getCallee(cs));
+    return isHeapAllocExtCallViaRet(cs) || isHeapAllocExtCallViaArg(cs);
 }
 
 inline bool isHeapAllocExtCall(const llvm::Instruction *inst) {
-    bool isPtrTy = inst->getType()->isPointerTy();
-    return isPtrTy && isHeapAllocExtFun(getCallee(inst));
+    return isHeapAllocExtCallViaRet(inst) || isHeapAllocExtCallViaArg(inst);
+}
+//@}
+
+/// Get the position of argument that holds an allocated heap object.
+//@{
+inline int getHeapAllocHoldingArgPosition(const llvm::Function *fun) {
+    return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
+}
+
+inline int getHeapAllocHoldingArgPosition(const llvm::CallSite cs) {
+    return getHeapAllocHoldingArgPosition(getCallee(cs));
+}
+
+inline int getHeapAllocHoldingArgPosition(const llvm::Instruction *inst) {
+    return getHeapAllocHoldingArgPosition(getCallee(inst));
 }
 //@}
 
@@ -188,6 +224,33 @@ inline bool isHeapAllocOrStaticExtCall(const llvm::Instruction *inst) {
 inline ExtAPI::extf_t extCallTy(const llvm::Function* fun) {
     return ExtAPI::getExtAPI()->get_type(fun);
 }
+
+/// Get the reference type of heap/static object from an allocation site.
+//@{
+inline const llvm::PointerType *getRefTypeOfHeapAllocOrStatic(const llvm::CallSite cs) {
+    const llvm::PointerType *refType = NULL;
+    // Case 1: heap object held by *argument, we should get its element type.
+    if (isHeapAllocExtCallViaArg(cs)) {
+        int argPos = getHeapAllocHoldingArgPosition(cs);
+        const llvm::Value *arg = cs.getArgument(argPos);
+        if (const llvm::PointerType *argType = llvm::dyn_cast<llvm::PointerType>(arg->getType()))
+            refType = llvm::dyn_cast<llvm::PointerType>(argType->getElementType());
+    }
+    // Case 2: heap/static object held by return value.
+    else {
+        assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
+                && "Must be heap alloc via ret, or static allocation site");
+        refType = llvm::dyn_cast<llvm::PointerType>(cs.getType());
+    }
+    assert(refType && "Allocated object must be held by a pointer-typed value.");
+    return refType;
+}
+
+inline const llvm::PointerType *getRefTypeOfHeapAllocOrStatic(const llvm::Instruction *inst) {
+    llvm::CallSite cs(const_cast<llvm::Instruction*>(inst));
+    return getRefTypeOfHeapAllocOrStatic(cs);
+}
+//@}
 
 /// Return true if this is a thread creation call
 ///@{
@@ -427,6 +490,14 @@ inline const llvm::ConstantExpr *isPtr2IntConstantExpr(const llvm::Value *val) {
 inline const llvm::ConstantExpr *isCastConstantExpr(const llvm::Value *val) {
     if(const llvm::ConstantExpr* constExpr = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
         if(constExpr->getOpcode() == llvm::Instruction::BitCast)
+            return constExpr;
+    }
+    return NULL;
+}
+
+inline const llvm::ConstantExpr *isSelectConstantExpr(const llvm::Value *val) {
+    if(const llvm::ConstantExpr* constExpr = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == llvm::Instruction::Select)
             return constExpr;
     }
     return NULL;

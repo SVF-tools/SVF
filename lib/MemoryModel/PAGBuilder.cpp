@@ -166,9 +166,11 @@ bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls) {
  */
 void PAGBuilder::processCE(const Value *val) {
     if (const Constant* ref = dyn_cast<Constant>(val)) {
+        if (!isa<PointerType>(ref->getType()))
+            return;
         if (const ConstantExpr* gepce = isGepConstantExpr(ref)) {
             DBOUT(DPAGBuild,
-                  outs() << "handle constant expression " << *ref << "\n");
+                  outs() << "handle gep constant expression " << *ref << "\n");
             const Constant* opnd = gepce->getOperand(0);
             LocationSet ls;
             bool constGep = computeGepOffset(gepce, ls);
@@ -187,7 +189,7 @@ void PAGBuilder::processCE(const Value *val) {
         }
         else if (const ConstantExpr* castce = isCastConstantExpr(ref)) {
             DBOUT(DPAGBuild,
-                  outs() << "handle constant expression " << *ref << "\n");
+                  outs() << "handle cast constant expression " << *ref << "\n");
             const Constant* opnd = castce->getOperand(0);
             const llvm::Value* cval = pag->getCurrentValue();
             const llvm::BasicBlock* cbb = pag->getCurrentBB();
@@ -195,6 +197,25 @@ void PAGBuilder::processCE(const Value *val) {
             pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(castce));
             pag->setCurrentLocation(cval, cbb);
             processCE(opnd);
+        }
+        else if (const ConstantExpr* selectce = isSelectConstantExpr(ref)) {
+            DBOUT(DPAGBuild,
+                  outs() << "handle select constant expression " << *ref << "\n");
+            const Constant* src1 = selectce->getOperand(1);
+            const Constant* src2 = selectce->getOperand(2);
+            const llvm::Value* cval = pag->getCurrentValue();
+            const llvm::BasicBlock* cbb = pag->getCurrentBB();
+            pag->setCurrentLocation(selectce, NULL);
+            NodeID nsrc1 = pag->getValueNode(src1);
+            NodeID nsrc2 = pag->getValueNode(src2);
+            NodeID nres = pag->getValueNode(selectce);
+            pag->addCopyEdge(nsrc1, nres);
+            pag->addCopyEdge(nsrc2, nres);
+            pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc1),NULL);
+            pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc2),NULL);
+            pag->setCurrentLocation(cval, cbb);
+            processCE(src1);
+            processCE(src2);
         }
         // if we meet a int2ptr, then it points-to black hole
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref)) {
@@ -310,8 +331,14 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
         pag->addAddrEdge(obj, idx);
     }
 
-    /// initial global aliases
-    /// for now we do not implement this
+    // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
+    for (Module::alias_iterator I = module.alias_begin(), E = module.alias_end(); I != E; I++) {
+        NodeID dst = pag->getValueNode(&*I);
+        NodeID src = pag->getValueNode((*I).getAliasee());
+        processCE((*I).getAliasee());
+        pag->setCurrentLocation(&*I, NULL);
+        pag->addCopyEdge(src,dst);
+    }
 }
 
 /*!
@@ -688,15 +715,30 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
  */
 void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
     const Instruction* inst = cs.getInstruction();
-    if (isHeapAllocExtCall(inst)) {
-        NodeID val = getValueNode(inst);
+    if (isHeapAllocOrStaticExtCall(cs)) {
         NodeID obj = getObjectNode(inst);
-        pag->addAddrEdge(obj, val);
-    }
-    else if(isStaticExtCall(inst)) {
-        NodeID val = getValueNode(inst);
-        NodeID obj = getObjectNode(inst);
-        pag->addAddrEdge(obj, val);
+        // case 1: ret = new obj
+        if (isHeapAllocExtCallViaRet(cs) || isStaticExtCall(cs)) {
+            NodeID val = getValueNode(inst);
+            NodeID obj = getObjectNode(inst);
+            pag->addAddrEdge(obj, val);
+        }
+        // case 2: *arg = new obj
+        else {
+            assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
+            int arg_pos = getHeapAllocHoldingArgPosition(callee);
+            const Value *arg = cs.getArgument(arg_pos);
+            if (arg->getType()->isPointerTy()) {
+                NodeID vnArg = getValueNode(arg);
+                NodeID dummy = pag->addDummyValNode();
+                if (vnArg && dummy && obj) {
+                    pag->addAddrEdge(obj, dummy);
+                    pag->addStoreEdge(dummy, vnArg);
+                }
+            } else {
+                wrnMsg("Arg receiving new object must be pointer type");
+            }
+        }
     }
     else {
         if(isExtCall(callee)) {
@@ -806,7 +848,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             case ExtAPI::EFT_A2R_NEW:
             case ExtAPI::EFT_A4R_NEW:
             case ExtAPI::EFT_A11R_NEW: {
-                //TODO:: handle case here
+                assert(!"Alloc via arg cases are not handled here.");
                 break;
             }
             case ExtAPI::EFT_ALLOC:
@@ -855,9 +897,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 Size_t offset = pag->getLocationSetFromBaseNode(vnArg).getOffset();
 
                 // We get all fields
-                const Type *type = vArg->getType();
                 vector<LocationSet> fields;
-                SymbolTableInfo::Symbolnfo()->getFields(fields, type, 0);
+                const Type *type = getBaseTypeAndFlattenedFields(vArg,fields);
                 assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
@@ -866,6 +907,37 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                     NodeID vnS = pag->getGepValNode(vArg, fields[i], type, i);
                     if(vnD && vnS)
                         pag->addStoreEdge(vnS,vnD);
+                }
+                break;
+            }
+            case ExtAPI::CPP_EFT_A0R_A1: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnD = pag->getValueNode(cs.getArgument(0));
+                    NodeID vnS = pag->getValueNode(cs.getArgument(1));
+                    pag->addStoreEdge(vnS, vnD);
+                }
+                break;
+            }
+            case ExtAPI::CPP_EFT_A0R_A1R: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnD = getValueNode(cs.getArgument(0));
+                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    assert(vnD && vnS && "dst or src not exist?");
+                    NodeID dummy = pag->addDummyValNode();
+                    pag->addLoadEdge(vnS,dummy);
+                    pag->addStoreEdge(dummy,vnD);
+                }
+                break;
+            }
+            case ExtAPI::CPP_EFT_A1R: {
+                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                if (symTable->getModelConstants()) {
+                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    assert(vnS && "src not exist?");
+                    NodeID dummy = pag->addDummyValNode();
+                    pag->addLoadEdge(vnS,dummy);
                 }
                 break;
             }
