@@ -57,6 +57,8 @@ public:
     enum CEDGEK {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
     };
+
+
 private:
     CallInstSet directCalls;
     CallInstSet indirectCalls;
@@ -216,6 +218,7 @@ public:
         destroy();
     }
 
+
     /// Get callees from an indirect callsite
     //@{
     inline CallEdgeMap& getIndCallMap() {
@@ -368,7 +371,9 @@ struct GraphTraits<Inverse<PTACallGraphNode *> > : public GraphTraits<Inverse<Ge
 };
 
 template<> struct GraphTraits<PTACallGraph*> : public GraphTraits<GenericGraph<PTACallGraphNode,PTACallGraphEdge>* > {
+  typedef PTACallGraphNode *NodeRef;
 };
+
 
 }
 

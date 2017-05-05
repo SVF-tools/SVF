@@ -255,9 +255,16 @@ std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
     raw_string_ostream rawstr(str);
     NamedMDNode* CU_Nodes = F->getParent()->getNamedMetadata("llvm.dbg.cu");
     if(CU_Nodes) {
+      /*
+       * Looks like the DICompileUnt->getSubprogram was moved into Function::
+       */
         for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
             DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
-            for (DISubprogram *SP : CUNode->getSubprograms()) {
+	    /*
+	     * https://reviews.llvm.org/D18074?id=50385 
+	     * looks like the relevant
+	     */
+            if (DISubprogram *SP =  F->getSubprogram()) {
                 if (SP->describes(F))
                     rawstr << "in line: " << SP->getLine()
                            << " file: " << SP->getFilename();
@@ -309,9 +316,13 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
         if(CU_Nodes) {
             for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
                 DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
-                for (DIGlobalVariable *GV : CUNode->getGlobalVariables()) {
-                    if (gvar == GV->getVariable())
-                        rawstr << "ln: " << GV->getLine() << " fl: " << GV->getFilename();
+                for (DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
+		  DIGlobalVariable * DGV = GV->getVariable();
+
+		  /*
+		  if ( gvar == DGV )
+                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+		  */
                 }
             }
         }

@@ -55,15 +55,15 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
             clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
-            clEnumValEnd));
+            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis")
+            ));
 
 
 static cl::bits<WPAPass::AliasCheckRule> AliasRule(cl::desc("Select alias check rule"),
         cl::values(
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
-            clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias"),
-            clEnumValEnd));
+            clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
+            ));
 
 cl::opt<bool> anderSVFG("svfg", cl::init(false),
                         cl::desc("Generate SVFG after Andersen's Analysis"));

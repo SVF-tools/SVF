@@ -1,0 +1,24 @@
+Diff between “llvm-4” and “master”
+
+Likely the most important difference is the requirement that a NodeRef (rather than NodeType) be declared for types that will utilize the GraphTraits as part of the class definition.
+
+I altered most of the getPassName() instances to return a llvm::StringRef rather than a const char * type.  This seems rather trivial and I didn’t see a reason not to use the preferred string type choice for LLVM.
+
+/include/Util/DataFlow.h
+The PostDominatorTree becomes PostDominatorTreeWrapperPass, which is pretty consistent in recent revisions where a pass is accessed via a wrapper.
+
+I altered the base class /include/Util/GraphUtil.h
+
+To have a typedef typename Traits::NodeRef NodeRef, per llvm 4.  I believe this is necessary, as I looked over the llvm-4.  This with the NodeRef alterations in each of the specific graph classes required some alterations in terms of dereferencing, etc.  Again, a quick pass and it seemed to work but this is a place where a simple “*” might have a subtle unintended consequence.
+
+include/WPA/WPAPass.h
+
+Here I had to remove the explicit inheritance from “AliasAnalysis”, and this likely needs a fix, as AliasAnalysis needs a TargetLibraryInfo to be passed as the argument now and I’m a little unsure as to where to get that from.  There is no more default constructor…  To get the TargetLibraryInfo it seems the best convention is:
+
+TLInfo = &getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
+
+But it didn’t seem to “drop in” to the wpa tool perfectly.  It seems that inheriting from AAResultsWrapperPass might make sense?  Or to have a dependency there?  That said, I’m still learning so I wanted to point this out and let others more familiar make that decision.
+
+I had a number of CMAKE issues, most of which I was able to solve but might have a few redundancies, perhaps that is because I’m on a Mac.
+
+I believe the rest is pretty straightforward.  Looking back the WPAPass is likely an issue to be solved prior to merging into master, the rest

@@ -60,7 +60,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         if (index <= baseIndex) {
             /// variant offset
             // Handling pointer types
-            if (const PointerType* pty = dyn_cast<PointerType>(*gi)) {
+	  if (const PointerType* pty = dyn_cast<PointerType>(gi.getIndexedType())) {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
 
@@ -73,7 +73,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 ls.addElemNumStridePair(std::make_pair(num, sz));
             }
             // Calculate the size of the array element
-            else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
+            else if(const ArrayType* at = dyn_cast<ArrayType>(gi.getIndexedType())) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 Size_t num = at->getNumElements();
@@ -94,19 +94,19 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
             // Handling pointer types
             // These GEP instructions are simply making address computations from the base pointer address
             // e.g. idx1 = (char*) &MyVar + 4,  at this case gep only one offset index (idx)
-            if (const PointerType* pty = dyn_cast<PointerType>(*gi)) {
+            if (const PointerType* pty = dyn_cast<PointerType>(gi.getIndexedType())) {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 ls.offset += idx * sz;
             }
             // Calculate the size of the array element
-            else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
+            else if(const ArrayType* at = dyn_cast<ArrayType>(gi.getIndexedType())) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 ls.offset += idx * sz;
             }
             // Handling struct here
-            else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
+	    else if (const StructType *ST = gi.getStructTypeOrNull() ) {
                 assert(op && "non-const struct index in GEP");
                 const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
                 if ((unsigned)idx >= so.size()) {
