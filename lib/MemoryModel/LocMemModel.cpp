@@ -74,7 +74,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 ls.addElemNumStridePair(std::make_pair(num, sz));
             }
             // Calculate the size of the array element
-            else if(const ArrayType* at = dyn_cast<ArrayType>(gi.getIndexedType())) {
+	    else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 Size_t num = at->getNumElements();
