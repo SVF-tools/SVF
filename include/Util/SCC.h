@@ -55,7 +55,7 @@ class SCCDetection {
 private:
     ///Define the GTraits and node iterator for printing
     typedef llvm::GraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeType          GNODE;
+    typedef typename GTraits::NodeRef          GNODE;
     typedef typename GTraits::nodes_iterator node_iterator;
     typedef typename GTraits::ChildIteratorType child_iterator;
     typedef unsigned NodeID ;
@@ -207,11 +207,11 @@ private:
         return _NodeSCCAuxInfo[n].inSCC();
     }
 
-    inline GNODE* Node(NodeID id) const {
+    inline GNODE Node(NodeID id) const {
         return GTraits::getNode(_graph, id);
     }
 
-    inline NodeID Node_Index(GNODE* node) const {
+    inline NodeID Node_Index(GNODE node) const {
         return GTraits::getNodeID(node);
     }
 

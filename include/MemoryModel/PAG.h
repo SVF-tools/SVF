@@ -685,6 +685,7 @@ template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<
 };
 
 template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* > {
+   typedef PAGNode *NodeRef;
 };
 }
 #endif /* PAG_H_ */

@@ -28,6 +28,7 @@
 
 #include "WPA/WPAPass.h"
 
+#include <llvm-c/Core.h> // for LLVMGetGlobalContext()
 #include <llvm/Support/CommandLine.h>	// for cl
 #include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
 #include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
@@ -38,7 +39,7 @@
 #include <llvm/Support/PrettyStackTrace.h> // for pass list
 #include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/ReaderWriter.h>		// for createBitcodeWriterPass
+#include <llvm/Bitcode/BitcodeWriterPass.h>		// for createBitcodeWriterPass
 
 
 using namespace llvm;
@@ -49,15 +50,16 @@ static cl::opt<std::string> InputFilename(cl::Positional,
 
 int main(int argc, char ** argv) {
 
-    sys::PrintStackTraceOnErrorSignal();
+    sys::PrintStackTraceOnErrorSignal(argv[0]);
     llvm::PrettyStackTraceProgram X(argc, argv);
 
-    LLVMContext &Context = getGlobalContext();
+    LLVMOpaqueContext * WrappedContextRef = LLVMGetGlobalContext();
+    LLVMContext &Context = *unwrap(WrappedContextRef);
 
     std::string OutputFilename;
 
     cl::ParseCommandLineOptions(argc, argv, "Whole Program Points-to Analysis\n");
-    sys::PrintStackTraceOnErrorSignal();
+    sys::PrintStackTraceOnErrorSignal(argv[0]);
 
     PassRegistry &Registry = *PassRegistry::getPassRegistry();
 

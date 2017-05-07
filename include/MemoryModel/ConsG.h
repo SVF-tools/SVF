@@ -314,6 +314,7 @@ struct GraphTraits<Inverse<ConstraintNode *> > : public GraphTraits<Inverse<Gene
 };
 
 template<> struct GraphTraits<ConstraintGraph*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* > {
+   typedef ConstraintNode *NodeRef;
 };
 
 }

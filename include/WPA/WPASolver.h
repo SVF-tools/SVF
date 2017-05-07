@@ -6,7 +6,7 @@
 // Copyright (C) <2013-2016>  <Jingling Xue>
 
 // This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
+// it under the terms of the GNU Gg12eneral Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
@@ -43,7 +43,7 @@ class WPASolver {
 public:
     ///Define the GTraits and node iterator for printing
     typedef llvm::GraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeType          GNODE;
+    typedef typename GTraits::NodeRef           GNODE;
     typedef typename GTraits::EdgeType          GEDGE;
     typedef typename GTraits::ChildIteratorType child_iterator;
 
@@ -122,8 +122,8 @@ protected:
 
     /// Propagation for the solving, to be implemented in the child class
     virtual void propagate(GNODE* v) {
-        child_iterator EI = GTraits::direct_child_begin(v);
-        child_iterator EE = GTraits::direct_child_end(v);
+        child_iterator EI = GTraits::direct_child_begin(*v);
+        child_iterator EE = GTraits::direct_child_end(*v);
         for (; EI != EE; ++EI) {
             if (propFromSrcToDst(*(EI.getCurrent())))
                 pushIntoWorklist(Node_Index(*EI));
@@ -162,7 +162,7 @@ protected:
     }
 
     /// Get node ID
-    inline NodeID Node_Index(GNODE* node) {
+    inline NodeID Node_Index(GNODE node) {
         return GTraits::getNodeID(node);
     }
 
