@@ -107,7 +107,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 ls.offset += idx * sz;
             }
             // Handling struct here
-	    else if (const StructType *ST = dyn_cast<StructType>(*gi ) {
+	    else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
                 assert(op && "non-const struct index in GEP");
                 const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
                 if ((unsigned)idx >= so.size()) {
