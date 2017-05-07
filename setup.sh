@@ -1,12 +1,14 @@
 echo "Setting up environment for PTA"
 
 
-#########PATH FOR LLVM (do not recommand to change it)##############                                                                 
-llvm_version=3.8.0
-export LLVM_HOME=/home/ysui/llvm-$llvm_version
-export LLVM_SRC_ROOT=$LLVM_HOME/llvm-$llvm_version.src
-export LLVM_OBJ_ROOT=$LLVM_HOME/llvm-$llvm_version.obj
-export PATH=$LLVM_OBJ_ROOT/Release+Asserts/bin:$PATH
+#########
+# Please change LLVM_OBJ_ROOT before using it
+########
+
+export LLVM_OBJ_ROOT=/home/ysui/llvm-4.0.0.obj
+
+export PATH=$LLVM_OBJ_ROOT/bin:$PATH
+export LLVM_DIR=$LLVM_OBJ_ROOT
 #export LLVM_OBJ_ROOT=$LLVM_HOME/llvm-$llvm_version.dbg
 #export PATH=$LLVM_OBJ_ROOT/Debug+Asserts/bin:$PATH
 export LLVMOPT=opt
@@ -38,10 +40,10 @@ PTAOBJTY='Debug'
 else
 PTAOBJTY='Release'
 fi
-
+Build=$PTAOBJTY'-build'
 export PTAHOME=`pwd`
-export PTABIN=$PTAHOME/$PTAOBJTY+Asserts/bin
-export PTALIB=$PTAHOME/$PTAOBJTY+Asserts/lib
+export PTABIN=$PTAHOME/$Build/bin
+export PTALIB=$PTAHOME/$Build/lib
 export PTARTLIB=$PTAHOME/lib/RuntimeLib
 export PATH=$PTABIN:$PATH
 
