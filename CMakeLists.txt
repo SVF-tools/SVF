@@ -8,7 +8,7 @@ if(NOT COMMAND add_llvm_loadable_module)
         # We need to match the build environment for LLVM:
         # In particular, we need C++11 and the -fno-rtti flag
         set(CMAKE_CXX_STANDARD 11)
-        set(CMAKE_CXX_FLAGS "-fno-rtti")
+        set(CMAKE_CXX_FLAGS "-std=gnu++11 -fno-rtti")
 
         find_package(LLVM REQUIRED CONFIG)
         
