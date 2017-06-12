@@ -77,9 +77,9 @@ public:
             delete ptaCallGraph;
         ptaCallGraph = NULL;
 
-        if(pathCondAllocator)
-            delete pathCondAllocator;
-        pathCondAllocator = NULL;
+        //if(pathCondAllocator)
+        //    delete pathCondAllocator;
+        //pathCondAllocator = NULL;
     }
 
     /// Start analysis here
