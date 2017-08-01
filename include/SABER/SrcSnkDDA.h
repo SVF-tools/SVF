@@ -144,7 +144,7 @@ public:
     virtual void initSnks() = 0;
     virtual bool isSourceLikeFun(const llvm::Function* fun) = 0;
     virtual bool isSinkLikeFun(const llvm::Function* fun) = 0;
-    virtual bool isSouce(const SVFGNode* node) = 0;
+    virtual bool isSource(const SVFGNode* node) = 0;
     virtual bool isSink(const SVFGNode* node) = 0;
     ///@}
 

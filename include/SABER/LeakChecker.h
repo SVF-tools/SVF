@@ -95,7 +95,7 @@ public:
     /// Identify allocation wrappers
     bool isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet);
     /// A SVFG node is source if it is an actualRet at malloc site
-    inline bool isSouce(const SVFGNode* node) {
+    inline bool isSource(const SVFGNode* node) {
         return getSources().find(node)!=getSources().end();
     }
     /// A SVFG node is source if it is an actual parameter at dealloca site

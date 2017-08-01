@@ -757,7 +757,7 @@ public:
                 }
                 else if (!llvm::isa<DummyValPN>(node)) {
                     llvm::outs() << "##<" << node->getValue()->getName() << "> ";
-                    llvm::outs() << "Souce Loc: " << analysisUtil::getSourceLoc(node->getValue());
+                    llvm::outs() << "Source Loc: " << analysisUtil::getSourceLoc(node->getValue());
                 }
 
                 const PointsTo& pts = getPts(node->getId());
