@@ -603,18 +603,20 @@ void CHGraph::analyzeVTables(const Module &M) {
     for (Module::const_global_iterator I = M.global_begin(),
             E = M.global_end(); I != E; ++I) {
         const GlobalValue *globalvalue = dyn_cast<const GlobalValue>(I);
-        if (isValVtbl(globalvalue)) {
-            if (isa<ArrayType>(globalvalue->getValueType()) &&
-                    globalvalue->getNumOperands() > 0) {
+        if (isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0) {
+            const ConstantStruct *vtblStruct =
+                dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
+            assert(vtblStruct && "Initializer of a vtable not a struct?");
 
-                string vtblClassName = getClassNameFromVtblVal(globalvalue);
-                CHNode *node = getOrCreateNode(vtblClassName);
+            string vtblClassName = getClassNameFromVtblVal(globalvalue);
+            CHNode *node = getOrCreateNode(vtblClassName);
 
-                node->setVTable(globalvalue);
+            node->setVTable(globalvalue);
 
+            for (int ei = 0; ei < vtblStruct->getNumOperands(); ++ei) {
                 const ConstantArray *vtbl =
-                    dyn_cast<ConstantArray>(globalvalue->getOperand(0));
-                assert (vtbl != NULL && "vtable operands not constant array");
+                    dyn_cast<ConstantArray>(vtblStruct->getOperand(ei));
+                assert(vtbl && "Element of initializer not an array?");
 
                 /*
                  * items in vtables can be classified into 3 categories:
