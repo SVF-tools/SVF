@@ -6,6 +6,7 @@ echo "Setting up environment for PTA"
 ########
 
 export LLVM_OBJ_ROOT=/home/ysui/llvm-4.0.0/llvm-4.0.0.obj
+export LLVM_OBJ_ROOT=/usr/lib/llvm-4.0
 
 export PATH=$LLVM_OBJ_ROOT/bin:$PATH
 export LLVM_DIR=$LLVM_OBJ_ROOT

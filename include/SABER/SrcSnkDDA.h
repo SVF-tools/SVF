@@ -58,10 +58,11 @@ private:
     PathCondAllocator* pathCondAllocator;
     SVFGNodeToDPItemsMap nodeToDPItemsMap;	///<  record forward visited dpitems
     SVFGNodeSet visitedSet;	///<  record backward visited nodes
+public:
+	/* XXX arr */
     SaberSVFGBuilder memSSA;
     SVFG* svfg;
     PTACallGraph* ptaCallGraph;
-public:
 
     /// Constructor
     SrcSnkDDA() : _curSlice(NULL), svfg(NULL), ptaCallGraph(NULL) {

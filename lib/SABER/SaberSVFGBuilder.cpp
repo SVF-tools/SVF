@@ -163,12 +163,36 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes() {
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
         const Function* fun = getCallee(it->first);
-        if(SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
-                || SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
+		std::string fName;
+		if (!fun->hasName()) {
+			fName = "";
+		} else {
+			fName = fun->getName().str();
+		}
+
+		int idx = -1;
+		if (isPruneSink(fName)) {
+			idx = getPruneSinkIndex(fName);
+		} else if (isPruneSource(fName)) {
+			idx = getPruneSourceIndex(fName);
+		} else {
+			std::cout << fName << " is not a pruneskin sink.\n";
+			return;	
+		}
+
             PAG::PAGNodeList& arglist =	it->second;
-            const PAGNode* pagNode = arglist.front();
-            svfg->addActualParmSVFGNode(pagNode,it->first);
-            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmSVFGNode(pagNode,it->first)->getId());
+		auto argIt = arglist.begin();
+		while (idx > 0) {	
+			++argIt;
+			--idx;
         }
+		const PAGNode* pagNode = *argIt;
+		svfg->addActualParmSVFGNode(pagNode,it->first);
+
+		const ActualParmSVFGNode *apsn = svfg->getActualParmSVFGNode(
+		  pagNode,
+		  it->first);
+		svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),
+		  apsn->getId());
     }
 }

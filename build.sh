@@ -5,7 +5,8 @@
 #########
 # Please change the following home directories of your LLVM builds
 ########
-LLVMRELEASE=/home/ysui/llvm-4.0.0/llvm-4.0.0.obj
+LLVMRELEASE=/usr/lib/llvm-4.0
+#LLVMRELEASE=/home/ysui/llvm-4.0.0/llvm-4.0.0.obj
 LLVMDEBUG=/home/ysui/llvm-4.0.0/llvm-4.0.0.dbg
 
 if [[ $1 == 'debug' ]]
@@ -26,10 +27,10 @@ cd $Build
 
 if [[ $1 == 'debug' ]]
 then
-cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
+CC=/usr/lib/ccache/cc CXX=/usr/lib/ccache/c++ cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
-cmake ../
+CC=/usr/lib/ccache/cc CXX=/usr/lib/ccache/c++ cmake ../
 fi
-cmake ../
-make -j4
+CC=/usr/lib/ccache/cc CXX=/usr/lib/ccache/c++ cmake ../
+CC=/usr/lib/ccache/cc CXX=/usr/lib/ccache/c++ make -j4
 

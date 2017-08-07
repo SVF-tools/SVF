@@ -44,6 +44,37 @@ public:
     typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
     typedef FIFOWorkList<NodeID> WorkList;
 
+
+	std::map<std::string, int> sinkMap;	
+	std::map<std::string, int> sourceMap;	
+	void addPruneSink(std::string fName, unsigned argIndex) {
+		sinkMap[fName] = argIndex;
+	}
+	bool isPruneSink(std::string fName) {
+		auto it = sinkMap.find(fName);
+		if (it != sinkMap.end()) {
+			return true;
+		}
+		return false;
+	}
+	int getPruneSinkIndex(std::string fName) {
+		return sinkMap[fName];
+	}
+	
+    void addPruneSource(std::string fName, unsigned argIndex) {
+        sourceMap[fName] = argIndex;
+    }
+    bool isPruneSource(std::string fName) {
+        auto it = sourceMap.find(fName);
+        if (it != sourceMap.end()) {
+            return true;
+        }
+        return false;
+    }
+    int getPruneSourceIndex(std::string fName) {
+        return sourceMap[fName];
+    }
+
     /// Constructor
     SaberSVFGBuilder() {}
 
