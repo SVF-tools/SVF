@@ -29,6 +29,7 @@
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
+#include "SABER/ArgvFlow.h"
 
 #include <llvm-c/Core.h> // for LLVMGetGlobalContext()
 #include <llvm/Support/CommandLine.h>	// for cl
@@ -57,6 +58,8 @@ static cl::opt<bool> FILECHECKER("fileck", cl::init(false),
 
 static cl::opt<bool> DFREECHECKER("dfree", cl::init(false),
                                   cl::desc("Double Free Detection"));
+static cl::opt<bool> PSKINARGV("pskin-argv", cl::init(false),
+                                  cl::desc("pskin argv flow"));
 
 int main(int argc, char ** argv) {
 
@@ -110,12 +113,18 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
+/*
     if(LEAKCHECKER)
         Passes.add(new LeakChecker());
     else if(FILECHECKER)
         Passes.add(new FileChecker());
     else if(DFREECHECKER)
         Passes.add(new DoubleFreeChecker());
+	else if (PSKINARGV) 
+ */
+
+	ArgvFlow *a = new ArgvFlow();		
+	Passes.add(a);
 
     Passes.add(createBitcodeWriterPass(Out->os()));
 
