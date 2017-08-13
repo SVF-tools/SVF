@@ -3,7 +3,7 @@
 * <b>SVF now supports [LLVM-4.0.0](https://github.com/unsw-corg/SVF/pull/23) (Contributed by Jared Carlson. Thank [Jared](https://github.com/jcarlson23) and [Will](https://github.com/dtzWill) for their in-depth [discussions](https://github.com/unsw-corg/SVF/pull/18) about updating SVF!) </b>
 * <b>SVF now supports analysis for C++ programs.</b>
 <br />
-* <b>Multiple full PhD scholarship available (plus tuition fee waiver). We are looking for students to continue to work on SVF in the area of program analysis for software security. Please contact Dr. Yulei Sui if you are interested (email: ysui@cse.unsw.edu.au).</b>
+* <b>Multiple full PhD scholarship available (plus tuition fee waiver). We are looking for students to continue to work on SVF in the area of program analysis for software security. Please contact Dr. Yulei Sui if you are interested (email: ysui@cse.unsw.edu.au, or rockysui@gmail.com).</b>
 
 
 <br />
