@@ -13,9 +13,9 @@
     <section class="page-header">
       <h1 class="project-name">SVF</h1>
       <h2 class="project-tagline">Pointer Analysis and Program Depedence Analysis in LLVM</h2>
-      <a href="https://github.com/unsw-corg/SVF" class="btn">View Wiki on GitHub</a>
+      <a href="https://github.com/svf-tools/SVF" class="btn">View Wiki on GitHub</a>
       <a href="https://www.cse.unsw.edu.au/~ysui/svf.php" class="btn">Download Source Code </a>
-      <a href="https://github.com/unsw-corg/SVF/wiki/Try-SVF-in-VirtualBox" class="btn">Download Virtual Machine Image</a>
+      <a href="https://github.com/svf-tools/SVF/wiki/Try-SVF-in-VirtualBox" class="btn">Download Virtual Machine Image</a>
 
     </section>
 
@@ -23,7 +23,7 @@
       <h2>
 <a id="what-is-svf" class="anchor" href="#what-is-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is SVF?</h2>
 
-<p><a href="https://github.com/unsw-corg/SVF">SVF</a> is a static tool that enables scalable and precise interprocedural dependence analysis for C and C++ programs. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
+<p><a href="https://github.com/svf-tools/SVF">SVF</a> is a static tool that enables scalable and precise interprocedural dependence analysis for C and C++ programs. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
 
 <h2>
 <a id="what-kind-of-analyses-does-svf-provide" class="anchor" href="#what-kind-of-analyses-does-svf-provide" aria-hidden="true"><span class="octicon octicon-link"></span></a>What kind of analyses does SVF provide?</h2>
@@ -35,7 +35,7 @@
 <li>Value-flow dependence analysis</li>
 <li>Interprocedural memory SSA</li>
 <li>Detecting source-sink related bugs, such as memory leaks and incorrect file-open close errors.</li>
-<li>An <a href= "https://github.com/unsw-corg/SVF-EclipsePlugin">Eclipse plugin </a> for visualizing bugs </li>
+<li>An <a href= "https://github.com/svf-tools/SVF-EclipsePlugin">Eclipse plugin </a> for visualizing bugs </li>
 </ul>
 
 <h2>
@@ -46,19 +46,19 @@ GPLv3
 <h2>
 <a id="how-to-setup-svf" class="anchor" href="#how-to-setup-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to setup SVF?</h2>
 
-<p>Please download the <a href="https://github.com/unsw-corg/SVF">source code</a> of SVF and refer to this <a href="https://github.com/unsw-corg/SVF/wiki/Setup-Guide#getting-started"> step-by-step guide</a> to setup SVF.</p>
+<p>Please download the <a href="https://github.com/svf-tools/SVF">source code</a> of SVF and refer to this <a href="https://github.com/svf-tools/SVF/wiki/Setup-Guide#getting-started"> step-by-step guide</a> to setup SVF.</p>
 
 <h2>
 <a id="how-to-run-svf" class="anchor" href="#how-to-run-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to run SVF?</h2>
 
-<p>SVF analyzes a program by taking the LLVM IR of the program as its input. Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#quick-start">this user guide</a> to run SVF with <a href="https://github.com/unsw-corg/SVF/wiki/Analyze-a-Simple-C-Program#an-example">a simple example</a> and generate the <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#analysis-outputs">outputs</a> of each analysis pass in your local machine.</p>
+<p>SVF analyzes a program by taking the LLVM IR of the program as its input. Please refer to <a href="https://github.com/svf-tools/SVF/wiki/User-Guide#quick-start">this user guide</a> to run SVF with <a href="https://github.com/svf-tools/SVF/wiki/Analyze-a-Simple-C-Program#an-example">a simple example</a> and generate the <a href="https://github.com/svf-tools/SVF/wiki/User-Guide#analysis-outputs">outputs</a> of each analysis pass in your local machine.</p>
 
-<p>Alternatively, we have also prepared a <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/SVF.ova">virtual machine image</a> for you to run SVF on any machine with VirtualBox installed. Please refer to this <a href="https://github.com/unsw-corg/SVF/wiki/Try-SVF-in-VirtualBox"> step-by-step guide</a> to try SVF in a VM. </p>
+<p>Alternatively, we have also prepared a <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/SVF.ova">virtual machine image</a> for you to run SVF on any machine with VirtualBox installed. Please refer to this <a href="https://github.com/svf-tools/SVF/wiki/Try-SVF-in-VirtualBox"> step-by-step guide</a> to try SVF in a VM. </p>
 
 <h2>
 <a id="how-does-svf-work-internally" class="anchor" href="#how-does-svf-work-internally" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does SVF work internally?</h2>
 
-<p>Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/Technical-documentation">this wiki documentation</a>, <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/doxygen/">doxygen code manual</a> and the following publications to understand the internal working of SVF.</p>
+<p>Please refer to <a href="https://github.com/svf-tools/SVF/wiki/Technical-documentation">this wiki documentation</a>, <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/doxygen/">doxygen code manual</a> and the following publications to understand the internal working of SVF.</p>
 
 <h2>
 <a id="publications" class="anchor" href="#publications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Publications</h2>
@@ -85,10 +85,6 @@ for Multithreaded Programs</a>, International Symposium on Code Generation and O
 Any comments, contributions and collaborations are welcomed.
 Please contact <a href="mailto:ysui@cse.unsw.edu.au">Yulei Sui</a> or <a href="mailto:jingling@cse.unsw.edu.au">Jingling Xue</a> if you have any questions.
 
-      <footer class="site-footer">
-              <span class="site-footer-owner"><a href="https://github.com/unsw-corg/SVF">SVF</a> is maintained by <a href="http://www.cse.unsw.edu.au/~corg/">UNSW-CORG</a>.</span>
-
-      </footer>
 
     </section>
 
