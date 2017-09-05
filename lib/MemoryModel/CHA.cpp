@@ -548,7 +548,7 @@ const Function *CHGraph::getVirtualFunctionBasedonID(s32_t id) const {
     return NULL;
 }
 
-set<string> CHGraph::getDescendantsName(const string className) const {
+set<string> CHGraph::getDescendantsNames(const string className) const {
     set<string> descendantsName;
     CHNode *classNode = getNode(className);
     if (classNode != NULL) {
@@ -566,6 +566,40 @@ set<string> CHGraph::getDescendantsName(const string className) const {
         }
     }
     return descendantsName;
+}
+
+set<string> CHGraph::getAncestorsNames(const string className) const {
+    set<string> ancestorsName;
+    CHNode *classNode = getNode(className);
+    if (classNode != NULL) {
+        CHNodeSetTy ancestors;
+        if (hasAncestors(className)) {
+            ancestors = getAncestors(className);
+        }
+        ancestors.insert(classNode);
+        for (CHNodeSetTy::const_iterator it = ancestors.begin(),
+                eit = ancestors.end(); it != eit; ++it) {
+            ancestorsName.insert((*it)->getName());
+        }
+    }
+    return ancestorsName;
+}
+
+set<string> CHGraph::getInstancesNames(const string className) const {
+    set<string> instancesName;
+    CHNode *classNode = getNode(className);
+    if (classNode != NULL) {
+        CHNodeSetTy instances;
+        if (hasInstances(className)) {
+            instances = getInstances(className);
+            instances.insert(classNode);
+        }
+        for (CHNodeSetTy::const_iterator it = instances.begin(),
+                eit = instances.end(); it != eit; ++it) {
+            instancesName.insert((*it)->getName());
+        }
+    }
+    return instancesName;
 }
 
 /*
@@ -1015,7 +1049,7 @@ void CHGraph::filterVtblsBasedonCHA(CallSite cs,
                                     CHNodeSetTy &targetClasses) const {
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
     std::set<std::string> descendantNames =
-        getDescendantsName(classNameOfThisPtr);
+        getDescendantsNames(classNameOfThisPtr);
     descendantNames.insert(classNameOfThisPtr);
 
     for (std::set<const llvm::Value*>::iterator it = vtbls.begin(),

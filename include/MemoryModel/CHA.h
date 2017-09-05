@@ -205,7 +205,9 @@ public:
     const CHNodeSetTy &getDescendants(const std::string className) const;
     const CHNodeSetTy &getAncestors(const std::string name) const;
     const CHNodeSetTy &getInstances(const std::string name) const;
-    std::set<std::string> getDescendantsName(const std::string className) const;
+    std::set<std::string> getDescendantsNames(const std::string className) const;
+    std::set<std::string> getAncestorsNames(const std::string className) const;
+    std::set<std::string> getInstancesNames(const std::string className) const;
     void readInheritanceMetadataFromModule(const llvm::Module &M);
     void analyzeVTables(const llvm::Module &M);
     std::string getClassNameOfThisPtr(llvm::CallSite cs) const;
