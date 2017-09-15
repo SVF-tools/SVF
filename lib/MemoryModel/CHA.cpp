@@ -291,6 +291,8 @@ void CHGraph::buildCHGOnBasicBlock(const BasicBlock *B,
                 continue;
             if ((relationType == CONSTRUCTOR && isConstructor(callee)) ||
                     (relationType == DESTRUCTOR && isDestructor(callee))) {
+                if (cs.arg_size() < 1)
+                  continue;
                 const Value *thisPtr = getVCallThisPtr(cs);
                 if (thisPtr != NULL) {
                     struct DemangledName dname = demangle(callee->getName().str());
