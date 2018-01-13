@@ -40,7 +40,7 @@ void IteratedDominanceFrontier::calculate(llvm::BasicBlock * bb,
 
     DomSetType worklist;
 
-    DominanceFrontierBase<llvm::BasicBlock>::const_iterator it = DF.find(bb);
+    DominanceFrontierBase<llvm::BasicBlock, false>::const_iterator it = DF.find(bb);
     assert(it != DF.end());
 
     worklist.insert(it->second.begin(), it->second.end());
