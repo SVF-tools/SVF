@@ -8,7 +8,6 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTA.h"
 #include "MTA/MTAResultValidator.h"
-#include "RC/RCResultValidator.h"
 #include "Util/AnalysisUtil.h"
 #include <llvm/Support/CommandLine.h>	// for llvm command line options
 
@@ -19,7 +18,7 @@ static cl::opt<bool> PrintLockSpan("print-lock", cl::init(false), cl::desc("Prin
 
 
 // Subclassing RCResultValidator to define the abstract methods.
-class LockValidator : public RCResultValidator {
+class LockValidator : public RaceResultValidator {
 public:
     LockValidator(LockAnalysis* ls) :lsa(ls) {
     }
@@ -62,7 +61,7 @@ void LockAnalysis::analyze() {
  */
 void LockAnalysis::collectLockUnlocksites() {
     ThreadCallGraph* tcg=tct->getThreadCallGraph();
-    for (Module::iterator F = tcg->getModule()->begin(), E = tcg->getModule()->end(); F != E; ++F) {
+    for (SVFModule::iterator F = tcg->getModule().begin(), E = tcg->getModule().end(); F != E; ++F) {
         for (inst_iterator II = inst_begin(*F), EE = inst_end(*F); II != EE; ++II) {
             const Instruction *inst = &*II;
             if (tcg->getThreadAPI()->isTDRelease(inst)) {

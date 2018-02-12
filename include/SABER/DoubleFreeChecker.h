@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,14 +51,14 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
+    virtual bool runOnModule(SVFModule module) {
         /// start analysis
         analyze(module);
         return false;
     }
 
     /// Get pass name
-    virtual llvm::StringRef getPassName() const {
+    virtual inline llvm::StringRef getPassName() const {
         return "Double Free Analysis";
     }
 

@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,9 @@
 #define CHA_H_
 
 #include "MemoryModel/GenericGraph.h"
+#include "Util/SVFModule.h"
 
+class SVFModule;
 class CHNode;
 
 typedef GenericEdge<CHNode> GenericCHEdgeTy;
@@ -174,9 +176,7 @@ public:
     }
     ~CHGraph();
 
-    void buildCHG(const llvm::Module &M);
-    void buildCHG(s32_t libnum, std::unique_ptr<llvm::Module> *libmodules,
-                  const llvm::Module &M);
+    void buildCHG(const SVFModule svfModule);
     void constructCHGraphFromIR(const llvm::Module &M);
     void buildInternalMaps();
     void buildCHGOnFunction(const llvm::Function *F);
@@ -189,11 +189,11 @@ public:
     CHNode *getNode(const std::string name) const;
     CHNode *getOrCreateNode(const std::string name);
     void addToNodeList(CHNode* node);
-    void printCH() const;
     /// Dump the graph
     void dump(const std::string& filename);
-    void dumpStats() const;
+    void collectAncestorsDescendants(const CHNode *node);
     void buildClassNameToAncestorsDescendantsMap();
+    void buildClassNameToNamesMap();
     void buildVirtualFunctionToIDMap();
     s32_t getVirtualFunctionID(const llvm::Function *vfn) const;
     const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const;
@@ -214,18 +214,18 @@ public:
     std::string getFunNameOfVCallSite(llvm::CallSite cs) const;
     CHNodeSetTy getTemplateInstancesAndDescendants(const std::string className) const;
     void getCSClasses(llvm::CallSite cs, CHNodeSetTy &chClasses) const;
-    void getCSVtbls(llvm::CallSite cs,
-                    std::set<llvm::Value*> &vtbls) const;
-    void getCSVFns(llvm::CallSite cs,
-                   std::set<llvm::Value*> &virtualFunctions) const;
 
     bool VCallInCtorOrDtor(llvm::CallSite cs) const;
-    void filterVtblsBasedonCHA(llvm::CallSite cs,
-                               std::set<const llvm::Value*> &vtbls,
-                               CHNodeSetTy &targetClasses) const;
     void getVFnsFromVtbls(llvm::CallSite cs,
-                          std::set<const llvm::Value*> &vtbls,
+                          const std::set<const llvm::Value*> &vtbls,
                           std::set<const llvm::Function*> &virtualFunctions) const;
+
+    void collectVirtualCallSites();
+    void buildCSToCHAVtblsAndVfnsMap();
+    const bool csHasVtblsBasedonCHA(llvm::CallSite cs) const;
+    const bool csHasVFnsBasedonCHA(llvm::CallSite cs) const;
+    const std::set<const llvm::Value*> &getCSVtblsBasedonCHA(llvm::CallSite cs) const;
+    const std::set<const llvm::Function*> &getCSVFsBasedonCHA(llvm::CallSite cs) const;
 private:
     u32_t classNum;
     s32_t vfID;
@@ -233,7 +233,15 @@ private:
     std::map<std::string, CHNodeSetTy> classNameToDescendantsMap;
     std::map<std::string, CHNodeSetTy> classNameToAncestorsMap;
     std::map<std::string, CHNodeSetTy> templateNameToInstancesMap;
+    std::map<std::string, std::set<std::string>> classNameToDescendantsNamesMap;
+    std::map<std::string, std::set<std::string>> classNameToAncestorsNamesMap;
+    std::map<std::string, std::set<std::string>> templateNameToInstancesNamesMap;
     std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
+
+    SVFModule svfMod;
+    std::set<llvm::CallSite> virtualCallSites;
+    std::map<llvm::CallSite, std::set<const llvm::Value*>> csToCHAVtblsMap;
+    std::map<llvm::CallSite, std::set<const llvm::Function*>> csToCHAVFnsMap;
 };
 
 
@@ -251,7 +259,7 @@ struct GraphTraits<Inverse<CHNode*> > : public GraphTraits<Inverse<GenericNode<C
 };
 
 template<> struct GraphTraits<CHGraph*> : public GraphTraits<GenericGraph<CHNode,CHEdge>* > {
-  typedef CHNode *NodeRef;
+    typedef CHNode *NodeRef;
 };
 
 }

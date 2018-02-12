@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
 class AndersenWaveDiff;
+class SVFModule;
 
 /*!
  * Flow sensitive whole program pointer analysis
@@ -70,10 +71,10 @@ public:
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FlowSensitive* createFSWPA(llvm::Module& module) {
+    static FlowSensitive* createFSWPA(SVFModule svfModule) {
         if (fspta == NULL) {
             fspta = new FlowSensitive();
-            fspta->analyze(module);
+            fspta->analyze(svfModule);
         }
         return fspta;
     }
@@ -86,17 +87,15 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        /// start analysis
-        analyze(module);
+    virtual bool runOnModule(SVFModule module) {
         return false;
     }
 
     /// Flow sensitive analysis
-    virtual void analyze(llvm::Module& module);
+    virtual void analyze(SVFModule svfModule);
 
     /// Initialize analysis
-    virtual void initialize(llvm::Module& module);
+    virtual void initialize(SVFModule svfModule);
 
     /// Finalize analysis
     virtual void finalize();

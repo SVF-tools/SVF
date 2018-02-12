@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
  */
 
 #include "Util/CPPUtil.h"
+#include "MemoryModel/CHA.h"
 #include <cxxabi.h>   // for demangling
 #include "Util/BasicTypes.h"
 #include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
@@ -247,7 +248,7 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs) {
     return vtbl;
 }
 
-size_t cppUtil::getVCallIdx(llvm::CallSite cs) {
+u64_t cppUtil::getVCallIdx(llvm::CallSite cs) {
     const LoadInst *vfuncloadinst = dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != NULL);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
@@ -255,7 +256,7 @@ size_t cppUtil::getVCallIdx(llvm::CallSite cs) {
         dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt *idx = dyn_cast<ConstantInt>(*oi);
-    size_t idx_value;
+    u64_t idx_value;
     if (idx == NULL) {
         errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
@@ -281,7 +282,7 @@ string cppUtil::getClassNameFromType(const Type *ty) {
     return className;
 }
 
-string cppUtil::getClassNameFromVtblVal(const Value *value) {
+string cppUtil::getClassNameFromVtblObj(const Value *value) {
     string className = "";
 
     string vtblName = value->getName().str();
@@ -312,7 +313,7 @@ bool cppUtil::isConstructor(const Function *F) {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
     if ((dname.className.size() > 0 && dname.className.compare(dname.funcName) == 0)
-    		|| (dname.funcName.size() == 0) ) /// on mac os function name is an empty string after demangling
+            || (dname.funcName.size() == 0) ) /// on mac os function name is an empty string after demangling
         return true;
     else
         return false;
@@ -339,4 +340,97 @@ bool cppUtil::isDestructor(const Function *F) {
         return true;
     else
         return false;
+}
+
+void cppUtil::printCH(const CHGraph *chgraph) {
+    for (CHGraph::const_iterator it = chgraph->begin(),
+            eit = chgraph->end(); it != eit; ++it) {
+        const CHNode *node = it->second;
+        outs() << '\n' << node->getName() << '\n';
+        CHGraph::CHNodeSetTy ancestors, descendants, instances;
+        if (chgraph->hasAncestors(node->getName())) {
+            CHGraph::CHNodeSetTy ancestors =
+                chgraph->getAncestors(node->getName());
+            for (CHGraph::CHNodeSetTy::const_iterator ait = ancestors.begin(),
+                    aeit = ancestors.end(); ait != aeit; ++ait) {
+                outs() << "ancesstor: " << (*ait)->getName() << '\n';
+            }
+        }
+        if (chgraph->hasDescendants(node->getName())) {
+            CHGraph::CHNodeSetTy descendants =
+                chgraph->getDescendants(node->getName());
+            for (CHGraph::CHNodeSetTy::const_iterator dit = descendants.begin(),
+                    deit = descendants.end(); dit != deit; ++dit) {
+                outs() << "descendants: " << (*dit)->getName() << '\n';
+            }
+        }
+        if (chgraph->hasInstances(node->getName())) {
+            CHGraph::CHNodeSetTy instances =
+                chgraph->getInstances(node->getName());
+            for (CHGraph::CHNodeSetTy::const_iterator iit = instances.begin(),
+                    ieit = instances.end(); iit != ieit; ++iit) {
+                outs() << "instances: " << (*iit)->getName() << '\n';
+            }
+        }
+    }
+    outs() << '\n';
+}
+
+void cppUtil::dumpCHAStats(const CHGraph *chgraph) {
+    s32_t pure_abstract_class_num = 0,
+          multi_inheritance_class_num = 0;
+    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
+            it != eit; ++it) {
+        CHNode *node = it->second;
+        if (node->isPureAbstract())
+            pure_abstract_class_num++;
+        if (node->isMultiInheritance())
+            multi_inheritance_class_num++;
+    }
+    outs() << "class_num:\t" << chgraph->getTotalNodeNum() << '\n';
+    outs() << "pure_abstract_class_num:\t" << pure_abstract_class_num << '\n';
+    outs() << "multi_inheritance_class_num:\t" << multi_inheritance_class_num << '\n';
+
+    /*
+     * count the following info:
+     * vtblnum
+     * total vfunction
+     * vtbl max vfunction
+     * pure abstract class
+     */
+    s32_t vtblnum = 0,
+          vfunc_total = 0,
+          vtbl_max = 0,
+          pure_abstract = 0;
+    set<const Function*> allVirtualFunctions;
+    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
+            it != eit; ++it) {
+        CHNode *node = it->second;
+        if (node->isPureAbstract())
+            pure_abstract++;
+
+        s32_t vfuncs_size = 0;
+        const vector<vector<const Function*>> vecs =
+                                               node->getVirtualFunctionVectors();
+        for (vector<vector<const Function*>>::const_iterator vit = vecs.begin(),
+                veit = vecs.end(); vit != veit; ++vit) {
+            vfuncs_size += (*vit).size();
+            for (vector<const Function*>::const_iterator fit = (*vit).begin(),
+                    feit = (*vit).end(); fit != feit; ++fit) {
+                const Function *func = *fit;
+                allVirtualFunctions.insert(func);
+            }
+        }
+        if (vfuncs_size > 0) {
+            vtblnum++;
+            if (vfuncs_size > vtbl_max) {
+                vtbl_max = vfuncs_size;
+            }
+        }
+    }
+    vfunc_total = allVirtualFunctions.size();
+
+    outs() << "vtblnum:\t" << vtblnum << '\n';
+    outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
+    outs() << "vtbl_max:\t" << vtbl_max << '\n';
 }

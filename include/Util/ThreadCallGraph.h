@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <Util/PTACallGraph.h>
 #include "WPA/Andersen.h"
 
+class SVFModule;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */
@@ -134,7 +135,7 @@ public:
     typedef std::map<const llvm::Instruction*, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
-    ThreadCallGraph(llvm::Module* module);
+    ThreadCallGraph(SVFModule svfModule);
     /// Destructor
     virtual ~ThreadCallGraph() {
     }
@@ -305,7 +306,7 @@ private:
     //@}
 
     /// Start building Thread Call graph
-    virtual void build(llvm::Module* m);
+    virtual void build(SVFModule svfModule);
 
     /// Add fork sites which directly or indirectly create a thread
     //@{

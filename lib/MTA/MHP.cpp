@@ -10,7 +10,6 @@
 #include "MTA/MTA.h"
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTAResultValidator.h"
-#include "RC/RCResultValidator.h"
 #include "Util/AnalysisUtil.h"
 #include <llvm/Support/CommandLine.h>	// for llvm command line options
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
@@ -58,7 +57,7 @@ static const SCEV *getSCEVMinusExpr(const SCEV *s1,const SCEV *s2, ScalarEvoluti
 
 
 // Subclassing RCResultValidator to define the abstract methods.
-class MHPValidator : public RCResultValidator {
+class MHPValidator : public RaceResultValidator {
 public:
     MHPValidator(MHP *mhp) :mhp(mhp) {
     }
@@ -160,11 +159,11 @@ void MHP::analyzeInterleaving() {
  * Update non-candidate functions' interleaving
  */
 void MHP::updateNonCandidateFunInterleaving() {
-    Module *module = tcg->getModule();
-    for (Module::iterator F = module->begin(), E = module->end(); F != E; ++F) {
-        const Function* fun = &*F;
+    SVFModule module = tcg->getModule();
+    for (SVFModule::iterator F = module.begin(), E = module.end(); F != E; ++F) {
+        const Function* fun = *F;
         if (!tct->isCandidateFun(fun) && !isExtCall(fun)) {
-            const Instruction *entryinst = &(F->getEntryBlock().front());
+            const Instruction *entryinst = &(fun->getEntryBlock().front());
             if (!hasThreadStmtSet(entryinst))
                 continue;
 

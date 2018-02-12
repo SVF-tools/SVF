@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
  *  Created on: Apr 15, 2014
  *      Author: Yulei Sui
  */
+#include "Util/SVFModule.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
@@ -92,17 +93,18 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
     DominatorTree dt;
     MemSSADF df;
 
-    for (llvm::Module::iterator iter = pta->getModule()->begin(), eiter = pta->getModule()->end();
+    SVFModule svfModule = pta->getModule();
+    for (SVFModule::iterator iter = svfModule.begin(), eiter = svfModule.end();
             iter != eiter; ++iter) {
 
-        llvm::Function& fun = *iter;
-        if (analysisUtil::isExtCall(&fun))
+        llvm::Function *fun = *iter;
+        if (analysisUtil::isExtCall(fun))
             continue;
 
-        dt.recalculate(fun);
+        dt.recalculate(*fun);
         df.runOnDT(dt);
 
-        mssa->buildMemSSA(fun, &df, &dt);
+        mssa->buildMemSSA(*fun, &df, &dt);
     }
 
     mssa->performStat();

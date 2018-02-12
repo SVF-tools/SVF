@@ -145,13 +145,13 @@ void TCT::markRelProcs(const Function* fun) {
  * Get Main function
  */
 void TCT::collectEntryFunInCallGraph() {
-    for(Module::const_iterator it = tcg->getModule()->begin(), eit = tcg->getModule()->end(); it!=eit; ++it) {
-        const llvm::Function& fun = (*it);
-        if (isExtCall(&fun))
+    for(SVFModule::const_iterator it = tcg->getModule().begin(), eit = tcg->getModule().end(); it!=eit; ++it) {
+        const llvm::Function* fun = (*it);
+        if (isExtCall(fun))
             continue;
-        PTACallGraphNode* node = tcg->getCallGraphNode(&fun);
+        PTACallGraphNode* node = tcg->getCallGraphNode(fun);
         if (!node->hasIncomingEdge()) {
-            entryFuncSet.insert(&fun);
+            entryFuncSet.insert(fun);
         }
     }
     assert(!entryFuncSet.empty() && "Can't find any function in module!");

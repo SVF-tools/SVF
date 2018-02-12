@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ class CHGraph;
 class CHNode;
 
 class TypeSystem;
+class SVFModule;
 
 class PTAStat;
 /*
@@ -60,6 +61,7 @@ public:
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
         AndersenWave_WPA,	///< Wave propagation andersen-style WPA
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
+        AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
         CSCallString_WPA,	///< Call string based context sensitive WPA
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
@@ -112,7 +114,7 @@ protected:
     /// PAG
     static PAG* pag;
     /// Module
-    static llvm::Module* mod;
+    SVFModule svfMod;
     /// Pointer analysis Type
     PTATY ptaTy;
     /// Statistics
@@ -163,8 +165,8 @@ public:
         return stat;
     }
     /// Module
-    inline llvm::Module* getModule() const {
-        return mod;
+    inline SVFModule getModule() const {
+        return svfMod;
     }
     /// Get all Valid Pointers for resolution
     inline NodeBS& getAllValidPtrs() {
@@ -175,13 +177,13 @@ public:
     virtual ~PointerAnalysis();
 
     /// Initialization of a pointer analysis, including building symbol table and PAG etc.
-    virtual void initialize(llvm::Module& module);
+    virtual void initialize(SVFModule svfModule);
 
     /// Finalization of a pointer analysis, including checking alias correctness
     virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis). It needs to be implemented in child class
-    virtual void analyze(llvm::Module& module) = 0;
+    virtual void analyze(SVFModule svfModule) = 0;
 
     /// Compute points-to results on-demand, overridden by derived classes
     virtual void computeDDAPts(NodeID id) {}
@@ -374,11 +376,13 @@ public:
         return chgraph;
     }
 
+    void getVFnsFromCHA(llvm::CallSite cs,
+                        std::set<const llvm::Function*> &vfns);
     void getVFnsFromPts(llvm::CallSite cs,
                         const PointsTo &target,
                         std::set<const llvm::Function*> &vfns);
     void connectVCallToVFns(llvm::CallSite cs,
-                            std::set<const llvm::Function*> &vfns,
+                            const std::set<const llvm::Function*> &vfns,
                             CallEdgeMap& newEdges,
                             llvm::CallGraph* callgraph = NULL);
     virtual void resolveCPPIndCalls(llvm::CallSite cs,

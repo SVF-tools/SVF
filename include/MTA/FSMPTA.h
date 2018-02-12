@@ -137,10 +137,10 @@ public:
     }
 
     /// Initialize analysis
-    void initialize(llvm::Module& module);
+    void initialize(SVFModule module);
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FSMPTA* createFSMPTA(llvm::Module& module, MHP* m, LockAnalysis* la) {
+    static FSMPTA* createFSMPTA(SVFModule module, MHP* m, LockAnalysis* la) {
         if (mfspta == NULL) {
             mfspta = new FSMPTA(m,la);
             mfspta->analyze(module);

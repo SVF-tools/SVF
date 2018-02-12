@@ -40,14 +40,14 @@ MTA::MTA() :
 MTA::~MTA() {
     if (tcg)
         delete tcg;
-    if (tct)
-        delete tct;
+    //if (tct)
+    //    delete tct;
 }
 
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(llvm::Module& module) {
+bool MTA::runOnModule(SVFModule module) {
 
 
     modulePass = this;
@@ -110,7 +110,7 @@ LockAnalysis* MTA::computeLocksets(TCT* tct) {
     return lsa;
 }
 
-MHP* MTA::computeMHP(llvm::Module& module) {
+MHP* MTA::computeMHP(SVFModule module) {
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
@@ -118,7 +118,7 @@ MHP* MTA::computeMHP(llvm::Module& module) {
     pta->getPTACallGraph()->dump("ptacg");
     DBOUT(DGENERAL, outs() << pasMsg("Create Thread Call Graph\n"));
     DBOUT(DMTA, outs() << pasMsg("Create Thread Call Graph\n"));
-    tcg = new ThreadCallGraph(&module);
+    tcg = new ThreadCallGraph(module);
     tcg->updateCallGraph(pta);
     //tcg->updateJoinEdge(pta);
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
@@ -157,7 +157,7 @@ MHP* MTA::computeMHP(llvm::Module& module) {
 // * when two memory access may-happen in parallel and does not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
-void MTA::detect(llvm::Module& module) {
+void MTA::detect(SVFModule module) {
 
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
@@ -166,7 +166,7 @@ void MTA::detect(llvm::Module& module) {
 
     std::set<const Instruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
-    for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F) {
+    for (SVFModule::iterator F = module.begin(), E = module.end(); F != E; ++F) {
         // collect and create symbols inside the function body
         for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
             const Instruction *inst = &*II;

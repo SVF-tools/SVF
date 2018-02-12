@@ -472,6 +472,7 @@ struct GraphTraits<Inverse<TCTNode *> > : public GraphTraits<Inverse<GenericNode
 };
 
 template<> struct GraphTraits<TCT*> : public GraphTraits<GenericGraph<TCTNode,TCTEdge>* > {
+    typedef TCTNode *NodeRef;
 };
 
 }

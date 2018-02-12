@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,14 +55,14 @@ static cl::opt<bool> PrintPathCond("print-pc", cl::init(false),
 /*!
  * Allocate path condition for each branch
  */
-void PathCondAllocator::allocate(const Module& M) {
+void PathCondAllocator::allocate(const SVFModule M) {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (Module::const_iterator fit = M.begin(); fit != M.end(); ++fit) {
-        const Function & func = *fit;
-        if (!analysisUtil::isExtCall(&func)) {
+    for (SVFModule::const_iterator fit = M.begin(); fit != M.end(); ++fit) {
+        const Function * func = *fit;
+        if (!analysisUtil::isExtCall(func)) {
             // Allocate conditions for a program.
-            for (Function::const_iterator bit = func.begin(), ebit = func.end(); bit != ebit; ++bit) {
+            for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit) {
                 const BasicBlock & bb = *bit;
                 collectBBCallingProgExit(bb);
                 allocateForBB(bb);

@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -503,7 +503,7 @@ void ConstraintGraph::connectCaller2CalleeParams(llvm::CallSite cs, const llvm::
         DBOUT(DPAGBuild, outs() << "      args:");
         PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         PAG::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
-        for (; funArgIt != funArgEit; ++csArgIt , ++funArgIt) {
+        for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt) {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
             if (csArgIt  == csArgEit) {
                 DBOUT(DAndersen, outs() << " !! not enough args\n");

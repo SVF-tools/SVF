@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
 
 
 class PTACallGraphNode;
+class SVFModule;
 
 /*
  * Call Graph edge representing a calling relation between two functions
@@ -182,7 +183,7 @@ public:
     typedef CallGraphEdgeSet::iterator CallGraphNodeIter;
 
 private:
-    llvm::Module* mod;
+    SVFModule svfMod;
 
     /// Indirect call map
     CallEdgeMap indirectCallMap;
@@ -199,7 +200,7 @@ private:
     Size_t numOfResolvedIndCallEdge;
 
     /// Build Call Graph
-    void buildCallGraph(llvm::Module* module);
+    void buildCallGraph(SVFModule svfModule);
 
     /// Add callgraph Node
     void addCallGraphNode(const llvm::Function* fun);
@@ -209,10 +210,8 @@ private:
 
 public:
     /// Constructor
-    PTACallGraph(llvm::Module* module)
-        : mod(module), callGraphNodeNum(0), numOfResolvedIndCallEdge(0) {
-        buildCallGraph(module);
-    }
+    PTACallGraph(SVFModule svfModule);
+
     /// Destructor
     virtual ~PTACallGraph() {
         destroy();
@@ -299,8 +298,11 @@ public:
     }
     //@}
     /// Get Module
-    inline llvm::Module* getModule() {
-        return mod;
+    inline SVFModule getModule() {
+        return svfMod;
+    }
+    inline SVFModule getSVFModule() {
+        return svfMod;
     }
     /// Whether we have aleady created this call graph edge
     PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind) const;
@@ -371,7 +373,7 @@ struct GraphTraits<Inverse<PTACallGraphNode *> > : public GraphTraits<Inverse<Ge
 };
 
 template<> struct GraphTraits<PTACallGraph*> : public GraphTraits<GenericGraph<PTACallGraphNode,PTACallGraphEdge>* > {
-  typedef PTACallGraphNode *NodeRef;
+    typedef PTACallGraphNode *NodeRef;
 };
 
 

@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
 #include <llvm/Bitcode/BitcodeWriterPass.h>		// for createBitcodeWriterPass
 
-
 using namespace llvm;
+using namespace std;
 
 static cl::opt<std::string> InputFilename(cl::Positional,
         cl::desc("<input bitcode>"), cl::init("-"));
@@ -50,65 +50,19 @@ static cl::opt<std::string> InputFilename(cl::Positional,
 
 int main(int argc, char ** argv) {
 
-    sys::PrintStackTraceOnErrorSignal(argv[0]);
-    llvm::PrettyStackTraceProgram X(argc, argv);
+    int arg_num = 0;
+    char **arg_value = new char*[argc];
+    std::vector<std::string> moduleNameVec;
+    analysisUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    cl::ParseCommandLineOptions(arg_num, arg_value,
+                                "Whole Program Points-to Analysis\n");
 
-    LLVMOpaqueContext * WrappedContextRef = LLVMGetGlobalContext();
-    LLVMContext &Context = *unwrap(WrappedContextRef);
+    SVFModule svfModule(moduleNameVec);
 
-    std::string OutputFilename;
+    WPAPass *wpa = new WPAPass();
+    wpa->runOnModule(svfModule);
 
-    cl::ParseCommandLineOptions(argc, argv, "Whole Program Points-to Analysis\n");
-    sys::PrintStackTraceOnErrorSignal(argv[0]);
-
-    PassRegistry &Registry = *PassRegistry::getPassRegistry();
-
-    initializeCore(Registry);
-    initializeScalarOpts(Registry);
-    initializeIPO(Registry);
-    initializeAnalysis(Registry);
-    initializeTransformUtils(Registry);
-    initializeInstCombine(Registry);
-    initializeInstrumentation(Registry);
-    initializeTarget(Registry);
-
-    llvm::legacy::PassManager Passes;
-
-    SMDiagnostic Err;
-
-    // Load the input module...
-    std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
-
-    if (!M1) {
-        Err.print(argv[0], errs());
-        return 1;
-    }
-
-
-    std::unique_ptr<tool_output_file> Out;
-    std::error_code ErrorInfo;
-
-    StringRef str(InputFilename);
-    InputFilename = str.rsplit('.').first;
-    OutputFilename = InputFilename + ".wpa";
-
-    Out.reset(
-        new tool_output_file(OutputFilename.c_str(), ErrorInfo,
-                             sys::fs::F_None));
-
-    if (ErrorInfo) {
-        errs() << ErrorInfo.message() << '\n';
-        return 1;
-    }
-
-    Passes.add(new WPAPass());
-
-    Passes.add(createBitcodeWriterPass(Out->os()));
-
-    Passes.run(*M1.get());
-    Out->keep();
+    svfModule.dumpModulesToFile(".wpa");
 
     return 0;
-
 }
-

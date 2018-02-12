@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/SVFModule.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
@@ -40,10 +41,10 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(llvm::Module& module) {
-    PointerAnalysis::initialize(module);
+void FlowSensitive::initialize(SVFModule svfModule) {
+    PointerAnalysis::initialize(svfModule);
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
     svfg = memSSA.buildSVFG(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
@@ -54,15 +55,13 @@ void FlowSensitive::initialize(llvm::Module& module) {
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(llvm::Module& module) {
+void FlowSensitive::analyze(SVFModule svfModule) {
     /// Initialization for the Solver
-    initialize(module);
+    initialize(svfModule);
 
     double start = stat->getClk();
     /// Start solving constraints
     DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Start Solving Constraints\n"));
-
-    //callGraphSCC = new CallGraphSCC(getPTACallGraph());
 
     do {
         numOfIteration++;

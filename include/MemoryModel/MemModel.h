@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #define OBJECTANDSYMBOL_H_
 
 #include "MemoryModel/LocationSet.h"
+#include "Util/SVFModule.h"
 
 #include <llvm/IR/CallSite.h>
 #include <llvm/IR/Module.h>
@@ -394,13 +395,13 @@ private:
     static SymbolTableInfo* symlnfo;
 
     /// Module
-    static llvm::Module* mod;
+    SVFModule mod;
 
     /// Max field limit
     static u32_t maxFieldLimit;
 
     /// Invoke llvm passes to modify module
-    void prePassSchedule(llvm::Module& module);
+    void prePassSchedule(SVFModule svfModule);
 
     /// Clean up memory
     void destroy();
@@ -455,22 +456,22 @@ public:
     //@}
 
     /// Module
-    static inline llvm::Module* getModule() {
+    inline SVFModule getModule() {
         return mod;
     }
 
     /// Get target machine data layout
-    inline static llvm::DataLayout* getDataLayout(llvm::Module* mod = getModule()) {
+    inline static llvm::DataLayout* getDataLayout(llvm::Module* mod) {
         if(dl==NULL)
             return dl = new llvm::DataLayout(mod);
         return dl;
     }
 
     /// Helper method to get the size of the type from target data layout
-    static u32_t getTypeSizeInBytes(const llvm::Type* type);
+    u32_t getTypeSizeInBytes(const llvm::Type* type);
 
     /// Start building memory model
-    void buildMemModel(llvm::Module& module);
+    void buildMemModel(SVFModule svfModule);
 
     /// collect the syms
     //@{
@@ -577,6 +578,11 @@ public:
     }
 
     inline SymID getObjSym(const llvm::Value *val) const {
+        /// find the unique defined global across multiple modules
+        if(const llvm::GlobalVariable* gvar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+            if (symlnfo->getModule().hasGlobalRep(gvar))
+                val = symlnfo->getModule().getGlobalRep(gvar);
+        }
         ValueToIDMapTy::const_iterator iter =  objSymMap.find(val);
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;

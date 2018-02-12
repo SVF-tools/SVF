@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -634,7 +634,7 @@ struct GraphTraits<Inverse<SVFGNode *> > : public GraphTraits<Inverse<GenericNod
 };
 
 template<> struct GraphTraits<SVFG*> : public GraphTraits<GenericGraph<SVFGNode,SVFGEdge>* > {
-  typedef SVFGNode *NodeRef;
+    typedef SVFGNode *NodeRef;
 };
 }
 

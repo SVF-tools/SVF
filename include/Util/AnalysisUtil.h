@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
+#include "Util/SVFModule.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 #include "Util/BasicTypes.h"
@@ -71,12 +72,23 @@ inline llvm::CallSite getLLVMCallSite(const llvm::Instruction* inst) {
     llvm::CallSite cs(const_cast<llvm::Instruction*>(inst));
     return cs;
 }
+
+/// Get the definition of a function across multiple modules
+inline const llvm::Function* getDefFunForMultipleModule(const llvm::Function* fun) {
+	if(fun == NULL) return NULL;
+
+    SVFModule svfModule;
+    if (fun->isDeclaration() && svfModule.hasDefinition(fun))
+        fun = svfModule.getDefinition(fun);
+    return fun;
+}
+
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
 inline const llvm::Function* getCallee(const llvm::CallSite cs) {
     // FIXME: do we need to strip-off the casts here to discover more library functions
     llvm::Function *callee = llvm::dyn_cast<llvm::Function>(cs.getCalledValue()->stripPointerCasts());
-    return callee;
+    return getDefFunForMultipleModule(callee);
 }
 
 inline const llvm::Function* getCallee(const llvm::Instruction *inst) {
@@ -107,7 +119,7 @@ inline bool isExtCall(const llvm::Instruction *inst) {
 /// note that these two functions are not suppose to be used externally
 inline bool isHeapAllocExtFunViaRet(const llvm::Function *fun) {
     return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
-            || ExtAPI::getExtAPI()->is_realloc(fun));
+                   || ExtAPI::getExtAPI()->is_realloc(fun));
 }
 inline bool isHeapAllocExtFunViaArg(const llvm::Function *fun) {
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
@@ -239,7 +251,7 @@ inline const llvm::PointerType *getRefTypeOfHeapAllocOrStatic(const llvm::CallSi
     // Case 2: heap/static object held by return value.
     else {
         assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
-                && "Must be heap alloc via ret, or static allocation site");
+               && "Must be heap alloc via ret, or static allocation site");
         refType = llvm::dyn_cast<llvm::PointerType>(cs.getType());
     }
     assert(refType && "Allocated object must be held by a pointer-typed value.");
@@ -395,11 +407,11 @@ inline bool isProgEntryFunction (const llvm::Function * fun) {
 }
 
 /// Get program entry function from module.
-inline const llvm::Function* getProgEntryFunction(const llvm::Module* mod) {
-    for (llvm::Module::const_iterator it = mod->begin(), eit = mod->end(); it != eit; ++it) {
-        const llvm::Function& fun = *it;
-        if (isProgEntryFunction(&fun))
-            return (&fun);
+inline const llvm::Function* getProgEntryFunction(SVFModule svfModule) {
+    for (SVFModule::const_iterator it = svfModule.begin(), eit = svfModule.end(); it != eit; ++it) {
+        const llvm::Function *fun = *it;
+        if (isProgEntryFunction(fun))
+            return (fun);
     }
     return NULL;
 }
@@ -554,6 +566,12 @@ bool getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb);
 /// Increase the stack size limit
 void increaseStackSize();
 
+/// Check whether a file is an LLVM IR file
+bool isIRFile(const std::string &filename);
+
+/// Parse argument for multi-module analysis
+void processArguments(int argc, char **argv, int &arg_num, char **arg_value,
+                      std::vector<std::string> &moduleNameVec);
 /*!
  * Compare two PointsTo according to their size and points-to elements.
  * 1. PointsTo with smaller size is smaller than the other;

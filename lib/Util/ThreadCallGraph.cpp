@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
  *      Author: Yulei Sui, Peng Di, Ding Ye
  */
 
+#include "Util/SVFModule.h"
 #include "Util/ThreadCallGraph.h"
 #include <llvm/IR/Module.h>
 #include <llvm/IR/InstIterator.h>	// for inst iteration
@@ -37,19 +38,20 @@ using namespace analysisUtil;
 /*!
  * Constructor
  */
-ThreadCallGraph::ThreadCallGraph(llvm::Module* module) :
-    PTACallGraph(module), tdAPI(ThreadAPI::getThreadAPI()) {
+ThreadCallGraph::ThreadCallGraph(SVFModule svfModule) :
+    PTACallGraph(svfModule), tdAPI(ThreadAPI::getThreadAPI()) {
     DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Building ThreadCallGraph\n"));
-    this->build(module);
+    this->build(svfModule);
 }
 
 /*!
  * Start building Thread Call Graph
  */
-void ThreadCallGraph::build(Module* m) {
+void ThreadCallGraph::build(SVFModule svfModule) {
     // create thread fork edges and record fork sites
-    for (Module::const_iterator fi = m->begin(), efi = m->end(); fi != efi; ++fi) {
-        for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
+    for (SVFModule::const_iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi; ++fi) {
+        const Function *fun = *fi;
+        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDFork(inst)) {
                 addForksite(inst);
@@ -76,8 +78,9 @@ void ThreadCallGraph::build(Module* m) {
         }
     }
     // record join sites
-    for (Module::const_iterator fi = m->begin(), efi = m->end(); fi != efi; ++fi) {
-        for (const_inst_iterator II = inst_begin(*fi), E = inst_end(*fi); II != E; ++II) {
+    for (SVFModule::const_iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi; ++fi) {
+        const Function *fun = *fi;
+        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
             if (tdAPI->isTDJoin(inst)) {
                 addJoinsite(inst);
@@ -174,6 +177,8 @@ void ThreadCallGraph::addDirectForkEdge(const llvm::Instruction* call) {
     const Function* forkee = dyn_cast<Function>(tdAPI->getForkedFun(call));
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(forkee);
+    SVFModule svfModule = getSVFModule();
+    callee = getCallGraphNode(getDefFunForMultipleModule(forkee));
 
     if (PTACallGraphEdge* callEdge = hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge)) {
         callEdge->addDirectCallSite(call);

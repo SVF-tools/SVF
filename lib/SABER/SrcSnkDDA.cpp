@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ static cl::opt<bool> DumpSlice("dump-slice", cl::init(false),
 static cl::opt<unsigned> cxtLimit("cxtlimit",  cl::init(3),
                                   cl::desc("Source-Sink Analysis Contexts Limit"));
 
-void SrcSnkDDA::analyze(llvm::Module& module) {
+void SrcSnkDDA::analyze(SVFModule module) {
 
     initialize(module);
 

@@ -85,7 +85,7 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
         std::vector<std::string> y = split((*i), '.');
         y[0].erase(y[0].find("cs"), 2);
 
-        const Function* callee = mod->getFunction(y[1]);
+        const Function* callee = tcg->getModule().getFunction(y[1]);
         CallSite cs = analysisUtil::getLLVMCallSite(csnumToInstMap[atoi(y[0].c_str())]);
         assert(callee && "callee error");
         CallSiteID csId = tcg->getCallSiteID(cs, callee);
@@ -163,8 +163,8 @@ void MTAResultValidator::dumpInterlev(NodeBS& lev) {
 }
 
 bool MTAResultValidator::collectCallsiteTargets() {
-    for (Module::const_iterator fi = mod->begin(), efi = mod->end(); fi != efi; ++fi) {
-        for (Function::const_iterator bi = fi->begin(), ebi = fi->end(); bi != ebi; ++bi) {
+    for (SVFModule::const_iterator fi = tcg->getModule().begin(), efi = tcg->getModule().end(); fi != efi; ++fi) {
+        for (Function::const_iterator bi = (*fi)->begin(), ebi = (*fi)->end(); bi != ebi; ++bi) {
             const BasicBlock* bb = &*bi;
             if (!bb->getName().str().compare(0, 2, "cs")) {
                 NodeID csnum = atoi(bb->getName().str().substr(2).c_str());
@@ -187,7 +187,7 @@ bool MTAResultValidator::collectCallsiteTargets() {
 }
 
 bool MTAResultValidator::collectCxtThreadTargets() {
-    const Function *F = mod->getFunction(CXT_THREAD);
+    const Function *F = tcg->getModule().getFunction(CXT_THREAD);
     if (!F)
         return false;
 
@@ -213,7 +213,7 @@ bool MTAResultValidator::collectCxtThreadTargets() {
 bool MTAResultValidator::collectTCTTargets() {
 
     // Collect call sites of all TCT_ACCESS function calls.
-    const Function *F = mod->getFunction(TCT_ACCESS);
+    const Function *F = tcg->getModule().getFunction(TCT_ACCESS);
     if (!F)
         return false;
 
@@ -236,7 +236,7 @@ bool MTAResultValidator::collectTCTTargets() {
 bool MTAResultValidator::collectInterleavingTargets() {
 
     // Collect call sites of all INTERLEV_ACCESS function calls.
-    const Function *F = mod->getFunction(INTERLEV_ACCESS);
+    const Function *F = tcg->getModule().getFunction(INTERLEV_ACCESS);
     if (!F)
         return false;
 

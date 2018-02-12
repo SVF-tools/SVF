@@ -661,14 +661,14 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta) {
 /*!
  * Initialize analysis
  */
-void FSMPTA::initialize(llvm::Module& module) {
+void FSMPTA::initialize(SVFModule module) {
     PointerAnalysis::initialize(module);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
     MTASVFGBuilder mtaSVFGBuilder(mhp,lockana);
     svfg = mtaSVFGBuilder.buildSVFG(ander);
     setGraph(svfg);
-    AndersenWaveDiff::releaseAndersenWaveDiff();
+    //AndersenWaveDiff::releaseAndersenWaveDiff();
 
     stat = new FlowSensitiveStat(this);
 }

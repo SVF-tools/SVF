@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include "Util/PTAStat.h"
 #include "Util/ThreadCallGraph.h"
 #include "Util/CPPUtil.h"
+#include "Util/SVFModule.h"
 #include "MemoryModel/CHA.h"
 #include "MemoryModel/PTAType.h"
 #include <fstream>
@@ -85,9 +86,11 @@ static cl::opt<bool> EnableThreadCallGraph("enable-tcg", cl::init(true),
 static cl::opt<bool> INCDFPTData("incdata", cl::init(true),
                                  cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
+static cl::opt<bool> connectVCallOnCHA("vcall-cha", cl::init(false),
+                                       cl::desc("connect virtual calls using cha"));
+
 CHGraph* PointerAnalysis::chgraph = NULL;
 PAG* PointerAnalysis::pag = NULL;
-llvm::Module* PointerAnalysis::mod = NULL;
 
 /*!
  * Constructor
@@ -124,22 +127,17 @@ void PointerAnalysis::destroy()
     typeSystem = NULL;
 }
 
-
 /*!
  * Initialization of pointer analysis
  */
-void PointerAnalysis::initialize(Module& module) {
+void PointerAnalysis::initialize(SVFModule svfModule) {
 
     /// whether we have already built PAG
     if(pag == NULL) {
 
-        /// run class hierarchy analysis
-        chgraph = new CHGraph();
-        chgraph->buildCHG(module);
-
         DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
         SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
-        symTable->buildMemModel(module);
+        symTable->buildMemModel(svfModule);
 
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         if (!Graphtxt.getValue().empty()) {
@@ -148,8 +146,11 @@ void PointerAnalysis::initialize(Module& module) {
 
         } else {
             PAGBuilder builder;
-            pag = builder.build(module);
+            pag = builder.build(svfModule);
         }
+
+        chgraph = new CHGraph();
+        chgraph->buildCHG(svfModule);
 
         // dump the PAG graph
         if (dumpGraph())
@@ -162,15 +163,16 @@ void PointerAnalysis::initialize(Module& module) {
 
     typeSystem = new TypeSystem(pag);
 
-    mod = &module;
+    svfMod = svfModule;
 
     /// initialise pta call graph
     if(EnableThreadCallGraph)
-        ptaCallGraph = new ThreadCallGraph(mod);
+        ptaCallGraph = new ThreadCallGraph(svfModule);
     else
-        ptaCallGraph = new PTACallGraph(mod);
+        ptaCallGraph = new PTACallGraph(svfModule);
     callGraphSCCDetection();
 }
+
 
 /*!
  * Return TRUE if this node is a local variable of recursive function.
@@ -302,7 +304,7 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type
     if(type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenLCD_WPA) {
         ptD = new PTDataTy();
     }
-    else if (type == AndersenWaveDiff_WPA) {
+    else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA) {
         ptD = new DiffPTDataTy();
     }
     else if (type == FSSPARSE_WPA) {
@@ -637,6 +639,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
 
             if(obj->isFunction()) {
                 const Function* callee = cast<Function>(obj->getRefVal());
+                callee = getDefFunForMultipleModule(callee);
 
                 /// if the arg size does not match then we do not need to connect this parameter
                 /// even if the callee is a variadic function (the first parameter of variadic function is its paramter number)
@@ -659,40 +662,55 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
 }
 
 /*
+ * Get virtual functions "vfns" based on CHA
+ */
+void PointerAnalysis::getVFnsFromCHA(CallSite cs,
+                                     std::set<const Function*> &vfns) {
+    if (chgraph->csHasVFnsBasedonCHA(cs))
+        vfns = chgraph->getCSVFsBasedonCHA(cs);
+}
+
+/*
  * Get virtual functions "vfns" from PoninsTo set "target" for callsite "cs"
  */
 void PointerAnalysis::getVFnsFromPts(CallSite cs,
                                      const PointsTo &target,
                                      std::set<const Function*> &vfns) {
 
-    std::set<const Value*> vtbls;
-
-    for (PointsTo::iterator it = target.begin(), eit = target.end();
-            it != eit; ++it) {
-        const PAGNode *ptdnode = pag->getPAGNode(*it);
-        if (ptdnode->hasValue()) {
-            const Value *vtbl = ptdnode->getValue();
-            if (cppUtil::isValVtbl(vtbl))
-                vtbls.insert(vtbl);
+    if (chgraph->csHasVtblsBasedonCHA(cs)) {
+        std::set<const Value*> vtbls;
+        const std::set<const Value*> &chaVtbls =
+            chgraph->getCSVtblsBasedonCHA(cs);
+        for (PointsTo::iterator it = target.begin(), eit = target.end();
+                it != eit; ++it) {
+            const PAGNode *ptdnode = pag->getPAGNode(*it);
+            if (ptdnode->hasValue()) {
+                const Value *vtbl = ptdnode->getValue();
+                if (chaVtbls.find(vtbl) != chaVtbls.end())
+                    vtbls.insert(vtbl);
+            }
         }
+        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
     }
-
-    chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
 }
 
 /*
  * Connect callsite "cs" to virtual functions in "vfns"
  */
 void PointerAnalysis::connectVCallToVFns(CallSite cs,
-        std::set<const Function*> &vfns,
+        const std::set<const Function*> &vfns,
         CallEdgeMap& newEdges,
         llvm::CallGraph* callgraph) {
     //// connect all valid functions
     for (set<const Function*>::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
         const Function* callee = *fit;
-        if(cs.arg_size() == callee->arg_size() &&
-                0 == getIndCallMap()[cs].count(callee)) {
+        if (callee->isDeclaration() && svfMod.hasDefinition(callee))
+            callee = svfMod.getDefinition(callee);
+        if (getIndCallMap()[cs].count(callee) > 0)
+            continue;
+        if(cs.arg_size() == callee->arg_size() ||
+                (cs.getFunctionType()->isVarArg() && callee->isVarArg())) {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
             ptaCallGraph->addIndirectCallGraphEdge(cs.getInstruction(), callee);
@@ -709,7 +727,10 @@ void PointerAnalysis::resolveCPPIndCalls(CallSite cs,
     assert(isVirtualCallSite(cs) && "not cpp virtual call");
 
     std::set<const Function*> vfns;
-    getVFnsFromPts(cs, target, vfns);
+    if (connectVCallOnCHA)
+        getVFnsFromCHA(cs, vfns);
+    else
+        getVFnsFromPts(cs, target, vfns);
     connectVCallToVFns(cs, vfns, newEdges, callgraph);
 }
 
@@ -720,49 +741,54 @@ void PointerAnalysis::resolveCPPIndCalls(CallSite cs,
 void PointerAnalysis::validateSuccessTests(const char* fun) {
 
     // check for must alias cases, whether our alias analysis produce the correct results
-    if (Function* checkFun = mod->getFunction(fun)) {
-        if(!checkFun->use_empty())
-            outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
+    for (u32_t i = 0; i < svfMod.getModuleNum(); ++i) {
+        Module *module = svfMod.getModule(i);
+        if (Function* checkFun = module->getFunction(fun)) {
+            if(!checkFun->use_empty())
+                outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->user_begin(), e =
-                    checkFun->user_end(); i != e; ++i)
-            if (CallInst *call = dyn_cast<CallInst>(*i)) {
-                assert(call->getNumArgOperands() == 2
-                       && "arguments should be two pointers!!");
-                Value* V1 = call->getArgOperand(0);
-                Value* V2 = call->getArgOperand(1);
-                AliasResult aliasRes = alias(V1, V2);
+            for (Value::user_iterator i = checkFun->user_begin(), e =
+                        checkFun->user_end(); i != e; ++i)
+                if (isa<CallInst>(*i) || isa<InvokeInst>(*i)) {
 
-                bool checkSuccessful = false;
-                if (strcmp(fun, "MAYALIAS") == 0 || strcmp(fun, "_Z8MAYALIASPvS_") == 0) {
-                    if (aliasRes == MayAlias || aliasRes == MustAlias)
-                        checkSuccessful = true;
-                } else if (strcmp(fun, "NOALIAS") == 0 || strcmp(fun, "_Z7NOALIASPvS_") == 0) {
-                    if (aliasRes == NoAlias)
-                        checkSuccessful = true;
-                } else if (strcmp(fun, "MUSTALIAS") == 0 || strcmp(fun, "_Z9MUSTALIASPvS_") == 0) {
-                    // change to must alias when our analysis support it
-                    if (aliasRes == MayAlias || aliasRes == MustAlias)
-                        checkSuccessful = true;
-                } else if (strcmp(fun, "PARTIALALIAS") == 0 || strcmp(fun, "_Z12PARTIALALIASPvS_") == 0) {
-                    // change to partial alias when our analysis support it
-                    if (aliasRes == MayAlias)
-                        checkSuccessful = true;
+                    CallSite cs(*i);
+                    assert(cs.getNumArgOperands() == 2
+                           && "arguments should be two pointers!!");
+                    Value* V1 = cs.getArgOperand(0);
+                    Value* V2 = cs.getArgOperand(1);
+                    AliasResult aliasRes = alias(V1, V2);
+
+                    bool checkSuccessful = false;
+                    if (strcmp(fun, "MAYALIAS") == 0 || strcmp(fun, "_Z8MAYALIASPvS_") == 0) {
+                        if (aliasRes == MayAlias || aliasRes == MustAlias)
+                            checkSuccessful = true;
+                    } else if (strcmp(fun, "NOALIAS") == 0 || strcmp(fun, "_Z7NOALIASPvS_") == 0) {
+                        if (aliasRes == NoAlias)
+                            checkSuccessful = true;
+                    } else if (strcmp(fun, "MUSTALIAS") == 0 || strcmp(fun, "_Z9MUSTALIASPvS_") == 0) {
+                        // change to must alias when our analysis support it
+                        if (aliasRes == MayAlias || aliasRes == MustAlias)
+                            checkSuccessful = true;
+                    } else if (strcmp(fun, "PARTIALALIAS") == 0 || strcmp(fun, "_Z12PARTIALALIASPvS_") == 0) {
+                        // change to partial alias when our analysis support it
+                        if (aliasRes == MayAlias)
+                            checkSuccessful = true;
+                    } else
+                        assert(false && "not supported alias check!!");
+
+                    NodeID id1 = pag->getValueNode(V1);
+                    NodeID id2 = pag->getValueNode(V2);
+
+                    if (checkSuccessful)
+                        outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
+                               << getSourceLoc(*i) << ")\n";
+                    else
+                        errs() << errMsg("\t FAIL :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
+                               << getSourceLoc(*i) << ")\n";
                 } else
-                    assert(false && "not supported alias check!!");
+                    assert(false && "alias check functions not only used at callsite??");
 
-                NodeID id1 = pag->getValueNode(V1);
-                NodeID id2 = pag->getValueNode(V2);
-
-                if (checkSuccessful)
-                    outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call) << ")\n";
-                else
-                    errs() << errMsg("\t FAIL :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                           << getSourceLoc(call) << ")\n";
-            } else
-                assert(false && "alias check functions not only used at callsite??");
-
+        }
     }
 }
 
@@ -771,7 +797,7 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
  */
 void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
 
-    if (Function* checkFun = mod->getFunction(fun)) {
+    if (Function* checkFun = getModule().getFunction(fun)) {
         if(!checkFun->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 

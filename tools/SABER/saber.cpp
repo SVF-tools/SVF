@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@
 #include <llvm/Support/PrettyStackTrace.h> // for pass list
 #include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-
 #include <llvm/Bitcode/BitcodeWriterPass.h> // for createBitcodeWriterPass
 
 
@@ -58,71 +57,33 @@ static cl::opt<bool> FILECHECKER("fileck", cl::init(false),
 static cl::opt<bool> DFREECHECKER("dfree", cl::init(false),
                                   cl::desc("Double Free Detection"));
 
+static cl::opt<bool> UAFCHECKER("uaf", cl::init(false),
+                                cl::desc("Use-After-Free Detection"));
+
 int main(int argc, char ** argv) {
 
-    sys::PrintStackTraceOnErrorSignal(argv[0]);
-    llvm::PrettyStackTraceProgram X(argc, argv);
+    int arg_num = 0;
+    char **arg_value = new char*[argc];
+    std::vector<std::string> moduleNameVec;
+    analysisUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    cl::ParseCommandLineOptions(arg_num, arg_value,
+                                "Source-Sink Bug Detector\n");
 
-    LLVMOpaqueContext * WrappedContextRef = LLVMGetGlobalContext();
-    LLVMContext &Context = *unwrap(WrappedContextRef);
+    SVFModule svfModule(moduleNameVec);
 
-    std::string OutputFilename;
-
-    cl::ParseCommandLineOptions(argc, argv, "Software Bug Check\n");
-    sys::PrintStackTraceOnErrorSignal(argv[0]);
-
-    PassRegistry &Registry = *PassRegistry::getPassRegistry();
-
-    initializeCore(Registry);
-    initializeScalarOpts(Registry);
-    initializeIPO(Registry);
-    initializeAnalysis(Registry);
-    initializeTransformUtils(Registry);
-    initializeInstCombine(Registry);
-    initializeInstrumentation(Registry);
-    initializeTarget(Registry);
-
-    llvm::legacy::PassManager Passes;
-
-    SMDiagnostic Err;
-
-    // Load the input module...
-    std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
-
-    if (!M1) {
-        Err.print(argv[0], errs());
-        return 1;
-    }
-
-    std::unique_ptr<tool_output_file> Out;
-    std::error_code ErrorInfo;
-
-    StringRef str(InputFilename);
-    InputFilename = str.rsplit('.').first;
-    OutputFilename = InputFilename + ".saber";
-
-    Out.reset(
-        new tool_output_file(OutputFilename.c_str(), ErrorInfo,
-                             sys::fs::F_None));
-
-    if (ErrorInfo) {
-        errs() << ErrorInfo.message() << '\n';
-        return 1;
-    }
+    LeakChecker *saber;
 
     if(LEAKCHECKER)
-        Passes.add(new LeakChecker());
+        saber = new LeakChecker();
     else if(FILECHECKER)
-        Passes.add(new FileChecker());
+        saber = new FileChecker();
     else if(DFREECHECKER)
-        Passes.add(new DoubleFreeChecker());
+        saber = new DoubleFreeChecker();
 
-    Passes.add(createBitcodeWriterPass(Out->os()));
+    saber->runOnModule(svfModule);
 
-    Passes.run(*M1.get());
-    Out->keep();
+    svfModule.dumpModulesToFile(".dvf");
 
     return 0;
 
 }
-

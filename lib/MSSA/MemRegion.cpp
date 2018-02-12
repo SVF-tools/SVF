@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 #include "Util/AnalysisUtil.h"
+#include "Util/SVFModule.h"
 
 #include <llvm/Support/raw_ostream.h>	// for output
 #include <llvm/Support/CommandLine.h>	// for cl::opt
@@ -139,11 +140,10 @@ void MRGenerator::generateMRs() {
  */
 void MRGenerator::collectModRefForLoadStore() {
 
-    Module *module = pta->getModule();
-
-    for (Module::iterator fi = module->begin(), efi = module->end(); fi != efi;
+    SVFModule svfModule = pta->getModule();
+    for (SVFModule::iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi;
             ++fi) {
-        const Function& fun = *fi;
+        const Function& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
         if (IgnoreDeadFun && isDeadFunction(&fun))

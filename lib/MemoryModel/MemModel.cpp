@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "MemoryModel/LocMemModel.h"
+#include "Util/SVFModule.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/CPPUtil.h"
 #include "Util/BreakConstantExpr.h"
@@ -49,7 +50,6 @@ llvm::DataLayout* SymbolTableInfo::dl = NULL;
 SymbolTableInfo* SymbolTableInfo::symlnfo = NULL;
 u32_t SymbolTableInfo::maxFieldLimit = 0;
 SymID SymbolTableInfo::totalSymNum = 0;
-llvm::Module* SymbolTableInfo::mod = NULL;
 
 static cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  cl::init(10000),
         cl::desc("Maximum field number for field sensitive analysis"));
@@ -195,7 +195,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // We treat whole array as one, then we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
         if(isa<ArrayType>(*gi))
-	  continue;
+            continue;
 
         //The int-value object of the current index operand
         //  (may not be constant for arrays).
@@ -585,31 +585,34 @@ void MemObj::destroy() {
 /*!
  * Invoke llvm passes to modify module
  */
-void SymbolTableInfo::prePassSchedule(llvm::Module& module)
+void SymbolTableInfo::prePassSchedule(SVFModule svfModule)
 {
     /// BreakConstantGEPs Pass
     BreakConstantGEPs* p1 = new BreakConstantGEPs();
-    p1->runOnModule(module);
+    for (u32_t i = 0; i < svfModule.getModuleNum(); ++i) {
+        Module *module = svfModule.getModule(i);
+        p1->runOnModule(*module);
+    }
 
     /// MergeFunctionRets Pass
     UnifyFunctionExitNodes* p2 = new UnifyFunctionExitNodes();
-    for (Module::iterator it = module.begin(), eit = module.end(); it != eit; ++it) {
-        Function& fun = *it;
-        if(fun.isDeclaration())
+    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+        Function *fun = *F;
+        if (fun->isDeclaration())
             continue;
-        p2->runOnFunction(fun);
+        p2->runOnFunction(*fun);
     }
 }
 
 /*!
  *  This method identify which is value sym and which is object sym
  */
-void SymbolTableInfo::buildMemModel(llvm::Module& module) {
+void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
     analysisUtil::increaseStackSize();
 
-    prePassSchedule(module);
+    prePassSchedule(svfModule);
 
-    mod = &module;
+    mod = svfModule;
 
     maxFieldLimit = maxFieldNumLimit;
 
@@ -632,33 +635,34 @@ void SymbolTableInfo::buildMemModel(llvm::Module& module) {
     symTyMap.insert(std::make_pair(totalSymNum, NullPtr));
 
     // Add symbols for all the globals .
-    for (Module::global_iterator I = module.global_begin(), E =
-                module.global_end(); I != E; ++I) {
-        collectSym(&*I);
+    for (SVFModule::global_iterator I = svfModule.global_begin(), E =
+                svfModule.global_end(); I != E; ++I) {
+        collectSym(*I);
     }
 
     // Add symbols for all the global aliases
-    for (Module::alias_iterator I = module.alias_begin(), E =
-                module.alias_end(); I != E; I++) {
-        collectSym(&*I);
-        collectSym((*I).getAliasee());
+    for (SVFModule::alias_iterator I = svfModule.alias_begin(), E =
+                svfModule.alias_end(); I != E; I++) {
+        collectSym(*I);
+        collectSym((*I)->getAliasee());
     }
 
     // Add symbols for all of the functions and the instructions in them.
-    for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F) {
-        collectSym(&*F);
-        collectRet(&*F);
-        if (F->getFunctionType()->isVarArg())
-            collectVararg(&*F);
+    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+        Function *fun = *F;
+        collectSym(fun);
+        collectRet(fun);
+        if (fun->getFunctionType()->isVarArg())
+            collectVararg(fun);
 
         // Add symbols for all formal parameters.
-        for (Function::arg_iterator I = F->arg_begin(), E = F->arg_end();
+        for (Function::arg_iterator I = fun->arg_begin(), E = fun->arg_end();
                 I != E; ++I) {
             collectSym(&*I);
         }
 
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(&*F), E = inst_end(&*F); II != E; ++II) {
+        for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
             collectSym(inst);
 
@@ -1051,7 +1055,7 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const llvm::Type* type) {
 
     // if the type has size then simply return it, otherwise just return 0
     if(type->isSized())
-        return  getDataLayout()->getTypeStoreSize(const_cast<Type*>(type));
+        return  getDataLayout(getModule().getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
     else
         return 0;
 }

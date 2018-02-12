@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Pass.h>
 
+class SVFModule;
 
 /*!
  * Whole program pointer analysis.
@@ -64,7 +65,7 @@ public:
 
     /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
     WPAPass() : llvm::ModulePass(ID) {
- 
+
     }
 
     /// Destructor
@@ -91,7 +92,12 @@ public:
     virtual llvm::AliasResult alias(const llvm::Value* V1,	const llvm::Value* V2);
 
     /// We start from here
-    virtual bool runOnModule(llvm::Module& module);
+    virtual bool runOnModule(llvm::Module& module) {
+        return false;
+    }
+
+    /// Run pointer analysis on SVFModule
+    void runOnModule(SVFModule svfModule);
 
     /// PTA name
     virtual inline llvm::StringRef getPassName() const {
@@ -100,7 +106,7 @@ public:
 
 private:
     /// Create pointer analysis according to specified kind and analyze the module.
-    void runPointerAnalysis(llvm::Module& module, u32_t kind);
+    void runPointerAnalysis(SVFModule svfModule, u32_t kind);
 
     PTAVector ptaVector;	///< all pointer analysis to be executed.
     PointerAnalysis* _pta;	///<  pointer analysis to be executed.

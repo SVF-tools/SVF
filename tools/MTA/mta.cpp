@@ -5,7 +5,9 @@
  */
 
 #include "MTA/MTA.h"
+#include "Util/AnalysisUtil.h"
 
+#include <llvm-c/Core.h> // for LLVMGetGlobalContext()
 #include <llvm/IR/Module.h>
 #include <llvm/Support/CommandLine.h>	// for cl
 #include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
@@ -17,7 +19,7 @@
 #include <llvm/Support/PrettyStackTrace.h> // for pass list
 #include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/ReaderWriter.h>		// for createBitcodeWriterPass
+#include <llvm/Bitcode/BitcodeWriterPass.h>		// for createBitcodeWriterPass
 #include <llvm/IR/DataLayout.h>		// data layout
 
 using namespace llvm;
@@ -35,62 +37,19 @@ DefaultDataLayout("default-data-layout",
 
 int main(int argc, char ** argv) {
 
-    sys::PrintStackTraceOnErrorSignal();
-    llvm::PrettyStackTraceProgram X(argc, argv);
+    int arg_num = 0;
+    char **arg_value = new char*[argc];
+    std::vector<std::string> moduleNameVec;
+    analysisUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    cl::ParseCommandLineOptions(arg_num, arg_value,
+                                "Analysis for Multithreaded programs\n");
 
-    LLVMContext &Context = getGlobalContext();
+    SVFModule svfModule(moduleNameVec);
 
-    std::string OutputFilename;
+    MTA *mta = new MTA();
+    mta->runOnModule(svfModule);
 
-    cl::ParseCommandLineOptions(argc, argv, "Multi-threaded Program Analysis\n");
-    sys::PrintStackTraceOnErrorSignal();
-
-    PassRegistry &Registry = *PassRegistry::getPassRegistry();
-
-    initializeCore(Registry);
-    initializeScalarOpts(Registry);
-    initializeIPO(Registry);
-    initializeAnalysis(Registry);
-    initializeTransformUtils(Registry);
-    initializeInstCombine(Registry);
-    initializeInstrumentation(Registry);
-    initializeTarget(Registry);
-
-    llvm::legacy::PassManager Passes;
-
-    SMDiagnostic Err;
-
-    // Load the input module...
-    std::unique_ptr<Module> M1 = parseIRFile(InputFilename, Err, Context);
-
-    if (!M1) {
-        Err.print(argv[0], errs());
-        return 1;
-    }
-
-    std::unique_ptr<tool_output_file> Out;
-    std::error_code ErrorInfo;
-
-    OutputFilename = InputFilename + ".mta";
-
-    Out.reset(
-        new tool_output_file(OutputFilename.c_str(), ErrorInfo,
-                             sys::fs::F_None));
-
-    if (ErrorInfo) {
-        errs() << ErrorInfo.message() << '\n';
-        return 1;
-    }
-
-    // Add an appropriate DataLayout instance for this module.
-
-    if(RACE)
-        Passes.add(new MTA());
-
-    Passes.add(createBitcodeWriterPass(Out->os()));
-
-    Passes.run(*M1.get());
-    Out->keep();
+    svfModule.dumpModulesToFile(".mta");
 
     return 0;
 

@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -151,7 +151,7 @@ public:
     static void handleBlackHole(bool b);
     //@}
     /// Get LLVM Module
-    static inline llvm::Module* getModule() {
+    inline SVFModule getModule() {
         return SymbolTableInfo::Symbolnfo()->getModule();
     }
     /// Get/set methods to get control flow information of a PAGEdge
@@ -568,7 +568,7 @@ public:
     inline NodeID addNullPtrNode() {
         NodeID nullPtr = addDummyValNode(getNullPtr());
         /// let all undef value or non-determined pointers points-to black hole
-        llvm::LLVMContext &cxt = getModule()->getContext();
+        llvm::LLVMContext &cxt = getModule().getContext();
         llvm::ConstantPointerNull *constNull = llvm::ConstantPointerNull::get(llvm::Type::getInt8PtrTy(cxt));
         setCurrentLocation(constNull, NULL);
         addBlackHoleAddrEdge(symInfo->blkPtrSymID());
@@ -685,7 +685,7 @@ template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<
 };
 
 template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* > {
-   typedef PAGNode *NodeRef;
+    typedef PAGNode *NodeRef;
 };
 }
 #endif /* PAG_H_ */

@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
  */
 
 
+#include "Util/SVFModule.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
@@ -55,15 +56,16 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
             clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis")
-            ));
+        ));
 
 
 static cl::bits<WPAPass::AliasCheckRule> AliasRule(cl::desc("Select alias check rule"),
         cl::values(
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
-            ));
+        ));
 
 cl::opt<bool> anderSVFG("svfg", cl::init(false),
                         cl::desc("Generate SVFG after Andersen's Analysis"));
@@ -84,23 +86,18 @@ WPAPass::~WPAPass() {
 /*!
  * We start from here
  */
-bool WPAPass::runOnModule(llvm::Module& module)
-{
-    /// initialization for llvm alias analyzer
-    //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
-
+void WPAPass::runOnModule(SVFModule svfModule) {
     for (u32_t i = 0; i< PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
-            runPointerAnalysis(module, i);
+            runPointerAnalysis(svfModule, i);
     }
-    return false;
 }
 
 
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
-void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
+void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
 {
     /// Initialize pointer analysis.
     switch (kind) {
@@ -116,6 +113,9 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
     case PointerAnalysis::AndersenWaveDiff_WPA:
         _pta = new AndersenWaveDiff();
         break;
+    case PointerAnalysis::AndersenWaveDiffWithType_WPA:
+        _pta = new AndersenWaveDiffWithType();
+        break;
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;
@@ -125,7 +125,7 @@ void WPAPass::runPointerAnalysis(llvm::Module& module, u32_t kind)
     }
 
     ptaVector.push_back(_pta);
-    _pta->analyze(module);
+    _pta->analyze(svfModule);
     if (anderSVFG) {
         SVFGBuilder memSSA(true);
         SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);

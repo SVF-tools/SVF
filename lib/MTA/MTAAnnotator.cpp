@@ -30,10 +30,10 @@ void MTAAnnotator::annotateDRCheck(Instruction* inst) {
     }
 }
 
-void MTAAnnotator::collectLoadStoreInst(Module* mod) {
+void MTAAnnotator::collectLoadStoreInst(SVFModule mod) {
 
-    for (Module::iterator F = mod->begin(), E = mod->end(); F != E; ++F) {
-        const Function* fun = &(*F);
+    for (SVFModule::iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
+        const Function* fun = (*F);
         if (analysisUtil::isExtCall(fun))
             continue;
         for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {

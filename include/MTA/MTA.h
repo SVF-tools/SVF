@@ -22,6 +22,7 @@ class MTAStat;
 class TCT;
 class MHP;
 class LockAnalysis;
+class SVFModule;
 
 /*!
  * Base data race detector
@@ -47,16 +48,20 @@ public:
 
 
     /// We start the pass here
-    virtual bool runOnModule(llvm::Module& module);
+    virtual bool runOnModule(llvm::Module& module) {
+        return runOnModule(module);
+    }
+    /// We start the pass here
+    virtual bool runOnModule(SVFModule module);
     /// Compute MHP
-    virtual MHP* computeMHP(llvm::Module& module);
+    virtual MHP* computeMHP(SVFModule module);
     /// Compute locksets
     virtual LockAnalysis* computeLocksets(TCT* tct);
     /// Perform detection
-    virtual void detect(llvm::Module& module);
+    virtual void detect(SVFModule module);
 
     /// Pass name
-    virtual const char* getPassName() const {
+    virtual llvm::StringRef getPassName() const {
         return "Multi threaded program analysis pass";
     }
 

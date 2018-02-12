@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #define THREADAPI_H_
 
 #include "Util/BasicTypes.h"
+#include "Util/SVFModule.h"
 #include <llvm/ADT/StringMap.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/CallSite.h>
@@ -284,7 +285,7 @@ public:
     }
     //@}
 
-    void performAPIStat(llvm::Module* m);
+    void performAPIStat(SVFModule m);
     void statInit(llvm::StringMap<u32_t>& tdAPIStatMap);
 };
 

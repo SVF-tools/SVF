@@ -553,6 +553,7 @@ static const ei_pair ei_pairs[]= {
     {"_Znam", ExtAPI::EFT_ALLOC},	// new []
     {"_Znaj", ExtAPI::EFT_ALLOC},	// new
     {"_Znwj", ExtAPI::EFT_ALLOC},	// new []
+    {"__cxa_allocate_exception", ExtAPI::EFT_ALLOC},	// allocate an exception
     {"aligned_alloc", ExtAPI::EFT_ALLOC},
     {"memalign", ExtAPI::EFT_ALLOC},
     {"valloc", ExtAPI::EFT_ALLOC},
@@ -773,6 +774,8 @@ static const ei_pair ei_pairs[]= {
 //    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 //    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 
+    {"_ZNSt8__detail15_List_node_base7_M_hookEPS0_", ExtAPI::EFT_STD_LIST_HOOK},
+
 
     /// string constructor: string (const char *s)
     {"_ZNSsC1EPKcRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
@@ -803,6 +806,7 @@ static const ei_pair ei_pairs[]= {
     {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE", ExtAPI::CPP_EFT_A1R}, // c++11
 
     //This must be the last entry.
+    {"__dynamic_cast", ExtAPI::CPP_EFT_DYNAMIC_CAST},
     {0, ExtAPI::EFT_NOOP}
 };
 

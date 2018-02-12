@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,22 +61,14 @@ static cl::opt<string> ReadAnder("read-ander",  cl::init(""),
                                  cl::desc("Read Andersen's analysis results from a file"));
 
 
-/*!
- * We start from here
- */
-bool Andersen::runOnModule(llvm::Module& module) {
-
-    /// start analysis
-    analyze(module);
-    return false;
-}
 
 /*!
  * Andersen analysis
  */
-void Andersen::analyze(llvm::Module& module) {
+void Andersen::analyze(SVFModule svfModule) {
     /// Initialization for the Solver
-    initialize(module);
+    initialize(svfModule);
+
 
     bool readResultsFromFile = false;
     if(!ReadAnder.empty())
@@ -116,7 +108,6 @@ void Andersen::analyze(llvm::Module& module) {
     if(!WriteAnder.empty())
         this->writeToFile(WriteAnder);
 }
-
 
 
 /*!
@@ -293,6 +284,9 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
                 addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
+                // Any points-to passed to an FIObj also pass to its first field
+                if (normalGepEdge->getLocationSet().getOffset() == 0)
+                    addCopyEdge(getBaseObjNode(fieldSrcPtdNode), fieldSrcPtdNode);
             }
             else {
                 assert(false && "new gep edge?");

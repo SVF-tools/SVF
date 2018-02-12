@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/SVFModule.h"
 #include "Util/PTACallGraph.h"
 #include "Util/GraphUtil.h"
 #include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
@@ -69,19 +70,28 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
 }
 
 
+/// Constructor
+PTACallGraph::PTACallGraph(SVFModule svfModule) {
+    svfMod = svfModule;
+    callGraphNodeNum = 0;
+    numOfResolvedIndCallEdge = 0;
+    buildCallGraph(svfModule);
+}
+
 /*!
  * Build call graph, connect direct call edge only
  */
-void PTACallGraph::buildCallGraph(llvm::Module* module) {
+void PTACallGraph::buildCallGraph(SVFModule svfModule) {
 
     /// create nodes
-    for (Module::iterator F = module->begin(), E = module->end(); F != E; ++F) {
-        addCallGraphNode(&*F);
+    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+        addCallGraphNode(*F);
     }
 
     /// create edges
-    for (Module::iterator F = module->begin(), E = module->end(); F != E; ++F) {
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
+    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+        Function *fun = *F;
+        for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
             if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
                 if(getCallee(inst))
@@ -146,6 +156,7 @@ void PTACallGraph::addDirectCallGraphEdge(const llvm::Instruction* call) {
 
     PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
     PTACallGraphNode* callee = getCallGraphNode(getCallee(call));
+    const Function *fun = getCallee(call);
 
     if(PTACallGraphEdge* callEdge = hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge)) {
         callEdge->addDirectCallSite(call);

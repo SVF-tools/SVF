@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,23 +36,24 @@
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 
 
+class SVFModule;
 /*!
  *  PAG Builder
  */
 class PAGBuilder: public llvm::InstVisitor<PAGBuilder> {
 private:
     PAG* pag;
+    SVFModule svfMod;
 public:
     /// Constructor
-    PAGBuilder() :
-        pag(PAG::getPAG()) {
+    PAGBuilder(): pag(PAG::getPAG()) {
     }
     /// Destructor
     virtual ~PAGBuilder() {
     }
 
     /// Start building PAG here
-    PAG* build(llvm::Module& module);
+    PAG* build(SVFModule svfModule);
 
     /// Return PAG
     PAG* getPAG() const {
@@ -98,7 +99,7 @@ public:
 
     /// Handle globals including (global variable and functions)
     //@{
-    void visitGlobal(llvm::Module& module);
+    void visitGlobal(SVFModule svfModule);
     void InitialGlobal(const llvm::GlobalVariable *gvar, llvm::Constant *C,
                        u32_t offset, u32_t fieldidx);
     NodeID getGlobalVarField(const llvm::GlobalVariable *gvar, u32_t offset, u32_t fieldidx);

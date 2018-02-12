@@ -56,7 +56,7 @@ public:
     void performAnnotate();
 
     /// Collect all load and store instruction
-    void collectLoadStoreInst(llvm::Module* mod);
+    void collectLoadStoreInst(SVFModule mod);
 
     /// Get operand of store and load
     const llvm::Value* getStoreOperand(const llvm::Instruction* inst);

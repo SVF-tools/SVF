@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         if (index <= baseIndex) {
             /// variant offset
             // Handling pointer types
-	  if (const PointerType* pty = dyn_cast<PointerType>(*gi)) {
+            if (const PointerType* pty = dyn_cast<PointerType>(*gi)) {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
 
@@ -74,7 +74,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 ls.addElemNumStridePair(std::make_pair(num, sz));
             }
             // Calculate the size of the array element
-	    else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
+            else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 Size_t num = at->getNumElements();
@@ -107,7 +107,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 ls.offset += idx * sz;
             }
             // Handling struct here
-	    else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
+            else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
                 assert(op && "non-const struct index in GEP");
                 const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
                 if ((unsigned)idx >= so.size()) {
@@ -171,7 +171,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
-    const StructLayout *stTySL = getDataLayout()->getStructLayout( const_cast<StructType *>(ty) );
+    const StructLayout *stTySL = getDataLayout(getModule().getMainLLVMModule())->getStructLayout( const_cast<StructType *>(ty) );
 
     u32_t field_idx = 0;
     for (StructType::element_iterator it = ty->element_begin(), ie =
@@ -308,5 +308,5 @@ void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize) {
 u32_t LocObjTypeInfo::getObjSize(const Value* val) {
 
     Type* ety  = cast<PointerType>(val->getType())->getElementType();
-    return LocSymTableInfo::getTypeSizeInBytes(ety);
+    return LocSymTableInfo::Symbolnfo()->getTypeSizeInBytes(ety);
 }

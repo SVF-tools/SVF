@@ -3,7 +3,7 @@
 //                     SVF: Static Value-Flow Analysis
 //
 // Copyright (C) <2013-2017>  <Yulei Sui>
-// 
+//
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
  */
 
 #include "MemoryModel/PAGBuilder.h"
+#include "Util/SVFModule.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/CPPUtil.h"
 
@@ -44,17 +45,19 @@ using namespace analysisUtil;
 /*!
  * Start building PAG here
  */
-PAG* PAGBuilder::build(llvm::Module& module) {
+PAG* PAGBuilder::build(SVFModule svfModule) {
+    svfMod = svfModule;
     /// initial external library information
     /// initial PAG nodes
     initalNode();
     /// initial PAG edges:
-    /// handle globals
-    visitGlobal(module);
+    ///// handle globals
+    visitGlobal(svfModule);
+    ///// collect exception vals in the program
     /// handle functions
-    for (llvm::Module::iterator fit = module.begin(), efit = module.end();
+    for (SVFModule::iterator fit = svfModule.begin(), efit = svfModule.end();
             fit != efit; ++fit) {
-        llvm::Function& fun = *fit;
+        llvm::Function& fun = **fit;
         /// collect return node of function fun
         if(!analysisUtil::isExtCall(&fun)) {
             /// Return PAG node will not be created for function which can not
@@ -77,10 +80,7 @@ PAG* PAGBuilder::build(llvm::Module& module) {
                     if(I->getType()->isPointerTy())
                         pag->addBlackHoleAddrEdge(argValNodeId);
                 }
-                /// We do not add arguments of main (program entry) into argument list
-                /// Because, later we don't manipulate them for connection of formal and actual parameters
-                else
-                    pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
+                pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
             }
         }
         for (llvm::Function::iterator bit = fun.begin(), ebit = fun.end();
@@ -301,14 +301,15 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
 /*!
  *  Visit global variables for building PAG
  */
-void PAGBuilder::visitGlobal(llvm::Module& module) {
+void PAGBuilder::visitGlobal(SVFModule svfModule) {
 
     /// initialize global variable
-    for (Module::global_iterator I = module.global_begin(), E =
-                module.global_end(); I != E; ++I) {
-        GlobalVariable * gvar = &*I;
+    for (SVFModule::global_iterator I = svfModule.global_begin(), E =
+                svfModule.global_end(); I != E; ++I) {
+        GlobalVariable *gvar = *I;
         NodeID idx = getValueNode(gvar);
         NodeID obj = getObjectNode(gvar);
+
         pag->setCurrentLocation(gvar, NULL);
         pag->addAddrEdge(obj, idx);
 
@@ -320,9 +321,9 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
     }
 
     /// initialize global functions
-    for (Module::iterator I = module.begin(), E =
-                module.end(); I != E; ++I) {
-        Function * fun = &*I;
+    for (SVFModule::iterator I = svfModule.begin(), E =
+                svfModule.end(); I != E; ++I) {
+        Function *fun = *I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
@@ -332,11 +333,11 @@ void PAGBuilder::visitGlobal(llvm::Module& module) {
     }
 
     // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
-    for (Module::alias_iterator I = module.alias_begin(), E = module.alias_end(); I != E; I++) {
-        NodeID dst = pag->getValueNode(&*I);
-        NodeID src = pag->getValueNode((*I).getAliasee());
-        processCE((*I).getAliasee());
-        pag->setCurrentLocation(&*I, NULL);
+    for (SVFModule::alias_iterator I = svfModule.alias_begin(), E = svfModule.alias_end(); I != E; I++) {
+        NodeID dst = pag->getValueNode(*I);
+        NodeID src = pag->getValueNode((*I)->getAliasee());
+        processCE((*I)->getAliasee());
+        pag->setCurrentLocation(*I, NULL);
         pag->addCopyEdge(src,dst);
     }
 }
@@ -910,6 +911,14 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 }
                 break;
             }
+            case ExtAPI::EFT_STD_LIST_HOOK: {
+                Value *vSrc = cs.getArgument(0);
+                Value *vDst = cs.getArgument(1);
+                NodeID src = pag->getValueNode(vSrc);
+                NodeID dst = pag->getValueNode(vDst);
+                pag->addStoreEdge(src, dst);
+                break;
+            }
             case ExtAPI::CPP_EFT_A0R_A1: {
                 SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
                 if (symTable->getModelConstants()) {
@@ -941,6 +950,19 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 }
                 break;
             }
+            case ExtAPI::CPP_EFT_DYNAMIC_CAST: {
+                Value *vArg0 = cs.getArgument(0);
+                Value *retVal = cs.getInstruction();
+                NodeID src = getValueNode(vArg0);
+                assert(src && "src not exist?");
+                NodeID dst = getValueNode(retVal);
+                assert(dst && "dst not exist?");
+                pag->addCopyEdge(src, dst);
+                break;
+            }
+            case ExtAPI::EFT_CXA_BEGIN_CATCH: {
+                break;
+            }
             //default:
             case ExtAPI::EFT_OTHER: {
                 if(isa<PointerType>(inst->getType())) {
@@ -957,6 +979,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
         /// create inter-procedural PAG edges for thread forks
         if(isThreadForkCall(inst)) {
             if(const Function* forkedFun = getLLVMFunction(getForkedFun(inst)) ) {
+                forkedFun = getDefFunForMultipleModule(forkedFun);
                 const Value* actualParm = getActualParmAtForkSite(inst);
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.

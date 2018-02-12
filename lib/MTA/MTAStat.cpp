@@ -87,9 +87,9 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
     if(AllPairMHP) {
         InstSet instSet1;
         InstSet instSet2;
-        Module* mod = mhp->getThreadCallGraph()->getModule();
-        for (Module::iterator F = mod->begin(), E = mod->end(); F != E; ++F) {
-            const Function* fun = &(*F);
+        SVFModule mod = mhp->getThreadCallGraph()->getModule();
+        for (SVFModule::iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
+            const Function* fun = (*F);
             if(analysisUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
