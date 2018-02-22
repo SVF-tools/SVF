@@ -60,6 +60,9 @@ static cl::opt<bool> LocMemModel("locMM", cl::init(false),
 static cl::opt<bool> modelConsts("modelConsts", cl::init(false),
                                  cl::desc("Modeling individual constant objects"));
 
+static cl::opt<bool> ptrArithmVariantGep("pavgep", cl::init(true),
+                                 cl::desc("Treating a pointer arithmetic as a variant gep"));
+
 /*!
  * Get the symbol table instance
  */
@@ -211,16 +214,17 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
 
         // Handling pointer types
         // These GEP instructions are simply making address computations from the base pointer address
-        // e.g. idx1 = (char*) &MyVar + 4,  at this case gep only one offset index (idx)
-
+        // e.g. idx = (char*) &p + 4,  at this case gep only one offset index (idx)
+        // Case 1: This operation is likely accessing an array through pointer p.
+        // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant)
+        // Since this is a field-index based memory model,
+        // for case 1: we consider the whole array as one element, This can be improved by LocMemModel as it can distinguish different
+        // elements of the same array.
+        // for case 2: we conservatively consider the pointer arithmetic will access the whole struct.
         if (isa<PointerType>(*gi)) {
-            // If this is a pointer, we're likely accessing an array through this pointer.
-            // idx gives the array index of which element is being accessed. But since this
-            // is a field-index based memory model, we consider array as containing one
-            // element, so there's no need to get the new element with an offset from the base
-            // pointer. This can be improved by LocMemModel as it can distinguish different
-            // elements of the same array.
             //off += idx;
+           if(ptrArithmVariantGep)
+              return false;
         }
 
 

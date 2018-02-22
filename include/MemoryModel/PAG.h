@@ -145,8 +145,6 @@ public:
     }
     /// PAG build configurations
     //@{
-    /// Whether to handle variant gep/field edge
-    static void handleVGep(bool b);
     /// Whether to handle blackhole edge
     static void handleBlackHole(bool b);
     //@}
