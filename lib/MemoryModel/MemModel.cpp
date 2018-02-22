@@ -60,9 +60,6 @@ static cl::opt<bool> LocMemModel("locMM", cl::init(false),
 static cl::opt<bool> modelConsts("modelConsts", cl::init(false),
                                  cl::desc("Modeling individual constant objects"));
 
-static cl::opt<bool> ptrArithmVariantGep("pavgep", cl::init(true),
-                                 cl::desc("Treating a pointer arithmetic as a variant gep"));
-
 /*!
  * Get the symbol table instance
  */
@@ -220,11 +217,9 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // Since this is a field-index based memory model,
         // for case 1: we consider the whole array as one element, This can be improved by LocMemModel as it can distinguish different
         // elements of the same array.
-        // for case 2: we conservatively consider the pointer arithmetic will access the whole struct.
+        // for case 2: we treat idx the same as &p by ignoring const 4 (This handling is unsound since the program itself is not ANSI-compliant).
         if (isa<PointerType>(*gi)) {
             //off += idx;
-           if(ptrArithmVariantGep)
-              return false;
         }
 
 

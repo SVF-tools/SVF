@@ -8,11 +8,11 @@
 TNAME=wpa
 ###########SET variables and options when testing using executable file
 EXEFILE=$PTABIN/wpa    ### Add the tools here for testing
-FLAGS="-fspta -print-pts -pavgep=true -stat=false" #-print-pts" # -dump-pag'  ### Add the FLAGS here for testing
+FLAGS="-ander -print-pts=false -stat=false" #-print-pts" # -dump-pag'  ### Add the FLAGS here for testing
 #echo testing MSSA with flag $FLAGS
 
 ###########SET variables and options when testing using loadable so file invoked by opt
-LLVMFLAGS="-mem2reg -wpa -ander -pavgep=true --debug-pass=Structure " #'-count-aa -dse -disable-opt -disable-inlining -disable-internalize'
+LLVMFLAGS="-mem2reg -wpa -ander --debug-pass=Structure " #'-count-aa -dse -disable-opt -disable-inlining -disable-internalize'
 LIBNAME=lib$TNAME
 
 ############don't need to touch here (please see run.sh script for meaning of the parameters)##########
