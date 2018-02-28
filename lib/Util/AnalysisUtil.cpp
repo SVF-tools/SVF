@@ -535,5 +535,4 @@ void analysisUtil::processArguments(int argc, char **argv, int &arg_num, char **
             arg_num++;
         }
     }
-    assert(!moduleNameVec.empty() && "no module is found!");
 }

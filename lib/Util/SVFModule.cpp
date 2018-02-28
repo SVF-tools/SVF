@@ -64,6 +64,7 @@ LLVMModuleSet::LLVMModuleSet(llvm::Module &mod) {
 }
 
 LLVMModuleSet::LLVMModuleSet(const vector<string> &moduleNameVec) {
+    assert(!moduleNameVec.empty() && "no module is found!");
     build(moduleNameVec);
 }
 
