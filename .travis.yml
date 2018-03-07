@@ -21,7 +21,7 @@ matrix:
     - os: osx
       env:
         - CXX=clang++ PATH=/usr/local/opt/llvm/bin:$PATH LLVM_DIR=/usr/local/opt/llvm LDFLAGS:=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include
-        - CONFIG_ARGS=
+        - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0"
       install: brew install llvm
       cache:
         directories: ~/Library/Caches/Homebrew/
