@@ -15,14 +15,14 @@ matrix:
       env:
         - CXX=clang++ PATH=/usr/local/opt/llvm/bin:$PATH LLVM_DIR=/usr/local/opt/llvm LDFLAGS:=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include
         - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm
+      install: brew install llvm@4
       cache:
         directories: ~/Library/Caches/Homebrew/
     - os: osx
       env:
         - CXX=clang++ PATH=/usr/local/opt/llvm/bin:$PATH LLVM_DIR=/usr/local/opt/llvm LDFLAGS:=-L/usr/local/opt/llvm/lib CPPFLAGS=-I/usr/local/opt/llvm/include
         - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm
+      install: brew install llvm@4  
       cache:
         directories: ~/Library/Caches/Homebrew/
 env:
