@@ -236,13 +236,13 @@ void MemSSA::insertPHI(const Function& fun) {
         while (!bbs.empty()) {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            DominanceFrontierBase<BasicBlock>::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
+            DominanceFrontierBase<BasicBlock, false>::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
             if(it == df->end()) {
                 wrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const DominanceFrontierBase<BasicBlock>::DomSetType& domSet = it->second;
-            for (DominanceFrontierBase<BasicBlock>::DomSetType::const_iterator bit =
+            const DominanceFrontierBase<BasicBlock, false>::DomSetType& domSet = it->second;
+            for (DominanceFrontierBase<BasicBlock, false>::DomSetType::const_iterator bit =
                         domSet.begin(); bit != domSet.end(); ++bit) {
                 const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
