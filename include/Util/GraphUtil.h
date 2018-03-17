@@ -58,7 +58,7 @@ public:
         std::string Filename = GraphName + ".dot";
         O << "Writing '" << Filename << "'...";
         std::error_code ErrInfo;
-        tool_output_file F(Filename.c_str(), ErrInfo, sys::fs::F_None);
+        ToolOutputFile F(Filename.c_str(), ErrInfo, sys::fs::F_None);
 
         if (!ErrInfo) {
             // dump the ValueFlowGraph here

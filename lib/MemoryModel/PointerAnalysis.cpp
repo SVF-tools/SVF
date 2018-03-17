@@ -341,7 +341,7 @@ void BVDataPTAImpl::writeToFile(const string& filename) {
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
-    tool_output_file F(filename.c_str(), err, sys::fs::F_None);
+    ToolOutputFile F(filename.c_str(), err, sys::fs::F_None);
     if (err) {
         outs() << "  error opening file for writing!\n";
         F.os().clear_error();

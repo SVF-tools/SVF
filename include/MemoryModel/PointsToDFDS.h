@@ -200,7 +200,7 @@ public:
         PTData<Key,Data>::dumpPts(this->ptsMap);
         /// dump points-to of address-taken variables
         std::error_code ErrInfo;
-        llvm::tool_output_file F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
+        llvm::ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
         if (!ErrInfo) {
             llvm::raw_fd_ostream & osm = F.os();
             NodeBS locs;
