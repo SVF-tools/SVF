@@ -9,7 +9,7 @@
 ################################################
 
 ##remember to run ./setup script before running testings
-CLANGFLAG='-g -c -emit-llvm -I.'
+CLANGFLAG='-Xclang -disable-O0-optnone -g -c -emit-llvm -I.'
 LLVMOPTFLAG='-mem2reg -mergereturn'
 
 TESTWITHOPT=$1

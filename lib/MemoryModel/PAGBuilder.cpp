@@ -985,7 +985,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 /// apr_thread_create has 2 arg.
                 assert((forkedFun->arg_size() <= 2) && "Size of formal parameter of start routine should be one");
                 if(forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1) {
-                    const Argument* formalParm = &(forkedFun->getArgumentList().front());
+                    const Argument* formalParm = &(*forkedFun->arg_begin());
                     /// Connect actual parameter to formal parameter of the start routine
                     if(isa<PointerType>(actualParm->getType()) && isa<PointerType>(formalParm->getType()) )
                         pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
@@ -1008,7 +1008,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 /// The task function of hare_parallel_for has 3 args.
                 assert((taskFunc->arg_size() == 3) && "Size of formal parameter of hare_parallel_for's task routine should be 3");
                 const Value* actualParm = getTaskDataAtHareParForSite(inst);
-                const Argument* formalParm = &(taskFunc->getArgumentList().front());
+                const Argument* formalParm = &(*taskFunc->arg_begin());
                 /// Connect actual parameter to formal parameter of the start routine
                 if(isa<PointerType>(actualParm->getType()) && isa<PointerType>(formalParm->getType()) )
                     pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
