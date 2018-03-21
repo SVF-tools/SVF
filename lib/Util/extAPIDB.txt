@@ -3,16 +3,16 @@
 // Empty lines are allowed
 
 // The current llvm-gcc puts in the \01.
-\01creat64                        EFT_NOOP
-\01fseeko64                       EFT_NOOP
-\01fstat64                        EFT_NOOP
-\01fstatvfs64                     EFT_NOOP
-\01ftello64                       EFT_NOOP
-\01getrlimit64                    EFT_NOOP
-\01lstat64                        EFT_NOOP
-\01open64                         EFT_NOOP
-\01stat64                         EFT_NOOP
-\01statvfs64                      EFT_NOOP
+creat64                         EFT_NOOP
+fseeko64                        EFT_NOOP
+fstat64                         EFT_NOOP
+fstatvfs64                      EFT_NOOP
+ftello64                        EFT_NOOP
+getrlimit64                     EFT_NOOP
+lstat64                         EFT_NOOP
+open64                          EFT_NOOP
+stat64                          EFT_NOOP
+statvfs64                       EFT_NOOP
 Gpm_GetEvent                      EFT_NOOP
 Gpm_Open                          EFT_NOOP
 RAND_seed                         EFT_NOOP
@@ -411,10 +411,10 @@ wmove                             EFT_NOOP
 wrefresh                          EFT_NOOP
 write                             EFT_NOOP
 wtouchln                          EFT_NOOP
-\01_fopen                         EFT_ALLOC
-\01fopen64                        EFT_ALLOC
-\01readdir64                      EFT_ALLOC
-\01tmpfile64                      EFT_ALLOC
+_fopen                         EFT_ALLOC
+fopen64                        EFT_ALLOC
+readdir64                      EFT_ALLOC
+tmpfile64                      EFT_ALLOC
 BIO_new_socket                    EFT_ALLOC
 FT_Get_Sfnt_Table                 EFT_ALLOC
 FcFontList                        EFT_ALLOC
@@ -547,7 +547,7 @@ memalign                  EFT_ALLOC
 valloc                    EFT_ALLOC
 SRE_LockCreate            EFT_ALLOC
 
-\01mmap64  EFT_NOSTRUCT_ALLOC
+mmap64  EFT_NOSTRUCT_ALLOC
 
 // FIXME: this is like realloc but with arg1.
 X509_NAME_oneline              EFT_NOSTRUCT_ALLOC
@@ -715,7 +715,7 @@ gmtime_r      EFT_L_A1
 gzgets        EFT_L_A1
 localtime_r   EFT_L_A1
 realpath      EFT_L_A1
-\01freopen64  EFT_L_A2
+freopen64  EFT_L_A2
 
 // FIXME: may do L_A3 if arg5 > 0.
 _XGetAsyncReply  EFT_L_A2
@@ -801,7 +801,7 @@ _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_  CPP_EFT_A0R_A1R
 // c++98
 _ZNSsC1ERKSsmm  CPP_EFT_A0R_A1R
 // c++11
-_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm  CPP_EFT_A0R_A1R},:
+_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm  CPP_EFT_A0R_A1R
 
 // string operator=: operator= (const string &str)
 // c++98
@@ -817,4 +817,4 @@ _ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic
 
 //This must be the last entry.
 __dynamic_cast  CPP_EFT_DYNAMIC_CAST
-0               EFT_NOOP
+////0               EFT_NOOP
