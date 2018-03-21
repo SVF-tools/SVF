@@ -9,6 +9,7 @@
 
 #include "Util/ExtAPI.h"
 #include <stdio.h>
+#include <fstream>
 
 using namespace std;
 
@@ -875,27 +876,61 @@ static void fillExtAPIStringMap() {
 
 
 void ExtAPI::init() {
+    fillExtAPIStringMap();
+
+    ifstream db;
+    db.open("/home/mohamad/svf/SVF/lib/Util/extAPIDB.txt", ifstream::in);
+
     set<extf_t> t_seen;
     extf_t prev_t= EFT_NOOP;
     t_seen.insert(EFT_NOOP);
-    for(const ei_pair *p= ei_pairs; p->n; ++p) {
-        if(p->t != prev_t) {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t)) {
-                fputs(p->n, stderr);
-                putc('\n', stderr);
-                assert(!"ei_pairs not grouped by type");
+
+    string name;
+    string typeString;
+
+    while (db >> name) {
+        // Is it a comment?
+        if (name[0] == '/') {
+            if (name.length() > 1 && name[1] == '/') {
+                db.ignore(numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            } else {
+                assert(!"came across single '/'");
             }
-            t_seen.insert(p->t);
-            prev_t= p->t;
         }
-        if(info.count(p->n)) {
-            fputs(p->n, stderr);
-            putc('\n', stderr);
-            assert(!"duplicate name in ei_pairs");
+
+        // It's some data.
+        db >> typeString;
+        llvm::StringMap<ExtAPI::extf_t>::const_iterator it
+            = stringToExtAPI.find(typeString);
+        if (it == stringToExtAPI.end()) {
+            cerr << typeString << "\n";
+            assert(!"^ unknown type");
         }
-        info[p->n]= p->t;
+
+        ExtAPI::extf_t type = it->second;
+
+        if (type != prev_t) {
+            // This will detect if an entry is moved to another block
+            // but did not have its type changed.
+            if (t_seen.count(type)) {
+                cerr << name << "\n";
+                assert(!"names not grouped by type");
+            }
+
+            t_seen.insert(type);
+            prev_t = type;
+        }
+
+        if (info.count(name)) {
+            cerr << name << "\n";
+            assert(!"duplicate name");
+        }
+
+        info[name] = type;
+        std::cout << name << " : " << type << "\n";
     }
+
+    db.close();
 }
 
