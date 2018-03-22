@@ -9,6 +9,8 @@ addons:
       - llvm-6.0
       - llvm-6.0-dev
       - clang-6.0
+      - libllvm6.0
+      - libstdc++6
 matrix:
   include:
     - os: osx
