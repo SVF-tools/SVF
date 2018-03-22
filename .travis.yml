@@ -12,7 +12,6 @@ addons:
       - clang-6.0
       - libllvm6.0
       - libstdc++6
-      - libstdc++-4.9
       - libgcc-4.9-dev
       - libobjc-4.9-dev
       - libclang-common-6.0-dev
