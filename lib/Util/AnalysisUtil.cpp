@@ -29,7 +29,7 @@
 
 #include "Util/AnalysisUtil.h"
 
-#include <llvm/Transforms/Utils/Local.h>	// for FindAllocaDbgDeclare
+#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
 #include <llvm/IR/Module.h>	// for Module
 #include <llvm/IR/InstrTypes.h>	// for TerminatorInst
@@ -300,10 +300,12 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
     raw_string_ostream rawstr(str);
     if (const Instruction *inst = dyn_cast<Instruction>(val)) {
         if (isa<AllocaInst>(inst)) {
-            DbgDeclareInst* DDI = llvm::FindAllocaDbgDeclare(const_cast<Instruction*>(inst));
-            if (DDI) {
-                DIVariable *DIVar = cast<DIVariable>(DDI->getVariable());
-                rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
+            for (DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst))) {
+                if (DbgDeclareInst *DDI = dyn_cast<DbgDeclareInst>(DII)) {
+                    DIVariable *DIVar = cast<DIVariable>(DDI->getVariable());
+                    rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
+                    break;
+                }
             }
         }
         else if (MDNode *N = inst->getMetadata("dbg")) { // Here I is an LLVM instruction

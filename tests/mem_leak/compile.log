@@ -1,7 +1,0 @@
-malloc52.c:16:9: warning: 'NULL' macro redefined
-#define NULL 0
-        ^
-/usr/include/stdio.h:84:9: note: previous definition is here
-#define NULL __DARWIN_NULL
-        ^
-1 warning generated.
