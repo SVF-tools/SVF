@@ -818,3 +818,27 @@ _ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic
 //This must be the last entry.
 __dynamic_cast  CPP_EFT_DYNAMIC_CAST
 ////0               EFT_NOOP
+
+//  FIXME:
+//  SSL_CTX_ctrl, SSL_ctrl - may set the ptr field arg0->x
+//  SSL_CTX_set_verify - sets the function ptr field arg0->x
+//  X509_STORE_CTX_get_current_cert - returns arg0->x
+//  X509_get_subject_name - returns arg0->x->y
+//  XStringListToTextProperty, XGetWindowAttributes - sets arg2->x
+//  XInitImage - sets function ptrs arg0->x->y
+//  XMatchVisualInfo - sets arg4->x
+//  XtGetApplicationResources - ???
+//  glob - sets arg3->gl_pathv
+//  gnutls_pkcs12_bag_get_data - copies arg0->element[arg1].data to *arg2
+//  gnutls_pkcs12_get_bag - finds the arg1'th bag in the ASN1 tree structure
+//    rooted at arg0->pkcs12 and copies it to *arg2
+//  gnutls_pkcs12_import - builds an ASN1 tree rooted at arg0->pkcs12,
+//    based on decrypted data
+//  gnutls_x509_crt_import - builds an ASN1 tree rooted at arg0->cert
+//  gnutls_x509_privkey_export_rsa_raw - points arg1->data thru arg6->data
+//    to new strings
+//  gnutls_x509_privkey_import, gnutls_x509_privkey_import_pkcs8 -
+//    builds an ASN1 tree rooted at arg0->key from decrypted data
+//  cairo_get_target - returns arg0->gstate->original_target
+//  hasmntopt - returns arg0->mnt_opts
+//
