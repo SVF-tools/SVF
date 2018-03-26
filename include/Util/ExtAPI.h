@@ -84,8 +84,6 @@ public:
         EFT_OTHER         //not found in the list
     };
 private:
-    std::string dbFilename = "extAPIDB.txt";
-
     //Each llvm::Function name is mapped to its extf_t
     //  (hash_map and map are much slower).
     llvm::StringMap<extf_t> info;

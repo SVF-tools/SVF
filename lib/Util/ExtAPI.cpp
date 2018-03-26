@@ -11,7 +11,13 @@
 #include <stdio.h>
 #include <fstream>
 
+#include <llvm/Support/CommandLine.h> // for tool output file
+
 using namespace std;
+using namespace llvm;
+
+static cl::opt<string> ReadExtApi("read-extapi",  cl::init(""),
+                                 cl::desc("Read external API names and types from a file"));
 
 ExtAPI* ExtAPI::extAPI = NULL;
 
@@ -878,8 +884,17 @@ static void fillExtAPIStringMap() {
 void ExtAPI::init() {
     fillExtAPIStringMap();
 
-    ifstream db;
-    db.open("/home/mohamad/svf/SVF/lib/Util/extAPIDB.txt", ifstream::in);
+    if (ReadExtApi.empty()) {
+        cout << "no external API database specified\n";
+        return;
+    }
+
+    ifstream db(ReadExtApi);
+    if (!db.is_open()) {
+        cout << "could not open external API database!\n";
+        return;
+    }
+    //db.open("/home/mohamad/svf/SVF/lib/Util/extAPIDB.txt", ifstream::in);
 
     set<extf_t> t_seen;
     extf_t prev_t= EFT_NOOP;
