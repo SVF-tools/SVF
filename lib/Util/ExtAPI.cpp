@@ -128,7 +128,6 @@ void ExtAPI::init() {
         }
 
         info[name] = type;
-        std::cout << name << " : " << type << "\n";
     }
 
     db.close();
