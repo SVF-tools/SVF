@@ -51,9 +51,9 @@ default=default=default=default:
 # Compiler selection
 #
 #####################################################################
-CC           = clang -g -O0 -flto -std=gnu89 -D_GNU_SOURCE -fpermissive -Wno-return-type #-emit-llvm
+CC           = clang -Xclang -disable-O0-optnone -g -O0 -flto -std=gnu89 -D_GNU_SOURCE -fpermissive -Wno-return-type #-emit-llvm
 #CLD          = /home/ysui/cpu2000/config/msc_cld
-CXX          = clang++ -g -O0  -flto -D_GNU_SOURCE #-emit-llvm
+CXX          = clang++ -Xclang -disable-O0-optnone -g -O0  -flto -D_GNU_SOURCE #-emit-llvm
 #CLD          = /home/ysui/cpu2000/config/msc_cld_cxx
 FC           = /usr/local/sles9/gcc42-0325/bin/gfortran
 
