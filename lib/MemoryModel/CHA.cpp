@@ -164,7 +164,7 @@ void CHGraph::buildCHGOnBasicBlock(const BasicBlock *B,
                 continue;
             if ((relationType == CONSTRUCTOR && isConstructor(callee)) ||
                     (relationType == DESTRUCTOR && isDestructor(callee))) {
-                if (cs.arg_size() < 1 || (cs.paramHasAttr(1, Attribute::StructRet) && cs.arg_size() < 2))
+                if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, Attribute::StructRet)))
                     continue;
                 const Value *thisPtr = getVCallThisPtr(cs);
                 if (thisPtr != NULL) {
