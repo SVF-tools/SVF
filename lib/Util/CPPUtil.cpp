@@ -224,7 +224,7 @@ bool cppUtil::isVirtualCallSite(CallSite cs) {
 }
 
 const Value *cppUtil::getVCallThisPtr(CallSite cs) {
-    if (cs.paramHasAttr(1, Attribute::StructRet)) {
+    if (cs.paramHasAttr(0, Attribute::StructRet)) {
         return cs.getArgument(1);
     } else {
         return cs.getArgument(0);
