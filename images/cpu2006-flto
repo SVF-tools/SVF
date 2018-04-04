@@ -53,7 +53,7 @@ default=default=default=default:
 #####################################################################
 CC           = clang -Xclang -disable-O0-optnone -flto -std=gnu89 -D_GNU_SOURCE -g -fpermissive -Wno-return-type
 #CLD          = /home/ysui/cpu2006/config/msc_cld
-CXX          = clang++ -Xclang -disable-O0-optnone -flto -g -D_GNU_SOURCE -fpermissive -Wno-return-type
+CXX          = clang++ -Xclang -disable-O0-optnone -flto -std=c++03 -g -D_GNU_SOURCE -fpermissive -Wno-return-type
 #CXX          = /home/ysui/llvm-3.8.0/llvm-3.8.0.obj/Release+Asserts/bin/clang++ -flto -c -g -emit-llvm -D_GNU_SOURCE -fpermissive -Wno-return-type
 #CXXLD        = ld -flto -Wl,-plugin-opt=save-temps
 FC           = /usr/local/sles9/gcc42-0325/bin/gfortran
