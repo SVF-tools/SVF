@@ -47,7 +47,7 @@ export PTALIB=$PTAHOME/$Build/lib
 export PTARTLIB=$PTAHOME/lib/RuntimeLib
 export PATH=$PTABIN:$PATH
 
-export PTATEST=$PTAHOME/tests
+export PTATEST=$PTAHOME/PTABen
 export PTATESTSCRIPTS=$PTATEST/scripts
 export RUNSCRIPT=$PTATESTSCRIPTS/run.sh
 
