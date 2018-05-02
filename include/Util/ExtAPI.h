@@ -38,6 +38,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <iostream>
 
 //------------------------------------------------------------------------------
 class ExtAPI {
@@ -83,7 +84,6 @@ public:
         EFT_OTHER         //not found in the list
     };
 private:
-
     //Each llvm::Function name is mapped to its extf_t
     //  (hash_map and map are much slower).
     llvm::StringMap<extf_t> info;
