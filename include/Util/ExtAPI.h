@@ -43,6 +43,9 @@
 //------------------------------------------------------------------------------
 class ExtAPI {
 public:
+    static const std::string DB_NAME;
+    static const char *PTAHOME;
+
     //External llvm::Function types
     //Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
     enum extf_t {

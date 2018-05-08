@@ -19,6 +19,9 @@ using namespace llvm;
 static cl::opt<string> ReadExtApi("read-extapi",  cl::init(""),
                                  cl::desc("Read external API names and types from a file"));
 
+const std::string ExtAPI::DB_NAME("externalAPIDB.txt");
+const char *ExtAPI::PTAHOME = "PTAHOME";
+
 ExtAPI* ExtAPI::extAPI = NULL;
 
 struct ei_pair {
@@ -69,17 +72,25 @@ static void fillExtAPIStringMap() {
 void ExtAPI::init() {
     fillExtAPIStringMap();
 
-    if (ReadExtApi.empty()) {
-        cout << "no external API database specified\n";
-        return;
+    const char *ptahome = std::getenv(PTAHOME);
+
+    if (ReadExtApi.empty() && ptahome != NULL) {
+        ReadExtApi = std::string(ptahome) + "/" + DB_NAME;
     }
 
     ifstream db(ReadExtApi);
     if (!db.is_open()) {
-        cout << "could not open external API database!\n";
+        if (ptahome == NULL && ReadExtApi.empty()) {
+            cout << "Neither $" << PTAHOME
+                 << " nor option -read-extapi is defined.\n";
+        } else {
+            cout << "cannot read file: '" << ReadExtApi << "'\n";
+        }
+
+        assert(!"Could not open external API database.");
+
         return;
     }
-    //db.open("/home/mohamad/svf/SVF/lib/Util/extAPIDB.txt", ifstream::in);
 
     set<extf_t> t_seen;
     extf_t prev_t= EFT_NOOP;
