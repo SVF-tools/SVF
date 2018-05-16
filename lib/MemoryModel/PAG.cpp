@@ -648,7 +648,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
                 rawstr << node->getId();
         } else {
             // print the whole value
-            if (!isa<DummyValPN>(node) || !isa<DummyObjPN>(node))
+            if (!isa<DummyValPN>(node) && !isa<DummyObjPN>(node))
                 rawstr << *node->getValue();
             else
                 rawstr << "";

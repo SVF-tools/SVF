@@ -337,10 +337,10 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
                 for (DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
                     DIGlobalVariable * DGV = GV->getVariable();
 
-                    /*
-                    if ( gvar == DGV )
-                                  rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
-                    */
+                    if(DGV->getName() == gvar->getName()){
+                        rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
+                    }
+
                 }
             }
         }
