@@ -587,7 +587,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*> {
                 rawstr << node->getId();
         } else {
             // print the whole value
-            if (!isa<DummyValPN>(node) || !isa<DummyObjPN>(node))
+            if (!isa<DummyValPN>(node) && !isa<DummyObjPN>(node))
                 rawstr << *node->getValue();
             else
                 rawstr << "";
