@@ -16,8 +16,8 @@
 using namespace std;
 using namespace llvm;
 
-static cl::opt<string> ReadExtApi("read-extapi",  cl::init(""),
-                                 cl::desc("Read external API names and types from a file"));
+static cl::opt<string> ReadApiSum("read-apisum",  cl::init(""),
+                                 cl::desc("Read API summaries (names and side effects) from a file"));
 
 const std::string ExtAPI::DB_NAME("externalAPIDB.txt");
 const char *ExtAPI::SVFHOME = "SVFHOME";
@@ -74,17 +74,17 @@ void ExtAPI::init() {
 
     const char *svfhome = std::getenv(SVFHOME);
 
-    if (ReadExtApi.empty() && svfhome != NULL) {
-        ReadExtApi = std::string(svfhome) + "/" + DB_NAME;
+    if (ReadApiSum.empty() && svfhome != NULL) {
+        ReadApiSum = std::string(svfhome) + "/" + DB_NAME;
     }
 
-    ifstream db(ReadExtApi);
+    ifstream db(ReadApiSum);
     if (!db.is_open()) {
-        if (svfhome == NULL && ReadExtApi.empty()) {
+        if (svfhome == NULL && ReadApiSum.empty()) {
             cout << "Neither $" << SVFHOME
-                 << " nor option -read-extapi is defined.\n";
+                 << " nor option -read-apisum is defined.\n";
         } else {
-            cout << "cannot read file: '" << ReadExtApi << "'\n";
+            cout << "cannot read file: '" << ReadApiSum << "'\n";
         }
 
         assert(!"Could not open external API database.");
