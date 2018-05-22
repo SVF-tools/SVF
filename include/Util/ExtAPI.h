@@ -44,7 +44,7 @@
 class ExtAPI {
 public:
     static const std::string DB_NAME;
-    static const char *PTAHOME;
+    static const char *SVFHOME;
 
     //External llvm::Function types
     //Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).

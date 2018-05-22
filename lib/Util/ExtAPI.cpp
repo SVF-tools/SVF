@@ -20,7 +20,7 @@ static cl::opt<string> ReadExtApi("read-extapi",  cl::init(""),
                                  cl::desc("Read external API names and types from a file"));
 
 const std::string ExtAPI::DB_NAME("externalAPIDB.txt");
-const char *ExtAPI::PTAHOME = "PTAHOME";
+const char *ExtAPI::SVFHOME = "SVFHOME";
 
 ExtAPI* ExtAPI::extAPI = NULL;
 
@@ -72,16 +72,16 @@ static void fillExtAPIStringMap() {
 void ExtAPI::init() {
     fillExtAPIStringMap();
 
-    const char *ptahome = std::getenv(PTAHOME);
+    const char *svfhome = std::getenv(SVFHOME);
 
-    if (ReadExtApi.empty() && ptahome != NULL) {
-        ReadExtApi = std::string(ptahome) + "/" + DB_NAME;
+    if (ReadExtApi.empty() && svfhome != NULL) {
+        ReadExtApi = std::string(svfhome) + "/" + DB_NAME;
     }
 
     ifstream db(ReadExtApi);
     if (!db.is_open()) {
-        if (ptahome == NULL && ReadExtApi.empty()) {
-            cout << "Neither $" << PTAHOME
+        if (svfhome == NULL && ReadExtApi.empty()) {
+            cout << "Neither $" << SVFHOME
                  << " nor option -read-extapi is defined.\n";
         } else {
             cout << "cannot read file: '" << ReadExtApi << "'\n";
