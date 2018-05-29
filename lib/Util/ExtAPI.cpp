@@ -19,8 +19,15 @@ using namespace llvm;
 static cl::opt<string> ReadApiSum("read-apisum",  cl::init(""),
                                  cl::desc("Read API summaries (names and side effects) from a file"));
 
-const std::string ExtAPI::DB_NAME("externalAPIDB.txt");
-const char *ExtAPI::SVFHOME = "SVFHOME";
+const std::string ExtAPI::DB_NAME("api_summaries.txt");
+
+const std::string ExtAPI::CONFIG_DIR_NAME(".svf");
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+    const char *ExtAPI::HOME_VAR = "APPDATA";
+#else
+    const char *ExtAPI::HOME_VAR = "HOME";
+#endif
 
 ExtAPI* ExtAPI::extAPI = NULL;
 
@@ -72,24 +79,17 @@ static void fillExtAPIStringMap() {
 void ExtAPI::init() {
     fillExtAPIStringMap();
 
-    const char *svfhome = std::getenv(SVFHOME);
+    const char *home = std::getenv(HOME_VAR);
 
-    if (ReadApiSum.empty() && svfhome != NULL) {
-        ReadApiSum = std::string(svfhome) + "/" + DB_NAME;
+    if (ReadApiSum.empty()) {
+        ReadApiSum = std::string(home) + "/" + CONFIG_DIR_NAME + "/" + DB_NAME;
     }
 
     ifstream db(ReadApiSum);
     if (!db.is_open()) {
-        if (svfhome == NULL && ReadApiSum.empty()) {
-            cout << "Neither $" << SVFHOME
-                 << " nor option -read-apisum is defined.\n";
-        } else {
-            cout << "cannot read file: '" << ReadApiSum << "'\n";
-        }
-
-        assert(!"Could not open external API database.");
-
-        return;
+        cerr << "Cannot open file: '" << ReadApiSum << "'\n";
+        cerr << "Try running \"setup.sh\" from the source's root directory\n";
+        assert(!"Could not open API summaries database.");
     }
 
     set<extf_t> t_seen;

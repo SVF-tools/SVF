@@ -59,3 +59,19 @@ do
     newfile=`echo $basefilename | sed s/lib/liblib/`
     ln -s $PTALIB/$basefilename $PTALIB/$newfile
 done
+
+######### .svf CONFIG FILE and API SUMMARIES DB ##############
+
+SVF_CONFIG_DIR="$HOME/.svf"
+DBNAME="api_summaries.txt"
+
+if [ ! -d "$SVF_CONFIG_DIR" ]; then
+    mkdir "$SVF_CONFIG_DIR"
+fi
+
+if [ -h "$SVF_CONFIG_DIR/$DBNAME" ]; then
+    rm "$SVF_CONFIG_DIR/$DBNAME"
+fi
+
+ln -s "$SVFHOME/$DBNAME" "$SVF_CONFIG_DIR/$DBNAME"
+
