@@ -77,7 +77,22 @@ void LLVMModuleSet::build(const vector<string> &moduleNameVec) {
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec) {
     moduleNum = moduleNameVec.size();
-    cxts = new LLVMContext[moduleNum];
+    //
+    // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
+    // We should use only one LLVMContext object for multiple modules in the same thread.
+    // No such problem if only one module is processed by SVF.
+    // ------------------------------------------------------------------
+    //    LLVMContext ctxa,ctxb;
+    //    IntegerType * t1 = IntegerType::get(ctxa,32);
+    //    IntegerType * t2 = IntegerType::get(ctxa,32);
+    //    assert(t1 == t2);
+    //    IntegerType * t3 = IntegerType::get(ctxb,32);
+    //    IntegerType * t4 = IntegerType::get(ctxb,32);
+    //    assert(t3 == t4);
+    //    assert(t1 != t3);
+    // ------------------------------------------------------------------
+    //
+    cxts = new LLVMContext[1];
     modules = new unique_ptr<Module>[moduleNum];
 
     u32_t i = 0;
@@ -85,7 +100,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec) {
             eit = moduleNameVec.end(); it != eit; ++it, ++i) {
         const string moduleName = *it;
         SMDiagnostic Err;
-        modules[i] = parseIRFile(moduleName, Err, cxts[i]);
+        modules[i] = parseIRFile(moduleName, Err, cxts[0]);
         if (!modules[i]) {
             errs() << "load module: " << moduleName << "failed\n";
             continue;
