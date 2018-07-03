@@ -353,6 +353,10 @@ public:
 
     /// Get points-to targets of a pointer. It needs to be implemented in child class
     virtual PointsTo& getPts(NodeID ptr) = 0;
+    
+    /// Given an object, get all the nodes having whose pointsto contains the object. 
+    /// Similar to getPts, this also needs to be implemented in child classes.
+    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts() {
