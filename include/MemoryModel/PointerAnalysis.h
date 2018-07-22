@@ -668,6 +668,7 @@ protected:
         for(typename PTDataTy::PtsMap::const_iterator it = ptsMap.begin(), eit=ptsMap.end(); it!=eit; ++it) {
             for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit) {
                 ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
+                objToBVRevPtsMap[cit->get_id()].set((it->first).get_id());
                 ptrToCPtsMap[(it->first).get_id()].set(*cit);
             }
         }
@@ -678,6 +679,8 @@ protected:
     bool normalized;
     /// Normal points-to representation (without conditions)
     PtrToBVPtsMap ptrToBVPtsMap;
+    /// Normal points-to representation (without conditions)
+    PtrToBVPtsMap objToBVRevPtsMap;
     /// Conditional points-to representation (with conditions)
     PtrToCPtsMap ptrToCPtsMap;
 public:
@@ -701,6 +704,11 @@ public:
     virtual inline const CPtSet& getCondPointsTo(NodeID ptr) {
         assert(normalized && "Pts of all context-vars have to be merged/normalized. Want to use getPts(CVar cvar)??");
         return ptrToCPtsMap[ptr];
+    }
+    /// Given an object return all pointers points to this object
+    virtual inline PointsTo& getRevPts(NodeID obj) {
+        assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
+        return objToBVRevPtsMap[obj];
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
