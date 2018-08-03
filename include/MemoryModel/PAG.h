@@ -521,8 +521,8 @@ public:
     /// Add a memory obj node
     inline NodeID addObjNode(const llvm::Value* val, NodeID i) {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
-        assert(mem->getSymId() == i && "not same object id?");
-        return addFIObjNode(mem, i);
+        assert(((mem->getSymId() == i) || (symInfo->getGlobalRep(val)!=val)) && "not same object id?");
+        return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const llvm::Function* val, NodeID i) {
@@ -539,7 +539,7 @@ public:
     /// Add a field obj node, this method can only invoked by getGepObjNode
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
-    NodeID addFIObjNode(const MemObj* obj, NodeID i);
+    NodeID addFIObjNode(const MemObj* obj);
     //@}
 
     ///  Add a dummy value/object node according to node ID (llvm value is null)

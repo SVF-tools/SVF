@@ -319,13 +319,13 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i) {
 /*!
  * Add a field-insensitive node, this method can only invoked by getFIGepObjNode
  */
-NodeID PAG::addFIObjNode(const MemObj* obj, NodeID i)
+NodeID PAG::addFIObjNode(const MemObj* obj)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = getObjectNode(obj);
-    memToFieldsMap[base].set(i);
-    FIObjPN *node = new FIObjPN(obj->getRefVal(), i, obj);
-    return addObjNode(obj->getRefVal(), node, i);
+    memToFieldsMap[base].set(obj->getSymId());
+    FIObjPN *node = new FIObjPN(obj->getRefVal(), obj->getSymId(), obj);
+    return addObjNode(obj->getRefVal(), node, obj->getSymId());
 }
 
 
