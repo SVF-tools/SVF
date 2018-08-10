@@ -228,9 +228,8 @@ bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
-    NodeID base = getBaseValNode(getValueNode(val));
-    NodePairSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, getValueNode(val)));
+NodeID PAG::getGepValNode(const llvm::Value* gepVal, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
+    NodePairSetMap::iterator iter = GepValNodeMap.find(std::make_pair(getValueNode(curVal), getValueNode(gepVal)));
     if (iter == GepValNodeMap.end()) {
         /*
          * getGepValNode can only be called from two places:
@@ -241,9 +240,10 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const T
          * 2. GlobalVariable
          */
         assert((isa<Instruction>(curVal) || isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
+        NodeID base = getBaseValNode(getValueNode(gepVal));
         const std::vector<FieldInfo> &fieldinfo = symInfo->getFlattenFieldInfoVec(baseType);
         const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
-        NodeID gepNode= addGepValNode(val,ls,nodeNum,type,fieldidx);
+        NodeID gepNode= addGepValNode(gepVal,ls,nodeNum,type,fieldidx);
         addGepEdge(base, gepNode, ls, true);
         return gepNode;
     } else
@@ -253,15 +253,15 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const T
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
  */
-NodeID PAG::addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
-    NodeID cur = getValueNode(val);
-    NodeID base = getBaseValNode(cur);
+NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
+    NodeID gep = getValueNode(gepVal);
+    NodeID cur = getValueNode(curVal);
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap.count(std::make_pair(base, cur))
+    assert(0==GepValNodeMap.count(std::make_pair(cur, gep))
            && "this node should not be created before");
-    GepValNodeMap[std::make_pair(base, cur)] = i;
-    GepValPN *node = new GepValPN(val, i, ls, type, fieldidx);
-    return addValNode(val, node, i);
+    GepValNodeMap[std::make_pair(cur, gep)] = i;
+    GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
+    return addValNode(gepVal, node, i);
 }
 
 /*!
