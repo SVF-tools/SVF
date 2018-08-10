@@ -291,6 +291,15 @@ protected:
     SVFGEdge* addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     //@}
 
+    /// sanitize Intra edges, verify that both nodes belong to the same function.
+    inline void checkIntraVFEdgeParents(SVFGNode *srcNode, SVFGNode *dstNode) {
+        const llvm::BasicBlock *srcBB = srcNode->getBB();
+        const llvm::BasicBlock *dstBB = dstNode->getBB();
+        if(srcBB != nullptr && dstBB != nullptr) {
+            assert(srcBB->getParent() == dstBB->getParent());
+        }
+    }
+    
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
