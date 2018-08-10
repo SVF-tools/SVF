@@ -63,13 +63,14 @@ public:
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef llvm::DenseMap<NodeOffset,NodeID,llvm::DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
     typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
+    typedef std::map<NodePair,NodeID> NodePairSetMap;
 
 private:
     SymbolTableInfo* symInfo;
     /// ValueNodes - This map indicates the Node that a particular Value* is
     /// represented by.  This contains entries for all pointers.
     PAGEdge::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < PAG edge map
-    NodeLocationSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
+    NodePairSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges

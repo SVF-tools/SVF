@@ -230,7 +230,7 @@ bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg
  */
 NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
     NodeID base = getBaseValNode(getValueNode(val));
-    NodeLocationSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
+    NodePairSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, getValueNode(val)));
     if (iter == GepValNodeMap.end()) {
         /*
          * getGepValNode can only be called from two places:
@@ -254,11 +254,12 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const T
  * Add a temp field value node, this method can only invoked by getGepValNode
  */
 NodeID PAG::addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
-    NodeID base = getBaseValNode(getValueNode(val));
+    NodeID cur = getValueNode(val);
+    NodeID base = getBaseValNode(cur);
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap.count(std::make_pair(base, ls))
+    assert(0==GepValNodeMap.count(std::make_pair(base, cur))
            && "this node should not be created before");
-    GepValNodeMap[std::make_pair(base, ls)] = i;
+    GepValNodeMap[std::make_pair(base, cur)] = i;
     GepValPN *node = new GepValPN(val, i, ls, type, fieldidx);
     return addValNode(val, node, i);
 }
