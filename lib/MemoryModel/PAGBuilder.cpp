@@ -228,7 +228,7 @@ void PAGBuilder::processCE(const Value *val) {
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset) {
+NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, u32_t fieldidx) {
 
     // if the global variable do not have any field needs to be initialized
     if (offset == 0 && gvar->getInitializer()->getType()->isSingleValueType()) {
@@ -240,7 +240,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset) {
         const Type *gvartype = gvar->getType();
         while (const PointerType *ptype = dyn_cast<PointerType>(gvartype))
             gvartype = ptype->getElementType();
-        return pag->getGepValNode(gvar, LocationSet(offset), gvartype, offset);
+        return pag->getGepValNode(gvar, LocationSet(offset), gvartype, fieldidx);
     }
 }
 
@@ -256,7 +256,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset) {
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
 void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                               u32_t offset) {
+                               u32_t offset, u32_t fieldidx) {
     DBOUT(DPAGBuild,
           outs() << "global " << *gvar << " constant initializer: " << *C
           << "\n");
@@ -265,7 +265,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         pag->setCurrentLocation(gvar, NULL);
-        NodeID field = getGlobalVarField(gvar, offset);
+        NodeID field = getGlobalVarField(gvar, offset, fieldidx);
 
         if (isa<GlobalVariable>(C) || isa<Function>(C)) {
             pag->setCurrentLocation(C, NULL);
@@ -282,7 +282,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     } else if (isa<ConstantArray>(C)) {
         if (cppUtil::isValVtbl(gvar) == false)
             for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-                InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset);
+                InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset, i);
 
     } else if (isa<ConstantStruct>(C)) {
         const StructType *sty = cast<StructType>(C->getType());
@@ -290,7 +290,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
             u32_t off = offsetvect[i];
-            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off);
+            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off, i);
         }
 
     } else {
@@ -316,7 +316,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
         if (gvar->hasDefinitiveInitializer()) {
             Constant *C = gvar->getInitializer();
             DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
-            InitialGlobal(gvar, C, 0);
+            InitialGlobal(gvar, C, 0, 0);
         }
     }
 
