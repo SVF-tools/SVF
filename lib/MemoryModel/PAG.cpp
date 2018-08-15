@@ -228,8 +228,9 @@ bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID PAG::getGepValNode(const llvm::Value* gepVal, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
-    NodePairSetMap::iterator iter = GepValNodeMap.find(std::make_pair(getValueNode(curVal), getValueNode(gepVal)));
+NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
+    NodeID base = getBaseValNode(getValueNode(val));
+    NodeLocationSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
     if (iter == GepValNodeMap.end()) {
         /*
          * getGepValNode can only be called from two places:
@@ -240,11 +241,17 @@ NodeID PAG::getGepValNode(const llvm::Value* gepVal, const LocationSet& ls, cons
          * 2. GlobalVariable
          */
         assert((isa<Instruction>(curVal) || isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
-        NodeID base = getBaseValNode(getValueNode(gepVal));
         const std::vector<FieldInfo> &fieldinfo = symInfo->getFlattenFieldInfoVec(baseType);
         const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
-        NodeID gepNode= addGepValNode(gepVal,ls,nodeNum,type,fieldidx);
+
+        // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
+        // We preserve the current BB information to restore it after creating the gepNode
+        const llvm::Value* cval = pag->getCurrentValue();
+        const llvm::BasicBlock* cbb = pag->getCurrentBB();
+        pag->setCurrentLocation(curVal, NULL);
+        NodeID gepNode= addGepValNode(val,ls,nodeNum,type,fieldidx);
         addGepEdge(base, gepNode, ls, true);
+        pag->setCurrentLocation(cval, cbb);
         return gepNode;
     } else
         return iter->second;
@@ -254,12 +261,11 @@ NodeID PAG::getGepValNode(const llvm::Value* gepVal, const LocationSet& ls, cons
  * Add a temp field value node, this method can only invoked by getGepValNode
  */
 NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
-    NodeID gep = getValueNode(gepVal);
-    NodeID cur = getValueNode(curVal);
+	NodeID base = getBaseValNode(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap.count(std::make_pair(cur, gep))
+	assert(0==GepValNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
-    GepValNodeMap[std::make_pair(cur, gep)] = i;
+	GepValNodeMap[std::make_pair(base, ls)] = i;
     GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
     return addValNode(gepVal, node, i);
 }
@@ -364,7 +370,9 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
     edge->setBB(curBB);
     edge->setValue(curVal);
     if (const Instruction *curInst = dyn_cast<Instruction>(curVal)) {
-        assert(curBB && "instruction does not have a basic block??");
+ 	/// We assume every GepValPN and its GepPE are unique across whole program
+	if(!(isa<GepPE>(edge) && isa<GepValPN>(edge->getDstNode())))
+		assert(curBB && "instruction does not have a basic block??");
         inst2PAGEdgesMap[curInst].push_back(edge);
     } else if (isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
