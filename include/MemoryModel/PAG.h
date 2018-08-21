@@ -550,7 +550,7 @@ public:
         return addObjNode(NULL, new DummyObjPN(nodeNum,mem), nodeNum);
     }
     inline NodeID addDummyObjNode(NodeID i) {
-        const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(i);
+        const MemObj* mem = addDummyMemObj(i);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
     }
     inline const MemObj* addDummyMemObj(NodeID i) {

@@ -1088,6 +1088,7 @@ PAG* PAGBuilderFromFile::build() {
 
 			if (token_count == 0)
 				continue;
+
 			else if (token_count == 2) {
 				NodeID nodeId;
 				string nodetype;
@@ -1098,23 +1099,12 @@ PAG* PAGBuilderFromFile::build() {
 				if (nodetype == "v")
 					pag->addDummyValNode(nodeId);
 				else if (nodetype == "o") {
-					pag->addFIObjNode(pag->addDummyMemObj(nodeId));
+					const MemObj* mem = pag->addDummyMemObj(nodeId);
+					mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
+					mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
+					pag->addFIObjNode(mem);
 				} else
 					assert(false && "format not support, pls specify node type");
-			}
-
-			// do not consider gep edge
-			else if (token_count == 3) {
-				NodeID nodeSrc;
-				NodeID nodeDst;
-				string edge;
-				istringstream ss(line);
-				ss >> nodeSrc;
-				ss >> edge;
-				ss >> nodeDst;
-				outs() << "reading edge :" << nodeSrc << " " << edge << " "
-						<< nodeDst << " \n";
-				addEdge(nodeSrc, nodeDst, 0, edge);
 			}
 
 			// do consider gep edge
