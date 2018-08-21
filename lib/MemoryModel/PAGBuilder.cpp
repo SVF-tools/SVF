@@ -1072,80 +1072,82 @@ void PAGBuilder::sanityCheck() {
  */
 PAG* PAGBuilderFromFile::build() {
 
-    string line;
-    ifstream myfile(file.c_str());
-    if (myfile.is_open()) {
-        while (myfile.good()) {
-            getline(myfile, line);
+	string line;
+	ifstream myfile(file.c_str());
+	if (myfile.is_open()) {
+		while (myfile.good()) {
+			getline(myfile, line);
 
-            Size_t token_count = 0;
-            string tmps;
-            istringstream ss(line);
-            while (ss.good()) {
-                ss >> tmps;
-                token_count++;
-            }
+			Size_t token_count = 0;
+			string tmps;
+			istringstream ss(line);
+			while (ss.good()) {
+				ss >> tmps;
+				token_count++;
+			}
 
-            if (token_count == 0)
-                continue;
-            else if (token_count == 2) {
-                NodeID nodeId;
-                string nodetype;
-                istringstream ss(line);
-                ss >> nodeId;
-                ss >> nodetype;
-                outs() << "reading node :" << nodeId << "\n";
-                if (nodetype == "v")
-                    pag->addDummyValNode(nodeId);
-                else if (nodetype == "o") {
-                    pag->addDummyObjNode();
-                }
-                else
-                    assert(
-                        false
-                        && "format not support, pls specify node type");
-            }
+			if (token_count == 0)
+				continue;
+			else if (token_count == 2) {
+				NodeID nodeId;
+				string nodetype;
+				istringstream ss(line);
+				ss >> nodeId;
+				ss >> nodetype;
+				outs() << "reading node :" << nodeId << "\n";
+				if (nodetype == "v")
+					pag->addDummyValNode(nodeId);
+				else if (nodetype == "o") {
+					pag->addDummyObjNode(nodeId);
+				} else
+					assert(
+							false
+									&& "format not support, pls specify node type");
+			}
 
-            // do not consider gep edge
-            else if (token_count == 3) {
-                NodeID nodeSrc;
-                NodeID nodeDst;
-                string edge;
-                istringstream ss(line);
-                ss >> nodeSrc;
-                ss >> edge;
-                ss >> nodeDst;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " \n";
-                addEdge(nodeSrc, nodeDst, 0, edge);
-            }
+			// do not consider gep edge
+			else if (token_count == 3) {
+				NodeID nodeSrc;
+				NodeID nodeDst;
+				string edge;
+				istringstream ss(line);
+				ss >> nodeSrc;
+				ss >> edge;
+				ss >> nodeDst;
+				outs() << "reading edge :" << nodeSrc << " " << edge << " "
+						<< nodeDst << " \n";
+				addEdge(nodeSrc, nodeDst, 0, edge);
+			}
 
-            // do consider gep edge
-            else if (token_count == 4) {
-                NodeID nodeSrc;
-                NodeID nodeDst;
-                Size_t offsetOrCSId;
-                string edge;
-                istringstream ss(line);
-                ss >> nodeSrc;
-                ss >> edge;
-                ss >> nodeDst;
-                ss >> offsetOrCSId;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
-                addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-            } else
-                outs() << "format not support, token count = " << token_count
-                       << "\n";
-        }
-        myfile.close();
-    }
+			// do consider gep edge
+			else if (token_count == 4) {
+				NodeID nodeSrc;
+				NodeID nodeDst;
+				Size_t offsetOrCSId;
+				string edge;
+				istringstream ss(line);
+				ss >> nodeSrc;
+				ss >> edge;
+				ss >> nodeDst;
+				ss >> offsetOrCSId;
+				outs() << "reading edge :" << nodeSrc << " " << edge << " "
+						<< nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
+				addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
+			} else {
+				if (!line.empty()) {
+					outs() << "format not supported, token count = "
+							<< token_count << "\n";
+					assert(false && "format not supported");
+				}
+			}
+		}
+		myfile.close();
+	}
 
-    else
-        outs() << "Unable to open file\n";
+	else
+		outs() << "Unable to open file\n";
 
-    return pag;
-
+	return pag;
 }
 
 /*!
@@ -1166,7 +1168,7 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
         pag->addLoadEdge(srcID, dstID);
     else if (edge == "store")
         pag->addStoreEdge(srcID, dstID);
-    else if (edge == "normal-gep")
+    else if (edge == "gep")
         pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
     else if (edge == "variant-gep")
         pag->addVariantGepEdge(srcID, dstID);

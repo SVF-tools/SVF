@@ -555,6 +555,10 @@ public:
         const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(nodeNum);
         return addObjNode(NULL, new DummyObjPN(nodeNum,mem), nodeNum);
     }
+    inline NodeID addDummyObjNode(NodeID i) {
+        const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(i);
+        return addObjNode(NULL, new DummyObjPN(i,mem), i);
+    }
     inline NodeID addBlackholeObjNode() {
         return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }

@@ -68,9 +68,6 @@ static cl::opt<bool> PAGDotGraph("dump-pag", cl::init(false),
 static cl::opt<bool> PAGPrint("print-pag", cl::init(false),
                               cl::desc("Print PAG to command line"));
 
-static cl::opt<std::string> Graphtxt("graphtxt", cl::value_desc("filename"),
-                                     cl::desc("graph txt file to build PAG"));
-
 static cl::opt<unsigned> IndirectCallLimit("indCallLimit",  cl::init(50000),
         cl::desc("Indirect solved call edge limit"));
 
@@ -135,22 +132,23 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     /// whether we have already built PAG
     if(pag == NULL) {
 
-        DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
-        symTable->buildMemModel(svfModule);
-
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
-        if (!Graphtxt.getValue().empty()) {
-            PAGBuilderFromFile fileBuilder(Graphtxt.getValue());
+        // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+        if (!SVFModule::pagReadFromTXT().empty()) {
+            PAGBuilderFromFile fileBuilder(SVFModule::pagReadFromTXT());
             pag = fileBuilder.build();
 
         } else {
+            DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
+            SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+            symTable->buildMemModel(svfModule);
+
             PAGBuilder builder;
             pag = builder.build(svfModule);
-        }
 
-        chgraph = new CHGraph();
-        chgraph->buildCHG(svfModule);
+            chgraph = new CHGraph();
+            chgraph->buildCHG(svfModule);
+        }
 
         // dump the PAG graph
         if (dumpGraph())

@@ -406,9 +406,9 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
-    setCurrentBBAndValueForPAGEdge(edge);
+	if (SVFModule::pagReadFromTXT().empty())
+		setCurrentBBAndValueForPAGEdge(edge);
     return true;
-
 }
 
 /*!
@@ -514,34 +514,79 @@ void PAG::destroy() {
  * Print this PAG graph including its nodes and edges
  */
 void PAG::print() {
-    for (iterator I = begin(), E = end(); I != E; ++I) {
-        PAGNode* node = I->second;
-        if (!isa<DummyValPN>(node) && !isa<DummyObjPN>(node)) {
-            outs() << "node " << node->getId() << " " << *(node->getValue())
-                   << "\n";
-            outs() << "\t InEdge: { ";
-            for (PAGNode::iterator iter = node->getInEdges().begin();
-                    iter != node->getInEdges().end(); ++iter) {
-                outs() << (*iter)->getSrcID() << " ";
-                if (NormalGepPE* edge = dyn_cast<NormalGepPE>(*iter))
-                    outs() << " offset=" << edge->getOffset() << " ";
-                else if (isa<VariantGepPE>(*iter))
-                    outs() << " offset=variant";
-            }
-            outs() << "}\t";
-            outs() << "\t OutEdge: { ";
-            for (PAGNode::iterator iter = node->getOutEdges().begin();
-                    iter != node->getOutEdges().end(); ++iter) {
-                outs() << (*iter)->getDstID() << " ";
-                if (NormalGepPE* edge = dyn_cast<NormalGepPE>(*iter))
-                    outs() << " offset=" << edge->getOffset() << " ";
-                else if (isa<VariantGepPE>(*iter))
-                    outs() << " offset=variant";
-            }
-            outs() << "}\n";
-        }
-        outs() << "\n";
-    }
+
+	outs() << "-------------------PAG------------------------------------\n";
+	PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
+			addrs.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
+			copys.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& calls = pag->getEdgeSet(PAGEdge::Call);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
+			calls.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& rets = pag->getEdgeSet(PAGEdge::Ret);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
+			rets.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& tdfks = pag->getEdgeSet(PAGEdge::ThreadFork);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
+			tdfks.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
+				<< (*iter)->getDstID() << "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& tdjns = pag->getEdgeSet(PAGEdge::ThreadJoin);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
+			tdjns.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
+				<< (*iter)->getDstID() << "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
+			ngeps.end(); iter != eiter; ++iter) {
+		NormalGepPE* gep = cast<NormalGepPE>(*iter);
+		outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
+				<< ") --> " << gep->getDstID() << "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
+			vgeps.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- VariantGep --> "
+				<< (*iter)->getDstID() << "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+			loads.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+			stores.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+	outs() << "----------------------------------------------------------\n";
 
 }
 
