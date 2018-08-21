@@ -235,8 +235,15 @@ public:
         pagReadFromTxt = txt;
     }
 
-    static inline std::string pagReadFromTXT() {
+    static inline std::string pagFileName() {
         return pagReadFromTxt;
+    }
+
+    static inline bool pagReadFromTXT() {
+    		if(pagReadFromTxt.empty())
+    			return false;
+    		else
+    			return true;
     }
 
     static void releaseLLVMModuleSet() {

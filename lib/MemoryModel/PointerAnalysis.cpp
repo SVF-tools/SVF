@@ -134,8 +134,8 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
 
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
-        if (!SVFModule::pagReadFromTXT().empty()) {
-            PAGBuilderFromFile fileBuilder(SVFModule::pagReadFromTXT());
+        if (SVFModule::pagReadFromTXT()) {
+            PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
             pag = fileBuilder.build();
 
         } else {
@@ -148,6 +148,8 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
 
             chgraph = new CHGraph();
             chgraph->buildCHG(svfModule);
+
+            typeSystem = new TypeSystem(pag);
         }
 
         // dump the PAG graph
@@ -158,8 +160,6 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         if (PAGPrint)
             pag->print();
     }
-
-    typeSystem = new TypeSystem(pag);
 
     svfMod = svfModule;
 
@@ -495,7 +495,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts) {
     /// print the points-to set of node which has the maximum pts size.
     if (isa<DummyObjPN> (node)) {
         outs() << "##<Dummy Obj > id:" << node->getId();
-    } else if (!isa<DummyValPN>(node)) {
+    } else if (!isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT()) {
         outs() << "##<" << node->getValue()->getName() << "> ";
         outs() << "Source Loc: " << getSourceLoc(node->getValue());
     }
@@ -525,8 +525,10 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts) {
         else if (isa<DummyObjPN>(node))
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
         else {
-            outs() << "<" << pagNode->getValue()->getName() << "> ";
-            outs() << "Source Loc: " << getSourceLoc(pagNode->getValue()) << "] \n";
+        		if(!SVFModule::pagReadFromTXT()){
+        			outs() << "<" << pagNode->getValue()->getName() << "> ";
+        			outs() << "Source Loc: " << getSourceLoc(pagNode->getValue()) << "] \n";
+        		}
         }
     }
 }

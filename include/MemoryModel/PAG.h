@@ -443,16 +443,10 @@ public:
         return (isBlkObj(id) || isConstantObj(id));
     }
     inline bool isBlkObj(NodeID id) const {
-        PAGNode* node = getPAGNode(id);
-        ObjPN* obj = llvm::dyn_cast<ObjPN>(node);
-        assert(obj && "not an object node?");
-        return (obj->getMemObj()->isBlackHoleObj());
+        return SymbolTableInfo::isBlkObj(id);
     }
     inline bool isConstantObj(NodeID id) const {
-        PAGNode* node = getPAGNode(id);
-        ObjPN* obj = llvm::dyn_cast<ObjPN>(node);
-        assert(obj && "not an object node?");
-        return (obj->getMemObj()->isConstantObj());
+        return SymbolTableInfo::isConstantObj(id);;
     }
     inline bool isTaintedObj(NodeID id) const {
         PAGNode* node = getPAGNode(id);
@@ -558,6 +552,9 @@ public:
     inline NodeID addDummyObjNode(NodeID i) {
         const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(i);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
+    }
+    inline const MemObj* addDummyMemObj(NodeID i) {
+        return SymbolTableInfo::Symbolnfo()->createDummyObj(i);
     }
     inline NodeID addBlackholeObjNode() {
         return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());

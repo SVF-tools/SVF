@@ -134,7 +134,8 @@ void ConstraintGraph::destroy() {
 AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id) {
     PAGNode* node = PAG::getPAG()->getPAGNode(s->getId());
-    assert(!llvm::isa<DummyValPN>(node) && "a dummy node??");
+	if (!SVFModule::pagReadFromTXT())
+		assert(!llvm::isa<DummyValPN>(node) && "a dummy node??");
 }
 
 /*!

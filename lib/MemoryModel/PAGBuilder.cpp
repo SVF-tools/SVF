@@ -1098,11 +1098,9 @@ PAG* PAGBuilderFromFile::build() {
 				if (nodetype == "v")
 					pag->addDummyValNode(nodeId);
 				else if (nodetype == "o") {
-					pag->addDummyObjNode(nodeId);
+					pag->addFIObjNode(pag->addDummyMemObj(nodeId));
 				} else
-					assert(
-							false
-									&& "format not support, pls specify node type");
+					assert(false && "format not support, pls specify node type");
 			}
 
 			// do not consider gep edge
@@ -1147,6 +1145,11 @@ PAG* PAGBuilderFromFile::build() {
 	else
 		outs() << "Unable to open file\n";
 
+	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
+	u32_t lower_bound = 1000;
+	for(u32_t i = 0; i < lower_bound; i++)
+		pag->incNodeNum();
+
 	return pag;
 }
 
@@ -1160,8 +1163,16 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     PAGNode* srcNode = pag->getPAGNode(srcID);
     PAGNode* dstNode = pag->getPAGNode(dstID);
 
-    if (edge == "addr")
+    /// sanity check for PAG from txt
+	assert(isa<ValPN>(dstNode) && "dst not an value node?");
+    if(edge=="addr")
+    		assert(isa<ObjPN>(srcNode) && "src not an value node?");
+    else
+		assert(!isa<ObjPN>(srcNode) && "src not an object node?");
+
+    if (edge == "addr"){
         pag->addAddrEdge(srcID, dstID);
+    }
     else if (edge == "copy")
         pag->addCopyEdge(srcID, dstID);
     else if (edge == "load")

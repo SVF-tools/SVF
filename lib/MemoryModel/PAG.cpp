@@ -406,7 +406,7 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
-	if (SVFModule::pagReadFromTXT().empty())
+	if (!SVFModule::pagReadFromTXT())
 		setCurrentBBAndValueForPAGEdge(edge);
     return true;
 }
