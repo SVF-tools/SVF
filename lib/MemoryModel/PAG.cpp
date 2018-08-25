@@ -604,6 +604,39 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
 }
 
+/*!
+ * Dump PAGs for the functions
+ */
+void PAG::dumpFunctions(std::vector<std::string> functions) {
+    // Naive: first map function names to entries in PAG, then dump them.
+    std::map<std::string, std::set<PAGNode *>> functionToPAGNodes;
+
+    for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
+        PAGNode *curr = it->second;
+        //llvm::outs() << "curr is:" << *curr << " <- \n";
+        PAGEdge::PAGEdgeSetTy callEdges =
+            curr->getOutgoingEdges(PAGEdge::PEDGEK::Call);
+
+        // Where are these calls going?
+        for (PAGEdge::PAGEdgeSetTy::iterator it =
+                curr->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
+             it != curr->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
+            const llvm::Instruction *inst =
+                static_cast<CallPE *>(*it)->getCallInst();
+            llvm::Function *currFunction =
+                static_cast<const CallInst *>(inst)->getCalledFunction();
+            if (currFunction) {
+                // Otherwise, it's an indirect call.
+                std::string currFunctionName = currFunction->getName();
+                if (std::find(functions.begin(), functions.end(),
+                              currFunctionName) != functions.end()) {
+                    llvm::outs() << currFunctionName << " FOUND!\n";
+                    functionToPAGNodes[currFunctionName].insert(curr);
+                }
+            }
+        }
+    }
+}
 
 /*!
  * Whether to handle blackhole edge

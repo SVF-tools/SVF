@@ -666,6 +666,9 @@ public:
     /// Dump PAG
     void dump(std::string name);
 
+    /// Dump PAG of certain functions
+    void dumpFunctions(std::vector<std::string> functions);
+
     Size_t storeInstNum;		///< total num of store instructions
     Size_t loadInstNum;		///< total num of load instructions
 };

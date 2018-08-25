@@ -65,6 +65,10 @@ static cl::opt<unsigned> statBudget("statlimit",  cl::init(20),
 static cl::opt<bool> PAGDotGraph("dump-pag", cl::init(false),
                                  cl::desc("Dump dot graph of PAG"));
 
+static cl::list<std::string> PAGFunctions("dump-function-pags",
+                                          cl::desc("Dump PAG for functions"),
+                                          cl::CommaSeparated);
+
 static cl::opt<bool> PAGPrint("print-pag", cl::init(false),
                               cl::desc("Print PAG to command line"));
 
@@ -131,7 +135,6 @@ void PointerAnalysis::destroy()
  * Initialization of pointer analysis
  */
 void PointerAnalysis::initialize(SVFModule svfModule) {
-
     /// whether we have already built PAG
     if(pag == NULL) {
 
@@ -232,6 +235,10 @@ void PointerAnalysis::finalize() {
     // dump the PAG graph
     if (dumpGraph())
         pag->dump("pag_final");
+
+    if (!PAGFunctions.empty())
+        pag->dumpFunctions(PAGFunctions);
+    else std::cout << "EMPTY!\n";
 
     /// Dump results
     if (PTSPrint) {
