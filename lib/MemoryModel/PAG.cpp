@@ -604,6 +604,58 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
 }
 
+static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode) {
+    o << pagNode->getId() << " ";
+    if (ValPN::classof(pagNode)) o << "v";
+    else o << "o";
+    o << "\n";
+}
+
+static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
+    NodeID srcId = pagEdge->getSrcID();
+    NodeID dstId = pagEdge->getDstID();
+    u32_t offset = 0;
+    std::string edgeKind = "-";
+
+    switch (pagEdge->getEdgeKind()) {
+    case PAGEdge::Addr:
+        edgeKind = "addr";
+        break;
+    case PAGEdge::Copy:
+        edgeKind = "copy";
+        break;
+    case PAGEdge::Store:
+        edgeKind = "store";
+        break;
+    case PAGEdge::Load:
+        edgeKind = "load";
+        break;
+    case PAGEdge::Call:
+        edgeKind = "call";
+        break;
+    case PAGEdge::Ret:
+        edgeKind = "ret";
+        break;
+    case PAGEdge::NormalGep:
+        edgeKind = "normal-gep";
+        break;
+    case PAGEdge::VariantGep:
+        edgeKind = "variant-gep";
+        break;
+    case PAGEdge::ThreadFork:
+        llvm::outs() << "dump-function-pags: found ThreadFork edge.\n";
+        break;
+    case PAGEdge::ThreadJoin:
+        llvm::outs() << "dump-function-pags: found ThreadJoin edge.\n";
+        break;
+    }
+
+    if (NormalGepPE::classof(pagEdge)) offset =
+        static_cast<NormalGepPE *>(pagEdge)->getOffset();
+
+    o << srcId << " " << edgeKind << " " << dstId << " " << offset << "\n";
+}
+
 /*!
  * Dump PAGs for the functions
  */
@@ -635,6 +687,54 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
                 }
             }
         }
+    }
+
+    for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
+         ++it) {
+        std::string function = it->first;
+
+        std::set<PAGNode *> nodes;
+        std::set<PAGEdge *> edges;
+        std::stack<PAGNode *> todoNodes;
+
+        llvm::outs() << "PAG for function: " << function << "\n";
+        for (auto paramNode = it->second.begin();
+             paramNode != it->second.end(); ++paramNode) {
+            todoNodes.push(*paramNode);
+        }
+
+        while (!todoNodes.empty()) {
+            PAGNode *paramNode = todoNodes.top();
+            todoNodes.pop();
+
+            // If the node has been dealt with, ignore it.
+            if (nodes.find(paramNode) != nodes.end()) continue;
+
+            nodes.insert(paramNode);
+
+            // We don't want edges outgoing from the return.
+            if (RetPN::classof(paramNode)) continue;
+
+            auto outEdges = paramNode->getOutEdges();
+            for (auto outEdge = outEdges.begin(); outEdge != outEdges.end();
+                 ++outEdge) {
+                llvm::outs() << "EDGES\n";
+                edges.insert(*outEdge);
+                todoNodes.push((*outEdge)->getDstNode());
+            }
+        }
+
+        for (auto node = nodes.begin(); node != nodes.end(); ++node) {
+            // TODO: proper file.
+            outputPAGNode(llvm::outs(), *node);
+        }
+
+        for (auto edge = edges.begin(); edge != edges.end(); ++edge) {
+            // TODO: proper file.
+            outputPAGEdge(llvm::outs(), *edge);
+        }
+
+        llvm::outs() << "PAG for function " << function << " done\n";
     }
 }
 

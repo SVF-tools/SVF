@@ -1098,7 +1098,7 @@ PAG* PAGBuilderFromFile::build() {
                 if (nodetype == "v")
                     pag->addDummyValNode(nodeId);
                 else if (nodetype == "o") {
-                    pag->addDummyObjNode();
+                    pag->addDummyObjNode(nodeId);
                 }
                 else
                     assert(
