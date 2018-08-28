@@ -663,6 +663,7 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
     // Naive: first map function names to entries in PAG, then dump them.
     std::map<std::string, std::set<PAGNode *>> functionToPAGNodes;
 
+    std::set<PAGNode *> callDsts;
     for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
         PAGNode *curr = it->second;
         //llvm::outs() << "curr is:" << *curr << " <- \n";
@@ -673,17 +674,25 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
         for (PAGEdge::PAGEdgeSetTy::iterator it =
                 curr->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
              it != curr->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
-            const llvm::Instruction *inst =
-                static_cast<CallPE *>(*it)->getCallInst();
+            CallPE *callEdge = static_cast<CallPE *>(*it);
+            const llvm::Instruction *inst = callEdge->getCallInst();
             llvm::Function *currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
-            if (currFunction) {
-                // Otherwise, it's an indirect call.
+
+            // Otherwise, it's an indirect call.
+            if (currFunction != NULL) {
                 std::string currFunctionName = currFunction->getName();
                 if (std::find(functions.begin(), functions.end(),
                               currFunctionName) != functions.end()) {
                     llvm::outs() << currFunctionName << " FOUND!\n";
-                    functionToPAGNodes[currFunctionName].insert(curr);
+
+                    // If the dst has already been added, we'd be adding
+                    // a second arg->param edge - no need.
+                    if (callDsts.find(callEdge->getDstNode())
+                        == callDsts.end()) {
+                        callDsts.insert(callEdge->getDstNode());
+                        functionToPAGNodes[currFunctionName].insert(curr);
+                    }
                 }
             }
         }
