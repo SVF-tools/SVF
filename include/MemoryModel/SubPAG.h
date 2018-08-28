@@ -12,6 +12,6 @@
 
 class SubPAG : public PAG {
 
-}
+};
 
 #endif  /* SUBPAG_H_ */

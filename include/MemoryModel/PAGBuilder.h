@@ -31,6 +31,7 @@
 #define PAGBUILDER_H_
 
 #include "MemoryModel/PAG.h"
+#include "MemoryModel/SubPAG.h"
 #include "Util/ExtAPI.h"
 
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
@@ -48,6 +49,10 @@ public:
     /// Constructor
     PAGBuilder(): pag(PAG::getPAG()) {
     }
+
+    PAGBuilder(SubPAG *subPAG): pag(subPAG) {
+    }
+
     /// Destructor
     virtual ~PAGBuilder() {
     }
