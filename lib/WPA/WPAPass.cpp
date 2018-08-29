@@ -57,7 +57,8 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis")
+            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
+			clEnumValN(PointerAnalysis::Default_PTA, "nopta", "Only construct PAG and CHA without performing pointer analysis")
         ));
 
 
@@ -87,7 +88,7 @@ WPAPass::~WPAPass() {
  * We start from here
  */
 void WPAPass::runOnModule(SVFModule svfModule) {
-    for (u32_t i = 0; i< PointerAnalysis::Default_PTA; i++) {
+    for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
             runPointerAnalysis(svfModule, i);
     }
@@ -119,9 +120,15 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;
+    case PointerAnalysis::Default_PTA:
+		_pta = new Andersen();
+		_pta->initialize(svfModule);
+		_pta->finalize();
+		llvm::outs() << "No pointer analysis is performed (only Generating PAG and CHA).\n";
+		return;
     default:
-        llvm::outs() << "This pointer analysis has not been implemented yet.\n";
-        break;
+        assert(false && "This pointer analysis has not been implemented yet.\n");
+        return;
     }
 
     ptaVector.push_back(_pta);
