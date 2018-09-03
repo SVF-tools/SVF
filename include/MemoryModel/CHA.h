@@ -66,6 +66,8 @@ public:
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
 
+    typedef std::vector<const llvm::Function*> FuncVector;
+
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(NULL), className(name), flags(0) {
     }
@@ -106,32 +108,13 @@ public:
     }
     //@}
 
-    void setArgsizeToVFunMap(s32_t argsize,
-                             std::set<const llvm::Function*>functions) {
-        argsizeToVFunMap[argsize] = functions;
-    }
-    void addVirtualFunction(const llvm::Function* vfunc) {
-        allVirtualFunctions.insert(vfunc);
-    }
-    const std::set<const llvm::Function*> &getAllVirtualFunctions() const {
-        return allVirtualFunctions;
-    }
-    const std::set<const llvm::Function*> getVirtualFunctions(s32_t argsize) const {
-        const std::map<s32_t, std::set<const llvm::Function*>>::const_iterator it =
-                    argsizeToVFunMap.find(argsize);
-        if (it != argsizeToVFunMap.end())
-            return it->second;
-        else
-            return std::set<const llvm::Function*>();
-    }
-
-    void addVirtualFunctionVector(std::vector<const llvm::Function*> vfuncvec) {
+    void addVirtualFunctionVector(FuncVector vfuncvec) {
         virtualFunctionVectors.push_back(vfuncvec);
     }
-    const std::vector<std::vector<const llvm::Function*>> &getVirtualFunctionVectors() const {
+    const std::vector<FuncVector> &getVirtualFunctionVectors() const {
         return virtualFunctionVectors;
     }
-    void getVirtualFunctions(u32_t idx, std::set<const llvm::Function*> &virtualFunctions) const;
+    void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
     const llvm::Value *getVTable() const {
         return vtable;
@@ -145,7 +128,6 @@ private:
     const llvm::Value *vtable;
     std::string className;
     size_t flags;
-    std::set<const llvm::Function*> allVirtualFunctions;
     /*
      * virtual functions inherited from different classes are separately stored
      * to model different vtables inherited from different fathers.
@@ -159,7 +141,6 @@ private:
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
     std::vector<std::vector<const llvm::Function*>> virtualFunctionVectors;
-    std::map<s32_t, std::set<const llvm::Function*>> argsizeToVFunMap;
 };
 
 /// class hierarchy graph
@@ -172,14 +153,16 @@ public:
         DESTRUCTOR = 0x2 // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(): classNum(0), vfID(0), buildingCHGTime(0) {
+    CHGraph(const SVFModule svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0) {
     }
     ~CHGraph();
 
-    void buildCHG(const SVFModule svfModule);
-    void constructCHGraphFromIR(const llvm::Module &M);
+    void buildCHG();
     void buildInternalMaps();
-    void buildCHGOnFunction(const llvm::Function *F);
+    void buildCHGNodes(const llvm::Function *F);
+    void buildCHGEdges(const llvm::Function *F);
+    void connectInheritEdgeViaCall(const llvm::Function *caller, llvm::CallSite cs);
+    void connectInheritEdgeViaStore(const llvm::Function *caller, const llvm::StoreInst* store);
     void buildCHGOnBasicBlock(const llvm::BasicBlock *B,
                               const std::string className,
                               RELATIONTYPE t);
@@ -187,8 +170,7 @@ public:
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    CHNode *getOrCreateNode(const std::string name);
-    void addToNodeList(CHNode* node);
+    CHNode *createNode(const std::string name);
     /// Dump the graph
     void dump(const std::string& filename);
     void collectAncestorsDescendants(const CHNode *node);
@@ -227,6 +209,7 @@ public:
     const std::set<const llvm::Value*> &getCSVtblsBasedonCHA(llvm::CallSite cs) const;
     const std::set<const llvm::Function*> &getCSVFsBasedonCHA(llvm::CallSite cs) const;
 private:
+    SVFModule svfMod;
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
@@ -238,7 +221,6 @@ private:
     std::map<std::string, std::set<std::string>> templateNameToInstancesNamesMap;
     std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
 
-    SVFModule svfMod;
     std::set<llvm::CallSite> virtualCallSites;
     std::map<llvm::CallSite, std::set<const llvm::Value*>> csToCHAVtblsMap;
     std::map<llvm::CallSite, std::set<const llvm::Function*>> csToCHAVFnsMap;

@@ -146,8 +146,8 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
             PAGBuilder builder;
             pag = builder.build(svfModule);
 
-            chgraph = new CHGraph();
-            chgraph->buildCHG(svfModule);
+            chgraph = new CHGraph(svfModule);
+            chgraph->buildCHG();
 
             typeSystem = new TypeSystem(pag);
 

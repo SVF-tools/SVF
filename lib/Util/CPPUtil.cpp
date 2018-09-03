@@ -299,6 +299,8 @@ string cppUtil::getClassNameFromVtblObj(const Value *value) {
 }
 
 bool cppUtil::isConstructor(const Function *F) {
+    if (F->isDeclaration())
+        return false;
     string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
         return false;
@@ -320,6 +322,8 @@ bool cppUtil::isConstructor(const Function *F) {
 }
 
 bool cppUtil::isDestructor(const Function *F) {
+    if (F->isDeclaration())
+        return false;
     string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
         return false;
@@ -410,9 +414,8 @@ void cppUtil::dumpCHAStats(const CHGraph *chgraph) {
             pure_abstract++;
 
         s32_t vfuncs_size = 0;
-        const vector<vector<const Function*>> vecs =
-                                               node->getVirtualFunctionVectors();
-        for (vector<vector<const Function*>>::const_iterator vit = vecs.begin(),
+        const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
+        for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
                 veit = vecs.end(); vit != veit; ++vit) {
             vfuncs_size += (*vit).size();
             for (vector<const Function*>::const_iterator fit = (*vit).begin(),
