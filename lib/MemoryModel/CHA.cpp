@@ -112,7 +112,7 @@ void CHGraph::buildCHG() {
 }
 
 void CHGraph::buildCHGNodes(const Function *F) {
-	if (isConstructor(F)) {
+	if (isConstructor(F) || isDestructor(F)) {
 		struct DemangledName dname = demangle(F->getName().str());
 		DBOUT(DCHA, outs() << "\t build CHANode for class " + dname.className + "...\n");
 		if (!getNode(dname.className))
@@ -138,7 +138,6 @@ void CHGraph::buildCHGEdges(const Function *F) {
 
 void CHGraph::buildInternalMaps() {
     buildClassNameToAncestorsDescendantsMap();
-    buildClassNameToNamesMap();
     buildVirtualFunctionToIDMap();
 
     collectVirtualCallSites();
@@ -307,57 +306,6 @@ void CHGraph::buildClassNameToAncestorsDescendantsMap() {
     }
 }
 
-/*
- * build the following three maps:
- * classNameToAncestorsMap
- * classNameToInstancesMap
- * classNameToDescendantsMap
- */
-void CHGraph::buildClassNameToNamesMap() {
-    for (CHGraph::const_iterator it = this->begin(), eit = this->end();
-            it != eit; ++it) {
-        CHNode *node = it->second;
-        string className = node->getName();
-        /// Ancestors
-        if (hasAncestors(className)) {
-            set<string> ancestorsNames;
-            const CHNodeSetTy &ancestors = getAncestors(className);
-            for (CHNodeSetTy::const_iterator nit = ancestors.begin(),
-                    neit = ancestors.end(); nit != neit; ++nit) {
-                const CHNode *curnode = *nit;
-                ancestorsNames.insert(curnode->getName());
-            }
-            classNameToAncestorsNamesMap[className] = ancestorsNames;
-        }
-        /// Instances
-        if (hasInstances(className)) {
-            set<string> instancesNames;
-            const CHNodeSetTy &instances = getInstances(className);
-            for (CHNodeSetTy::const_iterator nit = instances.begin(),
-                    neit = instances.end(); nit != neit; ++nit) {
-                const CHNode *curnode = *nit;
-                instancesNames.insert(curnode->getName());
-            }
-            templateNameToInstancesNamesMap[className] = instancesNames;
-        }
-        /// Descendants
-        CHNodeSetTy descendants;
-        set<string> descendantsName;
-        if (node->isTemplate()) {
-            descendants = getTemplateInstancesAndDescendants(className);
-        } else if (hasDescendants(className)) {
-            descendants = getDescendants(className);
-        } else {
-        }
-        descendants.insert(node);
-        for (CHNodeSetTy::const_iterator nit = descendants.begin(),
-                neit = descendants.end(); nit != neit; ++nit) {
-            descendantsName.insert((*nit)->getName());
-        }
-        classNameToDescendantsNamesMap[className] = descendantsName;
-    }
-}
-
 
 bool CHGraph::hasAncestors(const string className) const {
     map<string, CHNodeSetTy>::const_iterator it;
@@ -372,12 +320,6 @@ const CHGraph::CHNodeSetTy &CHGraph::getAncestors(const string className) const 
     return it->second;
 }
 
-set<string> CHGraph::getAncestorsNames(const string className) const {
-    map<string, set<string>>::const_iterator it;
-    it = classNameToAncestorsNamesMap.find(className);
-    assert(it != classNameToAncestorsNamesMap.end());
-    return it->second;
-}
 
 bool CHGraph::hasDescendants(const string className) const {
     map<string, CHNodeSetTy>::const_iterator it;
@@ -389,13 +331,6 @@ const CHGraph::CHNodeSetTy &CHGraph::getDescendants(const string className) cons
     map<string, CHNodeSetTy>::const_iterator it;
     it = classNameToDescendantsMap.find(className);
     assert(it != classNameToDescendantsMap.end());
-    return it->second;
-}
-
-set<string> CHGraph::getDescendantsNames(const string className) const {
-    map<string, set<string>>::const_iterator it;
-    it = classNameToDescendantsNamesMap.find(className);
-    assert(it != classNameToDescendantsNamesMap.end());
     return it->second;
 }
 
@@ -420,16 +355,9 @@ const CHGraph::CHNodeSetTy &CHGraph::getInstances(const string className) const 
     return it->second;
 }
 
-set<string> CHGraph::getInstancesNames(const string className) const {
-    map<string, set<string>>::const_iterator it;
-    it = templateNameToInstancesNamesMap.find(className);
-    assert(it != templateNameToInstancesNamesMap.end());
-    return it->second;
-}
-
 CHGraph::CHNodeSetTy CHGraph::getTemplateInstancesAndDescendants(const string className) const {
     CHNode *thisNode = getNode(className);
-    assert(thisNode->isTemplate());
+    assert(thisNode && thisNode->isTemplate());
     CHNodeSetTy descendants, instances;
     if (hasDescendants(className))
         descendants = getDescendants(className);

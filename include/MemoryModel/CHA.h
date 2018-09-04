@@ -188,9 +188,6 @@ public:
     const CHNodeSetTy &getDescendants(const std::string className) const;
     const CHNodeSetTy &getAncestors(const std::string name) const;
     const CHNodeSetTy &getInstances(const std::string name) const;
-    std::set<std::string> getDescendantsNames(const std::string className) const;
-    std::set<std::string> getAncestorsNames(const std::string className) const;
-    std::set<std::string> getInstancesNames(const std::string className) const;
     void readInheritanceMetadataFromModule(const llvm::Module &M);
     void analyzeVTables(const llvm::Module &M);
     std::string getClassNameOfThisPtr(llvm::CallSite cs) const;
@@ -217,9 +214,6 @@ private:
     std::map<std::string, CHNodeSetTy> classNameToDescendantsMap;
     std::map<std::string, CHNodeSetTy> classNameToAncestorsMap;
     std::map<std::string, CHNodeSetTy> templateNameToInstancesMap;
-    std::map<std::string, std::set<std::string>> classNameToDescendantsNamesMap;
-    std::map<std::string, std::set<std::string>> classNameToAncestorsNamesMap;
-    std::map<std::string, std::set<std::string>> templateNameToInstancesNamesMap;
     std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
 
     std::set<llvm::CallSite> virtualCallSites;
