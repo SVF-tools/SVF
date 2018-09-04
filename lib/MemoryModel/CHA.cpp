@@ -57,7 +57,7 @@ const string ztiLabel = "_ZTI";
 
 static bool hasEdge(const CHNode *src, const CHNode *dst,
                     CHEdge::CHEDGETYPE et) {
-    for (set<CHEdge*>::const_iterator it = src->getOutEdges().begin(),
+    for (CHEdge::CHEdgeSetTy::const_iterator it = src->getOutEdges().begin(),
             eit = src->getOutEdges().end(); it != eit; ++it) {
         CHNode *node = (*it)->getDstNode();
         CHEdge::CHEDGETYPE edgeType = (*it)->getEdgeType();
@@ -137,7 +137,6 @@ void CHGraph::buildCHGEdges(const Function *F) {
 
 
 void CHGraph::buildInternalMaps() {
-    buildTemplateNameToInstancesMap();
     buildClassNameToAncestorsDescendantsMap();
     buildClassNameToNamesMap();
     buildVirtualFunctionToIDMap();
@@ -227,15 +226,21 @@ CHNode *CHGraph::getNode(const string name) const {
     return NULL;
 }
 
-CHNode *CHGraph::createNode(const std::string name) {
-	assert(!getNode(name) && "this node should never be created before!");
-	CHNode * node = new CHNode(name, classNum++);
+
+CHNode *CHGraph::createNode(const std::string className) {
+	assert(!getNode(className) && "this node should never be created before!");
+	CHNode * node = new CHNode(className, classNum++);
 	addGNode(node->getId(), node);
-	string className = node->getName();
 	if (className.size() > 0 && className[className.size() - 1] == '>') {
 		string templateName = getBeforeBrackets(className);
-		if(!getNode(name))
-			createNode(templateName);
+		CHNode* templateNode = getNode(templateName);
+		if (!templateNode) {
+			DBOUT(DCHA, outs() << "\t Create Template CHANode " + templateName + " for class " + className + "...\n");
+			templateNode = createNode(templateName);
+			templateNode->setTemplate();
+		}
+		addEdge(className, templateName, CHEdge::INSTANTCE);
+		addInstances(templateName,node);
 	}
 	return node;
 }
@@ -253,7 +258,7 @@ void CHGraph::collectAncestorsDescendants(const CHNode *node) {
         nodeStack.pop();
         ancestors.insert(curnode);
         if (visitedNodes.find(curnode) == visitedNodes.end()) {
-            for (set<CHEdge*>::const_iterator it = curnode->getOutEdges().begin(),
+            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getOutEdges().begin(),
                     eit = curnode->getOutEdges().end(); it != eit; ++it) {
                 CHNode *node = (*it)->getDstNode();
                 if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
@@ -274,7 +279,7 @@ void CHGraph::collectAncestorsDescendants(const CHNode *node) {
         nodeStack.pop();
         descendants.insert(curnode);
         if (visitedNodes.find(curnode) == visitedNodes.end()) {
-            for (set<CHEdge*>::const_iterator it = curnode->getInEdges().begin(),
+            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getInEdges().begin(),
                     eit = curnode->getInEdges().end(); it != eit; ++it) {
                 CHNode *node = (*it)->getSrcNode();
                 if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
@@ -353,29 +358,6 @@ void CHGraph::buildClassNameToNamesMap() {
     }
 }
 
-void CHGraph::buildTemplateNameToInstancesMap() {
-    for (CHGraph::const_iterator it = this->begin(), eit = this->end();
-            it != eit; ++it) {
-        CHNode *node = it->second;
-        string className = node->getName();
-        if (className.size() > 0 && className[className.size() - 1] == '>') {
-            string templateName = getBeforeBrackets(className);
-            CHNode *templateNode = getNode(templateName);
-            assert(templateNode != NULL);
-            addEdge(className, templateName, CHEdge::INSTANTCE);
-            templateNode->setTemplate();
-            map<string, CHNodeSetTy>::iterator it =
-                templateNameToInstancesMap.find(templateName);
-            if (it != templateNameToInstancesMap.end())
-                it->second.insert(node);
-            else {
-                CHNodeSetTy instances;
-                instances.insert(node);
-                templateNameToInstancesMap[templateName] = instances;
-            }
-        }
-    }
-}
 
 bool CHGraph::hasAncestors(const string className) const {
     map<string, CHNodeSetTy>::const_iterator it;
@@ -415,6 +397,14 @@ set<string> CHGraph::getDescendantsNames(const string className) const {
     it = classNameToDescendantsNamesMap.find(className);
     assert(it != classNameToDescendantsNamesMap.end());
     return it->second;
+}
+
+void CHGraph::addInstances(const string templateName, CHNode* node) {
+	map<string, CHNodeSetTy>::iterator it = templateNameToInstancesMap.find(templateName);
+	if (it != templateNameToInstancesMap.end())
+		it->second.insert(node);
+	else
+		templateNameToInstancesMap[templateName].insert(node);
 }
 
 bool CHGraph::hasInstances(const string className) const {
@@ -713,13 +703,13 @@ void CHGraph::buildVirtualFunctionToIDMap() {
             group.insert(curnode);
             if (visitedNodes.find(curnode) != visitedNodes.end())
                 continue;
-            for (set<CHEdge*>::const_iterator it = curnode->getOutEdges().begin(),
+            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getOutEdges().begin(),
                     eit = curnode->getOutEdges().end(); it != eit; ++it) {
                 CHNode *tmpnode = (*it)->getDstNode();
                 nodeStack.push(tmpnode);
                 group.insert(tmpnode);
             }
-            for (set<CHEdge*>::const_iterator it = curnode->getInEdges().begin(),
+            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getInEdges().begin(),
                     eit = curnode->getInEdges().end(); it != eit; ++it) {
                 CHNode *tmpnode = (*it)->getSrcNode();
                 nodeStack.push(tmpnode);

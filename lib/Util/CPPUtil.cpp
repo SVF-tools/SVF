@@ -347,37 +347,21 @@ bool cppUtil::isDestructor(const Function *F) {
 }
 
 void cppUtil::printCH(const CHGraph *chgraph) {
-    for (CHGraph::const_iterator it = chgraph->begin(),
-            eit = chgraph->end(); it != eit; ++it) {
-        const CHNode *node = it->second;
-        outs() << '\n' << node->getName() << '\n';
-        CHGraph::CHNodeSetTy ancestors, descendants, instances;
-        if (chgraph->hasAncestors(node->getName())) {
-            CHGraph::CHNodeSetTy ancestors =
-                chgraph->getAncestors(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator ait = ancestors.begin(),
-                    aeit = ancestors.end(); ait != aeit; ++ait) {
-                outs() << "ancesstor: " << (*ait)->getName() << '\n';
-            }
-        }
-        if (chgraph->hasDescendants(node->getName())) {
-            CHGraph::CHNodeSetTy descendants =
-                chgraph->getDescendants(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator dit = descendants.begin(),
-                    deit = descendants.end(); dit != deit; ++dit) {
-                outs() << "descendants: " << (*dit)->getName() << '\n';
-            }
-        }
-        if (chgraph->hasInstances(node->getName())) {
-            CHGraph::CHNodeSetTy instances =
-                chgraph->getInstances(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator iit = instances.begin(),
-                    ieit = instances.end(); iit != ieit; ++iit) {
-                outs() << "instances: " << (*iit)->getName() << '\n';
-            }
-        }
-    }
-    outs() << '\n';
+	for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
+			it != eit; ++it) {
+		const CHNode *node = it->second;
+		outs() << '\n' << node->getName() << '\n';
+		for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin();
+				it != node->OutEdgeEnd(); ++it) {
+			if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
+				outs() << (*it)->getDstNode()->getName() << " --inheritance--> "
+						<< (*it)->getSrcNode()->getName() << "\n";
+			else
+				outs() << (*it)->getSrcNode()->getName() << " --instance--> "
+						<< (*it)->getDstNode()->getName() << "\n";
+		}
+	}
+	outs() << '\n';
 }
 
 void cppUtil::dumpCHAStats(const CHGraph *chgraph) {
@@ -386,6 +370,7 @@ void cppUtil::dumpCHAStats(const CHGraph *chgraph) {
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
             it != eit; ++it) {
         CHNode *node = it->second;
+        outs() << "class " << node->getName() << "\n";
         if (node->isPureAbstract())
             pure_abstract_class_num++;
         if (node->isMultiInheritance())

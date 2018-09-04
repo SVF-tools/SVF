@@ -44,6 +44,8 @@ public:
         INSTANTCE = 0x2 // template-instance relation
     } CHEDGETYPE;
 
+    typedef GenericNode<CHNode,CHEdge>::GEdgeSetTy CHEdgeSetTy;
+
     CHEdge(CHNode *s, CHNode *d, CHEDGETYPE et, GEdgeFlag k = 0):
         GenericCHEdgeTy(s,d,k) {
         edgeType = et;
@@ -179,11 +181,10 @@ public:
     void buildVirtualFunctionToIDMap();
     s32_t getVirtualFunctionID(const llvm::Function *vfn) const;
     const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const;
-    void buildTemplateNameToInstancesMap();
-    void buildArgsizeToVFunMap();
     bool hasDescendants(const std::string className) const;
     bool hasAncestors(const std::string name) const;
     bool hasInstances(const std::string name) const;
+    void addInstances(const std::string templateName, CHNode* node);
     const CHNodeSetTy &getDescendants(const std::string className) const;
     const CHNodeSetTy &getAncestors(const std::string name) const;
     const CHNodeSetTy &getInstances(const std::string name) const;
