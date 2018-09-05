@@ -244,94 +244,43 @@ CHNode *CHGraph::createNode(const std::string className) {
 	return node;
 }
 
-
-// collect ancestors and descendants for a given CHNode
-void CHGraph::collectAncestorsDescendants(const CHNode *node) {
-    stack<const CHNode*> nodeStack;
-    CHNodeSetTy visitedNodes, ancestors, descendants;
-
-    // ancestors
-    nodeStack.push(node);
-    while (!nodeStack.empty()) {
-        const CHNode *curnode = nodeStack.top();
-        nodeStack.pop();
-        ancestors.insert(curnode);
-        if (visitedNodes.find(curnode) == visitedNodes.end()) {
-            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getOutEdges().begin(),
-                    eit = curnode->getOutEdges().end(); it != eit; ++it) {
-                CHNode *node = (*it)->getDstNode();
-                if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
-                    nodeStack.push(node);
-            }
-            visitedNodes.insert(curnode);
-        }
-    }
-    ancestors.erase(node);
-
-    // clear visitedNodes;
-    visitedNodes.clear();
-
-    // descendants
-    nodeStack.push(node);
-    while (!nodeStack.empty()) {
-        const CHNode *curnode = nodeStack.top();
-        nodeStack.pop();
-        descendants.insert(curnode);
-        if (visitedNodes.find(curnode) == visitedNodes.end()) {
-            for (CHEdge::CHEdgeSetTy::const_iterator it = curnode->getInEdges().begin(),
-                    eit = curnode->getInEdges().end(); it != eit; ++it) {
-                CHNode *node = (*it)->getSrcNode();
-                if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
-                    nodeStack.push(node);
-            }
-            visitedNodes.insert(curnode);
-        }
-    }
-    descendants.erase(node);
-
-    string className = node->getName();
-    classNameToAncestorsMap[className] = ancestors;
-    classNameToDescendantsMap[className] = descendants;
-}
-
 /*
  * build the following two maps:
  * classNameToDescendantsMap
  * classNameToAncestorsMap
  */
 void CHGraph::buildClassNameToAncestorsDescendantsMap() {
-    for (CHGraph::const_iterator it = this->begin(), eit = this->end();
-            it != eit; ++it) {
-        collectAncestorsDescendants(it->second);
-    }
+
+	for (CHGraph::const_iterator it = this->begin(), eit = this->end();
+			it != eit; ++it) {
+		const CHNode *node = it->second;
+		WorkList worklist;
+		CHNodeSetTy visitedNodes;
+
+		// ancestors
+		worklist.push(node);
+		while (!worklist.empty()) {
+			const CHNode *curnode = worklist.pop();
+			if (visitedNodes.find(curnode) == visitedNodes.end()) {
+				for (CHEdge::CHEdgeSetTy::const_iterator it =
+						curnode->getOutEdges().begin(), eit =
+						curnode->getOutEdges().end(); it != eit; ++it) {
+					if ((*it)->getEdgeType() == CHEdge::INHERITANCE) {
+						CHNode *succnode = (*it)->getDstNode();
+						classNameToAncestorsMap[node->getName()].insert(succnode);
+						classNameToDescendantsMap[succnode->getName()].insert(node);
+						worklist.push(succnode);
+					}
+				}
+				visitedNodes.insert(curnode);
+			}
+		}
+	}
 }
 
 
-bool CHGraph::hasAncestors(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = classNameToAncestorsMap.find(className);
-    return it != classNameToAncestorsMap.end();
-}
-
-const CHGraph::CHNodeSetTy &CHGraph::getAncestors(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = classNameToAncestorsMap.find(className);
-    assert(it != classNameToAncestorsMap.end());
-    return it->second;
-}
-
-
-bool CHGraph::hasDescendants(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = classNameToDescendantsMap.find(className);
-    return it != classNameToDescendantsMap.end();
-}
-
-const CHGraph::CHNodeSetTy &CHGraph::getDescendants(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = classNameToDescendantsMap.find(className);
-    assert(it != classNameToDescendantsMap.end());
-    return it->second;
+const CHGraph::CHNodeSetTy &CHGraph::getDescendants(const string className) {
+    return classNameToDescendantsMap[className];
 }
 
 void CHGraph::addInstances(const string templateName, CHNode* node) {
@@ -342,43 +291,26 @@ void CHGraph::addInstances(const string templateName, CHNode* node) {
 		templateNameToInstancesMap[templateName].insert(node);
 }
 
-bool CHGraph::hasInstances(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = templateNameToInstancesMap.find(className);
-    return it != templateNameToInstancesMap.end();
+const CHGraph::CHNodeSetTy &CHGraph::getInstances(const string className) {
+    return templateNameToInstancesMap[className];
 }
 
-const CHGraph::CHNodeSetTy &CHGraph::getInstances(const string className) const {
-    map<string, CHNodeSetTy>::const_iterator it;
-    it = templateNameToInstancesMap.find(className);
-    assert(it != templateNameToInstancesMap.end());
-    return it->second;
-}
+void CHGraph::getInstancesAndDescendants(const string className, CHNodeSetTy& instAndDesces) {
+	CHNode *thisNode = getNode(className);
+	assert(thisNode && "node not found?");
+	instAndDesces = getDescendants(className);
+	if(!thisNode->isTemplate())
+		return;
 
-CHGraph::CHNodeSetTy CHGraph::getTemplateInstancesAndDescendants(const string className) const {
-    CHNode *thisNode = getNode(className);
-    assert(thisNode && thisNode->isTemplate());
-    CHNodeSetTy descendants, instances;
-    if (hasDescendants(className))
-        descendants = getDescendants(className);
-    if (hasInstances(className))
-        instances = getInstances(className);
-    for (CHNodeSetTy::const_iterator it = instances.begin(),
-            eit = instances.end(); it != eit; ++it) {
-        const CHNode *node = *it;
-        descendants.insert(node);
-        if (hasDescendants(node->getName())) {
-            CHNodeSetTy instance_descendants =
-                getDescendants(node->getName());
-            CHNodeSetTy::const_iterator dit, deit;
-            for (dit = instance_descendants.begin(), deit = instance_descendants.end();
-                    dit != deit; ++dit) {
-                const CHNode *dnode = *dit;
-                descendants.insert(dnode);
-            }
-        }
-    }
-    return descendants;
+	CHNodeSetTy instances = getInstances(className);
+	for (CHNodeSetTy::const_iterator it = instances.begin(), eit = instances.end(); it != eit; ++it) {
+		const CHNode *node = *it;
+		instAndDesces.insert(node);
+		CHNodeSetTy instance_descendants = getDescendants(node->getName());
+		for (CHNodeSetTy::const_iterator dit = instance_descendants.begin(), deit = instance_descendants.end(); dit != deit; ++dit) {
+			instAndDesces.insert(*dit);
+		}
+	}
 }
 
 s32_t CHGraph::getVirtualFunctionID(const llvm::Function *vfn) const {
@@ -691,31 +623,23 @@ void CHGraph::buildVirtualFunctionToIDMap() {
     }
 }
 
-void CHGraph::getCSClasses(CallSite cs, CHNodeSetTy &chClasses) const {
+void CHGraph::getCSClasses(CallSite cs, CHNodeSetTy &chClasses) {
 
-    assert(isVirtualCallSite(cs) && "not virtual callsite!");
+	assert(isVirtualCallSite(cs) && "not virtual callsite!");
 
-    string thisPtrClassName = getClassNameOfThisPtr(cs);
+	string thisPtrClassName = getClassNameOfThisPtr(cs);
 
-    CHNode *thisNode = getNode(thisPtrClassName);
-    if (thisNode == NULL)
-        return;
+	CHNode *thisNode = getNode(thisPtrClassName);
+	if (thisNode == NULL)
+		return;
 
-    ////// get descendants based cha
-    CHNodeSetTy descendants;
-    if (thisNode->isTemplate()) {
-        descendants = getTemplateInstancesAndDescendants(thisPtrClassName);
-    } else if (hasDescendants(thisPtrClassName)) {
-        descendants = getDescendants(thisPtrClassName);
-    } else {
-    }
-    descendants.insert(thisNode);
+	////// get descendants based cha
+	CHNodeSetTy instAndDesces;
+	getInstancesAndDescendants(thisPtrClassName, instAndDesces);
+	chClasses.insert(thisNode);
 
-    for (CHNodeSetTy::const_iterator it = descendants.begin(),
-            eit = descendants.end(); it != eit; ++it) {
-        const CHNode *child = *it;
-        chClasses.insert(child);
-    }
+	for (CHNodeSetTy::const_iterator it = instAndDesces.begin(), eit = instAndDesces.end(); it != eit; ++it)
+		chClasses.insert(*it);
 }
 
 /*

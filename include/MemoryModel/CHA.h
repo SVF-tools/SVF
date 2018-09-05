@@ -32,6 +32,7 @@
 
 #include "MemoryModel/GenericGraph.h"
 #include "Util/SVFModule.h"
+#include "Util/WorkList.h"
 
 class SVFModule;
 class CHNode;
@@ -150,6 +151,8 @@ typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public GenericCHGraphTy {
 public:
     typedef std::set<const CHNode*> CHNodeSetTy;
+    typedef FIFOWorkList<const CHNode*> WorkList;
+
     typedef enum {
         CONSTRUCTOR = 0x1, // connect node based on constructor
         DESTRUCTOR = 0x2 // connect node based on destructor
@@ -165,9 +168,6 @@ public:
     void buildCHGEdges(const llvm::Function *F);
     void connectInheritEdgeViaCall(const llvm::Function *caller, llvm::CallSite cs);
     void connectInheritEdgeViaStore(const llvm::Function *caller, const llvm::StoreInst* store);
-    void buildCHGOnBasicBlock(const llvm::BasicBlock *B,
-                              const std::string className,
-                              RELATIONTYPE t);
     void addEdge(const std::string className,
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
@@ -175,25 +175,19 @@ public:
     CHNode *createNode(const std::string name);
     /// Dump the graph
     void dump(const std::string& filename);
-    void collectAncestorsDescendants(const CHNode *node);
     void buildClassNameToAncestorsDescendantsMap();
-    void buildClassNameToNamesMap();
     void buildVirtualFunctionToIDMap();
     s32_t getVirtualFunctionID(const llvm::Function *vfn) const;
     const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const;
-    bool hasDescendants(const std::string className) const;
-    bool hasAncestors(const std::string name) const;
-    bool hasInstances(const std::string name) const;
     void addInstances(const std::string templateName, CHNode* node);
-    const CHNodeSetTy &getDescendants(const std::string className) const;
-    const CHNodeSetTy &getAncestors(const std::string name) const;
-    const CHNodeSetTy &getInstances(const std::string name) const;
+    const CHNodeSetTy &getDescendants(const std::string className);
+    const CHNodeSetTy &getInstances(const std::string name);
     void readInheritanceMetadataFromModule(const llvm::Module &M);
     void analyzeVTables(const llvm::Module &M);
     std::string getClassNameOfThisPtr(llvm::CallSite cs) const;
     std::string getFunNameOfVCallSite(llvm::CallSite cs) const;
-    CHNodeSetTy getTemplateInstancesAndDescendants(const std::string className) const;
-    void getCSClasses(llvm::CallSite cs, CHNodeSetTy &chClasses) const;
+    void getInstancesAndDescendants(const std::string className, CHNodeSetTy& descendants);
+    void getCSClasses(llvm::CallSite cs, CHNodeSetTy &chClasses);
 
     bool VCallInCtorOrDtor(llvm::CallSite cs) const;
     void getVFnsFromVtbls(llvm::CallSite cs,
