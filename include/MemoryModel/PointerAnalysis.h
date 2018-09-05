@@ -90,6 +90,8 @@ public:
     typedef	std::set<const llvm::Function*> FunctionSet;
     typedef std::map<llvm::CallSite, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef std::set<const llvm::GlobalValue*> VTableSet;
+    typedef std::set<const llvm::Function*> VFunSet;
     //@}
 
     /// Statistic numbers
@@ -380,15 +382,9 @@ public:
         return chgraph;
     }
 
-    void getVFnsFromCHA(llvm::CallSite cs,
-                        std::set<const llvm::Function*> &vfns);
-    void getVFnsFromPts(llvm::CallSite cs,
-                        const PointsTo &target,
-                        std::set<const llvm::Function*> &vfns);
-    void connectVCallToVFns(llvm::CallSite cs,
-                            const std::set<const llvm::Function*> &vfns,
-                            CallEdgeMap& newEdges,
-                            llvm::CallGraph* callgraph = NULL);
+    void getVFnsFromCHA(llvm::CallSite cs, std::set<const llvm::Function*> &vfns);
+    void getVFnsFromPts(llvm::CallSite cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(llvm::CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges, llvm::CallGraph* callgraph = NULL);
     virtual void resolveCPPIndCalls(llvm::CallSite cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges,

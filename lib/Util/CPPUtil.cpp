@@ -346,6 +346,53 @@ bool cppUtil::isDestructor(const Function *F) {
         return false;
 }
 
+string cppUtil::getClassNameOfThisPtr(CallSite cs) {
+    string thisPtrClassName;
+    Instruction *inst = cs.getInstruction();
+    if (MDNode *N = inst->getMetadata("VCallPtrType")) {
+        MDString *mdstr = cast<MDString>(N->getOperand(0));
+        thisPtrClassName = mdstr->getString().str();
+    }
+    if (thisPtrClassName.size() == 0) {
+        const Value *thisPtr = getVCallThisPtr(cs);
+        thisPtrClassName = getClassNameFromType(thisPtr->getType());
+    }
+
+    size_t found = thisPtrClassName.find_last_not_of("0123456789");
+    if (found != string::npos) {
+        if (found != thisPtrClassName.size() - 1 && thisPtrClassName[found] == '.') {
+            return thisPtrClassName.substr(0, found);
+        }
+    }
+
+    return thisPtrClassName;
+}
+
+string cppUtil::getFunNameOfVCallSite(CallSite cs) {
+    string funName;
+    Instruction *inst = cs.getInstruction();
+    if (MDNode *N = inst->getMetadata("VCallFunName")) {
+        MDString *mdstr = cast<MDString>(N->getOperand(0));
+        funName = mdstr->getString().str();
+    }
+    return funName;
+}
+
+
+/*
+ * Is this virtual call inside its own constructor or destructor?
+ */
+bool cppUtil::VCallInCtorOrDtor(CallSite cs)  {
+    std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
+    const Function *func = cs.getCaller();
+    if (isConstructor(func) || isDestructor(func)) {
+        struct DemangledName dname = demangle(func->getName().str());
+        if (classNameOfThisPtr.compare(dname.className) == 0)
+            return true;
+    }
+    return false;
+}
+
 void cppUtil::printCH(const CHGraph *chgraph) {
 	for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
 			it != eit; ++it) {

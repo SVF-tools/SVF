@@ -119,16 +119,16 @@ public:
     }
     void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const llvm::Value *getVTable() const {
+    const llvm::GlobalValue *getVTable() const {
         return vtable;
     }
 
-    void setVTable(const llvm::Value *vtbl) {
+    void setVTable(const llvm::GlobalValue *vtbl) {
         vtable = vtbl;
     }
 
 private:
-    const llvm::Value *vtable;
+    const llvm::GlobalValue* vtable;
     std::string className;
     size_t flags;
     /*
@@ -152,6 +152,12 @@ class CHGraph: public GenericCHGraphTy {
 public:
     typedef std::set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
+    typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
+    typedef std::map<llvm::CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef std::set<const llvm::GlobalValue*> VTableSet;
+    typedef std::set<const llvm::Function*> VFunSet;
+    typedef std::map<llvm::CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef std::map<llvm::CallSite, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum {
         CONSTRUCTOR = 0x1, // connect node based on constructor
@@ -173,46 +179,83 @@ public:
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
     CHNode *createNode(const std::string name);
-    /// Dump the graph
-    void dump(const std::string& filename);
     void buildClassNameToAncestorsDescendantsMap();
     void buildVirtualFunctionToIDMap();
-    s32_t getVirtualFunctionID(const llvm::Function *vfn) const;
-    const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const;
-    void addInstances(const std::string templateName, CHNode* node);
-    const CHNodeSetTy &getDescendants(const std::string className);
-    const CHNodeSetTy &getInstances(const std::string name);
+    void buildCSToCHAVtblsAndVfnsMap();
     void readInheritanceMetadataFromModule(const llvm::Module &M);
     void analyzeVTables(const llvm::Module &M);
-    std::string getClassNameOfThisPtr(llvm::CallSite cs) const;
-    std::string getFunNameOfVCallSite(llvm::CallSite cs) const;
-    void getInstancesAndDescendants(const std::string className, CHNodeSetTy& descendants);
-    void getCSClasses(llvm::CallSite cs, CHNodeSetTy &chClasses);
+    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
+    const CHNodeSetTy& getCSClasses(llvm::CallSite cs);
+    void getVFnsFromVtbls(llvm::CallSite cs,VTableSet &vtbls, VFunSet &virtualFunctions) const;
+    void dump(const std::string& filename);
 
-    bool VCallInCtorOrDtor(llvm::CallSite cs) const;
-    void getVFnsFromVtbls(llvm::CallSite cs,
-                          const std::set<const llvm::Value*> &vtbls,
-                          std::set<const llvm::Function*> &virtualFunctions) const;
 
-    void collectVirtualCallSites();
-    void buildCSToCHAVtblsAndVfnsMap();
-    const bool csHasVtblsBasedonCHA(llvm::CallSite cs) const;
-    const bool csHasVFnsBasedonCHA(llvm::CallSite cs) const;
-    const std::set<const llvm::Value*> &getCSVtblsBasedonCHA(llvm::CallSite cs) const;
-    const std::set<const llvm::Function*> &getCSVFsBasedonCHA(llvm::CallSite cs) const;
+    inline s32_t getVirtualFunctionID(const llvm::Function *vfn) const {
+		std::map<const llvm::Function*, s32_t>::const_iterator it =
+				virtualFunctionToIDMap.find(vfn);
+		if (it != virtualFunctionToIDMap.end())
+			return it->second;
+		else
+			return -1;
+	}
+	inline const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const {
+		std::map<const llvm::Function*, s32_t>::const_iterator it, eit;
+		for (it = virtualFunctionToIDMap.begin(), eit =
+				virtualFunctionToIDMap.end(); it != eit; ++it) {
+			if (it->second == id)
+				return it->first;
+		}
+		return NULL;
+	}
+
+	inline void addInstances(const std::string templateName, CHNode* node) {
+		NameToCHNodesMap::iterator it = templateNameToInstancesMap.find(
+				templateName);
+		if (it != templateNameToInstancesMap.end())
+			it->second.insert(node);
+		else
+			templateNameToInstancesMap[templateName].insert(node);
+	}
+	inline const CHNodeSetTy &getDescendants(const std::string className) {
+		return classNameToDescendantsMap[className];
+	}
+	inline const CHNodeSetTy &getInstances(const std::string className) {
+		return templateNameToInstancesMap[className];
+	}
+
+	inline const bool csHasVtblsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+		return it != csToCHAVtblsMap.end();
+	}
+	inline const bool csHasVFnsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+		return it != csToCHAVFnsMap.end();
+	}
+	inline const VTableSet &getCSVtblsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+		assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
+		return it->second;
+	}
+	inline const VFunSet &getCSVFsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+		assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
+		return it->second;
+	}
+
 private:
     SVFModule svfMod;
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
-    std::map<std::string, CHNodeSetTy> classNameToDescendantsMap;
-    std::map<std::string, CHNodeSetTy> classNameToAncestorsMap;
-    std::map<std::string, CHNodeSetTy> templateNameToInstancesMap;
-    std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
+    NameToCHNodesMap classNameToDescendantsMap;
+    NameToCHNodesMap classNameToAncestorsMap;
+    NameToCHNodesMap classNameToInstAndDescsMap;
+    NameToCHNodesMap templateNameToInstancesMap;
+    CallSiteToCHNodesMap csToClassesMap;
 
-    std::set<llvm::CallSite> virtualCallSites;
-    std::map<llvm::CallSite, std::set<const llvm::Value*>> csToCHAVtblsMap;
-    std::map<llvm::CallSite, std::set<const llvm::Function*>> csToCHAVFnsMap;
+    std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
+    CallSiteToVTableSetMap csToCHAVtblsMap;
+    CallSiteToVFunSetMap csToCHAVFnsMap;
 };
 
 

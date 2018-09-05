@@ -664,8 +664,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
 /*
  * Get virtual functions "vfns" based on CHA
  */
-void PointerAnalysis::getVFnsFromCHA(CallSite cs,
-                                     std::set<const Function*> &vfns) {
+void PointerAnalysis::getVFnsFromCHA(CallSite cs, VFunSet &vfns) {
     if (chgraph->csHasVFnsBasedonCHA(cs))
         vfns = chgraph->getCSVFsBasedonCHA(cs);
 }
@@ -673,19 +672,16 @@ void PointerAnalysis::getVFnsFromCHA(CallSite cs,
 /*
  * Get virtual functions "vfns" from PoninsTo set "target" for callsite "cs"
  */
-void PointerAnalysis::getVFnsFromPts(CallSite cs,
-                                     const PointsTo &target,
-                                     std::set<const Function*> &vfns) {
+void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns) {
 
     if (chgraph->csHasVtblsBasedonCHA(cs)) {
-        std::set<const Value*> vtbls;
-        const std::set<const Value*> &chaVtbls =
-            chgraph->getCSVtblsBasedonCHA(cs);
-        for (PointsTo::iterator it = target.begin(), eit = target.end();
-                it != eit; ++it) {
+        std::set<const GlobalValue*> vtbls;
+        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
+        for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it) {
             const PAGNode *ptdnode = pag->getPAGNode(*it);
             if (ptdnode->hasValue()) {
-                const Value *vtbl = ptdnode->getValue();
+                const GlobalValue *vtbl = dyn_cast<GlobalValue>(ptdnode->getValue());
+                assert(vtbl && "vtable not exist?");
                 if (chaVtbls.find(vtbl) != chaVtbls.end())
                     vtbls.insert(vtbl);
             }
@@ -697,12 +693,9 @@ void PointerAnalysis::getVFnsFromPts(CallSite cs,
 /*
  * Connect callsite "cs" to virtual functions in "vfns"
  */
-void PointerAnalysis::connectVCallToVFns(CallSite cs,
-        const std::set<const Function*> &vfns,
-        CallEdgeMap& newEdges,
-        llvm::CallGraph* callgraph) {
+void PointerAnalysis::connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges, llvm::CallGraph* callgraph) {
     //// connect all valid functions
-    for (set<const Function*>::const_iterator fit = vfns.begin(),
+    for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
         const Function* callee = *fit;
         if (callee->isDeclaration() && svfMod.hasDefinition(callee))
@@ -726,7 +719,7 @@ void PointerAnalysis::resolveCPPIndCalls(CallSite cs,
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
     assert(isVirtualCallSite(cs) && "not cpp virtual call");
 
-    std::set<const Function*> vfns;
+    VFunSet vfns;
     if (connectVCallOnCHA)
         getVFnsFromCHA(cs, vfns);
     else
