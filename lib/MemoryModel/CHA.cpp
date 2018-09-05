@@ -69,12 +69,10 @@ static bool hasEdge(const CHNode *src, const CHNode *dst,
 }
 
 void CHNode::getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const {
-    vector<FuncVector>::const_iterator it, eit;
-    for (it = virtualFunctionVectors.begin(),
+    for (vector<FuncVector>::const_iterator it = virtualFunctionVectors.begin(),
             eit = virtualFunctionVectors.end(); it != eit; ++it) {
-        if ((*it).size() > idx) {
+        if ((*it).size() > idx)
             virtualFunctions.push_back((*it)[idx]);
-        }
     }
 }
 
@@ -581,7 +579,7 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs) {
 void CHGraph::getVFnsFromVtbls(llvm::CallSite cs, VTableSet &vtbls, VFunSet &virtualFunctions) const {
 
     /// get target virtual functions
-    size_t idx = cppUtil::getVCallIdx(cs);
+    size_t idx = getVCallIdx(cs);
     /// get the function name of the virtual callsite
     string funName = getFunNameOfVCallSite(cs);
     for (VTableSet::iterator it = vtbls.begin(), eit = vtbls.end(); it != eit; ++it) {
@@ -595,8 +593,7 @@ void CHGraph::getVFnsFromVtbls(llvm::CallSite cs, VTableSet &vtbls, VFunSet &vir
             const Function* callee = *fit;
             if (cs.arg_size() == callee->arg_size() ||
                     (cs.getFunctionType()->isVarArg() && callee->isVarArg())) {
-                cppUtil::DemangledName dname =
-                    cppUtil::demangle(callee->getName().str());
+                DemangledName dname = demangle(callee->getName().str());
                 string calleeName = dname.funcName;
 
                 /*
