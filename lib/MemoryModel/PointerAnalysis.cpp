@@ -675,12 +675,12 @@ void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSe
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it) {
             const PAGNode *ptdnode = pag->getPAGNode(*it);
-            if (ptdnode->hasValue()) {
-                const GlobalValue *vtbl = dyn_cast<GlobalValue>(ptdnode->getValue());
-                assert(vtbl && "vtable not exist?");
-                if (chaVtbls.find(vtbl) != chaVtbls.end())
-                    vtbls.insert(vtbl);
-            }
+			if (ptdnode->hasValue()) {
+				if (const GlobalValue *vtbl = dyn_cast<GlobalValue>(ptdnode->getValue())) {
+					if (chaVtbls.find(vtbl) != chaVtbls.end())
+						vtbls.insert(vtbl);
+				}
+			}
         }
         chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
     }
