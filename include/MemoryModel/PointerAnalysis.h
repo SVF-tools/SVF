@@ -70,14 +70,14 @@ public:
         FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
         ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA
         ADAPTFSCSPS_WPA,	///< Adaptive Flow-, context-, path- sensitive WPA
+        TypeCPP_WPA, ///<  Type-based analysis for C++
 
         // Demand driven analysis
-        Insensitive_DDA, ///<  Flow-, context- insensitive DDA (POPL '08)
-        Regular_DDA,	///< Flow-, context- insensitive DDA (OOPSLA '05)
         FieldS_DDA,		///< Field sensitive DDA
         FlowS_DDA,		///< Flow sensitive DDA
         PathS_DDA,		///< Guarded value-flow DDA
         Cxt_DDA,		///< context sensitive DDA
+
 
         Default_PTA		///< default pta without any analysis
     };

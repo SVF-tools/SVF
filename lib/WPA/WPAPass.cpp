@@ -38,6 +38,7 @@
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
 #include "WPA/FlowSensitive.h"
+#include "WPA/TypeAnalysis.h"
 #include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
@@ -58,7 +59,7 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
-			clEnumValN(PointerAnalysis::Default_PTA, "nopta", "Only construct PAG and CHA without performing pointer analysis")
+			clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA")
         ));
 
 
@@ -120,12 +121,9 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;
-    case PointerAnalysis::Default_PTA:
-		_pta = new Andersen();
-		_pta->initialize(svfModule);
-		_pta->finalize();
-		llvm::outs() << "No pointer analysis is performed (only Generating PAG and CHA).\n";
-		return;
+    case PointerAnalysis::TypeCPP_WPA:
+		_pta = new TypeAnalysis();
+		break;
     default:
         assert(false && "This pointer analysis has not been implemented yet.\n");
         return;
@@ -135,6 +133,7 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
     _pta->analyze(svfModule);
     if (anderSVFG) {
         SVFGBuilder memSSA(true);
+        assert(isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
         SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);
         svfg->dump("ander_svfg");
     }

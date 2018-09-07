@@ -298,24 +298,20 @@ void PointerAnalysis::dumpAllTypes()
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type) {
-    if(type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenLCD_WPA) {
-        ptD = new PTDataTy();
-    }
-    else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA) {
-        ptD = new DiffPTDataTy();
-    }
-    else if (type == FSSPARSE_WPA) {
-        if(INCDFPTData)
-            ptD = new IncDFPTDataTy();
-        else
-            ptD = new DFPTDataTy();
-    }
-    else if (type == FlowS_DDA) {
-        ptD = new PTDataTy();
-    }
-    else
-        assert(false && "no points-to data available");
+BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) :
+		PointerAnalysis(type) {
+	if (type == Andersen_WPA || type == AndersenWave_WPA
+			|| type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA) {
+		ptD = new PTDataTy();
+	} else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA) {
+		ptD = new DiffPTDataTy();
+	} else if (type == FSSPARSE_WPA) {
+		if (INCDFPTData)
+			ptD = new IncDFPTDataTy();
+		else
+			ptD = new DFPTDataTy();
+	} else
+		assert(false && "no points-to data available");
 }
 
 /*!
@@ -712,11 +708,7 @@ void PointerAnalysis::connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallE
 }
 
 /// Resolve cpp indirect call edges
-void PointerAnalysis::resolveCPPIndCalls(CallSite cs,
-        const PointsTo& target,
-        CallEdgeMap& newEdges,
-        CallGraph* callgraph) {
-    assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
+void PointerAnalysis::resolveCPPIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges, CallGraph* callgraph) {
     assert(isVirtualCallSite(cs) && "not cpp virtual call");
 
     VFunSet vfns;

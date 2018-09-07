@@ -671,14 +671,30 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap() {
 	}
 }
 
+void CHGraph::printCH() {
+	for (CHGraph::const_iterator it = this->begin(), eit = this->end();
+			it != eit; ++it) {
+		const CHNode *node = it->second;
+		outs() << '\n' << node->getName() << '\n';
+		for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin();
+				it != node->OutEdgeEnd(); ++it) {
+			if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
+				outs() << (*it)->getDstNode()->getName() << " --inheritance--> "
+						<< (*it)->getSrcNode()->getName() << "\n";
+			else
+				outs() << (*it)->getSrcNode()->getName() << " --instance--> "
+						<< (*it)->getDstNode()->getName() << "\n";
+		}
+	}
+	outs() << '\n';
+}
 
 /*!
  * Dump call graph into dot file
  */
 void CHGraph::dump(const std::string& filename) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), filename, this);
-    printCH(this);
-    dumpCHAStats(this);
+    printCH();
 }
 
 

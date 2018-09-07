@@ -86,8 +86,6 @@ std::string getClassNameFromType(const llvm::Type *ty);
 std::string getClassNameOfThisPtr(llvm::CallSite cs);
 std::string getFunNameOfVCallSite(llvm::CallSite cs);
 bool VCallInCtorOrDtor(llvm::CallSite cs);
-void printCH(const CHGraph *chgraph);
-void dumpCHAStats(const CHGraph *chgraph);
 }
 
 #endif /* CPPUtil_H_ */

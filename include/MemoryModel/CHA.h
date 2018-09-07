@@ -188,7 +188,7 @@ public:
     const CHNodeSetTy& getCSClasses(llvm::CallSite cs);
     void getVFnsFromVtbls(llvm::CallSite cs,VTableSet &vtbls, VFunSet &virtualFunctions) const;
     void dump(const std::string& filename);
-
+    void printCH();
 
     inline s32_t getVirtualFunctionID(const llvm::Function *vfn) const {
 		std::map<const llvm::Function*, s32_t>::const_iterator it =
