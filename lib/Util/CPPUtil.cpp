@@ -250,7 +250,7 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
 }
 
 const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
-	assert(isConstructor(fun) && "not a constructor?");
+	assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
 	assert(fun->arg_size() >=1 && "argument size >= 1?");
 	const Argument* thisPtr =  &*(fun->arg_begin());
 	return thisPtr;
