@@ -71,13 +71,14 @@ bool isDestructor(const llvm::Function *F);
  *  vfn = &vtptr[i]
  *  %funp = *vfn
  *  call %funp(p,...)
- *
+ * getConstructorThisPtr(A) return "this" pointer
  * getVCallThisPtr(cs) return p (this pointer)
  * getVCallVtblPtr(cs) return vtptr
  * getVCallIdx(cs) return i
  * getClassNameFromVtblObj(VtableA) return
  * getClassNameFromType(type of p) return type A
  */
+const llvm::Argument* getConstructorThisPtr(const llvm::Function* fun);
 const llvm::Value *getVCallThisPtr(llvm::CallSite cs);
 const llvm::Value *getVCallVtblPtr(llvm::CallSite cs);
 u64_t getVCallIdx(llvm::CallSite cs);
@@ -86,6 +87,17 @@ std::string getClassNameFromType(const llvm::Type *ty);
 std::string getClassNameOfThisPtr(llvm::CallSite cs);
 std::string getFunNameOfVCallSite(llvm::CallSite cs);
 bool VCallInCtorOrDtor(llvm::CallSite cs);
+
+/*
+ *  A(A* this){
+ *      store this this.addr;
+ *      tmp = load this.addr;
+ *      this1 = bitcast(tmp);
+ *      B(this1);
+ *  }
+ *  this and this1 are the same thisPtr in the constructor
+ */
+bool isSameThisPtrInConstructor(const llvm::Argument* thisPtr1, const llvm::Value* thisPtr2);
 }
 
 #endif /* CPPUtil_H_ */

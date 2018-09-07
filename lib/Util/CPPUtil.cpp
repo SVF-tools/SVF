@@ -231,6 +231,31 @@ const Value *cppUtil::getVCallThisPtr(CallSite cs) {
     }
 }
 
+bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2) {
+	if (thisPtr1 == thisPtr2){
+		return true;
+	}
+	else {
+		for (const User *thisU : thisPtr1->users()) {
+			if (const StoreInst *store = dyn_cast<StoreInst>(thisU)) {
+				for (const User *storeU : store->getPointerOperand()->users()) {
+					if (const LoadInst *load = dyn_cast<LoadInst>(storeU)) {
+						return load == (thisPtr2->stripPointerCasts());
+					}
+				}
+			}
+		}
+		return false;
+	}
+}
+
+const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
+	assert(isConstructor(fun) && "not a constructor?");
+	assert(fun->arg_size() >=1 && "argument size >= 1?");
+	const Argument* thisPtr =  &*(fun->arg_begin());
+	return thisPtr;
+}
+
 /*
  * get the ptr "vtable" for a given virtual callsite:
  * %vtable = load ...

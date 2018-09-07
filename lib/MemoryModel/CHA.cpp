@@ -149,10 +149,12 @@ void CHGraph::connectInheritEdgeViaCall(const Function* caller, CallSite cs){
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee))) {
         if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, Attribute::StructRet)))
             return;
-        const Value *thisPtr = getVCallThisPtr(cs);
-        if (thisPtr != NULL) {
+        const Value *csThisPtr = getVCallThisPtr(cs);
+        const Argument *consThisPtr = getConstructorThisPtr(caller);
+        bool samePtr = isSameThisPtrInConstructor(consThisPtr,csThisPtr);
+        if (csThisPtr != NULL && samePtr) {
             struct DemangledName basename = demangle(callee->getName().str());
-            if (!isa<CallInst>(thisPtr) && !isa<InvokeInst>(thisPtr) &&
+            if (!isa<CallInst>(csThisPtr) && !isa<InvokeInst>(csThisPtr) &&
                     basename.className.size() > 0) {
                 addEdge(dname.className, basename.className, CHEdge::INHERITANCE);
             }
@@ -675,7 +677,7 @@ void CHGraph::printCH() {
 	for (CHGraph::const_iterator it = this->begin(), eit = this->end();
 			it != eit; ++it) {
 		const CHNode *node = it->second;
-		outs() << '\n' << node->getName() << '\n';
+		outs() << "class: " << node->getName() << "\n";
 		for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin();
 				it != node->OutEdgeEnd(); ++it) {
 			if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
