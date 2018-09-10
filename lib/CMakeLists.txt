@@ -48,6 +48,7 @@ set(SOURCES
     WPA/AndersenWaveDiffWithType.cpp
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp
+    WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp)
 
 add_llvm_loadable_module(Svf ${SOURCES})

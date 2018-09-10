@@ -194,6 +194,10 @@ void PTAStat::performStat() {
     generalNumMap["LocalVarInRecur"] = localVarInRecursion.count();
     bitcastInstStat();
     branchStat();
+
+    printStat();
+
+    generalNumMap.clear();
 }
 
 void PTAStat::callgraphStat() {

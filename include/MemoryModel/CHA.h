@@ -32,6 +32,7 @@
 
 #include "MemoryModel/GenericGraph.h"
 #include "Util/SVFModule.h"
+#include "Util/WorkList.h"
 
 class SVFModule;
 class CHNode;
@@ -43,6 +44,8 @@ public:
         INHERITANCE = 0x1, // inheritance relation
         INSTANTCE = 0x2 // template-instance relation
     } CHEDGETYPE;
+
+    typedef GenericNode<CHNode,CHEdge>::GEdgeSetTy CHEdgeSetTy;
 
     CHEdge(CHNode *s, CHNode *d, CHEDGETYPE et, GEdgeFlag k = 0):
         GenericCHEdgeTy(s,d,k) {
@@ -65,6 +68,8 @@ public:
         MULTI_INHERITANCE = 0x2, // multi inheritance class
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
+
+    typedef std::vector<const llvm::Function*> FuncVector;
 
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(NULL), className(name), flags(0) {
@@ -106,46 +111,26 @@ public:
     }
     //@}
 
-    void setArgsizeToVFunMap(s32_t argsize,
-                             std::set<const llvm::Function*>functions) {
-        argsizeToVFunMap[argsize] = functions;
-    }
-    void addVirtualFunction(const llvm::Function* vfunc) {
-        allVirtualFunctions.insert(vfunc);
-    }
-    const std::set<const llvm::Function*> &getAllVirtualFunctions() const {
-        return allVirtualFunctions;
-    }
-    const std::set<const llvm::Function*> getVirtualFunctions(s32_t argsize) const {
-        const std::map<s32_t, std::set<const llvm::Function*>>::const_iterator it =
-                    argsizeToVFunMap.find(argsize);
-        if (it != argsizeToVFunMap.end())
-            return it->second;
-        else
-            return std::set<const llvm::Function*>();
-    }
-
-    void addVirtualFunctionVector(std::vector<const llvm::Function*> vfuncvec) {
+    void addVirtualFunctionVector(FuncVector vfuncvec) {
         virtualFunctionVectors.push_back(vfuncvec);
     }
-    const std::vector<std::vector<const llvm::Function*>> &getVirtualFunctionVectors() const {
+    const std::vector<FuncVector> &getVirtualFunctionVectors() const {
         return virtualFunctionVectors;
     }
-    void getVirtualFunctions(u32_t idx, std::set<const llvm::Function*> &virtualFunctions) const;
+    void getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const;
 
-    const llvm::Value *getVTable() const {
+    const llvm::GlobalValue *getVTable() const {
         return vtable;
     }
 
-    void setVTable(const llvm::Value *vtbl) {
+    void setVTable(const llvm::GlobalValue *vtbl) {
         vtable = vtbl;
     }
 
 private:
-    const llvm::Value *vtable;
+    const llvm::GlobalValue* vtable;
     std::string className;
     size_t flags;
-    std::set<const llvm::Function*> allVirtualFunctions;
     /*
      * virtual functions inherited from different classes are separately stored
      * to model different vtables inherited from different fathers.
@@ -159,7 +144,6 @@ private:
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
     std::vector<std::vector<const llvm::Function*>> virtualFunctionVectors;
-    std::map<s32_t, std::set<const llvm::Function*>> argsizeToVFunMap;
 };
 
 /// class hierarchy graph
@@ -167,81 +151,111 @@ typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public GenericCHGraphTy {
 public:
     typedef std::set<const CHNode*> CHNodeSetTy;
+    typedef FIFOWorkList<const CHNode*> WorkList;
+    typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
+    typedef std::map<llvm::CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef std::set<const llvm::GlobalValue*> VTableSet;
+    typedef std::set<const llvm::Function*> VFunSet;
+    typedef std::map<llvm::CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef std::map<llvm::CallSite, VFunSet> CallSiteToVFunSetMap;
+
     typedef enum {
         CONSTRUCTOR = 0x1, // connect node based on constructor
         DESTRUCTOR = 0x2 // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(): classNum(0), vfID(0), buildingCHGTime(0) {
+    CHGraph(const SVFModule svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0) {
     }
     ~CHGraph();
 
-    void buildCHG(const SVFModule svfModule);
-    void constructCHGraphFromIR(const llvm::Module &M);
+    void buildCHG();
     void buildInternalMaps();
-    void buildCHGOnFunction(const llvm::Function *F);
-    void buildCHGOnBasicBlock(const llvm::BasicBlock *B,
-                              const std::string className,
-                              RELATIONTYPE t);
+    void buildCHGNodes(const llvm::Function *F);
+    void buildCHGEdges(const llvm::Function *F);
+    void connectInheritEdgeViaCall(const llvm::Function *caller, llvm::CallSite cs);
+    void connectInheritEdgeViaStore(const llvm::Function *caller, const llvm::StoreInst* store);
     void addEdge(const std::string className,
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    CHNode *getOrCreateNode(const std::string name);
-    void addToNodeList(CHNode* node);
-    /// Dump the graph
-    void dump(const std::string& filename);
-    void collectAncestorsDescendants(const CHNode *node);
+    CHNode *createNode(const std::string name);
     void buildClassNameToAncestorsDescendantsMap();
-    void buildClassNameToNamesMap();
     void buildVirtualFunctionToIDMap();
-    s32_t getVirtualFunctionID(const llvm::Function *vfn) const;
-    const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const;
-    void buildTemplateNameToInstancesMap();
-    void buildArgsizeToVFunMap();
-    bool hasDescendants(const std::string className) const;
-    bool hasAncestors(const std::string name) const;
-    bool hasInstances(const std::string name) const;
-    const CHNodeSetTy &getDescendants(const std::string className) const;
-    const CHNodeSetTy &getAncestors(const std::string name) const;
-    const CHNodeSetTy &getInstances(const std::string name) const;
-    std::set<std::string> getDescendantsNames(const std::string className) const;
-    std::set<std::string> getAncestorsNames(const std::string className) const;
-    std::set<std::string> getInstancesNames(const std::string className) const;
+    void buildCSToCHAVtblsAndVfnsMap();
     void readInheritanceMetadataFromModule(const llvm::Module &M);
     void analyzeVTables(const llvm::Module &M);
-    std::string getClassNameOfThisPtr(llvm::CallSite cs) const;
-    std::string getFunNameOfVCallSite(llvm::CallSite cs) const;
-    CHNodeSetTy getTemplateInstancesAndDescendants(const std::string className) const;
-    void getCSClasses(llvm::CallSite cs, CHNodeSetTy &chClasses) const;
+    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
+    const CHNodeSetTy& getCSClasses(llvm::CallSite cs);
+    void getVFnsFromVtbls(llvm::CallSite cs,VTableSet &vtbls, VFunSet &virtualFunctions) const;
+    void dump(const std::string& filename);
+    void printCH();
 
-    bool VCallInCtorOrDtor(llvm::CallSite cs) const;
-    void getVFnsFromVtbls(llvm::CallSite cs,
-                          const std::set<const llvm::Value*> &vtbls,
-                          std::set<const llvm::Function*> &virtualFunctions) const;
+    inline s32_t getVirtualFunctionID(const llvm::Function *vfn) const {
+		std::map<const llvm::Function*, s32_t>::const_iterator it =
+				virtualFunctionToIDMap.find(vfn);
+		if (it != virtualFunctionToIDMap.end())
+			return it->second;
+		else
+			return -1;
+	}
+	inline const llvm::Function *getVirtualFunctionBasedonID(s32_t id) const {
+		std::map<const llvm::Function*, s32_t>::const_iterator it, eit;
+		for (it = virtualFunctionToIDMap.begin(), eit =
+				virtualFunctionToIDMap.end(); it != eit; ++it) {
+			if (it->second == id)
+				return it->first;
+		}
+		return NULL;
+	}
 
-    void collectVirtualCallSites();
-    void buildCSToCHAVtblsAndVfnsMap();
-    const bool csHasVtblsBasedonCHA(llvm::CallSite cs) const;
-    const bool csHasVFnsBasedonCHA(llvm::CallSite cs) const;
-    const std::set<const llvm::Value*> &getCSVtblsBasedonCHA(llvm::CallSite cs) const;
-    const std::set<const llvm::Function*> &getCSVFsBasedonCHA(llvm::CallSite cs) const;
+	inline void addInstances(const std::string templateName, CHNode* node) {
+		NameToCHNodesMap::iterator it = templateNameToInstancesMap.find(
+				templateName);
+		if (it != templateNameToInstancesMap.end())
+			it->second.insert(node);
+		else
+			templateNameToInstancesMap[templateName].insert(node);
+	}
+	inline const CHNodeSetTy &getDescendants(const std::string className) {
+		return classNameToDescendantsMap[className];
+	}
+	inline const CHNodeSetTy &getInstances(const std::string className) {
+		return templateNameToInstancesMap[className];
+	}
+
+	inline const bool csHasVtblsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+		return it != csToCHAVtblsMap.end();
+	}
+	inline const bool csHasVFnsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+		return it != csToCHAVFnsMap.end();
+	}
+	inline const VTableSet &getCSVtblsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+		assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
+		return it->second;
+	}
+	inline const VFunSet &getCSVFsBasedonCHA(llvm::CallSite cs) const {
+		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+		assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
+		return it->second;
+	}
+
 private:
+    SVFModule svfMod;
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
-    std::map<std::string, CHNodeSetTy> classNameToDescendantsMap;
-    std::map<std::string, CHNodeSetTy> classNameToAncestorsMap;
-    std::map<std::string, CHNodeSetTy> templateNameToInstancesMap;
-    std::map<std::string, std::set<std::string>> classNameToDescendantsNamesMap;
-    std::map<std::string, std::set<std::string>> classNameToAncestorsNamesMap;
-    std::map<std::string, std::set<std::string>> templateNameToInstancesNamesMap;
-    std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
+    NameToCHNodesMap classNameToDescendantsMap;
+    NameToCHNodesMap classNameToAncestorsMap;
+    NameToCHNodesMap classNameToInstAndDescsMap;
+    NameToCHNodesMap templateNameToInstancesMap;
+    CallSiteToCHNodesMap csToClassesMap;
 
-    SVFModule svfMod;
-    std::set<llvm::CallSite> virtualCallSites;
-    std::map<llvm::CallSite, std::set<const llvm::Value*>> csToCHAVtblsMap;
-    std::map<llvm::CallSite, std::set<const llvm::Function*>> csToCHAVFnsMap;
+    std::map<const llvm::Function*, s32_t> virtualFunctionToIDMap;
+    CallSiteToVTableSetMap csToCHAVtblsMap;
+    CallSiteToVFunSetMap csToCHAVFnsMap;
 };
 
 
