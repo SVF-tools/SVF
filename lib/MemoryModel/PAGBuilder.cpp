@@ -1088,7 +1088,7 @@ PAG* PAGBuilderFromFile::build() {
 
             if (token_count == 0)
                 continue;
-            else if (token_count == 2) {
+            else if (token_count == 2 || token_count == 3) {
                 NodeID nodeId;
                 string nodetype;
                 istringstream ss(line);
