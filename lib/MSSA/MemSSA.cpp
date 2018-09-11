@@ -327,7 +327,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     for (succ_const_iterator sit = succ_begin(&bb), esit = succ_end(&bb);
             sit != esit; ++sit) {
         const BasicBlock* succ = *sit;
-        u32_t pos = getPreBBIndex(&bb, succ);
+        u32_t pos = getBBPredecessorPos(&bb, succ);
         if (hasPHISet(succ))
             RenamePhiOps(getPHISet(succ),pos,memRegs);
     }
@@ -361,22 +361,6 @@ MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def) {
     MRVer* mrVer = new MRVer(mr, version, def);
     mr2VerStackMap[mr].push_back(mrVer);
     return mrVer;
-}
-
-/*!
- * Return a position index from current bb to it successor bb
- */
-u32_t MemSSA::getPreBBIndex(const BasicBlock* bb,
-                            const BasicBlock* succbb) {
-    u32_t pos = 0;
-    for (const_pred_iterator pit = pred_begin(succbb), epit = pred_end(succbb);
-            pit != epit; ++pit, ++pos) {
-        if (bb == *pit)
-            return pos;
-    }
-    assert(false && "did not find bb in predecessors of succ_bb ");
-    return pos;
-
 }
 
 /*!

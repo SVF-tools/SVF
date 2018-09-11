@@ -146,10 +146,6 @@ private:
     /// Release the memory
     void destroy();
 
-    /// Get previous BB index for phi
-    u32_t getPreBBIndex(const llvm::BasicBlock* bb,
-                        const llvm::BasicBlock* succb);
-
     /// Get a new SSA name of a memory region
     MRVer* newSSAName(const MemRegion* mr, MSSADEF* def);
 

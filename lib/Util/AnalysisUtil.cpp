@@ -232,13 +232,14 @@ u32_t analysisUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Su
     return 0;
 }
 
+
 /*!
- * Get position of a predecessor basic block
+ * Return a position index from current bb to it successor bb
  */
-u32_t analysisUtil::getBBPredecessorPos(const llvm::BasicBlock *BB, const llvm::BasicBlock *Pred) {
+u32_t analysisUtil::getBBPredecessorPos(const llvm::BasicBlock *bb, const llvm::BasicBlock *succbb) {
     u32_t pos = 0;
-    for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it, ++pos) {
-        if(*it==Pred)
+    for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos) {
+        if(*it==bb)
             return pos;
     }
     assert(false && "Didn't find predecessor edge?");
