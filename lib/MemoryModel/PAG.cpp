@@ -611,6 +611,14 @@ static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode) {
     o << "\n";
 }
 
+static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode, int argno) {
+    o << pagNode->getId() << " ";
+    if (ValPN::classof(pagNode)) o << "v";
+    else o << "o";
+    o << " " << argno;
+    o << "\n";
+}
+
 static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
     NodeID srcId = pagEdge->getSrcID();
     NodeID dstId = pagEdge->getDstID();
@@ -656,42 +664,48 @@ static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
     o << srcId << " " << edgeKind << " " << dstId << " " << offset << "\n";
 }
 
+int getArgNo(llvm::Function *function, const llvm::Value *arg) {
+    int argNo = 0;
+    for (auto it = function->arg_begin(); it != function->arg_end();
+         ++it, ++argNo) {
+        if (arg->getName() == it->getName()) return argNo;
+    }
+
+    return -1;
+}
+
 /*!
  * Dump PAGs for the functions
  */
 void PAG::dumpFunctions(std::vector<std::string> functions) {
-    // Naive: first map function names to entries in PAG, then dump them.
-    std::map<std::string, std::set<PAGNode *>> functionToPAGNodes;
+    // Naive: first map functions to entries in PAG, then dump them.
+    std::map<llvm::Function *, std::vector<PAGNode *>> functionToPAGNodes;
 
     std::set<PAGNode *> callDsts;
     for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
-        PAGNode *curr = it->second;
-        //llvm::outs() << "curr is:" << *curr << " <- \n";
-        PAGEdge::PAGEdgeSetTy callEdges =
-            curr->getOutgoingEdges(PAGEdge::PEDGEK::Call);
+        PAGNode *currNode = it->second;
+        if (!currNode->hasOutgoingEdges(PAGEdge::PEDGEK::Call)) continue;
 
         // Where are these calls going?
         for (PAGEdge::PAGEdgeSetTy::iterator it =
-                curr->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
-             it != curr->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
+                currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
+             it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
             CallPE *callEdge = static_cast<CallPE *>(*it);
             const llvm::Instruction *inst = callEdge->getCallInst();
             llvm::Function *currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
 
-            // Otherwise, it's an indirect call.
             if (currFunction != NULL) {
+                // Otherwise, it would be an indirect call which we don't want.
                 std::string currFunctionName = currFunction->getName();
+
                 if (std::find(functions.begin(), functions.end(),
                               currFunctionName) != functions.end()) {
-                    llvm::outs() << currFunctionName << " FOUND!\n";
-
-                    // If the dst has already been added, we'd be adding
-                    // a second arg->param edge - no need.
-                    if (callDsts.find(callEdge->getDstNode())
-                        == callDsts.end()) {
+                    // If the dst has already been added, we'd be duplicating
+                    // due to multiple actual->arg call edges.
+                    if (callDsts.find(callEdge->getDstNode()) == callDsts.end()) {
                         callDsts.insert(callEdge->getDstNode());
-                        functionToPAGNodes[currFunctionName].insert(curr);
+                        functionToPAGNodes[currFunction].push_back(callEdge->getDstNode());
                     }
                 }
             }
@@ -700,34 +714,37 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
 
     for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
          ++it) {
-        std::string function = it->first;
+        llvm::Function *function = it->first;
+        std::string functionName = it->first->getName();
 
+        // The final nodes and edges we will print.
         std::set<PAGNode *> nodes;
         std::set<PAGEdge *> edges;
+        // The search stack.
         std::stack<PAGNode *> todoNodes;
+        // The arguments to the function.
+        std::vector<PAGNode *> argNodes = it->second;
 
-        llvm::outs() << "PAG for function: " << function << "\n";
-        for (auto paramNode = it->second.begin();
-             paramNode != it->second.end(); ++paramNode) {
-            todoNodes.push(*paramNode);
+
+        llvm::outs() << "PAG for function: " << functionName << "\n";
+        for (auto node = argNodes.begin(); node != argNodes.end(); ++node) {
+            todoNodes.push(*node);
         }
 
         while (!todoNodes.empty()) {
-            PAGNode *paramNode = todoNodes.top();
+            PAGNode *currNode = todoNodes.top();
             todoNodes.pop();
 
             // If the node has been dealt with, ignore it.
-            if (nodes.find(paramNode) != nodes.end()) continue;
+            if (nodes.find(currNode) != nodes.end()) continue;
+            nodes.insert(currNode);
 
-            nodes.insert(paramNode);
+            // Return signifies the end of a path.
+            if (RetPN::classof(currNode)) continue;
 
-            // We don't want edges outgoing from the return.
-            if (RetPN::classof(paramNode)) continue;
-
-            auto outEdges = paramNode->getOutEdges();
+            auto outEdges = currNode->getOutEdges();
             for (auto outEdge = outEdges.begin(); outEdge != outEdges.end();
                  ++outEdge) {
-                llvm::outs() << "EDGES\n";
                 edges.insert(*outEdge);
                 todoNodes.push((*outEdge)->getDstNode());
             }
@@ -735,7 +752,11 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
 
         for (auto node = nodes.begin(); node != nodes.end(); ++node) {
             // TODO: proper file.
-            outputPAGNode(llvm::outs(), *node);
+            // Argument nodes use extra information: it's argument number.
+            if (std::find(argNodes.begin(), argNodes.end(), *node)
+                != argNodes.end()) {
+                outputPAGNode(llvm::outs(), *node, getArgNo(function, (*node)->getValue()));
+            } else outputPAGNode(llvm::outs(), *node);
         }
 
         for (auto edge = edges.begin(); edge != edges.end(); ++edge) {
@@ -743,7 +764,7 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
             outputPAGEdge(llvm::outs(), *edge);
         }
 
-        llvm::outs() << "PAG for function " << function << " done\n";
+        llvm::outs() << "PAG for functionName " << functionName << " done\n";
     }
 }
 
