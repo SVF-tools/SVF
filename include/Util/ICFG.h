@@ -49,13 +49,9 @@ class ICFG : public GenericICFGTy {
     friend class RcSvfgBuilder;
 
 public:
-    /// SVFG kind
-    enum SVFGK {
-        ORIGSVFGK,OPTSVFGK
-    };
+
     typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef llvm::DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef std::map<std::pair<NodeID,llvm::CallSite>, ActualParmICFGNode *> PAGNodeToActualParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, ActualRetICFGNode *> PAGNodeToActualRetMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalParmICFGNode *> PAGNodeToFormalParmMapTy;
@@ -93,30 +89,23 @@ public:
 protected:
     NodeID totalICFGNode;
     PAGNodeToDefMapTy PAGNodeToDefMap;	///< map a pag node to its definition SVG node
-    MSSAVarToDefMapTy MSSAVarToDefMap;	///< map a memory SSA operator to its definition SVFG node
     PAGNodeToActualParmMapTy PAGNodeToActualParmMap;
     PAGNodeToActualRetMapTy PAGNodeToActualRetMap;
     PAGNodeToFormalParmMapTy PAGNodeToFormalParmMap;
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap;
-    CallSiteToActualINsMapTy callSiteToActualINMap;
-    CallSiteToActualOUTsMapTy callSiteToActualOUTMap;
-    FunctionToFormalINsMapTy funToFormalINMap;
-    FunctionToFormalOUTsMapTy funToFormalOUTMap;
     StoreNodeSet globalStore;	///< set of global store SVFG nodes
     StorePEToICFGNodeMap storePEToICFGNodeMap;	///< map store inst to store ICFGNode
     ICFGStat * stat;
-    SVFGK kind;
-    MemSSA* mssa;
     PointerAnalysis* pta;
 
     /// Clean up memory
     void destroy();
 
     /// Constructor
-    ICFG(SVFGK k = ORIGSVFGK);
+    ICFG();
 
     /// Start building SVFG
-    virtual void buildSVFG(MemSSA* m);
+    virtual void buildICFG(MemSSA* m);
 
 public:
     /// Destructor
@@ -132,17 +121,6 @@ public:
     /// Return PAG
     inline PAG* getPAG() {
         return PAG::getPAG();
-    }
-
-    /// Clear MSSA
-    inline void clearMSSA() {
-        delete mssa;
-        mssa = NULL;
-    }
-
-    /// Get SVFG kind
-    inline SVFGK getKind() const {
-        return kind;
     }
 
     /// Get a SVFG node
@@ -164,9 +142,6 @@ public:
 
     /// Get a SVFG edge according to src and dst
     ICFGEdge* getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
-
-    /// Get all inter value flow edges of a indirect call site
-    void getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llvm::Function* callee, ICFGEdgeSetTy& edges);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
@@ -226,44 +201,6 @@ public:
         PAGNodeToFormalRetMapTy::const_iterator it = PAGNodeToFormalRetMap.find(fret);
         assert(it!=PAGNodeToFormalRetMap.end() && "formal return SVFG node can not be found??");
         return it->second;
-    }
-    //@}
-
-    /// Has a ICFGNode
-    //@{
-    inline bool hasActualINICFGNodes(llvm::CallSite cs) const {
-        return callSiteToActualINMap.find(cs)!=callSiteToActualINMap.end();
-    }
-
-    inline bool hasActualOUTICFGNodes(llvm::CallSite cs) const {
-        return callSiteToActualOUTMap.find(cs)!=callSiteToActualOUTMap.end();
-    }
-
-    inline bool hasFormalINICFGNodes(const llvm::Function* fun) const {
-        return funToFormalINMap.find(fun)!=funToFormalINMap.end();
-    }
-
-    inline bool hasFormalOUTICFGNodes(const llvm::Function* fun) const {
-        return funToFormalOUTMap.find(fun)!=funToFormalOUTMap.end();
-    }
-    //@}
-
-    /// Get ICFGNode set
-    //@{
-    inline ActualINICFGNodeSet& getActualINICFGNodes(llvm::CallSite cs) {
-        return callSiteToActualINMap[cs];
-    }
-
-    inline ActualOUTICFGNodeSet& getActualOUTICFGNodes(llvm::CallSite cs) {
-        return callSiteToActualOUTMap[cs];
-    }
-
-    inline FormalINICFGNodeSet& getFormalINICFGNodes(const llvm::Function* fun) {
-        return funToFormalINMap[fun];
-    }
-
-    inline FormalOUTICFGNodeSet& getFormalOUTICFGNodes(const llvm::Function* fun) {
-        return funToFormalOUTMap[fun];
     }
     //@}
 
@@ -373,22 +310,6 @@ protected:
         assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }
-
-    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINICFGNode* actualIn, const llvm::Function* callee, ICFGEdgeSetTy& edges) {
-        for (ICFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt) {
-            ICFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getBB()->getParent() == callee)
-                edges.insert(edge);
-        }
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTICFGNode* actualOut, const llvm::Function* callee, ICFGEdgeSetTy& edges) {
-        for (ICFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt) {
-            ICFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getBB()->getParent() == callee)
-                edges.insert(edge);
-        }
-    }
     //@}
 
     /// Add SVFG edge
@@ -418,25 +339,6 @@ protected:
     }
     inline bool hasDef(const PAGNode* pagNode) const {
         return (PAGNodeToDefMap.find(pagNode) != PAGNodeToDefMap.end());
-    }
-    //@}
-
-    /// Given a MSSADef, set/get its def SVFG node (definition of address-taken variables)
-    //@{
-    inline void setDef(const MRVer* mvar, const ICFGNode* node) {
-        MSSAVarToDefMapTy::iterator it = MSSAVarToDefMap.find(mvar);
-        if(it==MSSAVarToDefMap.end()) {
-            MSSAVarToDefMap[mvar] = node->getId();
-            assert(hasICFGNode(node->getId()) && "not in the map!!");
-        }
-        else {
-            assert((it->second == node->getId()) && "a PAG node can only have unique definition ");
-        }
-    }
-    inline NodeID getDef(const MRVer* mvar) const {
-        MSSAVarToDefMapTy::const_iterator it = MSSAVarToDefMap.find(mvar);
-        assert(it!=MSSAVarToDefMap.end() && "memory SSA does not have a definition??");
-        return it->second;
     }
     //@}
 
@@ -505,9 +407,6 @@ protected:
         assert(storePEToICFGNodeMap.find(store)==storePEToICFGNodeMap.end() && "should not insert twice!");
         storePEToICFGNodeMap[store] = sNode;
         addStmtICFGNode(sNode);
-        for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi) {
-            setDef((*pi)->getResVer(),sNode);
-        }
 
         const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
         if (globalPAGStores.find(store) != globalPAGStores.end())
@@ -562,56 +461,6 @@ protected:
             sNode->setOpVerAndBB(pos,it->first,it->second);
         setDef(phiResNode,sNode);
     }
-    /// Add memory Function entry chi SVFG node
-    inline void addFormalINICFGNode(const MemSSA::ENTRYCHI* chi) {
-        FormalINICFGNode* sNode = new FormalINICFGNode(totalICFGNode++,chi);
-        addICFGNode(sNode);
-        setDef(chi->getResVer(),sNode);
-        funToFormalINMap[chi->getFunction()].set(sNode->getId());
-    }
-    /// Add memory Function return mu SVFG node
-    inline void addFormalOUTICFGNode(const MemSSA::RETMU* mu) {
-        FormalOUTICFGNode* sNode = new FormalOUTICFGNode(totalICFGNode++,mu);
-        addICFGNode(sNode);
-        funToFormalOUTMap[mu->getFunction()].set(sNode->getId());
-    }
-    /// Add memory callsite mu SVFG node
-    inline void addActualINICFGNode(const MemSSA::CALLMU* mu) {
-        ActualINICFGNode* sNode = new ActualINICFGNode(totalICFGNode++,mu, mu->getCallSite());
-        addICFGNode(sNode);
-        callSiteToActualINMap[mu->getCallSite()].set(sNode->getId());
-    }
-    /// Add memory callsite chi SVFG node
-    inline void addActualOUTICFGNode(const MemSSA::CALLCHI* chi) {
-        ActualOUTICFGNode* sNode = new ActualOUTICFGNode(totalICFGNode++,chi,chi->getCallSite());
-        addICFGNode(sNode);
-        setDef(chi->getResVer(),sNode);
-        callSiteToActualOUTMap[chi->getCallSite()].set(sNode->getId());
-    }
-    /// Add memory SSA PHI SVFG node
-    inline void addIntraMSSAPHIICFGNode(const MemSSA::PHI* phi) {
-        IntraMSSAPHIICFGNode* sNode = new IntraMSSAPHIICFGNode(totalICFGNode++,phi);
-        addICFGNode(sNode);
-        for(MemSSA::PHI::OPVers::const_iterator it = phi->opVerBegin(), eit=phi->opVerEnd(); it!=eit; ++it)
-            sNode->setOpVer(it->first,it->second);
-        setDef(phi->getResVer(),sNode);
-    }
-
-    /// Has function for EntryCHI/RetMU/CallCHI/CallMU
-    //@{
-    inline bool hasFuncEntryChi(const llvm::Function * func) const {
-        return (funToFormalINMap.find(func) != funToFormalINMap.end());
-    }
-    inline bool hasFuncRetMu(const llvm::Function * func) const {
-        return (funToFormalOUTMap.find(func) != funToFormalOUTMap.end());
-    }
-    inline bool hasCallSiteChi(llvm::CallSite cs) const {
-        return (callSiteToActualOUTMap.find(cs) != callSiteToActualOUTMap.end());
-    }
-    inline bool hasCallSiteMu(llvm::CallSite cs) const {
-        return (callSiteToActualINMap.find(cs) != callSiteToActualINMap.end());
-    }
-    //@}
 
     /// Whether a PAGNode has a blackhole or const object as its definition
     inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {

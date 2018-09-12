@@ -105,7 +105,7 @@ void LeakChecker::initSnks() {
             PAG::PAGNodeList& arglist =	it->second;
             assert(!arglist.empty() && "no actual parameter at deallocation site?");
             /// we only pick the first parameter of all the actual parameters
-            const SVFGNode* snk = getSVFG()->getActualParmSVFGNode(arglist.front(),it->first);
+            const SVFGNode* snk = getSVFG()->getActualParmICFGNode(arglist.front(),it->first);
             addToSinks(snk);
         }
     }

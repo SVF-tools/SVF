@@ -42,7 +42,7 @@ static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
 /*!
  * Constructor
  */
-ICFG::ICFG(SVFGK k): totalICFGNode(0), kind(k),mssa(NULL),pta(NULL) {
+ICFG::ICFG(): totalICFGNode(0),pta(NULL) {
 	stat = new ICFGStat();
 }
 
@@ -52,7 +52,6 @@ ICFG::ICFG(SVFGK k): totalICFGNode(0), kind(k),mssa(NULL),pta(NULL) {
 void ICFG::destroy() {
     delete stat;
     stat = NULL;
-    mssa = NULL;
     pta = NULL;
 }
 
@@ -65,8 +64,7 @@ void ICFG::destroy() {
  *    a) between two statements (PAGEdges)
  *    b) between two memory SSA operators (MSSAPHI MSSAMU and MSSACHI)
  */
-void ICFG::buildSVFG(MemSSA* m) {
-    mssa = m;
+void ICFG::buildICFG(MemSSA* m) {
     pta = m->getPTA();
     stat->startClk();
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
@@ -92,7 +90,7 @@ void ICFG::buildSVFG(MemSSA* m) {
  */
 void ICFG::addICFGNodesForTopLevelPtrs() {
 
-    PAG* pag = mssa->getPAG();
+    PAG* pag = PAG::getPAG();
     // initialize dummy definition  null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
     // and its definition will be set when processing addr PAG edge.
@@ -222,7 +220,6 @@ void ICFG::addICFGNodesForTopLevelPtrs() {
     for(PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit!=epit; ++pit) {
         addIntraPHIICFGNode(pit->first,pit->second);
     }
-
 }
 
 /*
@@ -230,38 +227,6 @@ void ICFG::addICFGNodesForTopLevelPtrs() {
  */
 void ICFG::addICFGNodesForAddrTakenVars() {
 
-    /// initialize memory SSA phi nodes (phi of address-taken variables)
-    for(MemSSA::BBToPhiSetMap::iterator it = mssa->getBBToPhiSetMap().begin(),
-            eit = mssa->getBBToPhiSetMap().end(); it!=eit; ++it) {
-        for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addIntraMSSAPHIICFGNode(*pi);
-    }
-    /// initialize memory SSA entry chi nodes
-    for(MemSSA::FunToEntryChiSetMap::iterator it = mssa->getFunToEntryChiSetMap().begin(),
-            eit = mssa->getFunToEntryChiSetMap().end(); it!=eit; ++it) {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addFormalINICFGNode(cast<ENTRYCHI>(*pi));
-    }
-    /// initialize memory SSA return mu nodes
-    for(MemSSA::FunToReturnMuSetMap::iterator it = mssa->getFunToRetMuSetMap().begin(),
-            eit = mssa->getFunToRetMuSetMap().end(); it!=eit; ++it) {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addFormalOUTICFGNode(cast<RETMU>(*pi));
-    }
-    /// initialize memory SSA callsite mu nodes
-    for(MemSSA::CallSiteToMUSetMap::iterator it = mssa->getCallSiteToMuSetMap().begin(),
-            eit = mssa->getCallSiteToMuSetMap().end();
-            it!=eit; ++it) {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addActualINICFGNode(cast<CALLMU>(*pi));
-    }
-    /// initialize memory SSA callsite chi nodes
-    for(MemSSA::CallSiteToCHISetMap::iterator it = mssa->getCallSiteToChiSetMap().begin(),
-            eit = mssa->getCallSiteToChiSetMap().end();
-            it!=eit; ++it) {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addActualOUTICFGNode(cast<CALLCHI>(*pi));
-    }
 }
 
 /*!
@@ -269,153 +234,12 @@ void ICFG::addICFGNodesForAddrTakenVars() {
  */
 void ICFG::connectDirectICFGEdges() {
 
-    for(iterator it = begin(), eit = end(); it!=eit; ++it) {
-        NodeID nodeId = it->first;
-        const ICFGNode* node = it->second;
-
-        if(const StmtICFGNode* stmtNode = dyn_cast<StmtICFGNode>(node)) {
-            /// do not handle AddrICFG node, as it is already the source of a definition
-            if(isa<AddrICFGNode>(stmtNode))
-                continue;
-            /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
-            addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()),nodeId);
-
-            /// for store, connect the RHS/LHS pointer to its def
-            if(isa<StoreICFGNode>(stmtNode)) {
-                addIntraDirectVFEdge(getDef(stmtNode->getPAGDstNode()),nodeId);
-            }
-
-        }
-        else if(const PHIICFGNode* phiNode = dyn_cast<PHIICFGNode>(node)) {
-            for (PHIICFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
-                    it != eit; it++) {
-                addIntraDirectVFEdge(getDef(it->second),nodeId);
-            }
-        }
-        else if(const ActualParmICFGNode* actualParm = dyn_cast<ActualParmICFGNode>(node)) {
-            addIntraDirectVFEdge(getDef(actualParm->getParam()),nodeId);
-        }
-        else if(const FormalParmICFGNode* formalParm = dyn_cast<FormalParmICFGNode>(node)) {
-            for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
-                    it!=eit; ++it) {
-                const Instruction* callInst = (*it)->getCallInst();
-                CallSite cs = analysisUtil::getLLVMCallSite(callInst);
-                const ActualParmICFGNode* acutalParm = getActualParmICFGNode((*it)->getSrcNode(),cs);
-                addInterVFEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
-            }
-        }
-        else if(const FormalRetICFGNode* calleeRet = dyn_cast<FormalRetICFGNode>(node)) {
-            /// connect formal ret to its definition node
-            addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
-
-            /// connect formal ret to actual ret
-            for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd();
-                    it!=eit; ++it) {
-                const ActualRetICFGNode* callsiteRev = getActualRetICFGNode((*it)->getDstNode());
-                addInterVFEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
-            }
-        }
-        /// Do not process FormalRetICFGNode, as they are connected by copy within callee
-        /// We assume one procedure only has unique return
-    }
-
-    /// connect direct value-flow edges (parameter passing) for thread fork/join
-    /// add fork edge
-    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
-                forks.end(); iter != eiter; ++iter) {
-        TDForkPE* forkedge = cast<TDForkPE>(*iter);
-        addActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        const ActualParmICFGNode* acutalParm = getActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        const FormalParmICFGNode* formalParm = getFormalParmICFGNode(forkedge->getDstNode());
-        addInterVFEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
-    }
-    /// add join edge
-    PAGEdge::PAGEdgeSetTy& joins = getPAG()->getEdgeSet(PAGEdge::ThreadJoin);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = joins.begin(), eiter =
-                joins.end(); iter != eiter; ++iter) {
-        TDJoinPE* joinedge = cast<TDJoinPE>(*iter);
-        NodeID callsiteRev = getDef(joinedge->getDstNode());
-        const FormalRetICFGNode* calleeRet = getFormalRetICFGNode(joinedge->getSrcNode());
-        addRetDirectVFEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
-    }
 }
 
 /*
  * Connect def-use chains for indirect value-flow, (value-flow of address-taken variables)
  */
 void ICFG::connectIndirectICFGEdges() {
-
-    for(iterator it = begin(), eit = end(); it!=eit; ++it) {
-        NodeID nodeId = it->first;
-        const ICFGNode* node = it->second;
-        if(const LoadICFGNode* loadNode = dyn_cast<LoadICFGNode>(node)) {
-            MUSet& muSet = mssa->getMUSet(cast<LoadPE>(loadNode->getPAGEdge()));
-            for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it) {
-                if(LOADMU* mu = dyn_cast<LOADMU>(*it)) {
-                    NodeID def = getDef(mu->getVer());
-                    addIntraIndirectVFEdge(def,nodeId, mu->getVer()->getMR()->getPointsTo());
-                }
-            }
-        }
-        else if(const StoreICFGNode* storeNode = dyn_cast<StoreICFGNode>(node)) {
-            CHISet& chiSet = mssa->getCHISet(cast<StorePE>(storeNode->getPAGEdge()));
-            for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it) {
-                if(STORECHI* chi = dyn_cast<STORECHI>(*it)) {
-                    NodeID def = getDef(chi->getOpVer());
-                    addIntraIndirectVFEdge(def,nodeId, chi->getOpVer()->getMR()->getPointsTo());
-                }
-            }
-        }
-        else if(const FormalINICFGNode* formalIn = dyn_cast<FormalINICFGNode>(node)) {
-            PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
-            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = analysisUtil::getLLVMCallSite(*it);
-                if(!mssa->hasMU(cs))
-                    continue;
-                ActualINICFGNodeSet& actualIns = getActualINICFGNodes(cs);
-                for(ActualINICFGNodeSet::iterator ait = actualIns.begin(), aeit = actualIns.end(); ait!=aeit; ++ait) {
-                    const ActualINICFGNode* actualIn = llvm::cast<ActualINICFGNode>(getICFGNode(*ait));
-                    addInterIndirectVFCallEdge(actualIn,formalIn,getCallSiteID(cs, formalIn->getFun()));
-                }
-            }
-        }
-        else if(const FormalOUTICFGNode* formalOut = dyn_cast<FormalOUTICFGNode>(node)) {
-            PTACallGraphEdge::CallInstSet callInstSet;
-            const MemSSA::RETMU* retMu = formalOut->getRetMU();
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
-            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = analysisUtil::getLLVMCallSite(*it);
-                if(!mssa->hasCHI(cs))
-                    continue;
-                ActualOUTICFGNodeSet& actualOuts = getActualOUTICFGNodes(cs);
-                for(ActualOUTICFGNodeSet::iterator ait = actualOuts.begin(), aeit = actualOuts.end(); ait!=aeit; ++ait) {
-                    const ActualOUTICFGNode* actualOut = llvm::cast<ActualOUTICFGNode>(getICFGNode(*ait));
-                    addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(cs, formalOut->getFun()));
-                }
-            }
-            NodeID def = getDef(retMu->getVer());
-            addIntraIndirectVFEdge(def,nodeId, retMu->getVer()->getMR()->getPointsTo());
-        }
-        else if(const ActualINICFGNode* actualIn = dyn_cast<ActualINICFGNode>(node)) {
-            const MRVer* ver = actualIn->getCallMU()->getVer();
-            NodeID def = getDef(ver);
-            addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
-        }
-        else if(isa<ActualOUTICFGNode>(node)) {
-            /// There's no need to connect actual out node to its definition site in the same function.
-        }
-        else if(const MSSAPHIICFGNode* phiNode = dyn_cast<MSSAPHIICFGNode>(node)) {
-            for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
-                    it != eit; it++) {
-                const MRVer* op = it->second;
-                NodeID def = getDef(op);
-                addIntraIndirectVFEdge(def,nodeId, op->getMR()->getPointsTo());
-            }
-        }
-    }
-
 
     connectFromGlobalToProgEntry();
 }
@@ -426,33 +250,7 @@ void ICFG::connectIndirectICFGEdges() {
  */
 void ICFG::connectFromGlobalToProgEntry()
 {
-    SVFModule svfModule = mssa->getPTA()->getModule();
-    const llvm::Function* mainFunc =
-        analysisUtil::getProgEntryFunction(svfModule);
-    FormalINICFGNodeSet& formalIns = getFormalINICFGNodes(mainFunc);
-    if (formalIns.empty())
-        return;
 
-    for (StoreNodeSet::const_iterator storeIt = globalStore.begin(), storeEit = globalStore.end();
-            storeIt != storeEit; ++storeIt) {
-        const StoreICFGNode* store = *storeIt;
-
-        /// connect this store to main function entry
-        const PointsTo& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID());
-
-        for (NodeBS::iterator fiIt = formalIns.begin(), fiEit = formalIns.end();
-                fiIt != fiEit; ++fiIt) {
-            NodeID formalInID = *fiIt;
-            PointsTo formalInPts = ((FormalINICFGNode*)getICFGNode(formalInID))->getPointsTo();
-
-            formalInPts &= storePts;
-            if (formalInPts.empty())
-                continue;
-
-            /// add indirect value flow edge
-            addIntraIndirectVFEdge(store->getId(), formalInID, formalInPts);
-        }
-    }
 }
 
 
@@ -678,68 +476,6 @@ void ICFG::dump(const std::string& file, bool simple) {
 }
 
 /**
- * Get all inter value flow edges at this indirect call site, including call and return edges.
- */
-void ICFG::getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llvm::Function* callee, ICFGEdgeSetTy& edges)
-{
-    PAG * pag = PAG::getPAG();
-    CallSiteID csId = getCallSiteID(cs, callee);
-    // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(callee)) {
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
-        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
-        PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++) {
-            const PAGNode *cs_arg = *csArgIt;
-            const PAGNode *fun_arg = *funArgIt;
-            if (fun_arg->isPointer() && cs_arg->isPointer())
-                getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, cs, csId, edges);
-        }
-        assert(funArgIt == funArgEit && "function has more arguments than call site");
-        if (callee->isVarArg()) {
-            NodeID varFunArg = pag->getVarargNode(callee);
-            const PAGNode* varFunArgNode = pag->getPAGNode(varFunArg);
-            if (varFunArgNode->isPointer()) {
-                for (; csArgIt != csArgEit; csArgIt++) {
-                    const PAGNode *cs_arg = *csArgIt;
-                    if (cs_arg->isPointer())
-                        getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, cs, csId, edges);
-                }
-            }
-        }
-    }
-
-    // Find inter direct return edges between actual return and formal return.
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
-        const PAGNode* fun_return = pag->getFunRet(callee);
-        if (cs_return->isPointer() && fun_return->isPointer())
-            getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
-    }
-
-    // Find inter indirect call edges between actual-in and formal-in ICFG nodes.
-    if (hasFuncEntryChi(callee) && hasCallSiteMu(cs)) {
-        ICFG::ActualINICFGNodeSet& actualInNodes = getActualINICFGNodes(cs);
-        for(ICFG::ActualINICFGNodeSet::iterator ai_it = actualInNodes.begin(),
-                ai_eit = actualInNodes.end(); ai_it!=ai_eit; ++ai_it) {
-            ActualINICFGNode * actualIn = llvm::cast<ActualINICFGNode>(getICFGNode(*ai_it));
-            getInterVFEdgeAtIndCSFromAInToFIn(actualIn, callee, edges);
-        }
-    }
-
-    // Find inter indirect return edges between actual-out and formal-out ICFG nodes.
-    if (hasFuncRetMu(callee) && hasCallSiteChi(cs)) {
-        ICFG::ActualOUTICFGNodeSet& actualOutNodes = getActualOUTICFGNodes(cs);
-        for(ICFG::ActualOUTICFGNodeSet::iterator ao_it = actualOutNodes.begin(),
-                ao_eit = actualOutNodes.end(); ao_it!=ao_eit; ++ao_it) {
-            ActualOUTICFGNode* actualOut = llvm::cast<ActualOUTICFGNode>(getICFGNode(*ao_it));
-            getInterVFEdgeAtIndCSFromFOutToAOut(actualOut, callee, edges);
-        }
-    }
-}
-
-/**
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
@@ -779,37 +515,6 @@ void ICFG::connectCallerAndCallee(CallSite cs, const llvm::Function* callee, ICF
         const PAGNode* fun_return = pag->getFunRet(callee);
         if (cs_return->isPointer() && fun_return->isPointer())
             connectFRetAndARet(fun_return, cs_return, csId, edges);
-    }
-
-    // connect actual in and formal in
-    if (hasFuncEntryChi(callee) && hasCallSiteMu(cs)) {
-        ICFG::ActualINICFGNodeSet& actualInNodes = getActualINICFGNodes(cs);
-        const ICFG::FormalINICFGNodeSet& formalInNodes = getFormalINICFGNodes(callee);
-        for(ICFG::ActualINICFGNodeSet::iterator ai_it = actualInNodes.begin(),
-                ai_eit = actualInNodes.end(); ai_it!=ai_eit; ++ai_it) {
-            const ActualINICFGNode * actualIn = llvm::cast<ActualINICFGNode>(getICFGNode(*ai_it));
-            for(ICFG::FormalINICFGNodeSet::iterator fi_it = formalInNodes.begin(),
-                    fi_eit = formalInNodes.end(); fi_it!=fi_eit; ++fi_it) {
-                const FormalINICFGNode* formalIn = llvm::cast<FormalINICFGNode>(getICFGNode(*fi_it));
-                connectAInAndFIn(actualIn, formalIn, csId, edges);
-            }
-        }
-    }
-
-    // connect actual out and formal out
-    if (hasFuncRetMu(callee) && hasCallSiteChi(cs)) {
-        // connect formal out and actual out
-        const ICFG::FormalOUTICFGNodeSet& formalOutNodes = getFormalOUTICFGNodes(callee);
-        ICFG::ActualOUTICFGNodeSet& actualOutNodes = getActualOUTICFGNodes(cs);
-        for(ICFG::FormalOUTICFGNodeSet::iterator fo_it = formalOutNodes.begin(),
-                fo_eit = formalOutNodes.end(); fo_it!=fo_eit; ++fo_it) {
-            const FormalOUTICFGNode * formalOut = llvm::cast<FormalOUTICFGNode>(getICFGNode(*fo_it));
-            for(ICFG::ActualOUTICFGNodeSet::iterator ao_it = actualOutNodes.begin(),
-                    ao_eit = actualOutNodes.end(); ao_it!=ao_eit; ++ao_it) {
-                const ActualOUTICFGNode* actualOut = llvm::cast<ActualOUTICFGNode>(getICFGNode(*ao_it));
-                connectFOutAndAOut(formalOut, actualOut, csId, edges);
-            }
-        }
     }
 }
 

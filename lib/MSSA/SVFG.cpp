@@ -44,7 +44,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(SVFGK k): totalSVFGNode(0), kind(k),mssa(NULL),pta(NULL) {
+SVFG::SVFG(SVFGK k): ICFG(), kind(k),mssa(NULL) {
     stat = new SVFGStat(this);
 }
 
@@ -103,7 +103,7 @@ void SVFG::buildSVFG(MemSSA* m) {
  */
 void SVFG::addSVFGNodesForTopLevelPtrs() {
 
-    PAG* pag = mssa->getPAG();
+    PAG* pag = pta->getPAG();
     // initialize dummy definition  null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
     // and its definition will be set when processing addr PAG edge.
@@ -468,78 +468,13 @@ void SVFG::connectFromGlobalToProgEntry()
 
 
 /*!
- * Whether we has an intra SVFG edge
- */
-SVFGEdge* SVFG::hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind) {
-    SVFGEdge edge(src,dst,kind);
-    SVFGEdge* outEdge = src->hasOutgoingEdge(&edge);
-    SVFGEdge* inEdge = dst->hasIncomingEdge(&edge);
-    if (outEdge && inEdge) {
-        assert(outEdge == inEdge && "edges not match");
-        return outEdge;
-    }
-    else
-        return NULL;
-}
-
-
-/*!
- * Whether we has an thread SVFG edge
- */
-SVFGEdge* SVFG::hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind) {
-    SVFGEdge edge(src,dst,kind);
-    SVFGEdge* outEdge = src->hasOutgoingEdge(&edge);
-    SVFGEdge* inEdge = dst->hasIncomingEdge(&edge);
-    if (outEdge && inEdge) {
-        assert(outEdge == inEdge && "edges not match");
-        return outEdge;
-    }
-    else
-        return NULL;
-}
-
-/*!
- * Whether we has an inter SVFG edge
- */
-SVFGEdge* SVFG::hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind,CallSiteID csId) {
-    SVFGEdge edge(src,dst,SVFGEdge::makeEdgeFlagWithInvokeID(kind,csId));
-    SVFGEdge* outEdge = src->hasOutgoingEdge(&edge);
-    SVFGEdge* inEdge = dst->hasIncomingEdge(&edge);
-    if (outEdge && inEdge) {
-        assert(outEdge == inEdge && "edges not match");
-        return outEdge;
-    }
-    else
-        return NULL;
-}
-
-/*!
- * Return the corresponding SVFGEdge
- */
-SVFGEdge* SVFG::getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::SVFGEdgeK kind) {
-
-    SVFGEdge * edge = NULL;
-    Size_t counter = 0;
-    for (SVFGEdge::SVFGEdgeSetTy::iterator iter = src->OutEdgeBegin();
-            iter != src->OutEdgeEnd(); ++iter) {
-        if ((*iter)->getDstID() == dst->getId() && (*iter)->getEdgeKind() == kind) {
-            counter++;
-            edge = (*iter);
-        }
-    }
-    assert(counter <= 1 && "there's more than one edge between two SVFG nodes");
-    return edge;
-
-}
-
-/*!
  * Add def-use edges for top level pointers
  */
 SVFGEdge* SVFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
     checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode, SVFGEdge::VFIntraDirect)) {
+    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, SVFGEdge::VFIntraDirect)) {
         assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
@@ -589,7 +524,7 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
     checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode,SVFGEdge::VFIntraIndirect)) {
+    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode,SVFGEdge::VFIntraIndirect)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
