@@ -44,6 +44,9 @@ static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
  */
 ICFG::ICFG(): totalICFGNode(0),pta(NULL) {
 	stat = new ICFGStat();
+
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
+	addICFGNodesForTopLevelPtrs();
 }
 
 /*!
@@ -58,30 +61,12 @@ void ICFG::destroy() {
 /*!
  * Build ICFG
  * 1) build ICFG nodes
- *    a) statements for top level pointers (PAGEdges)
- *    b) operators of address-taken variables (MSSAPHI and MSSACHI)
+ *    statements for top level pointers (PAGEdges)
  * 2) connect ICFG edges
- *    a) between two statements (PAGEdges)
- *    b) between two memory SSA operators (MSSAPHI MSSAMU and MSSACHI)
+ *    between two statements (PAGEdges)
  */
-void ICFG::buildICFG(MemSSA* m) {
-    pta = m->getPTA();
-    stat->startClk();
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
-
-    addICFGNodesForTopLevelPtrs();
-
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Addr-taken Node\n"));
-
-    addICFGNodesForAddrTakenVars();
-
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Direct Edge\n"));
-
-    connectDirectICFGEdges();
-
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Indirect Edge\n"));
-
-    connectIndirectICFGEdges();
+void ICFG::buildICFG(PointerAnalysis* _pta) {
+	pta = _pta;
 }
 
 
@@ -137,6 +122,13 @@ void ICFG::addICFGNodesForTopLevelPtrs() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         addStoreICFGNode(cast<StorePE>(*iter));
+    }
+
+    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
+                forks.end(); iter != eiter; ++iter) {
+        TDForkPE* forkedge = cast<TDForkPE>(*iter);
+        addActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
     }
 
     // initialize actual parameter nodes
@@ -222,37 +214,6 @@ void ICFG::addICFGNodesForTopLevelPtrs() {
     }
 }
 
-/*
- * Create ICFG nodes for address-taken variables
- */
-void ICFG::addICFGNodesForAddrTakenVars() {
-
-}
-
-/*!
- * Connect def-use chains for direct value-flow, (value-flow of top level pointers)
- */
-void ICFG::connectDirectICFGEdges() {
-
-}
-
-/*
- * Connect def-use chains for indirect value-flow, (value-flow of address-taken variables)
- */
-void ICFG::connectIndirectICFGEdges() {
-
-    connectFromGlobalToProgEntry();
-}
-
-
-/*!
- * Connect indirect ICFG edges from global initializers (store) to main function entry
- */
-void ICFG::connectFromGlobalToProgEntry()
-{
-
-}
-
 
 /*!
  * Whether we has an intra ICFG edge
@@ -319,153 +280,39 @@ ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::
 
 }
 
-/*!
- * Add def-use edges for top level pointers
- */
-ICFGEdge* ICFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
-    ICFGNode* srcNode = getICFGNode(srcId);
-    ICFGNode* dstNode = getICFGNode(dstId);
-    checkIntraVFEdgeParents(srcNode, dstNode);
-    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::VFIntraDirect)) {
-        assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        IntraDirVFEdge* directEdge = new IntraDirVFEdge(srcNode,dstNode);
-        return (addICFGEdge(directEdge) ? directEdge : NULL);
-    }
-}
 
 /*!
- * Add def-use call edges for top level pointers
+ * Add interprocedural call edges for top level pointers
  */
-ICFGEdge* ICFG::addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
+ICFGEdge* ICFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::VFDirCall,csId)) {
+    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallDirCF,csId)) {
         assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
     else {
-        CallDirVFEdge* callEdge = new CallDirVFEdge(srcNode,dstNode,csId);
+        CallDirCFEdge* callEdge = new CallDirCFEdge(srcNode,dstNode,csId);
         return (addICFGEdge(callEdge) ? callEdge : NULL);
     }
 }
 
 /*!
- * Add def-use return edges for top level pointers
+ * Add interprocedural return edges for top level pointers
  */
-ICFGEdge* ICFG::addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
+ICFGEdge* ICFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::VFDirRet,csId)) {
+    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetDirCF,csId)) {
         assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
     else {
-        RetDirVFEdge* retEdge = new RetDirVFEdge(srcNode,dstNode,csId);
+        RetDirCFEdge* retEdge = new RetDirCFEdge(srcNode,dstNode,csId);
         return (addICFGEdge(retEdge) ? retEdge : NULL);
     }
 }
 
-/*
- *  Add def-use edges of a memory region between two statements
- */
-ICFGEdge* ICFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts)
-{
-    ICFGNode* srcNode = getICFGNode(srcId);
-    ICFGNode* dstNode = getICFGNode(dstId);
-    checkIntraVFEdgeParents(srcNode, dstNode);
-    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode,ICFGEdge::VFIntraIndirect)) {
-        assert(isa<IndirectVFEdge>(edge) && "this should be a indirect value flow edge!");
-        return (cast<IndirectVFEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
-    }
-    else {
-        IntraIndVFEdge* indirectEdge = new IntraIndVFEdge(srcNode,dstNode);
-        indirectEdge->addPointsTo(cpts);
-        return (addICFGEdge(indirectEdge) ? indirectEdge : NULL);
-    }
-}
-
-/*!
- * Add def-use edges of a memory region between two may-happen-in-parallel statements for multithreaded program
- */
-ICFGEdge* ICFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {
-    ICFGNode* srcNode = getICFGNode(srcId);
-    ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasThreadICFGEdge(srcNode,dstNode,ICFGEdge::VFTheadMHPIndirect)) {
-        assert(isa<IndirectVFEdge>(edge) && "this should be a indirect value flow edge!");
-        return (cast<IndirectVFEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
-    }
-    else {
-        ThreadMHPIndVFEdge* indirectEdge = new ThreadMHPIndVFEdge(srcNode,dstNode);
-        indirectEdge->addPointsTo(cpts);
-        return (addICFGEdge(indirectEdge) ? indirectEdge : NULL);
-    }
-}
-
-/*
- *  Add def-use call edges of a memory region between two statements
- */
-ICFGEdge* ICFG::addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId)
-{
-    ICFGNode* srcNode = getICFGNode(srcId);
-    ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode,ICFGEdge::VFIndCall,csId)) {
-        assert(isa<CallIndVFEdge>(edge) && "this should be a indirect value flow edge!");
-        return (cast<CallIndVFEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
-    }
-    else {
-        CallIndVFEdge* callEdge = new CallIndVFEdge(srcNode,dstNode,csId);
-        callEdge->addPointsTo(cpts);
-        return (addICFGEdge(callEdge) ? callEdge : NULL);
-    }
-}
-
-/*
- *  Add def-use return edges of a memory region between two statements
- */
-ICFGEdge* ICFG::addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId)
-{
-    ICFGNode* srcNode = getICFGNode(srcId);
-    ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode,ICFGEdge::VFIndRet,csId)) {
-        assert(isa<RetIndVFEdge>(edge) && "this should be a indirect value flow edge!");
-        return (cast<RetIndVFEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
-    }
-    else {
-        RetIndVFEdge* retEdge = new RetIndVFEdge(srcNode,dstNode,csId);
-        retEdge->addPointsTo(cpts);
-        return (addICFGEdge(retEdge) ? retEdge : NULL);
-    }
-}
-
-/*!
- *
- */
-ICFGEdge* ICFG::addInterIndirectVFCallEdge(const ActualINICFGNode* src, const FormalINICFGNode* dst,CallSiteID csId) {
-    PointsTo cpts1 = src->getPointsTo();
-    PointsTo cpts2 = dst->getPointsTo();
-    if(cpts1.intersects(cpts2)) {
-        cpts1 &= cpts2;
-        return addCallIndirectVFEdge(src->getId(),dst->getId(),cpts1,csId);
-    }
-    return NULL;
-}
-
-/*!
- * Add inter VF edge from function exit mu to callsite chi
- */
-ICFGEdge* ICFG::addInterIndirectVFRetEdge(const FormalOUTICFGNode* src, const ActualOUTICFGNode* dst,CallSiteID csId) {
-
-    PointsTo cpts1 = src->getPointsTo();
-    PointsTo cpts2 = dst->getPointsTo();
-    if(cpts1.intersects(cpts2)) {
-        cpts1 &= cpts2;
-        return addRetIndirectVFEdge(src->getId(),dst->getId(),cpts1,csId);
-    }
-    return NULL;
-}
 
 /*!
  * Dump ICFG
@@ -562,40 +409,7 @@ const llvm::Function* ICFG::isFunEntryICFGNode(const ICFGNode* node) const {
     else if(const FormalINICFGNode* fi = dyn_cast<FormalINICFGNode>(node)) {
         return fi->getFun();
     }
-    else if(const InterMSSAPHIICFGNode* mphi = dyn_cast<InterMSSAPHIICFGNode>(node)) {
-        if(mphi->isFormalINPHI())
-            return phi->getFun();
-    }
     return NULL;
-}
-
-/*!
- * Whether this is an callsite return ICFGNode (actual return, actual out)
- */
-llvm::Instruction* ICFG::isCallSiteRetICFGNode(const ICFGNode* node) const {
-    if(const ActualRetICFGNode* ar = dyn_cast<ActualRetICFGNode>(node)) {
-        return ar->getCallSite().getInstruction();
-    }
-    else if(const InterPHIICFGNode* phi = dyn_cast<InterPHIICFGNode>(node)) {
-        if(phi->isActualRetPHI())
-            return phi->getCallSite().getInstruction();
-    }
-    else if(const ActualOUTICFGNode* ao = dyn_cast<ActualOUTICFGNode>(node)) {
-        return ao->getCallSite().getInstruction();
-    }
-    else if(const InterMSSAPHIICFGNode* mphi = dyn_cast<InterMSSAPHIICFGNode>(node)) {
-        if(mphi->isActualOUTPHI())
-            return mphi->getCallSite().getInstruction();
-    }
-    return NULL;
-}
-
-/*!
- * Perform Statistics
- */
-void ICFG::performStat()
-{
-    stat->performStat();
 }
 
 /*!
@@ -662,26 +476,6 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
             rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
             rawstr << "Fun[" << fr->getFun()->getName() << "]";
         }
-        else if(FormalINICFGNode* fi = dyn_cast<FormalINICFGNode>(node)) {
-            rawstr << "ENCHI\n";
-            rawstr << "Fun[" << fi->getFun()->getName() << "]";
-        }
-        else if(FormalOUTICFGNode* fo = dyn_cast<FormalOUTICFGNode>(node)) {
-            rawstr << "RETMU\n";
-            rawstr << "Fun[" << fo->getFun()->getName() << "]";
-        }
-        else if(ActualINICFGNode* ai = dyn_cast<ActualINICFGNode>(node)) {
-            rawstr << "CSMU\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite().getInstruction())  << "]";
-        }
-        else if(ActualOUTICFGNode* ao = dyn_cast<ActualOUTICFGNode>(node)) {
-            rawstr << "CSCHI\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite().getInstruction())  << "]";
-        }
-        else if(MSSAPHIICFGNode* mphi = dyn_cast<MSSAPHIICFGNode>(node)) {
-            rawstr << "MSSAPHI\n";
-            rawstr << getSourceLoc(&mphi->getBB()->back());
-        }
         else if(isa<NullPtrICFGNode>(node)) {
             rawstr << "NullPtr";
         }
@@ -708,17 +502,6 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
                 rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
             }
         }
-        else if(MSSAPHIICFGNode* mphi = dyn_cast<MSSAPHIICFGNode>(node)) {
-            rawstr << "MR_" << mphi->getRes()->getMR()->getMRID()
-                   << "V_" << mphi->getRes()->getResVer()->getSSAVersion() << " = PHI(";
-            for (MemSSA::PHI::OPVers::const_iterator it = mphi->opVerBegin(), eit = mphi->opVerEnd();
-                    it != eit; it++)
-                rawstr << "MR_" << it->second->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
-            rawstr << ")\n";
-
-            rawstr << mphi->getRes()->getMR()->dumpStr() << "\n";
-            rawstr << getSourceLoc(&mphi->getBB()->back());
-        }
         else if(PHIICFGNode* tphi = dyn_cast<PHIICFGNode>(node)) {
             rawstr << tphi->getRes()->getId() << " = PHI(";
             for(PHIICFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
@@ -727,31 +510,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
             rawstr << ")\n";
             rawstr << getSourceLoc(tphi->getRes()->getValue());
         }
-        else if(FormalINICFGNode* fi = dyn_cast<FormalINICFGNode>(node)) {
-            rawstr	<< fi->getEntryChi()->getMR()->getMRID() << "V_" << fi->getEntryChi()->getResVer()->getSSAVersion() <<
-                    " = ENCHI(MR_" << fi->getEntryChi()->getMR()->getMRID() << "V_" << fi->getEntryChi()->getOpVer()->getSSAVersion() << ")\n";
-            rawstr << fi->getEntryChi()->getMR()->dumpStr() << "\n";
-            rawstr << "Fun[" << fi->getFun()->getName() << "]";
-        }
-        else if(FormalOUTICFGNode* fo = dyn_cast<FormalOUTICFGNode>(node)) {
-            rawstr << "RETMU(" << fo->getRetMU()->getMR()->getMRID() << "V_" << fo->getRetMU()->getVer()->getSSAVersion() << ")\n";
-            rawstr  << fo->getRetMU()->getMR()->dumpStr() << "\n";
-            rawstr << "Fun[" << fo->getFun()->getName() << "]";
-        }
         else if(FormalParmICFGNode* fp = dyn_cast<FormalParmICFGNode>(node)) {
             rawstr	<< "FPARM(" << fp->getParam()->getId() << ")\n";
             rawstr << "Fun[" << fp->getFun()->getName() << "]";
-        }
-        else if(ActualINICFGNode* ai = dyn_cast<ActualINICFGNode>(node)) {
-            rawstr << "CSMU(" << ai->getCallMU()->getMR()->getMRID() << "V_" << ai->getCallMU()->getVer()->getSSAVersion() << ")\n";
-            rawstr << ai->getCallMU()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite().getInstruction()) << "]";
-        }
-        else if(ActualOUTICFGNode* ao = dyn_cast<ActualOUTICFGNode>(node)) {
-            rawstr <<  ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getResVer()->getSSAVersion() <<
-                   " = CSCHI(MR_" << ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getOpVer()->getSSAVersion() << ")\n";
-            rawstr << ao->getCallCHI()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite().getInstruction()) << "]" ;
         }
         else if(ActualParmICFGNode* ap = dyn_cast<ActualParmICFGNode>(node)) {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
@@ -806,19 +567,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         else if(isa<NullPtrICFGNode>(node)) {
             rawstr <<  "color=grey";
         }
-        else if(isa<FormalINICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
-        else if(isa<FormalOUTICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
         else if(isa<FormalParmICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
-        else if(isa<ActualINICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
-        else if(isa<ActualOUTICFGNode>(node)) {
             rawstr <<  "color=yellow,style=double";
         }
         else if(isa<ActualParmICFGNode>(node)) {
@@ -855,21 +604,12 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
     static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ICFG *pag) {
         ICFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if (isa<DirectVFEdge>(edge)) {
-            if (isa<CallDirVFEdge>(edge))
-                return "style=solid,color=red";
-            else if (isa<RetDirVFEdge>(edge))
-                return "style=solid,color=blue";
-            else
-                return "style=solid";
-        } else if (isa<IndirectVFEdge>(edge)) {
-            if (isa<CallIndVFEdge>(edge))
-                return "style=dashed,color=red";
-            else if (isa<RetIndVFEdge>(edge))
-                return "style=dashed,color=blue";
-            else
-                return "style=dashed";
-        }
+		if (isa<CallDirCFEdge>(edge))
+			return "style=solid,color=red";
+		else if (isa<RetDirCFEdge>(edge))
+			return "style=solid,color=blue";
+		else
+			return "style=solid";
         return "";
     }
 
@@ -880,14 +620,10 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 
         std::string str;
         raw_string_ostream rawstr(str);
-        if (CallDirVFEdge* dirCall = dyn_cast<CallDirVFEdge>(edge))
+        if (CallDirCFEdge* dirCall = dyn_cast<CallDirCFEdge>(edge))
             rawstr << dirCall->getCallSiteId();
-        else if (RetDirVFEdge* dirRet = dyn_cast<RetDirVFEdge>(edge))
+        else if (RetDirCFEdge* dirRet = dyn_cast<RetDirCFEdge>(edge))
             rawstr << dirRet->getCallSiteId();
-        else if (CallIndVFEdge* indCall = dyn_cast<CallIndVFEdge>(edge))
-            rawstr << indCall->getCallSiteId();
-        else if (RetIndVFEdge* indRet = dyn_cast<RetIndVFEdge>(edge))
-            rawstr << indRet->getCallSiteId();
 
         return rawstr.str();
     }

@@ -66,8 +66,8 @@ typedef IndirectVFEdge IndirectSVFGEdge;
 typedef IntraIndVFEdge IntraIndSVFGEdge;
 typedef CallIndVFEdge CallIndSVFGEdge;
 typedef RetIndVFEdge RetIndSVFGEdge;
-typedef CallDirVFEdge CallDirSVFGEdge;
-typedef RetDirVFEdge RetDirSVFGEdge;
+typedef CallDirCFEdge CallDirSVFGEdge;
+typedef RetDirCFEdge RetDirSVFGEdge;
 typedef ThreadMHPIndVFEdge ThreadMHPIndSVFGEdge;
 
 /*!
@@ -152,12 +152,12 @@ public:
 
     /// Get a SVFG node
     inline SVFGNode* getSVFGNode(NodeID id) const {
-        return getGNode(id);
+        return getICFGNode(id);
     }
 
     /// Whether has the SVFGNode
     inline bool hasSVFGNode(NodeID id) const {
-        return hasGNode(id);
+        return hasICFGNode(id);
     }
 
     /// Whether we has a SVFG edge
@@ -192,38 +192,8 @@ public:
         return getSVFGNode(getDef(pagNode));
     }
 
-    // Given a svfg node, return its left hand side top level pointer (PAGnode)
-    const PAGNode* getLHSTopLevPtr(const SVFGNode* node) const;
-
     /// Perform statistics
     void performStat();
-
-    /// Get a SVFGNode
-    //@{
-    inline ActualParmSVFGNode* getActualParmSVFGNode(const PAGNode* aparm,llvm::CallSite cs) const {
-        PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
-        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter SVFG node can not be found??");
-        return it->second;
-    }
-
-    inline ActualRetSVFGNode* getActualRetSVFGNode(const PAGNode* aret) const {
-        PAGNodeToActualRetMapTy::const_iterator it = PAGNodeToActualRetMap.find(aret);
-        assert(it!=PAGNodeToActualRetMap.end() && "actual return SVFG node can not be found??");
-        return it->second;
-    }
-
-    inline FormalParmSVFGNode* getFormalParmSVFGNode(const PAGNode* fparm) const {
-        PAGNodeToFormalParmMapTy::const_iterator it = PAGNodeToFormalParmMap.find(fparm);
-        assert(it!=PAGNodeToFormalParmMap.end() && "formal parameter SVFG node can not be found??");
-        return it->second;
-    }
-
-    inline FormalRetSVFGNode* getFormalRetSVFGNode(const PAGNode* fret) const {
-        PAGNodeToFormalRetMapTy::const_iterator it = PAGNodeToFormalRetMap.find(fret);
-        assert(it!=PAGNodeToFormalRetMap.end() && "formal return SVFG node can not be found??");
-        return it->second;
-    }
-    //@}
 
     /// Has a SVFGNode
     //@{
@@ -272,30 +242,17 @@ public:
 protected:
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge) {
-        edge->getDstNode()->removeIncomingEdge(edge);
-        edge->getSrcNode()->removeOutgoingEdge(edge);
-        delete edge;
+        removeICFGEdge(edge);
     }
     /// Remove a SVFGNode
     inline void removeSVFGNode(SVFGNode* node) {
-        removeGNode(node);
+        removeICFGNode(node);
     }
 
     /// Add direct def-use edges for top level pointers
     //@{
     SVFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
-    SVFGEdge* addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    SVFGEdge* addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     //@}
-
-    /// sanitize Intra edges, verify that both nodes belong to the same function.
-    inline void checkIntraVFEdgeParents(SVFGNode *srcNode, SVFGNode *dstNode) {
-        const llvm::BasicBlock *srcBB = srcNode->getBB();
-        const llvm::BasicBlock *dstBB = dstNode->getBB();
-        if(srcBB != nullptr && dstBB != nullptr) {
-            assert(srcBB->getParent() == dstBB->getParent());
-        }
-    }
 
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
@@ -305,15 +262,6 @@ protected:
     SVFGEdge* addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
     //@}
 
-    /// Add inter VF edge from actual to formal parameters
-    inline SVFGEdge* addInterVFEdgeFromAPToFP(const ActualParmSVFGNode* src, const FormalParmSVFGNode* dst, CallSiteID csId) {
-        return addCallDirectVFEdge(src->getId(),dst->getId(),csId);
-    }
-    /// Add inter VF edge from callee return to callsite receive parameter
-    inline SVFGEdge* addInterVFEdgeFromFRToAR(const FormalRetSVFGNode* src, const ActualRetSVFGNode* dst, CallSiteID csId) {
-        return addRetDirectVFEdge(src->getId(),dst->getId(),csId);
-    }
-
     /// Add inter VF edge from callsite mu to function entry chi
     SVFGEdge* addInterIndirectVFCallEdge(const ActualINSVFGNode* src, const FormalINSVFGNode* dst,CallSiteID csId);
 
@@ -322,22 +270,6 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call site
     //@{
-    /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        const ActualParmSVFGNode* actualParam = getActualParmSVFGNode(cs_arg,cs);
-        const FormalParmSVFGNode* formalParam = getFormalParmSVFGNode(fun_arg);
-        SVFGEdge* edge = addInterVFEdgeFromAPToFP(actualParam, formalParam,csId);
-        if (edge != NULL)
-            edges.insert(edge);
-    }
-    /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        const FormalRetSVFGNode* formalRet = getFormalRetSVFGNode(fun_return);
-        const ActualRetSVFGNode* actualRet = getActualRetSVFGNode(cs_return);
-        SVFGEdge* edge = addInterVFEdgeFromFRToAR(formalRet, actualRet,csId);
-        if (edge != NULL)
-            edges.insert(edge);
-    }
     /// Connect actual-in and formal-in
     virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGEdge* edge = addInterIndirectVFCallEdge(actualIn, formalIn,csId);
@@ -354,22 +286,6 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        ActualParmSVFGNode* actualParam = getActualParmSVFGNode(cs_arg,cs);
-        FormalParmSVFGNode* formalParam = getFormalParmSVFGNode(fun_arg);
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::VFDirCall, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        FormalRetSVFGNode* formalRet = getFormalRetSVFGNode(fun_return);
-        ActualRetSVFGNode* actualRet = getActualRetSVFGNode(cs_return);
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::VFDirRet, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
-        edges.insert(edge);
-    }
-
     virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt) {
             SVFGEdge* edge = *outIt;
@@ -389,10 +305,7 @@ protected:
 
     /// Add SVFG edge
     inline bool addSVFGEdge(SVFGEdge* edge) {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        return true;
+        return addICFGEdge(edge);
     }
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
@@ -427,8 +340,6 @@ protected:
     }
     //@}
 
-    /// Create SVFG nodes for top level pointers
-    void addSVFGNodesForTopLevelPtrs();
     /// Create SVFG nodes for address-taken variables
     void addSVFGNodesForAddrTakenVars();
     /// Connect direct SVFG edges between two SVFG nodes (value-flow of top level pointers)
@@ -440,107 +351,9 @@ protected:
 
     /// Add SVFG node
     virtual inline void addSVFGNode(SVFGNode* node) {
-        addGNode(node->getId(),node);
+        addICFGNode(node);
     }
-    /// Add SVFG node for program statement
-    inline void addStmtSVFGNode(StmtSVFGNode* node) {
-        addSVFGNode(node);
-    }
-    /// Add Dummy SVFG node for null pointer definition
-    /// To be noted for black hole pointer it has already has address edge connected
-    inline void addNullPtrSVFGNode(const PAGNode* pagNode) {
-        NullPtrSVFGNode* sNode = new NullPtrSVFGNode(totalICFGNode++,pagNode);
-        addSVFGNode(sNode);
-        setDef(pagNode,sNode);
-    }
-    /// Add Address SVFG node
-    inline void addAddrSVFGNode(const AddrPE* addr) {
-        AddrSVFGNode* sNode = new AddrSVFGNode(totalICFGNode++,addr);
-        addStmtSVFGNode(sNode);
-        setDef(addr->getDstNode(),sNode);
-    }
-    /// Add Copy SVFG node
-    inline void addCopySVFGNode(const CopyPE* copy) {
-        CopySVFGNode* sNode = new CopySVFGNode(totalICFGNode++,copy);
-        addStmtSVFGNode(sNode);
-        setDef(copy->getDstNode(),sNode);
-    }
-    /// Add Gep SVFG node
-    inline void addGepSVFGNode(const GepPE* gep) {
-        GepSVFGNode* sNode = new GepSVFGNode(totalICFGNode++,gep);
-        addStmtSVFGNode(sNode);
-        setDef(gep->getDstNode(),sNode);
-    }
-    /// Add Load SVFG node
-    void addLoadSVFGNode(LoadPE* load) {
-        LoadSVFGNode* sNode = new LoadSVFGNode(totalICFGNode++,load);
-        addStmtSVFGNode(sNode);
-        setDef(load->getDstNode(),sNode);
-    }
-    /// Add Store SVFG node,
-    /// To be noted store does not create a new pointer, we do not set def for any PAG node
-    void addStoreSVFGNode(StorePE* store) {
-        StoreSVFGNode* sNode = new StoreSVFGNode(totalICFGNode++,store);
-        assert(storePEToICFGNodeMap.find(store)==storePEToICFGNodeMap.end() && "should not insert twice!");
-        storePEToICFGNodeMap[store] = sNode;
-        addStmtSVFGNode(sNode);
-        for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi) {
-            setDef((*pi)->getResVer(),sNode);
-        }
 
-        const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGStores.find(store) != globalPAGStores.end())
-            globalStore.insert(sNode);
-    }
-    /// Add actual parameter SVFG node
-    /// To be noted that multiple actual parameters may have same value (PAGNode)
-    /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right SVFGParmNode
-    inline void addActualParmSVFGNode(const PAGNode* aparm, llvm::CallSite cs) {
-        ActualParmSVFGNode* sNode = new ActualParmSVFGNode(totalICFGNode++,aparm,cs);
-        addSVFGNode(sNode);
-        PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
-        /// do not set def here, this node is not a variable definition
-    }
-    /// Add formal parameter SVFG node
-    inline void addFormalParmSVFGNode(const PAGNode* fparm, const llvm::Function* fun, CallPESet& callPEs) {
-        FormalParmSVFGNode* sNode = new FormalParmSVFGNode(totalICFGNode++,fparm,fun);
-        addSVFGNode(sNode);
-        for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
-                it!=eit; ++it)
-            sNode->addCallPE(*it);
-
-        setDef(fparm,sNode);
-        PAGNodeToFormalParmMap[fparm] = sNode;
-    }
-    /// Add callee Return SVFG node
-    /// To be noted that here we assume returns of a procedure have already been unified into one
-    /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetSVFG node same as handling actual parameters
-    inline void addFormalRetSVFGNode(const PAGNode* ret, const llvm::Function* fun, RetPESet& retPEs) {
-        FormalRetSVFGNode* sNode = new FormalRetSVFGNode(totalICFGNode++,ret,fun);
-        addSVFGNode(sNode);
-        for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
-                it!=eit; ++it)
-            sNode->addRetPE(*it);
-
-        PAGNodeToFormalRetMap[ret] = sNode;
-        /// do not set def here, this node is not a variable definition
-    }
-    /// Add callsite Receive SVFG node
-    inline void addActualRetSVFGNode(const PAGNode* ret,llvm::CallSite cs) {
-        ActualRetSVFGNode* sNode = new ActualRetSVFGNode(totalICFGNode++,ret,cs);
-        addSVFGNode(sNode);
-        setDef(ret,sNode);
-        PAGNodeToActualRetMap[ret] = sNode;
-    }
-    /// Add llvm PHI SVFG node
-    inline void addIntraPHISVFGNode(const PAGNode* phiResNode, PAG::PNodeBBPairList& oplist) {
-        IntraPHISVFGNode* sNode = new IntraPHISVFGNode(totalICFGNode++,phiResNode);
-        addSVFGNode(sNode);
-        u32_t pos = 0;
-        for(PAG::PNodeBBPairList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-            sNode->setOpVerAndBB(pos,it->first,it->second);
-        setDef(phiResNode,sNode);
-    }
     /// Add memory Function entry chi SVFG node
     inline void addFormalINSVFGNode(const MemSSA::ENTRYCHI* chi) {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(totalICFGNode++,chi);

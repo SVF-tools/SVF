@@ -86,7 +86,7 @@ protected:
     //@{
     virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         NodeID phiId = getDef(fun_arg);
-        SVFGEdge* edge = addCallDirectVFEdge(getDef(cs_arg), phiId, csId);
+        SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
         if (edge != NULL) {
             PHISVFGNode* phi = llvm::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, cs_arg);
@@ -96,7 +96,7 @@ protected:
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
         NodeID phiId = getDef(cs_ret);
-        SVFGEdge* edge = addRetDirectVFEdge(getDef(fun_ret), phiId, csId);
+        SVFGEdge* edge = addRetEdge(getDef(fun_ret), phiId, csId);
         if (edge != NULL) {
             PHISVFGNode* phi = llvm::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, fun_ret);
@@ -132,7 +132,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::VFDirCall, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::CallDirCF, csId);
         assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
         edges.insert(edge);
     }
@@ -140,7 +140,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::VFDirRet, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::RetDirCF, csId);
         assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }

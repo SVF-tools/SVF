@@ -155,9 +155,9 @@ void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
         SVFGNode* dstNode = outEdge->getDstNode();
         NodeID dstId = dstNode->getId();
         if (const CallDirSVFGEdge* callEdge = dyn_cast<CallDirSVFGEdge>(outEdge))
-            addCallDirectVFEdge(phiId, dstId, callEdge->getCallSiteId());
+            addCallEdge(phiId, dstId, callEdge->getCallSiteId());
         else if (const RetDirSVFGEdge* retEdge = dyn_cast<RetDirSVFGEdge>(outEdge))
-            addRetDirectVFEdge(phiId, dstId, retEdge->getCallSiteId());
+            addRetEdge(phiId, dstId, retEdge->getCallSiteId());
         else
             addIntraDirectVFEdge(phiId, dstId);
     }
@@ -169,7 +169,7 @@ void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
             ActualParmSVFGNode* ap = llvm::cast<ActualParmSVFGNode>((*it)->getSrcNode());
             addInterPHIOperands(phi, ap->getParam());
             // connect actual param's def node to phi node
-            addCallDirectVFEdge(getDef(ap->getParam()), phiId, getCallSiteID(ap->getCallSite(), fp->getFun()));
+            addCallEdge(getDef(ap->getParam()), phiId, getCallSiteID(ap->getCallSite(), fp->getFun()));
         }
     }
     else if (ActualRetSVFGNode* ar = dyn_cast<ActualRetSVFGNode>(svfgNode)) {
@@ -178,7 +178,7 @@ void SVFGOPT::replaceFParamARetWithPHI(PHISVFGNode* phi, SVFGNode* svfgNode)
             FormalRetSVFGNode* fr = llvm::cast<FormalRetSVFGNode>((*it)->getSrcNode());
             addInterPHIOperands(phi, fr->getRet());
             // connect formal return's def node to phi node
-            addRetDirectVFEdge(getDef(fr->getRet()), phiId, getCallSiteID(ar->getCallSite(), fr->getFun()));
+            addRetEdge(getDef(fr->getRet()), phiId, getCallSiteID(ar->getCallSite(), fr->getFun()));
         }
     }
 

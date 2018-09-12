@@ -71,11 +71,6 @@ void SVFG::buildSVFG(MemSSA* m) {
     mssa = m;
     pta = m->getPTA();
     stat->startClk();
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Top Level Node\n"));
-
-    stat->TLVFNodeStart();
-    addSVFGNodesForTopLevelPtrs();
-    stat->TLVFNodeEnd();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
 
@@ -97,150 +92,23 @@ void SVFG::buildSVFG(MemSSA* m) {
 
 }
 
-
-/*!
- * Create SVFG nodes for top level pointers
- */
-void SVFG::addSVFGNodesForTopLevelPtrs() {
-
-    PAG* pag = pta->getPAG();
-    // initialize dummy definition  null pointers in order to uniform the construction
-    // to be noted for black hole pointer it has already has address edge connected,
-    // and its definition will be set when processing addr PAG edge.
-    addNullPtrSVFGNode(pag->getPAGNode(pag->getNullPtr()));
-
-    // initialize address nodes
-    PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
-                addrs.end(); iter != eiter; ++iter) {
-        addAddrSVFGNode(cast<AddrPE>(*iter));
-    }
-
-    // initialize copy nodes
-    PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
-                copys.end(); iter != eiter; ++iter) {
-        CopyPE* copy = cast<CopyPE>(*iter);
-        if(!isPhiCopyEdge(copy))
-            addCopySVFGNode(copy);
-    }
-
-    // initialize gep nodes
-    PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
-                ngeps.end(); iter != eiter; ++iter) {
-        addGepSVFGNode(cast<NormalGepPE>(*iter));
-    }
-
-    PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
-                vgeps.end(); iter != eiter; ++iter) {
-        addGepSVFGNode(cast<VariantGepPE>(*iter));
-    }
-
-    // initialize load nodes
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
-                loads.end(); iter != eiter; ++iter) {
-        addLoadSVFGNode(cast<LoadPE>(*iter));
-    }
-
-    // initialize store nodes
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
-                stores.end(); iter != eiter; ++iter) {
-        addStoreSVFGNode(cast<StorePE>(*iter));
-    }
-
-    // initialize actual parameter nodes
-    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it) {
-        const Function* fun = getCallee(it->first);
-        fun = getDefFunForMultipleModule(fun);
-        /// for external function we do not create acutalParm SVFGNode
-        /// because we do not have a formal parameter to connect this actualParm
-        if(isExtCall(fun))
-            continue;
-
-        for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
-            const PAGNode* pagNode = *pit;
-            if (pagNode->isPointer())
-                addActualParmSVFGNode(pagNode,it->first);
-        }
-    }
-
-    // initialize actual return nodes (callsite return)
-    for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it) {
-        /// for external function we do not create acutalRet SVFGNode
-        /// they are in the formal of AddrSVFGNode if the external function returns an allocated memory
-        /// if fun has body, it may also exist in isExtCall, e.g., xmalloc() in bzip2, spec2000.
-        if(it->second->isPointer() == false || hasDef(it->second))
-            continue;
-
-        addActualRetSVFGNode(it->second,it->first);
-    }
-
-    // initialize formal parameter nodes
-    for(PAG::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it) {
-        const llvm::Function* func = it->first;
-        for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
-            const PAGNode* param = *pit;
-            if (param->isPointer() == false || hasBlackHoleConstObjAddrAsDef(param))
-                continue;
-
-            CallPESet callPEs;
-            if(param->hasIncomingEdges(PAGEdge::Call)) {
-                for(PAGEdge::PAGEdgeSetTy::const_iterator cit = param->getIncomingEdgesBegin(PAGEdge::Call),
-                        ecit = param->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit) {
-                    callPEs.insert(cast<CallPE>(*cit));
-                }
-            }
-            addFormalParmSVFGNode(param,func,callPEs);
-        }
-
-        if (func->getFunctionType()->isVarArg()) {
-            const PAGNode* varParam = pag->getPAGNode(pag->getVarargNode(func));
-            if (varParam->isPointer() && hasBlackHoleConstObjAddrAsDef(varParam) == false) {
-                CallPESet callPEs;
-                if (varParam->hasIncomingEdges(PAGEdge::Call)) {
-                    for(PAGEdge::PAGEdgeSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(PAGEdge::Call),
-                            ecit = varParam->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit) {
-                        callPEs.insert(cast<CallPE>(*cit));
-                    }
-                }
-                addFormalParmSVFGNode(varParam,func,callPEs);
-            }
-        }
-    }
-
-    // initialize formal return nodes (callee return)
-    for(PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it !=eit; ++it) {
-        const PAGNode* retNode = it->second;
-        if (retNode->isPointer() == false)
-            continue;
-
-        RetPESet retPEs;
-        if(retNode->hasOutgoingEdges(PAGEdge::Ret)) {
-            for(PAGEdge::PAGEdgeSetTy::const_iterator cit = retNode->getOutgoingEdgesBegin(PAGEdge::Ret),
-                    ecit = retNode->getOutgoingEdgesEnd(PAGEdge::Ret); cit!=ecit; ++cit) {
-                retPEs.insert(cast<RetPE>(*cit));
-            }
-        }
-        addFormalRetSVFGNode(retNode,it->first,retPEs);
-    }
-
-    // initialize llvm phi nodes (phi of top level pointers)
-    PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
-    for(PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit!=epit; ++pit) {
-        addIntraPHISVFGNode(pit->first,pit->second);
-    }
-
-}
-
 /*
  * Create SVFG nodes for address-taken variables
  */
 void SVFG::addSVFGNodesForAddrTakenVars() {
 
+    // set defs for address-taken vars defined at store statements
+    PAGEdge::PAGEdgeSetTy& stores = mssa->getPAG()->getEdgeSet(PAGEdge::Store);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+                stores.end(); iter != eiter; ++iter) {
+        StorePE* store = cast<StorePE>(*iter);
+        const StoreSVFGNode* sNode = getStoreICFGNode(store);
+        for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi)
+            setDef((*pi)->getResVer(),sNode);
+    }
+
+    /// set defs for address-taken vars defined at phi/chi/call
+    /// create corresponding def and use nodes for address-taken vars (a.k.a MRVers)
     /// initialize memory SSA phi nodes (phi of address-taken variables)
     for(MemSSA::BBToPhiSetMap::iterator it = mssa->getBBToPhiSetMap().begin(),
             eit = mssa->getBBToPhiSetMap().end(); it!=eit; ++it) {
@@ -311,8 +179,8 @@ void SVFG::connectDirectSVFGEdges() {
                     it!=eit; ++it) {
                 const Instruction* callInst = (*it)->getCallInst();
                 CallSite cs = analysisUtil::getLLVMCallSite(callInst);
-                const ActualParmSVFGNode* acutalParm = getActualParmSVFGNode((*it)->getSrcNode(),cs);
-                addInterVFEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
+                const ActualParmSVFGNode* acutalParm = getActualParmICFGNode((*it)->getSrcNode(),cs);
+                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
             }
         }
         else if(const FormalRetSVFGNode* calleeRet = dyn_cast<FormalRetSVFGNode>(node)) {
@@ -322,8 +190,8 @@ void SVFG::connectDirectSVFGEdges() {
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd();
                     it!=eit; ++it) {
-                const ActualRetSVFGNode* callsiteRev = getActualRetSVFGNode((*it)->getDstNode());
-                addInterVFEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
+                const ActualRetSVFGNode* callsiteRev = getActualRetICFGNode((*it)->getDstNode());
+                addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
             }
         }
         /// Do not process FormalRetSVFGNode, as they are connected by copy within callee
@@ -336,10 +204,9 @@ void SVFG::connectDirectSVFGEdges() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter) {
         TDForkPE* forkedge = cast<TDForkPE>(*iter);
-        addActualParmSVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        const ActualParmSVFGNode* acutalParm = getActualParmSVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        const FormalParmSVFGNode* formalParm = getFormalParmSVFGNode(forkedge->getDstNode());
-        addInterVFEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
+        const ActualParmSVFGNode* acutalParm = getActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
+        const FormalParmSVFGNode* formalParm = getFormalParmICFGNode(forkedge->getDstNode());
+        addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
     }
     /// add join edge
     PAGEdge::PAGEdgeSetTy& joins = getPAG()->getEdgeSet(PAGEdge::ThreadJoin);
@@ -347,8 +214,8 @@ void SVFG::connectDirectSVFGEdges() {
                 joins.end(); iter != eiter; ++iter) {
         TDJoinPE* joinedge = cast<TDJoinPE>(*iter);
         NodeID callsiteRev = getDef(joinedge->getDstNode());
-        const FormalRetSVFGNode* calleeRet = getFormalRetSVFGNode(joinedge->getSrcNode());
-        addRetDirectVFEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
+        const FormalRetSVFGNode* calleeRet = getFormalRetICFGNode(joinedge->getSrcNode());
+        addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
     }
 }
 
@@ -473,46 +340,14 @@ void SVFG::connectFromGlobalToProgEntry()
 SVFGEdge* SVFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, SVFGEdge::VFIntraDirect)) {
+    checkIntraEdgeParents(srcNode, dstNode);
+    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, SVFGEdge::IntraDirectVF)) {
         assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
     else {
         IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
         return (addSVFGEdge(directEdge) ? directEdge : NULL);
-    }
-}
-
-/*!
- * Add def-use call edges for top level pointers
- */
-SVFGEdge* SVFG::addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
-    SVFGNode* srcNode = getSVFGNode(srcId);
-    SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::VFDirCall,csId)) {
-        assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode,dstNode,csId);
-        return (addSVFGEdge(callEdge) ? callEdge : NULL);
-    }
-}
-
-/*!
- * Add def-use return edges for top level pointers
- */
-SVFGEdge* SVFG::addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
-    SVFGNode* srcNode = getSVFGNode(srcId);
-    SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::VFDirRet,csId)) {
-        assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode,dstNode,csId);
-        return (addSVFGEdge(retEdge) ? retEdge : NULL);
     }
 }
 
@@ -523,8 +358,8 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode,SVFGEdge::VFIntraIndirect)) {
+    checkIntraEdgeParents(srcNode, dstNode);
+    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode,SVFGEdge::IntraIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -541,7 +376,7 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
 SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::VFTheadMHPIndirect)) {
+    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -559,7 +394,7 @@ SVFGEdge* SVFG::addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::VFIndCall,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::CallIndVF,csId)) {
         assert(isa<CallIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<CallIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -577,7 +412,7 @@ SVFGEdge* SVFG::addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo&
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::VFIndRet,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::RetIndVF,csId)) {
         assert(isa<RetIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -691,41 +526,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llv
  */
 void SVFG::connectCallerAndCallee(CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges)
 {
+    ICFG::connectCallerAndCallee(cs,callee,edges);
+
     PAG * pag = PAG::getPAG();
     CallSiteID csId = getCallSiteID(cs, callee);
-    // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(callee)) {
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
-        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
-        PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++) {
-            const PAGNode *cs_arg = *csArgIt;
-            const PAGNode *fun_arg = *funArgIt;
-            if (fun_arg->isPointer() && cs_arg->isPointer())
-                connectAParamAndFParam(cs_arg, fun_arg, cs, csId, edges);
-        }
-        assert(funArgIt == funArgEit && "function has more arguments than call site");
-        if (callee->isVarArg()) {
-            NodeID varFunArg = pag->getVarargNode(callee);
-            const PAGNode* varFunArgNode = pag->getPAGNode(varFunArg);
-            if (varFunArgNode->isPointer()) {
-                for (; csArgIt != csArgEit; csArgIt++) {
-                    const PAGNode *cs_arg = *csArgIt;
-                    if (cs_arg->isPointer())
-                        connectAParamAndFParam(cs_arg, varFunArgNode, cs, csId, edges);
-                }
-            }
-        }
-    }
-
-    // connect actual return and formal return
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
-        const PAGNode* fun_return = pag->getFunRet(callee);
-        if (cs_return->isPointer() && fun_return->isPointer())
-            connectFRetAndARet(fun_return, cs_return, csId, edges);
-    }
 
     // connect actual in and formal in
     if (hasFuncEntryChi(callee) && hasCallSiteMu(cs)) {
@@ -759,35 +563,6 @@ void SVFG::connectCallerAndCallee(CallSite cs, const llvm::Function* callee, SVF
     }
 }
 
-/*!
- * Given a svfg node, return its left hand side top level pointer
- */
-const PAGNode* SVFG::getLHSTopLevPtr(const SVFGNode* node) const {
-
-    if(const AddrSVFGNode* addr = dyn_cast<AddrSVFGNode>(node))
-        return addr->getPAGDstNode();
-    else if(const CopySVFGNode* copy = dyn_cast<CopySVFGNode>(node))
-        return copy->getPAGDstNode();
-    else if(const GepSVFGNode* gep = dyn_cast<GepSVFGNode>(node))
-        return gep->getPAGDstNode();
-    else if(const LoadSVFGNode* load = dyn_cast<LoadSVFGNode>(node))
-        return load->getPAGDstNode();
-    else if(const PHISVFGNode* phi = dyn_cast<PHISVFGNode>(node))
-        return phi->getRes();
-    else if(const ActualParmSVFGNode* ap = dyn_cast<ActualParmSVFGNode>(node))
-        return ap->getParam();
-    else if(const FormalParmSVFGNode*fp = dyn_cast<FormalParmSVFGNode>(node))
-        return fp->getParam();
-    else if(const ActualRetSVFGNode* ar = dyn_cast<ActualRetSVFGNode>(node))
-        return ar->getRev();
-    else if(const FormalRetSVFGNode* fr = dyn_cast<FormalRetSVFGNode>(node))
-        return fr->getRet();
-    else if(const NullPtrSVFGNode* nullsvfg = dyn_cast<NullPtrSVFGNode>(node))
-        return nullsvfg->getPAGNode();
-    else
-        assert(false && "unexpected node kind!");
-    return NULL;
-}
 
 /*!
  * Whether this is an function entry SVFGNode (formal parameter, formal In)
