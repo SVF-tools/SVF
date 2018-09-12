@@ -36,7 +36,6 @@
 #include <llvm/IR/CallSite.h>
 
 class ProgSlice;
-class SVFGNode;
 /*!
  * Saber annotation
  */

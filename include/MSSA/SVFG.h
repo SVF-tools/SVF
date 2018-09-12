@@ -30,18 +30,50 @@
 #ifndef SVFG_H_
 #define SVFG_H_
 
-#include "MSSA/SVFGNode.h"
-#include "MSSA/SVFGEdge.h"
+#include "Util/ICFG.h"
 
 class PointerAnalysis;
 class SVFGStat;
+
+typedef ICFGEdge SVFGEdge;
+typedef ICFGNode SVFGNode;
+typedef ActualParmICFGNode ActualParmSVFGNode;
+typedef ActualRetICFGNode ActualRetSVFGNode;
+typedef FormalParmICFGNode FormalParmSVFGNode;
+typedef FormalRetICFGNode FormalRetSVFGNode;
+typedef ActualINICFGNode ActualINSVFGNode;
+typedef FormalINICFGNode FormalINSVFGNode;
+typedef ActualOUTICFGNode ActualOUTSVFGNode;
+typedef FormalOUTICFGNode FormalOUTSVFGNode;
+typedef NullPtrICFGNode NullPtrSVFGNode;
+typedef StmtICFGNode StmtSVFGNode;
+typedef AddrICFGNode AddrSVFGNode;
+typedef CopyICFGNode CopySVFGNode;
+typedef StoreICFGNode StoreSVFGNode;
+typedef LoadICFGNode LoadSVFGNode;
+typedef GepICFGNode GepSVFGNode;
+typedef PHIICFGNode PHISVFGNode;
+typedef IntraPHIICFGNode IntraPHISVFGNode;
+typedef InterPHIICFGNode InterPHISVFGNode;
+typedef MSSAPHIICFGNode MSSAPHISVFGNode;
+typedef IntraMSSAPHIICFGNode IntraMSSAPHISVFGNode;
+typedef InterMSSAPHIICFGNode InterMSSAPHISVFGNode;
+
+typedef DirectVFEdge DirectSVFGEdge;
+typedef IntraDirVFEdge IntraDirSVFGEdge;
+typedef IndirectVFEdge IndirectSVFGEdge;
+typedef IntraIndVFEdge IntraIndSVFGEdge;
+typedef CallIndVFEdge CallIndSVFGEdge;
+typedef RetIndVFEdge RetIndSVFGEdge;
+typedef CallDirVFEdge CallDirSVFGEdge;
+typedef RetDirVFEdge RetDirSVFGEdge;
+typedef ThreadMHPIndVFEdge ThreadMHPIndSVFGEdge;
 
 /*!
  * Sparse value flow graph
  * Each node stands for a definition, each edge stands for value flow relations
  */
-typedef GenericGraph<SVFGNode,SVFGEdge> GenericSVFGGraphTy;
-class SVFG : public GenericSVFGGraphTy {
+class SVFG : public ICFG {
     friend class SVFGBuilder;
     friend class SaberSVFGBuilder;
     friend class DDASVFGBuilder;
@@ -49,10 +81,7 @@ class SVFG : public GenericSVFGGraphTy {
     friend class RcSvfgBuilder;
 
 public:
-    /// SVFG kind
-    enum SVFGK {
-        ORIGSVFGK,OPTSVFGK
-    };
+    typedef ICFG::SVFGK SVFGK;
     typedef llvm::DenseMap<NodeID, SVFGNode *> SVFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef llvm::DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
@@ -70,8 +99,8 @@ public:
     typedef llvm::DenseMap<const llvm::Function*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef FormalParmSVFGNode::CallPESet CallPESet;
     typedef FormalRetSVFGNode::RetPESet RetPESet;
-    typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSetTy;
-    typedef SVFGEdge::SVFGEdgeSetTy::iterator SVFGNodeIter;
+    typedef SVFGEdge::ICFGEdgeSetTy SVFGEdgeSetTy;
+    typedef SVFGEdge::ICFGEdgeSetTy::iterator SVFGNodeIter;
     typedef SVFGNodeIDToNodeMapTy::iterator iterator;
     typedef SVFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef MemSSA::MUSet MUSet;
@@ -156,13 +185,13 @@ public:
 
     /// Whether we has a SVFG edge
     //@{
-    SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind);
-    SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind, CallSiteID csId);
-    SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::SVFGEdgeK kind);
+    SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind);
+    SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind, CallSiteID csId);
+    SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind);
     //@}
 
     /// Get a SVFG edge according to src and dst
-    SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::SVFGEdgeK kind);
+    SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::ICFGEdgeK kind);
 
     /// Get all inter value flow edges of a indirect call site
     void getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges);
@@ -299,7 +328,7 @@ protected:
             assert(srcBB->getParent() == dstBB->getParent());
         }
     }
-    
+
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
@@ -360,7 +389,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         ActualParmSVFGNode* actualParam = getActualParmSVFGNode(cs_arg,cs);
         FormalParmSVFGNode* formalParam = getFormalParmSVFGNode(fun_arg);
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::DirCall, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::VFDirCall, csId);
         assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
         edges.insert(edge);
     }
@@ -368,7 +397,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, SVFGEdgeSetTy& edges) {
         FormalRetSVFGNode* formalRet = getFormalRetSVFGNode(fun_return);
         ActualRetSVFGNode* actualRet = getActualRetSVFGNode(cs_return);
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::DirRet, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::VFDirRet, csId);
         assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }
@@ -634,13 +663,13 @@ namespace llvm {
  * GraphTraits specializations for SVFG to be used for generic graph algorithms.
  * Provide graph traits for traversing from a SVFG node using standard graph traversals.
  */
-template<> struct GraphTraits<SVFGNode*>: public GraphTraits<GenericNode<SVFGNode,SVFGEdge>*  > {
-};
-
-/// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
-template<>
-struct GraphTraits<Inverse<SVFGNode *> > : public GraphTraits<Inverse<GenericNode<SVFGNode,SVFGEdge>* > > {
-};
+//template<> struct GraphTraits<SVFGNode*>: public GraphTraits<GenericNode<SVFGNode,SVFGEdge>*  > {
+//};
+//
+///// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
+//template<>
+//struct GraphTraits<Inverse<SVFGNode *> > : public GraphTraits<Inverse<GenericNode<SVFGNode,SVFGEdge>* > > {
+//};
 
 template<> struct GraphTraits<SVFG*> : public GraphTraits<GenericGraph<SVFGNode,SVFGEdge>* > {
     typedef SVFGNode *NodeRef;

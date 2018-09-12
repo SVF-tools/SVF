@@ -39,7 +39,6 @@
 
 #include "MSSA/SVFG.h"
 #include "Util/WorkList.h"
-#include "MSSA/SVFGStat.h"
 
 /**
  * Optimised SVFG.
@@ -81,20 +80,7 @@ public:
         return g->getKind() == OPTSVFGK;
     }
 protected:
-    virtual inline void buildSVFG(MemSSA* m) {
-        SVFG::buildSVFG(m);
-
-        dump("SVFG_before_opt");
-
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("\tSVFG Optimisation\n"));
-
-        stat->sfvgOptStart();
-        handleInterValueFlow();
-
-        handleIntraValueFlow();
-        stat->sfvgOptEnd();
-
-    }
+    virtual void buildSVFG(MemSSA* m);
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
@@ -146,7 +132,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::DirCall, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::VFDirCall, csId);
         assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
         edges.insert(edge);
     }
@@ -154,7 +140,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::DirRet, csId);
+        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::VFDirRet, csId);
         assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }

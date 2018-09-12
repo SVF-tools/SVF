@@ -33,6 +33,7 @@
  */
 
 #include "MSSA/SVFGOPT.h"
+#include "MSSA/SVFGStat.h"
 #include "Util/AnalysisUtil.h"
 #include <llvm/Support/CommandLine.h>
 
@@ -47,6 +48,21 @@ static std::string KeepAllSelfCycle = "all";
 static std::string KeepContextSelfCycle = "context";
 static std::string KeepNoneSelfCycle = "none";
 
+
+void SVFGOPT::buildSVFG(MemSSA* m) {
+    SVFG::buildSVFG(m);
+
+    dump("SVFG_before_opt");
+
+    DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("\tSVFG Optimisation\n"));
+
+    stat->sfvgOptStart();
+    handleInterValueFlow();
+
+    handleIntraValueFlow();
+    stat->sfvgOptEnd();
+
+}
 /*!
  *
  */

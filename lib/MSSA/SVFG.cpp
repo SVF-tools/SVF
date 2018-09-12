@@ -539,7 +539,7 @@ SVFGEdge* SVFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
     checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode, SVFGEdge::IntraDirect)) {
+    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode, SVFGEdge::VFIntraDirect)) {
         assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
@@ -555,7 +555,7 @@ SVFGEdge* SVFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
 SVFGEdge* SVFG::addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::DirCall,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::VFDirCall,csId)) {
         assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
@@ -571,7 +571,7 @@ SVFGEdge* SVFG::addCallDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
 SVFGEdge* SVFG::addRetDirectVFEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::DirRet,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode, SVFGEdge::VFDirRet,csId)) {
         assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
@@ -589,7 +589,7 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
     checkIntraVFEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode,SVFGEdge::IntraIndirect)) {
+    if(SVFGEdge* edge = hasIntraSVFGEdge(srcNode,dstNode,SVFGEdge::VFIntraIndirect)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -606,7 +606,7 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
 SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirect)) {
+    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::VFTheadMHPIndirect)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -624,7 +624,7 @@ SVFGEdge* SVFG::addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::IndCall,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::VFIndCall,csId)) {
         assert(isa<CallIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<CallIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -642,7 +642,7 @@ SVFGEdge* SVFG::addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo&
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::IndRet,csId)) {
+    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::VFIndRet,csId)) {
         assert(isa<RetIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }

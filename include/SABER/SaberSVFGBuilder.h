@@ -34,7 +34,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/WorkList.h"
 
-class SVFGNode;
 class PAGNode;
 
 class SaberSVFGBuilder : public SVFGBuilder {

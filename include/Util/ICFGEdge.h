@@ -2,7 +2,7 @@
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013-2018>  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 /*
  * ICFGEdge.h
  *
- *  Created on: Nov 11, 2013
+ *  Created on: Sep 11, 2018
  *      Author: Yulei Sui
  */
 
@@ -48,6 +48,8 @@ public:
 		VFIntraDirect, VFIntraIndirect, VFDirCall, VFDirRet,
 		VFIndCall, VFIndRet, VFTheadMHPIndirect
     };
+
+    typedef ICFGEdgeK SVFGEdgeK;
 
 public:
     /// Constructor
@@ -91,7 +93,7 @@ public:
     }
     //@}
     typedef GenericNode<ICFGNode,ICFGEdge>::GEdgeSetTy ICFGEdgeSetTy;
-
+    typedef ICFGEdgeSetTy SVFGEdgeSetTy;
     /// Compute the unique edgeFlag value from edge kind and CallSiteID.
     static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs) {
         return (cs << EdgeKindMaskBits) | k;

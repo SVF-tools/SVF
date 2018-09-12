@@ -133,7 +133,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta) {
             /// for store, connect the RHS/LHS pointer to its def
             if(isa<StoreSVFGNode>(stmtNode)) {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
-                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirect);
+                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::VFIntraDirect);
                 assert(edge && "Edge not found!");
                 svfg->removeSVFGEdge(edge);
 
@@ -143,7 +143,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta) {
             }
             else if(isa<LoadSVFGNode>(stmtNode)) {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
-                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirect);
+                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::VFIntraDirect);
                 assert(edge && "Edge not found!");
                 svfg->removeSVFGEdge(edge);
 
