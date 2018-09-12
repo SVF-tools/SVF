@@ -69,6 +69,10 @@ static cl::list<std::string> PAGFunctions("dump-function-pags",
                                           cl::desc("Dump PAG for functions"),
                                           cl::CommaSeparated);
 
+static cl::list<std::string> SubPAGs("subpags",
+                                     cl::desc("SubPAGs to use during PAG construction"),
+                                     cl::CommaSeparated);
+
 static cl::opt<bool> PAGPrint("print-pag", cl::init(false),
                               cl::desc("Print PAG to command line"));
 
@@ -95,6 +99,7 @@ static cl::opt<bool> connectVCallOnCHA("vcall-cha", cl::init(false),
 
 CHGraph* PointerAnalysis::chgraph = NULL;
 PAG* PointerAnalysis::pag = NULL;
+std::vector<SubPAG *> subpags;
 
 /*!
  * Constructor
@@ -141,6 +146,9 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
         SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
         symTable->buildMemModel(svfModule);
+
+        // Build sub PAGs first to use them in PAG construction.
+        //if (!SubPAGs.empty())
 
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         if (!Graphtxt.getValue().empty()) {

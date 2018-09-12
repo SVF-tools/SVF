@@ -11,6 +11,9 @@
 #define SUBPAG_H_
 
 class SubPAG : public PAG {
+    // Nodes in the SubPAG which call edges should connect to.
+    // argNodes[0] is arg 0, argNodes[1] is arg 1, ...
+    std::vector<PAGNode *> argNodes;
 
 };
 
