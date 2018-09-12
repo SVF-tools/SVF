@@ -150,13 +150,6 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
             chgraph->buildCHG();
 
             typeSystem = new TypeSystem(pag);
-
-            /// initialise pta call graph
-            if(EnableThreadCallGraph)
-                ptaCallGraph = new ThreadCallGraph(svfModule);
-            else
-                ptaCallGraph = new PTACallGraph(svfModule);
-            callGraphSCCDetection();
         }
 
         // dump the PAG graph
@@ -167,6 +160,13 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         if (PAGPrint)
             pag->print();
     }
+
+    /// initialise pta call graph for every pointer analysis instance
+    if(EnableThreadCallGraph)
+        ptaCallGraph = new ThreadCallGraph(svfModule);
+    else
+        ptaCallGraph = new PTACallGraph(svfModule);
+    callGraphSCCDetection();
 
     svfMod = svfModule;
 }
