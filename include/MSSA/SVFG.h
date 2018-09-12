@@ -58,6 +58,7 @@ typedef InterPHIICFGNode InterPHISVFGNode;
 typedef MSSAPHIICFGNode MSSAPHISVFGNode;
 typedef IntraMSSAPHIICFGNode IntraMSSAPHISVFGNode;
 typedef InterMSSAPHIICFGNode InterMSSAPHISVFGNode;
+typedef MRICFGNode MRSVFGNode;
 
 typedef DirectVFEdge DirectSVFGEdge;
 typedef IntraDirVFEdge IntraDirSVFGEdge;

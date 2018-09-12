@@ -1,4 +1,4 @@
-//===- SCC.h -- SCC detection algorithm---------------------------------------//
+//===- ICFG.h ----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -34,7 +34,7 @@
 #include "Util/ICFGEdge.h"
 
 class PointerAnalysis;
-class SVFGStat;
+class ICFGStat;
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -104,7 +104,7 @@ protected:
     FunctionToFormalOUTsMapTy funToFormalOUTMap;
     StoreNodeSet globalStore;	///< set of global store SVFG nodes
     StorePEToICFGNodeMap storePEToICFGNodeMap;	///< map store inst to store ICFGNode
-    SVFGStat * stat;
+    ICFGStat * stat;
     SVFGK kind;
     MemSSA* mssa;
     PointerAnalysis* pta;
@@ -125,7 +125,7 @@ public:
     }
 
     /// Return statistics
-    inline SVFGStat* getStat() const {
+    inline ICFGStat* getStat() const {
         return stat;
     }
 
