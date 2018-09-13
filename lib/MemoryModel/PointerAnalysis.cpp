@@ -99,7 +99,7 @@ static cl::opt<bool> connectVCallOnCHA("vcall-cha", cl::init(false),
 
 CHGraph* PointerAnalysis::chgraph = NULL;
 PAG* PointerAnalysis::pag = NULL;
-std::vector<SubPAG *> subpags;
+std::map<std::string, SubPAG *> subpags;
 
 /*!
  * Constructor
@@ -151,9 +151,10 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         for (auto functionName = SubPAGNames.begin();
              functionName != SubPAGNames.end(); ++functionName) {
             PAGBuilderFromFile fileBuilder(*functionName, true, *functionName);
-            subpags.push_back(static_cast<SubPAG *>(fileBuilder.build()));
+            subpags[*functionName] = static_cast<SubPAG *>(fileBuilder.build());
         }
 
+        /*
         for (auto x = subpags.begin(); x != subpags.end(); ++x) {
             (*x)->dump("subpag");
 
@@ -164,6 +165,7 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
                 llvm::outs() << **ag << "--\n";
             }
         }
+        */
 
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         if (!Graphtxt.getValue().empty()) {
