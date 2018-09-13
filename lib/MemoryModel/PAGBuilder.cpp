@@ -1095,15 +1095,39 @@ PAG* PAGBuilderFromFile::build() {
                 ss >> nodeId;
                 ss >> nodetype;
                 outs() << "reading node :" << nodeId << "\n";
-                if (nodetype == "v")
+                if (nodetype == "v") {
                     pag->addDummyValNode(nodeId);
-                else if (nodetype == "o") {
+                } else if (nodetype == "o") {
                     pag->addDummyObjNode(nodeId);
                 }
                 else
                     assert(
                         false
                         && "format not support, pls specify node type");
+
+                if (subPAG && token_count == 3) {
+                    int argNo;
+                    ss >> argNo;
+                    std::vector<PAGNode *> &argNodes =
+                        static_cast<SubPAG *>(pag)->getArgNodes();
+                    if (argNodes.size() <= argNo) argNodes.resize(argNo + 1);
+                    outs() << argNo << " HI\n";
+                    argNodes.insert(argNodes.begin(),
+                                    pag->getPAGNode(nodeId));
+                    argNodes.insert(argNodes.begin() + argNo,
+                                    pag->getPAGNode(nodeId));
+                    outs() << "bye\n";
+                    /*
+                    llvm::outs() << "inserting pag node\n";
+                    for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
+                        llvm::outs() << "checking\n";
+                        llvm::outs() << **ag << ",,,,,\n";
+                    }
+                    */
+                } else if (!subPAG && token_count == 2) {
+                    int argNo;
+                    ss >> argNo;
+                }
             }
 
             // do not consider gep edge

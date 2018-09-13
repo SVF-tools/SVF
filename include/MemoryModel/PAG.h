@@ -91,6 +91,10 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
+    /// Clean up memory
+    void destroy();
+
+protected:
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL) {
         symInfo = SymbolTableInfo::Symbolnfo();
@@ -98,8 +102,6 @@ private:
         loadInstNum = 0;
     }
 
-    /// Clean up memory
-    void destroy();
 
 public:
     /// Return valid pointers

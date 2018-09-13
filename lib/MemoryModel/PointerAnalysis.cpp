@@ -69,9 +69,9 @@ static cl::list<std::string> PAGFunctions("dump-function-pags",
                                           cl::desc("Dump PAG for functions"),
                                           cl::CommaSeparated);
 
-static cl::list<std::string> SubPAGs("subpags",
-                                     cl::desc("SubPAGs to use during PAG construction"),
-                                     cl::CommaSeparated);
+static cl::list<std::string> SubPAGNames("subpags",
+                                         cl::desc("SubPAGs to use during PAG construction"),
+                                         cl::CommaSeparated);
 
 static cl::opt<bool> PAGPrint("print-pag", cl::init(false),
                               cl::desc("Print PAG to command line"));
@@ -148,11 +148,26 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         symTable->buildMemModel(svfModule);
 
         // Build sub PAGs first to use them in PAG construction.
-        //if (!SubPAGs.empty())
+        for (auto functionName = SubPAGNames.begin();
+             functionName != SubPAGNames.end(); ++functionName) {
+            PAGBuilderFromFile fileBuilder(*functionName, true, *functionName);
+            subpags.push_back(static_cast<SubPAG *>(fileBuilder.build()));
+        }
+
+        for (auto x = subpags.begin(); x != subpags.end(); ++x) {
+            (*x)->dump("subpag");
+
+            std::vector<PAGNode *> &argNodes = (*x)->getArgNodes();
+            llvm::outs() << "HI\n";
+            for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
+            llvm::outs() << "HI\n";
+                llvm::outs() << **ag << "--\n";
+            }
+        }
 
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         if (!Graphtxt.getValue().empty()) {
-            PAGBuilderFromFile fileBuilder(Graphtxt.getValue());
+            PAGBuilderFromFile fileBuilder(Graphtxt.getValue(), false);
             pag = fileBuilder.build();
 
         } else {

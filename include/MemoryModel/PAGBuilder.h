@@ -204,10 +204,16 @@ class PAGBuilderFromFile {
 private:
     PAG* pag;
     std::string file;
+    bool subPAG;
 public:
     /// Constructor
-    PAGBuilderFromFile(std::string f) :
-        pag(PAG::getPAG(true)), file(f) {
+    PAGBuilderFromFile(std::string f, bool subpag, std::string functionName = "") :
+        pag(PAG::getPAG(true)), file(f), subPAG(subpag) {
+        if (subpag) {
+            pag = new SubPAG(functionName);
+        } else {
+            pag = PAG::getPAG(true);
+        }
     }
     /// Destructor
     ~PAGBuilderFromFile() {
