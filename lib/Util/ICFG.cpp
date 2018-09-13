@@ -287,12 +287,12 @@ ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::
 ICFGEdge* ICFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallDirCF,csId)) {
+    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF,csId)) {
         assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
     else {
-        CallDirCFEdge* callEdge = new CallDirCFEdge(srcNode,dstNode,csId);
+        CallCFGEdge* callEdge = new CallCFGEdge(srcNode,dstNode,csId);
         return (addICFGEdge(callEdge) ? callEdge : NULL);
     }
 }
@@ -303,12 +303,12 @@ ICFGEdge* ICFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
 ICFGEdge* ICFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
-    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetDirCF,csId)) {
+    if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF,csId)) {
         assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
         return NULL;
     }
     else {
-        RetDirCFEdge* retEdge = new RetDirCFEdge(srcNode,dstNode,csId);
+        RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode,csId);
         return (addICFGEdge(retEdge) ? retEdge : NULL);
     }
 }
@@ -405,9 +405,6 @@ const llvm::Function* ICFG::isFunEntryICFGNode(const ICFGNode* node) const {
     else if(const InterPHIICFGNode* phi = dyn_cast<InterPHIICFGNode>(node)) {
         if(phi->isFormalParmPHI())
             return phi->getFun();
-    }
-    else if(const FormalINICFGNode* fi = dyn_cast<FormalINICFGNode>(node)) {
-        return fi->getFun();
     }
     return NULL;
 }
@@ -558,9 +555,6 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
             }
             rawstr <<  "";
         }
-        else if(isa<MSSAPHIICFGNode>(node)) {
-            rawstr <<  "color=black";
-        }
         else if(isa<PHIICFGNode>(node)) {
             rawstr <<  "color=black";
         }
@@ -604,9 +598,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
     static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ICFG *pag) {
         ICFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-		if (isa<CallDirCFEdge>(edge))
+		if (isa<CallCFGEdge>(edge))
 			return "style=solid,color=red";
-		else if (isa<RetDirCFEdge>(edge))
+		else if (isa<RetCFGEdge>(edge))
 			return "style=solid,color=blue";
 		else
 			return "style=solid";
@@ -620,9 +614,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 
         std::string str;
         raw_string_ostream rawstr(str);
-        if (CallDirCFEdge* dirCall = dyn_cast<CallDirCFEdge>(edge))
+        if (CallCFGEdge* dirCall = dyn_cast<CallCFGEdge>(edge))
             rawstr << dirCall->getCallSiteId();
-        else if (RetDirCFEdge* dirRet = dyn_cast<RetDirCFEdge>(edge))
+        else if (RetCFGEdge* dirRet = dyn_cast<RetCFGEdge>(edge))
             rawstr << dirRet->getCallSiteId();
 
         return rawstr.str();

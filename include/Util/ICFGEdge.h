@@ -31,8 +31,6 @@
 #define ICFGEdge_H_
 
 
-#include "MSSA/MemSSA.h"
-
 class ICFGNode;
 
 /*!
@@ -42,14 +40,21 @@ typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
 class ICFGEdge : public GenericICFGEdgeTy {
 
 public:
-    /// eight kinds of ICFG edge
+    /// ten types of ICFG edge
 	/// three types of control-flow edges
-	/// five types of value-flow edges
-    enum ICFGEdgeK {
-    	IntraCF, CallDirCF, RetDirCF,
-		IntraDirectVF, IntraIndirectVF,
-		CallIndVF, RetIndVF, TheadMHPIndirectVF
-    };
+	/// seven types of value-flow edges
+	enum ICFGEdgeK {
+		IntraCF,
+		CallCF,
+		RetCF,
+		IntraDirectVF,
+		IntraIndirectVF,
+		CallDirVF,
+		RetDirVF,
+		CallIndVF,
+		RetIndVF,
+		TheadMHPIndirectVF
+	};
 
     typedef ICFGEdgeK SVFGEdgeK;
 
@@ -63,23 +68,32 @@ public:
 
     /// Get methods of the components
     //@{
+    inline bool isCFGEdge() const {
+        return getEdgeKind() == IntraCF || getEdgeKind() == CallCF || getEdgeKind() == RetCF;
+    }
+    inline bool isCallCFGEdge() const {
+        return getEdgeKind() == CallCF;
+    }
+    inline bool isRetCFGEdge() const {
+        return getEdgeKind() == RetCF;
+    }
     inline bool isDirectVFGEdge() const {
-        return getEdgeKind() == IntraDirectVF || getEdgeKind() == CallDirCF || getEdgeKind() == RetDirCF;
+        return getEdgeKind() == IntraDirectVF || getEdgeKind() == CallDirVF || getEdgeKind() == RetDirVF;
     }
     inline bool isIndirectVFGEdge() const {
         return getEdgeKind() == IntraIndirectVF || getEdgeKind() == CallIndVF || getEdgeKind() == RetIndVF || getEdgeKind() == TheadMHPIndirectVF;
     }
     inline bool isCallVFGEdge() const {
-        return getEdgeKind() == CallDirCF || getEdgeKind() == CallIndVF;
+        return getEdgeKind() == CallDirVF || getEdgeKind() == CallIndVF;
     }
     inline bool isRetVFGEdge() const {
-        return getEdgeKind() == RetDirCF || getEdgeKind() == RetIndVF;
+        return getEdgeKind() == RetDirVF || getEdgeKind() == RetIndVF;
     }
     inline bool isCallDirectVFGEdge() const {
-        return getEdgeKind() == CallDirCF;
+        return getEdgeKind() == CallDirVF;
     }
     inline bool isRetDirectVFGEdge() const {
-        return getEdgeKind() == RetDirCF;
+        return getEdgeKind() == RetDirVF;
     }
     inline bool isCallIndirectVFGEdge() const {
         return getEdgeKind() == CallIndVF;
@@ -103,107 +117,42 @@ public:
 };
 
 
-
 /*!
- * SVFG edge representing direct value-flows
+ * Intra ICFG edge representing control-flows between basic blocks within a function
  */
-class DirectVFEdge : public ICFGEdge {
+class IntraCFGEdge : public ICFGEdge {
 
 public:
     /// Constructor
-	DirectVFEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k): ICFGEdge(s,d,k) {
+	IntraCFGEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k): ICFGEdge(s,d,k) {
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const DirectVFEdge *) {
+    static inline bool classof(const IntraCFGEdge *) {
         return true;
     }
     static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == IntraDirectVF  ||
-               edge->getEdgeKind() == CallDirCF ||
-               edge->getEdgeKind() == RetDirCF;
+        return edge->getEdgeKind() == IntraCF;
     }
     static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == IntraDirectVF  ||
-               edge->getEdgeKind() == CallDirCF ||
-               edge->getEdgeKind() == RetDirCF;
+        return edge->getEdgeKind() == IntraCF;
     }
     //@}
 };
 
 
-/*!
- * Intra SVFG edge representing direct intra-procedural value-flows
- */
-class IntraDirVFEdge : public DirectVFEdge {
-
-public:
-    /// Constructor
-	IntraDirVFEdge(ICFGNode* s, ICFGNode* d): DirectVFEdge(s,d,IntraDirectVF) {
-    }
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const IntraDirVFEdge*) {
-        return true;
-    }
-    static inline bool classof(const DirectVFEdge *edge) {
-        return edge->getEdgeKind() == IntraDirectVF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == IntraDirectVF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == IntraDirectVF;
-    }
-    //@}
-};
-
 
 /*!
- * SVFG call edge representing direct value-flows from a caller to its callee at a callsite
+ * Call ICFG edge representing parameter passing/return from a caller to a callee
  */
-class CallDirCFEdge : public DirectVFEdge {
+class CallCFGEdge : public ICFGEdge {
 
 private:
     CallSiteID csId;
 public:
     /// Constructor
-    CallDirCFEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        DirectVFEdge(s,d,makeEdgeFlagWithInvokeID(CallDirCF,id)),csId(id) {
-    }
-    /// Return callsite ID
-    inline CallSiteID getCallSiteId() const {
-        return csId;
-    }
-
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const CallDirCFEdge *) {
-        return true;
-    }
-    static inline bool classof(const DirectVFEdge *edge) {
-        return edge->getEdgeKind() == CallDirCF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == CallDirCF ;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == CallDirCF ;
-    }
-    //@}
-};
-
-/*!
- * SVFG return edge connecting direct value-flows from a callee to its caller at a callsite
- */
-class RetDirCFEdge : public DirectVFEdge {
-
-private:
-    CallSiteID csId;
-public:
-    /// Constructor
-    RetDirCFEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        DirectVFEdge(s,d,makeEdgeFlagWithInvokeID(RetDirCF,id)),csId(id) {
+    CallCFGEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
+        ICFGEdge(s,d,makeEdgeFlagWithInvokeID(CallCF,id)),csId(id) {
     }
     /// Return callsite ID
     inline CallSiteID getCallSiteId() const {
@@ -211,182 +160,47 @@ public:
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const RetDirCFEdge *) {
+    static inline bool classof(const CallCFGEdge *) {
         return true;
     }
-    static inline bool classof(const DirectVFEdge *edge) {
-        return edge->getEdgeKind() == RetDirCF;
-    }
     static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == RetDirCF;
+        return edge->getEdgeKind() == CallCF;
     }
     static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == RetDirCF;
+        return edge->getEdgeKind() == CallCF;
     }
     //@}
 };
 
 /*!
- * SVFG edge representing indirect value-flows from a caller to its callee at a callsite
+ * Return ICFG edge representing parameter/return passing from a callee to a caller
  */
-class IndirectVFEdge : public ICFGEdge {
+class RetCFGEdge : public ICFGEdge {
 
-public:
-    typedef std::set<const MRVer*> MRVerSet;
 private:
-    MRVerSet mrs;
-    PointsTo cpts;
+    CallSiteID csId;
 public:
     /// Constructor
-    IndirectVFEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k): ICFGEdge(s,d,k) {
+    RetCFGEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
+        ICFGEdge(s,d,makeEdgeFlagWithInvokeID(RetCF,id)),csId(id) {
     }
-    /// Handle memory region
-    //@{
-    inline bool addPointsTo(const PointsTo& c) {
-        return (cpts |= c);
+    /// Return callsite ID
+    inline CallSiteID getCallSiteId() const {
+        return csId;
     }
-    inline const PointsTo& getPointsTo() const {
-        return cpts;
-    }
-
-    inline MRVerSet& getMRVer() {
-        return mrs;
-    }
-    inline bool addMrVer(const MRVer* mr) {
-        // collect memory regions' pts to edge;
-        cpts |= mr->getMR()->getPointsTo();
-        return mrs.insert(mr).second;
-    }
-    //@}
-
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IndirectVFEdge *) {
+    static inline bool classof(const RetCFGEdge *) {
         return true;
     }
     static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == IntraIndirectVF  ||
-               edge->getEdgeKind() == CallIndVF ||
-               edge->getEdgeKind() == RetIndVF ||
-               edge->getEdgeKind() == TheadMHPIndirectVF;
+        return edge->getEdgeKind() == RetCF;
     }
     static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == IntraIndirectVF  ||
-               edge->getEdgeKind() == CallIndVF ||
-               edge->getEdgeKind() == RetIndVF ||
-               edge->getEdgeKind() == TheadMHPIndirectVF;
+        return edge->getEdgeKind() == RetCF;
     }
     //@}
 };
 
-/*!
- * Intra SVFG edge representing indirect intra-procedural value-flows
- */
-class IntraIndVFEdge : public IndirectVFEdge {
-
-public:
-	IntraIndVFEdge(ICFGNode* s, ICFGNode* d): IndirectVFEdge(s,d,IntraIndirectVF) {
-    }
-    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const IntraIndVFEdge*) {
-        return true;
-    }
-    static inline bool classof(const IndirectVFEdge *edge) {
-        return edge->getEdgeKind() == IntraIndirectVF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == IntraIndirectVF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == IntraIndirectVF;
-    }
-    //@}
-};
-
-/*!
- * SVFG call edge representing indirect value-flows from a caller to its callee at a callsite
- */
-class CallIndVFEdge : public IndirectVFEdge {
-
-private:
-    CallSiteID csId;
-public:
-    CallIndVFEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        IndirectVFEdge(s,d,makeEdgeFlagWithInvokeID(CallIndVF,id)),csId(id) {
-    }
-    inline CallSiteID getCallSiteId() const {
-        return csId;
-    }
-    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CallIndVFEdge *) {
-        return true;
-    }
-    static inline bool classof(const IndirectVFEdge *edge) {
-        return edge->getEdgeKind() == CallIndVF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == CallIndVF ;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == CallIndVF ;
-    }
-    //@}
-};
-
-/*!
- * SVFG return edge representing direct value-flows from a callee to its caller at a callsite
- */
-class RetIndVFEdge : public IndirectVFEdge {
-
-private:
-    CallSiteID csId;
-public:
-    RetIndVFEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        IndirectVFEdge(s,d,makeEdgeFlagWithInvokeID(RetIndVF,id)),csId(id) {
-    }
-    inline CallSiteID getCallSiteId() const {
-        return csId;
-    }
-    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const RetIndVFEdge *) {
-        return true;
-    }
-    static inline bool classof(const IndirectVFEdge *edge) {
-        return edge->getEdgeKind() == RetIndVF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == RetIndVF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == RetIndVF;
-    }
-    //@}
-};
-
-
-/*!
- * MHP SVFG edge representing indirect value-flows between
- * two memory access may-happen-in-parallel in multithreaded program
- */
-class ThreadMHPIndVFEdge : public IndirectVFEdge {
-
-public:
-	ThreadMHPIndVFEdge(ICFGNode* s, ICFGNode* d): IndirectVFEdge(s,d,TheadMHPIndirectVF) {
-    }
-    //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const ThreadMHPIndVFEdge*) {
-        return true;
-    }
-    static inline bool classof(const IndirectVFEdge *edge) {
-        return edge->getEdgeKind() == TheadMHPIndirectVF;
-    }
-    static inline bool classof(const ICFGEdge *edge) {
-        return edge->getEdgeKind() == TheadMHPIndirectVF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge) {
-        return edge->getEdgeKind() == TheadMHPIndirectVF;
-    }
-    //@}
-};
 
 #endif /* ICFGEdge_H_ */

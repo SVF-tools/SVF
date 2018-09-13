@@ -235,25 +235,6 @@ protected:
     }
     //@}
 
-    /// Get inter value flow edges between indirect call site and callee.
-    //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        ActualParmICFGNode* actualParam = getActualParmICFGNode(cs_arg,cs);
-        FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
-        ICFGEdge* edge = hasInterICFGEdge(actualParam, formalParam, ICFGEdge::CallDirCF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        FormalRetICFGNode* formalRet = getFormalRetICFGNode(fun_return);
-        ActualRetICFGNode* actualRet = getActualRetICFGNode(cs_return);
-        ICFGEdge* edge = hasInterICFGEdge(formalRet, actualRet, ICFGEdge::RetDirCF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
-        edges.insert(edge);
-    }
-    //@}
-
     /// Add ICFG edge
     inline bool addICFGEdge(ICFGEdge* edge) {
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);

@@ -31,6 +31,7 @@
 #define SVFG_H_
 
 #include "Util/ICFG.h"
+#include "MSSA/SVFGNode.h"
 
 class PointerAnalysis;
 class SVFGStat;
@@ -41,10 +42,7 @@ typedef ActualParmICFGNode ActualParmSVFGNode;
 typedef ActualRetICFGNode ActualRetSVFGNode;
 typedef FormalParmICFGNode FormalParmSVFGNode;
 typedef FormalRetICFGNode FormalRetSVFGNode;
-typedef ActualINICFGNode ActualINSVFGNode;
-typedef FormalINICFGNode FormalINSVFGNode;
-typedef ActualOUTICFGNode ActualOUTSVFGNode;
-typedef FormalOUTICFGNode FormalOUTSVFGNode;
+
 typedef NullPtrICFGNode NullPtrSVFGNode;
 typedef StmtICFGNode StmtSVFGNode;
 typedef AddrICFGNode AddrSVFGNode;
@@ -55,20 +53,7 @@ typedef GepICFGNode GepSVFGNode;
 typedef PHIICFGNode PHISVFGNode;
 typedef IntraPHIICFGNode IntraPHISVFGNode;
 typedef InterPHIICFGNode InterPHISVFGNode;
-typedef MSSAPHIICFGNode MSSAPHISVFGNode;
-typedef IntraMSSAPHIICFGNode IntraMSSAPHISVFGNode;
-typedef InterMSSAPHIICFGNode InterMSSAPHISVFGNode;
-typedef MRICFGNode MRSVFGNode;
 
-typedef DirectVFEdge DirectSVFGEdge;
-typedef IntraDirVFEdge IntraDirSVFGEdge;
-typedef IndirectVFEdge IndirectSVFGEdge;
-typedef IntraIndVFEdge IntraIndSVFGEdge;
-typedef CallIndVFEdge CallIndSVFGEdge;
-typedef RetIndVFEdge RetIndSVFGEdge;
-typedef CallDirCFEdge CallDirSVFGEdge;
-typedef RetDirCFEdge RetDirSVFGEdge;
-typedef ThreadMHPIndVFEdge ThreadMHPIndSVFGEdge;
 
 /*!
  * Sparse value flow graph
@@ -162,21 +147,21 @@ public:
 
     /// Whether we has a SVFG edge
     //@{
-    inline SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind){
-    	return hasIntraICFGEdge(src,dst,kind);
-    }
-    inline SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind, CallSiteID csId){
-    	return hasInterICFGEdge(src,dst,kind,csId);
-    }
-    inline SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind){
-    	return hasThreadICFGEdge(src,dst,kind);
-    }
+	inline SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
+		return hasIntraICFGEdge(src, dst, kind);
+	}
+	inline SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind, CallSiteID csId) {
+		return hasInterICFGEdge(src, dst, kind, csId);
+	}
+	inline SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
+		return hasThreadICFGEdge(src, dst, kind);
+	}
     //@}
 
     /// Get a SVFG edge according to src and dst
-    inline SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::ICFGEdgeK kind){
-    	return getICFGEdge(src,dst,kind);
-    }
+	inline SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
+		return getICFGEdge(src, dst, kind);
+	}
 
     /// Get all inter value flow edges of a indirect call site
     void getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges);
@@ -252,6 +237,8 @@ protected:
     /// Add direct def-use edges for top level pointers
     //@{
     SVFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
+    SVFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    SVFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     //@}
 
     /// Add indirect def-use edges of a memory region between two statements,
@@ -286,6 +273,22 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
+        SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
+        SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
+        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
+        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
+        edges.insert(edge);
+    }
+
+    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
+        SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
+        SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
+        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::RetDirVF, csId);
+        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
+        edges.insert(edge);
+    }
+
     virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt) {
             SVFGEdge* edge = *outIt;

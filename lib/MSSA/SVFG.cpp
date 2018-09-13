@@ -371,6 +371,38 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
 }
 
 /*!
+ * Add interprocedural call edges for top level pointers
+ */
+SVFGEdge* SVFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
+	SVFGNode* srcNode = getICFGNode(srcId);
+	SVFGNode* dstNode = getICFGNode(dstId);
+    if(SVFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallDirVF,csId)) {
+        assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
+        return NULL;
+    }
+    else {
+        CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode,dstNode,csId);
+        return (addICFGEdge(callEdge) ? callEdge : NULL);
+    }
+}
+
+/*!
+ * Add interprocedural return edges for top level pointers
+ */
+SVFGEdge* SVFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
+	SVFGNode* srcNode = getICFGNode(srcId);
+	SVFGNode* dstNode = getICFGNode(dstId);
+    if(SVFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetDirVF,csId)) {
+        assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
+        return NULL;
+    }
+    else {
+        RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode,dstNode,csId);
+        return (addICFGEdge(retEdge) ? retEdge : NULL);
+    }
+}
+
+/*!
  * Add def-use edges of a memory region between two may-happen-in-parallel statements for multithreaded program
  */
 SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {

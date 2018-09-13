@@ -127,42 +127,6 @@ protected:
     }
     //@}
 
-    /// Get inter value flow edges between indirect call site and callee.
-    //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
-        SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::CallDirCF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
-        SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::RetDirCF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
-        SVFGNode* defNode = getSVFGNode(getActualINDef(actualIn->getId()));
-        for (SVFGNode::const_iterator outIt = defNode->OutEdgeBegin(), outEit = defNode->OutEdgeEnd(); outIt != outEit; ++outIt) {
-            SVFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getBB()->getParent() == callee)
-                edges.insert(edge);
-        }
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
-        for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt) {
-            SVFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getBB()->getParent() == callee)
-                edges.insert(edge);
-        }
-    }
-    //@}
-
     /// Get def-site of actual-in/formal-out.
     //@{
     inline NodeID getActualINDef(NodeID ai) const {
