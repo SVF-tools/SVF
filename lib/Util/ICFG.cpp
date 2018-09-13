@@ -46,7 +46,8 @@ ICFG::ICFG(): totalICFGNode(0),pta(NULL) {
 	stat = new ICFGStat();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
-	addICFGNodesForTopLevelPtrs();
+	addICFGNodes();
+	//addICFGEdges();
 }
 
 /*!
@@ -69,11 +70,37 @@ void ICFG::buildICFG(PointerAnalysis* _pta) {
 	pta = _pta;
 }
 
+/*!
+ * Create ICFG edges
+ */
+
+void ICFG::addICFGEdges(){
+
+    SVFModule svfModule = pta->getModule();
+    for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
+        const Function *fun = *iter;
+        if (analysisUtil::isExtCall(fun))
+            continue;
+
+        for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit) {
+            const BasicBlock* bb = &(*bit);
+            for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
+                const llvm::Instruction* inst = &(*it);
+                PAG::PAGEdgeList& pagEdgeList = pta->getPAG()->getInstPAGEdgeList(inst);
+                for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                        ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+                    const PAGEdge* inst = *bit;
+                }
+            }
+        }
+    }
+}
+
 
 /*!
  * Create ICFG nodes for top level pointers
  */
-void ICFG::addICFGNodesForTopLevelPtrs() {
+void ICFG::addICFGNodes() {
 
     PAG* pag = PAG::getPAG();
     // initialize dummy definition  null pointers in order to uniform the construction

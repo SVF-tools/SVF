@@ -265,8 +265,11 @@ protected:
     }
     //@}
 
-    /// Create ICFG nodes for top level pointers
-    void addICFGNodesForTopLevelPtrs();
+    /// Create ICFG nodes
+    void addICFGNodes();
+
+    /// Create edges between ICFG nodes
+    void addICFGEdges();
 
 
     inline bool isPhiCopyEdge(const CopyPE* copy) const {
