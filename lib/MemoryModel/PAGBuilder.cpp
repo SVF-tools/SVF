@@ -41,11 +41,27 @@ using namespace llvm;
 using namespace std;
 using namespace analysisUtil;
 
-static llvm::cl::list<std::string> SubPAGNames("subpags",
-                                               llvm::cl::desc("SubPAGs to use during PAG construction"),
-                                               llvm::cl::CommaSeparated);
+static llvm::cl::list<std::string> SubPAGArgs("subpags",
+                                              llvm::cl::desc("SubPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
+                                              llvm::cl::CommaSeparated);
 
 std::map<std::string, SubPAG *> subpags;
+
+static std::vector<std::pair<std::string, std::string>> parseSubPAGs(void) {
+    std::vector<std::pair<std::string, std::string>> parsedSubPAGs;
+    for (auto arg = SubPAGArgs.begin(); arg != SubPAGArgs.end(); ++arg) {
+        std::stringstream ss(*arg);
+        std::string functionName;
+        getline(ss, functionName, '@');
+        std::string path;
+        getline(ss, path);
+        parsedSubPAGs.push_back(
+            std::pair<std::string, std::string>(functionName, path));
+        llvm::outs() << "=" << path << "=\n";
+    }
+
+    return parsedSubPAGs;
+}
 
 /*!
  * Start building PAG here
@@ -53,26 +69,30 @@ std::map<std::string, SubPAG *> subpags;
 PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
 
+    std::vector<std::pair<std::string, std::string>> parsedSubPAGs
+        = parseSubPAGs();
+    for (auto pa = parsedSubPAGs.begin(); pa != parsedSubPAGs.end(); ++pa) {
+        llvm::outs() << "fname: " << pa->first << " path: " << pa->second << "\n";
+    }
+
     // Build sub PAGs first to use them in PAG construction.
-    for (auto functionName = SubPAGNames.begin();
-         functionName != SubPAGNames.end(); ++functionName) {
-        PAGBuilderFromFile fileBuilder(*functionName, true, *functionName);
-        subpags[*functionName] =
+    for (auto subpagPair= parsedSubPAGs.begin();
+         subpagPair != parsedSubPAGs.end(); ++subpagPair) {
+        llvm::outs() << "NEXT!\n";
+        llvm::outs() << "fname: " << subpagPair->first << " path: " << subpagPair->second << "\n";
+        std::string functionName = subpagPair->first;
+        std::string path = subpagPair->second;
+
+        PAGBuilderFromFile fileBuilder(path, true, functionName);
+        subpags[functionName] =
             static_cast<SubPAG *>(fileBuilder.build());
 
         subpags["swap"]->dump("newsubpag");
-        /*
-        for (auto x = subpags.begin(); x != subpags.end(); ++x) {
-            (*x)->dump("subpag");
-
-            std::vector<PAGNode *> &argNodes = (*x)->getArgNodes();
-            llvm::outs() << "HI\n";
-            for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
-            llvm::outs() << "HI\n";
-                llvm::outs() << **ag << "--\n";
-            }
+        std::vector<PAGNode *> &argNodes = subpags["swap"]->getArgNodes();
+        llvm::outs() << argNodes.size() << " SIZE";
+        for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
+            llvm::outs() << **ag << "--\n";
         }
-        */
     }
 
     /// initial external library information
