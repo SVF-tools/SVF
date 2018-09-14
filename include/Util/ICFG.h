@@ -50,6 +50,7 @@ public:
     typedef llvm::DenseMap<const PAGNode*, ActualRetICFGNode *> PAGNodeToActualRetMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalParmICFGNode *> PAGNodeToFormalParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalRetICFGNode *> PAGNodeToFormalRetMapTy;
+    typedef std::map<const PAGEdge*,const StmtICFGNode*> PAGEdgeToStmtICFGNodeMapTy;
     typedef FormalParmICFGNode::CallPESet CallPESet;
     typedef FormalRetICFGNode::RetPESet RetPESet;
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
@@ -59,7 +60,6 @@ public:
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<StoreICFGNode*> StoreNodeSet;
-    typedef std::map<const StorePE*,const StoreICFGNode*> StorePEToICFGNodeMap;
 
 protected:
     NodeID totalICFGNode;
@@ -68,8 +68,8 @@ protected:
     PAGNodeToActualRetMapTy PAGNodeToActualRetMap;
     PAGNodeToFormalParmMapTy PAGNodeToFormalParmMap;
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap;
-    StoreNodeSet globalStore;	///< set of global store SVFG nodes
-    StorePEToICFGNodeMap storePEToICFGNodeMap;	///< map store inst to store ICFGNode
+    PAGEdgeToStmtICFGNodeMapTy PAGEdgeToStmtICFGNodeMap;	///< map a PAGEdge to its StmtICFGNode
+    StoreNodeSet globalStore;	///< set of global store ICFG nodes
     ICFGStat * stat;
     PointerAnalysis* pta;
     PAG* pag;
@@ -99,7 +99,7 @@ public:
         return PAG::getPAG();
     }
 
-    /// Get a SVFG node
+    /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const {
         return getGNode(id);
     }
@@ -122,7 +122,7 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
-    /// Connect SVFG nodes between caller and callee for indirect call site
+    /// Connect ICFG nodes between caller and callee for indirect call site
     virtual void connectCallerAndCallee(llvm::CallSite cs, const llvm::Function* callee, ICFGEdgeSetTy& edges);
 
     /// Get callsite given a callsiteID
@@ -140,39 +140,38 @@ public:
         return getICFGNode(getDef(pagNode));
     }
 
-    /// Given a store pagEdge, return its ICFGNode
-    inline const StoreICFGNode* getStoreICFGNode(const StorePE* store) const {
-        StorePEToICFGNodeMap::const_iterator it = storePEToICFGNodeMap.find(store);
-        assert(it!=storePEToICFGNodeMap.end() && "ICFGNode not found?");
-        return it->second;
-    }
-
-    // Given a svfg node, return its left hand side top level pointer (PAGnode)
+    // Given a ICFG node, return its left hand side top level pointer (PAGnode)
     const PAGNode* getLHSTopLevPtr(const ICFGNode* node) const;
 
     /// Get a ICFGNode
     //@{
+	inline const StmtICFGNode* getStmtICFGNode(const PAGEdge* pagEdge) const {
+		PAGEdgeToStmtICFGNodeMapTy::const_iterator it = PAGEdgeToStmtICFGNodeMap.find(pagEdge);
+		assert(it != PAGEdgeToStmtICFGNodeMap.end() && "StmtICFGNode can not be found??");
+		return it->second;
+	}
+
     inline ActualParmICFGNode* getActualParmICFGNode(const PAGNode* aparm,llvm::CallSite cs) const {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
-        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter SVFG node can not be found??");
+        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter ICFG node can not be found??");
         return it->second;
     }
 
     inline ActualRetICFGNode* getActualRetICFGNode(const PAGNode* aret) const {
         PAGNodeToActualRetMapTy::const_iterator it = PAGNodeToActualRetMap.find(aret);
-        assert(it!=PAGNodeToActualRetMap.end() && "actual return SVFG node can not be found??");
+        assert(it!=PAGNodeToActualRetMap.end() && "actual return ICFG node can not be found??");
         return it->second;
     }
 
     inline FormalParmICFGNode* getFormalParmICFGNode(const PAGNode* fparm) const {
         PAGNodeToFormalParmMapTy::const_iterator it = PAGNodeToFormalParmMap.find(fparm);
-        assert(it!=PAGNodeToFormalParmMap.end() && "formal parameter SVFG node can not be found??");
+        assert(it!=PAGNodeToFormalParmMap.end() && "formal parameter ICFG node can not be found??");
         return it->second;
     }
 
     inline FormalRetICFGNode* getFormalRetICFGNode(const PAGNode* fret) const {
         PAGNodeToFormalRetMapTy::const_iterator it = PAGNodeToFormalRetMap.find(fret);
-        assert(it!=PAGNodeToFormalRetMap.end() && "formal return SVFG node can not be found??");
+        assert(it!=PAGNodeToFormalRetMap.end() && "formal return ICFG node can not be found??");
         return it->second;
     }
     //@}
@@ -216,7 +215,7 @@ protected:
         return addRetEdge(src->getId(),dst->getId(),csId);
     }
 
-    /// Connect SVFG nodes between caller and callee for indirect call site
+    /// Connect ICFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
     virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, ICFGEdgeSetTy& edges) {
@@ -281,58 +280,58 @@ protected:
         return pag->isPhiNode(node);
     }
 
-    /// Add ICFG node
+    /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node) {
         addGNode(node->getId(),node);
     }
-    /// Add ICFG node for program statement
-    inline void addStmtICFGNode(StmtICFGNode* node) {
+    /// Add a ICFG node for program statement
+    inline void addStmtICFGNode(StmtICFGNode* node, const PAGEdge* pagEdge) {
+        assert(PAGEdgeToStmtICFGNodeMap.find(pagEdge)==PAGEdgeToStmtICFGNodeMap.end() && "should not insert twice!");
+        PAGEdgeToStmtICFGNodeMap[pagEdge] = node;
         addICFGNode(node);
     }
-    /// Add Dummy ICFG node for null pointer definition
+    /// Add a Dummy ICFG node for null pointer definition
     /// To be noted for black hole pointer it has already has address edge connected
     inline void addNullPtrICFGNode(const PAGNode* pagNode) {
         NullPtrICFGNode* sNode = new NullPtrICFGNode(totalICFGNode++,pagNode);
         addICFGNode(sNode);
         setDef(pagNode,sNode);
     }
-    /// Add Address ICFG node
+    /// Add an Address ICFG node
     inline void addAddrICFGNode(const AddrPE* addr) {
         AddrICFGNode* sNode = new AddrICFGNode(totalICFGNode++,addr);
-        addStmtICFGNode(sNode);
+        addStmtICFGNode(sNode, addr);
         setDef(addr->getDstNode(),sNode);
     }
-    /// Add Copy ICFG node
+    /// Add a Copy ICFG node
     inline void addCopyICFGNode(const CopyPE* copy) {
         CopyICFGNode* sNode = new CopyICFGNode(totalICFGNode++,copy);
-        addStmtICFGNode(sNode);
+        addStmtICFGNode(sNode, copy);
         setDef(copy->getDstNode(),sNode);
     }
-    /// Add Gep ICFG node
+    /// Add a Gep ICFG node
     inline void addGepICFGNode(const GepPE* gep) {
         GepICFGNode* sNode = new GepICFGNode(totalICFGNode++,gep);
-        addStmtICFGNode(sNode);
+        addStmtICFGNode(sNode, gep);
         setDef(gep->getDstNode(),sNode);
     }
-    /// Add Load ICFG node
+    /// Add a Load ICFG node
     void addLoadICFGNode(LoadPE* load) {
         LoadICFGNode* sNode = new LoadICFGNode(totalICFGNode++,load);
-        addStmtICFGNode(sNode);
+        addStmtICFGNode(sNode, load);
         setDef(load->getDstNode(),sNode);
     }
-    /// Add Store ICFG node,
+    /// Add a Store ICFG node,
     /// To be noted store does not create a new pointer, we do not set def for any PAG node
     void addStoreICFGNode(StorePE* store) {
         StoreICFGNode* sNode = new StoreICFGNode(totalICFGNode++,store);
-        assert(storePEToICFGNodeMap.find(store)==storePEToICFGNodeMap.end() && "should not insert twice!");
-        storePEToICFGNodeMap[store] = sNode;
-        addStmtICFGNode(sNode);
+        addStmtICFGNode(sNode, store);
 
         const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
         if (globalPAGStores.find(store) != globalPAGStores.end())
             globalStore.insert(sNode);
     }
-    /// Add actual parameter ICFG node
+    /// Add an actual parameter ICFG node
     /// To be noted that multiple actual parameters may have same value (PAGNode)
     /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right ICFGParmNode
     inline void addActualParmICFGNode(const PAGNode* aparm, llvm::CallSite cs) {
@@ -341,7 +340,7 @@ protected:
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
         /// do not set def here, this node is not a variable definition
     }
-    /// Add formal parameter ICFG node
+    /// Add a formal parameter ICFG node
     inline void addFormalParmICFGNode(const PAGNode* fparm, const llvm::Function* fun, CallPESet& callPEs) {
         FormalParmICFGNode* sNode = new FormalParmICFGNode(totalICFGNode++,fparm,fun);
         addICFGNode(sNode);
@@ -352,7 +351,7 @@ protected:
         setDef(fparm,sNode);
         PAGNodeToFormalParmMap[fparm] = sNode;
     }
-    /// Add callee Return ICFG node
+    /// Add a callee Return ICFG node
     /// To be noted that here we assume returns of a procedure have already been unified into one
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetICFG node same as handling actual parameters
     inline void addFormalRetICFGNode(const PAGNode* ret, const llvm::Function* fun, RetPESet& retPEs) {
@@ -365,14 +364,14 @@ protected:
         PAGNodeToFormalRetMap[ret] = sNode;
         /// do not set def here, this node is not a variable definition
     }
-    /// Add callsite Receive ICFG node
+    /// Add a callsite Receive ICFG node
     inline void addActualRetICFGNode(const PAGNode* ret,llvm::CallSite cs) {
         ActualRetICFGNode* sNode = new ActualRetICFGNode(totalICFGNode++,ret,cs);
         addICFGNode(sNode);
         setDef(ret,sNode);
         PAGNodeToActualRetMap[ret] = sNode;
     }
-    /// Add llvm PHI ICFG node
+    /// Add an llvm PHI ICFG node
     inline void addIntraPHIICFGNode(const PAGNode* phiResNode, PAG::PNodeBBPairList& oplist) {
         IntraPHIICFGNode* sNode = new IntraPHIICFGNode(totalICFGNode++,phiResNode);
         addICFGNode(sNode);

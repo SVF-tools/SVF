@@ -100,7 +100,7 @@ void SVFG::addSVFGNodesForAddrTakenVars() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         StorePE* store = cast<StorePE>(*iter);
-        const StoreSVFGNode* sNode = getStoreICFGNode(store);
+        const StmtSVFGNode* sNode = getStmtICFGNode(store);
         for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi)
             setDef((*pi)->getResVer(),sNode);
     }

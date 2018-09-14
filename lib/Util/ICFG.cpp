@@ -82,14 +82,30 @@ void ICFG::addICFGEdges(){
         if (analysisUtil::isExtCall(fun))
             continue;
 
+        /// function arguments
+        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(fun);
+        for (PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end(); funArgIt!=funArgEit ;funArgIt++) {
+            const PAGNode *fun_arg = *funArgIt;
+            const FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
+
+        }
+
+        /// function return
+        if (pag->funHasRet(fun)) {
+            const PAGNode* fun_ret = pag->getFunRet(fun);
+            const FormalRetICFGNode* formalParam = getFormalRetICFGNode(fun_ret);
+        }
+
+        /// function body
         for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit) {
             const BasicBlock* bb = &(*bit);
             for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
                 const llvm::Instruction* inst = &(*it);
                 PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
-                for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
-                        ebit = pagEdgeList.end(); bit != ebit; ++bit) {
-                    const PAGEdge* inst = *bit;
+                for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+                    const PAGEdge* pagEdge = *bit;
+                    const StmtICFGNode* sNode = getStmtICFGNode(pagEdge);
+
                 }
             }
         }
