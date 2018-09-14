@@ -27,9 +27,8 @@ static cl::opt<u32_t> AddModelFlag("addTDEdge", cl::init(0), cl::desc("Add threa
 /*!
  *
  */
-void MTASVFGBuilder::buildSVFG(SVFG* graph) {
-	MemSSA* mssa = graph->getMSSA();
-    svfg = graph;
+void MTASVFGBuilder::buildSVFG() {
+	MemSSA* mssa = svfg->getMSSA();
     llvm::cast<SVFGOPT>(svfg)->setTokeepActualOutFormalIn();
     svfg->buildSVFG();
     if (ADDEDGE_NOEDGE != AddModelFlag) {
@@ -97,7 +96,7 @@ SVFGEdge*  MTASVFGBuilder::addTDEdges(NodeID srcId, NodeID dstId, PointsTo& pts)
     SVFGNode* srcNode = svfg->getSVFGNode(srcId);
     SVFGNode* dstNode = svfg->getSVFGNode(dstId);
 
-    if(SVFGEdge* edge = svfg->hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirect)) {
+    if(SVFGEdge* edge = svfg->hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(pts) ? edge : NULL);
     } else {
