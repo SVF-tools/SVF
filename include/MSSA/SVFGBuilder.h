@@ -68,7 +68,7 @@ public:
     static SVFGOPT* globalSvfg;
 
     /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
-    SVFGOPT* buildSVFG(BVDataPTAImpl* pta, bool withAOFI = false);
+    SVFG* build(BVDataPTAImpl* pta, bool withAOFI = false);
 
     /// Clean up
     static void releaseSVFG() {
@@ -92,12 +92,12 @@ public:
     }
 
 protected:
-    /// We start from here
-    virtual bool build(SVFG* graph,BVDataPTAImpl* pta);
+    /// Build Memory SSA
+    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta);
     /// Can be rewritten by subclasses
-    virtual void createSVFG(MemSSA* mssa, SVFG* graph);
+    virtual void buildSVFG();
     /// Release global SVFG
-    virtual void releaseMemory(SVFG* graph);
+    virtual void releaseMemory();
     /// Update call graph using pre-analysis points-to results
     virtual void updateCallGraph(PointerAnalysis* pta);
 

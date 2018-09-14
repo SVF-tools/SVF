@@ -42,7 +42,7 @@ static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
 /*!
  * Constructor
  */
-ICFG::ICFG(): totalICFGNode(0),pta(NULL) {
+ICFG::ICFG(): totalICFGNode(0), pta(NULL), pag(PAG::getPAG()) {
 	stat = new ICFGStat();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
@@ -56,7 +56,7 @@ ICFG::ICFG(): totalICFGNode(0),pta(NULL) {
 void ICFG::destroy() {
     delete stat;
     stat = NULL;
-    pta = NULL;
+    pag = NULL;
 }
 
 /*!
@@ -67,7 +67,7 @@ void ICFG::destroy() {
  *    between two statements (PAGEdges)
  */
 void ICFG::buildICFG(PointerAnalysis* _pta) {
-	pta = _pta;
+
 }
 
 /*!
@@ -76,7 +76,7 @@ void ICFG::buildICFG(PointerAnalysis* _pta) {
 
 void ICFG::addICFGEdges(){
 
-    SVFModule svfModule = pta->getModule();
+    SVFModule svfModule = pag->getModule();
     for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
         const Function *fun = *iter;
         if (analysisUtil::isExtCall(fun))
@@ -86,7 +86,7 @@ void ICFG::addICFGEdges(){
             const BasicBlock* bb = &(*bit);
             for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
                 const llvm::Instruction* inst = &(*it);
-                PAG::PAGEdgeList& pagEdgeList = pta->getPAG()->getInstPAGEdgeList(inst);
+                PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
                 for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit) {
                     const PAGEdge* inst = *bit;

@@ -57,7 +57,7 @@ class SVFGOPT : public SVFG {
 
 public:
     /// Constructor
-    SVFGOPT() : SVFG(OPTSVFGK) {
+    SVFGOPT(MemSSA* _mssa) : SVFG(_mssa,OPTSVFGK) {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor
@@ -80,7 +80,7 @@ public:
         return g->getKind() == OPTSVFGK;
     }
 protected:
-    virtual void buildSVFG(MemSSA* m);
+    virtual void buildSVFG();
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{

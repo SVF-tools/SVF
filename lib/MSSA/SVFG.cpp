@@ -44,7 +44,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(SVFGK k): ICFG(), kind(k),mssa(NULL) {
+SVFG::SVFG(MemSSA* _mssa, SVFGK k): ICFG(), kind(k),mssa(_mssa) {
     stat = new SVFGStat(this);
 }
 
@@ -55,7 +55,6 @@ void SVFG::destroy() {
     delete stat;
     stat = NULL;
     mssa = NULL;
-    pta = NULL;
 }
 
 /*!
@@ -67,9 +66,8 @@ void SVFG::destroy() {
  *    a) between two statements (PAGEdges)
  *    b) between two memory SSA operators (MSSAPHI MSSAMU and MSSACHI)
  */
-void SVFG::buildSVFG(MemSSA* m) {
-    mssa = m;
-    pta = m->getPTA();
+void SVFG::buildSVFG() {
+    pta = mssa->getPTA();
     stat->startClk();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));

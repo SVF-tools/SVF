@@ -108,10 +108,10 @@ protected:
     void destroy();
 
     /// Constructor
-    SVFG(SVFGK k = ORIGSVFGK);
+    SVFG(MemSSA* mssa, SVFGK k = ORIGSVFGK);
 
     /// Start building SVFG
-    virtual void buildSVFG(MemSSA* m);
+    virtual void buildSVFG();
 
 public:
     /// Destructor
@@ -133,6 +133,11 @@ public:
     /// Get SVFG kind
     inline SVFGK getKind() const {
         return kind;
+    }
+
+    /// Get SVFG memory SSA
+    inline MemSSA* getMSSA() const {
+        return mssa;
     }
 
     /// Get a SVFG node

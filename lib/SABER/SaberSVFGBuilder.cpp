@@ -34,10 +34,10 @@
 using namespace llvm;
 using namespace analysisUtil;
 
-void SaberSVFGBuilder::createSVFG(MemSSA* mssa, SVFG* graph) {
+void SaberSVFGBuilder::buildSVFG() {
 
-    svfg = graph;
-    svfg->buildSVFG(mssa);
+	MemSSA* mssa = svfg->getMSSA();
+    svfg->buildSVFG();
     BVDataPTAImpl* pta = mssa->getPTA();
     DBOUT(DGENERAL, outs() << pasMsg("\tCollect Global Variables\n"));
 

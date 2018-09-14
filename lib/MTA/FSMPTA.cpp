@@ -27,10 +27,11 @@ static cl::opt<u32_t> AddModelFlag("addTDEdge", cl::init(0), cl::desc("Add threa
 /*!
  *
  */
-void MTASVFGBuilder::createSVFG(MemSSA* mssa, SVFG* graph) {
+void MTASVFGBuilder::buildSVFG(SVFG* graph) {
+	MemSSA* mssa = graph->getMSSA();
     svfg = graph;
     llvm::cast<SVFGOPT>(svfg)->setTokeepActualOutFormalIn();
-    svfg->buildSVFG(mssa);
+    svfg->buildSVFG();
     if (ADDEDGE_NOEDGE != AddModelFlag) {
         DBOUT(DGENERAL, outs() << analysisUtil::pasMsg("FSMPTA adding edge\n"));
         DBOUT(DMTA, outs() << analysisUtil::pasMsg("FSMPTA adding edge\n"));
@@ -666,7 +667,7 @@ void FSMPTA::initialize(SVFModule module) {
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
     MTASVFGBuilder mtaSVFGBuilder(mhp,lockana);
-    svfg = mtaSVFGBuilder.buildSVFG(ander);
+    svfg = mtaSVFGBuilder.build(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 

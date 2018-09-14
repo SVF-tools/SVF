@@ -45,7 +45,7 @@ void FlowSensitive::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
-    svfg = memSSA.buildSVFG(ander);
+    svfg = memSSA.build(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 

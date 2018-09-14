@@ -49,8 +49,8 @@ static std::string KeepContextSelfCycle = "context";
 static std::string KeepNoneSelfCycle = "none";
 
 
-void SVFGOPT::buildSVFG(MemSSA* m) {
-    SVFG::buildSVFG(m);
+void SVFGOPT::buildSVFG() {
+    SVFG::buildSVFG();
 
     dump("SVFG_before_opt");
 

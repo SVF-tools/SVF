@@ -72,6 +72,7 @@ protected:
     StorePEToICFGNodeMap storePEToICFGNodeMap;	///< map store inst to store ICFGNode
     ICFGStat * stat;
     PointerAnalysis* pta;
+    PAG* pag;
 
     /// Clean up memory
     void destroy();
@@ -273,11 +274,11 @@ protected:
 
 
     inline bool isPhiCopyEdge(const CopyPE* copy) const {
-        return pta->getPAG()->isPhiNode(copy->getDstNode());
+        return pag->isPhiNode(copy->getDstNode());
     }
 
     inline bool isPhiCopyNode(const PAGNode* node) const {
-        return pta->getPAG()->isPhiNode(node);
+        return pag->isPhiNode(node);
     }
 
     /// Add ICFG node

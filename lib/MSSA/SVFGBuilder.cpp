@@ -46,54 +46,58 @@ SVFGOPT* SVFGBuilder::globalSvfg = NULL;
 /*!
  * Create SVFG
  */
-void SVFGBuilder::createSVFG(MemSSA* mssa, SVFG* graph) {
-    svfg = graph;
-    svfg->buildSVFG(mssa);
+void SVFGBuilder::buildSVFG() {
+	MemSSA* mssa = svfg->getMSSA();
+    svfg->buildSVFG();
     if(mssa->getPTA()->printStat())
         svfg->performStat();
     svfg->dump("FS_SVFG");
 }
 
 /// Create DDA SVFG
-SVFGOPT* SVFGBuilder::buildSVFG(BVDataPTAImpl* pta, bool withAOFI) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, bool withAOFI) {
 
+	MemSSA* mssa = buildMSSA(pta);
+
+    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            globalSvfg = new SVFGOPT();
+            svfg = globalSvfg = new SVFGOPT(mssa);
             if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
-            build(globalSvfg,pta);
+            buildSVFG();
         }
-        return globalSvfg;
     }
     else {
-        SVFGOPT* vfg = new SVFGOPT();
+        SVFGOPT* vfg = new SVFGOPT(mssa);
+        svfg = vfg;
         if (withAOFI) vfg->setTokeepActualOutFormalIn();
-        build(vfg,pta);
-        return vfg;
+        buildSVFG();
     }
+
+    if(SVFGWithIndirectCall || SVFGWithIndCall)
+        updateCallGraph(pta);
+
+    return svfg;
 }
 
 /*!
  * Release memory
  */
-void SVFGBuilder::releaseMemory(SVFG* vfg) {
-    vfg->clearMSSA();
+void SVFGBuilder::releaseMemory() {
+    svfg->clearMSSA();
 }
 
-/*!
- * We start the pass here
- */
-bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
-
-    MemSSA* mssa = new MemSSA(pta);
+MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
+
+    MemSSA* mssa = new MemSSA(pta);
 
     DominatorTree dt;
     MemSSADF df;
 
-    SVFModule svfModule = pta->getModule();
+    SVFModule svfModule = mssa->getPTA()->getModule();
     for (SVFModule::iterator iter = svfModule.begin(), eiter = svfModule.end();
             iter != eiter; ++iter) {
 
@@ -110,19 +114,8 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
     mssa->performStat();
     mssa->dumpMSSA();
 
-    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
-
-    createSVFG(mssa, graph);
-
-    if(SVFGWithIndirectCall || SVFGWithIndCall)
-        updateCallGraph(mssa->getPTA());
-
-    //delete MSSA when required (on-call)
-    //releaseMemory(graph);
-
-    return false;
+    return mssa;
 }
-
 
 
 /// Update call graph using pre-analysis results
