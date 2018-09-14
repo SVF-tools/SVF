@@ -82,19 +82,8 @@ void ICFG::addICFGEdges(){
         if (analysisUtil::isExtCall(fun))
             continue;
 
-        /// function arguments
-        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(fun);
-        for (PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end(); funArgIt!=funArgEit ;funArgIt++) {
-            const PAGNode *fun_arg = *funArgIt;
-            const FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
-
-        }
-
-        /// function return
-        if (pag->funHasRet(fun)) {
-            const PAGNode* fun_ret = pag->getFunRet(fun);
-            const FormalRetICFGNode* formalParam = getFormalRetICFGNode(fun_ret);
-        }
+        /// function entry
+        FunEntryICFGNode* funEntryNode = getFunEntryICFGNode(fun);
 
         /// function body
         for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit) {
@@ -109,6 +98,9 @@ void ICFG::addICFGEdges(){
                 }
             }
         }
+
+        /// function exit
+        getFunExitICFGNode(fun);
     }
 }
 
@@ -176,13 +168,14 @@ void ICFG::addICFGNodes() {
 
     // initialize actual parameter nodes
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it) {
-        const Function* fun = getCallee(it->first);
+		addCallAndRetNodes(it->first);
+
+		const Function* fun = getCallee(it->first);
         fun = getDefFunForMultipleModule(fun);
         /// for external function we do not create acutalParm ICFGNode
         /// because we do not have a formal parameter to connect this actualParm
         if(isExtCall(fun))
             continue;
-
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
             if (pagNode->isPointer())
@@ -192,7 +185,9 @@ void ICFG::addICFGNodes() {
 
     // initialize actual return nodes (callsite return)
     for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(), eit = pag->getCallSiteRets().end(); it !=eit; ++it) {
-        /// for external function we do not create acutalRet ICFGNode
+		addCallAndRetNodes(it->first);
+
+		/// for external function we do not create acutalRet ICFGNode
         /// they are in the formal of AddrICFGNode if the external function returns an allocated memory
         /// if fun has body, it may also exist in isExtCall, e.g., xmalloc() in bzip2, spec2000.
         if(it->second->isPointer() == false || hasDef(it->second))
@@ -203,7 +198,9 @@ void ICFG::addICFGNodes() {
 
     // initialize formal parameter nodes
     for(PAG::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it) {
-        const llvm::Function* func = it->first;
+		const llvm::Function* func = it->first;
+		addFunEntryAndExitNodes(func);
+
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* param = *pit;
             if (param->isPointer() == false || hasBlackHoleConstObjAddrAsDef(param))
@@ -236,7 +233,10 @@ void ICFG::addICFGNodes() {
 
     // initialize formal return nodes (callee return)
     for(PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it !=eit; ++it) {
-        const PAGNode* retNode = it->second;
+		const llvm::Function* func = it->first;
+		addFunEntryAndExitNodes(func);
+
+		const PAGNode* retNode = it->second;
         if (retNode->isPointer() == false)
             continue;
 
@@ -247,7 +247,7 @@ void ICFG::addICFGNodes() {
                 retPEs.insert(cast<RetPE>(*cit));
             }
         }
-        addFormalRetICFGNode(retNode,it->first,retPEs);
+        addFormalRetICFGNode(retNode,func,retPEs);
     }
 
     // initialize llvm phi nodes (phi of top level pointers)

@@ -47,8 +47,8 @@ public:
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK {
         Addr, Copy, Gep, Store, Load, TPhi, TIntraPhi, TInterPhi,
-        MPhi, MIntraPhi, MInterPhi, FRet, ARet,
-        AParm, APIN, APOUT, FParm, FPIN, FPOUT, NPtr
+        MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
+        FEntry, FCall, APIN, APOUT, FPIN, FPOUT, NPtr
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
@@ -141,6 +141,7 @@ public:
     }
     //@}
 };
+
 
 /*
  * SVFG Node stands for acutal parameter node (top level pointers)
@@ -326,7 +327,163 @@ public:
     //@}
 };
 
+/*!
+ * Function entry ICFGNode containing a set of FormalParmICFGNodes of a function
+ */
+class FunEntryICFGNode : public ICFGNode{
 
+public:
+    typedef std::vector<const FormalParmICFGNode*> FormalParmICFGNodeVec;
+private:
+    const llvm::Function* fun;
+    FormalParmICFGNodeVec FPNodes;
+public:
+    FunEntryICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FEntry), fun(f){
+    }
+    /// Return function
+    inline const llvm::Function* getFunction() const {
+        return fun;
+    }
+	/// Return the set of formal parameters
+	inline const FormalParmICFGNodeVec& getActualParms() const {
+		return FPNodes;
+	}
+	/// Add formal parameters
+	inline void addFormalParms(const FormalParmICFGNode* fp) {
+		FPNodes.push_back(fp);
+	}
+
+    ///Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const FunEntryICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == FEntry;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == FEntry;
+    }
+    //@}
+};
+
+/*!
+ * Function entry ICFGNode containing (at most one) FormalRetICFGNodes of a function
+ */
+class FunExitICFGNode : public ICFGNode{
+
+private:
+    const llvm::Function* fun;
+    const FormalRetICFGNode* formalRet;
+public:
+    FunExitICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FEntry), fun(f), formalRet(NULL){
+    }
+    /// Return function
+    inline const llvm::Function* getFunction() const {
+        return fun;
+    }
+	/// Return actual return parameter
+	inline const FormalRetICFGNode* getFormalRet() const {
+		return formalRet;
+	}
+	/// Add actual return parameter
+	inline void addFormalRet(const FormalRetICFGNode* fr) {
+		formalRet = fr;
+	}
+
+    ///Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const FunEntryICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == FEntry;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == FEntry;
+    }
+    //@}
+};
+
+/*!
+ * Call ICFGNode containing a set of ActualParmICFGNodes at a callsite
+ */
+class CallICFGNode : public ICFGNode{
+
+public:
+    typedef std::vector<const ActualParmICFGNode*> ActualParmICFGNodeVec;
+private:
+    llvm::CallSite cs;
+    ActualParmICFGNodeVec APNodes;
+public:
+    CallICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FCall), cs(c){
+    }
+
+    /// Return callsite
+	inline llvm::CallSite getCallSite() const {
+		return cs;
+	}
+	/// Return the set of actual parameters
+	inline const ActualParmICFGNodeVec& getActualParms() const {
+		return APNodes;
+	}
+	/// Add actual parameters
+	inline void addActualParms(const ActualParmICFGNode* ap) {
+		APNodes.push_back(ap);
+	}
+
+    ///Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CallICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == FCall;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == FCall;
+    }
+    //@}
+};
+
+/*!
+ * Return ICFGNode containing (at most one) ActualRetICFGNode at a callsite
+ */
+class RetICFGNode : public ICFGNode{
+
+private:
+    llvm::CallSite cs;
+    const ActualRetICFGNode* actualRet;
+public:
+    RetICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FCall), cs(c), actualRet(NULL){
+    }
+
+	/// Return callsite
+	inline llvm::CallSite getCallSite() const {
+		return cs;
+	}
+	/// Return actual return parameter
+	inline const ActualRetICFGNode* getActualRet() const {
+		return actualRet;
+	}
+	/// Add actual return parameter
+	inline void addActualRet(const ActualRetICFGNode* ar) {
+		actualRet = ar;
+	}
+
+    ///Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CallICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == FCall;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == FCall;
+    }
+    //@}
+};
 
 /*
  * SVFG Node stands for a top level pointer ssa phi node or a formal parameter or a return parameter
