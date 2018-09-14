@@ -73,7 +73,6 @@ void ICFG::buildICFG(PointerAnalysis* _pta) {
 /*!
  * Create ICFG edges
  */
-
 void ICFG::addICFGEdges(){
 
     SVFModule svfModule = pag->getModule();
@@ -85,17 +84,31 @@ void ICFG::addICFGEdges(){
         /// function entry
         FunEntryICFGNode* funEntryNode = getFunEntryICFGNode(fun);
 
-        /// function body
-        for (Function::const_iterator bit = fun->begin(), ebit = fun->end(); bit != ebit; ++bit) {
-            const BasicBlock* bb = &(*bit);
-            for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
-                const llvm::Instruction* inst = &(*it);
-                PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
-                for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit = pagEdgeList.end(); bit != ebit; ++bit) {
-                    const PAGEdge* pagEdge = *bit;
-                    const StmtICFGNode* sNode = getStmtICFGNode(pagEdge);
+        InstVec instVec;
+        InstSet visited;
+        const Instruction* firstInst = &(*fun->getEntryBlock().begin());
 
-                }
+        /// function body
+        instVec.push_back(firstInst);
+        while(!instVec.empty()) {
+			const llvm::Instruction* inst = instVec.back();
+			instVec.pop_back();
+
+			PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
+			for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+				const PAGEdge* pagEdge = *bit;
+				const StmtICFGNode* sNode = getStmtICFGNode(pagEdge);
+			}
+
+			InstVec nextInsts;
+            getNextInsts(inst, nextInsts);
+            for (InstVec::const_iterator sit = nextInsts.begin(), esit = nextInsts.end(); sit != esit; ++sit) {
+                const Instruction* succInst = (*sit);
+                if(visited.find(succInst)==visited.end())
+                    visited.insert(succInst);
+                else
+                    continue;
+                instVec.push_back(succInst);
             }
         }
 
@@ -323,15 +336,29 @@ ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::
 
 }
 
+/*!
+ * Add intraprocedural edges between two nodes
+ */
+ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode){
+    checkIntraEdgeParents(srcNode, dstNode);
+    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF)) {
+        assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
+        return NULL;
+    }
+    else {
+        IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
+        return (addICFGEdge(intraEdge) ? intraEdge : NULL);
+    }
+}
 
 /*!
- * Add interprocedural call edges for top level pointers
+ * Add interprocedural call edges between two nodes
  */
 ICFGEdge* ICFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF,csId)) {
-        assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
+        assert(edge->isCallCFGEdge() && "this should be a call CFG edge!");
         return NULL;
     }
     else {
@@ -341,13 +368,13 @@ ICFGEdge* ICFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
 }
 
 /*!
- * Add interprocedural return edges for top level pointers
+ * Add interprocedural return edges between two nodes
  */
 ICFGEdge* ICFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
     ICFGNode* srcNode = getICFGNode(srcId);
     ICFGNode* dstNode = getICFGNode(dstId);
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF,csId)) {
-        assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
+        assert(edge->isRetCFGEdge() && "this should be a return CFG edge!");
         return NULL;
     }
     else {

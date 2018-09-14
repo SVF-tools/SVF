@@ -260,14 +260,14 @@ public:
 
     /// Find incoming and outgoing edges
     //@{
-    inline EdgeType* hasIncomingEdge(EdgeType* edge) {
+    inline EdgeType* hasIncomingEdge(EdgeType* edge) const {
         const_iterator it = InEdges.find(edge);
         if (it != InEdges.end())
             return *it;
         else
             return NULL;
     }
-    inline EdgeType* hasOutgoingEdge(EdgeType* edge) {
+    inline EdgeType* hasOutgoingEdge(EdgeType* edge) const {
         const_iterator it = OutEdges.find(edge);
         if (it != OutEdges.end())
             return *it;

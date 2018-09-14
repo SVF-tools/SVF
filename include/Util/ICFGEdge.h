@@ -77,6 +77,9 @@ public:
     inline bool isRetCFGEdge() const {
         return getEdgeKind() == RetCF;
     }
+    inline bool isIntraCFGEdge() const {
+        return getEdgeKind() == IntraCF;
+    }
     inline bool isDirectVFGEdge() const {
         return getEdgeKind() == IntraDirectVF || getEdgeKind() == CallDirVF || getEdgeKind() == RetDirVF;
     }
@@ -124,7 +127,7 @@ class IntraCFGEdge : public ICFGEdge {
 
 public:
     /// Constructor
-	IntraCFGEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k): ICFGEdge(s,d,k) {
+	IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF) {
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{

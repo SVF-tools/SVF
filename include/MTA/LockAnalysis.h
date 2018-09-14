@@ -350,34 +350,6 @@ private:
     }
     //@}
 
-    /// Get the next instructions following control flow
-    inline void getNextInsts(const llvm::Instruction* curInst, InstVec& instList) {
-        if (!curInst->isTerminator()) {
-            instList.push_back(curInst->getNextNode());
-        } else {
-            const llvm::BasicBlock *BB = curInst->getParent();
-            // Visit all successors of BB in the CFG
-            for (llvm::succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
-                    it != ie; ++it) {
-                instList.push_back(&((*it)->front()));
-            }
-        }
-    }
-
-    /// Get the previous instructions following control flow
-    inline void getPrevInsts(const llvm::Instruction* curInst, InstVec& instList) {
-        if (curInst != &(curInst->getParent()->front())) {
-            instList.push_back(curInst->getPrevNode());
-        } else {
-            const llvm::BasicBlock *BB = curInst->getParent();
-            // Visit all successors of BB in the CFG
-            for (llvm::const_pred_iterator it = pred_begin(BB), ie = pred_end(BB);
-                    it != ie; ++it) {
-                instList.push_back(&((*it)->back()));
-            }
-        }
-    }
-
     /// Push calling context
     void pushCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
     /// Match context

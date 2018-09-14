@@ -516,6 +516,34 @@ inline const llvm::ConstantExpr *isSelectConstantExpr(const llvm::Value *val) {
 }
 //@}
 
+/// Get the next instructions following control flow
+inline void getNextInsts(const llvm::Instruction* curInst, std::vector<const llvm::Instruction*>& instList) {
+    if (!curInst->isTerminator()) {
+        instList.push_back(curInst->getNextNode());
+    } else {
+        const llvm::BasicBlock *BB = curInst->getParent();
+        // Visit all successors of BB in the CFG
+        for (llvm::succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
+                it != ie; ++it) {
+            instList.push_back(&((*it)->front()));
+        }
+    }
+}
+
+/// Get the previous instructions following control flow
+inline void getPrevInsts(const llvm::Instruction* curInst, std::vector<const llvm::Instruction*>& instList) {
+    if (curInst != &(curInst->getParent()->front())) {
+        instList.push_back(curInst->getPrevNode());
+    } else {
+        const llvm::BasicBlock *BB = curInst->getParent();
+        // Visit all successors of BB in the CFG
+        for (llvm::const_pred_iterator it = pred_begin(BB), ie = pred_end(BB);
+                it != ie; ++it) {
+            instList.push_back(&((*it)->back()));
+        }
+    }
+}
+
 /// Get basic block successor position
 u32_t getBBSuccessorPos(const llvm::BasicBlock *BB, const llvm::BasicBlock *Succ);
 /// Get num of BB's successors

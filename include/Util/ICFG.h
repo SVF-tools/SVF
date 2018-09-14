@@ -67,6 +67,8 @@ public:
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<StoreICFGNode*> StoreNodeSet;
+    typedef std::vector<const llvm::Instruction*> InstVec;
+    typedef std::set<const llvm::Instruction*> InstSet;
 
 protected:
     NodeID totalICFGNode;
@@ -220,14 +222,15 @@ protected:
         removeGNode(node);
     }
 
-    /// Add interprocedural control-flow edges for top level pointers
+    /// Add control-flow edges for top level pointers
     //@{
+    ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
     ICFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     ICFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
     //@}
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
-    inline void checkIntraEdgeParents(ICFGNode *srcNode, ICFGNode *dstNode) {
+    inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode) {
         const llvm::BasicBlock *srcBB = srcNode->getBB();
         const llvm::BasicBlock *dstBB = dstNode->getBB();
         if(srcBB != nullptr && dstBB != nullptr) {
