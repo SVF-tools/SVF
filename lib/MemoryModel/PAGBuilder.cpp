@@ -41,12 +41,40 @@ using namespace llvm;
 using namespace std;
 using namespace analysisUtil;
 
+static llvm::cl::list<std::string> SubPAGNames("subpags",
+                                               llvm::cl::desc("SubPAGs to use during PAG construction"),
+                                               llvm::cl::CommaSeparated);
+
+std::map<std::string, SubPAG *> subpags;
 
 /*!
  * Start building PAG here
  */
 PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
+
+    // Build sub PAGs first to use them in PAG construction.
+    for (auto functionName = SubPAGNames.begin();
+         functionName != SubPAGNames.end(); ++functionName) {
+        PAGBuilderFromFile fileBuilder(*functionName, true, *functionName);
+        subpags[*functionName] =
+            static_cast<SubPAG *>(fileBuilder.build());
+
+        subpags["swap"]->dump("newsubpag");
+        /*
+        for (auto x = subpags.begin(); x != subpags.end(); ++x) {
+            (*x)->dump("subpag");
+
+            std::vector<PAGNode *> &argNodes = (*x)->getArgNodes();
+            llvm::outs() << "HI\n";
+            for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
+            llvm::outs() << "HI\n";
+                llvm::outs() << **ag << "--\n";
+            }
+        }
+        */
+    }
+
     /// initial external library information
     /// initial PAG nodes
     initalNode();

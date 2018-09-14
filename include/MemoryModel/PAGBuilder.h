@@ -35,9 +35,51 @@
 #include "Util/ExtAPI.h"
 
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
-
+#include <llvm/Support/CommandLine.h> // for the subpags function names list.
 
 class SVFModule;
+
+/*!
+ * Build PAG from a user specified file (for debugging purpose)
+ */
+class PAGBuilderFromFile {
+
+private:
+    PAG* pag;
+    std::string file;
+    bool subPAG;
+public:
+    /// Constructor
+    PAGBuilderFromFile(std::string f, bool subpag, std::string functionName = "") :
+        pag(PAG::getPAG(true)), file(f), subPAG(subpag) {
+        if (subpag) {
+            pag = new SubPAG(functionName);
+        } else {
+            pag = PAG::getPAG(true);
+        }
+    }
+    /// Destructor
+    ~PAGBuilderFromFile() {
+    }
+
+    /// Return PAG
+    PAG* getPAG() const {
+        return pag;
+    }
+
+    /// Return file name
+    std::string getFileName() const {
+        return file;
+    }
+
+    /// Start building
+    PAG* build();
+
+    // Add edges
+    void addEdge(NodeID nodeSrc, NodeID nodeDst, Size_t offset,
+                 std::string edge);
+};
+
 /*!
  *  PAG Builder
  */
@@ -48,9 +90,6 @@ private:
 public:
     /// Constructor
     PAGBuilder(): pag(PAG::getPAG()) {
-    }
-
-    PAGBuilder(SubPAG *subPAG): pag(subPAG) {
     }
 
     /// Destructor
@@ -196,45 +235,5 @@ public:
     //}@
 };
 
-/*!
- * Build PAG from a user specified file (for debugging purpose)
- */
-class PAGBuilderFromFile {
-
-private:
-    PAG* pag;
-    std::string file;
-    bool subPAG;
-public:
-    /// Constructor
-    PAGBuilderFromFile(std::string f, bool subpag, std::string functionName = "") :
-        pag(PAG::getPAG(true)), file(f), subPAG(subpag) {
-        if (subpag) {
-            pag = new SubPAG(functionName);
-        } else {
-            pag = PAG::getPAG(true);
-        }
-    }
-    /// Destructor
-    ~PAGBuilderFromFile() {
-    }
-
-    /// Return PAG
-    PAG* getPAG() const {
-        return pag;
-    }
-
-    /// Return file name
-    std::string getFileName() const {
-        return file;
-    }
-
-    /// Start building
-    PAG* build();
-
-    // Add edges
-    void addEdge(NodeID nodeSrc, NodeID nodeDst, Size_t offset,
-                 std::string edge);
-};
 
 #endif /* PAGBUILDER_H_ */

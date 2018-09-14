@@ -12,8 +12,6 @@
 
 #include "PAG.h"
 
-class PAG;
-
 class SubPAG : public PAG {
 private:
     /// Name of the function this sub PAG represents.
