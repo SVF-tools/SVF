@@ -39,7 +39,11 @@
 using namespace std;
 using namespace llvm;
 
+static cl::opt<std::string> Graphtxt("graphtxt", cl::value_desc("filename"),
+                                     cl::desc("graph txt file to build PAG"));
+
 LLVMModuleSet *SVFModule::llvmModuleSet = NULL;
+std::string SVFModule::pagReadFromTxt = "";
 
 LLVMModuleSet::LLVMModuleSet(llvm::Module *mod) {
     moduleNum = 1;
@@ -64,7 +68,12 @@ LLVMModuleSet::LLVMModuleSet(llvm::Module &mod) {
 }
 
 LLVMModuleSet::LLVMModuleSet(const vector<string> &moduleNameVec) {
-    assert(!moduleNameVec.empty() && "no module is found!");
+	// We read PAG from LLVM IR
+	if(Graphtxt.getValue().empty())
+		assert(!moduleNameVec.empty() && "no module is found from LLVM bc file!");
+	// We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+	else
+		SVFModule::setPagFromTXT(Graphtxt.getValue());
     build(moduleNameVec);
 }
 

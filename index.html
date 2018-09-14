@@ -2,7 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="UTF-8">
-    <title>SVF by unsw-corg</title>
+    <title>SVF:Pointer Analysis for C and C++  </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
@@ -12,10 +12,10 @@
   <body>
     <section class="page-header">
       <h1 class="project-name">SVF</h1>
-      <h2 class="project-tagline">Static Value-Flow Analysis in LLVM</h2>
-      <a href="https://github.com/unsw-corg/SVF/wiki" class="btn">View Wiki on GitHub</a>
-      <a href="https://github.com/unsw-corg/SVF" class="btn">Download Source Code </a>
-      <a href="https://github.com/unsw-corg/SVF/wiki/Try-SVF-in-VirtualBox" class="btn">Download Virtual Machine Image</a>
+      <h2 class="project-tagline">Pointer Analysis and Program Depedence Analysis in LLVM</h2>
+      <a href="https://github.com/svf-tools/SVF" class="btn">View Wiki on GitHub</a>
+      <a href="https://www.cse.unsw.edu.au/~ysui/svf.php" class="btn">Download Source Code </a>
+      <a href="https://github.com/svf-tools/SVF/wiki/Try-SVF-in-VirtualBox" class="btn">Download Virtual Machine Image</a>
 
     </section>
 
@@ -23,63 +23,84 @@
       <h2>
 <a id="what-is-svf" class="anchor" href="#what-is-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is SVF?</h2>
 
-<p>SVF is a static tool that enables scalable and precise interprocedural dependence analysis for C programs. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
+<p><a href="https://github.com/svf-tools/SVF">SVF</a> is a static tool that enables scalable and precise interprocedural dependence analysis for C and C++ programs. SVF allows value-flow construction and pointer analysis to be performed iteratively, thereby providing increasingly improved precision for both. </p>
 
 <h2>
 <a id="what-kind-of-analyses-does-svf-provide" class="anchor" href="#what-kind-of-analyses-does-svf-provide" aria-hidden="true"><span class="octicon octicon-link"></span></a>What kind of analyses does SVF provide?</h2>
 
 <ul>
-<li>Field-sensitive Andersen's pointer analysis and call graph construction</li>
+<li>Call graph construction for C and C++ programs</li>
+<li>Field-sensitive Andersen's pointer analysis</li>
 <li>Sparse flow-sensitive pointer analysis</li>
 <li>Value-flow dependence analysis</li>
 <li>Interprocedural memory SSA</li>
 <li>Detecting source-sink related bugs, such as memory leaks and incorrect file-open close errors.</li>
+<li>An <a href= "https://github.com/svf-tools/SVF-EclipsePlugin">Eclipse plugin </a> for visualizing bugs </li>
 </ul>
+
+<h2>
+<a id="how-to-setup-svf" class="anchor" href="#how-to-setup-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>License </h2>
+
+GPLv3
 
 <h2>
 <a id="how-to-setup-svf" class="anchor" href="#how-to-setup-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to setup SVF?</h2>
 
-<p>Please download the <a href="https://github.com/unsw-corg/SVF">source code</a> of SVF and refer to this <a href="https://github.com/unsw-corg/SVF/wiki/Setup-Guide#getting-started"> step-by-step guide</a> to setup SVF.</p>
+<p>Please download the <a href="https://github.com/svf-tools/SVF">source code</a> of SVF and refer to this <a href="https://github.com/svf-tools/SVF/wiki/Setup-Guide#getting-started"> step-by-step guide</a> to setup SVF.</p>
 
 <h2>
 <a id="how-to-run-svf" class="anchor" href="#how-to-run-svf" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to run SVF?</h2>
 
-<p>SVF analyzes a program by taking the LLVM IR of the program as its input. Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#quick-start">this user guide</a> to run SVF with <a href="https://github.com/unsw-corg/SVF/wiki/Analyze-a-Simple-C-Program#an-example">a simple example</a> and generate the <a href="https://github.com/unsw-corg/SVF/wiki/User-Guide#analysis-outputs">outputs</a> of each analysis pass in your local machine.</p>
+<p>SVF analyzes a program by taking the LLVM IR of the program as its input. Please refer to <a href="https://github.com/svf-tools/SVF/wiki/User-Guide#quick-start">this user guide</a> to run SVF with <a href="https://github.com/svf-tools/SVF/wiki/Analyze-a-Simple-C-Program#an-example">a simple example</a> and generate the <a href="https://github.com/svf-tools/SVF/wiki/User-Guide#analysis-outputs">outputs</a> of each analysis pass in your local machine.</p>
 
-<p>Alternatively, we have also prepared a <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/SVF.ova">virtual machine image</a> for you to run SVF on any machine with VirtualBox installed. Please refer to this <a href="https://github.com/unsw-corg/SVF/wiki/Try-SVF-in-VirtualBox"> step-by-step guide</a> to try SVF in a VM. </p>
+<p>Alternatively, we have also prepared a <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/SVF.ova">virtual machine image</a> for you to run SVF on any machine with VirtualBox installed. Please refer to this <a href="https://github.com/svf-tools/SVF/wiki/Try-SVF-in-VirtualBox"> step-by-step guide</a> to try SVF in a VM. </p>
 
 <h2>
 <a id="how-does-svf-work-internally" class="anchor" href="#how-does-svf-work-internally" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does SVF work internally?</h2>
 
-<p>Please refer to <a href="https://github.com/unsw-corg/SVF/wiki/Technical-documentation">this wiki documentation</a>, <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/doxygen/">doxygen code manual</a> and the following publications to understand the internal working of SVF.</p>
+<p>Please refer to <a href="https://github.com/svf-tools/SVF/wiki/Technical-documentation">this wiki documentation</a>, <a href="http://www.cse.unsw.edu.au/%7Ecorg/svf/doxygen/">doxygen code manual</a> and the following publications to understand the internal working of SVF.</p>
 
 <h2>
 <a id="publications" class="anchor" href="#publications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Publications</h2>
 
-<p>Sen Ye, Yulei Sui, and Jingling Xue. Region-based Selective Flow-Sensitive Pointer Analysis , 21th International Static Analysis Symposium (SAS'14) </p>
+<p>Yulei Sui and Jingling Xue. <a href ="http://yuleisui.github.io/publications/tse18.pdf"> Value-Flow-Based Demand-Driven Pointer Analysis for C and C++  </a>, IEEE Transaction on Software Engineering (TSE'18) </p>
 
-<p>Yulei Sui, Ding Ye, and Jingling Xue. Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis , IEEE Transactions on Software Engineering (TSE'14)</p>
+<p>Xiaokang Fan, Yulei Sui and Jingling Xue. <a href ="http://www.cse.unsw.edu.au/~ysui/papers/issta17.pdf">  Boosting the Precision of Virtual Call Integrity Protection with Partial Pointer Analysis for C++ </a>, The ACM SIGSOFT International Symposium on Software Testing and Analysis (ISSTA'17) </p>
 
-<p>Yulei Sui, Sen Ye, Jingling Xue, and Jie Zhang. Making Context-Sensitive Inclusion-based Pointer Analysis Practical for Compilers Using Parameterised Summarisation , Software - Practice and Experience (SPE'14)</p>
+<p>Yulei Sui and Jingling Xue. <a href ="http://www.cse.unsw.edu.au/~ysui/papers/fse16.pdf">  On-Demand Strong Update Analysis via Value-Flow Refinement</a>, ACM SIGSOFT International Symposium on the Foundation of Software Engineering (FSE'16)</p>
 
-<p>Ding Ye, Yulei Sui, and Jingling Xue. Accelerating Dynamic Detection of Uses of Undefined Values with Static Value-Flow Analysis , 12th Annual IEEE/ACM International Symposium on Code Generation and Optimization (CGO'14)</p>
+<p>Yulei Sui and Jingling Xue. <a href ="http://www.cse.unsw.edu.au/~ysui/papers/cc16.pdf"> SVF: Interprocedural Static Value-Flow Analysis in LLVM</a>, 25th International Conference on Compiler Construction (CC'16)</p>
 
-<p>Yulei Sui, Ding Ye, and Jingling Xue. Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis , 2012 International Symposium on Software Testing and Analysis (ISSTA'12)</p>
+<p>Yulei Sui, Peng Di and Jingling Xue. <a href ="http://www.cse.unsw.edu.au/~ysui/papers/cgo16.pdf"> Sparse Flow-Sensitive Pointer Analysis
+for Multithreaded Programs</a>, International Symposium on Code Generation and Optimization (CGO'16)</p>
 
-<p>Yulei Sui, Sen Ye, Jingling Xue, and Pen-Chung Yew. SPAS: Scalable Path-Sensitive Pointer Analysis on Full-Sparse SSA,  9th Asian Symposium on Programming Languages and Systems (APLAS'11)</p>
+<p>Yulei Sui, Ding Ye, and Jingling Xue. <a href="http://www.cse.unsw.edu.au/~ysui/papers/tse14.pdf"> Detecting Memory Leaks Statically with Full-Sparse Value-Flow Analysis</a>, IEEE Transactions on Software Engineering (TSE'14)</p>
+
+<p>Yulei Sui, Sen Ye and Jingling Xue. <a href = "http://www.cse.unsw.edu.au/~ysui/papers/sas2014.pdf"> Region-based Selective Flow-Sensitive Pointer Analysis</a>, 21th International Static Analysis Symposium (SAS'14) </p>
+
+<p>Ding Ye, Yulei Sui, and Jingling Xue. <a href = "http://www.cse.unsw.edu.au/~ysui/papers/cgo14.pdf"> Accelerating Dynamic Detection of Uses of Undefined Values with Static Value-Flow Analysis</a>, 12th Annual IEEE/ACM International Symposium on Code Generation and Optimization(CGO'14)</p>
+
+<p>Yulei Sui, Ding Ye, and Jingling Xue. <a href = "http://www.cse.unsw.edu.au/~ysui/papers/issta12.pdf"> Static Memory Leak Detection Using Full-Sparse Value-Flow Analysis</a>, 2012 International Symposium on Software Testing and Analysis (ISSTA'12)</p>
 
 <h2>
 <a id="contacts" class="anchor" href="#contacts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contacts</h2>
 Any comments, contributions and collaborations are welcomed.
 Please contact <a href="mailto:ysui@cse.unsw.edu.au">Yulei Sui</a> or <a href="mailto:jingling@cse.unsw.edu.au">Jingling Xue</a> if you have any questions.
 
-      <footer class="site-footer">
-              <span class="site-footer-owner"><a href="https://github.com/unsw-corg/SVF">SVF</a> is maintained by <a href="http://www.cse.unsw.edu.au/~corg/">UNSW-CORG</a>.</span>
-
-      </footer>
 
     </section>
 
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-105021663-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
   
   </body>
 </html>

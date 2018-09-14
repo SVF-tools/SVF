@@ -261,7 +261,7 @@ void PAGBuilder::processCE(const Value *val) {
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, u32_t fieldidx) {
+NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset) {
 
     // if the global variable do not have any field needs to be initialized
     if (offset == 0 && gvar->getInitializer()->getType()->isSingleValueType()) {
@@ -273,7 +273,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, u
         const Type *gvartype = gvar->getType();
         while (const PointerType *ptype = dyn_cast<PointerType>(gvartype))
             gvartype = ptype->getElementType();
-        return pag->getGepValNode(gvar, LocationSet(offset), gvartype, fieldidx);
+        return pag->getGepValNode(gvar, LocationSet(offset), gvartype, offset);
     }
 }
 
@@ -289,7 +289,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, u
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
 void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                               u32_t offset, u32_t fieldidx) {
+                               u32_t offset) {
     DBOUT(DPAGBuild,
           outs() << "global " << *gvar << " constant initializer: " << *C
           << "\n");
@@ -298,7 +298,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         pag->setCurrentLocation(gvar, NULL);
-        NodeID field = getGlobalVarField(gvar, offset, fieldidx);
+        NodeID field = getGlobalVarField(gvar, offset);
 
         if (isa<GlobalVariable>(C) || isa<Function>(C)) {
             pag->setCurrentLocation(C, NULL);
@@ -315,7 +315,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     } else if (isa<ConstantArray>(C)) {
         if (cppUtil::isValVtbl(gvar) == false)
             for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-                InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset, i);
+                InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset);
 
     } else if (isa<ConstantStruct>(C)) {
         const StructType *sty = cast<StructType>(C->getType());
@@ -323,7 +323,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
             u32_t off = offsetvect[i];
-            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off, i);
+            InitialGlobal(gvar, cast<Constant>(C->getOperand(i)), offset + off);
         }
 
     } else {
@@ -349,7 +349,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
         if (gvar->hasDefinitiveInitializer()) {
             Constant *C = gvar->getInitializer();
             DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
-            InitialGlobal(gvar, C, 0, 0);
+            InitialGlobal(gvar, C, 0);
         }
     }
 
@@ -1104,7 +1104,6 @@ void PAGBuilder::sanityCheck() {
  * 3 gep 4 4
  */
 PAG* PAGBuilderFromFile::build() {
-
     string line;
     ifstream myfile(file.c_str());
     if (myfile.is_open()) {
@@ -1133,47 +1132,40 @@ PAG* PAGBuilderFromFile::build() {
                 if (nodetype == "v") {
                     pag->addDummyValNode(nodeId);
                 } else if (nodetype == "o") {
-                    pag->addDummyObjNode(nodeId);
+                    const MemObj* mem = pag->addDummyMemObj(nodeId);
+                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
+                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
+                    pag->addFIObjNode(mem);
+                } else {
+                    assert(false && "format not support, pls specify node type");
                 }
-                else
-                    assert(
-                        false
-                        && "format not support, pls specify node type");
             } else if (token_count == 3) {
-                // Either an edge, not considering gep, or a subpag node.
+                // A subpag node which corresponds to an argument.
 
                 // Will be the new node's ID or the source node.
                 NodeID nodeId;
-                string type;
+                string nodeType;
                 istringstream ss(line);
                 ss >> nodeId;
-                ss >> type;
+                ss >> nodeType;
 
-                if (type == "v" || type == "o") {
-                    // It's a node.
+                if (nodeType == "v") {
+                    pag->addDummyValNode(nodeId);
+                } else if (nodeType == "o") {
+                    const MemObj* mem = pag->addDummyMemObj(nodeId);
+                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
+                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
+                    pag->addFIObjNode(mem);
+                }
 
-                    if (type == "v") {
-                        pag->addDummyValNode(nodeId);
-                    } else if (type == "o") {
-                        pag->addDummyObjNode(nodeId);
-                    }
-
-                    // If it's not for a subpag, just ignore it.
-                    if (subPAG) {
-                        int argNo;
-                        ss >> argNo;
-                        std::map<int, PAGNode *> &argNodes =
-                            static_cast<SubPAG *>(pag)->getArgNodes();
-                        argNodes.insert(std::pair<int, PAGNode *>(
-                                            argNo, pag->getPAGNode(nodeId)));
-                    }
-                } else {
-                    // Edge, but not considering gep.
-                    int nodeDst;
-                    ss >> nodeDst;
-                    outs() << "reading edge :" << nodeId << " " << type << " "
-                           << nodeDst << " \n";
-                    addEdge(nodeId, nodeDst, 0, type);
+                // If it's not for a subpag, just ignore the extra (3rd) token.
+                if (subPAG) {
+                    int argNo;
+                    ss >> argNo;
+                    std::map<int, PAGNode *> &argNodes =
+                        static_cast<SubPAG *>(pag)->getArgNodes();
+                    argNodes.insert(std::pair<int, PAGNode *>(
+                                        argNo, pag->getPAGNode(nodeId)));
                 }
             } else if (token_count == 4) {
                 // do consider gep edge
@@ -1189,18 +1181,23 @@ PAG* PAGBuilderFromFile::build() {
                 outs() << "reading edge :" << nodeSrc << " " << edge << " "
                        << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
                 addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-            } else
-                outs() << "format not support, token count = " << token_count
-                       << "\n";
+            } else {
+                if (!line.empty()) {
+                    outs() << "format not supported, token count = "
+                            << token_count << "\n";
+                    assert(false && "format not supported");
+                }
+            }
         }
         myfile.close();
-    }
+    } else outs() << "Unable to open file\n";
 
-    else
-        outs() << "Unable to open file\n";
+    /// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
+    u32_t lower_bound = 1000;
+    for(u32_t i = 0; i < lower_bound; i++)
+        pag->incNodeNum();
 
     return pag;
-
 }
 
 /*!
@@ -1213,15 +1210,23 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     PAGNode* srcNode = pag->getPAGNode(srcID);
     PAGNode* dstNode = pag->getPAGNode(dstID);
 
-    if (edge == "addr")
+    /// sanity check for PAG from txt
+	assert(isa<ValPN>(dstNode) && "dst not an value node?");
+    if(edge=="addr")
+    		assert(isa<ObjPN>(srcNode) && "src not an value node?");
+    else
+		assert(!isa<ObjPN>(srcNode) && "src not an object node?");
+
+    if (edge == "addr"){
         pag->addAddrEdge(srcID, dstID);
+    }
     else if (edge == "copy")
         pag->addCopyEdge(srcID, dstID);
     else if (edge == "load")
         pag->addLoadEdge(srcID, dstID);
     else if (edge == "store")
         pag->addStoreEdge(srcID, dstID);
-    else if (edge == "normal-gep")
+    else if (edge == "gep")
         pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
     else if (edge == "variant-gep")
         pag->addVariantGepEdge(srcID, dstID);

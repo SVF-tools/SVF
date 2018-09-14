@@ -297,6 +297,8 @@ public:
 
     /// Dump graph into dot file
     void dump();
+    /// Print CG into terminal
+    void print();
 };
 
 

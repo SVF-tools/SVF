@@ -145,8 +145,8 @@ public:
     //@{
     void visitGlobal(SVFModule svfModule);
     void InitialGlobal(const llvm::GlobalVariable *gvar, llvm::Constant *C,
-                       u32_t offset, u32_t fieldidx);
-    NodeID getGlobalVarField(const llvm::GlobalVariable *gvar, u32_t offset, u32_t fieldidx);
+                       u32_t offset);
+    NodeID getGlobalVarField(const llvm::GlobalVariable *gvar, u32_t offset);
     //@}
 
     /// Process constant expression

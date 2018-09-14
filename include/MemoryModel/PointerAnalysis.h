@@ -70,14 +70,14 @@ public:
         FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
         ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA
         ADAPTFSCSPS_WPA,	///< Adaptive Flow-, context-, path- sensitive WPA
+        TypeCPP_WPA, ///<  Type-based analysis for C++
 
         // Demand driven analysis
-        Insensitive_DDA, ///<  Flow-, context- insensitive DDA (POPL '08)
-        Regular_DDA,	///< Flow-, context- insensitive DDA (OOPSLA '05)
         FieldS_DDA,		///< Field sensitive DDA
         FlowS_DDA,		///< Flow sensitive DDA
         PathS_DDA,		///< Guarded value-flow DDA
         Cxt_DDA,		///< context sensitive DDA
+
 
         Default_PTA		///< default pta without any analysis
     };
@@ -90,6 +90,8 @@ public:
     typedef	std::set<const llvm::Function*> FunctionSet;
     typedef std::map<llvm::CallSite, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
+    typedef std::set<const llvm::GlobalValue*> VTableSet;
+    typedef std::set<const llvm::Function*> VFunSet;
     //@}
 
     /// Statistic numbers
@@ -353,6 +355,10 @@ public:
 
     /// Get points-to targets of a pointer. It needs to be implemented in child class
     virtual PointsTo& getPts(NodeID ptr) = 0;
+    
+    /// Given an object, get all the nodes having whose pointsto contains the object. 
+    /// Similar to getPts, this also needs to be implemented in child classes.
+    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts() {
@@ -376,15 +382,9 @@ public:
         return chgraph;
     }
 
-    void getVFnsFromCHA(llvm::CallSite cs,
-                        std::set<const llvm::Function*> &vfns);
-    void getVFnsFromPts(llvm::CallSite cs,
-                        const PointsTo &target,
-                        std::set<const llvm::Function*> &vfns);
-    void connectVCallToVFns(llvm::CallSite cs,
-                            const std::set<const llvm::Function*> &vfns,
-                            CallEdgeMap& newEdges,
-                            llvm::CallGraph* callgraph = NULL);
+    void getVFnsFromCHA(llvm::CallSite cs, std::set<const llvm::Function*> &vfns);
+    void getVFnsFromPts(llvm::CallSite cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(llvm::CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges, llvm::CallGraph* callgraph = NULL);
     virtual void resolveCPPIndCalls(llvm::CallSite cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges,
@@ -664,6 +664,7 @@ protected:
         for(typename PTDataTy::PtsMap::const_iterator it = ptsMap.begin(), eit=ptsMap.end(); it!=eit; ++it) {
             for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit) {
                 ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
+                objToBVRevPtsMap[cit->get_id()].set((it->first).get_id());
                 ptrToCPtsMap[(it->first).get_id()].set(*cit);
             }
         }
@@ -674,6 +675,8 @@ protected:
     bool normalized;
     /// Normal points-to representation (without conditions)
     PtrToBVPtsMap ptrToBVPtsMap;
+    /// Normal points-to representation (without conditions)
+    PtrToBVPtsMap objToBVRevPtsMap;
     /// Conditional points-to representation (with conditions)
     PtrToCPtsMap ptrToCPtsMap;
 public:
@@ -697,6 +700,11 @@ public:
     virtual inline const CPtSet& getCondPointsTo(NodeID ptr) {
         assert(normalized && "Pts of all context-vars have to be merged/normalized. Want to use getPts(CVar cvar)??");
         return ptrToCPtsMap[ptr];
+    }
+    /// Given an object return all pointers points to this object
+    virtual inline PointsTo& getRevPts(NodeID obj) {
+        assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
+        return objToBVRevPtsMap[obj];
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos

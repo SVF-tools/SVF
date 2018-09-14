@@ -38,6 +38,7 @@
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
 #include "WPA/FlowSensitive.h"
+#include "WPA/TypeAnalysis.h"
 #include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
@@ -57,7 +58,8 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis")
+            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
+			clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA")
         ));
 
 
@@ -87,7 +89,7 @@ WPAPass::~WPAPass() {
  * We start from here
  */
 void WPAPass::runOnModule(SVFModule svfModule) {
-    for (u32_t i = 0; i< PointerAnalysis::Default_PTA; i++) {
+    for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
             runPointerAnalysis(svfModule, i);
     }
@@ -119,15 +121,19 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive();
         break;
+    case PointerAnalysis::TypeCPP_WPA:
+		_pta = new TypeAnalysis();
+		break;
     default:
-        llvm::outs() << "This pointer analysis has not been implemented yet.\n";
-        break;
+        assert(false && "This pointer analysis has not been implemented yet.\n");
+        return;
     }
 
     ptaVector.push_back(_pta);
     _pta->analyze(svfModule);
     if (anderSVFG) {
         SVFGBuilder memSSA(true);
+        assert(isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
         SVFG *svfg = memSSA.buildSVFG((BVDataPTAImpl*)_pta);
         svfg->dump("ander_svfg");
     }

@@ -109,6 +109,7 @@ public:
     virtual inline void finalize() {
         /// dump constraint graph if PAGDotGraph flag is enabled
         consCG->dump();
+        consCG->print();
         /// sanitize field insensitive obj
         /// TODO: Fields has been collapsed during Andersen::collapseField().
         //	sanitizePts();
