@@ -18,7 +18,7 @@ private:
     std::string functionName;
     /// Nodes in the SubPAG which call edges should connect to.
     /// argNodes[0] is arg 0, argNodes[1] is arg 1, ...
-    std::vector<PAGNode *> argNodes;
+    std::map<int, PAGNode *> argNodes;
 
 public:
     SubPAG(std::string functionName) : PAG(true), functionName(functionName), argNodes() {
@@ -27,7 +27,7 @@ public:
     ~SubPAG() {
     }
 
-    std::vector<PAGNode *> &getArgNodes() { return argNodes; }
+    std::map<int, PAGNode *> &getArgNodes() { return argNodes; }
     std::string getFunctionName() { return functionName; }
 };
 

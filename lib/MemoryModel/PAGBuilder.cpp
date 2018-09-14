@@ -71,28 +71,15 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
 
     std::vector<std::pair<std::string, std::string>> parsedSubPAGs
         = parseSubPAGs();
-    for (auto pa = parsedSubPAGs.begin(); pa != parsedSubPAGs.end(); ++pa) {
-        llvm::outs() << "fname: " << pa->first << " path: " << pa->second << "\n";
-    }
 
     // Build sub PAGs first to use them in PAG construction.
     for (auto subpagPair= parsedSubPAGs.begin();
          subpagPair != parsedSubPAGs.end(); ++subpagPair) {
-        llvm::outs() << "NEXT!\n";
-        llvm::outs() << "fname: " << subpagPair->first << " path: " << subpagPair->second << "\n";
-        std::string functionName = subpagPair->first;
+        std::string fname = subpagPair->first;
         std::string path = subpagPair->second;
 
-        PAGBuilderFromFile fileBuilder(path, true, functionName);
-        subpags[functionName] =
-            static_cast<SubPAG *>(fileBuilder.build());
-
-        subpags["swap"]->dump("newsubpag");
-        std::vector<PAGNode *> &argNodes = subpags["swap"]->getArgNodes();
-        llvm::outs() << argNodes.size() << " SIZE";
-        for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
-            llvm::outs() << **ag << "--\n";
-        }
+        PAGBuilderFromFile fileBuilder(path, true, fname);
+        subpags[fname] = static_cast<SubPAG *>(fileBuilder.build());
     }
 
     /// initial external library information
@@ -1134,9 +1121,11 @@ PAG* PAGBuilderFromFile::build() {
                 token_count++;
             }
 
-            if (token_count == 0)
+            if (token_count == 0) {
                 continue;
-            else if (token_count == 2 || token_count == 3) {
+            }
+
+            if (token_count == 2) {
                 NodeID nodeId;
                 string nodetype;
                 istringstream ss(line);
@@ -1152,48 +1141,44 @@ PAG* PAGBuilderFromFile::build() {
                     assert(
                         false
                         && "format not support, pls specify node type");
+            } else if (token_count == 3) {
+                // Either an edge, not considering gep, or a subpag node.
 
-                if (subPAG && token_count == 3) {
-                    int argNo;
-                    ss >> argNo;
-                    std::vector<PAGNode *> &argNodes =
-                        static_cast<SubPAG *>(pag)->getArgNodes();
-                    if (argNodes.size() <= argNo) argNodes.resize(argNo + 1);
-                    outs() << argNo << " HI\n";
-                    argNodes.insert(argNodes.begin(),
-                                    pag->getPAGNode(nodeId));
-                    argNodes.insert(argNodes.begin() + argNo,
-                                    pag->getPAGNode(nodeId));
-                    outs() << "bye\n";
-                    /*
-                    llvm::outs() << "inserting pag node\n";
-                    for (auto ag = argNodes.begin(); ag != argNodes.end(); ++ag) {
-                        llvm::outs() << "checking\n";
-                        llvm::outs() << **ag << ",,,,,\n";
-                    }
-                    */
-                } else if (!subPAG && token_count == 2) {
-                    int argNo;
-                    ss >> argNo;
-                }
-            }
-
-            // do not consider gep edge
-            else if (token_count == 3) {
-                NodeID nodeSrc;
-                NodeID nodeDst;
-                string edge;
+                // Will be the new node's ID or the source node.
+                NodeID nodeId;
+                string type;
                 istringstream ss(line);
-                ss >> nodeSrc;
-                ss >> edge;
-                ss >> nodeDst;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " \n";
-                addEdge(nodeSrc, nodeDst, 0, edge);
-            }
+                ss >> nodeId;
+                ss >> type;
 
-            // do consider gep edge
-            else if (token_count == 4) {
+                if (type == "v" || type == "o") {
+                    // It's a node.
+
+                    if (type == "v") {
+                        pag->addDummyValNode(nodeId);
+                    } else if (type == "o") {
+                        pag->addDummyObjNode(nodeId);
+                    }
+
+                    // If it's not for a subpag, just ignore it.
+                    if (subPAG) {
+                        int argNo;
+                        ss >> argNo;
+                        std::map<int, PAGNode *> &argNodes =
+                            static_cast<SubPAG *>(pag)->getArgNodes();
+                        argNodes.insert(std::pair<int, PAGNode *>(
+                                            argNo, pag->getPAGNode(nodeId)));
+                    }
+                } else {
+                    // Edge, but not considering gep.
+                    int nodeDst;
+                    ss >> nodeDst;
+                    outs() << "reading edge :" << nodeId << " " << type << " "
+                           << nodeDst << " \n";
+                    addEdge(nodeId, nodeDst, 0, type);
+                }
+            } else if (token_count == 4) {
+                // do consider gep edge
                 NodeID nodeSrc;
                 NodeID nodeDst;
                 Size_t offsetOrCSId;
