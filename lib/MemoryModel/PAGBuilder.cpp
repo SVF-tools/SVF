@@ -45,8 +45,6 @@ static llvm::cl::list<std::string> SubPAGArgs("subpags",
                                               llvm::cl::desc("SubPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
                                               llvm::cl::CommaSeparated);
 
-std::map<std::string, SubPAG *> subpags;
-
 static std::vector<std::pair<std::string, std::string>> parseSubPAGs(void) {
     std::vector<std::pair<std::string, std::string>> parsedSubPAGs;
     for (auto arg = SubPAGArgs.begin(); arg != SubPAGArgs.end(); ++arg) {

@@ -45,6 +45,7 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
 
+std::map<std::string, SubPAG *> subpags;
 
 /*!
  * Add Address edge

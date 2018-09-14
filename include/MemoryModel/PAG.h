@@ -35,6 +35,9 @@
 #include "PAGNode.h"
 #include "Util/AnalysisUtil.h"
 
+class SubPAG;
+extern std::map<std::string, SubPAG *> subpags;
+
 /*!
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
