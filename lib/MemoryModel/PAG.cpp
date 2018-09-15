@@ -30,6 +30,7 @@
 #include "MemoryModel/PAG.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/GraphUtil.h"
+#include "MemoryModel/SubPAG.h"
 
 #include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
 
@@ -599,6 +600,81 @@ bool PAG::isValidPointer(NodeID nodeId) const {
     if ((node->getInEdges().empty() && node->getOutEdges().empty()))
         return false;
     return node->isPointer();
+}
+
+bool PAG::addSubPAG(SubPAG *subpag) {
+    // We need: copies of nodes.
+    //        : copies of edges.
+    //        : to map function names to the (new) entry nodes.
+
+    // To create the new edges.
+    std::map<PAGNode *, PAGNode *> oldToNewNodes;
+
+    std::set<PAGEdge *> oldEdges;
+
+    // Add the nodes.
+    for (auto oldNode = subpag->begin(); oldNode != subpag->end(); ++oldNode) {
+        int newNodeId;
+        PAGNode *oldNodePtr = oldNode->second;
+        if (ValPN::classof(oldNodePtr)) newNodeId = pag->addDummyValNode();
+        else {
+            // TODO: fix obj node
+            newNodeId = pag->addDummyObjNode();
+        }
+
+        oldToNewNodes[oldNodePtr] = getPAGNode(newNodeId);
+
+        // Add edges to set to iterate later.
+        for (auto edge = oldNodePtr->getOutEdges().begin();
+             edge != oldNodePtr->getOutEdges().end(); ++edge) {
+            oldEdges.insert(*edge);
+        }
+    }
+
+    // Add the edges.
+    for (auto oldEdge = oldEdges.begin(); oldEdge != oldEdges.end();
+         ++oldEdge) {
+        PAGNode *srcNode = (*oldEdge)->getSrcNode();
+        PAGNode *dstNode = (*oldEdge)->getDstNode();
+        int srcID = oldToNewNodes[srcNode]->getId();
+        int dstID = oldToNewNodes[dstNode]->getId();
+
+        if ((*oldEdge)->getEdgeKind() == PAGEdge::Addr) {
+            pag->addAddrEdge(srcID, dstID);
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Copy) {
+            pag->addCopyEdge(srcID, dstID);
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Load) {
+            pag->addLoadEdge(srcID, dstID);
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Store) {
+            pag->addStoreEdge(srcID, dstID);
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::NormalGep) {
+            int offsetOrCSId =
+                static_cast<NormalGepPE *>(*oldEdge)->getOffset();
+            pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::VariantGep) {
+            pag->addVariantGepEdge(srcID, dstID);
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Call) {
+            pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
+        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Ret) {
+            pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
+        } else {
+            llvm::outs() << "Something is wrong... subpag addition\n";
+        }
+    }
+
+    std::map<int, PAGNode *> argNodes;
+    for (auto it = subpag->getArgNodes().begin();
+         it != subpag->getArgNodes().end(); ++it) {
+        int index = it->first;
+        PAGNode *oldNode = it->second;
+        argNodes[index] = oldToNewNodes[oldNode];
+    }
+
+    pag->getFuncNameToSubPAGEntriesMap()[subpag->getFunctionName()] = argNodes;
+}
+
+bool PAG::connectCallsiteToSubPAG(llvm::CallSite cs) {
+
 }
 
 /*!

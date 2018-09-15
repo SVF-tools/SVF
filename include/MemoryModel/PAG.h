@@ -95,6 +95,10 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
+    /// Maps function names to the entry nodes of the subpag which implements
+    /// it. This is to connect arguments and callsites.
+    std::map<std::string, std::map<int, PAGNode *>> funcNameToSubPAGEntries;
+
     /// Clean up memory
     void destroy();
 
@@ -661,6 +665,25 @@ public:
         return false;
     }
     //@}
+
+    inline std::map<std::string, std::map<int, PAGNode *>> getFuncNameToSubPAGEntriesMap(void) {
+        return funcNameToSubPAGEntries;
+    }
+
+    /// Whether a subPAG implementing funcName exists.
+    inline bool hasSubPAG(std::string funcName) {
+        return funcNameToSubPAGEntries.count(funcName) != 0;
+    }
+
+    /// Adds (creates new equivalents) all the nodes and edges of subpag to
+    /// this PAG.
+    /// Returns true on success, false otherwise (incl. if it already exists).
+    bool addSubPAG(SubPAG *subpag);
+
+    /// Connects callsite if a sub PAG implementing the relevant function
+    /// has been added.
+    /// Returns true on success, false otherwise.
+    bool connectCallsiteToSubPAG(llvm::CallSite cs);
 
     /// Return graph name
     inline std::string getGraphName() const {

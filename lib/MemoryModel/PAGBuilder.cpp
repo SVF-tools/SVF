@@ -553,7 +553,12 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee))
-            handleExtCall(cs, callee);
+            if (subpags.count(callee->getName())) {
+
+            } else {
+                // There is no subpag for the function, use the old method.
+                handleExtCall(cs, callee);
+            }
         else
             handleDirectCall(cs, callee);
     } else {
