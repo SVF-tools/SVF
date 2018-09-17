@@ -683,7 +683,7 @@ public:
     /// Connects callsite if a sub PAG implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
-    bool connectCallsiteToSubPAG(llvm::CallSite cs);
+    bool connectCallsiteToSubPAG(llvm::CallSite *cs);
 
     /// Return graph name
     inline std::string getGraphName() const {

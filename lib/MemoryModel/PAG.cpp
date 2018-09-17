@@ -673,8 +673,30 @@ bool PAG::addSubPAG(SubPAG *subpag) {
     pag->getFuncNameToSubPAGEntriesMap()[subpag->getFunctionName()] = argNodes;
 }
 
-bool PAG::connectCallsiteToSubPAG(llvm::CallSite cs) {
+bool PAG::connectCallsiteToSubPAG(llvm::CallSite *cs) {
+	Function *function = cs->getCalledFunction();
+	std::string functionName = function->getName();
+	if (!pag->hasSubPAG(functionName)) return false;
 
+	std::map<int, PAGNode*> argNodes =
+		pag->getFuncNameToSubPAGEntriesMap()[functionName];
+
+	// Handle the return.
+    if (llvm::isa<PointerType>(cs->getType())) {
+        NodeID dstrec = getValueNode(cs->getInstruction());
+        // Does it actually return a pointer?
+        if (isa<PointerType>(function->getReturnType())) {
+            // TODO, add it to subpag. NodeID srcret = getReturnNode(F);
+            //pag->addRetEdge(srcret, dstrec, cs->getInstruction());
+        } else {
+            // This is a int2ptr cast during parameter passing
+            //pag->addBlackHoleAddrEdge(dstrec);
+        }
+    }
+
+
+
+	return false;
 }
 
 /*!
