@@ -35,6 +35,7 @@
 #include "Util/ThreadCallGraph.h"
 #include "Util/CPPUtil.h"
 #include "Util/SVFModule.h"
+#include "Util/ICFG.h"
 #include "MemoryModel/CHA.h"
 #include "MemoryModel/PTAType.h"
 #include <fstream>
@@ -167,7 +168,7 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     else
         ptaCallGraph = new PTACallGraph(svfModule);
     callGraphSCCDetection();
-
+    icfg = new ICFG(ptaCallGraph);
     svfMod = svfModule;
 }
 

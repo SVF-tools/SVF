@@ -103,6 +103,7 @@ protected:
     SVFGStat * stat;
     SVFGK kind;
     MemSSA* mssa;
+    PointerAnalysis* pta;
 
     /// Clean up memory
     void destroy();

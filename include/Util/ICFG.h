@@ -50,10 +50,11 @@ public:
     typedef llvm::DenseMap<const PAGNode*, ActualRetICFGNode *> PAGNodeToActualRetMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalParmICFGNode *> PAGNodeToFormalParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalRetICFGNode *> PAGNodeToFormalRetMapTy;
-    typedef std::map<const PAGEdge*,const StmtICFGNode*> PAGEdgeToStmtICFGNodeMapTy;
+    typedef std::map<const PAGEdge*, StmtICFGNode*> PAGEdgeToStmtICFGNodeMapTy;
 
     typedef std::map<const llvm::Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const llvm::Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+    typedef std::map<const llvm::BasicBlock*, BasicBlockICFGNode *> BBToBasicBlockNodeMapTy;
     typedef std::map<llvm::CallSite, CallICFGNode *> CSToCallNodeMapTy;
     typedef std::map<llvm::CallSite, RetICFGNode *> CSToRetNodeMapTy;
 
@@ -67,8 +68,9 @@ public:
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<StoreICFGNode*> StoreNodeSet;
-    typedef std::vector<const llvm::Instruction*> InstVec;
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const llvm::BasicBlock*> BBSet;
+    typedef FIFOWorkList<const llvm::BasicBlock*> WorkList;
+
 
 protected:
     NodeID totalICFGNode;
@@ -83,22 +85,19 @@ protected:
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallICFGNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
-
+    BBToBasicBlockNodeMapTy BBToBasicBlockNodeMap; ///< map a basic block to its ICFGNode
     StoreNodeSet globalStore;	///< set of global store ICFG nodes
     ICFGStat * stat;
-    PointerAnalysis* pta;
+    PTACallGraph* callgraph;
     PAG* pag;
 
     /// Clean up memory
     void destroy();
 
-    /// Constructor
-    ICFG();
-
-    /// Start building SVFG
-    virtual void buildICFG(PointerAnalysis* pta);
-
 public:
+    /// Constructor
+    ICFG(PTACallGraph* callgraph);
+
     /// Destructor
     virtual ~ICFG() {
         destroy();
@@ -143,10 +142,10 @@ public:
     /// Get callsite given a callsiteID
     //@{
     inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
-        return pta->getPTACallGraph()->getCallSiteID(cs, func);
+        return callgraph->getCallSiteID(cs, func);
     }
     inline llvm::CallSite getCallSite(CallSiteID id) const {
-        return pta->getPTACallGraph()->getCallSite(id);
+        return callgraph->getCallSite(id);
     }
     //@}
 
@@ -160,7 +159,7 @@ public:
 
     /// Get an ICFGNode
     //@{
-	inline const StmtICFGNode* getStmtICFGNode(const PAGEdge* pagEdge) const {
+	inline StmtICFGNode* getStmtICFGNode(const PAGEdge* pagEdge) const {
 		PAGEdgeToStmtICFGNodeMapTy::const_iterator it = PAGEdgeToStmtICFGNodeMap.find(pagEdge);
 		assert(it != PAGEdgeToStmtICFGNodeMap.end() && "StmtICFGNode can not be found??");
 		return it->second;
@@ -185,26 +184,6 @@ public:
         assert(it!=PAGNodeToFormalRetMap.end() && "formal return ICFG node can not be found??");
         return it->second;
     }
-    inline FunEntryICFGNode* getFunEntryICFGNode(const llvm::Function* fun) const{
-        FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
-		assert(it!=FunToFunEntryNodeMap.end() && "FunEntryICFGNode not created?");
-		return it->second;
-    }
-    inline FunExitICFGNode* getFunExitICFGNode(const llvm::Function* fun) const{
-        FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
-		assert(it!=FunToFunExitNodeMap.end() && "FunExitICFGNode not created?");
-		return it->second;
-    }
-    inline CallICFGNode* getCallICFGNode(llvm::CallSite cs) const{
-        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
-		assert(it!=CSToCallNodeMap.end() && "CallICFGNode not created?");
-		return it->second;
-    }
-    inline RetICFGNode* getRetICFGNode(llvm::CallSite cs) const{
-        CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
-		assert(it!=CSToRetNodeMap.end() && "RetICFGNode not created?");
-		return it->second;
-    }
     //@}
 
     /// Whether a node is function entry ICFGNode
@@ -225,8 +204,8 @@ protected:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
-    ICFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    ICFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
     //@}
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
@@ -239,28 +218,28 @@ protected:
     }
 
     /// Add inter VF edge from actual to formal parameters
-    inline ICFGEdge* addInterEdgeFromAPToFP(const ActualParmICFGNode* src, const FormalParmICFGNode* dst, CallSiteID csId) {
-        return addCallEdge(src->getId(),dst->getId(),csId);
+    inline ICFGEdge* addInterEdgeFromAPToFP(ActualParmICFGNode* src, FormalParmICFGNode* dst, CallSiteID csId) {
+        return addCallEdge(src,dst,csId);
     }
     /// Add inter VF edge from callee return to callsite receive parameter
-    inline ICFGEdge* addInterEdgeFromFRToAR(const FormalRetICFGNode* src, const ActualRetICFGNode* dst, CallSiteID csId) {
-        return addRetEdge(src->getId(),dst->getId(),csId);
+    inline ICFGEdge* addInterEdgeFromFRToAR(FormalRetICFGNode* src, ActualRetICFGNode* dst, CallSiteID csId) {
+        return addRetEdge(src,dst,csId);
     }
 
     /// Connect ICFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
     virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        const ActualParmICFGNode* actualParam = getActualParmICFGNode(cs_arg,cs);
-        const FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
+        ActualParmICFGNode* actualParam = getActualParmICFGNode(cs_arg,cs);
+        FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
         ICFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        const FormalRetICFGNode* formalRet = getFormalRetICFGNode(fun_return);
-        const ActualRetICFGNode* actualRet = getActualRetICFGNode(cs_return);
+        FormalRetICFGNode* formalRet = getFormalRetICFGNode(fun_return);
+        ActualRetICFGNode* actualRet = getActualRetICFGNode(cs_return);
         ICFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
@@ -300,9 +279,11 @@ protected:
     /// Create ICFG nodes
     void addICFGNodes();
 
-    /// Create edges between ICFG nodes
+    /// Create edges between ICFG nodes within a function
     void addICFGEdges();
 
+    /// Create edges between ICFG nodes across functions
+    void addICFGInterEdges(llvm::CallSite cs, const llvm::Function* callee);
 
     inline bool isPhiCopyEdge(const CopyPE* copy) const {
         return pag->isPhiNode(copy->getDstNode());
@@ -364,51 +345,63 @@ protected:
             globalStore.insert(sNode);
     }
 
-    /// Add function entry and exit nodes
-    inline void addFunEntryAndExitNodes(const llvm::Function* fun){
-        addFunEntryICFGNode(fun);
-        addFunExitICFGNode(fun);
-    }
-    /// Add call and return nodes
-    inline void addCallAndRetNodes(llvm::CallSite cs){
-        addCallICFGNode(cs);
-        addRetICFGNode(cs);
-    }
-	/// Add a function entry node
-	inline void addFunEntryICFGNode(const llvm::Function* fun) {
+    void addStmtsToBBICFGNode(BasicBlockICFGNode* bbICFGNode, const llvm::BasicBlock* bb);
+
+	/// Add a basic block ICFGNode
+	inline BasicBlockICFGNode* getBasicBlockICFGNode(const llvm::BasicBlock* bb) {
+		BBToBasicBlockNodeMapTy::const_iterator it = BBToBasicBlockNodeMap.find(bb);
+		if (it == BBToBasicBlockNodeMap.end()) {
+			BasicBlockICFGNode* sNode = new BasicBlockICFGNode(totalICFGNode++,bb);
+			addICFGNode(sNode);
+			BBToBasicBlockNodeMap[bb] = sNode;
+			addStmtsToBBICFGNode(sNode,bb);
+			return sNode;
+		}
+		return it->second;
+	}
+    /// Add a function entry node
+	inline FunEntryICFGNode* getFunEntryICFGNode(const llvm::Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end()) {
 			FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,fun);
 			addICFGNode(sNode);
 			FunToFunEntryNodeMap[fun] = sNode;
+			return sNode;
 		}
+		return it->second;
 	}
 	/// Add a function exit node
-	inline void addFunExitICFGNode(const llvm::Function* fun) {
+	inline FunExitICFGNode* getFunExitICFGNode(const llvm::Function* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
 		if (it == FunToFunExitNodeMap.end()) {
 			FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, fun);
 			addICFGNode(sNode);
 			FunToFunExitNodeMap[fun] = sNode;
+			return sNode;
 		}
+		return it->second;
 	}
     /// Add a call node
-    inline void addCallICFGNode(llvm::CallSite cs) {
+    inline CallICFGNode* getCallICFGNode(llvm::CallSite cs) {
 		CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
 		if (it == CSToCallNodeMap.end()) {
 			CallICFGNode* sNode = new CallICFGNode(totalICFGNode++, cs);
 			addICFGNode(sNode);
 			CSToCallNodeMap[cs] = sNode;
+			return sNode;
 		}
+		return it->second;
     }
     /// Add a return node
-    inline void addRetICFGNode(llvm::CallSite cs) {
+    inline RetICFGNode* getRetICFGNode(llvm::CallSite cs) {
 		CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
 		if (it == CSToRetNodeMap.end()) {
 			RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs);
 			addICFGNode(sNode);
 			CSToRetNodeMap[cs] = sNode;
+			return sNode;
 		}
+		return it->second;
     }
 
     /// Add an actual parameter ICFG node

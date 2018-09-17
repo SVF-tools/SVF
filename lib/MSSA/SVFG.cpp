@@ -44,7 +44,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(MemSSA* _mssa, SVFGK k): ICFG(), kind(k),mssa(_mssa) {
+SVFG::SVFG(MemSSA* _mssa, SVFGK k): ICFG(_mssa->getPTA()->getPTACallGraph()), kind(k),mssa(_mssa), pta(mssa->getPTA()) {
     stat = new SVFGStat(this);
 }
 
@@ -67,7 +67,6 @@ void SVFG::destroy() {
  *    b) between two memory SSA operators (MSSAPHI MSSAMU and MSSACHI)
  */
 void SVFG::buildSVFG() {
-    pta = mssa->getPTA();
     stat->startClk();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
@@ -148,9 +147,9 @@ void SVFG::connectDirectSVFGEdges() {
 
     for(iterator it = begin(), eit = end(); it!=eit; ++it) {
         NodeID nodeId = it->first;
-        const SVFGNode* node = it->second;
+        SVFGNode* node = it->second;
 
-        if(const StmtSVFGNode* stmtNode = dyn_cast<StmtSVFGNode>(node)) {
+        if(StmtSVFGNode* stmtNode = dyn_cast<StmtSVFGNode>(node)) {
             /// do not handle AddrSVFG node, as it is already the source of a definition
             if(isa<AddrSVFGNode>(stmtNode))
                 continue;
@@ -163,32 +162,32 @@ void SVFG::connectDirectSVFGEdges() {
             }
 
         }
-        else if(const PHISVFGNode* phiNode = dyn_cast<PHISVFGNode>(node)) {
+        else if(PHISVFGNode* phiNode = dyn_cast<PHISVFGNode>(node)) {
             for (PHISVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
                     it != eit; it++) {
                 addIntraDirectVFEdge(getDef(it->second),nodeId);
             }
         }
-        else if(const ActualParmSVFGNode* actualParm = dyn_cast<ActualParmSVFGNode>(node)) {
+        else if(ActualParmSVFGNode* actualParm = dyn_cast<ActualParmSVFGNode>(node)) {
             addIntraDirectVFEdge(getDef(actualParm->getParam()),nodeId);
         }
-        else if(const FormalParmSVFGNode* formalParm = dyn_cast<FormalParmSVFGNode>(node)) {
+        else if(FormalParmSVFGNode* formalParm = dyn_cast<FormalParmSVFGNode>(node)) {
             for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
                     it!=eit; ++it) {
                 const Instruction* callInst = (*it)->getCallInst();
                 CallSite cs = analysisUtil::getLLVMCallSite(callInst);
-                const ActualParmSVFGNode* acutalParm = getActualParmICFGNode((*it)->getSrcNode(),cs);
+                ActualParmSVFGNode* acutalParm = getActualParmICFGNode((*it)->getSrcNode(),cs);
                 addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
             }
         }
-        else if(const FormalRetSVFGNode* calleeRet = dyn_cast<FormalRetSVFGNode>(node)) {
+        else if(FormalRetSVFGNode* calleeRet = dyn_cast<FormalRetSVFGNode>(node)) {
             /// connect formal ret to its definition node
             addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
 
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd();
                     it!=eit; ++it) {
-                const ActualRetSVFGNode* callsiteRev = getActualRetICFGNode((*it)->getDstNode());
+                ActualRetSVFGNode* callsiteRev = getActualRetICFGNode((*it)->getDstNode());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
             }
         }
@@ -202,8 +201,8 @@ void SVFG::connectDirectSVFGEdges() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter) {
         TDForkPE* forkedge = cast<TDForkPE>(*iter);
-        const ActualParmSVFGNode* acutalParm = getActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        const FormalParmSVFGNode* formalParm = getFormalParmICFGNode(forkedge->getDstNode());
+        ActualParmSVFGNode* acutalParm = getActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
+        FormalParmSVFGNode* formalParm = getFormalParmICFGNode(forkedge->getDstNode());
         addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
     }
     /// add join edge
@@ -212,7 +211,7 @@ void SVFG::connectDirectSVFGEdges() {
                 joins.end(); iter != eiter; ++iter) {
         TDJoinPE* joinedge = cast<TDJoinPE>(*iter);
         NodeID callsiteRev = getDef(joinedge->getDstNode());
-        const FormalRetSVFGNode* calleeRet = getFormalRetICFGNode(joinedge->getSrcNode());
+        FormalRetSVFGNode* calleeRet = getFormalRetICFGNode(joinedge->getSrcNode());
         addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
     }
 }

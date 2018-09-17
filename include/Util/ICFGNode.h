@@ -43,12 +43,12 @@ typedef GenericNode<ICFGNode,ICFGEdge> GenericICFGNodeTy;
 class ICFGNode : public GenericICFGNodeTy {
 
 public:
-    /// five kinds of SVFG node
+    /// 22 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK {
         Addr, Copy, Gep, Store, Load, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-        FEntry, FCall, APIN, APOUT, FPIN, FPOUT, NPtr
+        BasicBlock, FunEntry, FunExit, FunCall, FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
@@ -61,12 +61,12 @@ public:
     ICFGNode(NodeID i, ICFGNodeK k): GenericICFGNodeTy(i,k), bb(NULL) {
 
     }
-    /// We should know the program location (basic block level) of each SVFG node
+    /// We should know the program location (basic block level) of each ICFG node
     virtual const llvm::BasicBlock* getBB() const {
         return bb;
     }
 
-    /// Overloading operator << for dumping SVFG node ID
+    /// Overloading operator << for dumping ICFG node ID
     //@{
     friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const ICFGNode &node) {
         o << "ICFGNode ID:" << node.getId();
@@ -79,7 +79,7 @@ protected:
 
 
 /*!
- * SVFG node stands for a program statement
+ * ICFG node stands for a program statement
  */
 class StmtICFGNode : public ICFGNode {
 
@@ -142,9 +142,43 @@ public:
     //@}
 };
 
+/*!
+ * ICFG node stands for a program statement
+ */
+class BasicBlockICFGNode : public ICFGNode {
+public:
+    typedef std::vector<const StmtICFGNode*> StmtICFGNodeVec;
+private:
+    const llvm::BasicBlock* bb;
+    StmtICFGNodeVec stmts;
+public:
+    BasicBlockICFGNode(NodeID id, const llvm::BasicBlock* _bb) : ICFGNode(id, BasicBlock), bb(_bb){
+    }
+
+	inline const llvm::BasicBlock* getBB() const {
+		return bb;
+	}
+
+	inline void addStmtICFGNode(const StmtICFGNode* s) {
+		stmts.push_back(s);
+	}
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BasicBlockICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == BasicBlock;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == BasicBlock;
+    }
+    //@}
+};
 
 /*
- * SVFG Node stands for acutal parameter node (top level pointers)
+ * ICFG Node stands for acutal parameter node (top level pointers)
  */
 class ActualParmICFGNode : public ICFGNode {
 private:
@@ -183,7 +217,7 @@ public:
 
 
 /*
- * SVFG Node stands for formal parameter node (top level pointers)
+ * ICFG Node stands for formal parameter node (top level pointers)
  */
 class FormalParmICFGNode : public ICFGNode {
 private:
@@ -276,7 +310,7 @@ public:
 };
 
 /*!
- * Callee return SVFG node
+ * Callee return ICFG node
  */
 class FormalRetICFGNode: public ICFGNode {
 private:
@@ -338,7 +372,7 @@ private:
     const llvm::Function* fun;
     FormalParmICFGNodeVec FPNodes;
 public:
-    FunEntryICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FEntry), fun(f){
+    FunEntryICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FunEntry), fun(f){
     }
     /// Return function
     inline const llvm::Function* getFunction() const {
@@ -359,10 +393,10 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FEntry;
+        return node->getNodeKind() == FunEntry;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FEntry;
+        return node->getNodeKind() == FunEntry;
     }
     //@}
 };
@@ -376,7 +410,7 @@ private:
     const llvm::Function* fun;
     const FormalRetICFGNode* formalRet;
 public:
-    FunExitICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FEntry), fun(f), formalRet(NULL){
+    FunExitICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FunExit), fun(f), formalRet(NULL){
     }
     /// Return function
     inline const llvm::Function* getFunction() const {
@@ -397,10 +431,10 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FEntry;
+        return node->getNodeKind() == FunExit;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FEntry;
+        return node->getNodeKind() == FunExit;
     }
     //@}
 };
@@ -416,7 +450,7 @@ private:
     llvm::CallSite cs;
     ActualParmICFGNodeVec APNodes;
 public:
-    CallICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FCall), cs(c){
+    CallICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FunCall), cs(c){
     }
 
     /// Return callsite
@@ -438,10 +472,10 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FCall;
+        return node->getNodeKind() == FunCall;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FCall;
+        return node->getNodeKind() == FunCall;
     }
     //@}
 };
@@ -455,7 +489,7 @@ private:
     llvm::CallSite cs;
     const ActualRetICFGNode* actualRet;
 public:
-    RetICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FCall), cs(c), actualRet(NULL){
+    RetICFGNode(NodeID id, llvm::CallSite c): ICFGNode(id, FunRet), cs(c), actualRet(NULL){
     }
 
 	/// Return callsite
@@ -473,20 +507,20 @@ public:
 
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CallICFGNode *) {
+    static inline bool classof(const RetICFGNode *) {
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FCall;
+        return node->getNodeKind() == FunRet;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FCall;
+        return node->getNodeKind() == FunRet;
     }
     //@}
 };
 
 /*
- * SVFG Node stands for a top level pointer ssa phi node or a formal parameter or a return parameter
+ * ICFG Node stands for a top level pointer ssa phi node or a formal parameter or a return parameter
  */
 class PHIICFGNode : public ICFGNode {
 

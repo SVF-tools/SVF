@@ -46,7 +46,7 @@ class CHNode;
 
 class TypeSystem;
 class SVFModule;
-
+class ICFG;
 class PTAStat;
 /*
  * Pointer Analysis Base Class
@@ -125,6 +125,8 @@ protected:
     PTACallGraph* ptaCallGraph;
     /// SCC for CallGraph
     CallGraphSCC* callGraphSCC;
+    /// Interprocedural control-flow graph
+    ICFG* icfg;
     /// CHGraph
     static CHGraph *chgraph;
     /// TypeSystem
