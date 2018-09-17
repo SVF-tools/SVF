@@ -77,6 +77,63 @@ protected:
     const llvm::BasicBlock* bb;
 };
 
+class IntraICFGNode : public ICFGNode {
+
+public:
+    /// Constructor
+	IntraICFGNode(NodeID id, ICFGNodeK k): ICFGNode(id,k) {
+    }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const IntraICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+		return node->getNodeKind() == TIntraPhi
+				|| node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Store
+				|| node->getNodeKind() == Load;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+		return node->getNodeKind() == TIntraPhi
+				|| node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Store
+				|| node->getNodeKind() == Load;
+    }
+    //@}
+};
+
+class InterICFGNode : public ICFGNode {
+
+public:
+    /// Constructor
+	InterICFGNode(NodeID id, ICFGNodeK k): ICFGNode(id,k) {
+    }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const InterICFGNode *) {
+        return true;
+    }
+    static inline bool classof(const ICFGNode *node) {
+		return node->getNodeKind() == FunEntry
+				|| node->getNodeKind() == FunExit
+				|| node->getNodeKind() == FunCall
+				|| node->getNodeKind() == FunRet;
+    }
+    static inline bool classof(const GenericICFGNodeTy *node) {
+		return node->getNodeKind() == FunEntry
+				|| node->getNodeKind() == FunExit
+				|| node->getNodeKind() == FunCall
+				|| node->getNodeKind() == FunRet;
+    }
+    //@}
+};
 
 /*!
  * ICFG node stands for a program statement
@@ -145,21 +202,21 @@ public:
 /*!
  * ICFG node stands for a program statement
  */
-class BasicBlockICFGNode : public ICFGNode {
+class InstructionICFGNode : public ICFGNode {
 public:
     typedef std::vector<const StmtICFGNode*> StmtICFGNodeVec;
     typedef StmtICFGNodeVec::iterator iterator;
     typedef StmtICFGNodeVec::const_iterator const_iterator;
 
 private:
-    const llvm::BasicBlock* bb;
+    const llvm::Instruction* inst;
     StmtICFGNodeVec stmts;
 public:
-    BasicBlockICFGNode(NodeID id, const llvm::BasicBlock* _bb) : ICFGNode(id, BasicBlock), bb(_bb){
+    InstructionICFGNode(NodeID id, const llvm::Instruction* i) : ICFGNode(id, BasicBlock), inst(i){
     }
 
-	inline const llvm::BasicBlock* getBB() const {
-		return bb;
+	inline const llvm::Instruction* getInst() const {
+		return inst;
 	}
 
 	inline void addStmtICFGNode(const StmtICFGNode* s) {
@@ -176,7 +233,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const BasicBlockICFGNode *) {
+    static inline bool classof(const InstructionICFGNode *) {
         return true;
     }
     static inline bool classof(const ICFGNode *node) {

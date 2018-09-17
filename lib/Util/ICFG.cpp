@@ -71,35 +71,61 @@ void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 	const Function* caller = cs.getCaller();
 
 	CallICFGNode* callICFGNode = getCallICFGNode(cs);
-	RetICFGNode* retICFGNode = getRetICFGNode(cs);
-    FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
-    FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
+	FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
+	addCallEdge(callICFGNode, calleeEntryNode, getCallSiteID(cs, callee));
 
-    addCallEdge(callICFGNode,calleeEntryNode,getCallSiteID(cs,callee));
-    addRetEdge(calleeExitNode,retICFGNode,getCallSiteID(cs,callee));
+	if (!isExtCall(callee)) {
+		RetICFGNode* retICFGNode = getRetICFGNode(cs);
+		FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
+		addRetEdge(calleeExitNode, retICFGNode, getCallSiteID(cs, callee));
+	}
 }
 
 /*!
- * Add statements into BasicBlockICFGNode
+ * Add statements into InstructionICFGNode
  */
-void ICFG::addStmtsToBBICFGNode(BasicBlockICFGNode* bbICFGNode, const llvm::BasicBlock* bb){
-	for(BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it!=eit; ++it){
-		const llvm::Instruction* inst = &(*it);
-		if (isCallSite(inst) && getCallee(inst)) {
-			addICFGInterEdges(getLLVMCallSite(inst), getCallee(inst));
-		} else {
-			PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
-			for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
-					ebit = pagEdgeList.end(); bit != ebit; ++bit) {
-				if(!isPhiCopyEdge(*bit)){
-					StmtICFGNode* stmt = getStmtICFGNode(*bit);
-					bbICFGNode->addStmtICFGNode(stmt);
-				}
+void ICFG::addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, const llvm::Instruction* inst){
+	if (isCallSite(inst) && getCallee(inst)) {
+		CallSite cs = getLLVMCallSite(inst);
+		addICFGInterEdges(cs, getCallee(inst));
+		addIntraEdge(instICFGNode, getCallICFGNode(cs));
+		addIntraEdge(getRetICFGNode(cs), instICFGNode);
+		InstVec nextInsts;
+		getNextInsts(inst,nextInsts);
+	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
+			addIntraEdge(getRetICFGNode(cs), getInstructionICFGNode(*nit));
+	    }
+	} else {
+		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
+		for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
+				pagEdgeList.end(); bit != ebit; ++bit) {
+			if (!isPhiCopyEdge(*bit)) {
+				StmtICFGNode* stmt = getStmtICFGNode(*bit);
+				instICFGNode->addStmtICFGNode(stmt);
 			}
 		}
 	}
 }
 
+/*
+ *
+ */
+InstructionICFGNode* ICFG::getLastInstFromBasicBlock(const llvm::BasicBlock* bb){
+	const Instruction* curInst = &(*bb->begin());
+	InstructionICFGNode* curNode = getInstructionICFGNode(curInst);
+
+	for(BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it!=eit; ++it){
+		const Instruction* nextInst = &(*it);
+		if (curInst != nextInst) {
+			curNode = getInstructionICFGNode(curInst);
+			InstructionICFGNode* nextNode = getInstructionICFGNode(nextInst);
+			addIntraEdge(curNode, nextNode);
+			curInst = nextInst;
+			curNode = nextNode;
+		}
+	}
+	return curNode;
+}
 /*!
  * Create ICFG edges
  */
@@ -114,7 +140,7 @@ void ICFG::addICFGEdges(){
         /// function entry
         FunEntryICFGNode* funEntryNode = getFunEntryICFGNode(fun);
         const BasicBlock* entryBB = &(fun->getEntryBlock());
-        BasicBlockICFGNode* entryBBNode = getBasicBlockICFGNode(entryBB);
+        InstructionICFGNode* entryBBNode = getFirstInstFromBasicBlock(entryBB);
         addIntraEdge(funEntryNode, entryBBNode);
 
         BBSet visited;
@@ -125,10 +151,10 @@ void ICFG::addICFGEdges(){
             const llvm::BasicBlock* bb = worklist.pop();
 			if (visited.find(bb) == visited.end()) {
 				visited.insert(bb);
-				BasicBlockICFGNode* srcNode = getBasicBlockICFGNode(bb);
+				InstructionICFGNode* srcNode = getLastInstFromBasicBlock(bb);
 	            for (succ_const_iterator sit = succ_begin(bb), esit = succ_end(bb); sit != esit; ++sit) {
 	                const BasicBlock* succ = *sit;
-	                BasicBlockICFGNode* dstNode = getBasicBlockICFGNode(succ);
+	                InstructionICFGNode* dstNode = getFirstInstFromBasicBlock(succ);
 	                addIntraEdge(srcNode, dstNode);
 	                worklist.push(succ);
 	            }
@@ -139,8 +165,8 @@ void ICFG::addICFGEdges(){
 		/// function exit
 		FunExitICFGNode* funExitNode = getFunExitICFGNode(fun);
 		const BasicBlock* exitBB = getFunExitBB(fun);
-        BasicBlockICFGNode* exitBBNode = getBasicBlockICFGNode(exitBB);
-        addIntraEdge(exitBBNode,funExitNode);
+        InstructionICFGNode* exitInstNode = getLastInstFromBasicBlock(exitBB);
+        addIntraEdge(exitInstNode,funExitNode);
     }
 }
 
@@ -523,14 +549,15 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if(BasicBlockICFGNode* bbNode = dyn_cast<BasicBlockICFGNode>(node)) {
-			for (BasicBlockICFGNode::const_iterator it = bbNode->stmtBegin(), eit = bbNode->stmtEnd(); it != eit; ++it) {
+        if(InstructionICFGNode* bbNode = dyn_cast<InstructionICFGNode>(node)) {
+			for (InstructionICFGNode::const_iterator it = bbNode->stmtBegin(), eit = bbNode->stmtEnd(); it != eit; ++it) {
 				const StmtICFGNode* stmtNode = *it;
 				if (stmtNode->getInst()) {
 					rawstr << getSourceLoc(stmtNode->getInst());
 				} else if (stmtNode->getPAGDstNode()->hasValue()) {
 					rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
 				}
+				rawstr << "\n";
 			}
 
         }
@@ -558,7 +585,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
 
-        if(isa<BasicBlockICFGNode>(node)) {
+        if(isa<InstructionICFGNode>(node)) {
         		rawstr <<  "color=black";
         }
         else if(isa<FunEntryICFGNode>(node)) {

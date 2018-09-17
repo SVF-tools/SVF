@@ -54,7 +54,7 @@ public:
 
     typedef std::map<const llvm::Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const llvm::Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const llvm::BasicBlock*, BasicBlockICFGNode *> BBToBasicBlockNodeMapTy;
+    typedef std::map<const llvm::Instruction*, InstructionICFGNode *> BBToBasicBlockNodeMapTy;
     typedef std::map<llvm::CallSite, CallICFGNode *> CSToCallNodeMapTy;
     typedef std::map<llvm::CallSite, RetICFGNode *> CSToRetNodeMapTy;
 
@@ -68,6 +68,7 @@ public:
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<StoreICFGNode*> StoreNodeSet;
+    typedef std::vector<const llvm::Instruction*> InstVec;
     typedef std::set<const llvm::BasicBlock*> BBSet;
     typedef FIFOWorkList<const llvm::BasicBlock*> WorkList;
 
@@ -341,20 +342,28 @@ protected:
             globalStore.insert(sNode);
     }
 
-    void addStmtsToBBICFGNode(BasicBlockICFGNode* bbICFGNode, const llvm::BasicBlock* bb);
+    void addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, const llvm::Instruction* inst);
 
 	/// Add a basic block ICFGNode
-	inline BasicBlockICFGNode* getBasicBlockICFGNode(const llvm::BasicBlock* bb) {
-		BBToBasicBlockNodeMapTy::const_iterator it = BBToBasicBlockNodeMap.find(bb);
+	inline InstructionICFGNode* getInstructionICFGNode(const llvm::Instruction* inst) {
+		BBToBasicBlockNodeMapTy::const_iterator it = BBToBasicBlockNodeMap.find(inst);
 		if (it == BBToBasicBlockNodeMap.end()) {
-			BasicBlockICFGNode* sNode = new BasicBlockICFGNode(totalICFGNode++,bb);
+			InstructionICFGNode* sNode = new InstructionICFGNode(totalICFGNode++,inst);
 			addICFGNode(sNode);
-			BBToBasicBlockNodeMap[bb] = sNode;
-			addStmtsToBBICFGNode(sNode,bb);
+			BBToBasicBlockNodeMap[inst] = sNode;
+			addStmtsToInstructionICFGNode(sNode,inst);
 			return sNode;
 		}
 		return it->second;
 	}
+	/// Get the first instruction ICFGNode in a basic block
+	inline InstructionICFGNode* getFirstInstFromBasicBlock(const llvm::BasicBlock* bb) {
+		return getInstructionICFGNode(&(*bb->begin()));
+	}
+
+	/// Get the last instruction ICFGNode in a basic block
+	InstructionICFGNode* getLastInstFromBasicBlock(const llvm::BasicBlock* bb);
+
     /// Add a function entry node
 	inline FunEntryICFGNode* getFunEntryICFGNode(const llvm::Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
