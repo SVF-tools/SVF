@@ -180,7 +180,7 @@ void MemSSA::createMUCHI(const Function& fun) {
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
-            if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
+            if (isCallSite(inst)) {
                 CallSite cs = analysisUtil::getLLVMCallSite(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
@@ -309,7 +309,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
             }
         }
-        if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
+        if (isCallSite(inst)) {
             CallSite cs = analysisUtil::getLLVMCallSite(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));

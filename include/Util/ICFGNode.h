@@ -148,6 +148,9 @@ public:
 class BasicBlockICFGNode : public ICFGNode {
 public:
     typedef std::vector<const StmtICFGNode*> StmtICFGNodeVec;
+    typedef StmtICFGNodeVec::iterator iterator;
+    typedef StmtICFGNodeVec::const_iterator const_iterator;
+
 private:
     const llvm::BasicBlock* bb;
     StmtICFGNodeVec stmts;
@@ -161,6 +164,14 @@ public:
 
 	inline void addStmtICFGNode(const StmtICFGNode* s) {
 		stmts.push_back(s);
+	}
+
+	inline iterator stmtBegin() {
+		return stmts.begin();
+	}
+
+	inline iterator stmtEnd() {
+		return stmts.end();
 	}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -375,7 +386,7 @@ public:
     FunEntryICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FunEntry), fun(f){
     }
     /// Return function
-    inline const llvm::Function* getFunction() const {
+    inline const llvm::Function* getFun() const {
         return fun;
     }
 	/// Return the set of formal parameters
@@ -413,7 +424,7 @@ public:
     FunExitICFGNode(NodeID id, const llvm::Function* f): ICFGNode(id, FunExit), fun(f), formalRet(NULL){
     }
     /// Return function
-    inline const llvm::Function* getFunction() const {
+    inline const llvm::Function* getFun() const {
         return fun;
     }
 	/// Return actual return parameter

@@ -285,12 +285,8 @@ protected:
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(llvm::CallSite cs, const llvm::Function* callee);
 
-    inline bool isPhiCopyEdge(const CopyPE* copy) const {
+    inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
-    }
-
-    inline bool isPhiCopyNode(const PAGNode* node) const {
-        return pag->isPhiNode(node);
     }
 
     /// Add a ICFG node

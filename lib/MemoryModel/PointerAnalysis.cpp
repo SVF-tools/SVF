@@ -94,7 +94,7 @@ PAG* PointerAnalysis::pag = NULL;
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(PTATY ty) :
-    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL) {
+    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL) {
     OnTheFlyIterBudgetForStat = statBudget;
     print_stat = PStat;
     numOfIteration = 0;
@@ -168,7 +168,6 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     else
         ptaCallGraph = new PTACallGraph(svfModule);
     callGraphSCCDetection();
-    icfg = new ICFG(ptaCallGraph);
     svfMod = svfModule;
 }
 

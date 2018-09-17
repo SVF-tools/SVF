@@ -52,7 +52,7 @@ ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG Top Level Node\n"));
 	addICFGNodes();
-	//addICFGEdges();
+	addICFGEdges();
 }
 
 /*!
@@ -63,7 +63,6 @@ void ICFG::destroy() {
     stat = NULL;
     pag = NULL;
 }
-
 
 /*!
  * Create edges between ICFG nodes across functions
@@ -92,8 +91,10 @@ void ICFG::addStmtsToBBICFGNode(BasicBlockICFGNode* bbICFGNode, const llvm::Basi
 			PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
 			for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
 					ebit = pagEdgeList.end(); bit != ebit; ++bit) {
-				StmtICFGNode* stmt = getStmtICFGNode(*bit);
-				bbICFGNode->addStmtICFGNode(stmt);
+				if(!isPhiCopyEdge(*bit)){
+					StmtICFGNode* stmt = getStmtICFGNode(*bit);
+					bbICFGNode->addStmtICFGNode(stmt);
+				}
 			}
 		}
 	}
@@ -514,10 +515,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
     }
 
     std::string getNodeLabel(NodeType *node, ICFG *graph) {
-        if (isSimple())
-            return getSimpleNodeLabel(node, graph);
-        else
-            return getCompleteNodeLabel(node, graph);
+        return getSimpleNodeLabel(node, graph);
     }
 
     /// Return label of a VFG node without MemSSA information
@@ -525,96 +523,33 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if(StmtICFGNode* stmtNode = dyn_cast<StmtICFGNode>(node)) {
-            NodeID src = stmtNode->getPAGSrcNodeID();
-            NodeID dst = stmtNode->getPAGDstNodeID();
-            rawstr << dst << "<--" << src << "\n";
-            if(stmtNode->getInst()) {
-                rawstr << getSourceLoc(stmtNode->getInst());
-            }
-            else if(stmtNode->getPAGDstNode()->hasValue()) {
-                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
-            }
-        }
-        else if(PHIICFGNode* tphi = dyn_cast<PHIICFGNode>(node)) {
-            rawstr << tphi->getRes()->getId() << " = PHI(";
-            for(PHIICFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
-                    it != eit; it++)
-                rawstr << it->second->getId() << ", ";
-            rawstr << ")\n";
-            rawstr << getSourceLoc(tphi->getRes()->getValue());
-        }
-        else if(FormalParmICFGNode* fp = dyn_cast<FormalParmICFGNode>(node)) {
-            rawstr << "FPARM(" << fp->getParam()->getId() << ")\n";
-            rawstr << "Fun[" << fp->getFun()->getName() << "]";
-        }
-        else if(ActualParmICFGNode* ap = dyn_cast<ActualParmICFGNode>(node)) {
-            rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
-        }
-        else if (ActualRetICFGNode* ar = dyn_cast<ActualRetICFGNode>(node)) {
-            rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
-        }
-        else if (FormalRetICFGNode* fr = dyn_cast<FormalRetICFGNode>(node)) {
-            rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
-            rawstr << "Fun[" << fr->getFun()->getName() << "]";
-        }
-        else if(isa<NullPtrICFGNode>(node)) {
-            rawstr << "NullPtr";
-        }
-        else
-            assert(false && "what else kinds of nodes do we have??");
+        if(BasicBlockICFGNode* bbNode = dyn_cast<BasicBlockICFGNode>(node)) {
+			for (BasicBlockICFGNode::const_iterator it = bbNode->stmtBegin(), eit = bbNode->stmtEnd(); it != eit; ++it) {
+				const StmtICFGNode* stmtNode = *it;
+				if (stmtNode->getInst()) {
+					rawstr << getSourceLoc(stmtNode->getInst());
+				} else if (stmtNode->getPAGDstNode()->hasValue()) {
+					rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
+				}
+			}
 
-        return rawstr.str();
-    }
-
-    /// Return label of a VFG node with MemSSA information
-    static std::string getCompleteNodeLabel(NodeType *node, ICFG *graph) {
-
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "NodeID: " << node->getId() << "\n";
-        if(StmtICFGNode* stmtNode = dyn_cast<StmtICFGNode>(node)) {
-            NodeID src = stmtNode->getPAGSrcNodeID();
-            NodeID dst = stmtNode->getPAGDstNodeID();
-            rawstr << dst << "<--" << src << "\n";
-            if(stmtNode->getInst()) {
-                rawstr << getSourceLoc(stmtNode->getInst());
-            }
-            else if(stmtNode->getPAGDstNode()->hasValue()) {
-                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
-            }
         }
-        else if(PHIICFGNode* tphi = dyn_cast<PHIICFGNode>(node)) {
-            rawstr << tphi->getRes()->getId() << " = PHI(";
-            for(PHIICFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
-                    it != eit; it++)
-                rawstr << it->second->getId() << ", ";
-            rawstr << ")\n";
-            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        else if(FunEntryICFGNode* entry = dyn_cast<FunEntryICFGNode>(node)) {
+            rawstr << "Entry(" << entry->getId() << ")\n";
+            rawstr << "Fun[" << entry->getFun()->getName() << "]";
         }
-        else if(FormalParmICFGNode* fp = dyn_cast<FormalParmICFGNode>(node)) {
-            rawstr	<< "FPARM(" << fp->getParam()->getId() << ")\n";
-            rawstr << "Fun[" << fp->getFun()->getName() << "]";
+        else if(FunExitICFGNode* exit = dyn_cast<FunExitICFGNode>(node)) {
+            rawstr << "Exit(" << exit->getId() << ")\n";
+            rawstr << "Fun[" << exit->getFun()->getName() << "]";
         }
-        else if(ActualParmICFGNode* ap = dyn_cast<ActualParmICFGNode>(node)) {
-            rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+        else if(CallICFGNode* call = dyn_cast<CallICFGNode>(node)) {
+            rawstr << "Call(" << call->getId() << ")\n";
         }
-        else if(isa<NullPtrICFGNode>(node)) {
-            rawstr << "NullPtr";
+        else if(RetICFGNode* ret = dyn_cast<RetICFGNode>(node)) {
+            rawstr << "Ret(" << ret->getId() << ")\n";
         }
-        else if (ActualRetICFGNode* ar = dyn_cast<ActualRetICFGNode>(node)) {
-            rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
-        }
-        else if (FormalRetICFGNode* fr = dyn_cast<FormalRetICFGNode>(node)) {
-            rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
-            rawstr << "Fun[" << fr->getFun()->getName() << "]";
-        }
-        else
-            assert(false && "what else kinds of nodes do we have??");
+//        else
+//            assert(false && "what else kinds of nodes do we have??");
 
         return rawstr.str();
     }
@@ -623,58 +558,23 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
 
-        if(StmtICFGNode* stmtNode = dyn_cast<StmtICFGNode>(node)) {
-            const PAGEdge* edge = stmtNode->getPAGEdge();
-            if (isa<AddrPE>(edge)) {
-                rawstr <<  "color=green";
-            } else if (isa<CopyPE>(edge)) {
-                rawstr <<  "color=black";
-            } else if (isa<RetPE>(edge)) {
-                rawstr <<  "color=black,style=dotted";
-            } else if (isa<GepPE>(edge)) {
-                rawstr <<  "color=purple";
-            } else if (isa<StorePE>(edge)) {
-                rawstr <<  "color=blue";
-            } else if (isa<LoadPE>(edge)) {
-                rawstr <<  "color=red";
-            } else {
-                assert(0 && "No such kind edge!!");
-            }
-            rawstr <<  "";
+        if(isa<BasicBlockICFGNode>(node)) {
+        		rawstr <<  "color=black";
         }
-        else if(isa<PHIICFGNode>(node)) {
-            rawstr <<  "color=black";
+        else if(isa<FunEntryICFGNode>(node)) {
+            rawstr <<  "color=yellow";
         }
-        else if(isa<NullPtrICFGNode>(node)) {
-            rawstr <<  "color=grey";
+        else if(isa<FunExitICFGNode>(node)) {
+            rawstr <<  "color=yellow";
         }
-        else if(isa<FormalParmICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
+        else if(isa<CallICFGNode>(node)) {
+            rawstr <<  "color=red";
         }
-        else if(isa<ActualParmICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
+        else if(isa<RetICFGNode>(node)) {
+            rawstr <<  "color=blue";
         }
-        else if (isa<ActualRetICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
-        else if (isa<FormalRetICFGNode>(node)) {
-            rawstr <<  "color=yellow,style=double";
-        }
-        else
-            assert(false && "no such kind of node!!");
-
-        /// dump slice information
-        if(graph->getStat()->isSource(node)) {
-            rawstr << ",style=filled, fillcolor=red";
-        }
-        else if(graph->getStat()->isSink(node)) {
-            rawstr << ",style=filled, fillcolor=blue";
-        }
-        else if(graph->getStat()->inBackwardSlice(node)) {
-            rawstr << ",style=filled, fillcolor=yellow";
-        }
-        else if(graph->getStat()->inForwardSlice(node))
-            rawstr << ",style=filled, fillcolor=gray";
+//        else
+//            assert(false && "no such kind of node!!");
 
         rawstr <<  "";
 

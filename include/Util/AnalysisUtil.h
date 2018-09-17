@@ -49,13 +49,24 @@
  */
 namespace analysisUtil {
 
+/// Return true if this function is llvm dbg intrinsic function/instruction
+//@{
+inline bool isIntrinsicDbgFun(const llvm::Function* fun) {
+    return fun->getName().startswith("llvm.dbg.declare") ||
+           fun->getName().startswith("llvm.dbg.value");
+}
+bool isInstrinsicDbgInst(const llvm::Instruction* inst);
+//@}
+
 /// This function servers a allocation wrapper detector
 inline bool isAnAllocationWraper(const llvm::Instruction *inst) {
     return false;
 }
-/// Whether an instruction is a call or invoke instruction
+/// Whether an instruction is a call or invoke instruction, excluding llvm intrinsic calls
 inline bool isCallSite(const llvm::Instruction* inst) {
-    return llvm::isa<llvm::CallInst>(inst)|| llvm::isa<llvm::InvokeInst>(inst);
+	if(isInstrinsicDbgInst(inst))
+		return false;
+    return llvm::isa<llvm::CallInst>(inst) || llvm::isa<llvm::InvokeInst>(inst);
 }
 /// Whether an instruction is a return instruction
 inline bool isReturn(const llvm::Instruction* inst) {
@@ -377,14 +388,6 @@ inline const llvm::Value* getTaskDataAtHareParForSite(const llvm::Instruction *i
 /// Return true if this value refers to a object
 bool isObject (const llvm::Value * ref);
 
-/// Return true if this function is llvm dbg intrinsic function/instruction
-//@{
-inline bool isIntrinsicDbgFun(const llvm::Function* fun) {
-    return fun->getName().startswith("llvm.dbg.declare") ||
-           fun->getName().startswith("llvm.dbg.value");
-}
-bool isInstrinsicDbgInst(const llvm::Instruction* inst);
-//@}
 
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction

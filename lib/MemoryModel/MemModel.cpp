@@ -699,7 +699,7 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 if(ret->getReturnValue())
                     collectSym(ret->getReturnValue());
             }
-            else if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
+            else if (isCallSite(inst)) {
 
                 CallSite cs = analysisUtil::getLLVMCallSite(inst);
                 callSiteSet.insert(cs);

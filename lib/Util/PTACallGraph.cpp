@@ -93,7 +93,7 @@ void PTACallGraph::buildCallGraph(SVFModule svfModule) {
         Function *fun = *F;
         for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
-            if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
+            if (isCallSite(inst)) {
                 if(getCallee(inst))
                     addDirectCallGraphEdge(inst);
             }

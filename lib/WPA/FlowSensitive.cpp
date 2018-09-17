@@ -179,7 +179,7 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
         changed = true;
     }
     else if(isa<FunEntryICFGNode>(node) || isa<FunExitICFGNode>(node)
-            || isa<CallICFGNode>(node) || isa<RetICFGNode>(node)) {
+            || isa<CallICFGNode>(node) || isa<RetICFGNode>(node) || isa<BasicBlockICFGNode>(node)) {
         /// no need to handle these function stub nodes
     }
     else
