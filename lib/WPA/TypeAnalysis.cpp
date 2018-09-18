@@ -31,6 +31,7 @@
 #include "MemoryModel/CHA.h"
 #include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
+#include "Util/ICFGStat.h"
 #include "Util/SICFG.h"
 
 using namespace llvm;
@@ -43,6 +44,8 @@ void TypeAnalysis::initialize(SVFModule svfModule) {
     stat = new PTAStat(this);
     icfg = new SICFG(ptaCallGraph);
     icfg->dump("icfg_initial");
+	if (printStat())
+		icfg->getStat()->performStat();
 }
 
 /// Finalize analysis

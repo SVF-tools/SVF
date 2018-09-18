@@ -48,7 +48,7 @@ public:
     /// 22 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK {
-        BasicBlock, FunEntry, FunExit, FunCall, FunRet
+        IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
@@ -91,8 +91,9 @@ private:
     const llvm::Instruction* inst;
     StmtVFGNodeVec stmts;
 public:
-    IntraBlockNode(NodeID id, const llvm::Instruction* i) : ICFGNode(id, BasicBlock), inst(i){
-    }
+	IntraBlockNode(NodeID id, const llvm::Instruction* i) : ICFGNode(id, IntraBlock), inst(i) {
+		bb = inst->getParent();
+	}
 
 	inline const llvm::Instruction* getInst() const {
 		return inst;
@@ -116,10 +117,10 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == BasicBlock;
+        return node->getNodeKind() == IntraBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == BasicBlock;
+        return node->getNodeKind() == IntraBlock;
     }
     //@}
 };
@@ -137,16 +138,16 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-		return node->getNodeKind() == FunEntry
-				|| node->getNodeKind() == FunExit
-				|| node->getNodeKind() == FunCall
-				|| node->getNodeKind() == FunRet;
+		return node->getNodeKind() == FunEntryBlock
+				|| node->getNodeKind() == FunExitBlock
+				|| node->getNodeKind() == FunCallBlock
+				|| node->getNodeKind() == FunRetBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-		return node->getNodeKind() == FunEntry
-				|| node->getNodeKind() == FunExit
-				|| node->getNodeKind() == FunCall
-				|| node->getNodeKind() == FunRet;
+		return node->getNodeKind() == FunEntryBlock
+				|| node->getNodeKind() == FunExitBlock
+				|| node->getNodeKind() == FunCallBlock
+				|| node->getNodeKind() == FunRetBlock;
     }
     //@}
 };
@@ -163,7 +164,9 @@ private:
     const llvm::Function* fun;
     FormalParmVFGNodeVec FPNodes;
 public:
-    FunEntryBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunEntry), fun(f){
+    FunEntryBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunEntryBlock), fun(f){
+		if (!analysisUtil::isExtCall(fun))
+			bb = &(fun->getEntryBlock());
     }
     /// Return function
     inline const llvm::Function* getFun() const {
@@ -184,13 +187,13 @@ public:
         return true;
     }
 	static inline bool classof(const InterBlockNode * node) {
-		return node->getNodeKind() == FunEntry;
+		return node->getNodeKind() == FunEntryBlock;
 	}
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FunEntry;
+        return node->getNodeKind() == FunEntryBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FunEntry;
+        return node->getNodeKind() == FunEntryBlock;
     }
     //@}
 };
@@ -204,7 +207,9 @@ private:
     const llvm::Function* fun;
     const FormalRetVFGNode* formalRet;
 public:
-    FunExitBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunExit), fun(f), formalRet(NULL){
+    FunExitBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL){
+		if (!analysisUtil::isExtCall(fun))
+			bb = analysisUtil::getFunExitBB(fun);
     }
     /// Return function
     inline const llvm::Function* getFun() const {
@@ -225,13 +230,13 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FunExit;
+        return node->getNodeKind() == FunExitBlock;
     }
     static inline bool classof(const InterBlockNode *node) {
-        return node->getNodeKind() == FunExit;
+        return node->getNodeKind() == FunExitBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FunExit;
+        return node->getNodeKind() == FunExitBlock;
     }
     //@}
 };
@@ -247,7 +252,8 @@ private:
     llvm::CallSite cs;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunCall), cs(c){
+    CallBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunCallBlock), cs(c){
+		bb = cs.getInstruction()->getParent();
     }
 
     /// Return callsite
@@ -269,13 +275,13 @@ public:
         return true;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FunCall;
+        return node->getNodeKind() == FunCallBlock;
     }
     static inline bool classof(const InterBlockNode *node) {
-        return node->getNodeKind() == FunCall;
+        return node->getNodeKind() == FunCallBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FunCall;
+        return node->getNodeKind() == FunCallBlock;
     }
     //@}
 };
@@ -292,7 +298,8 @@ private:
     llvm::CallSite cs;
     const ActualRetVFGNode* actualRet;
 public:
-    RetBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunRet), cs(c), actualRet(NULL){
+    RetBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL){
+		bb = cs.getInstruction()->getParent();
     }
 
 	/// Return callsite
@@ -314,13 +321,13 @@ public:
         return true;
     }
     static inline bool classof(const InterBlockNode *node) {
-        return node->getNodeKind() == FunRet;
+        return node->getNodeKind() == FunRetBlock;
     }
     static inline bool classof(const ICFGNode *node) {
-        return node->getNodeKind() == FunRet;
+        return node->getNodeKind() == FunRetBlock;
     }
     static inline bool classof(const GenericICFGNodeTy *node) {
-        return node->getNodeKind() == FunRet;
+        return node->getNodeKind() == FunRetBlock;
     }
     //@}
 };

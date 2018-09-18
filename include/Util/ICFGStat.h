@@ -30,49 +30,62 @@
 #define INCLUDE_UTIL_ICFGSTAT_H_
 
 #include "Util/PTAStat.h"
-class ICFGNode;
+#include "Util/ICFG.h"
 
-class ICFGStat : public PTAStat{
+class ICFGStat : public PTAStat {
 
+private:
+	ICFG* icfg;
+    int numOfNodes;
+    int numOfCallNodes;
+    int numOfRetNodes;
+    int numOfEntryNodes;
+    int numOfExitNodes;
+    int numOfIntraNodes;
+    int numOfEdges;
+    int numOfCallEdges;
+    int numOfRetEdges;
+    int numOfIntraEdges;
 
 public:
     typedef std::set<const ICFGNode*> ICFGNodeSet;
 
-    ICFGStat() : PTAStat(NULL){
-
+    ICFGStat(ICFG* cfg) : PTAStat(NULL), icfg(cfg){
+        numOfNodes = 0;
+        numOfCallNodes = 0;
+        numOfRetNodes = 0;
+        numOfEntryNodes = 0;
+        numOfExitNodes = 0;
+        numOfIntraNodes = 0;
+        numOfEdges = 0;
+        numOfCallEdges = 0;
+        numOfRetEdges = 0;
+        numOfIntraEdges = 0;
 	}
 
-private:
-    ICFGNodeSet forwardSlice;
-    ICFGNodeSet backwardSlice;
-    ICFGNodeSet	sources;
-    ICFGNodeSet	sinks;
+    void performStat(){
 
-public:
-    inline void addToSources(const ICFGNode* node) {
-        sources.insert(node);
+		ICFG::ICFGNodeIDToNodeMapTy::iterator it = icfg->begin();
+		ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
+		for (; it != eit; ++it) {
+			numOfNodes++;
+			ICFGNode* node = it->second;
+
+			if (llvm::isa<IntraBlockNode>(node))
+				numOfIntraNodes++;
+			else if (llvm::isa<CallBlockNode>(node))
+				numOfIntraNodes++;
+
+			/// add your code here to stat nodes and edges
+		}
+
+        PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
+
+        std::cout << "\n*******ICFG Stat*******\n";
+        printStat();
     }
-    inline void addToSinks(const ICFGNode* node) {
-        sinks.insert(node);
-    }
-    inline void addToForwardSlice(const ICFGNode* node) {
-        forwardSlice.insert(node);
-    }
-    inline void addToBackwardSlice(const ICFGNode* node) {
-        backwardSlice.insert(node);
-    }
-    inline bool inForwardSlice(const ICFGNode* node) const {
-        return forwardSlice.find(node)!=forwardSlice.end();
-    }
-    inline bool inBackwardSlice(const ICFGNode* node) const {
-        return backwardSlice.find(node)!=backwardSlice.end();
-    }
-    inline bool isSource(const ICFGNode* node) const {
-        return sources.find(node)!=sources.end();
-    }
-    inline bool isSink(const ICFGNode* node) const {
-        return sinks.find(node)!=sinks.end();
-    }
+
+
 };
 
 

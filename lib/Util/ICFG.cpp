@@ -48,7 +48,7 @@ static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
  *    between two statements (PAGEdges)
  */
 ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
-	stat = new ICFGStat();
+	stat = new ICFGStat(this);
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
 	build();
@@ -87,7 +87,6 @@ void ICFG::handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* ins
 		CallSite cs = getLLVMCallSite(inst);
 		addICFGInterEdges(cs, callee);
 		addIntraEdge(instICFGNode, getCallICFGNode(cs));
-		addIntraEdge(getRetICFGNode(cs), instICFGNode);
 		InstVec nextInsts;
 		getNextInsts(inst,nextInsts);
 	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
@@ -312,21 +311,29 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         rawstr << "NodeID: " << node->getId() << "\n";
 		if (IntraBlockNode* bNode = dyn_cast<IntraBlockNode>(node)) {
 			rawstr << getSourceLoc(bNode->getInst());
+		} else if (FunEntryBlockNode* entry = dyn_cast<FunEntryBlockNode>(
+				node)) {
+			if (isExtCall(entry->getFun()))
+				rawstr << "Entry(" << ")\n";
+			else
+				rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
+			rawstr << "Fun[" << entry->getFun()->getName() << "]";
+		} else if (FunExitBlockNode* exit = dyn_cast<FunExitBlockNode>(node)) {
+			if (isExtCall(exit->getFun()))
+				rawstr << "Exit(" << ")\n";
+			else
+				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
+						<< ")\n";
+			rawstr << "Fun[" << exit->getFun()->getName() << "]";
+		} else if (CallBlockNode* call = dyn_cast<CallBlockNode>(node)) {
+			rawstr << "Call("
+					<< getSourceLoc(call->getCallSite().getInstruction())
+					<< ")\n";
+		} else if (RetBlockNode* ret = dyn_cast<RetBlockNode>(node)) {
+			rawstr << "Ret("
+					<< getSourceLoc(ret->getCallSite().getInstruction())
+					<< ")\n";
 		}
-        else if(FunEntryBlockNode* entry = dyn_cast<FunEntryBlockNode>(node)) {
-            rawstr << "Entry(" << entry->getId() << ")\n";
-            rawstr << "Fun[" << entry->getFun()->getName() << "]";
-        }
-        else if(FunExitBlockNode* exit = dyn_cast<FunExitBlockNode>(node)) {
-            rawstr << "Exit(" << exit->getId() << ")\n";
-            rawstr << "Fun[" << exit->getFun()->getName() << "]";
-        }
-        else if(CallBlockNode* call = dyn_cast<CallBlockNode>(node)) {
-            rawstr << "Call(" << call->getId() << ")\n";
-        }
-        else if(RetBlockNode* ret = dyn_cast<RetBlockNode>(node)) {
-            rawstr << "Ret(" << ret->getId() << ")\n";
-        }
         else
             assert(false && "what else kinds of nodes do we have??");
 
@@ -344,7 +351,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
             rawstr <<  "color=yellow";
         }
         else if(isa<FunExitBlockNode>(node)) {
-            rawstr <<  "color=yellow";
+            rawstr <<  "color=green";
         }
         else if(isa<CallBlockNode>(node)) {
             rawstr <<  "color=red";
