@@ -30,36 +30,36 @@
 #ifndef SVFG_H_
 #define SVFG_H_
 
-#include "Util/ICFG.h"
+#include "Util/VFG.h"
 #include "MSSA/SVFGNode.h"
 
 class PointerAnalysis;
 class SVFGStat;
 
-typedef ICFGEdge SVFGEdge;
-typedef ICFGNode SVFGNode;
-typedef ActualParmICFGNode ActualParmSVFGNode;
-typedef ActualRetICFGNode ActualRetSVFGNode;
-typedef FormalParmICFGNode FormalParmSVFGNode;
-typedef FormalRetICFGNode FormalRetSVFGNode;
+typedef VFGEdge SVFGEdge;
+typedef VFGNode SVFGNode;
+typedef ActualParmVFGNode ActualParmSVFGNode;
+typedef ActualRetVFGNode ActualRetSVFGNode;
+typedef FormalParmVFGNode FormalParmSVFGNode;
+typedef FormalRetVFGNode FormalRetSVFGNode;
 
-typedef NullPtrICFGNode NullPtrSVFGNode;
-typedef StmtICFGNode StmtSVFGNode;
-typedef AddrICFGNode AddrSVFGNode;
-typedef CopyICFGNode CopySVFGNode;
-typedef StoreICFGNode StoreSVFGNode;
-typedef LoadICFGNode LoadSVFGNode;
-typedef GepICFGNode GepSVFGNode;
-typedef PHIICFGNode PHISVFGNode;
-typedef IntraPHIICFGNode IntraPHISVFGNode;
-typedef InterPHIICFGNode InterPHISVFGNode;
+typedef NullPtrVFGNode NullPtrSVFGNode;
+typedef StmtVFGNode StmtSVFGNode;
+typedef AddrVFGNode AddrSVFGNode;
+typedef CopyVFGNode CopySVFGNode;
+typedef StoreVFGNode StoreSVFGNode;
+typedef LoadVFGNode LoadSVFGNode;
+typedef GepVFGNode GepSVFGNode;
+typedef PHIVFGNode PHISVFGNode;
+typedef IntraPHIVFGNode IntraPHISVFGNode;
+typedef InterPHIVFGNode InterPHISVFGNode;
 
 
 /*!
  * Sparse value flow graph
  * Each node stands for a definition, each edge stands for value flow relations
  */
-class SVFG : public ICFG {
+class SVFG : public VFG {
     friend class SVFGBuilder;
     friend class SaberSVFGBuilder;
     friend class DDASVFGBuilder;
@@ -71,7 +71,7 @@ public:
     enum SVFGK {
         ORIGSVFGK,OPTSVFGK
     };
-    typedef ICFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
+    typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef llvm::DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef NodeBS ActualINSVFGNodeSet;
@@ -143,30 +143,17 @@ public:
 
     /// Get a SVFG node
     inline SVFGNode* getSVFGNode(NodeID id) const {
-        return getICFGNode(id);
+        return getVFGNode(id);
     }
 
     /// Whether has the SVFGNode
     inline bool hasSVFGNode(NodeID id) const {
-        return hasICFGNode(id);
+        return hasVFGNode(id);
     }
 
-    /// Whether we has a SVFG edge
-    //@{
-	inline SVFGEdge* hasIntraSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
-		return hasIntraICFGEdge(src, dst, kind);
-	}
-	inline SVFGEdge* hasInterSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind, CallSiteID csId) {
-		return hasInterICFGEdge(src, dst, kind, csId);
-	}
-	inline SVFGEdge* hasThreadSVFGEdge(SVFGNode* src, SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
-		return hasThreadICFGEdge(src, dst, kind);
-	}
-    //@}
-
     /// Get a SVFG edge according to src and dst
-	inline SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::ICFGEdgeK kind) {
-		return getICFGEdge(src, dst, kind);
+	inline SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::VFGEdgeK kind) {
+		return getVFGEdge(src, dst, kind);
 	}
 
     /// Get all inter value flow edges of a indirect call site
@@ -233,19 +220,12 @@ public:
 protected:
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge) {
-        removeICFGEdge(edge);
+        removeVFGEdge(edge);
     }
     /// Remove a SVFGNode
     inline void removeSVFGNode(SVFGNode* node) {
-        removeICFGNode(node);
+        removeVFGNode(node);
     }
-
-    /// Add direct def-use edges for top level pointers
-    //@{
-    SVFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
-    SVFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    SVFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    //@}
 
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
@@ -282,7 +262,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
+        SVFGEdge* edge = hasInterVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
         assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
         edges.insert(edge);
     }
@@ -290,7 +270,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::RetDirVF, csId);
+        SVFGEdge* edge = hasInterVFGEdge(formalRet, actualRet, SVFGEdge::RetDirVF, csId);
         assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }
@@ -314,19 +294,19 @@ protected:
 
     /// Add SVFG edge
     inline bool addSVFGEdge(SVFGEdge* edge) {
-        return addICFGEdge(edge);
+        return addVFGEdge(edge);
     }
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
     //@{
-    inline void setDef(const PAGNode* pagNode, const SVFGNode* node) {
-    	ICFG::setDef(pagNode,node);
-    }
+	inline void setDef(const PAGNode* pagNode, const SVFGNode* node) {
+		VFG::setDef(pagNode, node);
+	}
     inline NodeID getDef(const PAGNode* pagNode) const {
-        return ICFG::getDef(pagNode);
+        return VFG::getDef(pagNode);
     }
     inline bool hasDef(const PAGNode* pagNode) const {
-        return ICFG::hasDef(pagNode);
+        return VFG::hasDef(pagNode);
     }
     //@}
 
@@ -351,8 +331,6 @@ protected:
 
     /// Create SVFG nodes for address-taken variables
     void addSVFGNodesForAddrTakenVars();
-    /// Connect direct SVFG edges between two SVFG nodes (value-flow of top level pointers)
-    void connectDirectSVFGEdges();
     /// Connect direct SVFG edges between two SVFG nodes (value-flow of top address-taken variables)
     void connectIndirectSVFGEdges();
     /// Connect indirect SVFG edges from global initializers (store) to main function entry
@@ -360,38 +338,38 @@ protected:
 
     /// Add SVFG node
     virtual inline void addSVFGNode(SVFGNode* node) {
-        addICFGNode(node);
+        addVFGNode(node);
     }
 
     /// Add memory Function entry chi SVFG node
     inline void addFormalINSVFGNode(const MemSSA::ENTRYCHI* chi) {
-        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalICFGNode++,chi);
+        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++,chi);
         addSVFGNode(sNode);
         setDef(chi->getResVer(),sNode);
         funToFormalINMap[chi->getFunction()].set(sNode->getId());
     }
     /// Add memory Function return mu SVFG node
     inline void addFormalOUTSVFGNode(const MemSSA::RETMU* mu) {
-        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalICFGNode++,mu);
+        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++,mu);
         addSVFGNode(sNode);
         funToFormalOUTMap[mu->getFunction()].set(sNode->getId());
     }
     /// Add memory callsite mu SVFG node
     inline void addActualINSVFGNode(const MemSSA::CALLMU* mu) {
-        ActualINSVFGNode* sNode = new ActualINSVFGNode(totalICFGNode++,mu, mu->getCallSite());
+        ActualINSVFGNode* sNode = new ActualINSVFGNode(totalVFGNode++,mu, mu->getCallSite());
         addSVFGNode(sNode);
         callSiteToActualINMap[mu->getCallSite()].set(sNode->getId());
     }
     /// Add memory callsite chi SVFG node
     inline void addActualOUTSVFGNode(const MemSSA::CALLCHI* chi) {
-        ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalICFGNode++,chi,chi->getCallSite());
+        ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalVFGNode++,chi,chi->getCallSite());
         addSVFGNode(sNode);
         setDef(chi->getResVer(),sNode);
         callSiteToActualOUTMap[chi->getCallSite()].set(sNode->getId());
     }
     /// Add memory SSA PHI SVFG node
     inline void addIntraMSSAPHISVFGNode(const MemSSA::PHI* phi) {
-        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalICFGNode++,phi);
+        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++,phi);
         addSVFGNode(sNode);
         for(MemSSA::PHI::OPVers::const_iterator it = phi->opVerBegin(), eit=phi->opVerEnd(); it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);

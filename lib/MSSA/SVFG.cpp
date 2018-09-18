@@ -44,7 +44,7 @@ static cl::opt<bool> DumpVFG("dump-svfg", cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(MemSSA* _mssa, SVFGK k): ICFG(_mssa->getPTA()->getPTACallGraph()), kind(k),mssa(_mssa), pta(mssa->getPTA()) {
+SVFG::SVFG(MemSSA* _mssa, SVFGK k): VFG(_mssa->getPTA()->getPTACallGraph()), kind(k),mssa(_mssa), pta(mssa->getPTA()) {
     stat = new SVFGStat(this);
 }
 
@@ -75,12 +75,6 @@ void SVFG::buildSVFG() {
     addSVFGNodesForAddrTakenVars();
     stat->ATVFNodeEnd();
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Direct Edge\n"));
-
-    stat->dirVFEdgeStart();
-    connectDirectSVFGEdges();
-    stat->dirVFEdgeEnd();
-
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
 
     stat->indVFEdgeStart();
@@ -99,7 +93,7 @@ void SVFG::addSVFGNodesForAddrTakenVars() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         StorePE* store = cast<StorePE>(*iter);
-        const StmtSVFGNode* sNode = getStmtICFGNode(store);
+        const StmtSVFGNode* sNode = getStmtVFGNode(store);
         for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi)
             setDef((*pi)->getResVer(),sNode);
     }
@@ -137,82 +131,6 @@ void SVFG::addSVFGNodesForAddrTakenVars() {
             it!=eit; ++it) {
         for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
             addActualOUTSVFGNode(cast<CALLCHI>(*pi));
-    }
-}
-
-/*!
- * Connect def-use chains for direct value-flow, (value-flow of top level pointers)
- */
-void SVFG::connectDirectSVFGEdges() {
-
-    for(iterator it = begin(), eit = end(); it!=eit; ++it) {
-        NodeID nodeId = it->first;
-        SVFGNode* node = it->second;
-
-        if(StmtSVFGNode* stmtNode = dyn_cast<StmtSVFGNode>(node)) {
-            /// do not handle AddrSVFG node, as it is already the source of a definition
-            if(isa<AddrSVFGNode>(stmtNode))
-                continue;
-            /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
-            addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()),nodeId);
-
-            /// for store, connect the RHS/LHS pointer to its def
-            if(isa<StoreSVFGNode>(stmtNode)) {
-                addIntraDirectVFEdge(getDef(stmtNode->getPAGDstNode()),nodeId);
-            }
-
-        }
-        else if(PHISVFGNode* phiNode = dyn_cast<PHISVFGNode>(node)) {
-            for (PHISVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
-                    it != eit; it++) {
-                addIntraDirectVFEdge(getDef(it->second),nodeId);
-            }
-        }
-        else if(ActualParmSVFGNode* actualParm = dyn_cast<ActualParmSVFGNode>(node)) {
-            addIntraDirectVFEdge(getDef(actualParm->getParam()),nodeId);
-        }
-        else if(FormalParmSVFGNode* formalParm = dyn_cast<FormalParmSVFGNode>(node)) {
-            for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
-                    it!=eit; ++it) {
-                const Instruction* callInst = (*it)->getCallInst();
-                CallSite cs = analysisUtil::getLLVMCallSite(callInst);
-                ActualParmSVFGNode* acutalParm = getActualParmICFGNode((*it)->getSrcNode(),cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
-            }
-        }
-        else if(FormalRetSVFGNode* calleeRet = dyn_cast<FormalRetSVFGNode>(node)) {
-            /// connect formal ret to its definition node
-            addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
-
-            /// connect formal ret to actual ret
-            for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd();
-                    it!=eit; ++it) {
-                ActualRetSVFGNode* callsiteRev = getActualRetICFGNode((*it)->getDstNode());
-                addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
-            }
-        }
-        /// Do not process FormalRetSVFGNode, as they are connected by copy within callee
-        /// We assume one procedure only has unique return
-    }
-
-    /// connect direct value-flow edges (parameter passing) for thread fork/join
-    /// add fork edge
-    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
-                forks.end(); iter != eiter; ++iter) {
-        TDForkPE* forkedge = cast<TDForkPE>(*iter);
-        ActualParmSVFGNode* acutalParm = getActualParmICFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-        FormalParmSVFGNode* formalParm = getFormalParmICFGNode(forkedge->getDstNode());
-        addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
-    }
-    /// add join edge
-    PAGEdge::PAGEdgeSetTy& joins = getPAG()->getEdgeSet(PAGEdge::ThreadJoin);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = joins.begin(), eiter =
-                joins.end(); iter != eiter; ++iter) {
-        TDJoinPE* joinedge = cast<TDJoinPE>(*iter);
-        NodeID callsiteRev = getDef(joinedge->getDstNode());
-        FormalRetSVFGNode* calleeRet = getFormalRetICFGNode(joinedge->getSrcNode());
-        addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
     }
 }
 
@@ -330,24 +248,6 @@ void SVFG::connectFromGlobalToProgEntry()
     }
 }
 
-
-/*!
- * Add def-use edges for top level pointers
- */
-SVFGEdge* SVFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId) {
-    SVFGNode* srcNode = getSVFGNode(srcId);
-    SVFGNode* dstNode = getSVFGNode(dstId);
-    checkIntraEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, SVFGEdge::IntraDirectVF)) {
-        assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
-        return (addSVFGEdge(directEdge) ? directEdge : NULL);
-    }
-}
-
 /*
  *  Add def-use edges of a memory region between two statements
  */
@@ -356,7 +256,7 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
     checkIntraEdgeParents(srcNode, dstNode);
-    if(SVFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode,SVFGEdge::IntraIndirectVF)) {
+    if(SVFGEdge* edge = hasIntraVFGEdge(srcNode,dstNode,SVFGEdge::IntraIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -367,37 +267,6 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     }
 }
 
-/*!
- * Add interprocedural call edges for top level pointers
- */
-SVFGEdge* SVFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
-	SVFGNode* srcNode = getICFGNode(srcId);
-	SVFGNode* dstNode = getICFGNode(dstId);
-    if(SVFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallDirVF,csId)) {
-        assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode,dstNode,csId);
-        return (addICFGEdge(callEdge) ? callEdge : NULL);
-    }
-}
-
-/*!
- * Add interprocedural return edges for top level pointers
- */
-SVFGEdge* SVFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
-	SVFGNode* srcNode = getICFGNode(srcId);
-	SVFGNode* dstNode = getICFGNode(dstId);
-    if(SVFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetDirVF,csId)) {
-        assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
-    }
-    else {
-        RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode,dstNode,csId);
-        return (addICFGEdge(retEdge) ? retEdge : NULL);
-    }
-}
 
 /*!
  * Add def-use edges of a memory region between two may-happen-in-parallel statements for multithreaded program
@@ -405,7 +274,7 @@ SVFGEdge* SVFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId) {
 SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts) {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
+    if(SVFGEdge* edge = hasThreadVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -423,7 +292,7 @@ SVFGEdge* SVFG::addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::CallIndVF,csId)) {
+    if(SVFGEdge* edge = hasInterVFGEdge(srcNode,dstNode,SVFGEdge::CallIndVF,csId)) {
         assert(isa<CallIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<CallIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -441,7 +310,7 @@ SVFGEdge* SVFG::addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo&
 {
     SVFGNode* srcNode = getSVFGNode(srcId);
     SVFGNode* dstNode = getSVFGNode(dstId);
-    if(SVFGEdge* edge = hasInterSVFGEdge(srcNode,dstNode,SVFGEdge::RetIndVF,csId)) {
+    if(SVFGEdge* edge = hasInterVFGEdge(srcNode,dstNode,SVFGEdge::RetIndVF,csId)) {
         assert(isa<RetIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
     }
@@ -555,7 +424,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llv
  */
 void SVFG::connectCallerAndCallee(CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges)
 {
-    ICFG::connectCallerAndCallee(cs,callee,edges);
+    VFG::connectCallerAndCallee(cs,callee,edges);
 
     PAG * pag = PAG::getPAG();
     CallSiteID csId = getCallSiteID(cs, callee);

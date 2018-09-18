@@ -30,18 +30,18 @@
 #ifndef INCLUDE_MSSA_SVFGNODE_H_
 #define INCLUDE_MSSA_SVFGNODE_H_
 
-#include "Util/ICFGNode.h"
+#include "Util/VFGNode.h"
 #include "MSSA/SVFGEdge.h"
 
 /*!
- * Memory region ICFGNode (for address-taken objects)
+ * Memory region VFGNode (for address-taken objects)
  */
-class MRSVFGNode : public ICFGNode {
+class MRSVFGNode : public VFGNode {
 protected:
     PointsTo cpts;
 
     // This constructor can only be used by derived classes
-    MRSVFGNode(NodeID id, ICFGNodeK k) : ICFGNode(id, k) {}
+    MRSVFGNode(NodeID id, VFGNodeK k) : VFGNode(id, k) {}
 
 public:
     /// Return points-to of the MR
@@ -53,7 +53,7 @@ public:
     static inline bool classof(const MRSVFGNode *) {
         return true;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == FPIN ||
                node->getNodeKind() == FPOUT ||
                node->getNodeKind() == APIN ||
@@ -62,7 +62,7 @@ public:
                node->getNodeKind() == MIntraPhi ||
                node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == FPIN ||
                node->getNodeKind() == FPOUT ||
                node->getNodeKind() == APIN ||
@@ -100,10 +100,10 @@ public:
     static inline bool classof(const FormalINSVFGNode *) {
         return true;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == FPIN;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == FPIN;
     }
     //@}
@@ -136,10 +136,10 @@ public:
     static inline bool classof(const FormalOUTSVFGNode *) {
         return true;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == FPOUT;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == FPOUT;
     }
     //@}
@@ -174,10 +174,10 @@ public:
     static inline bool classof(const ActualINSVFGNode *) {
         return true;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == APIN;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == APIN;
     }
     //@}
@@ -213,10 +213,10 @@ public:
     static inline bool classof(const ActualOUTSVFGNode *) {
         return true;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == APOUT;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == APOUT;
     }
     //@}
@@ -236,7 +236,7 @@ protected:
 
 public:
     /// Constructor
-    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,ICFGNodeK k = MPhi): MRSVFGNode(id, k), res(def) {
+    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def) {
         cpts = def->getMR()->getPointsTo();
         if(const MemSSA::PHI* phi = llvm::dyn_cast<const MemSSA::PHI>(def))
             bb = phi->getBasicBlock();
@@ -279,10 +279,10 @@ public:
     static inline bool classof(const MRSVFGNode *node) {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
     //@}
@@ -309,10 +309,10 @@ public:
     static inline bool classof(const MRSVFGNode *node) {
         return node->getNodeKind() == MIntraPhi;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == MIntraPhi;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == MIntraPhi;
     }
     //@}
@@ -360,10 +360,10 @@ public:
     static inline bool classof(const MRSVFGNode *node) {
         return node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const ICFGNode *node) {
+    static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const GenericICFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == MInterPhi;
     }
     //@}

@@ -35,7 +35,7 @@
 
 class PointerAnalysis;
 class ICFGStat;
-
+class StmtVFGNode;
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
@@ -45,12 +45,7 @@ class ICFG : public GenericICFGTy {
 public:
 
     typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
-    typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef std::map<std::pair<NodeID,llvm::CallSite>, ActualParmICFGNode *> PAGNodeToActualParmMapTy;
-    typedef llvm::DenseMap<const PAGNode*, ActualRetICFGNode *> PAGNodeToActualRetMapTy;
-    typedef llvm::DenseMap<const PAGNode*, FormalParmICFGNode *> PAGNodeToFormalParmMapTy;
-    typedef llvm::DenseMap<const PAGNode*, FormalRetICFGNode *> PAGNodeToFormalRetMapTy;
-    typedef std::map<const PAGEdge*, StmtICFGNode*> PAGEdgeToStmtICFGNodeMapTy;
+    typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
 
     typedef std::map<const llvm::Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const llvm::Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
@@ -58,16 +53,10 @@ public:
     typedef std::map<llvm::CallSite, CallBlockNode *> CSToCallNodeMapTy;
     typedef std::map<llvm::CallSite, RetBlockNode *> CSToRetNodeMapTy;
 
-
-    typedef FormalParmICFGNode::CallPESet CallPESet;
-    typedef FormalRetICFGNode::RetPESet RetPESet;
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
-    typedef ICFGEdge::SVFGEdgeSetTy SVFGEdgeSetTy;
-    typedef ICFGEdge::ICFGEdgeSetTy::iterator ICFGNodeIter;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef std::set<StoreICFGNode*> StoreNodeSet;
     typedef std::vector<const llvm::Instruction*> InstVec;
     typedef std::set<const llvm::BasicBlock*> BBSet;
     typedef FIFOWorkList<const llvm::BasicBlock*> WorkList;
@@ -75,19 +64,12 @@ public:
 
 protected:
     NodeID totalICFGNode;
-    PAGNodeToDefMapTy PAGNodeToDefMap;	///< map a pag node to its definition SVG node
-    PAGNodeToActualParmMapTy PAGNodeToActualParmMap; ///< map a PAGNode to an actual parameter
-    PAGNodeToActualRetMapTy PAGNodeToActualRetMap; ///< map a PAGNode to an actual return
-    PAGNodeToFormalParmMapTy PAGNodeToFormalParmMap; ///< map a PAGNode to a formal parameter
-    PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap; ///< map a PAGNode to a formal return
-    PAGEdgeToStmtICFGNodeMapTy PAGEdgeToStmtICFGNodeMap;	///< map a PAGEdge to its StmtICFGNode
-
+    PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitBlockNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
     BBToBasicBlockNodeMapTy BBToBasicBlockNodeMap; ///< map a basic block to its ICFGNode
-    StoreNodeSet globalStore;	///< set of global store ICFG nodes
     ICFGStat * stat;
     PTACallGraph* callgraph;
     PAG* pag;
@@ -137,9 +119,6 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
-    /// Connect ICFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(llvm::CallSite cs, const llvm::Function* callee, ICFGEdgeSetTy& edges);
-
     /// Get callsite given a callsiteID
     //@{
     inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
@@ -150,41 +129,13 @@ public:
     }
     //@}
 
-    /// Given a pagNode, return its definition site
-    inline const ICFGNode* getDefICFGNode(const PAGNode* pagNode) const {
-        return getICFGNode(getDef(pagNode));
-    }
-
-    // Given an ICFG node, return its left hand side top level pointer (PAGnode)
-    const PAGNode* getLHSTopLevPtr(const ICFGNode* node) const;
-
     /// Get an ICFGNode
     //@{
-	inline StmtICFGNode* getStmtICFGNode(const PAGEdge* pagEdge) const {
-		PAGEdgeToStmtICFGNodeMapTy::const_iterator it = PAGEdgeToStmtICFGNodeMap.find(pagEdge);
-		assert(it != PAGEdgeToStmtICFGNodeMap.end() && "StmtICFGNode can not be found??");
+	inline StmtVFGNode* getStmtVFGNode(const PAGEdge* pagEdge) const {
+		PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
+		assert(it != PAGEdgeToStmtVFGNodeMap.end() && "StmtVFGNode can not be found??");
 		return it->second;
 	}
-    inline ActualParmICFGNode* getActualParmICFGNode(const PAGNode* aparm,llvm::CallSite cs) const {
-        PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
-        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter ICFG node can not be found??");
-        return it->second;
-    }
-    inline ActualRetICFGNode* getActualRetICFGNode(const PAGNode* aret) const {
-        PAGNodeToActualRetMapTy::const_iterator it = PAGNodeToActualRetMap.find(aret);
-        assert(it!=PAGNodeToActualRetMap.end() && "actual return ICFG node can not be found??");
-        return it->second;
-    }
-    inline FormalParmICFGNode* getFormalParmICFGNode(const PAGNode* fparm) const {
-        PAGNodeToFormalParmMapTy::const_iterator it = PAGNodeToFormalParmMap.find(fparm);
-        assert(it!=PAGNodeToFormalParmMap.end() && "formal parameter ICFG node can not be found??");
-        return it->second;
-    }
-    inline FormalRetICFGNode* getFormalRetICFGNode(const PAGNode* fret) const {
-        PAGNodeToFormalRetMapTy::const_iterator it = PAGNodeToFormalRetMap.find(fret);
-        assert(it!=PAGNodeToFormalRetMap.end() && "formal return ICFG node can not be found??");
-        return it->second;
-    }
     //@}
 
     /// Whether a node is function entry ICFGNode
@@ -218,35 +169,6 @@ protected:
         }
     }
 
-    /// Add inter VF edge from actual to formal parameters
-    inline ICFGEdge* addInterEdgeFromAPToFP(ActualParmICFGNode* src, FormalParmICFGNode* dst, CallSiteID csId) {
-        return addCallEdge(src,dst,csId);
-    }
-    /// Add inter VF edge from callee return to callsite receive parameter
-    inline ICFGEdge* addInterEdgeFromFRToAR(FormalRetICFGNode* src, ActualRetICFGNode* dst, CallSiteID csId) {
-        return addRetEdge(src,dst,csId);
-    }
-
-    /// Connect ICFG nodes between caller and callee for indirect call site
-    //@{
-    /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        ActualParmICFGNode* actualParam = getActualParmICFGNode(cs_arg,cs);
-        FormalParmICFGNode* formalParam = getFormalParmICFGNode(fun_arg);
-        ICFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
-        if (edge != NULL)
-            edges.insert(edge);
-    }
-    /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, ICFGEdgeSetTy& edges) {
-        FormalRetICFGNode* formalRet = getFormalRetICFGNode(fun_return);
-        ActualRetICFGNode* actualRet = getActualRetICFGNode(cs_return);
-        ICFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
-        if (edge != NULL)
-            edges.insert(edge);
-    }
-    //@}
-
     /// Add ICFG edge
     inline bool addICFGEdge(ICFGEdge* edge) {
         bool added1 = edge->getDstNode()->addIncomingEdge(edge);
@@ -255,33 +177,8 @@ protected:
         return true;
     }
 
-    /// Given a PAGNode, set/get its def ICFG node (definition of top level pointers)
-    //@{
-    inline void setDef(const PAGNode* pagNode, const ICFGNode* node) {
-        PAGNodeToDefMapTy::iterator it = PAGNodeToDefMap.find(pagNode);
-        if(it == PAGNodeToDefMap.end()) {
-            PAGNodeToDefMap[pagNode] = node->getId();
-            assert(hasICFGNode(node->getId()) && "not in the map!!");
-        }
-        else {
-            assert((it->second == node->getId()) && "a PAG node can only have unique definition ");
-        }
-    }
-    inline NodeID getDef(const PAGNode* pagNode) const {
-        PAGNodeToDefMapTy::const_iterator it = PAGNodeToDefMap.find(pagNode);
-        assert(it!=PAGNodeToDefMap.end() && "PAG node does not have a definition??");
-        return it->second;
-    }
-    inline bool hasDef(const PAGNode* pagNode) const {
-        return (PAGNodeToDefMap.find(pagNode) != PAGNodeToDefMap.end());
-    }
-    //@}
-
-    /// Create ICFG nodes
-    void addICFGNodes();
-
     /// Create edges between ICFG nodes within a function
-    void addICFGEdges();
+    void build();
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(llvm::CallSite cs, const llvm::Function* callee);
@@ -295,51 +192,9 @@ protected:
         addGNode(node->getId(),node);
     }
     /// Add a ICFG node for program statement
-    inline void addStmtICFGNode(StmtICFGNode* node, const PAGEdge* pagEdge) {
-        assert(PAGEdgeToStmtICFGNodeMap.find(pagEdge)==PAGEdgeToStmtICFGNodeMap.end() && "should not insert twice!");
-        PAGEdgeToStmtICFGNodeMap[pagEdge] = node;
-        addICFGNode(node);
-    }
-    /// Add a Dummy ICFG node for null pointer definition
-    /// To be noted for black hole pointer it has already has address edge connected
-    inline void addNullPtrICFGNode(const PAGNode* pagNode) {
-        NullPtrICFGNode* sNode = new NullPtrICFGNode(totalICFGNode++,pagNode);
-        addICFGNode(sNode);
-        setDef(pagNode,sNode);
-    }
-    /// Add an Address ICFG node
-    inline void addAddrICFGNode(const AddrPE* addr) {
-        AddrICFGNode* sNode = new AddrICFGNode(totalICFGNode++,addr);
-        addStmtICFGNode(sNode, addr);
-        setDef(addr->getDstNode(),sNode);
-    }
-    /// Add a Copy ICFG node
-    inline void addCopyICFGNode(const CopyPE* copy) {
-        CopyICFGNode* sNode = new CopyICFGNode(totalICFGNode++,copy);
-        addStmtICFGNode(sNode, copy);
-        setDef(copy->getDstNode(),sNode);
-    }
-    /// Add a Gep ICFG node
-    inline void addGepICFGNode(const GepPE* gep) {
-        GepICFGNode* sNode = new GepICFGNode(totalICFGNode++,gep);
-        addStmtICFGNode(sNode, gep);
-        setDef(gep->getDstNode(),sNode);
-    }
-    /// Add a Load ICFG node
-    void addLoadICFGNode(LoadPE* load) {
-        LoadICFGNode* sNode = new LoadICFGNode(totalICFGNode++,load);
-        addStmtICFGNode(sNode, load);
-        setDef(load->getDstNode(),sNode);
-    }
-    /// Add a Store ICFG node,
-    /// To be noted store does not create a new pointer, we do not set def for any PAG node
-    void addStoreICFGNode(StorePE* store) {
-        StoreICFGNode* sNode = new StoreICFGNode(totalICFGNode++,store);
-        addStmtICFGNode(sNode, store);
-
-        const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGStores.find(store) != globalPAGStores.end())
-            globalStore.insert(sNode);
+    inline void addStmtVFGNode(StmtVFGNode* node, const PAGEdge* pagEdge) {
+        assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
+        PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
     }
 
     void addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
@@ -407,76 +262,6 @@ protected:
 			return sNode;
 		}
 		return it->second;
-    }
-
-    /// Add an actual parameter ICFG node
-    /// To be noted that multiple actual parameters may have same value (PAGNode)
-    /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right ICFGParmNode
-    inline void addActualParmICFGNode(const PAGNode* aparm, llvm::CallSite cs) {
-        ActualParmICFGNode* sNode = new ActualParmICFGNode(totalICFGNode++,aparm,cs);
-        addICFGNode(sNode);
-        PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
-        getCallICFGNode(cs)->addActualParms(sNode);
-        /// do not set def here, this node is not a variable definition
-    }
-    /// Add a formal parameter ICFG node
-    inline void addFormalParmICFGNode(const PAGNode* fparm, const llvm::Function* fun, CallPESet& callPEs) {
-        FormalParmICFGNode* sNode = new FormalParmICFGNode(totalICFGNode++,fparm,fun);
-        addICFGNode(sNode);
-        for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
-                it!=eit; ++it)
-            sNode->addCallPE(*it);
-
-        setDef(fparm,sNode);
-        PAGNodeToFormalParmMap[fparm] = sNode;
-		getFunEntryICFGNode(fun)->addFormalParms(sNode);
-    }
-    /// Add a callee Return ICFG node
-    /// To be noted that here we assume returns of a procedure have already been unified into one
-    /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetICFG node same as handling actual parameters
-    inline void addFormalRetICFGNode(const PAGNode* ret, const llvm::Function* fun, RetPESet& retPEs) {
-        FormalRetICFGNode* sNode = new FormalRetICFGNode(totalICFGNode++,ret,fun);
-        addICFGNode(sNode);
-        for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
-                it!=eit; ++it)
-            sNode->addRetPE(*it);
-
-        PAGNodeToFormalRetMap[ret] = sNode;
-        getFunExitICFGNode(fun)->addFormalRet(sNode);
-        /// do not set def here, this node is not a variable definition
-    }
-    /// Add a callsite Receive ICFG node
-    inline void addActualRetICFGNode(const PAGNode* ret,llvm::CallSite cs) {
-        ActualRetICFGNode* sNode = new ActualRetICFGNode(totalICFGNode++,ret,cs);
-        addICFGNode(sNode);
-        setDef(ret,sNode);
-        PAGNodeToActualRetMap[ret] = sNode;
-		getRetICFGNode(cs)->addActualRet(sNode);
-    }
-    /// Add an llvm PHI ICFG node
-    inline void addIntraPHIICFGNode(const PAGNode* phiResNode, PAG::PNodeBBPairList& oplist) {
-        IntraPHIICFGNode* sNode = new IntraPHIICFGNode(totalICFGNode++,phiResNode);
-        addICFGNode(sNode);
-        u32_t pos = 0;
-        for(PAG::PNodeBBPairList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-            sNode->setOpVerAndBB(pos,it->first,it->second);
-        setDef(phiResNode,sNode);
-    }
-
-    /// Whether a PAGNode has a blackhole or const object as its definition
-    inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {
-        if (hasDef(pagNode)) {
-            const ICFGNode* defNode = getICFGNode(getDef(pagNode));
-            if (const AddrICFGNode* addr = llvm::dyn_cast<AddrICFGNode>(defNode)) {
-                if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
-                    return true;
-            }
-            else if(const CopyICFGNode* copy = llvm::dyn_cast<CopyICFGNode>(defNode)) {
-                if (PAG::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
-                    return true;
-            }
-        }
-        return false;
     }
 };
 

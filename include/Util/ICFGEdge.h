@@ -47,13 +47,6 @@ public:
 		IntraCF,
 		CallCF,
 		RetCF,
-		IntraDirectVF,
-		IntraIndirectVF,
-		CallDirVF,
-		RetDirVF,
-		CallIndVF,
-		RetIndVF,
-		TheadMHPIndirectVF
 	};
 
     typedef ICFGEdgeK SVFGEdgeK;
@@ -79,36 +72,6 @@ public:
     }
     inline bool isIntraCFGEdge() const {
         return getEdgeKind() == IntraCF;
-    }
-    inline bool isDirectVFGEdge() const {
-        return getEdgeKind() == IntraDirectVF || getEdgeKind() == CallDirVF || getEdgeKind() == RetDirVF;
-    }
-    inline bool isIndirectVFGEdge() const {
-        return getEdgeKind() == IntraIndirectVF || getEdgeKind() == CallIndVF || getEdgeKind() == RetIndVF || getEdgeKind() == TheadMHPIndirectVF;
-    }
-    inline bool isCallVFGEdge() const {
-        return getEdgeKind() == CallDirVF || getEdgeKind() == CallIndVF;
-    }
-    inline bool isRetVFGEdge() const {
-        return getEdgeKind() == RetDirVF || getEdgeKind() == RetIndVF;
-    }
-    inline bool isCallDirectVFGEdge() const {
-        return getEdgeKind() == CallDirVF;
-    }
-    inline bool isRetDirectVFGEdge() const {
-        return getEdgeKind() == RetDirVF;
-    }
-    inline bool isCallIndirectVFGEdge() const {
-        return getEdgeKind() == CallIndVF;
-    }
-    inline bool isRetIndirectVFGEdge() const {
-        return getEdgeKind() == RetIndVF;
-    }
-    inline bool isIntraVFGEdge() const {
-        return getEdgeKind() == IntraDirectVF || getEdgeKind() == IntraIndirectVF;
-    }
-    inline bool isThreadMHPIndirectVFGEdge() const {
-        return getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
     typedef GenericNode<ICFGNode,ICFGEdge>::GEdgeSetTy ICFGEdgeSetTy;
