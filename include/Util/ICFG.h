@@ -64,7 +64,6 @@ public:
 
 protected:
     NodeID totalICFGNode;
-    PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitBlockNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
@@ -129,15 +128,6 @@ public:
     }
     //@}
 
-    /// Get an ICFGNode
-    //@{
-	inline StmtVFGNode* getStmtVFGNode(const PAGEdge* pagEdge) const {
-		PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
-		assert(it != PAGEdgeToStmtVFGNodeMap.end() && "StmtVFGNode can not be found??");
-		return it->second;
-	}
-    //@}
-
     /// Whether a node is function entry ICFGNode
     const llvm::Function* isFunEntryICFGNode(const ICFGNode* node) const;
 
@@ -191,13 +181,10 @@ protected:
     virtual inline void addICFGNode(ICFGNode* node) {
         addGNode(node->getId(),node);
     }
-    /// Add a ICFG node for program statement
-    inline void addStmtVFGNode(StmtVFGNode* node, const PAGEdge* pagEdge) {
-        assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
-        PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
-    }
-
-    void addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
+    /// Add VFGStmtNode into IntraBlockNode
+    void handleIntraStmt(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
+    /// Create InterBlockNode at direct callsites
+    void handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
 
 	/// Add a basic block ICFGNode
 	inline IntraBlockNode* getIntraBlockICFGNode(const llvm::Instruction* inst) {
@@ -206,7 +193,12 @@ protected:
 			IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
 			addICFGNode(sNode);
 			BBToBasicBlockNodeMap[inst] = sNode;
-			addStmtsToIntraBlockICFGNode(sNode,inst);
+
+			if(analysisUtil::isCallSite(inst))
+				handleCall(sNode,inst);
+			else
+				handleIntraStmt(sNode, inst);
+
 			return sNode;
 		}
 		return it->second;

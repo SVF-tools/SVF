@@ -79,14 +79,13 @@ void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 		addRetEdge(calleeExitNode, RetBlockNode, getCallSiteID(cs, callee));
 	}
 }
-
 /*!
- * Add statements into IntraBlockNode
+ * Handle call instruction by creating interprocedural edges
  */
-void ICFG::addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
-	if (isCallSite(inst) && getCallee(inst)) {
+void ICFG::handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
+	if (const Function* callee = getCallee(inst)) {
 		CallSite cs = getLLVMCallSite(inst);
-		addICFGInterEdges(cs, getCallee(inst));
+		addICFGInterEdges(cs, callee);
 		addIntraEdge(instICFGNode, getCallICFGNode(cs));
 		addIntraEdge(getRetICFGNode(cs), instICFGNode);
 		InstVec nextInsts;
@@ -94,7 +93,14 @@ void ICFG::addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm
 	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
 			addIntraEdge(getRetICFGNode(cs), getIntraBlockICFGNode(*nit));
 	    }
-	} else {
+	}
+}
+
+/*!
+ * Add statements into IntraBlockNode
+ */
+void ICFG::handleIntraStmt(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
+	if (!isCallSite(inst)) {
 		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
 		for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
 				pagEdgeList.end(); bit != ebit; ++bit) {
@@ -107,7 +113,7 @@ void ICFG::addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm
 }
 
 /*
- *
+ * Obtain the last instruction of a basic block
  */
 IntraBlockNode* ICFG::getLastInstFromBasicBlock(const llvm::BasicBlock* bb){
 	const Instruction* curInst = &(*bb->begin());
