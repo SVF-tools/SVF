@@ -52,11 +52,11 @@ public:
     typedef llvm::DenseMap<const PAGNode*, FormalRetICFGNode *> PAGNodeToFormalRetMapTy;
     typedef std::map<const PAGEdge*, StmtICFGNode*> PAGEdgeToStmtICFGNodeMapTy;
 
-    typedef std::map<const llvm::Function*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const llvm::Function*, FunExitICFGNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const llvm::Instruction*, InstructionICFGNode *> BBToBasicBlockNodeMapTy;
-    typedef std::map<llvm::CallSite, CallICFGNode *> CSToCallNodeMapTy;
-    typedef std::map<llvm::CallSite, RetICFGNode *> CSToRetNodeMapTy;
+    typedef std::map<const llvm::Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef std::map<const llvm::Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef std::map<const llvm::Instruction*, IntraBlockNode *> BBToBasicBlockNodeMapTy;
+    typedef std::map<llvm::CallSite, CallBlockNode *> CSToCallNodeMapTy;
+    typedef std::map<llvm::CallSite, RetBlockNode *> CSToRetNodeMapTy;
 
 
     typedef FormalParmICFGNode::CallPESet CallPESet;
@@ -82,10 +82,10 @@ protected:
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap; ///< map a PAGNode to a formal return
     PAGEdgeToStmtICFGNodeMapTy PAGEdgeToStmtICFGNodeMap;	///< map a PAGEdge to its StmtICFGNode
 
-    FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
-    FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
-    CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallICFGNode
-    CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
+    FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitBlockNode
+    FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
+    CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
+    CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
     BBToBasicBlockNodeMapTy BBToBasicBlockNodeMap; ///< map a basic block to its ICFGNode
     StoreNodeSet globalStore;	///< set of global store ICFG nodes
     ICFGStat * stat;
@@ -342,33 +342,33 @@ protected:
             globalStore.insert(sNode);
     }
 
-    void addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, const llvm::Instruction* inst);
+    void addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
 
 	/// Add a basic block ICFGNode
-	inline InstructionICFGNode* getInstructionICFGNode(const llvm::Instruction* inst) {
+	inline IntraBlockNode* getIntraBlockICFGNode(const llvm::Instruction* inst) {
 		BBToBasicBlockNodeMapTy::const_iterator it = BBToBasicBlockNodeMap.find(inst);
 		if (it == BBToBasicBlockNodeMap.end()) {
-			InstructionICFGNode* sNode = new InstructionICFGNode(totalICFGNode++,inst);
+			IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
 			addICFGNode(sNode);
 			BBToBasicBlockNodeMap[inst] = sNode;
-			addStmtsToInstructionICFGNode(sNode,inst);
+			addStmtsToIntraBlockICFGNode(sNode,inst);
 			return sNode;
 		}
 		return it->second;
 	}
 	/// Get the first instruction ICFGNode in a basic block
-	inline InstructionICFGNode* getFirstInstFromBasicBlock(const llvm::BasicBlock* bb) {
-		return getInstructionICFGNode(&(*bb->begin()));
+	inline IntraBlockNode* getFirstInstFromBasicBlock(const llvm::BasicBlock* bb) {
+		return getIntraBlockICFGNode(&(*bb->begin()));
 	}
 
 	/// Get the last instruction ICFGNode in a basic block
-	InstructionICFGNode* getLastInstFromBasicBlock(const llvm::BasicBlock* bb);
+	IntraBlockNode* getLastInstFromBasicBlock(const llvm::BasicBlock* bb);
 
     /// Add a function entry node
-	inline FunEntryICFGNode* getFunEntryICFGNode(const llvm::Function* fun) {
+	inline FunEntryBlockNode* getFunEntryICFGNode(const llvm::Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end()) {
-			FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,fun);
+			FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
 			addICFGNode(sNode);
 			FunToFunEntryNodeMap[fun] = sNode;
 			return sNode;
@@ -376,10 +376,10 @@ protected:
 		return it->second;
 	}
 	/// Add a function exit node
-	inline FunExitICFGNode* getFunExitICFGNode(const llvm::Function* fun) {
+	inline FunExitBlockNode* getFunExitICFGNode(const llvm::Function* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
 		if (it == FunToFunExitNodeMap.end()) {
-			FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, fun);
+			FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
 			addICFGNode(sNode);
 			FunToFunExitNodeMap[fun] = sNode;
 			return sNode;
@@ -387,10 +387,10 @@ protected:
 		return it->second;
 	}
     /// Add a call node
-    inline CallICFGNode* getCallICFGNode(llvm::CallSite cs) {
+    inline CallBlockNode* getCallICFGNode(llvm::CallSite cs) {
 		CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
 		if (it == CSToCallNodeMap.end()) {
-			CallICFGNode* sNode = new CallICFGNode(totalICFGNode++, cs);
+			CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
 			addICFGNode(sNode);
 			CSToCallNodeMap[cs] = sNode;
 			return sNode;
@@ -398,10 +398,10 @@ protected:
 		return it->second;
     }
     /// Add a return node
-    inline RetICFGNode* getRetICFGNode(llvm::CallSite cs) {
+    inline RetBlockNode* getRetICFGNode(llvm::CallSite cs) {
 		CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
 		if (it == CSToRetNodeMap.end()) {
-			RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs);
+			RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs);
 			addICFGNode(sNode);
 			CSToRetNodeMap[cs] = sNode;
 			return sNode;

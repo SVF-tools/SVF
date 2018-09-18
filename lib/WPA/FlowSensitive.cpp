@@ -178,10 +178,10 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
             || isa<NullPtrSVFGNode>(node)) {
         changed = true;
     }
-    else if(isa<FunEntryICFGNode>(node) || isa<FunExitICFGNode>(node)
-            || isa<CallICFGNode>(node) || isa<RetICFGNode>(node) || isa<InstructionICFGNode>(node)) {
-        /// no need to handle these function stub nodes
-    }
+    else if (isa<InterBlockNode>(node) || isa<IntraBlockNode>(node)) {
+		/// no need to handle these function block nodes
+		/// a function block node contains a list of statment nodes.
+	}
     else
         assert(false && "unexpected kind of SVFG nodes");
 

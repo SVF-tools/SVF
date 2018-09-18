@@ -70,21 +70,21 @@ void ICFG::destroy() {
 void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 	const Function* caller = cs.getCaller();
 
-	CallICFGNode* callICFGNode = getCallICFGNode(cs);
-	FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
-	addCallEdge(callICFGNode, calleeEntryNode, getCallSiteID(cs, callee));
+	CallBlockNode* CallBlockNode = getCallICFGNode(cs);
+	FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+	addCallEdge(CallBlockNode, calleeEntryNode, getCallSiteID(cs, callee));
 
 	if (!isExtCall(callee)) {
-		RetICFGNode* retICFGNode = getRetICFGNode(cs);
-		FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
-		addRetEdge(calleeExitNode, retICFGNode, getCallSiteID(cs, callee));
+		RetBlockNode* RetBlockNode = getRetICFGNode(cs);
+		FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+		addRetEdge(calleeExitNode, RetBlockNode, getCallSiteID(cs, callee));
 	}
 }
 
 /*!
- * Add statements into InstructionICFGNode
+ * Add statements into IntraBlockNode
  */
-void ICFG::addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, const llvm::Instruction* inst){
+void ICFG::addStmtsToIntraBlockICFGNode(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
 	if (isCallSite(inst) && getCallee(inst)) {
 		CallSite cs = getLLVMCallSite(inst);
 		addICFGInterEdges(cs, getCallee(inst));
@@ -93,7 +93,7 @@ void ICFG::addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, cons
 		InstVec nextInsts;
 		getNextInsts(inst,nextInsts);
 	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
-			addIntraEdge(getRetICFGNode(cs), getInstructionICFGNode(*nit));
+			addIntraEdge(getRetICFGNode(cs), getIntraBlockICFGNode(*nit));
 	    }
 	} else {
 		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
@@ -110,15 +110,15 @@ void ICFG::addStmtsToInstructionICFGNode(InstructionICFGNode* instICFGNode, cons
 /*
  *
  */
-InstructionICFGNode* ICFG::getLastInstFromBasicBlock(const llvm::BasicBlock* bb){
+IntraBlockNode* ICFG::getLastInstFromBasicBlock(const llvm::BasicBlock* bb){
 	const Instruction* curInst = &(*bb->begin());
-	InstructionICFGNode* curNode = getInstructionICFGNode(curInst);
+	IntraBlockNode* curNode = getIntraBlockICFGNode(curInst);
 
 	for(BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it!=eit; ++it){
 		const Instruction* nextInst = &(*it);
 		if (curInst != nextInst) {
-			curNode = getInstructionICFGNode(curInst);
-			InstructionICFGNode* nextNode = getInstructionICFGNode(nextInst);
+			curNode = getIntraBlockICFGNode(curInst);
+			IntraBlockNode* nextNode = getIntraBlockICFGNode(nextInst);
 			addIntraEdge(curNode, nextNode);
 			curInst = nextInst;
 			curNode = nextNode;
@@ -138,10 +138,10 @@ void ICFG::addICFGEdges(){
             continue;
 
         /// function entry
-        FunEntryICFGNode* funEntryNode = getFunEntryICFGNode(fun);
+        FunEntryBlockNode* FunEntryBlockNode = getFunEntryICFGNode(fun);
         const BasicBlock* entryBB = &(fun->getEntryBlock());
-        InstructionICFGNode* entryBBNode = getFirstInstFromBasicBlock(entryBB);
-        addIntraEdge(funEntryNode, entryBBNode);
+        IntraBlockNode* entryBBNode = getFirstInstFromBasicBlock(entryBB);
+        addIntraEdge(FunEntryBlockNode, entryBBNode);
 
         BBSet visited;
         WorkList worklist;
@@ -151,10 +151,10 @@ void ICFG::addICFGEdges(){
             const llvm::BasicBlock* bb = worklist.pop();
 			if (visited.find(bb) == visited.end()) {
 				visited.insert(bb);
-				InstructionICFGNode* srcNode = getLastInstFromBasicBlock(bb);
+				IntraBlockNode* srcNode = getLastInstFromBasicBlock(bb);
 	            for (succ_const_iterator sit = succ_begin(bb), esit = succ_end(bb); sit != esit; ++sit) {
 	                const BasicBlock* succ = *sit;
-	                InstructionICFGNode* dstNode = getFirstInstFromBasicBlock(succ);
+	                IntraBlockNode* dstNode = getFirstInstFromBasicBlock(succ);
 	                addIntraEdge(srcNode, dstNode);
 	                worklist.push(succ);
 	            }
@@ -163,10 +163,10 @@ void ICFG::addICFGEdges(){
 		}
 
 		/// function exit
-		FunExitICFGNode* funExitNode = getFunExitICFGNode(fun);
+		FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
 		const BasicBlock* exitBB = getFunExitBB(fun);
-        InstructionICFGNode* exitInstNode = getLastInstFromBasicBlock(exitBB);
-        addIntraEdge(exitInstNode,funExitNode);
+        IntraBlockNode* exitInstNode = getLastInstFromBasicBlock(exitBB);
+        addIntraEdge(exitInstNode,FunExitBlockNode);
     }
 }
 
@@ -549,30 +549,21 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if(InstructionICFGNode* bbNode = dyn_cast<InstructionICFGNode>(node)) {
-			for (InstructionICFGNode::const_iterator it = bbNode->stmtBegin(), eit = bbNode->stmtEnd(); it != eit; ++it) {
-				const StmtICFGNode* stmtNode = *it;
-				if (stmtNode->getInst()) {
-					rawstr << getSourceLoc(stmtNode->getInst());
-				} else if (stmtNode->getPAGDstNode()->hasValue()) {
-					rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
-				}
-				rawstr << "\n";
-			}
-
-        }
-        else if(FunEntryICFGNode* entry = dyn_cast<FunEntryICFGNode>(node)) {
+		if (IntraBlockNode* bNode = dyn_cast<IntraBlockNode>(node)) {
+			rawstr << getSourceLoc(bNode->getInst());
+		}
+        else if(FunEntryBlockNode* entry = dyn_cast<FunEntryBlockNode>(node)) {
             rawstr << "Entry(" << entry->getId() << ")\n";
             rawstr << "Fun[" << entry->getFun()->getName() << "]";
         }
-        else if(FunExitICFGNode* exit = dyn_cast<FunExitICFGNode>(node)) {
+        else if(FunExitBlockNode* exit = dyn_cast<FunExitBlockNode>(node)) {
             rawstr << "Exit(" << exit->getId() << ")\n";
             rawstr << "Fun[" << exit->getFun()->getName() << "]";
         }
-        else if(CallICFGNode* call = dyn_cast<CallICFGNode>(node)) {
+        else if(CallBlockNode* call = dyn_cast<CallBlockNode>(node)) {
             rawstr << "Call(" << call->getId() << ")\n";
         }
-        else if(RetICFGNode* ret = dyn_cast<RetICFGNode>(node)) {
+        else if(RetBlockNode* ret = dyn_cast<RetBlockNode>(node)) {
             rawstr << "Ret(" << ret->getId() << ")\n";
         }
 //        else
@@ -585,19 +576,19 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
 
-        if(isa<InstructionICFGNode>(node)) {
+        if(isa<IntraBlockNode>(node)) {
         		rawstr <<  "color=black";
         }
-        else if(isa<FunEntryICFGNode>(node)) {
+        else if(isa<FunEntryBlockNode>(node)) {
             rawstr <<  "color=yellow";
         }
-        else if(isa<FunExitICFGNode>(node)) {
+        else if(isa<FunExitBlockNode>(node)) {
             rawstr <<  "color=yellow";
         }
-        else if(isa<CallICFGNode>(node)) {
+        else if(isa<CallBlockNode>(node)) {
             rawstr <<  "color=red";
         }
-        else if(isa<RetICFGNode>(node)) {
+        else if(isa<RetBlockNode>(node)) {
             rawstr <<  "color=blue";
         }
 //        else
