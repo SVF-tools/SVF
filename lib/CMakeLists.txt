@@ -18,6 +18,7 @@ set(SOURCES
     Util/ThreadAPI.cpp
     Util/SVFModule.cpp
     Util/ICFG.cpp
+    Util/SICFG.cpp
     Util/VFG.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
