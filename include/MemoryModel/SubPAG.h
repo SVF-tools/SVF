@@ -19,9 +19,11 @@ private:
     /// Nodes in the SubPAG which call edges should connect to.
     /// argNodes[0] is arg 0, argNodes[1] is arg 1, ...
     std::map<int, PAGNode *> argNodes;
+    PAGNode *returnNode;
 
 public:
-    SubPAG(std::string functionName) : PAG(true), functionName(functionName), argNodes() {
+    SubPAG(std::string functionName) : PAG(true), functionName(functionName),
+	                                   argNodes(), returnNode(NULL) {
     }
 
     ~SubPAG() {
@@ -29,6 +31,8 @@ public:
 
     std::map<int, PAGNode *> &getArgNodes() { return argNodes; }
     std::string getFunctionName() { return functionName; }
+    PAGNode *getReturnNode() { return returnNode; }
+    void setReturnNode(PAGNode *returnNode) { this->returnNode = returnNode; }
 };
 
 #endif  /* SUBPAG_H_ */

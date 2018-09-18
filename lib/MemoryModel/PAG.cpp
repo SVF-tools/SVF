@@ -757,18 +757,27 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
 }
 
-static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode) {
+static void outputPAGNodeNoNewLine(llvm::raw_ostream &o, PAGNode *pagNode) {
     o << pagNode->getId() << " ";
     if (ValPN::classof(pagNode)) o << "v";
     else o << "o";
+}
+
+static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode) {
+    outputPAGNodeNoNewLine(o, pagNode);
     o << "\n";
 }
 
 static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode, int argno) {
-    o << pagNode->getId() << " ";
-    if (ValPN::classof(pagNode)) o << "v";
-    else o << "o";
+    outputPAGNodeNoNewLine(o, pagNode);
     o << " " << argno;
+    o << "\n";
+}
+
+static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode,
+                          std::string trail) {
+    outputPAGNodeNoNewLine(o, pagNode);
+    o << " " << trail;
     o << "\n";
 }
 
@@ -877,6 +886,7 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
         std::stack<PAGNode *> todoNodes;
         // The arguments to the function.
         std::vector<PAGNode *> argNodes = it->second;
+        PAGNode *retNode = NULL;
 
 
         llvm::outs() << "PAG for function: " << functionName << "\n";
@@ -893,7 +903,10 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
             nodes.insert(currNode);
 
             // Return signifies the end of a path.
-            if (RetPN::classof(currNode)) continue;
+            if (RetPN::classof(currNode)) {
+                retNode = currNode;
+                continue;
+            }
 
             auto outEdges = currNode->getOutEdges();
             for (auto outEdge = outEdges.begin(); outEdge != outEdges.end();
@@ -909,7 +922,11 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
             if (std::find(argNodes.begin(), argNodes.end(), *node)
                 != argNodes.end()) {
                 outputPAGNode(llvm::outs(), *node, getArgNo(function, (*node)->getValue()));
-            } else outputPAGNode(llvm::outs(), *node);
+            } else if (*node == retNode) {
+                outputPAGNode(llvm::outs(), *node, "ret");
+            } else {
+                outputPAGNode(llvm::outs(), *node);
+            }
         }
 
         for (auto edge = edges.begin(); edge != edges.end(); ++edge) {

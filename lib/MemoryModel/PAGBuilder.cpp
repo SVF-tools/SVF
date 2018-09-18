@@ -1096,7 +1096,7 @@ void PAGBuilder::sanityCheck() {
  * You can build a PAG from a file written by yourself
  *
  * The file should follow the format:
- * Node:  nodeID Nodetype
+ * Node:  nodeID Nodetype [0|1|2|...|ret]
  * Edge:  nodeID edgetype NodeID Offset
  *
  * like:
@@ -1145,7 +1145,7 @@ PAG* PAGBuilderFromFile::build() {
                     assert(false && "format not support, pls specify node type");
                 }
             } else if (token_count == 3) {
-                // A subpag node which corresponds to an argument.
+                // A subpag node which corresponds to an argument or return.
 
                 // Will be the new node's ID or the source node.
                 NodeID nodeId;
@@ -1165,12 +1165,19 @@ PAG* PAGBuilderFromFile::build() {
 
                 // If it's not for a subpag, just ignore the extra (3rd) token.
                 if (subPAG) {
-                    int argNo;
-                    ss >> argNo;
-                    std::map<int, PAGNode *> &argNodes =
+                    // TODO: may need better error handling.
+                    PAGNode *thisPAGNode = pag->getPAGNode(nodeId);
+                    std::string argNoOrRet;
+                    ss >> argNoOrRet;
+                    if (argNoOrRet == "ret") {
+                        static_cast<SubPAG *>(pag)->setReturnNode(thisPAGNode);
+                    } else {
+                        int argNo = std::stoi(argNoOrRet);
+                        std::map<int, PAGNode *> &argNodes =
                         static_cast<SubPAG *>(pag)->getArgNodes();
-                    argNodes.insert(std::pair<int, PAGNode *>(
-                                        argNo, pag->getPAGNode(nodeId)));
+                        argNodes.insert(std::pair<int, PAGNode *>(
+                                        argNo, thisPAGNode));
+                    }
                 }
             } else if (token_count == 4) {
                 // do consider gep edge
