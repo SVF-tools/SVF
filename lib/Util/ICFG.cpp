@@ -100,16 +100,6 @@ void ICFG::handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* ins
  * Add statements into IntraBlockNode
  */
 void ICFG::handleIntraStmt(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
-	if (!isCallSite(inst)) {
-		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
-		for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
-				pagEdgeList.end(); bit != ebit; ++bit) {
-//			if (!isPhiCopyEdge(*bit)) {
-//				StmtVFGNode* stmt = getStmtVFGNode(*bit);
-//				instICFGNode->addStmtVFGNode(stmt);
-//			}
-		}
-	}
 }
 
 /*
