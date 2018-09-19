@@ -8,7 +8,6 @@
 #include "MTA/FSMPTA.h"
 #include "MTA/MHP.h"
 #include "MTA/PCG.h"
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
 
 using namespace llvm;
 
@@ -96,7 +95,7 @@ SVFGEdge*  MTASVFGBuilder::addTDEdges(NodeID srcId, NodeID dstId, PointsTo& pts)
     SVFGNode* srcNode = svfg->getSVFGNode(srcId);
     SVFGNode* dstNode = svfg->getSVFGNode(dstId);
 
-    if(SVFGEdge* edge = svfg->hasThreadSVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
+    if(SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF)) {
         assert(isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
         return (cast<IndirectSVFGEdge>(edge)->addPointsTo(pts) ? edge : NULL);
     } else {

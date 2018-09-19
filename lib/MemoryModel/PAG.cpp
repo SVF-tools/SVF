@@ -31,8 +31,6 @@
 #include "Util/AnalysisUtil.h"
 #include "Util/GraphUtil.h"
 
-#include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
-
 using namespace llvm;
 using namespace analysisUtil;
 

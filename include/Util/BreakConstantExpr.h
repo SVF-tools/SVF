@@ -15,10 +15,7 @@
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
-#include <llvm/IR/Dominators.h>
-#include <llvm/IR/Module.h>
-#include <llvm/Pass.h>
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#include "Util/BasicTypes.h"
 
 //
 // Pass: BreakConstantGEPs

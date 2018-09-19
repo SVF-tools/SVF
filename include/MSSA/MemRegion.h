@@ -34,7 +34,6 @@
 #include "Util/PTACallGraph.h"
 #include "Util/WorkList.h"
 
-#include <llvm/Support/raw_ostream.h>	// for output
 #include <set>
 
 typedef NodeID MRID;

@@ -8,12 +8,9 @@
 #ifndef MTA_H_
 #define MTA_H_
 
-#include <llvm/Pass.h>
-#include <llvm/Analysis/ScalarEvolution.h>
-#include <llvm/Analysis/LoopInfo.h>
-#include <llvm/IR/Instructions.h>
 #include <set>
 #include <vector>
+#include "Util/BasicTypes.h"
 
 class PointerAnalysis;
 class AndersenWaveDiff;

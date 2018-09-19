@@ -31,11 +31,11 @@
 #include "Util/SVFModule.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/CPPUtil.h"
+#include "Util/BasicTypes.h"
 
 #include <fstream>	// for PAGBuilderFromFile
 #include <string>	// for PAGBuilderFromFile
 #include <sstream>	// for PAGBuilderFromFile
-#include <llvm/Support/CommandLine.h> // for tool output file
 
 using namespace llvm;
 using namespace std;

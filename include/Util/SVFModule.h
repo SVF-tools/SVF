@@ -31,8 +31,6 @@
 #define SVFMODULE_H_
 
 #include "Util/BasicTypes.h"
-#include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
-#include <llvm/IR/Module.h>
 
 class LLVMModuleSet {
 public:

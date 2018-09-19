@@ -38,9 +38,6 @@
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
 
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/CallGraph.h>	// call graph
-
 class CHGraph;
 class CHNode;
 

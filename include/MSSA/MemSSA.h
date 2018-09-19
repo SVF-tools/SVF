@@ -33,10 +33,6 @@
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/ADT/DenseMap.h>			// for dense map
-#include <llvm/Analysis/DominanceFrontier.h>
-
 #include <vector>
 
 class PointerAnalysis;

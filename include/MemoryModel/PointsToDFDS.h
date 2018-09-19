@@ -31,8 +31,7 @@
 #define POINTSTODSDF_H_
 
 #include "MemoryModel/PointsToDS.h"
-#include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/FileSystem.h>		// for file open flag
+
 
 /*!
  * Data-flow points-to data structure, points-to is maintained for each program point (statement)

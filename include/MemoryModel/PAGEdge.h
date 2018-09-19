@@ -35,12 +35,6 @@
 #include "MemoryModel/GenericGraph.h"
 #include "Util/AnalysisUtil.h"
 
-#include <llvm/IR/CallSite.h>	// for callsite
-#include <llvm/ADT/STLExtras.h>			// for mapped_iter
-#include <llvm/ADT/DepthFirstIterator.h>		// for depth first iterator, inverse iter
-#include <llvm/ADT/StringExtras.h>	// for utostr_32
-
-
 class PAGNode;
 
 /*

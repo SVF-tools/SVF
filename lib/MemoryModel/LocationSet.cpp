@@ -29,10 +29,8 @@
  *
  */
 
-
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
-#include <llvm/Support/CommandLine.h> // for tool output file
 
 using namespace llvm;
 

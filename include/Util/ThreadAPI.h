@@ -32,9 +32,6 @@
 
 #include "Util/BasicTypes.h"
 #include "Util/SVFModule.h"
-#include <llvm/ADT/StringMap.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/CallSite.h>
 
 /*
  * ThreadAPI class contains interfaces for pthread programs

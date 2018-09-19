@@ -33,6 +33,31 @@
 #include <llvm/ADT/SmallVector.h>		// for small vector
 #include <llvm/ADT/DenseSet.h>		// for dense map, set
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/CallSite.h>
+#include <llvm/Support/raw_ostream.h>	// for output
+#include <llvm/IR/InstVisitor.h>	// for instruction visitor
+#include <llvm/IR/InstIterator.h>	// for inst iteration
+#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
+#include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/ADT/StringExtras.h>	// for utostr_32
+#include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/FileSystem.h>		// for file open flag
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/CallGraph.h>	// call graph
+#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
+
+#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
+#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
+#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
+#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#include <llvm/Analysis/DominanceFrontier.h>
+#include <llvm/Analysis/PostDominators.h>
+#include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#include <llvm/ADT/GraphTraits.h>		// for Graphtraits
+#include <llvm/Support/GraphWriter.h>		// for graph write
+
 #include <vector>
 #include <list>
 #include <set>

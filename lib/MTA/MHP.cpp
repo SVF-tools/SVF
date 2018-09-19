@@ -11,8 +11,6 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTAResultValidator.h"
 #include "Util/AnalysisUtil.h"
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
-#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
 
 
 using namespace llvm;

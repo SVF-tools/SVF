@@ -29,7 +29,6 @@
 
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberAnnotator.h"
-#include <llvm/Analysis/PostDominators.h>
 
 using namespace llvm;
 using namespace analysisUtil;

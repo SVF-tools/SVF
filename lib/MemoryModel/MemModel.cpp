@@ -34,13 +34,6 @@
 #include "Util/CPPUtil.h"
 #include "Util/BreakConstantExpr.h"
 #include "Util/GEPTypeBridgeIterator.h" // include bridge_gep_iterator 
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
-#include <llvm/Support/raw_ostream.h>	// for output
-#include <llvm/IR/ValueSymbolTable.h>	// for valueSymbolTable
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/IR/CallSite.h>		//callsite
-#include <llvm/Support/CommandLine.h> // for tool output file
-#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
 
 using namespace llvm;
 using namespace std;

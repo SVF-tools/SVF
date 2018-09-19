@@ -32,10 +32,6 @@
 #include "Util/PathCondAllocator.h"
 #include "Util/DataFlowUtil.h"
 #include "Util/DPItem.h"
-#include <llvm/IR/Module.h>
-#include <llvm/Support/CommandLine.h>
-#include <llvm/Analysis/PostDominators.h>
-#include <llvm/IR/Dominators.h>
 #include <limits.h>
 
 using namespace llvm;

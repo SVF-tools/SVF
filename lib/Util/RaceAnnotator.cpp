@@ -7,7 +7,6 @@
 
 #include "Util/RaceAnnotator.h"
 #include <sstream>
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
 
 using namespace llvm;
 

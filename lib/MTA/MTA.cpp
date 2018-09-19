@@ -14,9 +14,6 @@
 #include "MTA/FSMPTA.h"
 #include "Util/AnalysisUtil.h"
 
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-
 using namespace llvm;
 using namespace analysisUtil;
 

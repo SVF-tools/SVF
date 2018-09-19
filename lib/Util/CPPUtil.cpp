@@ -31,7 +31,6 @@
 #include "MemoryModel/CHA.h"
 #include <cxxabi.h>   // for demangling
 #include "Util/BasicTypes.h"
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
 
 using namespace llvm;
 using namespace std;

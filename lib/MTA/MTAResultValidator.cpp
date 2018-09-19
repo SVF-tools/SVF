@@ -10,8 +10,6 @@
 
 #include "MTA/MTAResultValidator.h"
 
-#include <llvm/Support/CommandLine.h>
-
 using namespace llvm;
 using namespace analysisUtil;
 static cl::opt<bool> PrintValidRes("print-MHP-validation", cl::init(false), cl::desc("Print MHP Validation Results"));

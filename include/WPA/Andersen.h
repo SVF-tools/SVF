@@ -34,8 +34,6 @@
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
 #include "MemoryModel/ConsG.h"
-#include <llvm/PassAnalysisSupport.h>	// analysis usage
-#include <llvm/Support/Debug.h>		// DEBUG TYPE
 
 class PTAType;
 class SVFModule;

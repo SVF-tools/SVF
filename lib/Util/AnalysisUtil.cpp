@@ -28,22 +28,16 @@
  */
 
 #include "Util/AnalysisUtil.h"
-
-#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
-#include <llvm/IR/Module.h>	// for Module
-#include <llvm/IR/InstrTypes.h>	// for TerminatorInst
-#include <llvm/IR/IntrinsicInst.h>	// for intrinsic instruction
-//#include <llvm/Analysis/DebugInfo.h>
-#include <llvm/IR/DebugInfo.h>
-#include <llvm/Support/CommandLine.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/Analysis/CFG.h>	// for CFG
-#include <llvm/IR/CFG.h>		// for CFG
 #include "Util/Conditions.h"
 #include <sys/resource.h>		/// increase stack size
-#include <llvm/IRReader/IRReader.h>     /// for isIRFile
-#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
+
+#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
+#include <llvm/IR/InstrTypes.h>	// for TerminatorInst
+#include <llvm/IR/IntrinsicInst.h>	// for intrinsic instruction
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/Analysis/CFG.h>	// for CFG
+#include <llvm/IR/CFG.h>		// for CFG
+
 
 using namespace llvm;
 

@@ -35,7 +35,6 @@
 #include "MSSA/SVFGOPT.h"
 #include "MSSA/SVFGStat.h"
 #include "Util/AnalysisUtil.h"
-#include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
 

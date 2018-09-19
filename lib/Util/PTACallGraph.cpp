@@ -31,8 +31,6 @@
 #include "Util/SVFModule.h"
 #include "Util/PTACallGraph.h"
 #include "Util/GraphUtil.h"
-#include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
-#include <llvm/IR/InstIterator.h>	// for inst iteration
 
 using namespace llvm;
 using namespace analysisUtil;

@@ -33,9 +33,6 @@
 #include "MemoryModel/PAG.h"
 #include "Util/ExtAPI.h"
 
-#include <llvm/IR/InstVisitor.h>	// for instruction visitor
-
-
 class SVFModule;
 /*!
  *  PAG Builder

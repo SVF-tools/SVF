@@ -49,7 +49,7 @@ public:
 
     typedef std::map<const llvm::Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const llvm::Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const llvm::Instruction*, IntraBlockNode *> BBToBasicBlockNodeMapTy;
+    typedef std::map<const llvm::Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
     typedef std::map<llvm::CallSite, CallBlockNode *> CSToCallNodeMapTy;
     typedef std::map<llvm::CallSite, RetBlockNode *> CSToRetNodeMapTy;
 
@@ -68,7 +68,7 @@ protected:
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
-    BBToBasicBlockNodeMapTy BBToBasicBlockNodeMap; ///< map a basic block to its ICFGNode
+    InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
     ICFGStat * stat;
     PTACallGraph* callgraph;
     PAG* pag;
@@ -188,11 +188,11 @@ protected:
 
 	/// Add a basic block ICFGNode
 	inline IntraBlockNode* getIntraBlockICFGNode(const llvm::Instruction* inst) {
-		BBToBasicBlockNodeMapTy::const_iterator it = BBToBasicBlockNodeMap.find(inst);
-		if (it == BBToBasicBlockNodeMap.end()) {
+		InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
+		if (it == InstToBlockNodeMap.end()) {
 			IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
 			addICFGNode(sNode);
-			BBToBasicBlockNodeMap[inst] = sNode;
+			InstToBlockNodeMap[inst] = sNode;
 
 			if(analysisUtil::isCallSite(inst))
 				handleCall(sNode,inst);

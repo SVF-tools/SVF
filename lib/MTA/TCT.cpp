@@ -9,8 +9,7 @@
 #include "MTA/MTA.h"
 #include "Util/GraphUtil.h"
 #include "Util/DataFlowUtil.h"
-#include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
-#include <llvm/IR/InstIterator.h>	// for inst iteratio
+
 #include <string>
 
 using namespace llvm;

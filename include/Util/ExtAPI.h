@@ -33,8 +33,7 @@
 #ifndef __ExtAPI_H
 #define __ExtAPI_H
 
-#include <llvm/ADT/StringMap.h>
-#include <llvm/IR/Function.h>
+#include "Util/BasicTypes.h"
 #include <map>
 #include <set>
 #include <string>

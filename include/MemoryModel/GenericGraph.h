@@ -31,9 +31,6 @@
 #define GENERICGRAPH_H_
 
 #include "Util/BasicTypes.h"
-#include <llvm/ADT/GraphTraits.h>
-#include <llvm/ADT/STLExtras.h>			// for mapped_iter
-
 
 /*!
  * Generic edge on the graph as base class

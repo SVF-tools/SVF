@@ -7,8 +7,6 @@
 
 #include "MTA/PCG.h"
 #include "Util/AnalysisUtil.h"
-#include <llvm/IR/InstIterator.h> // for inst iteration
-#include <llvm/Support/CommandLine.h> // for llvm command line options
 
 using namespace llvm;
 using namespace analysisUtil;

@@ -30,8 +30,6 @@
 #ifndef PTATYPE_H_
 #define PTATYPE_H_
 
-#include <llvm/IR/Type.h>
-#include <llvm/Support/raw_ostream.h>
 #include <set>
 #include <map>
 #include "Util/BasicTypes.h"

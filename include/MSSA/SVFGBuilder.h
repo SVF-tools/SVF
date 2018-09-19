@@ -31,7 +31,6 @@
 #define ANDERSENMEMSSA_H_
 
 #include "MSSA/SVFGOPT.h"
-#include <llvm/Analysis/DominanceFrontier.h>
 
 /*!
  * Dominator frontier used in MSSA

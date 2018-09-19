@@ -30,11 +30,8 @@
 #ifndef DATAFLOWUTIL_H_
 #define DATAFLOWUTIL_H_
 
-#include <llvm/Analysis/DominanceFrontier.h>
-#include <llvm/Analysis/PostDominators.h>
-#include <llvm/Analysis/LoopInfo.h>
-#include <llvm/Analysis/ScalarEvolution.h>
-#include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#include "Util/BasicTypes.h"
+
 
 /*!
  * Wrapper for SCEV collected from function pass ScalarEvolution

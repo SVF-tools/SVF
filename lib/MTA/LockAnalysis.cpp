@@ -9,7 +9,6 @@
 #include "MTA/MTA.h"
 #include "MTA/MTAResultValidator.h"
 #include "Util/AnalysisUtil.h"
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
 
 using namespace llvm;
 using namespace analysisUtil;

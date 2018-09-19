@@ -32,7 +32,6 @@
 
 #include "Util/WorkList.h"
 #include "Util/DPItem.h"
-#include <llvm/ADT/GraphTraits.h>
 
 /*
  * Generic CFL solver for demand-driven analysis based on different graphs (e.g. PAG, VFG, ThreadVFG)

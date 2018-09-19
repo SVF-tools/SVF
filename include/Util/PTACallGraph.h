@@ -33,14 +33,7 @@
 #include "MemoryModel/GenericGraph.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/BasicTypes.h"
-#include <llvm/IR/Module.h>			// llvm module
-#include <llvm/ADT/STLExtras.h>		/// map iter
-#include <llvm/ADT/GraphTraits.h>	// graph traits
-#include <llvm/ADT/DenseMap.h>	// llvm dense map
-
 #include <set>
-
-
 
 class PTACallGraphNode;
 class SVFModule;

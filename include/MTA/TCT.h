@@ -12,8 +12,6 @@
 #include "Util/AnalysisUtil.h"
 #include "Util/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
-#include <llvm/Analysis/LoopInfo.h>
-#include <llvm/IR/InstIterator.h>
 #include <set>
 #include <vector>
 

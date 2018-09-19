@@ -36,8 +36,6 @@
 
 #include "Util/BasicTypes.h"
 
-#include <llvm/IR/Type.h>
-
 /*!
  * Field information of an aggregate object
  */

@@ -8,9 +8,7 @@
 #ifndef ANNOTATOR_H_
 #define ANNOTATOR_H_
 
-#include <llvm/IR/Instruction.h>
-#include <llvm/IR/Metadata.h>	// for llvm MDNode
-#include <llvm/IR/Type.h>
+#include "Util/BasicTypes.h"
 #include <vector>
 
 /*!

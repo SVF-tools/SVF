@@ -38,10 +38,6 @@
 #include <stack>
 #include "MemoryModel/CHA.h"
 #include "MemoryModel/MemModel.h"
-#include <llvm/Support/CommandLine.h>
-#include <llvm/IR/DebugInfo.h> // for debuginfo like DILocation
-#include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
-#include <llvm/IR/InstIterator.h> // for inst_iterator
 #include "Util/GraphUtil.h"
 #include "Util/AnalysisUtil.h"
 #include "Util/SVFModule.h"

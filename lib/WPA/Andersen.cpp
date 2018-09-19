@@ -31,8 +31,6 @@
 #include "WPA/Andersen.h"
 #include "Util/AnalysisUtil.h"
 
-#include <llvm/Support/CommandLine.h> // for tool output file
-
 using namespace llvm;
 using namespace analysisUtil;
 

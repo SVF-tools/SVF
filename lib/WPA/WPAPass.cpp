@@ -39,7 +39,6 @@
 #include "WPA/Andersen.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
-#include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
 

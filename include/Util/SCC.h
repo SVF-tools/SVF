@@ -40,8 +40,7 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include <llvm/ADT/GraphTraits.h>
-#include <llvm/ADT/SparseBitVector.h>	// for NodeBS
+#include "Util/BasicTypes.h"	// for NodeBS
 #include <limits.h>
 #include <stack>
 #include <map>

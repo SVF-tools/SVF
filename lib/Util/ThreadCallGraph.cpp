@@ -29,8 +29,6 @@
 
 #include "Util/SVFModule.h"
 #include "Util/ThreadCallGraph.h"
-#include <llvm/IR/Module.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
 
 using namespace llvm;
 using namespace analysisUtil;

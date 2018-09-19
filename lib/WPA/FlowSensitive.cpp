@@ -31,7 +31,6 @@
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
-#include <llvm/Support/Debug.h>		// DEBUG TYPE
 
 using namespace llvm;
 

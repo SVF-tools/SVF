@@ -32,13 +32,6 @@
 #include "Util/AnalysisUtil.h"
 #include "MSSA/SVFGStat.h"
 
-#include <llvm/Analysis/DominanceFrontier.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/IR/CFG.h>		// for CFG
-#include <llvm/Analysis/CFG.h>	// for CFG
-#include <llvm/Support/raw_ostream.h>	// for output
-#include <llvm/Support/CommandLine.h>
-
 using namespace llvm;
 using namespace analysisUtil;
 

@@ -30,10 +30,6 @@
 #ifndef CPPUtil_H_
 #define CPPUtil_H_
 
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/CallSite.h>
-#include <llvm/IR/Constants.h>
 #include "Util/BasicTypes.h"
 
 class CHGraph;

@@ -12,7 +12,6 @@
 #include "Util/PTACallGraph.h"
 #include "Util/WorkList.h"
 #include "WPA/Andersen.h"
-#include <llvm/Analysis/LoopInfo.h>
 #include <set>
 #include <vector>
 

@@ -30,12 +30,9 @@
 #ifndef GRAPHUTIL_H_
 #define GRAPHUTIL_H_
 
-#include <llvm/Support/Debug.h> 		// for debug
-#include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/CommandLine.h>           // for tool output file
-#include <llvm/Support/GraphWriter.h>		// for graph write
-#include <llvm/Support/FileSystem.h>		// for file open flag
+#include "Util/BasicTypes.h"
+
+
 
 namespace llvm {
 

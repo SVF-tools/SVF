@@ -12,7 +12,6 @@
 #include "MTA/FSMPTA.h"
 #include "MTA/MTAAnnotator.h"
 #include "Util/ThreadCallGraph.h"
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
 
 using namespace llvm;
 

@@ -8,7 +8,6 @@
 #include "MTA/MTAAnnotator.h"
 #include "MTA/LockAnalysis.h"
 #include <sstream>
-#include <llvm/Support/CommandLine.h>	// for llvm command line options
 
 using namespace llvm;
 using namespace analysisUtil;

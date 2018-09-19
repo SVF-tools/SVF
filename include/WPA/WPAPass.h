@@ -38,9 +38,6 @@
 #define WPA_H_
 
 #include "MemoryModel/PointerAnalysis.h"
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/TargetLibraryInfo.h>
-#include <llvm/Pass.h>
 
 class SVFModule;
 

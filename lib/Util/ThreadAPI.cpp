@@ -32,8 +32,6 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/AnalysisUtil.h"
-#include <llvm/IR/Module.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <iostream>		/// std output
 #include <stdio.h>
 #include <iomanip>		/// for setw
