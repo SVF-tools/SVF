@@ -552,15 +552,16 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     const Function *callee = getCallee(cs);
 
     if (callee) {
-        if (isExtCall(callee))
+        if (isExtCall(callee)) {
             if (subpags.count(callee->getName())) {
 
             } else {
                 // There is no subpag for the function, use the old method.
                 handleExtCall(cs, callee);
             }
-        else
+        } else {
             handleDirectCall(cs, callee);
+        }
     } else {
         //If the callee was not identified as a function (null F), this is indirect.
         handleIndCall(cs);
