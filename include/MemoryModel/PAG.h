@@ -98,7 +98,7 @@ private:
     /// Maps function names to the entry nodes of the subpag which implements
     /// it. This is to connect arguments and callsites.
     std::map<std::string, std::map<int, PAGNode *>> funcNameToSubPAGEntries;
-    int funcNameToSubPAGReturns;
+    std::map<std::string, PAGNode *> funcNameToSubPAGReturns;
 
     /// Clean up memory
     void destroy();
