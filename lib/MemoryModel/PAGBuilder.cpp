@@ -554,7 +554,14 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     if (callee) {
         if (isExtCall(callee)) {
             if (subpags.count(callee->getName())) {
+                if (!pag->hasSubPAG(callee->getName())) {
+                    // Add the sub PAG if it hasn't been added.
+                    llvm::outs() << "adding " << callee->getName() << "\n";
+                    pag->addSubPAG(subpags[callee->getName()]);
+                }
 
+                llvm::outs() << "connecting " << callee->getName() << "\n";
+                pag->connectCallsiteToSubPAG(&cs);
             } else {
                 // There is no subpag for the function, use the old method.
                 handleExtCall(cs, callee);

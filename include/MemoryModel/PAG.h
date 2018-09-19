@@ -667,11 +667,11 @@ public:
     }
     //@}
 
-    inline std::map<std::string, std::map<int, PAGNode *>> getFuncNameToSubPAGEntriesMap(void) {
+    inline std::map<std::string, std::map<int, PAGNode *>> &getFuncNameToSubPAGEntriesMap(void) {
         return funcNameToSubPAGEntries;
     }
 
-    inline std::map<std::string, PAGNode *> getFuncNameToSubPAGReturnNodes(void) {
+    inline std::map<std::string, PAGNode *> &getFuncNameToSubPAGReturnNodes(void) {
         return funcNameToSubPAGReturns;
     }
 
