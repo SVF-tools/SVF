@@ -763,7 +763,8 @@ void PAG::dump(std::string name) {
 
 static void outputPAGNodeNoNewLine(llvm::raw_ostream &o, PAGNode *pagNode) {
     o << pagNode->getId() << " ";
-    if (ValPN::classof(pagNode)) o << "v";
+    // TODO: is this check enough?
+    if (!ObjPN::classof(pagNode)) o << "v";
     else o << "o";
 }
 
