@@ -60,7 +60,7 @@ private:
     typedef unsigned NodeID ;
 
 public:
-    typedef llvm::SparseBitVector<> NodeBS;
+    typedef NodeBS NodeBS;
     typedef std::stack<NodeID> GNodeStack;
 
     class GNodeSCCInfo {
@@ -215,7 +215,7 @@ private:
     }
 
     void visit(NodeID v) {
-        // llvm::outs() << "visit GNODE: " << Node_Index(v)<< "\n";
+        // SVFUtil::outs() << "visit GNODE: " << Node_Index(v)<< "\n";
         _I += 1;
         _D[v] = _I;
         this->rep(v,v);

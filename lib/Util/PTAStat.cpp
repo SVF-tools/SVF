@@ -33,8 +33,6 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/PAG.h"
 
-using namespace llvm;
-
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
@@ -125,7 +123,7 @@ void PTAStat::performStat() {
     std::set<SymID> memObjSet;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it) {
         PAGNode* node = it->second;
-        if(ObjPN* obj = dyn_cast<ObjPN>(node)) {
+        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node)) {
             const MemObj* mem = obj->getMemObj();
             if (memObjSet.insert(mem->getSymId()).second == false)
                 continue;
@@ -286,15 +284,15 @@ void PTAStat::bitcastInstStat() {
     u32_t numberOfBitCast = 0;
     for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
             funIter != funEiter; ++funIter) {
-        const llvm::Function* func = *funIter;
-        for (llvm::Function::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const Function* func = *funIter;
+        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt) {
-            const llvm::BasicBlock& bb = *bbIt;
-            for (llvm::BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
+            const BasicBlock& bb = *bbIt;
+            for (BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
                     instIt != instEit; ++instIt) {
-                const llvm::Instruction& inst = *instIt;
-                if (const llvm::BitCastInst* bitcast = llvm::dyn_cast<llvm::BitCastInst>(&inst)) {
-                    if (llvm::isa<PointerType>(bitcast->getSrcTy()))
+                const Instruction& inst = *instIt;
+                if (const BitCastInst* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst)) {
+                    if (SVFUtil::isa<PointerType>(bitcast->getSrcTy()))
                         numberOfBitCast++;
                 }
             }
@@ -310,10 +308,10 @@ void PTAStat::branchStat() {
     u32_t numOfBB_3Succ = 0;
     for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
             funIter != funEiter; ++funIter) {
-        const llvm::Function* func = *funIter;
-        for (llvm::Function::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const Function* func = *funIter;
+        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt) {
-            const llvm::BasicBlock& bb = *bbIt;
+            const BasicBlock& bb = *bbIt;
             u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;

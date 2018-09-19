@@ -58,12 +58,12 @@ public:
     }
 
     /// Get pass name
-    virtual inline llvm::StringRef getPassName() const {
+    virtual inline StringRef getPassName() const {
         return "Double Free Analysis";
     }
 
     /// Pass dependence
-    virtual void getAnalysisUsage(llvm::AnalysisUsage& au) const {
+    virtual void getAnalysisUsage(AnalysisUsage& au) const {
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
     }

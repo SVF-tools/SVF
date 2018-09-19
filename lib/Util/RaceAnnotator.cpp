@@ -8,17 +8,15 @@
 #include "Util/RaceAnnotator.h"
 #include <sstream>
 
-using namespace llvm;
-
 void RaceAnnotator::annotateDRCheck(Instruction* inst) {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << DR_CHECK;
 
     /// memcpy and memset is not annotated
-    if (StoreInst* st = dyn_cast<StoreInst>(inst)) {
+    if (StoreInst* st = SVFUtil::dyn_cast<StoreInst>(inst)) {
         addMDTag(inst, st->getPointerOperand(), rawstr.str());
-    } else if (LoadInst* ld = dyn_cast<LoadInst>(inst)) {
+    } else if (LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(inst)) {
         addMDTag(inst, ld->getPointerOperand(), rawstr.str());
     }
 }

@@ -40,18 +40,16 @@
 #include "WPA/FlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 
-using namespace llvm;
-
 char WPAPass::ID = 0;
 
-static RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
+static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
         "Whole Program Pointer Analysis Pass");
 
 /// register this into alias analysis group
 ///static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
 
-static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer analysis"),
-        cl::values(
+static llvm::cl::bits<PointerAnalysis::PTATY> PASelected(llvm::cl::desc("Select pointer analysis"),
+		llvm::cl::values(
             clEnumValN(PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
@@ -62,14 +60,14 @@ static cl::bits<PointerAnalysis::PTATY> PASelected(cl::desc("Select pointer anal
         ));
 
 
-static cl::bits<WPAPass::AliasCheckRule> AliasRule(cl::desc("Select alias check rule"),
-        cl::values(
+static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule(llvm::cl::desc("Select alias check rule"),
+		llvm::cl::values(
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
 
-cl::opt<bool> anderSVFG("svfg", cl::init(false),
-                        cl::desc("Generate SVFG after Andersen's Analysis"));
+llvm::cl::opt<bool> anderSVFG("svfg", llvm::cl::init(false),
+                        llvm::cl::desc("Generate SVFG after Andersen's Analysis"));
 
 /*!
  * Destructor
@@ -132,7 +130,7 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
     _pta->analyze(svfModule);
     if (anderSVFG) {
         SVFGBuilder memSSA(true);
-        assert(isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
+        assert(SVFUtil::isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
         SVFG *svfg = memSSA.build((BVDataPTAImpl*)_pta);
         svfg->dump("ander_svfg");
     }
@@ -144,9 +142,9 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.
  */
-llvm::AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
+AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
 
-    llvm::AliasResult result = MayAlias;
+    AliasResult result = llvm::MayAlias;
 
     PAG* pag = _pta->getPAG();
 
@@ -159,22 +157,22 @@ llvm::AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
         /// Veto is used by default
         if (AliasRule.getBits() == 0 || AliasRule.isSet(Veto)) {
             /// Return NoAlias if any PTA gives NoAlias result
-            result = MayAlias;
+            result = llvm::MayAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it) {
-                if ((*it)->alias(V1, V2) == NoAlias)
-                    result = NoAlias;
+                if ((*it)->alias(V1, V2) == llvm::NoAlias)
+                    result = llvm::NoAlias;
             }
         }
         else if (AliasRule.isSet(Conservative)) {
             /// Return MayAlias if any PTA gives MayAlias result
-            result = NoAlias;
+            result = llvm::NoAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it) {
-                if ((*it)->alias(V1, V2) == MayAlias)
-                    result = MayAlias;
+                if ((*it)->alias(V1, V2) == llvm::MayAlias)
+                    result = llvm::MayAlias;
             }
         }
     }

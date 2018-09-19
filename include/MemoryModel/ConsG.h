@@ -66,15 +66,15 @@ private:
 
     /// Wappers used internally, not expose to Andernsen Pass
     //@{
-    inline NodeID getValueNode(const llvm::Value* value) const {
+    inline NodeID getValueNode(const Value* value) const {
         return sccRepNode(pag->getValueNode(value));
     }
 
-    inline NodeID getReturnNode(const llvm::Function* value) const {
+    inline NodeID getReturnNode(const Function* value) const {
         return pag->getReturnNode(value);
     }
 
-    inline NodeID getVarargNode(const llvm::Function* value) const {
+    inline NodeID getVarargNode(const Function* value) const {
         return pag->getVarargNode(value);
     }
     //@}
@@ -215,11 +215,11 @@ public:
     }
 
     /// Parameter passing
-    void connectCaller2CalleeParams(llvm::CallSite cs, const llvm::Function *F, NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
 
     /// Check if a given edge is a NormalGepCGEdge with 0 offset.
     inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const {
-        if (NormalGepCGEdge *normalGepCGEdge = llvm::dyn_cast<NormalGepCGEdge>(edge))
+        if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
             if (0 == normalGepCGEdge->getLocationSet().getOffset())
                 return true;
         return false;

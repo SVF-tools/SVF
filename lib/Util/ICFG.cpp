@@ -29,15 +29,13 @@
 
 #include "Util/ICFG.h"
 #include "Util/ICFGStat.h"
-#include "Util/GraphUtil.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
-                             cl::desc("Dump dot graph of ICFG"));
+static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
+                             llvm::cl::desc("Dump dot graph of ICFG"));
 
 /*!
  * Constructor
@@ -50,7 +48,7 @@ static cl::opt<bool> DumpICFG("dump-icfg", cl::init(false),
 ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
 	stat = new ICFGStat(this);
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate ICFG ...\n"));
 	build();
 }
 
@@ -82,7 +80,7 @@ void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 /*!
  * Handle call instruction by creating interprocedural edges
  */
-void ICFG::handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
+void ICFG::handleCall(IntraBlockNode* instICFGNode, const Instruction* inst){
 	if (const Function* callee = getCallee(inst)) {
 		CallSite cs = getLLVMCallSite(inst);
 		addICFGInterEdges(cs, callee);
@@ -98,13 +96,13 @@ void ICFG::handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* ins
 /*!
  * Add statements into IntraBlockNode
  */
-void ICFG::handleIntraStmt(IntraBlockNode* instICFGNode, const llvm::Instruction* inst){
+void ICFG::handleIntraStmt(IntraBlockNode* instICFGNode, const Instruction* inst){
 }
 
 /*
  * Obtain the last instruction of a basic block
  */
-IntraBlockNode* ICFG::getLastInstFromBasicBlock(const llvm::BasicBlock* bb){
+IntraBlockNode* ICFG::getLastInstFromBasicBlock(const BasicBlock* bb){
 	const Instruction* curInst = &(*bb->begin());
 	IntraBlockNode* curNode = getIntraBlockICFGNode(curInst);
 
@@ -128,7 +126,7 @@ void ICFG::build(){
     SVFModule svfModule = pag->getModule();
     for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
         const Function *fun = *iter;
-        if (analysisUtil::isExtCall(fun))
+        if (SVFUtil::isExtCall(fun))
             continue;
 
         /// function entry
@@ -142,7 +140,7 @@ void ICFG::build(){
         /// function body
         worklist.push(entryBB);
 		while (!worklist.empty()) {
-            const llvm::BasicBlock* bb = worklist.pop();
+            const BasicBlock* bb = worklist.pop();
 			if (visited.find(bb) == visited.end()) {
 				visited.insert(bb);
 				IntraBlockNode* srcNode = getLastInstFromBasicBlock(bb);
@@ -279,7 +277,7 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId
  */
 void ICFG::dump(const std::string& file, bool simple) {
     if(DumpICFG)
-        GraphPrinter::WriteGraphToFile(llvm::outs(), file, this, simple);
+        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), file, this, simple);
 }
 
 
@@ -309,27 +307,27 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-		if (IntraBlockNode* bNode = dyn_cast<IntraBlockNode>(node)) {
+		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
 			rawstr << getSourceLoc(bNode->getInst());
-		} else if (FunEntryBlockNode* entry = dyn_cast<FunEntryBlockNode>(
+		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(
 				node)) {
 			if (isExtCall(entry->getFun()))
 				rawstr << "Entry(" << ")\n";
 			else
 				rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
 			rawstr << "Fun[" << entry->getFun()->getName() << "]";
-		} else if (FunExitBlockNode* exit = dyn_cast<FunExitBlockNode>(node)) {
+		} else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node)) {
 			if (isExtCall(exit->getFun()))
 				rawstr << "Exit(" << ")\n";
 			else
 				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
 						<< ")\n";
 			rawstr << "Fun[" << exit->getFun()->getName() << "]";
-		} else if (CallBlockNode* call = dyn_cast<CallBlockNode>(node)) {
+		} else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node)) {
 			rawstr << "Call("
 					<< getSourceLoc(call->getCallSite().getInstruction())
 					<< ")\n";
-		} else if (RetBlockNode* ret = dyn_cast<RetBlockNode>(node)) {
+		} else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
 			rawstr << "Ret("
 					<< getSourceLoc(ret->getCallSite().getInstruction())
 					<< ")\n";
@@ -344,19 +342,19 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
 
-        if(isa<IntraBlockNode>(node)) {
+        if(SVFUtil::isa<IntraBlockNode>(node)) {
         		rawstr <<  "color=black";
         }
-        else if(isa<FunEntryBlockNode>(node)) {
+        else if(SVFUtil::isa<FunEntryBlockNode>(node)) {
             rawstr <<  "color=yellow";
         }
-        else if(isa<FunExitBlockNode>(node)) {
+        else if(SVFUtil::isa<FunExitBlockNode>(node)) {
             rawstr <<  "color=green";
         }
-        else if(isa<CallBlockNode>(node)) {
+        else if(SVFUtil::isa<CallBlockNode>(node)) {
             rawstr <<  "color=red";
         }
-        else if(isa<RetBlockNode>(node)) {
+        else if(SVFUtil::isa<RetBlockNode>(node)) {
             rawstr <<  "color=blue";
         }
         else
@@ -371,9 +369,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
     static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ICFG *pag) {
         ICFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-		if (isa<CallCFGEdge>(edge))
+		if (SVFUtil::isa<CallCFGEdge>(edge))
 			return "style=solid,color=red";
-		else if (isa<RetCFGEdge>(edge))
+		else if (SVFUtil::isa<RetCFGEdge>(edge))
 			return "style=solid,color=blue";
 		else
 			return "style=solid";
@@ -387,9 +385,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 
         std::string str;
         raw_string_ostream rawstr(str);
-        if (CallCFGEdge* dirCall = dyn_cast<CallCFGEdge>(edge))
+        if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
             rawstr << dirCall->getCallSiteId();
-        else if (RetCFGEdge* dirRet = dyn_cast<RetCFGEdge>(edge))
+        else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
             rawstr << dirRet->getCallSiteId();
 
         return rawstr.str();

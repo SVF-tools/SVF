@@ -28,17 +28,16 @@
  */
 
 #include "SABER/LeakChecker.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 char LeakChecker::ID = 0;
 
-static RegisterPass<LeakChecker> LEAKCHECKER("leak-checker",
+static llvm::RegisterPass<LeakChecker> LEAKCHECKER("leak-checker",
         "Memory Leak Checker");
-static cl::opt<bool> ValidateTests("valid-tests", cl::init(false),
-                                   cl::desc("Validate memory leak tests"));
+static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),
+                                   llvm::cl::desc("Validate memory leak tests"));
 
 /*!
  * Initialize sources
@@ -140,14 +139,14 @@ bool LeakChecker::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet) {
             // if this is a return edge
             else if(edge->isRetDirectVFGEdge()) {
                 reachFunExit = true;
-                csIdSet.insert(getSVFG()->getCallSite(cast<RetDirSVFGEdge>(edge)->getCallSiteId()));
+                csIdSet.insert(getSVFG()->getCallSite(SVFUtil::cast<RetDirSVFGEdge>(edge)->getCallSiteId()));
             }
             // if this is an intra edge
             else {
                 const SVFGNode* succ = edge->getDstNode();
-                if (isa<CopySVFGNode>(succ) || isa<GepSVFGNode>(succ)
-                        || isa<PHISVFGNode>(succ) || isa<FormalRetSVFGNode>(succ)
-                        || isa<ActualRetSVFGNode>(succ)) {
+                if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
+                        || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
+                        || SVFUtil::isa<ActualRetSVFGNode>(succ)) {
                     worklist.push(succ);
                 }
                 else {
@@ -165,13 +164,13 @@ bool LeakChecker::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet) {
 
 void LeakChecker::reportNeverFree(const SVFGNode* src) {
     CallSite cs = getSrcCSID(src);
-    errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
+    SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
            << getSourceLoc(cs.getInstruction()) << ")\n";
 }
 
 void LeakChecker::reportPartialLeak(const SVFGNode* src) {
     CallSite cs = getSrcCSID(src);
-    errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
+    SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
            << getSourceLoc(cs.getInstruction()) << ")\n";
 }
 
@@ -182,7 +181,7 @@ void LeakChecker::reportBug(ProgSlice* slice) {
     }
     else if (isAllPathReachable() == false && isSomePathReachable() == true) {
         reportPartialLeak(slice->getSource());
-        errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
+        SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
         slice->annotatePaths();
     }
 
@@ -240,11 +239,11 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const Function* f
     std::string funName = source->getBB()->getParent()->getName();
 
     if (success)
-        outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
+        SVFUtil::outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
     else
-        errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
+    	SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
 }
@@ -279,11 +278,11 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
     std::string funName = source->getBB()->getParent()->getName();
 
     if (expectedFailure)
-        outs() << sucMsg("\t EXPECTED FAIL :") << funName << " check <src id:" << source->getId()
+        SVFUtil::outs() << sucMsg("\t EXPECTED FAIL :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
     else
-        errs() << errMsg("\t UNEXPECTED FAIL :") << funName << " check <src id:" << source->getId()
+    	SVFUtil::errs() << errMsg("\t UNEXPECTED FAIL :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
 }

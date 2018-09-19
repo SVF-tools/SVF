@@ -13,9 +13,7 @@
 #include "MTA/MTAAnnotator.h"
 #include "Util/ThreadCallGraph.h"
 
-using namespace llvm;
-
-static cl::opt<bool> AllPairMHP("allpairMhp", cl::init(false), cl::desc("All pair MHP computation"));
+static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm::cl::desc("All pair MHP computation"));
 
 /*!
  * Statistics for thread call graph
@@ -27,7 +25,7 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg) {
     u32_t numOfIndForkEdge = 0;
     for (ThreadCallGraph::CallSiteSet::iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it) {
         bool indirectfork = false;
-        const Function* spawnee = dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
+        const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
         if(spawnee==NULL) {
             numOfIndForksite++;
             indirectfork = true;
@@ -89,16 +87,16 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
         SVFModule mod = mhp->getThreadCallGraph()->getModule();
         for (SVFModule::iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
             const Function* fun = (*F);
-            if(analysisUtil::isExtCall(fun))
+            if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
             for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II) {
                 const Instruction *inst = &*II;
-                if(isa<LoadInst>(inst)) {
+                if(SVFUtil::isa<LoadInst>(inst)) {
                     instSet1.insert(inst);
                 }
-                else if(isa<StoreInst>(inst)) {
+                else if(SVFUtil::isa<StoreInst>(inst)) {
                     instSet1.insert(inst);
                     instSet2.insert(inst);
                 }

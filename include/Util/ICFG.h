@@ -47,19 +47,19 @@ public:
     typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
     typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
 
-    typedef std::map<const llvm::Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const llvm::Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const llvm::Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
-    typedef std::map<llvm::CallSite, CallBlockNode *> CSToCallNodeMapTy;
-    typedef std::map<llvm::CallSite, RetBlockNode *> CSToRetNodeMapTy;
+    typedef std::map<const Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
+    typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
 
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef std::vector<const llvm::Instruction*> InstVec;
-    typedef std::set<const llvm::BasicBlock*> BBSet;
-    typedef FIFOWorkList<const llvm::BasicBlock*> WorkList;
+    typedef std::vector<const Instruction*> InstVec;
+    typedef std::set<const BasicBlock*> BBSet;
+    typedef FIFOWorkList<const BasicBlock*> WorkList;
 
 
 protected:
@@ -120,16 +120,16 @@ public:
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
+    inline CallSiteID getCallSiteID(CallSite cs, const Function* func) const {
         return callgraph->getCallSiteID(cs, func);
     }
-    inline llvm::CallSite getCallSite(CallSiteID id) const {
+    inline CallSite getCallSite(CallSiteID id) const {
         return callgraph->getCallSite(id);
     }
     //@}
 
     /// Whether a node is function entry ICFGNode
-    const llvm::Function* isFunEntryICFGNode(const ICFGNode* node) const;
+    const Function* isFunEntryICFGNode(const ICFGNode* node) const;
 
 protected:
     /// Remove a SVFG edge
@@ -152,8 +152,8 @@ protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode) {
-        const llvm::BasicBlock *srcBB = srcNode->getBB();
-        const llvm::BasicBlock *dstBB = dstNode->getBB();
+        const BasicBlock *srcBB = srcNode->getBB();
+        const BasicBlock *dstBB = dstNode->getBB();
         if(srcBB != nullptr && dstBB != nullptr) {
             assert(srcBB->getParent() == dstBB->getParent());
         }
@@ -171,7 +171,7 @@ protected:
     void build();
 
     /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(llvm::CallSite cs, const llvm::Function* callee);
+    void addICFGInterEdges(CallSite cs, const Function* callee);
 
     inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
@@ -182,19 +182,19 @@ protected:
         addGNode(node->getId(),node);
     }
     /// Add VFGStmtNode into IntraBlockNode
-    void handleIntraStmt(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
+    void handleIntraStmt(IntraBlockNode* instICFGNode, const Instruction* inst);
     /// Create InterBlockNode at direct callsites
-    void handleCall(IntraBlockNode* instICFGNode, const llvm::Instruction* inst);
+    void handleCall(IntraBlockNode* instICFGNode, const Instruction* inst);
 
 	/// Add a basic block ICFGNode
-	inline IntraBlockNode* getIntraBlockICFGNode(const llvm::Instruction* inst) {
+	inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst) {
 		InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
 		if (it == InstToBlockNodeMap.end()) {
 			IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
 			addICFGNode(sNode);
 			InstToBlockNodeMap[inst] = sNode;
 
-			if(analysisUtil::isCallSite(inst))
+			if(SVFUtil::isCallSite(inst))
 				handleCall(sNode,inst);
 			else
 				handleIntraStmt(sNode, inst);
@@ -204,15 +204,15 @@ protected:
 		return it->second;
 	}
 	/// Get the first instruction ICFGNode in a basic block
-	inline IntraBlockNode* getFirstInstFromBasicBlock(const llvm::BasicBlock* bb) {
+	inline IntraBlockNode* getFirstInstFromBasicBlock(const BasicBlock* bb) {
 		return getIntraBlockICFGNode(&(*bb->begin()));
 	}
 
 	/// Get the last instruction ICFGNode in a basic block
-	IntraBlockNode* getLastInstFromBasicBlock(const llvm::BasicBlock* bb);
+	IntraBlockNode* getLastInstFromBasicBlock(const BasicBlock* bb);
 
     /// Add a function entry node
-	inline FunEntryBlockNode* getFunEntryICFGNode(const llvm::Function* fun) {
+	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end()) {
 			FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
@@ -223,7 +223,7 @@ protected:
 		return it->second;
 	}
 	/// Add a function exit node
-	inline FunExitBlockNode* getFunExitICFGNode(const llvm::Function* fun) {
+	inline FunExitBlockNode* getFunExitICFGNode(const Function* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
 		if (it == FunToFunExitNodeMap.end()) {
 			FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
@@ -234,7 +234,7 @@ protected:
 		return it->second;
 	}
     /// Add a call node
-    inline CallBlockNode* getCallICFGNode(llvm::CallSite cs) {
+    inline CallBlockNode* getCallICFGNode(CallSite cs) {
 		CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
 		if (it == CSToCallNodeMap.end()) {
 			CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
@@ -245,7 +245,7 @@ protected:
 		return it->second;
     }
     /// Add a return node
-    inline RetBlockNode* getRetICFGNode(llvm::CallSite cs) {
+    inline RetBlockNode* getRetICFGNode(CallSite cs) {
 		CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
 		if (it == CSToRetNodeMap.end()) {
 			RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs);

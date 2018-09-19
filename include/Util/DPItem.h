@@ -90,7 +90,7 @@ public:
     }
 
     inline void dump() const {
-        llvm::outs() << "var " << cur << "\n";
+        SVFUtil::outs() << "var " << cur << "\n";
     }
 };
 
@@ -154,7 +154,7 @@ public:
         return !(*this==rhs);
     }
     inline void dump() const {
-        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << "\n";
+        SVFUtil::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << "\n";
     }
 };
 
@@ -271,7 +271,7 @@ public:
     /// Dump context condition
     inline std::string toString() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = context.begin(), eit = context.end(); it!=eit; ++it) {
             rawstr << *it << " ";
@@ -359,8 +359,8 @@ public:
         return !(*this==rhs);
     }
     inline void dump() const {
-        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
-        llvm::outs() << this->context.toString()  <<"\n";
+        SVFUtil::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
+        SVFUtil::outs() << this->context.toString()  <<"\n";
     }
 };
 
@@ -443,7 +443,7 @@ public:
             addVFEdge(from,to);
             return condAnd(allocator,c);
         }
-        //	DBOUT(DDDA, llvm::outs() << "\t\t!!path length beyond limits \n");
+        //	DBOUT(DDDA, SVFUtil::outs() << "\t\t!!path length beyond limits \n");
         return true;
     }
     /// Condition operatoration
@@ -485,7 +485,7 @@ public:
     /// Get value-flow edge traces
     inline std::string vfEdgesTrace() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         for(EdgeSet::const_iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it) {
             rawstr << "(" << it->first << "," << it->second << ")";
         }
@@ -494,7 +494,7 @@ public:
     /// Dump context condition
     inline std::string toString() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = context.begin(), eit = context.end(); it!=eit; ++it) {
             rawstr << *it << " ";
@@ -591,8 +591,8 @@ public:
     }
     /// Dump dpm info
     inline void dump() const {
-        llvm::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
-        llvm::outs() << this->vfpath.toString() << "\n";
+        SVFUtil::outs() << "statement " << *(this->curloc)  << ", var " << this->cur << " ";
+        SVFUtil::outs() << this->vfpath.toString() << "\n";
     }
 };
 

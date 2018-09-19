@@ -71,9 +71,9 @@ public:
 			numOfNodes++;
 			ICFGNode* node = it->second;
 
-			if (llvm::isa<IntraBlockNode>(node))
+			if (SVFUtil::isa<IntraBlockNode>(node))
 				numOfIntraNodes++;
-			else if (llvm::isa<CallBlockNode>(node))
+			else if (SVFUtil::isa<CallBlockNode>(node))
 				numOfIntraNodes++;
 
 			/// add your code here to stat nodes and edges

@@ -62,19 +62,19 @@ public:
 
     }
     /// We should know the program location (basic block level) of each ICFG node
-    virtual const llvm::BasicBlock* getBB() const {
+    virtual const BasicBlock* getBB() const {
         return bb;
     }
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const ICFGNode &node) {
+    friend raw_ostream& operator<< (raw_ostream &o, const ICFGNode &node) {
         o << "ICFGNode ID:" << node.getId();
         return o;
     }
     //@}
 protected:
-    const llvm::BasicBlock* bb;
+    const BasicBlock* bb;
 };
 
 
@@ -88,14 +88,14 @@ public:
     typedef StmtVFGNodeVec::const_iterator const_iterator;
 
 private:
-    const llvm::Instruction* inst;
+    const Instruction* inst;
     StmtVFGNodeVec stmts;
 public:
-	IntraBlockNode(NodeID id, const llvm::Instruction* i) : ICFGNode(id, IntraBlock), inst(i) {
+	IntraBlockNode(NodeID id, const Instruction* i) : ICFGNode(id, IntraBlock), inst(i) {
 		bb = inst->getParent();
 	}
 
-	inline const llvm::Instruction* getInst() const {
+	inline const Instruction* getInst() const {
 		return inst;
 	}
 
@@ -161,15 +161,15 @@ class FunEntryBlockNode : public InterBlockNode {
 public:
     typedef std::vector<const FormalParmVFGNode*> FormalParmVFGNodeVec;
 private:
-    const llvm::Function* fun;
+    const Function* fun;
     FormalParmVFGNodeVec FPNodes;
 public:
-    FunEntryBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunEntryBlock), fun(f){
-		if (!analysisUtil::isExtCall(fun))
+    FunEntryBlockNode(NodeID id, const Function* f): InterBlockNode(id, FunEntryBlock), fun(f){
+		if (!SVFUtil::isExtCall(fun))
 			bb = &(fun->getEntryBlock());
     }
     /// Return function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return fun;
     }
 	/// Return the set of formal parameters
@@ -204,15 +204,15 @@ public:
 class FunExitBlockNode : public InterBlockNode {
 
 private:
-    const llvm::Function* fun;
+    const Function* fun;
     const FormalRetVFGNode* formalRet;
 public:
-    FunExitBlockNode(NodeID id, const llvm::Function* f): InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL){
-		if (!analysisUtil::isExtCall(fun))
-			bb = analysisUtil::getFunExitBB(fun);
+    FunExitBlockNode(NodeID id, const Function* f): InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL){
+		if (!SVFUtil::isExtCall(fun))
+			bb = SVFUtil::getFunExitBB(fun);
     }
     /// Return function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return fun;
     }
 	/// Return actual return parameter
@@ -249,15 +249,15 @@ class CallBlockNode : public InterBlockNode {
 public:
     typedef std::vector<const ActualParmVFGNode*> ActualParmVFGNodeVec;
 private:
-    llvm::CallSite cs;
+    CallSite cs;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunCallBlock), cs(c){
+    CallBlockNode(NodeID id, CallSite c): InterBlockNode(id, FunCallBlock), cs(c){
 		bb = cs.getInstruction()->getParent();
     }
 
     /// Return callsite
-	inline llvm::CallSite getCallSite() const {
+	inline CallSite getCallSite() const {
 		return cs;
 	}
 	/// Return the set of actual parameters
@@ -295,15 +295,15 @@ public:
 class RetBlockNode : public InterBlockNode {
 
 private:
-    llvm::CallSite cs;
+    CallSite cs;
     const ActualRetVFGNode* actualRet;
 public:
-    RetBlockNode(NodeID id, llvm::CallSite c): InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL){
+    RetBlockNode(NodeID id, CallSite c): InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL){
 		bb = cs.getInstruction()->getParent();
     }
 
 	/// Return callsite
-	inline llvm::CallSite getCallSite() const {
+	inline CallSite getCallSite() const {
 		return cs;
 	}
 	/// Return actual return parameter

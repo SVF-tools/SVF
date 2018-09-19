@@ -28,10 +28,9 @@
  */
 
 #include "WPA/Andersen.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 AndersenWave* AndersenWave::waveAndersen = NULL;
 
@@ -103,9 +102,9 @@ void AndersenWave::handleCopyGep(ConstraintNode* node)
     NodeID nodeId = node->getId();
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
             ++it) {
-        if(CopyCGEdge* copyEdge = dyn_cast<CopyCGEdge>(*it))
+        if(CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(*it))
             processCopy(nodeId,copyEdge);
-        else if(GepCGEdge* gepEdge = dyn_cast<GepCGEdge>(*it))
+        else if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
             processGep(nodeId,gepEdge);
     }
 }

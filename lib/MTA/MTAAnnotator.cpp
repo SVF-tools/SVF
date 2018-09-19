@@ -9,10 +9,9 @@
 #include "MTA/LockAnalysis.h"
 #include <sstream>
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<u32_t> AnnoFlag("anno", cl::init(0), cl::desc("prune annotated instructions: 0001 Thread Local; 0002 Alias; 0004 MHP."));
+static llvm::cl::opt<u32_t> AnnoFlag("anno", llvm::cl::init(0), llvm::cl::desc("prune annotated instructions: 0001 Thread Local; 0002 Alias; 0004 MHP."));
 
 void MTAAnnotator::annotateDRCheck(Instruction* inst) {
     std::string str;
@@ -20,10 +19,10 @@ void MTAAnnotator::annotateDRCheck(Instruction* inst) {
     rawstr << DR_CHECK;
 
     /// memcpy and memset is not annotated
-    if (StoreInst* st = dyn_cast<StoreInst>(inst)) {
+    if (StoreInst* st = SVFUtil::dyn_cast<StoreInst>(inst)) {
         numOfAnnotatedSt++;
         addMDTag(inst, st->getPointerOperand(), rawstr.str());
-    } else if (LoadInst* ld = dyn_cast<LoadInst>(inst)) {
+    } else if (LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(inst)) {
         numOfAnnotatedLd++;
         addMDTag(inst, ld->getPointerOperand(), rawstr.str());
     }
@@ -33,13 +32,13 @@ void MTAAnnotator::collectLoadStoreInst(SVFModule mod) {
 
     for (SVFModule::iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
         const Function* fun = (*F);
-        if (analysisUtil::isExtCall(fun))
+        if (SVFUtil::isExtCall(fun))
             continue;
         for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
             const Instruction *inst = &*II;
-            if (isa<LoadInst>(inst)) {
+            if (SVFUtil::isa<LoadInst>(inst)) {
                 loadset.insert(inst);
-            } else if (isa<StoreInst>(inst)) {
+            } else if (SVFUtil::isa<StoreInst>(inst)) {
                 storeset.insert(inst);
             } else if (isMemset(inst)) {
                 storeset.insert(inst);
@@ -55,7 +54,7 @@ void MTAAnnotator::collectLoadStoreInst(SVFModule mod) {
 }
 
 const Value* MTAAnnotator::getStoreOperand(const Instruction* inst) {
-    if (const StoreInst* st = dyn_cast<StoreInst>(inst)) {
+    if (const StoreInst* st = SVFUtil::dyn_cast<StoreInst>(inst)) {
         return st->getPointerOperand();
     } else if (isMemset(inst)) {
         return inst->getOperand(0);
@@ -67,7 +66,7 @@ const Value* MTAAnnotator::getStoreOperand(const Instruction* inst) {
     return NULL;
 }
 const Value* MTAAnnotator::getLoadOperand(const Instruction* inst) {
-    if (const LoadInst* ld = dyn_cast<LoadInst>(inst)) {
+    if (const LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(inst)) {
         return ld->getPointerOperand();
     } else if (isMemcpy(inst)) {
         return inst->getOperand(1);
@@ -90,7 +89,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta) {
     if (!AnnoLocal)
         return;
 
-    DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune thread local pairs\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Run annotator prune thread local pairs\n"));
     PAG* pag = pta->getPAG();
     PointsTo nonlocalobjs;
     PointsTo worklist;
@@ -166,7 +165,7 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta) {
     if (!AnnoMHP && !AnnoAlias)
         return;
 
-    DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune Alias or MHP pairs\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Run annotator prune Alias or MHP pairs\n"));
     InstSet needannost;
     InstSet needannold;
     for (InstSet::iterator it1 = storeset.begin(), eit1 = storeset.end(); it1 != eit1; ++it1) {

@@ -129,7 +129,7 @@ public:
     }
     /// Print MU
     virtual void dump() {
-        llvm::outs() << "MU(MR_" << mr->getMRID() << "V_" << ver->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "MU(MR_" << mr->getMRID() << "V_" << ver->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
 };
@@ -142,12 +142,12 @@ class LoadMU : public MSSAMU<Cond> {
 
 private:
     const LoadPE* inst;
-    const llvm::BasicBlock* bb;
+    const BasicBlock* bb;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    LoadMU(const llvm::BasicBlock* b,const LoadPE* i, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    LoadMU(const BasicBlock* b,const LoadPE* i, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSAMU<Cond>(MSSAMU<Cond>::LoadMSSAMU,m,c), inst(i), bb(b) {
     }
     virtual ~LoadMU() {
@@ -161,7 +161,7 @@ public:
     }
 
     /// Return basic block
-    inline const llvm::BasicBlock* getBasicBlock() const {
+    inline const BasicBlock* getBasicBlock() const {
         return bb;
     }
 
@@ -177,7 +177,7 @@ public:
 
     /// Print MU
     virtual void dump() {
-        llvm::outs() << "LDMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "LDMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
 };
@@ -189,12 +189,12 @@ template<class Cond>
 class CallMU : public MSSAMU<Cond> {
 
 private:
-    const llvm::CallSite callsite;
+    const CallSite callsite;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    CallMU(const llvm::CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    CallMU(const CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSAMU<Cond>(MSSAMU<Cond>::CallMSSAMU,m,c), callsite(cs) {
     }
     virtual ~CallMU() {
@@ -203,12 +203,12 @@ public:
     //@}
 
     /// Return callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return callsite;
     }
 
     /// Return basic block
-    inline const llvm::BasicBlock* getBasicBlock() const {
+    inline const BasicBlock* getBasicBlock() const {
         return callsite.getInstruction()->getParent();
     }
 
@@ -224,7 +224,7 @@ public:
 
     /// Print MU
     virtual void dump() {
-        llvm::outs() << "CALMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "CALMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
 };
@@ -236,18 +236,18 @@ public:
 template<class Cond>
 class RetMU : public MSSAMU<Cond> {
 private:
-    const llvm::Function* fun;
+    const Function* fun;
 public:
     /// Constructor/Destructor for MU
     //@{
-    RetMU(const llvm::Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    RetMU(const Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSAMU<Cond>(MSSAMU<Cond>::RetMSSAMU,m,c), fun(f) {
     }
     virtual ~RetMU() {}
     //@}
 
     /// Return function
-    inline const llvm::Function* getFunction() const {
+    inline const Function* getFunction() const {
         return fun;
     }
 
@@ -263,7 +263,7 @@ public:
 
     /// Print MU
     virtual void dump() {
-        llvm::outs() << "RETMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "RETMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
 };
@@ -330,7 +330,7 @@ public:
 
     /// Print MSSADef
     virtual void dump() {
-        llvm::outs() << "DEF(MR_" << mr->getMRID() << "V_" << resVer->getSSAVersion() << ")\n";
+        SVFUtil::outs() << "DEF(MR_" << mr->getMRID() << "V_" << resVer->getSSAVersion() << ")\n";
     }
 };
 
@@ -384,7 +384,7 @@ public:
 
     /// Print CHI
     virtual void dump() {
-        llvm::outs() << "MR_" << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
+        SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                      " = CHI(MR_" << this->getMR()->getMRID() << "V_" << opVer->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
@@ -397,12 +397,12 @@ public:
 template<class Cond>
 class StoreCHI : public MSSACHI<Cond> {
 private:
-    const llvm::BasicBlock* bb;
+    const BasicBlock* bb;
     const StorePE* inst;
 public:
     /// Constructors for StoreCHI
     //@{
-    StoreCHI(const llvm::BasicBlock* b, const StorePE* i, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    StoreCHI(const BasicBlock* b, const StorePE* i, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSACHI<Cond>(MSSADEF::StoreMSSACHI,m,c), bb(b), inst(i) {
     }
     virtual ~StoreCHI() {
@@ -410,7 +410,7 @@ public:
     //@}
 
     /// Get basic block
-    inline const llvm::BasicBlock* getBasicBlock() const {
+    inline const BasicBlock* getBasicBlock() const {
         return bb;
     }
 
@@ -434,7 +434,7 @@ public:
 
     /// Print CHI
     virtual void dump() {
-        llvm::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
+        SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                      " = STCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
@@ -448,11 +448,11 @@ public:
 template<class Cond>
 class CallCHI : public MSSACHI<Cond> {
 private:
-    const llvm::CallSite callsite;
+    const CallSite callsite;
 public:
     /// Constructors for StoreCHI
     //@{
-    CallCHI(const llvm::CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    CallCHI(const CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs) {
     }
     virtual ~CallCHI() {
@@ -460,12 +460,12 @@ public:
     //@}
 
     /// Return basic block
-    inline const llvm::BasicBlock* getBasicBlock() const {
+    inline const BasicBlock* getBasicBlock() const {
         return callsite.getInstruction()->getParent();
     }
 
     /// Return callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return callsite;
     }
 
@@ -484,7 +484,7 @@ public:
 
     /// Print CHI
     virtual void dump() {
-        llvm::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
+        SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                      " = CALCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
@@ -496,11 +496,11 @@ public:
 template<class Cond>
 class EntryCHI : public MSSACHI<Cond> {
 private:
-    const llvm::Function* fun;
+    const Function* fun;
 public:
     /// Constructors for EntryCHI
     //@{
-    EntryCHI(const llvm::Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    EntryCHI(const Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSACHI<Cond>(MSSADEF::EntryMSSACHI,m,c),fun(f) {
     }
     virtual ~EntryCHI() {
@@ -508,7 +508,7 @@ public:
     //@}
 
     /// Return function
-    inline const llvm::Function* getFunction() const {
+    inline const Function* getFunction() const {
         return fun;
     }
 
@@ -527,7 +527,7 @@ public:
 
     /// Print CHI
     virtual void dump() {
-        llvm::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
+        SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                      " = ENCHI(MR_" << this->getMR()->getMRID() << "V_" << this->getOpVer()->getSSAVersion() << ") \t" <<
                      this->getMR()->dumpStr() << "\n";
     }
@@ -542,13 +542,13 @@ class MSSAPHI : public MSSADEF {
 public:
     typedef llvm::DenseMap<u32_t,const MRVer*> OPVers;
 private:
-    const llvm::BasicBlock* bb;
+    const BasicBlock* bb;
     OPVers opVers;
     Cond cond;
 public:
     /// Constructors for PHI
     //@{
-    MSSAPHI(const llvm::BasicBlock* b, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    MSSAPHI(const BasicBlock* b, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSADEF(MSSADEF::SSAPHI,m), bb(b), cond(c) {
     }
     virtual ~MSSAPHI() {
@@ -584,7 +584,7 @@ public:
     //@}
 
     /// Return the basic block
-    inline const llvm::BasicBlock* getBasicBlock() const {
+    inline const BasicBlock* getBasicBlock() const {
         return bb;
     }
 
@@ -605,12 +605,12 @@ public:
 
     /// Print PHI
     virtual void dump() {
-        llvm::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
+        SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                      " = PHI(";
         for(OPVers::iterator it = opVers.begin(), eit = opVers.end(); it!=eit; ++it)
-            llvm::outs() << "MR_" << this->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
+            SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
 
-        llvm::outs() << ")\n";
+        SVFUtil::outs() << ")\n";
     }
 };
 

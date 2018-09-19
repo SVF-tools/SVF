@@ -34,7 +34,6 @@
 #include "Util/ICFGStat.h"
 #include "Util/SICFG.h"
 
-using namespace llvm;
 using namespace cppUtil;
 using namespace std;
 
@@ -86,15 +85,15 @@ void TypeAnalysis::dumpCHAStats() {
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
             it != eit; ++it) {
         CHNode *node = it->second;
-        outs() << "class " << node->getName() << "\n";
+        SVFUtil::outs() << "class " << node->getName() << "\n";
         if (node->isPureAbstract())
             pure_abstract_class_num++;
         if (node->isMultiInheritance())
             multi_inheritance_class_num++;
     }
-    outs() << "class_num:\t" << chgraph->getTotalNodeNum() << '\n';
-    outs() << "pure_abstract_class_num:\t" << pure_abstract_class_num << '\n';
-    outs() << "multi_inheritance_class_num:\t" << multi_inheritance_class_num << '\n';
+    SVFUtil::outs() << "class_num:\t" << chgraph->getTotalNodeNum() << '\n';
+    SVFUtil::outs() << "pure_abstract_class_num:\t" << pure_abstract_class_num << '\n';
+    SVFUtil::outs() << "multi_inheritance_class_num:\t" << multi_inheritance_class_num << '\n';
 
     /*
      * count the following info:
@@ -134,9 +133,9 @@ void TypeAnalysis::dumpCHAStats() {
     }
     vfunc_total = allVirtualFunctions.size();
 
-    outs() << "vtblnum:\t" << vtblnum << '\n';
-    outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
-    outs() << "vtbl_max:\t" << vtbl_max << '\n';
+    SVFUtil::outs() << "vtblnum:\t" << vtblnum << '\n';
+    SVFUtil::outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
+    SVFUtil::outs() << "vtbl_max:\t" << vtbl_max << '\n';
 }
 
 

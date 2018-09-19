@@ -47,7 +47,7 @@ public:
 
     typedef llvm::DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef std::map<std::pair<NodeID,llvm::CallSite>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
+    typedef std::map<std::pair<NodeID,CallSite>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
@@ -112,14 +112,14 @@ public:
     void dump(const std::string& file, bool simple = false);
 
     /// Connect VFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(llvm::CallSite cs, const llvm::Function* callee, VFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSetTy& edges);
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(llvm::CallSite cs, const llvm::Function* func) const {
+    inline CallSiteID getCallSiteID(CallSite cs, const Function* func) const {
         return callgraph->getCallSiteID(cs, func);
     }
-    inline llvm::CallSite getCallSite(CallSiteID id) const {
+    inline CallSite getCallSite(CallSiteID id) const {
         return callgraph->getCallSite(id);
     }
     //@}
@@ -139,7 +139,7 @@ public:
 		assert(it != PAGEdgeToStmtVFGNodeMap.end() && "StmtVFGNode can not be found??");
 		return it->second;
 	}
-    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,llvm::CallSite cs) const {
+    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,CallSite cs) const {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
         assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter VFG node can not be found??");
         return it->second;
@@ -162,7 +162,7 @@ public:
     //@}
 
     /// Whether a node is function entry VFGNode
-    const llvm::Function* isFunEntryVFGNode(const VFGNode* node) const;
+    const Function* isFunEntryVFGNode(const VFGNode* node) const;
 
 protected:
     /// Remove a SVFG edge
@@ -192,8 +192,8 @@ protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode) {
-        const llvm::BasicBlock *srcBB = srcNode->getBB();
-        const llvm::BasicBlock *dstBB = dstNode->getBB();
+        const BasicBlock *srcBB = srcNode->getBB();
+        const BasicBlock *dstBB = dstNode->getBB();
         if(srcBB != nullptr && dstBB != nullptr) {
             assert(srcBB->getParent() == dstBB->getParent());
         }
@@ -211,7 +211,7 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, VFGEdgeSetTy& edges) {
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, CallSite cs, CallSiteID csId, VFGEdgeSetTy& edges) {
         ActualParmVFGNode* actualParam = getActualParmVFGNode(cs_arg,cs);
         FormalParmVFGNode* formalParam = getFormalParmVFGNode(fun_arg);
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
@@ -265,7 +265,7 @@ protected:
     void connectDirectVFGEdges();
 
     /// Create edges between VFG nodes across functions
-    void addVFGInterEdges(llvm::CallSite cs, const llvm::Function* callee);
+    void addVFGInterEdges(CallSite cs, const Function* callee);
 
     inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
@@ -326,14 +326,14 @@ protected:
     /// Add an actual parameter VFG node
     /// To be noted that multiple actual parameters may have same value (PAGNode)
     /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
-    inline void addActualParmVFGNode(const PAGNode* aparm, llvm::CallSite cs) {
+    inline void addActualParmVFGNode(const PAGNode* aparm, CallSite cs) {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
         addVFGNode(sNode);
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
         /// do not set def here, this node is not a variable definition
     }
     /// Add a formal parameter VFG node
-    inline void addFormalParmVFGNode(const PAGNode* fparm, const llvm::Function* fun, CallPESet& callPEs) {
+    inline void addFormalParmVFGNode(const PAGNode* fparm, const Function* fun, CallPESet& callPEs) {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
         addVFGNode(sNode);
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
@@ -346,7 +346,7 @@ protected:
     /// Add a callee Return VFG node
     /// To be noted that here we assume returns of a procedure have already been unified into one
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
-    inline void addFormalRetVFGNode(const PAGNode* ret, const llvm::Function* fun, RetPESet& retPEs) {
+    inline void addFormalRetVFGNode(const PAGNode* ret, const Function* fun, RetPESet& retPEs) {
         FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,ret,fun);
         addVFGNode(sNode);
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
@@ -357,7 +357,7 @@ protected:
         /// do not set def here, this node is not a variable definition
     }
     /// Add a callsite Receive VFG node
-    inline void addActualRetVFGNode(const PAGNode* ret,llvm::CallSite cs) {
+    inline void addActualRetVFGNode(const PAGNode* ret,CallSite cs) {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
         addVFGNode(sNode);
         setDef(ret,sNode);
@@ -377,11 +377,11 @@ protected:
     inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {
         if (hasDef(pagNode)) {
             const VFGNode* defNode = getVFGNode(getDef(pagNode));
-            if (const AddrVFGNode* addr = llvm::dyn_cast<AddrVFGNode>(defNode)) {
+            if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode)) {
                 if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
                     return true;
             }
-            else if(const CopyVFGNode* copy = llvm::dyn_cast<CopyVFGNode>(defNode)) {
+            else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(defNode)) {
                 if (PAG::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
                     return true;
             }

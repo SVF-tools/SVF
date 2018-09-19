@@ -35,12 +35,12 @@
 /*!
  * Dominator frontier used in MSSA
  */
-class MemSSADF : public llvm::DominanceFrontier {
+class MemSSADF : public DominanceFrontier {
 public:
-    MemSSADF() : llvm::DominanceFrontier()
+    MemSSADF() : DominanceFrontier()
     {}
 
-    bool runOnDT(llvm::DominatorTree& dt) {
+    bool runOnDT(DominatorTree& dt) {
         releaseMemory();
         analyze(dt);
         return false;

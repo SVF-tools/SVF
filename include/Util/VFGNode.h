@@ -63,19 +63,19 @@ public:
 
     }
     /// We should know the program location (basic block level) of each ICFG node
-    virtual const llvm::BasicBlock* getBB() const {
+    virtual const BasicBlock* getBB() const {
         return bb;
     }
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const VFGNode &node) {
+    friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node) {
         o << "VFGNode ID:" << node.getId();
         return o;
     }
     //@}
 protected:
-    const llvm::BasicBlock* bb;
+    const BasicBlock* bb;
 };
 
 /*!
@@ -135,7 +135,7 @@ public:
                node->getNodeKind() == Load;
     }
 
-    inline const llvm::Instruction* getInst() const {
+    inline const Instruction* getInst() const {
         /// should return a valid instruction unless it is a global PAGEdge
         return pagEdge->getInst();
     }
@@ -280,19 +280,19 @@ protected:
 public:
     /// Constructor
     PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k = TPhi): VFGNode(id, k), res(r) {
-        const llvm::Value* val = r->getValue();
-        if(const llvm::Function* fun =  llvm::dyn_cast<llvm::Function>(val)) {
-            assert(llvm::isa<VarArgPN>(r) && "not a varag function?");
+        const Value* val = r->getValue();
+        if(const Function* fun =  SVFUtil::dyn_cast<Function>(val)) {
+            assert(SVFUtil::isa<VarArgPN>(r) && "not a varag function?");
             bb = &fun->getEntryBlock();
         }
         /// the value can be an instruction phi, or a formal argument at function entry (due to SVFGOPT)
-        else if(const llvm::Instruction* inst = llvm::dyn_cast<llvm::Instruction>(val)) {
+        else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val)) {
             bb = inst->getParent();
         }
         else {
-            assert((llvm::isa<llvm::Argument>(val) || analysisUtil::isSelectConstantExpr(val))
+            assert((SVFUtil::isa<Argument>(val) || SVFUtil::isSelectConstantExpr(val))
                    && "Phi svf node is not an instruction, a select constantExpr or an formal parameter??");
-            if(const llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(val))
+            if(const Argument* arg = SVFUtil::dyn_cast<Argument>(val))
                 bb = &arg->getParent()->getEntryBlock();
             else
                 bb = NULL;	/// bb is null when we have a select constant expression
@@ -344,7 +344,7 @@ public:
 class IntraPHIVFGNode : public PHIVFGNode {
 
 public:
-    typedef llvm::DenseMap<u32_t,const llvm::BasicBlock*> OPIncomingBBs;
+    typedef llvm::DenseMap<u32_t,const BasicBlock*> OPIncomingBBs;
 
 private:
     OPIncomingBBs opIncomingBBs;
@@ -353,12 +353,12 @@ public:
     IntraPHIVFGNode(NodeID id, const PAGNode* r): PHIVFGNode(id, r, TIntraPhi) {
     }
 
-    inline const llvm::BasicBlock* getOpIncomingBB(u32_t pos) const {
+    inline const BasicBlock* getOpIncomingBB(u32_t pos) const {
         OPIncomingBBs::const_iterator it = opIncomingBBs.find(pos);
         assert(it!=opIncomingBBs.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const llvm::BasicBlock* bb) {
+    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const BasicBlock* bb) {
         opVers[pos] = node;
         opIncomingBBs[pos] = bb;
     }
@@ -446,16 +446,16 @@ public:
  */
 class ActualParmVFGNode : public ArgumentVFGNode {
 private:
-    llvm::CallSite cs;
+    CallSite cs;
 public:
     /// Constructor
-	ActualParmVFGNode(NodeID id, const PAGNode* n, llvm::CallSite c) :
+	ActualParmVFGNode(NodeID id, const PAGNode* n, CallSite c) :
 			ArgumentVFGNode(id, n, AParm), cs(c) {
 		bb = cs.getInstruction()->getParent();
 	}
 
     /// Return callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return cs;
     }
 
@@ -487,12 +487,12 @@ public:
  */
 class FormalParmVFGNode : public ArgumentVFGNode {
 private:
-    const llvm::Function* fun;
+    const Function* fun;
     CallPESet callPEs;
 
 public:
     /// Constructor
-    FormalParmVFGNode(NodeID id, const PAGNode* n, const llvm::Function* f):
+    FormalParmVFGNode(NodeID id, const PAGNode* n, const Function* f):
     		ArgumentVFGNode(id, n, FParm),  fun(f) {
         bb = &fun->getEntryBlock();
     }
@@ -503,7 +503,7 @@ public:
     }
 
     /// Return function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return fun;
     }
     /// Return call edge
@@ -542,7 +542,7 @@ public:
  */
 class ActualRetVFGNode: public ArgumentVFGNode {
 private:
-    llvm::CallSite cs;
+    CallSite cs;
 
     ActualRetVFGNode();                      ///< place holder
     ActualRetVFGNode(const ActualRetVFGNode &);  ///< place holder
@@ -550,12 +550,12 @@ private:
 
 public:
     /// Constructor
-	ActualRetVFGNode(NodeID id, const PAGNode* n, llvm::CallSite c) :
+	ActualRetVFGNode(NodeID id, const PAGNode* n, CallSite c) :
 			ArgumentVFGNode(id, n, ARet), cs(c) {
 		bb = cs.getInstruction()->getParent();
 	}
     /// Return callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return cs;
     }
     /// Receive parameter at callsite
@@ -584,7 +584,7 @@ public:
  */
 class FormalRetVFGNode: public ArgumentVFGNode {
 private:
-    const llvm::Function* fun;
+    const Function* fun;
     RetPESet retPEs;
 
     FormalRetVFGNode();                      ///< place holder
@@ -593,16 +593,16 @@ private:
 
 public:
     /// Constructor
-	FormalRetVFGNode(NodeID id, const PAGNode* n, const llvm::Function* f) :
+	FormalRetVFGNode(NodeID id, const PAGNode* n, const Function* f) :
 			ArgumentVFGNode(id, n, FRet), fun(f) {
-		bb = analysisUtil::getFunExitBB(fun);
+		bb = SVFUtil::getFunExitBB(fun);
 	}
     /// Return value at callee
     inline const PAGNode* getRet() const {
         return param;
     }
     /// Function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return fun;
     }
     /// RetPE
@@ -652,14 +652,14 @@ public:
         return (fun==NULL) && (callInst != NULL);
     }
 
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         assert(isFormalParmPHI() && "expect a formal parameter phi");
         return fun;
     }
 
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         assert(isActualRetPHI() && "expect a actual return phi");
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(callInst);
+        CallSite cs = SVFUtil::getLLVMCallSite(callInst);
         return cs;
     }
 
@@ -680,8 +680,8 @@ public:
     //@}
 
 private:
-    const llvm::Function* fun;
-    llvm::Instruction* callInst;
+    const Function* fun;
+    Instruction* callInst;
 };
 
 

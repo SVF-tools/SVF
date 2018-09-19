@@ -34,7 +34,7 @@
 #define LOCATIONSET_H_
 
 
-#include "Util/BasicTypes.h"
+#include "Util/SVFUtil.h"
 
 /*!
  * Field information of an aggregate object
@@ -45,16 +45,16 @@ public:
 
 private:
     u32_t offset;
-    const llvm::Type* elemTy;
+    const Type* elemTy;
     ElemNumStridePairVec elemNumStridePair;
 public:
-    FieldInfo(u32_t of, const llvm::Type* ty, ElemNumStridePairVec pa):
+    FieldInfo(u32_t of, const Type* ty, ElemNumStridePairVec pa):
         offset(of), elemTy(ty), elemNumStridePair(pa) {
     }
     inline u32_t getFlattenOffset() const {
         return offset;
     }
-    inline const llvm::Type* getFlattenElemTy() const {
+    inline const Type* getFlattenElemTy() const {
         return elemTy;
     }
     inline const ElemNumStridePairVec& getElemNumStridePairVect() const {
@@ -196,15 +196,15 @@ public:
 
     /// Dump location set
     void dump() const {
-        llvm::outs() << "LocationSet\tOffset: " << getOffset()
+        SVFUtil::outs() << "LocationSet\tOffset: " << getOffset()
                      << ",\tNum-Stride: {";
         const ElemNumStridePairVec& vec = getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
         ElemNumStridePairVec::const_iterator eit = vec.end();
         for (; it != eit; ++it) {
-            llvm::outs() << " (" << it->first << "," << it->second << ")";
+            SVFUtil::outs() << " (" << it->first << "," << it->second << ")";
         }
-        llvm::outs() << " }\n";
+        SVFUtil::outs() << " }\n";
     }
 private:
     /// Return TRUE if successfully increased any index by 1

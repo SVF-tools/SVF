@@ -29,20 +29,19 @@
 
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "MSSA/SVFGStat.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 
-static cl::opt<bool> DumpMSSA("dump-mssa", cl::init(false),
-                              cl::desc("Dump memory SSA"));
-static cl::opt<string> MSSAFun("mssafun",  cl::init(""),
-                               cl::desc("Please specify which function needs to be dumped"));
+static llvm::cl::opt<bool> DumpMSSA("dump-mssa", llvm::cl::init(false),
+                              llvm::cl::desc("Dump memory SSA"));
+static llvm::cl::opt<string> MSSAFun("mssafun",  llvm::cl::init(""),
+                               llvm::cl::desc("Please specify which function needs to be dumped"));
 
-static cl::opt<std::string> MemPar("mempar", cl::value_desc("memory-partition-type"),
-                                   cl::desc("memory partition strategy"));
+static llvm::cl::opt<std::string> MemPar("mempar", llvm::cl::value_desc("memory-partition-type"),
+                                   llvm::cl::desc("memory partition strategy"));
 static std::string kDistinctMemPar = "distinct";
 static std::string kIntraDisjointMemPar = "intra-disjoint";
 static std::string kInterDisjointMemPar = "inter-disjoint";
@@ -102,7 +101,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
 
-    DBOUT(DMSSA, outs() << "Building Memory SSA for function " << fun.getName()
+    DBOUT(DMSSA, SVFUtil::outs() << "Building Memory SSA for function " << fun.getName()
           << " \n");
 
     setCurrentDFDT(f,t);
@@ -134,7 +133,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
 void MemSSA::createMUCHI(const Function& fun) {
 
     DBOUT(DMSSA,
-          outs() << "\t creating mu chi for function " << fun.getName()
+          SVFUtil::outs() << "\t creating mu chi for function " << fun.getName()
           << "\n");
     // 1. create mu/chi
     //	insert a set of mus for memory regions at each load
@@ -159,7 +158,7 @@ void MemSSA::createMUCHI(const Function& fun) {
             iter != eiter; ++iter) {
         const BasicBlock* bb = *iter;
         varKills.clear();
-        for (llvm::BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
+        for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
                 it != eit; ++it) {
             const Instruction* inst = &*it;
             if(mrGen->hasPAGEdgeList(inst)) {
@@ -167,14 +166,14 @@ void MemSSA::createMUCHI(const Function& fun) {
                 for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit) {
                     const PAGEdge* inst = *bit;
-                    if (const LoadPE* load = dyn_cast<LoadPE>(inst))
+                    if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                         AddLoadMU(bb, load, mrGen->getLoadMRSet(load));
-                    else if (const StorePE* store = dyn_cast<StorePE>(inst))
+                    else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
             if (isCallSite(inst)) {
-                CallSite cs = analysisUtil::getLLVMCallSite(inst);
+                CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
 
@@ -214,7 +213,7 @@ void MemSSA::createMUCHI(const Function& fun) {
 void MemSSA::insertPHI(const Function& fun) {
 
     DBOUT(DMSSA,
-          outs() << "\t insert phi for function " << fun.getName() << "\n");
+          SVFUtil::outs() << "\t insert phi for function " << fun.getName() << "\n");
 
     const DominanceFrontier* df = getDF(fun);
     // record whether a phi of mr has already been inserted into the bb.
@@ -229,13 +228,13 @@ void MemSSA::insertPHI(const Function& fun) {
         while (!bbs.empty()) {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            DominanceFrontierBase<BasicBlock, false>::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
+            DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
             if(it == df->end()) {
                 wrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const DominanceFrontierBase<BasicBlock, false>::DomSetType& domSet = it->second;
-            for (DominanceFrontierBase<BasicBlock, false>::DomSetType::const_iterator bit =
+            const DominanceFrontierBase::DomSetType& domSet = it->second;
+            for (DominanceFrontierBase::DomSetType::const_iterator bit =
                         domSet.begin(); bit != domSet.end(); ++bit) {
                 const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
@@ -258,7 +257,7 @@ void MemSSA::insertPHI(const Function& fun) {
 void MemSSA::SSARename(const Function& fun) {
 
     DBOUT(DMSSA,
-          outs() << "\t ssa rename for function " << fun.getName() << "\n");
+          SVFUtil::outs() << "\t ssa rename for function " << fun.getName() << "\n");
 
     SSARenameBB(fun.getEntryBlock());
 }
@@ -286,7 +285,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     // 		rewrite r' with top mrver of stack(r)
     // 		rewrite r with new name
 
-    for (llvm::BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
+    for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
             it != eit; ++it) {
         const Instruction* inst = &*it;
         if(mrGen->hasPAGEdgeList(inst)) {
@@ -294,16 +293,16 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
             for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                     bit!=ebit; ++bit) {
                 const PAGEdge* inst = *bit;
-                if (const LoadPE* load = dyn_cast<LoadPE>(inst))
+                if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                     RenameMuSet(getMUSet(load));
 
-                else if (const StorePE* store = dyn_cast<StorePE>(inst))
+                else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
                     RenameChiSet(getCHISet(store),memRegs);
 
             }
         }
         if (isCallSite(inst)) {
-            CallSite cs = analysisUtil::getLLVMCallSite(inst);
+            CallSite cs = SVFUtil::getLLVMCallSite(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
 
@@ -546,7 +545,7 @@ u32_t MemSSA::getBBPhiNum() const
 /*!
  * Print SSA
  */
-void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
+void MemSSA::dumpMSSA(raw_ostream& Out) {
     if (!DumpMSSA)
         return;
 
@@ -581,7 +580,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                     it != eit; ++it) {
                 Instruction& inst = *it;
                 if (isCallSite(&inst) && isExtCall(&inst)==false) {
-                    CallSite cs = analysisUtil::getLLVMCallSite(&inst);
+                    CallSite cs = SVFUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {
                             Out << "\n";
@@ -611,7 +610,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit) {
                         const PAGEdge* edge = *bit;
-                        if (const LoadPE* load = dyn_cast<LoadPE>(edge)) {
+                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge)) {
                             MUSet& muSet = getMUSet(load);
                             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it) {
                                 if (!dump_preamble && !last_is_chi) {
@@ -629,7 +628,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit) {
                         const PAGEdge* edge = *bit;
-                        if (const StorePE* store = dyn_cast<StorePE>(edge)) {
+                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge)) {
                             CHISet& chiSet = getCHISet(store);
                             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it) {
                                 has_chi = true;

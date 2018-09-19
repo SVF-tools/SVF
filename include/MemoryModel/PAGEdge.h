@@ -33,7 +33,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "MemoryModel/GenericGraph.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
 class PAGNode;
 
@@ -52,8 +52,8 @@ public:
     };
 
 private:
-    const llvm::Value* value;	///< LLVM value
-    const llvm::BasicBlock *basicBlock;   ///< LLVM BasicBlock
+    const Value* value;	///< LLVM value
+    const BasicBlock *basicBlock;   ///< LLVM BasicBlock
     EdgeID edgeId;					///< Edge ID
 public:
     static Size_t totalEdgeNum;		///< Total edge number
@@ -90,25 +90,25 @@ public:
 
     /// Get/set methods for llvm instruction
     //@{
-    inline const llvm::Instruction* getInst() const {
-        return llvm::dyn_cast<llvm::Instruction>(value);
+    inline const Instruction* getInst() const {
+        return SVFUtil::dyn_cast<Instruction>(value);
     }
-    inline void setValue(const llvm::Value *val) {
+    inline void setValue(const Value *val) {
         value = val;
     }
-    inline const llvm::Value* getValue() const {
+    inline const Value* getValue() const {
         return value;
     }
-    inline void setBB(const llvm::BasicBlock *bb) {
+    inline void setBB(const BasicBlock *bb) {
         basicBlock = bb;
     }
-    inline const llvm::BasicBlock* getBB() const {
+    inline const BasicBlock* getBB() const {
         return basicBlock;
     }
     //@}
 
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.
-    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const llvm::Instruction* cs) {
+    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const Instruction* cs) {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : callEdgeLabelCounter++;
@@ -120,7 +120,7 @@ public:
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
 
 private:
-    typedef llvm::DenseMap<const llvm::Instruction*, u32_t> Inst2LabelMap;
+    typedef llvm::DenseMap<const Instruction*, u32_t> Inst2LabelMap;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
 };
@@ -355,7 +355,7 @@ private:
     CallPE(const CallPE &);  ///< place holder
     void operator=(const CallPE &); ///< place holder
 
-    const llvm::Instruction* inst;		///< llvm instruction for this call
+    const Instruction* inst;		///< llvm instruction for this call
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -371,17 +371,17 @@ public:
     //@}
 
     /// constructor
-    CallPE(PAGNode* s, PAGNode* d, const llvm::Instruction* i) :
+    CallPE(PAGNode* s, PAGNode* d, const Instruction* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i) {
     }
 
     /// Get method for the call instruction
     //@{
-    inline const llvm::Instruction* getCallInst() const {
+    inline const Instruction* getCallInst() const {
         return inst;
     }
-    inline llvm::CallSite getCallSite() const {
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(getCallInst());
+    inline CallSite getCallSite() const {
+        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
         return cs;
     }
     //@}
@@ -397,7 +397,7 @@ private:
     RetPE(const RetPE &);  ///< place holder
     void operator=(const RetPE &); ///< place holder
 
-    const llvm::Instruction* inst;		/// the callsite instruction return to
+    const Instruction* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -413,17 +413,17 @@ public:
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const llvm::Instruction* i) :
+    RetPE(PAGNode* s, PAGNode* d, const Instruction* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i) {
     }
 
     /// Get method for call instruction at caller
     //@{
-    inline const llvm::Instruction* getCallInst() const {
+    inline const Instruction* getCallInst() const {
         return inst;
     }
-    inline llvm::CallSite getCallSite() const {
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(getCallInst());
+    inline CallSite getCallSite() const {
+        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
         return cs;
     }
     //@}
@@ -439,7 +439,7 @@ private:
     TDForkPE(const TDForkPE &);  ///< place holder
     void operator=(const TDForkPE &); ///< place holder
 
-    const llvm::Instruction* inst;		///< llvm instruction at the fork site
+    const Instruction* inst;		///< llvm instruction at the fork site
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -455,17 +455,17 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(PAGNode* s, PAGNode* d, const llvm::Instruction* i) :
+    TDForkPE(PAGNode* s, PAGNode* d, const Instruction* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i) {
     }
 
     /// Get method for the instruction at the fork site
     //@{
-    inline const llvm::Instruction* getCallInst() const {
+    inline const Instruction* getCallInst() const {
         return inst;
     }
-    inline llvm::CallSite getCallSite() const {
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(getCallInst());
+    inline CallSite getCallSite() const {
+        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
         return cs;
     }
     //@}
@@ -482,7 +482,7 @@ private:
     TDJoinPE(const TDJoinPE &);  ///< place holder
     void operator=(const TDJoinPE &); ///< place holder
 
-    const llvm::Instruction* inst;		/// the callsite instruction return to
+    const Instruction* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -498,17 +498,17 @@ public:
     //@}
 
     /// Constructor
-    TDJoinPE(PAGNode* s, PAGNode* d, const llvm::Instruction* i) :
+    TDJoinPE(PAGNode* s, PAGNode* d, const Instruction* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i) {
     }
 
     /// Get method for the instruction at the join site
     //@{
-    inline const llvm::Instruction* getCallInst() const {
+    inline const Instruction* getCallInst() const {
         return inst;
     }
-    inline llvm::CallSite getCallSite() const {
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(getCallInst());
+    inline CallSite getCallSite() const {
+        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
         return cs;
     }
     //@}

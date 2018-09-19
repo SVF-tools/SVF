@@ -32,14 +32,13 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", cl::init(false),
-        cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
+static llvm::cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", llvm::cl::init(false),
+        llvm::cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
 
-static cl::opt<bool> SingleVFG("singleVFG", cl::init(false),
-                               cl::desc("Create a single VFG shared by multiple analysis"));
+static llvm::cl::opt<bool> SingleVFG("singleVFG", llvm::cl::init(false),
+                               llvm::cl::desc("Create a single VFG shared by multiple analysis"));
 
 SVFGOPT* SVFGBuilder::globalSvfg = NULL;
 
@@ -59,7 +58,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, bool withAOFI) {
 
 	MemSSA* mssa = buildMSSA(pta);
 
-    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
@@ -90,7 +89,7 @@ void SVFGBuilder::releaseMemory() {
 
 MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
 
-    DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Build Memory SSA \n"));
 
     MemSSA* mssa = new MemSSA(pta);
 
@@ -101,8 +100,8 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
     for (SVFModule::iterator iter = svfModule.begin(), eiter = svfModule.end();
             iter != eiter; ++iter) {
 
-        llvm::Function *fun = *iter;
-        if (analysisUtil::isExtCall(fun))
+        Function *fun = *iter;
+        if (SVFUtil::isExtCall(fun))
             continue;
 
         dt.recalculate(*fun);
@@ -124,10 +123,10 @@ void SVFGBuilder::updateCallGraph(PointerAnalysis* pta)
     CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
     CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {
-        llvm::CallSite newcs = iter->first;
+        CallSite newcs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const llvm::Function * func = *func_iter;
+            const Function * func = *func_iter;
             svfg->connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
         }
     }

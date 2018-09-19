@@ -100,7 +100,7 @@ public:
 
 private:
     /// LLVM type
-    llvm::Type* type;
+    Type* type;
     /// Type flags
     Size_t flags;
     /// Max offset for flexible field sensitive analysis
@@ -110,7 +110,7 @@ private:
 public:
 
     /// Constructors
-    ObjTypeInfo(const llvm::Value* val, llvm::Type* t, u32_t max) :
+    ObjTypeInfo(const Value* val, Type* t, u32_t max) :
         type(t), flags(0), maxOffsetLimit(max) {
     }
     /// Constructor
@@ -122,25 +122,25 @@ public:
 
     }
     /// Initialize the object type
-    void init(const llvm::Value* value);
+    void init(const Value* value);
 
     /// Get the size of this object,
     /// derived classes can override this to get more precise object size
-    virtual u32_t getObjSize(const llvm::Value* val);
+    virtual u32_t getObjSize(const Value* val);
 
     /// Analyse types of gobal and stack objects
-    void analyzeGlobalStackObjType(const llvm::Value* val);
+    void analyzeGlobalStackObjType(const Value* val);
 
     /// Analyse types of heap and static objects
-    void analyzeHeapStaticObjType(const llvm::Value* val);
+    void analyzeHeapStaticObjType(const Value* val);
 
     /// Reset LLVM type
-    inline void setLLVMType(llvm::Type* t) {
+    inline void setLLVMType(Type* t) {
         type = t;
     }
 
     /// Get LLVM type
-    inline llvm::Type* getLLVMType() {
+    inline Type* getLLVMType() {
         return type;
     }
 
@@ -216,7 +216,7 @@ class MemObj {
 
 private:
     /// The unique pointer value refer this object
-    const llvm::Value *refVal;
+    const Value *refVal;
     /// The unique id in the graph
     SymID GSymID;
     /// Type information of this object
@@ -228,7 +228,7 @@ private:
 public:
 
     /// Constructor
-    MemObj(const llvm::Value *val, SymID id);
+    MemObj(const Value *val, SymID id);
 
     /// Constructor for black hole and constant obj
     MemObj(SymID id);
@@ -239,7 +239,7 @@ public:
     }
 
     /// Initialize the object
-    void init(const llvm::Value *val);
+    void init(const Value *val);
 
     /// Initialize black hole and constant object
     void init();
@@ -255,7 +255,7 @@ public:
     }
 
     /// Get the reference value to this object
-    inline const llvm::Value *getRefVal() const {
+    inline const Value *getRefVal() const {
         return refVal;
     }
 
@@ -356,24 +356,24 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef llvm::DenseMap<const llvm::Value *, SymID> ValueToIDMapTy;
+    typedef llvm::DenseMap<const Value *, SymID> ValueToIDMapTy;
     /// sym id to memory object map
     typedef llvm::DenseMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
-    typedef llvm::DenseMap<const llvm::Function *, SymID> FunToIDMapTy;
+    typedef llvm::DenseMap<const Function *, SymID> FunToIDMapTy;
     /// sym id to sym type map
     typedef llvm::DenseMap<SymID,SYMTYPE> IDToSymTyMapTy;
     /// struct type to struct info map
-    typedef llvm::DenseMap<const llvm::Type*, StInfo*> TypeToFieldInfoMap;
-    typedef std::set<llvm::CallSite> CallSiteSet;
-    typedef llvm::DenseMap<const llvm::Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef llvm::DenseMap<CallSiteID,const llvm::Instruction*> IDToCallSiteMapTy;
+    typedef llvm::DenseMap<const Type*, StInfo*> TypeToFieldInfoMap;
+    typedef std::set<CallSite> CallSiteSet;
+    typedef llvm::DenseMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
+    typedef llvm::DenseMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
 
     //@}
 
 private:
     /// Data layout on a target machine
-    static llvm::DataLayout *dl;
+    static DataLayout *dl;
 
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
@@ -454,38 +454,38 @@ public:
     }
 
     /// Get target machine data layout
-    inline static llvm::DataLayout* getDataLayout(llvm::Module* mod) {
+    inline static DataLayout* getDataLayout(Module* mod) {
         if(dl==NULL)
-            return dl = new llvm::DataLayout(mod);
+            return dl = new DataLayout(mod);
         return dl;
     }
 
     /// Helper method to get the size of the type from target data layout
-    u32_t getTypeSizeInBytes(const llvm::Type* type);
+    u32_t getTypeSizeInBytes(const Type* type);
 
     /// Start building memory model
     void buildMemModel(SVFModule svfModule);
 
     /// collect the syms
     //@{
-    void collectSym(const llvm::Value *val);
+    void collectSym(const Value *val);
 
-    void collectVal(const llvm::Value *val);
+    void collectVal(const Value *val);
 
-    void collectObj(const llvm::Value *val);
+    void collectObj(const Value *val);
 
-    void collectRet(const llvm::Function *val);
+    void collectRet(const Function *val);
 
-    void collectVararg(const llvm::Function *val);
+    void collectVararg(const Function *val);
     //@}
 
     /// special value
     // @{
-    static bool isNullPtrSym(const llvm::Value *val);
+    static bool isNullPtrSym(const Value *val);
 
-    static bool isBlackholeSym(const llvm::Value *val);
+    static bool isBlackholeSym(const Value *val);
 
-    bool isConstantObjSym(const llvm::Value *val);
+    bool isConstantObjSym(const Value *val);
 
     static inline bool isBlkPtr(NodeID id) {
         return (id == BlkPtr);
@@ -543,14 +543,14 @@ public:
 
     /// Handle constant expression
     // @{
-    void handleGlobalCE(const llvm::GlobalVariable *G);
-    void handleGlobalInitializerCE(const llvm::Constant *C, u32_t offset);
-    void handleCE(const llvm::Value *val);
+    void handleGlobalCE(const GlobalVariable *G);
+    void handleGlobalInitializerCE(const Constant *C, u32_t offset);
+    void handleCE(const Value *val);
     // @}
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const llvm::Value *val) {
+    SymID getValSym(const Value *val) {
 
         if(isNullPtrSym(val))
             return nullPtrSymID();
@@ -563,7 +563,7 @@ public:
         }
     }
 
-    inline bool hasValSym(const llvm::Value* val) {
+    inline bool hasValSym(const Value* val) {
         if (isNullPtrSym(val) || isBlackholeSym(val))
             return true;
         else
@@ -571,15 +571,15 @@ public:
     }
 
     /// find the unique defined global across multiple modules
-    inline const llvm::Value* getGlobalRep(const llvm::Value* val) const{
-        if(const llvm::GlobalVariable* gvar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
+    inline const Value* getGlobalRep(const Value* val) const{
+        if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
             if (symlnfo->getModule().hasGlobalRep(gvar))
                 val = symlnfo->getModule().getGlobalRep(gvar);
         }
         return val;
     }
 
-    inline SymID getObjSym(const llvm::Value *val) const {
+    inline SymID getObjSym(const Value *val) const {
         ValueToIDMapTy::const_iterator iter = objSymMap.find(getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
@@ -591,13 +591,13 @@ public:
         return iter->second;
     }
 
-    inline SymID getRetSym(const llvm::Function *val) const {
+    inline SymID getRetSym(const Function *val) const {
         FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
-    inline SymID getVarargSym(const llvm::Function *val) const {
+    inline SymID getVarargSym(const Function *val) const {
         FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
         assert(iter!=varargSymMap.end() && "vararg sym not found");
         return iter->second;
@@ -641,7 +641,7 @@ public:
     /// Get struct info
     //@{
     ///Get an iterator for StructInfo, designed as internal methods
-    TypeToFieldInfoMap::iterator getStructInfoIter(const llvm::Type *T) {
+    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T) {
         assert(T);
         TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
         if (it != typeToFieldInfo.end())
@@ -653,40 +653,40 @@ public:
     }
 
     ///Get a reference to StructInfo.
-    inline StInfo* getStructInfo(const llvm::Type *T) {
+    inline StInfo* getStructInfo(const Type *T) {
         return getStructInfoIter(T)->second;
     }
 
     ///Get a reference to the components of struct_info.
-    const inline std::vector<u32_t>& getStructOffsetVec(const llvm::Type *T) {
+    const inline std::vector<u32_t>& getStructOffsetVec(const Type *T) {
         return getStructInfoIter(T)->second->getFieldOffsetVec();
     }
-    const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const llvm::Type *T) {
+    const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
     //@}
 
     /// Compute gep offset
-    virtual bool computeGepOffset(const llvm::User *V, LocationSet& ls);
+    virtual bool computeGepOffset(const User *V, LocationSet& ls);
     /// Get the base type and max offset
-    const llvm::Type *getBaseTypeAndFlattenedFields(const llvm::Value *V, std::vector<LocationSet> &fields);
+    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields);
     /// Replace fields with flatten fields of T if the number of its fields is larger than msz.
-    u32_t getFields(std::vector<LocationSet>& fields, const llvm::Type* T, u32_t msz);
+    u32_t getFields(std::vector<LocationSet>& fields, const Type* T, u32_t msz);
     /// Collect type info
-    void collectTypeInfo(const llvm::Type* T);
+    void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
     virtual LocationSet getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls);
 
     /// Debug method
-    void printFlattenFields(const llvm::Type* type);
+    void printFlattenFields(const Type* type);
 
 protected:
     /// Collect the struct info
-    virtual void collectStructInfo(const llvm::StructType *T);
+    virtual void collectStructInfo(const StructType *T);
     /// Collect the array info
-    virtual void collectArrayInfo(const llvm::ArrayType* T);
+    virtual void collectArrayInfo(const ArrayType* T);
     /// Collect simple type (non-aggregate) info
-    virtual void collectSimpleTypeInfo(const llvm::Type* T);
+    virtual void collectSimpleTypeInfo(const Type* T);
 
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
@@ -695,7 +695,7 @@ protected:
     TypeToFieldInfoMap typeToFieldInfo;
 
     ///The struct type with the most fields
-    const llvm::Type* maxStruct;
+    const Type* maxStruct;
 
     ///The number of fields in max_struct
     u32_t maxStSize;

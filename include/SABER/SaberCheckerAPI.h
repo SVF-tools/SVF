@@ -30,7 +30,7 @@
 #ifndef SABERCHECKERAPI_H_
 #define SABERCHECKERAPI_H_
 
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
 /*
  * Saber Checker API class contains interfaces for various bug checking
@@ -66,7 +66,7 @@ private:
     static SaberCheckerAPI* ckAPI;
 
     /// Get the function type of a function
-    inline CHECKER_TYPE getType(const llvm::Function* F) const {
+    inline CHECKER_TYPE getType(const Function* F) const {
         if(F) {
             TDAPIMap::const_iterator it= tdAPIMap.find(F->getName().str());
             if(it != tdAPIMap.end())
@@ -86,52 +86,52 @@ public:
 
     /// Return true if this call is a memory allocation
     //@{
-    inline bool isMemAlloc(const llvm::Function* fun) const {
+    inline bool isMemAlloc(const Function* fun) const {
         return getType(fun) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const llvm::Instruction *inst) const {
-        return getType(analysisUtil::getCallee(inst)) == CK_ALLOC;
+    inline bool isMemAlloc(const Instruction *inst) const {
+        return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
     }
-    inline bool isMemAlloc(llvm::CallSite cs) const {
+    inline bool isMemAlloc(CallSite cs) const {
         return isMemAlloc(cs.getInstruction());
     }
     //@}
 
     /// Return true if this call is a memory deallocation
     //@{
-    inline bool isMemDealloc(const llvm::Function* fun) const {
+    inline bool isMemDealloc(const Function* fun) const {
         return getType(fun) == CK_FREE;
     }
-    inline bool isMemDealloc(const llvm::Instruction *inst) const {
-        return getType(analysisUtil::getCallee(inst)) == CK_FREE;
+    inline bool isMemDealloc(const Instruction *inst) const {
+        return getType(SVFUtil::getCallee(inst)) == CK_FREE;
     }
-    inline bool isMemDealloc(llvm::CallSite cs) const {
+    inline bool isMemDealloc(CallSite cs) const {
         return isMemDealloc(cs.getInstruction());
     }
     //@}
 
     /// Return true if this call is a file open
     //@{
-    inline bool isFOpen(const llvm::Function* fun) const {
+    inline bool isFOpen(const Function* fun) const {
         return getType(fun) == CK_FOPEN;
     }
-    inline bool isFOpen(const llvm::Instruction *inst) const {
-        return getType(analysisUtil::getCallee(inst)) == CK_FOPEN;
+    inline bool isFOpen(const Instruction *inst) const {
+        return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
     }
-    inline bool isFOpen(llvm::CallSite cs) const {
+    inline bool isFOpen(CallSite cs) const {
         return isFOpen(cs.getInstruction());
     }
     //@}
 
     /// Return true if this call is a file close
     //@{
-    inline bool isFClose(const llvm::Function* fun) const {
+    inline bool isFClose(const Function* fun) const {
         return getType(fun) == CK_FCLOSE;
     }
-    inline bool isFClose(const llvm::Instruction *inst) const {
-        return getType(analysisUtil::getCallee(inst)) == CK_FCLOSE;
+    inline bool isFClose(const Instruction *inst) const {
+        return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
     }
-    inline bool isFClose(llvm::CallSite cs) const {
+    inline bool isFClose(CallSite cs) const {
         return isFClose(cs.getInstruction());
     }
     //@}

@@ -38,7 +38,7 @@
 class CxtStmt  {
 public:
     /// Constructor
-    CxtStmt(const CallStrCxt& c, const llvm::Instruction* f) :cxt(c), inst(f) {
+    CxtStmt(const CallStrCxt& c, const Instruction* f) :cxt(c), inst(f) {
     }
     /// Copy constructor
     CxtStmt(const CxtStmt& ctm) : cxt(ctm.getContext()),inst(ctm.getStmt()) {
@@ -51,7 +51,7 @@ public:
         return cxt;
     }
     /// Return current statement
-    inline const llvm::Instruction* getStmt() const {
+    inline const Instruction* getStmt() const {
         return inst;
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
@@ -81,7 +81,7 @@ public:
     /// Return context in string format
     inline std::string cxtToStr() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it) {
             rawstr << *it << " ";
@@ -91,12 +91,12 @@ public:
     }
     /// Dump CxtStmt
     inline void dump() const {
-        llvm::outs() << "[ Current Stmt: " << analysisUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
     CallStrCxt cxt;
-    const llvm::Instruction* inst;
+    const Instruction* inst;
 };
 
 
@@ -106,7 +106,7 @@ protected:
 class CxtThreadStmt : public CxtStmt {
 public:
     /// Constructor
-    CxtThreadStmt(NodeID t, const CallStrCxt& c, const llvm::Instruction* f) :CxtStmt(c,f), tid(t) {
+    CxtThreadStmt(NodeID t, const CallStrCxt& c, const Instruction* f) :CxtStmt(c,f), tid(t) {
     }
     /// Copy constructor
     CxtThreadStmt(const CxtThreadStmt& ctm) :CxtStmt(ctm), tid(ctm.getTid()) {
@@ -146,7 +146,7 @@ public:
     }
     /// Dump CxtThreadStmt
     inline void dump() const {
-        llvm::outs() << "[ Current Thread id: " << tid << "  Stmt: " << analysisUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -160,7 +160,7 @@ private:
 class CxtThread {
 public:
     /// Constructor
-    CxtThread(const CallStrCxt& c, const llvm::CallInst* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)  {
+    CxtThread(const CallStrCxt& c, const CallInst* fork) : cxt(c), forksite(fork), inloop(false), incycle(false)  {
     }
     /// Copy constructor
     CxtThread(const CxtThread& ct) :
@@ -174,7 +174,7 @@ public:
         return cxt;
     }
     /// Return forksite
-    inline const llvm::CallInst* getThread() const {
+    inline const CallInst* getThread() const {
         return forksite;
     }
     /// Enable compare operator to avoid duplicated item insertion in map or set
@@ -204,7 +204,7 @@ public:
     /// Return context in string format
     inline std::string cxtToStr() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "[:";
         for(CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it!=eit; ++it) {
             rawstr << *it << " ";
@@ -235,15 +235,15 @@ public:
         string cycle = incycle?", incycle":"";
 
         if(forksite)
-            llvm::outs() << "[ Thread: $" << analysisUtil::getSourceLoc(forksite) << "$ " << *forksite  << "\t Contexts: " << cxtToStr()
+            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << *forksite  << "\t Contexts: " << cxtToStr()
                          << loop << cycle <<"  ]\n";
         else
-            llvm::outs() << "[ Thread: " << "main   "  << "\t Contexts: " << cxtToStr()
+            SVFUtil::outs() << "[ Thread: " << "main   "  << "\t Contexts: " << cxtToStr()
                          << loop << cycle <<"  ]\n";
     }
 protected:
     CallStrCxt cxt;
-    const llvm::CallInst* forksite;
+    const CallInst* forksite;
     bool inloop;
     bool incycle;
 };
@@ -257,7 +257,7 @@ protected:
 class CxtProc {
 public:
     /// Constructor
-    CxtProc(const CallStrCxt& c, const llvm::Function* f) :
+    CxtProc(const CallStrCxt& c, const Function* f) :
         cxt(c), fun(f) {
     }
     /// Copy constructor
@@ -268,7 +268,7 @@ public:
     virtual ~CxtProc() {
     }
     /// Return current procedure
-    inline const llvm::Function* getProc() const {
+    inline const Function* getProc() const {
         return fun;
     }
     /// Return current context
@@ -302,7 +302,7 @@ public:
     /// Return context in string format
     inline std::string cxtToStr() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "[:";
         for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it) {
             rawstr << *it << " ";
@@ -312,12 +312,12 @@ public:
     }
     /// Dump CxtProc
     inline void dump() const {
-        llvm::outs() << "[ Proc: " << fun->getName() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Proc: " << fun->getName() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
     CallStrCxt cxt;
-    const llvm::Function* fun;
+    const Function* fun;
 };
 
 
@@ -330,7 +330,7 @@ protected:
 class CxtThreadProc : public CxtProc {
 public:
     /// Constructor
-    CxtThreadProc(NodeID t, const CallStrCxt& c, const llvm::Function* f) :CxtProc(c,f),tid(t) {
+    CxtThreadProc(NodeID t, const CallStrCxt& c, const Function* f) :CxtProc(c,f),tid(t) {
     }
     /// Copy constructor
     CxtThreadProc(const CxtThreadProc& ctm) : CxtProc(ctm.getContext(),ctm.getProc()), tid(ctm.getTid()) {
@@ -371,7 +371,7 @@ public:
     }
     /// Dump CxtThreadProc
     inline void dump() const {
-        llvm::outs() << "[ Current Thread id: " << tid << "  Proc: " << fun->getName() << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Proc: " << fun->getName() << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:

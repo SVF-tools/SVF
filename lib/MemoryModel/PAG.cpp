@@ -28,14 +28,12 @@
  */
 
 #include "MemoryModel/PAG.h"
-#include "Util/AnalysisUtil.h"
-#include "Util/GraphUtil.h"
+#include "Util/SVFUtil.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<bool> HANDBLACKHOLE("blk", cl::init(false),
-                                   cl::desc("Hanle blackhole edge"));
+static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
+                                   llvm::cl::desc("Hanle blackhole edge"));
 
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
@@ -95,7 +93,7 @@ bool PAG::addStoreEdge(NodeID src, NodeID dst) {
 /*!
  * Add Call edge
  */
-bool PAG::addCallEdge(NodeID src, NodeID dst, const llvm::Instruction* cs) {
+bool PAG::addCallEdge(NodeID src, NodeID dst, const Instruction* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Call, cs))
@@ -107,7 +105,7 @@ bool PAG::addCallEdge(NodeID src, NodeID dst, const llvm::Instruction* cs) {
 /*!
  * Add Return edge
  */
-bool PAG::addRetEdge(NodeID src, NodeID dst, const llvm::Instruction* cs) {
+bool PAG::addRetEdge(NodeID src, NodeID dst, const Instruction* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Ret, cs))
@@ -129,7 +127,7 @@ bool PAG::addBlackHoleAddrEdge(NodeID node) {
 /*!
  * Add Thread fork edge for parameter passing from a spawner to its spawnees
  */
-bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const llvm::Instruction* cs) {
+bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const Instruction* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadFork, cs))
@@ -141,7 +139,7 @@ bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const llvm::Instruction* cs)
 /*!
  * Add Thread fork edge for parameter passing from a spawnee back to its spawners
  */
-bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const llvm::Instruction* cs) {
+bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const Instruction* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadJoin, cs))
@@ -200,8 +198,8 @@ bool PAG::addVariantGepEdge(NodeID src, NodeID dst) {
  * Add global black hole address edge
  */
 bool PAG::addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
-    const llvm::Value* cval = curVal;
-    const llvm::BasicBlock* cbb = curBB;
+    const Value* cval = curVal;
+    const BasicBlock* cbb = curBB;
     setCurrentLocation(int2Ptrce,NULL);
     bool added = addBlackHoleAddrEdge(node);
     setCurrentLocation(cval,cbb);
@@ -211,10 +209,10 @@ bool PAG::addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
 /*!
  * Add black hole Address edge for formal params
  */
-bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg)
+bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const Argument *arg)
 {
-    const llvm::Value* cval = curVal;
-    const llvm::BasicBlock* cbb = curBB;
+    const Value* cval = curVal;
+    const BasicBlock* cbb = curBB;
     setCurrentLocation(arg,&(arg->getParent()->getEntryBlock()));
     bool added = addBlackHoleAddrEdge(node);
     setCurrentLocation(cval,cbb);
@@ -226,7 +224,7 @@ bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const llvm::Argument *arg
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
+NodeID PAG::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
     NodeID base = getBaseValNode(getValueNode(val));
     NodeLocationSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
     if (iter == GepValNodeMap.end()) {
@@ -238,14 +236,14 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const T
          * 1. Instruction
          * 2. GlobalVariable
          */
-        assert((isa<Instruction>(curVal) || isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
+        assert((SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
         const std::vector<FieldInfo> &fieldinfo = symInfo->getFlattenFieldInfoVec(baseType);
         const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode
-        const llvm::Value* cval = pag->getCurrentValue();
-        const llvm::BasicBlock* cbb = pag->getCurrentBB();
+        const Value* cval = pag->getCurrentValue();
+        const BasicBlock* cbb = pag->getCurrentBB();
         pag->setCurrentLocation(curVal, NULL);
         NodeID gepNode= addGepValNode(val,ls,nodeNum,type,fieldidx);
         addGepEdge(base, gepNode, ls, true);
@@ -258,7 +256,7 @@ NodeID PAG::getGepValNode(const llvm::Value* val, const LocationSet& ls, const T
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
  */
-NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx) {
+NodeID PAG::addGepValNode(const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx) {
 	NodeID base = getBaseValNode(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
 	assert(0==GepValNodeMap.count(std::make_pair(base, ls))
@@ -273,9 +271,9 @@ NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, Node
  */
 NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls) {
     PAGNode* node = pag->getPAGNode(id);
-    if (GepObjPN* gepNode = dyn_cast<GepObjPN>(node))
+    if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
         return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
-    else if (FIObjPN* baseNode = dyn_cast<FIObjPN>(node))
+    else if (FIObjPN* baseNode = SVFUtil::dyn_cast<FIObjPN>(node))
         return getGepObjNode(baseNode->getMemObj(), ls);
     else {
         assert(false && "new gep obj node kind?");
@@ -345,7 +343,7 @@ bool PAG::hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind) {
 /*!
  * Return true if it is an inter-procedural edge
  */
-bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const llvm::Instruction* callInst) {
+bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const Instruction* callInst) {
     PAGEdge edge(src,dst,PAGEdge::makeEdgeFlagWithCallInst(kind,callInst));
     return PAGEdgeKindToSetMap[kind].find(&edge) != PAGEdgeKindToSetMap[kind].end();
 }
@@ -367,24 +365,24 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
     assert(curVal && "current Val is NULL?");
     edge->setBB(curBB);
     edge->setValue(curVal);
-    if (const Instruction *curInst = dyn_cast<Instruction>(curVal)) {
+    if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal)) {
  	/// We assume every GepValPN and its GepPE are unique across whole program
-	if(!(isa<GepPE>(edge) && isa<GepValPN>(edge->getDstNode())))
+	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
 		assert(curBB && "instruction does not have a basic block??");
         inst2PAGEdgesMap[curInst].push_back(edge);
-    } else if (isa<Argument>(curVal)) {
+    } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
         funToEntryPAGEdges[curBB->getParent()].insert(edge);
-    } else if (isa<ConstantExpr>(curVal)) {
+    } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
-    } else if (isa<ConstantPointerNull>(curVal)) {
+    } else if (SVFUtil::isa<ConstantPointerNull>(curVal)) {
         assert((edge->getSrcID() == NullPtr && edge->getDstID() == BlkPtr) ||
                (edge->getSrcID() == BlackHole && edge->getDstID() == BlkPtr));
         globPAGEdgesSet.insert(edge);
-    } else if (isa<GlobalVariable>(curVal) ||
-               isa<Function>(curVal) ||
-               isa<Constant>(curVal)) {
+    } else if (SVFUtil::isa<GlobalVariable>(curVal) ||
+               SVFUtil::isa<Function>(curVal) ||
+               SVFUtil::isa<Constant>(curVal)) {
         globPAGEdgesSet.insert(edge);
     } else {
         assert(false && "what else value can we have?");
@@ -397,7 +395,7 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
 bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
 
     DBOUT(DPAGBuild,
-          outs() << "add edge from " << src->getId() << " kind :"
+          SVFUtil::outs() << "add edge from " << src->getId() << " kind :"
           << src->getNodeKind() << " to " << dst->getId()
           << " kind :" << dst->getNodeKind() << "\n");
     src->addOutEdge(edge);
@@ -422,8 +420,8 @@ NodeBS& PAG::getAllFieldsObjNode(const MemObj* obj) {
  */
 NodeBS& PAG::getAllFieldsObjNode(NodeID id) {
     const PAGNode* node = pag->getPAGNode(id);
-    assert(llvm::isa<ObjPN>(node) && "need an object node");
-    const ObjPN* obj = llvm::cast<ObjPN>(node);
+    assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
+    const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
     return getAllFieldsObjNode(obj->getMemObj());
 }
 
@@ -434,8 +432,8 @@ NodeBS& PAG::getAllFieldsObjNode(NodeID id) {
  */
 NodeBS PAG::getFieldsAfterCollapse(NodeID id) {
     const PAGNode* node = pag->getPAGNode(id);
-    assert(llvm::isa<ObjPN>(node) && "need an object node");
-    const MemObj* mem = llvm::cast<ObjPN>(node)->getMemObj();
+    assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
+    const MemObj* mem = SVFUtil::cast<ObjPN>(node)->getMemObj();
     if(mem->isFieldInsensitive()) {
         NodeBS bs;
         bs.set(getFIObjNode(mem));
@@ -464,7 +462,7 @@ NodeID PAG::getBaseValNode(NodeID nodeId) {
         else
             it = vgeps.begin();
 
-        assert(isa<GepPE>(*it) && "not a gep edge??");
+        assert(SVFUtil::isa<GepPE>(*it) && "not a gep edge??");
         return (*it)->getSrcID();
     }
     else
@@ -487,8 +485,8 @@ LocationSet PAG::getLocationSetFromBaseNode(NodeID nodeId) {
     assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
     PAGNode::iterator it = geps.begin();
     const PAGEdge* edge = *it;
-    assert(isa<NormalGepPE>(edge) && "not a get edge??");
-    const NormalGepPE* gepEdge = cast<NormalGepPE>(edge);
+    assert(SVFUtil::isa<NormalGepPE>(edge) && "not a get edge??");
+    const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
     return gepEdge->getLocationSet();
 }
 
@@ -513,78 +511,78 @@ void PAG::destroy() {
  */
 void PAG::print() {
 
-	outs() << "-------------------PAG------------------------------------\n";
+	SVFUtil::outs() << "-------------------PAG------------------------------------\n";
 	PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
 			addrs.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
 			copys.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& calls = pag->getEdgeSet(PAGEdge::Call);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
 			calls.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& rets = pag->getEdgeSet(PAGEdge::Ret);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
 			rets.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& tdfks = pag->getEdgeSet(PAGEdge::ThreadFork);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
 			tdfks.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& tdjns = pag->getEdgeSet(PAGEdge::ThreadJoin);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
 			tdjns.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
 			ngeps.end(); iter != eiter; ++iter) {
-		NormalGepPE* gep = cast<NormalGepPE>(*iter);
-		outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
+		NormalGepPE* gep = SVFUtil::cast<NormalGepPE>(*iter);
+		SVFUtil::outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
 				<< ") --> " << gep->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
 			vgeps.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- VariantGep --> "
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- VariantGep --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
 			loads.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
 			stores.end(); iter != eiter; ++iter) {
-		outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
+		SVFUtil::outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
 				<< "\n";
 	}
-	outs() << "----------------------------------------------------------\n";
+	SVFUtil::outs() << "----------------------------------------------------------\n";
 
 }
 
@@ -610,7 +608,7 @@ PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
 /*!
  * PAGNode constructor
  */
-PAGNode::PAGNode(const llvm::Value* val, NodeID i, PNODEK k) :
+PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val) {
 
     assert( ValNode <= k && k<= DummyObjNode && "new PAG node kind?");
@@ -626,7 +624,7 @@ PAGNode::PAGNode(const llvm::Value* val, NodeID i, PNODEK k) :
 
     case RetNode: {
         assert(val != NULL && "value is NULL for RetNode");
-        isTLPointer = llvm::cast<llvm::Function>(val)->getReturnType()->isPointerTy();
+        isTLPointer = SVFUtil::cast<Function>(val)->getReturnType()->isPointerTy();
         isATPointer = false;
         break;
     }
@@ -653,7 +651,7 @@ PAGNode::PAGNode(const llvm::Value* val, NodeID i, PNODEK k) :
  * Dump this PAG
  */
 void PAG::dump(std::string name) {
-    GraphPrinter::WriteGraphToFile(llvm::outs(), name, this);
+    GraphPrinter::WriteGraphToFile(SVFUtil::outs(), name, this);
 }
 
 
@@ -691,7 +689,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
         raw_string_ostream rawstr(str);
 
         if (briefDisplay) {
-            if (isa<ValPN>(node)) {
+            if (SVFUtil::isa<ValPN>(node)) {
                 if (nameDisplay)
                     rawstr << node->getId() << ":" << node->getValueName();
                 else
@@ -700,7 +698,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
                 rawstr << node->getId();
         } else {
             // print the whole value
-            if (!isa<DummyValPN>(node) && !isa<DummyObjPN>(node))
+            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
                 rawstr << *node->getValue();
             else
                 rawstr << "";
@@ -712,25 +710,25 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
     }
 
     static std::string getNodeAttributes(PAGNode *node, PAG *pag) {
-        if (isa<ValPN>(node)) {
-            if(isa<GepValPN>(node))
+        if (SVFUtil::isa<ValPN>(node)) {
+            if(SVFUtil::isa<GepValPN>(node))
                 return "shape=hexagon";
-            else if (isa<DummyValPN>(node))
+            else if (SVFUtil::isa<DummyValPN>(node))
                 return "shape=diamond";
             else
                 return "shape=circle";
-        } else if (isa<ObjPN>(node)) {
-            if(isa<GepObjPN>(node))
+        } else if (SVFUtil::isa<ObjPN>(node)) {
+            if(SVFUtil::isa<GepObjPN>(node))
                 return "shape=doubleoctagon";
-            else if(isa<FIObjPN>(node))
+            else if(SVFUtil::isa<FIObjPN>(node))
                 return "shape=septagon";
-            else if (isa<DummyObjPN>(node))
+            else if (SVFUtil::isa<DummyObjPN>(node))
                 return "shape=Mcircle";
             else
                 return "shape=doublecircle";
-        } else if (isa<RetPN>(node)) {
+        } else if (SVFUtil::isa<RetPN>(node)) {
             return "shape=Mrecord";
-        } else if (isa<VarArgPN>(node)) {
+        } else if (SVFUtil::isa<VarArgPN>(node)) {
             return "shape=octagon";
         } else {
             assert(0 && "no such kind node!!");
@@ -742,23 +740,23 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
     static std::string getEdgeAttributes(PAGNode *node, EdgeIter EI, PAG *pag) {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if (isa<AddrPE>(edge)) {
+        if (SVFUtil::isa<AddrPE>(edge)) {
             return "color=green";
-        } else if (isa<CopyPE>(edge)) {
+        } else if (SVFUtil::isa<CopyPE>(edge)) {
             return "color=black";
-        } else if (isa<GepPE>(edge)) {
+        } else if (SVFUtil::isa<GepPE>(edge)) {
             return "color=purple";
-        } else if (isa<StorePE>(edge)) {
+        } else if (SVFUtil::isa<StorePE>(edge)) {
             return "color=blue";
-        } else if (isa<LoadPE>(edge)) {
+        } else if (SVFUtil::isa<LoadPE>(edge)) {
             return "color=red";
-        } else if (isa<TDForkPE>(edge)) {
+        } else if (SVFUtil::isa<TDForkPE>(edge)) {
             return "color=Turquoise";
-        } else if (isa<TDJoinPE>(edge)) {
+        } else if (SVFUtil::isa<TDJoinPE>(edge)) {
             return "color=Turquoise";
-        } else if (isa<CallPE>(edge)) {
+        } else if (SVFUtil::isa<CallPE>(edge)) {
             return "color=black,style=dashed";
-        } else if (isa<RetPE>(edge)) {
+        } else if (SVFUtil::isa<RetPE>(edge)) {
             return "color=black,style=dotted";
         }
         else {
@@ -770,13 +768,13 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
     static std::string getEdgeSourceLabel(PAGNode *node, EdgeIter EI) {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if(const CallPE* calledge = dyn_cast<CallPE>(edge)) {
-            const llvm::Instruction* callInst= calledge->getCallInst();
-            return analysisUtil::getSourceLoc(callInst);
+        if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge)) {
+            const Instruction* callInst= calledge->getCallInst();
+            return SVFUtil::getSourceLoc(callInst);
         }
-        else if(const RetPE* retedge = dyn_cast<RetPE>(edge)) {
-            const llvm::Instruction* callInst= retedge->getCallInst();
-            return analysisUtil::getSourceLoc(callInst);
+        else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge)) {
+            const Instruction* callInst= retedge->getCallInst();
+            return SVFUtil::getSourceLoc(callInst);
         }
         return "";
     }

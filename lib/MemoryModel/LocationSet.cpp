@@ -32,10 +32,8 @@
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
 
-using namespace llvm;
-
-static cl::opt<bool> singleStride("stride-only", cl::init(false),
-                                  cl::desc("Only use single stride in LocMemoryModel"));
+static llvm::cl::opt<bool> singleStride("stride-only", llvm::cl::init(false),
+                                  llvm::cl::desc("Only use single stride in LocMemoryModel"));
 
 /*!
  * Add element num and stride pair

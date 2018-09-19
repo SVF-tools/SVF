@@ -92,7 +92,7 @@ public:
         return chi;
     }
     /// Return function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return bb->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -121,14 +121,14 @@ public:
     /// Constructor
     FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit) {
         cpts = exit->getMR()->getPointsTo();
-        bb = analysisUtil::getFunExitBB(exit->getFunction());
+        bb = SVFUtil::getFunExitBB(exit->getFunction());
     }
     /// RetMU
     inline const MemSSA::RETMU* getRetMU() const {
         return mu;
     }
     /// Function
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         return bb->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -152,16 +152,16 @@ public:
 class ActualINSVFGNode : public MRSVFGNode {
 private:
     const MemSSA::CALLMU* mu;
-    llvm::CallSite cs;
+    CallSite cs;
 public:
     /// Constructor
-    ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, llvm::CallSite c):
+    ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, CallSite c):
         MRSVFGNode(id, APIN), mu(m), cs(c) {
         cpts = m->getMR()->getPointsTo();
         bb = cs.getInstruction()->getParent();
     }
     /// Callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return cs;
     }
     /// CallMU
@@ -190,17 +190,17 @@ public:
 class ActualOUTSVFGNode : public MRSVFGNode {
 private:
     const MemSSA::CALLCHI* chi;
-    llvm::CallSite cs;
+    CallSite cs;
 
 public:
     /// Constructor
-    ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, llvm::CallSite cal):
+    ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, CallSite cal):
         MRSVFGNode(id, APOUT), chi(c), cs(cal) {
         cpts = c->getMR()->getPointsTo();
         bb = cs.getInstruction()->getParent();
     }
     /// Callsite
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         return cs;
     }
     /// CallCHI
@@ -238,11 +238,11 @@ public:
     /// Constructor
     MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def) {
         cpts = def->getMR()->getPointsTo();
-        if(const MemSSA::PHI* phi = llvm::dyn_cast<const MemSSA::PHI>(def))
+        if(const MemSSA::PHI* phi = SVFUtil::dyn_cast<const MemSSA::PHI>(def))
             bb = phi->getBasicBlock();
-        else if(const MemSSA::ENTRYCHI* enChi = llvm::dyn_cast<const MemSSA::ENTRYCHI>(def))
+        else if(const MemSSA::ENTRYCHI* enChi = SVFUtil::dyn_cast<const MemSSA::ENTRYCHI>(def))
             bb = &enChi->getFunction()->getEntryBlock();
-        else if(const MemSSA::CALLCHI* calChi = llvm::dyn_cast<const MemSSA::CALLCHI>(def))
+        else if(const MemSSA::CALLCHI* calChi = SVFUtil::dyn_cast<const MemSSA::CALLCHI>(def))
             bb = calChi->getBasicBlock();
         else
             assert("what else def for MSSAPHI node?");
@@ -338,14 +338,14 @@ public:
         return (fun==NULL) && (callInst != NULL);
     }
 
-    inline const llvm::Function* getFun() const {
+    inline const Function* getFun() const {
         assert(isFormalINPHI() && "expect a formal parameter phi");
         return fun;
     }
 
-    inline llvm::CallSite getCallSite() const {
+    inline CallSite getCallSite() const {
         assert(isActualOUTPHI() && "expect a actual return phi");
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(callInst);
+        CallSite cs = SVFUtil::getLLVMCallSite(callInst);
         return cs;
     }
 
@@ -368,8 +368,8 @@ public:
     }
     //@}
 private:
-    const llvm::Function* fun;
-    llvm::Instruction* callInst;
+    const Function* fun;
+    Instruction* callInst;
 };
 
 #endif /* INCLUDE_MSSA_SVFGNODE_H_ */

@@ -70,7 +70,7 @@ public:
     //@}
 
 private:
-    std::set<llvm::CallSite> virtualCallSites;
+    std::set<CallSite> virtualCallSites;
 };
 
 

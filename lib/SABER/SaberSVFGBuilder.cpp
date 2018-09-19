@@ -31,23 +31,22 @@
 #include "SABER/SaberCheckerAPI.h"
 #include "MSSA/SVFG.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 void SaberSVFGBuilder::buildSVFG() {
 
 	MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
     BVDataPTAImpl* pta = mssa->getPTA();
-    DBOUT(DGENERAL, outs() << pasMsg("\tCollect Global Variables\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCollect Global Variables\n"));
 
     collectGlobals(pta);
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
 
     rmDerefDirSVFGEdges(pta);
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
+    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
     AddExtActualParmSVFGNodes();
 
@@ -65,10 +64,10 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta) {
     NodeVector worklist;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++) {
         PAGNode* pagNode = it->second;
-        if(isa<DummyValPN>(pagNode) || isa<DummyObjPN>(pagNode))
+        if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
             continue;
         if(const Value* val = pagNode->getValue()) {
-            if(isa<GlobalVariable>(val))
+            if(SVFUtil::isa<GlobalVariable>(val))
                 worklist.push_back(it->first);
         }
     }
@@ -129,9 +128,9 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta) {
     for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it) {
         const SVFGNode* node = it->second;
 
-        if(const StmtSVFGNode* stmtNode = dyn_cast<StmtSVFGNode>(node)) {
+        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node)) {
             /// for store, connect the RHS/LHS pointer to its def
-            if(isa<StoreSVFGNode>(stmtNode)) {
+            if(SVFUtil::isa<StoreSVFGNode>(stmtNode)) {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
                 SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
                 assert(edge && "Edge not found!");
@@ -141,7 +140,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta) {
                     globSVFGNodes.insert(stmtNode);
                 }
             }
-            else if(isa<LoadSVFGNode>(stmtNode)) {
+            else if(SVFUtil::isa<LoadSVFGNode>(stmtNode)) {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
                 SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
                 assert(edge && "Edge not found!");

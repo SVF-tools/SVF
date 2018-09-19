@@ -430,9 +430,9 @@ protected:
     /// process "bitcast" CopyCGEdge
     virtual void processCast(const ConstraintEdge *edge);
     /// update type of objects when process "bitcast" CopyCGEdge
-    void updateObjType(const llvm::Type *type, PointsTo &objs);
+    void updateObjType(const Type *type, PointsTo &objs);
     /// process mismatched gep edges
-    void processTypeMismatchedGep(NodeID obj, const llvm::Type *type);
+    void processTypeMismatchedGep(NodeID obj, const Type *type);
     /// match types for Gep Edges
     virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge);
     /// add type for newly created GepObjNode

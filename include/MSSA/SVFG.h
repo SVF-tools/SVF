@@ -78,10 +78,10 @@ public:
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef std::map<llvm::CallSite, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef std::map<llvm::CallSite, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
-    typedef llvm::DenseMap<const llvm::Function*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
-    typedef llvm::DenseMap<const llvm::Function*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
+    typedef std::map<CallSite, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef std::map<CallSite, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef llvm::DenseMap<const Function*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
+    typedef llvm::DenseMap<const Function*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
     typedef MemSSA::CHISet CHISet;
     typedef MemSSA::PHISet PHISet;
@@ -157,13 +157,13 @@ public:
 	}
 
     /// Get all inter value flow edges of a indirect call site
-    void getInterVFEdgesForIndirectCallSite(const llvm::CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges);
+    void getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function* callee, SVFGEdgeSetTy& edges);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
     /// Connect SVFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(llvm::CallSite cs, const llvm::Function* callee, SVFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(CallSite cs, const Function* callee, SVFGEdgeSetTy& edges);
 
     /// Given a pagNode, return its definition site
     inline const SVFGNode* getDefSVFGNode(const PAGNode* pagNode) const {
@@ -175,47 +175,47 @@ public:
 
     /// Has a SVFGNode
     //@{
-    inline bool hasActualINSVFGNodes(llvm::CallSite cs) const {
+    inline bool hasActualINSVFGNodes(CallSite cs) const {
         return callSiteToActualINMap.find(cs)!=callSiteToActualINMap.end();
     }
 
-    inline bool hasActualOUTSVFGNodes(llvm::CallSite cs) const {
+    inline bool hasActualOUTSVFGNodes(CallSite cs) const {
         return callSiteToActualOUTMap.find(cs)!=callSiteToActualOUTMap.end();
     }
 
-    inline bool hasFormalINSVFGNodes(const llvm::Function* fun) const {
+    inline bool hasFormalINSVFGNodes(const Function* fun) const {
         return funToFormalINMap.find(fun)!=funToFormalINMap.end();
     }
 
-    inline bool hasFormalOUTSVFGNodes(const llvm::Function* fun) const {
+    inline bool hasFormalOUTSVFGNodes(const Function* fun) const {
         return funToFormalOUTMap.find(fun)!=funToFormalOUTMap.end();
     }
     //@}
 
     /// Get SVFGNode set
     //@{
-    inline ActualINSVFGNodeSet& getActualINSVFGNodes(llvm::CallSite cs) {
+    inline ActualINSVFGNodeSet& getActualINSVFGNodes(CallSite cs) {
         return callSiteToActualINMap[cs];
     }
 
-    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(llvm::CallSite cs) {
+    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(CallSite cs) {
         return callSiteToActualOUTMap[cs];
     }
 
-    inline FormalINSVFGNodeSet& getFormalINSVFGNodes(const llvm::Function* fun) {
+    inline FormalINSVFGNodeSet& getFormalINSVFGNodes(const Function* fun) {
         return funToFormalINMap[fun];
     }
 
-    inline FormalOUTSVFGNodeSet& getFormalOUTSVFGNodes(const llvm::Function* fun) {
+    inline FormalOUTSVFGNodeSet& getFormalOUTSVFGNodes(const Function* fun) {
         return funToFormalOUTMap[fun];
     }
     //@}
 
     /// Whether a node is function entry SVFGNode
-    const llvm::Function* isFunEntrySVFGNode(const SVFGNode* node) const;
+    const Function* isFunEntrySVFGNode(const SVFGNode* node) const;
 
     /// Whether a node is callsite return SVFGNode
-    llvm::Instruction* isCallSiteRetSVFGNode(const SVFGNode* node) const;
+    Instruction* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
 protected:
     /// Remove a SVFG edge
@@ -259,7 +259,7 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
         SVFGEdge* edge = hasInterVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
@@ -275,7 +275,7 @@ protected:
         edges.insert(edge);
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
+    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt) {
             SVFGEdge* edge = *outIt;
             if (edge->getDstNode()->getBB()->getParent() == callee)
@@ -283,7 +283,7 @@ protected:
         }
     }
 
-    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
+    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt) {
             SVFGEdge* edge = *inIt;
             if (edge->getSrcNode()->getBB()->getParent() == callee)
@@ -378,16 +378,16 @@ protected:
 
     /// Has function for EntryCHI/RetMU/CallCHI/CallMU
     //@{
-    inline bool hasFuncEntryChi(const llvm::Function * func) const {
+    inline bool hasFuncEntryChi(const Function * func) const {
         return (funToFormalINMap.find(func) != funToFormalINMap.end());
     }
-    inline bool hasFuncRetMu(const llvm::Function * func) const {
+    inline bool hasFuncRetMu(const Function * func) const {
         return (funToFormalOUTMap.find(func) != funToFormalOUTMap.end());
     }
-    inline bool hasCallSiteChi(llvm::CallSite cs) const {
+    inline bool hasCallSiteChi(CallSite cs) const {
         return (callSiteToActualOUTMap.find(cs) != callSiteToActualOUTMap.end());
     }
-    inline bool hasCallSiteMu(llvm::CallSite cs) const {
+    inline bool hasCallSiteMu(CallSite cs) const {
         return (callSiteToActualINMap.find(cs) != callSiteToActualINMap.end());
     }
     //@}

@@ -62,7 +62,7 @@ public:
     Type *getIndexedType() const {
         if ( CurTy.getInt() )
             return CurTy.getPointer();
-        CompositeType *CT = cast<CompositeType>( CurTy.getPointer() );
+        CompositeType *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
         return CT->getTypeAtIndex(getOperand());
     }
 
@@ -102,9 +102,9 @@ public:
 typedef generic_bridge_gep_type_iterator<> bridge_gep_iterator;
 
 inline bridge_gep_iterator bridge_gep_begin(const User* GEP) {
-    auto *GEPOp = cast<GEPOperator>(GEP);
+    auto *GEPOp = llvm::cast<GEPOperator>(GEP);
     return bridge_gep_iterator::begin(GEPOp->getSourceElementType(),
-                                      cast<PointerType>(GEPOp->getPointerOperandType()->getScalarType())->getAddressSpace(),
+                                      llvm::cast<PointerType>(GEPOp->getPointerOperandType()->getScalarType())->getAddressSpace(),
                                       GEP->op_begin() + 1);
 }
 
@@ -113,9 +113,9 @@ inline bridge_gep_iterator bridge_gep_end(const User* GEP) {
 }
 
 inline bridge_gep_iterator bridge_gep_begin(const User &GEP) {
-    auto &GEPOp = cast<GEPOperator>(GEP);
+    auto &GEPOp = llvm::cast<GEPOperator>(GEP);
     return bridge_gep_iterator::begin( GEPOp.getSourceElementType(),
-                                       cast<PointerType>(GEPOp.getPointerOperandType()->getScalarType())->getAddressSpace(),
+                                       llvm::cast<PointerType>(GEPOp.getPointerOperandType()->getScalarType())->getAddressSpace(),
                                        GEP.op_begin() + 1);
 }
 

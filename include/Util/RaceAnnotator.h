@@ -25,7 +25,7 @@ public:
     }
     /// Annotation
     //@{
-    void annotateDRCheck(llvm::Instruction* inst);
+    void annotateDRCheck(Instruction* inst);
     //@}
 
 };
