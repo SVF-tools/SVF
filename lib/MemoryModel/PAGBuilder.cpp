@@ -1109,6 +1109,11 @@ void PAGBuilder::sanityCheck() {
  * 3 gep 4 4
  */
 PAG* PAGBuilderFromFile::build() {
+    // We do this to avoid setting off adding the current BB and value in
+    // addEdge (as they don't exist).
+    std::string oldPagFromTXT = SVFModule::pagFileName();
+    SVFModule::setPagFromTXT("tmp");
+
     string line;
     ifstream myfile(file.c_str());
     if (myfile.is_open()) {
@@ -1208,6 +1213,8 @@ PAG* PAGBuilderFromFile::build() {
     u32_t lower_bound = 1000;
     for(u32_t i = 0; i < lower_bound; i++)
         pag->incNodeNum();
+
+    SVFModule::setPagFromTXT(oldPagFromTXT);
 
     return pag;
 }
