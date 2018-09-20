@@ -47,10 +47,10 @@ static llvm::cl::opt<bool> DumpVFG("dump-VFG", llvm::cl::init(false),
  */
 VFG::VFG(PTACallGraph* cg): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate VFG Top Level Node\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate VFG Top Level Node\n"));
 	addVFGNodes();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate SVFG Direct Edge\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Direct Edge\n"));
 	connectDirectVFGEdges();
 }
 
@@ -408,7 +408,7 @@ VFGEdge* VFG::getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdg
  */
 void VFG::dump(const std::string& file, bool simple) {
     if(DumpVFG)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), file, this, simple);
+        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 /**

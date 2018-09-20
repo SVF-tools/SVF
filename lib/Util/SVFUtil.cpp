@@ -351,7 +351,7 @@ std::string SVFUtil::sucMsg(std::string msg) {
  */
 void SVFUtil::wrnMsg(std::string msg) {
     if(DisableWarn) return;
-    SVFUtil::outs() << KYEL + msg + KNRM << "\n";
+    outs() << KYEL + msg + KNRM << "\n";
 }
 
 /*!
@@ -384,9 +384,9 @@ std::string SVFUtil::pasMsg(std::string msg) {
  * Dump points-to set
  */
 void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs) {
-    SVFUtil::outs() << "node " << node << " points-to: {";
+    outs() << "node " << node << " points-to: {";
     dumpSet(bs);
-    SVFUtil::outs() << "}\n";
+    outs() << "}\n";
 }
 
 
@@ -394,9 +394,9 @@ void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs) {
  * Dump alias set
  */
 void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs) {
-    SVFUtil::outs() << "node " << node << " alias set: {";
+    outs() << "node " << node << " alias set: {";
     dumpSet(bs);
-    SVFUtil::outs() << "}\n";
+    outs() << "}\n";
 }
 
 /*!
@@ -476,7 +476,7 @@ void SVFUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-                SVFUtil::outs() << "setrlimit returned result = " << result << "\n";
+                outs() << "setrlimit returned result = " << result << "\n";
         }
     }
 }

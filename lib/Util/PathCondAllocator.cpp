@@ -51,7 +51,7 @@ static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
  * Allocate path condition for each branch
  */
 void PathCondAllocator::allocate(const SVFModule M) {
-    DBOUT(DGENERAL,SVFUtil::outs() << pasMsg("path condition allocation starts\n"));
+    DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
     for (SVFModule::const_iterator fit = M.begin(); fit != M.end(); ++fit) {
         const Function * func = *fit;
@@ -68,7 +68,7 @@ void PathCondAllocator::allocate(const SVFModule M) {
     if(PrintPathCond)
         printPathCond();
 
-    DBOUT(DGENERAL,SVFUtil::outs() << pasMsg("path condition allocation ends\n"));
+    DBOUT(DGENERAL,outs() << pasMsg("path condition allocation ends\n"));
 }
 
 /*!
@@ -435,7 +435,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
             else
                 brCond = getEvalBrCond(bb, succ);
 
-            DBOUT(DSaber, SVFUtil::outs() << " bb (" << bb->getName() <<
+            DBOUT(DSaber, outs() << " bb (" << bb->getName() <<
                   ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");
             Condition* succPathCond = condAnd(cond, brCond);
             if(setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
@@ -443,7 +443,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
         }
     }
 
-    DBOUT(DSaber, SVFUtil::outs() << " src_bb (" << srcBB->getName() <<
+    DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName() <<
           ") --> " << "dst_bb (" << dstBB->getName() << ") condition: " << getCFCond(dstBB) << "\n");
 
     return getCFCond(dstBB);
@@ -463,7 +463,7 @@ void PathCondAllocator::destroy() {
  */
 void PathCondAllocator::printPathCond() {
 
-    SVFUtil::outs() << "print path condition\n";
+    outs() << "print path condition\n";
 
     for(BBCondMap::iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it) {
         const BasicBlock* bb = it->first;
@@ -471,8 +471,8 @@ void PathCondAllocator::printPathCond() {
             const TerminatorInst *Term = bb->getTerminator();
             const BasicBlock* succ = Term->getSuccessor(cit->first);
             Condition* cond = cit->second;
-            SVFUtil::outs() << bb->getName() << "-->" << succ->getName() << ":";
-            SVFUtil::outs() << dumpCond(cond) << "\n";
+            outs() << bb->getName() << "-->" << succ->getName() << ":";
+            outs() << dumpCond(cond) << "\n";
         }
     }
 }

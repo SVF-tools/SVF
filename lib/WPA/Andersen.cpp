@@ -72,7 +72,7 @@ void Andersen::analyze(SVFModule svfModule) {
         readResultsFromFile = this->readFromFile(ReadAnder);
 
     if(!readResultsFromFile) {
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
         processAllAddr();
 
@@ -96,7 +96,7 @@ void Andersen::analyze(SVFModule svfModule) {
 
         } while (reanalyze);
 
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
         /// finalize the analysis
         finalize();

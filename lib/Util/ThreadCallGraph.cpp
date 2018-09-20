@@ -37,7 +37,7 @@ using namespace SVFUtil;
  */
 ThreadCallGraph::ThreadCallGraph(SVFModule svfModule) :
     PTACallGraph(svfModule), tdAPI(ThreadAPI::getThreadAPI()) {
-    DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
     this->build(svfModule);
 }
 

@@ -32,6 +32,8 @@
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
 
+using namespace SVFUtil;
+
 FlowSensitive* FlowSensitive::fspta = NULL;
 
 /*!
@@ -57,7 +59,7 @@ void FlowSensitive::analyze(SVFModule svfModule) {
 
     double start = stat->getClk();
     /// Start solving constraints
-    DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
     do {
         numOfIteration++;
@@ -71,7 +73,7 @@ void FlowSensitive::analyze(SVFModule svfModule) {
 
     } while (updateCallGraph(getIndirectCallsites()));
 
-    DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
     double end = stat->getClk();
     solveTime += (end - start) / TIMEINTERVAL;

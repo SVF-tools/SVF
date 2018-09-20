@@ -22,17 +22,17 @@ void MTAResultValidator::analyze() {
         return;
 
     errstring = getOutput("Validate CxtThread:", validateCxtThread());
-    SVFUtil::outs() << "======" << errstring << "======\n";
+    outs() << "======" << errstring << "======\n";
 
     if (!collectTCTTargets())
         return;
     errstring = getOutput("Validate TCT:     ", validateTCT());
-    SVFUtil::outs() << "======" << errstring << "======\n";
+    outs() << "======" << errstring << "======\n";
 
     if (!collectInterleavingTargets())
         return;
     errstring = getOutputforInterlevAnalysis("Validate Interleaving:", validateInterleaving());
-    SVFUtil::outs() << "======" << errstring << "======\n";
+    outs() << "======" << errstring << "======\n";
 }
 
 std::vector<std::string> &MTAResultValidator::split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -147,16 +147,16 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const {
         rawstr << "  call  " << tcg->getCallSite(*it).getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
-    SVFUtil::outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
+    outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
 }
 
 void MTAResultValidator::dumpInterlev(NodeBS& lev) {
-    SVFUtil::outs() << " [ ";
+    outs() << " [ ";
     for (NodeBS::iterator it = lev.begin(), eit = lev.end(); it != eit; it++) {
         NodeID id = *it;
-        SVFUtil::outs() << rthdTovthd[id] << ", ";
+        outs() << rthdTovthd[id] << ", ";
     }
-    SVFUtil::outs() << "]\n";
+    outs() << "]\n";
 }
 
 bool MTAResultValidator::collectCallsiteTargets() {
@@ -271,8 +271,8 @@ bool MTAResultValidator::validateCxtThread() {
     if (tct->getTCTNodeNum() != vthdToCxt.size()) {
         res = false;
         if (PrintValidRes) {
-            SVFUtil::outs() << "\nValidate CxtThread: The number of CxtThread is different from given result!!!\n";
-            SVFUtil::outs() << "Given threads:\t" << vthdToCxt.size() << "\nAnalysis result:\t" << tct->getTCTNodeNum() << "\n";
+            outs() << "\nValidate CxtThread: The number of CxtThread is different from given result!!!\n";
+            outs() << "Given threads:\t" << vthdToCxt.size() << "\nAnalysis result:\t" << tct->getTCTNodeNum() << "\n";
         }
     }
 
@@ -287,7 +287,7 @@ bool MTAResultValidator::validateCxtThread() {
                 if (visitedvthd.find(vthdid) != visitedvthd.end()) {
                     res = false;
                     if (PrintValidRes) {
-                        SVFUtil::outs() << "\nValidate CxtThread: Repeat real CxtThread !!!\n";
+                        outs() << "\nValidate CxtThread: Repeat real CxtThread !!!\n";
                         rthd.dump();
                         tct->getTCTNode(vthdTorthd[vthdid])->getCxtThread().dump();
                     }
@@ -302,7 +302,7 @@ bool MTAResultValidator::validateCxtThread() {
         if (!matched) {
             res = false;
             if (PrintValidRes) {
-                SVFUtil::outs() << "\nValidate CxtThread: Cannot match real CxtThread !!!\n";
+                outs() << "\nValidate CxtThread: Cannot match real CxtThread !!!\n";
                 rthd.dump();
             }
         }
@@ -310,7 +310,7 @@ bool MTAResultValidator::validateCxtThread() {
     if (visitedvthd.size() != vthdToCxt.size()) {
         res = false;
         if (PrintValidRes) {
-            SVFUtil::outs() << "\nValidate CxtThread: Some given CxtThreads cannot be found !!!\n";
+            outs() << "\nValidate CxtThread: Some given CxtThreads cannot be found !!!\n";
             for (std::map<NodeID, CallStrCxt>::iterator j = vthdToCxt.begin(), ej = vthdToCxt.end(); j != ej; j++) {
                 NodeID vthdid = (*j).first;
                 if (visitedvthd.find(vthdid) == visitedvthd.end()) {
@@ -346,19 +346,19 @@ bool MTAResultValidator::validateTCT() {
             }
         }
         if ((!res_node) && PrintValidRes) {
-            SVFUtil::outs() << "Validate TCT: Wrong at TID " << rthdTovthd[i] << "\n";
-            SVFUtil::outs() << "Given children: \t";
+            outs() << "Validate TCT: Wrong at TID " << rthdTovthd[i] << "\n";
+            outs() << "Given children: \t";
             for (std::set<NodeID>::iterator j = rthdToChildren[i].begin(), ej = rthdToChildren[i].end(); j != ej; j++) {
                 NodeID gid = *j;
-                SVFUtil::outs() << rthdTovthd[gid] << ", ";
+                outs() << rthdTovthd[gid] << ", ";
             }
-            SVFUtil::outs() << "\nAnalysis children:\t";
+            outs() << "\nAnalysis children:\t";
             for (TCT::ThreadCreateEdgeSet::const_iterator ci = tct->getChildrenBegin(pnode), cei = tct->getChildrenEnd(pnode); ci != cei;
                     ci++) {
                 NodeID tid = (*ci)->getDstID();
-                SVFUtil::outs() << rthdTovthd[tid] << ", ";
+                outs() << rthdTovthd[tid] << ", ";
             }
-            SVFUtil::outs() << "\n";
+            outs() << "\n";
         }
     }
     return res;
@@ -374,20 +374,20 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving() {
 
         if ((*seti).second.size() != tsSet.size()) {
             if (PrintValidRes) {
-                SVFUtil::outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
-                SVFUtil::outs() << "Reason: The number of thread running on stmt is wrong\n";
-                SVFUtil::outs() << "\n----Given threads:\n";
+                outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
+                outs() << "Reason: The number of thread running on stmt is wrong\n";
+                outs() << "\n----Given threads:\n";
                 for (MHP::CxtThreadStmtSet::iterator thdlevi = (*seti).second.begin(), ethdlevi = (*seti).second.end(); thdlevi != ethdlevi;
                         ++thdlevi) {
-                    SVFUtil::outs() << "TID " << rthdTovthd[(*thdlevi).getTid()] << ": ";
+                    outs() << "TID " << rthdTovthd[(*thdlevi).getTid()] << ": ";
                     dumpCxt((*thdlevi).getContext());
                 }
-                SVFUtil::outs() << "\n----Analysis threads:\n";
+                outs() << "\n----Analysis threads:\n";
                 for (MHP::CxtThreadStmtSet::const_iterator it = tsSet.begin(), eit = tsSet.end(); it != eit; ++it) {
-                    SVFUtil::outs() << "TID " << rthdTovthd[(*it).getTid()] << ": ";
+                    outs() << "TID " << rthdTovthd[(*it).getTid()] << ": ";
                     dumpCxt((*it).getContext());
                 }
-                SVFUtil::outs() << "\n";
+                outs() << "\n";
             }
             res = MTAResultValidator::INTERLEV_UNSOUND;
         }
@@ -404,12 +404,12 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving() {
                     NodeBS lev2 = threadStmtToInterLeaving[ts2];
                     if (lev != lev2) {
                         if (PrintValidRes) {
-                            SVFUtil::outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
-                            SVFUtil::outs() << "Reason: thread interleaving on stmt is wrong\n";
+                            outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
+                            outs() << "Reason: thread interleaving on stmt is wrong\n";
                             dumpCxt(ts.getContext());
-                            SVFUtil::outs() << "Given result:    \tTID " << rthdTovthd[ts.getTid()];
+                            outs() << "Given result:    \tTID " << rthdTovthd[ts.getTid()];
                             dumpInterlev(lev2);
-                            SVFUtil::outs() << "Analysis result: \tTID " << rthdTovthd[ts.getTid()];
+                            outs() << "Analysis result: \tTID " << rthdTovthd[ts.getTid()];
                             dumpInterlev(lev);
                         }
 
@@ -434,12 +434,12 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving() {
 
             if (!matched) {
                 if (PrintValidRes) {
-                    SVFUtil::outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
-                    SVFUtil::outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";
+                    outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
+                    outs() << "Reason: analysis thread cxt is not matched by given thread cxt\n";
                     dumpCxt(ts.getContext());
                     NodeBS lev = mhp->getInterleavingThreads(ts);
 
-                    SVFUtil::outs() << "Analysis result: \tTID " << rthdTovthd[ts.getTid()];
+                    outs() << "Analysis result: \tTID " << rthdTovthd[ts.getTid()];
                     dumpInterlev(lev);
                 }
                 res = MTAResultValidator::INTERLEV_UNSOUND;

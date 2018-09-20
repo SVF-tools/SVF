@@ -87,8 +87,8 @@ MHP::~MHP() {
  */
 void MHP::analyze() {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("MHP interleaving analysis\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("MHP interleaving analysis\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("MHP interleaving analysis\n"));
+    DBOUT(DMTA, outs() << pasMsg("MHP interleaving analysis\n"));
     DOTIMESTAT(double interleavingStart = PTAStat::getClk());
     analyzeInterleaving();
     DOTIMESTAT(double interleavingEnd = PTAStat::getClk());
@@ -113,11 +113,11 @@ void MHP::analyzeInterleaving() {
         while(!cxtStmtList.empty()) {
             CxtThreadStmt cts = popFromCTSWorkList();
             const Instruction* curInst = cts.getStmt();
-            DBOUT(DMTA,SVFUtil::outs() << "-----\nMHP analysis root thread: " << rootTid << " ");
+            DBOUT(DMTA,outs() << "-----\nMHP analysis root thread: " << rootTid << " ");
             DBOUT(DMTA,cts.dump());
-            DBOUT(DMTA,SVFUtil::outs() << "current thread interleaving: < ");
+            DBOUT(DMTA,outs() << "current thread interleaving: < ");
             DBOUT(DMTA,dumpSet(getInterleavingThreads(cts)));
-            DBOUT(DMTA,SVFUtil::outs() << " >\n-----\n");
+            DBOUT(DMTA,outs() << " >\n-----\n");
 
             /// handle non-candidate function
             if (!tct->isCandidateFun(curInst->getParent()->getParent())) {
@@ -250,7 +250,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid) {
         }
         else {
             rmInterleavingThread(cts,joinedTids,call);
-            DBOUT(DMTA,SVFUtil::outs() << "\n\t match join site " << *call <<  " for thread " << rootTid << "\n");
+            DBOUT(DMTA,outs() << "\n\t match join site " << *call <<  " for thread " << rootTid << "\n");
         }
     }
     /// for the join site in a loop loop which does not join the current thread
@@ -347,9 +347,9 @@ void MHP::handleIntra(const CxtThreadStmt& cts) {
  */
 void MHP::updateAncestorThreads(NodeID curTid) {
     NodeBS tds = tct->getAncestorThread(curTid);
-    DBOUT(DMTA,SVFUtil::outs() << "##Ancestor thread of " << curTid << " is : ");
+    DBOUT(DMTA,outs() << "##Ancestor thread of " << curTid << " is : ");
     DBOUT(DMTA,dumpSet(tds));
-    DBOUT(DMTA,SVFUtil::outs() << "\n");
+    DBOUT(DMTA,outs() << "\n");
     tds.set(curTid);
 
     for(NodeBS::iterator it = tds.begin(), eit = tds.end(); it!=eit; ++it) {
@@ -393,9 +393,9 @@ void MHP::updateSiblingThreads(NodeID curTid) {
             addInterleavingThread(cts,curTid);
         }
 
-        DBOUT(DMTA,SVFUtil::outs() << "##Sibling thread of " << curTid << " is : ");
+        DBOUT(DMTA,outs() << "##Sibling thread of " << curTid << " is : ");
         DBOUT(DMTA,dumpSet(siblingTds));
-        DBOUT(DMTA,SVFUtil::outs() << "\n");
+        DBOUT(DMTA,outs() << "\n");
     }
 }
 
@@ -589,12 +589,12 @@ void MHP::validateResults() {
  */
 void MHP::printInterleaving() {
     for(ThreadStmtToThreadInterleav::const_iterator it = threadStmtToTheadInterLeav.begin(), eit = threadStmtToTheadInterLeav.end(); it!=eit; ++it) {
-        SVFUtil::outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << *(it->first.getStmt()) << " ) ==> [";
+        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << *(it->first.getStmt()) << " ) ==> [";
         for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
                 ii != ie; ii++) {
-            SVFUtil::outs() << " " << *ii << " ";
+            outs() << " " << *ii << " ";
         }
-        SVFUtil::outs() << "]\n";
+        outs() << "]\n";
     }
 }
 
@@ -670,9 +670,9 @@ void ForkJoinAnalysis::analyzeForkJoinPair() {
             while(!cxtStmtList.empty()) {
                 CxtStmt cts = popFromCTSWorkList();
                 const Instruction* curInst = cts.getStmt();
-                DBOUT(DMTA,SVFUtil::outs() << "-----\nForkJoinAnalysis root thread: " << it->first << " ");
+                DBOUT(DMTA,outs() << "-----\nForkJoinAnalysis root thread: " << it->first << " ");
                 DBOUT(DMTA,cts.dump());
-                DBOUT(DMTA,SVFUtil::outs() << "-----\n");
+                DBOUT(DMTA,outs() << "-----\n");
 
                 if(isTDFork(curInst)) {
                     handleFork(cts,rootTid);
@@ -751,7 +751,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid) {
             else {
                 markCxtStmtFlag(cts,TDDead);
                 addDirectlyJoinTID(cts,rootTid);
-                DBOUT(DMTA,SVFUtil::outs() << "\n\t match join site " << *call <<  "for thread " << rootTid << "\n");
+                DBOUT(DMTA,outs() << "\n\t match join site " << *call <<  "for thread " << rootTid << "\n");
             }
         }
         /// for the join site in a loop loop which does not join the current thread

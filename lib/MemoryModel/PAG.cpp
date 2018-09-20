@@ -395,7 +395,7 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
 bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
 
     DBOUT(DPAGBuild,
-          SVFUtil::outs() << "add edge from " << src->getId() << " kind :"
+          outs() << "add edge from " << src->getId() << " kind :"
           << src->getNodeKind() << " to " << dst->getId()
           << " kind :" << dst->getNodeKind() << "\n");
     src->addOutEdge(edge);
@@ -511,46 +511,46 @@ void PAG::destroy() {
  */
 void PAG::print() {
 
-	SVFUtil::outs() << "-------------------PAG------------------------------------\n";
+	outs() << "-------------------PAG------------------------------------\n";
 	PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
 			addrs.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
 			copys.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& calls = pag->getEdgeSet(PAGEdge::Call);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
 			calls.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& rets = pag->getEdgeSet(PAGEdge::Ret);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
 			rets.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& tdfks = pag->getEdgeSet(PAGEdge::ThreadFork);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
 			tdfks.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
+		outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& tdjns = pag->getEdgeSet(PAGEdge::ThreadJoin);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
 			tdjns.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
+		outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
@@ -558,31 +558,31 @@ void PAG::print() {
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
 			ngeps.end(); iter != eiter; ++iter) {
 		NormalGepPE* gep = SVFUtil::cast<NormalGepPE>(*iter);
-		SVFUtil::outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
+		outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
 				<< ") --> " << gep->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
 			vgeps.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- VariantGep --> "
+		outs() << (*iter)->getSrcID() << " -- VariantGep --> "
 				<< (*iter)->getDstID() << "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
 			loads.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
 	for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
 			stores.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
 				<< "\n";
 	}
-	SVFUtil::outs() << "----------------------------------------------------------\n";
+	outs() << "----------------------------------------------------------\n";
 
 }
 
@@ -651,7 +651,7 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
  * Dump this PAG
  */
 void PAG::dump(std::string name) {
-    GraphPrinter::WriteGraphToFile(SVFUtil::outs(), name, this);
+    GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 

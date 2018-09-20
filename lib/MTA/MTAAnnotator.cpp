@@ -89,7 +89,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta) {
     if (!AnnoLocal)
         return;
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Run annotator prune thread local pairs\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune thread local pairs\n"));
     PAG* pag = pta->getPAG();
     PointsTo nonlocalobjs;
     PointsTo worklist;
@@ -165,7 +165,7 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta) {
     if (!AnnoMHP && !AnnoAlias)
         return;
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Run annotator prune Alias or MHP pairs\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune Alias or MHP pairs\n"));
     InstSet needannost;
     InstSet needannold;
     for (InstSet::iterator it1 = storeset.begin(), eit1 = storeset.end(); it1 != eit1; ++it1) {

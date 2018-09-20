@@ -108,23 +108,23 @@ void MRGenerator::collectGlobals() {
  */
 void MRGenerator::generateMRs() {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Generate Memory Regions \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Generate Memory Regions \n"));
 
     collectGlobals();
 
     callGraphSCC->find();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCollect ModRef For Load/Store \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For Load/Store \n"));
 
     /// collect mod-ref for loads/stores
     collectModRefForLoadStore();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCollect ModRef For CallSite\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For CallSite\n"));
 
     /// collect mod-ref for calls
     collectModRefForCall();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tPartition Memory Regions \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tPartition Memory Regions \n"));
     /// Partition memory regions
     partitionMRs();
     /// attach memory regions for loads/stores/calls
@@ -185,14 +185,14 @@ void MRGenerator::collectModRefForLoadStore() {
  */
 void MRGenerator::collectModRefForCall() {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\t\tCollect Callsite PointsTo \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\t\tCollect Callsite PointsTo \n"));
 
     /// collect points-to information for callsites
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it)
         collectCallSitePts(*it);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
 
     WorkList worklist;
     getCallGraphSCCRevTopoOrder(worklist);
@@ -208,7 +208,7 @@ void MRGenerator::collectModRefForCall() {
         }
     }
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\t\tAdd PointsTo to Callsites \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\t\tAdd PointsTo to Callsites \n"));
 
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it) {

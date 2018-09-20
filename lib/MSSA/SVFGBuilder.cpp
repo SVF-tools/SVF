@@ -58,7 +58,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, bool withAOFI) {
 
 	MemSSA* mssa = buildMSSA(pta);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
@@ -89,7 +89,7 @@ void SVFGBuilder::releaseMemory() {
 
 MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Build Memory SSA \n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
     MemSSA* mssa = new MemSSA(pta);
 

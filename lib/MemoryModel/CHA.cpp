@@ -41,6 +41,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
 
+using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
@@ -82,7 +83,7 @@ void CHGraph::buildCHG() {
 	for (u32_t i = 0; i < svfMod.getModuleNum(); ++i) {
 		Module *M = svfMod.getModule(i);
 		assert(M && "module not found?");
-		DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("construct CHGraph From module "
+		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
 										+ M->getName().str() + "...\n"));
 		readInheritanceMetadataFromModule(*M);
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
@@ -93,7 +94,7 @@ void CHGraph::buildCHG() {
 		analyzeVTables(*M);
 	}
 
-	DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("build Internal Maps ...\n"));
+	DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("build Internal Maps ...\n"));
 	buildInternalMaps();
 
 	timeEnd = CLOCK_IN_MS();
@@ -106,7 +107,7 @@ void CHGraph::buildCHG() {
 void CHGraph::buildCHGNodes(const Function *F) {
 	if (isConstructor(F) || isDestructor(F)) {
 		struct DemangledName dname = demangle(F->getName().str());
-		DBOUT(DCHA, SVFUtil::outs() << "\t build CHANode for class " + dname.className + "...\n");
+		DBOUT(DCHA, outs() << "\t build CHANode for class " + dname.className + "...\n");
 		if (!getNode(dname.className))
 			createNode(dname.className);
 	}
@@ -226,7 +227,7 @@ CHNode *CHGraph::createNode(const std::string className) {
 		string templateName = getBeforeBrackets(className);
 		CHNode* templateNode = getNode(templateName);
 		if (!templateNode) {
-			DBOUT(DCHA, SVFUtil::outs() << "\t Create Template CHANode " + templateName + " for class " + className + "...\n");
+			DBOUT(DCHA, outs() << "\t Create Template CHANode " + templateName + " for class " + className + "...\n");
 			templateNode = createNode(templateName);
 			templateNode->setTemplate();
 		}
@@ -671,25 +672,25 @@ void CHGraph::printCH() {
 	for (CHGraph::const_iterator it = this->begin(), eit = this->end();
 			it != eit; ++it) {
 		const CHNode *node = it->second;
-		SVFUtil::outs() << "class: " << node->getName() << "\n";
+		outs() << "class: " << node->getName() << "\n";
 		for (CHEdge::CHEdgeSetTy::const_iterator it = node->OutEdgeBegin();
 				it != node->OutEdgeEnd(); ++it) {
 			if ((*it)->getEdgeType() == CHEdge::INHERITANCE)
-				SVFUtil::outs() << (*it)->getDstNode()->getName() << " --inheritance--> "
+				outs() << (*it)->getDstNode()->getName() << " --inheritance--> "
 						<< (*it)->getSrcNode()->getName() << "\n";
 			else
-				SVFUtil::outs() << (*it)->getSrcNode()->getName() << " --instance--> "
+				outs() << (*it)->getSrcNode()->getName() << " --instance--> "
 						<< (*it)->getDstNode()->getName() << "\n";
 		}
 	}
-	SVFUtil::outs() << '\n';
+	outs() << '\n';
 }
 
 /*!
  * Dump call graph into dot file
  */
 void CHGraph::dump(const std::string& filename) {
-    GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
+    GraphPrinter::WriteGraphToFile(outs(), filename, this);
     printCH();
 }
 

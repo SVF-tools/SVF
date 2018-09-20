@@ -109,7 +109,7 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
                 assert(op && "non-const struct index in GEP");
                 const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
                 if ((unsigned)idx >= so.size()) {
-                    SVFUtil::outs() << "!! Struct index out of bounds" << idx << "\n";
+                    outs() << "!! Struct index out of bounds" << idx << "\n";
                     assert(0);
                 }
                 //add the translated offset

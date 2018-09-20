@@ -104,7 +104,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
  * Initial all the nodes from symbol table
  */
 void PAGBuilder::initalNode() {
-    DBOUT(DPAGBuild, SVFUtil::outs() << "Inital PAG Node ...\n");
+    DBOUT(DPAGBuild, outs() << "Inital PAG Node ...\n");
 
     SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
 
@@ -116,7 +116,7 @@ void PAGBuilder::initalNode() {
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
                 symTable->valSyms().begin(); iter != symTable->valSyms().end();
             ++iter) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "add val node " << iter->second << "\n");
+        DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
         if(iter->second == symTable->blkPtrSymID() || iter->second == symTable->nullPtrSymID())
             continue;
         pag->addValNode(iter->first, iter->second);
@@ -125,7 +125,7 @@ void PAGBuilder::initalNode() {
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
                 symTable->objSyms().begin(); iter != symTable->objSyms().end();
             ++iter) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "add obj node " << iter->second << "\n");
+        DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
             continue;
         pag->addObjNode(iter->first, iter->second);
@@ -134,14 +134,14 @@ void PAGBuilder::initalNode() {
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->retSyms().begin(); iter != symTable->retSyms().end();
             ++iter) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "add ret node " << iter->second << "\n");
+        DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         pag->addRetNode(iter->first, iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->varargSyms().begin();
             iter != symTable->varargSyms().end(); ++iter) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "add vararg node " << iter->second << "\n");
+        DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
         pag->addVarargNode(iter->first, iter->second);
     }
 
@@ -169,7 +169,7 @@ void PAGBuilder::processCE(const Value *val) {
             return;
         if (const ConstantExpr* gepce = isGepConstantExpr(ref)) {
             DBOUT(DPAGBuild,
-                  SVFUtil::outs() << "handle gep constant expression " << *ref << "\n");
+                  outs() << "handle gep constant expression " << *ref << "\n");
             const Constant* opnd = gepce->getOperand(0);
             LocationSet ls;
             bool constGep = computeGepOffset(gepce, ls);
@@ -188,7 +188,7 @@ void PAGBuilder::processCE(const Value *val) {
         }
         else if (const ConstantExpr* castce = isCastConstantExpr(ref)) {
             DBOUT(DPAGBuild,
-                  SVFUtil::outs() << "handle cast constant expression " << *ref << "\n");
+                  outs() << "handle cast constant expression " << *ref << "\n");
             const Constant* opnd = castce->getOperand(0);
             const Value* cval = pag->getCurrentValue();
             const BasicBlock* cbb = pag->getCurrentBB();
@@ -199,7 +199,7 @@ void PAGBuilder::processCE(const Value *val) {
         }
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref)) {
             DBOUT(DPAGBuild,
-                  SVFUtil::outs() << "handle select constant expression " << *ref << "\n");
+                  outs() << "handle select constant expression " << *ref << "\n");
             const Constant* src1 = selectce->getOperand(1);
             const Constant* src2 = selectce->getOperand(2);
             const Value* cval = pag->getCurrentValue();
@@ -257,7 +257,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset) {
 void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                u32_t offset) {
     DBOUT(DPAGBuild,
-          SVFUtil::outs() << "global " << *gvar << " constant initializer: " << *C
+          outs() << "global " << *gvar << " constant initializer: " << *C
           << "\n");
 
     if (C->getType()->isSingleValueType() && SVFUtil::isa<PointerType>(C->getType())) {
@@ -314,7 +314,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
 
         if (gvar->hasDefinitiveInitializer()) {
             Constant *C = gvar->getInitializer();
-            DBOUT(DPAGBuild, SVFUtil::outs() << "add global var node " << *gvar << "\n");
+            DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
             InitialGlobal(gvar, C, 0);
         }
     }
@@ -326,7 +326,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "add global function node " << fun->getName() << "\n");
+        DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName() << "\n");
         pag->setCurrentLocation(fun, NULL);
         pag->addAddrEdge(obj, idx);
     }
@@ -350,7 +350,7 @@ void PAGBuilder::visitAllocaInst(AllocaInst &inst) {
     // AllocaInst should always be a pointer type
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, SVFUtil::outs() << "process alloca  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process alloca  " << inst << " \n");
     NodeID dst = getValueNode(&inst);
 
     NodeID src = getObjectNode(&inst);
@@ -366,7 +366,7 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
 
     if (SVFUtil::isa<PointerType>(inst.getType())) {
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process phi " << inst << "  \n");
+        DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
 
         NodeID dst = getValueNode(&inst);
 
@@ -386,7 +386,7 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
 void PAGBuilder::visitLoadInst(LoadInst &inst) {
     pag->loadInstNum++;
     if (SVFUtil::isa<PointerType>(inst.getType())) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process load  " << inst << " \n");
+        DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
         NodeID dst = getValueNode(&inst);
 
@@ -406,7 +406,7 @@ void PAGBuilder::visitStoreInst(StoreInst &inst) {
 
     if (SVFUtil::isa<PointerType>(inst.getValueOperand()->getType())) {
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process store " << inst << " \n");
+        DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
 
         NodeID dst = getValueNode(inst.getPointerOperand());
 
@@ -429,7 +429,7 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, SVFUtil::outs() << "process gep  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -445,7 +445,7 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
  */
 void PAGBuilder::visitIntToPtrInst(IntToPtrInst &inst) {
 
-    DBOUT(DPAGBuild, SVFUtil::outs() << "process cast  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
     NodeID dst = getValueNode(&inst);
     pag->addBlackHoleAddrEdge(dst);
 }
@@ -457,7 +457,7 @@ void PAGBuilder::visitCastInst(CastInst &inst) {
 
     if (SVFUtil::isa<PointerType>(inst.getType())) {
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process cast  " << inst << " \n");
+        DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
         NodeID dst = getValueNode(&inst);
 
         Value * opnd = inst.getOperand(0);
@@ -483,7 +483,7 @@ void PAGBuilder::visitCastInst(CastInst &inst) {
 void PAGBuilder::visitSelectInst(SelectInst &inst) {
 
     if (SVFUtil::isa<PointerType>(inst.getType())) {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process select  " << inst << " \n");
+        DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
 
         NodeID dst = getValueNode(&inst);
         NodeID src1 = getValueNode(inst.getTrueValue());
@@ -506,7 +506,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
         return;
 
     DBOUT(DPAGBuild,
-          SVFUtil::outs() << "process callsite " << *cs.getInstruction() << "\n");
+          outs() << "process callsite " << *cs.getInstruction() << "\n");
 
     /// Collect callsite arguments and returns
     for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
@@ -540,7 +540,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
     if (inst.getNumOperands()
             && (SVFUtil::isa<PointerType>(inst.getOperand(0)->getType()))) {
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process return  " << inst << " \n");
+        DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
         Value *src = inst.getReturnValue();
         if (!SVFUtil::isa<PointerType>(src->getType()))
@@ -595,7 +595,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
     assert(F);
 
     DBOUT(DPAGBuild,
-          SVFUtil::outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
+          outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     if (SVFUtil::isa<PointerType>(cs.getType())) {
@@ -610,17 +610,17 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         }
 
     } else {
-        DBOUT(DPAGBuild, SVFUtil::outs() << "not a pointer, ignored\n");
+        DBOUT(DPAGBuild, outs() << "not a pointer, ignored\n");
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
     Function::const_arg_iterator itF = F->arg_begin(), ieF = F->arg_end();
     //Go through the fixed parameters.
-    DBOUT(DPAGBuild, SVFUtil::outs() << "      args:");
+    DBOUT(DPAGBuild, outs() << "      args:");
     for (; itF != ieF; ++itA, ++itF) {
         //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
         if (itA == ieA) {
-            DBOUT(DPAGBuild, SVFUtil::outs() << " !! not enough args\n");
+            DBOUT(DPAGBuild, outs() << " !! not enough args\n");
             break;
         }
         const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
@@ -628,7 +628,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         if (!SVFUtil::isa<PointerType>(FA->getType()))
             continue;
 
-        DBOUT(DPAGBuild, SVFUtil::outs() << "process actual parm  " << *AA << " \n");
+        DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
 
         NodeID dstFA = getValueNode(FA);
         if (SVFUtil::isa<PointerType>(AA->getType())) {
@@ -642,7 +642,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
     //Any remaining actual args must be varargs.
     if (F->isVarArg()) {
         NodeID vaF = getVarargNode(F);
-        DBOUT(DPAGBuild, SVFUtil::outs() << "\n      varargs:");
+        DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA) {
             Value *AA = *itA;
             if (SVFUtil::isa<PointerType>(AA->getType())) {
@@ -1094,7 +1094,7 @@ PAG* PAGBuilderFromFile::build() {
 				istringstream ss(line);
 				ss >> nodeId;
 				ss >> nodetype;
-				SVFUtil::outs() << "reading node :" << nodeId << "\n";
+				outs() << "reading node :" << nodeId << "\n";
 				if (nodetype == "v")
 					pag->addDummyValNode(nodeId);
 				else if (nodetype == "o") {
@@ -1117,12 +1117,12 @@ PAG* PAGBuilderFromFile::build() {
 				ss >> edge;
 				ss >> nodeDst;
 				ss >> offsetOrCSId;
-				SVFUtil::outs() << "reading edge :" << nodeSrc << " " << edge << " "
+				outs() << "reading edge :" << nodeSrc << " " << edge << " "
 						<< nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
 				addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
 			} else {
 				if (!line.empty()) {
-					SVFUtil::outs() << "format not supported, token count = "
+					outs() << "format not supported, token count = "
 							<< token_count << "\n";
 					assert(false && "format not supported");
 				}
@@ -1132,7 +1132,7 @@ PAG* PAGBuilderFromFile::build() {
 	}
 
 	else
-		SVFUtil::outs() << "Unable to open file\n";
+		outs() << "Unable to open file\n";
 
 	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
 	u32_t lower_bound = 1000;

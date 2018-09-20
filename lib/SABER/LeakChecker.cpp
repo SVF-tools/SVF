@@ -239,7 +239,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const Function* f
     std::string funName = source->getBB()->getParent()->getName();
 
     if (success)
-        SVFUtil::outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
+        outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
     else
@@ -278,7 +278,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Fun
     std::string funName = source->getBB()->getParent()->getName();
 
     if (expectedFailure)
-        SVFUtil::outs() << sucMsg("\t EXPECTED FAIL :") << funName << " check <src id:" << source->getId()
+        outs() << sucMsg("\t EXPECTED FAIL :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source).getInstruction() << "> at ("
                << getSourceLoc(cs.getInstruction()) << ")\n";
     else

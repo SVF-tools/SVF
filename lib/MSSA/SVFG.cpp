@@ -67,13 +67,13 @@ void SVFG::destroy() {
 void SVFG::buildSVFG() {
     stat->startClk();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
 
     stat->ATVFNodeStart();
     addSVFGNodesForAddrTakenVars();
     stat->ATVFNodeEnd();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
 
     stat->indVFEdgeStart();
     connectIndirectSVFGEdges();
@@ -351,7 +351,7 @@ SVFGEdge* SVFG::addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const Ac
  */
 void SVFG::dump(const std::string& file, bool simple) {
     if(DumpVFG)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), file, this, simple);
+        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 /**

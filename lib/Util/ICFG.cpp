@@ -48,7 +48,7 @@ static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
 ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
 	stat = new ICFGStat(this);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCreate ICFG ...\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
 	build();
 }
 
@@ -277,7 +277,7 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId
  */
 void ICFG::dump(const std::string& file, bool simple) {
     if(DumpICFG)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), file, this, simple);
+        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 

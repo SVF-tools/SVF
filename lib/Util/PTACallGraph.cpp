@@ -264,7 +264,7 @@ void PTACallGraph::vefityCallGraph()
  */
 void PTACallGraph::dump(const std::string& filename) {
     if(CallGraphDotGraph)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
+        GraphPrinter::WriteGraphToFile(outs(), filename, this);
 
 }
 

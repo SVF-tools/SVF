@@ -141,7 +141,7 @@ typedef llvm::CallSite CallSite;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
-typedef llvm::CallGraph CallGraph;
+typedef llvm::CallGraph LLVMCallGraph;
 typedef llvm::User User;
 typedef llvm::Use Use;
 typedef llvm::Loop Loop;

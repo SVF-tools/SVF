@@ -101,7 +101,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
 
-    DBOUT(DMSSA, SVFUtil::outs() << "Building Memory SSA for function " << fun.getName()
+    DBOUT(DMSSA, outs() << "Building Memory SSA for function " << fun.getName()
           << " \n");
 
     setCurrentDFDT(f,t);
@@ -133,7 +133,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
 void MemSSA::createMUCHI(const Function& fun) {
 
     DBOUT(DMSSA,
-          SVFUtil::outs() << "\t creating mu chi for function " << fun.getName()
+          outs() << "\t creating mu chi for function " << fun.getName()
           << "\n");
     // 1. create mu/chi
     //	insert a set of mus for memory regions at each load
@@ -213,7 +213,7 @@ void MemSSA::createMUCHI(const Function& fun) {
 void MemSSA::insertPHI(const Function& fun) {
 
     DBOUT(DMSSA,
-          SVFUtil::outs() << "\t insert phi for function " << fun.getName() << "\n");
+          outs() << "\t insert phi for function " << fun.getName() << "\n");
 
     const DominanceFrontier* df = getDF(fun);
     // record whether a phi of mr has already been inserted into the bb.
@@ -257,7 +257,7 @@ void MemSSA::insertPHI(const Function& fun) {
 void MemSSA::SSARename(const Function& fun) {
 
     DBOUT(DMSSA,
-          SVFUtil::outs() << "\t ssa rename for function " << fun.getName() << "\n");
+          outs() << "\t ssa rename for function " << fun.getName() << "\n");
 
     SSARenameBB(fun.getEntryBlock());
 }

@@ -36,6 +36,8 @@
 #include "MSSA/SVFGStat.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVFUtil;
+
 static llvm::cl::opt<bool> ContextInsensitive("ci-svfg", llvm::cl::init(false),
                                         llvm::cl::desc("Reduce SVFG into a context-insensitive one"));
 
@@ -51,7 +53,7 @@ void SVFGOPT::buildSVFG() {
 
     dump("SVFG_before_opt");
 
-    DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
+    DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
 
     stat->sfvgOptStart();
     handleInterValueFlow();

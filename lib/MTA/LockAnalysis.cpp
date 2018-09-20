@@ -35,16 +35,16 @@ void LockAnalysis::analyze() {
 
     DOTIMESTAT(double lockStart = PTAStat::getClk());
 
-    DBOUT(DGENERAL, SVFUtil::outs() << "\tIntra-procedural LockAnalysis\n");
-    DBOUT(DMTA, SVFUtil::outs() << "\tIntra-procedural LockAnalysis\n");
+    DBOUT(DGENERAL, outs() << "\tIntra-procedural LockAnalysis\n");
+    DBOUT(DMTA, outs() << "\tIntra-procedural LockAnalysis\n");
     analyzeIntraProcedualLock();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << "\tCollect context-sensitive locks\n");
-    DBOUT(DMTA, SVFUtil::outs() << "\tCollect context-sensitive locks\n");
+    DBOUT(DGENERAL, outs() << "\tCollect context-sensitive locks\n");
+    DBOUT(DMTA, outs() << "\tCollect context-sensitive locks\n");
     collectCxtLock();
 
-    DBOUT(DGENERAL, SVFUtil::outs() << "\tInter-procedural LockAnalysis\n");
-    DBOUT(DMTA, SVFUtil::outs() << "\tInter-procedural LockAnalysis\n");
+    DBOUT(DGENERAL, outs() << "\tInter-procedural LockAnalysis\n");
+    DBOUT(DMTA, outs() << "\tInter-procedural LockAnalysis\n");
     analyzeLockSpanCxtStmt();
 
     DOTIMESTAT(double lockEnd = PTAStat::getClk());
@@ -161,8 +161,8 @@ bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& un
 
         if (isTDRelease(I) && isAliasedLocks(lockSite, I)) {
             unlockSet.insert(I);
-            DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite)<<"\n");
-            DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I)<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(lockSite)<<"\n");
+            DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(I)<<"\n");
             continue;
         }
 
@@ -202,8 +202,8 @@ bool LockAnalysis::intraBackwardTraverse(const InstSet& unlockSet, InstSet& back
             backwardInsts.insert(I);
 
             if (isTDAcquire(I) && isAliasedLocks(unlockSite, I)) {
-                DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I)<<"\n");
-                DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite)<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci lock   -- " << SVFUtil::getSourceLoc(I)<<"\n");
+                DBOUT(DMTA, outs() << "LockAnalysis ci unlock -- " << SVFUtil::getSourceLoc(unlockSite)<<"\n");
                 continue;
             }
 
@@ -241,14 +241,14 @@ void LockAnalysis::collectCxtLock() {
             for (PTACallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(), ecit = cgEdge->directCallsEnd();
                     cit != ecit; ++cit) {
                 DBOUT(DMTA,
-                      SVFUtil::outs() << "\nCollecting CxtLocks: handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName()
+                      outs() << "\nCollecting CxtLocks: handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName()
                       << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(clp, cgEdge, getLLVMCallSite(*cit));
             }
             for (PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(), eind = cgEdge->indirectCallsEnd();
                     ind != eind; ++ind) {
                 DBOUT(DMTA,
-                      SVFUtil::outs() << "\nCollecting CxtLocks: handling indirect call:" << **ind << "\t"
+                      outs() << "\nCollecting CxtLocks: handling indirect call:" << **ind << "\t"
                       << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName()
                       << "\n");
                 handleCallRelation(clp, cgEdge, getLLVMCallSite(*ind));
@@ -276,8 +276,8 @@ void LockAnalysis::handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* 
 
     CxtLockProc newclp(cxt, callee);
     if (pushToCTPWorkList(newclp)) {
-        DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis Process CallRet old clp --"; clp.dump());
-        DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis Process CallRet new clp --"; newclp.dump());
+        DBOUT(DMTA, outs() << "LockAnalysis Process CallRet old clp --"; clp.dump());
+        DBOUT(DMTA, outs() << "LockAnalysis Process CallRet new clp --"; newclp.dump());
     }
 
 }
@@ -300,10 +300,10 @@ void LockAnalysis::analyzeLockSpanCxtStmt() {
         const Instruction* curInst = cts.getStmt();
         instToCxtStmtSet[curInst].insert(cts);
 
-        DBOUT(DMTA, SVFUtil::outs() << "\nVisit cxtStmt: ");
+        DBOUT(DMTA, outs() << "\nVisit cxtStmt: ");
         DBOUT(DMTA, cts.dump());
 
-        DBOUT(DMTA, SVFUtil::outs() << "\nIts cxt lock sets: ");
+        DBOUT(DMTA, outs() << "\nIts cxt lock sets: ");
         DBOUT(DMTA, printLocks(cts));
 
         if (isTDFork(curInst)) {
@@ -333,7 +333,7 @@ void LockAnalysis::analyzeLockSpanCxtStmt() {
  */
 void LockAnalysis::printLocks(const CxtStmt& cts) {
     const CxtLockSet & lockset = getCxtLockfromCxtStmt(cts);
-    SVFUtil::outs() << "\nlock sets size = " << lockset.size() << "\n";
+    outs() << "\nlock sets size = " << lockset.size() << "\n";
     for (CxtLockSet::iterator it = lockset.begin(), eit = lockset.end(); it != eit; ++it) {
         (*it).dump();
     }

@@ -477,7 +477,7 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
 
     assert(F);
 
-    DBOUT(DAndersen, SVFUtil::outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
 
     if (pag->funHasRet(F) && pag->callsiteHasRet(cs)) {
         const PAGNode* cs_return = pag->getCallSiteRet(cs);
@@ -490,7 +490,7 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
             }
         }
         else {
-            DBOUT(DAndersen, SVFUtil::outs() << "not a pointer ignored\n");
+            DBOUT(DAndersen, outs() << "not a pointer ignored\n");
         }
     }
 
@@ -500,20 +500,20 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
-        DBOUT(DPAGBuild, SVFUtil::outs() << "      args:");
+        DBOUT(DPAGBuild, outs() << "      args:");
         PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         PAG::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt) {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
             if (csArgIt  == csArgEit) {
-                DBOUT(DAndersen, SVFUtil::outs() << " !! not enough args\n");
+                DBOUT(DAndersen, outs() << " !! not enough args\n");
                 break;
             }
             const PAGNode *cs_arg = *csArgIt ;
             const PAGNode *fun_arg = *funArgIt;
 
             if (cs_arg->isPointer() && fun_arg->isPointer()) {
-                DBOUT(DAndersen, SVFUtil::outs() << "process actual parm  " << *(cs_arg->getValue()) << " \n");
+                DBOUT(DAndersen, outs() << "process actual parm  " << *(cs_arg->getValue()) << " \n");
                 NodeID srcAA = sccRepNode(cs_arg->getId());
                 NodeID dstFA = sccRepNode(fun_arg->getId());
                 if(addCopyCGEdge(srcAA, dstFA)) {
@@ -525,7 +525,7 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
         //Any remaining actual args must be varargs.
         if (F->isVarArg()) {
             NodeID vaF = sccRepNode(getVarargNode(F));
-            DBOUT(DPAGBuild, SVFUtil::outs() << "\n      varargs:");
+            DBOUT(DPAGBuild, outs() << "\n      varargs:");
             for (; csArgIt != csArgEit; ++csArgIt) {
                 const PAGNode *cs_arg = *csArgIt;
                 if (cs_arg->isPointer()) {
@@ -548,7 +548,7 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
  */
 void ConstraintGraph::dump() {
     if(ConsCGDotGraph)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), "consCG_final", this);
+        GraphPrinter::WriteGraphToFile(outs(), "consCG_final", this);
 }
 
 /*!
@@ -559,12 +559,12 @@ void ConstraintGraph::print() {
 	if (!PrintCGGraph)
 		return;
 
-	SVFUtil::outs() << "-----------------ConstraintGraph--------------------------------------\n";
+	outs() << "-----------------ConstraintGraph--------------------------------------\n";
 
 	ConstraintEdge::ConstraintEdgeSetTy& addrs = this->getAddrCGEdges();
 	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = addrs.begin(),
 			eiter = addrs.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
@@ -572,13 +572,13 @@ void ConstraintGraph::print() {
 	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = directs.begin(),
 			eiter = directs.end(); iter != eiter; ++iter) {
 		if (CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(*iter)) {
-			SVFUtil::outs() << copy->getSrcID() << " -- Copy --> " << copy->getDstID()
+			outs() << copy->getSrcID() << " -- Copy --> " << copy->getDstID()
 					<< "\n";
 		} else if (NormalGepCGEdge* ngep = SVFUtil::dyn_cast<NormalGepCGEdge>(*iter)) {
-			SVFUtil::outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
+			outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
 					<< ") --> " << ngep->getDstID() << "\n";
 		} else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter)) {
-			SVFUtil::outs() << ngep->getSrcID() << " -- VarintGep --> "
+			outs() << ngep->getSrcID() << " -- VarintGep --> "
 					<< ngep->getDstID() << "\n";
 		} else
 			assert(false && "wrong constraint edge kind!");
@@ -587,18 +587,18 @@ void ConstraintGraph::print() {
 	ConstraintEdge::ConstraintEdgeSetTy& loads = this->getLoadCGEdges();
 	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = loads.begin(),
 			eiter = loads.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
 	ConstraintEdge::ConstraintEdgeSetTy& stores = this->getStoreCGEdges();
 	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = stores.begin(),
 			eiter = stores.end(); iter != eiter; ++iter) {
-		SVFUtil::outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
+		outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
 				<< "\n";
 	}
 
-	SVFUtil::outs()
+	outs()
 			<< "--------------------------------------------------------------\n";
 
 }

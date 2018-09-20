@@ -29,8 +29,8 @@ void MTASVFGBuilder::buildSVFG() {
     SVFUtil::cast<SVFGOPT>(svfg)->setTokeepActualOutFormalIn();
     svfg->buildSVFG();
     if (ADDEDGE_NOEDGE != AddModelFlag) {
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("FSMPTA adding edge\n"));
-        DBOUT(DMTA, SVFUtil::outs() << SVFUtil::pasMsg("FSMPTA adding edge\n"));
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("FSMPTA adding edge\n"));
+        DBOUT(DMTA, outs() << SVFUtil::pasMsg("FSMPTA adding edge\n"));
         connectMHPEdges(mssa->getPTA());
     }
     if (mssa->getPTA()->printStat())
@@ -140,7 +140,7 @@ void MTASVFGBuilder::performRemovingMHPEdges() {
             SVFGEdge* edge = *removededges.begin();
             removededges.erase(removededges.begin());
             svfg->removeSVFGEdge(edge);
-            DBOUT(DMTA,SVFUtil::outs()<<"Read Precision remove: "<<edge->getSrcID()<<" -> "<<edge->getDstID()<<"\n");
+            DBOUT(DMTA,outs()<<"Read Precision remove: "<<edge->getSrcID()<<" -> "<<edge->getDstID()<<"\n");
             MTASVFGBuilder::numOfRemovedSVFGEdges++;
         }
     }
@@ -466,7 +466,7 @@ void MTASVFGBuilder::handleStoreLoadWithLockPrecisely(const StmtSVFGNode* n1,con
 //    NodeBS comlocks2;
 //    lockana->getCommonLocks(i1, i2, comlocks1, comlocks2);
 //
-//    SVFUtil::outs()<<comlocks1.count() << "  "<< comlocks2.count()<<"\n";
+//    outs()<<comlocks1.count() << "  "<< comlocks2.count()<<"\n";
 
 
 //    if(comlocks1.count() && comlocks2.count()) {
@@ -649,8 +649,8 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta) {
     }
 
     if(ReadPrecisionTDEdge && ADDEDGE_NORP!=AddModelFlag) {
-        DBOUT(DGENERAL,SVFUtil::outs()<<"Read precision edge removing \n");
-        DBOUT(DMTA,SVFUtil::outs()<<"Read precision edge removing \n");
+        DBOUT(DGENERAL,outs()<<"Read precision edge removing \n");
+        DBOUT(DMTA,outs()<<"Read precision edge removing \n");
         readPrecision();
     }
 }

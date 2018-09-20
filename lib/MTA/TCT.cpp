@@ -199,8 +199,8 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
     if(cgEdge->getEdgeKind() == PTACallGraphEdge::CallRetEdge) {
         CxtThreadProc newctp(ctp.getTid(),cxt,callee);
         if(pushToCTPWorkList(newctp)) {
-            DBOUT(DMTA,SVFUtil::outs() << "TCT Process CallRet old ctp --"; ctp.dump());
-            DBOUT(DMTA,SVFUtil::outs() << "TCT Process CallRet new ctp --"; newctp.dump());
+            DBOUT(DMTA,outs() << "TCT Process CallRet old ctp --"; ctp.dump());
+            DBOUT(DMTA,outs() << "TCT Process CallRet new ctp --"; newctp.dump());
         }
     }
 
@@ -214,14 +214,14 @@ void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge,
         if(pushToCTPWorkList(newctp)) {
             /// Add TCT nodes and edge
             if(addTCTEdge(this->getGNode(ctp.getTid()), spawneeNode)) {
-                DBOUT(DMTA,SVFUtil::outs() << "Add TCT Edge from thread " << ctp.getTid() << "  ";
+                DBOUT(DMTA,outs() << "Add TCT Edge from thread " << ctp.getTid() << "  ";
                       this->getGNode(ctp.getTid())->getCxtThread().dump();
-                      SVFUtil::outs() << " to thread " << spawneeNode->getId() << "  ";
+                      outs() << " to thread " << spawneeNode->getId() << "  ";
                       spawneeNode->getCxtThread().dump();
-                      SVFUtil::outs() << "\n" );
+                      outs() << "\n" );
             }
-            DBOUT(DMTA,SVFUtil::outs() << "TCT Process Fork old ctp --"; ctp.dump());
-            DBOUT(DMTA,SVFUtil::outs() << "TCT Process Fork new ctp --"; newctp.dump());
+            DBOUT(DMTA,outs() << "TCT Process Fork old ctp --"; ctp.dump());
+            DBOUT(DMTA,outs() << "TCT Process Fork new ctp --"; newctp.dump());
         }
     }
 }
@@ -360,12 +360,12 @@ void TCT::build() {
 
             for(PTACallGraphEdge::CallInstSet::const_iterator cit = cgEdge->directCallsBegin(),
                     ecit = cgEdge->directCallsEnd(); cit!=ecit; ++cit) {
-                DBOUT(DMTA,SVFUtil::outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
+                DBOUT(DMTA,outs() << "\nTCT handling direct call:" << **cit << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(ctp,cgEdge,getLLVMCallSite(*cit));
             }
             for(PTACallGraphEdge::CallInstSet::const_iterator ind = cgEdge->indirectCallsBegin(),
                     eind = cgEdge->indirectCallsEnd(); ind!=eind; ++ind) {
-                DBOUT(DMTA,SVFUtil::outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
+                DBOUT(DMTA,outs() << "\nTCT handling indirect call:" << **ind << "\t" << cgEdge->getSrcNode()->getFunction()->getName() << "-->" << cgEdge->getDstNode()->getFunction()->getName() << "\n");
                 handleCallRelation(ctp,cgEdge,getLLVMCallSite(*ind));
             }
         }
@@ -465,7 +465,7 @@ void TCT::dumpCxt(CallStrCxt& cxt) {
         rawstr << "  call  " << tcg->getCallSite(*it).getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
-    SVFUtil::outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
+    outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
 }
 
 /*!
@@ -473,7 +473,7 @@ void TCT::dumpCxt(CallStrCxt& cxt) {
  */
 void TCT::dump(const std::string& filename) {
     if (TCTDotGraph)
-        GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
+        GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 /*!
@@ -481,7 +481,7 @@ void TCT::dump(const std::string& filename) {
  */
 void TCT::print() const {
     for(TCT::const_iterator it = this->begin(), eit = this->end(); it!=eit; ++it) {
-        SVFUtil::outs() << "TID " << it->first << "\t";
+        outs() << "TID " << it->first << "\t";
         it->second->getCxtThread().dump();
     }
 }

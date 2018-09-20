@@ -38,15 +38,15 @@ void SaberSVFGBuilder::buildSVFG() {
 	MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
     BVDataPTAImpl* pta = mssa->getPTA();
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tCollect Global Variables\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect Global Variables\n"));
 
     collectGlobals(pta);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
 
     rmDerefDirSVFGEdges(pta);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
     AddExtActualParmSVFGNodes();
 

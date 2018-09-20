@@ -220,7 +220,7 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
             assert(op && "non-const struct index in GEP");
             const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
             if ((unsigned)idx >= so.size()) {
-                SVFUtil::outs() << "!! Struct index out of bounds" << idx << "\n";
+                outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
             }
             //add the translated offset
@@ -737,7 +737,7 @@ void SymbolTableInfo::collectSym(const Value *val) {
 
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
 
-    DBOUT(DMemModel, SVFUtil::outs() << "collect sym from ##" << *val << " \n");
+    DBOUT(DMemModel, outs() << "collect sym from ##" << *val << " \n");
 
     // special sym here
     if (isNullPtrSym(val) || isBlackholeSym(val))
@@ -765,7 +765,7 @@ void SymbolTableInfo::collectVal(const Value *val) {
         valSymMap.insert(std::make_pair(val, ++totalSymNum));
         symTyMap.insert(std::make_pair(totalSymNum, ValSym));
         DBOUT(DMemModel,
-              SVFUtil::outs() << "create a new value sym " << totalSymNum << "\n");
+              outs() << "create a new value sym " << totalSymNum << "\n");
         ///  handle global constant expression here
         if (const GlobalVariable* globalVar = SVFUtil::dyn_cast<GlobalVariable>(val))
             handleGlobalCE(globalVar);
@@ -789,7 +789,7 @@ void SymbolTableInfo::collectObj(const Value *val) {
             objSymMap.insert(std::make_pair(val, ++totalSymNum));
             symTyMap.insert(std::make_pair(totalSymNum, ObjSym));
             DBOUT(DMemModel,
-                  SVFUtil::outs() << "create a new obj sym " << totalSymNum << "\n");
+                  outs() << "create a new obj sym " << totalSymNum << "\n");
 
             // create a memory object
             MemObj* mem = new MemObj(val, totalSymNum);
@@ -808,7 +808,7 @@ void SymbolTableInfo::collectRet(const Function *val) {
         returnSymMap.insert(std::make_pair(val, ++totalSymNum));
         symTyMap.insert(std::make_pair(totalSymNum, RetSym));
         DBOUT(DMemModel,
-              SVFUtil::outs() << "create a return sym " << totalSymNum << "\n");
+              outs() << "create a return sym " << totalSymNum << "\n");
     }
 }
 
@@ -821,7 +821,7 @@ void SymbolTableInfo::collectVararg(const Function *val) {
         varargSymMap.insert(std::make_pair(val, ++totalSymNum));
         symTyMap.insert(std::make_pair(totalSymNum, VarargSym));
         DBOUT(DMemModel,
-              SVFUtil::outs() << "create a vararg sym " << totalSymNum << "\n");
+              outs() << "create a vararg sym " << totalSymNum << "\n");
     }
 }
 
@@ -876,7 +876,7 @@ void SymbolTableInfo::handleCE(const Value *val) {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val)) {
         if (const ConstantExpr* ce = isGepConstantExpr(ref)) {
             DBOUT(DMemModelCE,
-                  SVFUtil::outs() << "handle constant expression " << *ref << "\n");
+                  outs() << "handle constant expression " << *ref << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -884,7 +884,7 @@ void SymbolTableInfo::handleCE(const Value *val) {
             handleCE(ce->getOperand(0));
         } else if (const ConstantExpr* ce = isCastConstantExpr(ref)) {
             DBOUT(DMemModelCE,
-                  SVFUtil::outs() << "handle constant expression " << *ref << "\n");
+                  outs() << "handle constant expression " << *ref << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             // handle the recursive constant express case
@@ -892,7 +892,7 @@ void SymbolTableInfo::handleCE(const Value *val) {
             handleCE(ce->getOperand(0));
         } else if (const ConstantExpr* ce = isSelectConstantExpr(ref)) {
             DBOUT(DMemModelCE,
-                  SVFUtil::outs() << "handle constant expression " << *ref << "\n");
+                  outs() << "handle constant expression " << *ref << "\n");
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
@@ -979,62 +979,62 @@ void SymbolTableInfo::handleGlobalInitializerCE(const Constant *C,
 void SymbolTableInfo::printFlattenFields(const Type* type) {
 
     if(const ArrayType *at = SVFUtil::dyn_cast<ArrayType> (type)) {
-        SVFUtil::outs() <<"  {Type: ";
-        at->print(SVFUtil::outs());
-        SVFUtil::outs() << "}\n";
-        SVFUtil::outs() << "\tarray type ";
-        SVFUtil::outs() << "\t [element size = " << getTypeSizeInBytes(at->getElementType()) << "]\n";
-        SVFUtil::outs() << "\n";
+        outs() <<"  {Type: ";
+        at->print(outs());
+        outs() << "}\n";
+        outs() << "\tarray type ";
+        outs() << "\t [element size = " << getTypeSizeInBytes(at->getElementType()) << "]\n";
+        outs() << "\n";
     }
 
     else if(const StructType *st = SVFUtil::dyn_cast<StructType> (type)) {
-        SVFUtil::outs() <<"  {Type: ";
-        st->print(SVFUtil::outs());
-        SVFUtil::outs() << "}\n";
+        outs() <<"  {Type: ";
+        st->print(outs());
+        outs() << "}\n";
         std::vector<FieldInfo>& finfo = getStructInfo(st)->getFlattenFieldInfoVec();
         int field_idx = 0;
         for(std::vector<FieldInfo>::iterator it = finfo.begin(), eit = finfo.end();
                 it!=eit; ++it, field_idx++) {
-            SVFUtil::outs() << " \tField_idx = " << field_idx << " [offset: " << (*it).getFlattenOffset();
-            SVFUtil::outs() << ", field type: ";
-            (*it).getFlattenElemTy()->print(SVFUtil::outs());
-            SVFUtil::outs() << ", field size: " << getTypeSizeInBytes((*it).getFlattenElemTy());
-            SVFUtil::outs() << ", field stride pair: ";
+            outs() << " \tField_idx = " << field_idx << " [offset: " << (*it).getFlattenOffset();
+            outs() << ", field type: ";
+            (*it).getFlattenElemTy()->print(outs());
+            outs() << ", field size: " << getTypeSizeInBytes((*it).getFlattenElemTy());
+            outs() << ", field stride pair: ";
             for(FieldInfo::ElemNumStridePairVec::const_iterator pit = (*it).elemStridePairBegin(),
                     peit = (*it).elemStridePairEnd(); pit!=peit; ++pit) {
-                SVFUtil::outs() << "[ " << pit->first << ", " << pit->second << " ] ";
+                outs() << "[ " << pit->first << ", " << pit->second << " ] ";
             }
-            SVFUtil::outs() << "\n";
+            outs() << "\n";
         }
-        SVFUtil::outs() << "\n";
+        outs() << "\n";
     }
 
     else if (const PointerType* pt= SVFUtil::dyn_cast<PointerType> (type)) {
         u32_t sizeInBits = getTypeSizeInBytes(type);
         u32_t eSize = getTypeSizeInBytes(pt->getElementType());
-        SVFUtil::outs() << "  {Type: ";
-        pt->print(SVFUtil::outs());
-        SVFUtil::outs() << "}\n";
-        SVFUtil::outs() <<"\t [pointer size = " << sizeInBits << "]";
-        SVFUtil::outs() <<"\t [target size = " << eSize << "]\n";
-        SVFUtil::outs() << "\n";
+        outs() << "  {Type: ";
+        pt->print(outs());
+        outs() << "}\n";
+        outs() <<"\t [pointer size = " << sizeInBits << "]";
+        outs() <<"\t [target size = " << eSize << "]\n";
+        outs() << "\n";
     }
 
     else if ( const FunctionType* fu= SVFUtil::dyn_cast<FunctionType> (type)) {
-        SVFUtil::outs() << "  {Type: ";
-        fu->getReturnType()->print(SVFUtil::outs());
-        SVFUtil::outs() << "(Function)}\n\n";
+        outs() << "  {Type: ";
+        fu->getReturnType()->print(outs());
+        outs() << "(Function)}\n\n";
     }
 
     else {
         assert(type->isSingleValueType() && "not a single value type, then what else!!");
         /// All rest types are scalar type?
         u32_t eSize = getTypeSizeInBytes(type);
-        SVFUtil::outs() <<"  {Type: ";
-        type->print(SVFUtil::outs());
-        SVFUtil::outs() << "}\n";
-        SVFUtil::outs() <<"\t [object size = " << eSize << "]\n";
-        SVFUtil::outs() << "\n";
+        outs() <<"  {Type: ";
+        type->print(outs());
+        outs() << "}\n";
+        outs() <<"\t [object size = " << eSize << "]\n";
+        outs() << "\n";
     }
 }
 

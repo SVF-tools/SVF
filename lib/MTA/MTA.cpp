@@ -62,8 +62,8 @@ bool MTA::runOnModule(SVFModule module) {
     } else if (FSAnno) {
 
         reportMemoryUsageKB("Mem before analysis");
-        DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("FSMPTA analysis\n"));
-        DBOUT(DMTA, SVFUtil::outs() << pasMsg("FSMPTA analysis\n"));
+        DBOUT(DGENERAL, outs() << pasMsg("FSMPTA analysis\n"));
+        DBOUT(DMTA, outs() << pasMsg("FSMPTA analysis\n"));
 
         DOTIMESTAT(double ptStart = stat->getClk());
         pta = FSMPTA::createFSMPTA(module, mhp,lsa);
@@ -79,8 +79,8 @@ bool MTA::runOnModule(SVFModule module) {
     }
 
     if (DoInstrumentation) {
-        DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
-        DBOUT(DMTA, SVFUtil::outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
+        DBOUT(DGENERAL, outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
+        DBOUT(DMTA, outs() << pasMsg("ThreadSanitizer Instrumentation\n"));
         TSan tsan;
         tsan.doInitialization(*pta->getModule());
         for (Module::iterator it = pta->getModule()->begin(), eit = pta->getModule()->end(); it != eit; ++it) {
@@ -108,17 +108,17 @@ LockAnalysis* MTA::computeLocksets(TCT* tct) {
 
 MHP* MTA::computeMHP(SVFModule module) {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("MTA analysis\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("MTA analysis\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
+    DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(module);
     pta->getPTACallGraph()->dump("ptacg");
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Create Thread Call Graph\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("Create Thread Call Graph\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Create Thread Call Graph\n"));
+    DBOUT(DMTA, outs() << pasMsg("Create Thread Call Graph\n"));
     tcg = new ThreadCallGraph(module);
     tcg->updateCallGraph(pta);
     //tcg->updateJoinEdge(pta);
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Build TCT\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("Build TCT\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
+    DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
 
     DOTIMESTAT(double tctStart = stat->getClk());
     tct = new TCT(tcg, pta);
@@ -132,8 +132,8 @@ MHP* MTA::computeMHP(SVFModule module) {
 
     tcg->dump("tcg");
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("MHP analysis\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("MHP analysis\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("MHP analysis\n"));
+    DBOUT(DMTA, outs() << pasMsg("MHP analysis\n"));
 
     DOTIMESTAT(double mhpStart = stat->getClk());
     MHP* mhp = new MHP(tct);
@@ -141,8 +141,8 @@ MHP* MTA::computeMHP(SVFModule module) {
     DOTIMESTAT(double mhpEnd = stat->getClk());
     DOTIMESTAT(stat->MHPTime += (mhpEnd - mhpStart) / TIMEINTERVAL);
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("MHP analysis finish\n"));
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("MHP analysis finish\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("MHP analysis finish\n"));
+    DBOUT(DMTA, outs() << pasMsg("MHP analysis finish\n"));
     return mhp;
 }
 
@@ -155,7 +155,7 @@ MHP* MTA::computeMHP(SVFModule module) {
 // */
 void MTA::detect(SVFModule module) {
 
-    DBOUT(DGENERAL, SVFUtil::outs() << pasMsg("Starting Race Detection\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
     LoadSet loads;
     StoreSet stores;
@@ -187,6 +187,6 @@ void MTA::detect(SVFModule module) {
             needcheckinst.insert(load);
     }
 
-    SVFUtil::outs() << "HP needcheck: " << needcheckinst.size() << "\n";
+    outs() << "HP needcheck: " << needcheckinst.size() << "\n";
 }
 

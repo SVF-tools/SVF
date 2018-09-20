@@ -20,7 +20,7 @@ bool PCG::analyze() {
 
     //callgraph = new PTACallGraph(mod);
 
-    DBOUT(DMTA, SVFUtil::outs() << pasMsg("Starting MHP analysis\n"));
+    DBOUT(DMTA, outs() << pasMsg("Starting MHP analysis\n"));
 
     initFromThreadAPI(mod);
 
@@ -234,7 +234,7 @@ void PCG::collectFollowers() {
  */
 void PCG::interferenceAnalysis() {
 
-//	DBOUT(DMTA, SVFUtil::outs() << pasMsg("Starting Race Detection\n"));
+//	DBOUT(DMTA, outs() << pasMsg("Starting Race Detection\n"));
 
     PCG::FunVec worklist;
     for (SVFModule::const_iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
@@ -283,6 +283,6 @@ void PCG::printTDFuns() {
         std::string isSpawner = isSpawnerFun(fun) ? " SPAWNER " : "";
         std::string isSpawnee = isSpawneeFun(fun) ? " CHILDREN " : "";
         std::string isFollower = isFollowerFun(fun) ? " FOLLOWER " : "";
-        SVFUtil::outs() << fun->getName() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
+        outs() << fun->getName() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
     }
 }

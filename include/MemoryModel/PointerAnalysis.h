@@ -312,7 +312,7 @@ public:
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,CallGraph* callgraph = NULL);
+    virtual void resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
     /// Match arguments for callsite at caller and callee
     inline bool matchArgs(CallSite cs, const Function* callee) {
         if(ThreadAPI::getThreadAPI()->isTDFork(cs))
@@ -383,11 +383,10 @@ public:
 
     void getVFnsFromCHA(CallSite cs, std::set<const Function*> &vfns);
     void getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges, CallGraph* callgraph = NULL);
+    void connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges);
     virtual void resolveCPPIndCalls(CallSite cs,
                                     const PointsTo& target,
-                                    CallEdgeMap& newEdges,
-                                    CallGraph* callgraph = NULL);
+                                    CallEdgeMap& newEdges);
 
     /// get TypeSystem
     const TypeSystem *getTypeSystem() const {
@@ -478,7 +477,7 @@ protected:
     }
 
     /// On the fly call graph construction
-    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges,CallGraph* callgraph = NULL);
+    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
 private:
     /// Points-to data
