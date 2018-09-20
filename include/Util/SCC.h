@@ -60,7 +60,6 @@ private:
     typedef unsigned NodeID ;
 
 public:
-    typedef NodeBS NodeBS;
     typedef std::stack<NodeID> GNodeStack;
 
     class GNodeSCCInfo {
