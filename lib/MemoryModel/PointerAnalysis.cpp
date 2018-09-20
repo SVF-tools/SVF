@@ -29,6 +29,7 @@
 
 #include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/PAGBuilder.h"
+#include "MemoryModel/PAGBuilderFromFile.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ThreadCallGraph.h"

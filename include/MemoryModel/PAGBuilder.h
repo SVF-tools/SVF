@@ -188,39 +188,4 @@ public:
     //}@
 };
 
-/*!
- * Build PAG from a user specified file (for debugging purpose)
- */
-class PAGBuilderFromFile {
-
-private:
-    PAG* pag;
-    std::string file;
-public:
-    /// Constructor
-    PAGBuilderFromFile(std::string f) :
-        pag(PAG::getPAG(true)), file(f) {
-    }
-    /// Destructor
-    ~PAGBuilderFromFile() {
-    }
-
-    /// Return PAG
-    PAG* getPAG() const {
-        return pag;
-    }
-
-    /// Return file name
-    std::string getFileName() const {
-        return file;
-    }
-
-    /// Start building
-    PAG* build();
-
-    // Add edges
-    void addEdge(NodeID nodeSrc, NodeID nodeDst, Size_t offset,
-                 std::string edge);
-};
-
 #endif /* PAGBUILDER_H_ */

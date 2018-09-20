@@ -25,6 +25,7 @@ set(SOURCES
     MemoryModel/LocMemModel.cpp
     MemoryModel/MemModel.cpp
     MemoryModel/PAGBuilder.cpp
+    MemoryModel/PAGBuilderFromFile.cpp
     MemoryModel/PAG.cpp
     MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
