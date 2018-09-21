@@ -676,7 +676,7 @@ public:
     }
 
     /// Whether an external PAG implementing funcName exists.
-    inline bool hasExternalPAG(std::string funcName) {
+    inline bool hasExternalPAG(std::string funcName) const {
         return funcNameToExternalPAGEntries.find(funcName)
                != funcNameToExternalPAGEntries.end();
     }
