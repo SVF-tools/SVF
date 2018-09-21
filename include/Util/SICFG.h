@@ -21,7 +21,7 @@ public:
 
     /// Add VFGStmtNode into IntraBlockNode
     void handleIntraStmt(IntraBlockNode* instICFGNode, const Instruction* inst){
-		if (!SVFUtil::isCallSite(inst)) {
+		if (!SVFUtil::isNonInstricCallSite(inst)) {
 			PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
 			for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
 					ebit = pagEdgeList.end(); bit != ebit; ++bit) {

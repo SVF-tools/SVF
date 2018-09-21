@@ -37,6 +37,9 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
                              llvm::cl::desc("Dump dot graph of ICFG"));
 
+static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
+                             llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
+
 /*!
  * Constructor
  *  * Build ICFG
@@ -77,47 +80,40 @@ void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 		addRetEdge(calleeExitNode, RetBlockNode, getCallSiteID(cs, callee));
 	}
 }
+
 /*!
- * Handle call instruction by creating interprocedural edges
+ * Add and get IntraBlock ICFGNode
  */
-void ICFG::handleCall(IntraBlockNode* instICFGNode, const Instruction* inst){
+IntraBlockNode* ICFG::getIntraBlockICFGNode(const Instruction* inst) {
+	InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
+	if (it == InstToBlockNodeMap.end()) {
+		IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
+		addICFGNode(sNode);
+		InstToBlockNodeMap[inst] = sNode;
+		return sNode;
+	}
+	return it->second;
+}
+
+
+/*!
+ * (1) Add and get CallBlockICFGNode
+ * (2) Handle call instruction by creating interprocedural edges
+ */
+InterBlockNode* ICFG::getInterBlockICFGNode(const Instruction* inst){
+	CallSite cs = getLLVMCallSite(inst);
 	if (const Function* callee = getCallee(inst)) {
-		CallSite cs = getLLVMCallSite(inst);
 		addICFGInterEdges(cs, callee);
-		addIntraEdge(instICFGNode, getCallICFGNode(cs));
 		InstVec nextInsts;
 		getNextInsts(inst,nextInsts);
 	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
-			addIntraEdge(getRetICFGNode(cs), getIntraBlockICFGNode(*nit));
+			addIntraEdge(getRetICFGNode(cs), getBlockICFGNode(*nit));
 	    }
 	}
+	return getCallICFGNode(cs);
 }
 
-/*!
- * Add statements into IntraBlockNode
- */
-void ICFG::handleIntraStmt(IntraBlockNode* instICFGNode, const Instruction* inst){
-}
 
-/*
- * Obtain the last instruction of a basic block
- */
-IntraBlockNode* ICFG::getLastInstFromBasicBlock(const BasicBlock* bb){
-	const Instruction* curInst = &(*bb->begin());
-	IntraBlockNode* curNode = getIntraBlockICFGNode(curInst);
-
-	for(BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it!=eit; ++it){
-		const Instruction* nextInst = &(*it);
-		if (curInst != nextInst) {
-			curNode = getIntraBlockICFGNode(curInst);
-			IntraBlockNode* nextNode = getIntraBlockICFGNode(nextInst);
-			addIntraEdge(curNode, nextNode);
-			curInst = nextInst;
-			curNode = nextNode;
-		}
-	}
-	return curNode;
-}
 /*!
  * Create ICFG nodes and edges
  */
@@ -131,33 +127,34 @@ void ICFG::build(){
 
         /// function entry
         FunEntryBlockNode* FunEntryBlockNode = getFunEntryICFGNode(fun);
-        const BasicBlock* entryBB = &(fun->getEntryBlock());
-        IntraBlockNode* entryBBNode = getFirstInstFromBasicBlock(entryBB);
-        addIntraEdge(FunEntryBlockNode, entryBBNode);
+        const Instruction* entryInst = &((fun->getEntryBlock()).front());
+        ICFGNode* entryInstNode = getBlockICFGNode(entryInst);
+        addIntraEdge(FunEntryBlockNode, entryInstNode);
 
         BBSet visited;
         WorkList worklist;
         /// function body
-        worklist.push(entryBB);
+        worklist.push(entryInst);
 		while (!worklist.empty()) {
-            const BasicBlock* bb = worklist.pop();
-			if (visited.find(bb) == visited.end()) {
-				visited.insert(bb);
-				IntraBlockNode* srcNode = getLastInstFromBasicBlock(bb);
-	            for (succ_const_iterator sit = succ_begin(bb), esit = succ_end(bb); sit != esit; ++sit) {
-	                const BasicBlock* succ = *sit;
-	                IntraBlockNode* dstNode = getFirstInstFromBasicBlock(succ);
-	                addIntraEdge(srcNode, dstNode);
-	                worklist.push(succ);
-	            }
-
+            const Instruction* inst = worklist.pop();
+			if (visited.find(inst) == visited.end()) {
+				visited.insert(inst);
+				ICFGNode* srcNode = getBlockICFGNode(inst);
+				InstVec nextInsts;
+				getNextInsts(inst,nextInsts);
+				for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
+					const Instruction* succ = *nit;
+					ICFGNode* dstNode = getBlockICFGNode(succ);
+					addIntraEdge(srcNode, dstNode);
+					worklist.push(succ);
+				}
 			}
 		}
 
 		/// function exit
 		FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
 		const BasicBlock* exitBB = getFunExitBB(fun);
-        IntraBlockNode* exitInstNode = getLastInstFromBasicBlock(exitBB);
+        ICFGNode* exitInstNode = getBlockICFGNode(&(exitBB->back()));
         addIntraEdge(exitInstNode,FunExitBlockNode);
     }
 }
@@ -302,15 +299,16 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         return getSimpleNodeLabel(node, graph);
     }
 
-    /// Return label of a VFG node without MemSSA information
+    /// Return the label of an ICFG node
     static std::string getSimpleNodeLabel(NodeType *node, ICFG *graph) {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
 		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
-			rawstr << getSourceLoc(bNode->getInst());
-		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(
-				node)) {
+			rawstr << getSourceLoc(bNode->getInst()) << "\n";
+			if(DumpLLVMInst)
+				rawstr << *(bNode->getInst()) << "\n";
+		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node)) {
 			if (isExtCall(entry->getFun()))
 				rawstr << "Entry(" << ")\n";
 			else

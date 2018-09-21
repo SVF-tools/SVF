@@ -172,7 +172,7 @@ void MemSSA::createMUCHI(const Function& fun) {
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
-            if (isCallSite(inst)) {
+            if (isNonInstricCallSite(inst)) {
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
@@ -301,7 +301,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
             }
         }
-        if (isCallSite(inst)) {
+        if (isNonInstricCallSite(inst)) {
             CallSite cs = SVFUtil::getLLVMCallSite(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
@@ -579,7 +579,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isCallSite(&inst) && isExtCall(&inst)==false) {
+                if (isNonInstricCallSite(&inst) && isExtCall(&inst)==false) {
                     CallSite cs = SVFUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {

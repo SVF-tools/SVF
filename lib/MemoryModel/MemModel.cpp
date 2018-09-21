@@ -544,7 +544,7 @@ void MemObj::init(const Value *val) {
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite
-    if (I && isCallSite(I))
+    if (I && isNonInstricCallSite(I))
         refTy = getRefTypeOfHeapAllocOrStatic(I);
     // (2) Other objects (e.g., alloca, global, etc.)
     else
@@ -691,7 +691,7 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 if(ret->getReturnValue())
                     collectSym(ret->getReturnValue());
             }
-            else if (isCallSite(inst)) {
+            else if (isNonInstricCallSite(inst)) {
 
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 callSiteSet.insert(cs);

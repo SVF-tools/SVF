@@ -212,6 +212,50 @@ Value * SVFUtil::stripAllCasts(Value *val) {
     return NULL;
 }
 
+/// Get the next instructions following control flow
+void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
+	if (!curInst->isTerminator()) {
+		const Instruction* nextInst = curInst->getNextNode();
+		if (isInstrinsicDbgInst(nextInst))
+			getNextInsts(nextInst, instList);
+		else
+			instList.push_back(nextInst);
+	} else {
+		const BasicBlock *BB = curInst->getParent();
+		// Visit all successors of BB in the CFG
+		for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it) {
+			const Instruction* nextInst = &((*it)->front());
+			if (isInstrinsicDbgInst(nextInst))
+				getNextInsts(nextInst, instList);
+			else
+				instList.push_back(nextInst);
+		}
+	}
+}
+
+
+/// Get the previous instructions following control flow
+void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
+	if (curInst != &(curInst->getParent()->front())) {
+		const Instruction* prevInst = curInst->getPrevNode();
+		if (isInstrinsicDbgInst(prevInst))
+			getNextInsts(prevInst, instList);
+		else
+			instList.push_back(prevInst);
+	} else {
+		const BasicBlock *BB = curInst->getParent();
+		// Visit all successors of BB in the CFG
+		for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it) {
+			const Instruction* prevInst = &((*it)->back());
+			if (isInstrinsicDbgInst(prevInst))
+				getNextInsts(prevInst, instList);
+			else
+				instList.push_back(prevInst);
+		}
+	}
+}
+
+
 /*!
  * Get position of a successor basic block
  */
