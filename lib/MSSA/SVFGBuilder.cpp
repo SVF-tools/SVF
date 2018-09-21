@@ -32,73 +32,76 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", cl::init(false),
-        cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
+static llvm::cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", llvm::cl::init(false),
+        llvm::cl::desc("Update Indirect Calls for SVFG using pre-analysis"));
 
-static cl::opt<bool> SingleVFG("singleVFG", cl::init(false),
-                               cl::desc("Create a single VFG shared by multiple analysis"));
+static llvm::cl::opt<bool> SingleVFG("singleVFG", llvm::cl::init(false),
+                               llvm::cl::desc("Create a single VFG shared by multiple analysis"));
 
 SVFGOPT* SVFGBuilder::globalSvfg = NULL;
 
 /*!
  * Create SVFG
  */
-void SVFGBuilder::createSVFG(MemSSA* mssa, SVFG* graph) {
-    svfg = graph;
-    svfg->buildSVFG(mssa);
+void SVFGBuilder::buildSVFG() {
+	MemSSA* mssa = svfg->getMSSA();
+    svfg->buildSVFG();
     if(mssa->getPTA()->printStat())
         svfg->performStat();
     svfg->dump("FS_SVFG");
 }
 
 /// Create DDA SVFG
-SVFGOPT* SVFGBuilder::buildSVFG(BVDataPTAImpl* pta, bool withAOFI) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, bool withAOFI) {
 
+	MemSSA* mssa = buildMSSA(pta);
+
+    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            globalSvfg = new SVFGOPT();
+            svfg = globalSvfg = new SVFGOPT(mssa);
             if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
-            build(globalSvfg,pta);
+            buildSVFG();
         }
-        return globalSvfg;
     }
     else {
-        SVFGOPT* vfg = new SVFGOPT();
+        SVFGOPT* vfg = new SVFGOPT(mssa);
+        svfg = vfg;
         if (withAOFI) vfg->setTokeepActualOutFormalIn();
-        build(vfg,pta);
-        return vfg;
+        buildSVFG();
     }
+
+    if(SVFGWithIndirectCall || SVFGWithIndCall)
+        updateCallGraph(pta);
+
+    return svfg;
 }
 
 /*!
  * Release memory
  */
-void SVFGBuilder::releaseMemory(SVFG* vfg) {
-    vfg->clearMSSA();
+void SVFGBuilder::releaseMemory() {
+    svfg->clearMSSA();
 }
 
-/*!
- * We start the pass here
- */
-bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
-
-    MemSSA* mssa = new MemSSA(pta);
+MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
+
+    MemSSA* mssa = new MemSSA(pta);
 
     DominatorTree dt;
     MemSSADF df;
 
-    SVFModule svfModule = pta->getModule();
+    SVFModule svfModule = mssa->getPTA()->getModule();
     for (SVFModule::iterator iter = svfModule.begin(), eiter = svfModule.end();
             iter != eiter; ++iter) {
 
-        llvm::Function *fun = *iter;
-        if (analysisUtil::isExtCall(fun))
+        Function *fun = *iter;
+        if (SVFUtil::isExtCall(fun))
             continue;
 
         dt.recalculate(*fun);
@@ -110,19 +113,8 @@ bool SVFGBuilder::build(SVFG* graph,BVDataPTAImpl* pta) {
     mssa->performStat();
     mssa->dumpMSSA();
 
-    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
-
-    createSVFG(mssa, graph);
-
-    if(SVFGWithIndirectCall || SVFGWithIndCall)
-        updateCallGraph(mssa->getPTA());
-
-    //delete MSSA when required (on-call)
-    //releaseMemory(graph);
-
-    return false;
+    return mssa;
 }
-
 
 
 /// Update call graph using pre-analysis results
@@ -131,10 +123,10 @@ void SVFGBuilder::updateCallGraph(PointerAnalysis* pta)
     CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
     CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {
-        llvm::CallSite newcs = iter->first;
+        CallSite newcs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const llvm::Function * func = *func_iter;
+            const Function * func = *func_iter;
             svfg->connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
         }
     }

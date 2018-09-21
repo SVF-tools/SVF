@@ -40,8 +40,7 @@
 #ifndef SCC_H_
 #define SCC_H_
 
-#include <llvm/ADT/GraphTraits.h>
-#include <llvm/ADT/SparseBitVector.h>	// for NodeBS
+#include "Util/BasicTypes.h"	// for NodeBS
 #include <limits.h>
 #include <stack>
 #include <map>
@@ -61,7 +60,6 @@ private:
     typedef unsigned NodeID ;
 
 public:
-    typedef llvm::SparseBitVector<> NodeBS;
     typedef std::stack<NodeID> GNodeStack;
 
     class GNodeSCCInfo {
@@ -216,7 +214,7 @@ private:
     }
 
     void visit(NodeID v) {
-        // llvm::outs() << "visit GNODE: " << Node_Index(v)<< "\n";
+        // SVFUtil::outs() << "visit GNODE: " << Node_Index(v)<< "\n";
         _I += 1;
         _D[v] = _I;
         this->rep(v,v);

@@ -31,8 +31,10 @@
 #include "MemoryModel/CHA.h"
 #include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
+#include "Util/ICFGStat.h"
+#include "Util/SICFG.h"
 
-using namespace llvm;
+using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
@@ -40,6 +42,10 @@ using namespace std;
 void TypeAnalysis::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
     stat = new PTAStat(this);
+    icfg = new SICFG(ptaCallGraph);
+    icfg->dump("icfg_initial");
+	if (printStat())
+		icfg->getStat()->performStat();
 }
 
 /// Finalize analysis

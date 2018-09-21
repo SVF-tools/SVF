@@ -29,8 +29,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 u32_t AndersenStat::_MaxPtsSize = 0;
 u32_t AndersenStat::_NumOfCycles = 0;
@@ -68,7 +67,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG) {
         for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it) {
             NodeID nodeId = *it;
             PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
-            if (isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId)) {
+            if (SVFUtil::isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId)) {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
                 clone.reset(nodeId);
                 clone.set(baseId);
@@ -112,7 +111,7 @@ void AndersenStat::statNullPtr() {
             if(pts.empty()) {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!isa<DummyValPN>(pagNode) && !isa<DummyObjPN>(pagNode) ) {
+                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode) ) {
                     // if a pointer is in dead function, we do not care
                     if(isPtrInDeadFunction(pagNode->getValue()) == false) {
                         _NumOfNullPtr++;
@@ -138,7 +137,7 @@ void AndersenStat::statNullPtr() {
  */
 void AndersenStat::performStat() {
 
-    assert(isa<Andersen>(pta) && "not an andersen pta pass!! what else??");
+    assert(SVFUtil::isa<Andersen>(pta) && "not an andersen pta pass!! what else??");
     endClk();
 
     PAG* pag = pta->getPAG();
@@ -155,9 +154,9 @@ void AndersenStat::performStat() {
     // collect copy and gep edges
     for(ConstraintEdge::ConstraintEdgeSetTy::iterator it = consCG->getDirectCGEdges().begin(),
             eit = consCG->getDirectCGEdges().end(); it!=eit; ++it) {
-        if(isa<CopyCGEdge>(*it))
+        if(SVFUtil::isa<CopyCGEdge>(*it))
             numOfCopys++;
-        else if(isa<GepCGEdge>(*it))
+        else if(SVFUtil::isa<GepCGEdge>(*it))
             numOfGeps++;
         else
             assert(false && "what else!!");

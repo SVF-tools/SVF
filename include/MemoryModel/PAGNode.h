@@ -62,7 +62,7 @@ public:
 
 
 protected:
-    const llvm::Value* value; ///< value of this PAG node
+    const Value* value; ///< value of this PAG node
     PAGEdge::PAGKindToEdgeSetMapTy InEdgeKindToSetMap;
     PAGEdge::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
     bool isTLPointer;	/// top-level pointer
@@ -70,14 +70,14 @@ protected:
 
 public:
     /// Constructor
-    PAGNode(const llvm::Value* val, NodeID i, PNODEK k);
+    PAGNode(const Value* val, NodeID i, PNODEK k);
     /// Destructor
     virtual ~PAGNode() {
     }
 
     ///  Get/has methods of the components
     //@{
-    inline const llvm::Value* getValue() const {
+    inline const Value* getValue() const {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
         assert((SymbolTableInfo::isBlkObjOrConstantObj(this->getId())==false) && "blackhole and constant obj do not have value");
         assert(value && "value is null!!");
@@ -186,7 +186,7 @@ public:
     //@}
     /// Overloading operator << for dumping PAGNode value
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const PAGNode &node) {
+    friend raw_ostream& operator<< (raw_ostream &o, const PAGNode &node) {
         o << "NodeID: " << node.getId() << "\t, Node Kind: ";
         if (node.getNodeKind() == ValNode ||
                 node.getNodeKind() == GepValNode ||
@@ -203,8 +203,8 @@ public:
             o << "otherPN\n";
         }
         if (node.hasValue()) {
-            const llvm::Value *val = node.getValue();
-            if (const llvm::Function *fun = llvm::dyn_cast<llvm::Function>(val))
+            const Value *val = node.getValue();
+            if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
                 o << "Value: function " << fun->getName().str();
             else
                 o << "Value: " << *val;
@@ -242,7 +242,7 @@ public:
     //@}
 
     /// Constructor
-    ValPN(const llvm::Value* val, NodeID i, PNODEK ty = ValNode) :
+    ValPN(const Value* val, NodeID i, PNODEK ty = ValNode) :
         PAGNode(val, i, ty) {
     }
     /// Return name of a LLVM value
@@ -262,7 +262,7 @@ class ObjPN: public PAGNode {
 protected:
     const MemObj* mem;	///< memory object
     /// Constructor
-    ObjPN(const llvm::Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
+    ObjPN(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
         PAGNode(val, i, ty), mem(m) {
     }
 public:
@@ -308,7 +308,7 @@ class GepValPN: public ValPN {
 
 private:
     LocationSet ls;	// LocationSet
-    const llvm::Type *type;
+    const Type *type;
     u32_t fieldIdx;
 
 public:
@@ -329,7 +329,7 @@ public:
     //@}
 
     /// Constructor
-    GepValPN(const llvm::Value* val, NodeID i, const LocationSet& l, const llvm::Type *ty, u32_t idx) :
+    GepValPN(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
         ValPN(val, i, GepValNode), ls(l), type(ty), fieldIdx(idx) {
     }
 
@@ -345,7 +345,7 @@ public:
         return "offset_" + llvm::utostr(getOffset());
     }
 
-    const llvm::Type *getType() const {
+    const Type *getType() const {
         return type;
     }
 
@@ -381,7 +381,7 @@ public:
     //@}
 
     /// Constructor
-    GepObjPN(const llvm::Value* val, NodeID i, const MemObj* mem, const LocationSet& l) :
+    GepObjPN(const Value* val, NodeID i, const MemObj* mem, const LocationSet& l) :
         ObjPN(val, i, mem, GepObjNode), ls(l) {
     }
 
@@ -422,7 +422,7 @@ public:
     //@}
 
     /// Constructor
-    FIObjPN(const llvm::Value* val, NodeID i, const MemObj* mem) :
+    FIObjPN(const Value* val, NodeID i, const MemObj* mem) :
         ObjPN(val, i, mem, FIObjNode) {
     }
 
@@ -454,13 +454,13 @@ public:
     //@}
 
     /// Constructor
-    RetPN(const llvm::Function* val, NodeID i) :
+    RetPN(const Function* val, NodeID i) :
         PAGNode(val, i, RetNode) {
     }
 
     /// Return name of a LLVM value
     const std::string getValueName() {
-        const llvm::Function* fun = llvm::cast<llvm::Function>(value);
+        const Function* fun = SVFUtil::cast<Function>(value);
         return fun->getName().str() + "_ret";
     }
 };
@@ -486,13 +486,13 @@ public:
     //@}
 
     /// Constructor
-    VarArgPN(const llvm::Function* val, NodeID i) :
+    VarArgPN(const Function* val, NodeID i) :
         PAGNode(val, i, VarargNode) {
     }
 
     /// Return name of a LLVM value
     const std::string getValueName() {
-        const llvm::Function* fun = llvm::cast<llvm::Function>(value);
+        const Function* fun = SVFUtil::cast<Function>(value);
         return fun->getName().str() + "_vararg";
     }
 };

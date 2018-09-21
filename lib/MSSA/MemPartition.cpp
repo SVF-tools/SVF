@@ -33,7 +33,6 @@
  */
 
 #include "MSSA/MemPartition.h"
-using namespace llvm;
 
 /**
  * Create distinct memory regions.
@@ -58,7 +57,7 @@ void DistinctMRG::partitionMRs()
  * 1. collect all points-to targets in a function scope.
  * 2. create memory region for each point-to target.
  */
-void DistinctMRG::createDistinctMR(const llvm::Function* func, const PointsTo& pts)
+void DistinctMRG::createDistinctMR(const Function* func, const PointsTo& pts)
 {
     /// Create memory regions for each points-to target.
 
@@ -212,7 +211,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
 /**
  * Create memory regions for each points-to target.
  */
-void IntraDisjointMRG::createDisjointMR(const llvm::Function* func, const PointsTo& cpts)
+void IntraDisjointMRG::createDisjointMR(const Function* func, const PointsTo& cpts)
 {
     // set the rep cpts as itself.
     cptsToRepCPtsMap[cpts] = cpts;

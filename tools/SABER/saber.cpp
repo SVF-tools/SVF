@@ -30,42 +30,29 @@
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
 
-#include <llvm-c/Core.h> // for LLVMGetGlobalContext()
-#include <llvm/Support/CommandLine.h>	// for cl
-#include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
-#include <llvm/IR/LegacyPassManager.h>		// pass manager
-#include <llvm/Support/Signals.h>	// singal for command line
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Support/ToolOutputFile.h> // for tool output file
-#include <llvm/Support/PrettyStackTrace.h> // for pass list
-#include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
-#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/BitcodeWriterPass.h> // for createBitcodeWriterPass
-
-
 using namespace llvm;
 
-static cl::opt<std::string> InputFilename(cl::Positional,
-        cl::desc("<input bitcode>"), cl::init("-"));
+static llvm::cl::opt<std::string> InputFilename(cl::Positional,
+        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
 
-static cl::opt<bool> LEAKCHECKER("leak", cl::init(false),
-                                 cl::desc("Memory Leak Detection"));
+static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
+                                 llvm::cl::desc("Memory Leak Detection"));
 
-static cl::opt<bool> FILECHECKER("fileck", cl::init(false),
-                                 cl::desc("File Open/Close Detection"));
+static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
+                                 llvm::cl::desc("File Open/Close Detection"));
 
-static cl::opt<bool> DFREECHECKER("dfree", cl::init(false),
-                                  cl::desc("Double Free Detection"));
+static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
+                                  llvm::cl::desc("Double Free Detection"));
 
-static cl::opt<bool> UAFCHECKER("uaf", cl::init(false),
-                                cl::desc("Use-After-Free Detection"));
+static llvm::cl::opt<bool> UAFCHECKER("uaf", llvm::cl::init(false),
+                                llvm::cl::desc("Use-After-Free Detection"));
 
 int main(int argc, char ** argv) {
 
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    analysisUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Source-Sink Bug Detector\n");
 

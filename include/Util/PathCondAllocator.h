@@ -30,7 +30,7 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
 #include "Util/DataFlowUtil.h"
@@ -45,12 +45,12 @@ public:
 
     typedef DdNode Condition;
     typedef std::map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
-    typedef std::map<const llvm::BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
-    typedef std::map<const Condition*, const llvm::TerminatorInst* > CondToTermInstMap;	// map a condition to its branch instruction
-    typedef std::set<const llvm::BasicBlock*> BasicBlockSet;
-    typedef std::map<const llvm::Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef std::map<const llvm::BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
-    typedef FIFOWorkList<const llvm::BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef std::map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
+    typedef std::map<const Condition*, const TerminatorInst* > CondToTermInstMap;	// map a condition to its branch instruction
+    typedef std::set<const BasicBlock*> BasicBlockSet;
+    typedef std::map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
+    typedef std::map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
+    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
     /// Constructor
     PathCondAllocator() {
@@ -85,22 +85,22 @@ public:
     void allocate(const SVFModule module);
 
     /// Get llvm conditional expression
-    inline const llvm::TerminatorInst* getCondInst(const Condition* cond) const {
+    inline const TerminatorInst* getCondInst(const Condition* cond) const {
         CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
         assert(it!=condToInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
 
     /// Get dominators
-    inline llvm::DominatorTree* getDT(const llvm::Function* fun) {
+    inline DominatorTree* getDT(const Function* fun) {
         return cfInfoBuilder.getDT(fun);
     }
     /// Get Postdominators
-    inline llvm::PostDominatorTree* getPostDT(const llvm::Function* fun) {
+    inline PostDominatorTree* getPostDT(const Function* fun) {
         return cfInfoBuilder.getPostDT(fun);
     }
     /// Get LoopInfo
-    PTALoopInfo* getLoopInfo(const llvm::Function* f) {
+    PTALoopInfo* getLoopInfo(const Function* f) {
         return cfInfoBuilder.getLoopInfo(f);
     }
 
@@ -146,23 +146,23 @@ public:
 
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
-    virtual Condition* ComputeIntraVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst);
-    virtual Condition* ComputeInterCallVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst, const llvm::BasicBlock* callBB);
-    virtual Condition* ComputeInterRetVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst, const llvm::BasicBlock* retBB);
+    virtual Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
+    virtual Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB);
+    virtual Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB);
 
     /// Get complement condition (from B1 to B0) according to a complementBB (BB2) at a phi
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
-    virtual Condition* getPHIComplementCond(const llvm::BasicBlock* BB1, const llvm::BasicBlock* BB2, const llvm::BasicBlock* BB0);
+    virtual Condition* getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
 
     inline void clearCFCond() {
         bbToCondMap.clear();
     }
     /// Set current value for branch condition evaluation
-    inline void setCurEvalVal(const llvm::Value* val) {
+    inline void setCurEvalVal(const Value* val) {
         curEvalVal = val;
     }
     /// Get current value for branch condition evaluation
-    inline const llvm::Value* getCurEvalVal() const {
+    inline const Value* getCurEvalVal() const {
         return curEvalVal;
     }
     //@}
@@ -173,17 +173,17 @@ public:
 private:
 
     /// Allocate path condition for every basic block
-    virtual void allocateForBB(const llvm::BasicBlock& bb);
+    virtual void allocateForBB(const BasicBlock& bb);
 
     /// Get/Set a branch condition, and its terminator instruction
     //@{
     /// Set branch condition
-    void setBranchCond(const llvm::BasicBlock *bb, const llvm::BasicBlock *succ, Condition* cond);
+    void setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond);
     /// Get branch condition
-    Condition* getBranchCond(const llvm::BasicBlock * bb, const llvm::BasicBlock *succ) const;
+    Condition* getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    inline Condition* getEvalBrCond(const llvm::BasicBlock * bb, const llvm::BasicBlock *succ) {
-        if(const llvm::Value* val = getCurEvalVal())
+    inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ) {
+        if(const Value* val = getCurEvalVal())
             return evaluateBranchCond(bb, succ, val);
         else
             return getBranchCond(bb,succ);
@@ -192,36 +192,36 @@ private:
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition* evaluateBranchCond(const llvm::BasicBlock * bb, const llvm::BasicBlock *succ, const llvm::Value* val) ;
+    Condition* evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ, const Value* val) ;
     /// Evaluate loop exit branch
-    Condition* evaluateLoopExitBranch(const llvm::BasicBlock * bb, const llvm::BasicBlock *succ);
+    Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
-    Condition* evaluateTestNullLikeExpr(const llvm::BranchInst* brInst, const llvm::BasicBlock *succ, const llvm::Value* val);
+    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ, const Value* val);
     /// Return condition when there is a branch calls program exit
-    Condition* evaluateProgExit(const llvm::BranchInst* brInst, const llvm::BasicBlock *succ);
+    Condition* evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ);
     /// Collect basic block contains program exit function call
-    void collectBBCallingProgExit(const llvm::BasicBlock& bb);
-    bool isBBCallsProgExit(const llvm::BasicBlock* bb);
+    void collectBBCallingProgExit(const BasicBlock& bb);
+    bool isBBCallsProgExit(const BasicBlock* bb);
     //@}
 
     /// Evaluate test null/not null like expressions
     //@{
     /// Return true if the predicate of this compare instruction is equal
-    bool isEQCmp(const llvm::CmpInst* cmp) const;
+    bool isEQCmp(const CmpInst* cmp) const;
     /// Return true if the predicate of this compare instruction is not equal
-    bool isNECmp(const llvm::CmpInst* cmp) const;
+    bool isNECmp(const CmpInst* cmp) const;
     /// Return true if this is a test null expression
-    bool isTestNullExpr(const llvm::Value* test,const llvm::Value* val) const;
+    bool isTestNullExpr(const Value* test,const Value* val) const;
     /// Return true if this is a test not null expression
-    bool isTestNotNullExpr(const llvm::Value* test,const llvm::Value* val) const;
+    bool isTestNotNullExpr(const Value* test,const Value* val) const;
     /// Return true if two values on the predicate are what we want
-    bool isTestContainsNullAndTheValue(const llvm::CmpInst* cmp, const llvm::Value* val) const;
+    bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const;
     //@}
 
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const llvm::BasicBlock* bb, Condition* cond) {
+    inline bool setCFCond(const BasicBlock* bb, Condition* cond) {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
         if(it!=bbToCondMap.end() && it->second == cond)
             return false;
@@ -229,7 +229,7 @@ private:
         bbToCondMap[bb] = cond;
         return true;
     }
-    inline Condition* getCFCond(const llvm::BasicBlock* bb) const {
+    inline Condition* getCFCond(const BasicBlock* bb) const {
         BBToCondMap::const_iterator it = bbToCondMap.find(bb);
         if(it==bbToCondMap.end()) {
             return getFalseCond();
@@ -239,7 +239,7 @@ private:
     //@}
 
     /// Allocate a new condition
-    inline Condition* newCond(const llvm::TerminatorInst* inst) {
+    inline Condition* newCond(const TerminatorInst* inst) {
         Condition* cond = bddCondMgr->createNewCond(totalCondNum++);
         assert(condToInstMap.find(cond)==condToInstMap.end() && "this should be a fresh condition");
         condToInstMap[cond] = inst;
@@ -259,7 +259,7 @@ private:
     PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
-    const llvm::Value* curEvalVal;			///< current llvm value to evaluate branch condition when computing guards
+    const Value* curEvalVal;			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
     static BddCondManager* bddCondMgr;		///< bbd manager

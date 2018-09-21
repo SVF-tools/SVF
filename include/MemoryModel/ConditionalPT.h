@@ -32,7 +32,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "Util/Conditions.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "llvm/Support/raw_ostream.h"
 
 /*!
@@ -97,12 +97,12 @@ public:
 
     inline std::string toString() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "<" << m_id << " " << m_cond.toString() << "> ";
         return rawstr.str();
     }
 
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const CondVar<Cond> &cvar) {
+    friend raw_ostream& operator<< (raw_ostream &o, const CondVar<Cond> &cvar) {
         o << cvar.toString();
         return o;
     }
@@ -232,7 +232,7 @@ public:
 
     inline std::string toString() const {
         std::string str;
-        llvm::raw_string_ostream rawstr(str);
+        raw_string_ostream rawstr(str);
         rawstr << "{ ";
         for (const_iterator i = elements.begin(); i != elements.end(); ++i) {
             rawstr << (*i).toString() << " ";
@@ -547,10 +547,10 @@ public:
                     if (lpts.count() < rpts.count())
                         return true;
                     else if (lpts.count() == rpts.count()) {
-                        llvm::SparseBitVector<>::iterator bit = lpts.begin();
-                        llvm::SparseBitVector<>::iterator eit = lpts.end();
-                        llvm::SparseBitVector<>::iterator rbit = rpts.begin();
-                        llvm::SparseBitVector<>::iterator reit = rpts.end();
+                        NodeBS::iterator bit = lpts.begin();
+                        NodeBS::iterator eit = lpts.end();
+                        NodeBS::iterator rbit = rpts.begin();
+                        NodeBS::iterator reit = rpts.end();
                         for (; bit != eit && rbit != reit; bit++, rbit++) {
                             if (*bit < *rbit)
                                 return true;
@@ -595,13 +595,13 @@ public:
 
     // Print all points-to targets
     //@{
-    inline void dump(llvm::raw_ostream & O) const {
+    inline void dump(raw_ostream & O) const {
         CondPtsConstIter it = cptsBegin();
         CondPtsConstIter eit = cptsEnd();
         for (; it != eit; it++) {
             const PointsTo& pts = it->second;
             O << "pts{";
-            analysisUtil::dumpSet(pts, O);
+            SVFUtil::dumpSet(pts, O);
             O << "}";
         }
     }
@@ -612,7 +612,7 @@ public:
         for (; it != eit; it++) {
             const PointsTo& pts = it->second;
             str += "pts{";
-            for (llvm::SparseBitVector<>::iterator ii = pts.begin(), ie = pts.end();
+            for (NodeBS::iterator ii = pts.begin(), ie = pts.end();
                     ii != ie; ii++) {
                 char int2str[16];
                 sprintf(int2str, "%d", *ii);

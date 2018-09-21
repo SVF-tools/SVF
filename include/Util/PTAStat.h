@@ -30,7 +30,7 @@
 #ifndef ANDERSENSTAT_H_
 #define ANDERSENSTAT_H_
 
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/BasicTypes.h"
 #include <iostream>
 #include <map>

@@ -11,7 +11,7 @@
 #include <MemoryModel/PointerAnalysis.h>
 #include "MTA/TCT.h"
 #include "MTA/MHP.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/ThreadCallGraph.h"
 
 /*!
@@ -45,15 +45,15 @@ protected:
     std::vector<std::string> split(const std::string &s, char delim);
 
     // Get special arguments of given call sites
-    NodeID getIntArg(const llvm::Instruction* inst, unsigned int arg_num);
-    std::vector<std::string> getStringArg(const llvm::Instruction* inst, unsigned int arg_num);
-    CallStrCxt getCxtArg(const llvm::Instruction* inst, unsigned int arg_num);
+    NodeID getIntArg(const Instruction* inst, unsigned int arg_num);
+    std::vector<std::string> getStringArg(const Instruction* inst, unsigned int arg_num);
+    CallStrCxt getCxtArg(const Instruction* inst, unsigned int arg_num);
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
      * same BasicBlock. Return NULL if none exists.
      */
-    const llvm::Instruction *getPreviousMemoryAccessInst(const llvm::Instruction *I);
+    const Instruction *getPreviousMemoryAccessInst(const Instruction *I);
 
     // Compare two cxts
     bool matchCxt(const CallStrCxt cxt1, const CallStrCxt cxt2) const;
@@ -110,7 +110,7 @@ protected:
 
 private:
 
-    std::map<NodeID, const llvm::CallInst*> csnumToInstMap;
+    std::map<NodeID, const CallInst*> csnumToInstMap;
     std::map<NodeID, CallStrCxt> vthdToCxt;
     std::map<NodeID, NodeID> vthdTorthd;
     std::map<NodeID, NodeID> rthdTovthd;
@@ -163,7 +163,7 @@ public:
     class AccessPair {
     public:
         /// Constructor
-        AccessPair(const llvm::Instruction *I1, const llvm::Instruction *I2,
+        AccessPair(const Instruction *I1, const Instruction *I2,
                    const RC_FLAG flags) :
             I1(I1), I2(I2), flags(flags) {
         }
@@ -173,17 +173,17 @@ public:
         inline bool isFlaged(const RC_FLAG flag) const {
             return flags & flag;
         }
-        inline const llvm::Instruction *getInstruction1() const {
+        inline const Instruction *getInstruction1() const {
             return I1;
         }
-        inline const llvm::Instruction *getInstruction2() const {
+        inline const Instruction *getInstruction2() const {
             return I2;
         }
         //@}
 
     private:
-        const llvm::Instruction *I1;
-        const llvm::Instruction *I2;
+        const Instruction *I1;
+        const Instruction *I2;
         RC_FLAG flags;
     };
 
@@ -217,23 +217,23 @@ protected:
     /// Interface to the specific validation properties.
     /// Override one or more to implement your own analysis.
     //@{
-    virtual bool mayAccessAliases(const llvm::Instruction *I1,
-                                  const llvm::Instruction *I2) {
+    virtual bool mayAccessAliases(const Instruction *I1,
+                                  const Instruction *I2) {
         selectedValidationScenarios &= ~RC_ALIASES;
         return true;
     }
-    virtual bool mayHappenInParallel(const llvm::Instruction *I1,
-                                     const llvm::Instruction *I2) {
+    virtual bool mayHappenInParallel(const Instruction *I1,
+                                     const Instruction *I2) {
         selectedValidationScenarios &= ~RC_MHP;
         return true;
     }
-    virtual bool protectedByCommonLocks(const llvm::Instruction *I1,
-                                        const llvm::Instruction *I2) {
+    virtual bool protectedByCommonLocks(const Instruction *I1,
+                                        const Instruction *I2) {
         selectedValidationScenarios &= ~RC_PROTECTED;
         return true;
     }
-    virtual bool mayHaveDataRace(const llvm::Instruction *I1,
-                                 const llvm::Instruction *I2) {
+    virtual bool mayHaveDataRace(const Instruction *I1,
+                                 const Instruction *I2) {
         selectedValidationScenarios &= ~RC_RACE;
         return true;
     }
@@ -246,15 +246,15 @@ protected:
      */
     void collectValidationTargets() {
         // Collect call sites of all RC_ACCESS function calls.
-        std::vector<const llvm::CallInst*> csInsts;
-        const llvm::Function *F = M.getFunction(RC_ACCESS);
+        std::vector<const CallInst*> csInsts;
+        const Function *F = M.getFunction(RC_ACCESS);
         if (!F)     return;
 
-        for (llvm::Value::const_use_iterator it = F->use_begin(), ie =
+        for (Value::const_use_iterator it = F->use_begin(), ie =
                     F->use_end(); it != ie; ++it) {
-            const llvm::Use *u = &*it;
-            const llvm::Value *user = u->getUser();
-            const llvm::CallInst *csInst = llvm::dyn_cast<llvm::CallInst>(user);
+            const Use *u = &*it;
+            const Value *user = u->getUser();
+            const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(user);
             assert(csInst);
             csInsts.push_back(csInst);
         }
@@ -265,12 +265,12 @@ protected:
 
         // Generate access pairs.
         for (int i = 0, e = csInsts.size(); i != e;) {
-            const llvm::CallInst *CI1 = csInsts[i++];
-            const llvm::CallInst *CI2 = csInsts[i++];
-            const llvm::ConstantInt *C = llvm::dyn_cast<llvm::ConstantInt>(CI1->getOperand(1));
+            const CallInst *CI1 = csInsts[i++];
+            const CallInst *CI2 = csInsts[i++];
+            const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1->getOperand(1));
             assert(C);
-            const llvm::Instruction *I1 = getPreviousMemoryAccessInst(CI1);
-            const llvm::Instruction *I2 = getPreviousMemoryAccessInst(CI2);
+            const Instruction *I1 = getPreviousMemoryAccessInst(CI1);
+            const Instruction *I2 = getPreviousMemoryAccessInst(CI2);
             assert(I1 && I2 && "RC_ACCESS should be placed immediately after the target memory access.");
             RC_FLAG flags = C->getZExtValue();
             accessPairs.push_back(AccessPair(I1, I2, flags));
@@ -279,44 +279,44 @@ protected:
 
     /// Perform validation for all targets.
     void validateAll() {
-        llvm::outs() << analysisUtil::pasMsg(" --- Analysis Result Validation ---\n");
+        SVFUtil::outs() << SVFUtil::pasMsg(" --- Analysis Result Validation ---\n");
 
         // Iterate every memory access pair to perform the validation.
         for (int i = 0, e = accessPairs.size(); i != e; ++i) {
             const AccessPair &ap = accessPairs[i];
-            const llvm::Instruction *I1 = ap.getInstruction1();
-            const llvm::Instruction *I2 = ap.getInstruction2();
+            const Instruction *I1 = ap.getInstruction1();
+            const Instruction *I2 = ap.getInstruction2();
 
             bool mhp = mayHappenInParallel(I1, I2);
             bool alias = mayAccessAliases(I1, I2);
             bool protect = protectedByCommonLocks(I1, I2);
             bool racy = mayHaveDataRace(I1, I2);
 
-            llvm::outs() << "For the memory access pair at ("
-                         << analysisUtil::getSourceLoc(I1) << ", "
-                         << analysisUtil::getSourceLoc(I2) << ")\n";
+            SVFUtil::outs() << "For the memory access pair at ("
+                         << SVFUtil::getSourceLoc(I1) << ", "
+                         << SVFUtil::getSourceLoc(I2) << ")\n";
             if (selectedValidationScenarios & RC_ALIASES) {
-                llvm::outs() << "\t"
+                SVFUtil::outs() << "\t"
                              << getOutput("ALIASES", alias, ap.isFlaged(RC_ALIASES))
                              << "\n";
             }
             if (selectedValidationScenarios & RC_MHP) {
-                llvm::outs() << "\t"
+                SVFUtil::outs() << "\t"
                              << getOutput("MHP", mhp, ap.isFlaged(RC_MHP)) << "\n";
             }
             if (selectedValidationScenarios & RC_PROTECTED) {
-                llvm::outs() << "\t"
+                SVFUtil::outs() << "\t"
                              << getOutput("PROTECT", protect,
                                           ap.isFlaged(RC_PROTECTED)) << "\n";
             }
             if (selectedValidationScenarios & RC_RACE) {
-                llvm::outs() << "\t"
+                SVFUtil::outs() << "\t"
                              << getOutput("RACE", racy, ap.isFlaged(RC_RACE))
                              << "\n";
             }
         }
 
-        llvm::outs() << "\n";
+        SVFUtil::outs() << "\n";
     }
 
     /// Get the validation result string of a single validation scenario.
@@ -329,9 +329,9 @@ protected:
         else
             ret += " F: ";
         if (analysisRes == expectedRes)
-            ret += analysisUtil::sucMsg("SUCCESS");
+            ret += SVFUtil::sucMsg("SUCCESS");
         else
-            ret += analysisUtil::errMsg("FAILURE");
+            ret += SVFUtil::errMsg("FAILURE");
         return ret;
     }
 
@@ -344,11 +344,11 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(const llvm::CallInst *CI1, const llvm::CallInst *CI2) {
-        const llvm::Value *V1 = CI1->getOperand(0);
-        const llvm::Value *V2 = CI2->getOperand(0);
-        const llvm::ConstantInt *C1 = llvm::dyn_cast<llvm::ConstantInt>(V1);
-        const llvm::ConstantInt *C2 = llvm::dyn_cast<llvm::ConstantInt>(V2);
+    static bool compare(const CallInst *CI1, const CallInst *CI2) {
+        const Value *V1 = CI1->getOperand(0);
+        const Value *V2 = CI2->getOperand(0);
+        const ConstantInt *C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
+        const ConstantInt *C2 = SVFUtil::dyn_cast<ConstantInt>(V2);
         assert(0 != C1 && 0 != C2);
         return C1->getZExtValue() < C2->getZExtValue();
     }
@@ -358,15 +358,15 @@ private:
      * same BasicBlock.
      * Return NULL if none exists.
      */
-    const llvm::Instruction *getPreviousMemoryAccessInst(
-        const llvm::Instruction *I) {
+    const Instruction *getPreviousMemoryAccessInst(
+        const Instruction *I) {
         I = I->getPrevNode();
         while (I) {
-            if (llvm::isa<llvm::LoadInst>(I) || llvm::isa<llvm::StoreInst>(I))
+            if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
-            if (const llvm::Function *callee = analysisUtil::getCallee(I)) {
+            if (const Function *callee = SVFUtil::getCallee(I)) {
                 if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)
-                        || callee->getName().find("llvm.memset") != llvm::StringRef::npos)
+                        || callee->getName().find("llvm.memset") != StringRef::npos)
                     return I;
             }
             I = I->getPrevNode();

@@ -31,18 +31,16 @@
 #define SVFMODULE_H_
 
 #include "Util/BasicTypes.h"
-#include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
-#include <llvm/IR/Module.h>
 
 class LLVMModuleSet {
 public:
-    typedef std::vector<llvm::Function*> FunctionSetType;
-    typedef std::vector<llvm::GlobalVariable*> GlobalSetType;
-    typedef std::vector<llvm::GlobalAlias*> AliasSetType;
+    typedef std::vector<Function*> FunctionSetType;
+    typedef std::vector<GlobalVariable*> GlobalSetType;
+    typedef std::vector<GlobalAlias*> AliasSetType;
 
-    typedef std::map<const llvm::Function*, llvm::Function*> FunDeclToDefMapTy;
-    typedef std::map<const llvm::Function*, FunctionSetType> FunDefToDeclsMapTy;
-    typedef std::map<const llvm::GlobalVariable*, llvm::GlobalVariable*> GlobalDefToRepMapTy;
+    typedef std::map<const Function*, Function*> FunDeclToDefMapTy;
+    typedef std::map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
+    typedef std::map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
@@ -54,8 +52,8 @@ public:
 
 private:
     u32_t moduleNum;
-    llvm::LLVMContext *cxts;
-    std::unique_ptr<llvm::Module> *modules;
+    LLVMContext *cxts;
+    std::unique_ptr<Module> *modules;
 
     FunctionSetType FunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
@@ -71,8 +69,8 @@ private:
 public:
     /// Constructor
     LLVMModuleSet(const std::vector<std::string> &moduleNameVec);
-    LLVMModuleSet(llvm::Module *mod);
-    LLVMModuleSet(llvm::Module &mod);
+    LLVMModuleSet(Module *mod);
+    LLVMModuleSet(Module &mod);
     LLVMModuleSet() {}
 
     void build(const std::vector<std::string> &moduleNameVec);
@@ -81,12 +79,12 @@ public:
         return moduleNum;
     }
 
-    llvm::Module *getModule(u32_t idx) const {
+    Module *getModule(u32_t idx) const {
         assert(idx < moduleNum && "Out of range.");
         return modules[idx].get();
     }
 
-    llvm::Module &getModuleRef(u32_t idx) const {
+    Module &getModuleRef(u32_t idx) const {
         assert(idx < moduleNum && "Out of range.");
         return *(modules[idx].get());
     }
@@ -95,13 +93,13 @@ public:
     void dumpModulesToFile(const std::string suffix);
 
     /// Fun decl --> def
-    bool hasDefinition(const llvm::Function *fun) const {
+    bool hasDefinition(const Function *fun) const {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
-    llvm::Function *getDefinition(const llvm::Function *fun) const {
+    Function *getDefinition(const Function *fun) const {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         assert(it != FunDeclToDefMap.end() && "has no definition?");
@@ -109,13 +107,13 @@ public:
     }
 
     /// Fun def --> decl
-    bool hasDeclaration(const llvm::Function *fun) const {
+    bool hasDeclaration(const Function *fun) const {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         return it != FunDefToDeclsMap.end();
     }
 
-    const FunctionSetType &getDeclaration(const llvm::Function *fun) const {
+    const FunctionSetType &getDeclaration(const Function *fun) const {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         assert(it != FunDefToDeclsMap.end() && "has no declaration?");
@@ -123,12 +121,12 @@ public:
     }
 
     /// Global to rep
-    bool hasGlobalRep(const llvm::GlobalVariable *val) const {
+    bool hasGlobalRep(const GlobalVariable *val) const {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         return it != GlobalDefToRepMap.end();
     }
 
-    llvm::GlobalVariable *getGlobalRep(const llvm::GlobalVariable *val) const {
+    GlobalVariable *getGlobalRep(const GlobalVariable *val) const {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         assert(it != GlobalDefToRepMap.end() && "has no rep?");
         return it->second;
@@ -212,11 +210,11 @@ public:
         if (llvmModuleSet == NULL)
             llvmModuleSet = new LLVMModuleSet(moduleNameVec);
     }
-    SVFModule(llvm::Module *mod) {
+    SVFModule(Module *mod) {
         if (llvmModuleSet == NULL)
             llvmModuleSet = new LLVMModuleSet(mod);
     }
-    SVFModule(llvm::Module &mod) {
+    SVFModule(Module &mod) {
         if (llvmModuleSet == NULL)
             llvmModuleSet = new LLVMModuleSet(mod);
     }
@@ -261,11 +259,11 @@ public:
         return llvmModuleSet->getModuleNum();
     }
 
-    llvm::Module *getModule(u32_t idx) const {
+    Module *getModule(u32_t idx) const {
         return llvmModuleSet->getModule(idx);
     }
 
-    llvm::Module &getModuleRef(u32_t idx) const {
+    Module &getModuleRef(u32_t idx) const {
         return llvmModuleSet->getModuleRef(idx);
     }
 
@@ -275,29 +273,29 @@ public:
     }
 
     /// Fun decl --> def
-    bool hasDefinition(const llvm::Function *fun) const {
+    bool hasDefinition(const Function *fun) const {
         return llvmModuleSet->hasDefinition(fun);
     }
 
-    llvm::Function *getDefinition(const llvm::Function *fun) const {
+    Function *getDefinition(const Function *fun) const {
         return llvmModuleSet->getDefinition(fun);
     }
 
     /// Fun def --> decl
-    bool hasDeclaration(const llvm::Function *fun) const {
+    bool hasDeclaration(const Function *fun) const {
         return llvmModuleSet->hasDeclaration(fun);
     }
 
-    const FunctionSetType &getDeclaration(const llvm::Function *fun) const {
+    const FunctionSetType &getDeclaration(const Function *fun) const {
         return llvmModuleSet->getDeclaration(fun);
     }
 
     /// Global to rep
-    bool hasGlobalRep(const llvm::GlobalVariable *val) const {
+    bool hasGlobalRep(const GlobalVariable *val) const {
         return llvmModuleSet->hasGlobalRep(val);
     }
 
-    llvm::GlobalVariable *getGlobalRep(const llvm::GlobalVariable *val) const {
+    GlobalVariable *getGlobalRep(const GlobalVariable *val) const {
         return llvmModuleSet->getGlobalRep(val);
     }
 
@@ -316,7 +314,7 @@ public:
         return llvmModuleSet->end();
     }
 
-    llvm::Module *getMainLLVMModule() const {
+    Module *getMainLLVMModule() const {
         return llvmModuleSet->getModule(0);
     }
 
@@ -329,15 +327,15 @@ public:
 		}
 	}
 
-    llvm::LLVMContext& getContext() const {
+    LLVMContext& getContext() const {
         assert(!empty() && "empty LLVM module!!");
         return getMainLLVMModule()->getContext();
     }
 
-    inline llvm::Function* getFunction(llvm::StringRef name) const {
-        llvm::Function* fun = NULL;
+    inline Function* getFunction(StringRef name) const {
+        Function* fun = NULL;
         for (u32_t i = 0; i < getModuleNum(); ++i) {
-            llvm::Module *mod = llvmModuleSet->getModule(i);
+            Module *mod = llvmModuleSet->getModule(i);
             fun = mod->getFunction(name);
             if(fun && !fun->isDeclaration()) {
                 return fun;

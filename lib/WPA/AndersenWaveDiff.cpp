@@ -28,10 +28,8 @@
  */
 
 #include "WPA/Andersen.h"
-#include <llvm/Support/CommandLine.h> // for tool output file
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 AndersenWaveDiff* AndersenWaveDiff::diffWave = NULL;
 
@@ -54,7 +52,7 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
     numOfProcessedCopy++;
 
     bool changed = false;
-    assert((isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
+    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
     PointsTo& srcDiffPts = getDiffPts(node);
     processCast(edge);
@@ -128,7 +126,7 @@ bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        llvm::CallSite cs = it->first;
+        CallSite cs = it->first;
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             consCG->connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }

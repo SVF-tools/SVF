@@ -29,20 +29,16 @@
 
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
 
-#include <llvm/Support/raw_ostream.h>	// for output
-#include <llvm/Support/CommandLine.h>	// for cl::opt
-
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 Size_t MemRegion::totalMRNum = 0;
 Size_t MRVer::totalVERNum = 0;
 
-static cl::opt<bool> IgnoreDeadFun("mssa-ignoreDeadFun", cl::init(false),
-                                   cl::desc("Don't construct memory SSA for deadfunction"));
+static llvm::cl::opt<bool> IgnoreDeadFun("mssa-ignoreDeadFun", llvm::cl::init(false),
+                                   llvm::cl::desc("Don't construct memory SSA for deadfunction"));
 
 /*!
  * Clean up memory
@@ -97,7 +93,7 @@ const MemRegion* MRGenerator::getMR(const PointsTo& cpts) const {
 void MRGenerator::collectGlobals() {
     PAG* pag = pta->getPAG();
     for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
-        if(ObjPN* obj = dyn_cast<ObjPN>(nIter->second)) {
+        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(nIter->second)) {
             if (obj->getMemObj()->isGlobalObj()) {
                 allGlobals.set(nIter->getFirst());
                 allGlobals |= CollectPtsChain(nIter->getFirst());
@@ -160,7 +156,7 @@ void MRGenerator::collectModRefForLoadStore() {
                             pagEdgeList.end(); bit != ebit; ++bit) {
                     const PAGEdge* inst = *bit;
                     pagEdgeToFunMap[inst] = &fun;
-                    if (const StorePE *st = dyn_cast<StorePE>(inst)) {
+                    if (const StorePE *st = SVFUtil::dyn_cast<StorePE>(inst)) {
                         PointsTo cpts(pta->getPts(st->getDstID()));
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
@@ -169,7 +165,7 @@ void MRGenerator::collectModRefForLoadStore() {
                         addCPtsToStore(cpts, st, &fun);
                     }
 
-                    else if (const LoadPE *ld = dyn_cast<LoadPE>(inst)) {
+                    else if (const LoadPE *ld = SVFUtil::dyn_cast<LoadPE>(inst)) {
                         PointsTo cpts(pta->getPts(ld->getSrcID()));
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
@@ -339,7 +335,7 @@ void MRGenerator::updateAliasMRs() {
 /*!
  * Add indirect uses an memory object in the function
  */
-void MRGenerator::addRefSideEffectOfFunction(const llvm::Function* fun, const NodeBS& refs) {
+void MRGenerator::addRefSideEffectOfFunction(const Function* fun, const NodeBS& refs) {
     for(NodeBS::iterator it = refs.begin(), eit = refs.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToRefsMap[fun].set(*it);
@@ -349,7 +345,7 @@ void MRGenerator::addRefSideEffectOfFunction(const llvm::Function* fun, const No
 /*!
  * Add indirect def an memory object in the function
  */
-void MRGenerator::addModSideEffectOfFunction(const llvm::Function* fun, const NodeBS& mods) {
+void MRGenerator::addModSideEffectOfFunction(const Function* fun, const NodeBS& mods) {
     for(NodeBS::iterator it = mods.begin(), eit = mods.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToModsMap[fun].set(*it);
@@ -359,7 +355,7 @@ void MRGenerator::addModSideEffectOfFunction(const llvm::Function* fun, const No
 /*!
  * Add indirect uses an memory object in the function
  */
-bool MRGenerator::addRefSideEffectOfCallSite(llvm::CallSite cs, const NodeBS& refs) {
+bool MRGenerator::addRefSideEffectOfCallSite(CallSite cs, const NodeBS& refs) {
     if(!refs.empty()) {
         NodeBS refset = refs;
         refset &= getCallSitePts(cs);
@@ -373,7 +369,7 @@ bool MRGenerator::addRefSideEffectOfCallSite(llvm::CallSite cs, const NodeBS& re
 /*!
  * Add indirect def an memory object in the function
  */
-bool MRGenerator::addModSideEffectOfCallSite(llvm::CallSite cs, const NodeBS& mods) {
+bool MRGenerator::addModSideEffectOfCallSite(CallSite cs, const NodeBS& mods) {
     if(!mods.empty()) {
         NodeBS modset = mods;
         modset &= getCallSitePts(cs);
@@ -476,7 +472,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
     /// or if the local variable of its callers
     /// or a local variable is in function recursion cycles
     else if(obj->isStack()) {
-        if(const AllocaInst* local = dyn_cast<AllocaInst>(obj->getRefVal())) {
+        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal())) {
             const Function* fun = local->getParent()->getParent();
             if(fun!=curFun)
                 return true;
@@ -507,7 +503,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
             NodeBS ref = getRefSideEffectOfFunction(callGraphNode->getFunction());
             /// ref set include all mods
             ref |= mod;
-            CallSite cs = analysisUtil::getLLVMCallSite(*cit);
+            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
             // add ref set
             bool refchanged = addRefSideEffectOfCallSite(cs, ref);
             // add mod set
@@ -522,7 +518,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
             NodeBS ref = getRefSideEffectOfFunction(callGraphNode->getFunction());
             /// ref set include all mods
             ref |= mod;
-            CallSite cs = analysisUtil::getLLVMCallSite(*cit);
+            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
             // add ref set
             bool refchanged = addRefSideEffectOfCallSite(cs, ref);
             // add mod set

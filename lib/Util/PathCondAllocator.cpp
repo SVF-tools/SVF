@@ -32,14 +32,9 @@
 #include "Util/PathCondAllocator.h"
 #include "Util/DataFlowUtil.h"
 #include "Util/DPItem.h"
-#include <llvm/IR/Module.h>
-#include <llvm/Support/CommandLine.h>
-#include <llvm/Analysis/PostDominators.h>
-#include <llvm/IR/Dominators.h>
 #include <limits.h>
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 u64_t DPItem::maximumBudget = ULONG_MAX - 1;
 u32_t ContextCond::maximumCxtLen = 0;
@@ -49,8 +44,8 @@ u32_t VFPathCond::maximumPath = 0;
 
 u32_t PathCondAllocator::totalCondNum = 0;
 BddCondManager* PathCondAllocator::bddCondMgr = NULL;
-static cl::opt<bool> PrintPathCond("print-pc", cl::init(false),
-                                   cl::desc("Print out path condition"));
+static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
+                                   llvm::cl::desc("Print out path condition"));
 
 /*!
  * Allocate path condition for each branch
@@ -60,7 +55,7 @@ void PathCondAllocator::allocate(const SVFModule M) {
 
     for (SVFModule::const_iterator fit = M.begin(); fit != M.end(); ++fit) {
         const Function * func = *fit;
-        if (!analysisUtil::isExtCall(func)) {
+        if (!SVFUtil::isExtCall(func)) {
             // Allocate conditions for a program.
             for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit) {
                 const BasicBlock & bb = *bit;
@@ -129,7 +124,7 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 /*!
  * Get a branch condition
  */
-PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const llvm::BasicBlock * bb, const llvm::BasicBlock *succ) const {
+PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const {
     u32_t pos = getBBSuccessorPos(bb,succ);
     if(getBBSuccessorNum(bb) == 1)
         return getTrueCond();
@@ -145,7 +140,7 @@ PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const llvm::Basic
 /*!
  * Set a branch condition
  */
-void PathCondAllocator::setBranchCond(const llvm::BasicBlock *bb, const llvm::BasicBlock *succ, Condition* cond) {
+void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond) {
     /// we only care about basic blocks have more than one successor
     assert(getBBSuccessorNum(bb) > 1 && "not more than one successor??");
     u32_t pos = getBBSuccessorPos(bb,succ);
@@ -235,7 +230,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
     const LoopInfo* loopInfo = getLoopInfo(fun);
     if(loopInfo->isLoopHeader(const_cast<BasicBlock*>(bb))) {
         const Loop *loop = loopInfo->getLoopFor(bb);
-        SmallVector<BasicBlock*, 8> exitbbs;
+        SmallBBVector exitbbs;
         std::set<BasicBlock*> filteredbbs;
         loop->getExitBlocks(exitbbs);
         /// exclude exit bb which calls program exit
@@ -270,7 +265,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
         return getTrueCond();
     }
 
-    if(const BranchInst* brInst = dyn_cast<BranchInst>(bb->getTerminator())) {
+    if(const BranchInst* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator())) {
         assert(brInst->getNumSuccessors() == 2 && "not a two successors branch??");
         const BasicBlock* succ1 = brInst->getSuccessor(0);
         const BasicBlock* succ2 = brInst->getSuccessor(1);
@@ -292,34 +287,34 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
     return getBranchCond(bb, succ);
 }
 
-bool PathCondAllocator::isEQCmp(const llvm::CmpInst* cmp) const {
+bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const {
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool PathCondAllocator::isNECmp(const llvm::CmpInst* cmp) const {
+bool PathCondAllocator::isNECmp(const CmpInst* cmp) const {
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool PathCondAllocator::isTestNullExpr(const llvm::Value* test,const llvm::Value* val) const {
-    if(const CmpInst* cmp = dyn_cast<CmpInst>(test)) {
+bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const {
+    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test)) {
         return isTestContainsNullAndTheValue(cmp,val) && isEQCmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestNotNullExpr(const llvm::Value* test,const llvm::Value* val) const {
-    if(const CmpInst* cmp = dyn_cast<CmpInst>(test)) {
+bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const {
+    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test)) {
         return isTestContainsNullAndTheValue(cmp,val) && isNECmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestContainsNullAndTheValue(const llvm::CmpInst* cmp, const llvm::Value* val) const {
+bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const {
 
     const Value* op0 = cmp->getOperand(0);
     const Value* op1 = cmp->getOperand(1);
-    if((op0 == val && isa<ConstantPointerNull>(op1))
-            || (op1 == val && isa<ConstantPointerNull>(op0)) )
+    if((op0 == val && SVFUtil::isa<ConstantPointerNull>(op1))
+            || (op1 == val && SVFUtil::isa<ConstantPointerNull>(op0)) )
         return true;
 
     return false;
@@ -332,8 +327,8 @@ void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb) {
 
     for(BasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it!=eit; it++) {
         const Instruction* inst = &*it;
-        if(isa<CallInst>(inst) || isa<InvokeInst>(inst))
-            if(analysisUtil::isProgExitCall(inst)) {
+        if(SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst))
+            if(SVFUtil::isProgExitCall(inst)) {
                 funToExitBBsMap[bb.getParent()].insert(&bb);
             }
     }
@@ -342,7 +337,7 @@ void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb) {
 /*!
  * Whether this basic block contains program exit function call
  */
-bool PathCondAllocator::isBBCallsProgExit(const llvm::BasicBlock* bb) {
+bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb) {
     const Function* fun = bb->getParent();
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(fun);
     if(it!=funToExitBBsMap.end()) {
@@ -379,7 +374,7 @@ PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const Basi
  * src --c1--> callBB --true--> funEntryBB --c2--> dst
  * the InterCallVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const llvm::BasicBlock* srcBB, const llvm::BasicBlock* dstBB, const BasicBlock* callBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB, const BasicBlock* callBB) {
     const BasicBlock* funEntryBB = &dstBB->getParent()->getEntryBlock();
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,callBB);
@@ -393,7 +388,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const 
  * src --c1--> funExitBB --true--> retBB --c2--> dst
  * the InterRetVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const llvm::BasicBlock*  srcBB, const llvm::BasicBlock*  dstBB, const BasicBlock* retBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB) {
     const BasicBlock* funExitBB = getFunExitBB(srcBB->getParent());
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,funExitBB);
@@ -405,7 +400,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const l
 /*!
  * Compute intra-procedural guards between two SVFGNodes (inside same function)
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const llvm::BasicBlock* srcBB, const llvm::BasicBlock* dstBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB) {
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 

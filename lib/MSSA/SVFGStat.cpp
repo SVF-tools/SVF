@@ -30,7 +30,6 @@
 #include "MSSA/SVFG.h"
 #include "MSSA/SVFGStat.h"
 #include "Util/PTACallGraph.h"
-using namespace llvm;
 
 const char* MemSSAStat::TotalTimeOfConstructMemSSA = "TotalMSSATime";	///< Total time for constructing memory SSA
 const char* MemSSAStat::TimeOfGeneratingMemRegions  = "GenRegionTime";	///< Time for allocating regions
@@ -242,35 +241,35 @@ void SVFGStat::processGraph()
     SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
     for (; it != eit; ++it) {
         numOfNodes++;
-        if (isa<FormalINSVFGNode>(it->second))
+        if (SVFUtil::isa<FormalINSVFGNode>(it->second))
             numOfFormalIn++;
-        else if (isa<FormalOUTSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalOUTSVFGNode>(it->second))
             numOfFormalOut++;
-        else if (isa<FormalParmSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalParmSVFGNode>(it->second))
             numOfFormalParam++;
-        else if (isa<FormalRetSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalRetSVFGNode>(it->second))
             numOfFormalRet++;
-        else if (isa<ActualINSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualINSVFGNode>(it->second))
             numOfActualIn++;
-        else if (isa<ActualOUTSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualOUTSVFGNode>(it->second))
             numOfActualOut++;
-        else if (isa<ActualParmSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualParmSVFGNode>(it->second))
             numOfActualParam++;
-        else if (isa<ActualRetSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualRetSVFGNode>(it->second))
             numOfActualRet++;
-        else if (isa<AddrSVFGNode>(it->second))
+        else if (SVFUtil::isa<AddrSVFGNode>(it->second))
             numOfAddr++;
-        else if (isa<CopySVFGNode>(it->second))
+        else if (SVFUtil::isa<CopySVFGNode>(it->second))
             numOfCopy++;
-        else if (isa<GepSVFGNode>(it->second))
+        else if (SVFUtil::isa<GepSVFGNode>(it->second))
             numOfGep++;
-        else if (isa<LoadSVFGNode>(it->second))
+        else if (SVFUtil::isa<LoadSVFGNode>(it->second))
             numOfLoad++;
-        else if (isa<StoreSVFGNode>(it->second))
+        else if (SVFUtil::isa<StoreSVFGNode>(it->second))
             numOfStore++;
-        else if (isa<PHISVFGNode>(it->second))
+        else if (SVFUtil::isa<PHISVFGNode>(it->second))
             numOfPhi++;
-        else if (isa<MSSAPHISVFGNode>(it->second))
+        else if (SVFUtil::isa<MSSAPHISVFGNode>(it->second))
             numOfMSSAPhi++;
 
         SVFGNode* node = it->second;
@@ -303,7 +302,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt) {
-        if (IndirectSVFGEdge* edge = dyn_cast<IndirectSVFGEdge>(*edgeIt)) {
+        if (IndirectSVFGEdge* edge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt)) {
             indInEdges++;
             nodeHasIndInEdge.insert(node->getId());
             // get edge's weight
@@ -312,13 +311,13 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             avgWeight += cpts.count();
         }
 
-        if (isa<CallDirSVFGEdge>(*edgeIt))
+        if (SVFUtil::isa<CallDirSVFGEdge>(*edgeIt))
             totalDirCallEdge++;
-        else if (isa<CallIndSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<CallIndSVFGEdge>(*edgeIt))
             totalIndCallEdge++;
-        else if (isa<RetDirSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<RetDirSVFGEdge>(*edgeIt))
             totalDirRetEdge++;
-        else if (isa<RetIndSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<RetIndSVFGEdge>(*edgeIt))
             totalIndRetEdge++;
     }
 

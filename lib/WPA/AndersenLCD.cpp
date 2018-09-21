@@ -28,11 +28,9 @@
  */
 
 #include "WPA/Andersen.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
-#include <llvm/Support/CommandLine.h> // for tool output file
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 AndersenLCD* AndersenLCD::lcdAndersen = NULL;
 
@@ -51,7 +49,7 @@ void AndersenLCD::processNode(NodeID nodeId) {
 
     for (ConstraintNode::const_iterator it = node->outgoingAddrsBegin(), eit =  node->outgoingAddrsEnd(); it != eit;
             ++it) {
-        processAddr(cast<AddrCGEdge>(*it));
+        processAddr(SVFUtil::cast<AddrCGEdge>(*it));
     }
 
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(
@@ -76,7 +74,7 @@ void AndersenLCD::processNode(NodeID nodeId) {
     bool lcd = false;
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
             ++it) {
-        if(GepCGEdge* gepEdge = llvm::dyn_cast<GepCGEdge>(*it))
+        if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
             processGep(nodeId,gepEdge);
         else if(processCopy(nodeId,*it))
             lcd = true;
@@ -95,7 +93,7 @@ void AndersenLCD::processNode(NodeID nodeId) {
  */
 bool AndersenLCD::processCopy(NodeID node, const ConstraintEdge* edge) {
 
-    assert((isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
+    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
     PointsTo& srcPts = getPts(node);
     PointsTo& dstPts = getPts(dst);

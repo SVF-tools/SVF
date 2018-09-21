@@ -30,16 +30,12 @@
 
 #include "Util/SVFModule.h"
 #include "Util/PTACallGraph.h"
-#include "Util/GraphUtil.h"
-#include <llvm/Support/DOTGraphTraits.h>	// for dot graph traits
-#include <llvm/IR/InstIterator.h>	// for inst iteration
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 
-static cl::opt<bool> CallGraphDotGraph("dump-callgraph", cl::init(false),
-                                       cl::desc("Dump dot graph of Call Graph"));
+static llvm::cl::opt<bool> CallGraphDotGraph("dump-callgraph", llvm::cl::init(false),
+                                       llvm::cl::desc("Dump dot graph of Call Graph"));
 
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
 PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
@@ -56,7 +52,7 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
         PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
         nodeStack.pop();
 
-        if (analysisUtil::isProgEntryFunction(node->getFunction()))
+        if (SVFUtil::isProgEntryFunction(node->getFunction()))
             return true;
 
         for (const_iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it) {
@@ -93,7 +89,7 @@ void PTACallGraph::buildCallGraph(SVFModule svfModule) {
         Function *fun = *F;
         for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
-            if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
+            if (isCallSite(inst)) {
                 if(getCallee(inst))
                     addDirectCallGraphEdge(inst);
             }
@@ -112,7 +108,7 @@ void PTACallGraph::destroy() {
 /*!
  * Add call graph node
  */
-void PTACallGraph::addCallGraphNode(const llvm::Function* fun) {
+void PTACallGraph::addCallGraphNode(const Function* fun) {
     NodeID id = callGraphNodeNum;
     PTACallGraphNode* callGraphNode = new PTACallGraphNode(id, fun);
     addGNode(id,callGraphNode);
@@ -151,7 +147,7 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraph
 /*!
  * Add direct call edges
  */
-void PTACallGraph::addDirectCallGraphEdge(const llvm::Instruction* call) {
+void PTACallGraph::addDirectCallGraphEdge(const Instruction* call) {
     assert(getCallee(call) && "no callee found");
 
     PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
@@ -177,7 +173,7 @@ void PTACallGraph::addDirectCallGraphEdge(const llvm::Instruction* call) {
 /*!
  * Add indirect call edge to update call graph
  */
-void PTACallGraph::addIndirectCallGraphEdge(const llvm::Instruction* call, const llvm::Function* calleefun) {
+void PTACallGraph::addIndirectCallGraphEdge(const Instruction* call, const Function* calleefun) {
     PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
@@ -202,7 +198,7 @@ void PTACallGraph::addIndirectCallGraphEdge(const llvm::Instruction* call, const
 /*!
  * Get all callsite invoking this callee
  */
-void PTACallGraph::getAllCallSitesInvokingCallee(const llvm::Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
+void PTACallGraph::getAllCallSitesInvokingCallee(const Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
     PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it) {
@@ -220,7 +216,7 @@ void PTACallGraph::getAllCallSitesInvokingCallee(const llvm::Function* callee, P
 /*!
  * Get direct callsite invoking this callee
  */
-void PTACallGraph::getDirCallSitesInvokingCallee(const llvm::Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
+void PTACallGraph::getDirCallSitesInvokingCallee(const Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
     PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it) {
@@ -234,7 +230,7 @@ void PTACallGraph::getDirCallSitesInvokingCallee(const llvm::Function* callee, P
 /*!
  * Get indirect callsite invoking this callee
  */
-void PTACallGraph::getIndCallSitesInvokingCallee(const llvm::Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
+void PTACallGraph::getIndCallSitesInvokingCallee(const Function* callee, PTACallGraphEdge::CallInstSet& csSet) {
     PTACallGraphNode* callGraphNode = getCallGraphNode(callee);
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it) {
@@ -268,7 +264,7 @@ void PTACallGraph::vefityCallGraph()
  */
 void PTACallGraph::dump(const std::string& filename) {
     if(CallGraphDotGraph)
-        GraphPrinter::WriteGraphToFile(llvm::outs(), filename, this);
+        GraphPrinter::WriteGraphToFile(outs(), filename, this);
 
 }
 
@@ -298,7 +294,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits {
 
     static std::string getNodeAttributes(PTACallGraphNode *node, PTACallGraph *PTACallGraph) {
         const Function* fun = node->getFunction();
-        if (!analysisUtil::isExtCall(fun)) {
+        if (!SVFUtil::isExtCall(fun)) {
             return "shape=circle";
         } else
             return "shape=Mrecord";

@@ -34,7 +34,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/WorkList.h"
 
-class SVFGNode;
 class PAGNode;
 
 class SaberSVFGBuilder : public SVFGBuilder {
@@ -55,7 +54,7 @@ public:
     }
 protected:
     /// Re-write create SVFG method
-    virtual void createSVFG(MemSSA* mssa, SVFG* graph);
+    virtual void buildSVFG();
 
 private:
     /// Remove direct value-flow edge to a dereference point for Saber source-sink memory error detection

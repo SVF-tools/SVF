@@ -32,7 +32,6 @@
 #define GRAPHSOLVER_H_
 
 #include "Util/WorkList.h"
-#include <llvm/ADT/GraphTraits.h>
 
 /*
  * Generic graph solver for whole program pointer analysis

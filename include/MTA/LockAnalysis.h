@@ -14,7 +14,6 @@
 #include "MTA/TCT.h"
 #include "MTA/MHP.h"
 #include "Util/DataFlowUtil.h"
-#include <llvm/IR/Instructions.h>
 #include <set>
 #include <vector>
 
@@ -37,11 +36,11 @@ public:
 
     typedef NodeBS LockSet;
     typedef TCT::InstVec InstVec;
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Instruction*> InstSet;
     typedef InstSet CISpan;
-    typedef std::map<const llvm::Instruction*, CISpan>CILockToSpan;
-    typedef std::set<const llvm::Function*> FunSet;
-    typedef std::map<const llvm::Instruction*, InstSet> InstToInstSetMap;
+    typedef std::map<const Instruction*, CISpan>CILockToSpan;
+    typedef std::set<const Function*> FunSet;
+    typedef std::map<const Instruction*, InstSet> InstToInstSetMap;
     typedef std::map<const CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
     typedef std::set<CxtStmt> LockSpan;
@@ -50,13 +49,13 @@ public:
 
     typedef std::map<CxtLock, LockSpan> CxtLockToSpan;
     typedef std::map<CxtLock, NodeBS> CxtLockToLockSet;
-    typedef std::map<const llvm::Instruction*, NodeBS> LockSiteToLockSet;
-    typedef std::map<const llvm::Instruction*, LockSpan> InstToCxtStmtSet;
+    typedef std::map<const Instruction*, NodeBS> LockSiteToLockSet;
+    typedef std::map<const Instruction*, LockSpan> InstToCxtStmtSet;
     typedef std::map<const CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
     typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
     typedef set<CxtLockProc> CxtLockProcSet;
 
-    typedef std::pair<const llvm::Function*,const llvm::Function*> FuncPair;
+    typedef std::pair<const Function*,const Function*> FuncPair;
     typedef std::map<FuncPair, bool> FuncPairToBool;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0) {
@@ -67,7 +66,7 @@ public:
     /// (2) maps a context-sensitive lock site to its corresponding lock span.
     void analyze();
     void analyzeIntraProcedualLock();
-    bool intraForwardTraverse(const llvm::Instruction* lock, InstSet& unlockset, InstSet& forwardInsts);
+    bool intraForwardTraverse(const Instruction* lock, InstSet& unlockset, InstSet& forwardInsts);
     bool intraBackwardTraverse(const InstSet& unlockset, InstSet& backwardInsts);
 
     void collectCxtLock();
@@ -79,13 +78,13 @@ public:
     /// Intraprocedural locks
     //@{
     /// Return true if the lock is an intra-procedural lock
-    inline bool isIntraLock(const llvm::Instruction* lock) const {
+    inline bool isIntraLock(const Instruction* lock) const {
         assert(locksites.find(lock)!=locksites.end() && "not a lock site?");
         return ciLocktoSpan.find(lock)!=ciLocktoSpan.end();
     }
 
     /// Add intra-procedural lock
-    inline void addIntraLock(const llvm::Instruction* lockSite, const InstSet& stmts) {
+    inline void addIntraLock(const Instruction* lockSite, const InstSet& stmts) {
         for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it) {
             instCILocksMap[*it].insert(lockSite);
             ciLocktoSpan[lockSite].insert(*it);
@@ -93,23 +92,23 @@ public:
     }
 
     /// Add intra-procedural lock
-    inline void addCondIntraLock(const llvm::Instruction* lockSite, const InstSet& stmts) {
+    inline void addCondIntraLock(const Instruction* lockSite, const InstSet& stmts) {
         for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it) {
             instTocondCILocksMap[*it].insert(lockSite);
         }
     }
 
     /// Return true if a statement is inside an intra-procedural lock
-    inline bool isInsideIntraLock(const llvm::Instruction* stmt) const {
+    inline bool isInsideIntraLock(const Instruction* stmt) const {
         return instCILocksMap.find(stmt)!=instCILocksMap.end() || isInsideCondIntraLock(stmt);
     }
 
     /// Return true if a statement is inside a partial lock/unlock pair (conditional lock with unconditional unlock)
-    inline bool isInsideCondIntraLock(const llvm::Instruction* stmt) const {
+    inline bool isInsideCondIntraLock(const Instruction* stmt) const {
         return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
     }
 
-    inline const InstSet& getIntraLockSet(const llvm::Instruction* stmt) const {
+    inline const InstSet& getIntraLockSet(const Instruction* stmt) const {
         InstToInstSetMap::const_iterator it = instCILocksMap.find(stmt);
         assert(it!=instCILocksMap.end() && "intralock not found!");
         return it->second;
@@ -119,10 +118,10 @@ public:
     /// Context-sensitive locks
     //@{
     /// Add inter-procedural context-sensitive lock
-    inline void addCxtLock(const CallStrCxt& cxt,const llvm::Instruction* inst) {
+    inline void addCxtLock(const CallStrCxt& cxt,const Instruction* inst) {
         CxtLock cxtlock(cxt,inst);
         cxtLockset.insert(cxtlock);
-        DBOUT(DMTA, llvm::outs() << "LockAnalysis Process new lock "; cxtlock.dump());
+        DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis Process new lock "; cxtlock.dump());
     }
 
     /// Get context-sensitive lock
@@ -155,18 +154,18 @@ public:
     //@}
 
     /// Return true if it is a candidate function
-    inline bool isLockCandidateFun(const llvm::Function* fun) const {
+    inline bool isLockCandidateFun(const Function* fun) const {
         return lockcandidateFuncSet.find(fun)!=lockcandidateFuncSet.end();
     }
 
     /// Context-sensitive statement and lock spans
     //@{
     /// Get LockSet and LockSpan
-    inline bool hasCxtStmtfromInst(const llvm::Instruction* inst) const {
+    inline bool hasCxtStmtfromInst(const Instruction* inst) const {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         return (it != instToCxtStmtSet.end());
     }
-    inline const CxtStmtSet& getCxtStmtfromInst(const llvm::Instruction* inst) const {
+    inline const CxtStmtSet& getCxtStmtfromInst(const Instruction* inst) const {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         assert(it != instToCxtStmtSet.end());
         return it->second;
@@ -216,7 +215,7 @@ public:
 
 
     /// Check if one instruction's context stmt is in a lock span
-    inline bool hasOneCxtInLockSpan(const llvm::Instruction *I, LockSpan lspan) const {
+    inline bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan) const {
         if(!hasCxtStmtfromInst(I))
             return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
@@ -228,7 +227,7 @@ public:
         return false;
     }
 
-    inline bool hasAllCxtInLockSpan(const llvm::Instruction *I, LockSpan lspan) const {
+    inline bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan) const {
         if(!hasCxtStmtfromInst(I))
             return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
@@ -244,15 +243,15 @@ public:
     /// Check if two Instructions are protected by common locks
     /// echo inst may have multiple cxt stmt
     /// we check whether every cxt stmt of instructions is protected by a common lock.
-    bool isProtectedByCommonLock(const llvm::Instruction *i1, const llvm::Instruction *i2);
-    bool isProtectedByCommonCxtLock(const llvm::Instruction *i1, const llvm::Instruction *i2);
+    bool isProtectedByCommonLock(const Instruction *i1, const Instruction *i2);
+    bool isProtectedByCommonCxtLock(const Instruction *i1, const Instruction *i2);
     bool isProtectedByCommonCxtLock(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2);
-    bool isProtectedByCommonCILock(const llvm::Instruction *i1, const llvm::Instruction *i2);
+    bool isProtectedByCommonCILock(const Instruction *i1, const Instruction *i2);
 
-    bool isInSameSpan(const llvm::Instruction *I1, const llvm::Instruction *I2);
-    bool isInSameCSSpan(const llvm::Instruction *i1, const llvm::Instruction *i2) const;
+    bool isInSameSpan(const Instruction *I1, const Instruction *I2);
+    bool isInSameCSSpan(const Instruction *i1, const Instruction *i2) const;
     bool isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2) const;
-    bool isInSameCISpan(const llvm::Instruction *i1, const llvm::Instruction *i2) const;
+    bool isInSameCISpan(const Instruction *i1, const Instruction *i2) const;
 
     inline u32_t getNumOfCxtLocks() {
         return cxtLockset.size();
@@ -274,13 +273,13 @@ private:
     void handleIntra(const CxtStmt& cts);
 
     /// Handle call relations
-    void handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, llvm::CallSite call);
+    void handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, CallSite call);
 
     /// Return true it a lock matches an unlock
     bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2) {
         return isAliasedLocks(cl1.getStmt(), cl2.getStmt());
     }
-    bool isAliasedLocks(const llvm::Instruction* i1, const llvm::Instruction* i2) {
+    bool isAliasedLocks(const Instruction* i1, const Instruction* i2) {
         /// todo: must alias
         return tct->getPTA()->alias(getLockVal(i1), getLockVal(i2));
     }
@@ -350,55 +349,27 @@ private:
     }
     //@}
 
-    /// Get the next instructions following control flow
-    inline void getNextInsts(const llvm::Instruction* curInst, InstVec& instList) {
-        if (!curInst->isTerminator()) {
-            instList.push_back(curInst->getNextNode());
-        } else {
-            const llvm::BasicBlock *BB = curInst->getParent();
-            // Visit all successors of BB in the CFG
-            for (llvm::succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
-                    it != ie; ++it) {
-                instList.push_back(&((*it)->front()));
-            }
-        }
-    }
-
-    /// Get the previous instructions following control flow
-    inline void getPrevInsts(const llvm::Instruction* curInst, InstVec& instList) {
-        if (curInst != &(curInst->getParent()->front())) {
-            instList.push_back(curInst->getPrevNode());
-        } else {
-            const llvm::BasicBlock *BB = curInst->getParent();
-            // Visit all successors of BB in the CFG
-            for (llvm::const_pred_iterator it = pred_begin(BB), ie = pred_end(BB);
-                    it != ie; ++it) {
-                instList.push_back(&((*it)->back()));
-            }
-        }
-    }
-
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
+    void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
 
     void validateResults();
 
     /// Whether it is a lock site
-    inline bool isTDFork(const llvm::Instruction* call) {
+    inline bool isTDFork(const Instruction* call) {
         return getTCG()->getThreadAPI()->isTDFork(call);
     }
     /// Whether it is a lock site
-    inline bool isTDAcquire(const llvm::Instruction* call) {
+    inline bool isTDAcquire(const Instruction* call) {
         return getTCG()->getThreadAPI()->isTDAcquire(call);
     }
     /// Whether it is a unlock site
-    inline bool isTDRelease(const llvm::Instruction* call) {
+    inline bool isTDRelease(const Instruction* call) {
         return getTCG()->getThreadAPI()->isTDRelease(call);
     }
     /// Get lock value
-    inline const llvm::Value* getLockVal(const llvm::Instruction* call) {
+    inline const Value* getLockVal(const Instruction* call) {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }
     /// ThreadCallGraph

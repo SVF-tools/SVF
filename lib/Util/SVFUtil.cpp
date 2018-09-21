@@ -27,25 +27,19 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/AnalysisUtil.h"
-
-#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
-#include <llvm/IR/Module.h>	// for Module
-#include <llvm/IR/InstrTypes.h>	// for TerminatorInst
-#include <llvm/IR/IntrinsicInst.h>	// for intrinsic instruction
-//#include <llvm/Analysis/DebugInfo.h>
-#include <llvm/IR/DebugInfo.h>
-#include <llvm/Support/CommandLine.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/Analysis/CFG.h>	// for CFG
-#include <llvm/IR/CFG.h>		// for CFG
+#include "Util/SVFUtil.h"
 #include "Util/Conditions.h"
 #include <sys/resource.h>		/// increase stack size
-#include <llvm/IRReader/IRReader.h>     /// for isIRFile
-#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
 
-using namespace llvm;
+#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
+#include <llvm/IR/InstrTypes.h>	// for TerminatorInst
+#include <llvm/IR/IntrinsicInst.h>	// for intrinsic instruction
+#include <llvm/IR/DebugInfo.h>
+#include <llvm/Analysis/CFG.h>	// for CFG
+#include <llvm/IR/CFG.h>		// for CFG
+
+
+
 
 /// Color for output format
 #define KNRM  "\x1B[1;0m"
@@ -57,8 +51,8 @@ using namespace llvm;
 #define KCYA  "\x1B[1;36m"
 #define KWHT  "\x1B[1;37m"
 
-static cl::opt<bool> DisableWarn("dwarn", cl::init(true),
-                                 cl::desc("Disable warning"));
+static llvm::cl::opt<bool> DisableWarn("dwarn", llvm::cl::init(true),
+                                 llvm::cl::desc("Disable warning"));
 
 /*!
  * A value represents an object if it is
@@ -67,13 +61,13 @@ static cl::opt<bool> DisableWarn("dwarn", cl::init(true),
  * 3) stack
  * 4) heap
  */
-bool analysisUtil::isObject(const Value * ref) {
+bool SVFUtil::isObject(const Value * ref) {
     bool createobj = false;
-    if (isa<Instruction>(ref) && isHeapAllocOrStaticExtCall(cast<Instruction>(ref)))
+    if (SVFUtil::isa<Instruction>(ref) && isHeapAllocOrStaticExtCall(SVFUtil::cast<Instruction>(ref)))
         createobj = true;
-    if (isa<GlobalVariable>(ref))
+    if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
-    if (isa<Function>(ref) || isa<AllocaInst>(ref) )
+    if (SVFUtil::isa<Function>(ref) || SVFUtil::isa<AllocaInst>(ref) )
         createobj = true;
 
     return createobj;
@@ -82,14 +76,14 @@ bool analysisUtil::isObject(const Value * ref) {
 /*!
  * Return true if it is an intric debug instruction
  */
-bool analysisUtil::isInstrinsicDbgInst(const Instruction* inst) {
-    return isa<DbgInfoIntrinsic>(inst);
+bool SVFUtil::isInstrinsicDbgInst(const Instruction* inst) {
+    return SVFUtil::isa<llvm::DbgInfoIntrinsic>(inst);
 }
 
 /*!
  * Return reachable bbs from function entry
  */
-void analysisUtil::getFunReachableBBs (const llvm::Function * fun, llvm::DominatorTree* dt, std::vector<const llvm::BasicBlock*> &reachableBBs) {
+void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs) {
     std::set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
     bbVec.push_back(&fun->getEntryBlock());
@@ -114,7 +108,7 @@ void analysisUtil::getFunReachableBBs (const llvm::Function * fun, llvm::Dominat
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool analysisUtil::functionDoesNotRet (const llvm::Function * fun) {
+bool SVFUtil::functionDoesNotRet (const Function * fun) {
 
     std::vector<const BasicBlock*> bbVec;
     std::set<const BasicBlock*> visited;
@@ -122,9 +116,9 @@ bool analysisUtil::functionDoesNotRet (const llvm::Function * fun) {
     while(!bbVec.empty()) {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
-        for (llvm::BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
+        for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
                 it != eit; ++it) {
-            if(isa<ReturnInst>(*it))
+            if(SVFUtil::isa<ReturnInst>(*it))
                 return false;
         }
 
@@ -147,13 +141,13 @@ bool analysisUtil::functionDoesNotRet (const llvm::Function * fun) {
 /*!
  * Return true if this is a function without any possible caller
  */
-bool analysisUtil::isDeadFunction (const llvm::Function * fun) {
+bool SVFUtil::isDeadFunction (const Function * fun) {
     if(fun->hasAddressTaken())
         return false;
     if(isProgEntryFunction(fun))
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i) {
-        if (isa<CallInst>(*i) || isa<InvokeInst>(*i))
+        if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
             return false;
     }
     SVFModule svfModule;
@@ -161,11 +155,11 @@ bool analysisUtil::isDeadFunction (const llvm::Function * fun) {
         const SVFModule::FunctionSetType &decls = svfModule.getDeclaration(fun);
         for (SVFModule::FunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it) {
-            const llvm::Function *decl = *it;
+            const Function *decl = *it;
             if(decl->hasAddressTaken())
                 return false;
-            for (llvm::Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i) {
-                if (llvm::isa<llvm::CallInst>(*i) || llvm::isa<llvm::InvokeInst>(*i))
+            for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i) {
+                if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
                     return false;
             }
         }
@@ -176,12 +170,12 @@ bool analysisUtil::isDeadFunction (const llvm::Function * fun) {
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool analysisUtil::isPtrInDeadFunction (const llvm::Value * value) {
-    if(const llvm::Instruction* inst = llvm::dyn_cast<llvm::Instruction>(value)) {
+bool SVFUtil::isPtrInDeadFunction (const Value * value) {
+    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value)) {
         if(isDeadFunction(inst->getParent()->getParent()))
             return true;
     }
-    else if(const llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(value)) {
+    else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value)) {
         if(isDeadFunction(arg->getParent()))
             return true;
     }
@@ -191,10 +185,10 @@ bool analysisUtil::isPtrInDeadFunction (const llvm::Value * value) {
 /*!
  * Strip constant casts
  */
-const Value * analysisUtil::stripConstantCasts(const Value *val) {
-    if (isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
+const Value * SVFUtil::stripConstantCasts(const Value *val) {
+    if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
-    else if (const ConstantExpr *CE = dyn_cast<ConstantExpr>(val)) {
+    else if (const ConstantExpr *CE = SVFUtil::dyn_cast<ConstantExpr>(val)) {
         if (Instruction::isCast(CE->getOpcode()))
             return stripConstantCasts(CE->getOperand(0));
     }
@@ -204,11 +198,11 @@ const Value * analysisUtil::stripConstantCasts(const Value *val) {
 /*!
  * Strip all casts
  */
-Value * analysisUtil::stripAllCasts(Value *val) {
+Value * SVFUtil::stripAllCasts(Value *val) {
     while (true) {
-        if (CastInst *ci = dyn_cast<CastInst>(val)) {
+        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val)) {
             val = ci->getOperand(0);
-        } else if (ConstantExpr *ce = dyn_cast<ConstantExpr>(val)) {
+        } else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val)) {
             if(ce->isCast())
                 val = ce->getOperand(0);
         } else {
@@ -221,7 +215,7 @@ Value * analysisUtil::stripAllCasts(Value *val) {
 /*!
  * Get position of a successor basic block
  */
-u32_t analysisUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {
+u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {
     const TerminatorInst *Term = BB->getTerminator();
     u32_t e = Term->getNumSuccessors();
     for (u32_t i = 0; ; ++i) {
@@ -232,13 +226,14 @@ u32_t analysisUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Su
     return 0;
 }
 
+
 /*!
- * Get position of a predecessor basic block
+ * Return a position index from current bb to it successor bb
  */
-u32_t analysisUtil::getBBPredecessorPos(const llvm::BasicBlock *BB, const llvm::BasicBlock *Pred) {
+u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb) {
     u32_t pos = 0;
-    for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it, ++pos) {
-        if(*it==Pred)
+    for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos) {
+        if(*it==bb)
             return pos;
     }
     assert(false && "Didn't find predecessor edge?");
@@ -248,14 +243,14 @@ u32_t analysisUtil::getBBPredecessorPos(const llvm::BasicBlock *BB, const llvm::
 /*!
  *  Get the num of BB's successors
  */
-u32_t analysisUtil::getBBSuccessorNum(const llvm::BasicBlock *BB) {
+u32_t SVFUtil::getBBSuccessorNum(const BasicBlock *BB) {
     return BB->getTerminator()->getNumSuccessors();
 }
 
 /*!
  * Get the num of BB's predecessors
  */
-u32_t analysisUtil::getBBPredecessorNum(const llvm::BasicBlock *BB) {
+u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB) {
     u32_t num = 0;
     for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)
         num++;
@@ -265,7 +260,7 @@ u32_t analysisUtil::getBBPredecessorNum(const llvm::BasicBlock *BB) {
 /*!
  * Get source code line number of a function according to debug info
  */
-std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
+std::string SVFUtil::getSourceLocOfFunction(const Function *F)
 {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -273,7 +268,7 @@ std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
     * https://reviews.llvm.org/D18074?id=50385	
     * looks like the relevant	
     */
-    if (DISubprogram *SP =  F->getSubprogram()) {
+    if (llvm::DISubprogram *SP =  F->getSubprogram()) {
         if (SP->describes(F))
             rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
     }
@@ -283,30 +278,30 @@ std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
 /*!
  * Get the meta data (line number and file name) info of a LLVM value
  */
-std::string analysisUtil::getSourceLoc(const Value* val) {
+std::string SVFUtil::getSourceLoc(const Value* val) {
     if(val==NULL)  return "empty val";
 
     std::string str;
     raw_string_ostream rawstr(str);
-    if (const Instruction *inst = dyn_cast<Instruction>(val)) {
-        if (isa<AllocaInst>(inst)) {
-            for (DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst))) {
-                if (DbgDeclareInst *DDI = dyn_cast<DbgDeclareInst>(DII)) {
-                    DIVariable *DIVar = cast<DIVariable>(DDI->getVariable());
+    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val)) {
+        if (SVFUtil::isa<AllocaInst>(inst)) {
+            for (llvm::DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst))) {
+                if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII)) {
+                	llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
                     rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
                     break;
                 }
             }
         }
         else if (MDNode *N = inst->getMetadata("dbg")) { // Here I is an LLVM instruction
-            DILocation* Loc = cast<DILocation>(N);                   // DILocation is in DebugInfo.h
+        	llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
             unsigned Line = Loc->getLine();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
             rawstr << "ln: " << Line << " fl: " << File;
         }
     }
-    else if (const Argument* argument = dyn_cast<Argument>(val)) {
+    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val)) {
         if (argument->getArgNo()%10 == 1)
             rawstr << argument->getArgNo() << "st";
         else if (argument->getArgNo()%10 == 2)
@@ -318,14 +313,14 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
         rawstr << " arg " << argument->getParent()->getName() << " "
                << getSourceLocOfFunction(argument->getParent());
     }
-    else if (const GlobalVariable* gvar = dyn_cast<GlobalVariable>(val)) {
+    else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
         rawstr << "Glob ";
         NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
         if(CU_Nodes) {
             for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
-                DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
-                for (DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
-                    DIGlobalVariable * DGV = GV->getVariable();
+            	llvm::DICompileUnit *CUNode = SVFUtil::cast<llvm::DICompileUnit>(CU_Nodes->getOperand(i));
+                for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
+                	llvm::DIGlobalVariable * DGV = GV->getVariable();
 
                     if(DGV->getName() == gvar->getName()){
                         rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
@@ -335,7 +330,7 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
             }
         }
     }
-    else if (const Function* func = dyn_cast<Function>(val)) {
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(val)) {
         rawstr << getSourceLocOfFunction(func);
     }
     else {
@@ -347,14 +342,14 @@ std::string analysisUtil::getSourceLoc(const Value* val) {
 /*!
  * print successful message by converting a string into green string output
  */
-std::string analysisUtil::sucMsg(std::string msg) {
+std::string SVFUtil::sucMsg(std::string msg) {
     return KGRN + msg + KNRM;
 }
 
 /*!
  * print warning message by converting a string into yellow string output
  */
-void analysisUtil::wrnMsg(std::string msg) {
+void SVFUtil::wrnMsg(std::string msg) {
     if(DisableWarn) return;
     outs() << KYEL + msg + KNRM << "\n";
 }
@@ -362,33 +357,33 @@ void analysisUtil::wrnMsg(std::string msg) {
 /*!
  * print error message by converting a string into red string output
  */
-std::string analysisUtil::errMsg(std::string msg) {
+std::string SVFUtil::errMsg(std::string msg) {
     return KRED + msg + KNRM;
 }
 
-std::string analysisUtil::bugMsg1(std::string msg) {
+std::string SVFUtil::bugMsg1(std::string msg) {
     return KYEL + msg + KNRM;
 }
 
-std::string analysisUtil::bugMsg2(std::string msg) {
+std::string SVFUtil::bugMsg2(std::string msg) {
     return KPUR + msg + KNRM;
 }
 
-std::string analysisUtil::bugMsg3(std::string msg) {
+std::string SVFUtil::bugMsg3(std::string msg) {
     return KCYA + msg + KNRM;
 }
 
 /*!
  * print each pass/phase message by converting a string into blue string output
  */
-std::string analysisUtil::pasMsg(std::string msg) {
+std::string SVFUtil::pasMsg(std::string msg) {
     return KBLU + msg + KNRM;
 }
 
 /*!
  * Dump points-to set
  */
-void analysisUtil::dumpPointsToSet(unsigned node, llvm::SparseBitVector<> bs) {
+void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs) {
     outs() << "node " << node << " points-to: {";
     dumpSet(bs);
     outs() << "}\n";
@@ -398,7 +393,7 @@ void analysisUtil::dumpPointsToSet(unsigned node, llvm::SparseBitVector<> bs) {
 /*!
  * Dump alias set
  */
-void analysisUtil::dumpAliasSet(unsigned node, llvm::SparseBitVector<> bs) {
+void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs) {
     outs() << "node " << node << " alias set: {";
     dumpSet(bs);
     outs() << "}\n";
@@ -407,8 +402,8 @@ void analysisUtil::dumpAliasSet(unsigned node, llvm::SparseBitVector<> bs) {
 /*!
  * Dump bit vector set
  */
-void analysisUtil::dumpSet(llvm::SparseBitVector<> bs, llvm::raw_ostream & O) {
-    for (llvm::SparseBitVector<>::iterator ii = bs.begin(), ie = bs.end();
+void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O) {
+    for (NodeBS::iterator ii = bs.begin(), ie = bs.end();
             ii != ie; ii++) {
         O << " " << *ii << " ";
     }
@@ -417,7 +412,7 @@ void analysisUtil::dumpSet(llvm::SparseBitVector<> bs, llvm::raw_ostream & O) {
 /*!
  * Print memory usage
  */
-void analysisUtil::reportMemoryUsageKB(const std::string& infor, llvm::raw_ostream & O)
+void SVFUtil::reportMemoryUsageKB(const std::string& infor, raw_ostream & O)
 {
     u32_t vmrss, vmsize;
     if (getMemoryUsageKB(&vmrss, &vmsize))
@@ -427,7 +422,7 @@ void analysisUtil::reportMemoryUsageKB(const std::string& infor, llvm::raw_ostre
 /*!
  * Get memory usage
  */
-bool analysisUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
+bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
 {
     /* Get the the current process' status file from the proc filesystem */
     char buffer[8192];
@@ -471,7 +466,7 @@ bool analysisUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
 /*!
  * Increase stack size
  */
-void analysisUtil::increaseStackSize()
+void SVFUtil::increaseStackSize()
 {
     const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
     struct rlimit rl;
@@ -481,7 +476,7 @@ void analysisUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-                llvm::outs() << "setrlimit returned result = " << result << "\n";
+                outs() << "setrlimit returned result = " << result << "\n";
         }
     }
 }
@@ -491,29 +486,29 @@ void analysisUtil::increaseStackSize()
  * llvm::parseIRFile (lib/IRReader/IRReader.cpp)
  * llvm::parseIR (lib/IRReader/IRReader.cpp)
  */
-bool analysisUtil::isIRFile(const std::string &filename) {
-    ErrorOr<std::unique_ptr<MemoryBuffer>> FileOrErr = MemoryBuffer::getFileOrSTDIN(filename);
+bool SVFUtil::isIRFile(const std::string &filename) {
+	llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
     if (FileOrErr.getError())
         return false;
-    MemoryBufferRef Buffer = FileOrErr.get()->getMemBufferRef();
+    llvm::MemoryBufferRef Buffer = FileOrErr.get()->getMemBufferRef();
     const unsigned char *bufferStart =
         (const unsigned char *)Buffer.getBufferStart();
     const unsigned char *bufferEnd =
         (const unsigned char *)Buffer.getBufferEnd();
-    return isBitcode(bufferStart, bufferEnd) ? true :
+    return llvm::isBitcode(bufferStart, bufferEnd) ? true :
            Buffer.getBuffer().startswith("; ModuleID =");
 }
 
 
 /// Get the names of all modules into a vector
 /// And process arguments
-void analysisUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
+void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                                     std::vector<std::string> &moduleNameVec) {
     bool first_ir_file = true;
     for (s32_t i = 0; i < argc; ++i) {
         std::string argument(argv[i]);
         size_t arg_len = argument.size();
-        if (analysisUtil::isIRFile(argument)) {
+        if (SVFUtil::isIRFile(argument)) {
             if (find(moduleNameVec.begin(), moduleNameVec.end(), argument)
                     == moduleNameVec.end())
                 moduleNameVec.push_back(argument);

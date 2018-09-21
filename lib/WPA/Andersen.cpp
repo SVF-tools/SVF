@@ -29,12 +29,9 @@
 
 #include "MemoryModel/PAG.h"
 #include "WPA/Andersen.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 
-#include <llvm/Support/CommandLine.h> // for tool output file
-
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 
 Size_t Andersen::numOfProcessedAddr = 0;
@@ -55,10 +52,10 @@ double Andersen::timeOfProcessLoadStore = 0;
 double Andersen::timeOfUpdateCallGraph = 0;
 
 
-static cl::opt<string> WriteAnder("write-ander",  cl::init(""),
-                                  cl::desc("Write Andersen's analysis results to a file"));
-static cl::opt<string> ReadAnder("read-ander",  cl::init(""),
-                                 cl::desc("Read Andersen's analysis results from a file"));
+static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
+                                  llvm::cl::desc("Write Andersen's analysis results to a file"));
+static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
+                                 llvm::cl::desc("Read Andersen's analysis results from a file"));
 
 
 
@@ -75,7 +72,7 @@ void Andersen::analyze(SVFModule svfModule) {
         readResultsFromFile = this->readFromFile(ReadAnder);
 
     if(!readResultsFromFile) {
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Start Solving Constraints\n"));
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
         processAllAddr();
 
@@ -99,7 +96,7 @@ void Andersen::analyze(SVFModule svfModule) {
 
         } while (reanalyze);
 
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Finish Solving Constraints\n"));
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
         /// finalize the analysis
         finalize();
@@ -124,7 +121,7 @@ void Andersen::processNode(NodeID nodeId) {
 
     for (ConstraintNode::const_iterator it = node->outgoingAddrsBegin(), eit =
                 node->outgoingAddrsEnd(); it != eit; ++it) {
-        processAddr(cast<AddrCGEdge>(*it));
+        processAddr(SVFUtil::cast<AddrCGEdge>(*it));
     }
 
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
@@ -148,7 +145,7 @@ void Andersen::processNode(NodeID nodeId) {
     // handle copy, call, return, gep
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
                 node->directOutEdgeEnd(); it != eit; ++it) {
-        if (GepCGEdge* gepEdge = llvm::dyn_cast<GepCGEdge>(*it))
+        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
             processGep(nodeId, gepEdge);
         else
             processCopy(nodeId, *it);
@@ -164,7 +161,7 @@ void Andersen::processAllAddr()
         ConstraintNode * cgNode = nodeIt->second;
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
                 it != eit; ++it)
-            processAddr(cast<AddrCGEdge>(*it));
+            processAddr(SVFUtil::cast<AddrCGEdge>(*it));
     }
 }
 
@@ -226,7 +223,7 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store) {
 bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
     numOfProcessedCopy++;
 
-    assert((isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
+    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
     PointsTo& srcPts = getPts(node);
     bool changed = unionPts(dst,srcPts);
@@ -266,7 +263,7 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             /// handle variant gep edge
             /// If a pointer connected by a variant gep edge,
             /// then set this memory object to be field insensitive
-            if (isa<VariantGepCGEdge>(edge)) {
+            if (SVFUtil::isa<VariantGepCGEdge>(edge)) {
                 if (consCG->isFieldInsensitiveObj(ptd) == false) {
                     consCG->setObjFieldInsensitive(ptd);
                     consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(ptd));
@@ -278,7 +275,7 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             /// Otherwise process invariant (normal) gep
             // TODO: after the node is set to field insensitive, handling invaraint gep edge may lose precision
             // because offset here are ignored, and it always return the base obj
-            else if (const NormalGepCGEdge* normalGepEdge = dyn_cast<NormalGepCGEdge>(edge)) {
+            else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)) {
                 if (!matchType(edge->getSrcID(), ptd, normalGepEdge))
                     continue;
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
@@ -454,7 +451,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        llvm::CallSite cs = it->first;
+        CallSite cs = it->first;
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             consCG->connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }

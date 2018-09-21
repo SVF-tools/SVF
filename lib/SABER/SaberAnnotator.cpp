@@ -30,8 +30,6 @@
 #include "SABER/SaberAnnotator.h"
 #include "SABER/ProgSlice.h"
 
-using namespace llvm;
-
 /*!
  *
  */
@@ -39,7 +37,7 @@ void SaberAnnotator::annotateSource() {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_SLICESOURCE ; //<< _curSlice->getSource()->getId();
-    if(const Instruction* sourceinst = dyn_cast<Instruction>(_curSlice->getLLVMValue(_curSlice->getSource()))) {
+    if(const Instruction* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getLLVMValue(_curSlice->getSource()))) {
         addMDTag(const_cast<Instruction*>(sourceinst),rawstr.str());
     }
     else
@@ -53,10 +51,10 @@ void SaberAnnotator::annotateSource() {
 void SaberAnnotator::annotateSinks() {
     for(ProgSlice::SVFGNodeSet::iterator it = _curSlice->getSinks().begin(),
             eit = _curSlice->getSinks().end(); it!=eit; ++it) {
-        if(const ActualParmSVFGNode* ap = dyn_cast<ActualParmSVFGNode>(*it)) {
+        if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it)) {
             const Instruction* sinkinst = ap->getCallSite().getInstruction();
-            assert(isa<CallInst>(sinkinst) && "not a call instruction?");
-            const CallInst* sink = cast<CallInst>(sinkinst);
+            assert(SVFUtil::isa<CallInst>(sinkinst) && "not a call instruction?");
+            const CallInst* sink = SVFUtil::cast<CallInst>(sinkinst);
             std::string str;
             raw_string_ostream rawstr(str);
             rawstr << SB_SLICESINK << _curSlice->getSource()->getId();

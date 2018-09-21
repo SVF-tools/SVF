@@ -28,16 +28,14 @@
  */
 
 #include "MemoryModel/ConsG.h"
-#include "Util/AnalysisUtil.h"
-#include "Util/GraphUtil.h"
+#include "Util/SVFUtil.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
-static cl::opt<bool> ConsCGDotGraph("dump-consG", cl::init(false),
-                                    cl::desc("Dump dot graph of Constraint Graph"));
-static cl::opt<bool> PrintCGGraph("print-consG", cl::init(false),
-                                    cl::desc("Print Constraint Graph to Terminal"));
+static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
+                                    llvm::cl::desc("Dump dot graph of Constraint Graph"));
+static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
+                                    llvm::cl::desc("Print Constraint Graph to Terminal"));
 
 /*!
  * Start building constraint graph
@@ -95,14 +93,14 @@ void ConstraintGraph::buildCG() {
     PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter) {
-        NormalGepPE* edge = cast<NormalGepPE>(*iter);
+        NormalGepPE* edge = SVFUtil::cast<NormalGepPE>(*iter);
         addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
     }
 
     PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter) {
-        VariantGepPE* edge = cast<VariantGepPE>(*iter);
+        VariantGepPE* edge = SVFUtil::cast<VariantGepPE>(*iter);
         addVariantGepCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
@@ -135,7 +133,7 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id) {
     PAGNode* node = PAG::getPAG()->getPAGNode(s->getId());
 	if (!SVFModule::pagReadFromTXT())
-		assert(!llvm::isa<DummyValPN>(node) && "a dummy node??");
+		assert(!SVFUtil::isa<DummyValPN>(node) && "a dummy node??");
 }
 
 /*!
@@ -253,31 +251,31 @@ bool ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst) {
 void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* newDstNode) {
     NodeID newDstNodeID = newDstNode->getId();
     NodeID srcId = edge->getSrcID();
-    if(LoadCGEdge* load = dyn_cast<LoadCGEdge>(edge)) {
+    if(LoadCGEdge* load = SVFUtil::dyn_cast<LoadCGEdge>(edge)) {
         removeLoadEdge(load);
         addLoadCGEdge(srcId,newDstNodeID);
     }
-    else if(StoreCGEdge* store = dyn_cast<StoreCGEdge>(edge)) {
+    else if(StoreCGEdge* store = SVFUtil::dyn_cast<StoreCGEdge>(edge)) {
         removeStoreEdge(store);
         addStoreCGEdge(srcId,newDstNodeID);
     }
-    else if(CopyCGEdge* copy = dyn_cast<CopyCGEdge>(edge)) {
+    else if(CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(edge)) {
         removeDirectEdge(copy);
         addCopyCGEdge(srcId,newDstNodeID);
     }
-    else if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)) {
+    else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)) {
         const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
         addNormalGepCGEdge(srcId,newDstNodeID,ls);
     }
-    else if(VariantGepCGEdge* gep = dyn_cast<VariantGepCGEdge>(edge)) {
+    else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge)) {
         removeDirectEdge(gep);
         addVariantGepCGEdge(srcId,newDstNodeID);
     }
     /// Address edge is removed directly, because it won't participate in solving further
     /// To be noted: it can not retarget the address edge to newSrc, otherwise it might lead
     /// non object node flows to points-to set of a pointer (src of the edge maybe non object node after scc)
-    else if(AddrCGEdge* addr = dyn_cast<AddrCGEdge>(edge)) {
+    else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
         removeAddrEdge(addr);
     }
     else
@@ -293,31 +291,31 @@ void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* ne
 void ConstraintGraph::reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* newSrcNode) {
     NodeID newSrcNodeID = newSrcNode->getId();
     NodeID dstId = edge->getDstID();
-    if(LoadCGEdge* load = dyn_cast<LoadCGEdge>(edge)) {
+    if(LoadCGEdge* load = SVFUtil::dyn_cast<LoadCGEdge>(edge)) {
         removeLoadEdge(load);
         addLoadCGEdge(newSrcNodeID,dstId);
     }
-    else if(StoreCGEdge* store = dyn_cast<StoreCGEdge>(edge)) {
+    else if(StoreCGEdge* store = SVFUtil::dyn_cast<StoreCGEdge>(edge)) {
         removeStoreEdge(store);
         addStoreCGEdge(newSrcNodeID,dstId);
     }
-    else if(CopyCGEdge* copy = dyn_cast<CopyCGEdge>(edge)) {
+    else if(CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(edge)) {
         removeDirectEdge(copy);
         addCopyCGEdge(newSrcNodeID,dstId);
     }
-    else if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)) {
+    else if(NormalGepCGEdge* gep = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)) {
         const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
         addNormalGepCGEdge(newSrcNodeID,dstId,ls);
     }
-    else if(VariantGepCGEdge* gep = dyn_cast<VariantGepCGEdge>(edge)) {
+    else if(VariantGepCGEdge* gep = SVFUtil::dyn_cast<VariantGepCGEdge>(edge)) {
         removeDirectEdge(gep);
         addVariantGepCGEdge(newSrcNodeID,dstId);
     }
     /// Address edge is removed directly, because it won't participate in solving further
     /// To be noted: it can not retarget the address edge to newSrc, otherwise it might lead
     /// non object node flows to points-to set of a pointer (src of the edge maybe non object node after scc)
-    else if(AddrCGEdge* addr = dyn_cast<AddrCGEdge>(edge)) {
+    else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
         removeAddrEdge(addr);
     }
     else
@@ -399,9 +397,9 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
         ConstraintEdge* edge = sccEdges.back();
         sccEdges.pop_back();
         /// only copy and gep edge can be removed
-        if(isa<CopyCGEdge>(edge))
+        if(SVFUtil::isa<CopyCGEdge>(edge))
             removeDirectEdge(edge);
-        else if (isa<GepCGEdge>(edge)) {
+        else if (SVFUtil::isa<GepCGEdge>(edge)) {
             removeDirectEdge(edge);
             // If the GEP is critical (i.e. may have a non-zero offset),
             // then it brings impact on field-sensitivity.
@@ -409,9 +407,9 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
                 criticalGepInsideSCC = true;
             }
         }
-        else if(isa<LoadCGEdge>(edge) || isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
-        else if(AddrCGEdge* addr = dyn_cast<AddrCGEdge>(edge)) {
+        else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
             removeAddrEdge(addr);
         }
         else
@@ -450,9 +448,9 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
         ConstraintEdge* edge = sccEdges.back();
         sccEdges.pop_back();
         /// only copy and gep edge can be removed
-        if(isa<CopyCGEdge>(edge))
+        if(SVFUtil::isa<CopyCGEdge>(edge))
             removeDirectEdge(edge);
-        else if (isa<GepCGEdge>(edge)) {
+        else if (SVFUtil::isa<GepCGEdge>(edge)) {
             removeDirectEdge(edge);
             // If the GEP is critical (i.e. may have a non-zero offset),
             // then it brings impact on field-sensitivity.
@@ -460,9 +458,9 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
                 criticalGepInsideSCC = true;
             }
         }
-        else if(isa<LoadCGEdge>(edge) || isa<StoreCGEdge>(edge))
+        else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
-        else if(AddrCGEdge* addr = dyn_cast<AddrCGEdge>(edge)) {
+        else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
             removeAddrEdge(addr);
         }
         else
@@ -474,7 +472,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
 /*!
  * Connect formal and actual parameters for indirect callsites
  */
-void ConstraintGraph::connectCaller2CalleeParams(llvm::CallSite cs, const llvm::Function *F,
+void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
         NodePairSet& cpySrcNodes) {
 
     assert(F);
@@ -550,7 +548,7 @@ void ConstraintGraph::connectCaller2CalleeParams(llvm::CallSite cs, const llvm::
  */
 void ConstraintGraph::dump() {
     if(ConsCGDotGraph)
-        GraphPrinter::WriteGraphToFile(llvm::outs(), "consCG_final", this);
+        GraphPrinter::WriteGraphToFile(outs(), "consCG_final", this);
 }
 
 /*!
@@ -573,13 +571,13 @@ void ConstraintGraph::print() {
 	ConstraintEdge::ConstraintEdgeSetTy& directs = this->getDirectCGEdges();
 	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = directs.begin(),
 			eiter = directs.end(); iter != eiter; ++iter) {
-		if (CopyCGEdge* copy = dyn_cast<CopyCGEdge>(*iter)) {
+		if (CopyCGEdge* copy = SVFUtil::dyn_cast<CopyCGEdge>(*iter)) {
 			outs() << copy->getSrcID() << " -- Copy --> " << copy->getDstID()
 					<< "\n";
-		} else if (NormalGepCGEdge* ngep = dyn_cast<NormalGepCGEdge>(*iter)) {
+		} else if (NormalGepCGEdge* ngep = SVFUtil::dyn_cast<NormalGepCGEdge>(*iter)) {
 			outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
 					<< ") --> " << ngep->getDstID() << "\n";
-		} else if (VariantGepCGEdge* vgep = dyn_cast<VariantGepCGEdge>(*iter)) {
+		} else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter)) {
 			outs() << ngep->getSrcID() << " -- VarintGep --> "
 					<< ngep->getDstID() << "\n";
 		} else
@@ -632,7 +630,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*> {
         raw_string_ostream rawstr(str);
 
         if (briefDisplay) {
-            if (isa<ValPN>(node)) {
+            if (SVFUtil::isa<ValPN>(node)) {
                 if (nameDisplay)
                     rawstr << node->getId() << ":" << node->getValueName();
                 else
@@ -641,7 +639,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*> {
                 rawstr << node->getId();
         } else {
             // print the whole value
-            if (!isa<DummyValPN>(node) && !isa<DummyObjPN>(node))
+            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
                 rawstr << *node->getValue();
             else
                 rawstr << "";
@@ -654,25 +652,25 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*> {
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph *graph) {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
 
-        if (isa<ValPN>(node)) {
-            if(isa<GepValPN>(node))
+        if (SVFUtil::isa<ValPN>(node)) {
+            if(SVFUtil::isa<GepValPN>(node))
                 return "shape=hexagon";
-            else if (isa<DummyValPN>(node))
+            else if (SVFUtil::isa<DummyValPN>(node))
                 return "shape=diamond";
             else
                 return "shape=circle";
-        } else if (isa<ObjPN>(node)) {
-            if(isa<GepObjPN>(node))
+        } else if (SVFUtil::isa<ObjPN>(node)) {
+            if(SVFUtil::isa<GepObjPN>(node))
                 return "shape=doubleoctagon";
-            else if(isa<FIObjPN>(node))
+            else if(SVFUtil::isa<FIObjPN>(node))
                 return "shape=septagon";
-            else if (isa<DummyObjPN>(node))
+            else if (SVFUtil::isa<DummyObjPN>(node))
                 return "shape=Mcircle";
             else
                 return "shape=doublecircle";
-        } else if (isa<RetPN>(node)) {
+        } else if (SVFUtil::isa<RetPN>(node)) {
             return "shape=Mrecord";
-        } else if (isa<VarArgPN>(node)) {
+        } else if (SVFUtil::isa<VarArgPN>(node)) {
             return "shape=octagon";
         } else {
             assert(0 && "no such kind node!!");

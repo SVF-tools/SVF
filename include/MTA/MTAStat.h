@@ -21,7 +21,7 @@ class MTAAnnotator;
 class MTAStat : public PTAStat {
 
 public:
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Instruction*> InstSet;
 
     /// Constructor
     MTAStat():PTAStat(NULL),TCTTime(0),MHPTime(0),FSMPTATime(0),AnnotationTime(0) {
