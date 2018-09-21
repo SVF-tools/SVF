@@ -35,8 +35,8 @@
 #include "PAGNode.h"
 #include "Util/SVFUtil.h"
 
-class SubPAG;
-extern std::map<std::string, SubPAG *> subpags;
+class ExternalPAG;
+extern std::map<std::string, ExternalPAG *> extpags;
 
 /*!
  * Program Assignment Graph for pointer analysis
@@ -95,10 +95,10 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
-    /// Maps function names to the entry nodes of the subpag which implements
+    /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
-    std::map<std::string, std::map<int, PAGNode *>> funcNameToSubPAGEntries;
-    std::map<std::string, PAGNode *> funcNameToSubPAGReturns;
+    std::map<std::string, std::map<int, PAGNode *>> funcNameToExternalPAGEntries;
+    std::map<std::string, PAGNode *> funcNameToExternalPAGReturns;
 
     /// Clean up memory
     void destroy();
@@ -667,29 +667,29 @@ public:
     }
     //@}
 
-    inline std::map<std::string, std::map<int, PAGNode *>> &getFuncNameToSubPAGEntriesMap(void) {
-        return funcNameToSubPAGEntries;
+    inline std::map<std::string, std::map<int, PAGNode *>> &getFuncNameToExternalPAGEntriesMap(void) {
+        return funcNameToExternalPAGEntries;
     }
 
-    inline std::map<std::string, PAGNode *> &getFuncNameToSubPAGReturnNodes(void) {
-        return funcNameToSubPAGReturns;
+    inline std::map<std::string, PAGNode *> &getFuncNameToExternalPAGReturnNodes(void) {
+        return funcNameToExternalPAGReturns;
     }
 
-    /// Whether a subPAG implementing funcName exists.
-    inline bool hasSubPAG(std::string funcName) {
-        return funcNameToSubPAGEntries.find(funcName)
-               != funcNameToSubPAGEntries.end();
+    /// Whether an external PAG implementing funcName exists.
+    inline bool hasExternalPAG(std::string funcName) {
+        return funcNameToExternalPAGEntries.find(funcName)
+               != funcNameToExternalPAGEntries.end();
     }
 
-    /// Adds (creates new equivalents) all the nodes and edges of subpag to
+    /// Adds (creates new equivalents) all the nodes and edges of extpag to
     /// this PAG.
     /// Returns true on success, false otherwise (incl. if it already exists).
-    bool addSubPAG(SubPAG *subpag);
+    bool addExternalPAG(ExternalPAG *extpag);
 
-    /// Connects callsite if a sub PAG implementing the relevant function
+    /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
-    bool connectCallsiteToSubPAG(llvm::CallSite *cs);
+    bool connectCallsiteToExternalPAG(llvm::CallSite *cs);
 
     /// Return graph name
     inline std::string getGraphName() const {

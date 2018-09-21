@@ -1,32 +1,34 @@
-//===- SubPAG.h -- Program assignment graph-----------------------------------//
+//===- ExternalPAG.h -- Program assignment graph-----------------------------------//
 
 /*
- * SubPAG.h
+ * ExternalPAG.h
  *
  *  Created on: Aug 20, 2018
  *      Author: Mohamad Barbar
  */
 
-#ifndef SUBPAG_H_
-#define SUBPAG_H_
+#ifndef EXTERNALPAG_H_
+#define EXTERNALPAG_H_
 
 #include "PAG.h"
 
-class SubPAG : public PAG {
+/// Represents the PAG of a function loaded externally (i.e. from file).
+/// It's purpose is to be attached to the main PAG (almost) seamlessly.
+class ExternalPAG : public PAG {
 private:
-    /// Name of the function this sub PAG represents.
+    /// Name of the function this external PAG represents.
     std::string functionName;
-    /// Nodes in the SubPAG which call edges should connect to.
+    /// Nodes in the ExternalPAG which call edges should connect to.
     /// argNodes[0] is arg 0, argNodes[1] is arg 1, ...
     std::map<int, PAGNode *> argNodes;
     PAGNode *returnNode;
 
 public:
-    SubPAG(std::string functionName) : PAG(true), functionName(functionName),
+    ExternalPAG(std::string functionName) : PAG(true), functionName(functionName),
 	                                   argNodes(), returnNode(NULL) {
     }
 
-    ~SubPAG() {
+    ~ExternalPAG() {
     }
 
     std::map<int, PAGNode *> &getArgNodes() { return argNodes; }
@@ -35,4 +37,4 @@ public:
     void setReturnNode(PAGNode *returnNode) { this->returnNode = returnNode; }
 };
 
-#endif  /* SUBPAG_H_ */
+#endif  /* EXTERNALPAG_H_ */

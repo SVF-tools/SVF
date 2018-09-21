@@ -31,7 +31,7 @@
 #define PAGBUILDER_H_
 
 #include "MemoryModel/PAG.h"
-#include "MemoryModel/SubPAG.h"
+#include "MemoryModel/ExternalPAG.h"
 #include "Util/ExtAPI.h"
 
 class SVFModule;

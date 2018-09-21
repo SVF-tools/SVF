@@ -29,7 +29,7 @@
 
 #include "MemoryModel/PAG.h"
 #include "Util/GraphPrinter.h"
-#include "MemoryModel/SubPAG.h"
+#include "MemoryModel/ExternalPAG.h"
 #include "Util/SVFUtil.h"
 #include "Util/BasicTypes.h"
 
@@ -44,7 +44,7 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
 
-std::map<std::string, SubPAG *> subpags;
+std::map<std::string, ExternalPAG *> extpags;
 
 /*!
  * Add Address edge
@@ -600,7 +600,7 @@ bool PAG::isValidPointer(NodeID nodeId) const {
     return node->isPointer();
 }
 
-bool PAG::addSubPAG(SubPAG *subpag) {
+bool PAG::addExternalPAG(ExternalPAG *extpag) {
     // We need: copies of nodes.
     //        : copies of edges.
     //        : to map function names to the (new) entry nodes.
@@ -611,7 +611,7 @@ bool PAG::addSubPAG(SubPAG *subpag) {
     std::set<PAGEdge *> oldEdges;
 
     // Add the nodes.
-    for (auto oldNode = subpag->begin(); oldNode != subpag->end(); ++oldNode) {
+    for (auto oldNode = extpag->begin(); oldNode != extpag->end(); ++oldNode) {
         int newNodeId;
         PAGNode *oldNodePtr = oldNode->second;
         if (ValPN::classof(oldNodePtr)) newNodeId = pag->addDummyValNode();
@@ -656,33 +656,33 @@ bool PAG::addSubPAG(SubPAG *subpag) {
         } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Ret) {
             pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
         } else {
-            llvm::outs() << "Something is wrong... subpag addition\n";
+            llvm::outs() << "Something is wrong... extpag addition\n";
         }
     }
 
     std::map<int, PAGNode *> argNodes;
-    for (auto it = subpag->getArgNodes().begin();
-         it != subpag->getArgNodes().end(); ++it) {
+    for (auto it = extpag->getArgNodes().begin();
+         it != extpag->getArgNodes().end(); ++it) {
         int index = it->first;
         PAGNode *oldNode = it->second;
         argNodes[index] = oldToNewNodes[oldNode];
     }
 
-    pag->getFuncNameToSubPAGEntriesMap()[subpag->getFunctionName()] = argNodes;
-    if (subpag->getReturnNode() != NULL) {
-        pag->getFuncNameToSubPAGReturnNodes()[subpag->getFunctionName()] =
-            oldToNewNodes[subpag->getReturnNode()];
+    pag->getFuncNameToExternalPAGEntriesMap()[extpag->getFunctionName()] = argNodes;
+    if (extpag->getReturnNode() != NULL) {
+        pag->getFuncNameToExternalPAGReturnNodes()[extpag->getFunctionName()] =
+            oldToNewNodes[extpag->getReturnNode()];
     }
 }
 
-bool PAG::connectCallsiteToSubPAG(llvm::CallSite *cs) {
+bool PAG::connectCallsiteToExternalPAG(llvm::CallSite *cs) {
     Function *function = cs->getCalledFunction();
     std::string functionName = function->getName();
-    if (!pag->hasSubPAG(functionName)) return false;
+    if (!pag->hasExternalPAG(functionName)) return false;
 
     std::map<int, PAGNode*> argNodes =
-    pag->getFuncNameToSubPAGEntriesMap()[functionName];
-    PAGNode *retNode = pag->getFuncNameToSubPAGReturnNodes()[functionName];
+    pag->getFuncNameToExternalPAGEntriesMap()[functionName];
+    PAGNode *retNode = pag->getFuncNameToExternalPAGReturnNodes()[functionName];
 
     // Handle the return.
     if (llvm::isa<PointerType>(cs->getType())) {
@@ -713,7 +713,7 @@ bool PAG::connectCallsiteToSubPAG(llvm::CallSite *cs) {
             break;
         }
 
-        // Formal arg node is from the subpag, actual arg node would come from
+        // Formal arg node is from the extpag, actual arg node would come from
         // the main pag.
         PAGNode *formalArgNode = argNodes[formalNodeIndex];
         NodeID actualArgNodeId = getValueNode(*itA);

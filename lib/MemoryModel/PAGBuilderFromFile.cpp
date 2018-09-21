@@ -93,7 +93,7 @@ PAG* PAGBuilderFromFile::build() {
                     assert(false && "format not support, pls specify node type");
                 }
             } else if (token_count == 3) {
-                // A subpag node which corresponds to an argument or return.
+                // A extpag node which corresponds to an argument or return.
 
                 // Will be the new node's ID or the source node.
                 NodeID nodeId;
@@ -111,18 +111,18 @@ PAG* PAGBuilderFromFile::build() {
                     pag->addFIObjNode(mem);
                 }
 
-                // If it's not for a subpag, just ignore the extra (3rd) token.
-                if (subPAG) {
+                // If it's not for a extpag, just ignore the extra (3rd) token.
+                if (extPAG) {
                     // TODO: may need better error handling.
                     PAGNode *thisPAGNode = pag->getPAGNode(nodeId);
                     std::string argNoOrRet;
                     ss >> argNoOrRet;
                     if (argNoOrRet == "ret") {
-                        static_cast<SubPAG *>(pag)->setReturnNode(thisPAGNode);
+                        static_cast<ExternalPAG *>(pag)->setReturnNode(thisPAGNode);
                     } else {
                         int argNo = std::stoi(argNoOrRet);
                         std::map<int, PAGNode *> &argNodes =
-                        static_cast<SubPAG *>(pag)->getArgNodes();
+                        static_cast<ExternalPAG *>(pag)->getArgNodes();
                         argNodes.insert(std::pair<int, PAGNode *>(
                                         argNo, thisPAGNode));
                     }

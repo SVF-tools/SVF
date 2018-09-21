@@ -31,7 +31,7 @@
 #define INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
 
 #include "MemoryModel/PAG.h"
-#include "MemoryModel/SubPAG.h"
+#include "MemoryModel/ExternalPAG.h"
 
 /*!
  * Build PAG from a user specified file (for debugging purpose)
@@ -41,13 +41,13 @@ class PAGBuilderFromFile {
 private:
     PAG* pag;
     std::string file;
-    bool subPAG;
+    bool extPAG;
 public:
     /// Constructor
-    PAGBuilderFromFile(std::string f, bool subpag, std::string functionName = "") :
-        pag(PAG::getPAG(true)), file(f), subPAG(subpag) {
-        if (subpag) {
-            pag = new SubPAG(functionName);
+    PAGBuilderFromFile(std::string f, bool extpag, std::string functionName = "") :
+        pag(PAG::getPAG(true)), file(f), extPAG(extpag) {
+        if (extpag) {
+            pag = new ExternalPAG(functionName);
         } else {
             pag = PAG::getPAG(true);
         }

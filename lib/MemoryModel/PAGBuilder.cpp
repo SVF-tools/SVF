@@ -40,24 +40,24 @@
 using namespace std;
 using namespace SVFUtil;
 
-static llvm::cl::list<std::string> SubPAGArgs("subpags",
-                                              llvm::cl::desc("SubPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
+static llvm::cl::list<std::string> ExternalPAGArgs("extpags",
+                                              llvm::cl::desc("ExternalPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
                                               llvm::cl::CommaSeparated);
 
-static std::vector<std::pair<std::string, std::string>> parseSubPAGs(void) {
-    std::vector<std::pair<std::string, std::string>> parsedSubPAGs;
-    for (auto arg = SubPAGArgs.begin(); arg != SubPAGArgs.end(); ++arg) {
+static std::vector<std::pair<std::string, std::string>> parseExternalPAGs(void) {
+    std::vector<std::pair<std::string, std::string>> parsedExternalPAGs;
+    for (auto arg = ExternalPAGArgs.begin(); arg != ExternalPAGArgs.end(); ++arg) {
         stringstream ss(*arg);
         std::string functionName;
         getline(ss, functionName, '@');
         std::string path;
         getline(ss, path);
-        parsedSubPAGs.push_back(
+        parsedExternalPAGs.push_back(
             std::pair<std::string, std::string>(functionName, path));
         llvm::outs() << "=" << path << "=\n";
     }
 
-    return parsedSubPAGs;
+    return parsedExternalPAGs;
 }
 
 /*!
@@ -66,17 +66,17 @@ static std::vector<std::pair<std::string, std::string>> parseSubPAGs(void) {
 PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
 
-    std::vector<std::pair<std::string, std::string>> parsedSubPAGs
-        = parseSubPAGs();
+    std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
+        = parseExternalPAGs();
 
-    // Build sub PAGs first to use them in PAG construction.
-    for (auto subpagPair= parsedSubPAGs.begin();
-         subpagPair != parsedSubPAGs.end(); ++subpagPair) {
-        std::string fname = subpagPair->first;
-        std::string path = subpagPair->second;
+    // Build ext PAGs first to use them in PAG construction.
+    for (auto extpagPair= parsedExternalPAGs.begin();
+         extpagPair != parsedExternalPAGs.end(); ++extpagPair) {
+        std::string fname = extpagPair->first;
+        std::string path = extpagPair->second;
 
         PAGBuilderFromFile fileBuilder(path, true, fname);
-        subpags[fname] = static_cast<SubPAG *>(fileBuilder.build());
+        extpags[fname] = static_cast<ExternalPAG *>(fileBuilder.build());
     }
 
     /// initial external library information
@@ -552,17 +552,17 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee)) {
-            if (subpags.find(callee->getName()) != subpags.end()) {
-                if (!pag->hasSubPAG(callee->getName())) {
-                    // Add the sub PAG if it hasn't been added.
+            if (extpags.find(callee->getName()) != extpags.end()) {
+                if (!pag->hasExternalPAG(callee->getName())) {
+                    // Add the ext PAG if it hasn't been added.
                     llvm::outs() << "adding " << callee->getName() << "\n";
-                    pag->addSubPAG(subpags[callee->getName()]);
+                    pag->addExternalPAG(extpags[callee->getName()]);
                 }
 
                 llvm::outs() << "connecting " << callee->getName() << "\n";
-                pag->connectCallsiteToSubPAG(&cs);
+                pag->connectCallsiteToExternalPAG(&cs);
             } else {
-                // There is no subpag for the function, use the old method.
+                // There is no extpag for the function, use the old method.
                 handleExtCall(cs, callee);
             }
         } else {
