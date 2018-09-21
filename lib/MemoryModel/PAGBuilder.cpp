@@ -552,7 +552,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee)) {
-            if (subpags.count(callee->getName())) {
+            if (subpags.find(callee->getName()) != subpags.end()) {
                 if (!pag->hasSubPAG(callee->getName())) {
                     // Add the sub PAG if it hasn't been added.
                     llvm::outs() << "adding " << callee->getName() << "\n";

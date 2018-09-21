@@ -677,7 +677,8 @@ public:
 
     /// Whether a subPAG implementing funcName exists.
     inline bool hasSubPAG(std::string funcName) {
-        return funcNameToSubPAGEntries.count(funcName) != 0;
+        return funcNameToSubPAGEntries.find(funcName)
+               != funcNameToSubPAGEntries.end();
     }
 
     /// Adds (creates new equivalents) all the nodes and edges of subpag to
