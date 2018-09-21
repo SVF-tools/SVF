@@ -113,49 +113,82 @@ InterBlockNode* ICFG::getInterBlockICFGNode(const Instruction* inst){
 	return getCallICFGNode(cs);
 }
 
+/*!
+ * function entry
+ */
+void ICFG::processFunEntry(const Function* fun, WorkList& worklist){
+	FunEntryBlockNode* FunEntryBlockNode = getFunEntryICFGNode(fun);
+	const Instruction* entryInst = &((fun->getEntryBlock()).front());
+	InstVec insts;
+	if (isInstrinsicDbgInst(entryInst))
+		getNextInsts(entryInst, insts);
+	else
+		insts.push_back(entryInst);
+	for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
+			nit != enit; ++nit) {
+		ICFGNode* instNode = getBlockICFGNode(*nit);
+		addIntraEdge(FunEntryBlockNode, instNode);
+		worklist.push(*nit);
+	}
+}
+
+/*!
+ * function body
+ */
+void ICFG::processFunBody(WorkList& worklist){
+	BBSet visited;
+	/// function body
+	while (!worklist.empty()) {
+		const Instruction* inst = worklist.pop();
+		if (visited.find(inst) == visited.end()) {
+			visited.insert(inst);
+			ICFGNode* srcNode = getBlockICFGNode(inst);
+			InstVec nextInsts;
+			getNextInsts(inst, nextInsts);
+			for (InstVec::const_iterator nit = nextInsts.begin(), enit =
+					nextInsts.end(); nit != enit; ++nit) {
+				const Instruction* succ = *nit;
+				ICFGNode* dstNode = getBlockICFGNode(succ);
+				addIntraEdge(srcNode, dstNode);
+				worklist.push(succ);
+			}
+		}
+	}
+}
+
+/*!
+ * function exit
+ */
+void ICFG::processFunExit(const Function* fun){
+	FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
+	const Instruction* exitInst = &(getFunExitBB(fun)->back());
+	InstVec insts;
+	if (isInstrinsicDbgInst(exitInst))
+		getPrevInsts(exitInst, insts);
+	else
+		insts.push_back(exitInst);
+	for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
+			nit != enit; ++nit) {
+		ICFGNode* instNode = getBlockICFGNode(*nit);
+		addIntraEdge(instNode, FunExitBlockNode);
+	}
+}
+
 
 /*!
  * Create ICFG nodes and edges
  */
 void ICFG::build(){
-
     SVFModule svfModule = pag->getModule();
     for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
         const Function *fun = *iter;
         if (SVFUtil::isExtCall(fun))
             continue;
-
-        /// function entry
-        FunEntryBlockNode* FunEntryBlockNode = getFunEntryICFGNode(fun);
-        const Instruction* entryInst = &((fun->getEntryBlock()).front());
-        ICFGNode* entryInstNode = getBlockICFGNode(entryInst);
-        addIntraEdge(FunEntryBlockNode, entryInstNode);
-
-        BBSet visited;
         WorkList worklist;
-        /// function body
-        worklist.push(entryInst);
-		while (!worklist.empty()) {
-            const Instruction* inst = worklist.pop();
-			if (visited.find(inst) == visited.end()) {
-				visited.insert(inst);
-				ICFGNode* srcNode = getBlockICFGNode(inst);
-				InstVec nextInsts;
-				getNextInsts(inst,nextInsts);
-				for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
-					const Instruction* succ = *nit;
-					ICFGNode* dstNode = getBlockICFGNode(succ);
-					addIntraEdge(srcNode, dstNode);
-					worklist.push(succ);
-				}
-			}
-		}
+        processFunEntry(fun,worklist);
+        processFunBody(worklist);
+        processFunExit(fun);
 
-		/// function exit
-		FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
-		const BasicBlock* exitBB = getFunExitBB(fun);
-        ICFGNode* exitInstNode = getBlockICFGNode(&(exitBB->back()));
-        addIntraEdge(exitInstNode,FunExitBlockNode);
     }
 }
 

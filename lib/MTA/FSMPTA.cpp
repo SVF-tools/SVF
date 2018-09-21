@@ -9,6 +9,8 @@
 #include "MTA/MHP.h"
 #include "MTA/PCG.h"
 
+using namespace SVFUtil;
+
 FSMPTA* FSMPTA::mfspta = NULL;
 u32_t MTASVFGBuilder::numOfNewSVFGEdges = 0;
 u32_t MTASVFGBuilder::numOfRemovedSVFGEdges = 0;
