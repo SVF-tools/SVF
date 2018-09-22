@@ -31,7 +31,6 @@
 #define INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
 
 #include "MemoryModel/PAG.h"
-#include "MemoryModel/ExternalPAG.h"
 
 /*!
  * Build PAG from a user specified file (for debugging purpose)

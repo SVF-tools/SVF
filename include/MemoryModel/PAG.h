@@ -38,7 +38,6 @@
 using namespace SVFUtil;
 
 class ExternalPAG;
-extern std::map<std::string, ExternalPAG *> extpags;
 
 /*!
  * Program Assignment Graph for pointer analysis

@@ -44,8 +44,6 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
 
-std::map<std::string, ExternalPAG *> extpags;
-
 /*!
  * Add Address edge
  */
