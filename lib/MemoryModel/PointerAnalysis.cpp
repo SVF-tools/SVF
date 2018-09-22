@@ -138,7 +138,7 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
         // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
         if (SVFModule::pagReadFromTXT()) {
-            PAGBuilderFromFile fileBuilder(SVFModule::pagFileName(), false);
+            PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
             pag = fileBuilder.build();
 
         } else {

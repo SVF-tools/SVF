@@ -44,13 +44,8 @@ private:
     bool extPAG;
 public:
     /// Constructor
-    PAGBuilderFromFile(std::string f, bool extpag, std::string functionName = "") :
-        pag(PAG::getPAG(true)), file(f), extPAG(extpag) {
-        if (extpag) {
-            pag = new ExternalPAG(functionName);
-        } else {
-            pag = PAG::getPAG(true);
-        }
+    PAGBuilderFromFile(std::string f) :
+        pag(PAG::getPAG(true)), file(f) {
     }
     /// Destructor
     ~PAGBuilderFromFile() {

@@ -32,6 +32,7 @@
 
 #include "MemoryModel/PAGBuilder.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
+#include "MemoryModel/ExternalPAG.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/CPPUtil.h"
@@ -69,14 +70,15 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
         = parseExternalPAGs();
 
-    // Build ext PAGs first to use them in PAG construction.
+    // Build ext PAGs (and add them) first to use them in PAG construction.
     for (auto extpagPair= parsedExternalPAGs.begin();
          extpagPair != parsedExternalPAGs.end(); ++extpagPair) {
         std::string fname = extpagPair->first;
         std::string path = extpagPair->second;
 
-        PAGBuilderFromFile fileBuilder(path, true, fname);
-        extpags[fname] = static_cast<ExternalPAG *>(fileBuilder.build());
+        ExternalPAG extpag = ExternalPAG(fname);
+        extpag.readFromFile(path);
+        pag->addExternalPAG(&extpag);
     }
 
     /// initial external library information

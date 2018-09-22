@@ -92,41 +92,6 @@ PAG* PAGBuilderFromFile::build() {
                 } else {
                     assert(false && "format not support, pls specify node type");
                 }
-            } else if (token_count == 3) {
-                // A extpag node which corresponds to an argument or return.
-
-                // Will be the new node's ID or the source node.
-                NodeID nodeId;
-                string nodeType;
-                istringstream ss(line);
-                ss >> nodeId;
-                ss >> nodeType;
-
-                if (nodeType == "v") {
-                    pag->addDummyValNode(nodeId);
-                } else if (nodeType == "o") {
-                    const MemObj* mem = pag->addDummyMemObj(nodeId);
-                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
-                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
-                    pag->addFIObjNode(mem);
-                }
-
-                // If it's not for a extpag, just ignore the extra (3rd) token.
-                if (extPAG) {
-                    // TODO: may need better error handling.
-                    PAGNode *thisPAGNode = pag->getPAGNode(nodeId);
-                    std::string argNoOrRet;
-                    ss >> argNoOrRet;
-                    if (argNoOrRet == "ret") {
-                        static_cast<ExternalPAG *>(pag)->setReturnNode(thisPAGNode);
-                    } else {
-                        int argNo = std::stoi(argNoOrRet);
-                        std::map<int, PAGNode *> &argNodes =
-                        static_cast<ExternalPAG *>(pag)->getArgNodes();
-                        argNodes.insert(std::pair<int, PAGNode *>(
-                                        argNo, thisPAGNode));
-                    }
-                }
             } else if (token_count == 4) {
                 // do consider gep edge
                 NodeID nodeSrc;

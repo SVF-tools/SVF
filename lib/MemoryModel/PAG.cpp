@@ -601,81 +601,86 @@ bool PAG::isValidPointer(NodeID nodeId) const {
 }
 
 bool PAG::addExternalPAG(ExternalPAG *extpag) {
-    // We need: copies of nodes.
-    //        : copies of edges.
-    //        : to map function names to the (new) entry nodes.
+    // We need: the new nodes.
+    //        : the new edges.
+    //        : to map function names to the entry nodes.
+    //        : to map function names to the return node.
 
     // To create the new edges.
-    std::map<PAGNode *, PAGNode *> oldToNewNodes;
-
-    std::set<PAGEdge *> oldEdges;
+    std::map<NodeID, PAGNode *> extToNewNodes;
 
     // Add the nodes.
-    for (auto oldNode = extpag->begin(); oldNode != extpag->end(); ++oldNode) {
-        int newNodeId;
-        PAGNode *oldNodePtr = oldNode->second;
-        if (ValPN::classof(oldNodePtr)) newNodeId = pag->addDummyValNode();
-        else {
-            // TODO: fix obj node
+    for (auto extNodeIt = extpag->getNodes().begin();
+         extNodeIt != extpag->getNodes().end(); ++extNodeIt) {
+        NodeID extNodeId = std::get<0>(*extNodeIt);
+        std::string extNodeType = std::get<1>(*extNodeIt);
+
+        NodeID newNodeId;
+        if (extNodeType == "v") {
+            newNodeId = pag->addDummyValNode();
+        } else {
+            // TODO: fix obj node - there's more to it.
             newNodeId = pag->addDummyObjNode();
         }
 
-        oldToNewNodes[oldNodePtr] = getPAGNode(newNodeId);
-
-        // Add edges to set to iterate later.
-        for (auto edge = oldNodePtr->getOutEdges().begin();
-             edge != oldNodePtr->getOutEdges().end(); ++edge) {
-            oldEdges.insert(*edge);
-        }
+        extToNewNodes[extNodeId] = getPAGNode(newNodeId);
     }
 
     // Add the edges.
-    for (auto oldEdge = oldEdges.begin(); oldEdge != oldEdges.end();
-         ++oldEdge) {
-        PAGNode *srcNode = (*oldEdge)->getSrcNode();
-        PAGNode *dstNode = (*oldEdge)->getDstNode();
-        int srcID = oldToNewNodes[srcNode]->getId();
-        int dstID = oldToNewNodes[dstNode]->getId();
+    for (auto extEdgeIt = extpag->getEdges().begin();
+         extEdgeIt != extpag->getEdges().end(); ++extEdgeIt) {
+        NodeID extSrcId = std::get<0>(*extEdgeIt);
+        NodeID extDstId = std::get<1>(*extEdgeIt);
+        std::string extEdgeType = std::get<2>(*extEdgeIt);
+        int extOffsetOrCSId = std::get<3>(*extEdgeIt);
 
-        if ((*oldEdge)->getEdgeKind() == PAGEdge::Addr) {
-            pag->addAddrEdge(srcID, dstID);
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Copy) {
-            pag->addCopyEdge(srcID, dstID);
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Load) {
-            pag->addLoadEdge(srcID, dstID);
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Store) {
-            pag->addStoreEdge(srcID, dstID);
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::NormalGep) {
-            int offsetOrCSId =
-                static_cast<NormalGepPE *>(*oldEdge)->getOffset();
-            pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::VariantGep) {
-            pag->addVariantGepEdge(srcID, dstID);
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Call) {
+        PAGNode *srcNode = extToNewNodes[extSrcId];
+        PAGNode *dstNode = extToNewNodes[extDstId];
+        NodeID srcId = srcNode->getId();
+        NodeID dstId = dstNode->getId();
+
+        if (extEdgeType == "addr") {
+            pag->addAddrEdge(srcId, dstId);
+        } else if (extEdgeType == "copy") {
+            pag->addCopyEdge(srcId, dstId);
+        } else if (extEdgeType == "load") {
+            pag->addLoadEdge(srcId, dstId);
+        } else if (extEdgeType == "store") {
+            pag->addStoreEdge(srcId, dstId);
+        } else if (extEdgeType == "gep") {
+            pag->addNormalGepEdge(srcId, dstId, LocationSet(extOffsetOrCSId));
+        } else if (extEdgeType == "variant-gep") {
+            pag->addVariantGepEdge(srcId, dstId);
+        } else if (extEdgeType == "call") {
             pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
-        } else if ((*oldEdge)->getEdgeKind() == PAGEdge::Ret) {
+        } else if (extEdgeType == "ret") {
             pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
         } else {
-            llvm::outs() << "Something is wrong... extpag addition\n";
+            outs() << "Bad edge type found during extpag addition\n";
         }
     }
 
+    // Record the arg nodes.
     std::map<int, PAGNode *> argNodes;
-    for (auto it = extpag->getArgNodes().begin();
-         it != extpag->getArgNodes().end(); ++it) {
-        int index = it->first;
-        PAGNode *oldNode = it->second;
-        argNodes[index] = oldToNewNodes[oldNode];
+    for (auto argNodeIt = extpag->getArgNodes().begin();
+         argNodeIt != extpag->getArgNodes().end(); ++argNodeIt) {
+        int index = argNodeIt->first;
+        NodeID extNodeId = argNodeIt->second;
+        argNodes[index] = extToNewNodes[extNodeId];
     }
 
-    pag->getFuncNameToExternalPAGEntriesMap()[extpag->getFunctionName()] = argNodes;
-    if (extpag->getReturnNode() != NULL) {
+    pag->getFuncNameToExternalPAGEntriesMap()[extpag->getFunctionName()]
+        = argNodes;
+
+    // Record the return node.
+    if (extpag->hasReturnNode()) {
         pag->getFuncNameToExternalPAGReturnNodes()[extpag->getFunctionName()] =
-            oldToNewNodes[extpag->getReturnNode()];
+            extToNewNodes[extpag->getReturnNode()];
     }
 }
 
-bool PAG::connectCallsiteToExternalPAG(llvm::CallSite *cs) {
+bool PAG::connectCallsiteToExternalPAG(CallSite *cs) {
+    /*
     Function *function = cs->getCalledFunction();
     std::string functionName = function->getName();
     if (!pag->hasExternalPAG(functionName)) return false;
@@ -732,6 +737,7 @@ bool PAG::connectCallsiteToExternalPAG(llvm::CallSite *cs) {
     }
 
     return false;
+    */
 }
 
 /*!
@@ -792,32 +798,32 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
-static void outputPAGNodeNoNewLine(llvm::raw_ostream &o, PAGNode *pagNode) {
+static void outputPAGNodeNoNewLine(raw_ostream &o, PAGNode *pagNode) {
     o << pagNode->getId() << " ";
     // TODO: is this check enough?
     if (!ObjPN::classof(pagNode)) o << "v";
     else o << "o";
 }
 
-static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode) {
+static void outputPAGNode(raw_ostream &o, PAGNode *pagNode) {
     outputPAGNodeNoNewLine(o, pagNode);
     o << "\n";
 }
 
-static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode, int argno) {
+static void outputPAGNode(raw_ostream &o, PAGNode *pagNode, int argno) {
     outputPAGNodeNoNewLine(o, pagNode);
     o << " " << argno;
     o << "\n";
 }
 
-static void outputPAGNode(llvm::raw_ostream &o, PAGNode *pagNode,
+static void outputPAGNode(raw_ostream &o, PAGNode *pagNode,
                           std::string trail) {
     outputPAGNodeNoNewLine(o, pagNode);
     o << " " << trail;
     o << "\n";
 }
 
-static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
+static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge) {
     NodeID srcId = pagEdge->getSrcID();
     NodeID dstId = pagEdge->getDstID();
     u32_t offset = 0;
@@ -849,10 +855,10 @@ static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
         edgeKind = "variant-gep";
         break;
     case PAGEdge::ThreadFork:
-        llvm::outs() << "dump-function-pags: found ThreadFork edge.\n";
+        outs() << "dump-function-pags: found ThreadFork edge.\n";
         break;
     case PAGEdge::ThreadJoin:
-        llvm::outs() << "dump-function-pags: found ThreadJoin edge.\n";
+        outs() << "dump-function-pags: found ThreadJoin edge.\n";
         break;
     }
 
@@ -862,7 +868,7 @@ static void outputPAGEdge(llvm::raw_ostream &o, PAGEdge *pagEdge) {
     o << srcId << " " << edgeKind << " " << dstId << " " << offset << "\n";
 }
 
-int getArgNo(llvm::Function *function, const llvm::Value *arg) {
+int getArgNo(Function *function, const Value *arg) {
     int argNo = 0;
     for (auto it = function->arg_begin(); it != function->arg_end();
          ++it, ++argNo) {
@@ -877,7 +883,7 @@ int getArgNo(llvm::Function *function, const llvm::Value *arg) {
  */
 void PAG::dumpFunctions(std::vector<std::string> functions) {
     // Naive: first map functions to entries in PAG, then dump them.
-    std::map<llvm::Function *, std::vector<PAGNode *>> functionToPAGNodes;
+    std::map<Function *, std::vector<PAGNode *>> functionToPAGNodes;
 
     std::set<PAGNode *> callDsts;
     for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
@@ -889,8 +895,8 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
                 currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
              it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
             CallPE *callEdge = static_cast<CallPE *>(*it);
-            const llvm::Instruction *inst = callEdge->getCallInst();
-            llvm::Function *currFunction =
+            const Instruction *inst = callEdge->getCallInst();
+            ::Function *currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
 
             if (currFunction != NULL) {
@@ -912,7 +918,7 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
 
     for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
          ++it) {
-        llvm::Function *function = it->first;
+        Function *function = it->first;
         std::string functionName = it->first->getName();
 
         // The final nodes and edges we will print.
@@ -925,7 +931,7 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
         PAGNode *retNode = NULL;
 
 
-        llvm::outs() << "PAG for function: " << functionName << "\n";
+        outs() << "PAG for function: " << functionName << "\n";
         for (auto node = argNodes.begin(); node != argNodes.end(); ++node) {
             todoNodes.push(*node);
         }
@@ -957,20 +963,20 @@ void PAG::dumpFunctions(std::vector<std::string> functions) {
             // Argument nodes use extra information: it's argument number.
             if (std::find(argNodes.begin(), argNodes.end(), *node)
                 != argNodes.end()) {
-                outputPAGNode(llvm::outs(), *node, getArgNo(function, (*node)->getValue()));
+                outputPAGNode(outs(), *node, getArgNo(function, (*node)->getValue()));
             } else if (*node == retNode) {
-                outputPAGNode(llvm::outs(), *node, "ret");
+                outputPAGNode(outs(), *node, "ret");
             } else {
-                outputPAGNode(llvm::outs(), *node);
+                outputPAGNode(outs(), *node);
             }
         }
 
         for (auto edge = edges.begin(); edge != edges.end(); ++edge) {
             // TODO: proper file.
-            outputPAGEdge(llvm::outs(), *edge);
+            outputPAGEdge(outs(), *edge);
         }
 
-        llvm::outs() << "PAG for functionName " << functionName << " done\n";
+        outs() << "PAG for functionName " << functionName << " done\n";
     }
 }
 
