@@ -233,9 +233,7 @@ void PointerAnalysis::finalize() {
     if (dumpGraph())
         pag->dump("pag_final");
 
-    if (!PAGFunctions.empty())
-        pag->dumpFunctions(PAGFunctions);
-    else std::cout << "EMPTY!\n";
+    if (!PAGFunctions.empty()) pag->dumpFunctions(PAGFunctions);
 
     /// Dump results
     if (PTSPrint) {
