@@ -600,7 +600,11 @@ bool PAG::isValidPointer(NodeID nodeId) const {
     return node->isPointer();
 }
 
-bool PAG::addExternalPAG(ExternalPAG *extpag) {
+bool PAG::addExternalPAG(ExternalPAG *extpag, Function *function) {
+    // The function does not exist in the module - bad arg?
+    // TODO: maybe some warning?
+    if (function == NULL) return false;
+
     outs() << "Adding extpag " << extpag->getFunctionName() << "\n";
     // Temporarily trick SVF Module into thinking we are reading from
     // file to avoid setting BBs/Values (as these nodes don't have any).
@@ -675,12 +679,11 @@ bool PAG::addExternalPAG(ExternalPAG *extpag) {
         argNodes[index] = extToNewNodes[extNodeId];
     }
 
-    pag->getFuncNameToExternalPAGEntriesMap()[extpag->getFunctionName()]
-        = argNodes;
+    pag->getFunctionToExternalPAGEntriesMap()[function] = argNodes;
 
     // Record the return node.
     if (extpag->hasReturnNode()) {
-        pag->getFuncNameToExternalPAGReturnNodes()[extpag->getFunctionName()] =
+        pag->getFunctionToExternalPAGReturnNodes()[function] =
             extToNewNodes[extpag->getReturnNode()];
     }
 
@@ -691,11 +694,11 @@ bool PAG::addExternalPAG(ExternalPAG *extpag) {
 bool PAG::connectCallsiteToExternalPAG(CallSite *cs) {
     Function *function = cs->getCalledFunction();
     std::string functionName = function->getName();
-    if (!pag->hasExternalPAG(functionName)) return false;
+    if (!pag->hasExternalPAG(function)) return false;
 
     std::map<int, PAGNode*> argNodes =
-    pag->getFuncNameToExternalPAGEntriesMap()[functionName];
-    PAGNode *retNode = pag->getFuncNameToExternalPAGReturnNodes()[functionName];
+    pag->getFunctionToExternalPAGEntriesMap()[function];
+    PAGNode *retNode = pag->getFunctionToExternalPAGReturnNodes()[function];
 
     // Handle the return.
     if (llvm::isa<PointerType>(cs->getType())) {

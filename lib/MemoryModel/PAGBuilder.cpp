@@ -86,7 +86,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
 
         ExternalPAG extpag = ExternalPAG(fname);
         extpag.readFromFile(path);
-        pag->addExternalPAG(&extpag);
+        pag->addExternalPAG(&extpag, svfModule.getFunction(fname));
     }
 
 
@@ -556,7 +556,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee)) {
-            if (pag->hasExternalPAG(callee->getName())) {
+            if (pag->hasExternalPAG(callee)) {
                 pag->connectCallsiteToExternalPAG(&cs);
             } else {
                 // There is no extpag for the function, use the old method.

@@ -99,8 +99,8 @@ private:
 
     /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
-    std::map<std::string, std::map<int, PAGNode *>> funcNameToExternalPAGEntries;
-    std::map<std::string, PAGNode *> funcNameToExternalPAGReturns;
+    std::map<const Function *, std::map<int, PAGNode *>> functionToExternalPAGEntries;
+    std::map<const Function *, PAGNode *> functionToExternalPAGReturns;
 
     /// Clean up memory
     void destroy();
@@ -669,25 +669,25 @@ public:
     }
     //@}
 
-    inline std::map<std::string, std::map<int, PAGNode *>> &getFuncNameToExternalPAGEntriesMap(void) {
-        return funcNameToExternalPAGEntries;
+    inline std::map<const Function *, std::map<int, PAGNode *>> &getFunctionToExternalPAGEntriesMap(void) {
+        return functionToExternalPAGEntries;
     }
 
-    inline std::map<std::string, PAGNode *> &getFuncNameToExternalPAGReturnNodes(void) {
-        return funcNameToExternalPAGReturns;
+    inline std::map<const Function *, PAGNode *> &getFunctionToExternalPAGReturnNodes(void) {
+        return functionToExternalPAGReturns;
     }
 
-    /// Whether an external PAG implementing funcName exists.
-    inline bool hasExternalPAG(std::string funcName) const {
-        bool ret = funcNameToExternalPAGEntries.find(funcName)
-               != funcNameToExternalPAGEntries.end();
+    /// Whether an external PAG implementing function exists.
+    inline bool hasExternalPAG(const Function *function) const {
+        bool ret = functionToExternalPAGEntries.find(function)
+               != functionToExternalPAGEntries.end();
         return ret;
     }
 
     /// Adds (creates new equivalents) all the nodes and edges of extpag to
-    /// this PAG.
+    /// this PAG. function is used as a key for future lookups.
     /// Returns true on success, false otherwise (incl. if it already exists).
-    bool addExternalPAG(ExternalPAG *extpag);
+    bool addExternalPAG(ExternalPAG *extpag, Function *function);
 
     /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.
