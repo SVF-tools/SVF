@@ -35,6 +35,8 @@
 #include "PAGNode.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVFUtil;
+
 class ExternalPAG;
 extern std::map<std::string, ExternalPAG *> extpags;
 
@@ -677,8 +679,9 @@ public:
 
     /// Whether an external PAG implementing funcName exists.
     inline bool hasExternalPAG(std::string funcName) const {
-        return funcNameToExternalPAGEntries.find(funcName)
+        bool ret = funcNameToExternalPAGEntries.find(funcName)
                != funcNameToExternalPAGEntries.end();
+        return ret;
     }
 
     /// Adds (creates new equivalents) all the nodes and edges of extpag to

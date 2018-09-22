@@ -70,6 +70,14 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
         = parseExternalPAGs();
 
+    /// initial external library information
+    /// initial PAG nodes
+    initalNode();
+    /// initial PAG edges:
+    ///// handle globals
+    visitGlobal(svfModule);
+    ///// collect exception vals in the program
+
     // Build ext PAGs (and add them) first to use them in PAG construction.
     for (auto extpagPair= parsedExternalPAGs.begin();
          extpagPair != parsedExternalPAGs.end(); ++extpagPair) {
@@ -81,13 +89,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
         pag->addExternalPAG(&extpag);
     }
 
-    /// initial external library information
-    /// initial PAG nodes
-    initalNode();
-    /// initial PAG edges:
-    ///// handle globals
-    visitGlobal(svfModule);
-    ///// collect exception vals in the program
+
     /// handle functions
     for (SVFModule::iterator fit = svfModule.begin(), efit = svfModule.end();
             fit != efit; ++fit) {
@@ -554,14 +556,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee)) {
-            if (extpags.find(callee->getName()) != extpags.end()) {
-                if (!pag->hasExternalPAG(callee->getName())) {
-                    // Add the ext PAG if it hasn't been added.
-                    llvm::outs() << "adding " << callee->getName() << "\n";
-                    pag->addExternalPAG(extpags[callee->getName()]);
-                }
-
-                llvm::outs() << "connecting " << callee->getName() << "\n";
+            if (pag->hasExternalPAG(callee->getName())) {
                 pag->connectCallsiteToExternalPAG(&cs);
             } else {
                 // There is no extpag for the function, use the old method.

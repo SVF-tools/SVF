@@ -601,6 +601,12 @@ bool PAG::isValidPointer(NodeID nodeId) const {
 }
 
 bool PAG::addExternalPAG(ExternalPAG *extpag) {
+    outs() << "Adding extpag " << extpag->getFunctionName() << "\n";
+    // Temporarily trick SVF Module into thinking we are reading from
+    // file to avoid setting BBs/Values (as these nodes don't have any).
+    std::string oldSVFModuleFileName = SVFModule::pagFileName();
+    SVFModule::setPagFromTXT("tmp");
+
     // We need: the new nodes.
     //        : the new edges.
     //        : to map function names to the entry nodes.
@@ -677,10 +683,12 @@ bool PAG::addExternalPAG(ExternalPAG *extpag) {
         pag->getFuncNameToExternalPAGReturnNodes()[extpag->getFunctionName()] =
             extToNewNodes[extpag->getReturnNode()];
     }
+
+    // Put it back as if nothing happened.
+    SVFModule::setPagFromTXT(oldSVFModuleFileName);
 }
 
 bool PAG::connectCallsiteToExternalPAG(CallSite *cs) {
-    /*
     Function *function = cs->getCalledFunction();
     std::string functionName = function->getName();
     if (!pag->hasExternalPAG(functionName)) return false;
@@ -712,7 +720,6 @@ bool PAG::connectCallsiteToExternalPAG(CallSite *cs) {
     size_t formalNodeIndex = 0;
 
     for (; itF != ieF ; ++itA, ++itF, ++formalNodeIndex) {
-        llvm::outs() << "HIIII\n";
         if (itA == ieA) {
             // When unneeded args are left empty, e.g. Linux kernel.
             break;
@@ -737,7 +744,6 @@ bool PAG::connectCallsiteToExternalPAG(CallSite *cs) {
     }
 
     return false;
-    */
 }
 
 /*!
