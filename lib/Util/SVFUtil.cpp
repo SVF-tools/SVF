@@ -239,7 +239,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
 	if (curInst != &(curInst->getParent()->front())) {
 		const Instruction* prevInst = curInst->getPrevNode();
 		if (isInstrinsicDbgInst(prevInst))
-			getNextInsts(prevInst, instList);
+			getPrevInsts(prevInst, instList);
 		else
 			instList.push_back(prevInst);
 	} else {
@@ -248,7 +248,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
 		for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it) {
 			const Instruction* prevInst = &((*it)->back());
 			if (isInstrinsicDbgInst(prevInst))
-				getNextInsts(prevInst, instList);
+				getPrevInsts(prevInst, instList);
 			else
 				instList.push_back(prevInst);
 		}

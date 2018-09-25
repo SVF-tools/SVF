@@ -168,7 +168,15 @@ protected:
     }
 
     /// Create edges between ICFG nodes within a function
+    ///@{
     void build();
+
+    void processFunEntry(const Function* fun, WorkList& worklist);
+
+    void processFunBody(WorkList& worklist);
+
+    void processFunExit(const Function* fun);
+    //@}
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(CallSite cs, const Function* callee);
@@ -193,7 +201,7 @@ protected:
 
 	/// Add/Get a basic block ICFGNode
 	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
-		if(SVFUtil::isCallSite(inst))
+		if(SVFUtil::isNonInstricCallSite(inst))
 			return getInterBlockICFGNode(inst);
 		else
 			return getIntraBlockICFGNode(inst);
