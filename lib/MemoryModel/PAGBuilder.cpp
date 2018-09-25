@@ -380,7 +380,6 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
  * Visit load instructions
  */
 void PAGBuilder::visitLoadInst(LoadInst &inst) {
-    pag->loadInstNum++;
     if (SVFUtil::isa<PointerType>(inst.getType())) {
         DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
@@ -396,7 +395,6 @@ void PAGBuilder::visitLoadInst(LoadInst &inst) {
  * Visit store instructions
  */
 void PAGBuilder::visitStoreInst(StoreInst &inst) {
-    pag->storeInstNum++;
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
@@ -436,42 +434,50 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
     pag->addGepEdge(src, dst, ls, constGep);
 }
 
-/*!
- * Visit intToPtr instructions
- */
-void PAGBuilder::visitIntToPtrInst(IntToPtrInst &inst) {
-
-    DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
-    NodeID dst = getValueNode(&inst);
-    pag->addBlackHoleAddrEdge(dst);
-}
-
 /*
  * Visit cast instructions
  */
 void PAGBuilder::visitCastInst(CastInst &inst) {
 
     if (SVFUtil::isa<PointerType>(inst.getType())) {
-
         DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
         NodeID dst = getValueNode(&inst);
 
-        Value * opnd = inst.getOperand(0);
-        if (!SVFUtil::isa<PointerType>(opnd->getType()))
-            opnd = stripAllCasts(opnd);
+		if (SVFUtil::isa<IntToPtrInst>(&inst)) {
+			pag->addBlackHoleAddrEdge(dst);
+		} else {
+			Value * opnd = inst.getOperand(0);
+			if (!SVFUtil::isa<PointerType>(opnd->getType()))
+				opnd = stripAllCasts(opnd);
 
-        if (SVFUtil::isa<PointerType>(opnd->getType())) {
-            NodeID src = getValueNode(opnd);
-            pag->addCopyEdge(src, dst);
-        }
-        else {
-            assert(SVFUtil::isa<IntToPtrInst>(&inst) && "what else do we have??");
-            // This is a int2ptr cast
-            pag->addBlackHoleAddrEdge(dst);
-        }
-    }
-
+			if (SVFUtil::isa<PointerType>(opnd->getType())) {
+				NodeID src = getValueNode(opnd);
+				pag->addCopyEdge(src, dst);
+			}
+		}
+	}
 }
+
+/*!
+ * TODO: this should not be a copy edge?
+ */
+void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
+//	Value* opnd = inst.getOperand(0);
+//    NodeID dst = getValueNode(&inst);
+//    NodeID src = getValueNode(opnd);
+//    pag->addCopyEdge(src, dst);
+}
+
+/*!
+ * TODO: this should not be a copy edge?
+ */
+void PAGBuilder::visitCmpInst(CmpInst &inst) {
+//	Value* opnd = inst.getOperand(0);
+//    NodeID dst = getValueNode(&inst);
+//    NodeID src = getValueNode(opnd);
+//    pag->addCopyEdge(src, dst);
+}
+
 
 /*!
  * Visit select instructions

@@ -174,6 +174,7 @@ typedef llvm::MemoryLocation MemoryLocation;
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
+typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantExpr ConstantExpr;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;

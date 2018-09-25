@@ -140,21 +140,16 @@ public:
     void visitReturnInst(ReturnInst &I);
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);
-    void visitIntToPtrInst(IntToPtrInst &inst);
     void visitExtractValueInst(ExtractValueInst  &EVI);
     void visitInsertValueInst(InsertValueInst &IVI) {
     }
     // Terminators
     void visitTerminatorInst(TerminatorInst &TI) {
     }
-    void visitBinaryOperator(BinaryOperator &I) {
-    }
-    void visitCmpInst(CmpInst &I) {
-    }
+    void visitBinaryOperator(BinaryOperator &I);
+    void visitCmpInst(CmpInst &I);
 
     /// TODO: do we need to care about these corner cases?
-    void visitPtrToIntInst(PtrToIntInst &inst) {
-    }
     void visitVAArgInst(VAArgInst &I) {
     }
     void visitExtractElementInst(ExtractElementInst &I);

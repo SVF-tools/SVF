@@ -101,6 +101,14 @@ public:
     inline bool isAddressTakenPtr() const {
         return isATPointer;
     }
+    /// Whether it is constant data, i.e., "0", "1.001", "str"
+	inline bool isConstantData() const {
+		if (hasValue())
+			return SVFUtil::isa<ConstantData>(value);
+		else
+			return false;
+	}
+
     /// Get name of the LLVM value
     virtual const std::string getValueName() = 0;
 

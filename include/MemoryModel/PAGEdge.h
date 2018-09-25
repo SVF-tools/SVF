@@ -87,6 +87,8 @@ public:
     inline EdgeID getEdgeID() const {
         return edgeId;
     }
+    /// Whether src and dst nodes are both of pointer type
+    inline bool isPTAEdge() const;
 
     /// Get/set methods for llvm instruction
     //@{

@@ -51,7 +51,8 @@ void TypeAnalysis::initialize(SVFModule svfModule) {
 /// Finalize analysis
 void TypeAnalysis::finalize() {
     PointerAnalysis::finalize();
-    dumpCHAStats();
+	if (printStat())
+		dumpCHAStats();
 }
 
 void TypeAnalysis::analyze(SVFModule svfModule){

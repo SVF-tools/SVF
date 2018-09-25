@@ -95,8 +95,6 @@ private:
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL) {
         symInfo = SymbolTableInfo::Symbolnfo();
-        storeInstNum = 0;
-        loadInstNum = 0;
     }
 
     /// Clean up memory
@@ -668,8 +666,6 @@ public:
     /// Dump PAG
     void dump(std::string name);
 
-    Size_t storeInstNum;		///< total num of store instructions
-    Size_t loadInstNum;		///< total num of load instructions
 };
 
 namespace llvm {

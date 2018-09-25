@@ -606,6 +606,13 @@ PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
 }
 
 /*!
+ * Whether src and dst nodes are both pointer type
+ */
+bool PAGEdge::isPTAEdge() const {
+	return getSrcNode()->isPointer() && getDstNode()->isPointer();
+}
+
+/*!
  * PAGNode constructor
  */
 PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :

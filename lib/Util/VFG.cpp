@@ -274,22 +274,24 @@ void VFG::connectDirectVFGEdges() {
             if(SVFUtil::isa<AddrVFGNode>(stmtNode))
                 continue;
             /// for all other cases, like copy/gep/load/ret, connect the RHS pointer to its def
-            addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()),nodeId);
+			if (stmtNode->getPAGSrcNode()->isConstantData() == false)
+				addIntraDirectVFEdge(getDef(stmtNode->getPAGSrcNode()), nodeId);
 
             /// for store, connect the RHS/LHS pointer to its def
-            if(SVFUtil::isa<StoreVFGNode>(stmtNode)) {
-                addIntraDirectVFEdge(getDef(stmtNode->getPAGDstNode()),nodeId);
+            if(SVFUtil::isa<StoreVFGNode>(stmtNode) && (stmtNode->getPAGDstNode()->isConstantData() == false)) {
+				addIntraDirectVFEdge(getDef(stmtNode->getPAGDstNode()), nodeId);
             }
 
         }
         else if(PHIVFGNode* phiNode = SVFUtil::dyn_cast<PHIVFGNode>(node)) {
-            for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
-                    it != eit; it++) {
-                addIntraDirectVFEdge(getDef(it->second),nodeId);
+            for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd(); it != eit; it++) {
+				if (it->second->isConstantData() == false)
+					addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
         else if(ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
-            addIntraDirectVFEdge(getDef(actualParm->getParam()),nodeId);
+			if (actualParm->getParam()->isConstantData() == false)
+				addIntraDirectVFEdge(getDef(actualParm->getParam()), nodeId);
         }
         else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
             for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
@@ -305,8 +307,7 @@ void VFG::connectDirectVFGEdges() {
             addIntraDirectVFEdge(getDef(calleeRet->getRet()), nodeId);
 
             /// connect formal ret to actual ret
-            for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd();
-                    it!=eit; ++it) {
+            for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it) {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getDstNode());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
             }
