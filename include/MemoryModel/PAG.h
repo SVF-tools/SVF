@@ -691,7 +691,7 @@ public:
     /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
-    bool connectCallsiteToExternalPAG(llvm::CallSite *cs);
+    bool connectCallsiteToExternalPAG(CallSite *cs);
 
     /// Return graph name
     inline std::string getGraphName() const {

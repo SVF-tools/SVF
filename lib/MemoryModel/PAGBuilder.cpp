@@ -58,7 +58,6 @@ static std::vector<std::pair<std::string, std::string>> parseExternalPAGs(void) 
         getline(ss, path);
         parsedExternalPAGs.push_back(
             std::pair<std::string, std::string>(functionName, path));
-        llvm::outs() << "=" << path << "=\n";
     }
 
     return parsedExternalPAGs;
