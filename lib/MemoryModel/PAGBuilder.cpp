@@ -41,28 +41,6 @@
 using namespace std;
 using namespace SVFUtil;
 
-static llvm::cl::list<std::string> ExternalPAGArgs("extpags",
-                                              llvm::cl::desc("ExternalPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
-                                              llvm::cl::CommaSeparated);
-
-std::map<std::string, ExternalPAG *> extpags;
-
-/// Parses that passed to -extpags option, spliting fname@path into a pair.
-static std::vector<std::pair<std::string, std::string>> parseExternalPAGs(void) {
-    std::vector<std::pair<std::string, std::string>> parsedExternalPAGs;
-    for (auto arg = ExternalPAGArgs.begin(); arg != ExternalPAGArgs.end(); ++arg) {
-        stringstream ss(*arg);
-        std::string functionName;
-        getline(ss, functionName, '@');
-        std::string path;
-        getline(ss, path);
-        parsedExternalPAGs.push_back(
-            std::pair<std::string, std::string>(functionName, path));
-    }
-
-    return parsedExternalPAGs;
-}
-
 /*!
  * Start building PAG here
  */
@@ -70,7 +48,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
 
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
-        = parseExternalPAGs();
+        = ExternalPAG::parseExternalPAGs(ExternalPAGArgs);
 
     /// initial external library information
     /// initial PAG nodes
