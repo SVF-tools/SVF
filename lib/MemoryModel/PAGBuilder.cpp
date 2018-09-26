@@ -47,9 +47,6 @@ using namespace SVFUtil;
 PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
 
-    std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
-        = ExternalPAG::parseExternalPAGs(ExternalPAGArgs);
-
     /// initial external library information
     /// initial PAG nodes
     initalNode();
@@ -58,17 +55,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     visitGlobal(svfModule);
     ///// collect exception vals in the program
 
-    // Build ext PAGs (and add them) first to use them in PAG construction.
-    for (auto extpagPair= parsedExternalPAGs.begin();
-         extpagPair != parsedExternalPAGs.end(); ++extpagPair) {
-        std::string fname = extpagPair->first;
-        std::string path = extpagPair->second;
-
-        ExternalPAG extpag = ExternalPAG(fname);
-        extpag.readFromFile(path);
-        pag->addExternalPAG(&extpag, svfModule.getFunction(fname));
-    }
-
+    ExternalPAG::initialise(svfModule);
 
     /// handle functions
     for (SVFModule::iterator fit = svfModule.begin(), efit = svfModule.end();

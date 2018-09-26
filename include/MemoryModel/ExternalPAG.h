@@ -39,16 +39,20 @@ private:
     /// Whether this function has a return or not.
     bool hasReturn;
 
+    /// For passing that passed to -extpags option, splitting fname@path into
+    /// a pair.
+    static std::vector<std::pair<std::string, std::string>>
+        parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs);
+
 public:
     ExternalPAG(std::string functionName) : functionName(functionName),
                                             hasReturn(false) {}
 
     ~ExternalPAG() {}
 
-    /// For passing that passed to -extpags option, splitting fname@path into
-    /// a pair.
-    static std::vector<std::pair<std::string, std::string>>
-        parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs);
+    /// Parses command line arguments and attaches external PAGs to main
+    /// PAG.
+    static void initialise(SVFModule svfModule);
 
     std::string getFunctionName() const { return functionName; }
 
