@@ -89,6 +89,20 @@ void VFG::addVFGNodes() {
             addCopyVFGNode(copy);
     }
 
+    // initialize comparision nodes
+    PAGEdge::PAGEdgeSetTy& cmps = pag->getEdgeSet(PAGEdge::Cmp);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = cmps.begin(), eiter =
+                cmps.end(); iter != eiter; ++iter) {
+		addCmpVFGNode(SVFUtil::cast<CmpPE>(*iter));
+    }
+
+    // initialize binary operator nodes
+    PAGEdge::PAGEdgeSetTy& bins = pag->getEdgeSet(PAGEdge::BinaryOp);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = bins.begin(), eiter =
+                bins.end(); iter != eiter; ++iter) {
+		addBinaryOPVFGNode(SVFUtil::cast<BinaryOPPE>(*iter));
+    }
+
     // initialize gep nodes
     PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =

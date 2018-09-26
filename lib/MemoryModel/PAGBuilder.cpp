@@ -459,25 +459,28 @@ void PAGBuilder::visitCastInst(CastInst &inst) {
 }
 
 /*!
- * TODO: this should not be a copy edge?
+ * Visit Binary Operator
  */
 void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
-//	Value* opnd = inst.getOperand(0);
-//    NodeID dst = getValueNode(&inst);
-//    NodeID src = getValueNode(opnd);
-//    pag->addCopyEdge(src, dst);
+	if (SVFUtil::isa<PointerType>(inst.getType())) {
+		Value* opnd = inst.getOperand(0);
+		NodeID dst = getValueNode(&inst);
+		NodeID src = getValueNode(opnd);
+		pag->addBinaryOPEdge(src, dst);
+	}
 }
 
 /*!
- * TODO: this should not be a copy edge?
+ * Visit compare instruction
  */
 void PAGBuilder::visitCmpInst(CmpInst &inst) {
-//	Value* opnd = inst.getOperand(0);
-//    NodeID dst = getValueNode(&inst);
-//    NodeID src = getValueNode(opnd);
-//    pag->addCopyEdge(src, dst);
+	if (SVFUtil::isa<PointerType>(inst.getType())) {
+		Value* opnd = inst.getOperand(0);
+		NodeID dst = getValueNode(&inst);
+		NodeID src = getValueNode(opnd);
+		pag->addCmpEdge(src, dst);
+	}
 }
-
 
 /*!
  * Visit select instructions

@@ -680,12 +680,12 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 collectSym(sel->getFalseValue());
             }
             else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst)) {
-//                collectSym(binary->getOperand(0));
-//                collectSym(binary->getOperand(1));
+                collectSym(binary->getOperand(0));
+                collectSym(binary->getOperand(1));
             }
             else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst)) {
-//                collectSym(cmp->getOperand(0));
-//                collectSym(cmp->getOperand(1));
+                collectSym(cmp->getOperand(0));
+                collectSym(cmp->getOperand(1));
             }
             else if (const CastInst *cast = SVFUtil::dyn_cast<CastInst>(inst)) {
                 collectSym(cast->getOperand(0));
