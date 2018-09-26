@@ -92,6 +92,11 @@ public:
         bb = e->getBB();
     }
 
+    /// Whether this node is used for pointer analysis. Both src and dst PAGNodes are of ptr type.
+    inline bool isPTANode() const{
+		return pagEdge->isPTAEdge();
+    }
+
     /// PAGNode and PAGEdge
     ///@{
     inline const PAGEdge* getPAGEdge() const {
@@ -368,6 +373,11 @@ public:
         }
     }
 
+    /// Whether this phi node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return res->isPointer();
+    }
+
     /// Operands at a llvm PHINode
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const {
@@ -487,6 +497,11 @@ protected:
 public:
     /// Constructor
     ArgumentVFGNode(NodeID id, const PAGNode* p, VFGNodeK k): VFGNode(id,k), param(p) {
+    }
+
+    /// Whether this argument node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return param->isPointer();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -766,6 +781,11 @@ public:
     NullPtrVFGNode(NodeID id, const PAGNode* n) : VFGNode(id,NPtr), node(n) {
 
     }
+    /// Whether this node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return node->isPointer();
+    }
+    /// Return corresponding PAGNode
     const PAGNode* getPAGNode() const {
         return node;
     }

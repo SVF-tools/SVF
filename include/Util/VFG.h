@@ -300,6 +300,18 @@ protected:
         addStmtVFGNode(sNode, copy);
         setDef(copy->getDstNode(),sNode);
     }
+    /// Add a Compare VFG node
+    inline void addCmpVFGNode(const CmpPE* cmp) {
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++,cmp);
+        addStmtVFGNode(sNode, cmp);
+        setDef(cmp->getDstNode(),sNode);
+    }
+    /// Add a BinaryOperator VFG node
+    inline void addBinaryOPVFGNode(const BinaryOPPE* binary) {
+		BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, binary);
+        addStmtVFGNode(sNode, binary);
+        setDef(binary->getDstNode(),sNode);
+    }
     /// Add a Gep VFG node
     inline void addGepVFGNode(const GepPE* gep) {
         GepVFGNode* sNode = new GepVFGNode(totalVFGNode++,gep);

@@ -782,6 +782,10 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
             return "color=blue";
         } else if (SVFUtil::isa<LoadPE>(edge)) {
             return "color=red";
+        } else if (SVFUtil::isa<CmpPE>(edge)) {
+            return "color=grey";
+        } else if (SVFUtil::isa<BinaryOPPE>(edge)) {
+            return "color=grey";
         } else if (SVFUtil::isa<TDForkPE>(edge)) {
             return "color=Turquoise";
         } else if (SVFUtil::isa<TDJoinPE>(edge)) {

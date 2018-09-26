@@ -176,6 +176,9 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
             || SVFUtil::isa<NullPtrSVFGNode>(node)) {
         changed = true;
     }
+    else if(SVFUtil::isa<CmpVFGNode>(node) || SVFUtil::isa<BinaryOPVFGNode>(node)){
+
+    }
     else
         assert(false && "unexpected kind of SVFG nodes");
 
