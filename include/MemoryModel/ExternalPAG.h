@@ -44,6 +44,24 @@ private:
     static std::vector<std::pair<std::string, std::string>>
         parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs);
 
+    /// Reads nodes and edges from file.
+    ///
+    /// File format:
+    /// Node: nodeID Nodetype [[0|1|2|...]+|ret]
+    ///  * Giving a number means that node represents such argument.
+    ///  * Giving ret means that node represents the return node..
+    /// Edge: nodeID edgetype NodeID Offset
+    ///
+    /// Example:
+    /// 1 o
+    /// 2 v
+    /// 3 v
+    /// 4 v
+    /// 1 addr 2 0
+    /// 1 addr 3 0
+    /// 3 gep 4 4
+    void readFromFile(std::string filename);
+
 public:
     ExternalPAG(std::string functionName) : functionName(functionName),
                                             hasReturn(false) {}
@@ -71,24 +89,6 @@ public:
 
     /// Does this function have a return node?
     bool hasReturnNode() const { return hasReturn; }
-
-    /// Reads nodes and edges from file.
-    ///
-    /// File format:
-    /// Node: nodeID Nodetype [[0|1|2|...]+|ret]
-    ///  * Giving a number means that node represents such argument.
-    ///  * Giving ret means that node represents the return node..
-    /// Edge: nodeID edgetype NodeID Offset
-    ///
-    /// Example:
-    /// 1 o
-    /// 2 v
-    /// 3 v
-    /// 4 v
-    /// 1 addr 2 0
-    /// 1 addr 3 0
-    /// 3 gep 4 4
-    void readFromFile(std::string filename);
 };
 
 #endif  /* EXTERNALPAG_H_ */
