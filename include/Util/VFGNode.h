@@ -47,7 +47,7 @@ public:
     /// 20 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK {
-        Addr, Copy, Gep, Store, Load, TPhi, TIntraPhi, TInterPhi,
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
 		FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
@@ -121,18 +121,22 @@ public:
         return true;
     }
     static inline bool classof(const VFGNode *node) {
-        return node->getNodeKind() == Addr ||
-               node->getNodeKind() == Copy ||
-               node->getNodeKind() == Gep ||
-               node->getNodeKind() == Store ||
-               node->getNodeKind() == Load;
+		return node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Store
+				|| node->getNodeKind() == Load
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == BinaryOp;
     }
     static inline bool classof(const GenericVFGNodeTy *node) {
-        return node->getNodeKind() == Addr ||
-               node->getNodeKind() == Copy ||
-               node->getNodeKind() == Gep ||
-               node->getNodeKind() == Store ||
-               node->getNodeKind() == Load;
+		return node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == Load
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == BinaryOp;
     }
 
     inline const Instruction* getInst() const {
@@ -231,6 +235,71 @@ public:
     }
     static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == Copy;
+    }
+    //@}
+};
+
+
+/*!
+ * VFGNode for compare instruction, e.g., bool b = (a!=c);
+ */
+class CmpVFGNode: public StmtVFGNode {
+private:
+	CmpVFGNode();                      ///< place holder
+	CmpVFGNode(const CmpVFGNode &);  ///< place holder
+    void operator=(const CmpVFGNode &); ///< place holder
+
+public:
+    /// Constructor
+    CmpVFGNode(NodeID id,const CmpPE* copy): StmtVFGNode(id,copy,Cmp) {
+
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CmpVFGNode *) {
+        return true;
+    }
+    static inline bool classof(const StmtVFGNode *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    static inline bool classof(const VFGNode *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    //@}
+};
+
+
+
+/*!
+ * VFGNode for binary operator instructions, e.g., a = b + c;
+ */
+class BinaryOPVFGNode: public StmtVFGNode {
+private:
+	BinaryOPVFGNode();                      ///< place holder
+	BinaryOPVFGNode(const BinaryOPVFGNode &);  ///< place holder
+    void operator=(const BinaryOPVFGNode &); ///< place holder
+
+public:
+    /// Constructor
+    BinaryOPVFGNode(NodeID id,const BinaryOPPE* copy): StmtVFGNode(id,copy,BinaryOp) {
+
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BinaryOPVFGNode *) {
+        return true;
+    }
+    static inline bool classof(const StmtVFGNode *node) {
+        return node->getNodeKind() == BinaryOp;
+    }
+    static inline bool classof(const VFGNode *node) {
+        return node->getNodeKind() == BinaryOp;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node) {
+        return node->getNodeKind() == BinaryOp;
     }
     //@}
 };

@@ -97,17 +97,19 @@ void AndersenStat::statNullPtr() {
             iter != eiter; ++iter) {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
+		if (pagNode->isTopLevelPtr() == false)
+			continue;
         PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
         PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
         if (inComingStore.empty()==false || outGoingLoad.empty()==false) {
             ///TODO: change the condition here to fetch the points-to set
             PointsTo& pts = pta->getPts(pagNodeId);
-            if(pta->containBlackHoleNode(pts)) {
-                _NumOfConstantPtr++;
-            }
-            if(pta->containConstantNode(pts)) {
-                _NumOfBlackholePtr++;
-            }
+			if (pta->containBlackHoleNode(pts))
+				_NumOfBlackholePtr++;
+
+			if (pta->containConstantNode(pts))
+				_NumOfConstantPtr++;
+
             if(pts.empty()) {
                 std::string str;
                 raw_string_ostream rawstr(str);

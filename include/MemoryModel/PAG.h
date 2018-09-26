@@ -605,6 +605,10 @@ public:
     bool addAddrEdge(NodeID src, NodeID dst);
     /// Add Copy edge
     bool addCopyEdge(NodeID src, NodeID dst);
+    /// Add Copy edge
+    bool addCmpEdge(NodeID src, NodeID dst);
+    /// Add Copy edge
+    bool addBinaryOPEdge(NodeID src, NodeID dst);
     /// Add Load edge
     bool addLoadEdge(NodeID src, NodeID dst);
     /// Add Store edge

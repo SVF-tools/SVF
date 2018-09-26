@@ -67,6 +67,31 @@ bool PAG::addCopyEdge(NodeID src, NodeID dst) {
 }
 
 /*!
+ * Add Compare edge
+ */
+bool PAG::addCmpEdge(NodeID src, NodeID dst) {
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(hasIntraEdge(srcNode,dstNode, PAGEdge::Cmp))
+        return false;
+    else
+        return addEdge(srcNode,dstNode, new CmpPE(srcNode, dstNode));
+}
+
+
+/*!
+ * Add Compare edge
+ */
+bool PAG::addBinaryOPEdge(NodeID src, NodeID dst) {
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(hasIntraEdge(srcNode,dstNode, PAGEdge::BinaryOp))
+        return false;
+    else
+        return addEdge(srcNode,dstNode, new BinaryOPPE(srcNode, dstNode));
+}
+
+/*!
  * Add Load edge
  */
 bool PAG::addLoadEdge(NodeID src, NodeID dst) {

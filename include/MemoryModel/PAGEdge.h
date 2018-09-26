@@ -48,7 +48,7 @@ public:
     /// Gep represents offset edge for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK {
-        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin
+        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin, Cmp, BinaryOp
     };
 
 private:
@@ -79,7 +79,9 @@ public:
                edge->getEdgeKind() == PAGEdge::NormalGep ||
                edge->getEdgeKind() == PAGEdge::VariantGep ||
                edge->getEdgeKind() == PAGEdge::ThreadFork ||
-               edge->getEdgeKind() == PAGEdge::ThreadJoin;
+               edge->getEdgeKind() == PAGEdge::ThreadJoin ||
+               edge->getEdgeKind() == PAGEdge::Cmp ||
+               edge->getEdgeKind() == PAGEdge::BinaryOp;
     }
     ///@}
 
@@ -88,7 +90,7 @@ public:
         return edgeId;
     }
     /// Whether src and dst nodes are both of pointer type
-    inline bool isPTAEdge() const;
+    bool isPTAEdge() const;
 
     /// Get/set methods for llvm instruction
     //@{
@@ -181,6 +183,62 @@ public:
 
     /// constructor
     CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy) {
+    }
+};
+
+
+/*!
+ * Compare instruction edge
+ */
+class CmpPE: public PAGEdge {
+private:
+	CmpPE();                      ///< place holder
+	CmpPE(const CmpPE &);  ///< place holder
+    void operator=(const CmpPE &); ///< place holder
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CmpPE *) {
+        return true;
+    }
+    static inline bool classof(const PAGEdge *edge) {
+        return edge->getEdgeKind() == PAGEdge::Cmp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge) {
+        return edge->getEdgeKind() == PAGEdge::Cmp;
+    }
+    //@}
+
+    /// constructor
+    CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp) {
+    }
+};
+
+
+/*!
+ * Binary instruction edge
+ */
+class BinaryOPPE: public PAGEdge {
+private:
+	BinaryOPPE();                      ///< place holder
+	BinaryOPPE(const BinaryOPPE &);  ///< place holder
+    void operator=(const BinaryOPPE &); ///< place holder
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BinaryOPPE *) {
+        return true;
+    }
+    static inline bool classof(const PAGEdge *edge) {
+        return edge->getEdgeKind() == PAGEdge::BinaryOp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge) {
+        return edge->getEdgeKind() == PAGEdge::BinaryOp;
+    }
+    //@}
+
+    /// constructor
+    BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp) {
     }
 };
 
