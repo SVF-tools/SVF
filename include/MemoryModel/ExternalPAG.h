@@ -89,6 +89,11 @@ public:
 
     /// Does this function have a return node?
     bool hasReturnNode() const { return hasReturn; }
+
+    /// Adds (creates new equivalents) all the nodes and edges of this extpag to
+    /// the main PAG. function is used as a key for future lookups.
+    /// Returns true on success, false otherwise (incl. if it already exists).
+    bool addExternalPAG(Function *function);
 };
 
 #endif  /* EXTERNALPAG_H_ */

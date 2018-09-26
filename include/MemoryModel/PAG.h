@@ -683,11 +683,6 @@ public:
         return ret;
     }
 
-    /// Adds (creates new equivalents) all the nodes and edges of extpag to
-    /// this PAG. function is used as a key for future lookups.
-    /// Returns true on success, false otherwise (incl. if it already exists).
-    bool addExternalPAG(ExternalPAG *extpag, Function *function);
-
     /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
