@@ -69,13 +69,14 @@ private:
     SymbolTableInfo* symInfo;
     /// ValueNodes - This map indicates the Node that a particular Value* is
     /// represented by.  This contains entries for all pointers.
-    PAGEdge::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < PAG edge map
+    PAGEdge::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < PAG edge map containing all PAGEdges
+    PAGEdge::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < PAG edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
+    Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges
+    Inst2PAGEdgesMap inst2PTAPAGEdgesMap;	///< Map a instruction to its PointerAnalysis related PAGEdges
     NodeLocationSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
-    Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
-    FunToPAGEdgeSetMap funToEntryPAGEdges; ///< Map a function to its function entry PAGEdges (e.g., blackhole--ptr edge, no caller functions)
     PHINodeMap phiNodeMap;	///< A set of phi copy edges in order to enable path sensitive analysis
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
@@ -164,21 +165,26 @@ public:
     inline const BasicBlock *getCurrentBB() const {
         return curBB;
     }
-    /// Get Instruction to PAGEdge Map
-    inline Inst2PAGEdgesMap& getInstToPAGEdgeMap() {
-        return inst2PAGEdgesMap;
-    }
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const Instruction* inst) {
+    inline bool hasPAGEdgeList(const Instruction* inst) const {
         return inst2PAGEdgesMap.find(inst)!=inst2PAGEdgesMap.end();
+    }
+    inline bool hasPTAPAGEdgeList(const Instruction* inst) const {
+        return inst2PTAPAGEdgesMap.find(inst)!=inst2PTAPAGEdgesMap.end();
     }
     /// Given an instruction, get all its PAGEdges
     inline PAGEdgeList& getInstPAGEdgeList(const Instruction* inst) {
         return inst2PAGEdgesMap[inst];
     }
-    /// Get function entry PAGEdges (not in a procedure)
-    inline PAGEdgeSet& getGlobalPAGEdgeSet(const Function* fun) {
-        return funToEntryPAGEdges[fun];
+    /// Given an instruction, get all its PTA PAGEdges
+    inline PAGEdgeList& getInstPTAPAGEdgeList(const Instruction* inst) {
+        return inst2PTAPAGEdgesMap[inst];
+    }
+    /// Add a PAGEdge into instruction map
+    inline void addToInstPAGEdgeList(const Instruction* inst, PAGEdge* edge) {
+		inst2PAGEdgesMap[inst].push_back(edge);
+		if (edge->isPTAEdge())
+			inst2PTAPAGEdgesMap[inst].push_back(edge);
     }
     /// Get global PAGEdges (not in a procedure)
     inline PAGEdgeSet& getGlobalPAGEdgeSet() {
@@ -335,6 +341,11 @@ public:
     /// Get edges set according to its kind
     inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind) {
         return PAGEdgeKindToSetMap[kind];
+    }
+
+    /// Get PTA edges set according to its kind
+    inline PAGEdge::PAGEdgeSetTy& getPTAEdgeSet(PAGEdge::PEDGEK kind) {
+        return PTAPAGEdgeKindToSetMap[kind];
     }
 
     /// Get an edge according to src, dst and kind

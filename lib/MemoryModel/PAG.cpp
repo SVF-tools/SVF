@@ -394,10 +394,9 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
  	/// We assume every GepValPN and its GepPE are unique across whole program
 	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
 		assert(curBB && "instruction does not have a basic block??");
-        inst2PAGEdgesMap[curInst].push_back(edge);
+		addToInstPAGEdgeList(curInst,edge);
     } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
-        funToEntryPAGEdges[curBB->getParent()].insert(edge);
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
@@ -427,6 +426,8 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
+	if (edge->isPTAEdge())
+		PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
 	if (!SVFModule::pagReadFromTXT())
 		setCurrentBBAndValueForPAGEdge(edge);
     return true;

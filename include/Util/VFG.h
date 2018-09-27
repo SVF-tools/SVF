@@ -261,6 +261,11 @@ protected:
     /// Create VFG nodes
     void addVFGNodes();
 
+    /// Get PAGEdge set
+    inline PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
+		return pag->getEdgeSet(kind);
+    }
+
     /// Create edges between VFG nodes within a function
     void connectDirectVFGEdges();
 
@@ -319,14 +324,14 @@ protected:
         setDef(gep->getDstNode(),sNode);
     }
     /// Add a Load VFG node
-    void addLoadVFGNode(LoadPE* load) {
+    void addLoadVFGNode(const LoadPE* load) {
         LoadVFGNode* sNode = new LoadVFGNode(totalVFGNode++,load);
         addStmtVFGNode(sNode, load);
         setDef(load->getDstNode(),sNode);
     }
     /// Add a Store VFG node,
     /// To be noted store does not create a new pointer, we do not set def for any PAG node
-    void addStoreVFGNode(StorePE* store) {
+    void addStoreVFGNode(const StorePE* store) {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
         addStmtVFGNode(sNode, store);
 
