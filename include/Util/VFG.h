@@ -44,6 +44,10 @@ typedef GenericGraph<VFGNode,VFGEdge> GenericVFGTy;
 class VFG : public GenericVFGTy {
 
 public:
+    /// VFG kind
+    enum VFGK {
+        ORIGSVFGK, PTRONLYSVFGK
+    };
 
     typedef llvm::DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
@@ -77,17 +81,28 @@ protected:
     StoreNodeSet globalStore;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
     PAG* pag;
+    VFGK kind;
 
     /// Clean up memory
     void destroy();
 
 public:
     /// Constructor
-    VFG(PTACallGraph* callgraph);
+    VFG(PTACallGraph* callgraph, VFGK k = ORIGSVFGK);
 
     /// Destructor
     virtual ~VFG() {
         destroy();
+    }
+
+    /// Get VFG kind
+    inline VFGK getKind() const {
+        return kind;
+    }
+
+    /// Return true if this VFG only contains pointer related SVFGNodes for pointer analysis
+    inline bool isPtrOnlySVFG() const {
+        return kind == PTRONLYSVFGK;
     }
 
     /// Return PAG
@@ -262,10 +277,19 @@ protected:
     void addVFGNodes();
 
     /// Get PAGEdge set
-    virtual PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind);
+    virtual inline PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
+		if (isPtrOnlySVFG())
+			return pag->getPTAEdgeSet(kind);
+		else
+			return pag->getEdgeSet(kind);
+    }
 
-    /// Get PAGPhiNode set
-    virtual void initialPAGPhiNodes();
+    virtual inline bool isInterestedPAGNode(const PAGNode* node) const{
+		if (isPtrOnlySVFG())
+			return node->isPointer();
+		else
+			return true;
+    }
 
     /// Create edges between VFG nodes within a function
     void connectDirectVFGEdges();

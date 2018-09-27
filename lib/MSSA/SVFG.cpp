@@ -42,7 +42,7 @@ static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(MemSSA* _mssa, SVFGK k): VFG(_mssa->getPTA()->getPTACallGraph()), kind(k),mssa(_mssa), pta(mssa->getPTA()) {
+SVFG::SVFG(MemSSA* _mssa, VFGK k): VFG(_mssa->getPTA()->getPTACallGraph(),k),mssa(_mssa), pta(mssa->getPTA()) {
     stat = new SVFGStat(this);
 }
 

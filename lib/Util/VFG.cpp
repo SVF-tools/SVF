@@ -45,7 +45,7 @@ static llvm::cl::opt<bool> DumpVFG("dump-VFG", llvm::cl::init(false),
  * 2) connect VFG edges
  *    between two statements (PAGEdges)
  */
-VFG::VFG(PTACallGraph* cg): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
+VFG::VFG(PTACallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()), kind(k) {
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate VFG Top Level Node\n"));
 	addVFGNodes();
@@ -61,23 +61,6 @@ void VFG::destroy() {
     pag = NULL;
 }
 
-/*!
- * Get PAGEdge set
- */
-PAGEdge::PAGEdgeSetTy& VFG::getPAGEdgeSet(PAGEdge::PEDGEK kind){
-	return pag->getPTAEdgeSet(kind);
-}
-
-/*!
- * Get PAGPhi node set
- */
-void VFG::initialPAGPhiNodes(){
-	PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
-	for (PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit != epit; ++pit) {
-		if (pit->first->isPointer())
-			addIntraPHIVFGNode(pit->first, pit->second);
-	}
-}
 
 /*!
  * Create VFG nodes for top level pointers
@@ -164,7 +147,7 @@ void VFG::addVFGNodes() {
             continue;
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
-            if (pagNode->isPointer())
+            if (isInterestedPAGNode(pagNode))
                 addActualParmVFGNode(pagNode,it->first);
         }
     }
@@ -175,7 +158,7 @@ void VFG::addVFGNodes() {
 		/// for external function we do not create acutalRet VFGNode
         /// they are in the formal of AddrVFGNode if the external function returns an allocated memory
         /// if fun has body, it may also exist in isExtCall, e.g., xmalloc() in bzip2, spec2000.
-        if(it->second->isPointer() == false || hasDef(it->second))
+        if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
             continue;
 
         addActualRetVFGNode(it->second,it->first);
@@ -187,7 +170,7 @@ void VFG::addVFGNodes() {
 
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* param = *pit;
-            if (param->isPointer() == false || hasBlackHoleConstObjAddrAsDef(param))
+            if (isInterestedPAGNode(param) == false || hasBlackHoleConstObjAddrAsDef(param))
                 continue;
 
             CallPESet callPEs;
@@ -202,7 +185,7 @@ void VFG::addVFGNodes() {
 
         if (func->getFunctionType()->isVarArg()) {
             const PAGNode* varParam = pag->getPAGNode(pag->getVarargNode(func));
-            if (varParam->isPointer() && hasBlackHoleConstObjAddrAsDef(varParam) == false) {
+            if (isInterestedPAGNode(varParam) && hasBlackHoleConstObjAddrAsDef(varParam) == false) {
                 CallPESet callPEs;
                 if (varParam->hasIncomingEdges(PAGEdge::Call)) {
                     for(PAGEdge::PAGEdgeSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(PAGEdge::Call),
@@ -220,7 +203,7 @@ void VFG::addVFGNodes() {
 		const Function* func = it->first;
 
 		const PAGNode* retNode = it->second;
-        if (retNode->isPointer() == false)
+        if (isInterestedPAGNode(retNode) == false)
             continue;
 
         RetPESet retPEs;
@@ -234,7 +217,11 @@ void VFG::addVFGNodes() {
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
-    initialPAGPhiNodes();
+	PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
+	for (PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit != epit; ++pit) {
+		if (isInterestedPAGNode(pit->first))
+			addIntraPHIVFGNode(pit->first, pit->second);
+	}
 }
 
 /*!
