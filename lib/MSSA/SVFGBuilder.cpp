@@ -54,21 +54,21 @@ void SVFGBuilder::buildSVFG() {
 }
 
 /// Create DDA SVFG
-SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, bool withAOFI) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
 
-	MemSSA* mssa = buildMSSA(pta);
+	MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFGK==kind));
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            svfg = globalSvfg = new SVFGOPT(mssa);
+            svfg = globalSvfg = new SVFGOPT(mssa, kind);
             if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
             buildSVFG();
         }
     }
     else {
-        SVFGOPT* vfg = new SVFGOPT(mssa);
+        SVFGOPT* vfg = new SVFGOPT(mssa, kind);
         svfg = vfg;
         if (withAOFI) vfg->setTokeepActualOutFormalIn();
         buildSVFG();
@@ -87,11 +87,11 @@ void SVFGBuilder::releaseMemory() {
     svfg->clearMSSA();
 }
 
-MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta){
+MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
 
-    MemSSA* mssa = new MemSSA(pta);
+    MemSSA* mssa = new MemSSA(pta, ptrOnlyMSSA);
 
     DominatorTree dt;
     MemSSADF df;

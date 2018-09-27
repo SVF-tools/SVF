@@ -167,6 +167,7 @@ private:
     BVDataPTAImpl* pta;
     SCC* callGraphSCC;
     PTACallGraph* callGraph;
+    bool ptrOnlyMSSA;
 
     /// Map a function to all its memory regions
     FunToMRsMap funToMRsMap;
@@ -241,8 +242,8 @@ private:
     void getCallGraphSCCRevTopoOrder(WorkList& worklist);
 
 protected:
-    MRGenerator(BVDataPTAImpl* p) :
-        pta(p) {
+    MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
+        pta(p), ptrOnlyMSSA(ptrOnly) {
         callGraph = pta->getPTACallGraph();
         callGraphSCC = new SCC(callGraph);
     }
@@ -412,11 +413,17 @@ public:
     //@}
     /// Whether this instruction has PAG Edge
     inline bool hasPAGEdgeList(const Instruction* inst) {
-        return pta->getPAG()->hasPTAPAGEdgeList(inst);
+		if (ptrOnlyMSSA)
+			return pta->getPAG()->hasPTAPAGEdgeList(inst);
+		else
+			return pta->getPAG()->hasPAGEdgeList(inst);
     }
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
     inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst) {
-        return pta->getPAG()->getInstPTAPAGEdgeList(inst);
+		if (ptrOnlyMSSA)
+			return pta->getPAG()->getInstPTAPAGEdgeList(inst);
+		else
+			return pta->getPAG()->getInstPAGEdgeList(inst);
     }
 
 };

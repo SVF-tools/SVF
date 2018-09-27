@@ -66,8 +66,13 @@ public:
 
     static SVFGOPT* globalSvfg;
 
-    /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
-    SVFG* build(BVDataPTAImpl* pta, bool withAOFI = false);
+	inline SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta, bool withAOFI = false) {
+		return build(pta, VFG::PTRONLYSVFGK, withAOFI);
+	}
+
+	inline SVFG* buildOriginalSVFG(BVDataPTAImpl* pta, bool withAOFI = false) {
+		return build(pta, VFG::ORIGSVFGK, withAOFI);
+	}
 
     /// Clean up
     static void releaseSVFG() {
@@ -91,8 +96,11 @@ public:
     }
 
 protected:
+    /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
+    SVFG* build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI);
+
     /// Build Memory SSA
-    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta);
+    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
     /// Can be rewritten by subclasses
     virtual void buildSVFG();
     /// Release global SVFG

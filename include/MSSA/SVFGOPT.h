@@ -57,7 +57,7 @@ class SVFGOPT : public SVFG {
 
 public:
     /// Constructor
-    SVFGOPT(MemSSA* _mssa, VFGK kind = PTRONLYSVFGK) : SVFG(_mssa, kind) {
+    SVFGOPT(MemSSA* _mssa, VFGK kind) : SVFG(_mssa, kind) {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor
