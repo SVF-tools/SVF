@@ -412,11 +412,11 @@ public:
     //@}
     /// Whether this instruction has PAG Edge
     inline bool hasPAGEdgeList(const Instruction* inst) {
-        return pta->getPAG()->hasPAGEdgeList(inst);
+        return pta->getPAG()->hasPTAPAGEdgeList(inst);
     }
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
     inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst) {
-        return pta->getPAG()->getInstPAGEdgeList(inst);
+        return pta->getPAG()->getInstPTAPAGEdgeList(inst);
     }
 
 };

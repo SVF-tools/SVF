@@ -61,76 +61,92 @@ void VFG::destroy() {
     pag = NULL;
 }
 
+/*!
+ * Get PAGEdge set
+ */
+PAGEdge::PAGEdgeSetTy& VFG::getPAGEdgeSet(PAGEdge::PEDGEK kind){
+	return pag->getPTAEdgeSet(kind);
+}
+
+/*!
+ * Get PAGPhi node set
+ */
+void VFG::initialPAGPhiNodes(){
+	PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
+	for (PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit != epit; ++pit) {
+		if (pit->first->isPointer())
+			addIntraPHIVFGNode(pit->first, pit->second);
+	}
+}
 
 /*!
  * Create VFG nodes for top level pointers
  */
 void VFG::addVFGNodes() {
 
-    PAG* pag = PAG::getPAG();
     // initialize dummy definition  null pointers in order to uniform the construction
     // to be noted for black hole pointer it has already has address edge connected,
     // and its definition will be set when processing addr PAG edge.
     addNullPtrVFGNode(pag->getPAGNode(pag->getNullPtr()));
 
     // initialize address nodes
-    PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
+    PAGEdge::PAGEdgeSetTy& addrs = getPAGEdgeSet(PAGEdge::Addr);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter) {
         addAddrVFGNode(SVFUtil::cast<AddrPE>(*iter));
     }
 
     // initialize copy nodes
-    PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
+    PAGEdge::PAGEdgeSetTy& copys = getPAGEdgeSet(PAGEdge::Copy);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter) {
-        CopyPE* copy = SVFUtil::cast<CopyPE>(*iter);
-        if(!isPhiCopyEdge(copy))
-            addCopyVFGNode(copy);
+        const CopyPE* edge = SVFUtil::cast<CopyPE>(*iter);
+        if(!isPhiCopyEdge(edge))
+            addCopyVFGNode(edge);
     }
 
     // initialize comparision nodes
-    PAGEdge::PAGEdgeSetTy& cmps = pag->getEdgeSet(PAGEdge::Cmp);
+    PAGEdge::PAGEdgeSetTy& cmps = getPAGEdgeSet(PAGEdge::Cmp);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = cmps.begin(), eiter =
                 cmps.end(); iter != eiter; ++iter) {
 		addCmpVFGNode(SVFUtil::cast<CmpPE>(*iter));
     }
 
     // initialize binary operator nodes
-    PAGEdge::PAGEdgeSetTy& bins = pag->getEdgeSet(PAGEdge::BinaryOp);
+    PAGEdge::PAGEdgeSetTy& bins = getPAGEdgeSet(PAGEdge::BinaryOp);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = bins.begin(), eiter =
                 bins.end(); iter != eiter; ++iter) {
 		addBinaryOPVFGNode(SVFUtil::cast<BinaryOPPE>(*iter));
     }
 
     // initialize gep nodes
-    PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
+    PAGEdge::PAGEdgeSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter) {
         addGepVFGNode(SVFUtil::cast<NormalGepPE>(*iter));
     }
 
-    PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
+    PAGEdge::PAGEdgeSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter) {
         addGepVFGNode(SVFUtil::cast<VariantGepPE>(*iter));
     }
 
     // initialize load nodes
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
+    PAGEdge::PAGEdgeSetTy& loads = getPAGEdgeSet(PAGEdge::Load);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter) {
         addLoadVFGNode(SVFUtil::cast<LoadPE>(*iter));
     }
 
     // initialize store nodes
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
+    PAGEdge::PAGEdgeSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         addStoreVFGNode(SVFUtil::cast<StorePE>(*iter));
     }
 
-    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
+    PAGEdge::PAGEdgeSetTy& forks = getPAGEdgeSet(PAGEdge::ThreadFork);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter) {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
@@ -218,10 +234,7 @@ void VFG::addVFGNodes() {
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
-    PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
-    for(PAG::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit!=epit; ++pit) {
-        addIntraPHIVFGNode(pit->first,pit->second);
-    }
+    initialPAGPhiNodes();
 }
 
 /*!
@@ -332,7 +345,7 @@ void VFG::connectDirectVFGEdges() {
 
     /// connect direct value-flow edges (parameter passing) for thread fork/join
     /// add fork edge
-    PAGEdge::PAGEdgeSetTy& forks = getPAG()->getEdgeSet(PAGEdge::ThreadFork);
+    PAGEdge::PAGEdgeSetTy& forks = getPAGEdgeSet(PAGEdge::ThreadFork);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter) {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
@@ -341,7 +354,7 @@ void VFG::connectDirectVFGEdges() {
         addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
     }
     /// add join edge
-    PAGEdge::PAGEdgeSetTy& joins = getPAG()->getEdgeSet(PAGEdge::ThreadJoin);
+    PAGEdge::PAGEdgeSetTy& joins = getPAGEdgeSet(PAGEdge::ThreadJoin);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = joins.begin(), eiter =
                 joins.end(); iter != eiter; ++iter) {
         TDJoinPE* joinedge = SVFUtil::cast<TDJoinPE>(*iter);

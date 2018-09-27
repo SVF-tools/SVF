@@ -64,6 +64,10 @@ private:
 
     void destroy();
 
+    PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
+		return pag->getPTAEdgeSet(kind);
+    }
+
     /// Wappers used internally, not expose to Andernsen Pass
     //@{
     inline NodeID getValueNode(const Value* value) const {

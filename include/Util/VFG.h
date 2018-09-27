@@ -262,9 +262,10 @@ protected:
     void addVFGNodes();
 
     /// Get PAGEdge set
-    inline PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
-		return pag->getEdgeSet(kind);
-    }
+    virtual PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind);
+
+    /// Get PAGPhiNode set
+    virtual void initialPAGPhiNodes();
 
     /// Create edges between VFG nodes within a function
     void connectDirectVFGEdges();

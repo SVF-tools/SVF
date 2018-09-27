@@ -88,13 +88,12 @@ private:
     bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
     const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
     const Value* curVal;	///< Current Value during PAG construction when visiting the module
-
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
     /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL) {
+    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0) {
         symInfo = SymbolTableInfo::Symbolnfo();
     }
 
@@ -102,6 +101,8 @@ private:
     void destroy();
 
 public:
+    u32_t totalPTAPAGEdge;
+
     /// Return valid pointers
     inline NodeBS& getAllValidPtrs() {
         return candidatePointers;
@@ -164,6 +165,14 @@ public:
     }
     inline const BasicBlock *getCurrentBB() const {
         return curBB;
+    }
+    /// Get edges set according to its kind
+    inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind) {
+        return PAGEdgeKindToSetMap[kind];
+    }
+    /// Get PTA edges set according to its kind
+    inline PAGEdge::PAGEdgeSetTy& getPTAEdgeSet(PAGEdge::PEDGEK kind) {
+        return PTAPAGEdgeKindToSetMap[kind];
     }
     /// Whether this instruction has PAG Edge
     inline bool hasPAGEdgeList(const Instruction* inst) const {
@@ -336,16 +345,6 @@ public:
     /// Get a pag node according to its ID
     inline bool findPAGNode(NodeID id) const {
         return hasGNode(id);
-    }
-
-    /// Get edges set according to its kind
-    inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind) {
-        return PAGEdgeKindToSetMap[kind];
-    }
-
-    /// Get PTA edges set according to its kind
-    inline PAGEdge::PAGEdgeSetTy& getPTAEdgeSet(PAGEdge::PEDGEK kind) {
-        return PTAPAGEdgeKindToSetMap[kind];
     }
 
     /// Get an edge according to src, dst and kind
