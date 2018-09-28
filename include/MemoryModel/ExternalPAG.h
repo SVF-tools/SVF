@@ -21,9 +21,12 @@ private:
     /// Name of the function this external PAG represents.
     std::string functionName;
 
-    /// Nodes in this external PAG, represented by NodeIDs (and the type,
-    /// v or o) because we will rebuild these nodes in the main PAG.
-    std::set<std::tuple<NodeID, std::string>> nodes;
+    /// Value nodes in this external PAG, represented by NodeIDs
+    /// because we will rebuild these nodes in the main PAG.
+    std::set<NodeID> valueNodes;
+    /// Object nodes in this external PAG, represented by NodeIDs
+    /// because we will rebuild these nodes in the main PAG.
+    std::set<NodeID> objectNodes;
     /// Edges in this external PAG, represented by the parts of an Edge because
     /// we will rebuild these edges in the main PAG.
     std::set<std::tuple<NodeID, NodeID, std::string, int>>edges;
@@ -79,7 +82,8 @@ public:
 
     std::string getFunctionName() const { return functionName; }
 
-    std::set<std::tuple<NodeID, std::string>> &getNodes() { return nodes; }
+    std::set<NodeID> &getValueNodes() { return valueNodes; }
+    std::set<NodeID> &getObjectNodes() { return objectNodes; }
     std::set<std::tuple<NodeID, NodeID, std::string, int>> &getEdges() {
         return edges;
     }

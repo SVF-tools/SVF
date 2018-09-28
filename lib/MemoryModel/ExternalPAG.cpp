@@ -140,21 +140,19 @@ bool ExternalPAG::addExternalPAG(Function *function) {
     // To create the new edges.
     std::map<NodeID, PAGNode *> extToNewNodes;
 
-    // Add the nodes.
-    for (auto extNodeIt = this->getNodes().begin();
-         extNodeIt != this->getNodes().end(); ++extNodeIt) {
-        NodeID extNodeId = std::get<0>(*extNodeIt);
-        std::string extNodeType = std::get<1>(*extNodeIt);
+    // Add the value nodes.
+    for (auto extNodeIt = this->getValueNodes().begin();
+         extNodeIt != this->getValueNodes().end(); ++extNodeIt) {
+        NodeID newNodeId = pag->addDummyValNode();
+        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
+    }
 
-        NodeID newNodeId;
-        if (extNodeType == "v") {
-            newNodeId = pag->addDummyValNode();
-        } else {
-            // TODO: fix obj node - there's more to it.
-            newNodeId = pag->addDummyObjNode();
-        }
-
-        extToNewNodes[extNodeId] = pag->getPAGNode(newNodeId);
+    // Add the object nodes.
+    for (auto extNodeIt = this->getObjectNodes().begin();
+         extNodeIt != this->getObjectNodes().end(); ++extNodeIt) {
+        // TODO: fix obj node - there's more to it?
+        NodeID newNodeId = pag->addDummyObjNode();
+        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
     }
 
     // Add the edges.
@@ -247,8 +245,10 @@ void ExternalPAG::readFromFile(std::string filename) {
             ss >> nodeId;
             ss >> nodeType;
 
-            if (nodeType == "v" || nodeType == "o") {
-                nodes.insert(std::tuple<NodeID, std::string>(nodeId, nodeType));
+            if (nodeType == "v") {
+                valueNodes.insert(nodeId);
+            } else if (nodeType == "o") {
+                objectNodes.insert(nodeId);
             } else {
                 assert(false
                        && "format not supported, please specify node type");
