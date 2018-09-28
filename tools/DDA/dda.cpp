@@ -56,7 +56,7 @@ int main(int argc, char ** argv) {
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
-    analysisUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+    SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Demand-Driven Points-to Analysis\n");
 
