@@ -261,7 +261,7 @@ void ExternalPAG::readFromFile(std::string filename) {
                 ss >> argNoOrRet;
 
                 if (argNoOrRet == "ret") {
-                    returnNode = nodeId;
+                    setReturnNode(nodeId);
                 } else if (std::all_of(argNoOrRet.begin(), argNoOrRet.end(),
                                        ::isdigit)) {
                     int argNo = std::stoi(argNoOrRet);
