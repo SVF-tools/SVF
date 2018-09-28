@@ -53,7 +53,22 @@ set(SOURCES
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
-    WPA/WPAPass.cpp)
+    WPA/WPAPass.cpp
+    DDA/ContextDDA.cpp
+    DDA/DDAClient.cpp
+    DDA/DDAPass.cpp
+    DDA/DDAStat.cpp
+    DDA/FlowDDA.cpp
+    MTA/FSMPTA.cpp
+    MTA/LockAnalysis.cpp
+    MTA/MHP.cpp
+    MTA/MTAAnnotator.cpp
+    MTA/MTA.cpp
+    MTA/MTAResultValidator.cpp
+    MTA/MTAStat.cpp
+    MTA/PCG.cpp
+    MTA/TCT.cpp
+    )
 
 add_llvm_loadable_module(Svf ${SOURCES})
 add_llvm_Library(LLVMSvf ${SOURCES})
