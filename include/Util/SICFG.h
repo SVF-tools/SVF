@@ -15,6 +15,10 @@ private:
 	VFG* vfg;
 
 public:
+	inline VFG* getVFG() const{
+		return vfg;
+	}
+
 	SICFG(PTACallGraph* cg): ICFG(cg){
 		vfg = new VFG(cg);
 	}

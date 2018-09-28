@@ -42,8 +42,10 @@ using namespace std;
 void TypeAnalysis::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
     stat = new PTAStat(this);
-    icfg = new SICFG(ptaCallGraph);
-    icfg->dump("icfg_initial");
+    SICFG* sicfg = new SICFG(ptaCallGraph);
+    sicfg->dump("icfg_initial");
+    sicfg->getVFG()->dump("vfg_initial");
+    icfg = sicfg;
 	if (printStat())
 		icfg->getStat()->performStat();
 }

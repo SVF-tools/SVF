@@ -512,3 +512,212 @@ const Function* VFG::isFunEntryVFGNode(const VFGNode* node) const {
     }
     return NULL;
 }
+
+
+
+
+/*!
+ * GraphTraits specialization
+ */
+namespace llvm {
+template<>
+struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
+
+    typedef VFGNode NodeType;
+    DOTGraphTraits(bool isSimple = false) :
+        DOTGraphTraits<PAG*>(isSimple) {
+    }
+
+    /// Return name of the graph
+    static std::string getGraphName(VFG *graph) {
+        return "VFG";
+    }
+
+    std::string getNodeLabel(NodeType *node, VFG *graph) {
+        if (isSimple())
+            return getSimpleNodeLabel(node, graph);
+        else
+            return getCompleteNodeLabel(node, graph);
+    }
+
+    /// Return label of a VFG node without MemSSA information
+    static std::string getSimpleNodeLabel(NodeType *node, VFG *graph) {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "NodeID: " << node->getId() << "\n";
+        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node)) {
+            NodeID src = stmtNode->getPAGSrcNodeID();
+            NodeID dst = stmtNode->getPAGDstNodeID();
+            rawstr << dst << "<--" << src << "\n";
+            if(stmtNode->getInst()) {
+                rawstr << getSourceLoc(stmtNode->getInst());
+            }
+            else if(stmtNode->getPAGDstNode()->hasValue()) {
+                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
+            }
+        }
+        else if(PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node)) {
+            rawstr << tphi->getRes()->getId() << " = PHI(";
+            for(PHIVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
+            rawstr << "FPARM(" << fp->getParam()->getId() << ")\n";
+            rawstr << "Fun[" << fp->getFun()->getName() << "]";
+        }
+        else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
+            rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+        }
+        else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node)) {
+            rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+        }
+        else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node)) {
+            rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
+            rawstr << "Fun[" << fr->getFun()->getName() << "]";
+        }
+        else if(SVFUtil::isa<NullPtrVFGNode>(node)) {
+            rawstr << "NullPtr";
+        }
+        else
+			assert(false && "what else kinds of nodes do we have??");
+
+        return rawstr.str();
+    }
+
+    /// Return label of a VFG node with MemSSA information
+    static std::string getCompleteNodeLabel(NodeType *node, VFG *graph) {
+
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "NodeID: " << node->getId() << "\n";
+        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node)) {
+            NodeID src = stmtNode->getPAGSrcNodeID();
+            NodeID dst = stmtNode->getPAGDstNodeID();
+            rawstr << dst << "<--" << src << "\n";
+            if(stmtNode->getInst()) {
+                rawstr << getSourceLoc(stmtNode->getInst());
+            }
+            else if(stmtNode->getPAGDstNode()->hasValue()) {
+                rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
+            }
+        }
+        else if(PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node)) {
+            rawstr << tphi->getRes()->getId() << " = PHI(";
+            for(PHIVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
+            rawstr	<< "FPARM(" << fp->getParam()->getId() << ")\n";
+            rawstr << "Fun[" << fp->getFun()->getName() << "]";
+        }
+        else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
+            rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+        }
+        else if(SVFUtil::isa<NullPtrVFGNode>(node)) {
+            rawstr << "NullPtr";
+        }
+        else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node)) {
+            rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+        }
+        else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node)) {
+            rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
+            rawstr << "Fun[" << fr->getFun()->getName() << "]";
+        }
+        else
+            assert(false && "what else kinds of nodes do we have??");
+
+        return rawstr.str();
+    }
+
+    static std::string getNodeAttributes(NodeType *node, VFG *graph) {
+        std::string str;
+        raw_string_ostream rawstr(str);
+
+        if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node)) {
+            const PAGEdge* edge = stmtNode->getPAGEdge();
+            if (SVFUtil::isa<AddrPE>(edge)) {
+                rawstr <<  "color=green";
+            } else if (SVFUtil::isa<CopyPE>(edge)) {
+                rawstr <<  "color=black";
+            } else if (SVFUtil::isa<RetPE>(edge)) {
+                rawstr <<  "color=black,style=dotted";
+            } else if (SVFUtil::isa<GepPE>(edge)) {
+                rawstr <<  "color=purple";
+            } else if (SVFUtil::isa<StorePE>(edge)) {
+                rawstr <<  "color=blue";
+            } else if (SVFUtil::isa<LoadPE>(edge)) {
+                rawstr <<  "color=red";
+            } else {
+                assert(0 && "No such kind edge!!");
+            }
+            rawstr <<  "";
+        }
+        else if(SVFUtil::isa<PHIVFGNode>(node)) {
+            rawstr <<  "color=black";
+        }
+        else if(SVFUtil::isa<NullPtrVFGNode>(node)) {
+            rawstr <<  "color=grey";
+        }
+        else if(SVFUtil::isa<FormalParmVFGNode>(node)) {
+            rawstr <<  "color=yellow,style=double";
+        }
+        else if(SVFUtil::isa<ActualParmVFGNode>(node)) {
+            rawstr <<  "color=yellow,style=double";
+        }
+        else if (SVFUtil::isa<ActualRetVFGNode>(node)) {
+            rawstr <<  "color=yellow,style=double";
+        }
+        else if (SVFUtil::isa<FormalRetVFGNode>(node)) {
+            rawstr <<  "color=yellow,style=double";
+        }
+        else
+            assert(false && "no such kind of node!!");
+
+        rawstr <<  "";
+
+        return rawstr.str();
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, VFG *vfg) {
+        VFGEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+        if (SVFUtil::isa<DirectSVFGEdge>(edge)) {
+            if (SVFUtil::isa<CallDirSVFGEdge>(edge))
+                return "style=solid,color=red";
+            else if (SVFUtil::isa<RetDirSVFGEdge>(edge))
+                return "style=solid,color=blue";
+            else
+                return "style=solid";
+        } else {
+        		assert(false && "what else edge we have?");
+        }
+        return "";
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI) {
+        VFGEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+
+        std::string str;
+        raw_string_ostream rawstr(str);
+        if (CallDirSVFGEdge* dirCall = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
+            rawstr << dirCall->getCallSiteId();
+        else if (RetDirSVFGEdge* dirRet = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
+            rawstr << dirRet->getCallSiteId();
+
+        return rawstr.str();
+    }
+};
+}
