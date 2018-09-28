@@ -524,7 +524,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     if (callee) {
         if (isExtCall(callee)) {
             if (pag->hasExternalPAG(callee)) {
-                pag->connectCallsiteToExternalPAG(&cs);
+                ExternalPAG::connectCallsiteToExternalPAG(&cs);
             } else {
                 // There is no extpag for the function, use the old method.
                 handleExtCall(cs, callee);

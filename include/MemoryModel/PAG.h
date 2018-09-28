@@ -683,11 +683,6 @@ public:
         return ret;
     }
 
-    /// Connects callsite if a external PAG implementing the relevant function
-    /// has been added.
-    /// Returns true on success, false otherwise.
-    bool connectCallsiteToExternalPAG(CallSite *cs);
-
     /// Return graph name
     inline std::string getGraphName() const {
         return "PAG";

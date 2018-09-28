@@ -58,6 +58,66 @@ void ExternalPAG::initialise(SVFModule svfModule) {
     }
 }
 
+bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
+    PAG *pag = PAG::getPAG();
+
+    Function *function = cs->getCalledFunction();
+    std::string functionName = function->getName();
+    if (!pag->hasExternalPAG(function)) return false;
+
+    std::map<int, PAGNode*> argNodes =
+        pag->getFunctionToExternalPAGEntriesMap()[function];
+    PAGNode *retNode = pag->getFunctionToExternalPAGReturnNodes()[function];
+
+    // Handle the return.
+    if (llvm::isa<PointerType>(cs->getType())) {
+        NodeID dstrec = pag->getValueNode(cs->getInstruction());
+        // Does it actually return a pointer?
+        if (SVFUtil::isa<PointerType>(function->getReturnType())) {
+            if (retNode != NULL) {
+                pag->addRetEdge(retNode->getId(), dstrec, cs->getInstruction());
+            }
+        } else {
+            // This is a int2ptr cast during parameter passing
+            pag->addBlackHoleAddrEdge(dstrec);
+        }
+    }
+
+    // Handle the arguments;
+    // Actual arguments.
+    CallSite::arg_iterator itA = cs->arg_begin(), ieA = cs->arg_end();
+    Function::const_arg_iterator itF = function->arg_begin(),
+                                 ieF = function->arg_end();
+    // Formal arguments.
+    size_t formalNodeIndex = 0;
+
+    for (; itF != ieF ; ++itA, ++itF, ++formalNodeIndex) {
+        if (itA == ieA) {
+            // When unneeded args are left empty, e.g. Linux kernel.
+            break;
+        }
+
+        // Formal arg node is from the extpag, actual arg node would come from
+        // the main pag.
+        PAGNode *formalArgNode = argNodes[formalNodeIndex];
+        NodeID actualArgNodeId = pag->getValueNode(*itA);
+
+        const llvm::Value *formalArg = &*itF;
+        if (!SVFUtil::isa<PointerType>(formalArg->getType())) continue;
+
+        if (SVFUtil::isa<PointerType>((*itA)->getType())) {
+            pag->addCallEdge(actualArgNodeId, formalArgNode->getId(),
+                             cs->getInstruction());
+        } else {
+            // This is a int2ptr cast during parameter passing
+            pag->addFormalParamBlackHoleAddrEdge(formalArgNode->getId(), &*itF);
+        }
+        // TODO proofread.
+    }
+
+    return false;
+}
+
 bool ExternalPAG::addExternalPAG(Function *function) {
     // The function does not exist in the module - bad arg?
     // TODO: maybe some warning?

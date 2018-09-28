@@ -72,6 +72,11 @@ public:
     /// PAG.
     static void initialise(SVFModule svfModule);
 
+    /// Connects callsite if a external PAG implementing the relevant function
+    /// has been added.
+    /// Returns true on success, false otherwise.
+    static bool connectCallsiteToExternalPAG(CallSite *cs);
+
     std::string getFunctionName() const { return functionName; }
 
     std::set<std::tuple<NodeID, std::string>> &getNodes() { return nodes; }
