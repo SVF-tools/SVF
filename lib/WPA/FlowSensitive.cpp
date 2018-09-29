@@ -43,7 +43,7 @@ void FlowSensitive::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
-    svfg = memSSA.build(ander);
+    svfg = memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
@@ -175,6 +175,9 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
             || SVFUtil::isa<ActualRetSVFGNode>(node) || SVFUtil::isa<FormalRetSVFGNode>(node)
             || SVFUtil::isa<NullPtrSVFGNode>(node)) {
         changed = true;
+    }
+    else if(SVFUtil::isa<CmpVFGNode>(node) || SVFUtil::isa<BinaryOPVFGNode>(node)){
+
     }
     else
         assert(false && "unexpected kind of SVFG nodes");

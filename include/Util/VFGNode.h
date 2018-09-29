@@ -47,7 +47,7 @@ public:
     /// 20 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK {
-        Addr, Copy, Gep, Store, Load, TPhi, TIntraPhi, TInterPhi,
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
 		FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
@@ -92,6 +92,11 @@ public:
         bb = e->getBB();
     }
 
+    /// Whether this node is used for pointer analysis. Both src and dst PAGNodes are of ptr type.
+    inline bool isPTANode() const{
+		return pagEdge->isPTAEdge();
+    }
+
     /// PAGNode and PAGEdge
     ///@{
     inline const PAGEdge* getPAGEdge() const {
@@ -121,18 +126,22 @@ public:
         return true;
     }
     static inline bool classof(const VFGNode *node) {
-        return node->getNodeKind() == Addr ||
-               node->getNodeKind() == Copy ||
-               node->getNodeKind() == Gep ||
-               node->getNodeKind() == Store ||
-               node->getNodeKind() == Load;
+		return node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Store
+				|| node->getNodeKind() == Load
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == BinaryOp;
     }
     static inline bool classof(const GenericVFGNodeTy *node) {
-        return node->getNodeKind() == Addr ||
-               node->getNodeKind() == Copy ||
-               node->getNodeKind() == Gep ||
-               node->getNodeKind() == Store ||
-               node->getNodeKind() == Load;
+		return node->getNodeKind() == Addr
+				|| node->getNodeKind() == Copy
+				|| node->getNodeKind() == Gep
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == Load
+				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == BinaryOp;
     }
 
     inline const Instruction* getInst() const {
@@ -235,6 +244,71 @@ public:
     //@}
 };
 
+
+/*!
+ * VFGNode for compare instruction, e.g., bool b = (a!=c);
+ */
+class CmpVFGNode: public StmtVFGNode {
+private:
+	CmpVFGNode();                      ///< place holder
+	CmpVFGNode(const CmpVFGNode &);  ///< place holder
+    void operator=(const CmpVFGNode &); ///< place holder
+
+public:
+    /// Constructor
+    CmpVFGNode(NodeID id,const CmpPE* copy): StmtVFGNode(id,copy,Cmp) {
+
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CmpVFGNode *) {
+        return true;
+    }
+    static inline bool classof(const StmtVFGNode *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    static inline bool classof(const VFGNode *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node) {
+        return node->getNodeKind() == Cmp;
+    }
+    //@}
+};
+
+
+
+/*!
+ * VFGNode for binary operator instructions, e.g., a = b + c;
+ */
+class BinaryOPVFGNode: public StmtVFGNode {
+private:
+	BinaryOPVFGNode();                      ///< place holder
+	BinaryOPVFGNode(const BinaryOPVFGNode &);  ///< place holder
+    void operator=(const BinaryOPVFGNode &); ///< place holder
+
+public:
+    /// Constructor
+    BinaryOPVFGNode(NodeID id,const BinaryOPPE* copy): StmtVFGNode(id,copy,BinaryOp) {
+
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BinaryOPVFGNode *) {
+        return true;
+    }
+    static inline bool classof(const StmtVFGNode *node) {
+        return node->getNodeKind() == BinaryOp;
+    }
+    static inline bool classof(const VFGNode *node) {
+        return node->getNodeKind() == BinaryOp;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node) {
+        return node->getNodeKind() == BinaryOp;
+    }
+    //@}
+};
+
 /*!
  * VFGNode for Gep
  */
@@ -297,6 +371,11 @@ public:
             else
                 bb = NULL;	/// bb is null when we have a select constant expression
         }
+    }
+
+    /// Whether this phi node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return res->isPointer();
     }
 
     /// Operands at a llvm PHINode
@@ -418,6 +497,11 @@ protected:
 public:
     /// Constructor
     ArgumentVFGNode(NodeID id, const PAGNode* p, VFGNodeK k): VFGNode(id,k), param(p) {
+    }
+
+    /// Whether this argument node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return param->isPointer();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -697,6 +781,11 @@ public:
     NullPtrVFGNode(NodeID id, const PAGNode* n) : VFGNode(id,NPtr), node(n) {
 
     }
+    /// Whether this node is of pointer type (used for pointer analysis).
+    inline bool isPTANode() const{
+		return node->isPointer();
+    }
+    /// Return corresponding PAGNode
     const PAGNode* getPAGNode() const {
         return node;
     }

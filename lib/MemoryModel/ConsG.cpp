@@ -48,74 +48,75 @@ void ConstraintGraph::buildCG() {
     }
 
     // initialize edges
-    PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
+    PAGEdge::PAGEdgeSetTy& addrs = getPAGEdgeSet(PAGEdge::Addr);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addAddrCGEdge(edge->getSrcID(),edge->getDstID());
+        	addAddrCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
+    PAGEdge::PAGEdgeSetTy& copys = getPAGEdgeSet(PAGEdge::Copy);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        	addCopyCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& calls = pag->getEdgeSet(PAGEdge::Call);
+    PAGEdge::PAGEdgeSetTy& calls = getPAGEdgeSet(PAGEdge::Call);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        	addCopyCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& rets = pag->getEdgeSet(PAGEdge::Ret);
+    PAGEdge::PAGEdgeSetTy& rets = getPAGEdgeSet(PAGEdge::Ret);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
                 rets.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        	addCopyCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& tdfks = pag->getEdgeSet(PAGEdge::ThreadFork);
+    PAGEdge::PAGEdgeSetTy& tdfks = getPAGEdgeSet(PAGEdge::ThreadFork);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        	addCopyCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& tdjns = pag->getEdgeSet(PAGEdge::ThreadJoin);
+    PAGEdge::PAGEdgeSetTy& tdjns = getPAGEdgeSet(PAGEdge::ThreadJoin);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
                 tdjns.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        	addCopyCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
+    PAGEdge::PAGEdgeSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter) {
         NormalGepPE* edge = SVFUtil::cast<NormalGepPE>(*iter);
-        addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
+        if(edge->isPTAEdge())
+        	addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
     }
 
-    PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
+    PAGEdge::PAGEdgeSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter) {
         VariantGepPE* edge = SVFUtil::cast<VariantGepPE>(*iter);
-        addVariantGepCGEdge(edge->getSrcID(),edge->getDstID());
+        	addVariantGepCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Load);
+    PAGEdge::PAGEdgeSetTy& stores = getPAGEdgeSet(PAGEdge::Load);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addLoadCGEdge(edge->getSrcID(),edge->getDstID());
+        	addLoadCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Store);
+    PAGEdge::PAGEdgeSetTy& loads = getPAGEdgeSet(PAGEdge::Store);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter) {
         PAGEdge* edge = *iter;
-        addStoreCGEdge(edge->getSrcID(),edge->getDstID());
+        	addStoreCGEdge(edge->getSrcID(),edge->getDstID());
     }
 }
 

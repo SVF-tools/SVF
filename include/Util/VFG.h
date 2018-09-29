@@ -44,6 +44,10 @@ typedef GenericGraph<VFGNode,VFGEdge> GenericVFGTy;
 class VFG : public GenericVFGTy {
 
 public:
+    /// VFG kind
+    enum VFGK {
+        ORIGSVFGK, PTRONLYSVFGK
+    };
 
     typedef llvm::DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
@@ -77,17 +81,28 @@ protected:
     StoreNodeSet globalStore;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
     PAG* pag;
+    VFGK kind;
 
     /// Clean up memory
     void destroy();
 
 public:
     /// Constructor
-    VFG(PTACallGraph* callgraph);
+    VFG(PTACallGraph* callgraph, VFGK k = ORIGSVFGK);
 
     /// Destructor
     virtual ~VFG() {
         destroy();
+    }
+
+    /// Get VFG kind
+    inline VFGK getKind() const {
+        return kind;
+    }
+
+    /// Return true if this VFG only contains pointer related SVFGNodes for pointer analysis
+    inline bool isPtrOnlySVFG() const {
+        return kind == PTRONLYSVFGK;
     }
 
     /// Return PAG
@@ -261,6 +276,21 @@ protected:
     /// Create VFG nodes
     void addVFGNodes();
 
+    /// Get PAGEdge set
+    virtual inline PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
+		if (isPtrOnlySVFG())
+			return pag->getPTAEdgeSet(kind);
+		else
+			return pag->getEdgeSet(kind);
+    }
+
+    virtual inline bool isInterestedPAGNode(const PAGNode* node) const{
+		if (isPtrOnlySVFG())
+			return node->isPointer();
+		else
+			return true;
+    }
+
     /// Create edges between VFG nodes within a function
     void connectDirectVFGEdges();
 
@@ -300,6 +330,18 @@ protected:
         addStmtVFGNode(sNode, copy);
         setDef(copy->getDstNode(),sNode);
     }
+    /// Add a Compare VFG node
+    inline void addCmpVFGNode(const CmpPE* cmp) {
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++,cmp);
+        addStmtVFGNode(sNode, cmp);
+        setDef(cmp->getDstNode(),sNode);
+    }
+    /// Add a BinaryOperator VFG node
+    inline void addBinaryOPVFGNode(const BinaryOPPE* binary) {
+		BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, binary);
+        addStmtVFGNode(sNode, binary);
+        setDef(binary->getDstNode(),sNode);
+    }
     /// Add a Gep VFG node
     inline void addGepVFGNode(const GepPE* gep) {
         GepVFGNode* sNode = new GepVFGNode(totalVFGNode++,gep);
@@ -307,14 +349,14 @@ protected:
         setDef(gep->getDstNode(),sNode);
     }
     /// Add a Load VFG node
-    void addLoadVFGNode(LoadPE* load) {
+    void addLoadVFGNode(const LoadPE* load) {
         LoadVFGNode* sNode = new LoadVFGNode(totalVFGNode++,load);
         addStmtVFGNode(sNode, load);
         setDef(load->getDstNode(),sNode);
     }
     /// Add a Store VFG node,
     /// To be noted store does not create a new pointer, we do not set def for any PAG node
-    void addStoreVFGNode(StorePE* store) {
+    void addStoreVFGNode(const StorePE* store) {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
         addStmtVFGNode(sNode, store);
 

@@ -268,7 +268,7 @@ private:
 
 public:
     /// Constructor
-    MemSSA(BVDataPTAImpl* p);
+    MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA);
 
     /// Destructor
     virtual ~MemSSA() {

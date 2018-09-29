@@ -169,8 +169,6 @@ bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls) {
  */
 void PAGBuilder::processCE(const Value *val) {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val)) {
-        if (!SVFUtil::isa<PointerType>(ref->getType()))
-            return;
         if (const ConstantExpr* gepce = isGepConstantExpr(ref)) {
             DBOUT(DPAGBuild,
                   outs() << "handle gep constant expression " << *ref << "\n");
@@ -223,6 +221,19 @@ void PAGBuilder::processCE(const Value *val) {
         // if we meet a int2ptr, then it points-to black hole
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref)) {
             pag->addGlobalBlackHoleAddrEdge(pag->getValueNode(int2Ptrce), int2Ptrce);
+        }
+        else if (const ConstantExpr* ptr2Intce = isPtr2IntConstantExpr(ref)) {
+			const Constant* opnd = ptr2Intce->getOperand(0);
+			const BasicBlock* cbb = pag->getCurrentBB();
+			const Value* cval = pag->getCurrentValue();
+			pag->setCurrentLocation(ptr2Intce, NULL);
+			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
+			pag->setCurrentLocation(cval, cbb);
+			processCE(opnd);
+        }
+        else{
+        		if(SVFUtil::isa<ConstantExpr>(val))
+        			assert(false && "we don't handle all other constant expression for now!");
         }
     }
 }
@@ -368,56 +379,45 @@ void PAGBuilder::visitAllocaInst(AllocaInst &inst) {
  */
 void PAGBuilder::visitPHINode(PHINode &inst) {
 
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
+	DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
 
-        DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
+	NodeID dst = getValueNode(&inst);
 
-        NodeID dst = getValueNode(&inst);
-
-        for (Size_t i = 0; i < inst.getNumIncomingValues(); ++i) {
-            NodeID src = getValueNode(inst.getIncomingValue(i));
-            const BasicBlock* bb = inst.getIncomingBlock(i);
-            pag->addCopyEdge(src, dst);
-            pag->addPhiNode(pag->getPAGNode(dst),pag->getPAGNode(src),bb);
-        }
-    }
-
+	for (Size_t i = 0; i < inst.getNumIncomingValues(); ++i) {
+		NodeID src = getValueNode(inst.getIncomingValue(i));
+		const BasicBlock* bb = inst.getIncomingBlock(i);
+		pag->addCopyEdge(src, dst);
+		pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src), bb);
+	}
 }
 
 /*
  * Visit load instructions
  */
 void PAGBuilder::visitLoadInst(LoadInst &inst) {
-    pag->loadInstNum++;
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
-        DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
+	DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
-        NodeID dst = getValueNode(&inst);
+	NodeID dst = getValueNode(&inst);
 
-        NodeID src = getValueNode(inst.getPointerOperand());
+	NodeID src = getValueNode(inst.getPointerOperand());
 
-        pag->addLoadEdge(src, dst);
-    }
+	pag->addLoadEdge(src, dst);
 }
 
 /*!
  * Visit store instructions
  */
 void PAGBuilder::visitStoreInst(StoreInst &inst) {
-    pag->storeInstNum++;
     // StoreInst itself should always not be a pointer type
-    assert(!SVFUtil::isa<PointerType>(inst.getType()));
+	assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    if (SVFUtil::isa<PointerType>(inst.getValueOperand()->getType())) {
+	DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
 
-        DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
+	NodeID dst = getValueNode(inst.getPointerOperand());
 
-        NodeID dst = getValueNode(inst.getPointerOperand());
+	NodeID src = getValueNode(inst.getValueOperand());
 
-        NodeID src = getValueNode(inst.getValueOperand());
-
-        pag->addStoreEdge(src, dst);
-    }
+	pag->addStoreEdge(src, dst);
 
 }
 
@@ -444,60 +444,62 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
     pag->addGepEdge(src, dst, ls, constGep);
 }
 
-/*!
- * Visit intToPtr instructions
- */
-void PAGBuilder::visitIntToPtrInst(IntToPtrInst &inst) {
-
-    DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
-    NodeID dst = getValueNode(&inst);
-    pag->addBlackHoleAddrEdge(dst);
-}
-
 /*
  * Visit cast instructions
  */
 void PAGBuilder::visitCastInst(CastInst &inst) {
 
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
+	DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
+	NodeID dst = getValueNode(&inst);
 
-        DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
-        NodeID dst = getValueNode(&inst);
+	if (SVFUtil::isa<IntToPtrInst>(&inst)) {
+		pag->addBlackHoleAddrEdge(dst);
+	} else {
+		Value * opnd = inst.getOperand(0);
+		if (!SVFUtil::isa<PointerType>(opnd->getType()))
+			opnd = stripAllCasts(opnd);
 
-        Value * opnd = inst.getOperand(0);
-        if (!SVFUtil::isa<PointerType>(opnd->getType()))
-            opnd = stripAllCasts(opnd);
-
-        if (SVFUtil::isa<PointerType>(opnd->getType())) {
-            NodeID src = getValueNode(opnd);
-            pag->addCopyEdge(src, dst);
-        }
-        else {
-            assert(SVFUtil::isa<IntToPtrInst>(&inst) && "what else do we have??");
-            // This is a int2ptr cast
-            pag->addBlackHoleAddrEdge(dst);
-        }
-    }
-
+		NodeID src = getValueNode(opnd);
+		pag->addCopyEdge(src, dst);
+	}
 }
+
+/*!
+ * Visit Binary Operator
+ */
+void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
+	Value* opnd = inst.getOperand(0);
+    NodeID dst = getValueNode(&inst);
+    NodeID src = getValueNode(opnd);
+    pag->addBinaryOPEdge(src, dst);
+}
+
+/*!
+ * Visit compare instruction
+ */
+void PAGBuilder::visitCmpInst(CmpInst &inst) {
+	Value* opnd = inst.getOperand(0);
+    NodeID dst = getValueNode(&inst);
+    NodeID src = getValueNode(opnd);
+    pag->addCmpEdge(src, dst);
+}
+
 
 /*!
  * Visit select instructions
  */
 void PAGBuilder::visitSelectInst(SelectInst &inst) {
 
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
-        DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
+	DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
 
-        NodeID dst = getValueNode(&inst);
-        NodeID src1 = getValueNode(inst.getTrueValue());
-        NodeID src2 = getValueNode(inst.getFalseValue());
-        pag->addCopyEdge(src1, dst);
-        pag->addCopyEdge(src2, dst);
-        /// Two operands have same incoming basic block, both are the current BB
-        pag->addPhiNode(pag->getPAGNode(dst),pag->getPAGNode(src1),inst.getParent());
-        pag->addPhiNode(pag->getPAGNode(dst),pag->getPAGNode(src2),inst.getParent());
-    }
+	NodeID dst = getValueNode(&inst);
+	NodeID src1 = getValueNode(inst.getTrueValue());
+	NodeID src2 = getValueNode(inst.getFalseValue());
+	pag->addCopyEdge(src1, dst);
+	pag->addCopyEdge(src2, dst);
+	/// Two operands have same incoming basic block, both are the current BB
+	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src1), inst.getParent());
+	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src2), inst.getParent());
 }
 
 /*
@@ -553,8 +555,6 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
         DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
         Value *src = inst.getReturnValue();
-        if (!SVFUtil::isa<PointerType>(src->getType()))
-            return;
 
         Function *F = inst.getParent()->getParent();
 
@@ -575,11 +575,8 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
  * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
  */
 void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst) {
-
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
-        NodeID dst = getValueNode(&inst);
-        pag->addBlackHoleAddrEdge(dst);
-    }
+	NodeID dst = getValueNode(&inst);
+	pag->addBlackHoleAddrEdge(dst);
 }
 
 /*!
@@ -591,10 +588,8 @@ void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst) {
  * <result> = extractelement <4 x i32> %vec, i32 0    ; yields i32
  */
 void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst) {
-    if (SVFUtil::isa<PointerType>(inst.getType())) {
-        NodeID dst = getValueNode(&inst);
-        pag->addBlackHoleAddrEdge(dst);
-    }
+	NodeID dst = getValueNode(&inst);
+	pag->addBlackHoleAddrEdge(dst);
 }
 
 /*!

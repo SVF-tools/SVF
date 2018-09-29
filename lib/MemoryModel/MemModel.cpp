@@ -544,7 +544,7 @@ void MemObj::init(const Value *val) {
 
     // We consider two types of objects:
     // (1) A heap/static object from a callsite
-    if (I && isCallSite(I))
+    if (I && isNonInstricCallSite(I))
         refTy = getRefTypeOfHeapAllocOrStatic(I);
     // (2) Other objects (e.g., alloca, global, etc.)
     else
@@ -663,27 +663,30 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 collectSym(st->getPointerOperand());
                 collectSym(st->getValueOperand());
             }
-
             else if (const LoadInst *ld = SVFUtil::dyn_cast<LoadInst>(inst)) {
                 collectSym(ld->getPointerOperand());
             }
-
             else if (const PHINode *phi = SVFUtil::dyn_cast<PHINode>(inst)) {
                 for (u32_t i = 0; i < phi->getNumIncomingValues(); ++i) {
                     collectSym(phi->getIncomingValue(i));
                 }
             }
-
             else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(
                     inst)) {
                 collectSym(gep->getPointerOperand());
             }
-
             else if (const SelectInst *sel = SVFUtil::dyn_cast<SelectInst>(inst)) {
                 collectSym(sel->getTrueValue());
                 collectSym(sel->getFalseValue());
             }
-
+            else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst)) {
+                collectSym(binary->getOperand(0));
+                collectSym(binary->getOperand(1));
+            }
+            else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst)) {
+                collectSym(cmp->getOperand(0));
+                collectSym(cmp->getOperand(1));
+            }
             else if (const CastInst *cast = SVFUtil::dyn_cast<CastInst>(inst)) {
                 collectSym(cast->getOperand(0));
             }
@@ -691,7 +694,7 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 if(ret->getReturnValue())
                     collectSym(ret->getReturnValue());
             }
-            else if (isCallSite(inst)) {
+            else if (isNonInstricCallSite(inst)) {
 
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 callSiteSet.insert(cs);

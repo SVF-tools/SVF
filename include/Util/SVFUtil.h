@@ -64,11 +64,15 @@ bool isInstrinsicDbgInst(const Instruction* inst);
 inline bool isAnAllocationWraper(const Instruction *inst) {
     return false;
 }
-/// Whether an instruction is a call or invoke instruction, excluding llvm intrinsic calls
+/// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Instruction* inst) {
+    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
+}
+/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
+inline bool isNonInstricCallSite(const Instruction* inst) {
 	if(isInstrinsicDbgInst(inst))
 		return false;
-    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
+    return isCallSite(inst);
 }
 /// Whether an instruction is a return instruction
 inline bool isReturn(const Instruction* inst) {
@@ -522,32 +526,10 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val) {
 //@}
 
 /// Get the next instructions following control flow
-inline void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
-    if (!curInst->isTerminator()) {
-        instList.push_back(curInst->getNextNode());
-    } else {
-        const BasicBlock *BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB);
-                it != ie; ++it) {
-            instList.push_back(&((*it)->front()));
-        }
-    }
-}
+void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 /// Get the previous instructions following control flow
-inline void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
-    if (curInst != &(curInst->getParent()->front())) {
-        instList.push_back(curInst->getPrevNode());
-    } else {
-        const BasicBlock *BB = curInst->getParent();
-        // Visit all successors of BB in the CFG
-        for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB);
-                it != ie; ++it) {
-            instList.push_back(&((*it)->back()));
-        }
-    }
-}
+void getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 
 /// Get basic block successor position
 u32_t getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ);

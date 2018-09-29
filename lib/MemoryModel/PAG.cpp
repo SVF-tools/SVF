@@ -69,6 +69,31 @@ bool PAG::addCopyEdge(NodeID src, NodeID dst) {
 }
 
 /*!
+ * Add Compare edge
+ */
+bool PAG::addCmpEdge(NodeID src, NodeID dst) {
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(hasIntraEdge(srcNode,dstNode, PAGEdge::Cmp))
+        return false;
+    else
+        return addEdge(srcNode,dstNode, new CmpPE(srcNode, dstNode));
+}
+
+
+/*!
+ * Add Compare edge
+ */
+bool PAG::addBinaryOPEdge(NodeID src, NodeID dst) {
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(hasIntraEdge(srcNode,dstNode, PAGEdge::BinaryOp))
+        return false;
+    else
+        return addEdge(srcNode,dstNode, new BinaryOPPE(srcNode, dstNode));
+}
+
+/*!
  * Add Load edge
  */
 bool PAG::addLoadEdge(NodeID src, NodeID dst) {
@@ -371,10 +396,9 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
  	/// We assume every GepValPN and its GepPE are unique across whole program
 	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
 		assert(curBB && "instruction does not have a basic block??");
-        inst2PAGEdgesMap[curInst].push_back(edge);
+		addToInstPAGEdgeList(curInst,edge);
     } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
-        funToEntryPAGEdges[curBB->getParent()].insert(edge);
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
@@ -404,8 +428,14 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
+    if (edge->isPTAEdge()){
+        totalPTAPAGEdge++;
+        PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
+    }
+
     if (!SVFModule::pagReadFromTXT())
         setCurrentBBAndValueForPAGEdge(edge);
+
     return true;
 }
 
@@ -606,6 +636,13 @@ PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
     GenericPAGEdgeTy(s,d,k),value(NULL),basicBlock(NULL) {
     edgeId = PAG::getPAG()->getTotalEdgeNum();
     PAG::getPAG()->incEdgeNum();
+}
+
+/*!
+ * Whether src and dst nodes are both pointer type
+ */
+bool PAGEdge::isPTAEdge() const {
+	return getSrcNode()->isPointer() && getDstNode()->isPointer();
 }
 
 /*!
@@ -934,6 +971,10 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
             return "color=blue";
         } else if (SVFUtil::isa<LoadPE>(edge)) {
             return "color=red";
+        } else if (SVFUtil::isa<CmpPE>(edge)) {
+            return "color=grey";
+        } else if (SVFUtil::isa<BinaryOPPE>(edge)) {
+            return "color=grey";
         } else if (SVFUtil::isa<TDForkPE>(edge)) {
             return "color=Turquoise";
         } else if (SVFUtil::isa<TDJoinPE>(edge)) {

@@ -43,7 +43,7 @@
  */
 class DistinctMRG : public MRGenerator {
 public:
-    DistinctMRG(BVDataPTAImpl* p) : MRGenerator(p)
+    DistinctMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
 
     ~DistinctMRG() {}
@@ -72,7 +72,7 @@ public:
     typedef std::map<const Function*, PtsToSubPtsMap> FunToPtsMap;
     typedef std::map<const Function*, PointsToList> FunToInterMap;
 
-    IntraDisjointMRG(BVDataPTAImpl* p) : MRGenerator(p)
+    IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
 
     ~IntraDisjointMRG() {}
@@ -129,7 +129,7 @@ private:
  */
 class InterDisjointMRG : public IntraDisjointMRG {
 public:
-    InterDisjointMRG(BVDataPTAImpl* p) : IntraDisjointMRG(p)
+    InterDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : IntraDisjointMRG(p, ptrOnly)
     {}
 
     ~InterDisjointMRG() {}

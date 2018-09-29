@@ -57,7 +57,7 @@ class SVFGOPT : public SVFG {
 
 public:
     /// Constructor
-    SVFGOPT(MemSSA* _mssa) : SVFG(_mssa,OPTSVFGK) {
+    SVFGOPT(MemSSA* _mssa, VFGK kind) : SVFG(_mssa, kind) {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor
@@ -73,12 +73,6 @@ public:
         keepContextSelfCycle = true;
     }
 
-    static inline bool classof(const SVFGOPT *) {
-        return true;
-    }
-    static inline bool classof(const SVFG *g) {
-        return g->getKind() == OPTSVFGK;
-    }
 protected:
     virtual void buildSVFG();
 

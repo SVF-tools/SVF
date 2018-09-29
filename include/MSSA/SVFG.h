@@ -67,10 +67,6 @@ class SVFG : public VFG {
     friend class RcSvfgBuilder;
 
 public:
-    /// SVFG kind
-    enum SVFGK {
-        ORIGSVFGK,OPTSVFGK
-    };
     typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef llvm::DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
@@ -101,7 +97,6 @@ protected:
     FunctionToFormalINsMapTy funToFormalINMap;
     FunctionToFormalOUTsMapTy funToFormalOUTMap;
     SVFGStat * stat;
-    SVFGK kind;
     MemSSA* mssa;
     PointerAnalysis* pta;
 
@@ -109,7 +104,7 @@ protected:
     void destroy();
 
     /// Constructor
-    SVFG(MemSSA* mssa, SVFGK k = ORIGSVFGK);
+    SVFG(MemSSA* mssa, VFGK k);
 
     /// Start building SVFG
     virtual void buildSVFG();
@@ -129,11 +124,6 @@ public:
     inline void clearMSSA() {
         delete mssa;
         mssa = NULL;
-    }
-
-    /// Get SVFG kind
-    inline SVFGK getKind() const {
-        return kind;
     }
 
     /// Get SVFG memory SSA

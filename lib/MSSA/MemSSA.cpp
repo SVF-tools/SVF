@@ -55,7 +55,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p) : df(NULL),dt(NULL) {
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL) {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
@@ -63,16 +63,16 @@ MemSSA::MemSSA(BVDataPTAImpl* p) : df(NULL),dt(NULL) {
     if (!MemPar.getValue().empty()) {
         std::string strategy = MemPar.getValue();
         if (strategy == kDistinctMemPar)
-            mrGen = new DistinctMRG(pta);
+            mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
         else if (strategy == kIntraDisjointMemPar)
-            mrGen = new IntraDisjointMRG(pta);
+            mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
         else if (strategy == kInterDisjointMemPar)
-            mrGen = new InterDisjointMRG(pta);
+            mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
         else
             assert(false && "unrecognised memory partition strategy");
     }
     else {
-        mrGen = new IntraDisjointMRG(pta);
+        mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
     }
 
     stat = new MemSSAStat(this);
@@ -172,7 +172,7 @@ void MemSSA::createMUCHI(const Function& fun) {
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
-            if (isCallSite(inst)) {
+            if (isNonInstricCallSite(inst)) {
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
@@ -301,7 +301,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
             }
         }
-        if (isCallSite(inst)) {
+        if (isNonInstricCallSite(inst)) {
             CallSite cs = SVFUtil::getLLVMCallSite(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
@@ -579,7 +579,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isCallSite(&inst) && isExtCall(&inst)==false) {
+                if (isNonInstricCallSite(&inst) && isExtCall(&inst)==false) {
                     CallSite cs = SVFUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {

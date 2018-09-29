@@ -58,8 +58,8 @@ public:
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::vector<const Instruction*> InstVec;
-    typedef std::set<const BasicBlock*> BBSet;
-    typedef FIFOWorkList<const BasicBlock*> WorkList;
+    typedef std::set<const Instruction*> BBSet;
+    typedef FIFOWorkList<const Instruction*> WorkList;
 
 
 protected:
@@ -168,7 +168,15 @@ protected:
     }
 
     /// Create edges between ICFG nodes within a function
+    ///@{
     void build();
+
+    void processFunEntry(const Function* fun, WorkList& worklist);
+
+    void processFunBody(WorkList& worklist);
+
+    void processFunExit(const Function* fun);
+    //@}
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(CallSite cs, const Function* callee);
@@ -181,35 +189,23 @@ protected:
     virtual inline void addICFGNode(ICFGNode* node) {
         addGNode(node->getId(),node);
     }
-    /// Add VFGStmtNode into IntraBlockNode
-    void handleIntraStmt(IntraBlockNode* instICFGNode, const Instruction* inst);
+
     /// Create InterBlockNode at direct callsites
     void handleCall(IntraBlockNode* instICFGNode, const Instruction* inst);
 
-	/// Add a basic block ICFGNode
-	inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst) {
-		InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
-		if (it == InstToBlockNodeMap.end()) {
-			IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
-			addICFGNode(sNode);
-			InstToBlockNodeMap[inst] = sNode;
+    /// Add/Get an intra block ICFGNode
+    IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst);
 
-			if(SVFUtil::isCallSite(inst))
-				handleCall(sNode,inst);
-			else
-				handleIntraStmt(sNode, inst);
+    /// Add/Get an inter block ICFGNode
+    InterBlockNode* getInterBlockICFGNode(const Instruction* inst);
 
-			return sNode;
-		}
-		return it->second;
+	/// Add/Get a basic block ICFGNode
+	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
+		if(SVFUtil::isNonInstricCallSite(inst))
+			return getInterBlockICFGNode(inst);
+		else
+			return getIntraBlockICFGNode(inst);
 	}
-	/// Get the first instruction ICFGNode in a basic block
-	inline IntraBlockNode* getFirstInstFromBasicBlock(const BasicBlock* bb) {
-		return getIntraBlockICFGNode(&(*bb->begin()));
-	}
-
-	/// Get the last instruction ICFGNode in a basic block
-	IntraBlockNode* getLastInstFromBasicBlock(const BasicBlock* bb);
 
     /// Add a function entry node
 	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {

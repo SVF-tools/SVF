@@ -42,7 +42,7 @@ static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
 /*!
  * Constructor
  */
-SVFG::SVFG(MemSSA* _mssa, SVFGK k): VFG(_mssa->getPTA()->getPTACallGraph()), kind(k),mssa(_mssa), pta(mssa->getPTA()) {
+SVFG::SVFG(MemSSA* _mssa, VFGK k): VFG(_mssa->getPTA()->getPTACallGraph(),k),mssa(_mssa), pta(mssa->getPTA()) {
     stat = new SVFGStat(this);
 }
 
@@ -87,7 +87,7 @@ void SVFG::buildSVFG() {
 void SVFG::addSVFGNodesForAddrTakenVars() {
 
     // set defs for address-taken vars defined at store statements
-    PAGEdge::PAGEdgeSetTy& stores = mssa->getPAG()->getEdgeSet(PAGEdge::Store);
+    PAGEdge::PAGEdgeSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter) {
         StorePE* store = SVFUtil::cast<StorePE>(*iter);
@@ -359,7 +359,6 @@ void SVFG::dump(const std::string& file, bool simple) {
  */
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function* callee, SVFGEdgeSetTy& edges)
 {
-    PAG * pag = PAG::getPAG();
     CallSiteID csId = getCallSiteID(cs, callee);
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(callee)) {
@@ -424,7 +423,6 @@ void SVFG::connectCallerAndCallee(CallSite cs, const Function* callee, SVFGEdgeS
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
-    PAG * pag = PAG::getPAG();
     CallSiteID csId = getCallSiteID(cs, callee);
 
     // connect actual in and formal in

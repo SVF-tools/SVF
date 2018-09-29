@@ -95,7 +95,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta) {
     PointsTo worklist;
 
     /// find fork arguments' objects
-    const PAGEdge::PAGEdgeSetTy& forkedges = pag->getEdgeSet(PAGEdge::ThreadFork);
+    const PAGEdge::PAGEdgeSetTy& forkedges = pag->getPTAEdgeSet(PAGEdge::ThreadFork);
     for (PAGEdge::PAGEdgeSetTy::iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it) {
         PAGEdge* edge = *it;
         worklist |= pta->getPts(edge->getDstID());
