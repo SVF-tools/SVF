@@ -300,7 +300,7 @@ public:
     //@}
 
     /// Dump graph into dot file
-    void dump();
+    void dump(std::string name);
     /// Print CG into terminal
     void print();
 };

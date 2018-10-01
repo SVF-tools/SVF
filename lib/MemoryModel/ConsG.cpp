@@ -547,9 +547,9 @@ void ConstraintGraph::connectCaller2CalleeParams(CallSite cs, const Function *F,
 /*!
  * Dump constraint graph
  */
-void ConstraintGraph::dump() {
+void ConstraintGraph::dump(std::string name) {
     if(ConsCGDotGraph)
-        GraphPrinter::WriteGraphToFile(outs(), "consCG_final", this);
+        GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 /*!
