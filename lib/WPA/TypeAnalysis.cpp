@@ -32,7 +32,7 @@
 #include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ICFGStat.h"
-#include "Util/SICFG.h"
+#include "Util/VFG.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;
@@ -42,10 +42,9 @@ using namespace std;
 void TypeAnalysis::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
     stat = new PTAStat(this);
-    SICFG* sicfg = new SICFG(ptaCallGraph);
-    sicfg->dump("icfg_initial");
-    sicfg->getVFG()->dump("vfg_initial");
-    icfg = sicfg;
+    icfg = new ICFG(ptaCallGraph);
+    icfg->dump("icfg_initial");
+    icfg->getVFG()->dump("vfg_initial");
 	if (printStat())
 		icfg->getStat()->performStat();
 }

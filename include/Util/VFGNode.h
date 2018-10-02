@@ -138,7 +138,7 @@ public:
 		return node->getNodeKind() == Addr
 				|| node->getNodeKind() == Copy
 				|| node->getNodeKind() == Gep
-				|| node->getNodeKind() == Cmp
+				|| node->getNodeKind() == Store
 				|| node->getNodeKind() == Load
 				|| node->getNodeKind() == Cmp
 				|| node->getNodeKind() == BinaryOp;

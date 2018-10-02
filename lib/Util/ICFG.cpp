@@ -31,6 +31,7 @@
 #include "Util/ICFGStat.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
+#include "Util/VFG.h"
 
 using namespace SVFUtil;
 
@@ -50,9 +51,10 @@ static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
  */
 ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()) {
 	stat = new ICFGStat(this);
-
+	vfg = new VFG(cg);
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
 	build();
+	addVFGToICFG();
 }
 
 /*!
@@ -190,6 +192,57 @@ void ICFG::build(){
         processFunExit(fun);
 
     }
+}
+
+/*!
+ *
+ */
+void ICFG::addVFGToICFG(){
+
+	for(const_iterator it = begin(), eit = end(); it!=eit; ++it){
+		ICFGNode* node = it->second;
+		if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(node)){
+			handleIntraBlock(intra);
+		}
+		else{
+
+		}
+	}
+}
+
+/*!
+ *  Add VFGStmtNode into IntraBlockNode
+ */
+void ICFG::handleIntraBlock(IntraBlockNode* intraICFGNode){
+	const Instruction* inst = intraICFGNode->getInst();
+	if (!SVFUtil::isNonInstricCallSite(inst)) {
+		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
+		for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+				ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+			const PAGEdge* edge = *bit;
+			if (isPhiCopyEdge(edge)) {
+				IntraPHIVFGNode* phi = vfg->getIntraPHIVFGNode(edge->getDstNode());
+				intraICFGNode->addVFGNode(phi);
+			}
+			else{
+				StmtVFGNode* stmt = vfg->getStmtVFGNode(edge);
+				intraICFGNode->addVFGNode(stmt);
+			}
+		}
+	}
+}
+
+/*!
+ * Add ArgumentVFGNode into InterBlockNode
+ */
+void ICFG::handleInterBlock(InterBlockNode* interICFGNode){
+
+	if(FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(interICFGNode)){
+
+	}
+	else if(FunExitBlockNode* entry = SVFUtil::dyn_cast<FunExitBlockNode>(interICFGNode)){
+
+	}
 }
 
 
