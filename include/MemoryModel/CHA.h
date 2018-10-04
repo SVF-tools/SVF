@@ -170,6 +170,7 @@ public:
 
     void buildCHG();
     void buildInternalMaps();
+    void buildCHGNodes(const llvm::GlobalValue *V);
     void buildCHGNodes(const llvm::Function *F);
     void buildCHGEdges(const llvm::Function *F);
     void connectInheritEdgeViaCall(const llvm::Function *caller, llvm::CallSite cs);
