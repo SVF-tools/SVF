@@ -86,6 +86,8 @@ void CHGraph::buildCHG() {
 		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
 										+ M->getName().str() + "...\n"));
 		readInheritanceMetadataFromModule(*M);
+		for (Module::const_global_iterator I = M->global_begin(), E = M->global_end(); I != E; ++I)
+			buildCHGNodes(&(*I));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
 			buildCHGNodes(&(*F));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
@@ -102,6 +104,15 @@ void CHGraph::buildCHG() {
 
 	if (dumpCHA)
 		dump("cha");
+}
+
+void CHGraph::buildCHGNodes(const GlobalValue *globalvalue) {
+	if (isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0) {
+		const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
+		assert(vtblStruct && "Initializer of a vtable not a struct?");
+		string className = getClassNameFromVtblObj(globalvalue);
+		if (!getNode(className))								    		createNode(className);
+	}
 }
 
 void CHGraph::buildCHGNodes(const Function *F) {
