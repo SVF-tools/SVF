@@ -191,10 +191,15 @@ protected:
     /// Add VFGNodes to ICFG
     void addVFGToICFG();
     /// Add VFGStmtNode into IntraBlockNode
-    void handleIntraBlock(IntraBlockNode* instICFGNode);
+    void handleIntraBlock(IntraBlockNode* intraICFGNode);
     /// Add ArgumentVFGNode into InterBlockNode
-    void handleInterBlock(InterBlockNode* instICFGNode);
+    void handleInterBlock(InterBlockNode* interICFGNode);
     //@}
+    /// Within handleInterBlock: handle 4 kinds of ArgumentNodes
+    void handleFormalParm(FunEntryBlockNode* funEntryBlockNode);
+    void handleFormalRet(FunExitBlockNode* funExitBlockNode);
+    void handleActualParm(CallBlockNode* callBlockNode);
+    void handleActualRet(RetBlockNode* retBlockNode);
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(CallSite cs, const Function* callee);
