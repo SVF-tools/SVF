@@ -149,7 +149,7 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
             chgraph = new CHGraph(svfModule);
             chgraph->buildCHG();
 
-            typeSystem = new TypeSystem(pag);
+            //typeSystem = new TypeSystem(pag);
         }
 
         // dump the PAG graph
