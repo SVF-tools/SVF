@@ -337,11 +337,11 @@ bool cppUtil::isConstructor(const Function *F) {
     } else {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
-    if ((dname.className.size() > 0 && dname.className.compare(dname.funcName) == 0)
-            || (dname.funcName.size() == 0) ) /// on mac os function name is an empty string after demangling
-        return true;
-    else
-        return false;
+	if (dname.className.size() > 0 && (dname.className.compare(dname.funcName) == 0))
+		/// TODO: on mac os function name is an empty string after demangling
+		return true;
+	else
+		return false;
 }
 
 bool cppUtil::isDestructor(const Function *F) {
