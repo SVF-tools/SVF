@@ -46,19 +46,18 @@ public:
     typedef llvm::DenseMap<NodeID, NodeID> NodeToRepMap;
     typedef llvm::DenseMap<NodeID, NodeBS> NodeToSubsMap;
     typedef FIFOWorkList<NodeID> WorkList;
-private:
+
+protected:
     PAG*pag;
     NodeToRepMap nodeToRepMap;
     NodeToSubsMap nodeToSubsMap;
+    WorkList nodesToBeCollapsed;
+    EdgeID edgeIndex;
 
     ConstraintEdge::ConstraintEdgeSetTy AddrCGEdgeSet;
     ConstraintEdge::ConstraintEdgeSetTy directEdgeSet;
     ConstraintEdge::ConstraintEdgeSetTy LoadCGEdgeSet;
     ConstraintEdge::ConstraintEdgeSetTy StoreCGEdgeSet;
-
-    EdgeID edgeIndex;
-
-    WorkList nodesToBeCollapsed;
 
     void buildCG();
 
