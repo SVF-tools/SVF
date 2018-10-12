@@ -32,22 +32,25 @@
 #include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ICFGStat.h"
-#include "Util/SICFG.h"
+#include "Util/VFG.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
+llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Generate ICFG graph"));
+
 /// Initialize analysis
 void TypeAnalysis::initialize(SVFModule svfModule) {
     PointerAnalysis::initialize(svfModule);
     stat = new PTAStat(this);
-    SICFG* sicfg = new SICFG(ptaCallGraph);
-    sicfg->dump("icfg_initial");
-    sicfg->getVFG()->dump("vfg_initial");
-    icfg = sicfg;
-	if (printStat())
-		icfg->getStat()->performStat();
+	if (genICFG) {
+		icfg = new ICFG(ptaCallGraph);
+		icfg->dump("icfg_initial");
+		icfg->getVFG()->dump("vfg_initial");
+		if (printStat())
+			icfg->getStat()->performStat();
+	}
 }
 
 /// Finalize analysis

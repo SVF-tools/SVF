@@ -86,6 +86,8 @@ void CHGraph::buildCHG() {
 		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
 										+ M->getName().str() + "...\n"));
 		readInheritanceMetadataFromModule(*M);
+		for (Module::const_global_iterator I = M->global_begin(), E = M->global_end(); I != E; ++I)
+			buildCHGNodes(&(*I));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
 			buildCHGNodes(&(*F));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
@@ -102,6 +104,31 @@ void CHGraph::buildCHG() {
 
 	if (dumpCHA)
 		dump("cha");
+}
+
+void CHGraph::buildCHGNodes(const GlobalValue *globalvalue) {
+	if (isValVtbl(globalvalue) && globalvalue->getNumOperands() > 0) {
+		const ConstantStruct *vtblStruct = SVFUtil::dyn_cast<ConstantStruct>(globalvalue->getOperand(0));
+		assert(vtblStruct && "Initializer of a vtable not a struct?");
+		string className = getClassNameFromVtblObj(globalvalue);
+		if (!getNode(className))
+			createNode(className);
+
+        for (int ei = 0; ei < vtblStruct->getNumOperands(); ++ei) {
+            const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtblStruct->getOperand(ei));
+            assert(vtbl && "Element of initializer not an array?");
+			for (u32_t i = 0; i < vtbl->getNumOperands(); ++i) {
+				if(const ConstantExpr *ce = isCastConstantExpr(vtbl->getOperand(i))){
+					const Value *bitcastValue = ce->getOperand(0);
+					if (const Function *func = SVFUtil::dyn_cast<Function>(bitcastValue)) {
+						struct DemangledName dname = demangle(func->getName().str());
+						if (!getNode(dname.className))
+							createNode(dname.className);
+					}
+				}
+			}
+        }
+	}
 }
 
 void CHGraph::buildCHGNodes(const Function *F) {

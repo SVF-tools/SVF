@@ -98,7 +98,7 @@ public:
         setGraph(consCG);
         /// Create statistic class
         stat = new AndersenStat(this);
-
+        consCG->dump("consCG_initial");
     }
 
     //}
@@ -106,7 +106,7 @@ public:
     /// Finalize analysis
     virtual inline void finalize() {
         /// dump constraint graph if PAGDotGraph flag is enabled
-        consCG->dump();
+        consCG->dump("consCG_final");
         consCG->print();
         /// sanitize field insensitive obj
         /// TODO: Fields has been collapsed during Andersen::collapseField().

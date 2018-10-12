@@ -83,13 +83,13 @@ protected:
  */
 class IntraBlockNode : public ICFGNode {
 public:
-    typedef std::vector<const StmtVFGNode*> StmtVFGNodeVec;
-    typedef StmtVFGNodeVec::iterator iterator;
-    typedef StmtVFGNodeVec::const_iterator const_iterator;
+    typedef std::vector<const VFGNode*> StmtOrPHIVFGNodeVec;
+    typedef StmtOrPHIVFGNodeVec::iterator iterator;
+    typedef StmtOrPHIVFGNodeVec::const_iterator const_iterator;
 
 private:
     const Instruction* inst;
-    StmtVFGNodeVec stmts;
+    StmtOrPHIVFGNodeVec vnodes;
 public:
 	IntraBlockNode(NodeID id, const Instruction* i) : ICFGNode(id, IntraBlock), inst(i) {
 		bb = inst->getParent();
@@ -99,16 +99,16 @@ public:
 		return inst;
 	}
 
-	inline void addStmtVFGNode(const StmtVFGNode* s) {
-		stmts.push_back(s);
+	inline void addVFGNode(const VFGNode* s) {
+		vnodes.push_back(s);
 	}
 
-	inline iterator stmtBegin() {
-		return stmts.begin();
+	inline iterator vNodeBegin() {
+		return vnodes.begin();
 	}
 
-	inline iterator stmtEnd() {
-		return stmts.end();
+	inline iterator vNodeEnd() {
+		return vnodes.end();
 	}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

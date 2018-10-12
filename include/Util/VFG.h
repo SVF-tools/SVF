@@ -56,7 +56,7 @@ public:
     typedef llvm::DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
     typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
-
+    typedef std::map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
 
     typedef FormalParmVFGNode::CallPESet CallPESet;
     typedef FormalRetVFGNode::RetPESet RetPESet;
@@ -76,6 +76,7 @@ protected:
     PAGNodeToActualRetMapTy PAGNodeToActualRetMap; ///< map a PAGNode to an actual return
     PAGNodeToFormalParmMapTy PAGNodeToFormalParmMap; ///< map a PAGNode to a formal parameter
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap; ///< map a PAGNode to a formal return
+    PAGNodeToPHIVFGNodeMapTy PAGNodeToIntraPHIVFGNodeMap;	///< map a PAGNode to its PHIVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
 
     StoreNodeSet globalStore;	///< set of global store VFG nodes
@@ -152,6 +153,11 @@ public:
 	inline StmtVFGNode* getStmtVFGNode(const PAGEdge* pagEdge) const {
 		PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
 		assert(it != PAGEdgeToStmtVFGNodeMap.end() && "StmtVFGNode can not be found??");
+		return it->second;
+	}
+	inline IntraPHIVFGNode* getIntraPHIVFGNode(const PAGNode* pagNode) const {
+		PAGNodeToPHIVFGNodeMapTy::const_iterator it = PAGNodeToIntraPHIVFGNodeMap.find(pagNode);
+		assert(it != PAGNodeToIntraPHIVFGNodeMap.end() && "PHIVFGNode can not be found??");
 		return it->second;
 	}
     inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,CallSite cs) const {
@@ -413,6 +419,7 @@ protected:
         for(PAG::PNodeBBPairList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
             sNode->setOpVerAndBB(pos,it->first,it->second);
         setDef(phiResNode,sNode);
+        PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
     }
 
     /// Whether a PAGNode has a blackhole or const object as its definition

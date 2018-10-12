@@ -488,7 +488,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL), field_insensitive(false), isTainted(false) {
+    refVal(val), GSymID(id), typeInfo(NULL), field_insensitive((0==maxFieldNumLimit)), isTainted(false) {
     init(val);
 }
 
@@ -496,7 +496,7 @@ MemObj::MemObj(const Value *val, SymID id) :
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id) :
-    refVal(NULL), GSymID(id), typeInfo(NULL), field_insensitive(false) {
+    refVal(NULL), GSymID(id), typeInfo(NULL), field_insensitive((0==maxFieldNumLimit)) {
     isTainted = !SymbolTableInfo::isBlkObjOrConstantObj(GSymID);
     init();
 }

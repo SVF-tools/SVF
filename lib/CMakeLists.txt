@@ -18,7 +18,6 @@ set(SOURCES
     Util/ThreadAPI.cpp
     Util/SVFModule.cpp
     Util/ICFG.cpp
-    Util/SICFG.cpp
     Util/VFG.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
@@ -50,6 +49,7 @@ set(SOURCES
     WPA/AndersenStat.cpp
     WPA/AndersenWave.cpp
     WPA/AndersenWaveDiff.cpp
+    WPA/IFDS.cpp
     WPA/AndersenWaveDiffWithType.cpp
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp

@@ -36,6 +36,8 @@
 class PointerAnalysis;
 class ICFGStat;
 class StmtVFGNode;
+class VFG;
+
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
@@ -72,6 +74,7 @@ protected:
     ICFGStat * stat;
     PTACallGraph* callgraph;
     PAG* pag;
+	VFG* vfg;
 
     /// Clean up memory
     void destroy();
@@ -94,6 +97,11 @@ public:
     inline PAG* getPAG() {
         return PAG::getPAG();
     }
+
+    /// Return VFG
+	inline VFG* getVFG() const{
+		return vfg;
+	}
 
     /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const {
@@ -177,6 +185,21 @@ protected:
 
     void processFunExit(const Function* fun);
     //@}
+
+    /// Add VFG nodes to ICFG
+    //@{
+    /// Add VFGNodes to ICFG
+    void addVFGToICFG();
+    /// Add VFGStmtNode into IntraBlockNode
+    void handleIntraBlock(IntraBlockNode* intraICFGNode);
+    /// Add ArgumentVFGNode into InterBlockNode
+    void handleInterBlock(InterBlockNode* interICFGNode);
+    //@}
+    /// Within handleInterBlock: handle 4 kinds of ArgumentNodes
+    void handleFormalParm(FunEntryBlockNode* funEntryBlockNode);
+    void handleFormalRet(FunExitBlockNode* funExitBlockNode);
+    void handleActualParm(CallBlockNode* callBlockNode);
+    void handleActualRet(RetBlockNode* retBlockNode);
 
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(CallSite cs, const Function* callee);
