@@ -577,13 +577,17 @@ public:
             return (valSymMap.find(val) != valSymMap.end());
     }
 
-    inline SymID getObjSym(const llvm::Value *val) const {
-        /// find the unique defined global across multiple modules
+    /// find the unique defined global across multiple modules
+    inline const llvm::Value* getGlobalRep(const llvm::Value* val) const{
         if(const llvm::GlobalVariable* gvar = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
             if (symlnfo->getModule().hasGlobalRep(gvar))
                 val = symlnfo->getModule().getGlobalRep(gvar);
         }
-        ValueToIDMapTy::const_iterator iter =  objSymMap.find(val);
+        return val;
+    }
+
+    inline SymID getObjSym(const llvm::Value *val) const {
+        ValueToIDMapTy::const_iterator iter = objSymMap.find(getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
     }

@@ -269,23 +269,13 @@ std::string analysisUtil::getSourceLocOfFunction(const llvm::Function *F)
 {
     std::string str;
     raw_string_ostream rawstr(str);
-    NamedMDNode* CU_Nodes = F->getParent()->getNamedMetadata("llvm.dbg.cu");
-    if(CU_Nodes) {
-        /*
-         * Looks like the DICompileUnt->getSubprogram was moved into Function::
-         */
-        for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
-            DICompileUnit *CUNode = cast<DICompileUnit>(CU_Nodes->getOperand(i));
-            /*
-             * https://reviews.llvm.org/D18074?id=50385
-             * looks like the relevant
-             */
-            if (DISubprogram *SP =  F->getSubprogram()) {
-                if (SP->describes(F))
-                    rawstr << "in line: " << SP->getLine()
-                           << " file: " << SP->getFilename();
-            }
-        }
+   /*	
+    * https://reviews.llvm.org/D18074?id=50385	
+    * looks like the relevant	
+    */
+    if (DISubprogram *SP =  F->getSubprogram()) {
+        if (SP->describes(F))
+            rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
     }
     return rawstr.str();
 }

@@ -204,6 +204,7 @@ public:
 
 private:
     static LLVMModuleSet *llvmModuleSet;
+    static std::string pagReadFromTxt;
 
 public:
     /// Constructors
@@ -228,6 +229,21 @@ public:
         if (llvmModuleSet == NULL)
             llvmModuleSet = new LLVMModuleSet;
         return llvmModuleSet;
+    }
+
+    static inline void setPagFromTXT(std::string txt) {
+        pagReadFromTxt = txt;
+    }
+
+    static inline std::string pagFileName() {
+        return pagReadFromTxt;
+    }
+
+    static inline bool pagReadFromTXT() {
+    		if(pagReadFromTxt.empty())
+    			return false;
+    		else
+    			return true;
     }
 
     static void releaseLLVMModuleSet() {
@@ -304,13 +320,17 @@ public:
         return llvmModuleSet->getModule(0);
     }
 
-    const std::string& getModuleIdentifier() const {
-        assert(!empty() && "empty module!!");
-        return getMainLLVMModule()->getModuleIdentifier();
-    }
+	const std::string& getModuleIdentifier() const {
+		if (pagReadFromTxt.empty()) {
+			assert(!empty() && "empty LLVM module!!");
+			return getMainLLVMModule()->getModuleIdentifier();
+		} else {
+			return pagReadFromTxt;
+		}
+	}
 
     llvm::LLVMContext& getContext() const {
-        assert(!empty() && "empty module!!");
+        assert(!empty() && "empty LLVM module!!");
         return getMainLLVMModule()->getContext();
     }
 

@@ -12,7 +12,8 @@ export LLVM_DIR=$LLVM_OBJ_ROOT
 #export LLVM_OBJ_ROOT=$LLVM_HOME/llvm-$llvm_version.dbg
 #export PATH=$LLVM_OBJ_ROOT/Debug+Asserts/bin:$PATH
 export LLVMOPT=opt
-export CLANG=clang
+export CLANG=$LLVM_OBJ_ROOT/bin/clang
+export CLANGCPP=$LLVM_OBJ_ROOT/bin/clang++
 export LLVMDIS=llvm-dis
 export LLVMLLC=llc
 

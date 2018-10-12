@@ -36,7 +36,8 @@ using namespace analysisUtil;
 
 static cl::opt<bool> ConsCGDotGraph("dump-consG", cl::init(false),
                                     cl::desc("Dump dot graph of Constraint Graph"));
-
+static cl::opt<bool> PrintCGGraph("print-consG", cl::init(false),
+                                    cl::desc("Print Constraint Graph to Terminal"));
 
 /*!
  * Start building constraint graph
@@ -133,7 +134,8 @@ void ConstraintGraph::destroy() {
 AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id) {
     PAGNode* node = PAG::getPAG()->getPAGNode(s->getId());
-    assert(!llvm::isa<DummyValPN>(node) && "a dummy node??");
+	if (!SVFModule::pagReadFromTXT())
+		assert(!llvm::isa<DummyValPN>(node) && "a dummy node??");
 }
 
 /*!
@@ -549,6 +551,58 @@ void ConstraintGraph::connectCaller2CalleeParams(llvm::CallSite cs, const llvm::
 void ConstraintGraph::dump() {
     if(ConsCGDotGraph)
         GraphPrinter::WriteGraphToFile(llvm::outs(), "consCG_final", this);
+}
+
+/*!
+ * Print this constraint graph including its nodes and edges
+ */
+void ConstraintGraph::print() {
+
+	if (!PrintCGGraph)
+		return;
+
+	outs() << "-----------------ConstraintGraph--------------------------------------\n";
+
+	ConstraintEdge::ConstraintEdgeSetTy& addrs = this->getAddrCGEdges();
+	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = addrs.begin(),
+			eiter = addrs.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	ConstraintEdge::ConstraintEdgeSetTy& directs = this->getDirectCGEdges();
+	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = directs.begin(),
+			eiter = directs.end(); iter != eiter; ++iter) {
+		if (CopyCGEdge* copy = dyn_cast<CopyCGEdge>(*iter)) {
+			outs() << copy->getSrcID() << " -- Copy --> " << copy->getDstID()
+					<< "\n";
+		} else if (NormalGepCGEdge* ngep = dyn_cast<NormalGepCGEdge>(*iter)) {
+			outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
+					<< ") --> " << ngep->getDstID() << "\n";
+		} else if (VariantGepCGEdge* vgep = dyn_cast<VariantGepCGEdge>(*iter)) {
+			outs() << ngep->getSrcID() << " -- VarintGep --> "
+					<< ngep->getDstID() << "\n";
+		} else
+			assert(false && "wrong constraint edge kind!");
+	}
+
+	ConstraintEdge::ConstraintEdgeSetTy& loads = this->getLoadCGEdges();
+	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = loads.begin(),
+			eiter = loads.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	ConstraintEdge::ConstraintEdgeSetTy& stores = this->getStoreCGEdges();
+	for (ConstraintEdge::ConstraintEdgeSetTy::iterator iter = stores.begin(),
+			eiter = stores.end(); iter != eiter; ++iter) {
+		outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
+				<< "\n";
+	}
+
+	outs()
+			<< "--------------------------------------------------------------\n";
+
 }
 
 /*!

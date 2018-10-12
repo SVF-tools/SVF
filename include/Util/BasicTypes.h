@@ -91,6 +91,7 @@ typedef SmallVector16 CallStrCxt;
 #define DAndersen "ander"
 #define DSaber "saber"
 #define DMTA "mta"
+#define DCHA "cha"
 
 /*
  * Number of clock ticks per second. A clock tick is the unit by which

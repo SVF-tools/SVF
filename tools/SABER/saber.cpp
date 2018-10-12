@@ -79,6 +79,8 @@ int main(int argc, char ** argv) {
         saber = new FileChecker();
     else if(DFREECHECKER)
         saber = new DoubleFreeChecker();
+    else
+	saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
 
     saber->runOnModule(svfModule);
 

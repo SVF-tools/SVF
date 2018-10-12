@@ -231,6 +231,31 @@ const Value *cppUtil::getVCallThisPtr(CallSite cs) {
     }
 }
 
+bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2) {
+	if (thisPtr1 == thisPtr2){
+		return true;
+	}
+	else {
+		for (const User *thisU : thisPtr1->users()) {
+			if (const StoreInst *store = dyn_cast<StoreInst>(thisU)) {
+				for (const User *storeU : store->getPointerOperand()->users()) {
+					if (const LoadInst *load = dyn_cast<LoadInst>(storeU)) {
+						return load == (thisPtr2->stripPointerCasts());
+					}
+				}
+			}
+		}
+		return false;
+	}
+}
+
+const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
+	assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
+	assert(fun->arg_size() >=1 && "argument size >= 1?");
+	const Argument* thisPtr =  &*(fun->arg_begin());
+	return thisPtr;
+}
+
 /*
  * get the ptr "vtable" for a given virtual callsite:
  * %vtable = load ...
@@ -299,6 +324,8 @@ string cppUtil::getClassNameFromVtblObj(const Value *value) {
 }
 
 bool cppUtil::isConstructor(const Function *F) {
+    if (F->isDeclaration())
+        return false;
     string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
         return false;
@@ -312,14 +339,16 @@ bool cppUtil::isConstructor(const Function *F) {
     } else {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
-    if ((dname.className.size() > 0 && dname.className.compare(dname.funcName) == 0)
-            || (dname.funcName.size() == 0) ) /// on mac os function name is an empty string after demangling
-        return true;
-    else
-        return false;
+	if (dname.className.size() > 0 && (dname.className.compare(dname.funcName) == 0))
+		/// TODO: on mac os function name is an empty string after demangling
+		return true;
+	else
+		return false;
 }
 
 bool cppUtil::isDestructor(const Function *F) {
+    if (F->isDeclaration())
+        return false;
     string funcName = F->getName().str();
     if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
         return false;
@@ -342,95 +371,49 @@ bool cppUtil::isDestructor(const Function *F) {
         return false;
 }
 
-void cppUtil::printCH(const CHGraph *chgraph) {
-    for (CHGraph::const_iterator it = chgraph->begin(),
-            eit = chgraph->end(); it != eit; ++it) {
-        const CHNode *node = it->second;
-        outs() << '\n' << node->getName() << '\n';
-        CHGraph::CHNodeSetTy ancestors, descendants, instances;
-        if (chgraph->hasAncestors(node->getName())) {
-            CHGraph::CHNodeSetTy ancestors =
-                chgraph->getAncestors(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator ait = ancestors.begin(),
-                    aeit = ancestors.end(); ait != aeit; ++ait) {
-                outs() << "ancesstor: " << (*ait)->getName() << '\n';
-            }
-        }
-        if (chgraph->hasDescendants(node->getName())) {
-            CHGraph::CHNodeSetTy descendants =
-                chgraph->getDescendants(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator dit = descendants.begin(),
-                    deit = descendants.end(); dit != deit; ++dit) {
-                outs() << "descendants: " << (*dit)->getName() << '\n';
-            }
-        }
-        if (chgraph->hasInstances(node->getName())) {
-            CHGraph::CHNodeSetTy instances =
-                chgraph->getInstances(node->getName());
-            for (CHGraph::CHNodeSetTy::const_iterator iit = instances.begin(),
-                    ieit = instances.end(); iit != ieit; ++iit) {
-                outs() << "instances: " << (*iit)->getName() << '\n';
-            }
+string cppUtil::getClassNameOfThisPtr(CallSite cs) {
+    string thisPtrClassName;
+    Instruction *inst = cs.getInstruction();
+    if (MDNode *N = inst->getMetadata("VCallPtrType")) {
+        MDString *mdstr = cast<MDString>(N->getOperand(0));
+        thisPtrClassName = mdstr->getString().str();
+    }
+    if (thisPtrClassName.size() == 0) {
+        const Value *thisPtr = getVCallThisPtr(cs);
+        thisPtrClassName = getClassNameFromType(thisPtr->getType());
+    }
+
+    size_t found = thisPtrClassName.find_last_not_of("0123456789");
+    if (found != string::npos) {
+        if (found != thisPtrClassName.size() - 1 && thisPtrClassName[found] == '.') {
+            return thisPtrClassName.substr(0, found);
         }
     }
-    outs() << '\n';
+
+    return thisPtrClassName;
 }
 
-void cppUtil::dumpCHAStats(const CHGraph *chgraph) {
-    s32_t pure_abstract_class_num = 0,
-          multi_inheritance_class_num = 0;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it) {
-        CHNode *node = it->second;
-        if (node->isPureAbstract())
-            pure_abstract_class_num++;
-        if (node->isMultiInheritance())
-            multi_inheritance_class_num++;
+string cppUtil::getFunNameOfVCallSite(CallSite cs) {
+    string funName;
+    Instruction *inst = cs.getInstruction();
+    if (MDNode *N = inst->getMetadata("VCallFunName")) {
+        MDString *mdstr = cast<MDString>(N->getOperand(0));
+        funName = mdstr->getString().str();
     }
-    outs() << "class_num:\t" << chgraph->getTotalNodeNum() << '\n';
-    outs() << "pure_abstract_class_num:\t" << pure_abstract_class_num << '\n';
-    outs() << "multi_inheritance_class_num:\t" << multi_inheritance_class_num << '\n';
+    return funName;
+}
 
-    /*
-     * count the following info:
-     * vtblnum
-     * total vfunction
-     * vtbl max vfunction
-     * pure abstract class
-     */
-    s32_t vtblnum = 0,
-          vfunc_total = 0,
-          vtbl_max = 0,
-          pure_abstract = 0;
-    set<const Function*> allVirtualFunctions;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it) {
-        CHNode *node = it->second;
-        if (node->isPureAbstract())
-            pure_abstract++;
 
-        s32_t vfuncs_size = 0;
-        const vector<vector<const Function*>> vecs =
-                                               node->getVirtualFunctionVectors();
-        for (vector<vector<const Function*>>::const_iterator vit = vecs.begin(),
-                veit = vecs.end(); vit != veit; ++vit) {
-            vfuncs_size += (*vit).size();
-            for (vector<const Function*>::const_iterator fit = (*vit).begin(),
-                    feit = (*vit).end(); fit != feit; ++fit) {
-                const Function *func = *fit;
-                allVirtualFunctions.insert(func);
-            }
-        }
-        if (vfuncs_size > 0) {
-            vtblnum++;
-            if (vfuncs_size > vtbl_max) {
-                vtbl_max = vfuncs_size;
-            }
-        }
+/*
+ * Is this virtual call inside its own constructor or destructor?
+ */
+bool cppUtil::VCallInCtorOrDtor(CallSite cs)  {
+    std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
+    const Function *func = cs.getCaller();
+    if (isConstructor(func) || isDestructor(func)) {
+        struct DemangledName dname = demangle(func->getName().str());
+        if (classNameOfThisPtr.compare(dname.className) == 0)
+            return true;
     }
-    vfunc_total = allVirtualFunctions.size();
-
-    outs() << "vtblnum:\t" << vtblnum << '\n';
-    outs() << "vtbl_average:\t" << (double)(vfunc_total)/vtblnum << '\n';
-    outs() << "vtbl_max:\t" << vtbl_max << '\n';
+    return false;
 }
