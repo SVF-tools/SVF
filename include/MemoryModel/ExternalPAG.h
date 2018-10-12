@@ -12,12 +12,16 @@
 
 #include "PAG.h"
 
-extern llvm::cl::list<std::string> ExternalPAGArgs;
-
 /// Represents the PAG of a function loaded externally (i.e. from file).
 /// It's purpose is to be attached to the main PAG (almost) seamlessly.
 class ExternalPAG {
 private:
+    /// Maps function names to the entry nodes of the extpag which implements
+    /// it. This is to connect arguments and callsites.
+    static std::map<const Function *, std::map<int, PAGNode *>>
+        functionToExternalPAGEntries;
+    static std::map<const Function *, PAGNode *> functionToExternalPAGReturns;
+
     /// Name of the function this external PAG represents.
     std::string functionName;
 
@@ -79,6 +83,12 @@ public:
     /// has been added.
     /// Returns true on success, false otherwise.
     static bool connectCallsiteToExternalPAG(CallSite *cs);
+
+    /// Whether an external PAG implementing function exists.
+    static bool hasExternalPAG(const Function *function);
+
+    /// Dump individual PAGs of specified functions. Currently to outs().
+    static void dumpFunctions(std::vector<std::string> functions);
 
     std::string getFunctionName() const { return functionName; }
 

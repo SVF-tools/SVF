@@ -32,6 +32,7 @@
 
 #include "MemoryModel/PAG.h"
 
+
 /*!
  * Build PAG from a user specified file (for debugging purpose)
  */
@@ -40,7 +41,6 @@ class PAGBuilderFromFile {
 private:
     PAG* pag;
     std::string file;
-    bool extPAG;
 public:
     /// Constructor
     PAGBuilderFromFile(std::string f) :
@@ -67,5 +67,7 @@ public:
     void addEdge(NodeID nodeSrc, NodeID nodeDst, Size_t offset,
                  std::string edge);
 };
+
+
 
 #endif /* INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_ */

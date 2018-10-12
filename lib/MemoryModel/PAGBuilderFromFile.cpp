@@ -39,7 +39,7 @@ using namespace SVFUtil;
  * You can build a PAG from a file written by yourself
  *
  * The file should follow the format:
- * Node:  nodeID Nodetype [0|1|2|...|ret]
+ * Node:  nodeID Nodetype
  * Edge:  nodeID edgetype NodeID Offset
  *
  * like:

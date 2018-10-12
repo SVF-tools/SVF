@@ -41,12 +41,12 @@
 using namespace std;
 using namespace SVFUtil;
 
+
 /*!
  * Start building PAG here
  */
 PAG* PAGBuilder::build(SVFModule svfModule) {
     svfMod = svfModule;
-
     /// initial external library information
     /// initial PAG nodes
     initalNode();
@@ -525,7 +525,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
 
     if (callee) {
         if (isExtCall(callee)) {
-            if (pag->hasExternalPAG(callee)) {
+            if (ExternalPAG::hasExternalPAG(callee)) {
                 ExternalPAG::connectCallsiteToExternalPAG(&cs);
             } else {
                 // There is no extpag for the function, use the old method.

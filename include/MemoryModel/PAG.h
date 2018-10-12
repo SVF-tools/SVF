@@ -35,10 +35,6 @@
 #include "PAGNode.h"
 #include "Util/SVFUtil.h"
 
-using namespace SVFUtil;
-
-class ExternalPAG;
-
 /*!
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
@@ -96,20 +92,13 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeBS candidatePointers;
 
-    /// Maps function names to the entry nodes of the extpag which implements
-    /// it. This is to connect arguments and callsites.
-    std::map<const Function *, std::map<int, PAGNode *>> functionToExternalPAGEntries;
-    std::map<const Function *, PAGNode *> functionToExternalPAGReturns;
-
-    /// Clean up memory
-    void destroy();
-
-protected:
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0) {
         symInfo = SymbolTableInfo::Symbolnfo();
     }
 
+    /// Clean up memory
+    void destroy();
 
 public:
     u32_t totalPTAPAGEdge;
@@ -567,7 +556,7 @@ public:
     inline NodeID addDummyObjNode() {
         const MemObj* mem = SymbolTableInfo::Symbolnfo()->createDummyObj(nodeNum);
         return addObjNode(NULL, new DummyObjPN(nodeNum,mem), nodeNum);
-        }
+    }
     inline NodeID addDummyObjNode(NodeID i) {
         const MemObj* mem = addDummyMemObj(i);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
@@ -680,21 +669,6 @@ public:
     }
     //@}
 
-    inline std::map<const Function *, std::map<int, PAGNode *>> &getFunctionToExternalPAGEntriesMap(void) {
-        return functionToExternalPAGEntries;
-    }
-
-    inline std::map<const Function *, PAGNode *> &getFunctionToExternalPAGReturnNodes(void) {
-        return functionToExternalPAGReturns;
-    }
-
-    /// Whether an external PAG implementing function exists.
-    inline bool hasExternalPAG(const Function *function) const {
-        bool ret = functionToExternalPAGEntries.find(function)
-               != functionToExternalPAGEntries.end();
-        return ret;
-    }
-
     /// Return graph name
     inline std::string getGraphName() const {
         return "PAG";
@@ -706,8 +680,6 @@ public:
     /// Dump PAG
     void dump(std::string name);
 
-    /// Dump PAG of certain functions
-    void dumpFunctions(std::vector<std::string> functions);
 };
 
 namespace llvm {

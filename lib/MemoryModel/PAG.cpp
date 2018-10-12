@@ -44,6 +44,7 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
 
+
 /*!
  * Add Address edge
  */
@@ -628,7 +629,6 @@ bool PAG::isValidPointer(NodeID nodeId) const {
     return node->isPointer();
 }
 
-
 /*!
  * PAGEdge constructor
  */
@@ -694,187 +694,6 @@ void PAG::dump(std::string name) {
     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
-static void outputPAGNodeNoNewLine(raw_ostream &o, PAGNode *pagNode) {
-    o << pagNode->getId() << " ";
-    // TODO: is this check enough?
-    if (!ObjPN::classof(pagNode)) o << "v";
-    else o << "o";
-}
-
-static void outputPAGNode(raw_ostream &o, PAGNode *pagNode) {
-    outputPAGNodeNoNewLine(o, pagNode);
-    o << "\n";
-}
-
-static void outputPAGNode(raw_ostream &o, PAGNode *pagNode, int argno) {
-    outputPAGNodeNoNewLine(o, pagNode);
-    o << " " << argno;
-    o << "\n";
-}
-
-static void outputPAGNode(raw_ostream &o, PAGNode *pagNode,
-                          std::string trail) {
-    outputPAGNodeNoNewLine(o, pagNode);
-    o << " " << trail;
-    o << "\n";
-}
-
-static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge) {
-    NodeID srcId = pagEdge->getSrcID();
-    NodeID dstId = pagEdge->getDstID();
-    u32_t offset = 0;
-    std::string edgeKind = "-";
-
-    switch (pagEdge->getEdgeKind()) {
-    case PAGEdge::Addr:
-        edgeKind = "addr";
-        break;
-    case PAGEdge::Copy:
-        edgeKind = "copy";
-        break;
-    case PAGEdge::Store:
-        edgeKind = "store";
-        break;
-    case PAGEdge::Load:
-        edgeKind = "load";
-        break;
-    case PAGEdge::Call:
-        edgeKind = "call";
-        break;
-    case PAGEdge::Ret:
-        edgeKind = "ret";
-        break;
-    case PAGEdge::NormalGep:
-        edgeKind = "normal-gep";
-        break;
-    case PAGEdge::VariantGep:
-        edgeKind = "variant-gep";
-        break;
-    case PAGEdge::ThreadFork:
-        outs() << "dump-function-pags: found ThreadFork edge.\n";
-        break;
-    case PAGEdge::ThreadJoin:
-        outs() << "dump-function-pags: found ThreadJoin edge.\n";
-        break;
-    }
-
-    if (NormalGepPE::classof(pagEdge)) offset =
-        static_cast<NormalGepPE *>(pagEdge)->getOffset();
-
-    o << srcId << " " << edgeKind << " " << dstId << " " << offset << "\n";
-}
-
-int getArgNo(Function *function, const Value *arg) {
-    int argNo = 0;
-    for (auto it = function->arg_begin(); it != function->arg_end();
-         ++it, ++argNo) {
-        if (arg->getName() == it->getName()) return argNo;
-    }
-
-    return -1;
-}
-
-/*!
- * Dump PAGs for the functions
- */
-void PAG::dumpFunctions(std::vector<std::string> functions) {
-    // Naive: first map functions to entries in PAG, then dump them.
-    std::map<Function *, std::vector<PAGNode *>> functionToPAGNodes;
-
-    std::set<PAGNode *> callDsts;
-    for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
-        PAGNode *currNode = it->second;
-        if (!currNode->hasOutgoingEdges(PAGEdge::PEDGEK::Call)) continue;
-
-        // Where are these calls going?
-        for (PAGEdge::PAGEdgeSetTy::iterator it =
-                currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
-             it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
-            CallPE *callEdge = static_cast<CallPE *>(*it);
-            const Instruction *inst = callEdge->getCallInst();
-            ::Function *currFunction =
-                static_cast<const CallInst *>(inst)->getCalledFunction();
-
-            if (currFunction != NULL) {
-                // Otherwise, it would be an indirect call which we don't want.
-                std::string currFunctionName = currFunction->getName();
-
-                if (std::find(functions.begin(), functions.end(),
-                              currFunctionName) != functions.end()) {
-                    // If the dst has already been added, we'd be duplicating
-                    // due to multiple actual->arg call edges.
-                    if (callDsts.find(callEdge->getDstNode()) == callDsts.end()) {
-                        callDsts.insert(callEdge->getDstNode());
-                        functionToPAGNodes[currFunction].push_back(callEdge->getDstNode());
-                    }
-                }
-            }
-        }
-    }
-
-    for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
-         ++it) {
-        Function *function = it->first;
-        std::string functionName = it->first->getName();
-
-        // The final nodes and edges we will print.
-        std::set<PAGNode *> nodes;
-        std::set<PAGEdge *> edges;
-        // The search stack.
-        std::stack<PAGNode *> todoNodes;
-        // The arguments to the function.
-        std::vector<PAGNode *> argNodes = it->second;
-        PAGNode *retNode = NULL;
-
-
-        outs() << "PAG for function: " << functionName << "\n";
-        for (auto node = argNodes.begin(); node != argNodes.end(); ++node) {
-            todoNodes.push(*node);
-        }
-
-        while (!todoNodes.empty()) {
-            PAGNode *currNode = todoNodes.top();
-            todoNodes.pop();
-
-            // If the node has been dealt with, ignore it.
-            if (nodes.find(currNode) != nodes.end()) continue;
-            nodes.insert(currNode);
-
-            // Return signifies the end of a path.
-            if (RetPN::classof(currNode)) {
-                retNode = currNode;
-                continue;
-            }
-
-            auto outEdges = currNode->getOutEdges();
-            for (auto outEdge = outEdges.begin(); outEdge != outEdges.end();
-                 ++outEdge) {
-                edges.insert(*outEdge);
-                todoNodes.push((*outEdge)->getDstNode());
-            }
-        }
-
-        for (auto node = nodes.begin(); node != nodes.end(); ++node) {
-            // TODO: proper file.
-            // Argument nodes use extra information: it's argument number.
-            if (std::find(argNodes.begin(), argNodes.end(), *node)
-                != argNodes.end()) {
-                outputPAGNode(outs(), *node, getArgNo(function, (*node)->getValue()));
-            } else if (*node == retNode) {
-                outputPAGNode(outs(), *node, "ret");
-            } else {
-                outputPAGNode(outs(), *node);
-            }
-        }
-
-        for (auto edge = edges.begin(); edge != edges.end(); ++edge) {
-            // TODO: proper file.
-            outputPAGEdge(outs(), *edge);
-        }
-
-        outs() << "PAG for functionName " << functionName << " done\n";
-    }
-}
 
 /*!
  * Whether to handle blackhole edge

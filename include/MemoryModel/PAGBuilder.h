@@ -34,8 +34,6 @@
 #include "Util/ExtAPI.h"
 
 class SVFModule;
-
-
 /*!
  *  PAG Builder
  */
@@ -47,7 +45,6 @@ public:
     /// Constructor
     PAGBuilder(): pag(PAG::getPAG()) {
     }
-
     /// Destructor
     virtual ~PAGBuilder() {
     }
@@ -185,4 +182,5 @@ public:
     }
     //}@
 };
+
 #endif /* PAGBUILDER_H_ */

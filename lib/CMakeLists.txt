@@ -23,12 +23,12 @@ set(SOURCES
     MemoryModel/LocationSet.cpp
     MemoryModel/LocMemModel.cpp
     MemoryModel/MemModel.cpp
+    MemoryModel/ExternalPAG.cpp
     MemoryModel/PAGBuilder.cpp
     MemoryModel/PAGBuilderFromFile.cpp
     MemoryModel/PAG.cpp
     MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
-    MemoryModel/ExternalPAG.cpp
     MSSA/MemPartition.cpp
     MSSA/MemRegion.cpp
     MSSA/MemSSA.cpp
