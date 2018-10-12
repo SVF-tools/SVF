@@ -52,79 +52,76 @@ using namespace SVFUtil;
  * 3 gep 4 4
  */
 PAG* PAGBuilderFromFile::build() {
-    // We do this to avoid setting off adding the current BB and value in
-    // addEdge (as they don't exist).
-    std::string oldPagFromTXT = SVFModule::pagFileName();
-    SVFModule::setPagFromTXT("tmp");
 
-    string line;
-    ifstream myfile(file.c_str());
-    if (myfile.is_open()) {
-        while (myfile.good()) {
-            getline(myfile, line);
+	string line;
+	ifstream myfile(file.c_str());
+	if (myfile.is_open()) {
+		while (myfile.good()) {
+			getline(myfile, line);
 
-            Size_t token_count = 0;
-            string tmps;
-            istringstream ss(line);
-            while (ss.good()) {
-                ss >> tmps;
-                token_count++;
-            }
+			Size_t token_count = 0;
+			string tmps;
+			istringstream ss(line);
+			while (ss.good()) {
+				ss >> tmps;
+				token_count++;
+			}
 
-            if (token_count == 0) {
-                continue;
-            }
+			if (token_count == 0)
+				continue;
 
-            if (token_count == 2) {
-                NodeID nodeId;
-                string nodetype;
-                istringstream ss(line);
-                ss >> nodeId;
-                ss >> nodetype;
-                outs() << "reading node :" << nodeId << "\n";
-                if (nodetype == "v") {
-                    pag->addDummyValNode(nodeId);
-                } else if (nodetype == "o") {
-                    const MemObj* mem = pag->addDummyMemObj(nodeId);
-                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
-                    mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
-                    pag->addFIObjNode(mem);
-                } else {
-                    assert(false && "format not support, pls specify node type");
-                }
-            } else if (token_count == 4) {
-                // do consider gep edge
-                NodeID nodeSrc;
-                NodeID nodeDst;
-                Size_t offsetOrCSId;
-                string edge;
-                istringstream ss(line);
-                ss >> nodeSrc;
-                ss >> edge;
-                ss >> nodeDst;
-                ss >> offsetOrCSId;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
-                addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-            } else {
-                if (!line.empty()) {
-                    outs() << "format not supported, token count = "
-                            << token_count << "\n";
-                    assert(false && "format not supported");
-                }
-            }
-        }
-        myfile.close();
-    } else outs() << "Unable to open file\n";
+			else if (token_count == 2) {
+				NodeID nodeId;
+				string nodetype;
+				istringstream ss(line);
+				ss >> nodeId;
+				ss >> nodetype;
+				outs() << "reading node :" << nodeId << "\n";
+				if (nodetype == "v")
+					pag->addDummyValNode(nodeId);
+				else if (nodetype == "o") {
+					const MemObj* mem = pag->addDummyMemObj(nodeId);
+					mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
+					mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
+					pag->addFIObjNode(mem);
+				} else
+					assert(false && "format not support, pls specify node type");
+			}
 
-    /// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
-    u32_t lower_bound = 1000;
-    for(u32_t i = 0; i < lower_bound; i++)
-        pag->incNodeNum();
+			// do consider gep edge
+			else if (token_count == 4) {
+				NodeID nodeSrc;
+				NodeID nodeDst;
+				Size_t offsetOrCSId;
+				string edge;
+				istringstream ss(line);
+				ss >> nodeSrc;
+				ss >> edge;
+				ss >> nodeDst;
+				ss >> offsetOrCSId;
+				outs() << "reading edge :" << nodeSrc << " " << edge << " "
+						<< nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
+				addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
+			} else {
+				if (!line.empty()) {
+					outs() << "format not supported, token count = "
+							<< token_count << "\n";
+					assert(false && "format not supported");
+				}
+			}
+		}
+		myfile.close();
+	}
 
-    SVFModule::setPagFromTXT(oldPagFromTXT);
+	else
+		outs() << "Unable to open file\n";
 
-    return pag;
+	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
+	u32_t lower_bound = 1000;
+	for(u32_t i = 0; i < lower_bound; i++)
+		pag->incNodeNum();
+
+	return pag;
 }
 
 /*!
