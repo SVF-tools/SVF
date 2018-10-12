@@ -37,15 +37,10 @@
 #include <map>
 #include <set>
 #include <string>
-#include <iostream>
 
 //------------------------------------------------------------------------------
 class ExtAPI {
 public:
-    static const std::string DB_NAME;
-    static const char *HOME_VAR;
-    static const std::string CONFIG_DIR_NAME;
-
     //External Function types
     //Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
     enum extf_t {

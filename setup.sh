@@ -5,7 +5,7 @@ echo "Setting up environment for PTA"
 # Please change LLVM_OBJ_ROOT before using it
 ########
 
-export LLVM_OBJ_ROOT=/home/mohamad/llvm6/llvm6-obj/
+export LLVM_OBJ_ROOT=/home/ysui/llvm-6.0.0/llvm-6.0.0.obj
 
 export PATH=$LLVM_OBJ_ROOT/bin:$PATH
 export LLVM_DIR=$LLVM_OBJ_ROOT
@@ -34,7 +34,7 @@ fi
 
 
 #########PATH FOR PTA##############                                                                 
-export SVFHOME=`pwd`
+export PTAHOME=`pwd`
 if [[ $1 == 'debug' ]]
 then
 PTAOBJTY='Debug'
@@ -42,13 +42,13 @@ else
 PTAOBJTY='Release'
 fi
 Build=$PTAOBJTY'-build'
-export SVFHOME=`pwd`
-export PTABIN=$SVFHOME/$Build/bin
-export PTALIB=$SVFHOME/$Build/lib
-export PTARTLIB=$SVFHOME/lib/RuntimeLib
+export PTAHOME=`pwd`
+export PTABIN=$PTAHOME/$Build/bin
+export PTALIB=$PTAHOME/$Build/lib
+export PTARTLIB=$PTAHOME/lib/RuntimeLib
 export PATH=$PTABIN:$PATH
 
-export PTATEST=$SVFHOME/PTABen
+export PTATEST=$PTAHOME/PTABen
 export PTATESTSCRIPTS=$PTATEST/scripts
 export RUNSCRIPT=$PTATESTSCRIPTS/run.sh
 
@@ -60,19 +60,3 @@ do
     newfile=`echo $basefilename | sed s/lib/liblib/`
     ln -s $PTALIB/$basefilename $PTALIB/$newfile
 done
-
-######### .svf CONFIG FILE and API SUMMARIES DB ##############
-
-SVF_CONFIG_DIR="$HOME/.svf"
-DBNAME="api_summaries.txt"
-
-if [ ! -d "$SVF_CONFIG_DIR" ]; then
-    mkdir "$SVF_CONFIG_DIR"
-fi
-
-if [ -h "$SVF_CONFIG_DIR/$DBNAME" ]; then
-    rm "$SVF_CONFIG_DIR/$DBNAME"
-fi
-
-ln -s "$SVFHOME/$DBNAME" "$SVF_CONFIG_DIR/$DBNAME"
-
