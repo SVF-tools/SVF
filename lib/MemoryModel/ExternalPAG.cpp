@@ -23,6 +23,11 @@ llvm::cl::list<std::string> ExternalPAGArgs("extpags",
                                               llvm::cl::desc("ExternalPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
                                               llvm::cl::CommaSeparated);
 
+llvm::cl::list<std::string> DumpPAGFunctions("dump-function-pags",
+                                             llvm::cl::desc("Dump PAG for functions"),
+                                             llvm::cl::CommaSeparated);
+
+
 std::map<const Function *, std::map<int, PAGNode *>>
     ExternalPAG::functionToExternalPAGEntries;
 std::map<const Function *, PAGNode *> ExternalPAG::functionToExternalPAGReturns;

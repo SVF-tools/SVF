@@ -66,10 +66,6 @@ static llvm::cl::opt<unsigned> statBudget("statlimit",  llvm::cl::init(20),
 static llvm::cl::opt<bool> PAGDotGraph("dump-pag", llvm::cl::init(false),
                                  llvm::cl::desc("Dump dot graph of PAG"));
 
-static llvm::cl::list<std::string> PAGFunctions("dump-function-pags",
-                                                llvm::cl::desc("Dump PAG for functions"),
-                                                llvm::cl::CommaSeparated);
-
 static llvm::cl::opt<bool> PAGPrint("print-pag", llvm::cl::init(false),
                               llvm::cl::desc("Print PAG to command line"));
 
@@ -234,7 +230,7 @@ void PointerAnalysis::finalize() {
     if (dumpGraph())
         pag->dump("pag_final");
 
-    if (!PAGFunctions.empty()) ExternalPAG::dumpFunctions(PAGFunctions);
+    if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 
     /// Dump results
     if (PTSPrint) {

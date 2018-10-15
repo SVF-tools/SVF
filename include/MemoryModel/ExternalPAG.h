@@ -10,7 +10,9 @@
 #ifndef EXTERNALPAG_H_
 #define EXTERNALPAG_H_
 
-#include "PAG.h"
+#include "PAGNode.h"
+
+extern llvm::cl::list<std::string> DumpPAGFunctions;
 
 /// Represents the PAG of a function loaded externally (i.e. from file).
 /// It's purpose is to be attached to the main PAG (almost) seamlessly.
