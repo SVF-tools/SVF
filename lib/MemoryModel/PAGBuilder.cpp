@@ -27,11 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include <sstream>
-#include <fstream>
-
 #include "MemoryModel/PAGBuilder.h"
-#include "MemoryModel/PAGBuilderFromFile.h"
 #include "MemoryModel/ExternalPAG.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"

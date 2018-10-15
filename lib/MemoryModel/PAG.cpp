@@ -28,10 +28,7 @@
  */
 
 #include "MemoryModel/PAG.h"
-#include "Util/GraphPrinter.h"
-#include "MemoryModel/ExternalPAG.h"
 #include "Util/SVFUtil.h"
-#include "Util/BasicTypes.h"
 
 using namespace SVFUtil;
 
@@ -429,14 +426,12 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
     dst->addInEdge(edge);
     bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
     assert(added && "duplicated edge, not added!!!");
-    if (edge->isPTAEdge()){
-        totalPTAPAGEdge++;
-        PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
-    }
-
-    if (!SVFModule::pagReadFromTXT())
-        setCurrentBBAndValueForPAGEdge(edge);
-
+	if (edge->isPTAEdge()){
+	    totalPTAPAGEdge++;
+		PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
+	}
+	if (!SVFModule::pagReadFromTXT())
+		setCurrentBBAndValueForPAGEdge(edge);
     return true;
 }
 
