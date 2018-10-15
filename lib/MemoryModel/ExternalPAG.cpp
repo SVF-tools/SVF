@@ -194,6 +194,12 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge) {
     case PAGEdge::VariantGep:
         edgeKind = "variant-gep";
         break;
+    case PAGEdge::Cmp:
+        edgeKind = "cmp";
+        break;
+    case PAGEdge::BinaryOp:
+        edgeKind = "binary-op";
+        break;
     case PAGEdge::ThreadFork:
         outs() << "dump-function-pags: found ThreadFork edge.\n";
         break;
@@ -379,6 +385,10 @@ bool ExternalPAG::addExternalPAG(Function *function) {
             pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
         } else if (extEdgeType == "ret") {
             pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
+        } else if (extEdgeType == "cmp") {
+            pag->addCmpEdge(srcId, dstId);
+        } else if (extEdgeType == "binary-op") {
+            pag->addBinaryOPEdge(srcId, dstId);
         } else {
             outs() << "Bad edge type found during extpag addition\n";
         }
