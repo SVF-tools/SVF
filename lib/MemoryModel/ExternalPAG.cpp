@@ -124,7 +124,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
         // TODO proofread.
     }
 
-    return false;
+    return true;
 }
 
 bool ExternalPAG::hasExternalPAG(const Function *function) {
@@ -418,6 +418,8 @@ bool ExternalPAG::addExternalPAG(Function *function) {
 
     // Put it back as if nothing happened.
     SVFModule::setPagFromTXT(oldSVFModuleFileName);
+
+    return true;
 }
 
 // Very similar implementation to the PAGBuilderFromFile.
