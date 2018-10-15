@@ -38,6 +38,7 @@
 #include "Util/ICFG.h"
 #include "MemoryModel/CHA.h"
 #include "MemoryModel/PTAType.h"
+#include "MemoryModel/ExternalPAG.h"
 #include <fstream>
 #include <sstream>
 
@@ -229,6 +230,8 @@ void PointerAnalysis::finalize() {
     // dump the PAG graph
     if (dumpGraph())
         pag->dump("pag_final");
+
+    if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 
     /// Dump results
     if (PTSPrint) {

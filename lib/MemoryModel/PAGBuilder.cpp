@@ -28,6 +28,7 @@
  */
 
 #include "MemoryModel/PAGBuilder.h"
+#include "MemoryModel/ExternalPAG.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "Util/CPPUtil.h"
@@ -49,6 +50,9 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
+
+    ExternalPAG::initialise(svfModule);
+
     /// handle functions
     for (SVFModule::iterator fit = svfModule.begin(), efit = svfModule.end();
             fit != efit; ++fit) {
@@ -516,10 +520,16 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     const Function *callee = getCallee(cs);
 
     if (callee) {
-        if (isExtCall(callee))
-            handleExtCall(cs, callee);
-        else
+        if (isExtCall(callee)) {
+            if (ExternalPAG::hasExternalPAG(callee)) {
+                ExternalPAG::connectCallsiteToExternalPAG(&cs);
+            } else {
+                // There is no extpag for the function, use the old method.
+                handleExtCall(cs, callee);
+            }
+        } else {
             handleDirectCall(cs, callee);
+        }
     } else {
         //If the callee was not identified as a function (null F), this is indirect.
         handleIndCall(cs);
@@ -1043,3 +1053,4 @@ void PAGBuilder::sanityCheck() {
         // (5)  reduce unnecessary copy edge (const casts) and ensure correctness.
     }
 }
+
