@@ -158,6 +158,10 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
     else if (edge == "ret")
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
+    else if (edge == "cmp")
+        pag->addCmpEdge(srcID, dstID);
+    else if (edge == "binary-op")
+        pag->addBinaryOPEdge(srcID, dstID);
     else
         assert(false && "format not support, can not create such edge");
 }
