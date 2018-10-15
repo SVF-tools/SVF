@@ -129,6 +129,7 @@ void PointerAnalysis::destroy()
  * Initialization of pointer analysis
  */
 void PointerAnalysis::initialize(SVFModule svfModule) {
+
     /// whether we have already built PAG
     if(pag == NULL) {
 
