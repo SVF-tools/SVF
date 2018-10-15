@@ -234,7 +234,6 @@ void PointerAnalysis::finalize() {
     if (dumpGraph())
         pag->dump("pag_final");
 
-    outs() << " HELLO\n";
     if (!PAGFunctions.empty()) ExternalPAG::dumpFunctions(PAGFunctions);
 
     /// Dump results
