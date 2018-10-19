@@ -35,7 +35,7 @@
 class ICFGStat : public PTAStat {
 
 private:
-	ICFG* icfg;
+    ICFG *icfg;
     int numOfNodes;
     int numOfCallNodes;
     int numOfRetNodes;
@@ -49,9 +49,9 @@ private:
     int numOfIntraEdges;
 
 public:
-    typedef std::set<const ICFGNode*> ICFGNodeSet;
+    typedef std::set<const ICFGNode *> ICFGNodeSet;
 
-    ICFGStat(ICFG* cfg) : PTAStat(NULL), icfg(cfg){
+    ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg) {
         numOfNodes = 0;
         numOfCallNodes = 0;
         numOfRetNodes = 0;
@@ -64,46 +64,46 @@ public:
         numOfRetEdges = 0;
         numOfIntraEdges = 0;
 
-	}
+    }
 
-    void performStat(){
+    void performStat() {
 
-		ICFG::ICFGNodeIDToNodeMapTy::iterator it = icfg->begin();
-		ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
-		for (; it != eit; ++it) {
-			numOfNodes++;
+        ICFG::ICFGNodeIDToNodeMapTy::iterator it = icfg->begin();
+        ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
+        for (; it != eit; ++it) {
+            numOfNodes++;
 
-			ICFGNode* node = it->second;
+            ICFGNode *node = it->second;
 
-			if (SVFUtil::isa<IntraBlockNode>(node))
-				numOfIntraNodes++;
-			else if (SVFUtil::isa<CallBlockNode>(node))
-				numOfCallNodes++;
-			else if (SVFUtil::isa<RetBlockNode>(node))
-				numOfRetNodes++;
-			else if (SVFUtil::isa<FunEntryBlockNode>(node))
-				numOfEntryNodes++;
-			else if (SVFUtil::isa<FunExitBlockNode>(node))
-				numOfExitNodes++;
+            if (SVFUtil::isa<IntraBlockNode>(node))
+                numOfIntraNodes++;
+            else if (SVFUtil::isa<CallBlockNode>(node))
+                numOfCallNodes++;
+            else if (SVFUtil::isa<RetBlockNode>(node))
+                numOfRetNodes++;
+            else if (SVFUtil::isa<FunEntryBlockNode>(node))
+                numOfEntryNodes++;
+            else if (SVFUtil::isa<FunExitBlockNode>(node))
+                numOfExitNodes++;
 
 
-			ICFGEdge::ICFGEdgeSetTy::iterator edgeIt =
-					it->second->OutEdgeBegin();
-			ICFGEdge::ICFGEdgeSetTy::iterator edgeEit =
-					it->second->OutEdgeEnd();
-			for (; edgeIt != edgeEit; ++edgeIt) {
-				const ICFGEdge *edge = *edgeIt;
-			    numOfEdges++;
-			    if (edge->isCallCFGEdge())
-			    	numOfCallEdges++;
-			    else if (edge->isRetCFGEdge())
-			    	numOfRetEdges++;
-			    else if (edge->isIntraCFGEdge())
-			    	numOfIntraEdges++;
-			}
-		}
+            ICFGEdge::ICFGEdgeSetTy::iterator edgeIt =
+                    it->second->OutEdgeBegin();
+            ICFGEdge::ICFGEdgeSetTy::iterator edgeEit =
+                    it->second->OutEdgeEnd();
+            for (; edgeIt != edgeEit; ++edgeIt) {
+                const ICFGEdge *edge = *edgeIt;
+                numOfEdges++;
+                if (edge->isCallCFGEdge())
+                    numOfCallEdges++;
+                else if (edge->isRetCFGEdge())
+                    numOfRetEdges++;
+                else if (edge->isIntraCFGEdge())
+                    numOfIntraEdges++;
+            }
+        }
 
-		PTNumStatMap["ICFGNode"] = numOfNodes;
+        PTNumStatMap["ICFGNode"] = numOfNodes;
         PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
         PTNumStatMap["CallBlockNode"] = numOfCallNodes;
         PTNumStatMap["RetBlockNode"] = numOfRetNodes;
@@ -121,7 +121,6 @@ public:
 
 
 };
-
 
 
 #endif /* INCLUDE_UTIL_ICFGSTAT_H_ */
