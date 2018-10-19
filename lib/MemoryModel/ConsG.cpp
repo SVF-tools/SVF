@@ -452,12 +452,12 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
         if(SVFUtil::isa<CopyCGEdge>(edge))
             removeDirectEdge(edge);
         else if (SVFUtil::isa<GepCGEdge>(edge)) {
-            removeDirectEdge(edge);
             // If the GEP is critical (i.e. may have a non-zero offset),
             // then it brings impact on field-sensitivity.
             if (!isZeroOffsettedGepCGEdge(edge)) {
                 criticalGepInsideSCC = true;
             }
+            removeDirectEdge(edge);
         }
         else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
