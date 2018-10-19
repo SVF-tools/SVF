@@ -75,15 +75,15 @@ public:
 
 			ICFGNode* node = it->second;
 
-			if (llvm::isa<IntraBlockNode>(node))
+			if (SVFUtil::isa<IntraBlockNode>(node))
 				numOfIntraNodes++;
-			else if (llvm::isa<CallBlockNode>(node))
+			else if (SVFUtil::isa<CallBlockNode>(node))
 				numOfCallNodes++;
-			else if (llvm::isa<RetBlockNode>(node))
+			else if (SVFUtil::isa<RetBlockNode>(node))
 				numOfRetNodes++;
-			else if (llvm::isa<FunEntryBlockNode>(node))
+			else if (SVFUtil::isa<FunEntryBlockNode>(node))
 				numOfEntryNodes++;
-			else if (llvm::isa<FunExitBlockNode>(node))
+			else if (SVFUtil::isa<FunExitBlockNode>(node))
 				numOfExitNodes++;
 
 
