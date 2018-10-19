@@ -258,9 +258,12 @@ void ICFG::handleFormalParm(FunEntryBlockNode* funEntryBlockNode){
         const PAG::PAGNodeList& pagNodeList =  pag->getFunArgsList(func);
         for(PAG::PAGNodeList::const_iterator it = pagNodeList.begin(),
                     eit = pagNodeList.end(); it != eit; ++it){
-            FormalParmVFGNode* formalParmNode = vfg->getFormalParmVFGNode(*it);
-            funEntryBlockNode->addFormalParms(formalParmNode);
-        }
+			const PAGNode* param = *it;
+			if (vfg->hasBlackHoleConstObjAddrAsDef(param) == false) {
+				FormalParmVFGNode* formalParmNode = vfg->getFormalParmVFGNode(param);
+				funEntryBlockNode->addFormalParms(formalParmNode);
+			}
+		}
     }
 }
 
@@ -277,14 +280,14 @@ void ICFG::handleFormalRet(FunExitBlockNode* funExitBlockNode){
 /// Add ActualParmVFGNode(VFG) to CallBlockNode (ICFG)
 void ICFG::handleActualParm(CallBlockNode* callBlockNode){
     CallSite cs = callBlockNode->getCallSite();
-    if (pag->hasCallSiteArgsMap(cs)){
-        const PAG::PAGNodeList& pagNodeList =  pag->getCallSiteArgsList(cs);
-        for(PAG::PAGNodeList::const_iterator it = pagNodeList.begin(),
-                    eit = pagNodeList.end(); it != eit; ++it){
-            ActualParmVFGNode* actualParmNode = vfg->getActualParmVFGNode(*it, cs);
-            callBlockNode->addActualParms(actualParmNode);
-        }
-    }
+	if (pag->hasCallSiteArgsMap(cs)) {
+		const PAG::PAGNodeList& pagNodeList = pag->getCallSiteArgsList(cs);
+		for (PAG::PAGNodeList::const_iterator it = pagNodeList.begin(), eit =
+				pagNodeList.end(); it != eit; ++it) {
+			ActualParmVFGNode* actualParmNode = vfg->getActualParmVFGNode(*it, cs);
+			callBlockNode->addActualParms(actualParmNode);
+		}
+	}
 }
 
 /// Add ActualRetVFGNode(VFG) to RetBlockNode (ICFG)
@@ -292,8 +295,12 @@ void ICFG::handleActualRet(RetBlockNode* retBlockNode){
     CallSite cs = retBlockNode->getCallSite();
     if (pag->callsiteHasRet(cs)){
         const PAGNode* retNode =  pag->getCallSiteRet(cs);
-        ActualRetVFGNode* actualRetNode = vfg->getActualRetVFGNode(retNode);
-        retBlockNode->addActualRet(actualRetNode);
+        /// if this retNode is returned from a malloc-like instruction (e.g., ret=malloc()),
+        /// we have already created an address node
+        if(retNode->hasIncomingEdges(PAGEdge::Addr) == false){
+        		ActualRetVFGNode* actualRetNode = vfg->getActualRetVFGNode(retNode);
+        		retBlockNode->addActualRet(actualRetNode);
+        }
     }
 }
 

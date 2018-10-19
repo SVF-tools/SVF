@@ -185,6 +185,22 @@ public:
     /// Whether a node is function entry VFGNode
     const Function* isFunEntryVFGNode(const VFGNode* node) const;
 
+    /// Whether a PAGNode has a blackhole or const object as its definition
+    inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {
+        if (hasDef(pagNode)) {
+            const VFGNode* defNode = getVFGNode(getDef(pagNode));
+            if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode)) {
+                if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
+                    return true;
+            }
+            else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(defNode)) {
+                if (PAG::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
+                    return true;
+            }
+        }
+        return false;
+    }
+
 protected:
     /// Remove a SVFG edge
     inline void removeVFGEdge(VFGEdge* edge) {
@@ -420,22 +436,6 @@ protected:
             sNode->setOpVerAndBB(pos,it->first,it->second);
         setDef(phiResNode,sNode);
         PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
-    }
-
-    /// Whether a PAGNode has a blackhole or const object as its definition
-    inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {
-        if (hasDef(pagNode)) {
-            const VFGNode* defNode = getVFGNode(getDef(pagNode));
-            if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode)) {
-                if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
-                    return true;
-            }
-            else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(defNode)) {
-                if (PAG::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
-                    return true;
-            }
-        }
-        return false;
     }
 };
 

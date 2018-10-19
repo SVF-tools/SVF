@@ -141,10 +141,6 @@ void VFG::addVFGNodes() {
 
 		const Function* fun = getCallee(it->first);
         fun = getDefFunForMultipleModule(fun);
-        /// for external function we do not create acutalParm VFGNode
-        /// because we do not have a formal parameter to connect this actualParm
-        if(isExtCall(fun))
-            continue;
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
             if (isInterestedPAGNode(pagNode))
