@@ -103,6 +103,10 @@ public:
 		vnodes.push_back(s);
 	}
 
+	inline StmtOrPHIVFGNodeVec& getVFGNodes()  {
+			return vnodes;
+	}
+
 	inline iterator vNodeBegin() {
 		return vnodes.begin();
 	}
@@ -173,7 +177,7 @@ public:
         return fun;
     }
 	/// Return the set of formal parameters
-	inline const FormalParmVFGNodeVec& getActualParms() const {
+	inline const FormalParmVFGNodeVec& getFormalParms() const {
 		return FPNodes;
 	}
 	/// Add formal parameters

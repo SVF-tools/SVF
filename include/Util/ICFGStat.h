@@ -42,6 +42,7 @@ private:
     int numOfEntryNodes;
     int numOfExitNodes;
     int numOfIntraNodes;
+
     int numOfEdges;
     int numOfCallEdges;
     int numOfRetEdges;
@@ -57,10 +58,12 @@ public:
         numOfEntryNodes = 0;
         numOfExitNodes = 0;
         numOfIntraNodes = 0;
+
         numOfEdges = 0;
         numOfCallEdges = 0;
         numOfRetEdges = 0;
         numOfIntraEdges = 0;
+
 	}
 
     void performStat(){
@@ -69,17 +72,48 @@ public:
 		ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
 		for (; it != eit; ++it) {
 			numOfNodes++;
+
 			ICFGNode* node = it->second;
 
-			if (SVFUtil::isa<IntraBlockNode>(node))
+			if (llvm::isa<IntraBlockNode>(node))
 				numOfIntraNodes++;
-			else if (SVFUtil::isa<CallBlockNode>(node))
-				numOfIntraNodes++;
+			else if (llvm::isa<CallBlockNode>(node))
+				numOfCallNodes++;
+			else if (llvm::isa<RetBlockNode>(node))
+				numOfRetNodes++;
+			else if (llvm::isa<FunEntryBlockNode>(node))
+				numOfEntryNodes++;
+			else if (llvm::isa<FunExitBlockNode>(node))
+				numOfExitNodes++;
 
-			/// add your code here to stat nodes and edges
+
+			ICFGEdge::ICFGEdgeSetTy::iterator edgeIt =
+					it->second->OutEdgeBegin();
+			ICFGEdge::ICFGEdgeSetTy::iterator edgeEit =
+					it->second->OutEdgeEnd();
+			for (; edgeIt != edgeEit; ++edgeIt) {
+				const ICFGEdge *edge = *edgeIt;
+			    numOfEdges++;
+			    if (edge->isCallCFGEdge())
+			    	numOfCallEdges++;
+			    else if (edge->isRetCFGEdge())
+			    	numOfRetEdges++;
+			    else if (edge->isIntraCFGEdge())
+			    	numOfIntraEdges++;
+			}
 		}
 
+		PTNumStatMap["ICFGNode"] = numOfNodes;
         PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
+        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
+        PTNumStatMap["RetBlockNode"] = numOfRetNodes;
+        PTNumStatMap["FunEntryBlockNode"] = numOfEntryNodes;
+        PTNumStatMap["FunExitBlockNode"] = numOfExitNodes;
+
+        PTNumStatMap["ICFGEdge"] = numOfEdges;
+        PTNumStatMap["CallCFGEdge"] = numOfCallEdges;
+        PTNumStatMap["RetCFGEdge"] = numOfRetEdges;
+        PTNumStatMap["IntraCFGEdge"] = numOfIntraEdges;
 
         std::cout << "\n*******ICFG Stat*******\n";
         printStat();
@@ -91,3 +125,4 @@ public:
 
 
 #endif /* INCLUDE_UTIL_ICFGSTAT_H_ */
+
