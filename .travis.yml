@@ -4,40 +4,40 @@ os: linux
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-6.0
+      - llvm-toolchain-trusty-7.0
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
-      - llvm-6.0
-      - llvm-6.0-dev
-      - clang-6.0
-      - libllvm6.0
-      - libstdc++6
+      - llvm-7.0
+      - llvm-7.0-dev
+      - clang-7.0
+      - libllvm7.0
+      - libstdc++7
       - libgcc-4.9-dev
       - libobjc-4.9-dev
-      - libclang-common-6.0-dev
-      - libclang1-6.0
-      - llvm-6.0-runtime
+      - libclang-common-7.0-dev
+      - libclang1-7.0
+      - llvm-7.0-runtime
 matrix:
   include:
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@6/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@6 LDFLAGS:=-L/usr/local/opt/llvm@6/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@7/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@7 LDFLAGS:=-L/usr/local/opt/llvm@7/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
         - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@6
+      install: brew install llvm@7
       cache:
         directories: ~/Library/Caches/Homebrew/
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@6/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@6 LDFLAGS:=-L/usr/local/opt/llvm@6/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@7/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@7 LDFLAGS:=-L/usr/local/opt/llvm@7/lib CPPFLAGS=-I/usr/local/opt/llvm@7/include
         - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
       install: brew install llvm@6  
       cache:
         directories: ~/Library/Caches/Homebrew/
 env:
   global:
-    - CC=clang-6.0 CXX=clang++-6.0
+    - CC=clang-7.0 CXX=clang++-7.0
     - PATH=$TRAVIS_BUILD_DIR/cmake-3.8.1-Linux-x86_64/bin:$PATH
-    - LLVM_DIR=/usr/lib/llvm-6.0
+    - LLVM_DIR=/usr/lib/llvm-7.0
   matrix:
     - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug"
     - CONFIG_ARGS=
