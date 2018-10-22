@@ -30,7 +30,7 @@ matrix:
       env:
         - CXX=clang++ PATH=/usr/local/opt/llvm@7/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@7 LDFLAGS:=-L/usr/local/opt/llvm@7/lib CPPFLAGS=-I/usr/local/opt/llvm@7/include
         - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@6  
+      install: brew install llvm@7
       cache:
         directories: ~/Library/Caches/Homebrew/
 env:
