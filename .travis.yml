@@ -4,7 +4,7 @@ os: linux
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-7.0
+      - llvm-toolchain-trusty-7
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
       - llvm-7.0
