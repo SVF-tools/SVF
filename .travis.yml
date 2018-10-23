@@ -4,19 +4,20 @@ os: linux
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-7.0
+      - llvm-toolchain-trusty-7
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
-      - llvm-7.0
-      - llvm-7.0-dev
-      - clang-7.0
-      - libllvm7.0
-      - libstdc++7
+      - llvm-7
+      - llvm-7-dev
+      - clang-7
+      - libllvm7
+      - libc++-7-dev
+      - libc++abi-7-dev
       - libgcc-4.9-dev
       - libobjc-4.9-dev
-      - libclang-common-7.0-dev
-      - libclang1-7.0
-      - llvm-7.0-runtime
+      - libclang-common-7-dev
+      - libclang1-7
+      - llvm-7-runtime
 matrix:
   include:
     - os: osx
@@ -35,9 +36,9 @@ matrix:
         directories: ~/Library/Caches/Homebrew/
 env:
   global:
-    - CC=clang-7.0 CXX=clang++-7.0
+    - CC=clang-7 CXX=clang++-7
     - PATH=$TRAVIS_BUILD_DIR/cmake-3.8.1-Linux-x86_64/bin:$PATH
-    - LLVM_DIR=/usr/lib/llvm-7.0
+    - LLVM_DIR=/usr/lib/llvm-7
   matrix:
     - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug"
     - CONFIG_ARGS=
