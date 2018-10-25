@@ -1,20 +1,30 @@
-#  !bash
+#!/usr/bin/env bash
+
 # type './build.sh'  for release build
 # type './build.sh debug'  for debug build
 
 #########
 # Please change the following home directories of your LLVM builds
 ########
-LLVMRELEASE=/home/ysui/llvm-7.0.0/llvm-7.0.0.obj
-LLVMDEBUG=/home/ysui/llvm-7.0.0/llvm-7.0.0.dbg
+LLVMRELEASE=$HOME/llvm-7.0.0/llvm-7.0.0.obj
+LLVMDEBUG=$HOME/llvm-7.0.0/llvm-7.0.0.dbg
 
 if [[ $1 == 'debug' ]]
 then
 BuildTY='Debug'
-export LLVM_DIR=$LLVMDEBUG
+TMP_LLVM_DIR=$LLVMDEBUG
 else
 BuildTY='Release'
-export LLVM_DIR=$LLVMRELEASE
+TMP_LLVM_DIR=$LLVMRELEASE
+fi
+
+if [[ -z "$LLVM_DIR" ]]; then
+  export LLVM_DIR=$TMP_LLVM_DIR
+fi
+
+if ! [[ -d $LLVM_DIR ]]; then
+  echo "\$LLVM_DIR: $LLVM_DIR is not a directory"
+  exit 1
 fi
 
 export PATH=$LLVM_DIR/bin:$PATH
