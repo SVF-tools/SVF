@@ -18,7 +18,7 @@ public:
     class PathEdge;
     typedef std::string ValueName;          //(stmtNode->getPAGDstNode()->getValueName())
     typedef std::set<PAGNode*> Datafact;   // set of uninitialized variables at ICFGNode
-    typedef std::set<Datafact*> Facts;     // different datafacts from different path
+    typedef std::set<Datafact> Facts;     // different datafacts from different path
     typedef std::set<ICFGNode*> ICFGNodeSet;
     typedef std::list<PathEdge*> PathEdgeSet;
     typedef std::map<ICFGNode*, Facts> ICFGNodeToDataFactsMap;
@@ -50,10 +50,10 @@ public:
 	//procedures in Tabulation Algorithm
     void initialize();
     void forwardTabulate();
-    ICFGNodeToDataFactsMap& merge();
+    void merge();
 
     //add new PathEdge components into PathEdgeList and WorkList
-    void propagate(PathNode* srcPN, ICFGNode* succ, Datafact* d);
+    void propagate(PathNode* srcPN, ICFGNode* succ, Datafact d);
 
     //get all ICFGNode in all EndPathNode of PathEdgeList
     ICFGNodeSet& getDstICFGNodeSet();
@@ -62,21 +62,24 @@ public:
     Facts getDstICFGNodeFacts(ICFGNode* node);
 
     // transfer function of given ICFGNode
-    Datafact* transferFun(PathNode* pathNode);
+    Datafact transferFun(PathNode* pathNode);
 
     //whether the variable is initialized
-    bool isInitialized(PAGNode* pagNode, Datafact* datafact);
+    bool isInitialized(PAGNode* pagNode, Datafact datafact);
+
+    // print ICFGNodes and theirs datafacts
+    void printRes();
 
     // in order to denote : <node, d> , d here is datafact before the execution of node
     class PathNode{
         ICFGNode* icfgNode;
-        Datafact* datafact;
+        Datafact datafact;
 
         //Constructor
     public:
         PathNode();
 
-        PathNode(ICFGNode* node, Datafact* fact){
+        PathNode(ICFGNode* node, Datafact fact){
             icfgNode = node;
             datafact = fact;
         }
@@ -85,7 +88,7 @@ public:
             icfgNode = node;
         }
 
-        void setDataFact (Datafact* fact){
+        void setDataFact (Datafact fact){
             datafact = fact;
         }
 
@@ -93,7 +96,7 @@ public:
             return icfgNode;
         }
 
-        Datafact* getDataFact() {
+        Datafact getDataFact() {
             return datafact;
         }
 
