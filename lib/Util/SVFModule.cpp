@@ -41,13 +41,14 @@
 
   svf.main() is used to model the real entry point of a C++ program,
   which initializes all global C++ objects and then call main().
+  For example, given a "int main(int argc, char * argv[])", the corresponding
+  svf.main will be generated as follows:
 
       define void @svf.main() {
         entry:
-          call void @_GLOBAL__sub_I_cast.cpp()
           call void @_GLOBAL__sub_I_1.cpp()
           call void @_GLOBAL__sub_I_2.cpp()
-          call void bitcast (i32 (i32, i8**)* @main to void ()*)()
+          %0 = call i32 @main(i32 0, i8** null)
           ret void
       }
  */
@@ -60,7 +61,7 @@ using namespace llvm;
 static cl::opt<std::string> Graphtxt("graphtxt", cl::value_desc("filename"),
                                      cl::desc("graph txt file to build PAG"));
                                      
-static cl::opt<bool> SVFMain("add-svfmain", cl::init(false),
+static cl::opt<bool> SVFMain("svfmain", cl::init(false),
                              cl::desc("add svf.main()"));                                     
 
 LLVMModuleSet *SVFModule::llvmModuleSet = NULL;
@@ -178,7 +179,7 @@ void LLVMModuleSet::addSVFMain(){
             if(func.getName().startswith(SVF_GLOBAL_SUB_I_XXX))
                 init_funcs.push_back(&func);
             if(func.getName().equals(SVF_MAIN_FUNC_NAME))
-                assert(false && SVF_MAIN_FUNC_NAME " alread defined");
+                assert(false && SVF_MAIN_FUNC_NAME " already defined");
             if(func.getName().equals("main")){
                 orgMain = &func;
                 k = i;
