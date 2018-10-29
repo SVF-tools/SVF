@@ -178,6 +178,7 @@ public:
 
 private:
     void loadModules(const std::vector<std::string> &moduleNameVec);
+    void addSVFMain();
     void initialize();
 
     void buildFunToFunMap();

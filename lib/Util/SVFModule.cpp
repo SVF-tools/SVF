@@ -36,11 +36,32 @@
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
 #include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
 
+#include <llvm/IR/IRBuilder.h>
+/*
+
+  svf.main() is used to model the real entry point of a C++ program,
+  which initializes all global C++ objects and then call main().
+
+      define void @svf.main() {
+        entry:
+          call void @_GLOBAL__sub_I_cast.cpp()
+          call void @_GLOBAL__sub_I_1.cpp()
+          call void @_GLOBAL__sub_I_2.cpp()
+          call void bitcast (i32 (i32, i8**)* @main to void ()*)()
+          ret void
+      }
+ */
+#define SVF_MAIN_FUNC_NAME           "svf.main"
+#define SVF_GLOBAL_SUB_I_XXX          "_GLOBAL__sub_I_"
+
 using namespace std;
 using namespace llvm;
 
 static cl::opt<std::string> Graphtxt("graphtxt", cl::value_desc("filename"),
                                      cl::desc("graph txt file to build PAG"));
+                                     
+static cl::opt<bool> SVFMain("add-svfmain", cl::init(false),
+                             cl::desc("add svf.main()"));                                     
 
 LLVMModuleSet *SVFModule::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
@@ -79,6 +100,9 @@ LLVMModuleSet::LLVMModuleSet(const vector<string> &moduleNameVec) {
 
 void LLVMModuleSet::build(const vector<string> &moduleNameVec) {
     loadModules(moduleNameVec);
+    if(SVFMain){
+        addSVFMain();
+    }
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
@@ -141,6 +165,57 @@ void LLVMModuleSet::initialize() {
             GlobalAlias *alias = &*it;
             AliasSet.push_back(alias);
         }
+    }
+}
+
+void LLVMModuleSet::addSVFMain(){
+    std::vector<Function *> init_funcs;
+    Function * orgMain = 0;
+    u32_t k = 0;
+    for (u32_t i = 0; i < moduleNum; ++i) {
+        Module *mod = modules[i].get();
+        for (auto &func: *mod) {
+            if(func.getName().startswith(SVF_GLOBAL_SUB_I_XXX))
+                init_funcs.push_back(&func);
+            if(func.getName().equals(SVF_MAIN_FUNC_NAME))
+                assert(false && SVF_MAIN_FUNC_NAME " alread defined");
+            if(func.getName().equals("main")){
+                orgMain = &func;
+                k = i;
+            }
+        }
+    }
+    if(orgMain && moduleNum > 0 && init_funcs.size() > 0){
+        Module & M = *(modules[k].get());
+        Function *func = (Function*)M.getOrInsertFunction(
+            SVF_MAIN_FUNC_NAME,
+            Type::getVoidTy(M.getContext())
+        );
+        func->setCallingConv(CallingConv::C);
+        BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", func);
+        IRBuilder<> Builder(block);
+        // emit "call void @_GLOBAL__sub_I_XXX()"
+        for(auto & init: init_funcs){
+            Function *target = (Function*)M.getOrInsertFunction(
+                init->getName(),
+                Type::getVoidTy(M.getContext())
+            );
+            Builder.CreateCall(target);
+        }
+        // char **
+        Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        // int main(int argc, char * argv[] , char * env[])
+        Value * args[] = {
+            ConstantInt::get(IntegerType::getInt32Ty(M.getContext()),0),
+            Constant::getNullValue(i8ptr2),
+            Constant::getNullValue(i8ptr2)
+        };
+        size_t cnt = orgMain->arg_size();
+        assert(cnt <= sizeof(args)/sizeof(args[0]) && "Too many arguments for main()");
+        // main() should be called after all _GLOBAL__sub_I_XXX functions.
+        Builder.CreateCall(orgMain, ArrayRef<Value*>(args,args + cnt));
+        // return;
+        Builder.CreateRetVoid();
     }
 }
 
