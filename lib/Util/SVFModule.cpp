@@ -44,13 +44,14 @@
   For example, given a "int main(int argc, char * argv[])", the corresponding
   svf.main will be generated as follows:
 
-      define void @svf.main() {
-        entry:
-          call void @_GLOBAL__sub_I_1.cpp()
-          call void @_GLOBAL__sub_I_2.cpp()
-          %0 = call i32 @main(i32 0, i8** null)
-          ret void
-      }
+    define void @svf.main(i32, i8**, i8**) {
+      entry:
+        call void @_GLOBAL__sub_I_cast.cpp()
+        call void @_GLOBAL__sub_I_1.cpp()
+        call void @_GLOBAL__sub_I_2.cpp()
+        %3 = call i32 @main(i32 %0, i8** %1)
+        ret void
+    }
  */
 #define SVF_MAIN_FUNC_NAME           "svf.main"
 #define SVF_GLOBAL_SUB_I_XXX          "_GLOBAL__sub_I_"
@@ -188,12 +189,17 @@ void LLVMModuleSet::addSVFMain(){
     }
     if(orgMain && moduleNum > 0 && init_funcs.size() > 0){
         Module & M = *(modules[k].get());
-        Function *func = (Function*)M.getOrInsertFunction(
+        // char **
+        Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
+        Type * i32 = IntegerType::getInt32Ty(M.getContext());
+        // define void @svf.main(i32, i8**, i8**)
+        Function *svfmain = (Function*)M.getOrInsertFunction(
             SVF_MAIN_FUNC_NAME,
-            Type::getVoidTy(M.getContext())
+            Type::getVoidTy(M.getContext()),
+            i32,i8ptr2,i8ptr2
         );
-        func->setCallingConv(CallingConv::C);
-        BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", func);
+        svfmain->setCallingConv(CallingConv::C);
+        BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
         IRBuilder<> Builder(block);
         // emit "call void @_GLOBAL__sub_I_XXX()"
         for(auto & init: init_funcs){
@@ -203,17 +209,11 @@ void LLVMModuleSet::addSVFMain(){
             );
             Builder.CreateCall(target);
         }
-        // char **
-        Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
-        // int main(int argc, char * argv[] , char * env[])
-        Value * args[] = {
-            ConstantInt::get(IntegerType::getInt32Ty(M.getContext()),0),
-            Constant::getNullValue(i8ptr2),
-            Constant::getNullValue(i8ptr2)
-        };
-        size_t cnt = orgMain->arg_size();
-        assert(cnt <= sizeof(args)/sizeof(args[0]) && "Too many arguments for main()");
         // main() should be called after all _GLOBAL__sub_I_XXX functions.
+        Function::arg_iterator arg_it = svfmain->arg_begin();
+        Value * args[] = {arg_it, arg_it + 1, arg_it + 2 };
+        size_t cnt = orgMain->arg_size();
+        assert(cnt <= 3 && "Too many arguments for main()");        
         Builder.CreateCall(orgMain, ArrayRef<Value*>(args,args + cnt));
         // return;
         Builder.CreateRetVoid();
