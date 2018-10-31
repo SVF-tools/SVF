@@ -26,6 +26,8 @@
  // Author: Yulei Sui,
  */
 
+#include <memory>
+
 #include "WPA/WPAPass.h"
 
 #include <llvm-c/Core.h> // for LLVMGetGlobalContext()
@@ -59,7 +61,7 @@ int main(int argc, char ** argv) {
 
     SVFModule svfModule(moduleNameVec);
 
-    WPAPass *wpa = new WPAPass();
+    auto wpa = std::unique_ptr<WPAPass>(new WPAPass());
     wpa->runOnModule(svfModule);
 
     svfModule.dumpModulesToFile(".wpa");
