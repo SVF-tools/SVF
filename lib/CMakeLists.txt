@@ -56,13 +56,15 @@ add_llvm_Library(LLVMSvf ${SOURCES})
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
 
-## we don't link libs for static library since we rely on target linkage
+## we don't link LLVM libs for static library since we rely on target linkage
 # llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
 # target_link_libraries(LLVMSvf ${llvm_libs})
 
-## we don't link shared library (module) since it will be resolved by opt
+## we don't link shared library (module) with LLVM dependencies either
 if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
     target_link_libraries(Svf LLVMCudd)
+else()
+    target_link_libraries(Svf)
 endif()
 
 if(DEFINED IN_SOURCE_BUILD)
