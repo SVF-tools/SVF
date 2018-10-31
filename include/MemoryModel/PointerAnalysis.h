@@ -96,10 +96,10 @@ public:
 #define  SUB_TREE_OF_TypeAnalysis  {TypeCPP_WPA}
 #define  SUB_TREE_OF_CondPTAImpl  {PathS_DDA,Cxt_DDA}
 
-#define  CLASS_OF_SUB_TREE(subtree) static inline bool classof(const PointerAnalysis *pta) { \
-        static PointerAnalysis::PTATY types[] = subtree; \
+#define  CLASS_OF_SUB_TREE(Subtree, Ancestor, Method, KindType) static inline bool classof(const Ancestor * ances) { \
+        static KindType types[] = Subtree; \
         for(int i = 0; i < sizeof(types)/sizeof(types[0]); i++){ \
-            if(pta->getAnalysisTy() == types[i]){ \
+            if(ances->Method() == types[i]){ \
                 return true; \
             } \
         } \
@@ -441,7 +441,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_BVDataPTAImpl)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_BVDataPTAImpl, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     /// Release memory
@@ -564,7 +564,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_CondPTAImpl)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_CondPTAImpl, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     /// Destructor

@@ -61,7 +61,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_TypeAnalysis)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_TypeAnalysis, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
 private:

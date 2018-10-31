@@ -127,7 +127,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_Andersen)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_Andersen, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     /// SCC methods
@@ -263,7 +263,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWave)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWave, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     virtual void processNode(NodeID nodeId);
@@ -336,7 +336,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiff)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiff, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     virtual void handleCopyGep(ConstraintNode* node);
@@ -426,7 +426,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiffWithType)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiffWithType, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
 protected:
@@ -478,7 +478,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenLCD)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenLCD, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     /// Overriding functions of Andersen Pass

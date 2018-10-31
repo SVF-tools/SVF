@@ -107,7 +107,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    CLASS_OF_SUB_TREE(SUB_TREE_OF_FlowSensitive)
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_FlowSensitive, PointerAnalysis, getAnalysisTy, PointerAnalysis::PTATY)
     //@}
 
     /// Return SVFG
