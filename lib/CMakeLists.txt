@@ -56,12 +56,12 @@ add_llvm_Library(LLVMSvf ${SOURCES})
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
 
-## we don't link LLVM libs for static library since we rely on target linkage
-# llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
-# target_link_libraries(LLVMSvf ${llvm_libs})
-
-## we don't link shared library (module) with LLVM dependencies either
+## On Linux platform, we don't link LLVM libs for static/dynamic libraries since we rely on target linkage
+## For Mac, if we don't link we may face errors like "ld: symbol(s) not found for architecture x86_64"
+## need further inspection on this
 if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
+    target_link_libraries(LLVMSvf ${llvm_libs})
     target_link_libraries(Svf LLVMCudd)
 else()
     target_link_libraries(Svf)
