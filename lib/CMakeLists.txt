@@ -66,6 +66,7 @@ if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
 else()
     target_link_libraries(Svf)
 endif()
+set_property(TARGET LLVMSvf PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(DEFINED IN_SOURCE_BUILD)
     add_dependencies(Svf intrinsics_gen)
