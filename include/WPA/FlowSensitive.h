@@ -105,14 +105,9 @@ public:
         return "FlowSensitive";
     }
 
-    /// Methods for support type inquiry through isa, cast, and dyn_cast
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FlowSensitive *) {
-        return true;
-    }
-    static inline bool classof(const PointerAnalysis *pta) {
-        return pta->getAnalysisTy() == FSSPARSE_WPA;
-    }
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_FlowSensitive)
     //@}
 
     /// Return SVFG

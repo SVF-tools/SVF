@@ -61,12 +61,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TypeAnalysis *) {
-        return true;
-    }
-    static inline bool classof(const PointerAnalysis *pta) {
-        return (pta->getAnalysisTy() == TypeCPP_WPA);
-    }
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_TypeAnalysis)
     //@}
 
 private:

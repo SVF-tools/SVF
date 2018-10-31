@@ -82,6 +82,30 @@ public:
         Default_PTA		///< default pta without any analysis
     };
 
+#define  SUB_TREE_OF_BVDataPTAImpl  { \
+    Andersen_WPA,AndersenLCD_WPA,AndersenWave_WPA,AndersenWaveDiff_WPA,AndersenWaveDiffWithType_WPA, \
+    FSSPARSE_WPA, \
+    TypeCPP_WPA  \
+}
+#define  SUB_TREE_OF_Andersen  {Andersen_WPA,AndersenLCD_WPA,AndersenWave_WPA,AndersenWaveDiff_WPA,AndersenWaveDiffWithType_WPA}
+#define  SUB_TREE_OF_AndersenLCD  {AndersenLCD_WPA}
+#define  SUB_TREE_OF_AndersenWave  {AndersenWave_WPA,AndersenWaveDiff_WPA,AndersenWaveDiffWithType_WPA}
+#define  SUB_TREE_OF_AndersenWaveDiff  {AndersenWaveDiff_WPA,AndersenWaveDiffWithType_WPA}
+#define  SUB_TREE_OF_AndersenWaveDiffWithType  {AndersenWaveDiffWithType_WPA}
+#define  SUB_TREE_OF_FlowSensitive  {FSSPARSE_WPA}
+#define  SUB_TREE_OF_TypeAnalysis  {TypeCPP_WPA}
+#define  SUB_TREE_OF_CondPTAImpl  {PathS_DDA,Cxt_DDA}
+
+#define  CLASS_OF_SUB_TREE(subtree) static inline bool classof(const PointerAnalysis *pta) { \
+        static PointerAnalysis::PTATY types[] = subtree; \
+        for(int i = 0; i < sizeof(types)/sizeof(types[0]); i++){ \
+            if(pta->getAnalysisTy() == types[i]){ \
+                return true; \
+            } \
+        } \
+        return false; \
+    }
+
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
@@ -415,6 +439,11 @@ public:
         destroy();
     }
 
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_BVDataPTAImpl)
+    //@}
+
     /// Release memory
     inline void destroy() {
         delete ptD;
@@ -532,6 +561,11 @@ public:
         else
             assert(false && "no points-to data available");
     }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_CondPTAImpl)
+    //@}
 
     /// Destructor
     virtual ~CondPTAImpl() {

@@ -127,16 +127,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const Andersen *) {
-        return true;
-    }
-    static inline bool classof(const PointerAnalysis *pta) {
-        return (pta->getAnalysisTy() == Andersen_WPA
-                || pta->getAnalysisTy() == AndersenLCD_WPA
-                || pta->getAnalysisTy() == AndersenWave_WPA
-                || pta->getAnalysisTy() == AndersenWaveDiff_WPA
-                || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA);
-    }
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_Andersen)
     //@}
 
     /// SCC methods
@@ -270,6 +261,11 @@ public:
         waveAndersen = NULL;
     }
 
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWave)
+    //@}
+
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
 
@@ -338,6 +334,11 @@ public:
         diffWave = NULL;
     }
 
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiff)
+    //@}
+
     virtual void handleCopyGep(ConstraintNode* node);
     virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
     virtual void processGep(NodeID node, const GepCGEdge* edge);
@@ -393,7 +394,6 @@ private:
     }
 
     static AndersenWaveDiffWithType* diffWaveWithType; // static instance
-
     /// Handle diff points-to set.
     //@{
     virtual inline void computeDiffPts(NodeID id) {
@@ -423,6 +423,11 @@ public:
             delete diffWaveWithType;
         diffWaveWithType = NULL;
     }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenWaveDiffWithType)
+    //@}
 
 protected:
     /// SCC detection
@@ -470,6 +475,12 @@ public:
             delete lcdAndersen;
         lcdAndersen = NULL;
     }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    CLASS_OF_SUB_TREE(SUB_TREE_OF_AndersenLCD)
+    //@}
+
     /// Overriding functions of Andersen Pass
     //@{
     void processNode(NodeID nodeId);
