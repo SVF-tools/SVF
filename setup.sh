@@ -34,7 +34,7 @@ fi
 
 
 #########PATH FOR PTA##############                                                                 
-export PTAHOME=`pwd`
+export SVF_HOME=`pwd`
 if [[ $1 == 'debug' ]]
 then
 PTAOBJTY='Debug'
@@ -42,13 +42,13 @@ else
 PTAOBJTY='Release'
 fi
 Build=$PTAOBJTY'-build'
-export PTAHOME=`pwd`
-export PTABIN=$PTAHOME/$Build/bin
-export PTALIB=$PTAHOME/$Build/lib
-export PTARTLIB=$PTAHOME/lib/RuntimeLib
+export SVF_HOME=`pwd`
+export PTABIN=$SVF_HOME/$Build/bin
+export PTALIB=$SVF_HOME/$Build/lib
+export PTARTLIB=$SVF_HOME/lib/RuntimeLib
 export PATH=$PTABIN:$PATH
 
-export PTATEST=$PTAHOME/PTABen
+export PTATEST=$SVF_HOME/PTABen
 export PTATESTSCRIPTS=$PTATEST/scripts
 export RUNSCRIPT=$PTATESTSCRIPTS/run.sh
 

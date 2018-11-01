@@ -45,9 +45,6 @@ RUN bash ./build.sh
 #rm -rf /src
 
 # Cleanup build dependencies and apt cache.
-RUN apt-get remove -y $build_deps
-RUN apt autoremove -y
-RUN rm -rf /var/lib/apt/lists/*
 RUN rm -rf /master.zip
 
 
