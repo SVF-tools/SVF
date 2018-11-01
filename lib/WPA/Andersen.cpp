@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include "MemoryModel/PAG.h"
 #include "WPA/Andersen.h"
 #include "Util/SVFUtil.h"
 
@@ -71,59 +70,29 @@ void Andersen::analyze(SVFModule svfModule) {
     if(!ReadAnder.empty())
         readResultsFromFile = this->readFromFile(ReadAnder);
 
-    if(!readResultsFromFile) {
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+	if(!readResultsFromFile) {
+		// Start solving constraints
+		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+		processAllAddr();
+		solve();
+		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-        processAllAddr();
+		// Finalize the analysis
+		finalize();
+	}
 
-        do {
-            numOfIteration++;
-
-            if(0 == numOfIteration % OnTheFlyIterBudgetForStat) {
-                dumpStat();
-            }
-
-            reanalyze = false;
-
-            /// Start solving constraints
-            solve();
-
-            double cgUpdateStart = stat->getClk();
-            if (updateCallGraph(getIndirectCallsites()))
-                reanalyze = true;
-            double cgUpdateEnd = stat->getClk();
-            timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-        } while (reanalyze);
-
-        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
-
-        /// finalize the analysis
-        finalize();
-    }
-
-    if(!WriteAnder.empty())
-        this->writeToFile(WriteAnder);
+	if (!WriteAnder.empty())
+		this->writeToFile(WriteAnder);
 }
-
 
 /*!
  * Start constraint solving
  */
 void Andersen::processNode(NodeID nodeId) {
-
-    numOfIteration++;
-    if (0 == numOfIteration % OnTheFlyIterBudgetForStat) {
-        dumpStat();
-    }
-
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
-    for (ConstraintNode::const_iterator it = node->outgoingAddrsBegin(), eit =
-                node->outgoingAddrsEnd(); it != eit; ++it) {
-        processAddr(SVFUtil::cast<AddrCGEdge>(*it));
-    }
-
+    // handle load and store
+    double insertStart = stat->getClk();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
                 getPts(nodeId).end(); piter != epiter; ++piter) {
         NodeID ptd = *piter;
@@ -141,8 +110,11 @@ void Andersen::processNode(NodeID nodeId) {
                 pushIntoWorklist((*it)->getSrcID());
         }
     }
+    double insertEnd = stat->getClk();
+    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 
     // handle copy, call, return, gep
+    double propStart = stat->getClk();
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
                 node->directOutEdgeEnd(); it != eit; ++it) {
         if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
@@ -150,6 +122,8 @@ void Andersen::processNode(NodeID nodeId) {
         else
             processCopy(nodeId, *it);
     }
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
@@ -281,9 +255,6 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
                 addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
-                // Any points-to passed to an FIObj also pass to its first field
-                if (normalGepEdge->getLocationSet().getOffset() == 0)
-                    addCopyEdge(getBaseObjNode(fieldSrcPtdNode), fieldSrcPtdNode);
             }
             else {
                 assert(false && "new gep edge?");
@@ -294,6 +265,27 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
     NodeID dstId = edge->getDstID();
     if (unionPts(dstId, tmpDstPts))
         pushIntoWorklist(dstId);
+}
+
+/**
+ * Detect and collapse PWC nodes produced by processing gep edges, under the constraint of field limit.
+ */
+inline void Andersen::collapsePWCNode(NodeID nodeId) {
+    // If a node is a PWC node, collapse all its points-to tarsget.
+    // collapseNodePts() may change the points-to set of the nodes which have been processed
+    // before, in this case, we may need to re-do the analysis.
+    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+        reanalyze = true;
+}
+
+inline void Andersen::collapseFields() {
+    while (consCG->hasNodesToBeCollapsed()) {
+        NodeID node = consCG->getNextCollapseNode();
+        // collapseField() may change the points-to set of the nodes which have been processed
+        // before, in this case, we may need to re-do the analysis.
+        if (collapseField(node))
+            reanalyze = true;
+    }
 }
 
 /*
@@ -447,6 +439,8 @@ NodeStack& Andersen::SCCDetect() {
 
 /// Update call graph for the input indirect callsites
 bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+    double cgUpdateStart = stat->getClk();
+
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
@@ -459,6 +453,9 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it) {
         pushIntoWorklist(it->first);
     }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
     if(!newEdges.empty())
         return true;
