@@ -281,9 +281,9 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
                 addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
-                // Any points-to passed to an FIObj also pass to its first field
-                if (normalGepEdge->getLocationSet().getOffset() == 0)
-                    addCopyEdge(getBaseObjNode(fieldSrcPtdNode), fieldSrcPtdNode);
+                // the first field of an object will be created as an individual object
+                //if (normalGepEdge->getLocationSet().getOffset() == 0)
+                //    addCopyEdge(getBaseObjNode(fieldSrcPtdNode), fieldSrcPtdNode);
             }
             else {
                 assert(false && "new gep edge?");
