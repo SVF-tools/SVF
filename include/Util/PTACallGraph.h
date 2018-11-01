@@ -244,7 +244,7 @@ public:
         return numOfResolvedIndCallEdge;
     }
 
-    inline CallInstToCallGraphEdgesMap& getCallInstToCallGraphEdgesMap() {
+    inline CallInstToCallGraphEdgesMap const& getCallInstToCallGraphEdgesMap() const {
         return callinstToCallGraphEdgesMap;
     }
 
