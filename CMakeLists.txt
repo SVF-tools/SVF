@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.4.3)
 
+option(SVF_BUILD_PIC_LIBS "Build SVF libs with PIC" 0)
+
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
