@@ -84,6 +84,10 @@ protected:
         getSCCDetector()->find();
         return getSCCDetector()->topoNodeStack();
     }
+    virtual inline NodeStack& SCCDetect(NodeSet& candidates) {
+        getSCCDetector()->find(candidates);
+        return getSCCDetector()->topoNodeStack();
+    }
 
     /// Constraint Solving
     virtual inline void solve() {
