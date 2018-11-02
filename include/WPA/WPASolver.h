@@ -53,7 +53,7 @@ public:
 protected:
 
     /// Constructor
-    WPASolver(): _graph(NULL),scc(NULL)
+    WPASolver(): _graph(NULL),scc(NULL), reanalyze(false), numOfIteration(0), iterationForPrintStat(0)
     {
     }
     /// Destructor
@@ -61,6 +61,7 @@ protected:
         delete scc;
         scc = NULL;
     }
+
     /// Get SCC detector
     inline SCC* getSCCDetector() const {
         return scc;
@@ -85,40 +86,53 @@ protected:
     }
 
     /// Constraint Solving
-    virtual void solve() {
+    virtual inline void solve() {
+		initWorklist();
+		do {
+			numOfIteration++;
+			if (0 == numOfIteration % iterationForPrintStat)
+				printStat();
 
-        /// SCC detection
-        /// Nodes in nodeStack are in topological order by default.
-        /// This order can be changed by overwritten SCCDetect() in sub-classes
+			reanalyze = false;
+
+			solveWorklist();
+
+			if (updateCallGraph())
+				reanalyze = true;
+
+		} while (reanalyze);
+    }
+
+    virtual inline void initWorklist() {
         NodeStack& nodeStack = SCCDetect();
-
-        /// initial worklist
-        /// process nodes in nodeStack.
         while (!nodeStack.empty()) {
             NodeID nodeId = nodeStack.top();
             nodeStack.pop();
-            processNode(nodeId);
+            pushIntoWorklist(nodeId);
         }
+    }
 
-        /// start solving
-        /// New nodes may be inserted into work list during processing.
-        /// Keep solving until it's empty.
+    virtual inline void solveWorklist() {
         while (!isWorklistEmpty()) {
             NodeID nodeId = popFromWorklist();
-            postProcessNode(nodeId);
+            collapsePWCNode(nodeId);
+            // Keep solving until workList is empty.
+            processNode(nodeId);
+            collapseFields();
         }
-
     }
 
     /// Following methods are to be implemented in child class, in order to achieve a fully worked PTA
     //@{
     /// Process each node on the graph, to be implemented in the child class
-    virtual inline void processNode(NodeID node) {
-    }
-    virtual inline void postProcessNode(NodeID node) {
-        processNode(node);
-    }
-
+    virtual inline void processNode(NodeID node) {}
+    /// update callgraph for all indirect callsites
+    virtual bool updateCallGraph() { return false; }
+    /// collapse positive weight cycles of a graph
+    virtual void collapsePWCNode(NodeID nodeId) {}
+    virtual void collapseFields() {};
+    /// dump statistics
+    virtual void printStat() {}
     /// Propagation for the solving, to be implemented in the child class
     virtual void propagate(GNODE* v) {
         child_iterator EI = GTraits::direct_child_begin(*v);
@@ -154,7 +168,12 @@ protected:
     }
     //@}
 
-protected:
+    /// Reanalyze if any constraint value changed
+    bool reanalyze;
+    /// print out statistics for i-th iteration
+    u32_t iterationForPrintStat;
+
+
     /// Get node on the graph
     inline GNODE* Node(NodeID id) {
         return GTraits::getNode(_graph, id);
@@ -174,6 +193,10 @@ private:
 
     /// Worklist for resolution
     WorkList worklist;
+
+public:
+    /// num of iterations during constaint solving
+    u32_t numOfIteration;
 };
 
 #endif /* GRAPHSOLVER_H_ */
