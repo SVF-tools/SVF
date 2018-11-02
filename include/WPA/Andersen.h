@@ -33,7 +33,9 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
+#include "MemoryModel/PAG.h"
 #include "MemoryModel/ConsG.h"
+#include "MemoryModel/OfflineConsG.h"
 
 class PTAType;
 class SVFModule;
@@ -75,7 +77,7 @@ public:
     Andersen(PTATY type = Andersen_WPA)
         :  BVDataPTAImpl(type), consCG(NULL)
     {
-        reanalyze = false;
+		iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
@@ -158,8 +160,8 @@ public:
     }
 
 protected:
-    /// Reanalyze if any constraint value changed
-    bool reanalyze;
+
+    virtual void initWorklist() {}
 
     /// Override WPASolver function in order to use the default solver
     virtual void processNode(NodeID nodeId);
@@ -189,6 +191,16 @@ protected:
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
+    /// Update call graph for all the indirect callsites
+	virtual inline bool updateCallGraph() {
+		return updateCallGraph(getIndirectCallsites());
+	}
+
+	/// dump statistics
+    inline void printStat() {
+        PointerAnalysis::dumpStat();
+    }
+
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
@@ -199,6 +211,8 @@ protected:
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
     //@{
+    void collapsePWCNode(NodeID nodeId);
+    void collapseFields();
     bool collapseNodePts(NodeID nodeId);
     bool collapseField(NodeID nodeId);
     //@}
@@ -268,6 +282,7 @@ public:
         waveAndersen = NULL;
     }
 
+    virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
 

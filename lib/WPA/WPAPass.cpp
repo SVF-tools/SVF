@@ -100,30 +100,30 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
 {
     /// Initialize pointer analysis.
     switch (kind) {
-    case PointerAnalysis::Andersen_WPA:
-        _pta = new Andersen();
-        break;
-    case PointerAnalysis::AndersenLCD_WPA:
-        _pta = new AndersenLCD();
-        break;
-    case PointerAnalysis::AndersenWave_WPA:
-        _pta = new AndersenWave();
-        break;
-    case PointerAnalysis::AndersenWaveDiff_WPA:
-        _pta = new AndersenWaveDiff();
-        break;
-    case PointerAnalysis::AndersenWaveDiffWithType_WPA:
-        _pta = new AndersenWaveDiffWithType();
-        break;
-    case PointerAnalysis::FSSPARSE_WPA:
-        _pta = new FlowSensitive();
-        break;
-    case PointerAnalysis::TypeCPP_WPA:
-		_pta = new TypeAnalysis();
-		break;
-    default:
-        assert(false && "This pointer analysis has not been implemented yet.\n");
-        return;
+        case PointerAnalysis::Andersen_WPA:
+            _pta = new Andersen();
+            break;
+        case PointerAnalysis::AndersenLCD_WPA:
+            _pta = new AndersenLCD();
+            break;
+        case PointerAnalysis::AndersenWave_WPA:
+            _pta = new AndersenWave();
+            break;
+        case PointerAnalysis::AndersenWaveDiff_WPA:
+            _pta = new AndersenWaveDiff();
+            break;
+        case PointerAnalysis::AndersenWaveDiffWithType_WPA:
+            _pta = new AndersenWaveDiffWithType();
+            break;
+        case PointerAnalysis::FSSPARSE_WPA:
+            _pta = new FlowSensitive();
+            break;
+        case PointerAnalysis::TypeCPP_WPA:
+            _pta = new TypeAnalysis();
+            break;
+        default:
+            assert(false && "This pointer analysis has not been implemented yet.\n");
+            return;
     }
 
     ptaVector.push_back(_pta);

@@ -34,38 +34,47 @@ using namespace SVFUtil;
 
 AndersenWave* AndersenWave::waveAndersen = NULL;
 
+
+inline void AndersenWave::solveWorklist() {
+    // Initialize the nodeStack via a whole SCC detection
+    // Nodes in nodeStack are in topological order by default.
+    NodeStack& nodeStack = SCCDetect();
+
+    // Process nodeStack and put the changed nodes into workList.
+    while (!nodeStack.empty()) {
+        NodeID nodeId = nodeStack.top();
+        nodeStack.pop();
+        collapsePWCNode(nodeId);
+        // process nodes in nodeStack
+        processNode(nodeId);
+        collapseFields();
+    }
+
+    // New nodes will be inserted into workList during processing.
+    while (!isWorklistEmpty()) {
+        NodeID nodeId = popFromWorklist();
+        // process nodes in worklist
+        postProcessNode(nodeId);
+    }
+}
+
 /*!
  * Process edge PAGNode
  */
-void AndersenWave::processNode(NodeID nodeId)
-{
-    double propStart = stat->getClk();
+void AndersenWave::processNode(NodeID nodeId) {
+	double propStart = stat->getClk();
 
-    // If this is a PWC node, collapse all its points-to targets.
-    // collapseNodePts() may change the points-to set of the nodes which have been processed
-    // before, in this case, we may need to re-do the analysis.
-    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
-        reanalyze = true;
+	// This node may be merged during collapseNodePts() which means it is no longer a rep node
+	// in the graph. Only rep node needs to be handled.
+	if (sccRepNode(nodeId) != nodeId)
+		return;
 
-    // This node may be merged during collapseNodePts() which means it is no longer a rep node
-    // in the graph. Only rep node needs to be handled.
-    if (sccRepNode(nodeId) != nodeId)
-        return;
+	ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
-    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+	handleCopyGep(node);
 
-    handleCopyGep(node);
-
-    // collapse nodes found during processing variant gep edges.
-    while (consCG->hasNodesToBeCollapsed()) {
-        NodeID nodeId = consCG->getNextCollapseNode();
-        // collapseField() may change the points-to set of the nodes which have been processed
-        // before, in this case, we may need to re-do the analysis.
-        if (collapseField(nodeId))
-            reanalyze = true;
-    }
-    double propEnd = stat->getClk();
-    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
+	double propEnd = stat->getClk();
+	timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
