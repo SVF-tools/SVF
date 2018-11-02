@@ -161,6 +161,8 @@ public:
 
 protected:
 
+    virtual void initWorklist() {}
+
     /// Override WPASolver function in order to use the default solver
     virtual void processNode(NodeID nodeId);
 
@@ -280,7 +282,6 @@ public:
         waveAndersen = NULL;
     }
 
-    virtual inline void initWorklist() {}
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);

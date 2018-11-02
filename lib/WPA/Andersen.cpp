@@ -64,8 +64,7 @@ static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
 void Andersen::analyze(SVFModule svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
-
-
+    
     bool readResultsFromFile = false;
     if(!ReadAnder.empty())
         readResultsFromFile = this->readFromFile(ReadAnder);
