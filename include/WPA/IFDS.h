@@ -6,29 +6,35 @@
 #ifndef INCLUDE_WPA_IFDS_H_
 #define INCLUDE_WPA_IFDS_H_
 
+
 #include "Util/ICFG.h"
+#include "WPA/Andersen.h"
+#include <iostream>
 
 class IFDS {
 
 private:
 	ICFG* icfg;
+	PointerAnalysis* pta;
 
 public:
     class PathNode;
     class PathEdge;
     typedef std::string ValueName;          //(stmtNode->getPAGDstNode()->getValueName())
-    typedef std::set<PAGNode*> Datafact;   // set of uninitialized variables at ICFGNode
-    typedef std::set<Datafact> Facts;     // different datafacts from different path
-    typedef std::set<ICFGNode*> ICFGNodeSet;
+    typedef std::set<const PAGNode*> Datafact;    //set of uninitialized variables at ICFGNode
+    typedef std::set<Datafact> Facts;       //different datafacts from different path
+    typedef std::set<const ICFGNode*> ICFGNodeSet;
     typedef std::list<PathEdge*> PathEdgeSet;
-    typedef std::map<ICFGNode*, Facts> ICFGNodeToDataFactsMap;
+    typedef std::map<const ICFGNode*, Facts> ICFGNodeToDataFactsMap;
 
 protected:
     PathEdgeSet WorkList;         //worklist used during the tabulation algorithm
     PathEdgeSet PathEdgeList;     //used to restore all PathEdges (result)
     PathEdgeSet SummaryEdgeList;  //used to restore all SummaryEdges
     ICFGNodeSet ICFGDstNodeSet;
-    ICFGNodeToDataFactsMap UniniVarSolution; // uninitialized variable solution
+    ICFGNodeToDataFactsMap ICFGNodeToFacts;
+    //ICFGNodeToDataFactsMap UniniVarSolution; // uninitialized variable solution
+    Facts facts;    // Datafacts for a given ICFGNode
     ICFGNode* mainEntryNode;
 
 public:
@@ -50,7 +56,6 @@ public:
 	//procedures in Tabulation Algorithm
     void initialize();
     void forwardTabulate();
-    void merge();
 
     //add new PathEdge components into PathEdgeList and WorkList
     void propagate(PathNode* srcPN, ICFGNode* succ, Datafact d);
@@ -58,28 +63,30 @@ public:
     //get all ICFGNode in all EndPathNode of PathEdgeList
     ICFGNodeSet& getDstICFGNodeSet();
 
-    //get all datafacts of a ICFGNode in all EndPathNode of PathEdgeList
-    Facts getDstICFGNodeFacts(ICFGNode* node);
-
-    // transfer function of given ICFGNode
+    //transfer function of given ICFGNode
     Datafact transferFun(PathNode* pathNode);
 
     //whether the variable is initialized
-    bool isInitialized(PAGNode* pagNode, Datafact datafact);
+    bool isInitialized(const PAGNode* pagNode, Datafact datafact);
 
-    // print ICFGNodes and theirs datafacts
+    //print ICFGNodes and theirs datafacts
     void printRes();
+
+    //Get points-to set of given PAGNode
+    inline PointsTo& getPts(NodeID id) {
+        return pta->getPts(id);
+    }
 
     // in order to denote : <node, d> , d here is datafact before the execution of node
     class PathNode{
-        ICFGNode* icfgNode;
+        const ICFGNode* icfgNode;
         Datafact datafact;
 
         //Constructor
     public:
         PathNode();
 
-        PathNode(ICFGNode* node, Datafact fact){
+        PathNode(const ICFGNode* node, Datafact fact){
             icfgNode = node;
             datafact = fact;
         }
@@ -92,11 +99,11 @@ public:
             datafact = fact;
         }
 
-        ICFGNode* getICFGNode() {
+        const ICFGNode* getICFGNode() const{
             return icfgNode;
         }
 
-        Datafact getDataFact() {
+        Datafact& getDataFact() {
             return datafact;
         }
 
@@ -123,14 +130,13 @@ public:
             dstNode = node;
         }
 
-        PathNode* getDstPathNode(){
+        PathNode* getDstPathNode() const{
             return dstNode;
         }
 
-        PathNode* getSrcPathNode(){
+        PathNode* getSrcPathNode() const{
             return srcNode;
         }
-
     };
 };
 
