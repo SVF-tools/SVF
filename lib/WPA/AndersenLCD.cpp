@@ -23,8 +23,8 @@
 /*
  * AndersenLCD.cpp
  *
- *  Created on: Oct 26, 2013
- *      Author: Yulei Sui
+ *  Created on: 13 Sep. 2018
+ *      Author: Yuxiang Lei
  */
 
 #include "WPA/Andersen.h"
@@ -32,80 +32,99 @@
 
 using namespace SVFUtil;
 
-AndersenLCD* AndersenLCD::lcdAndersen = NULL;
+AndersenLCD* AndersenLCD::lcdAndersen = nullptr;
 
+
+void AndersenLCD::solveWorklist() {
+	while (!isWorklistEmpty()) {
+		NodeID nodeId = popFromWorklist();
+		collapsePWCNode(nodeId);
+		// Merge detected SCC cycles
+		mergeOnlineSCC();
+		// Keep solving until workList is empty.
+		processNode(nodeId);
+		collapseFields();
+	}
+}
 
 /*!
- * Start constraint solving
+ * Solve constraints of each node
  */
 void AndersenLCD::processNode(NodeID nodeId) {
+	ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
-    numOfIteration++;
-    if(0 == numOfIteration % OnTheFlyIterBudgetForStat) {
-        dumpStat();
-    }
-
-    ConstraintNode* node = consCG->getConstraintNode(nodeId);
-
-    for (ConstraintNode::const_iterator it = node->outgoingAddrsBegin(), eit =  node->outgoingAddrsEnd(); it != eit;
-            ++it) {
-        processAddr(SVFUtil::cast<AddrCGEdge>(*it));
-    }
-
+    // hand load and store
+    double insertStart = stat->getClk();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(
-                nodeId).end(); piter != epiter; ++piter) {
-        NodeID ptd = *piter;
-        // handle load
-        for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd(); it != eit;
-                ++it) {
-            if(processLoad(ptd, *it))
-                pushIntoWorklist(ptd);
-        }
-
-        // handle store
-        for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd(); it != eit;
-                ++it) {
-            if(processStore(ptd, *it))
-                pushIntoWorklist((*it)->getSrcID());
-        }
-    }
+			nodeId).end(); piter != epiter; ++piter) {
+		NodeID ptd = *piter;
+		// handle load
+		for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
+				eit = node->outgoingLoadsEnd(); it != eit; ++it) {
+			if (processLoad(ptd, *it))
+				pushIntoWorklist(ptd);
+		}
+		// handle store
+		for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
+				eit = node->incomingStoresEnd(); it != eit; ++it) {
+			if (processStore(ptd, *it))
+				pushIntoWorklist((*it)->getSrcID());
+		}
+	}
+    double insertEnd = stat->getClk();
+    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 
     // handle copy, call, return, gep
-    bool lcd = false;
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
-            ++it) {
-        if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-            processGep(nodeId,gepEdge);
-        else if(processCopy(nodeId,*it))
-            lcd = true;
-    }
-    if(lcd)
-        SCCDetect();
+    double propStart = stat->getClk();
+    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
+			node->directOutEdgeEnd(); it != eit; ++it) {
+		if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+			processGep(nodeId, gepEdge);
+		else {
+			NodeID dstNodeId = (*it)->getDstID();
+			PointsTo& srcPts = getPts(nodeId);
+			PointsTo& dstPts = getPts(dstNodeId);
 
-    // update call graph
-    updateCallGraph(getIndirectCallsites());
+			// In one edge, if the pts of src node equals to that of dst node, and the edge
+			// is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
+			if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
+				addMetEdge(*it);
+				addLCDCandidate((*it)->getDstID());
+			}
+			processCopy(nodeId, *it);
+		}
+	}
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
-
-/*
- *	src --copy--> dst,
- *	union pts(dst) with pts(src)
+/*!
+ * Collapse nodes and fields based on 'lcdCandidates'
  */
-bool AndersenLCD::processCopy(NodeID node, const ConstraintEdge* edge) {
-
-    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
-    NodeID dst = edge->getDstID();
-    PointsTo& srcPts = getPts(node);
-    PointsTo& dstPts = getPts(dst);
-    /// Lazy cycle detection when points-to of source and destination are identical
-    /// and we haven't seen this edge before
-    if (srcPts == dstPts) {
-        if (!srcPts.empty() && isNewLCDEdge(edge)) {
-            return true;
-        }
-    } else {
-        if (unionPts(dst, srcPts))
-            pushIntoWorklist(dst);
-    }
-    return false;
+void AndersenLCD::mergeOnlineSCC() {
+    if (hasLCDCandidate())
+        SCCDetect(lcdCandidates);
+    cleanLCDCandidate();
 }
+
+/*!
+ * AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
+ */
+NodeStack& AndersenLCD::SCCDetect(NodeSet& lcdCandidate) {
+    numOfSCCDetection++;
+
+	double sccStart = stat->getClk();
+	/// Detect SCC cycles
+	WPAConstraintSolver::SCCDetect(lcdCandidate);
+	double sccEnd = stat->getClk();
+	timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
+
+	double mergeStart = stat->getClk();
+	/// Merge SCC cycles
+	mergeSccCycle();
+	double mergeEnd = stat->getClk();
+	timeOfSCCMerges += (mergeEnd - mergeStart) / TIMEINTERVAL;
+
+	return getSCCDetector()->topoNodeStack();
+}
+

@@ -48,7 +48,6 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl {
 
 
 public:
-    typedef std::set<const ConstraintEdge*> EdgeSet;
     typedef SCCDetection<ConstraintGraph*> CGSCC;
 
     /// Pass ID
@@ -457,50 +456,69 @@ protected:
 
 
 /*
- * Lazy Cycle Detection based Andersen Analysis
- * TODO: note that this implementaion is incomplete,
- * and the algorithm may not be consistent with the one in paper
+ * Lazy Cycle Detection Based Andersen Analysis
  */
 class AndersenLCD : public Andersen {
 
 private:
-    static AndersenLCD* lcdAndersen; // static instance
+    static AndersenLCD* lcdAndersen;
+    EdgeSet metEdges;
+    NodeSet lcdCandidates;
 
 public:
-    AndersenLCD(PTATY type = AndersenLCD_WPA): Andersen(type) {}
+    AndersenLCD(PTATY type = AndersenLCD_WPA) :
+            Andersen(type), lcdCandidates({}), metEdges({}) {
+    }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenWave(SVFModule svfModule) {
-        if(lcdAndersen==NULL) {
+    static AndersenLCD* createAndersenLCD(SVFModule svfModule) {
+        if (lcdAndersen == nullptr) {
             lcdAndersen = new AndersenLCD();
             lcdAndersen->analyze(svfModule);
             return lcdAndersen;
         }
         return lcdAndersen;
     }
+
     static void releaseAndersenLCD() {
         if (lcdAndersen)
             delete lcdAndersen;
-        lcdAndersen = NULL;
+        lcdAndersen = nullptr;
     }
-    /// Overriding functions of Andersen Pass
+
+protected:
+    // 'lcdCandidates' is used to collect nodes need to be visited by SCC detector
     //@{
-    void processNode(NodeID nodeId);
-
-    bool processCopy(NodeID node, const ConstraintEdge* edge);
+    inline bool hasLCDCandidate () const {
+        return !lcdCandidates.empty();
+    };
+    inline void cleanLCDCandidate() {
+        lcdCandidates.clear();
+    };
+    inline void addLCDCandidate(NodeID nodeId) {
+        lcdCandidates.insert(nodeId);
+    };
     //@}
-private:
-    /// Lazy cycle elimination edge, in order to avoid duplicate detection
-    EdgeSet lcdEdges;
 
-    /// LCD edge
-    bool inline isNewLCDEdge(const ConstraintEdge* edge) {
-        if(0==lcdEdges.count(edge)) {
-            lcdEdges.insert(edge);
-            return true;
-        }
-        return false;
-    }
+    // 'metEdges' is used to collect edges met by AndersenLCD, to avoid redundant visit
+    //@{
+    bool isMetEdge (ConstraintEdge* edge) const {
+        EdgeSet::iterator it = metEdges.find(edge->getEdgeID());
+        return it != metEdges.end();
+    };
+    void addMetEdge(ConstraintEdge* edge) {
+        metEdges.insert(edge->getEdgeID());
+    };
+    //@}
+
+    //AndersenLCD worklist processer
+    void solveWorklist();
+    // Solve constraints of each nodes
+    void processNode(NodeID nodeId);
+    // Collapse nodes and fields based on 'lcdCandidates'
+    void mergeOnlineSCC();
+    // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
+    NodeStack& SCCDetect(NodeSet& lcdCandidates);
 };
 
 #endif /* ANDERSENPASS_H_ */

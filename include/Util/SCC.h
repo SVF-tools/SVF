@@ -289,6 +289,19 @@ public:
         }
     }
 
+    void find(NodeSet &candidates) {
+        // This function is reloaded to only visit candidate NODES
+        clear();
+        for (NodeID node : candidates) {
+            if (!this->visited(node)) {
+                if (this->rep(node) == UINT_MAX || this->rep(node) == node)
+                    visit(node);
+                else
+                    this->visited(node);
+            }
+        }
+    }
+
 };
 
 #endif /* SCC_H_ */

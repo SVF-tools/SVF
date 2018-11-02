@@ -35,7 +35,7 @@ using namespace SVFUtil;
 AndersenWave* AndersenWave::waveAndersen = NULL;
 
 
-inline void AndersenWave::solveWorklist() {
+void AndersenWave::solveWorklist() {
     // Initialize the nodeStack via a whole SCC detection
     // Nodes in nodeStack are in topological order by default.
     NodeStack& nodeStack = SCCDetect();
