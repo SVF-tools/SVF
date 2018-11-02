@@ -3,9 +3,9 @@
  *
  */
 
-// how to distinguish local variable and global variable?     PAGNode is global stack
-//TODO 1. in TransferFun: remove dummy value
-//TODO 3. in ForwardTabulate: realize CallNode and EndFuncNode
+// how to distinguish local variable and global variable?
+// caller(p) : sp incomingEdges -> getSrcNode     map<proc, callers>
+//TODO 1. in ForwardTabulate: realize CallNode and EndFuncNode
 
 #include "WPA/IFDS.h"
 
@@ -21,9 +21,9 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
 }
 
 /*initialization
-    set PathEdgeList = {(<EntryMain, 0> --> <EntryMain,0>)}
-    set WorkList = {(<EntryMain, 0> --> <EntryMain,0>)}
-    set SummaryEdgeList = {}
+    PathEdgeList = {(<EntryMain, 0> --> <EntryMain,0>)}
+    WorkList = {(<EntryMain, 0> --> <EntryMain,0>)}
+    SummaryEdgeList = {}
  */
 void IFDS::initialize() {
 
@@ -52,8 +52,36 @@ void IFDS::forwardTabulate() {
         const ICFGNode *n = e->getDstPathNode()->getICFGNode();
 
         if (SVFUtil::isa<CallBlockNode>(n)) {
-
-            //code to add
+            const ICFGEdge::ICFGEdgeSetTy &outEdges = n->getOutEdges();
+            for (ICFGEdge::ICFGEdgeSetTy::iterator it = outEdges.begin(), eit =
+                    outEdges.end(); it != eit; ++it) {
+                if((*it)->isCallCFGEdge()){      // if this is Call Edge
+                    ICFGNode* sp = (*it)->getDstNode();
+                    ICFGNodeToFacts[sp].insert(dstPN->getDataFact());   //datafact doesnt change at Call Edge
+                    //for each datafact of sp
+                    for (Facts::iterator it = ICFGNodeToFacts[sp].begin(), eit = ICFGNodeToFacts[sp].end(); it != eit; ++it){
+                        PathNode* newSrcPN = new PathNode(sp, *it);
+                        propagate(newSrcPN, sp, *it);
+                    }
+                }
+                else if((*it)->isIntraCFGEdge()){    // if it is CallToRetEdge?
+                    Datafact d = transferFun(dstPN);  // to do: add transfer function for call node ??
+                    ICFGNode* ret = (*it)->getDstNode();
+                    ICFGNodeToFacts[ret].insert(d);   //datafact doesnt change at Call Edge
+                    // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode
+                    for(PathEdgeSet::iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end(); it != eit; ++it){
+                        if(((*it)->getSrcPathNode()->getICFGNode() == n)
+                           && ((*it)->getSrcPathNode()->getDataFact() == dstPN->getDataFact())
+                           &&((*it)->getDstPathNode()->getICFGNode() == ret)){
+                            ICFGNodeToFacts[ret].insert((*it)->getDstPathNode()->getDataFact());
+                        }
+                    }
+                    //for each datafact of ret
+                    for (Facts::iterator it = ICFGNodeToFacts[ret].begin(), eit = ICFGNodeToFacts[ret].end(); it != eit; ++it){
+                        propagate(srcPN, ret, *it);
+                    }
+                }
+            }
         } else if (SVFUtil::isa<FunExitBlockNode>(n)) {
             //code to add
         } else if (SVFUtil::isa<IntraBlockNode>(n)
@@ -138,7 +166,7 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
 // StmtNode(excludes cmp and binaryOp)
 // Addr: srcNode is uninitialized, dstNode is initialiazed
 // copy: dstNode depends on srcNode
-// Store: dstNode->obj depends on srcNode     getPTS
+// Store: dstNode->obj depends on srcNode
 // Load: dstNode depends on scrNode->obj
 // Gep : same as Copy
 
