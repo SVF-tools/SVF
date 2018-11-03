@@ -904,10 +904,12 @@ void SymbolTableInfo::handleCE(const Value *val) {
             collectVal(ce);
             collectVal(ce->getOperand(0));
             collectVal(ce->getOperand(1));
+            collectVal(ce->getOperand(2));
             // handle the recursive constant express case
             // like (gep (bitcast (gep X 1)) 1); the inner gep is ce->getOperand(0)
             handleCE(ce->getOperand(0));
             handleCE(ce->getOperand(1));
+            handleCE(ce->getOperand(2));
         }
         // remember to handle the constant bit cast opnd after stripping casts off
         else {
