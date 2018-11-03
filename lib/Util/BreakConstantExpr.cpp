@@ -162,6 +162,9 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
     case Instruction::Add:
     case Instruction::Sub:
     case Instruction::Mul:
+    case Instruction::FAdd:
+    case Instruction::FSub:
+    case Instruction::FMul:
     case Instruction::UDiv:
     case Instruction::SDiv:
     case Instruction::FDiv:
