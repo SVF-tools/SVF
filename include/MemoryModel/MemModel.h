@@ -671,7 +671,8 @@ public:
     const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const llvm::Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
-    const inline llvm::Type* getSubType(const llvm::Type* baseType, u32_t fieldIndex){
+    /// Get a subType of a type of a base object (all its subtypes are flattened)
+    const inline llvm::Type* getFlattenSubType(const llvm::Type* baseType, u32_t fieldIndex){
         const std::vector<FieldInfo> &fieldinfo = getFlattenFieldInfoVec(baseType);
         const llvm::Type *subtype = fieldinfo[fieldIndex].getFlattenElemTy();
         return subtype;

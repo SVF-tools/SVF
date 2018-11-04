@@ -269,8 +269,8 @@ public:
     inline NodeID getFIObjNode(NodeID id) {
         return pag->getFIObjNode(id);
     }
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
-        return pag->getGepObjNode(id,ls);
+    inline NodeID getGepObjNode(NodeID id, const NormalGepPE* gepEdge) {
+        return pag->getGepObjNode(id,gepEdge);
     }
     inline const NodeBS& getAllFieldsObjNode(NodeID id) {
         return pag->getAllFieldsObjNode(id);

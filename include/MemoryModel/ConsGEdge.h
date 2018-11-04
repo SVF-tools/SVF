@@ -239,7 +239,7 @@ private:
     NormalGepCGEdge(const NormalGepCGEdge &);  ///< place holder
     void operator=(const NormalGepCGEdge &); ///< place holder
 
-    LocationSet ls;	///< location set of the gep edge
+    const NormalGepPE* gepPE;	///< PAG Gep Edge
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -259,18 +259,23 @@ public:
     //@}
 
     /// Constructor
-    NormalGepCGEdge(ConstraintNode* s, ConstraintNode* d, const LocationSet& l, EdgeID id)
-        : GepCGEdge(s,d,NormalGep,id), ls(l)
+    NormalGepCGEdge(ConstraintNode* s, ConstraintNode* d, const NormalGepPE* gep, EdgeID id)
+        : GepCGEdge(s,d,NormalGep,id), gepPE(gep)
     {}
 
     /// Get location set of the gep edge
     inline const LocationSet& getLocationSet() const {
-        return ls;
+        return gepPE->getLocationSet();
     }
 
     /// Get location set of the gep edge
     inline const u32_t getOffset() const {
-        return ls.getOffset();
+        return gepPE->getLocationSet().getOffset();
+    }
+
+    /// Get location set of the gep edge
+    inline const NormalGepPE* getGepPE() const {
+        return gepPE;
     }
 };
 

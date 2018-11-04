@@ -273,12 +273,12 @@ NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, Node
 /*!
  * Given an object node, find its field object node
  */
-NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls) {
+NodeID PAG::getGepObjNode(NodeID id, const NormalGepPE* gepEdge) {
     PAGNode* node = pag->getPAGNode(id);
     if (GepObjPN* gepNode = dyn_cast<GepObjPN>(node))
-        return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
+        return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + gepEdge->getLocationSet());
     else if (FIObjPN* baseNode = dyn_cast<FIObjPN>(node))
-        return getGepObjNode(baseNode->getMemObj(), ls);
+        return getGepObjNode(baseNode->getMemObj(), gepEdge->getLocationSet());
     else {
         assert(false && "new gep obj node kind?");
         return id;
@@ -318,10 +318,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i) {
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
     GepObjNodeMap[std::make_pair(base, ls)] = i;
-    const Type* gepObjType = NULL;
-	if (obj->getRefVal())
-		gepObjType = symInfo->getSubType(obj->getRefVal()->getType(), ls.getOffset());
-	GepObjPN *node = new GepObjPN(obj, gepObjType, i, ls);
+	GepObjPN *node = new GepObjPN(obj, i, ls);
     memToFieldsMap[base].set(i);
     return addObjNode(obj->getRefVal(), node, i);
 }

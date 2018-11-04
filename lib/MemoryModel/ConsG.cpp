@@ -96,7 +96,7 @@ void ConstraintGraph::buildCG() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter) {
         NormalGepPE* edge = cast<NormalGepPE>(*iter);
-        addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
+        addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge);
     }
 
     PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
@@ -177,13 +177,13 @@ bool ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst) {
 /*!
  * Add Gep edge
  */
-bool ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls) {
+bool ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const NormalGepPE* gepPE) {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
         return false;
 
-    NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
+    NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode, gepPE, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
@@ -266,9 +266,8 @@ void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* ne
         addCopyCGEdge(srcId,newDstNodeID);
     }
     else if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)) {
-        const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(srcId,newDstNodeID,ls);
+        addNormalGepCGEdge(srcId,newDstNodeID,gep->getGepPE());
     }
     else if(VariantGepCGEdge* gep = dyn_cast<VariantGepCGEdge>(edge)) {
         removeDirectEdge(gep);
@@ -306,9 +305,8 @@ void ConstraintGraph::reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* ne
         addCopyCGEdge(newSrcNodeID,dstId);
     }
     else if(NormalGepCGEdge* gep = dyn_cast<NormalGepCGEdge>(edge)) {
-        const LocationSet ls = gep->getLocationSet();
         removeDirectEdge(gep);
-        addNormalGepCGEdge(newSrcNodeID,dstId,ls);
+        addNormalGepCGEdge(newSrcNodeID,dstId,gep->getGepPE());
     }
     else if(VariantGepCGEdge* gep = dyn_cast<VariantGepCGEdge>(edge)) {
         removeDirectEdge(gep);

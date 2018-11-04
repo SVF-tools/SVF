@@ -405,7 +405,7 @@ public:
     /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Get a field obj PAG node according to a mem obj and a given offset
-    NodeID getGepObjNode(NodeID id, const LocationSet& ls) ;
+    NodeID getGepObjNode(NodeID id, const NormalGepPE* gepEdge) ;
     /// Get a field-insensitive obj PAG node according to a mem obj
     //@{
     inline NodeID getFIObjNode(const MemObj* obj) const {
