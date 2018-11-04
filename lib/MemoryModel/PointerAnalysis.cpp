@@ -97,7 +97,6 @@ PointerAnalysis::PointerAnalysis(PTATY ty) :
     ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL) {
     OnTheFlyIterBudgetForStat = statBudget;
     print_stat = PStat;
-    numOfIteration = 0;
 }
 
 /*!

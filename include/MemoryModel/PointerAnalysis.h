@@ -91,11 +91,6 @@ public:
     typedef std::set<const Function*> VFunSet;
     //@}
 
-    /// Statistic numbers
-    //@{
-    Size_t numOfIteration;
-    //@}
-
 private:
     /// Release the memory
     void destroy();
@@ -107,7 +102,7 @@ protected:
     /// Flag for printing the statistic results
     bool print_stat;
     /// Flag for iteration budget for on-the-fly statistics
-    Size_t OnTheFlyIterBudgetForStat;
+    u32_t OnTheFlyIterBudgetForStat;
     //@}
 
     /// PAG

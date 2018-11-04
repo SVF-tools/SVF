@@ -84,6 +84,13 @@ public:
         return value;
     }
 
+    /// Return type of the value
+    inline virtual const Type* getType() const{
+        if (value && value->hasName())
+            return value->getType();
+        return NULL;
+    }
+
     inline bool hasValue() const {
         return (this->getNodeKind() != DummyValNode &&
                 this->getNodeKind() != DummyObjNode &&
@@ -110,7 +117,7 @@ public:
 	}
 
     /// Get name of the LLVM value
-    virtual const std::string getValueName() = 0;
+    virtual const std::string getValueName() const = 0;
 
     /// Get incoming PAG edges
     inline PAGEdge::PAGEdgeSetTy& getIncomingEdges(PAGEdge::PEDGEK kind) {
@@ -254,7 +261,7 @@ public:
         PAGNode(val, i, ty) {
     }
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         if (value && value->hasName())
             return value->getName();
         return "";
@@ -316,7 +323,7 @@ class GepValPN: public ValPN {
 
 private:
     LocationSet ls;	// LocationSet
-    const Type *type;
+    const Type *gepValType;
     u32_t fieldIdx;
 
 public:
@@ -338,24 +345,24 @@ public:
 
     /// Constructor
     GepValPN(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
-        ValPN(val, i, GepValNode), ls(l), type(ty), fieldIdx(idx) {
+        ValPN(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx) {
     }
 
     /// offset of the base value node
-    inline Size_t getOffset() {
+    inline u32_t getOffset() const {
         return ls.getOffset();
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::utostr(getOffset());
         return "offset_" + llvm::utostr(getOffset());
     }
 
-    const Type *getType() const {
-        return type;
-    }
+	inline const Type* getType() const {
+		return gepValType;
+	}
 
     u32_t getFieldIdx() const {
         return fieldIdx;
@@ -370,6 +377,7 @@ public:
 class GepObjPN: public ObjPN {
 private:
     LocationSet ls;
+    const Type* gepObjType;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -389,21 +397,25 @@ public:
     //@}
 
     /// Constructor
-    GepObjPN(const Value* val, NodeID i, const MemObj* mem, const LocationSet& l) :
-        ObjPN(val, i, mem, GepObjNode), ls(l) {
+    GepObjPN(const MemObj* mem, const Type* type, NodeID i, const LocationSet& l) :
+        ObjPN(mem->getRefVal(), i, mem, GepObjNode), ls(l), gepObjType(type) {
     }
 
     /// offset of the mem object
-    inline const LocationSet& getLocationSet() {
+    inline const LocationSet& getLocationSet() const {
         return ls;
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
         return "offset_" + llvm::itostr(ls.getOffset());
     }
+    /// Return type of this gep object
+	inline const Type* getType() const {
+		return gepObjType;
+	}
 };
 
 /*
@@ -435,7 +447,7 @@ public:
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         if (value && value->hasName())
             return value->getName().str() + "_field_insensitive";
         return "field_insensitive";
@@ -467,7 +479,7 @@ public:
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    const std::string getValueName() const {
         const Function* fun = SVFUtil::cast<Function>(value);
         return fun->getName().str() + "_ret";
     }
@@ -499,7 +511,7 @@ public:
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         const Function* fun = SVFUtil::cast<Function>(value);
         return fun->getName().str() + "_vararg";
     }
@@ -533,7 +545,7 @@ public:
 
 
     /// Return name of this node
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         return "dummyVal";
     }
 };
@@ -563,7 +575,7 @@ public:
     }
 
     /// Return name of this node
-    const std::string getValueName() {
+    inline const std::string getValueName() const {
         return "dummyObj";
     }
 };
