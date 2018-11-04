@@ -317,7 +317,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const NormalGepPE* gepEdge, const L
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
     GepObjNodeMap[std::make_pair(base, ls)] = nodeNum;
-	GepObjPN *node = new GepObjPN(obj, nodeNum, ls);
+	GepObjPN *node = new GepObjPN(obj, gepEdge, nodeNum, ls);
     memToFieldsMap[base].set(nodeNum);
     return addObjNode(obj->getRefVal(), node, nodeNum);
 }
