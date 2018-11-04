@@ -377,7 +377,6 @@ public:
 class GepObjPN: public ObjPN {
 private:
     LocationSet ls;
-    const Type* gepObjType;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -397,8 +396,8 @@ public:
     //@}
 
     /// Constructor
-    GepObjPN(const MemObj* mem, const Type* type, NodeID i, const LocationSet& l) :
-        ObjPN(mem->getRefVal(), i, mem, GepObjNode), ls(l), gepObjType(type) {
+    GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l) :
+        ObjPN(mem->getRefVal(), i, mem, GepObjNode), ls(l) {
     }
 
     /// offset of the mem object
@@ -412,10 +411,6 @@ public:
             return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
         return "offset_" + llvm::itostr(ls.getOffset());
     }
-    /// Return type of this gep object
-	inline const Type* getType() const {
-		return gepObjType;
-	}
 };
 
 /*
