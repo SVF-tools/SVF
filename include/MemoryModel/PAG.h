@@ -403,9 +403,9 @@ public:
     /// Get a field PAG Value node according to base value and offset
     NodeID getGepValNode(const llvm::Value* val, const LocationSet& ls, const llvm::Type *baseType, u32_t fieldidx);
     /// Get a field PAG Object node according to base mem obj and offset
-    NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
+    NodeID getGepObjNode(const MemObj* obj, const NormalGepPE* gepEdge, const LocationSet& ls);
     /// Get a field obj PAG node according to a mem obj and a given offset
-    NodeID getGepObjNode(NodeID id, const LocationSet& ls) ;
+    NodeID getGepObjNode(NodeID id, const NormalGepPE* gepEdge) ;
     /// Get a field-insensitive obj PAG node according to a mem obj
     //@{
     inline NodeID getFIObjNode(const MemObj* obj) const {
@@ -532,7 +532,7 @@ public:
     /// Add a temp field value node, this method can only invoked by getGepValNode
     NodeID addGepValNode(const llvm::Value* val, const LocationSet& ls, NodeID i, const llvm::Type *type, u32_t fieldidx);
     /// Add a field obj node, this method can only invoked by getGepObjNode
-    NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i);
+    NodeID addGepObjNode(const MemObj* obj, const NormalGepPE* gepEdge, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
     NodeID addFIObjNode(const MemObj* obj);
     //@}

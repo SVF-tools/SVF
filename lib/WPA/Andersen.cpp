@@ -281,7 +281,7 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             else if (const NormalGepCGEdge* normalGepEdge = dyn_cast<NormalGepCGEdge>(edge)) {
                 if (!matchType(edge->getSrcID(), ptd, normalGepEdge))
                     continue;
-                NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
+                NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge);
                 tmpDstPts.set(fieldSrcPtdNode);
                 addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
                 // Any points-to passed to an FIObj also pass to its first field
