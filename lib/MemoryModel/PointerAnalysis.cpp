@@ -443,7 +443,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename) {
         size_t offset;
         ss >> id >> base >> offset;
 
-        NodeID n = pag->getGepObjNode(pag->getObject(base), LocationSet(offset));
+        NodeID n = pag->getGepObjNode(pag->getObject(base), NULL, LocationSet(offset));
         assert(id == n && "Error adding GepObjNode into PAG!");
 
         getline(F, line);

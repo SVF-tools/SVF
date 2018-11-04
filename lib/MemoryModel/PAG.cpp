@@ -273,12 +273,12 @@ NodeID PAG::addGepValNode(const llvm::Value* gepVal, const LocationSet& ls, Node
 /*!
  * Given an object node, find its field object node
  */
-NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls) {
+NodeID PAG::getGepObjNode(NodeID id, const NormalGepPE* gepEdge) {
     PAGNode* node = pag->getPAGNode(id);
     if (GepObjPN* gepNode = dyn_cast<GepObjPN>(node))
-        return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
+        return getGepObjNode(gepNode->getMemObj(), gepEdge, gepNode->getLocationSet() + gepEdge->getLocationSet());
     else if (FIObjPN* baseNode = dyn_cast<FIObjPN>(node))
-        return getGepObjNode(baseNode->getMemObj(), ls);
+        return getGepObjNode(baseNode->getMemObj(), gepEdge, gepEdge->getLocationSet());
     else {
         assert(false && "new gep obj node kind?");
         return id;
@@ -291,7 +291,7 @@ NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls) {
  * offset = offset % obj->getMaxFieldOffsetLimit() to create limited number of mem objects
  * maximum number of field object creation is obj->getMaxFieldOffsetLimit()
  */
-NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls) {
+NodeID PAG::getGepObjNode(const MemObj* obj, const NormalGepPE* gepEdge, const LocationSet& ls) {
     NodeID base = getObjectNode(obj);
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
@@ -301,29 +301,25 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls) {
     LocationSet newLS = SymbolTableInfo::Symbolnfo()->getModulusOffset(obj->getTypeInfo(),ls);
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
-    if (iter == GepObjNodeMap.end()) {
-        NodeID gepNode= addGepObjNode(obj,newLS,nodeNum);
-        return gepNode;
-    } else
-        return iter->second;
+	if (iter == GepObjNodeMap.end())
+		return addGepObjNode(obj, gepEdge, newLS);
+	else
+		return iter->second;
 
 }
 
 /*!
  * Add a field obj node, this method can only invoked by getGepObjNode
  */
-NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls, NodeID i) {
+NodeID PAG::addGepObjNode(const MemObj* obj, const NormalGepPE* gepEdge, const LocationSet& ls) {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = getObjectNode(obj);
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
-    GepObjNodeMap[std::make_pair(base, ls)] = i;
-    const Type* gepObjType = NULL;
-	if (obj->getRefVal())
-		gepObjType = symInfo->getSubType(obj->getRefVal()->getType(), ls.getOffset());
-	GepObjPN *node = new GepObjPN(obj, gepObjType, i, ls);
-    memToFieldsMap[base].set(i);
-    return addObjNode(obj->getRefVal(), node, i);
+    GepObjNodeMap[std::make_pair(base, ls)] = nodeNum;
+	GepObjPN *node = new GepObjPN(obj, nodeNum, ls);
+    memToFieldsMap[base].set(nodeNum);
+    return addObjNode(obj->getRefVal(), node, nodeNum);
 }
 
 /*!

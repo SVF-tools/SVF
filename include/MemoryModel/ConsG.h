@@ -130,7 +130,7 @@ public:
     /// Add Copy edge
     bool addCopyCGEdge(NodeID src, NodeID dst);
     /// Add Gep edge
-    bool addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    bool addNormalGepCGEdge(NodeID src, NodeID dst, const NormalGepPE* gepPE);
     bool addVariantGepCGEdge(NodeID src, NodeID dst);
     /// Add Load edge
     bool addLoadCGEdge(NodeID src, NodeID dst);
@@ -255,8 +255,8 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
-        NodeID gep =  pag->getGepObjNode(id,ls);
+    inline NodeID getGepObjNode(NodeID id, const NormalGepCGEdge* gepEdge) {
+        NodeID gep =  pag->getGepObjNode(id,gepEdge->getGepPE());
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
             addConstraintNode(new ConstraintNode(gep),gep);

@@ -387,7 +387,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge) {
                 tmpDstPts.set(getFIObjNode(ptd));
             }
             else if (const NormalGepPE* normalGep = dyn_cast<NormalGepPE>(edge->getPAGEdge())) {
-                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
+                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep);
                 tmpDstPts.set(fieldSrcPtdNode);
             }
             else
