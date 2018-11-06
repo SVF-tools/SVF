@@ -184,7 +184,7 @@ namespace llvm {
 
         /// Return name of the graph
         static std::string getGraphName(OfflineConsG *graph) {
-            return "ConstraintG";
+            return "Offline Constraint Graph";
         }
 
         /// Return label of a VFG node with two display mode
