@@ -45,9 +45,8 @@ public:
 
 
     /// We start the pass here
-    virtual bool runOnModule(Module& module) {
-        return runOnModule(module);
-    }
+
+    virtual bool runOnModule(Module& module);
     /// We start the pass here
     virtual bool runOnModule(SVFModule module);
     /// Compute MHP
