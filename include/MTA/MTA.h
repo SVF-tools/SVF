@@ -48,9 +48,7 @@ public:
 
 
     /// We start the pass here
-    virtual bool runOnModule(llvm::Module& module) {
-        return runOnModule(module);
-    }
+    virtual bool runOnModule(llvm::Module& module);
     /// We start the pass here
     virtual bool runOnModule(SVFModule module);
     /// Compute MHP
