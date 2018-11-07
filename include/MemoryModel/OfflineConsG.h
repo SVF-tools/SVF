@@ -50,7 +50,7 @@ protected:
 
 public:
     OfflineConsG(PAG *p) : ConstraintGraph(p),
-                           nodeToRefMap({}), norToRepMap({}) {
+                           nodeToRefMap({}), norToRepMap({}), oscc(NULL) {
         buildOfflineCG();
     }
 
