@@ -32,9 +32,10 @@ protected:
     PathEdgeSet PathEdgeList;     //used to restore all PathEdges (result)
     PathEdgeSet SummaryEdgeList;  //used to restore all SummaryEdges
     ICFGNodeSet ICFGDstNodeSet;
+    ICFGNodeSet SummaryICFGDstNodeSet;
     ICFGNodeToDataFactsMap ICFGNodeToFacts;
-    //ICFGNodeToDataFactsMap UniniVarSolution; // uninitialized variable solution
-    Facts facts;    // Datafacts for a given ICFGNode
+    ICFGNodeToDataFactsMap SummaryICFGNodeToFacts;
+    Facts facts, facts2;    // Datafacts for a given ICFGNode
     ICFGNode* mainEntryNode;
 
 public:
@@ -60,8 +61,12 @@ public:
     //add new PathEdge components into PathEdgeList and WorkList
     void propagate(PathNode* srcPN, ICFGNode* succ, Datafact d);
 
+    bool isNotInSummaryEdgeList(ICFGNode* n1, Datafact d1, ICFGNode* n2, Datafact d2);
+
     //get all ICFGNode in all EndPathNode of PathEdgeList
     ICFGNodeSet& getDstICFGNodeSet();
+
+    ICFGNodeSet& getSummaryDstICFGNodeSet();
 
     //transfer function of given ICFGNode
     Datafact transferFun(PathNode* pathNode);
@@ -76,6 +81,8 @@ public:
     inline PointsTo& getPts(NodeID id) {
         return pta->getPts(id);
     }
+
+    ICFGNode* getRetNode(ICFGNode* call);
 
     // in order to denote : <node, d> , d here is datafact before the execution of node
     class PathNode{
