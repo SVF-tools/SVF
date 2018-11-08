@@ -78,9 +78,9 @@ void ICFG::addICFGInterEdges(CallSite cs, const Function* callee){
 	addCallEdge(CallBlockNode, calleeEntryNode, getCallSiteID(cs, callee));
 
 	if (!isExtCall(callee)) {
-		RetBlockNode* RetBlockNode = getRetICFGNode(cs);
+		RetBlockNode* retBlockNode = getRetICFGNode(cs);
 		FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
-		addRetEdge(calleeExitNode, RetBlockNode, getCallSiteID(cs, callee));
+		addRetEdge(calleeExitNode, retBlockNode, getCallSiteID(cs, callee));
 	}
 }
 
@@ -105,15 +105,18 @@ IntraBlockNode* ICFG::getIntraBlockICFGNode(const Instruction* inst) {
  */
 InterBlockNode* ICFG::getInterBlockICFGNode(const Instruction* inst){
 	CallSite cs = getLLVMCallSite(inst);
+	CallBlockNode* callICFGNode = getCallICFGNode(cs);
+	RetBlockNode* retICFGNode = getRetICFGNode(cs);
 	if (const Function* callee = getCallee(inst)) {
 		addICFGInterEdges(cs, callee);                       //creating edges
 		InstVec nextInsts;
 		getNextInsts(inst,nextInsts);
 	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
-			addIntraEdge(getRetICFGNode(cs), getBlockICFGNode(*nit));
+			addIntraEdge(retICFGNode, getBlockICFGNode(*nit));
 	    }
+		addIntraEdge(callICFGNode, retICFGNode);
 	}
-	return getCallICFGNode(cs);
+	return callICFGNode;
 }
 
 /*!
@@ -151,8 +154,10 @@ void ICFG::processFunBody(WorkList& worklist){
 			for (InstVec::const_iterator nit = nextInsts.begin(), enit =
 					nextInsts.end(); nit != enit; ++nit) {
 				const Instruction* succ = *nit;
-				ICFGNode* dstNode = getBlockICFGNode(succ);
-				addIntraEdge(srcNode, dstNode);
+				if(isNonInstricCallSite(inst) == false){
+					ICFGNode* dstNode = getBlockICFGNode(succ);
+					addIntraEdge(srcNode, dstNode);
+				}
 				worklist.push(succ);
 			}
 		}
