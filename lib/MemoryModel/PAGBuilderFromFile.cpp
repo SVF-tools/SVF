@@ -34,6 +34,7 @@
 
 using namespace std;
 using namespace SVFUtil;
+static u32_t gepNodeNumIndex = 100000;
 
 /*
  * You can build a PAG from a file written by yourself
@@ -43,13 +44,16 @@ using namespace SVFUtil;
  * Edge:  nodeID edgetype NodeID Offset
  *
  * like:
- * 1 o
- * 2 v
- * 3 v
- * 4 v
- * 1 addr 2 0
- * 1 addr 3 0
- * 3 gep 4 4
+5 o
+6 v
+7 v
+8 v
+9 v
+5 addr 6 0
+6 gep 7 4
+7 copy 8 0
+6 store 8 0
+8 load 9 0
  */
 PAG* PAGBuilderFromFile::build() {
 
@@ -117,7 +121,7 @@ PAG* PAGBuilderFromFile::build() {
 		outs() << "Unable to open file\n";
 
 	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
-	u32_t lower_bound = 1000;
+	u32_t lower_bound = gepNodeNumIndex;
 	for(u32_t i = 0; i < lower_bound; i++)
 		pag->incNodeNum();
 
