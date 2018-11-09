@@ -41,16 +41,16 @@
 class OfflineConsG: public ConstraintGraph{
 public:
     typedef SCCDetection<OfflineConsG*> OSCC;
-
+    typedef std::set<LoadCGEdge*> LoadEdges;
+    typedef std::set<StoreCGEdge*> StoreEdges;
 protected:
     NodeSet refNodes;
     NodeToRepMap nodeToRefMap;  // a --> *a
     NodeToRepMap norToRepMap;   // for each *a construct a --> rep, i.e., mapping a node of to a rep node for online constraint solving
-    OSCC* oscc;
 
 public:
     OfflineConsG(PAG *p) : ConstraintGraph(p),
-                           nodeToRefMap({}), norToRepMap({}), oscc(NULL) {
+                           nodeToRefMap({}), norToRepMap({}) {
         buildOfflineCG();
     }
 
@@ -82,9 +82,8 @@ public:
 
     // Constraint solver of offline constraint graph
     //{@
-    void solveOCG();
-    void offlineSCCDetect();
-    void buildOfflineMap();
+    void solveOCG(OSCC* oscc);
+    void buildOfflineMap(OSCC* oscc);
     //@}
 
     // Dump graph into dot file
@@ -105,7 +104,7 @@ protected:
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;
     };
-    NodeID solveRep(NodeID rep);
+    NodeID solveRep(OSCC* oscc, NodeID rep);
 
     void buildOfflineCG();
     bool addRefLoadEdge(NodeID src, NodeID dst);
