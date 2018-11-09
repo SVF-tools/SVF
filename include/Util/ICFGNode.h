@@ -109,11 +109,11 @@ public:
         return vnodes;
     }
 
-    inline iterator vNodeBegin() {
+    inline const_iterator vNodeBegin() const {
         return vnodes.begin();
     }
 
-    inline iterator vNodeEnd() {
+    inline const_iterator vNodeEnd() const {
         return vnodes.end();
     }
 
