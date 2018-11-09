@@ -75,7 +75,7 @@ void PCG::initFromThreadAPI(SVFModule module) {
                 /// TODO: handle indirect call here for the fork Fun
                 else {
                     wrnMsg("pthread create");
-                    inst->dump();
+                    outs() << *inst << "\n";
                     wrnMsg("invoke spawnee indirectly");
                 }
             }

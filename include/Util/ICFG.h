@@ -230,6 +230,7 @@ protected:
 			return getIntraBlockICFGNode(inst);
 	}
 
+public:
     /// Add a function entry node
 public:	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);

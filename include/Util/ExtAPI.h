@@ -157,7 +157,7 @@ public:
         case EFT_A11R_NEW:
             return 11;
         default:
-            assert(!"Not an alloc call via argument.");
+            assert(false && "Not an alloc call via argument.");
             return -1;
         }
     }
