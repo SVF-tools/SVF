@@ -528,17 +528,13 @@ protected:
  */
 class AndersenHCD : public Andersen{
 
-public:
-//    typedef SCCDetection<OfflineConsG*> OSCC;
-
 private:
     static AndersenHCD* hcdAndersen;
     OfflineConsG* oCG;
-//    OSCC* oscc;
 
 public:
     AndersenHCD(PTATY type = AndersenHCD_WPA) :
-            Andersen(type), oCG(NULL) {
+            Andersen(type), oCG(NULL){
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
