@@ -114,21 +114,41 @@ bool OfflineConsG::createRefNode(NodeID nodeId) {
 /*!
  * Offline constraint solver, building a offline constraint graph, and detecting its SCC cycles.
  */
-void OfflineConsG::solveOCG(OSCC* oscc) {
+// TODO
+//void OfflineConsG::solveOCG(OSCC* oscc) {
+//    // Implement SCC detection in offline constraint graph
+//    oscc->find();
+//    // Build offline nodeToRepMap
+//    buildOfflineMap(oscc);
+//}
+void OfflineConsG::solveOCG() {
+    if (!oscc)
+        oscc = new OSCC(this);
     // Implement SCC detection in offline constraint graph
     oscc->find();
     // Build offline nodeToRepMap
-    buildOfflineMap(oscc);
+    buildOfflineMap();
 }
+
 
 /*!
  * Build offline node to rep map, which only collect nodes having a ref node
  */
-void OfflineConsG::buildOfflineMap(OSCC* oscc) {
+// TODO
+//void OfflineConsG::buildOfflineMap(OSCC* oscc) {
+//    for (NodeToRepMap::const_iterator it = nodeToRefMap.begin(); it != nodeToRefMap.end(); ++it) {
+//        NodeID node = it->first;
+//        NodeID ref = getRef(node);
+//        NodeID rep = solveRep(oscc, oscc->repNode(ref));
+//        if (!isaRef(rep) && !isaRef(node))
+//            setNorRep(node, rep);
+//    }
+//}
+void OfflineConsG::buildOfflineMap() {
     for (NodeToRepMap::const_iterator it = nodeToRefMap.begin(); it != nodeToRefMap.end(); ++it) {
         NodeID node = it->first;
         NodeID ref = getRef(node);
-        NodeID rep = solveRep(oscc,oscc->repNode(ref));
+        NodeID rep = solveRep(oscc->repNode(ref));
         if (!isaRef(rep) && !isaRef(node))
             setNorRep(node, rep);
     }
@@ -138,7 +158,20 @@ void OfflineConsG::buildOfflineMap(OSCC* oscc) {
  * The rep nodes of offline constraint graph are possible to be 'ref' nodes.
  * These nodes should be replaced by one of its sub nodes which is not a ref node.
  */
-NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep) {
+// TODO
+//NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep) {
+//    if (isaRef(rep)) {
+//        NodeBS subNodes = oscc->subNodes(rep);
+//        for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt) {
+//            if (isaRef(*subIt)) {
+//                rep = *subIt;
+//                break;
+//            }
+//        }
+//    }
+//    return rep;
+//}
+NodeID OfflineConsG::solveRep(NodeID rep) {
     if (isaRef(rep)) {
         NodeBS subNodes = oscc->subNodes(rep);
         for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt) {
