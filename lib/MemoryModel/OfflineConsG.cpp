@@ -40,39 +40,39 @@ static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
  */
 void OfflineConsG::buildOfflineCG() {
     // Add a copy edge between the ref node of src node and dst node
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
-            LoadCGEdgeSet.end(); it != eit; ++it) {
-        LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
-        NodeID src = load->getSrcID();
-        NodeID dst = load->getDstID();
-        addRefLoadEdge(src, dst);
-    }
-    // Add a copy edge between src node and the ref node of dst node
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
-            StoreCGEdgeSet.end(); it != eit; ++it) {
-        StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
-        NodeID src = store->getSrcID();
-        NodeID dst = store->getDstID();
-        addRefStoreEdge(src, dst);
-    }
-
-    // Dump offline graph with all edges
+//    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
+//            LoadCGEdgeSet.end(); it != eit; ++it) {
+//        LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
+//        NodeID src = load->getSrcID();
+//        NodeID dst = load->getDstID();
+//        addRefLoadEdge(src, dst);
+//    }
+//    // Add a copy edge between src node and the ref node of dst node
+//    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
+//            StoreCGEdgeSet.end(); it != eit; ++it) {
+//        StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
+//        NodeID src = store->getSrcID();
+//        NodeID dst = store->getDstID();
+//        addRefStoreEdge(src, dst);
+//    }
+//
+//    // Dump offline graph with all edges
     dump("oCG_initial");
-
-    // Remove load and store edges in offline constraint graph
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
-            LoadCGEdgeSet.end(); it != eit; ++it) {
-        LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
-        removeLoadEdge(load);
-    }
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
-            StoreCGEdgeSet.end(); it != eit; ++it) {
-        StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
-        removeStoreEdge(store);
-    }
-
-    // Dump offline graph with removed load and store edges
-    dump("oCG_final");
+//
+//    // Remove load and store edges in offline constraint graph
+//    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
+//            LoadCGEdgeSet.end(); it != eit; ++it) {
+//        LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
+//        removeLoadEdge(load);
+//    }
+//    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
+//            StoreCGEdgeSet.end(); it != eit; ++it) {
+//        StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
+//        removeStoreEdge(store);
+//    }
+//
+//    // Dump offline graph with removed load and store edges
+//    dump("oCG_final");
 }
 
 /*!
