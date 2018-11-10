@@ -521,4 +521,56 @@ protected:
     NodeStack& SCCDetect(NodeSet& lcdCandidates);
 };
 
+
+
+/*!
+ * Hybrid Cycle Detection Based Andersen Analysis
+ */
+class AndersenHCD : public Andersen{
+
+private:
+    static AndersenHCD* hcdAndersen;
+    OfflineConsG* oCG;
+
+public:
+    AndersenHCD(PTATY type = AndersenHCD_WPA) :
+            Andersen(type), oCG(NULL){
+    }
+
+    /// Create an singleton instance directly instead of invoking llvm pass manager
+    static AndersenHCD *createAndersenHCD(SVFModule svfModule) {
+        if (hcdAndersen == nullptr) {
+            hcdAndersen = new AndersenHCD();
+            hcdAndersen->analyze(svfModule);
+            return hcdAndersen;
+        }
+        return hcdAndersen;
+    }
+
+    static void releaseAndersenHCD() {
+        if (hcdAndersen)
+            delete hcdAndersen;
+        hcdAndersen = nullptr;
+    }
+
+protected:
+    void initialize(SVFModule svfModule);
+
+    /*!
+     * Get offline rep node from offline constraint graph
+     */ //@{
+    inline bool hasOfflineRep(NodeID nodeId) const {
+        return oCG->hasOCGRep(nodeId);
+    }
+    inline NodeID getOfflineRep(NodeID nodeId) {
+        return oCG->getOCGRep(nodeId);
+    }
+    //@}
+
+    void solveWorklist();
+    void mergeOfflineSCC(NodeID nodeId);
+    void mergeNodeAndPts(NodeID node, NodeID tgt);
+
+};
+
 #endif /* ANDERSENPASS_H_ */
