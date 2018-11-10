@@ -51,7 +51,8 @@ void AndersenHCD::initialize(SVFModule svfModule) {
 
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);
-    oCG->solveOCG();
+    OfflineConsG::OSCC* oscc = new OfflineConsG::OSCC(oCG);
+    oCG->solveOCG(oscc);
 
     // Create statistic class
     stat = new AndersenStat(this);

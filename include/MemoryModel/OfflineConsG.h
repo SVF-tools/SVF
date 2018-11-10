@@ -82,7 +82,7 @@ public:
 
     // Constraint solver of offline constraint graph
     //{@
-    void solveOCG();
+    void solveOCG(OSCC* oscc);
     void buildOfflineMap(OSCC* oscc);
     //@}
 
