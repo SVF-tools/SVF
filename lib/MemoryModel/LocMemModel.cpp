@@ -131,15 +131,15 @@ void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
-    /// Array itself only has one field which is the inner most element
-    stinfo->getFieldOffsetVec().push_back(0);
-
     /// If this is an array type, calculate the outmost array
     /// information and append them to the inner elements' type
     /// information later.
     u64_t out_num = ty->getNumElements();
     const llvm::Type* elemTy = ty->getElementType();
     u32_t out_stride = getTypeSizeInBytes(elemTy);
+
+    /// Array itself only has one field which is the inner most element
+    stinfo->addOffsetWithType(0, elemTy);
 
     while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy)) {
         out_num *= aty->getNumElements();
@@ -185,7 +185,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
         //The offset is where this element will be placed in the exp. struct.
         /// FIXME: As the layout size is uint_64, here we assume
         /// offset with uint_32 (Size_t) is large enough and will not cause overflow
-        stinfo->getFieldOffsetVec().push_back(static_cast<u32_t>(eOffsetInBytes));
+        stinfo->addOffsetWithType(static_cast<u32_t>(eOffsetInBytes), et);
 
         StInfo* fieldStinfo = getStructInfo(et);
         u32_t nfE = fieldStinfo->getFlattenFieldInfoVec().size();

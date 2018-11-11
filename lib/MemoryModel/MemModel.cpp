@@ -96,12 +96,12 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty) {
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
-    /// Array itself only has one field which is the inner most element
-    stinfo->getFieldOffsetVec().push_back(0);
-
     llvm::Type* elemTy = ty->getElementType();
     while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy))
         elemTy = aty->getElementType();
+
+    /// Array itself only has one field which is the inner most element
+    stinfo->addOffsetWithType(0, elemTy);
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
@@ -133,10 +133,10 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty) {
 
     for (StructType::element_iterator it = sty->element_begin(), ie =
                 sty->element_end(); it != ie; ++it) {
-        //The offset is where this element will be placed in the exp. struct.
-        stinfo->getFieldOffsetVec().push_back(nf);
-
         const Type *et = *it;
+        //The offset is where this element will be placed in the exp. struct.
+        stinfo->addOffsetWithType(nf, et);
+
         if (isa<StructType>(et) || isa<ArrayType>(et)) {
             StInfo * subStinfo = getStructInfo(et);
             u32_t nfE = subStinfo->getFlattenFieldInfoVec().size();
@@ -175,7 +175,7 @@ void SymbolTableInfo::collectSimpleTypeInfo(const llvm::Type* ty)
     typeToFieldInfo[ty] = stinfo;
 
     /// Only one field
-    stinfo->getFieldOffsetVec().push_back(0);
+    stinfo->addOffsetWithType(0,ty);
 
     FieldInfo::ElemNumStridePairVec pair;
     pair.push_back(std::make_pair(1,0));

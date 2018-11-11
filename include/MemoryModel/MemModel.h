@@ -62,6 +62,8 @@ class StInfo {
 private:
     /// Offsets of all fields of a struct
     std::vector<u32_t> foffset;
+    /// Types of all fields of a struct
+    std::map<u32_t, const llvm::Type*> offset2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FieldInfo> finfo;
 public:
@@ -73,8 +75,17 @@ public:
     ~StInfo() {
     }
 
+    /// Add offset with its corresponding type
+	void addOffsetWithType(u32_t off, const llvm::Type* type) {
+		foffset.push_back(off);
+		offset2TypeMap[off] = type;
+	}
+
     /// Get method for fields of a struct
     //{@
+	const llvm::Type* getFieldType(u32_t offset) {
+		return offset2TypeMap[offset];
+	}
     std::vector<u32_t>& getFieldOffsetVec() {
         return foffset;
     }
@@ -671,11 +682,9 @@ public:
     const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const llvm::Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
-    const inline llvm::Type* getSubType(const llvm::Type* baseType, u32_t fieldIndex){
-        const std::vector<FieldInfo> &fieldinfo = getFlattenFieldInfoVec(baseType);
-        const llvm::Type *subtype = fieldinfo[fieldIndex].getFlattenElemTy();
-        return subtype;
-    }
+	const inline llvm::Type* getOrigSubType(const llvm::Type* baseType, u32_t offset) {
+		return getStructInfoIter(baseType)->second->getFieldType(offset);
+	}
     //@}
 
     /// Compute gep offset
