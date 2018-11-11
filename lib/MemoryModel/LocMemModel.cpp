@@ -98,13 +98,13 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
             if (const PointerType* pty = dyn_cast<PointerType>(*gi)) {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
-                ls.offset += idx * sz;
+                ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Calculate the size of the array element
             else if(const ArrayType* at = dyn_cast<ArrayType>(*gi)) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
-                ls.offset += idx * sz;
+                ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Handling struct here
             else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
@@ -115,7 +115,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                     assert(0);
                 }
                 //add the translated offset
-                ls.offset += so[idx];
+                ls.setByteOffset(ls.getByteOffset() + so[idx]);
             }
             else
                 assert(false && "what other types?");
@@ -128,6 +128,7 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
  * Collect array information
  */
 void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
+	/*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
@@ -161,6 +162,7 @@ void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
         FieldInfo field(off, fieldTy, pair);
         stinfo->getFlattenFieldInfoVec().push_back(field);
     }
+    */
 }
 
 
@@ -168,6 +170,7 @@ void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
  * Recursively collect the memory layout information for a struct type
  */
 void LocSymTableInfo::collectStructInfo(const StructType *ty) {
+	/*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
@@ -207,6 +210,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
         maxStruct = ty;
         maxStSize = stTySL->getSizeInBytes();
     }
+    */
 }
 
 
@@ -289,7 +293,7 @@ LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const Locatio
  */
 void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize) {
 
-    u32_t lastOff = stinfo->getFlattenFieldInfoVec().back().getFlattenOffset();
+    u32_t lastOff = stinfo->getFlattenFieldInfoVec().back().getFlattenByteOffset();
     u32_t strideSize = 0;
     FieldInfo::ElemNumStridePairVec::const_iterator pit = stinfo->getFlattenFieldInfoVec().back().elemStridePairBegin();
     FieldInfo::ElemNumStridePairVec::const_iterator epit = stinfo->getFlattenFieldInfoVec().back().elemStridePairEnd();
