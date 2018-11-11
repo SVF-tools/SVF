@@ -53,19 +53,87 @@ enum SYMTYPE {
     VarargSym
 };
 
-
 /*!
  * Struct information
  */
 class StInfo {
 
+	/*!
+	 * Byte precision modeling for a nested type
+	 */
+	class ByteSizeTypeInfo {
+
+	private:
+	    /// Offsets of all fields of a struct
+	    std::vector<u32_t> foffset;
+	    /// Types of all fields of a struct
+	    std::map<u32_t, const llvm::Type*> offset2TypeMap;
+	    /// All field infos after flattening a struct
+	    std::vector<FieldInfo> finfo;
+	public:
+	    /// Constructor
+	    ByteSizeTypeInfo() {}
+	    /// Destructor
+	    ~ByteSizeTypeInfo() {}
+
+	    /// Add offset with its corresponding type
+		inline void addOffsetWithType(u32_t off, const llvm::Type* type) {
+			foffset.push_back(off);
+			offset2TypeMap[off] = type;
+		}
+
+	    /// Get method for fields of a struct
+	    //{@
+		inline const llvm::Type* getFieldType(u32_t offset) {
+			return offset2TypeMap[offset];
+		}
+		inline std::vector<u32_t>& getFieldOffsetVec() {
+	        return foffset;
+	    }
+		inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
+	        return finfo;
+	    }
+	    //@}
+	};
+
+	/*!
+	 * Field Index-based modeling for a nested type
+	 */
+	class FieldIdxTypeInfo {
+	private:
+	    /// Offsets of all fields of a struct
+	    std::vector<u32_t> fldIdxVec;
+	    /// Types of all fields of a struct
+	    std::map<u32_t, const llvm::Type*> fldIdx2TypeMap;
+	    /// All field infos after flattening a struct
+	    std::vector<FieldInfo> finfo;
+
+	public:
+	    /// Add offset with its corresponding type
+	    inline void addFldIdxWithType(u32_t fldIdx, const llvm::Type* type) {
+			fldIdxVec.push_back(fldIdx);
+			fldIdx2TypeMap[fldIdx] = type;
+		}
+
+	    /// Get method for fields of a struct
+	    //{@
+		inline const llvm::Type* getFieldType(u32_t fldIdx) {
+			return fldIdx2TypeMap[fldIdx];
+		}
+		inline std::vector<u32_t>& getFieldIdxVec() {
+	        return fldIdxVec;
+	    }
+		inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
+	        return finfo;
+	    }
+	    //@}
+	};
+
+
 private:
-    /// Offsets of all fields of a struct
-    std::vector<u32_t> foffset;
-    /// Types of all fields of a struct
-    std::map<u32_t, const llvm::Type*> offset2TypeMap;
-    /// All field infos after flattening a struct
-    std::vector<FieldInfo> finfo;
+	ByteSizeTypeInfo bTy;
+	FieldIdxTypeInfo fTy;
+
 public:
     /// Constructor
     StInfo() {
@@ -75,22 +143,34 @@ public:
     ~StInfo() {
     }
 
+    /// Add field index with its corresponding type
+	inline void addFldIdxWithType(u32_t fldIdx, const llvm::Type* type) {
+		fTy.addFldIdxWithType(fldIdx,type);
+	}
     /// Add offset with its corresponding type
-	void addOffsetWithType(u32_t off, const llvm::Type* type) {
-		foffset.push_back(off);
-		offset2TypeMap[off] = type;
+	inline void addOffsetWithType(u32_t offset, const llvm::Type* type) {
+		bTy.addOffsetWithType(offset,type);
 	}
 
     /// Get method for fields of a struct
     //{@
-	const llvm::Type* getFieldType(u32_t offset) {
-		return offset2TypeMap[offset];
+	inline const llvm::Type* getFieldTypeWithFldIdx(u32_t field_idx) {
+		return fTy.getFieldType(field_idx);
 	}
-    std::vector<u32_t>& getFieldOffsetVec() {
-        return foffset;
+	inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset) {
+		return bTy.getFieldType(offset);
+	}
+	inline std::vector<u32_t>& getFieldIdxVec() {
+        return fTy.getFieldIdxVec();
     }
-    std::vector<FieldInfo>& getFlattenFieldInfoVec() {
-        return finfo;
+	inline std::vector<u32_t>& getFieldOffsetVec() {
+        return bTy.getFieldOffsetVec();
+    }
+	inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
+        return fTy.getFlattenFieldInfoVec();
+    }
+	inline std::vector<FieldInfo>& getFlattenFieldInfoVecWithByteOffset() {
+        return bTy.getFlattenFieldInfoVec();
     }
     //@}
 
@@ -677,13 +757,16 @@ public:
 
     ///Get a reference to the components of struct_info.
     const inline std::vector<u32_t>& getStructOffsetVec(const llvm::Type *T) {
-        return getStructInfoIter(T)->second->getFieldOffsetVec();
+        return getStructInfoIter(T)->second->getFieldIdxVec();
     }
     const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const llvm::Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
-	const inline llvm::Type* getOrigSubType(const llvm::Type* baseType, u32_t offset) {
-		return getStructInfoIter(baseType)->second->getFieldType(offset);
+	const inline llvm::Type* getOrigSubTypeWithFldInx(const llvm::Type* baseType, u32_t field_idx) {
+		return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
+	}
+	const inline llvm::Type* getOrigSubTypeWithByteOffset(const llvm::Type* baseType, u32_t byteOffset) {
+		return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
 	}
     //@}
 

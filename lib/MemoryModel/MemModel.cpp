@@ -101,6 +101,7 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty) {
         elemTy = aty->getElementType();
 
     /// Array itself only has one field which is the inner most element
+    stinfo->addFldIdxWithType(0, elemTy);
     stinfo->addOffsetWithType(0, elemTy);
 
     /// Array's flatten field infor is the same as its element's
@@ -127,15 +128,25 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty) {
     /// The struct info should not be processed before
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[sty] = stinfo;
+    const StructLayout *stTySL = getDataLayout(getModule().getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
 
-    // Number of fields have been placed in the expanded struct
+    // Number of fields after flattening the struct
     u32_t nf = 0;
-
+    // field of the current struct
+    u32_t field_idx = 0;
     for (StructType::element_iterator it = sty->element_begin(), ie =
-                sty->element_end(); it != ie; ++it) {
+                sty->element_end(); it != ie; ++it, ++field_idx) {
         const Type *et = *it;
         //The offset is where this element will be placed in the exp. struct.
-        stinfo->addOffsetWithType(nf, et);
+        stinfo->addFldIdxWithType(nf, et);
+
+        // This offset is computed after alignment with the current struct
+        u64_t eOffsetInBytes = stTySL->getElementOffset(field_idx);
+        //The offset is where this element will be placed in the exp. struct.
+        /// FIXME: As the layout size is uint_64, here we assume
+        /// offset with uint_32 (Size_t) is large enough and will not cause overflow
+        stinfo->addOffsetWithType(static_cast<u32_t>(eOffsetInBytes), et);
+
 
         if (isa<StructType>(et) || isa<ArrayType>(et)) {
             StInfo * subStinfo = getStructInfo(et);
