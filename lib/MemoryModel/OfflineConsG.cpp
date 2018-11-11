@@ -119,7 +119,6 @@ void OfflineConsG::solveOCG(OSCC* oscc) {
 	oscc->find();
 	// Build offline nodeToRepMap
 	buildOfflineMap(oscc);
-	delete oscc;
 }
 
 /*!

@@ -53,6 +53,7 @@ void AndersenHCD::initialize(SVFModule svfModule) {
     oCG = new OfflineConsG(pag);
     OfflineConsG::OSCC* oscc = new OfflineConsG::OSCC(oCG);
     oCG->solveOCG(oscc);
+	delete oscc;
 
     // Create statistic class
     stat = new AndersenStat(this);
