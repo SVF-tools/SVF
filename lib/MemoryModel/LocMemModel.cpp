@@ -96,13 +96,13 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
             if (const PointerType* pty = SVFUtil::dyn_cast<PointerType>(*gi)) {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
-                ls.offset += idx * sz;
+                ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Calculate the size of the array element
             else if(const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(*gi)) {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
-                ls.offset += idx * sz;
+                ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Handling struct here
             else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi)) {
@@ -113,7 +113,7 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
                     assert(0);
                 }
                 //add the translated offset
-                ls.offset += so[idx];
+                ls.setByteOffset(ls.getByteOffset() + so[idx]);
             }
             else
                 assert(false && "what other types?");
@@ -125,12 +125,10 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
 /*!
  * Collect array information
  */
-void LocSymTableInfo::collectArrayInfo(const ArrayType *ty) {
+void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
+	/*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
-
-    /// Array itself only has one field which is the inner most element
-    stinfo->getFieldOffsetVec().push_back(0);
 
     /// If this is an array type, calculate the outmost array
     /// information and append them to the inner elements' type
@@ -139,7 +137,10 @@ void LocSymTableInfo::collectArrayInfo(const ArrayType *ty) {
     const Type* elemTy = ty->getElementType();
     u32_t out_stride = getTypeSizeInBytes(elemTy);
 
-    while (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(elemTy)) {
+    /// Array itself only has one field which is the inner most element
+    stinfo->addOffsetWithType(0, elemTy);
+
+    while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy)) {
         out_num *= aty->getNumElements();
         elemTy = aty->getElementType();
         out_stride = getTypeSizeInBytes(elemTy);
@@ -159,6 +160,7 @@ void LocSymTableInfo::collectArrayInfo(const ArrayType *ty) {
         FieldInfo field(off, fieldTy, pair);
         stinfo->getFlattenFieldInfoVec().push_back(field);
     }
+    */
 }
 
 
@@ -166,6 +168,7 @@ void LocSymTableInfo::collectArrayInfo(const ArrayType *ty) {
  * Recursively collect the memory layout information for a struct type
  */
 void LocSymTableInfo::collectStructInfo(const StructType *ty) {
+	/*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
@@ -183,7 +186,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
         //The offset is where this element will be placed in the exp. struct.
         /// FIXME: As the layout size is uint_64, here we assume
         /// offset with uint_32 (Size_t) is large enough and will not cause overflow
-        stinfo->getFieldOffsetVec().push_back(static_cast<u32_t>(eOffsetInBytes));
+        stinfo->addOffsetWithType(static_cast<u32_t>(eOffsetInBytes), et);
 
         StInfo* fieldStinfo = getStructInfo(et);
         u32_t nfE = fieldStinfo->getFlattenFieldInfoVec().size();
@@ -205,6 +208,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
         maxStruct = ty;
         maxStSize = stTySL->getSizeInBytes();
     }
+    */
 }
 
 
@@ -287,7 +291,7 @@ LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const Locatio
  */
 void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize) {
 
-    u32_t lastOff = stinfo->getFlattenFieldInfoVec().back().getFlattenOffset();
+    u32_t lastOff = stinfo->getFlattenFieldInfoVec().back().getFlattenByteOffset();
     u32_t strideSize = 0;
     FieldInfo::ElemNumStridePairVec::const_iterator pit = stinfo->getFlattenFieldInfoVec().back().elemStridePairBegin();
     FieldInfo::ElemNumStridePairVec::const_iterator epit = stinfo->getFlattenFieldInfoVec().back().elemStridePairEnd();
