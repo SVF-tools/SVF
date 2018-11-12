@@ -57,11 +57,11 @@ public:
     }
 
     // Determine whether a node has a OCG rep node
-    inline const bool hasOCGRep(NodeID node) const {
+    inline bool hasOCGRep(NodeID node) const {
         return hasNorRep(node);
     }
     // Get a node's OCG rep node
-    inline const NodeID getOCGRep(NodeID node) const {
+    inline NodeID getOCGRep(NodeID node) const {
         return getNorRep(node);
     }
     // Get the OCG node to rep map (this map is const and should not be modified)
@@ -70,17 +70,17 @@ public:
     }
 
     // Determine whether a node is a ref node
-    inline const bool isaRef(NodeID node) const {
+    inline bool isaRef(NodeID node) const {
         NodeSet::const_iterator it = refNodes.find(node);
         return it != refNodes.end();
     };
     // Determine whether a node has ref nodes
-    inline const bool hasRef(NodeID node) const {
+    inline bool hasRef(NodeID node) const {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         return it != nodeToRefMap.end();
     };
     // Use a constraint node to track its corresponding ref node
-    inline const NodeID getRef(NodeID node) const {
+    inline NodeID getRef(NodeID node) const {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         assert(it != nodeToRefMap.end() && "No such ref node in ref to node map!");
         return it->second;
@@ -96,7 +96,7 @@ public:
     void dump(std::string name);
 
 protected:
-    inline bool const hasNorRep(NodeID nor) const {
+    inline bool hasNorRep(NodeID nor) const {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         return it != norToRepMap.end();
     };
@@ -105,7 +105,7 @@ protected:
         norToRepMap.insert(std::pair<NodeID, NodeID>(nor, rep));
     };
 
-    inline const NodeID getNorRep(NodeID nor) const {
+    inline NodeID getNorRep(NodeID nor) const {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;
