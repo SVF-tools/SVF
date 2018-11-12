@@ -217,7 +217,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
  * the field information of this ObjTypeInfo by considering memory layout
  */
 LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls) {
-    Type* ety = tyInfo->getLLVMType();
+    const Type* ety = tyInfo->getType();
 
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety)) {
         /// Find an appropriate field for this LocationSet
