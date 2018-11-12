@@ -39,10 +39,12 @@
  * 'Nor' means a constraint node of its corresponding ref node.
  */
 class OfflineConsG: public ConstraintGraph{
+
 public:
     typedef SCCDetection<OfflineConsG*> OSCC;
     typedef std::set<LoadCGEdge*> LoadEdges;
     typedef std::set<StoreCGEdge*> StoreEdges;
+
 protected:
     NodeSet refNodes;
     NodeToRepMap nodeToRefMap;  // a --> *a
@@ -55,26 +57,30 @@ public:
     }
 
     // Determine whether a node has a OCG rep node
-    inline const bool hasOCGRep(NodeID node) const {
+    inline bool hasOCGRep(NodeID node) const {
         return hasNorRep(node);
     }
     // Get a node's OCG rep node
-    inline NodeID getOCGRep(NodeID node) {
+    inline NodeID getOCGRep(NodeID node) const {
         return getNorRep(node);
+    }
+    // Get the OCG node to rep map (this map is const and should not be modified)
+    inline const NodeToRepMap& getOCGRepMap () const {
+        return norToRepMap;
     }
 
     // Determine whether a node is a ref node
-    inline const bool isaRef(NodeID node) const {
+    inline bool isaRef(NodeID node) const {
         NodeSet::const_iterator it = refNodes.find(node);
         return it != refNodes.end();
     };
     // Determine whether a node has ref nodes
-    inline const bool hasRef(NodeID node) const {
+    inline bool hasRef(NodeID node) const {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         return it != nodeToRefMap.end();
     };
     // Use a constraint node to track its corresponding ref node
-    inline NodeID getRef(NodeID node) {
+    inline NodeID getRef(NodeID node) const {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         assert(it != nodeToRefMap.end() && "No such ref node in ref to node map!");
         return it->second;
@@ -82,7 +88,7 @@ public:
 
     // Constraint solver of offline constraint graph
     //{@
-    void solveOCG(OSCC* oscc);
+    void solveOfflineSCC(OSCC* oscc);
     void buildOfflineMap(OSCC* oscc);
     //@}
 
@@ -99,7 +105,7 @@ protected:
         norToRepMap.insert(std::pair<NodeID, NodeID>(nor, rep));
     };
 
-    inline NodeID getNorRep(NodeID nor) {
+    inline NodeID getNorRep(NodeID nor) const {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;

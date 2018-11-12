@@ -51,8 +51,8 @@ void AndersenHCD::initialize(SVFModule svfModule) {
 
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);
-    OfflineConsG::OSCC* oscc = new OfflineConsG::OSCC(oCG);
-    oCG->solveOCG(oscc);
+    OSCC* oscc = new OSCC(oCG);
+    oCG->solveOfflineSCC(oscc);
 	delete oscc;
 
     // Create statistic class
@@ -100,9 +100,10 @@ void AndersenHCD::mergeOfflineSCC(NodeID nodeId) {
  * Merge node and its pts to the rep node
  */
 void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep) {
-    bool changed = unionPts(rep, node);
-    if (changed)
-        pushIntoWorklist(rep);
-//    if (consCG->getConstraintNode(node))
-    mergeNodeToRep(node, rep);
+    if (!isaMergedNode(node)) {
+        if (unionPts(rep, node))
+            pushIntoWorklist(rep);
+        mergeNodeToRep(node, rep);
+        setMergedNode(node);
+    }
 }

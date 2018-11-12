@@ -528,8 +528,12 @@ protected:
  */
 class AndersenHCD : public Andersen{
 
+public:
+    typedef SCCDetection<OfflineConsG*> OSCC;
+
 private:
     static AndersenHCD* hcdAndersen;
+    NodeSet mergedNodes;
     OfflineConsG* oCG;
 
 public:
@@ -556,15 +560,26 @@ public:
 protected:
     void initialize(SVFModule svfModule);
 
-    /*!
-     * Get offline rep node from offline constraint graph
-     */ //@{
+    // Get offline rep node from offline constraint graph
+    //@{
     inline bool hasOfflineRep(NodeID nodeId) const {
         return oCG->hasOCGRep(nodeId);
     }
     inline NodeID getOfflineRep(NodeID nodeId) {
         return oCG->getOCGRep(nodeId);
     }
+    //@}
+
+    // The set 'mergedNodes' is used to record the merged node, therefore avoiding re-merge nodes
+    //@{
+    inline bool isaMergedNode(NodeID node) const {
+        NodeSet::const_iterator it = mergedNodes.find(node);
+        return it != mergedNodes.end();
+    };
+    inline void setMergedNode(NodeID node) {
+        if (!isaMergedNode(node))
+            mergedNodes.insert(node);
+    };
     //@}
 
     void solveWorklist();
