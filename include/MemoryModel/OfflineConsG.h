@@ -39,10 +39,12 @@
  * 'Nor' means a constraint node of its corresponding ref node.
  */
 class OfflineConsG: public ConstraintGraph{
+
 public:
     typedef SCCDetection<OfflineConsG*> OSCC;
     typedef std::set<LoadCGEdge*> LoadEdges;
     typedef std::set<StoreCGEdge*> StoreEdges;
+
 protected:
     NodeSet refNodes;
     NodeToRepMap nodeToRefMap;  // a --> *a
@@ -59,8 +61,12 @@ public:
         return hasNorRep(node);
     }
     // Get a node's OCG rep node
-    inline NodeID getOCGRep(NodeID node) {
+    inline const NodeID getOCGRep(NodeID node) const {
         return getNorRep(node);
+    }
+    // Get the OCG node to rep map (this map is const and should not be modified)
+    inline const NodeToRepMap& getOCGRepMap () const {
+        return norToRepMap;
     }
 
     // Determine whether a node is a ref node
@@ -74,7 +80,7 @@ public:
         return it != nodeToRefMap.end();
     };
     // Use a constraint node to track its corresponding ref node
-    inline NodeID getRef(NodeID node) {
+    inline const NodeID getRef(NodeID node) const {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         assert(it != nodeToRefMap.end() && "No such ref node in ref to node map!");
         return it->second;
@@ -82,7 +88,7 @@ public:
 
     // Constraint solver of offline constraint graph
     //{@
-    void solveOCG(OSCC* oscc);
+    void solveOfflineSCC(OSCC* oscc);
     void buildOfflineMap(OSCC* oscc);
     //@}
 
@@ -90,7 +96,7 @@ public:
     void dump(std::string name);
 
 protected:
-    inline bool hasNorRep(NodeID nor) const {
+    inline bool const hasNorRep(NodeID nor) const {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         return it != norToRepMap.end();
     };
@@ -99,7 +105,7 @@ protected:
         norToRepMap.insert(std::pair<NodeID, NodeID>(nor, rep));
     };
 
-    inline NodeID getNorRep(NodeID nor) {
+    inline const NodeID getNorRep(NodeID nor) const {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;
