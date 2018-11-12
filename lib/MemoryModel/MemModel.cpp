@@ -96,24 +96,30 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty) {
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
-    /// Array itself only has one field which is the inner most element
-    stinfo->getFieldOffsetVec().push_back(0);
-
-    llvm::Type* elemTy = ty->getElementType();
-    while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy))
+    u64_t out_num = ty->getNumElements();
+    const llvm::Type* elemTy = ty->getElementType();
+    u32_t out_stride = getTypeSizeInBytes(elemTy);
+    while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy)) {
+        out_num *= aty->getNumElements();
         elemTy = aty->getElementType();
+        out_stride = getTypeSizeInBytes(elemTy);
+    }
+
+    /// Array itself only has one field which is the inner most element
+    stinfo->addFldWithType(0, 0, elemTy);
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = getStructInfo(elemTy);
     u32_t nfE = elemStInfo->getFlattenFieldInfoVec().size();
     for (u32_t j = 0; j < nfE; j++) {
-        u32_t off = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenOffset();
+		u32_t idx = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
+		u32_t off = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
         const Type* fieldTy = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
         FieldInfo::ElemNumStridePairVec pair = elemStInfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
         /// append the additional number
-        pair.push_back(std::make_pair(1, 0));
-        FieldInfo field(off, fieldTy, pair);
+        pair.push_back(std::make_pair(out_num, out_stride));
+        FieldInfo field(idx, off, fieldTy, pair);
         stinfo->getFlattenFieldInfoVec().push_back(field);
     }
 }
@@ -127,32 +133,40 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty) {
     /// The struct info should not be processed before
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[sty] = stinfo;
+    const StructLayout *stTySL = getDataLayout(getModule().getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
 
-    // Number of fields have been placed in the expanded struct
+    // Number of fields after flattening the struct
     u32_t nf = 0;
-
+    // field of the current struct
+    u32_t field_idx = 0;
     for (StructType::element_iterator it = sty->element_begin(), ie =
-                sty->element_end(); it != ie; ++it) {
-        //The offset is where this element will be placed in the exp. struct.
-        stinfo->getFieldOffsetVec().push_back(nf);
-
+                sty->element_end(); it != ie; ++it, ++field_idx) {
         const Type *et = *it;
+        // This offset is computed after alignment with the current struct
+        u64_t eOffsetInBytes = stTySL->getElementOffset(field_idx);
+        //The offset is where this element will be placed in the exp. struct.
+        /// FIXME: As the layout size is uint_64, here we assume
+        /// offset with uint_32 (Size_t) is large enough and will not cause overflow
+        stinfo->addFldWithType(nf, static_cast<u32_t>(eOffsetInBytes), et);
+
         if (isa<StructType>(et) || isa<ArrayType>(et)) {
             StInfo * subStinfo = getStructInfo(et);
             u32_t nfE = subStinfo->getFlattenFieldInfoVec().size();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++) {
-                u32_t off = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenOffset();
+				u32_t fldIdx = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
+				u32_t off = eOffsetInBytes + subStinfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
                 const Type* elemTy = subStinfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
                 FieldInfo::ElemNumStridePairVec pair = subStinfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
-                FieldInfo field(off,elemTy,pair);
+                pair.push_back(std::make_pair(1, 0));
+                FieldInfo field(fldIdx, off,elemTy,pair);
                 stinfo->getFlattenFieldInfoVec().push_back(field);
             }
             nf += nfE;
         } else { //simple type
             FieldInfo::ElemNumStridePairVec pair;
             pair.push_back(std::make_pair(1,0));
-            FieldInfo field(nf,et,pair);
+            FieldInfo field(nf, eOffsetInBytes, et,pair);
             stinfo->getFlattenFieldInfoVec().push_back(field);
             ++nf;
         }
@@ -175,11 +189,11 @@ void SymbolTableInfo::collectSimpleTypeInfo(const llvm::Type* ty)
     typeToFieldInfo[ty] = stinfo;
 
     /// Only one field
-    stinfo->getFieldOffsetVec().push_back(0);
+    stinfo->addFldWithType(0,0, ty);
 
     FieldInfo::ElemNumStridePairVec pair;
     pair.push_back(std::make_pair(1,0));
-    FieldInfo field(0, ty, pair);
+    FieldInfo field(0, 0, ty, pair);
     stinfo->getFlattenFieldInfoVec().push_back(field);
 }
 
@@ -188,6 +202,15 @@ void SymbolTableInfo::collectSimpleTypeInfo(const llvm::Type* ty)
  */
 bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
     assert(V);
+
+    const GEPOperator *gepOp = dyn_cast<const GEPOperator>(V);
+    APInt byteOffset(64,0,true);
+    DataLayout * dataLayout = getDataLayout(getModule().getMainLLVMModule());
+    if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset)){
+        Size_t bo = byteOffset.getSExtValue();
+        ls.setByteOffset(bo + ls.getByteOffset());
+    }
+
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi) {
 
@@ -232,7 +255,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
                 assert(0);
             }
             //add the translated offset
-            ls.offset += so[idx];
+            ls.setFldIdx(ls.getOffset() + so[idx]);
         }
     }
     return true;
@@ -451,7 +474,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (isHeap() || isStaticObj())
         return false;
 
-    llvm::Type* ety = getLLVMType();
+    const llvm::Type* ety = getType();
     while (const ArrayType *AT= dyn_cast<ArrayType>(ety)) {
         ety = AT->getElementType();
     }
@@ -573,6 +596,15 @@ void MemObj::init(const Value *val) {
     }
 }
 
+/// Get obj type info
+const Type* MemObj::getType() const {
+	if (isHeap() == false)
+		return typeInfo->getType();
+	else if (refVal && isa<Instruction>(refVal))
+		return getTypeOfHeapAlloc(cast<Instruction>(refVal));
+	else
+		return NULL;
+}
 /*
  * Destroy the fields of the memory object
  */
@@ -1005,7 +1037,7 @@ void SymbolTableInfo::printFlattenFields(const llvm::Type* type) {
         int field_idx = 0;
         for(std::vector<FieldInfo>::iterator it = finfo.begin(), eit = finfo.end();
                 it!=eit; ++it, field_idx++) {
-            outs() << " \tField_idx = " << field_idx << " [offset: " << (*it).getFlattenOffset();
+            outs() << " \tField_idx = " << (*it).getFlattenFldIdx() << " [offset: " << (*it).getFlattenByteOffset();
             outs() << ", field type: ";
             (*it).getFlattenElemTy()->print(outs());
             outs() << ", field size: " << getTypeSizeInBytes((*it).getFlattenElemTy());

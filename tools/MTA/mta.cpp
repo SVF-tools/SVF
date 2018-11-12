@@ -37,6 +37,19 @@ DefaultDataLayout("default-data-layout",
 
 int main(int argc, char ** argv) {
 
+    llvm::legacy::PassManager Passes;
+
+    PassRegistry &Registry = *PassRegistry::getPassRegistry();
+
+    initializeCore(Registry);
+    initializeScalarOpts(Registry);
+    initializeIPO(Registry);
+    initializeAnalysis(Registry);
+    initializeTransformUtils(Registry);
+    initializeInstCombine(Registry);
+    initializeInstrumentation(Registry);
+    initializeTarget(Registry);
+
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
@@ -46,8 +59,8 @@ int main(int argc, char ** argv) {
 
     SVFModule svfModule(moduleNameVec);
 
-    MTA *mta = new MTA();
-    mta->runOnModule(svfModule);
+    Passes.add(new MTA());
+    Passes.run(*svfModule.getMainLLVMModule());
 
     svfModule.dumpModulesToFile(".mta");
 
