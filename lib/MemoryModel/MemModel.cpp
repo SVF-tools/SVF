@@ -474,7 +474,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (isHeap() || isStaticObj())
         return false;
 
-    llvm::Type* ety = getLLVMType();
+    const llvm::Type* ety = getType();
     while (const ArrayType *AT= dyn_cast<ArrayType>(ety)) {
         ety = AT->getElementType();
     }
@@ -596,6 +596,15 @@ void MemObj::init(const Value *val) {
     }
 }
 
+/// Get obj type info
+const Type* MemObj::getType() const {
+	if (isHeap() == false)
+		return typeInfo->getType();
+	else if (refVal && isa<Instruction>(refVal))
+		return getTypeOfHeapAlloc(cast<Instruction>(refVal));
+	else
+		return NULL;
+}
 /*
  * Destroy the fields of the memory object
  */

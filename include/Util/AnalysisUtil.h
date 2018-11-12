@@ -473,6 +473,9 @@ const llvm::Value * stripConstantCasts(const llvm::Value *val);
 /// Strip off the all casts
 llvm::Value *stripAllCasts(llvm::Value *val) ;
 
+/// Get the type of the heap allocation
+const llvm::Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
+
 /// Return corresponding constant expression, otherwise return NULL
 //@{
 inline const llvm::ConstantExpr *isGepConstantExpr(const llvm::Value *val) {

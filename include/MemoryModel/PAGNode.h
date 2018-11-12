@@ -397,6 +397,11 @@ public:
         return ls;
     }
 
+    /// Return the type of this gep object
+	inline const llvm::Type* getType() {
+		return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+	}
+
     /// Return name of a LLVM value
     inline const std::string getValueName() const {
         if (value && value->hasName())

@@ -219,6 +219,21 @@ Value * analysisUtil::stripAllCasts(Value *val) {
 }
 
 /*!
+ * Return the type of the object from a heap allocation
+ */
+const Type* analysisUtil::getTypeOfHeapAlloc(const Instruction *inst){
+	assert(isHeapAllocExtCall(inst) && "not a heap allocation instruction?");
+	const PointerType* type = dyn_cast<PointerType>(inst->getType());
+	if(const Instruction* nextInst =  inst->getNextNode()){
+		if(const CastInst* cast = dyn_cast<CastInst>(nextInst)){
+			type = dyn_cast<PointerType>(cast->getType());
+		}
+	}
+	assert(type && "not a pointer type?");
+	return type->getElementType();
+}
+
+/*!
  * Get position of a successor basic block
  */
 u32_t analysisUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {

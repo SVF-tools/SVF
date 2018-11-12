@@ -128,7 +128,7 @@ public:
 
 private:
     /// LLVM type
-    llvm::Type* type;
+    const llvm::Type* type;
     /// Type flags
     Size_t flags;
     /// Max offset for flexible field sensitive analysis
@@ -138,7 +138,7 @@ private:
 public:
 
     /// Constructors
-    ObjTypeInfo(const llvm::Value* val, llvm::Type* t, u32_t max) :
+    ObjTypeInfo(const llvm::Value* val, const llvm::Type* t, u32_t max) :
         type(t), flags(0), maxOffsetLimit(max) {
     }
     /// Constructor
@@ -162,13 +162,8 @@ public:
     /// Analyse types of heap and static objects
     void analyzeHeapStaticObjType(const llvm::Value* val);
 
-    /// Reset LLVM type
-    inline void setLLVMType(llvm::Type* t) {
-        type = t;
-    }
-
     /// Get LLVM type
-    inline llvm::Type* getLLVMType() {
+    inline const llvm::Type* getType() const{
         return type;
     }
 
@@ -276,6 +271,9 @@ public:
     inline ObjTypeInfo* getTypeInfo() const {
         return typeInfo;
     }
+
+    /// Get obj type
+    const llvm::Type* getType() const;
 
     /// Get max field offset limit
     inline Size_t getMaxFieldOffsetLimit() const {
