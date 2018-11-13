@@ -112,11 +112,10 @@ bool OfflineConsG::createRefNode(NodeID nodeId) {
 }
 
 /*!
- * Offline constraint solver, building a offline constraint graph, and detecting its SCC cycles.
+ * Use a offline SCC detector to solve node relations in OCG.
+ * Generally, the 'oscc' should be solved first.
  */
 void OfflineConsG::solveOfflineSCC(OSCC* oscc) {
-    // Implement SCC detection in offline constraint graph
-	oscc->find();
 	// Build offline nodeToRepMap
 	buildOfflineMap(oscc);
 }
