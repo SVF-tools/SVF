@@ -9,6 +9,7 @@
 #include "WPA/IFDS.h"
 
 using namespace std;
+using namespace SVFUtil;
 
 //constructor
 IFDS::IFDS(ICFG *i) : icfg(i) {
@@ -17,6 +18,8 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
     initialize();
     forwardTabulate();
     printRes();
+    validateTests("checkInit");
+    validateTests("checkUninit");
 }
 
 /*initialization
@@ -27,7 +30,8 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
 void IFDS::initialize() {
 
     Datafact datafact = {};    // datafact = 0;
-    mainEntryNode = icfg->getFunEntryICFGNode(SVFUtil::getProgEntryFunction(getPAG()->getModule()));
+    mainEntryNode = icfg->getFunEntryICFGNode(
+            SVFUtil::getProgEntryFunction(getPAG()->getModule()));    //getProgEntryFunction needs to be public, edited
     PathNode *mainEntryPN = new PathNode(mainEntryNode, datafact);
     PathEdge *startPE = new PathEdge(mainEntryPN, mainEntryPN);
     PathEdgeList.push_back(startPE);
@@ -36,7 +40,7 @@ void IFDS::initialize() {
 
     //initialize ICFGNodeToFacts
     for (ICFG::const_iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it) {
-        const ICFGNode* node = it->second;
+        const ICFGNode *node = it->second;
         ICFGNodeToFacts[node] = {};
         SummaryICFGNodeToFacts[node] = {};
     }
@@ -48,7 +52,7 @@ void IFDS::forwardTabulate() {
         PathEdge *e = WorkList.front();
         WorkList.pop_front();
         PathNode *srcPN = e->getSrcPathNode();
-        const ICFGNode* sp = srcPN->getICFGNode();
+        const ICFGNode *sp = srcPN->getICFGNode();
         Datafact d1 = srcPN->getDataFact();
         PathNode *dstPN = e->getDstPathNode();
         const ICFGNode *n = e->getDstPathNode()->getICFGNode();
@@ -58,22 +62,24 @@ void IFDS::forwardTabulate() {
             for (ICFGEdge::ICFGEdgeSetTy::iterator it = outEdges.begin(), eit =
                     outEdges.end(); it != eit; ++it) {
                 // if this is Call Edge
-                if((*it)->isCallCFGEdge()){
-                    ICFGNode* sp = (*it)->getDstNode();
-                    PathNode* newSrcPN = new PathNode(sp, dstPN->getDataFact()); //datafact doesnt change at Call Edge
+                if ((*it)->isCallCFGEdge()) {
+                    ICFGNode *sp = (*it)->getDstNode();
+                    Datafact d = transferFun(dstPN);
+                    PathNode *newSrcPN = new PathNode(sp, d);
                     propagate(newSrcPN, sp, dstPN->getDataFact());
                 }
-                // if it is CallToRetEdge
-                else if((*it)->isIntraCFGEdge()){
-                    Datafact d = transferFun(dstPN);  // to do: add transfer function for call node (dont care about global var)
-                    ICFGNode* ret = (*it)->getDstNode();
+                    // if it is CallToRetEdge
+                else if ((*it)->isIntraCFGEdge()) {
+                    Datafact d = transferFun(dstPN);
+                    ICFGNode *ret = (*it)->getDstNode();
                     ICFGNodeToFacts[ret].insert(d);
                     propagate(srcPN, ret, d);
                     // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode
-                    for(PathEdgeSet::iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end(); it != eit; ++it){
-                        if(((*it)->getSrcPathNode()->getICFGNode() == n)
-                           && ((*it)->getSrcPathNode()->getDataFact() == dstPN->getDataFact())
-                           &&((*it)->getDstPathNode()->getICFGNode() == ret)){
+                    for (PathEdgeSet::iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end();
+                         it != eit; ++it) {
+                        if (((*it)->getSrcPathNode()->getICFGNode() == n)
+                            && ((*it)->getSrcPathNode()->getDataFact() == dstPN->getDataFact())
+                            && ((*it)->getDstPathNode()->getICFGNode() == ret)) {
                             propagate(srcPN, ret, (*it)->getDstPathNode()->getDataFact());
                         }
                     }
@@ -85,12 +91,16 @@ void IFDS::forwardTabulate() {
             for (ICFGEdge::ICFGEdgeSetTy::iterator it = inEdges.begin(), eit =
                     inEdges.end(); it != eit; ++it) {
                 assert((*it)->isCallCFGEdge());     // only can be call edges
-                ICFGNode* caller = (*it)->getSrcNode();
-                ICFGNode* ret = getRetNode(caller);
-                Datafact d5 = transferFun(dstPN);    // to do: add transfer function for exit node (only care about global var)
+                ICFGNode *caller = (*it)->getSrcNode();
+
+                CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(
+                        *it); //downcast to CallCFGEdge  --> getCallSiteID
+                ICFGNode *ret = icfg->getRetICFGNode(icfg->getCallSite(callEdge->getCallSiteId()));
+                Datafact d5 = transferFun(
+                        dstPN);    // to do: add transfer function for exit node (only care about global var)
                 ICFGNodeToFacts[ret].insert(d5);
 
-                if(isNotInSummaryEdgeList(caller, d1, ret, d5)){
+                if (isNotInSummaryEdgeList(caller, d1, ret, d5)) {
                     // insert new summary edge into SummaryEdgeList
                     PathNode *srcPN = new PathNode(caller, d1);
                     PathNode *dstPN = new PathNode(ret, d5);
@@ -99,9 +109,10 @@ void IFDS::forwardTabulate() {
                     SummaryICFGNodeToFacts[caller].insert(d1);
                     SummaryICFGNodeToFacts[ret].insert(d5);
 
-                    for(PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end(); pit != epit; ++it){
-                        if(((*pit)->getDstPathNode()->getICFGNode() == caller)
-                           && ((*pit)->getDstPathNode()->getDataFact() == d1))
+                    for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
+                         pit != epit; ++pit) {
+                        if (((*pit)->getDstPathNode()->getICFGNode() == caller)
+                            && ((*pit)->getDstPathNode()->getDataFact() == d1))
                             propagate((*pit)->getSrcPathNode(), ret, d5);
                     }
                 }
@@ -119,29 +130,6 @@ void IFDS::forwardTabulate() {
             }
         }
     }
-}
-
-// print ICFGNodes and theirs datafacts
-void IFDS::printRes(){
-    std::cout << "\n*******Possibly Uninitialized Variables*******\n";
-    for (ICFGNodeToDataFactsMap::iterator it = ICFGNodeToFacts.begin(), eit = ICFGNodeToFacts.end(); it != eit; ++it){
-        const ICFGNode* node = it->first;
-        Facts facts = it->second;
-        NodeID id = node->getId();
-        std::cout << "ICFGNodeID:" <<id << ": PAGNodeSet: {";
-        Datafact finalFact = {};
-        for (Facts::iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit){
-            Datafact fact = (*fit);
-            for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit){
-                finalFact.insert(*dit);
-            }
-        }
-        for(Datafact::iterator dit = finalFact.begin(), edit = finalFact.end(); dit != edit; ++dit){
-            std::cout << (*dit)->getId() << " ";
-        }
-        std::cout << "}\n";
-    }
-    std::cout << "-------------------------------------------------------";
 }
 
 //add new PathEdge into PathEdgeList and WorkList
@@ -167,7 +155,7 @@ void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact d) {
     }
 }
 
-bool IFDS::isNotInSummaryEdgeList(ICFGNode* n1, Datafact d1, ICFGNode* n2, Datafact d2){
+bool IFDS::isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2) {
     SummaryICFGDstNodeSet = getSummaryDstICFGNodeSet();
     facts = SummaryICFGNodeToFacts[n1];
     facts2 = SummaryICFGNodeToFacts[n2];
@@ -187,7 +175,7 @@ bool IFDS::isNotInSummaryEdgeList(ICFGNode* n1, Datafact d1, ICFGNode* n2, Dataf
 }
 
 //get all ICFGNode in all EndPathNode of PathEdgeList
-IFDS::ICFGNodeSet& IFDS::getDstICFGNodeSet() {
+IFDS::ICFGNodeSet &IFDS::getDstICFGNodeSet() {
     for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit =
             PathEdgeList.end(); pit != epit; ++pit) {
         const ICFGNode *n = (*pit)->getDstPathNode()->getICFGNode();
@@ -196,7 +184,7 @@ IFDS::ICFGNodeSet& IFDS::getDstICFGNodeSet() {
     return ICFGDstNodeSet;
 }
 
-IFDS::ICFGNodeSet& IFDS::getSummaryDstICFGNodeSet() {
+IFDS::ICFGNodeSet &IFDS::getSummaryDstICFGNodeSet() {
     for (PathEdgeSet::iterator pit = SummaryEdgeList.begin(), epit =
             SummaryEdgeList.end(); pit != epit; ++pit) {
         const ICFGNode *n = (*pit)->getDstPathNode()->getICFGNode();
@@ -211,14 +199,6 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
         return true;
     else
         return false;
-}
-
-ICFGNode* IFDS::getRetNode(ICFGNode* call){
-    const ICFGEdge::ICFGEdgeSetTy &outEdges = call->getOutEdges();
-    for (ICFGEdge::ICFGEdgeSetTy::iterator it = outEdges.begin(), eit =
-            outEdges.end(); it != eit; ++it)
-        if((*it)->isIntraCFGEdge())
-            return (*it)->getDstNode();
 }
 
 // StmtNode(excludes cmp and binaryOp)
@@ -238,21 +218,21 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
     if (icfgNode == mainEntryNode) {
         for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {
             PAGNode *node = it->second;
-            if (node->hasIncomingEdge() || node->hasOutgoingEdge()){
+            if (node->hasIncomingEdge() || node->hasOutgoingEdge()) {
                 bool constant = false;
-                if(node->isConstantData())
+                if (node->isConstantData())
                     constant = true;
-                if (ObjPN* objNode = SVFUtil::dyn_cast<ObjPN>(node))
-                    if (objNode->getMemObj()->isGlobalObj()||objNode->getMemObj()->isFunction())
+                if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(node))
+                    if (objNode->getMemObj()->isGlobalObj() || objNode->getMemObj()->isFunction())
                         constant = true;
-                PAGEdge::PAGEdgeSetTy edges= node->getIncomingEdges(PAGEdge::Addr);
-                for(PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it){
-                    PAGEdge* e = *it;
-                    if(ObjPN* objNode = SVFUtil::dyn_cast<ObjPN>(e->getSrcNode()))
-                        if (objNode->getMemObj()->isGlobalObj()||objNode->getMemObj()->isFunction())
+                PAGEdge::PAGEdgeSetTy edges = node->getIncomingEdges(PAGEdge::Addr);
+                for (PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it) {
+                    PAGEdge *e = *it;
+                    if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(e->getSrcNode()))
+                        if (objNode->getMemObj()->isGlobalObj() || objNode->getMemObj()->isFunction())
                             constant = true;
                 }
-                if (DummyValPN* dummyValNode = SVFUtil::dyn_cast<DummyValPN>(node))
+                if (DummyValPN *dummyValNode = SVFUtil::dyn_cast<DummyValPN>(node))
                     constant = true;
                 if (!constant)
                     fact.insert(node);
@@ -273,41 +253,41 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
                     fact.insert(srcPagNode);
                     fact.erase(dstPagNode);
                 }
-                // Copy: dstNode depends on srcNode
+                    // Copy: dstNode depends on srcNode
                 else if (const CopyVFGNode *copyNode = SVFUtil::dyn_cast<CopyVFGNode>(stmtNode)) {
                     if (isInitialized(srcPagNode, fact))
                         fact.erase(dstPagNode);
                     else
                         fact.insert(dstPagNode);
                 }
-                // Gep: same as Copy
+                    // Gep: same as Copy
                 else if (const GepVFGNode *copyNode = SVFUtil::dyn_cast<GepVFGNode>(stmtNode)) {
                     if (isInitialized(srcPagNode, fact))
                         fact.erase(dstPagNode);
                     else
                         fact.insert(dstPagNode);
                 }
-                // Store：dstNode->obj depends on srcNode
-                else if (const StoreVFGNode* storeNode = SVFUtil::dyn_cast<StoreVFGNode>(stmtNode)){
-                    PointsTo& PTset = IFDS::getPts(dstPagNode->getId());
-                    if (isInitialized(srcPagNode, fact)){
-                        for(PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it) {
+                    // Store：dstNode->obj depends on srcNode
+                else if (const StoreVFGNode *storeNode = SVFUtil::dyn_cast<StoreVFGNode>(stmtNode)) {
+                    PointsTo &PTset = IFDS::getPts(dstPagNode->getId());
+                    if (isInitialized(srcPagNode, fact)) {
+                        for (PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it) {
                             PAGNode *node = getPAG()->getPAGNode(*it);
                             fact.erase(node);
                         }
-                    }else {
-                        for(PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it){
-                            PAGNode* node = getPAG()->getPAGNode(*it);
+                    } else {
+                        for (PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it) {
+                            PAGNode *node = getPAG()->getPAGNode(*it);
                             fact.insert(node);
                         }
                     }
                 }
-                // Load：Load: dstNode depends on scrNode->obj
-                // if all obj are initialized, dstPagNode is initialized, otherwise dstPagNode is Unini
-                else if (const LoadVFGNode* loadNode = SVFUtil::dyn_cast<LoadVFGNode>(stmtNode)){
+                    // Load：Load: dstNode depends on scrNode->obj
+                    // if all obj are initialized, dstPagNode is initialized, otherwise dstPagNode is Unini
+                else if (const LoadVFGNode *loadNode = SVFUtil::dyn_cast<LoadVFGNode>(stmtNode)) {
                     PointsTo PTset = IFDS::getPts(srcPagNode->getId());
                     u32_t sum = 0;
-                    for(PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it){
+                    for (PointsTo::iterator it = PTset.begin(), eit = PTset.end(); it != eit; ++it) {
                         PAGNode *node = getPAG()->getPAGNode(*it);
                         sum += isInitialized(node, fact);
                     }
@@ -317,17 +297,123 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
                         fact.insert(dstPagNode);
                 }
             }
-            //code to add ..
         }
     } else if (const FunEntryBlockNode *node = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)) {
         //code to add ..
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
-        //code to add ..
-    } else if (const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(icfgNode)) {
 
-        //code to add ..
+        for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
+            // erase local variable from datafact
+            if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
+                if (!objNode->getMemObj()->isGlobalObj())
+                    fact.erase(*dit);
+        }
+
+    } else if (const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(icfgNode)) {
+        const ICFGEdge::ICFGEdgeSetTy &outEdges = node->getOutEdges();
+        for (ICFGEdge::ICFGEdgeSetTy::iterator it = outEdges.begin(), eit =
+                outEdges.end(); it != eit; ++it) {
+            // if is Call Edge
+            if ((*it)->isCallCFGEdge()) {
+                for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
+                     it != eit; ++it) {
+                    const PAGNode *actualParmNode = (*it)->getParam();
+                    if (actualParmNode->hasOutgoingEdges(PAGEdge::Call)) {
+                        for (PAGEdge::PAGEdgeSetTy::const_iterator pit = actualParmNode->getOutgoingEdgesBegin(
+                                PAGEdge::Call), epit = actualParmNode->getOutgoingEdgesEnd(PAGEdge::Call);
+                             pit != epit; ++pit) {
+                            if (isInitialized(actualParmNode, fact))
+                                fact.erase((*pit)->getDstNode());
+                            else
+                                fact.insert((*pit)->getDstNode());
+                        }
+                    }
+                }
+            }
+                // if is call-to-ret edge
+            else if ((*it)->isIntraCFGEdge()) {
+                // erase global variable from datafact
+                for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
+                    if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
+                        if (objNode->getMemObj()->isGlobalObj())
+                            fact.erase(*dit);
+                }
+            }
+        }
     } else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {
         //code to add ..
     }
     return fact;
+}
+
+// print ICFGNodes and theirs datafacts
+void IFDS::printRes() {
+    std::cout << "\n*******Possibly Uninitialized Variables*******\n";
+    for (ICFGNodeToDataFactsMap::iterator it = ICFGNodeToFacts.begin(), eit = ICFGNodeToFacts.end(); it != eit; ++it) {
+        const ICFGNode *node = it->first;
+        Facts facts = it->second;
+        NodeID id = node->getId();
+        std::cout << "ICFGNodeID:" << id << ": PAGNodeSet: {";
+        Datafact finalFact = {};
+        for (Facts::iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit) {
+            Datafact fact = (*fit);
+            for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
+                finalFact.insert(*dit);
+            }
+        }
+        for (Datafact::iterator dit = finalFact.begin(), edit = finalFact.end(); dit != edit; ++dit) {
+            std::cout << (*dit)->getId() << " ";
+        }
+        std::cout << "}\n";
+    }
+    std::cout << "-------------------------------------------------------";
+}
+
+void IFDS::validateTests(const char *fun) {
+    for (u32_t i = 0; i < icfg->getPAG()->getModule().getModuleNum(); ++i) {
+        Module *module = icfg->getPAG()->getModule().getModule(i);
+        if (Function *checkFun = module->getFunction(fun)) {
+            for (Value::user_iterator i = checkFun->user_begin(), e =
+                    checkFun->user_end(); i != e; ++i)
+                if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i)) {
+                    CallSite cs(*i);
+                    assert(cs.getNumArgOperands() == 1 && "arguments should one pointer!!");
+                    Value *v1 = cs.getArgOperand(0);
+                    NodeID ptr = icfg->getPAG()->getValueNode(v1);
+                    PointsTo &pts = pta->getPts(ptr);
+                    for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it) {
+                        const PAGNode *objNode = icfg->getPAG()->getPAGNode(*it);
+                        NodeID objNodeId = objNode->getId();
+                        const CallBlockNode *callnode = icfg->getCallICFGNode(cs);
+                        const Facts &facts = ICFGNodeToFacts[callnode];
+
+                        bool initialize = true;
+                        for (Facts::const_iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit) {
+                            const Datafact &fact = (*fit);
+                            if (fact.count(objNode))
+                                initialize = false;
+                        }
+                        if (strcmp(fun, "checkInit") == 0) {
+                            if (initialize)
+                                outs() << sucMsg("\t SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                       << ", objId:" << objNodeId << "> at ("
+                                       << getSourceLoc(*i) << ")\n";
+                            else
+                                errs() << errMsg("\t FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                       << ", objId:" << objNodeId << "> at ("
+                                       << getSourceLoc(*i) << ")\n";
+                        } else if (strcmp(fun, "checkUninit") == 0) {
+                            if (initialize)
+                                outs() << errMsg("\t FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                       << ", objId:" << objNodeId << "> at ("
+                                       << getSourceLoc(*i) << ")\n";
+                            else
+                                errs() << sucMsg("\t SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                       << ", objId:" << objNodeId << "> at ("
+                                       << getSourceLoc(*i) << ")\n";
+                        }
+                    }
+                }
+        }
+    }
 }

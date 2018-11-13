@@ -14,18 +14,19 @@
 class IFDS {
 
 private:
-	ICFG* icfg;
-	PointerAnalysis* pta;
+    ICFG *icfg;
+    PointerAnalysis *pta;
 
 public:
     class PathNode;
     class PathEdge;
+
     typedef std::string ValueName;          //(stmtNode->getPAGDstNode()->getValueName())
-    typedef std::set<const PAGNode*> Datafact;    //set of uninitialized variables at ICFGNode
+    typedef std::set<const PAGNode *> Datafact;    //set of uninitialized variables at ICFGNode
     typedef std::set<Datafact> Facts;       //different datafacts from different path
-    typedef std::set<const ICFGNode*> ICFGNodeSet;
-    typedef std::list<PathEdge*> PathEdgeSet;
-    typedef std::map<const ICFGNode*, Facts> ICFGNodeToDataFactsMap;
+    typedef std::set<const ICFGNode *> ICFGNodeSet;
+    typedef std::list<PathEdge *> PathEdgeSet;
+    typedef std::map<const ICFGNode *, Facts> ICFGNodeToDataFactsMap;
 
 protected:
     PathEdgeSet WorkList;         //worklist used during the tabulation algorithm
@@ -36,112 +37,113 @@ protected:
     ICFGNodeToDataFactsMap ICFGNodeToFacts;
     ICFGNodeToDataFactsMap SummaryICFGNodeToFacts;
     Facts facts, facts2;    // Datafacts for a given ICFGNode
-    ICFGNode* mainEntryNode;
+    ICFGNode *mainEntryNode;
 
 public:
-	inline VFG* getVFG() const{
-		return icfg->getVFG();
-	}
+    inline VFG *getVFG() const {
+        return icfg->getVFG();
+    }
 
-	inline ICFG* getICFG() const{
-		return icfg;
-	}
+    inline ICFG *getICFG() const {
+        return icfg;
+    }
 
-	inline PAG* getPAG() const{
-		return icfg->getPAG();
-	}
+    inline PAG *getPAG() const {
+        return icfg->getPAG();
+    }
 
-	//constructor
-	IFDS(ICFG* i);
+    //constructor
+    IFDS(ICFG *i);
 
-	//procedures in Tabulation Algorithm
+    //procedures in Tabulation Algorithm
     void initialize();
+
     void forwardTabulate();
 
     //add new PathEdge components into PathEdgeList and WorkList
-    void propagate(PathNode* srcPN, ICFGNode* succ, Datafact d);
+    void propagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
 
-    bool isNotInSummaryEdgeList(ICFGNode* n1, Datafact d1, ICFGNode* n2, Datafact d2);
+    bool isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
 
     //get all ICFGNode in all EndPathNode of PathEdgeList
-    ICFGNodeSet& getDstICFGNodeSet();
+    ICFGNodeSet &getDstICFGNodeSet();
 
-    ICFGNodeSet& getSummaryDstICFGNodeSet();
+    ICFGNodeSet &getSummaryDstICFGNodeSet();
 
     //transfer function of given ICFGNode
-    Datafact transferFun(PathNode* pathNode);
+    Datafact transferFun(PathNode *pathNode);
 
     //whether the variable is initialized
-    bool isInitialized(const PAGNode* pagNode, Datafact datafact);
+    bool isInitialized(const PAGNode *pagNode, Datafact datafact);
 
     //print ICFGNodes and theirs datafacts
     void printRes();
 
+    void validateTests(const char *fun);
+
     //Get points-to set of given PAGNode
-    inline PointsTo& getPts(NodeID id) {
+    inline PointsTo &getPts(NodeID id) {
         return pta->getPts(id);
     }
 
-    ICFGNode* getRetNode(ICFGNode* call);
-
     // in order to denote : <node, d> , d here is datafact before the execution of node
-    class PathNode{
-        const ICFGNode* icfgNode;
+    class PathNode {
+        const ICFGNode *icfgNode;
         Datafact datafact;
 
         //Constructor
     public:
         PathNode();
 
-        PathNode(const ICFGNode* node, Datafact fact){
+        PathNode(const ICFGNode *node, Datafact fact) {
             icfgNode = node;
             datafact = fact;
         }
 
-        void setICFGNode(ICFGNode* node){
+        void setICFGNode(ICFGNode *node) {
             icfgNode = node;
         }
 
-        void setDataFact (Datafact fact){
+        void setDataFact(Datafact fact) {
             datafact = fact;
         }
 
-        const ICFGNode* getICFGNode() const{
+        const ICFGNode *getICFGNode() const {
             return icfgNode;
         }
 
-        Datafact& getDataFact() {
+        Datafact &getDataFact() {
             return datafact;
         }
 
     };
 
 // in order to denote : <node1, d1> --> <node2, d2>
-    class PathEdge{
-        PathNode* srcNode;
-        PathNode* dstNode;
+    class PathEdge {
+        PathNode *srcNode;
+        PathNode *dstNode;
 
     public:
         PathEdge();
 
-        PathEdge(PathNode* src, PathNode* dst){
+        PathEdge(PathNode *src, PathNode *dst) {
             srcNode = src;
             dstNode = dst;
         }
 
-        void setStartPathNode(PathNode* node){
+        void setStartPathNode(PathNode *node) {
             srcNode = node;
         }
 
-        void setEndPathNode(PathNode* node){
+        void setEndPathNode(PathNode *node) {
             dstNode = node;
         }
 
-        PathNode* getDstPathNode() const{
+        PathNode *getDstPathNode() const {
             return dstNode;
         }
 
-        PathNode* getSrcPathNode() const{
+        PathNode *getSrcPathNode() const {
             return srcNode;
         }
     };
