@@ -67,7 +67,7 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
 
 
 /// Constructor
-PTACallGraph::PTACallGraph(SVFModule svfModule) {
+PTACallGraph::PTACallGraph(SVFModule svfModule, CGEK k): kind(k) {
     svfMod = svfModule;
     callGraphNodeNum = 0;
     numOfResolvedIndCallEdge = 0;

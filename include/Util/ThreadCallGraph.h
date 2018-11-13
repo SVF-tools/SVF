@@ -140,6 +140,16 @@ public:
     virtual ~ThreadCallGraph() {
     }
 
+    /// ClassOf
+    //@{
+    static inline bool classof(const ThreadCallGraph *) {
+        return true;
+    }
+    static inline bool classof(const PTACallGraph *g) {
+        return g->getKind() == PTACallGraph::ThdCallGraph;
+    }
+    //@}
+
     /// Update call graph using pointer results
     void updateCallGraph(PointerAnalysis* pta);
     /// Update join edge using pointer analysis results
