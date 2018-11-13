@@ -52,6 +52,7 @@ void AndersenHCD::initialize(SVFModule svfModule) {
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);
     OSCC* oscc = new OSCC(oCG);
+    oscc->find();
     oCG->solveOfflineSCC(oscc);
 	delete oscc;
 
@@ -103,7 +104,10 @@ void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep) {
     if (!isaMergedNode(node)) {
         if (unionPts(rep, node))
             pushIntoWorklist(rep);
+        // Once a 'Node' is merged to its rep, it is collapsed,
+        // only remaining its 'NodeID' exists in the set 'subNodes' of its rep node.
         mergeNodeToRep(node, rep);
         setMergedNode(node);
+        updateNodeRepAndSubs(node);
     }
 }
