@@ -300,9 +300,9 @@ void Andersen::mergeSccCycle()
         NodeID repNodeId = topoOrder.top();
         topoOrder.pop();
         revTopoOrder.push(repNodeId);
-
+        const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
-        mergeSccNodes(repNodeId, changedRepNodes);
+        mergeSccNodes(repNodeId, subNodes, changedRepNodes);
     }
 
     // update rep/sub relation in the constraint graph.
@@ -324,9 +324,8 @@ void Andersen::mergeSccCycle()
  * Union points-to of subscc nodes into its rep nodes
  * Move incoming/outgoing direct edges of sub node to rep node
  */
-void Andersen::mergeSccNodes(NodeID repNodeId, NodeBS & chanegdRepNodes)
+void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes, NodeBS & chanegdRepNodes)
 {
-    const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
     for (NodeBS::iterator nodeIt = subNodes.begin(); nodeIt != subNodes.end(); nodeIt++) {
         NodeID subNodeId = *nodeIt;
         if (subNodeId != repNodeId) {

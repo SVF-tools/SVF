@@ -205,7 +205,7 @@ protected:
 
     /// Merge sub node in a SCC cycle to their rep node
     //@{
-    void mergeSccNodes(NodeID repNodeId, NodeBS & chanegdRepNodes);
+    void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes, NodeBS & chanegdRepNodes);
     void mergeSccCycle();
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
