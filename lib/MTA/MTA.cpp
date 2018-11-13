@@ -121,16 +121,12 @@ MHP* MTA::computeMHP(SVFModule module) {
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(module);
     pta->getPTACallGraph()->dump("ptacg");
-    DBOUT(DGENERAL, outs() << pasMsg("Create Thread Call Graph\n"));
-    DBOUT(DMTA, outs() << pasMsg("Create Thread Call Graph\n"));
-    tcg = new ThreadCallGraph(module);
-    tcg->updateCallGraph(pta);
-    //tcg->updateJoinEdge(pta);
+
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
-
     DOTIMESTAT(double tctStart = stat->getClk());
-    tct = new TCT(tcg, pta);
+    tct = new TCT(pta);
+    tcg = tct->getThreadCallGraph();
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
 

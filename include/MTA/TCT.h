@@ -115,8 +115,11 @@ public:
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
-    TCT(ThreadCallGraph* t, PointerAnalysis* p) :tcg(t),pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0) {
-        tcgSCC = new ThreadCallGraphSCC(tcg);
+    TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0) {
+        tcg = llvm::cast<ThreadCallGraph>(pta->getPTACallGraph());
+        tcg->updateCallGraph(pta);
+        //tcg->updateJoinEdge(pta);
+        tcgSCC = pta->getCallGraphSCC();
         tcgSCC->find();
         build();
     }

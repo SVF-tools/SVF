@@ -39,7 +39,7 @@ using namespace analysisUtil;
  * Constructor
  */
 ThreadCallGraph::ThreadCallGraph(SVFModule svfModule) :
-    PTACallGraph(svfModule), tdAPI(ThreadAPI::getThreadAPI()) {
+    PTACallGraph(svfModule, ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI()) {
     DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("Building ThreadCallGraph\n"));
     this->build(svfModule);
 }
