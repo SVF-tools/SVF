@@ -182,7 +182,13 @@ public:
     typedef std::map<llvm::CallSite, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphNodeIter;
 
+    enum CGEK {
+        NormCallGraph, ThdCallGraph
+    };
+
 private:
+    CGEK kind;
+
     SVFModule svfMod;
 
     /// Indirect call map
@@ -210,13 +216,17 @@ private:
 
 public:
     /// Constructor
-    PTACallGraph(SVFModule svfModule);
+    PTACallGraph(SVFModule svfModule, CGEK k = NormCallGraph);
 
     /// Destructor
     virtual ~PTACallGraph() {
         destroy();
     }
 
+    /// Return type of this callgraph
+    inline CGEK getKind() const {
+        return kind;
+    }
 
     /// Get callees from an indirect callsite
     //@{

@@ -7,7 +7,7 @@ RUN set -e
 ENV llvm_version=7.0.0
 
 # Define dependencies.
-ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim"
+ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim clang-7"
 ENV build_deps="wget xz-utils cmake python"
 
 # Fetch dependencies.
