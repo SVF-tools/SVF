@@ -59,6 +59,8 @@ enum SYMTYPE {
 class StInfo {
 
 private:
+    /// mapping original index to flatten index
+    std::vector<u32_t> origIdx2FlattenFldInxVec;
     /// Offsets of all fields of a struct
     std::vector<u32_t> fldIdxVec;
     /// Offsets of all fields of a struct
@@ -80,20 +82,23 @@ public:
 
     /// Get method for fields of a struct
     //{@
-	inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx) {
-		return fldIdx2TypeMap[fldIdx];
-	}
-	inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset) {
-		return offset2TypeMap[offset];
-	}
-	inline std::vector<u32_t>& getFieldIdxVec() {
+    inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx) {
+        return fldIdx2TypeMap[fldIdx];
+    }
+    inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset) {
+        return offset2TypeMap[offset];
+    }
+    inline std::vector<u32_t>& getFieldIdxVec() {
         return fldIdxVec;
     }
-	inline std::vector<u32_t>& getFieldOffsetVec() {
+    inline std::vector<u32_t>& getFieldOffsetVec() {
         return foffset;
     }
-	inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
+    inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
         return finfo;
+    }
+    inline std::vector<u32_t>& getOrigIdx2FlattenFldInxVec() {
+        return origIdx2FlattenFldInxVec;
     }
     //@}
 
@@ -690,12 +695,15 @@ public:
     const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const llvm::Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
-	const inline llvm::Type* getOrigSubTypeWithFldInx(const llvm::Type* baseType, u32_t field_idx) {
-		return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
-	}
-	const inline llvm::Type* getOrigSubTypeWithByteOffset(const llvm::Type* baseType, u32_t byteOffset) {
-		return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
-	}
+    const inline std::vector<u32_t>& getOrigIdx2FlattenFldInxVec(const llvm::Type *T) {
+        return getStructInfoIter(T)->second->getOrigIdx2FlattenFldInxVec();
+    }
+    const inline llvm::Type* getOrigSubTypeWithFldInx(const llvm::Type* baseType, u32_t field_idx) {
+        return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
+    }
+    const inline llvm::Type* getOrigSubTypeWithByteOffset(const llvm::Type* baseType, u32_t byteOffset) {
+        return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
+    }
     //@}
 
     /// Compute gep offset
