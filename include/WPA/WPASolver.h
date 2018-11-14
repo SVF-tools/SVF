@@ -53,7 +53,7 @@ public:
 protected:
 
     /// Constructor
-    WPASolver(): _graph(NULL),scc(NULL), reanalyze(false), numOfIteration(0), iterationForPrintStat(0)
+    WPASolver(): _graph(NULL),scc(NULL), reanalyze(false), numOfIteration(0), iterationForPrintStat(1000)
     {
     }
     /// Destructor
