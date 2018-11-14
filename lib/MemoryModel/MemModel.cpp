@@ -95,6 +95,8 @@ void SymbolTableInfo::collectTypeInfo(const llvm::Type* ty) {
 void SymbolTableInfo::collectArrayInfo(const ArrayType* ty) {
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
+    /// Array itself only has one field which is the inner most element
+    stinfo->getOrigIdx2FlattenFldInxVec().push_back(0);
 
     u64_t out_num = ty->getNumElements();
     const llvm::Type* elemTy = ty->getElementType();
@@ -141,6 +143,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty) {
     u32_t field_idx = 0;
     for (StructType::element_iterator it = sty->element_begin(), ie =
                 sty->element_end(); it != ie; ++it, ++field_idx) {
+        stinfo->getOrigIdx2FlattenFldInxVec().push_back(nf);
         const Type *et = *it;
         // This offset is computed after alignment with the current struct
         u64_t eOffsetInBytes = stTySL->getElementOffset(field_idx);
@@ -154,8 +157,8 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty) {
             u32_t nfE = subStinfo->getFlattenFieldInfoVec().size();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++) {
-				u32_t fldIdx = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
-				u32_t off = eOffsetInBytes + subStinfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
+                u32_t fldIdx = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
+                u32_t off = eOffsetInBytes + subStinfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
                 const Type* elemTy = subStinfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
                 FieldInfo::ElemNumStridePairVec pair = subStinfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
                 pair.push_back(std::make_pair(1, 0));
@@ -187,7 +190,7 @@ void SymbolTableInfo::collectSimpleTypeInfo(const llvm::Type* ty)
 {
     StInfo* stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
-
+    stinfo->getOrigIdx2FlattenFldInxVec().push_back(0);
     /// Only one field
     stinfo->addFldWithType(0,0, ty);
 
@@ -249,7 +252,7 @@ bool SymbolTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
         // Handling struct here
         if (const StructType *ST = dyn_cast<StructType>(*gi) ) {
             assert(op && "non-const struct index in GEP");
-            const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
+            const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getOrigIdx2FlattenFldInxVec(ST);
             if ((unsigned)idx >= so.size()) {
                 outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
@@ -1005,7 +1008,7 @@ void SymbolTableInfo::handleGlobalInitializerCE(const Constant *C,
     } else if (isa<ConstantStruct>(C)) {
         const StructType *sty = cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
+            SymbolTableInfo::Symbolnfo()->getOrigIdx2FlattenFldInxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
             u32_t off = offsetvect[i];
             handleGlobalInitializerCE(cast<Constant>(C->getOperand(i)),

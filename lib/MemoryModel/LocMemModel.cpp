@@ -109,13 +109,14 @@ bool LocSymTableInfo::computeGepOffset(const llvm::User *V, LocationSet& ls) {
             // Handling struct here
             else if (const StructType *ST = dyn_cast<StructType>(*gi)) {
                 assert(op && "non-const struct index in GEP");
-                const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
+                const vector<u32_t> &boVec = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
+                const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getOrigIdx2FlattenFldInxVec(ST);
                 if ((unsigned)idx >= so.size()) {
                     outs() << "!! Struct index out of bounds" << idx << "\n";
                     assert(0);
                 }
                 //add the translated offset
-                ls.setByteOffset(ls.getByteOffset() + so[idx]);
+                ls.setByteOffset(ls.getByteOffset() + boVec[so[idx]]);
             }
             else
                 assert(false && "what other types?");
