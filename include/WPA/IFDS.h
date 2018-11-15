@@ -73,11 +73,15 @@ public:
     //transfer function of given ICFGNode
     Datafact transferFun(PathNode *pathNode);
 
+    Datafact getCallerDatafact(PathNode *srcPN, ICFGNode* caller);
+
     //whether the variable is initialized
     bool isInitialized(const PAGNode *pagNode, Datafact datafact);
 
     //print ICFGNodes and theirs datafacts
     void printRes();
+    void printPathEdgeList();
+    void printSummaryEdgeList();
 
     void validateTests(const char *fun);
 

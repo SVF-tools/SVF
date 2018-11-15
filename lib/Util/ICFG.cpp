@@ -455,6 +455,20 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         rawstr << "NodeID: " << node->getId() << "\n";
 		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
 			rawstr << getSourceLoc(bNode->getInst()) << "\n";
+
+			IntraBlockNode::StmtOrPHIVFGNodeVec& nodes = bNode->getVFGNodes();
+			for (IntraBlockNode::StmtOrPHIVFGNodeVec::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it){
+			    const VFGNode* node = *it;
+			    if(const StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node)){
+			        NodeID src = stmtNode->getPAGSrcNodeID();
+			        NodeID dst = stmtNode->getPAGDstNodeID();
+			        rawstr << dst << "<--" << src << "\n";
+			        std::string srcValueName = stmtNode->getPAGSrcNode()->getValueName();
+			        std::string dstValueName = stmtNode->getPAGDstNode()->getValueName();
+			        rawstr << dstValueName << "<--" << srcValueName << "\n";
+			    }
+			}
+
 			if(DumpLLVMInst)
 				rawstr << *(bNode->getInst()) << "\n";
 		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node)) {

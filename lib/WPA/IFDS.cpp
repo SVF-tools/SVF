@@ -3,9 +3,6 @@
  *
  */
 
-// how to distinguish local variable and global variable?
-// caller(p) : sp incomingEdges -> getSrcNode     map<proc, callers>
-
 #include "WPA/IFDS.h"
 
 using namespace std;
@@ -66,15 +63,15 @@ void IFDS::forwardTabulate() {
                     ICFGNode *sp = (*it)->getDstNode();
                     Datafact d = transferFun(dstPN);
                     PathNode *newSrcPN = new PathNode(sp, d);
-                    propagate(newSrcPN, sp, dstPN->getDataFact());
+                    propagate(newSrcPN, sp, d);
                 }
                     // if it is CallToRetEdge
                 else if ((*it)->isIntraCFGEdge()) {
                     Datafact d = transferFun(dstPN);
                     ICFGNode *ret = (*it)->getDstNode();
-                    ICFGNodeToFacts[ret].insert(d);
+                    ICFGNodeToFacts[ret].insert(d);   //reduntant
                     propagate(srcPN, ret, d);
-                    // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode
+                    // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode   ??
                     for (PathEdgeSet::iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end();
                          it != eit; ++it) {
                         if (((*it)->getSrcPathNode()->getICFGNode() == n)
@@ -93,26 +90,25 @@ void IFDS::forwardTabulate() {
                 assert((*it)->isCallCFGEdge());     // only can be call edges
                 ICFGNode *caller = (*it)->getSrcNode();
 
-                CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(
-                        *it); //downcast to CallCFGEdge  --> getCallSiteID
+                CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(*it); //downcast to CallCFGEdge  --> getCallSiteID
                 ICFGNode *ret = icfg->getRetICFGNode(icfg->getCallSite(callEdge->getCallSiteId()));
-                Datafact d5 = transferFun(
-                        dstPN);    // to do: add transfer function for exit node (only care about global var)
+                Datafact d5 = transferFun(dstPN);    // to do: add transfer function for exit node (only care about global var)
                 ICFGNodeToFacts[ret].insert(d5);
 
-                if (isNotInSummaryEdgeList(caller, d1, ret, d5)) {
+                Datafact d4 = getCallerDatafact(srcPN, caller); // deduce d4 from d1 (backward direction!)
+                if (isNotInSummaryEdgeList(caller, d4, ret, d5)) {    //d1 should be d4 ??
                     // insert new summary edge into SummaryEdgeList
-                    PathNode *srcPN = new PathNode(caller, d1);
+                    PathNode *srcPN = new PathNode(caller, d4);
                     PathNode *dstPN = new PathNode(ret, d5);
                     PathEdge *e = new PathEdge(srcPN, dstPN);
                     SummaryEdgeList.push_back(e);
-                    SummaryICFGNodeToFacts[caller].insert(d1);
+                    SummaryICFGNodeToFacts[caller].insert(d4);
                     SummaryICFGNodeToFacts[ret].insert(d5);
 
                     for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
                          pit != epit; ++pit) {
                         if (((*pit)->getDstPathNode()->getICFGNode() == caller)
-                            && ((*pit)->getDstPathNode()->getDataFact() == d1))
+                            && ((*pit)->getDstPathNode()->getDataFact() == d4))
                             propagate((*pit)->getSrcPathNode(), ret, d5);
                     }
                 }
@@ -201,13 +197,37 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
         return false;
 }
 
+//get d4 from d1
+IFDS::Datafact IFDS::getCallerDatafact(PathNode *srcPN, ICFGNode *caller) {
+    const ICFGNode *sp = srcPN->getICFGNode();
+    Datafact d1 = srcPN->getDataFact();
+
+    const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(caller);
+
+    for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
+         it != eit; ++it) {
+        const PAGNode *actualParmNode = (*it)->getParam();
+        if (actualParmNode->hasOutgoingEdges(PAGEdge::Call)) {
+            for (PAGEdge::PAGEdgeSetTy::const_iterator pit = actualParmNode->getOutgoingEdgesBegin(
+                    PAGEdge::Call), epit = actualParmNode->getOutgoingEdgesEnd(PAGEdge::Call);
+                 pit != epit; ++pit) {
+
+                if (isInitialized((*pit)->getDstNode(), d1))
+                    d1.erase(actualParmNode);
+                else
+                    d1.insert(actualParmNode);
+            }
+        }
+    }
+    return d1;
+}
+
 // StmtNode(excludes cmp and binaryOp)
 // Addr: srcNode is uninitialized, dstNode is initialiazed
 // copy: dstNode depends on srcNode
 // Store: dstNode->obj depends on srcNode
 // Load: dstNode depends on scrNode->obj
 // Gep : same as Copy
-
 // PHINode: resNode depends on operands -> getPAGNode
 
 IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
@@ -298,7 +318,10 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
                 }
             }
         }
+    // backward direction to deduce d4 from d1 ??
     } else if (const FunEntryBlockNode *node = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)) {
+
+
         //code to add ..
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
 
@@ -366,7 +389,56 @@ void IFDS::printRes() {
         }
         std::cout << "}\n";
     }
+    printPathEdgeList();
+    printSummaryEdgeList();
     std::cout << "-------------------------------------------------------";
+}
+
+void IFDS::printPathEdgeList() {
+    std::cout << "\n***********PathEdge**************\n";
+    for (PathEdgeSet::const_iterator it = PathEdgeList.begin(), eit = PathEdgeList.end(); it != eit; ++it){
+        NodeID srcID = (*it)->getSrcPathNode()->getICFGNode()->getId();
+        NodeID dstID = (*it)->getDstPathNode()->getICFGNode()->getId();
+        Datafact srcFact = (*it)->getSrcPathNode()->getDataFact();
+        Datafact dstFact = (*it)->getDstPathNode()->getDataFact();
+
+        cout << "[ICFGNodeID:" << srcID << ",(";
+        for (Datafact::const_iterator it = srcFact.begin(), eit = srcFact.end(); it != eit; it++){
+            std::cout << (*it)->getId() << " ";
+        }
+        if (!srcFact.empty())
+            cout << "\b";
+        cout << ")] --> [ICFGNodeID:" << dstID << ",(";
+        for (Datafact::const_iterator it = dstFact.begin(), eit = dstFact.end(); it != eit; it++){
+            std::cout << (*it)->getId() << " ";
+        }
+        if (!dstFact.empty())
+            cout << "\b";
+        cout << ")]\n";
+    }
+}
+void IFDS::printSummaryEdgeList() {
+    std::cout << "\n***********SummaryEdge**************\n";
+    for (PathEdgeSet::const_iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end(); it != eit; ++it){
+        NodeID srcID = (*it)->getSrcPathNode()->getICFGNode()->getId();
+        NodeID dstID = (*it)->getDstPathNode()->getICFGNode()->getId();
+        Datafact srcFact = (*it)->getSrcPathNode()->getDataFact();
+        Datafact dstFact = (*it)->getDstPathNode()->getDataFact();
+
+        cout << "[ICFGNodeID:" << srcID << ",(";
+        for (Datafact::const_iterator it = srcFact.begin(), eit = srcFact.end(); it != eit; it++){
+            std::cout << (*it)->getId() << " ";
+        }
+        if (!srcFact.empty())
+            cout << "\b";
+        cout << ")] --> [ICFGNodeID:" << dstID << ",(";
+        for (Datafact::const_iterator it = dstFact.begin(), eit = dstFact.end(); it != eit; it++){
+            std::cout << (*it)->getId() << " ";
+        }
+        if (!dstFact.empty())
+            cout << "\b";
+        cout << ")]\n";
+    }
 }
 
 void IFDS::validateTests(const char *fun) {
@@ -395,20 +467,20 @@ void IFDS::validateTests(const char *fun) {
                         }
                         if (strcmp(fun, "checkInit") == 0) {
                             if (initialize)
-                                outs() << sucMsg("\t SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                outs() << sucMsg("SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                             else
-                                errs() << errMsg("\t FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                errs() << errMsg("FAIL :") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                         } else if (strcmp(fun, "checkUninit") == 0) {
                             if (initialize)
-                                outs() << errMsg("\t FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                outs() << errMsg("FAIL :") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                             else
-                                errs() << sucMsg("\t SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                errs() << sucMsg("SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                         }
