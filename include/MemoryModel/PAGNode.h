@@ -303,6 +303,10 @@ public:
             return value->getName();
         return "";
     }
+    /// Return type of the value
+    inline virtual const llvm::Type* getType() const{
+       return mem->getType();
+    }
 };
 
 
