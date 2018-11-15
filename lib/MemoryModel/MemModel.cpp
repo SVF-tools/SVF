@@ -241,7 +241,7 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
         // Handling struct here
         if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) ) {
             assert(op && "non-const struct index in GEP");
-            const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
+            const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getFattenFieldIdxVec(ST);
             if ((unsigned)idx >= so.size()) {
                 outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
@@ -1000,7 +1000,7 @@ void SymbolTableInfo::handleGlobalInitializerCE(const Constant *C,
     } else if (SVFUtil::isa<ConstantStruct>(C)) {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
+            SymbolTableInfo::Symbolnfo()->getFattenFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
             u32_t off = offsetvect[i];
             handleGlobalInitializerCE(SVFUtil::cast<Constant>(C->getOperand(i)),

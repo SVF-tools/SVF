@@ -52,9 +52,9 @@ enum SYMTYPE {
 class StInfo {
 
 private:
-    /// Offsets of all fields of a struct
+    /// flattened field indices of a struct
     std::vector<u32_t> fldIdxVec;
-    /// Offsets of all fields of a struct
+    /// flattened field offsets of of a struct
     std::vector<u32_t> foffset;
     /// Types of all fields of a struct
     std::map<u32_t, const llvm::Type*> fldIdx2TypeMap;
@@ -677,8 +677,11 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    const inline std::vector<u32_t>& getStructOffsetVec(const Type *T) {
+    const inline std::vector<u32_t>& getFattenFieldIdxVec(const Type *T) {
         return getStructInfoIter(T)->second->getFieldIdxVec();
+    }
+    const inline std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T) {
+        return getStructInfoIter(T)->second->getFieldOffsetVec();
     }
     const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T) {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();

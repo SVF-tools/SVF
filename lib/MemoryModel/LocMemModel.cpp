@@ -107,7 +107,7 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
             // Handling struct here
             else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi)) {
                 assert(op && "non-const struct index in GEP");
-                const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getStructOffsetVec(ST);
+                const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getFieldOffsetVec(ST);
                 if ((unsigned)idx >= so.size()) {
                     outs() << "!! Struct index out of bounds" << idx << "\n";
                     assert(0);
