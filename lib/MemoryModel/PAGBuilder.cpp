@@ -599,19 +599,11 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
           outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
-    if (SVFUtil::isa<PointerType>(cs.getType())) {
-        NodeID dstrec = getValueNode(cs.getInstruction());
-        //Does it actually return a ptr?
-        if (SVFUtil::isa<PointerType>(F->getReturnType())) {
-            NodeID srcret = getReturnNode(F);
-            pag->addRetEdge(srcret, dstrec, cs.getInstruction());
-        } else {
-            // This is a int2ptr cast during parameter passing
-            pag->addBlackHoleAddrEdge(dstrec);
-        }
-
-    } else {
-        DBOUT(DPAGBuild, outs() << "not a pointer, ignored\n");
+    NodeID dstrec = getValueNode(cs.getInstruction());
+    //Does it actually return a ptr?
+    if (F->getReturnType()->isVoidTy() == false) {
+        NodeID srcret = getReturnNode(F);
+        pag->addRetEdge(srcret, dstrec, cs.getInstruction());
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
@@ -625,20 +617,12 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
             break;
         }
         const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
-        //Non-ptr formal args don't need constraints.
-        if (!SVFUtil::isa<PointerType>(FA->getType()))
-            continue;
 
         DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
 
         NodeID dstFA = getValueNode(FA);
-        if (SVFUtil::isa<PointerType>(AA->getType())) {
             NodeID srcAA = getValueNode(AA);
             pag->addCallEdge(srcAA, dstFA, cs.getInstruction());
-        } else {
-            // This is a int2ptr cast during parameter passing
-            pag->addFormalParamBlackHoleAddrEdge(dstFA, &*itF);
-        }
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg()) {
@@ -646,13 +630,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA) {
             Value *AA = *itA;
-            if (SVFUtil::isa<PointerType>(AA->getType())) {
                 NodeID vnAA = getValueNode(AA);
                 pag->addCallEdge(vnAA,vaF, cs.getInstruction());
-            } else {
-                // This is a int2ptr cast during parameter passing
-                // pag->addBlackHoleAddrEdge(vaF);
-            }
         }
     }
     if(itA != ieA) {

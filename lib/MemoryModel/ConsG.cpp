@@ -94,7 +94,6 @@ void ConstraintGraph::buildCG() {
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter) {
         NormalGepPE* edge = SVFUtil::cast<NormalGepPE>(*iter);
-        if(edge->isPTAEdge())
         	addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
     }
 
