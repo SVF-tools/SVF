@@ -86,7 +86,7 @@ public:
 
     /// Return type of the value
     inline virtual const Type* getType() const{
-        if (value && value->hasName())
+        if (value)
             return value->getType();
         return NULL;
     }
@@ -311,6 +311,10 @@ public:
             return value->getName();
         return "";
     }
+    /// Return type of the value
+    inline virtual const llvm::Type* getType() const{
+       return mem->getType();
+    }
 };
 
 
@@ -404,6 +408,11 @@ public:
     inline const LocationSet& getLocationSet() const {
         return ls;
     }
+
+    /// Return the type of this gep object
+	inline const llvm::Type* getType() {
+		return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+	}
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const {

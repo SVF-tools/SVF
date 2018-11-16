@@ -39,10 +39,14 @@ static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
  * Builder of offline constraint graph
  */
 void OfflineConsG::buildOfflineCG() {
+	LoadEdges loads;
+	StoreEdges stores;
+
     // Add a copy edge between the ref node of src node and dst node
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
             LoadCGEdgeSet.end(); it != eit; ++it) {
         LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
+        loads.insert(load);
         NodeID src = load->getSrcID();
         NodeID dst = load->getDstID();
         addRefLoadEdge(src, dst);
@@ -51,6 +55,7 @@ void OfflineConsG::buildOfflineCG() {
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
             StoreCGEdgeSet.end(); it != eit; ++it) {
         StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
+        stores.insert(store);
         NodeID src = store->getSrcID();
         NodeID dst = store->getDstID();
         addRefStoreEdge(src, dst);
@@ -60,15 +65,11 @@ void OfflineConsG::buildOfflineCG() {
     dump("oCG_initial");
 
     // Remove load and store edges in offline constraint graph
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
-            LoadCGEdgeSet.end(); it != eit; ++it) {
-        LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
-        removeLoadEdge(load);
+    for (LoadEdges::iterator it = loads.begin(), eit = loads.end(); it != eit; ++it) {
+        removeLoadEdge(*it);
     }
-    for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
-            StoreCGEdgeSet.end(); it != eit; ++it) {
-        StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
-        removeStoreEdge(store);
+    for (StoreEdges::iterator it = stores.begin(), eit = stores.end(); it != eit; ++it) {
+        removeStoreEdge(*it);
     }
 
     // Dump offline graph with removed load and store edges
@@ -111,34 +112,22 @@ bool OfflineConsG::createRefNode(NodeID nodeId) {
 }
 
 /*!
- * Offline constraint solver, building a offline constraint graph, and detecting its SCC cycles.
+ * Use a offline SCC detector to solve node relations in OCG.
+ * Generally, the 'oscc' should be solved first.
  */
-void OfflineConsG::solveOCG() {
-    // Implement SCC detection in offline constraint graph
-    offlineSCCDetect();
-    // Build offline nodeToRepMap
-    buildOfflineMap();
-}
-
-/*!
- * Offline SCC detection in AndersenHCD
- */
-void OfflineConsG::offlineSCCDetect() {
-    // initilize
-    if (!oscc)
-        oscc = new OSCC(this);
-    // detect
-    oscc->find();
+void OfflineConsG::solveOfflineSCC(OSCC* oscc) {
+	// Build offline nodeToRepMap
+	buildOfflineMap(oscc);
 }
 
 /*!
  * Build offline node to rep map, which only collect nodes having a ref node
  */
-void OfflineConsG::buildOfflineMap() {
+void OfflineConsG::buildOfflineMap(OSCC* oscc) {
     for (NodeToRepMap::const_iterator it = nodeToRefMap.begin(); it != nodeToRefMap.end(); ++it) {
         NodeID node = it->first;
         NodeID ref = getRef(node);
-        NodeID rep = solveRep(oscc->repNode(ref));
+        NodeID rep = solveRep(oscc,oscc->repNode(ref));
         if (!isaRef(rep) && !isaRef(node))
             setNorRep(node, rep);
     }
@@ -148,7 +137,7 @@ void OfflineConsG::buildOfflineMap() {
  * The rep nodes of offline constraint graph are possible to be 'ref' nodes.
  * These nodes should be replaced by one of its sub nodes which is not a ref node.
  */
-NodeID OfflineConsG::solveRep(NodeID rep) {
+NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep) {
     if (isaRef(rep)) {
         NodeBS subNodes = oscc->subNodes(rep);
         for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt) {

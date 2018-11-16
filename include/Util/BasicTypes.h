@@ -58,6 +58,7 @@
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
 #include <llvm/Support/GraphWriter.h>		// for graph write
+#include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 
 #include <vector>
 #include <list>
@@ -244,5 +245,6 @@ typedef llvm::const_pred_iterator const_pred_iterator;
 typedef llvm::gep_type_iterator gep_type_iterator;
 typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
-
+typedef llvm::IRBuilder<> IRBuilder;
+typedef llvm::IntegerType IntegerType;
 #endif /* BASICTYPES_H_ */

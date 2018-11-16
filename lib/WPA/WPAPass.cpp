@@ -52,6 +52,7 @@ static llvm::cl::bits<PointerAnalysis::PTATY> PASelected(llvm::cl::desc("Select 
 		llvm::cl::values(
             clEnumValN(PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenHCD_WPA, "hander", "Hybrid cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
@@ -105,6 +106,9 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
             break;
         case PointerAnalysis::AndersenLCD_WPA:
             _pta = new AndersenLCD();
+            break;
+        case PointerAnalysis::AndersenHCD_WPA:
+            _pta = new AndersenHCD();
             break;
         case PointerAnalysis::AndersenWave_WPA:
             _pta = new AndersenWave();

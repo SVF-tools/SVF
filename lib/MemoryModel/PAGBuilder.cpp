@@ -169,6 +169,8 @@ void PAGBuilder::processCE(const Value *val) {
             DBOUT(DPAGBuild,
                   outs() << "handle gep constant expression " << *ref << "\n");
             const Constant* opnd = gepce->getOperand(0);
+            // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
+            processCE(opnd);
             LocationSet ls;
             bool constGep = computeGepOffset(gepce, ls);
             // must invoke pag methods here, otherwise it will be a dead recursion cycle
@@ -181,25 +183,25 @@ void PAGBuilder::processCE(const Value *val) {
              */
             pag->addGepEdge(pag->getValueNode(opnd), pag->getValueNode(gepce), ls, constGep);
             pag->setCurrentLocation(cval, cbb);
-            // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
-            processCE(opnd);
         }
         else if (const ConstantExpr* castce = isCastConstantExpr(ref)) {
             DBOUT(DPAGBuild,
                   outs() << "handle cast constant expression " << *ref << "\n");
             const Constant* opnd = castce->getOperand(0);
+            processCE(opnd);
             const Value* cval = pag->getCurrentValue();
             const BasicBlock* cbb = pag->getCurrentBB();
             pag->setCurrentLocation(castce, NULL);
             pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(castce));
             pag->setCurrentLocation(cval, cbb);
-            processCE(opnd);
         }
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref)) {
             DBOUT(DPAGBuild,
                   outs() << "handle select constant expression " << *ref << "\n");
             const Constant* src1 = selectce->getOperand(1);
             const Constant* src2 = selectce->getOperand(2);
+            processCE(src1);
+            processCE(src2);
             const Value* cval = pag->getCurrentValue();
             const BasicBlock* cbb = pag->getCurrentBB();
             pag->setCurrentLocation(selectce, NULL);
@@ -211,8 +213,6 @@ void PAGBuilder::processCE(const Value *val) {
             pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc1),NULL);
             pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc2),NULL);
             pag->setCurrentLocation(cval, cbb);
-            processCE(src1);
-            processCE(src2);
         }
         // if we meet a int2ptr, then it points-to black hole
         else if (const ConstantExpr* int2Ptrce = isInt2PtrConstantExpr(ref)) {
@@ -220,16 +220,16 @@ void PAGBuilder::processCE(const Value *val) {
         }
         else if (const ConstantExpr* ptr2Intce = isPtr2IntConstantExpr(ref)) {
 			const Constant* opnd = ptr2Intce->getOperand(0);
+			processCE(opnd);
 			const BasicBlock* cbb = pag->getCurrentBB();
 			const Value* cval = pag->getCurrentValue();
 			pag->setCurrentLocation(ptr2Intce, NULL);
 			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
 			pag->setCurrentLocation(cval, cbb);
-			processCE(opnd);
         }
         else{
-        		if(SVFUtil::isa<ConstantExpr>(val))
-        			assert(false && "we don't handle all other constant expression for now!");
+        	if(SVFUtil::isa<ConstantExpr>(val))
+        		assert(false && "we don't handle all other constant expression for now!");
         }
     }
 }
@@ -297,7 +297,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     } else if (SVFUtil::isa<ConstantStruct>(C)) {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::Symbolnfo()->getStructOffsetVec(sty);
+            SymbolTableInfo::Symbolnfo()->getFattenFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++) {
             u32_t off = offsetvect[i];
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
@@ -599,19 +599,11 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
           outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
-    if (SVFUtil::isa<PointerType>(cs.getType())) {
-        NodeID dstrec = getValueNode(cs.getInstruction());
-        //Does it actually return a ptr?
-        if (SVFUtil::isa<PointerType>(F->getReturnType())) {
-            NodeID srcret = getReturnNode(F);
-            pag->addRetEdge(srcret, dstrec, cs.getInstruction());
-        } else {
-            // This is a int2ptr cast during parameter passing
-            pag->addBlackHoleAddrEdge(dstrec);
-        }
-
-    } else {
-        DBOUT(DPAGBuild, outs() << "not a pointer, ignored\n");
+    NodeID dstrec = getValueNode(cs.getInstruction());
+    //Does it actually return a ptr?
+    if (F->getReturnType()->isVoidTy() == false) {
+        NodeID srcret = getReturnNode(F);
+        pag->addRetEdge(srcret, dstrec, cs.getInstruction());
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
@@ -625,20 +617,12 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
             break;
         }
         const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
-        //Non-ptr formal args don't need constraints.
-        if (!SVFUtil::isa<PointerType>(FA->getType()))
-            continue;
 
         DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
 
         NodeID dstFA = getValueNode(FA);
-        if (SVFUtil::isa<PointerType>(AA->getType())) {
             NodeID srcAA = getValueNode(AA);
             pag->addCallEdge(srcAA, dstFA, cs.getInstruction());
-        } else {
-            // This is a int2ptr cast during parameter passing
-            pag->addFormalParamBlackHoleAddrEdge(dstFA, &*itF);
-        }
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg()) {
@@ -646,13 +630,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA) {
             Value *AA = *itA;
-            if (SVFUtil::isa<PointerType>(AA->getType())) {
                 NodeID vnAA = getValueNode(AA);
                 pag->addCallEdge(vnAA,vaF, cs.getInstruction());
-            } else {
-                // This is a int2ptr cast during parameter passing
-                // pag->addBlackHoleAddrEdge(vaF);
-            }
         }
     }
     if(itA != ieA) {

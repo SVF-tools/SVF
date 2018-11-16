@@ -257,6 +257,21 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
 
 
 /*!
+ * Return the type of the object from a heap allocation
+ */
+const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
+	assert(isHeapAllocExtCall(inst) && "not a heap allocation instruction?");
+	const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
+	if(const Instruction* nextInst =  inst->getNextNode()){
+		if(const CastInst* cast = SVFUtil::dyn_cast<CastInst>(nextInst)){
+			type = SVFUtil::dyn_cast<PointerType>(cast->getType());
+		}
+	}
+	assert(type && "not a pointer type?");
+	return type->getElementType();
+}
+
+/*!
  * Get position of a successor basic block
  */
 u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {

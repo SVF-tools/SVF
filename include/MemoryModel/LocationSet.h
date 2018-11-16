@@ -44,15 +44,19 @@ public:
     typedef std::vector<NodePair > ElemNumStridePairVec;
 
 private:
-    u32_t offset;
+    u32_t fldIdx;
+    u32_t byteOffset;
     const Type* elemTy;
     ElemNumStridePairVec elemNumStridePair;
 public:
-    FieldInfo(u32_t of, const Type* ty, ElemNumStridePairVec pa):
-        offset(of), elemTy(ty), elemNumStridePair(pa) {
+	FieldInfo(u32_t idx, u32_t byteOff, const Type* ty, ElemNumStridePairVec pa) :
+			fldIdx(idx), byteOffset(byteOff), elemTy(ty), elemNumStridePair(pa) {
+	}
+    inline u32_t getFlattenFldIdx() const {
+        return fldIdx;
     }
-    inline u32_t getFlattenOffset() const {
-        return offset;
+    inline u32_t getFlattenByteOffset() const {
+        return byteOffset;
     }
     inline const Type* getFlattenElemTy() const {
         return elemTy;
@@ -86,11 +90,11 @@ public:
     typedef FieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
 
     /// Constructor
-    LocationSet(Size_t o = 0) : offset(o)
+    LocationSet(Size_t o = 0) : fldIdx(o), byteOffset(o)
     {}
 
     /// Copy Constructor
-    LocationSet(const LocationSet& ls) : offset(ls.offset)
+    LocationSet(const LocationSet& ls) : fldIdx(ls.fldIdx)
     {
         const ElemNumStridePairVec& vec = ls.getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -100,7 +104,7 @@ public:
     }
 
     /// Initialization from FieldInfo
-    LocationSet(const FieldInfo& fi) : offset(fi.getFlattenOffset())
+    LocationSet(const FieldInfo& fi) : fldIdx(fi.getFlattenFldIdx())
     {
         const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -116,7 +120,8 @@ public:
     //@{
     inline LocationSet operator+ (const LocationSet& rhs) const {
         LocationSet ls(rhs);
-        ls.offset += getOffset();
+        ls.fldIdx += getOffset();
+        ls.byteOffset += getByteOffset();
         ElemNumStridePairVec::const_iterator it = getNumStridePair().begin();
         ElemNumStridePairVec::const_iterator eit = getNumStridePair().end();
         for (; it != eit; ++it)
@@ -125,13 +130,16 @@ public:
         return ls;
     }
     inline const LocationSet& operator= (const LocationSet& rhs) {
-        offset = rhs.offset;
-        numStridePair = rhs.getNumStridePair();
-        return *this;
+		fldIdx = rhs.fldIdx;
+		byteOffset = rhs.byteOffset;
+		numStridePair = rhs.getNumStridePair();
+		return *this;
     }
     inline bool operator< (const LocationSet& rhs) const {
-        if (offset != rhs.offset)
-            return (offset < rhs.offset);
+        if (fldIdx != rhs.fldIdx)
+            return (fldIdx < rhs.fldIdx);
+//        else if (byteOffset != rhs.byteOffset)
+//            return (byteOffset < rhs.byteOffset);
         else {
             const ElemNumStridePairVec& pairVec = getNumStridePair();
             const ElemNumStridePairVec& rhsPairVec = rhs.getNumStridePair();
@@ -156,7 +164,16 @@ public:
     /// Get methods
     //@{
     inline Size_t getOffset() const {
-        return offset;
+        return fldIdx;
+    }
+    inline Size_t getByteOffset() const {
+        return byteOffset;
+    }
+    inline void setFldIdx(Size_t idx) {
+		fldIdx = idx;
+    }
+    inline void setByteOffset(Size_t os) {
+        byteOffset = os;
     }
     inline const ElemNumStridePairVec& getNumStridePair() const {
         return numStridePair;
@@ -196,7 +213,9 @@ public:
 
     /// Dump location set
     void dump() const {
-        SVFUtil::outs() << "LocationSet\tOffset: " << getOffset()
+
+        SVFUtil::outs() << "LocationSet\tField_Index: " << getOffset();
+        SVFUtil::outs() << "\tOffset: " << getByteOffset()
                      << ",\tNum-Stride: {";
         const ElemNumStridePairVec& vec = getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -218,7 +237,8 @@ private:
         return (n2 == 0) ? n1 : gcd (n2, n1 % n2);
     }
 
-    Size_t offset;	///< offset relative to base
+    Size_t fldIdx;	///< offset relative to base
+    Size_t byteOffset;	///< offset relative to base
     ElemNumStridePairVec numStridePair;	///< element number and stride pair
 };
 
