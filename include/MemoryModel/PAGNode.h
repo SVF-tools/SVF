@@ -119,6 +119,19 @@ public:
     /// Get name of the LLVM value
     virtual const std::string getValueName() const = 0;
 
+    /// Return the function that this PAGNode resides in. Return NULL if it is a global or constantexpr node
+    virtual inline const Function* getFunction() const {
+        if(value){
+            if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+                return inst->getParent()->getParent();
+            else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+                return arg->getParent();
+            else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
+                return fun;
+        }
+        return NULL;
+    }
+
     /// Get incoming PAG edges
     inline PAGEdge::PAGEdgeSetTy& getIncomingEdges(PAGEdge::PEDGEK kind) {
         return InEdgeKindToSetMap[kind];
