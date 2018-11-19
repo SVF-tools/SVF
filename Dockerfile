@@ -7,7 +7,7 @@ RUN set -e
 ENV llvm_version=7.0.0
 
 # Define dependencies.
-ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim clang-7"
+ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim"
 ENV build_deps="wget xz-utils cmake python"
 
 # Fetch dependencies.
@@ -20,7 +20,11 @@ RUN mkdir -p /home/ysui/llvm-${llvm_version}
 WORKDIR /home/ysui/llvm-${llvm_version}
 RUN wget "http://llvm.org/releases/${llvm_version}/llvm-${llvm_version}.src.tar.xz"
 RUN tar xvf "llvm-${llvm_version}.src.tar.xz"
+RUN wget "http://llvm.org/releases/${llvm_version}/cfe-${llvm_version}.src.tar.xz"
+RUN tar xvf "cfe-${llvm_version}.src.tar.xz"
+RUN mv "cfe-${llvm_version}.src" "llvm-${llvm_version}.src/tools/clang"
 RUN rm "llvm-${llvm_version}.src.tar.xz"
+RUN rm "cfe-${llvm_version}.src.tar.xz"
 RUN mkdir llvm-${llvm_version}.obj
 WORKDIR /home/ysui/llvm-${llvm_version}/llvm-${llvm_version}.obj
 RUN cmake -DCMAKE_BUILD_TYPE=MinSizeRel ../llvm-${llvm_version}.src
