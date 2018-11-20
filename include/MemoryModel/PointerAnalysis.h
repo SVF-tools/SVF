@@ -166,7 +166,7 @@ public:
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
-    inline NodeBS& getAllValidPtrs() {
+    inline NodeSet& getAllValidPtrs() {
         return pag->getAllValidPtrs();
     }
 
@@ -755,7 +755,7 @@ public:
 
     /// Dump points-to information of top-level pointers
     void dumpTopLevelPtsTo() {
-        for (NodeBS::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter) {
+        for (NodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter) {
             const PAGNode* node = this->getPAG()->getPAGNode(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node)) {
                 if (SVFUtil::isa<DummyObjPN>(node)) {
