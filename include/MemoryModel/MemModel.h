@@ -487,7 +487,10 @@ public:
     }
 
     /// Helper method to get the size of the type from target data layout
+    //@{
     u32_t getTypeSizeInBytes(const llvm::Type* type);
+    u32_t getTypeSizeInBytes(const llvm::StructType *sty, u32_t field_index);
+    //@}
 
     /// Start building memory model
     void buildMemModel(SVFModule svfModule);
