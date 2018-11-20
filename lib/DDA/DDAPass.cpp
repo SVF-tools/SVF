@@ -302,8 +302,8 @@ AliasResult DDAPass::alias(const Value* V1, const Value* V2) {
  * Print queries' pts
  */
 void DDAPass::printQueryPTS() {
-    const NodeBS& candidates = _client->getCandidateQueries();
-    for (NodeBS::iterator it = candidates.begin(), eit = candidates.end(); it != eit; ++it) {
+    const NodeSet& candidates = _client->getCandidateQueries();
+    for (NodeSet::iterator it = candidates.begin(), eit = candidates.end(); it != eit; ++it) {
         const PointsTo& pts = _pta->getPts(*it);
         _pta->dumpPts(*it,pts);
     }
