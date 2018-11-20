@@ -279,6 +279,7 @@ void PTAStat::printStat(string statname) {
     std::cout << "#######################################################" << std::endl;
     generalNumMap.clear();
     PTNumStatMap.clear();
+    timeStatMap.clear();
 }
 
 

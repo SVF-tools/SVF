@@ -127,7 +127,7 @@ void AndersenStat::constraintGraphStat(){
     for (ConstraintGraph::ConstraintNodeIDToNodeMapTy::iterator nodeIt = consCG->begin(), nodeEit = consCG->end();
             nodeIt != nodeEit; nodeIt++) {
         totalNodeNumber++;
-        if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty() )
+        if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
         u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
@@ -185,18 +185,18 @@ void AndersenStat::constraintGraphStat(){
     PTNumStatMap["NumOfLoads"] = consCG->getLoadCGEdges().size();
     PTNumStatMap["NumOfStores"] = consCG->getStoreCGEdges().size();
     PTNumStatMap["MaxInCopyEdge"] = copymaxIn;
-    PTNumStatMap["MaxOutCopyEdge"] = copymaxIn;
-    PTNumStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
+    PTNumStatMap["MaxOutCopyEdge"] = copymaxOut;
     PTNumStatMap["MaxInLoadEdge"] = loadmaxIn;
-    PTNumStatMap["MaxOutLoadEdge"] = loadmaxIn;
-    PTNumStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
+    PTNumStatMap["MaxOutLoadEdge"] = loadmaxOut;
     PTNumStatMap["MaxInStoreEdge"] = storemaxIn;
-    PTNumStatMap["MaxOutStoreEdge"] = storemaxIn;
+    PTNumStatMap["MaxOutStoreEdge"] = storemaxOut;
     PTNumStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
     PTNumStatMap["MaxInAddrEdge"] = addrmaxIn;
-    PTNumStatMap["MaxOutAddrEdge"] = addrmaxIn;
-    PTNumStatMap["AvgIn/OutAddrEdge"] = addravgIn;
-    PTNumStatMap["AvgIn/OutEdge"] = avgIn;
+    PTNumStatMap["MaxOutAddrEdge"] = addrmaxOut;
+    timeStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
+    timeStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
+    timeStatMap["AvgIn/OutAddrEdge"] = addravgIn;
+    timeStatMap["AvgIn/OutEdge"] = avgIn;
 
     PTAStat::printStat("Constraint Graph Stats");
 }
