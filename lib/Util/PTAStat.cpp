@@ -197,9 +197,8 @@ void PTAStat::performStat() {
     bitcastInstStat();
     branchStat();
 
-    printStat();
+    printStat("General Stats");
 
-    generalNumMap.clear();
 }
 
 void PTAStat::callgraphStat() {
@@ -248,19 +247,18 @@ void PTAStat::callgraphStat() {
     PTNumStatMap["TotalEdge"] = totalEdge;
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
-    std::cout << "\n****CallGraph SCC Stat****\n";
-    PTAStat::printStat();
-
-    PTNumStatMap.clear();
+    PTAStat::printStat("CallGraph Stats");
 
     delete callgraphSCC;
 }
 
-void PTAStat::printStat() {
+void PTAStat::printStat(string statname) {
 
     StringRef fullName(SymbolTableInfo::Symbolnfo()->getModule().getModuleIdentifier());
     StringRef name = fullName.split('/').second;
     moduleName = name.split('.').first.str();
+
+    std::cout << "\n*********" << statname << "***************\n";
     std::cout << "################ (program : " << moduleName << ")###############\n";
     std::cout.flags(std::ios::left);
     unsigned field_width = 20;
@@ -279,7 +277,8 @@ void PTAStat::printStat() {
     }
 
     std::cout << "#######################################################" << std::endl;
-
+    generalNumMap.clear();
+    PTNumStatMap.clear();
 }
 
 

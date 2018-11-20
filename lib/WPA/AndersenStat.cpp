@@ -38,7 +38,6 @@ u32_t AndersenStat::_NumOfNodesInCycles = 0;
 u32_t AndersenStat::_MaxNumOfNodesInSCC = 0;
 
 const char* AndersenStat::CollapseTime = "CollapseTime";
-const char* AndersenStat::NumberOfCGNode = "CGNodeNum";
 
 /*!
  * Constructor
@@ -87,6 +86,120 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG) {
     _NumOfCycles += repNodes.size();
 }
 
+void AndersenStat::constraintGraphStat(){
+
+
+    ConstraintGraph* consCG = pta->getConstraintGraph();
+
+    u32_t numOfCopys = 0;
+    u32_t numOfGeps = 0;
+    // collect copy and gep edges
+    for(ConstraintEdge::ConstraintEdgeSetTy::iterator it = consCG->getDirectCGEdges().begin(),
+            eit = consCG->getDirectCGEdges().end(); it!=eit; ++it) {
+        if(SVFUtil::isa<CopyCGEdge>(*it))
+            numOfCopys++;
+        else if(SVFUtil::isa<GepCGEdge>(*it))
+            numOfGeps++;
+        else
+            assert(false && "what else!!");
+    }
+
+    u32_t totalNodeNumber = 0;
+    u32_t cgNodeNumber = 0;
+    u32_t addrtotalIn = 0;
+    u32_t addrtotalOut = 0;
+    u32_t addrmaxIn = 0;
+    u32_t addrmaxOut = 0;
+    u32_t copytotalIn = 0;
+    u32_t copytotalOut = 0;
+    u32_t copymaxIn = 0;
+    u32_t copymaxOut = 0;
+    u32_t loadtotalIn = 0;
+    u32_t loadtotalOut = 0;
+    u32_t loadmaxIn = 0;
+    u32_t loadmaxOut = 0;
+    u32_t storetotalIn = 0;
+    u32_t storetotalOut = 0;
+    u32_t storemaxIn = 0;
+    u32_t storemaxOut = 0;
+
+
+    for (ConstraintGraph::ConstraintNodeIDToNodeMapTy::iterator nodeIt = consCG->begin(), nodeEit = consCG->end();
+            nodeIt != nodeEit; nodeIt++) {
+        totalNodeNumber++;
+        if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty() )
+            continue;
+        cgNodeNumber++;
+        u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
+        if(nCopyIn > copymaxIn)
+            copymaxIn = nCopyIn;
+        copytotalIn +=nCopyIn;
+        u32_t nCopyOut = nodeIt->second->getDirectOutEdges().size();
+        if(nCopyOut > copymaxOut)
+            copymaxOut = nCopyOut;
+        copytotalOut +=nCopyOut;
+        u32_t nLoadIn = nodeIt->second->getLoadInEdges().size();
+        if(nLoadIn > loadmaxIn)
+            loadmaxIn = nLoadIn;
+        loadtotalIn +=nLoadIn;
+        u32_t nLoadOut = nodeIt->second->getLoadOutEdges().size();
+        if(nLoadOut > loadmaxOut)
+            loadmaxOut = nLoadOut;
+        loadtotalOut +=nLoadOut;
+        u32_t nStoreIn = nodeIt->second->getStoreInEdges().size();
+        if(nStoreIn > storemaxIn)
+            storemaxIn = nStoreIn;
+        storetotalIn +=nStoreIn;
+        u32_t nStoreOut = nodeIt->second->getStoreOutEdges().size();
+        if(nStoreOut > storemaxOut)
+            storemaxOut = nStoreOut;
+        storetotalOut +=nStoreOut;
+        u32_t nAddrIn = nodeIt->second->getAddrInEdges().size();
+        if(nAddrIn > addrmaxIn)
+            addrmaxIn = nAddrIn;
+        addrtotalIn +=nAddrIn;
+        u32_t nAddrOut = nodeIt->second->getAddrOutEdges().size();
+        if(nAddrOut > addrmaxOut)
+            addrmaxOut = nAddrOut;
+        addrtotalOut +=nAddrOut;
+    }
+    double storeavgIn = (double)storetotalIn/cgNodeNumber;
+    double storeavgOut = (double)storetotalOut/cgNodeNumber;
+    double loadavgIn = (double)loadtotalIn/cgNodeNumber;
+    double loadavgOut = (double)loadtotalOut/cgNodeNumber;
+    double copyavgIn = (double)copytotalIn/cgNodeNumber;
+    double copyavgOut = (double)copytotalOut/cgNodeNumber;
+    double addravgIn = (double)addrtotalIn/cgNodeNumber;
+    double addravgOut = (double)addrtotalOut/cgNodeNumber;
+    double avgIn = (double)(addrtotalIn + copytotalIn + loadtotalIn + storetotalIn)/cgNodeNumber;
+    double avgOut = (double)(copytotalOut + loadtotalOut + storetotalOut)/cgNodeNumber;
+
+
+    PTNumStatMap["NumOfCGNode"] = totalNodeNumber;
+    PTNumStatMap["TotalValidNode"] = cgNodeNumber;
+    PTNumStatMap["NumOfCGEdge"] = consCG->getLoadCGEdges().size() + consCG->getStoreCGEdges().size()
+                                    + numOfCopys + numOfGeps;
+    PTNumStatMap["NumOfAddrs"] =  consCG->getAddrCGEdges().size();
+    PTNumStatMap["NumOfCopys"] = numOfCopys;
+    PTNumStatMap["NumOfGeps"] =  numOfGeps;
+    PTNumStatMap["NumOfLoads"] = consCG->getLoadCGEdges().size();
+    PTNumStatMap["NumOfStores"] = consCG->getStoreCGEdges().size();
+    PTNumStatMap["MaxInCopyEdge"] = copymaxIn;
+    PTNumStatMap["MaxOutCopyEdge"] = copymaxIn;
+    PTNumStatMap["AvgIn/OutCopyEdge"] = copyavgIn;
+    PTNumStatMap["MaxInLoadEdge"] = loadmaxIn;
+    PTNumStatMap["MaxOutLoadEdge"] = loadmaxIn;
+    PTNumStatMap["AvgIn/OutLoadEdge"] = loadavgIn;
+    PTNumStatMap["MaxInStoreEdge"] = storemaxIn;
+    PTNumStatMap["MaxOutStoreEdge"] = storemaxIn;
+    PTNumStatMap["AvgIn/OutStoreEdge"] = storeavgIn;
+    PTNumStatMap["MaxInAddrEdge"] = addrmaxIn;
+    PTNumStatMap["MaxOutAddrEdge"] = addrmaxIn;
+    PTNumStatMap["AvgIn/OutAddrEdge"] = addravgIn;
+    PTNumStatMap["AvgIn/OutEdge"] = avgIn;
+
+    PTAStat::printStat("Constraint Graph Stats");
+}
 /*!
  * Stat null pointers
  */
@@ -151,25 +264,6 @@ void AndersenStat::performStat() {
     // stat null ptr number
     statNullPtr();
 
-    u32_t numOfCopys = 0;
-    u32_t numOfGeps = 0;
-    // collect copy and gep edges
-    for(ConstraintEdge::ConstraintEdgeSetTy::iterator it = consCG->getDirectCGEdges().begin(),
-            eit = consCG->getDirectCGEdges().end(); it!=eit; ++it) {
-        if(SVFUtil::isa<CopyCGEdge>(*it))
-            numOfCopys++;
-        else if(SVFUtil::isa<GepCGEdge>(*it))
-            numOfGeps++;
-        else
-            assert(false && "what else!!");
-    }
-
-    u32_t cgNodeNumber = 0;
-    for (ConstraintGraph::ConstraintNodeIDToNodeMapTy::iterator nodeIt = consCG->begin(), nodeEit = consCG->end();
-            nodeIt != nodeEit; nodeIt++) {
-        cgNodeNumber++;
-    }
-
     u32_t totalPointers = 0;
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
@@ -194,6 +288,8 @@ void AndersenStat::performStat() {
 
     PTAStat::performStat();
 
+    constraintGraphStat();
+
     timeStatMap[TotalAnalysisTime] = (endTime - startTime)/TIMEINTERVAL;
     timeStatMap[SCCDetectionTime] = Andersen::timeOfSCCDetection;
     timeStatMap[SCCMergeTime] =  Andersen::timeOfSCCMerges;
@@ -205,14 +301,7 @@ void AndersenStat::performStat() {
 
     PTNumStatMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
     PTNumStatMap[TotalNumOfObjects] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
-    PTNumStatMap[TotalNumOfEdges] = consCG->getLoadCGEdges().size() + consCG->getStoreCGEdges().size()
-                                    + numOfCopys + numOfGeps;
 
-    PTNumStatMap[NumOfAddrs] =  consCG->getAddrCGEdges().size();
-    PTNumStatMap[NumOfCopys] = numOfCopys;
-    PTNumStatMap[NumOfGeps] =  numOfGeps;
-    PTNumStatMap[NumOfLoads] = consCG->getLoadCGEdges().size();
-    PTNumStatMap[NumOfStores] = consCG->getStoreCGEdges().size();
 
     PTNumStatMap[NumOfProcessedAddrs] = Andersen::numOfProcessedAddr;
     PTNumStatMap[NumOfProcessedCopys] = Andersen::numOfProcessedCopy;
@@ -224,8 +313,6 @@ void AndersenStat::performStat() {
     PTNumStatMap[NumOfMemObjects] = pag->getObjectNodeNum();
     PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();
     PTNumStatMap[NumOfGepFieldObjects] = pag->getFieldObjNodeNum();
-
-    PTNumStatMap[NumberOfCGNode] = cgNodeNumber;
 
     timeStatMap[AveragePointsToSetSize] = (double)totalPtsSize/totalPointers;;
     timeStatMap[AverageTopLevPointsToSetSize] = (double)totalTopLevPtsSize/totalTopLevPointers;;
@@ -246,15 +333,6 @@ void AndersenStat::performStat() {
     PTNumStatMap["PointsToConstPtr"] = _NumOfConstantPtr;
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
 
-    printStat();
-
+    PTAStat::printStat("Andersen Pointer Analysis Stats");
 }
 
-/*!
- * Print all statistics
- */
-void AndersenStat::printStat() {
-
-    std::cout << "\n****Andersen Pointer Analysis Statistics****\n";
-    PTAStat::printStat();
-}
