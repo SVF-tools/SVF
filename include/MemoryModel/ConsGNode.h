@@ -41,6 +41,7 @@ public:
     typedef ConstraintEdge::ConstraintEdgeSetTy::const_iterator const_iterator;
     bool _isPWCNode;
 
+private:
     ConstraintEdge::ConstraintEdgeSetTy loadInEdges; ///< all incoming load edge of this node
     ConstraintEdge::ConstraintEdgeSetTy loadOutEdges; ///< all outgoing load edge of this node
 
@@ -78,6 +79,34 @@ public:
     inline bool isIndirectEdge(ConstraintEdge::ConstraintEdgeK kind) {
         return (kind == ConstraintEdge::Load || kind == ConstraintEdge::Store);
     }
+
+    /// Return constraint edges
+    //@{
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getDirectInEdges() const {
+        return directInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getDirectOutEdges() const {
+        return directOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getLoadInEdges() const {
+        return loadInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getLoadOutEdges() const {
+        return loadOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getStoreInEdges() const {
+        return storeInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getStoreOutEdges() const {
+        return storeOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getAddrInEdges() const {
+        return addressInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getAddrOutEdges() const {
+        return addressOutEdges;
+    }
+    //@}
 
     ///  Iterators
     //@{
