@@ -277,7 +277,7 @@ void PointerAnalysis::validateTests() {
 
 void PointerAnalysis::dumpAllTypes()
 {
-    for (NodeBS::iterator nIter = this->getAllValidPtrs().begin();
+    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter) {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
         if (isa<DummyObjPN>(node) || isa<DummyValPN>(node))
@@ -462,7 +462,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename) {
  * Dump points-to of each pag node
  */
 void BVDataPTAImpl::dumpTopLevelPtsTo() {
-    for (NodeBS::iterator nIter = this->getAllValidPtrs().begin();
+    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter) {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node)) {

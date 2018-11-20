@@ -90,7 +90,7 @@ private:
 
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
-    NodeBS candidatePointers;
+    NodeSet candidatePointers;
 
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL) {
@@ -104,7 +104,7 @@ private:
 
 public:
     /// Return valid pointers
-    inline NodeBS& getAllValidPtrs() {
+    inline NodeSet& getAllValidPtrs() {
         return candidatePointers;
     }
     /// Initialize candidate pointers
@@ -116,7 +116,7 @@ public:
             if (isValidPointer(nodeId) == false)
                 continue;
 
-            candidatePointers.test_and_set(nodeId);
+            candidatePointers.insert(nodeId);
         }
     }
 
