@@ -39,7 +39,6 @@ class ConstraintNode : public GenericConsNodeTy {
 public:
     typedef ConstraintEdge::ConstraintEdgeSetTy::iterator iterator;
     typedef ConstraintEdge::ConstraintEdgeSetTy::const_iterator const_iterator;
-private:
     bool _isPWCNode;
 
     ConstraintEdge::ConstraintEdgeSetTy loadInEdges; ///< all incoming load edge of this node
