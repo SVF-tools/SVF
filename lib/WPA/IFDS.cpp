@@ -93,7 +93,6 @@ void IFDS::forwardTabulate() {
                 CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(*it); //downcast to CallCFGEdge  --> getCallSiteID
                 ICFGNode *ret = icfg->getRetICFGNode(icfg->getCallSite(callEdge->getCallSiteId()));
                 Datafact d5 = transferFun(dstPN);    // to do: add transfer function for exit node (only care about global var)
-                ICFGNodeToFacts[ret].insert(d5);
 
                 Datafact d4 = getCallerDatafact(srcPN, caller); // deduce d4 from d1 (backward direction!)
                 if (isNotInSummaryEdgeList(caller, d4, ret, d5)) {    //d1 should be d4 ??
@@ -107,7 +106,7 @@ void IFDS::forwardTabulate() {
 
                     for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
                          pit != epit; ++pit) {
-                        if (((*pit)->getDstPathNode()->getICFGNode() == caller)
+                        if (((*pit)->getDstPathNode()->getICFGNode()->getId() == caller->getId())
                             && ((*pit)->getDstPathNode()->getDataFact() == d4))
                             propagate((*pit)->getSrcPathNode(), ret, d5);
                     }
@@ -201,7 +200,6 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
 IFDS::Datafact IFDS::getCallerDatafact(PathNode *srcPN, ICFGNode *caller) {
     const ICFGNode *sp = srcPN->getICFGNode();
     Datafact d1 = srcPN->getDataFact();
-
     const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(caller);
 
     for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
@@ -212,10 +210,7 @@ IFDS::Datafact IFDS::getCallerDatafact(PathNode *srcPN, ICFGNode *caller) {
                     PAGEdge::Call), epit = actualParmNode->getOutgoingEdgesEnd(PAGEdge::Call);
                  pit != epit; ++pit) {
 
-                if (isInitialized((*pit)->getDstNode(), d1))
-                    d1.erase(actualParmNode);
-                else
-                    d1.insert(actualParmNode);
+                d1.insert((*pit)->getDstNode());
             }
         }
     }
