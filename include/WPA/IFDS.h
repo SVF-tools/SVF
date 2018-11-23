@@ -21,11 +21,10 @@ public:
     class PathNode;
     class PathEdge;
 
-    typedef std::string ValueName;          //(stmtNode->getPAGDstNode()->getValueName())
     typedef std::set<const PAGNode *> Datafact;    //set of uninitialized variables at ICFGNode
     typedef std::set<Datafact> Facts;       //different datafacts from different path
     typedef std::set<const ICFGNode *> ICFGNodeSet;
-    typedef std::list<PathEdge *> PathEdgeSet;
+    typedef std::list<PathEdge *> PathEdgeSet;    //to do : list -> vector (faster)
     typedef std::map<const ICFGNode *, Facts> ICFGNodeToDataFactsMap;
 
 protected:
@@ -108,7 +107,7 @@ public:
             icfgNode = node;
         }
 
-        void setDataFact(Datafact fact) {
+        void setDataFact(Datafact &fact) {    //reference
             datafact = fact;
         }
 
