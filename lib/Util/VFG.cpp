@@ -422,6 +422,22 @@ void VFG::dump(const std::string& file, bool simple) {
         GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
+
+void VFG::updateCallGraph(PointerAnalysis* pta)
+{
+    VFGEdgeSetTy vfEdgesAtIndCallSite;
+    PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
+    PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
+    for (; iter != eiter; iter++) {
+        CallSite newcs = iter->first;
+        const PointerAnalysis::FunctionSet & functions = iter->second;
+        for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
+            const Function * func = *func_iter;
+            connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
+        }
+    }
+}
+
 /**
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.

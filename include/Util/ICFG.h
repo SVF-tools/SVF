@@ -124,7 +124,7 @@ public:
     ICFGEdge* getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
 
 	/// Connect interprocedural CFG edges based on pointer analysis results
-	void resolveIndirectCalls(PointerAnalysis* pta);
+	void updateCallgraph(PointerAnalysis* pta);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);

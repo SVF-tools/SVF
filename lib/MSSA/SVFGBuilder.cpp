@@ -74,8 +74,9 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
         buildSVFG();
     }
 
+    /// Update call graph using pre-analysis results
     if(SVFGWithIndirectCall || SVFGWithIndCall)
-        updateCallGraph(pta);
+        svfg->updateCallGraph(pta);
 
     return svfg;
 }
@@ -117,17 +118,3 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
 }
 
 
-/// Update call graph using pre-analysis results
-void SVFGBuilder::updateCallGraph(PointerAnalysis* pta)
-{
-    CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
-    CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
-    for (; iter != eiter; iter++) {
-        CallSite newcs = iter->first;
-        const FunctionSet & functions = iter->second;
-        for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const Function * func = *func_iter;
-            svfg->connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
-        }
-    }
-}
