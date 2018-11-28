@@ -425,7 +425,7 @@ void VFG::dump(const std::string& file, bool simple) {
 
 void VFG::updateCallGraph(PointerAnalysis* pta)
 {
-    VFGEdgeSetTy& vfEdgesAtIndCallSite;
+    VFGEdgeSetTy vfEdgesAtIndCallSite;
     PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
     PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {

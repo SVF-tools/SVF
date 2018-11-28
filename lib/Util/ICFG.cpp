@@ -413,7 +413,7 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId
     }
 }
 
-void ICFG::resolveIndirectCalls(PointerAnalysis* pta) {
+void ICFG::updateCallgraph(PointerAnalysis* pta) {
 
 	PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
 	PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
