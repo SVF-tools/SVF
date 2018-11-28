@@ -669,13 +669,9 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
                 rawstr <<  "color=blue";
 			} else if (SVFUtil::isa<LoadPE>(edge)) {
 				rawstr << "color=red";
-			} else if (SVFUtil::isa<CallPE>(edge)) {
+			} else if (SVFUtil::isa<CmpPE>(edge)) {
 				rawstr << "color=grey";
-			} else if (SVFUtil::isa<RetPE>(edge)) {
-				rawstr << "color=grey";
-			} else if (SVFUtil::isa<TDForkPE>(edge)) {
-				rawstr << "color=grey";
-			} else if (SVFUtil::isa<TDJoinPE>(edge)) {
+			} else if (SVFUtil::isa<BinaryOPPE>(edge)) {
 				rawstr << "color=grey";
 			} else {
 				assert(0 && "No such kind edge!!");
