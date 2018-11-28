@@ -105,8 +105,6 @@ protected:
     virtual void buildSVFG();
     /// Release global SVFG
     virtual void releaseMemory();
-    /// Update call graph using pre-analysis points-to results
-    virtual void updateCallGraph(PointerAnalysis* pta);
 
     /// SVFG Edges connected at indirect call/ret sites
     SVFGEdgeSet vfEdgesAtIndCallSite;

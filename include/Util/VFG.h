@@ -127,6 +127,9 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
+    /// Update VFG based on pointer analysis results
+    void updateCallGraph(PointerAnalysis* pta);
+
     /// Connect VFG nodes between caller and callee for indirect call site
     virtual void connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSetTy& edges);
 
