@@ -32,18 +32,18 @@ public:
     virtual inline void initialise(SVFModule module) {}
 
     /// Collect candidate pointers for query.
-    virtual inline NodeBS& collectCandidateQueries(PAG* p) {
+    virtual inline NodeSet& collectCandidateQueries(PAG* p) {
         setPAG(p);
         if (solveAll)
             candidateQueries = pag->getAllValidPtrs();
         else {
-            for (NodeBS::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
+            for (NodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
                 addCandidate(*it);
         }
         return candidateQueries;
     }
     /// Get candidate queries
-    inline const NodeBS& getCandidateQueries() const {
+    inline const NodeSet& getCandidateQueries() const {
         return candidateQueries;
     }
 
@@ -59,7 +59,7 @@ public:
     }
     /// Set pointer to be queried by DDA analysis.
     void setQuery(NodeID ptr) {
-        userInput.set(ptr);
+        userInput.insert(ptr);
         solveAll = false;
     }
     /// Get LLVM module
@@ -74,16 +74,16 @@ public:
 protected:
     void addCandidate(NodeID id) {
         if (pag->isValidTopLevelPtr(pag->getPAGNode(id)))
-            candidateQueries.set(id);
+            candidateQueries.insert(id);
     }
 
     PAG*   pag;					///< PAG graph used by current DDA analysis
     SVFModule module;		///< LLVM module
     NodeID curPtr;				///< current pointer being queried
-    NodeBS candidateQueries;	///< store all candidate pointers to be queried
+    NodeSet candidateQueries;	///< store all candidate pointers to be queried
 
 private:
-    NodeBS userInput;           ///< User input queries
+    NodeSet userInput;           ///< User input queries
     bool solveAll;				///< TRUE if all top level pointers are being queried
 };
 
@@ -100,7 +100,7 @@ public:
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual inline NodeBS& collectCandidateQueries(PAG* p) {
+    virtual inline NodeSet& collectCandidateQueries(PAG* p) {
         setPAG(p);
         for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
                 eit = pag->getIndirectCallsites().end(); it!=eit; ++it) {

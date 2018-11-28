@@ -47,14 +47,14 @@ void DDAClient::answerQueries(PointerAnalysis* pta) {
     collectCandidateQueries(pta->getPAG());
 
     u32_t count = 0;
-    for (NodeBS::iterator nIter = candidateQueries.begin();
+    for (NodeSet::iterator nIter = candidateQueries.begin();
             nIter != candidateQueries.end(); ++nIter,++count) {
         PAGNode* node = pta->getPAG()->getPAGNode(*nIter);
         if(pta->getPAG()->isValidTopLevelPtr(node)) {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.count() << "]" << " \n");
+                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             DBOUT(DDDA,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
-                  " [" << count + 1<< "/" << candidateQueries.count() << "]" << " \n");
+                  " [" << count + 1<< "/" << candidateQueries.size() << "]" << " \n");
             setCurrentQueryPtr(node->getId());
             pta->computeDDAPts(node->getId());
         }

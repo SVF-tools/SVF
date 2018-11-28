@@ -107,15 +107,8 @@ InterBlockNode* ICFG::getInterBlockICFGNode(const Instruction* inst){
 	CallSite cs = getLLVMCallSite(inst);
 	CallBlockNode* callICFGNode = getCallICFGNode(cs);
 	RetBlockNode* retICFGNode = getRetICFGNode(cs);
-	if (const Function* callee = getCallee(inst)) {
-		addICFGInterEdges(cs, callee);                       //creating edges
-		InstVec nextInsts;
-		getNextInsts(inst,nextInsts);
-	    for (InstVec::const_iterator nit = nextInsts.begin(), enit = nextInsts.end(); nit != enit; ++nit) {
-			addIntraEdge(retICFGNode, getBlockICFGNode(*nit));
-	    }
-		addIntraEdge(callICFGNode, retICFGNode);
-	}
+	if (const Function* callee = getCallee(inst))
+		addICFGInterEdges(cs, callee);                       //creating interprocedural edges
 	return callICFGNode;
 }
 
@@ -154,10 +147,13 @@ void ICFG::processFunBody(WorkList& worklist){
 			for (InstVec::const_iterator nit = nextInsts.begin(), enit =
 					nextInsts.end(); nit != enit; ++nit) {
 				const Instruction* succ = *nit;
-				if(isNonInstricCallSite(inst) == false){
-					ICFGNode* dstNode = getBlockICFGNode(succ);
-					addIntraEdge(srcNode, dstNode);
+				ICFGNode* dstNode = getBlockICFGNode(succ);
+				if (isNonInstricCallSite(inst)){
+					RetBlockNode* retICFGNode = getRetICFGNode(getLLVMCallSite(inst));
+					addIntraEdge(srcNode, retICFGNode);
+					srcNode = retICFGNode;
 				}
+				addIntraEdge(srcNode, dstNode);
 				worklist.push(succ);
 			}
 		}
@@ -415,6 +411,21 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId
         RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode,csId);
         return (addICFGEdge(retEdge) ? retEdge : NULL);
     }
+}
+
+void ICFG::resolveIndirectCalls(PointerAnalysis* pta) {
+
+	PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
+	PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
+	for (; iter != eiter; iter++) {
+		CallSite cs = iter->first;
+		const PointerAnalysis::FunctionSet & functions = iter->second;
+		for (PointerAnalysis::FunctionSet::const_iterator func_iter =
+				functions.begin(); func_iter != functions.end(); func_iter++) {
+			const Function * callee = *func_iter;
+			addICFGInterEdges(cs, callee);
+		}
+	}
 }
 
 

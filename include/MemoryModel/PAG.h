@@ -90,7 +90,7 @@ private:
     const Value* curVal;	///< Current Value during PAG construction when visiting the module
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
-    NodeBS candidatePointers;
+    NodeSet candidatePointers;
 
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0) {
@@ -104,7 +104,7 @@ public:
     u32_t totalPTAPAGEdge;
 
     /// Return valid pointers
-    inline NodeBS& getAllValidPtrs() {
+    inline NodeSet& getAllValidPtrs() {
         return candidatePointers;
     }
     /// Initialize candidate pointers
@@ -116,7 +116,7 @@ public:
             if (isValidPointer(nodeId) == false)
                 continue;
 
-            candidatePointers.test_and_set(nodeId);
+            candidatePointers.insert(nodeId);
         }
     }
 

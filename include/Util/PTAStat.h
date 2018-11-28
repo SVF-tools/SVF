@@ -138,7 +138,7 @@ public:
 
     virtual void performStat();
 
-    virtual void printStat();
+    virtual void printStat(string str = "");
 
     virtual void performStatPerQuery(NodeID ptr) {}
 

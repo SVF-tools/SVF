@@ -43,22 +43,21 @@ llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Gen
 
 /// Initialize analysis
 void TypeAnalysis::initialize(SVFModule svfModule) {
-    PointerAnalysis::initialize(svfModule);
-    stat = new PTAStat(this);
+    Andersen::initialize(svfModule);
 	if (genICFG) {
 		icfg = new ICFG(ptaCallGraph);
 		IFDS* ifds = new IFDS(icfg);
 		icfg->dump("icfg_initial");
 		icfg->getVFG()->dump("vfg_initial");
-		if (printStat())
+		if (print_stat)
 			icfg->getStat()->performStat();
 	}
 }
 
 /// Finalize analysis
 void TypeAnalysis::finalize() {
-    PointerAnalysis::finalize();
-	if (printStat())
+    Andersen::finalize();
+	if (print_stat)
 		dumpCHAStats();
 }
 

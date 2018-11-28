@@ -50,8 +50,6 @@ private:
 public:
     static const char* CollapseTime;
 
-    static const char* NumberOfCGNode;
-
     static u32_t _MaxPtsSize;
     static u32_t _NumOfCycles;
     static u32_t _NumOfPWCCycles;
@@ -69,11 +67,11 @@ public:
 
     virtual void performStat();
 
-    virtual void printStat();
-
     void collectCycleInfo(ConstraintGraph* consCG);
 
     void statNullPtr();
+
+    void constraintGraphStat();
 };
 
 /*!
@@ -96,7 +94,6 @@ public:
 
     virtual void performStat();
 
-    virtual void printStat();
 private:
     enum ENUM_INOUT {
         IN,
