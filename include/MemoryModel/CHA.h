@@ -248,6 +248,7 @@ private:
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
+    std::map<const std::string, CHNode *> classNameToNodeMap;
     NameToCHNodesMap classNameToDescendantsMap;
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;
