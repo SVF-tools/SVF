@@ -236,19 +236,16 @@ void CHGraph::addEdge(const string className, const string baseClassName,
 }
 
 CHNode *CHGraph::getNode(const string name) const {
-    for (CHGraph::const_iterator it = this->begin(), eit = this->end();
-            it != eit; ++it) {
-        CHNode *node = it->second;
-        if (node->getName() == name)
-            return node;
-    }
-    return NULL;
+    auto chNode = classNameToNodeMap.find(name);
+    if (chNode != classNameToNodeMap.end()) return chNode->second;
+    else return NULL;
 }
 
 
 CHNode *CHGraph::createNode(const std::string className) {
 	assert(!getNode(className) && "this node should never be created before!");
 	CHNode * node = new CHNode(className, classNum++);
+	classNameToNodeMap[className] = node;
 	addGNode(node->getId(), node);
 	if (className.size() > 0 && className[className.size() - 1] == '>') {
 		string templateName = getBeforeBrackets(className);
