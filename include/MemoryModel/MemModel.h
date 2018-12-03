@@ -165,6 +165,11 @@ public:
         return maxOffsetLimit;
     }
 
+    /// Get max field offset limit
+    inline void setMaxFieldOffsetLimit(u32_t limit) {
+        maxOffsetLimit = limit;
+    }
+
     /// Flag for this object type
     //@{
     inline void setFlag(MEMTYPE mask) {
@@ -237,8 +242,6 @@ private:
     SymID GSymID;
     /// Type information of this object
     ObjTypeInfo* typeInfo;
-    /// Field-sensitivity
-    bool field_insensitive;
     /// dummy object
     bool isTainted;
 public:
@@ -283,9 +286,14 @@ public:
         return GSymID;
     }
 
+    /// Return true if its field limit is 0
+    inline bool isFieldInsensitive() const {
+        return getMaxFieldOffsetLimit() == 0;
+    }
+
     /// Set the memory object to be field insensitive
     inline void setFieldInsensitive() {
-        field_insensitive = true;
+        typeInfo->setMaxFieldOffsetLimit(0);
     }
 
     /// Set the memory object to be field sensitive (up to max field limit)
@@ -343,9 +351,6 @@ public:
     }
     inline bool isConstant() const {
         return typeInfo->isConstant();
-    }
-    inline bool isFieldInsensitive() const {
-        return field_insensitive;
     }
     inline bool hasPtrObj() const {
         return typeInfo->hasPtrObj();
