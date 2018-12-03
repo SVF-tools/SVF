@@ -464,20 +464,24 @@ void PAGBuilder::visitCastInst(CastInst &inst) {
  * Visit Binary Operator
  */
 void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
-	Value* opnd = inst.getOperand(0);
     NodeID dst = getValueNode(&inst);
-    NodeID src = getValueNode(opnd);
-    pag->addBinaryOPEdge(src, dst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++) {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        pag->addBinaryOPEdge(src, dst);
+    }
 }
 
 /*!
  * Visit compare instruction
  */
 void PAGBuilder::visitCmpInst(CmpInst &inst) {
-	Value* opnd = inst.getOperand(0);
     NodeID dst = getValueNode(&inst);
-    NodeID src = getValueNode(opnd);
-    pag->addCmpEdge(src, dst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++) {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        pag->addCmpEdge(src, dst);
+    }
 }
 
 
