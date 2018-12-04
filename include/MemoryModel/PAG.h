@@ -51,6 +51,8 @@ public:
     typedef std::list<const PAGNode*> PAGNodeList;
     typedef std::list<std::pair<const PAGNode*, const BasicBlock*> > PNodeBBPairList;
     typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
+    typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
+    typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
     typedef llvm::DenseMap<const Function*,PAGNodeList> FunToArgsListMap;
     typedef std::map<CallSite,PAGNodeList> CSToArgsListMap;
     typedef std::map<CallSite,const PAGNode*> CSToRetMap;
@@ -77,7 +79,9 @@ private:
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
-    PHINodeMap phiNodeMap;	///< A set of phi copy edges in order to enable path sensitive analysis
+    PHINodeMap phiNodeMap;	///< A set of phi copy edges
+    BinaryNodeMap binaryNodeMap;	///< A set of binary edges
+    CmpNodeMap cmpNodeMap;	///< A set of comparision edges
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
@@ -210,6 +214,30 @@ public:
     /// Get all phi copy edges
     inline PHINodeMap& getPhiNodeMap() {
         return phiNodeMap;
+    }
+    /// Add phi node information
+    inline void addBinaryNode(const PAGNode* res, const PAGNode* op) {
+        binaryNodeMap[res].push_back(op);
+    }
+    /// Whether this PAGNode is a result operand a of phi node
+    inline bool isBinaryNode(const PAGNode* node) const {
+        return binaryNodeMap.find(node) != binaryNodeMap.end();
+    }
+    /// Get all phi copy edges
+    inline BinaryNodeMap& getBinaryNodeMap() {
+        return binaryNodeMap;
+    }
+    /// Add phi node information
+    inline void addCmpNode(const PAGNode* res, const PAGNode* op) {
+        cmpNodeMap[res].push_back(op);
+    }
+    /// Whether this PAGNode is a result operand a of phi node
+    inline bool isCmpNode(const PAGNode* node) const {
+        return cmpNodeMap.find(node) != cmpNodeMap.end();
+    }
+    /// Get all phi copy edges
+    inline CmpNodeMap& getCmpNodeMap() {
+        return cmpNodeMap;
     }
     //@}
 

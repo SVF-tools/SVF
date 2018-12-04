@@ -210,6 +210,12 @@ protected:
     inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
     }
+    inline bool isBinaryEdge(const PAGEdge* copy) const {
+        return pag->isBinaryNode(copy->getDstNode());
+    }
+    inline bool isCmpEdge(const PAGEdge* copy) const {
+        return pag->isCmpNode(copy->getDstNode());
+    }
 
     /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node) {

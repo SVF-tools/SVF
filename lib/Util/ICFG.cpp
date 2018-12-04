@@ -224,6 +224,14 @@ void ICFG::handleIntraBlock(IntraBlockNode* intraICFGNode){
 				IntraPHIVFGNode* phi = vfg->getIntraPHIVFGNode(edge->getDstNode());
 				intraICFGNode->addVFGNode(phi);
 			}
+			else if (isBinaryEdge(edge)){
+                BinaryOPVFGNode* binary = vfg->getBinaryOPVFGNode(edge->getDstNode());
+                intraICFGNode->addVFGNode(binary);
+			}
+            else if (isCmpEdge(edge)){
+                CmpVFGNode* cmp = vfg->getCmpVFGNode(edge->getDstNode());
+                intraICFGNode->addVFGNode(cmp);
+            }
 			else{
 				StmtVFGNode* stmt = vfg->getStmtVFGNode(edge);
 				intraICFGNode->addVFGNode(stmt);

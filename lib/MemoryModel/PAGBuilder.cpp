@@ -469,6 +469,7 @@ void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         pag->addBinaryOPEdge(src, dst);
+        pag->addBinaryNode(pag->getPAGNode(dst),pag->getPAGNode(src));
     }
 }
 
@@ -481,6 +482,7 @@ void PAGBuilder::visitCmpInst(CmpInst &inst) {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         pag->addCmpEdge(src, dst);
+        pag->addCmpNode(pag->getPAGNode(dst),pag->getPAGNode(src));
     }
 }
 

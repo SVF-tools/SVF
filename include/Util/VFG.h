@@ -57,6 +57,8 @@ public:
     typedef llvm::DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
     typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
     typedef std::map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
+    typedef std::map<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
+    typedef std::map<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
 
     typedef FormalParmVFGNode::CallPESet CallPESet;
     typedef FormalRetVFGNode::RetPESet RetPESet;
@@ -77,6 +79,8 @@ protected:
     PAGNodeToFormalParmMapTy PAGNodeToFormalParmMap; ///< map a PAGNode to a formal parameter
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap; ///< map a PAGNode to a formal return
     PAGNodeToPHIVFGNodeMapTy PAGNodeToIntraPHIVFGNodeMap;	///< map a PAGNode to its PHIVFGNode
+    PAGNodeToBinaryOPVFGNodeMapTy PAGNodeToBinaryOPVFGNodeMap;	///< map a PAGNode to its BinaryOPVFGNode
+    PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
 
     StoreNodeSet globalStore;	///< set of global store VFG nodes
@@ -163,6 +167,16 @@ public:
 		assert(it != PAGNodeToIntraPHIVFGNodeMap.end() && "PHIVFGNode can not be found??");
 		return it->second;
 	}
+    inline BinaryOPVFGNode* getBinaryOPVFGNode(const PAGNode* pagNode) const {
+        PAGNodeToBinaryOPVFGNodeMapTy::const_iterator it = PAGNodeToBinaryOPVFGNodeMap.find(pagNode);
+        assert(it != PAGNodeToBinaryOPVFGNodeMap.end() && "BinaryOPVFGNode can not be found??");
+        return it->second;
+    }
+    inline CmpVFGNode* getCmpVFGNode(const PAGNode* pagNode) const {
+        PAGNodeToCmpVFGNodeMapTy::const_iterator it = PAGNodeToCmpVFGNodeMap.find(pagNode);
+        assert(it != PAGNodeToCmpVFGNodeMap.end() && "CmpVFGNode can not be found??");
+        return it->second;
+    }
     inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,CallSite cs) const {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
         assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter VFG node can not be found??");
@@ -355,18 +369,6 @@ protected:
         addStmtVFGNode(sNode, copy);
         setDef(copy->getDstNode(),sNode);
     }
-    /// Add a Compare VFG node
-    inline void addCmpVFGNode(const CmpPE* cmp) {
-        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++,cmp);
-        addStmtVFGNode(sNode, cmp);
-        setDef(cmp->getDstNode(),sNode);
-    }
-    /// Add a BinaryOperator VFG node
-    inline void addBinaryOPVFGNode(const BinaryOPPE* binary) {
-		BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, binary);
-        addStmtVFGNode(sNode, binary);
-        setDef(binary->getDstNode(),sNode);
-    }
     /// Add a Gep VFG node
     inline void addGepVFGNode(const GepPE* gep) {
         GepVFGNode* sNode = new GepVFGNode(totalVFGNode++,gep);
@@ -439,6 +441,26 @@ protected:
             sNode->setOpVerAndBB(pos,it->first,it->second);
         setDef(phiResNode,sNode);
         PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
+    }
+    /// Add a Compare VFG node
+    inline void addCmpVFGNode(const PAGNode* resNode, PAG::PAGNodeList& oplist) {
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
+        addVFGNode(sNode);
+        u32_t pos = 0;
+        for(PAG::PAGNodeList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+            sNode->setOpVer(pos,*it);
+        setDef(resNode,sNode);
+        PAGNodeToCmpVFGNodeMap[resNode] = sNode;
+    }
+    /// Add a BinaryOperator VFG node
+    inline void addBinaryOPVFGNode(const PAGNode* resNode, PAG::PAGNodeList& oplist) {
+        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
+        addVFGNode(sNode);
+        u32_t pos = 0;
+        for(PAG::PAGNodeList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+            sNode->setOpVer(pos,*it);
+        setDef(resNode,sNode);
+        PAGNodeToBinaryOPVFGNodeMap[resNode] = sNode;
     }
 };
 

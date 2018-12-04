@@ -88,20 +88,6 @@ void VFG::addVFGNodes() {
             addCopyVFGNode(edge);
     }
 
-    // initialize comparision nodes
-    PAGEdge::PAGEdgeSetTy& cmps = getPAGEdgeSet(PAGEdge::Cmp);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = cmps.begin(), eiter =
-                cmps.end(); iter != eiter; ++iter) {
-		addCmpVFGNode(SVFUtil::cast<CmpPE>(*iter));
-    }
-
-    // initialize binary operator nodes
-    PAGEdge::PAGEdgeSetTy& bins = getPAGEdgeSet(PAGEdge::BinaryOp);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = bins.begin(), eiter =
-                bins.end(); iter != eiter; ++iter) {
-		addBinaryOPVFGNode(SVFUtil::cast<BinaryOPPE>(*iter));
-    }
-
     // initialize gep nodes
     PAGEdge::PAGEdgeSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
@@ -218,6 +204,18 @@ void VFG::addVFGNodes() {
 		if (isInterestedPAGNode(pit->first))
 			addIntraPHIVFGNode(pit->first, pit->second);
 	}
+    // initialize llvm binary nodes (binary operators)
+    PAG::BinaryNodeMap& binaryNodeMap = pag->getBinaryNodeMap();
+    for (PAG::BinaryNodeMap::iterator pit = binaryNodeMap.begin(), epit = binaryNodeMap.end(); pit != epit; ++pit) {
+        if (isInterestedPAGNode(pit->first))
+            addBinaryOPVFGNode(pit->first, pit->second);
+    }
+    // initialize llvm cmp nodes (comparision)
+    PAG::CmpNodeMap& cmpNodeMap = pag->getCmpNodeMap();
+    for (PAG::CmpNodeMap::iterator pit = cmpNodeMap.begin(), epit =cmpNodeMap.end(); pit != epit; ++pit) {
+        if (isInterestedPAGNode(pit->first))
+            addCmpVFGNode(pit->first, pit->second);
+    }
 }
 
 /*!
@@ -297,6 +295,18 @@ void VFG::connectDirectVFGEdges() {
             for (PHIVFGNode::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd(); it != eit; it++) {
 				if (it->second->isConstantData() == false)
 					addIntraDirectVFEdge(getDef(it->second), nodeId);
+            }
+        }
+        else if(BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node)) {
+            for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd(); it != eit; it++) {
+                if (it->second->isConstantData() == false)
+                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+            }
+        }
+        else if(CmpVFGNode* cmpNode = SVFUtil::dyn_cast<CmpVFGNode>(node)) {
+            for (CmpVFGNode::OPVers::const_iterator it = cmpNode->opVerBegin(), eit = cmpNode->opVerEnd(); it != eit; it++) {
+                if (it->second->isConstantData() == false)
+                    addIntraDirectVFEdge(getDef(it->second), nodeId);
             }
         }
         else if(ActualParmVFGNode* actualParm = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
@@ -617,6 +627,22 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
             else if(stmtNode->getPAGDstNode()->hasValue()) {
                 rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());
             }
+        }
+        else if(BinaryOPVFGNode* tphi = SVFUtil::dyn_cast<BinaryOPVFGNode>(node)) {
+            rawstr << tphi->getRes()->getId() << " = Binary(";
+            for(BinaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(CmpVFGNode* tphi = SVFUtil::dyn_cast<CmpVFGNode>(node)) {
+            rawstr << tphi->getRes()->getId() << " = cmp(";
+            for(CmpVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
         }
         else if(PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node)) {
             rawstr << tphi->getRes()->getId() << " = PHI(";
