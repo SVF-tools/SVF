@@ -526,6 +526,14 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val) {
     }
     return NULL;
 }
+
+inline const ConstantExpr *isTruncConstantExpr(const Value *val) {
+    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == Instruction::Trunc)
+            return constExpr;
+    }
+    return NULL;
+}
 //@}
 
 /// Get the next instructions following control flow
