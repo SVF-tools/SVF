@@ -227,8 +227,8 @@ void PAGBuilder::processCE(const Value *val) {
 			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
 			pag->setCurrentLocation(cval, cbb);
         }
-        else if(isTruncConstantExpr(ref)){
-            // we don't handle trunc instruction for now
+        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref)){
+            // we don't handle trunc and cmp instruction for now
         }
         else{
         	    if(SVFUtil::isa<ConstantExpr>(val))
