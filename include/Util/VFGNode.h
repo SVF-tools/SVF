@@ -130,18 +130,14 @@ public:
 				|| node->getNodeKind() == Copy
 				|| node->getNodeKind() == Gep
 				|| node->getNodeKind() == Store
-				|| node->getNodeKind() == Load
-				|| node->getNodeKind() == Cmp
-				|| node->getNodeKind() == BinaryOp;
+				|| node->getNodeKind() == Load;
     }
     static inline bool classof(const GenericVFGNodeTy *node) {
 		return node->getNodeKind() == Addr
 				|| node->getNodeKind() == Copy
 				|| node->getNodeKind() == Gep
 				|| node->getNodeKind() == Store
-				|| node->getNodeKind() == Load
-				|| node->getNodeKind() == Cmp
-				|| node->getNodeKind() == BinaryOp;
+				|| node->getNodeKind() == Load;
     }
 
     inline const Instruction* getInst() const {
@@ -248,24 +244,28 @@ public:
 /*!
  * VFGNode for compare instruction, e.g., bool b = (a!=c);
  */
-class CmpVFGNode: public StmtVFGNode {
+
+class CmpVFGNode: public VFGNode {
+public:
+    typedef std::map<u32_t,const PAGNode*> OPVers;
+protected:
+    const PAGNode* res;
+    OPVers opVers;
+
 private:
-	CmpVFGNode();                      ///< place holder
-	CmpVFGNode(const CmpVFGNode &);  ///< place holder
+    CmpVFGNode();                      ///< place holder
+    CmpVFGNode(const CmpVFGNode &);  ///< place holder
     void operator=(const CmpVFGNode &); ///< place holder
 
 public:
     /// Constructor
-    CmpVFGNode(NodeID id,const CmpPE* copy): StmtVFGNode(id,copy,Cmp) {
-
+    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r) {
+        assert(SVFUtil::isa<CmpInst>(r->getValue()) && "not a binary operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CmpVFGNode *) {
         return true;
-    }
-    static inline bool classof(const StmtVFGNode *node) {
-        return node->getNodeKind() == Cmp;
     }
     static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == Cmp;
@@ -274,14 +274,42 @@ public:
         return node->getNodeKind() == Cmp;
     }
     //@}
+    /// Operands at a BinaryNode
+    //@{
+    inline const PAGNode* getOpVer(u32_t pos) const {
+        OPVers::const_iterator it = opVers.find(pos);
+        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        return it->second;
+    }
+    inline void setOpVer(u32_t pos, const PAGNode* node) {
+        opVers[pos] = node;
+    }
+    inline const PAGNode* getRes() const {
+        return res;
+    }
+    inline u32_t getOpVerNum() const {
+        return opVers.size();
+    }
+    inline OPVers::const_iterator opVerBegin() const {
+        return opVers.begin();
+    }
+    inline OPVers::const_iterator opVerEnd() const {
+        return opVers.end();
+    }
+    //@}
 };
-
 
 
 /*!
  * VFGNode for binary operator instructions, e.g., a = b + c;
  */
-class BinaryOPVFGNode: public StmtVFGNode {
+class BinaryOPVFGNode: public VFGNode {
+public:
+    typedef std::map<u32_t,const PAGNode*> OPVers;
+protected:
+    const PAGNode* res;
+    OPVers opVers;
+
 private:
 	BinaryOPVFGNode();                      ///< place holder
 	BinaryOPVFGNode(const BinaryOPVFGNode &);  ///< place holder
@@ -289,22 +317,42 @@ private:
 
 public:
     /// Constructor
-    BinaryOPVFGNode(NodeID id,const BinaryOPPE* copy): StmtVFGNode(id,copy,BinaryOp) {
-
+    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r) {
+        assert(SVFUtil::isa<BinaryOperator>(r->getValue()) && "not a binary operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const BinaryOPVFGNode *) {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
-        return node->getNodeKind() == BinaryOp;
-    }
     static inline bool classof(const VFGNode *node) {
         return node->getNodeKind() == BinaryOp;
     }
     static inline bool classof(const GenericVFGNodeTy *node) {
         return node->getNodeKind() == BinaryOp;
+    }
+    //@}
+    /// Operands at a BinaryNode
+    //@{
+    inline const PAGNode* getOpVer(u32_t pos) const {
+        OPVers::const_iterator it = opVers.find(pos);
+        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        return it->second;
+    }
+    inline void setOpVer(u32_t pos, const PAGNode* node) {
+        opVers[pos] = node;
+    }
+    inline const PAGNode* getRes() const {
+        return res;
+    }
+    inline u32_t getOpVerNum() const {
+        return opVers.size();
+    }
+    inline OPVers::const_iterator opVerBegin() const {
+        return opVers.begin();
+    }
+    inline OPVers::const_iterator opVerEnd() const {
+        return opVers.end();
     }
     //@}
 };
@@ -346,7 +394,7 @@ public:
 class PHIVFGNode : public VFGNode {
 
 public:
-    typedef llvm::DenseMap<u32_t,const PAGNode*> OPVers;
+    typedef std::map<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;

@@ -102,6 +102,11 @@ public:
     }
 
     inline void addVFGNode(const VFGNode *s) {
+        // avoid duplicate element
+        for(StmtOrPHIVFGNodeVec::const_iterator it = vnodes.begin(), eit = vnodes.end(); it!=eit; ++it)
+            if(*it==s)
+                return;
+
         vnodes.push_back(s);
     }
 

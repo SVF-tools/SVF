@@ -510,7 +510,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL), field_insensitive((0==maxFieldNumLimit)), isTainted(false) {
+    refVal(val), GSymID(id), typeInfo(NULL),isTainted(false) {
     init(val);
 }
 
@@ -518,7 +518,7 @@ MemObj::MemObj(const Value *val, SymID id) :
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id) :
-    refVal(NULL), GSymID(id), typeInfo(NULL), field_insensitive((0==maxFieldNumLimit)) {
+    refVal(NULL), GSymID(id), typeInfo(NULL){
     isTainted = !SymbolTableInfo::isBlkObjOrConstantObj(GSymID);
     init();
 }
@@ -548,7 +548,7 @@ bool MemObj::isBlackHoleOrConstantObj() const {
  * Set mem object to be field sensitive (up to maximum field limit)
  */
 void MemObj::setFieldSensitive() {
-    field_insensitive = false;
+    typeInfo->setMaxFieldOffsetLimit(maxFieldNumLimit);
 }
 /*
  * Initial the memory object here
@@ -711,12 +711,12 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
                 collectSym(sel->getFalseValue());
             }
             else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst)) {
-                collectSym(binary->getOperand(0));
-                collectSym(binary->getOperand(1));
+                for (u32_t i = 0; i < binary->getNumOperands(); i++)
+                     collectSym(binary->getOperand(i));
             }
             else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst)) {
-                collectSym(cmp->getOperand(0));
-                collectSym(cmp->getOperand(1));
+                for (u32_t i = 0; i < cmp->getNumOperands(); i++)
+                     collectSym(cmp->getOperand(i));
             }
             else if (const CastInst *cast = SVFUtil::dyn_cast<CastInst>(inst)) {
                 collectSym(cast->getOperand(0));
