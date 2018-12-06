@@ -72,6 +72,8 @@ public:
     //transfer function of given ICFGNode
     Datafact transferFun(PathNode *pathNode);
 
+    Datafact getCalleeDatafact(PathNode *caller);
+    Datafact getCallToRetDatafact(PathNode *caller);
     Datafact getCallerDatafact(PathNode *srcPN, ICFGNode* caller);
 
     //whether the variable is initialized
@@ -81,7 +83,6 @@ public:
     void printRes();
     void printPathEdgeList();
     void printSummaryEdgeList();
-
     void validateTests(const char *fun);
 
     //Get points-to set of given PAGNode
