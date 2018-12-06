@@ -704,6 +704,12 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
 			}
             rawstr <<  "";
         }
+        else if (SVFUtil::isa<CmpVFGNode> (node)) {
+            rawstr << "color=red";
+        }
+        else if (SVFUtil::isa<BinaryOPVFGNode>(node)) {
+            rawstr << "color=grey";
+        }
         else if(SVFUtil::isa<PHIVFGNode>(node)) {
             rawstr <<  "color=black";
         }
