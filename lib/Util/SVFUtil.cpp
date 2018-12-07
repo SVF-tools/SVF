@@ -268,10 +268,10 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
 	            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
 	}
 	else if(isHeapAllocExtCallViaArg(inst)){
-	    CallSite cs(inst);
+	    CallSite cs = getLLVMCallSite(inst);
         int arg_pos = getHeapAllocHoldingArgPosition(getCallee(cs));
         const Value *arg = cs.getArgument(arg_pos);
-        type = arg->getType();
+        type = SVFUtil::dyn_cast<PointerType>(arg->getType());
 	}
 	else{
 	    assert( false && "not a heap allocation instruction?");
