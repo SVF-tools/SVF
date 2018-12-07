@@ -720,6 +720,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             if (arg->getType()->isPointerTy()) {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
+                obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj) {
                     pag->addAddrEdge(obj, dummy);
                     pag->addStoreEdge(dummy, vnArg);
