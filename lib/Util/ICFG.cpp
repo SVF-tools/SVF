@@ -306,7 +306,9 @@ void ICFG::handleActualRet(RetBlockNode* retBlockNode){
         const PAGNode* retNode =  pag->getCallSiteRet(cs);
         /// if this retNode is returned from a malloc-like instruction (e.g., ret=malloc()),
         /// we have already created an address node
-        if(retNode->hasIncomingEdges(PAGEdge::Addr) == false){
+        /// if this is a copy edge from an external call (e.g., ret = fgets(i8* %arraydecay);
+        /// we have handled it as a copy from %arraydecay to ret.
+        if(!retNode->hasIncomingEdges(PAGEdge::Addr) && !retNode->hasIncomingEdges(PAGEdge::Copy)){
         		ActualRetVFGNode* actualRetNode = vfg->getActualRetVFGNode(retNode);
         		retBlockNode->addActualRet(actualRetNode);
         }
