@@ -49,7 +49,7 @@ public:
     /// Compute gep offset
     virtual bool computeGepOffset(const User *V, LocationSet& ls);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls);
+    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     /// Verify struct size construction
     void verifyStructSize(StInfo *stInfo, u32_t structSize);

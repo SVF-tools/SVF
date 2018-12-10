@@ -216,8 +216,8 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
  * Given LocationSet from a Gep Instruction, return a new LocationSet which matches
  * the field information of this ObjTypeInfo by considering memory layout
  */
-LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls) {
-    const Type* ety = tyInfo->getType();
+LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls) {
+    const Type* ety = obj->getType();
 
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety)) {
         /// Find an appropriate field for this LocationSet
@@ -245,7 +245,7 @@ LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const Locatio
         }
     }
     else {
-        if (tyInfo->isStaticObj() || tyInfo->isHeap()) {
+        if (obj->isStaticObj() || obj->isHeap()) {
             // TODO: Objects which cannot find proper field for a certain offset including
             //       arguments in main(), static objects allocated before main and heap
             //       objects. Right now they're considered to have infinite fields. So we
@@ -272,7 +272,7 @@ LocationSet LocSymTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const Locatio
             wrnMsg("try to create a gep node with negative offset.");
             offset = abs(offset);
         }
-        u32_t maxOffset = tyInfo->getMaxFieldOffsetLimit();
+        u32_t maxOffset = obj->getMaxFieldOffsetLimit();
         if (maxOffset != 0)
             offset = offset % maxOffset;
         else

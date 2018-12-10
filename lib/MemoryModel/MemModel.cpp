@@ -323,7 +323,7 @@ const Type *SymbolTableInfo::getBaseTypeAndFlattenedFields(const Value *V, std::
 /*!
  * Get modulus offset given the type information
  */
-LocationSet SymbolTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls) {
+LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls) {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
     /// of current struct. Make the offset positive so we can still get a node within current
@@ -334,7 +334,7 @@ LocationSet SymbolTableInfo::getModulusOffset(ObjTypeInfo* tyInfo, const Locatio
         wrnMsg("try to create a gep node with negative offset.");
         offset = abs(offset);
     }
-    u32_t maxOffset = tyInfo->getMaxFieldOffsetLimit();
+    u32_t maxOffset = obj->getMaxFieldOffsetLimit();
     if (maxOffset != 0)
         offset = offset % maxOffset;
     else
@@ -517,10 +517,10 @@ MemObj::MemObj(const Value *val, SymID id) :
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id) :
+MemObj::MemObj(SymID id, const Type* type) :
     refVal(NULL), GSymID(id), typeInfo(NULL){
     isTainted = !SymbolTableInfo::isBlkObjOrConstantObj(GSymID);
-    init();
+    init(type);
 }
 
 /*!
@@ -553,8 +553,10 @@ void MemObj::setFieldSensitive() {
 /*
  * Initial the memory object here
  */
-void MemObj::init() {
-    typeInfo = new ObjTypeInfo(maxFieldNumLimit);
+void MemObj::init(const Type* type) {
+    typeInfo = new ObjTypeInfo(maxFieldNumLimit,type);
+    typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+    typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
 }
 /*
  * Initial the memory object here

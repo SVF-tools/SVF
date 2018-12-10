@@ -85,8 +85,6 @@ PAG* PAGBuilderFromFile::build() {
 					pag->addDummyValNode(nodeId);
 				else if (nodetype == "o") {
 					const MemObj* mem = pag->addDummyMemObj(nodeId);
-					mem->getTypeInfo()->setFlag(ObjTypeInfo::HEAP_OBJ);
-					mem->getTypeInfo()->setFlag(ObjTypeInfo::HASPTR_OBJ);
 					pag->addFIObjNode(mem);
 				} else
 					assert(false && "format not support, pls specify node type");
