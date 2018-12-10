@@ -589,8 +589,12 @@ void MemObj::init(const Value *val) {
 
 /// Get obj type info
 const Type* MemObj::getType() const {
-	if (isHeap() == false)
-		return typeInfo->getType();
+	if (isHeap() == false){
+	    if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
+	        return type->getElementType();
+	    else
+	        return typeInfo->getType();
+	}
 	else if (refVal && SVFUtil::isa<Instruction>(refVal))
 		return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(refVal));
 	else
