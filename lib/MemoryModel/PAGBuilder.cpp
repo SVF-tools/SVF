@@ -227,15 +227,13 @@ void PAGBuilder::processCE(const Value *val) {
 			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
 			pag->setCurrentLocation(cval, cbb);
         }
-        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref)){
+        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref) || SVFUtil::isa<ConstantAggregate>(ref)){
             // we don't handle trunc and cmp instruction for now
-        }
-        else if(SVFUtil::isa<ConstantAggregate>(ref)){
             // we don't handle constant agrgregate like constant vectors
             const Value* cval = pag->getCurrentValue();
             const BasicBlock* cbb = pag->getCurrentBB();
             pag->setCurrentLocation(ref, NULL);
-            NodeID dst = getValueNode(ref);
+            NodeID dst = pag->getValueNode(ref);
             pag->addBlackHoleAddrEdge(dst);
             pag->setCurrentLocation(cval, cbb);
         }
@@ -434,16 +432,17 @@ void PAGBuilder::visitStoreInst(StoreInst &inst) {
  */
 void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
 
+    NodeID dst = getValueNode(&inst);
     // GetElementPtrInst should always be a pointer or a vector contains pointers
-    // TODO: for now we don't handle vector type here
-    if(SVFUtil::isa<VectorType>(inst.getType()))
+    // for now we don't handle vector type here
+    if(SVFUtil::isa<VectorType>(inst.getType())){
+	pag->addBlackHoleAddrEdge(dst);
         return;
+    }
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
     DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
-
-    NodeID dst = getValueNode(&inst);
 
     NodeID src = getValueNode(inst.getPointerOperand());
 

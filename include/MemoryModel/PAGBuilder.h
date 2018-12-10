@@ -141,7 +141,8 @@ public:
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);
     void visitExtractValueInst(ExtractValueInst  &EVI);
-    void visitInsertValueInst(InsertValueInst &IVI) {
+    void visitInsertValueInst(InsertValueInst &I) {
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
     // Terminators
     void visitTerminatorInst(TerminatorInst &TI) {
@@ -155,14 +156,13 @@ public:
     void visitExtractElementInst(ExtractElementInst &I);
 
     void visitInsertElementInst(InsertElementInst &I) {
-	    	NodeID dst = getValueNode(&I);
-		pag->addBlackHoleAddrEdge(dst);
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitShuffleVectorInst(ShuffleVectorInst &I) {
-	    	NodeID dst = getValueNode(&I);
-		pag->addBlackHoleAddrEdge(dst);
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitLandingPadInst(LandingPadInst &I) {
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Instruction not that often
@@ -173,16 +173,13 @@ public:
     void visitUnreachableInst(TerminatorInst &I) { /*returns void*/
     }
     void visitFenceInst(FenceInst &I) { /*returns void*/
-	    	NodeID dst = getValueNode(&I);
-		pag->addBlackHoleAddrEdge(dst);
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitAtomicCmpXchgInst(AtomicCmpXchgInst &I) {
-	    	NodeID dst = getValueNode(&I);
-		pag->addBlackHoleAddrEdge(dst);
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitAtomicRMWInst(AtomicRMWInst &I) {
-	    	NodeID dst = getValueNode(&I);
-		pag->addBlackHoleAddrEdge(dst);
+		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Provide base case for our instruction visit.
