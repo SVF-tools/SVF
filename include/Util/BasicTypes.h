@@ -177,6 +177,7 @@ typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
 typedef llvm::ConstantData ConstantData;
 typedef llvm::ConstantExpr ConstantExpr;
+typedef llvm::ConstantAggregate ConstantAggregate;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;

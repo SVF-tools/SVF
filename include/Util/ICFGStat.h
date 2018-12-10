@@ -115,8 +115,7 @@ public:
         PTNumStatMap["RetCFGEdge"] = numOfRetEdges;
         PTNumStatMap["IntraCFGEdge"] = numOfIntraEdges;
 
-        std::cout << "\n*******ICFG Stat*******\n";
-        printStat();
+        printStat("ICFG Stat");
     }
 
 
