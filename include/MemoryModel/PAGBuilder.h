@@ -155,8 +155,12 @@ public:
     void visitExtractElementInst(ExtractElementInst &I);
 
     void visitInsertElementInst(InsertElementInst &I) {
+	    	NodeID dst = getValueNode(&I);
+		pag->addBlackHoleAddrEdge(dst);
     }
     void visitShuffleVectorInst(ShuffleVectorInst &I) {
+	    	NodeID dst = getValueNode(&I);
+		pag->addBlackHoleAddrEdge(dst);
     }
     void visitLandingPadInst(LandingPadInst &I) {
     }
@@ -169,10 +173,16 @@ public:
     void visitUnreachableInst(TerminatorInst &I) { /*returns void*/
     }
     void visitFenceInst(FenceInst &I) { /*returns void*/
+	    	NodeID dst = getValueNode(&I);
+		pag->addBlackHoleAddrEdge(dst);
     }
     void visitAtomicCmpXchgInst(AtomicCmpXchgInst &I) {
+	    	NodeID dst = getValueNode(&I);
+		pag->addBlackHoleAddrEdge(dst);
     }
     void visitAtomicRMWInst(AtomicRMWInst &I) {
+	    	NodeID dst = getValueNode(&I);
+		pag->addBlackHoleAddrEdge(dst);
     }
 
     /// Provide base case for our instruction visit.
