@@ -227,9 +227,19 @@ void PAGBuilder::processCE(const Value *val) {
 			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
 			pag->setCurrentLocation(cval, cbb);
         }
+        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref) || SVFUtil::isa<ConstantAggregate>(ref)){
+            // we don't handle trunc and cmp instruction for now
+            // we don't handle constant agrgregate like constant vectors
+            const Value* cval = pag->getCurrentValue();
+            const BasicBlock* cbb = pag->getCurrentBB();
+            pag->setCurrentLocation(ref, NULL);
+            NodeID dst = pag->getValueNode(ref);
+            pag->addBlackHoleAddrEdge(dst);
+            pag->setCurrentLocation(cval, cbb);
+        }
         else{
-        	if(SVFUtil::isa<ConstantExpr>(val))
-        		assert(false && "we don't handle all other constant expression for now!");
+        	    if(SVFUtil::isa<ConstantExpr>(val))
+        	        assert(false && "we don't handle all other constant expression for now!");
         }
     }
 }
@@ -422,16 +432,17 @@ void PAGBuilder::visitStoreInst(StoreInst &inst) {
  */
 void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
 
+    NodeID dst = getValueNode(&inst);
     // GetElementPtrInst should always be a pointer or a vector contains pointers
-    // TODO: for now we don't handle vector type here
-    if(SVFUtil::isa<VectorType>(inst.getType()))
+    // for now we don't handle vector type here
+    if(SVFUtil::isa<VectorType>(inst.getType())){
+	pag->addBlackHoleAddrEdge(dst);
         return;
+    }
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
     DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
-
-    NodeID dst = getValueNode(&inst);
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
@@ -717,6 +728,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             if (arg->getType()->isPointerTy()) {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
+                obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj) {
                     pag->addAddrEdge(obj, dummy);
                     pag->addStoreEdge(dummy, vnArg);

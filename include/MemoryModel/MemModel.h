@@ -135,7 +135,7 @@ public:
         type(t), flags(0), maxOffsetLimit(max) {
     }
     /// Constructor
-    ObjTypeInfo(u32_t max) : type(NULL), flags(0), maxOffsetLimit(max) {
+    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max) {
 
     }
     /// Destructor
@@ -250,7 +250,7 @@ public:
     MemObj(const Value *val, SymID id);
 
     /// Constructor for black hole and constant obj
-    MemObj(SymID id);
+    MemObj(SymID id, const Type* type = NULL);
 
     /// Destructor
     ~MemObj() {
@@ -261,12 +261,7 @@ public:
     void init(const Value *val);
 
     /// Initialize black hole and constant object
-    void init();
-
-    /// Get obj type info
-    inline ObjTypeInfo* getTypeInfo() const {
-        return typeInfo;
-    }
+    void init(const Type* type);
 
     /// Get obj type
     const llvm::Type* getType() const;
@@ -560,9 +555,9 @@ public:
     }
 
     /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
-    inline const MemObj* createDummyObj(SymID symId) {
+    inline const MemObj* createDummyObj(SymID symId, const Type* type) {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        MemObj* memObj = new MemObj(symId);
+        MemObj* memObj = new MemObj(symId, type);
         objMap[symId] = memObj;
         return memObj;
     }
@@ -711,7 +706,7 @@ public:
     /// Collect type info
     void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls);
+    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     /// Debug method
     void printFlattenFields(const Type* type);

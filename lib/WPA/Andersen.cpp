@@ -363,7 +363,7 @@ bool Andersen::collapseField(NodeID nodeId)
     /// In later versions, instead of using base node to represent the struct,
     /// we'll create new field-insensitive node. To avoid creating a new "black hole"
     /// node, do not collapse field for black hole node.
-    if (consCG->isBlkObjOrConstantObj(nodeId) || consCG->isSingleFieldObj(nodeId))
+    if (consCG->isBlkObjOrConstantObj(nodeId))
         return false;
 
     bool changed = false;

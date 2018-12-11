@@ -526,6 +526,26 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val) {
     }
     return NULL;
 }
+
+inline const ConstantExpr *isTruncConstantExpr(const Value *val) {
+    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == Instruction::Trunc ||
+                constExpr->getOpcode() == Instruction::FPTrunc ||
+                constExpr->getOpcode() == Instruction::ZExt ||
+                constExpr->getOpcode() == Instruction::SExt ||
+                constExpr->getOpcode() == Instruction::FPExt)
+            return constExpr;
+    }
+    return NULL;
+}
+
+inline const ConstantExpr *isCmpConstantExpr(const Value *val) {
+    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val)) {
+        if(constExpr->getOpcode() == Instruction::ICmp || constExpr->getOpcode() == Instruction::FCmp)
+            return constExpr;
+    }
+    return NULL;
+}
 //@}
 
 /// Get the next instructions following control flow

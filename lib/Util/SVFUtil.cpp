@@ -260,13 +260,23 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
  * Return the type of the object from a heap allocation
  */
 const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
-	assert(isHeapAllocExtCall(inst) && "not a heap allocation instruction?");
-	const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
-	if(const Instruction* nextInst =  inst->getNextNode()){
-		if(const CastInst* cast = SVFUtil::dyn_cast<CastInst>(nextInst)){
-			type = SVFUtil::dyn_cast<PointerType>(cast->getType());
-		}
+    const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
+
+	if(isHeapAllocExtCallViaRet(inst)){
+	    if(inst->getNextNode()->getOpcode() == Instruction::BitCast)
+	           // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
+	            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
 	}
+	else if(isHeapAllocExtCallViaArg(inst)){
+	    CallSite cs = getLLVMCallSite(inst);
+        int arg_pos = getHeapAllocHoldingArgPosition(getCallee(cs));
+        const Value *arg = cs.getArgument(arg_pos);
+        type = SVFUtil::dyn_cast<PointerType>(arg->getType());
+	}
+	else{
+	    assert( false && "not a heap allocation instruction?");
+	}
+
 	assert(type && "not a pointer type?");
 	return type->getElementType();
 }
