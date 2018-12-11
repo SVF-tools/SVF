@@ -555,9 +555,9 @@ public:
     }
 
     /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
-    inline const MemObj* createDummyObj(SymID symId) {
+    inline const MemObj* createDummyObj(SymID symId, const Type* type) {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        MemObj* memObj = new MemObj(symId);
+        MemObj* memObj = new MemObj(symId, type);
         objMap[symId] = memObj;
         return memObj;
     }
