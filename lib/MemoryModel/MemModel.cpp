@@ -600,7 +600,7 @@ const Type* MemObj::getType() const {
 	else if (refVal && SVFUtil::isa<Instruction>(refVal))
 		return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(refVal));
 	else
-		return NULL;
+		return typeInfo->getType();
 }
 /*
  * Destroy the fields of the memory object
