@@ -64,11 +64,6 @@ public:
 
     bool isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
 
-    //get all ICFGNode in all EndPathNode of PathEdgeList
-    ICFGNodeSet &getDstICFGNodeSet();
-
-    ICFGNodeSet &getSummaryDstICFGNodeSet();
-
     //transfer function of given ICFGNode
     Datafact transferFun(PathNode *pathNode);
 
