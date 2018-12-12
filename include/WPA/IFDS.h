@@ -35,7 +35,6 @@ protected:
     ICFGNodeSet SummaryICFGDstNodeSet;
     ICFGNodeToDataFactsMap ICFGNodeToFacts;
     ICFGNodeToDataFactsMap SummaryICFGNodeToFacts;
-    Facts facts, facts2;    // Datafacts for a given ICFGNode
     ICFGNode *mainEntryNode;
 
 public:
@@ -61,6 +60,8 @@ public:
 
     //add new PathEdge components into PathEdgeList and WorkList
     void propagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
+    void PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
+    void SEPropagate(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5);
 
     bool isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
 
@@ -103,7 +104,7 @@ public:
             icfgNode = node;
         }
 
-        void setDataFact(Datafact &fact) {    //reference
+        void setDataFact(Datafact &fact) {
             datafact = fact;
         }
 

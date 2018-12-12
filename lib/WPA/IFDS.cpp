@@ -36,7 +36,7 @@ void IFDS::initialize() {
     PathEdgeList.push_back(startPE);
     WorkList.push_back(startPE);
     SummaryEdgeList = {};
-    ICFGDstNodeSet.insert(mainEntryNode);  //new
+    ICFGDstNodeSet.insert(mainEntryNode);
 
     //initialize ICFGNodeToFacts
     for (ICFG::const_iterator it = icfg->begin(), eit = icfg->end(); it != eit; ++it) {
@@ -72,7 +72,6 @@ void IFDS::forwardTabulate() {
                 else if ((*it)->isIntraCFGEdge()) {
                     Datafact d = getCallToRetDatafact(dstPN);
                     ICFGNode *ret = (*it)->getDstNode();
-                    ICFGNodeToFacts[ret].insert(d);   //reduntant
                     propagate(srcPN, ret, d);
                     // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode   ??
                     for (PathEdgeSet::iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end();
@@ -98,14 +97,7 @@ void IFDS::forwardTabulate() {
                 Datafact d5 = transferFun(dstPN);
                 Datafact d4 = getCallerDatafact(srcPN, caller); // deduce d4 from d1 (backward direction!)
                 if (isNotInSummaryEdgeList(caller, d4, ret, d5)) {
-                    // insert new summary edge into SummaryEdgeList
-                    PathNode *srcPN = new PathNode(caller, d4);
-                    PathNode *dstPN = new PathNode(ret, d5);
-                    PathEdge *e = new PathEdge(srcPN, dstPN);
-                    SummaryEdgeList.push_back(e);
-                    SummaryICFGNodeToFacts[caller].insert(d4);
-                    SummaryICFGNodeToFacts[ret].insert(d5);
-                    SummaryICFGDstNodeSet.insert(ret);
+                    SEPropagate(caller, d4, ret, d5); // insert new summary edge into SummaryEdgeList
 
                     for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
                          pit != epit; ++pit) {
@@ -134,37 +126,45 @@ void IFDS::forwardTabulate() {
 void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact d) {
     ICFGNodeSet::iterator it = ICFGDstNodeSet.find(succ);
     if (it == ICFGDstNodeSet.end()) {
-        PathNode *newDstPN = new PathNode(succ, d);
-        PathEdge *e = new PathEdge(srcPN, newDstPN);
-        WorkList.push_back(e);
-        PathEdgeList.push_back(e);
-        ICFGNodeToFacts[succ].insert(d);
+        PEPropagate(srcPN, succ, d);
         ICFGDstNodeSet.insert(succ);
     } else {
-        facts = ICFGNodeToFacts[succ];
-        Facts::iterator it = facts.find(d);
-        if (it == facts.end()) {
-            PathNode *newDstPN = new PathNode(succ, d);
-            PathEdge *e = new PathEdge(srcPN, newDstPN);
-            WorkList.push_back(e);
-            PathEdgeList.push_back(e);
-            ICFGNodeToFacts[succ].insert(d);
+        Facts::iterator it = ICFGNodeToFacts[succ].find(d);
+        if (it == ICFGNodeToFacts[succ].end()) {
+            PEPropagate(srcPN, succ, d);
         }
     }
 }
 
-bool IFDS::isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2) {
-    facts = SummaryICFGNodeToFacts[n1];      //copy -> reference
-    facts2 = SummaryICFGNodeToFacts[n2];
-    ICFGNodeSet::iterator it = SummaryICFGDstNodeSet.find(n2);
-    Facts::iterator fit = facts.find(d1);
-    Facts::iterator fit2 = facts2.find(d2);
+void IFDS:: PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d){
+    PathNode *newDstPN = new PathNode(succ, d);
+    PathEdge *e = new PathEdge(srcPN, newDstPN);
+    WorkList.push_back(e);
+    PathEdgeList.push_back(e);
+    ICFGNodeToFacts[succ].insert(d);
+}
+// add new SummaryEdge
+void IFDS:: SEPropagate(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5){
+    PathNode *srcPN = new PathNode(caller, d4);
+    PathNode *dstPN = new PathNode(ret, d5);
+    PathEdge *e = new PathEdge(srcPN, dstPN);
+    SummaryEdgeList.push_back(e);
+    SummaryICFGNodeToFacts[caller].insert(d4);
+    SummaryICFGNodeToFacts[ret].insert(d5);
+}
 
-    if (it == SummaryICFGDstNodeSet.end())
+bool IFDS::isNotInSummaryEdgeList(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5) {
+    ICFGNodeSet::iterator it = SummaryICFGDstNodeSet.find(ret);
+    Facts::iterator fit = SummaryICFGNodeToFacts[ret].find(d5);
+    Facts::iterator fit2 = SummaryICFGNodeToFacts[caller].find(d4);
+
+    if (it == SummaryICFGDstNodeSet.end()){
+        SummaryICFGDstNodeSet.insert(ret);
         return true;
-    else if (fit2 == facts2.end())
+    }
+    else if (fit == SummaryICFGNodeToFacts[ret].end())
         return true;
-    else if (fit == facts.end())
+    else if (fit2 == SummaryICFGNodeToFacts[caller].end())
         return true;
     else
         return false;
@@ -205,7 +205,7 @@ IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {
         for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
              it != eit; ++it) {
             const PAGNode *actualParmNode = (*it)->getParam();
-            if (actualParmNode->hasOutgoingEdges(PAGEdge::Call)) {
+            if (actualParmNode->hasOutgoingEdges(PAGEdge::Call)) {   //Q1: only has one outgoing edge?
                 for (PAGEdge::PAGEdgeSetTy::const_iterator pit = actualParmNode->getOutgoingEdgesBegin(
                         PAGEdge::Call), epit = actualParmNode->getOutgoingEdgesEnd(PAGEdge::Call);
                      pit != epit; ++pit) {
@@ -247,7 +247,7 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
     const ICFGNode *icfgNode = pathNode->getICFGNode();
     Datafact fact = pathNode->getDataFact();    //reference (read only)
 
-    if(const FunEntryBlockNode *funEntry = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)){  // cannot delete datafact from main fun
+    if(const FunEntryBlockNode *funEntry = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)){
         for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {     //to do: should only be done once
             PAGNode *node = it->second;
 
