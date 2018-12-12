@@ -262,8 +262,9 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
 const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
-	if(isHeapAllocExtCallViaRet(inst) && inst->getNextNode()){
-	    if(inst->getNextNode()->getOpcode() == Instruction::BitCast)
+	if(isHeapAllocExtCallViaRet(inst)){
+		const Instruction* nextInst = inst->getNextNode();
+		if(nextInst && nextInst->getOpcode() == Instruction::BitCast)
 	           // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
 	            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
 	}
