@@ -715,9 +715,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
     if (isHeapAllocOrStaticExtCall(cs)) {
         // case 1: ret = new obj
         if (isHeapAllocExtCallViaRet(cs) || isStaticExtCall(cs)) {
-            NodeID obj = getObjectNode(inst);
-        	NodeID val = getValueNode(inst);
-            NodeID obj = getObjectNode(inst);
+			NodeID val = getValueNode(inst);
+			NodeID obj = getObjectNode(inst);
             pag->addAddrEdge(obj, val);
         }
         // case 2: *arg = new obj
