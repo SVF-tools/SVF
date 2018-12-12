@@ -63,7 +63,9 @@ static llvm::cl::opt<bool> DisableWarn("dwarn", llvm::cl::init(true),
  */
 bool SVFUtil::isObject(const Value * ref) {
     bool createobj = false;
-    if (SVFUtil::isa<Instruction>(ref) && isHeapAllocOrStaticExtCall(SVFUtil::cast<Instruction>(ref)))
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
+        createobj = true;
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
