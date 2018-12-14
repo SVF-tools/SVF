@@ -222,6 +222,8 @@ void ICFG::connectGlobalToProgEntry()
  */
 void ICFG::addVFGToICFG(){
 
+    connectGlobalToProgEntry();
+
 	for (const_iterator it = begin(), eit = end(); it!=eit; ++it){
 		ICFGNode* node = it->second;
 		if (IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(node))
