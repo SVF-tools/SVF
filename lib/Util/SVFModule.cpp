@@ -64,8 +64,6 @@ LLVMModuleSet::LLVMModuleSet(Module *mod) {
     modules = new unique_ptr<Module>[moduleNum];
     modules[0] = std::unique_ptr<Module>(mod);
 
-	if (SVFMain)
-		addSVFMain();
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
@@ -133,6 +131,9 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec) {
 }
 
 void LLVMModuleSet::initialize() {
+   if (SVFMain)
+	addSVFMain();
+
     for (u32_t i = 0; i < moduleNum; ++i) {
         Module *mod = modules[i].get();
 
