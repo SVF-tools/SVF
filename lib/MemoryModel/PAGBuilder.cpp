@@ -713,11 +713,10 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
 void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
     const Instruction* inst = cs.getInstruction();
     if (isHeapAllocOrStaticExtCall(cs)) {
-        NodeID obj = getObjectNode(inst);
         // case 1: ret = new obj
         if (isHeapAllocExtCallViaRet(cs) || isStaticExtCall(cs)) {
-            NodeID val = getValueNode(inst);
-            NodeID obj = getObjectNode(inst);
+			NodeID val = getValueNode(inst);
+			NodeID obj = getObjectNode(inst);
             pag->addAddrEdge(obj, val);
         }
         // case 2: *arg = new obj
@@ -728,7 +727,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             if (arg->getType()->isPointerTy()) {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                obj = pag->addDummyObjNode();
+                NodeID obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj) {
                     pag->addAddrEdge(obj, dummy);
                     pag->addStoreEdge(dummy, vnArg);

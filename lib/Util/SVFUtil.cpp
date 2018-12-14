@@ -63,7 +63,9 @@ static llvm::cl::opt<bool> DisableWarn("dwarn", llvm::cl::init(true),
  */
 bool SVFUtil::isObject(const Value * ref) {
     bool createobj = false;
-    if (SVFUtil::isa<Instruction>(ref) && isHeapAllocOrStaticExtCall(SVFUtil::cast<Instruction>(ref)))
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
+        createobj = true;
+    if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isHeapAllocExtCallViaRet(SVFUtil::cast<Instruction>(ref)))
         createobj = true;
     if (SVFUtil::isa<GlobalVariable>(ref))
         createobj = true;
@@ -263,7 +265,8 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
 	if(isHeapAllocExtCallViaRet(inst)){
-	    if(inst->getNextNode()->getOpcode() == Instruction::BitCast)
+		const Instruction* nextInst = inst->getNextNode();
+		if(nextInst && nextInst->getOpcode() == Instruction::BitCast)
 	           // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
 	            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
 	}

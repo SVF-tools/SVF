@@ -193,6 +193,8 @@ protected:
     //@{
     /// Add VFGNodes to ICFG
     void addVFGToICFG();
+    /// Add global stores to the function entry ICFGNode of main
+    void connectGlobalToProgEntry();
     /// Add VFGStmtNode into IntraBlockNode
     void handleIntraBlock(IntraBlockNode* intraICFGNode);
     /// Add ArgumentVFGNode into InterBlockNode

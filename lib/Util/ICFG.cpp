@@ -196,6 +196,27 @@ void ICFG::build(){
     }
 }
 
+void ICFG::connectGlobalToProgEntry()
+{
+    const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
+
+    FunEntryBlockNode* entryNode = getFunEntryICFGNode(mainFunc);
+    for(ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){
+        if(const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it)){
+            if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(intraEdge->getDstNode())){
+                for (VFG::StoreNodeSet::const_iterator storeIt = vfg->getGlobalStores().begin(), storeEit = vfg->getGlobalStores().end();
+                        storeIt != storeEit; ++storeIt)
+                    intra->addVFGNode(*storeIt);
+            }
+            else
+                assert(false && " the dst node of an intra edge is not an intra block node?");
+        }
+        else
+            assert(false && "the edge from main's functionEntryBlock is not an intra edge?");
+    }
+}
+
+
 /*!
  *
  */

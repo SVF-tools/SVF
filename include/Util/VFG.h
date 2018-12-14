@@ -124,6 +124,10 @@ public:
     inline bool hasVFGNode(NodeID id) const {
         return hasGNode(id);
     }
+    /// Return global stores
+    inline StoreNodeSet& getGlobalStores() {
+        return globalStore;
+    }
 
     /// Get a SVFG edge according to src and dst
     VFGEdge* getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind);
