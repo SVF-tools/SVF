@@ -151,9 +151,11 @@ void PAGBuilder::initalNode() {
 		DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
 		const Value* val = iter->first;
 		if (symTable->isConstantObjSym(val)) {
-			pag->setCurrentLocation(val, NULL);
 			NodeID ptr = pag->getValueNode(val);
-			pag->addAddrEdge(iter->second, ptr);
+			if(ptr!= pag->getBlkPtr() && ptr!= pag->getNullPtr()){
+				pag->setCurrentLocation(val, NULL);
+				pag->addAddrEdge(iter->second, ptr);
+			}
 		}
     }
 
