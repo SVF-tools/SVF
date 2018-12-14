@@ -127,7 +127,7 @@ void PTAStat::performStat() {
             const MemObj* mem = obj->getMemObj();
             if (memObjSet.insert(mem->getSymId()).second == false)
                 continue;
-            if(mem->isBlackHoleOrConstantObj())
+            if(mem->isBlackHoleObj())
                 continue;
             if(mem->isFunction())
                 numOfFunction++;

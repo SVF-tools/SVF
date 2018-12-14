@@ -481,15 +481,11 @@ public:
     inline bool isBlkObj(NodeID id) const {
         return SymbolTableInfo::isBlkObj(id);
     }
-    inline bool isConstantObj(NodeID id) const {
-        return SymbolTableInfo::isConstantObj(id);;
-    }
-    inline bool isTaintedObj(NodeID id) const {
-        PAGNode* node = getPAGNode(id);
-        ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node);
-        assert(obj && "not an object node?");
-        return (obj->getMemObj()->isTaintedObj());
-    }
+	inline bool isConstantObj(NodeID id) const {
+		const MemObj* obj = getObject(id);
+		assert(obj && "not an object node?");
+		return SymbolTableInfo::isConstantObj(id) || obj->isConstant();
+	}
     inline bool isNonPointerObj(NodeID id) const {
         PAGNode* node = getPAGNode(id);
         if (FIObjPN* fiNode = SVFUtil::dyn_cast<FIObjPN>(node)) {
@@ -676,9 +672,6 @@ public:
 
     /// Set a pointer points-to black hole (e.g. int2ptr)
     bool addBlackHoleAddrEdge(NodeID node);
-
-    /// Get constant object node
-    NodeID getNodeForConstantPointer(const Constant *C);
 
     /// Whether a node is a valid pointer
     //@{

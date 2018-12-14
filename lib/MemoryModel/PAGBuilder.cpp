@@ -145,6 +145,18 @@ void PAGBuilder::initalNode() {
         pag->addVarargNode(iter->first, iter->second);
     }
 
+    /// add address edges for constant nodes.
+    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
+                symTable->objSyms().begin(); iter != symTable->objSyms().end(); ++iter) {
+		DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
+		const Value* val = iter->first;
+		if (symTable->isConstantObjSym(val)) {
+			pag->setCurrentLocation(val, NULL);
+			NodeID ptr = pag->getValueNode(val);
+			pag->addAddrEdge(iter->second, ptr);
+		}
+    }
+
     assert(pag->getTotalNodeNum() >= symTable->getTotalSymNum()
            && "not all node been inititalize!!!");
 

@@ -510,7 +510,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL),isTainted(false) {
+    refVal(val), GSymID(id), typeInfo(NULL) {
     init(val);
 }
 
@@ -519,7 +519,6 @@ MemObj::MemObj(const Value *val, SymID id) :
  */
 MemObj::MemObj(SymID id, const Type* type) :
     refVal(NULL), GSymID(id), typeInfo(NULL){
-    isTainted = !SymbolTableInfo::isBlkObjOrConstantObj(GSymID);
     init(type);
 }
 
@@ -528,20 +527,6 @@ MemObj::MemObj(SymID id, const Type* type) :
  */
 bool MemObj::isBlackHoleObj() const {
     return SymbolTableInfo::isBlkObj(GSymID);
-}
-
-/*!
- * Whether it is a constant object
- */
-bool MemObj::isConstantObj() const {
-    return SymbolTableInfo::isConstantObj(GSymID) || isTaintedObj();
-}
-
-/*!
- * Whether it is a black hole or constant object
- */
-bool MemObj::isBlackHoleOrConstantObj() const {
-    return isBlackHoleObj() || isConstantObj() ;
 }
 
 /*!
@@ -810,6 +795,9 @@ void SymbolTableInfo::collectVal(const Value *val) {
         if (const GlobalVariable* globalVar = SVFUtil::dyn_cast<GlobalVariable>(val))
             handleGlobalCE(globalVar);
     }
+
+	if (isConstantObjSym(val))
+		collectObj(val);
 }
 
 /*!
@@ -905,7 +893,7 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
             return v->isConstant();
         }
     }
-    return false;
+    return SVFUtil::isa<ConstantData>(val) || SVFUtil::isa<ConstantAggregate>(val);
 }
 
 
