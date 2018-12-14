@@ -204,9 +204,8 @@ void ICFG::connectGlobalToProgEntry()
     for(ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){
         if(const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it)){
             if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(intraEdge->getDstNode())){
-                for (VFG::StoreNodeSet::const_iterator storeIt = vfg->getGlobalStores().begin(), storeEit = vfg->getGlobalStores().end();
-                        storeIt != storeEit; ++storeIt)
-                    intra->addVFGNode(*storeIt);
+                for (VFG::GlobalVFGNodeSet::const_iterator nodeIt = vfg->getGlobalVFGNodes().begin(), nodeEit = vfg->getGlobalVFGNodes().end(); nodeIt != nodeEit; ++nodeIt)
+                    intra->addVFGNode(*nodeIt);
             }
             else
                 assert(false && " the dst node of an intra edge is not an intra block node?");
