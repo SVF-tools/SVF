@@ -224,24 +224,26 @@ void SVFG::connectFromGlobalToProgEntry()
     if (formalIns.empty())
         return;
 
-    for (StoreNodeSet::const_iterator storeIt = globalStore.begin(), storeEit = globalStore.end();
+    for (GlobalVFGNodeSet::const_iterator storeIt = globalVFGNodes.begin(), storeEit = globalVFGNodes.end();
             storeIt != storeEit; ++storeIt) {
-        const StoreSVFGNode* store = *storeIt;
+        if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(*storeIt)) {
 
-        /// connect this store to main function entry
-        const PointsTo& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID());
+            /// connect this store to main function entry
+            const PointsTo& storePts = mssa->getPTA()->getPts(
+                    store->getPAGDstNodeID());
 
-        for (NodeBS::iterator fiIt = formalIns.begin(), fiEit = formalIns.end();
-                fiIt != fiEit; ++fiIt) {
-            NodeID formalInID = *fiIt;
-            PointsTo formalInPts = ((FormalINSVFGNode*)getSVFGNode(formalInID))->getPointsTo();
+            for (NodeBS::iterator fiIt = formalIns.begin(), fiEit =
+                    formalIns.end(); fiIt != fiEit; ++fiIt) {
+                NodeID formalInID = *fiIt;
+                PointsTo formalInPts = ((FormalINSVFGNode*) getSVFGNode(formalInID))->getPointsTo();
 
-            formalInPts &= storePts;
-            if (formalInPts.empty())
-                continue;
+                formalInPts &= storePts;
+                if (formalInPts.empty())
+                    continue;
 
-            /// add indirect value flow edge
-            addIntraIndirectVFEdge(store->getId(), formalInID, formalInPts);
+                /// add indirect value flow edge
+                addIntraIndirectVFEdge(store->getId(), formalInID, formalInPts);
+            }
         }
     }
 }

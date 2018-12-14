@@ -68,7 +68,7 @@ public:
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef std::set<StoreVFGNode*> StoreNodeSet;
+    typedef std::set<const VFGNode*> GlobalVFGNodeSet;
 
 
 protected:
@@ -83,7 +83,7 @@ protected:
     PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
 
-    StoreNodeSet globalStore;	///< set of global store VFG nodes
+    GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
     PAG* pag;
     VFGK kind;
@@ -125,8 +125,8 @@ public:
         return hasGNode(id);
     }
     /// Return global stores
-    inline StoreNodeSet& getGlobalStores() {
-        return globalStore;
+    inline GlobalVFGNodeSet& getGlobalVFGNodes() {
+        return globalVFGNodes;
     }
 
     /// Get a SVFG edge according to src and dst
@@ -353,6 +353,10 @@ protected:
         assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
         PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
         addVFGNode(node);
+
+        const PAGEdgeSet& globalPAGEdges = getPAG()->getGlobalPAGEdgeSet();
+        if (globalPAGEdges.find(pagEdge) != globalPAGEdges.end())
+            globalVFGNodes.insert(node);
     }
     /// Add a Dummy VFG node for null pointer definition
     /// To be noted for black hole pointer it has already has address edge connected
@@ -393,7 +397,7 @@ protected:
 
         const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
         if (globalPAGStores.find(store) != globalPAGStores.end())
-            globalStore.insert(sNode);
+            globalVFGNodes.insert(sNode);
     }
 
     /// Add an actual parameter VFG node
