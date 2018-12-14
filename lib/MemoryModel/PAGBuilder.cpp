@@ -281,7 +281,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
           outs() << "global " << *gvar << " constant initializer: " << *C
           << "\n");
 
-    if (C->getType()->isSingleValueType() && SVFUtil::isa<PointerType>(C->getType())) {
+    if (C->getType()->isSingleValueType()) {
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         pag->setCurrentLocation(gvar, NULL);
@@ -296,7 +296,8 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             pag->setCurrentLocation(C, NULL);
             pag->addStoreEdge(src, field);
         } else {
-            //TODO:assert(false,"what else do we have");
+            pag->setCurrentLocation(C, NULL);
+            pag->addStoreEdge(src, field);
         }
 
     } else if (SVFUtil::isa<ConstantArray>(C)) {

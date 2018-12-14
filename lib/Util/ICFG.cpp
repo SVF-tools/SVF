@@ -208,7 +208,7 @@ void ICFG::connectGlobalToProgEntry()
                     intra->addVFGNode(*nodeIt);
             }
             else
-                assert(false && " the dst node of an intra edge is not an intra block node?");
+                assert(SVFUtil::isa<CallBlockNode>(intraEdge->getDstNode()) && " the dst node of an intra edge is not an intra block node or a callblocknode?");
         }
         else
             assert(false && "the edge from main's functionEntryBlock is not an intra edge?");
