@@ -333,7 +333,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
         pag->setCurrentLocation(gvar, NULL);
         pag->addAddrEdge(obj, idx);
 
-        if (gvar->hasDefinitiveInitializer()) {
+        if (gvar->hasInitializer()) {
             Constant *C = gvar->getInitializer();
             DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
             InitialGlobal(gvar, C, 0);
