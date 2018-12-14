@@ -241,15 +241,17 @@ void PAGBuilder::processCE(const Value *val) {
 			pag->addCopyEdge(pag->getValueNode(opnd), pag->getValueNode(ptr2Intce));
 			pag->setCurrentLocation(cval, cbb);
         }
-        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref) || SVFUtil::isa<ConstantAggregate>(ref)){
+        else if(isTruncConstantExpr(ref) || isCmpConstantExpr(ref)){
             // we don't handle trunc and cmp instruction for now
-            // we don't handle constant agrgregate like constant vectors
             const Value* cval = pag->getCurrentValue();
             const BasicBlock* cbb = pag->getCurrentBB();
             pag->setCurrentLocation(ref, NULL);
             NodeID dst = pag->getValueNode(ref);
             pag->addBlackHoleAddrEdge(dst);
             pag->setCurrentLocation(cval, cbb);
+        }
+        else if (SVFUtil::isa<ConstantAggregate>(ref)){
+            // we don't handle constant agrgregate like constant vectors
         }
         else{
         	    if(SVFUtil::isa<ConstantExpr>(val))
