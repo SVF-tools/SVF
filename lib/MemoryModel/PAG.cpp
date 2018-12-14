@@ -399,13 +399,9 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
         if (!curBB)
             globPAGEdgesSet.insert(edge);
-    } else if (SVFUtil::isa<ConstantPointerNull>(curVal)) {
-        assert((edge->getSrcID() == NullPtr && edge->getDstID() == BlkPtr) ||
-               (edge->getSrcID() == BlackHole && edge->getDstID() == BlkPtr));
-        globPAGEdgesSet.insert(edge);
     } else if (SVFUtil::isa<GlobalVariable>(curVal) ||
                SVFUtil::isa<Function>(curVal) ||
-               SVFUtil::isa<Constant>(curVal)) {
+			   SymbolTableInfo::Symbolnfo()->isConstantObjSym(curVal)) {
         globPAGEdgesSet.insert(edge);
     } else {
         assert(false && "what else value can we have?");
