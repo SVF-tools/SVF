@@ -991,7 +991,7 @@ void SymbolTableInfo::handleGlobalCE(const GlobalVariable *G) {
 void SymbolTableInfo::handleGlobalInitializerCE(const Constant *C,
         u32_t offset) {
 
-    if (C->getType()->isSingleValueType() && SVFUtil::isa<PointerType>(C->getType())) {
+    if (C->getType()->isSingleValueType()) {
         if (const ConstantExpr *E = SVFUtil::dyn_cast<ConstantExpr>(C)) {
             handleCE(E);
         }
