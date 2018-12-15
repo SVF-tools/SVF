@@ -370,17 +370,11 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
             }
         }
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {  //TODO ...
-
-        for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
-            // erase local variable from datafact
-//            if((*dit)->getFunction() != NULL)
-//                fact.erase(*dit);
-            if ((*dit)->getFunction() == node->getFun()){
-                fact.erase(*dit);
-            }
-//            if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
-//                if (!objNode->getMemObj()->isGlobalObj()) //heap need to add
-//                    fact.erase(*dit);
+        for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){
+            if(((*dit)->getFunction()) != NULL)
+                dit = fact.erase(dit);
+            else
+                dit++;
         }
     }
     return fact;
