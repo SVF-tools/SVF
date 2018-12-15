@@ -95,7 +95,7 @@ public:
     public:
         PathNode();
 
-        PathNode(const ICFGNode *node, Datafact fact) {
+        PathNode(const ICFGNode *node, const Datafact& fact) {
             icfgNode = node;
             datafact = fact;
         }

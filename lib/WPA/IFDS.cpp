@@ -97,6 +97,7 @@ void IFDS::forwardTabulate() {
                 Datafact d5 = transferFun(dstPN);
                 Datafact d4 = getCallerDatafact(srcPN, caller); // deduce d4 from d1 (backward direction!)
                 if (isNotInSummaryEdgeList(caller, d4, ret, d5)) {
+
                     SEPropagate(caller, d4, ret, d5); // insert new summary edge into SummaryEdgeList
 
                     for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
@@ -124,13 +125,11 @@ void IFDS::forwardTabulate() {
 
 //add new PathEdge into PathEdgeList and WorkList
 void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact d) {
-    ICFGNodeSet::iterator it = ICFGDstNodeSet.find(succ);
-    if (it == ICFGDstNodeSet.end()) {
+    if (ICFGDstNodeSet.find(succ) == ICFGDstNodeSet.end()) {
         PEPropagate(srcPN, succ, d);
         ICFGDstNodeSet.insert(succ);
     } else {
-        Facts::iterator it = ICFGNodeToFacts[succ].find(d);
-        if (it == ICFGNodeToFacts[succ].end()) {
+        if (ICFGNodeToFacts[succ].find(d) == ICFGNodeToFacts[succ].end()) {
             PEPropagate(srcPN, succ, d);
         }
     }
@@ -154,17 +153,13 @@ void IFDS:: SEPropagate(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d
 }
 
 bool IFDS::isNotInSummaryEdgeList(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5) {
-    ICFGNodeSet::iterator it = SummaryICFGDstNodeSet.find(ret);
-    Facts::iterator fit = SummaryICFGNodeToFacts[ret].find(d5);
-    Facts::iterator fit2 = SummaryICFGNodeToFacts[caller].find(d4);
-
-    if (it == SummaryICFGDstNodeSet.end()){
+    if (SummaryICFGDstNodeSet.find(ret) == SummaryICFGDstNodeSet.end()){
         SummaryICFGDstNodeSet.insert(ret);
         return true;
     }
-    else if (fit == SummaryICFGNodeToFacts[ret].end())
+    else if (SummaryICFGNodeToFacts[ret].find(d5) == SummaryICFGNodeToFacts[ret].end())
         return true;
-    else if (fit2 == SummaryICFGNodeToFacts[caller].end())
+    else if (SummaryICFGNodeToFacts[caller].find(d4) == SummaryICFGNodeToFacts[caller].end())
         return true;
     else
         return false;
@@ -181,7 +176,7 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
 //get d4 from d1
 IFDS::Datafact IFDS::getCallerDatafact(PathNode *srcPN, ICFGNode *caller) {
     const ICFGNode *sp = srcPN->getICFGNode();
-    Datafact d1 = srcPN->getDataFact();    // reference
+    Datafact d1 = srcPN->getDataFact();
     const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(caller);
     for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
          it != eit; ++it) {
@@ -243,14 +238,23 @@ IFDS::Datafact IFDS::getCallToRetDatafact(IFDS::PathNode *caller) {
 // PHINode: resNode depends on operands -> getPAGNode
 // Cmp & Binary
 
-IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
+IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact reference as parameter
     const ICFGNode *icfgNode = pathNode->getICFGNode();
     Datafact fact = pathNode->getDataFact();    //reference (read only)
 
     if(const FunEntryBlockNode *funEntry = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)){
         for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {     //to do: should only be done once
             PAGNode *node = it->second;
-
+            //add global var after mainEntryNode
+            if (funEntry == mainEntryNode){
+                if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(node))
+                    if ((objNode->getMemObj()->isGlobalObj()) && !(objNode->getMemObj()->isFunction())){
+                        fact.insert(node);
+                        PAGEdge::PAGEdgeSetTy edges = node->getOutgoingEdges(PAGEdge::Addr);
+                        for (PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                            fact.insert((*it)->getDstNode());
+                    }
+            }
             if ((node->hasIncomingEdge() || node->hasOutgoingEdge()) && node->getFunction() == funEntry->getFun()) { // nodes has edges && in concerned funcion
                 bool constant = false;    // constant == false means add into datafact
                 // solve formal parm : do not add formalParmPAGNode into fact. (if fact.before has it(from getCalleeDatafact), no need to add, else, dont add it.)
@@ -285,8 +289,14 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
                 PAGNode *srcPagNode = stmtNode->getPAGSrcNode();
                 // Addr: srcNode is uninitialized, dstNode is initialiazed
                 if (const AddrVFGNode *addrNode = SVFUtil::dyn_cast<AddrVFGNode>(stmtNode)) {
-                    fact.insert(srcPagNode);
                     fact.erase(dstPagNode);
+                    if(dstPagNode->isConstantData())
+                        fact.erase(srcPagNode);
+                    else
+                        fact.insert(srcPagNode);
+                    if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(srcPagNode))
+                        if (objNode->getMemObj()->isFunction())
+                            fact.erase(srcPagNode);
                 }
                 // Copy: dstNode depends on srcNode
                 else if (const CopyVFGNode *copyNode = SVFUtil::dyn_cast<CopyVFGNode>(stmtNode)) {
@@ -359,13 +369,18 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) {
                     fact.insert(resBiOpNode);
             }
         }
-    } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
+    } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {  //TODO ...
 
         for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
             // erase local variable from datafact
-            if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
-                if (!objNode->getMemObj()->isGlobalObj()) //heap need to add
-                    fact.erase(*dit);
+//            if((*dit)->getFunction() != NULL)
+//                fact.erase(*dit);
+            if ((*dit)->getFunction() == node->getFun()){
+                fact.erase(*dit);
+            }
+//            if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
+//                if (!objNode->getMemObj()->isGlobalObj()) //heap need to add
+//                    fact.erase(*dit);
         }
     }
     return fact;
