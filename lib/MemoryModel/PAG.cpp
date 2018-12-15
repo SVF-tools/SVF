@@ -401,7 +401,7 @@ void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
             globPAGEdgesSet.insert(edge);
     } else if (SVFUtil::isa<GlobalVariable>(curVal) ||
                SVFUtil::isa<Function>(curVal) ||
-			   SymbolTableInfo::Symbolnfo()->isConstantObjSym(curVal)) {
+			   SVFUtil::isa<Constant>(curVal)) {
         globPAGEdgesSet.insert(edge);
     } else {
         assert(false && "what else value can we have?");
