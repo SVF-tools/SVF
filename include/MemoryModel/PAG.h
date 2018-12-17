@@ -95,9 +95,10 @@ private:
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeSet candidatePointers;
+    NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
 
     /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0) {
+    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
         symInfo = SymbolTableInfo::Symbolnfo();
     }
 
@@ -509,6 +510,13 @@ public:
         return symInfo->getConstantObj();
     }
     //@}
+
+    inline u32_t getNodeNumAfterPAGBuild() const {
+        return nodeNumAfterPAGBuild;
+    }
+    inline void setNodeNumAfterPAGBuild(u32_t num) {
+        nodeNumAfterPAGBuild = num;
+    }
 
     /// Base and Offset methods for Value and Object node
     //@{

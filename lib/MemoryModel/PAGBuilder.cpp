@@ -97,6 +97,8 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
 
     pag->initialiseCandidatePointers();
 
+    pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+
     return pag;
 }
 

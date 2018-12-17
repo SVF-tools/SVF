@@ -123,6 +123,8 @@ PAG* PAGBuilderFromFile::build() {
 	for(u32_t i = 0; i < lower_bound; i++)
 		pag->incNodeNum();
 
+    pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+
 	return pag;
 }
 
