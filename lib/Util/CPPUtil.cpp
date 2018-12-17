@@ -229,6 +229,18 @@ const Value *cppUtil::getVCallThisPtr(CallSite cs) {
     }
 }
 
+/*!
+ * Given a inheritance relation B is a child of A
+ * We assume B::B(thisPtr1){ A::A(thisPtr2) } such that thisPtr1 == thisPtr2
+ * In the following code thisPtr1 is "%class.B1* %this" and thisPtr2 is "%class.A* %0".
+ *
+define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat
+  %this.addr = alloca %class.B1*, align 8
+  store %class.B1* %this, %class.B1** %this.addr, align 8
+  %this1 = load %class.B1*, %class.B1** %this.addr, align 8
+  %0 = bitcast %class.B1* %this1 to %class.A*
+  call void @A::A()(%class.A* %0)
+ */
 bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2) {
 	if (thisPtr1 == thisPtr2){
 		return true;
@@ -238,7 +250,8 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
 			if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU)) {
 				for (const User *storeU : store->getPointerOperand()->users()) {
 					if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU)) {
-						return load == (thisPtr2->stripPointerCasts());
+					    if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
+					        return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
 					}
 				}
 			}
