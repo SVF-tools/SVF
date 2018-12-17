@@ -61,16 +61,15 @@ public:
     //add new PathEdge components into PathEdgeList and WorkList
     void propagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
     void PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
-    void SEPropagate(ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5);
+    void SEPropagate(const ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5);
 
-    bool isNotInSummaryEdgeList(ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
+    bool isNotInSummaryEdgeList(const ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
 
     //transfer function of given ICFGNode
     Datafact transferFun(PathNode *pathNode);
 
     Datafact getCalleeDatafact(PathNode *caller);
     Datafact getCallToRetDatafact(PathNode *caller);
-    Datafact getCallerDatafact(PathNode *srcPN, ICFGNode* caller);
 
     //whether the variable is initialized
     bool isInitialized(const PAGNode *pagNode, Datafact datafact);
@@ -90,14 +89,24 @@ public:
     class PathNode {
         const ICFGNode *icfgNode;
         Datafact datafact;
+        PathNode *caller;   // for sp node
 
         //Constructor
     public:
-        PathNode();
+        PathNode(){
+        }
 
-        PathNode(const ICFGNode *node, const Datafact& fact) {
+        PathNode(const ICFGNode *node, const Datafact& fact) : caller (NULL){
             icfgNode = node;
             datafact = fact;
+        }
+
+        void setCaller(PathNode *caller){
+            this->caller = caller;
+        }
+
+        PathNode* getCaller(){
+            return this->caller;
         }
 
         void setICFGNode(ICFGNode *node) {
