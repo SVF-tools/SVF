@@ -580,21 +580,16 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
     // ReturnInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    //ignore void and non-ptr return statements
-    if (inst.getNumOperands()
-            && (SVFUtil::isa<PointerType>(inst.getOperand(0)->getType()))) {
+    DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
-        DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
+    Value *src = inst.getReturnValue();
 
-        Value *src = inst.getReturnValue();
+    Function *F = inst.getParent()->getParent();
 
-        Function *F = inst.getParent()->getParent();
-
-        NodeID rnF = getReturnNode(F);
-        NodeID vnS = getValueNode(src);
-        //vnS may be null if src is a null ptr
-        pag->addCopyEdge(vnS, rnF);
-    }
+    NodeID rnF = getReturnNode(F);
+    NodeID vnS = getValueNode(src);
+    //vnS may be null if src is a null ptr
+    pag->addCopyEdge(vnS, rnF);
 }
 
 
