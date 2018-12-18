@@ -203,9 +203,11 @@ protected:
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
+    virtual bool mergeSrcToTgt(NodeID srcId,NodeID tgtId);
+
     /// Merge sub node in a SCC cycle to their rep node
     //@{
-    void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes, NodeBS & chanegdRepNodes);
+    void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes);
     void mergeSccCycle();
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
@@ -217,7 +219,7 @@ protected:
     //@}
 
     /// Updates subnodes of its rep, and rep node of its subs
-    void updateNodeRepAndSubs(NodeID nodeId);
+    void updateNodeRepAndSubs(NodeID nodeId,NodeID newRepId);
 
     /// SCC detection
     virtual NodeStack& SCCDetect();

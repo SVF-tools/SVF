@@ -187,8 +187,7 @@ public:
             return it->second;
     }
     inline NodeBS& sccSubNodes(NodeID id) {
-        if(0==nodeToSubsMap.count(id))
-            nodeToSubsMap[id].set(id);
+        nodeToSubsMap[id].set(id);
         return nodeToSubsMap[id];
     }
     inline void setRep(NodeID node, NodeID rep) {
