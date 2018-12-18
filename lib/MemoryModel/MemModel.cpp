@@ -1101,3 +1101,66 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
     else
         return stTySL->getElementOffset(field_idx);
 }
+
+/*
+    Get flatten field index via byte offset.
+    @return
+      -1      FAIL
+      >= 0    Field index
+ */
+Size_t SymbolTableInfo::getFldIdxViaByteOffset(llvm::StructType * baseTy,Size_t byteoffset){
+    StInfo * info = getStructInfo(baseTy);
+    std::vector<FieldInfo> &fields = info->getFlattenFieldInfoVec();
+    for(int i = 0; i < fields.size(); i++){
+        const FieldInfo &field = fields[i];
+        Size_t bo = field.getFlattenByteOffset();
+        const FieldInfo::ElemNumStridePairVec& pairs = field.getElemNumStridePairVect();
+        for(auto p: pairs){
+            u32_t num = p.first;
+            u32_t stride = p.second;
+            for(u32_t cnt = 0; cnt < num ; cnt++){
+              if((bo + cnt * stride) == byteoffset){
+                  return i;
+              }
+            }
+        }
+    }
+    return -1;
+}
+
+
+llvm::StructType * SymbolTableInfo::getSubStructViaByteOffset(llvm::StructType * baseTy, int64_t byteoffset){
+    const DataLayout * dataLayout = getDataLayout(getModule().getMainLLVMModule());
+    const StructLayout * structLayout = dataLayout->getStructLayout(baseTy);
+    uint64_t structSize = structLayout->getSizeInBytes();
+    if(byteoffset < 0){
+        // FIXME: It is a sign of out-of-bound accessing.
+        // We can give some warning here.
+        // (1) down-cast error when multi-inheritance
+        // (2) arr[-3]
+        return baseTy;
+    }else if((byteoffset % structSize) == 0){
+        return baseTy;
+    }
+    byteoffset %= structSize;
+    unsigned index = structLayout->getElementContainingOffset(byteoffset);
+    uint64_t eleOffset = structLayout->getElementOffset(index);
+    Type * eleTy = baseTy->getContainedType(index);
+    while(ArrayType * at = dyn_cast<ArrayType>(eleTy)){
+        eleTy = at->getArrayElementType();
+    }
+    if(eleOffset == byteoffset){
+        return dyn_cast<StructType>(eleTy);
+    }else if(eleOffset < byteoffset){
+        if(StructType * st = dyn_cast<StructType>(eleTy)){
+            return getSubStructViaByteOffset(st,byteoffset-eleOffset);
+        }else{
+            return nullptr;
+        }
+    }else{
+        // we shouldn't get here.
+        return nullptr;
+    }
+}
+
+

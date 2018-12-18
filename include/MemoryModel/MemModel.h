@@ -394,7 +394,9 @@ public:
     typedef std::set<llvm::CallSite> CallSiteSet;
     typedef llvm::DenseMap<const llvm::Instruction*,CallSiteID> CallSiteToIDMapTy;
     typedef llvm::DenseMap<CallSiteID,const llvm::Instruction*> IDToCallSiteMapTy;
-
+    
+	Size_t getFldIdxViaByteOffset(llvm::StructType * baseTy,Size_t byteoffset);
+	llvm::StructType * getSubStructViaByteOffset(llvm::StructType * baseTy, int64_t byteoffset);
     //@}
 
 private:
