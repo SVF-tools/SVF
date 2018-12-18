@@ -292,8 +292,6 @@ inline void Andersen::collapseFields() {
  */
 void Andersen::mergeSccCycle()
 {
-    NodeBS changedRepNodes;
-
     NodeStack revTopoOrder;
     NodeStack & topoOrder = getSCCDetector()->topoNodeStack();
     while (!topoOrder.empty()) {
@@ -302,13 +300,7 @@ void Andersen::mergeSccCycle()
         revTopoOrder.push(repNodeId);
         const NodeBS& subNodes = getSCCDetector()->subNodes(repNodeId);
         // merge sub nodes to rep node
-        mergeSccNodes(repNodeId, subNodes, changedRepNodes);
-    }
-
-    // update rep/sub relation in the constraint graph.
-    // each node will have a rep node
-    for(NodeBS::iterator it = changedRepNodes.begin(), eit = changedRepNodes.end(); it!=eit; ++it) {
-        updateNodeRepAndSubs(*it);
+        mergeSccNodes(repNodeId, subNodes);
     }
 
     // restore the topological order for later solving.
@@ -324,13 +316,12 @@ void Andersen::mergeSccCycle()
  * Union points-to of subscc nodes into its rep nodes
  * Move incoming/outgoing direct edges of sub node to rep node
  */
-void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes, NodeBS & chanegdRepNodes)
+void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes)
 {
     for (NodeBS::iterator nodeIt = subNodes.begin(); nodeIt != subNodes.end(); nodeIt++) {
         NodeID subNodeId = *nodeIt;
         if (subNodeId != repNodeId) {
             mergeNodeToRep(subNodeId, repNodeId);
-            chanegdRepNodes.set(subNodeId);
         }
     }
 }
@@ -395,10 +386,6 @@ bool Andersen::collapseField(NodeID nodeId)
             NodeID fieldRepNodeId = consCG->sccRepNode(fieldId);
             if (fieldRepNodeId != baseRepNodeId)
                 mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
-
-            // field's rep node FR has got new rep node BR during mergeNodeToRep(),
-            // update all FR's sub nodes' rep node to BR.
-            updateNodeRepAndSubs(fieldRepNodeId);
         }
     }
 
@@ -460,12 +447,13 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     return false;
 }
 
-/*
- * Merge a node to its rep node
+/*!
+ * merge nodeId to newRepId. Return true if the newRepId is a PWC node
  */
-void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
+bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
+
     if(nodeId==newRepId)
-        return;
+        return false;
 
     /// union pts of node to rep
     unionPts(newRepId,nodeId);
@@ -473,34 +461,42 @@ void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
     /// move the edges from node to rep, and remove the node
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
+
+    consCG->removeConstraintNode(node);
+
+    /// set rep and sub relations
+    updateNodeRepAndSubs(node->getId(),newRepId);
+
+    return gepInsideScc;
+}
+/*
+ * Merge a node to its rep node based on SCC detection
+ */
+void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
+
+    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    bool gepInsideScc = mergeSrcToTgt(nodeId,newRepId);
     /// 1. if find gep edges inside SCC cycle, the rep node will become a PWC node and
     /// its pts should be collapsed later.
     /// 2. if the node to be merged is already a PWC node, the rep node will also become
     /// a PWC node as it will have a self-cycle gep edge.
     if (gepInsideScc || node->isPWCNode())
         consCG->setPWCNode(newRepId);
-
-    consCG->removeConstraintNode(node);
-
-    /// set rep and sub relations
-    consCG->setRep(node->getId(),newRepId);
-    NodeBS& newSubs = consCG->sccSubNodes(newRepId);
-    newSubs.set(node->getId());
 }
 
 /*
  * Updates subnodes of its rep, and rep node of its subs
  */
-void Andersen::updateNodeRepAndSubs(NodeID nodeId) {
-    NodeID repId = consCG->sccRepNode(nodeId);
+void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
+    consCG->setRep(nodeId,newRepId);
     NodeBS repSubs;
     /// update nodeToRepMap, for each subs of current node updates its rep to newRepId
     //  update nodeToSubsMap, union its subs with its rep Subs
     NodeBS& nodeSubs = consCG->sccSubNodes(nodeId);
     for(NodeBS::iterator sit = nodeSubs.begin(), esit = nodeSubs.end(); sit!=esit; ++sit) {
         NodeID subId = *sit;
-        consCG->setRep(subId,repId);
+        consCG->setRep(subId,newRepId);
     }
     repSubs |= nodeSubs;
-    consCG->setSubs(repId,repSubs);
+    consCG->setSubs(newRepId,repSubs);
 }

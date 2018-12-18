@@ -108,6 +108,5 @@ void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep) {
         // only remaining its 'NodeID' exists in the set 'subNodes' of its rep node.
         mergeNodeToRep(node, rep);
         setMergedNode(node);
-        updateNodeRepAndSubs(node);
     }
 }
