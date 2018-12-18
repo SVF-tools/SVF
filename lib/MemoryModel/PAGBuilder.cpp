@@ -582,14 +582,14 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
 
     DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
-    Value *src = inst.getReturnValue();
+    if(Value *src = inst.getReturnValue()){
+        Function *F = inst.getParent()->getParent();
 
-    Function *F = inst.getParent()->getParent();
-
-    NodeID rnF = getReturnNode(F);
-    NodeID vnS = getValueNode(src);
-    //vnS may be null if src is a null ptr
-    pag->addCopyEdge(vnS, rnF);
+        NodeID rnF = getReturnNode(F);
+        NodeID vnS = getValueNode(src);
+        //vnS may be null if src is a null ptr
+        pag->addCopyEdge(vnS, rnF);
+    }
 }
 
 
