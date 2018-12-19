@@ -172,7 +172,7 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
         return false;
 }
 
-IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {
+IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {     //TODO: no parameters
     const ICFGNode *icfgNode = caller->getICFGNode();
     Datafact fact = caller->getDataFact();
     if (const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(icfgNode)) {
@@ -253,8 +253,13 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
                         if (objNode->getMemObj()->isFunction())
                             constant = true;
                 }
-                //add eligible VFGNode into fact
-                if (!constant)
+                PAGEdge::PAGEdgeSetTy retEdges = node->getIncomingEdges(PAGEdge::Ret); //any incomingEdge is RetEdge, PAGNode don't add to fact     Redundant?
+                for (PAGEdge::PAGEdgeSetTy::iterator it = retEdges.begin(), eit = retEdges.end(); it != eit; ++it) {
+                    PAGEdge *e = *it;
+                    if (e->getEdgeKind() == PAGEdge::Ret)
+                        constant = true;
+                }
+                if (!constant) //add eligible VFGNode into fact
                     fact.insert(node);
             }
         }
@@ -348,14 +353,27 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
                     fact.insert(resBiOpNode);
             }
         }
-    } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {  //TODO ...
+    } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
         for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){
-            if(((*dit)->getFunction()) != NULL)
+            if(((*dit)->getFunction()) != NULL)   //erase non global vars
                 dit = fact.erase(dit);
             else
                 dit++;
         }
     }
+    else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {       //handle actualRetNode
+        if (node->getActualRet() != NULL){     // if there is a return statement
+            const PAGNode *actualRet = node->getActualRet()->getRev();
+            u32_t sum = 0;
+            for(PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
+                sum += isInitialized((*it)->getSrcNode(), fact);
+            if(sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
+                fact.erase(actualRet);
+            else
+                fact.insert(actualRet);
+        }
+    }
+
     return fact;
 }
 
