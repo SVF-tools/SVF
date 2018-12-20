@@ -337,10 +337,9 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls) {
     NodeID base = getObjectNode(obj);
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
-    // TODO: update this
-//    NodeID gepId = base * pow(10, (ceil(log10(nodeNum)))) + ls.getOffset();
-    NodeID gepMultiplier = getNodeNumAfterPAGBuild() > obj->getMaxFieldOffsetLimit() ? getNodeNumAfterPAGBuild()
-                                                                                     : obj->getMaxFieldOffsetLimit();
+
+    NodeID gepMultiplier = getNodeNumAfterPAGBuild() > SymbolTableInfo::getMaxFieldLimit() ? getNodeNumAfterPAGBuild()
+                                                                                     : SymbolTableInfo::getMaxFieldLimit();
     NodeID gepId = base * pow(10, (ceil(log10(gepMultiplier)))) + ls.getOffset();
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
 	GepObjPN *node = new GepObjPN(obj, gepId, ls);
