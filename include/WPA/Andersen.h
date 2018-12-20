@@ -158,6 +158,8 @@ public:
         return consCG;
     }
 
+    void dumpTopLevelPtsTo();
+
 protected:
 
     virtual void initWorklist() {}
