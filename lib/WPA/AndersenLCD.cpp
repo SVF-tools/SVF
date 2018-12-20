@@ -37,10 +37,11 @@ AndersenLCD* AndersenLCD::lcdAndersen = nullptr;
 
 void AndersenLCD::solveWorklist() {
 	while (!isWorklistEmpty()) {
-		NodeID nodeId = popFromWorklist();
+        // Merge detected SCC cycles
+        mergeOnlineSCC();
+
+        NodeID nodeId = popFromWorklist();
 		collapsePWCNode(nodeId);
-		// Merge detected SCC cycles
-		mergeOnlineSCC();
 		// Keep solving until workList is empty.
 		processNode(nodeId);
 		collapseFields();
