@@ -102,9 +102,15 @@ void AndersenLCD::processNode(NodeID nodeId) {
  * Collapse nodes and fields based on 'lcdCandidates'
  */
 void AndersenLCD::mergeOnlineSCC() {
-    if (hasLCDCandidate())
-        SCCDetect(lcdCandidates);
-    cleanLCDCandidate();
+    if (hasLCDCandidate()) {
+        NodeStack &topoRepStack = SCCDetect(lcdCandidates);
+        while (!topoRepStack.empty()) {
+            NodeID node = topoRepStack.top();
+            topoRepStack.pop();
+            pushIntoWorklist(node);
+        }
+        cleanLCDCandidate();
+    }
 }
 
 /*!
