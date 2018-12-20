@@ -194,19 +194,35 @@ IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {     //TODO: no 
             }
         }
     }
+    delDatafact(fact, PAGNode::RetNode); //delete retNode in datafact
     return fact;
 }
 
-IFDS::Datafact IFDS::getCallToRetDatafact(IFDS::PathNode *caller) {
+IFDS::Datafact IFDS::getCallToRetDatafact(IFDS::PathNode *caller) {   //TODO: handle global and heap
     Datafact fact = caller->getDataFact();
-    for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
-        if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
+    for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){   //erase global var
+        if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit)) {
             if (objNode->getMemObj()->isGlobalObj())
-                fact.erase(*dit);
+                dit = fact.erase(dit);
+            else
+                dit++;
+        }
+        else
+            dit++;
     }
+    delDatafact(fact, PAGNode::RetNode);
     return fact;
 }
 
+//erase designated PAGNode
+void IFDS::delDatafact(IFDS::Datafact& d, s32_t kind){
+    for(Datafact::iterator dit = d.begin(), edit = d.end(); dit != edit; ){
+        if((*dit)->getNodeKind() == kind)   //erase designated PAGNode
+            dit = d.erase(dit);
+        else
+            dit++;
+    }
+}
 // StmtNode(excludes cmp and binaryOp)
 // Addr: srcNode is uninitialized, dstNode is initialiazed
 // copy: dstNode depends on srcNode
@@ -355,7 +371,7 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
         }
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
         for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){
-            if(((*dit)->getFunction()) != NULL)   //erase non global vars
+            if(((*dit)->getFunction()) != NULL && (*dit)->getNodeKind()!= PAGNode::RetNode)   //erase non global vars
                 dit = fact.erase(dit);
             else
                 dit++;

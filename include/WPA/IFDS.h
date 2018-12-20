@@ -70,6 +70,7 @@ public:
 
     Datafact getCalleeDatafact(PathNode *caller);
     Datafact getCallToRetDatafact(PathNode *caller);
+    void delDatafact(Datafact& d, s32_t kind);
 
     //whether the variable is initialized
     bool isInitialized(const PAGNode *pagNode, Datafact datafact);
