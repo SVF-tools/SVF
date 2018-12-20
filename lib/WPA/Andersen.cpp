@@ -384,6 +384,7 @@ bool Andersen::collapseField(NodeID nodeId)
                 changed = true;
             }
             // merge field node into base node, including edges and pts.
+            // TODO: is merge really needed?
             NodeID fieldRepNodeId = consCG->sccRepNode(fieldId);
             if (fieldRepNodeId != baseRepNodeId)
                 mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
