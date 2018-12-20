@@ -379,6 +379,7 @@ bool Andersen::collapseField(NodeID nodeId)
                 PointsTo & pts = getPts(*ptdIt);
                 pts.reset(fieldId);
                 pts.set(baseId);
+                pushIntoWorklist(*ptdIt);
 
                 changed = true;
             }
