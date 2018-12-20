@@ -501,3 +501,33 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
     repSubs |= nodeSubs;
     consCG->setSubs(newRepId,repSubs);
 }
+
+/*!
+ * Print pag nodes' pts by an ascending order
+ */
+void Andersen::dumpTopLevelPtsTo() {
+    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+         nIter != this->getAllValidPtrs().end(); ++nIter) {
+        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        if (getPAG()->isValidTopLevelPtr(node)) {
+            PointsTo& pts = this->getPts(node->getId());
+            outs() << "\nNodeID " << node->getId() << " ";
+
+            if (pts.empty()) {
+                outs() << "\t\tPointsTo: {empty}\n\n";
+            } else {
+                outs() << "\t\tPointsTo: { ";
+
+                multiset<Size_t> line;
+                for (PointsTo::iterator it = pts.begin(), eit = pts.end();
+                     it != eit; ++it) {
+                    line.insert(*it);
+                }
+                for (multiset<Size_t>::const_iterator it = line.begin(); it != line.end(); ++it)
+                    outs() << *it << " ";
+                outs() << "}\n\n";
+            }
+        }
+    }
+}
+
