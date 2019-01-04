@@ -471,7 +471,7 @@ protected:
 /*
  * Lazy Cycle Detection Based Andersen Analysis
  */
-class AndersenLCD : public Andersen {
+class AndersenLCD : virtual public Andersen {
 
 private:
     static AndersenLCD* lcdAndersen;
@@ -527,9 +527,9 @@ protected:
     //AndersenLCD worklist processer
     void solveWorklist();
     // Solve constraints of each nodes
-    void processNode(NodeID nodeId);
+    virtual void processNode(NodeID nodeId);
     // Collapse nodes and fields based on 'lcdCandidates'
-    void mergeOnlineSCC();
+    virtual void mergeSCC();
     // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
     NodeStack& SCCDetect(NodeSet& lcdCandidates);
 };
@@ -539,7 +539,7 @@ protected:
 /*!
  * Hybrid Cycle Detection Based Andersen Analysis
  */
-class AndersenHCD : public Andersen{
+class AndersenHCD : virtual public Andersen{
 
 public:
     typedef SCCDetection<OfflineConsG*> OSCC;
@@ -571,7 +571,7 @@ public:
     }
 
 protected:
-    void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule svfModule);
 
     // Get offline rep node from offline constraint graph
     //@{
@@ -595,10 +595,50 @@ protected:
     };
     //@}
 
-    void solveWorklist();
-    void mergeOfflineSCC(NodeID nodeId);
+    virtual void solveWorklist();
+    virtual void mergeSCC(NodeID nodeId);
     void mergeNodeAndPts(NodeID node, NodeID tgt);
 
 };
+
+
+
+/*!
+ * Hybrid Lazy Cycle Detection Based Andersen Analysis
+ */
+class AndersenHLCD : public AndersenHCD, public AndersenLCD{
+
+private:
+    static AndersenHLCD* hlcdAndersen;
+
+public:
+    AndersenHLCD(PTATY type = AndersenHLCD_WPA) :
+            AndersenHCD(type) {
+    }
+
+    /// Create an singleton instance directly instead of invoking llvm pass manager
+    static AndersenHLCD *createAndersenHLCD(SVFModule svfModule) {
+        if (hlcdAndersen == nullptr) {
+            hlcdAndersen = new AndersenHLCD();
+            hlcdAndersen->analyze(svfModule);
+            return hlcdAndersen;
+        }
+        return hlcdAndersen;
+    }
+
+    static void releaseAndersenHLCD() {
+        if (hlcdAndersen)
+            delete hlcdAndersen;
+        hlcdAndersen = nullptr;
+    }
+
+protected:
+    void initialize(SVFModule svfModule) {AndersenHCD::initialize(svfModule);}
+    void solveWorklist() {AndersenHCD::solveWorklist();}
+    void processNode(NodeID nodeId) {AndersenLCD::processNode(nodeId);}
+    void mergeSCC(NodeID nodeId);
+
+};
+
 
 #endif /* ANDERSENPASS_H_ */
