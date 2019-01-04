@@ -5,8 +5,8 @@
 #########
 # Please change the following home directories of your LLVM builds
 ########
-LLVMRELEASE=/home/ysui/llvm-7.0.0/llvm-7.0.0.obj
-LLVMDEBUG=/home/ysui/llvm-7.0.0/llvm-7.0.0.dbg
+LLVMRELEASE=$LLVM_OBJ
+LLVMDEBUG=$LLVM_OBJ
 
 if [[ $1 == 'debug' ]]
 then
