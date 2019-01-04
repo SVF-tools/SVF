@@ -721,6 +721,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
         bool nameDisplay = true;
         std::string str;
         raw_string_ostream rawstr(str);
+        // print function info
+        if (node->getFunction())
+            rawstr << "[" << node->getFunction()->getName() << "] ";
 
         if (briefDisplay) {
             if (SVFUtil::isa<ValPN>(node)) {

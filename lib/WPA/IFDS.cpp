@@ -275,7 +275,7 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
                     if (e->getEdgeKind() == PAGEdge::Ret)
                         constant = true;
                 }
-                if (!constant) //add eligible VFGNode into fact
+                if (!constant) //add eligible PAGNode into fact
                     fact.insert(node);
             }
         }
@@ -371,22 +371,26 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
         }
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
         for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){
-            if(((*dit)->getFunction()) != NULL && (*dit)->getNodeKind()!= PAGNode::RetNode)   //erase non global vars
+            if(((*dit)->getFunction()) != NULL && (*dit)->getNodeKind()!= PAGNode::RetNode)   //erase non global vars except retNode
                 dit = fact.erase(dit);
             else
                 dit++;
         }
     }
-    else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {       //handle actualRetNode
-        if (node->getActualRet() != NULL){     // if there is a return statement
-            const PAGNode *actualRet = node->getActualRet()->getRev();
-            u32_t sum = 0;
-            for(PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
-                sum += isInitialized((*it)->getSrcNode(), fact);
-            if(sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
+    else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {       // isExtCall()
+        if (node->getActualRet()){
+            const PAGNode *actualRet = node->getActualRet()->getRev();// if there is a return statement
+            if (!isExtCall(node->getCallSite())){
+                u32_t sum = 0;
+                // all FormalRetNodes are initialized --> actualRetNode is initialized
+                for(PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
+                    sum += isInitialized((*it)->getSrcNode(), fact);
+                if(sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
+                    fact.erase(actualRet);
+                else
+                    fact.insert(actualRet);
+            } else
                 fact.erase(actualRet);
-            else
-                fact.insert(actualRet);
         }
     }
 
