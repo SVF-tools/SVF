@@ -384,7 +384,6 @@ bool Andersen::collapseField(NodeID nodeId)
                 changed = true;
             }
             // merge field node into base node, including edges and pts.
-            // TODO: is merge really needed?
             NodeID fieldRepNodeId = consCG->sccRepNode(fieldId);
             if (fieldRepNodeId != baseRepNodeId)
                 mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
@@ -464,10 +463,10 @@ bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
 
-    consCG->removeConstraintNode(node);
-
     /// set rep and sub relations
     updateNodeRepAndSubs(node->getId(),newRepId);
+
+    consCG->removeConstraintNode(node);
 
     return gepInsideScc;
 }
