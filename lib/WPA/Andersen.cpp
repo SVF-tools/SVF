@@ -463,10 +463,10 @@ bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
 
-    consCG->removeConstraintNode(node);
-
     /// set rep and sub relations
     updateNodeRepAndSubs(node->getId(),newRepId);
+
+    consCG->removeConstraintNode(node);
 
     return gepInsideScc;
 }

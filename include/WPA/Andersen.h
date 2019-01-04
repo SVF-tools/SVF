@@ -148,9 +148,18 @@ public:
     }
     //@}
 
-    /// Get points-to set
+    /// Operation of points-to set
     virtual inline PointsTo& getPts(NodeID id) {
         return getPTDataTy()->getPts(sccRepNode(id));
+    }
+    virtual inline bool unionPts(NodeID id, const PointsTo& target) {
+        id = sccRepNode(id);
+        return getPTDataTy()->unionPts(id, target);
+    }
+    virtual inline bool unionPts(NodeID id, NodeID ptd) {
+        id = sccRepNode(id);
+        ptd = sccRepNode(ptd);
+        return getPTDataTy()->unionPts(id,ptd);
     }
 
     /// Get constraint graph
