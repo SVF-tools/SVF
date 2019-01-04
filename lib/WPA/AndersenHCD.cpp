@@ -101,11 +101,13 @@ void AndersenHCD::mergeOfflineSCC(NodeID nodeId) {
  * Merge node and its pts to the rep node
  */
 void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep) {
+    node = sccRepNode(node);
+    rep = sccRepNode(rep);
     if (!isaMergedNode(node)) {
         if (unionPts(rep, node))
             pushIntoWorklist(rep);
         // Once a 'Node' is merged to its rep, it is collapsed,
-        // only remaining its 'NodeID' exists in the set 'subNodes' of its rep node.
+        // only its 'NodeID' remaining in the set 'subNodes' of its rep node.
         mergeNodeToRep(node, rep);
         setMergedNode(node);
     }
