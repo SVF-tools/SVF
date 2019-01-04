@@ -38,7 +38,7 @@ AndersenLCD* AndersenLCD::lcdAndersen = nullptr;
 void AndersenLCD::solveWorklist() {
 	while (!isWorklistEmpty()) {
         // Merge detected SCC cycles
-        mergeOnlineSCC();
+        mergeSCC();
 
         NodeID nodeId = popFromWorklist();
 		collapsePWCNode(nodeId);
@@ -102,7 +102,7 @@ void AndersenLCD::processNode(NodeID nodeId) {
 /*!
  * Collapse nodes and fields based on 'lcdCandidates'
  */
-void AndersenLCD::mergeOnlineSCC() {
+void AndersenLCD::mergeSCC() {
     if (hasLCDCandidate()) {
         NodeStack &topoRepStack = SCCDetect(lcdCandidates);
         while (!topoRepStack.empty()) {

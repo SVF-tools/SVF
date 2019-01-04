@@ -57,6 +57,7 @@ public:
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
+        AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
         AndersenWave_WPA,	///< Wave propagation andersen-style WPA
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
