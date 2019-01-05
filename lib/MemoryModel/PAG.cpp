@@ -41,6 +41,7 @@ static cl::opt<bool> HANDBLACKHOLE("blk", cl::init(false),
 
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
+u64_t PAGEdge::storeEdgeLabelCounter = 0;
 PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
@@ -84,6 +85,7 @@ bool PAG::addLoadEdge(NodeID src, NodeID dst) {
 
 /*!
  * Add Store edge
+ * Note that two store instructions may share the same Store PAGEdge
  */
 bool PAG::addStoreEdge(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
@@ -91,7 +93,7 @@ bool PAG::addStoreEdge(NodeID src, NodeID dst) {
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Store))
         return false;
     else
-        return addEdge(srcNode,dstNode, new StorePE(srcNode, dstNode));
+        return addEdge(srcNode,dstNode, new StorePE(srcNode, dstNode, curVal));
 }
 
 /*!
