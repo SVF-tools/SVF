@@ -132,9 +132,9 @@ public:
 
     /// Return true if the intersection of two locksets is not empty
     inline bool intersects(const CxtLockSet& lockset1,const CxtLockSet& lockset2) const {
-        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset2.end(); it!=eit; ++it) {
+        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it) {
             const CxtLock& lock = *it;
-            for(CxtLockSet::const_iterator lit = lockset1.begin(), elit = lockset2.end(); lit!=elit; ++lit) {
+            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit) {
                 if(lock==*lit)
                     return true;
             }
