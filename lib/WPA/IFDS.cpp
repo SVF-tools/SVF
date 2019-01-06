@@ -10,7 +10,6 @@ using namespace SVFUtil;
 
 //constructor
 IFDS::IFDS(ICFG *i) : icfg(i) {
-
     pta = AndersenWaveDiff::createAndersenWaveDiff(getPAG()->getModule());
     icfg->updateCallgraph(pta);
     icfg->getVFG()->updateCallGraph(pta);
@@ -27,9 +26,8 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
     SummaryEdgeList = {}
  */
 void IFDS::initialize() {
-
     Datafact datafact = {};    // datafact = 0;
-    assert(getProgEntryFunction(getPAG()->getModule()) != NULL); // must have main function as program entry point
+    assert(getProgEntryFunction(getPAG()->getModule())); // must have main function as program entry point
     mainEntryNode = icfg->getFunEntryICFGNode(getProgEntryFunction(getPAG()->getModule()));
     PathNode *mainEntryPN = new PathNode(mainEntryNode, datafact);
     PathEdge *startPE = new PathEdge(mainEntryPN, mainEntryPN);
@@ -47,15 +45,15 @@ void IFDS::initialize() {
 }
 
 void IFDS::forwardTabulate() {
-
     while (!WorkList.empty()) {
         PathEdge *e = WorkList.front();
         WorkList.pop_front();
         PathNode *srcPN = e->getSrcPathNode();
         const ICFGNode *sp = srcPN->getICFGNode();
-        Datafact d1 = srcPN->getDataFact();
+        Datafact& d1 = srcPN->getDataFact();
         PathNode *dstPN = e->getDstPathNode();
         const ICFGNode *n = e->getDstPathNode()->getICFGNode();
+        Datafact& d2 = dstPN->getDataFact();
 
         if (SVFUtil::isa<CallBlockNode>(n)) {
             const ICFGEdge::ICFGEdgeSetTy &outEdges = n->getOutEdges();
@@ -64,14 +62,14 @@ void IFDS::forwardTabulate() {
                 // if this is Call Edge
                 if ((*it)->isCallCFGEdge()) {
                     ICFGNode *sp = (*it)->getDstNode();
-                    Datafact d = getCalleeDatafact(dstPN);
+                    Datafact& d = getCalleeDatafact(n, d2);
                     PathNode *newSrcPN = new PathNode(sp, d);
                     newSrcPN->setCaller(dstPN);   // set caller of sp
                     propagate(newSrcPN, sp, d);
                 }
                 // if it is CallToRetEdge
                 else if ((*it)->isIntraCFGEdge()) {
-                    Datafact d = getCallToRetDatafact(dstPN);
+                    Datafact& d = getCallToRetDatafact(d2);
                     ICFGNode *ret = (*it)->getDstNode();
                     propagate(srcPN, ret, d);
                     // add datafacts coming form SummaryEdges: find all <call, d1> --> <ret, any_fact> in SummaryEdgeList, add any_fact in retNode   ??
@@ -86,15 +84,15 @@ void IFDS::forwardTabulate() {
                 }
             }
         } else if (SVFUtil::isa<FunExitBlockNode>(n)) {
-            if(srcPN->getCaller() != NULL){
+            if(srcPN->getCaller()){
                 const ICFGNode *caller = srcPN->getCaller()->getICFGNode();
                 const ICFGEdge::ICFGEdgeSetTy &outEdges = caller->getOutEdges();
                 for (ICFGEdge::ICFGEdgeSetTy::const_iterator it = outEdges.begin(), eit = outEdges.end(); it != eit; ++it){
                     if ((*it)->isCallCFGEdge()){
                         CallCFGEdge *callEdge = SVFUtil::dyn_cast<CallCFGEdge>(*it);
                         ICFGNode *ret = icfg->getRetICFGNode(icfg->getCallSite(callEdge->getCallSiteId()));
-                        Datafact d5 = transferFun(dstPN);
-                        Datafact d4 = srcPN->getCaller()->getDataFact();
+                        Datafact& d5 = transferFun(n, d2);
+                        Datafact& d4 = srcPN->getCaller()->getDataFact();
                         if (isNotInSummaryEdgeList(caller, d4, ret, d5)) {
                             SEPropagate(caller, d4, ret, d5); // insert new summary edge into SummaryEdgeList
                             for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
@@ -111,7 +109,7 @@ void IFDS::forwardTabulate() {
                    || SVFUtil::isa<RetBlockNode>(n)
                    || SVFUtil::isa<FunEntryBlockNode>(n)) {
 
-            Datafact d = transferFun(dstPN);     //caculate datafact after execution of n
+            Datafact& d = transferFun(n, d2);     //caculate datafact after execution of n
             const ICFGEdge::ICFGEdgeSetTy &outEdges = n->getOutEdges();
             for (ICFGEdge::ICFGEdgeSetTy::iterator it = outEdges.begin(), eit =
                     outEdges.end(); it != eit; ++it) {
@@ -123,7 +121,7 @@ void IFDS::forwardTabulate() {
 }
 
 //add new PathEdge into PathEdgeList and WorkList
-void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact d) {
+void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact& d) {
     if (ICFGDstNodeSet.find(succ) == ICFGDstNodeSet.end()) {
         PEPropagate(srcPN, succ, d);
         ICFGDstNodeSet.insert(succ);
@@ -134,7 +132,7 @@ void IFDS::propagate(PathNode *srcPN, ICFGNode *succ, Datafact d) {
     }
 }
 
-void IFDS:: PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d){
+void IFDS:: PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact& d){
     PathNode *newDstPN = new PathNode(succ, d);
     PathEdge *e = new PathEdge(srcPN, newDstPN);
     WorkList.push_back(e);
@@ -142,7 +140,7 @@ void IFDS:: PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d){
     ICFGNodeToFacts[succ].insert(d);
 }
 // add new SummaryEdge
-void IFDS:: SEPropagate(const ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5){
+void IFDS:: SEPropagate(const ICFGNode *caller, Datafact& d4, ICFGNode *ret, Datafact& d5){
     PathNode *srcPN = new PathNode(caller, d4);
     PathNode *dstPN = new PathNode(ret, d5);
     PathEdge *e = new PathEdge(srcPN, dstPN);
@@ -151,7 +149,7 @@ void IFDS:: SEPropagate(const ICFGNode *caller, Datafact d4, ICFGNode *ret, Data
     SummaryICFGNodeToFacts[ret].insert(d5);
 }
 
-bool IFDS::isNotInSummaryEdgeList(const ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5) {
+bool IFDS::isNotInSummaryEdgeList(const ICFGNode *caller, Datafact& d4, ICFGNode *ret, Datafact& d5) {
     if (SummaryICFGDstNodeSet.find(ret) == SummaryICFGDstNodeSet.end()){
         SummaryICFGDstNodeSet.insert(ret);
         return true;
@@ -164,7 +162,7 @@ bool IFDS::isNotInSummaryEdgeList(const ICFGNode *caller, Datafact d4, ICFGNode 
         return false;
 }
 
-bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
+bool IFDS::isInitialized(const PAGNode *pagNode, Datafact& datafact) {
     Datafact::iterator it = datafact.find(pagNode);
     if (it == datafact.end())
         return true;
@@ -172,9 +170,7 @@ bool IFDS::isInitialized(const PAGNode *pagNode, Datafact datafact) {
         return false;
 }
 
-IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {     //TODO: no parameters
-    const ICFGNode *icfgNode = caller->getICFGNode();
-    Datafact fact = caller->getDataFact();
+IFDS::Datafact& IFDS::getCalleeDatafact(const ICFGNode *icfgNode, Datafact& fact) {     //TODO: no parameters?
     if (const CallBlockNode *node = SVFUtil::dyn_cast<CallBlockNode>(icfgNode)) {
         for (CallBlockNode::ActualParmVFGNodeVec::const_iterator it = node->getActualParms().begin(), eit = node->getActualParms().end();
              it != eit; ++it) {
@@ -198,8 +194,7 @@ IFDS::Datafact IFDS::getCalleeDatafact(IFDS::PathNode *caller) {     //TODO: no 
     return fact;
 }
 
-IFDS::Datafact IFDS::getCallToRetDatafact(IFDS::PathNode *caller) {   //TODO: handle global and heap
-    Datafact fact = caller->getDataFact();
+IFDS::Datafact& IFDS::getCallToRetDatafact(Datafact& fact) {   //TODO: handle global and heap
     for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){   //erase global var
         if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit)) {
             if (objNode->getMemObj()->isGlobalObj())
@@ -233,10 +228,7 @@ void IFDS::delDatafact(IFDS::Datafact& d, s32_t kind){
 // PHINode: resNode depends on operands -> getPAGNode
 // Cmp & Binary
 
-IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact reference as parameter
-    const ICFGNode *icfgNode = pathNode->getICFGNode();
-    Datafact fact = pathNode->getDataFact();    //reference (read only)
-
+IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
     if(const FunEntryBlockNode *funEntry = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)){
         for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {     //to do: should only be done once
             PAGNode *node = it->second;
@@ -371,13 +363,13 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
         }
     } else if (const FunExitBlockNode *node = SVFUtil::dyn_cast<FunExitBlockNode>(icfgNode)) {
         for(Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ){
-            if(((*dit)->getFunction()) != NULL && (*dit)->getNodeKind()!= PAGNode::RetNode)   //erase non global vars except retNode
+            if((*dit)->getFunction() && (*dit)->getNodeKind()!= PAGNode::RetNode)   //erase non global vars except retNode
                 dit = fact.erase(dit);
             else
                 dit++;
         }
     }
-    else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {       // isExtCall()
+    else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {
         if (node->getActualRet()){
             const PAGNode *actualRet = node->getActualRet()->getRev();// if there is a return statement
             if (!isExtCall(node->getCallSite())){
@@ -389,7 +381,7 @@ IFDS::Datafact IFDS::transferFun(PathNode *pathNode) { //using Datafact referenc
                     fact.erase(actualRet);
                 else
                     fact.insert(actualRet);
-            } else
+            } else // isExtCall()
                 fact.erase(actualRet);
         }
     }

@@ -59,21 +59,21 @@ public:
     void forwardTabulate();
 
     //add new PathEdge components into PathEdgeList and WorkList
-    void propagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
-    void PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact d);
-    void SEPropagate(const ICFGNode *caller, Datafact d4, ICFGNode *ret, Datafact d5);
+    void propagate(PathNode *srcPN, ICFGNode *succ, Datafact& d);
+    void PEPropagate(PathNode *srcPN, ICFGNode *succ, Datafact& d);
+    void SEPropagate(const ICFGNode *caller, Datafact& d4, ICFGNode *ret, Datafact& d5);
 
-    bool isNotInSummaryEdgeList(const ICFGNode *n1, Datafact d1, ICFGNode *n2, Datafact d2);
+    bool isNotInSummaryEdgeList(const ICFGNode *n1, Datafact& d1, ICFGNode *n2, Datafact& d2);
 
     //transfer function of given ICFGNode
-    Datafact transferFun(PathNode *pathNode);
+    Datafact& transferFun(const ICFGNode *icfgNode, Datafact& fact);
 
-    Datafact getCalleeDatafact(PathNode *caller);
-    Datafact getCallToRetDatafact(PathNode *caller);
+    Datafact& getCalleeDatafact(const ICFGNode *icfgNode, Datafact& fact);
+    Datafact& getCallToRetDatafact(Datafact& fact);
     void delDatafact(Datafact& d, s32_t kind);
 
     //whether the variable is initialized
-    bool isInitialized(const PAGNode *pagNode, Datafact datafact);
+    bool isInitialized(const PAGNode *pagNode, Datafact& datafact);
 
     //print ICFGNodes and theirs datafacts
     void printRes();
