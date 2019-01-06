@@ -104,7 +104,7 @@ void AndersenLCD::processNode(NodeID nodeId) {
  */
 void AndersenLCD::mergeSCC() {
     if (hasLCDCandidate()) {
-        NodeStack &topoRepStack = SCCDetect(lcdCandidates);
+        NodeStack &topoRepStack = SCCDetect();
         while (!topoRepStack.empty()) {
             NodeID node = topoRepStack.top();
             topoRepStack.pop();
@@ -117,12 +117,19 @@ void AndersenLCD::mergeSCC() {
 /*!
  * AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
  */
-NodeStack& AndersenLCD::SCCDetect(NodeSet& lcdCandidate) {
+NodeStack& AndersenLCD::SCCDetect() {
     numOfSCCDetection++;
+
+    NodeSet sccCandidates = {};
+
+    for (NodeSet::iterator it = lcdCandidates.begin(); it != lcdCandidates.end(); ++it) {
+        if (sccRepNode(*it) == *it)
+            sccCandidates.insert(*it);
+    }
 
 	double sccStart = stat->getClk();
 	/// Detect SCC cycles
-	WPAConstraintSolver::SCCDetect(lcdCandidate);
+	WPAConstraintSolver::SCCDetect(sccCandidates);
 	double sccEnd = stat->getClk();
 	timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
 
