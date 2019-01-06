@@ -242,34 +242,6 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
                             fact.insert((*it)->getDstNode());
                     }
             }
-            if ((node->hasIncomingEdge() || node->hasOutgoingEdge()) && node->getFunction() == funEntry->getFun()) { // nodes has edges && in concerned funcion
-                bool constant = false;    // constant == false means add into datafact
-                // solve formal parm : do not add formalParmPAGNode into fact. (if fact.before has it(from getCalleeDatafact), no need to add, else, dont add it.)
-                for(FunEntryBlockNode::FormalParmVFGNodeVec::const_iterator it = funEntry->getFormalParms().begin(), eit = funEntry->getFormalParms().end(); it != eit; ++it){
-                    if ((*it)->getParam() == node)
-                        constant = true;
-                }
-                if (node->isConstantData())
-                    constant = true;
-                if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(node))
-                    if (objNode->getMemObj()->isFunction())
-                        constant = true;
-                PAGEdge::PAGEdgeSetTy edges = node->getIncomingEdges(PAGEdge::Addr);
-                for (PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it) {
-                    PAGEdge *e = *it;
-                    if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(e->getSrcNode()))
-                        if (objNode->getMemObj()->isFunction())
-                            constant = true;
-                }
-                PAGEdge::PAGEdgeSetTy retEdges = node->getIncomingEdges(PAGEdge::Ret); //any incomingEdge is RetEdge, PAGNode don't add to fact     Redundant?
-                for (PAGEdge::PAGEdgeSetTy::iterator it = retEdges.begin(), eit = retEdges.end(); it != eit; ++it) {
-                    PAGEdge *e = *it;
-                    if (e->getEdgeKind() == PAGEdge::Ret)
-                        constant = true;
-                }
-                if (!constant) //add eligible PAGNode into fact
-                    fact.insert(node);
-            }
         }
     }
     else if (const IntraBlockNode *node = SVFUtil::dyn_cast<IntraBlockNode>(icfgNode)) {
