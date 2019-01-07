@@ -151,7 +151,7 @@ bool LockAnalysis::intraForwardTraverse(const Instruction* lockSite, InstSet& un
         const Instruction *I = worklist.back();
         worklist.pop_back();
 
-        if(&(getFunExitBB(fun)->front()) == I)
+        if(&(getFunExitBB(fun)->back()) == I)
             return false;
 
         // Skip the visited Instructions.
