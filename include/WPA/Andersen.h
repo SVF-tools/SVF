@@ -531,7 +531,7 @@ protected:
     // Collapse nodes and fields based on 'lcdCandidates'
     virtual void mergeSCC();
     // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
-    NodeStack& SCCDetect(NodeSet& lcdCandidates);
+    NodeStack& SCCDetect();
 };
 
 
