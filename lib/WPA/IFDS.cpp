@@ -97,7 +97,7 @@ void IFDS::forwardTabulate() {
                             SEPropagate(caller, d4, ret, d5); // insert new summary edge into SummaryEdgeList
                             for (PathEdgeSet::iterator pit = PathEdgeList.begin(), epit = PathEdgeList.end();
                                  pit != epit; ++pit) {
-                                if (((*pit)->getDstPathNode()->getICFGNode()->getId() == caller->getId())
+                                if (((*pit)->getDstPathNode()->getICFGNode()->getId() == caller->getId())  //
                                     && ((*pit)->getDstPathNode()->getDataFact() == d4))
                                     propagate((*pit)->getSrcPathNode(), ret, d5);
                             }
@@ -229,22 +229,7 @@ void IFDS::delDatafact(IFDS::Datafact& d, s32_t kind){
 // Cmp & Binary
 
 IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
-    if(const FunEntryBlockNode *funEntry = SVFUtil::dyn_cast<FunEntryBlockNode>(icfgNode)){
-        for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {     //to do: should only be done once
-            PAGNode *node = it->second;
-            //add global var after mainEntryNode
-            if (funEntry == mainEntryNode){
-                if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(node))
-                    if ((objNode->getMemObj()->isGlobalObj()) && !(objNode->getMemObj()->isFunction())){
-                        fact.insert(node);
-                        PAGEdge::PAGEdgeSetTy edges = node->getOutgoingEdges(PAGEdge::Addr);
-                        for (PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-                            fact.insert((*it)->getDstNode());
-                    }
-            }
-        }
-    }
-    else if (const IntraBlockNode *node = SVFUtil::dyn_cast<IntraBlockNode>(icfgNode)) {
+    if (const IntraBlockNode *node = SVFUtil::dyn_cast<IntraBlockNode>(icfgNode)) {
         for (IntraBlockNode::StmtOrPHIVFGNodeVec::const_iterator it = node->vNodeBegin(), eit = node->vNodeEnd();
              it != eit; ++it) {
             const VFGNode *node = *it;
@@ -342,14 +327,16 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
         }
     }
     else if (const RetBlockNode *node = SVFUtil::dyn_cast<RetBlockNode>(icfgNode)) {
-        if (node->getActualRet()){
+        if (node->getActualRet()) {
             const PAGNode *actualRet = node->getActualRet()->getRev();// if there is a return statement
-            if (!isExtCall(node->getCallSite())){
+            if (!isExtCall(node->getCallSite())) {
                 u32_t sum = 0;
                 // all FormalRetNodes are initialized --> actualRetNode is initialized
-                for(PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
+                for (PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(
+                        PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
                     sum += isInitialized((*it)->getSrcNode(), fact);
-                if(sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
+                if (sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),
+                                         actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
                     fact.erase(actualRet);
                 else
                     fact.insert(actualRet);
