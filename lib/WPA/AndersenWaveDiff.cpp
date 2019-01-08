@@ -67,9 +67,9 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
 /*!
  * Propagate diff points-to set from src to dst
  */
-void AndersenWaveDiff::processGep(NodeID node, const GepCGEdge* edge) {
+bool AndersenWaveDiff::processGep(NodeID node, const GepCGEdge* edge) {
     PointsTo& srcDiffPts = getDiffPts(edge->getSrcID());
-    processGepPts(srcDiffPts, edge);
+    return processGepPts(srcDiffPts, edge);
 }
 
 /*!
