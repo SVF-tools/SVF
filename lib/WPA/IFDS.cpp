@@ -16,8 +16,6 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
     initialize();
     forwardTabulate();
     printRes();
-    validateTests("checkInit");
-    validateTests("checkUninit");
 }
 
 /*initialization
@@ -372,7 +370,9 @@ void IFDS::printRes() {
     }
     printPathEdgeList();
     printSummaryEdgeList();
-    std::cout << "-------------------------------------------------------";
+    validateTests("checkInit");
+    validateTests("checkUninit");
+    std::cout << "-------------------------------------------------------" << std::endl;
 }
 void IFDS::printPathEdgeList() {
     std::cout << "\n***********PathEdge**************\n";
@@ -446,20 +446,20 @@ void IFDS::validateTests(const char *fun) {
                         }
                         if (strcmp(fun, "checkInit") == 0) {
                             if (initialize)
-                                outs() << sucMsg("SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                outs() << sucMsg("SUCCESS: ") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                             else
-                                errs() << errMsg("FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                errs() << errMsg("FAIL: ") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                         } else if (strcmp(fun, "checkUninit") == 0) {
                             if (initialize)
-                                outs() << errMsg("FAIL :") << fun << " check <CFGId:" << callnode->getId()
+                                errs() << errMsg("FAIL: ") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                             else
-                                errs() << sucMsg("SUCCESS :") << fun << " check <CFGId:" << callnode->getId()
+                                outs() << sucMsg("SUCCESS: ") << fun << " check <CFGId:" << callnode->getId()
                                        << ", objId:" << objNodeId << "> at ("
                                        << getSourceLoc(*i) << ")\n";
                         }
