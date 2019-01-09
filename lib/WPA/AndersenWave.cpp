@@ -62,19 +62,13 @@ void AndersenWave::solveWorklist() {
  * Process edge PAGNode
  */
 void AndersenWave::processNode(NodeID nodeId) {
-	double propStart = stat->getClk();
-
 	// This node may be merged during collapseNodePts() which means it is no longer a rep node
 	// in the graph. Only rep node needs to be handled.
 	if (sccRepNode(nodeId) != nodeId)
 		return;
 
 	ConstraintNode* node = consCG->getConstraintNode(nodeId);
-
 	handleCopyGep(node);
-
-	double propEnd = stat->getClk();
-	timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
@@ -108,6 +102,8 @@ void AndersenWave::postProcessNode(NodeID nodeId)
  */
 void AndersenWave::handleCopyGep(ConstraintNode* node)
 {
+    double propStart = stat->getClk();
+
     NodeID nodeId = node->getId();
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
             ++it) {
@@ -116,6 +112,9 @@ void AndersenWave::handleCopyGep(ConstraintNode* node)
         else if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
             processGep(nodeId,gepEdge);
     }
+
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
