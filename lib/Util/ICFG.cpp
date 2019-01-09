@@ -198,6 +198,7 @@ void ICFG::build(){
 
 void ICFG::connectGlobalToProgEntry()
 {
+	assert(getProgEntryFunction(pag->getModule()));
     const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
 
     FunEntryBlockNode* entryNode = getFunEntryICFGNode(mainFunc);
