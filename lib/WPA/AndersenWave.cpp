@@ -108,9 +108,9 @@ void AndersenWave::handleCopyGep(ConstraintNode* node)
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
             ++it) {
         if(CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(*it))
-            reanalyze = (processCopy(nodeId,copyEdge));
+            processCopy(nodeId,copyEdge);
         else if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-            reanalyze = processGep(nodeId,gepEdge);
+            processGep(nodeId,gepEdge);
     }
 
     double propEnd = stat->getClk();
