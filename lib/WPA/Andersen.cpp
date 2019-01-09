@@ -89,40 +89,54 @@ void Andersen::analyze(SVFModule svfModule) {
  */
 void Andersen::processNode(NodeID nodeId) {
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    handleLoadStore(node);
+    handleCopyGep(node);
+}
 
-    // handle load and store
+/*!
+ * Process copy and gep edges
+ */
+void Andersen::handleCopyGep(ConstraintNode* node) {
+    double propStart = stat->getClk();
+
+    NodeID nodeId = node->getId();
+    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
+            node->directOutEdgeEnd(); it != eit; ++it)
+        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+            processGep(nodeId, gepEdge);
+        else
+            processCopy(nodeId, *it);
+
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
+}
+
+/*!
+ * Process load and store edges
+ */
+void Andersen::handleLoadStore(ConstraintNode *node) {
     double insertStart = stat->getClk();
+
+    NodeID nodeId = node->getId();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
-                getPts(nodeId).end(); piter != epiter; ++piter) {
+            getPts(nodeId).end(); piter != epiter; ++piter) {
         NodeID ptd = *piter;
         // handle load
         for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
-                eit = node->outgoingLoadsEnd(); it != eit; ++it) {
+                     eit = node->outgoingLoadsEnd(); it != eit; ++it) {
             if (processLoad(ptd, *it))
                 pushIntoWorklist(ptd);
         }
 
         // handle store
         for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
-                eit = node->incomingStoresEnd(); it != eit; ++it) {
+                     eit = node->incomingStoresEnd(); it != eit; ++it) {
             if (processStore(ptd, *it))
                 pushIntoWorklist((*it)->getSrcID());
         }
     }
     double insertEnd = stat->getClk();
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
-
-    // handle copy, call, return, gep
-    double propStart = stat->getClk();
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-                node->directOutEdgeEnd(); it != eit; ++it) {
-        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-            processGep(nodeId, gepEdge);
-        else
-            processCopy(nodeId, *it);
-    }
-    double propEnd = stat->getClk();
-    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
@@ -212,16 +226,16 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
  *	for each srcPtdNode \in pts(src) ==> add fieldSrcPtdNode into tmpDstPts
  *		union pts(dst) with tmpDstPts
  */
-void Andersen::processGep(NodeID node, const GepCGEdge* edge) {
+bool Andersen::processGep(NodeID node, const GepCGEdge* edge) {
 
     PointsTo& srcPts = getPts(edge->getSrcID());
-    processGepPts(srcPts, edge);
+    return processGepPts(srcPts, edge);
 }
 
 /*!
  * Compute points-to for gep edges
  */
-void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 {
     numOfProcessedGep++;
 
@@ -262,8 +276,11 @@ void Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
     }
 
     NodeID dstId = edge->getDstID();
-    if (unionPts(dstId, tmpDstPts))
+    if (unionPts(dstId, tmpDstPts)) {
         pushIntoWorklist(dstId);
+        return true;
+    }
+    return false;
 }
 
 /**

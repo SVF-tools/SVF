@@ -49,52 +49,31 @@ void AndersenLCD::solveWorklist() {
 }
 
 /*!
- * Solve constraints of each node
+ * Process copy and gep edges
  */
-void AndersenLCD::processNode(NodeID nodeId) {
-	ConstraintNode* node = consCG->getConstraintNode(nodeId);
-
-    // hand load and store
-    double insertStart = stat->getClk();
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(
-			nodeId).end(); piter != epiter; ++piter) {
-		NodeID ptd = *piter;
-		// handle load
-		for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
-				eit = node->outgoingLoadsEnd(); it != eit; ++it) {
-			if (processLoad(ptd, *it))
-				pushIntoWorklist(ptd);
-		}
-		// handle store
-		for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
-				eit = node->incomingStoresEnd(); it != eit; ++it) {
-			if (processStore(ptd, *it))
-				pushIntoWorklist((*it)->getSrcID());
-		}
-	}
-    double insertEnd = stat->getClk();
-    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
-
-    // handle copy, call, return, gep
+void AndersenLCD::handleCopyGep(ConstraintNode* node) {
     double propStart = stat->getClk();
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-			node->directOutEdgeEnd(); it != eit; ++it) {
-		if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-			processGep(nodeId, gepEdge);
-		else {
-			NodeID dstNodeId = (*it)->getDstID();
-			PointsTo& srcPts = getPts(nodeId);
-			PointsTo& dstPts = getPts(dstNodeId);
 
-			// In one edge, if the pts of src node equals to that of dst node, and the edge
-			// is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
-			if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
-				addMetEdge(*it);
-				addLCDCandidate((*it)->getDstID());
-			}
-			processCopy(nodeId, *it);
-		}
-	}
+    NodeID nodeId = node->getId();
+    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
+            node->directOutEdgeEnd(); it != eit; ++it) {
+        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+            processGep(nodeId, gepEdge);
+        else {
+            NodeID dstNodeId = (*it)->getDstID();
+            PointsTo& srcPts = getPts(nodeId);
+            PointsTo& dstPts = getPts(dstNodeId);
+
+            // In one edge, if the pts of src node equals to that of dst node, and the edge
+            // is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
+            if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
+                addMetEdge(*it);
+                addLCDCandidate((*it)->getDstID());
+            }
+            processCopy(nodeId, *it);
+        }
+    }
+
     double propEnd = stat->getClk();
     timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
