@@ -31,6 +31,7 @@
 
 #include "Util/PTAStat.h"
 #include "Util/ICFG.h"
+#include <iomanip>
 
 class ICFGStat : public PTAStat {
 
@@ -68,6 +69,33 @@ public:
 
     void performStat() {
 
+        countStat();
+
+        PTNumStatMap["ICFGNode"] = numOfNodes;
+        PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
+        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
+        PTNumStatMap["RetBlockNode"] = numOfRetNodes;
+        PTNumStatMap["FunEntryBlockNode"] = numOfEntryNodes;
+        PTNumStatMap["FunExitBlockNode"] = numOfExitNodes;
+
+        PTNumStatMap["ICFGEdge"] = numOfEdges;
+        PTNumStatMap["CallCFGEdge"] = numOfCallEdges;
+        PTNumStatMap["RetCFGEdge"] = numOfRetEdges;
+        PTNumStatMap["IntraCFGEdge"] = numOfIntraEdges;
+
+        printStat("ICFG Stat");
+    }
+
+    void performStatforIFDS() {
+
+        countStat();
+        PTNumStatMap["ICFGNode"] = numOfNodes;
+        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
+        PTNumStatMap["ICFGEdge"] = numOfEdges;
+        printStat("ICFG Stat");
+    }
+
+    void countStat(){
         ICFG::ICFGNodeIDToNodeMapTy::iterator it = icfg->begin();
         ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
         for (; it != eit; ++it) {
@@ -102,23 +130,31 @@ public:
                     numOfIntraEdges++;
             }
         }
-
-        PTNumStatMap["ICFGNode"] = numOfNodes;
-        PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
-        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
-        PTNumStatMap["RetBlockNode"] = numOfRetNodes;
-        PTNumStatMap["FunEntryBlockNode"] = numOfEntryNodes;
-        PTNumStatMap["FunExitBlockNode"] = numOfExitNodes;
-
-        PTNumStatMap["ICFGEdge"] = numOfEdges;
-        PTNumStatMap["CallCFGEdge"] = numOfCallEdges;
-        PTNumStatMap["RetCFGEdge"] = numOfRetEdges;
-        PTNumStatMap["IntraCFGEdge"] = numOfIntraEdges;
-
-        printStat("ICFG Stat");
     }
 
+    void printStat(string statname) {
 
+        std::cout << "\n************ " << statname << " ***************\n";
+        std::cout.flags(std::ios::left);
+        unsigned field_width = 20;
+        for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it) {
+            // format out put with width 20 space
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        }
+        std::cout << "-------------------------------------------------------\n";
+        for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it) {
+            // format out put with width 20 space
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        }
+        for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it) {
+            // format out put with width 20 space
+            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        }
+
+        generalNumMap.clear();
+        PTNumStatMap.clear();
+        timeStatMap.clear();
+    }
 };
 
 

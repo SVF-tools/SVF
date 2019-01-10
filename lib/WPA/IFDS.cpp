@@ -4,6 +4,7 @@
  */
 
 #include "WPA/IFDS.h"
+#include "Util/ICFGStat.h"
 
 using namespace std;
 using namespace SVFUtil;
@@ -355,11 +356,11 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
 
 // print ICFGNodes and theirs datafacts
 void IFDS::printRes() {
-    std::cout << "\n*******Possibly Uninitialized Variables*******\n";
+    std::cout << "\n******* Possibly Uninitialized Variables *******\n";
     cout << "Analysis Terminates! Possibly uninitialized variables are: {";
     printFacts(MainExitFacts);
     cout << "}\n\n";
-    
+
     for (ICFGNodeToDataFactsMap::iterator it = ICFGNodeToFacts.begin(), eit = ICFGNodeToFacts.end(); it != eit; ++it) {
         const ICFGNode *node = it->first;
         Facts facts = it->second;
@@ -372,6 +373,7 @@ void IFDS::printRes() {
     printSummaryEdgeList();
     validateTests("checkInit");
     validateTests("checkUninit");
+    icfg->getStat()->performStatforIFDS();
     std::cout << "-------------------------------------------------------" << std::endl;
 }
 
@@ -393,7 +395,7 @@ void IFDS::printFacts(Facts facts){
 }
 
 void IFDS::printPathEdgeList() {
-    std::cout << "\n***********PathEdge**************\n";
+    std::cout << "\n*********** PathEdge **************\n";
     for (PathEdgeSet::const_iterator it = PathEdgeList.begin(), eit = PathEdgeList.end(); it != eit; ++it){
         NodeID srcID = (*it)->getSrcPathNode()->getICFGNode()->getId();
         NodeID dstID = (*it)->getDstPathNode()->getICFGNode()->getId();
@@ -416,7 +418,7 @@ void IFDS::printPathEdgeList() {
     }
 }
 void IFDS::printSummaryEdgeList() {
-    std::cout << "\n***********SummaryEdge**************\n";
+    std::cout << "\n*********** SummaryEdge **************\n";
     for (PathEdgeSet::const_iterator it = SummaryEdgeList.begin(), eit = SummaryEdgeList.end(); it != eit; ++it){
         NodeID srcID = (*it)->getSrcPathNode()->getICFGNode()->getId();
         NodeID dstID = (*it)->getDstPathNode()->getICFGNode()->getId();
