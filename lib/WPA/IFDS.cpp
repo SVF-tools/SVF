@@ -40,6 +40,8 @@ void IFDS::initialize() {
         ICFGNodeToFacts[node] = {};
         SummaryICFGNodeToFacts[node] = {};
     }
+
+    MainExitFacts = {};    //facts at main exit node
 }
 
 void IFDS::forwardTabulate() {
@@ -103,6 +105,9 @@ void IFDS::forwardTabulate() {
                     }
                 }
             }
+            else if (sp == mainEntryNode)
+                MainExitFacts.insert(d2);
+
         } else if (SVFUtil::isa<IntraBlockNode>(n)
                    || SVFUtil::isa<RetBlockNode>(n)
                    || SVFUtil::isa<FunEntryBlockNode>(n)) {
@@ -329,15 +334,17 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
             const PAGNode *actualRet = node->getActualRet()->getRev();// if there is a return statement
             if (!isExtCall(node->getCallSite())) {
                 u32_t sum = 0;
-                // all FormalRetNodes are initialized --> actualRetNode is initialized
-                for (PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(
-                        PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
-                    sum += isInitialized((*it)->getSrcNode(), fact);
-                if (sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),
-                                         actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
-                    fact.erase(actualRet);
-                else
-                    fact.insert(actualRet);
+                if (actualRet->hasIncomingEdges(PAGEdge::Ret)){
+                    // all FormalRetNodes are initialized --> actualRetNode is initialized
+                    for (PAGEdge::PAGEdgeSetTy::iterator it = actualRet->getIncomingEdgesBegin(
+                            PAGEdge::Ret), eit = actualRet->getIncomingEdgesEnd(PAGEdge::Ret); it != eit; ++it)
+                        sum += isInitialized((*it)->getSrcNode(), fact);
+                    if (sum == std::distance(actualRet->getIncomingEdgesBegin(PAGEdge::Ret),
+                                             actualRet->getIncomingEdgesEnd(PAGEdge::Ret)))
+                        fact.erase(actualRet);
+                    else
+                        fact.insert(actualRet);
+                }
             } else // isExtCall()
                 fact.erase(actualRet);
         }
@@ -349,27 +356,17 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
 // print ICFGNodes and theirs datafacts
 void IFDS::printRes() {
     std::cout << "\n*******Possibly Uninitialized Variables*******\n";
+    cout << "Analysis Terminates! Possibly uninitialized variables are: {";
+    printFacts(MainExitFacts);
+    cout << "}\n\n";
+    
     for (ICFGNodeToDataFactsMap::iterator it = ICFGNodeToFacts.begin(), eit = ICFGNodeToFacts.end(); it != eit; ++it) {
         const ICFGNode *node = it->first;
         Facts facts = it->second;
         NodeID id = node->getId();
         std::cout << "ICFGNodeID:" << id << ": PAGNodeSet: {";
-        Datafact finalFact = {};
-        for (Facts::iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit) {
-            Datafact fact = (*fit);
-            for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
-                finalFact.insert(*dit);
-            }
-        }
-        if (finalFact.size() > 1){
-            for (Datafact::iterator dit = finalFact.begin(), edit = --finalFact.end(); dit != edit; ++dit)
-                std::cout << (*dit)->getId() << " ";
-            std::cout << (*finalFact.rbegin())->getId() << "}\n";   //print last element without " "
-        }
-        else if (finalFact.size() == 1)
-            std::cout << (*finalFact.begin())->getId() << "}\n";
-        else
-            std::cout << "}\n";
+        printFacts(facts);
+        cout << "}\n";
     }
     printPathEdgeList();
     printSummaryEdgeList();
@@ -377,6 +374,24 @@ void IFDS::printRes() {
     validateTests("checkUninit");
     std::cout << "-------------------------------------------------------" << std::endl;
 }
+
+void IFDS::printFacts(Facts facts){
+    Datafact finalFact = {};
+    for (Facts::iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit) {
+        Datafact fact = (*fit);
+        for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
+            finalFact.insert(*dit);
+        }
+    }
+    if (finalFact.size() > 1){
+        for (Datafact::iterator dit = finalFact.begin(), edit = --finalFact.end(); dit != edit; ++dit)
+            std::cout << (*dit)->getId() << " ";
+        std::cout << (*finalFact.rbegin())->getId();   //print last element without " "
+    }
+    else if (finalFact.size() == 1)
+        std::cout << (*finalFact.begin())->getId();
+}
+
 void IFDS::printPathEdgeList() {
     std::cout << "\n***********PathEdge**************\n";
     for (PathEdgeSet::const_iterator it = PathEdgeList.begin(), eit = PathEdgeList.end(); it != eit; ++it){

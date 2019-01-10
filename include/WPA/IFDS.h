@@ -36,6 +36,7 @@ protected:
     ICFGNodeToDataFactsMap ICFGNodeToFacts;
     ICFGNodeToDataFactsMap SummaryICFGNodeToFacts;
     ICFGNode *mainEntryNode;
+    Facts MainExitFacts;
 
 public:
     inline VFG *getVFG() const {
@@ -80,6 +81,8 @@ public:
     void printPathEdgeList();
     void printSummaryEdgeList();
     void validateTests(const char *fun);
+
+    void printFacts(Facts facts);
 
     //Get points-to set of given PAGNode
     inline PointsTo &getPts(NodeID id) {
