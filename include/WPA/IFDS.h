@@ -82,7 +82,7 @@ public:
     void printSummaryEdgeList();
     void validateTests(const char *fun);
 
-    void printFacts(Facts facts);
+    void printFacts(Facts facts, bool ObjNodeOnly = false);
 
     //Get points-to set of given PAGNode
     inline PointsTo &getPts(NodeID id) {

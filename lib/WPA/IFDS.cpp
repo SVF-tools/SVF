@@ -358,7 +358,7 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
 void IFDS::printRes() {
     std::cout << "\n******* Possibly Uninitialized Variables *******\n";
     cout << "Analysis Terminates! Possibly uninitialized variables are: {";
-    printFacts(MainExitFacts);
+    printFacts(MainExitFacts, true);
     cout << "}\n\n";
 
     for (ICFGNodeToDataFactsMap::iterator it = ICFGNodeToFacts.begin(), eit = ICFGNodeToFacts.end(); it != eit; ++it) {
@@ -376,13 +376,17 @@ void IFDS::printRes() {
     icfg->getStat()->performStatforIFDS();
     std::cout << "-------------------------------------------------------" << std::endl;
 }
-
-void IFDS::printFacts(Facts facts){
+void IFDS::printFacts(Facts facts, bool ObjNodeOnly) {
     Datafact finalFact = {};
     for (Facts::iterator fit = facts.begin(), efit = facts.end(); fit != efit; ++fit) {
         Datafact fact = (*fit);
         for (Datafact::iterator dit = fact.begin(), edit = fact.end(); dit != edit; ++dit) {
-            finalFact.insert(*dit);
+            if (ObjNodeOnly){
+                if (const ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(*dit))
+                    finalFact.insert(*dit);
+            }
+            else
+                finalFact.insert(*dit);
         }
     }
     if (finalFact.size() > 1){
