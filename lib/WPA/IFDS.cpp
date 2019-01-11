@@ -14,6 +14,7 @@ IFDS::IFDS(ICFG *i) : icfg(i) {
     pta = AndersenWaveDiff::createAndersenWaveDiff(getPAG()->getModule());
     icfg->updateCallgraph(pta);
     icfg->getVFG()->updateCallGraph(pta);
+    getIFDSStat();
     initialize();
     forwardTabulate();
     printRes();
@@ -355,8 +356,44 @@ IFDS::Datafact& IFDS::transferFun(const ICFGNode *icfgNode, Datafact& fact) {
 }
 
 // print ICFGNodes and theirs datafacts
+void IFDS::getIFDSStat() {
+    icfg->getStat()->performStatforIFDS();
+    Datafact fact = concernedDatafact();
+    estimatedDatafacts = fact.size();
+    cout << "Datafact(D)         " << estimatedDatafacts << endl;
+    std::cout << "-------------------------------------------------------\n";
+//    Facts facts = {};
+//    facts.insert(fact);
+//    cout << "PAGNode ID: {";
+//    printFacts(facts);
+//    cout << "}\n";
+}
+IFDS::Datafact IFDS::concernedDatafact() {
+    Datafact fact = {};
+    for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {
+        PAGNode *node = it->second;
+        if (node->hasIncomingEdge() || node->hasOutgoingEdge() && node->getFunction()) { // nodes has edges
+            bool excluded = false;    // excluded == false means add into fact
+            if (node->isConstantData())
+                excluded = true;
+            if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(node))
+                if (objNode->getMemObj()->isFunction())
+                    excluded = true;
+            PAGEdge::PAGEdgeSetTy edges = node->getIncomingEdges(PAGEdge::Addr);
+            for (PAGEdge::PAGEdgeSetTy::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it) {
+                PAGEdge *e = *it;
+                if (ObjPN *objNode = SVFUtil::dyn_cast<ObjPN>(e->getSrcNode()))
+                    if (objNode->getMemObj()->isFunction())
+                        excluded = true;
+            }
+            if (!excluded) //add eligible PAGNode into fact
+                fact.insert(node);
+        }
+    }
+    return fact;
+}
 void IFDS::printRes() {
-    std::cout << "\n******* Possibly Uninitialized Variables *******\n";
+    std::cout << "\n******* Possibly Uninitialized Variables Problem *******\n\n";
     cout << "Analysis Terminates! Possibly uninitialized variables are: {";
     printFacts(MainExitFacts, true);
     cout << "}\n\n";
@@ -373,7 +410,6 @@ void IFDS::printRes() {
     printSummaryEdgeList();
     validateTests("checkInit");
     validateTests("checkUninit");
-    icfg->getStat()->performStatforIFDS();
     std::cout << "-------------------------------------------------------" << std::endl;
 }
 void IFDS::printFacts(Facts facts, bool ObjNodeOnly) {

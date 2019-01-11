@@ -89,10 +89,10 @@ public:
     void performStatforIFDS() {
 
         countStat();
-        PTNumStatMap["ICFGNode"] = numOfNodes;
-        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
-        PTNumStatMap["ICFGEdge"] = numOfEdges;
-        printStat("ICFG Stat");
+        PTNumStatMap["ICFGNode(N)"] = numOfNodes;
+        PTNumStatMap["CallBlockNode(Call)"] = numOfCallNodes;
+        PTNumStatMap["ICFGEdge(E)"] = numOfEdges;
+        printStat("IFDS Stat");
     }
 
     void countStat(){
@@ -137,23 +137,11 @@ public:
         std::cout << "\n************ " << statname << " ***************\n";
         std::cout.flags(std::ios::left);
         unsigned field_width = 20;
-        for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it) {
-            // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
-        }
-        std::cout << "-------------------------------------------------------\n";
-        for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it) {
-            // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
-        }
         for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it) {
             // format out put with width 20 space
             std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
-
-        generalNumMap.clear();
         PTNumStatMap.clear();
-        timeStatMap.clear();
     }
 };
 

@@ -37,6 +37,7 @@ protected:
     ICFGNodeToDataFactsMap SummaryICFGNodeToFacts;
     ICFGNode *mainEntryNode;
     Facts MainExitFacts;
+    int32_t estimatedDatafacts;
 
 public:
     inline VFG *getVFG() const {
@@ -77,12 +78,14 @@ public:
     bool isInitialized(const PAGNode *pagNode, Datafact& datafact);
 
     //print ICFGNodes and theirs datafacts
+    void getIFDSStat();
     void printRes();
     void printPathEdgeList();
     void printSummaryEdgeList();
     void validateTests(const char *fun);
 
     void printFacts(Facts facts, bool ObjNodeOnly = false);
+    Datafact concernedDatafact();
 
     //Get points-to set of given PAGNode
     inline PointsTo &getPts(NodeID id) {
