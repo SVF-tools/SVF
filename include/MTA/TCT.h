@@ -182,6 +182,12 @@ public:
     inline u32_t getMaxCxtSize() const {
         return MaxCxtSize;
     }
+    inline static u32_t getMaxCxtLimit() {
+        return MaxCxtLimit;
+    }
+    inline static void setMaxCxtLimit(u32_t limit) {
+        MaxCxtLimit = limit;
+    }
     //@}
 
     /// Find/Get TCT node
@@ -318,6 +324,8 @@ private:
     u32_t TCTNodeNum;
     u32_t TCTEdgeNum;
     u32_t MaxCxtSize;
+    static u32_t MaxCxtLimit;
+
     /// Add TCT node
     inline TCTNode* addTCTNode(const CxtThread& ct) {
         assert(ctpToNodeMap.find(ct)==ctpToNodeMap.end() && "Already has this node!!");
@@ -431,9 +439,11 @@ private:
         return ctp;
     }
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
-        cxt.push_back(csId);
-        if(cxt.size() > MaxCxtSize)
-            MaxCxtSize = cxt.size();
+		cxt.push_back(csId);
+		if (cxt.size() >= MaxCxtLimit)
+			cxt.erase(cxt.begin());
+		if (cxt.size() > MaxCxtSize)
+			MaxCxtSize = cxt.size();
     }
     inline bool isVisitedCTPs(const CxtThreadProc& ctp) const {
         return visitedCTPs.find(ctp)!=visitedCTPs.end();
