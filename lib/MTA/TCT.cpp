@@ -17,7 +17,7 @@ using namespace llvm;
 using namespace analysisUtil;
 
 static cl::opt<bool> TCTDotGraph("dump-tct", cl::init(false), cl::desc("Dump dot graph of Call Graph"));
-static u32_t TCT::MaxCxtLimit = 0;
+
 /*!
  * An instruction i is in loop
  * (1) the instruction i itself

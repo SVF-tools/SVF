@@ -182,12 +182,6 @@ public:
     inline u32_t getMaxCxtSize() const {
         return MaxCxtSize;
     }
-    inline static u32_t getMaxCxtLimit() {
-        return MaxCxtLimit;
-    }
-    inline static void setMaxCxtLimit(u32_t limit) {
-        MaxCxtLimit = limit;
-    }
     //@}
 
     /// Find/Get TCT node
@@ -304,6 +298,11 @@ public:
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
 
+    inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
+		cxt.push_back(csId);
+		if (cxt.size() > MaxCxtSize)
+			MaxCxtSize = cxt.size();
+    }
     /// Whether a join site is in recursion
     inline bool isJoinSiteInRecursion(const llvm::Instruction* join) const {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
@@ -324,7 +323,6 @@ private:
     u32_t TCTNodeNum;
     u32_t TCTEdgeNum;
     u32_t MaxCxtSize;
-    static u32_t MaxCxtLimit;
 
     /// Add TCT node
     inline TCTNode* addTCTNode(const CxtThread& ct) {
@@ -437,13 +435,6 @@ private:
     inline CxtThreadProc popFromCTPWorkList() {
         CxtThreadProc ctp = ctpList.pop();
         return ctp;
-    }
-    inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
-		cxt.push_back(csId);
-		if (cxt.size() >= MaxCxtLimit)
-			cxt.erase(cxt.begin());
-		if (cxt.size() > MaxCxtSize)
-			MaxCxtSize = cxt.size();
     }
     inline bool isVisitedCTPs(const CxtThreadProc& ctp) const {
         return visitedCTPs.find(ctp)!=visitedCTPs.end();

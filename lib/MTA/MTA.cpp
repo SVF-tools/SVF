@@ -127,7 +127,6 @@ MHP* MTA::computeMHP(SVFModule module) {
     DBOUT(DMTA, outs() << pasMsg("Build TCT\n"));
     DOTIMESTAT(double tctStart = stat->getClk());
     tct = new TCT(pta);
-    TCT::setMaxCxtLimit(maxCxtLength);
     tcg = tct->getThreadCallGraph();
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
