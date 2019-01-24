@@ -441,7 +441,7 @@ void LockAnalysis::pushCxt(CallStrCxt& cxt, const Instruction* call, const Funct
 //        return;
 
     if (tct->inSameCallGraphSCC(getTCG()->getCallGraphNode(caller), getTCG()->getCallGraphNode(callee)) == false) {
-        cxt.push_back(csId);
+        tct->pushCxt(cxt,csId);
         DBOUT(DMTA, tct->dumpCxt(cxt));
     }
 }

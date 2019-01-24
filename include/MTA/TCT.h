@@ -296,6 +296,11 @@ public:
     /// Match context
     bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
 
+    inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
+		cxt.push_back(csId);
+		if (cxt.size() > MaxCxtSize)
+			MaxCxtSize = cxt.size();
+    }
     /// Whether a join site is in recursion
     inline bool isJoinSiteInRecursion(const Instruction* join) const {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
@@ -316,6 +321,7 @@ private:
     u32_t TCTNodeNum;
     u32_t TCTEdgeNum;
     u32_t MaxCxtSize;
+
     /// Add TCT node
     inline TCTNode* addTCTNode(const CxtThread& ct) {
         assert(ctpToNodeMap.find(ct)==ctpToNodeMap.end() && "Already has this node!!");
@@ -427,11 +433,6 @@ private:
     inline CxtThreadProc popFromCTPWorkList() {
         CxtThreadProc ctp = ctpList.pop();
         return ctp;
-    }
-    inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
-        cxt.push_back(csId);
-        if(cxt.size() > MaxCxtSize)
-            MaxCxtSize = cxt.size();
     }
     inline bool isVisitedCTPs(const CxtThreadProc& ctp) const {
         return visitedCTPs.find(ctp)!=visitedCTPs.end();
