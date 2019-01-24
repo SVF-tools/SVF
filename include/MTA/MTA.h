@@ -61,6 +61,8 @@ public:
         return "Multi threaded program analysis pass";
     }
 
+    void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
+
     /// Get analysis usage
     inline virtual void getAnalysisUsage(AnalysisUsage& au) const {
         /// do not intend to change the IR in this pass,

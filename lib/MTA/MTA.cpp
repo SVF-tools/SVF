@@ -22,7 +22,6 @@ static llvm::cl::opt<bool> AndersenAnno("tsan-ander", llvm::cl::init(false), llv
 
 static llvm::cl::opt<bool> FSAnno("tsan-fs", llvm::cl::init(false), llvm::cl::desc("Add TSan annotation according to flow-sensitive analysis"));
 
-static cl::opt<u32_t> maxCxtLength("maxCxtLen", cl::init(10), cl::desc("set the max context length for context-sensitive analysis"));
 
 char MTA::ID = 0;
 ModulePass* MTA::modulePass = NULL;
