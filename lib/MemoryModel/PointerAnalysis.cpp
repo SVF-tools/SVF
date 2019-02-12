@@ -626,7 +626,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
     for (PointsTo::iterator ii = target.begin(), ie = target.end();
             ii != ie; ii++) {
 
-        if(getNumOfResolvedIndCallEdge() > IndirectCallLimit) {
+        if(getNumOfResolvedIndCallEdge() >= IndirectCallLimit) {
             errMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
         }
