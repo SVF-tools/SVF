@@ -64,7 +64,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
             /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
             /// c-lang.c shows an example when fun.doesNotReturn() evaluates
             /// to TRUE because of abort().
-            if(fun.doesNotReturn() == false && fun.getReturnType()->isPointerTy())
+            if(fun.doesNotReturn() == false)
                 pag->addFunRet(&fun,pag->getPAGNode(pag->getReturnNode(&fun)));
         }
         for (Function::arg_iterator I = fun.arg_begin(), E = fun.arg_end();
