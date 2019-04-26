@@ -40,6 +40,9 @@ static llvm::cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", llvm::cl::ini
 static llvm::cl::opt<bool> SingleVFG("singleVFG", llvm::cl::init(false),
                                llvm::cl::desc("Create a single VFG shared by multiple analysis"));
 
+static llvm::cl::opt<bool> OPTSVFG("optSVFG", llvm::cl::init(true),
+                               llvm::cl::desc("unoptimized SVFG with formal-in and actual-out"));
+
 SVFGOPT* SVFGBuilder::globalSvfg = NULL;
 
 /*!
@@ -54,7 +57,7 @@ void SVFGBuilder::buildSVFG() {
 }
 
 /// Create DDA SVFG
-SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool opt = OPTSVFG) {
 
 	MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFGK==kind));
 
@@ -63,14 +66,14 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
             svfg = globalSvfg = new SVFGOPT(mssa, kind);
-            if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
+            if (!opt) globalSvfg->setTokeepActualOutFormalIn();
             buildSVFG();
         }
     }
     else {
         SVFGOPT* vfg = new SVFGOPT(mssa, kind);
         svfg = vfg;
-        if (withAOFI) vfg->setTokeepActualOutFormalIn();
+        if (!opt) vfg->setTokeepActualOutFormalIn();
         buildSVFG();
     }
 
