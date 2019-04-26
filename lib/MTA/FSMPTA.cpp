@@ -664,7 +664,7 @@ void FSMPTA::initialize(SVFModule module) {
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
     MTASVFGBuilder mtaSVFGBuilder(mhp,lockana);
-    svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander,true);
+    svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 

@@ -45,6 +45,26 @@ static llvm::cl::opt<bool> OPTSVFG("optSVFG", llvm::cl::init(true),
 
 SVFG* SVFGBuilder::globalSvfg = NULL;
 
+
+SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta) {
+    return build(pta, VFG::PTRONLYSVFGK);
+}
+
+SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta) {
+    OPTSVFG = false;
+    return build(pta, VFG::PTRONLYSVFGK);
+}
+
+SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta) {
+    return build(pta, VFG::ORIGSVFGK);
+}
+
+SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta) {
+    OPTSVFG = false;
+    return build(pta, VFG::ORIGSVFGK);
+}
+
+
 /*!
  * Create SVFG
  */
@@ -57,7 +77,7 @@ void SVFGBuilder::buildSVFG() {
 }
 
 /// Create DDA SVFG
-SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool opt = OPTSVFG) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind) {
 
 	MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFGK==kind));
 
@@ -65,7 +85,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool opt = OPTSVFG)
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            if(opt)
+            if(OPTSVFG)
                 svfg = globalSvfg = new SVFGOPT(mssa, kind);
             else
                 svfg = globalSvfg = new SVFG(mssa, kind);
@@ -73,7 +93,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool opt = OPTSVFG)
         }
     }
     else {
-        if(opt)
+        if(OPTSVFG)
             svfg = new SVFGOPT(mssa, kind);
         else
             svfg = new SVFG(mssa,kind);

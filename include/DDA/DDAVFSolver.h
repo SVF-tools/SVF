@@ -240,7 +240,7 @@ protected:
     /// Build SVFG
     virtual inline void buildSVFG(SVFModule module) {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(module);
-        _svfg = svfgBuilder.buildPTROnlySVFG(_ander, false);
+        _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
         _pag = _svfg->getPAG();
     }
     /// Reset visited map for next points-to query
