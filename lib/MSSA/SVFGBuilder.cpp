@@ -53,7 +53,7 @@ void SVFGBuilder::buildSVFG() {
     svfg->buildSVFG();
     if(mssa->getPTA()->printStat())
         svfg->performStat();
-    svfg->dump("FS_SVFG");
+    svfg->dump("svfg_final");
 }
 
 /// Create DDA SVFG
