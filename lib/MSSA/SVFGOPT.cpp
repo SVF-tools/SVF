@@ -41,7 +41,7 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> ContextInsensitive("ci-svfg", llvm::cl::init(false),
                                         llvm::cl::desc("Reduce SVFG into a context-insensitive one"));
 
-static llvm::cl::opt<bool> KeepAOFI("-keepAOFI", llvm::cl::init(false),
+static llvm::cl::opt<bool> KeepAOFI("keepAOFI", llvm::cl::init(false),
                                         llvm::cl::desc("Keep formal-in and actual-out parameters"));
 
 static llvm::cl::opt<std::string> SelfCycle("keep-self-cycle", llvm::cl::value_desc("keep self cycle"),
