@@ -64,7 +64,7 @@ public:
     /// Destructor
     virtual ~SVFGBuilder() {}
 
-    static SVFGOPT* globalSvfg;
+    static SVFG* globalSvfg;
 
 	inline SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta, bool opt = true) {
 		return build(pta, VFG::PTRONLYSVFGK, opt);

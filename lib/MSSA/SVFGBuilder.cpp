@@ -43,7 +43,7 @@ static llvm::cl::opt<bool> SingleVFG("singleVFG", llvm::cl::init(false),
 static llvm::cl::opt<bool> OPTSVFG("optSVFG", llvm::cl::init(true),
                                llvm::cl::desc("unoptimized SVFG with formal-in and actual-out"));
 
-SVFGOPT* SVFGBuilder::globalSvfg = NULL;
+SVFG* SVFGBuilder::globalSvfg = NULL;
 
 /*!
  * Create SVFG
@@ -65,15 +65,18 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool opt = OPTSVFG)
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            svfg = globalSvfg = new SVFGOPT(mssa, kind);
-            if (!opt) globalSvfg->setTokeepActualOutFormalIn();
+            if(opt)
+                svfg = globalSvfg = new SVFGOPT(mssa, kind);
+            else
+                svfg = globalSvfg = new SVFG(mssa, kind);
             buildSVFG();
         }
     }
     else {
-        SVFGOPT* vfg = new SVFGOPT(mssa, kind);
-        svfg = vfg;
-        if (!opt) vfg->setTokeepActualOutFormalIn();
+        if(opt)
+            svfg = new SVFGOPT(mssa, kind);
+        else
+            svfg = new SVFG(mssa,kind);
         buildSVFG();
     }
 

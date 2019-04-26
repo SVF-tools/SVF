@@ -41,6 +41,9 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> ContextInsensitive("ci-svfg", llvm::cl::init(false),
                                         llvm::cl::desc("Reduce SVFG into a context-insensitive one"));
 
+static llvm::cl::opt<bool> KeepAOFI("ci-svfg", llvm::cl::init(false),
+                                        llvm::cl::desc("Keep formal-in and actual-out parameters"));
+
 static llvm::cl::opt<std::string> SelfCycle("keep-self-cycle", llvm::cl::value_desc("keep self cycle"),
                                       llvm::cl::desc("How to handle self cycle edges: all, context, none"));
 static std::string KeepAllSelfCycle = "all";
@@ -54,6 +57,8 @@ void SVFGOPT::buildSVFG() {
     dump("SVFG_before_opt");
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
+
+    keepActualOutFormalIn = KeepAOFI;
 
     stat->sfvgOptStart();
     handleInterValueFlow();
