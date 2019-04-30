@@ -536,6 +536,7 @@ protected:
     virtual void mergeSCC();
     // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
     NodeStack& SCCDetect();
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
 };
 
 
@@ -641,6 +642,7 @@ protected:
     void solveWorklist() {AndersenHCD::solveWorklist();}
     void handleCopyGep(ConstraintNode* node) {AndersenLCD::handleCopyGep(node);}
     void mergeSCC(NodeID nodeId);
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId) { return AndersenLCD::mergeSrcToTgt(nodeId, newRepId);}
 
 };
 
