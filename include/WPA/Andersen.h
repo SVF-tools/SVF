@@ -679,8 +679,6 @@ public:
     }
 
 protected:
-
-    // TODO ~~~~~~~~~~~~~~~~~~
     virtual void solveWorklist();
     NodeStack& SCCDetect();
     void procIndirectNodes();

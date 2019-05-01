@@ -35,21 +35,12 @@ using namespace SVFUtil;
 AndersenSCD* AndersenSCD::scdAndersen = NULL;
 
 
-// TODO: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /*!
- *
+ * Worklist solver of SCD
  */
 void AndersenSCD::solveWorklist() {
-    // Initialize the nodeStack via a whole SCC detection
-    // Nodes in nodeStack are in topological order by default.
     SCCDetect();
     sccCandidates.clear();
-//    while (!topoOrder.empty()) {
-//        NodeID nodeId = topoOrder.top();
-//        topoOrder.pop();
-//        repNodes.push(nodeId);
-////        sccCandidates.insert(nodeId);
-//    }
 
     // Process nodeStack and put the changed nodes into workList.
     procRepNodes();
@@ -63,7 +54,7 @@ void AndersenSCD::solveWorklist() {
 }
 
 /*!
- *
+ * SCC detection for SCD
  */
 NodeStack& AndersenSCD::SCCDetect() {
     numOfSCCDetection++;
@@ -82,7 +73,7 @@ NodeStack& AndersenSCD::SCCDetect() {
 }
 
 /*!
- *
+ * Only the nodes with changed point-to sets are pushed into worklist
  */
 bool AndersenSCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
     if(nodeId==newRepId)
@@ -104,7 +95,7 @@ bool AndersenSCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
 }
 
 /*!
- *
+ * Process direct edges for rep nodes
  */
 void AndersenSCD::procRepNodes() {
     while (!isWorklistEmpty()) {
@@ -124,13 +115,12 @@ void AndersenSCD::procRepNodes() {
 }
 
 /*!
- *
+ * Process indirect edges for nodes in indirectNodes
  */
 void AndersenSCD::procIndirectNodes() {
     while (!indirectNodes.empty()) {
         NodeID nodeId = indirectNodes.pop();
-//        if (sccRepNode(nodeId) != nodeId)  // Really omittable??
-//            continue;
+
         // process nodes in worklist
         ConstraintNode* node = consCG->getConstraintNode(nodeId);
         handleLoadStore(node);
@@ -138,7 +128,8 @@ void AndersenSCD::procIndirectNodes() {
 }
 
 /*!
- *
+ * Source nodes of new added edges are pushed into sccCandidates.
+ * Source nodes of new added edges whose pts differ from those of dst nodes are pushed into worklist.
  */
 void AndersenSCD::handleLoadStore(ConstraintNode *node) {
     double insertStart = stat->getClk();
@@ -174,7 +165,7 @@ void AndersenSCD::handleLoadStore(ConstraintNode *node) {
 }
 
 /*!
- *
+ * Initialize worklist via processing addrs
  */
 void AndersenSCD::processAddr(const AddrCGEdge *addr) {
     numOfProcessedAddr++;
@@ -188,24 +179,3 @@ void AndersenSCD::processAddr(const AddrCGEdge *addr) {
 }
 
 
-/*!
- *
- */
-//void AndersenSCD::handleCopyGep(ConstraintNode* node) {
-//    double propStart = stat->getClk();
-//
-//    NodeID nodeId = node->getId();
-//    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
-//         ++it) {
-//        if(CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(*it))
-//            processCopy(nodeId,copyEdge);
-//        else if(GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-//            processGep(nodeId,gepEdge);
-//    }
-//
-//    if (!node->getLoadInEdges().empty() || !node->getStoreOutEdges().empty())
-//        indirectNodes.push(node->getId());
-//
-//    double propEnd = stat->getClk();
-//    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
-//}
