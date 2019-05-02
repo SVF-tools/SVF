@@ -122,6 +122,11 @@ bool AndersenWaveDiff::handleStore(NodeID node, const ConstraintEdge* edge)
  * Update call graph for the input indirect callsites
  */
 bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+    //TODO
+//    return false;
+
+    double cgUpdateStart = stat->getClk();
+
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
@@ -137,6 +142,9 @@ bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
         unionPts(dst, src);
         pushIntoWorklist(dst);
     }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
     return (!newEdges.empty());
 }

@@ -88,6 +88,10 @@ void Andersen::analyze(SVFModule svfModule) {
  * Start constraint solving
  */
 void Andersen::processNode(NodeID nodeId) {
+    // sub nodes do not need to be processed
+    if (sccRepNode(nodeId) != nodeId)
+        return;
+
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     handleLoadStore(node);
     handleCopyGep(node);
@@ -442,6 +446,7 @@ NodeStack& Andersen::SCCDetect() {
 
 /// Update call graph for the input indirect callsites
 bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+
     double cgUpdateStart = stat->getClk();
 
     CallEdgeMap newEdges;
@@ -460,9 +465,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     double cgUpdateEnd = stat->getClk();
     timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
-    if(!newEdges.empty())
-        return true;
-    return false;
+    return (!newEdges.empty());
 }
 
 /*!
