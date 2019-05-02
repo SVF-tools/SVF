@@ -681,10 +681,8 @@ public:
 protected:
     virtual void solveWorklist();
     NodeStack& SCCDetect();
-    void procIndirectNodes();
     void handleLoadStore(ConstraintNode* node);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
-    void procRepNodes();
     void processAddr(const AddrCGEdge* addr);
 
     inline void addSccCandidate(NodeID nodeId) {

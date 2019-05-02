@@ -43,15 +43,35 @@ void AndersenSCD::solveWorklist() {
     sccCandidates.clear();
 
     // Process nodeStack and put the changed nodes into workList.
-    procRepNodes();
+    while (!isWorklistEmpty()) {
+        NodeID nodeId = popFromWorklist();
+        collapsePWCNode(nodeId);
+        // process nodes in nodeStack
+        if (sccRepNode(nodeId) != nodeId)
+            return;
+
+        ConstraintNode* node = consCG->getConstraintNode(nodeId);
+        handleCopyGep(node);
+
+        if (!node->getLoadOutEdges().empty() || !node->getStoreInEdges().empty())
+            indirectNodes.push(node->getId());
+        collapseFields();
+    }
 
     // New nodes will be inserted into workList during processing.
-    procIndirectNodes();
+    while (!indirectNodes.empty()) {
+        NodeID nodeId = indirectNodes.pop();
+
+        // process nodes in worklist
+        ConstraintNode* node = consCG->getConstraintNode(nodeId);
+        handleLoadStore(node);
+    }
 
     // reanalysis stops when sccCandidates become empty.
     if(!sccCandidates.empty())
         reanalyze = true;
 }
+
 
 /*!
  * SCC detection for SCD
@@ -71,6 +91,7 @@ NodeStack& AndersenSCD::SCCDetect() {
 
     return getSCCDetector()->topoNodeStack();
 }
+
 
 /*!
  * Only the nodes with changed point-to sets are pushed into worklist
@@ -94,38 +115,6 @@ bool AndersenSCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
     return gepInsideScc;
 }
 
-/*!
- * Process direct edges for rep nodes
- */
-void AndersenSCD::procRepNodes() {
-    while (!isWorklistEmpty()) {
-        NodeID nodeId = popFromWorklist();
-        collapsePWCNode(nodeId);
-        // process nodes in nodeStack
-        if (sccRepNode(nodeId) != nodeId)
-            return;
-
-        ConstraintNode* node = consCG->getConstraintNode(nodeId);
-        handleCopyGep(node);
-
-        if (!node->getLoadOutEdges().empty() || !node->getStoreInEdges().empty())
-            indirectNodes.push(node->getId());
-        collapseFields();
-    }
-}
-
-/*!
- * Process indirect edges for nodes in indirectNodes
- */
-void AndersenSCD::procIndirectNodes() {
-    while (!indirectNodes.empty()) {
-        NodeID nodeId = indirectNodes.pop();
-
-        // process nodes in worklist
-        ConstraintNode* node = consCG->getConstraintNode(nodeId);
-        handleLoadStore(node);
-    }
-}
 
 /*!
  * Source nodes of new added edges are pushed into sccCandidates.
@@ -164,6 +153,7 @@ void AndersenSCD::handleLoadStore(ConstraintNode *node) {
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 }
 
+
 /*!
  * Initialize worklist via processing addrs
  */
@@ -177,5 +167,3 @@ void AndersenSCD::processAddr(const AddrCGEdge *addr) {
         addSccCandidate(dst);
     }
 }
-
-
