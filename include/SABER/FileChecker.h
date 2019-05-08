@@ -51,8 +51,9 @@ public:
     virtual ~FileChecker() {
     }
     /// We start from here
-    virtual bool runOnModule(Module& module) {
-        return runOnModule(module);
+    virtual bool runOnModule(llvm::Module& module) {
+        SVFModule svfModule(module);
+        return runOnModule(svfModule);
     }
 
     /// We start from here

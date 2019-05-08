@@ -319,7 +319,7 @@ public:
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() {
+    virtual const std::string getValueName() const {
         if (value && value->hasName())
             return value->getName();
         return "";
@@ -423,7 +423,7 @@ public:
     }
 
     /// Return the type of this gep object
-	inline const llvm::Type* getType() {
+	inline virtual const llvm::Type* getType() const {
 		return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
 	}
 
