@@ -53,6 +53,12 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy directInEdges;
     ConstraintEdge::ConstraintEdgeSetTy directOutEdges;
 
+    ConstraintEdge::ConstraintEdgeSetTy copyInEdges;
+    ConstraintEdge::ConstraintEdgeSetTy copyOutEdges;
+
+    ConstraintEdge::ConstraintEdgeSetTy gepInEdges;
+    ConstraintEdge::ConstraintEdgeSetTy gepOutEdges;
+
     ConstraintEdge::ConstraintEdgeSetTy addressInEdges; ///< all incoming address edge of this node
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
@@ -87,6 +93,18 @@ public:
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getDirectOutEdges() const {
         return directOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyInEdges() const {
+        return copyInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyOutEdges() const {
+        return copyOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepInEdges() const {
+        return gepInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepOutEdges() const {
+        return gepOutEdges;
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getLoadInEdges() const {
         return loadInEdges;
@@ -186,15 +204,31 @@ public:
     ///  Add constraint graph edges
     //@{
     inline void addIncomingCopyEdge(CopyCGEdge* inEdge) {
+        assert(inEdge->getDstID() == this->getId());
+        bool added1 = copyInEdges.insert(inEdge).second;
+        bool added2 = addIncomingEdge(inEdge);
+        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addIncomingDirectEdge(inEdge);
     }
     inline void addIncomingGepEdge(GepCGEdge* inEdge) {
+        assert(inEdge->getDstID() == this->getId());
+        bool added1 = gepInEdges.insert(inEdge).second;
+        bool added2 = addIncomingEdge(inEdge);
+        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addIncomingDirectEdge(inEdge);
     }
     inline void addOutgoingCopyEdge(CopyCGEdge* outEdge) {
+        assert(outEdge->getSrcID() == this->getId());
+        bool added1 = copyOutEdges.insert(outEdge).second;
+        bool added2 = addOutgoingEdge(outEdge);
+        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addOutgoingDirectEdge(outEdge);
     }
     inline void addOutgoingGepEdge(GepCGEdge* outEdge) {
+        assert(outEdge->getSrcID() == this->getId());
+        bool added1 = gepOutEdges.insert(outEdge).second;
+        bool added2 = addOutgoingEdge(outEdge);
+        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addOutgoingDirectEdge(outEdge);
     }
     inline void addIncomingAddrEdge(AddrCGEdge* inEdge) {

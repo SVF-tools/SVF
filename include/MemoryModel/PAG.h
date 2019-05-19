@@ -96,6 +96,7 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
+    NodeSet sfrValNodes;
 
     /// Constructor
     PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
@@ -404,6 +405,16 @@ public:
     inline bool hasValueNode(const Value* V) {
         return symInfo->hasValSym(V);
     }
+
+    inline bool hasSFRValNode(NodeID sfrId) { return sfrValNodes.find(sfrId) != sfrValNodes.end(); }
+    inline SFRValPN* getSFRValNode(NodeID sfrId) { return SVFUtil::dyn_cast<SFRValPN>(getPAGNode(sfrId)); }
+    inline NodeSet& getSFRValNodes() { return sfrValNodes; }
+    inline NodeID addSFRValNode(NodeID _init, NodeID _b, const NodeBS& _s) {
+        NodeID sfrId = addValNode(NULL, new SFRValPN(nodeNum, _init, _b, _s), nodeNum);
+        sfrValNodes.insert(sfrId);
+        return sfrId;
+    }
+
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
     inline NodeID getObjectNode(const Value *V) {
