@@ -57,8 +57,7 @@ public:
         GepObjNode,
         FIObjNode,
         DummyValNode,
-        DummyObjNode,
-        SFRValNode
+        DummyObjNode
     };
 
 
@@ -558,7 +557,7 @@ public:
     //@}
 
     /// Constructor
-    DummyValPN(NodeID i, PNODEK ty = DummyValNode) : ValPN(NULL, i, ty) {
+    DummyValPN(NodeID i) : ValPN(NULL, i, DummyValNode) {
     }
 
 
@@ -595,35 +594,6 @@ public:
     /// Return name of this node
     inline const std::string getValueName() const {
         return "dummyObj";
-    }
-};
-
-/*!
- *
- */
-class SFRValPN : public ValPN {
-public:
-    NodeID initial;
-    NodeBS strides;
-    NodeSet fields;
-    NodeID baseId;
-
-public:
-    static inline bool classof(const SFRValPN*) {
-        return true;
-    }
-    static inline bool classof(const ValPN* node) {
-        return node->getNodeKind() == PAGNode::SFRValNode;
-    }
-    static inline bool classof(const PAGNode* node) {
-        return node->getNodeKind() == PAGNode::SFRValNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node) {
-        return node->getNodeKind() == PAGNode::SFRValNode;
-    }
-    SFRValPN(NodeID i, NodeID _init, NodeID _b, const NodeBS& _s) :
-            ValPN(NULL, i, SFRValNode), initial(_init), baseId(_b) {
-        strides |= _s;
     }
 };
 
