@@ -37,6 +37,7 @@
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
+#include "WPA/CSC.h"
 
 class CHGraph;
 class CHNode;
@@ -59,6 +60,7 @@ public:
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
         AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
         AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
+        AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWave_WPA,	///< Wave propagation andersen-style WPA
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA

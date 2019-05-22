@@ -592,6 +592,10 @@ public:
         const MemObj* mem = addDummyMemObj(i, NULL);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
     }
+    inline NodeID addSFRObjNode(NodeID _init, NodeID _b, const NodeBS& _s) {
+        const MemObj* mem = addDummyMemObj(nodeNum, NULL);
+        return addObjNode(NULL, new SFRObjPN(nodeNum, mem, _init, _b, _s), nodeNum);
+    }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type) {
         return SymbolTableInfo::Symbolnfo()->createDummyObj(i,type);
     }

@@ -704,7 +704,8 @@ private:
 
     CGSCC* scc;
     CSC* csc;
-    FieldReps fieldReps;  // once a field's pts is changed twice, its rep is itself
+    NodeSet sfrObjNodes;
+    FieldReps fieldReps;
 
 public:
     AndersenSFR(PTATY type = AndersenSFR_WPA) :

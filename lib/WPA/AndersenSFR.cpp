@@ -36,7 +36,7 @@ AndersenSFR* AndersenSFR::sfrAndersen = NULL;
 
 
 /*!
- *
+ * Override Andersen's SCC detection method to satisfy PWC stride calculation.
  */
 NodeStack& AndersenSFR::SCCDetect() {
     numOfSCCDetection++;
@@ -63,7 +63,7 @@ NodeStack& AndersenSFR::SCCDetect() {
 }
 
 /*!
- *
+ * Call the PWC stride calculation method of class CSC.
  */
 void AndersenSFR::PWCStrideCalculate() {
     scc->find(sccCandidates, "copyGep");
@@ -71,7 +71,7 @@ void AndersenSFR::PWCStrideCalculate() {
 }
 
 /*!
- *
+ * Propagate point-to set via a copy edge, using SFR
  */
 bool AndersenSFR::processCopy(NodeID nodeId, const ConstraintEdge* edge) {
     numOfProcessedCopy++;
@@ -86,20 +86,19 @@ bool AndersenSFR::processCopy(NodeID nodeId, const ConstraintEdge* edge) {
             PointsTo& srcPts = getPts(sfr);
             changed = unionPts(dst,srcPts);
         }
-    else if (SFRValPN* sfr = SVFUtil::dyn_cast<SFRValPN>(node)) {
+    else if (SFRObjPN* sfr = SVFUtil::dyn_cast<SFRObjPN>(node)) {
         NodeSet propedSfr;
         propedSfr.clear();
         for (NodeID field : sfr->fields)
             for (NodeID fRepId : fieldReps[field])
-                if (propedSfr.find(fRepId) == propedSfr.end()) {
+                if (propedSfr.find(fRepId) == propedSfr.end() && fRepId != nodeId) {
                     PointsTo& srcPts = getPts(fRepId);
                     changed = unionPts(dst,srcPts);
                     propedSfr.insert(fRepId);
                 }
-    } else {
-        PointsTo& srcPts = getPts(nodeId);
-        changed = unionPts(dst,srcPts);
     }
+    PointsTo& srcPts = getPts(nodeId);
+    changed = changed || unionPts(dst,srcPts);
 
     if (changed)
         pushIntoWorklist(dst);
@@ -107,7 +106,7 @@ bool AndersenSFR::processCopy(NodeID nodeId, const ConstraintEdge* edge) {
 }
 
 /*!
- *
+ * Propagate point-to set via a gep edge, using SFR
  */
 bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge) {
     numOfProcessedGep++;
@@ -144,7 +143,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge) {
                     NodeBS stride;
                     NodeID init;
                     NodeID base;
-                    if (SFRValPN* sfr = SVFUtil::dyn_cast<SFRValPN>(pag->getPAGNode(ptd))) {
+                    if (SFRObjPN* sfr = SVFUtil::dyn_cast<SFRObjPN>(pag->getPAGNode(ptd))) {
                         // ptd is an sfr
                         stride = sfr->strides | nodeStrides[dstId];
                         init = sfr->initial + normalGepEdge->getLocationSet().getOffset();
@@ -164,7 +163,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge) {
                     addTypeForGepObjNode(newSfrId, normalGepEdge);
                 } else {
                     // node dst is not in PWC
-                    if (SFRValPN* sfr = SVFUtil::dyn_cast<SFRValPN>(pag->getPAGNode(ptd))) {
+                    if (SFRObjPN* sfr = SVFUtil::dyn_cast<SFRObjPN>(pag->getPAGNode(ptd))) {
                         // ptd is an sfr
                         NodeBS stride = sfr->strides;
                         NodeID init = sfr->initial + normalGepEdge->getLocationSet().getOffset();
@@ -194,59 +193,62 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge) {
 }
 
 /*!
- *
+ * If the required SFR constraint node exists, get its id, else, create one.
  */
 NodeID AndersenSFR::getSFRCGNode(NodeID init, NodeID baseId, const NodeBS& stride, NodeID dstId) {
-    for (NodeID sfrId : pag->getSFRValNodes()) {
-        SFRValPN* sfr = pag->getSFRValNode(sfrId);
+    // if there is one, get it
+    for (NodeID sfrId : sfrObjNodes) {
+        SFRObjPN* sfr = SVFUtil::dyn_cast<SFRObjPN>(pag->getPAGNode(sfrId));
         if (sfr->initial == init && sfr->strides == stride)
             return sfrId;
     }
 
+    // else, check whether we need to create a new one
     bool newSfr = true;
     PointsTo& dstPts = getPts(dstId);
     for (NodeID dstPtdId : dstPts) {
-        if (SFRValPN* dstPtdSfr = SVFUtil::dyn_cast<SFRValPN>(pag->getPAGNode(dstPtdId))) {
+        if (SFRObjPN* dstPtdSfr = SVFUtil::dyn_cast<SFRObjPN>(pag->getPAGNode(dstPtdId))) {
             NodeBS tmpStride = dstPtdSfr->strides;
             newSfr = fieldReps.find(init) == fieldReps.end() ||
                      fieldReps[init].find(dstPtdId) == fieldReps[init].end() || (tmpStride |= stride);
             if (!newSfr)
+                // if not, return
                 return dstPtdId;
         }
     }
 
-    if (newSfr) {
-        // add new SFR pag node
-        NodeID newSfrId = pag->addSFRValNode(init, baseId, stride);
+    // if yes, create one
+    // add new SFR pag node
+    NodeID newSfrId = pag->addSFRObjNode(init, baseId, stride);
+    sfrObjNodes.insert(newSfrId);
 
-        // calculate field expansion
-        NodeID maxLimit = pag->getObject(baseId)->getMaxFieldOffsetLimit();
-        SFRValPN* sfrPNode = SVFUtil::dyn_cast<SFRValPN>(pag->getPAGNode(newSfrId));
+    // calculate field expansion
+    NodeID maxLimit = pag->getObject(baseId)->getMaxFieldOffsetLimit();
+    SFRObjPN *sfrPNode = SVFUtil::dyn_cast<SFRObjPN>(pag->getPAGNode(newSfrId));
 
-        NodeSet fieldExp;
-        fieldExp.clear();
+    NodeSet fieldExp;
+    fieldExp.clear();
 
-        fieldExp.insert(init);
-        for (auto _s : stride)
-            fieldExp.insert(init+_s);
+    fieldExp.insert(init);
+    for (auto _s : stride)
+        fieldExp.insert(init + _s);
 
-        bool loopFlag = true;
-        while (loopFlag) {
-            loopFlag = false;
-            for (auto _f : fieldExp)
-                for (auto _s : stride) {
-                    NodeID _f1 = _f+_s;
-                    loopFlag = (fieldExp.find(_f1) == fieldExp.end()) && (_f1<maxLimit);
-                    if (loopFlag) {
-                        fieldExp.insert(_f1);
-                        fieldReps[_f1].insert(newSfrId);
-                    }
+    bool loopFlag = true;
+    while (loopFlag) {
+        loopFlag = false;
+        for (auto _f : fieldExp)
+            for (auto _s : stride) {
+                NodeID _f1 = _f + _s;
+                loopFlag = (fieldExp.find(_f1) == fieldExp.end()) && (_f1 < maxLimit);
+                if (loopFlag) {
+                    fieldExp.insert(_f1);
+                    fieldReps[_f1].insert(newSfrId);
                 }
-        }
-        sfrPNode->fields = fieldExp;
-
-        // add constraint graph node
-        consCG->addConstraintNode(new ConstraintNode(newSfrId), newSfrId);
-        return newSfrId;
+            }
     }
+    sfrPNode->fields = fieldExp;
+
+    // add constraint graph node
+    consCG->addConstraintNode(new ConstraintNode(newSfrId), newSfrId);
+    return newSfrId;
 }
