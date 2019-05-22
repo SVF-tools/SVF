@@ -39,6 +39,7 @@
 #include "WPA/Andersen.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
+#include "WPA/AndersenSFR.h"
 
 char WPAPass::ID = 0;
 
