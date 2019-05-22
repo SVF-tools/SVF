@@ -36,6 +36,7 @@
 #include "MemoryModel/PAG.h"
 #include "MemoryModel/ConsG.h"
 #include "MemoryModel/OfflineConsG.h"
+#include "WPA/CSC.h"
 
 class PTAType;
 class SVFModule;
@@ -48,8 +49,6 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl {
 
 
 public:
-    typedef SCCDetection<ConstraintGraph*> CGSCC;
-
     /// Pass ID
     static char ID;
 
@@ -652,9 +651,8 @@ protected:
  * Selective Cycle Detection Based Andersen Analysis
  */
 class AndersenSCD : public Andersen {
-private:
+protected:
     static AndersenSCD* scdAndersen;
-//    WorkList repNodes;
     WorkList indirectNodes;
     NodeSet sccCandidates;
 
@@ -689,5 +687,75 @@ protected:
         sccCandidates.insert(sccRepNode(nodeId));
     }
 };
+
+
+
+/*!
+ * Selective Cycle Detection with Stride-based Field Representation
+ */
+class AndersenSFR : public AndersenSCD {
+public:
+    typedef llvm::DenseMap<NodeID, NodeBS> NodeStrides;
+    typedef llvm::DenseMap<NodeID, NodeSet> FieldReps;
+    typedef llvm::DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+
+private:
+    static AndersenSFR* sfrAndersen;
+
+    CGSCC* scc;
+    CSC* csc;
+    FieldReps fieldReps;  // once a field's pts is changed twice, its rep is itself
+
+public:
+    AndersenSFR(PTATY type = AndersenSFR_WPA) :
+            AndersenSCD(type) {
+    }
+
+    /// Create an singleton instance directly instead of invoking llvm pass manager
+    static AndersenSFR *createAndersenSFR(SVFModule svfModule) {
+        if (sfrAndersen == nullptr) {
+            new AndersenSFR();
+            sfrAndersen->analyze(svfModule);
+            return sfrAndersen;
+        }
+        return sfrAndersen;
+    }
+
+    static void releaseAndersenSFR() {
+        if (sfrAndersen)
+            delete sfrAndersen;
+    }
+
+protected:
+    inline void initialize(SVFModule svfModule) {
+        resetData();
+        /// Build PAG
+        PointerAnalysis::initialize(svfModule);
+        /// Build Constraint Graph
+        consCG = new ConstraintGraph(pag);
+        setGraph(consCG);
+        if (!scc)
+            scc = new CGSCC(consCG);
+        csc = new CSC(consCG, scc);
+        /// Create statistic class
+        stat = new AndersenStat(this);
+        consCG->dump("consCG_initial");
+
+        scc->find();
+        mergeSccCycle();
+    }
+
+    inline const NodeID pwcRep(NodeID nodeId) const {
+        return scc->repNode(nodeId);
+    }
+
+    void PWCStrideCalculate();
+    NodeStack& SCCDetect();
+    bool processCopy(NodeID nodeId, const ConstraintEdge* edge);
+    bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
+    NodeID getSFRCGNode(NodeID init, NodeID baseId, const NodeBS& strides, NodeID dstId);
+
+};
+
 
 #endif /* ANDERSENPASS_H_ */
