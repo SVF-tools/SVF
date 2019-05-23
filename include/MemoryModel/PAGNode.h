@@ -583,10 +583,12 @@ public:
         return true;
     }
     static inline bool classof(const PAGNode *node) {
-        return node->getNodeKind() == PAGNode::DummyObjNode;
+        return node->getNodeKind() == PAGNode::DummyObjNode ||
+               node->getNodeKind() == PAGNode::SFRObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node) {
-        return node->getNodeKind() == PAGNode::DummyObjNode;
+        return node->getNodeKind() == PAGNode::DummyObjNode ||
+               node->getNodeKind() == PAGNode::SFRObjNode;
     }
     //@}
 
