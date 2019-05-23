@@ -620,9 +620,9 @@ public:
     static inline bool classof(const GenericPAGNodeTy* node) {
         return node->getNodeKind() == PAGNode::SFRObjNode;
     }
-    SFRObjPN(NodeID i, const MemObj* m, NodeID _init, NodeID _b, const NodeBS& _s) :
-            DummyObjPN(i, m, SFRObjNode), initial(_init), baseId(_b) {
-        strides |= _s;
+    SFRObjPN(NodeID i, const MemObj* m, NodeID initial, NodeID base, const NodeBS& stride) :
+            DummyObjPN(i, m, SFRObjNode), initial(initial), baseId(base) {
+        strides |= stride;
     }
 
     /// Return name of this node
