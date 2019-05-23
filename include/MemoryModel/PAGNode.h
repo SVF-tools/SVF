@@ -591,7 +591,7 @@ public:
     //@}
 
     /// Constructor
-    DummyObjPN(NodeID i,const MemObj* m) : ObjPN(NULL, i, m, DummyObjNode) {
+    DummyObjPN(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode) : ObjPN(NULL, i, m, ty) {
     }
 
     /// Return name of this node
@@ -603,7 +603,7 @@ public:
 /*!
  *
  */
-class SFRObjPN : public ObjPN {
+class SFRObjPN : public DummyObjPN {
 public:
     NodeID initial;
     NodeBS strides;
@@ -621,7 +621,7 @@ public:
         return node->getNodeKind() == PAGNode::SFRObjNode;
     }
     SFRObjPN(NodeID i, const MemObj* m, NodeID _init, NodeID _b, const NodeBS& _s) :
-            ObjPN(NULL, i, m, SFRObjNode), initial(_init), baseId(_b) {
+            DummyObjPN(i, m, SFRObjNode), initial(_init), baseId(_b) {
         strides |= _s;
     }
 
