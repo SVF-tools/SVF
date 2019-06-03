@@ -205,31 +205,23 @@ public:
     //@{
     inline void addIncomingCopyEdge(CopyCGEdge* inEdge) {
         assert(inEdge->getDstID() == this->getId());
-        bool added1 = copyInEdges.insert(inEdge).second;
-        bool added2 = addIncomingEdge(inEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addIncomingDirectEdge(inEdge);
+        copyInEdges.insert(inEdge);
     }
     inline void addIncomingGepEdge(GepCGEdge* inEdge) {
         assert(inEdge->getDstID() == this->getId());
-        bool added1 = gepInEdges.insert(inEdge).second;
-        bool added2 = addIncomingEdge(inEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addIncomingDirectEdge(inEdge);
+        gepInEdges.insert(inEdge);
     }
     inline void addOutgoingCopyEdge(CopyCGEdge* outEdge) {
         assert(outEdge->getSrcID() == this->getId());
-        bool added1 = copyOutEdges.insert(outEdge).second;
-        bool added2 = addOutgoingEdge(outEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addOutgoingDirectEdge(outEdge);
+        copyOutEdges.insert(outEdge);
     }
     inline void addOutgoingGepEdge(GepCGEdge* outEdge) {
         assert(outEdge->getSrcID() == this->getId());
-        bool added1 = gepOutEdges.insert(outEdge).second;
-        bool added2 = addOutgoingEdge(outEdge);
-        assert(added1 && added2 && "edge not added, duplicated adding!!");
         addOutgoingDirectEdge(outEdge);
+        gepOutEdges.insert(outEdge);
     }
     inline void addIncomingAddrEdge(AddrCGEdge* inEdge) {
         addressInEdges.insert(inEdge);
