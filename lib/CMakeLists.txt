@@ -50,7 +50,6 @@ set(SOURCES
     WPA/AndersenHCD.cpp    
     WPA/AndersenHLCD.cpp
     WPA/AndersenSCD.cpp
-    WPA/AndersenSFR.cpp
     WPA/AndersenStat.cpp
     WPA/AndersenWave.cpp
     WPA/AndersenWaveDiff.cpp

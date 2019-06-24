@@ -57,8 +57,7 @@ public:
         GepObjNode,
         FIObjNode,
         DummyValNode,
-        DummyObjNode,
-        SFRObjNode
+        DummyObjNode
     };
 
 
@@ -304,14 +303,12 @@ public:
         return node->getNodeKind() == PAGNode::ObjNode ||
                node->getNodeKind() == PAGNode::GepObjNode ||
                node->getNodeKind() == PAGNode::FIObjNode ||
-               node->getNodeKind() == PAGNode::SFRObjNode ||
                node->getNodeKind() == PAGNode::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node) {
         return node->getNodeKind() == PAGNode::ObjNode ||
                node->getNodeKind() == PAGNode::GepObjNode ||
                node->getNodeKind() == PAGNode::FIObjNode ||
-               node->getNodeKind() == PAGNode::SFRObjNode ||
                node->getNodeKind() == PAGNode::DummyObjNode;
     }
     //@}
@@ -583,53 +580,20 @@ public:
         return true;
     }
     static inline bool classof(const PAGNode *node) {
-        return node->getNodeKind() == PAGNode::DummyObjNode ||
-               node->getNodeKind() == PAGNode::SFRObjNode;
+        return node->getNodeKind() == PAGNode::DummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node) {
-        return node->getNodeKind() == PAGNode::DummyObjNode ||
-               node->getNodeKind() == PAGNode::SFRObjNode;
+        return node->getNodeKind() == PAGNode::DummyObjNode;
     }
     //@}
 
     /// Constructor
-    DummyObjPN(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode) : ObjPN(NULL, i, m, ty) {
+    DummyObjPN(NodeID i,const MemObj* m) : ObjPN(NULL, i, m, DummyObjNode) {
     }
 
     /// Return name of this node
     inline const std::string getValueName() const {
         return "dummyObj";
-    }
-};
-
-/*!
- *
- */
-class SFRObjPN : public DummyObjPN {
-public:
-    NodeID initial;
-    NodeBS strides;
-    NodeSet fields;
-    NodeID baseId;
-
-public:
-    static inline bool classof(const SFRObjPN*) {
-        return true;
-    }
-    static inline bool classof(const PAGNode* node) {
-        return node->getNodeKind() == PAGNode::SFRObjNode;
-    }
-    static inline bool classof(const GenericPAGNodeTy* node) {
-        return node->getNodeKind() == PAGNode::SFRObjNode;
-    }
-    SFRObjPN(NodeID i, const MemObj* m, NodeID initial, NodeID base, const NodeBS& stride) :
-            DummyObjPN(i, m, SFRObjNode), initial(initial), baseId(base) {
-        strides |= stride;
-    }
-
-    /// Return name of this node
-    inline const std::string getValueName() const {
-        return "sfrObj";
     }
 };
 

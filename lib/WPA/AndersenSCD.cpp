@@ -27,7 +27,7 @@
  *      Author: Yuxiang Lei
  */
 
-#include "WPA/AndersenSFR.h"
+#include "WPA/Andersen.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
