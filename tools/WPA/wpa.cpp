@@ -33,7 +33,7 @@
 #include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
 #include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
 #include <llvm/IR/LegacyPassManager.h>		// pass manager
-#include <llvm/Support/Signals.h>	// singal for command line
+#include <llvm/Support/Signals.h>	// signal for command line
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
 #include <llvm/Support/ToolOutputFile.h> // for tool output file
 #include <llvm/Support/PrettyStackTrace.h> // for pass list
