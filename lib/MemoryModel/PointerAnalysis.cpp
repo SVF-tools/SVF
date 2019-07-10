@@ -247,7 +247,7 @@ void PointerAnalysis::finalize() {
     if (FuncPointerPrint)
         printIndCSTargets();
 
-    getPTACallGraph()->vefityCallGraph();
+    getPTACallGraph()->verifyCallGraph();
 
     getPTACallGraph()->dump("callgraph_final");
 
