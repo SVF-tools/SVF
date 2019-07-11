@@ -344,7 +344,7 @@ inline const llvm::Value* getForkedFun(const llvm::Instruction *inst) {
 }
 //@}
 
-/// Return sole argument of the thread rountine
+/// Return sole argument of the thread routine
 //@{
 inline const llvm::Value* getActualParmAtForkSite(const llvm::CallSite cs) {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
@@ -354,7 +354,7 @@ inline const llvm::Value* getActualParmAtForkSite(const llvm::Instruction *inst)
 }
 //@}
 
-/// Return the task function of the parallel_for rountine
+/// Return the task function of the parallel_for routine
 //@{
 inline const llvm::Value* getTaskFuncAtHareParForSite(const llvm::CallSite cs) {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);
