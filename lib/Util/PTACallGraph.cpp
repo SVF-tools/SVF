@@ -248,7 +248,7 @@ void PTACallGraph::getIndCallSitesInvokingCallee(const llvm::Function* callee, P
 /*!
  * Issue a warning if the function which has indirect call sites can not be reached from program entry.
  */
-void PTACallGraph::vefityCallGraph()
+void PTACallGraph::verifyCallGraph()
 {
     CallEdgeMap::const_iterator it = indirectCallMap.begin();
     CallEdgeMap::const_iterator eit = indirectCallMap.end();

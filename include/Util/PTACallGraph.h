@@ -259,7 +259,7 @@ public:
     }
 
     /// Issue a warning if the function which has indirect call sites can not be reached from program entry.
-    void vefityCallGraph();
+    void verifyCallGraph();
 
     /// Get call graph node
     //@{
