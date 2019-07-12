@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 For a full list of contributors, refer to
-        https://github.com/unsw-corg/SVF/blob/gh-pages/Contributors.txt
+        https://github.com/SVF-tools/SVF/graphs/contributors
 
 ==============================================================================
 Copyrights and Licenses for Third Party Software Distributed with SVF:
