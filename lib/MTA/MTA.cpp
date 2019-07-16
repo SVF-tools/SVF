@@ -20,7 +20,7 @@
 using namespace llvm;
 using namespace analysisUtil;
 
-static RegisterPass<MTA> RACEDETECOR("pmhp", "May-Happen-in-Parallel Analysis");
+static RegisterPass<MTA> RACEDETECTOR("pmhp", "May-Happen-in-Parallel Analysis");
 
 static cl::opt<bool> AndersenAnno("tsan-ander", cl::init(false), cl::desc("Add TSan annotation according to Andersen"));
 
