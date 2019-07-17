@@ -151,7 +151,7 @@ MHP* MTA::computeMHP(SVFModule module) {
 // * Check   (1) write-write race
 // * 		 (2) write-read race
 // * 		 (3) read-read race
-// * when two memory access may-happen in parallel and does not protected by the same lock
+// * when two memory access may-happen in parallel and are not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
 void MTA::detect(SVFModule module) {
