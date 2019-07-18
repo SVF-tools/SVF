@@ -67,6 +67,14 @@ public:
         return bb;
     }
 
+    /// Get the function of this SVFGNode
+    virtual const Function* getFun() const {
+        if(bb)
+            return bb->getParent();
+        else
+            return NULL;
+    }
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node) {
@@ -260,7 +268,9 @@ private:
 public:
     /// Constructor
     CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r) {
-        assert(SVFUtil::isa<CmpInst>(r->getValue()) && "not a binary operator?");
+        const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
+        assert(cmp && "not a binary operator?");
+        bb = cmp->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -318,7 +328,9 @@ private:
 public:
     /// Constructor
     BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r) {
-        assert(SVFUtil::isa<BinaryOperator>(r->getValue()) && "not a binary operator?");
+        const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
+        assert(binary && "not a binary operator?");
+        bb = binary->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
