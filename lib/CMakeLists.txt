@@ -37,43 +37,20 @@ set(SOURCES
     MSSA/SVFG.cpp 
     MSSA/SVFGOPT.cpp
     MSSA/SVFGStat.cpp
-    SABER/DoubleFreeChecker.cpp
-    SABER/FileChecker.cpp
-    SABER/LeakChecker.cpp
-    SABER/ProgSlice.cpp
-    SABER/SaberAnnotator.cpp
-    SABER/SaberCheckerAPI.cpp
-    SABER/SaberSVFGBuilder.cpp
-    SABER/SrcSnkDDA.cpp
     WPA/Andersen.cpp
     WPA/AndersenLCD.cpp
-    WPA/AndersenHCD.cpp    
+    WPA/AndersenHCD.cpp
     WPA/AndersenHLCD.cpp
     WPA/AndersenSCD.cpp
     WPA/AndersenStat.cpp
     WPA/AndersenWave.cpp
     WPA/AndersenWaveDiff.cpp
-    WPA/CSC.cpp
     WPA/IFDS.cpp
     WPA/AndersenWaveDiffWithType.cpp
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
-    DDA/ContextDDA.cpp
-    DDA/DDAClient.cpp
-    DDA/DDAPass.cpp
-    DDA/DDAStat.cpp
-    DDA/FlowDDA.cpp
-    MTA/FSMPTA.cpp
-    MTA/LockAnalysis.cpp
-    MTA/MHP.cpp
-    MTA/MTAAnnotator.cpp
-    MTA/MTA.cpp
-    MTA/MTAResultValidator.cpp
-    MTA/MTAStat.cpp
-    MTA/PCG.cpp
-    MTA/TCT.cpp
     )
 
 add_llvm_loadable_module(Svf ${SOURCES})

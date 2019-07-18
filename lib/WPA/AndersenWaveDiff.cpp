@@ -69,7 +69,8 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
  */
 bool AndersenWaveDiff::processGep(NodeID node, const GepCGEdge* edge) {
     PointsTo& srcDiffPts = getDiffPts(edge->getSrcID());
-    return processGepPts(srcDiffPts, edge);
+    PointsTo tmpDstPts = processGepPts(srcDiffPts, edge);
+    return unionPts(edge->getDstID(), tmpDstPts);
 }
 
 /*!

@@ -231,18 +231,22 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
  *		union pts(dst) with tmpDstPts
  */
 bool Andersen::processGep(NodeID node, const GepCGEdge* edge) {
+    numOfProcessedGep++;
 
     PointsTo& srcPts = getPts(edge->getSrcID());
-    return processGepPts(srcPts, edge);
+    NodeID dst = edge->getDstID();
+    PointsTo tmpDstPts = processGepPts(srcPts, edge);
+    bool changed = unionPts(dst, tmpDstPts);
+    if (changed)
+        pushIntoWorklist(dst);
+    return changed;
 }
 
 /*!
  * Compute points-to for gep edges
  */
-bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+PointsTo Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 {
-    numOfProcessedGep++;
-
     PointsTo tmpDstPts;
     for (PointsTo::iterator piter = pts.begin(), epiter = pts.end(); piter != epiter; ++piter) {
         /// get the object
@@ -280,11 +284,7 @@ bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
     }
 
     NodeID dstId = edge->getDstID();
-    if (unionPts(dstId, tmpDstPts)) {
-        pushIntoWorklist(dstId);
-        return true;
-    }
-    return false;
+    return tmpDstPts;
 }
 
 /**
