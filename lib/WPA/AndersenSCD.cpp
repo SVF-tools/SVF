@@ -46,16 +46,10 @@ void AndersenSCD::solveWorklist() {
         pushIntoWorklist(nId);
     sccCandidates.clear();
 
-    NodeSet copyProcessed;
-    copyProcessed.clear();
-
     // propagate point-to sets
     while (!nodeStack.empty()) {
         NodeID nodeId = nodeStack.top();
         nodeStack.pop();
-
-        if (copyProcessed.find(nodeId) != copyProcessed.end())
-            assert(false && "copy processed!!!");
 
         collapsePWCNode(nodeId);
 
@@ -66,8 +60,6 @@ void AndersenSCD::solveWorklist() {
             handleCopyGep(node);
             processPWC(nodeId);
         }
-
-        copyProcessed.insert(nodeId);
     }
     collapseFields();
 
