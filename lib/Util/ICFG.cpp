@@ -139,29 +139,37 @@ void ICFG::processFunBody(WorkList& worklist){
 	/// function body
 	while (!worklist.empty()) {
 		const Instruction* inst = worklist.pop();
-		if (visited.find(inst) == visited.end()) {
-			visited.insert(inst);
-			ICFGNode* srcNode = getBlockICFGNode(inst);
-			InstVec nextInsts;
-			getNextInsts(inst, nextInsts);
-			for (InstVec::const_iterator nit = nextInsts.begin(), enit =
-					nextInsts.end(); nit != enit; ++nit) {
-				const Instruction* succ = *nit;
-				ICFGNode* dstNode = getBlockICFGNode(succ);
-				if (isNonInstricCallSite(inst)){
-					RetBlockNode* retICFGNode = getRetICFGNode(getLLVMCallSite(inst));
-					addIntraEdge(srcNode, retICFGNode);
-					srcNode = retICFGNode;
-				}
-				addIntraEdge(srcNode, dstNode);
-				worklist.push(succ);
-			}
-		}
+        if (visited.find(inst) == visited.end()) {
+            visited.insert(inst);
+            ICFGNode* srcNode = getBlockICFGNode(inst);
+            if (isReturn(inst)) {
+                FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(
+                        inst->getFunction());
+                addIntraEdge(srcNode, FunExitBlockNode);
+            }
+            InstVec nextInsts;
+            getNextInsts(inst, nextInsts);
+            for (InstVec::const_iterator nit = nextInsts.begin(), enit =
+                    nextInsts.end(); nit != enit; ++nit) {
+                const Instruction* succ = *nit;
+                ICFGNode* dstNode = getBlockICFGNode(succ);
+                if (isNonInstricCallSite(inst)) {
+                    RetBlockNode* retICFGNode = getRetICFGNode(
+                            getLLVMCallSite(inst));
+                    addIntraEdge(srcNode, retICFGNode);
+                    srcNode = retICFGNode;
+                }
+                addIntraEdge(srcNode, dstNode);
+                worklist.push(succ);
+            }
+        }
 	}
 }
 
 /*!
- * function exit
+ * function exit e.g., exit(0). In LLVM, it usually manifests as "unreachable" instruction
+ * If a function has multiple exit(0), we will only have one "unreachle" instruction
+ * after the UnifyFunctionExitNodes pass.
  */
 void ICFG::processFunExit(const Function* fun){
 	FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
@@ -500,32 +508,39 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
-			rawstr << getSourceLoc(bNode->getInst()) << "\n";
-			if(DumpLLVMInst)
-				rawstr << *(bNode->getInst()) << "\n";
-		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node)) {
-			if (isExtCall(entry->getFun()))
-				rawstr << "Entry(" << ")\n";
-			else
-				rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
-			rawstr << "Fun[" << entry->getFun()->getName() << "]";
-		} else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node)) {
-			if (isExtCall(exit->getFun()))
-				rawstr << "Exit(" << ")\n";
-			else
-				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
-						<< ")\n";
-			rawstr << "Fun[" << exit->getFun()->getName() << "]";
-		} else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node)) {
-			rawstr << "Call("
-					<< getSourceLoc(call->getCallSite().getInstruction())
-					<< ")\n";
-		} else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
-			rawstr << "Ret("
-					<< getSourceLoc(ret->getCallSite().getInstruction())
-					<< ")\n";
-		}
+        if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
+            rawstr << getSourceLoc(bNode->getInst()) << "\n";
+            rawstr << "Fun[" << bNode->getInst()->getName() << "]";
+            if (DumpLLVMInst)
+                rawstr << *(bNode->getInst()) << "\n";
+        } else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<
+                FunEntryBlockNode>(node)) {
+            if (isExtCall(entry->getFun()))
+                rawstr << "Entry(" << ")\n";
+            else
+                rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
+            rawstr << "Fun[" << entry->getFun()->getName() << "]";
+        } else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(
+                node)) {
+            if (isExtCall(exit->getFun()))
+                rawstr << "Exit(" << ")\n";
+            else
+                rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back())) << ")\n";
+            rawstr << "Fun[" << exit->getFun()->getName() << "]";
+        } else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(
+                node)) {
+            rawstr << "Call("
+                    << getSourceLoc(call->getCallSite().getInstruction())
+                    << ")\n";
+            rawstr << "Fun[" << call->getCallSite()->getFunction()->getName()
+                    << "]";
+        } else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
+            rawstr << "Ret("
+                    << getSourceLoc(ret->getCallSite().getInstruction())
+                    << ")\n";
+            rawstr << "Fun[" << ret->getCallSite()->getFunction()->getName()
+                    << "]";
+        }
         else
             assert(false && "what else kinds of nodes do we have??");
 
