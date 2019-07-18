@@ -42,9 +42,6 @@ void AndersenSCD::solveWorklist() {
     // Initialize the nodeStack via a whole SCC detection
     // Nodes in nodeStack are in topological order by default.
     NodeStack& nodeStack = SCCDetect();
-    for (NodeID nId : sccCandidates)
-        pushIntoWorklist(nId);
-    sccCandidates.clear();
 
     // propagate point-to sets
     while (!nodeStack.empty()) {
@@ -67,7 +64,7 @@ void AndersenSCD::solveWorklist() {
     while (!isWorklistEmpty()) {
         NodeID nodeId = popFromWorklist();
         ConstraintNode* node = consCG->getConstraintNode(nodeId);
-        // process nodes in worklist
+        // add copy edges via processing load or store edges
         handleLoadStore(node);
     }
 }
@@ -88,6 +85,10 @@ NodeStack& AndersenSCD::SCCDetect() {
     mergeSccCycle();
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
+
+    for (NodeID nId : sccCandidates)
+        pushIntoWorklist(nId);
+    sccCandidates.clear();
 
     return getSCCDetector()->topoNodeStack();
 }
@@ -144,7 +145,7 @@ void AndersenSCD::processAddr(const AddrCGEdge *addr) {
 
 
 /*!
- *
+ * If one copy edge is successful added, the src node should be added into SCC detection
  */
 bool AndersenSCD::addCopyEdge(NodeID src, NodeID dst) {
     if (consCG->addCopyCGEdge(src, dst)) {
@@ -154,28 +155,3 @@ bool AndersenSCD::addCopyEdge(NodeID src, NodeID dst) {
     return false;
 }
 
-
-/*!
- *
- */
-bool AndersenSCD::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
-
-    double cgUpdateStart = stat->getClk();
-
-    CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        CallSite cs = it->first;
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
-            consCG->connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
-        }
-    }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
-        addSccCandidate(it->first);
-
-    double cgUpdateEnd = stat->getClk();
-    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-    return (!newEdges.empty());
-}

@@ -67,7 +67,6 @@ protected:
     virtual void solveWorklist();
     void handleLoadStore(ConstraintNode* node);
     void processAddr(const AddrCGEdge* addr);
-    bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
     bool addCopyEdge(NodeID src, NodeID dst);
 
     virtual void processPWC(NodeID nodeId) {};
