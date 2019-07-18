@@ -156,3 +156,25 @@ bool AndersenSCD::addCopyEdge(NodeID src, NodeID dst) {
     return false;
 }
 
+
+/*!
+ * Update call graph for the input indirect callsites
+ */
+bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap &callsites) {
+    double cgUpdateStart = stat->getClk();
+
+    CallEdgeMap newEdges;
+    onTheFlyCallGraphSolve(callsites,newEdges);
+    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
+    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
+        CallSite cs = it->first;
+        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
+            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+        }
+    }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
+
+    return (!newEdges.empty());
+}

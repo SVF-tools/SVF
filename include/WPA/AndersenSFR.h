@@ -68,6 +68,7 @@ protected:
     void handleLoadStore(ConstraintNode* node);
     void processAddr(const AddrCGEdge* addr);
     bool addCopyEdge(NodeID src, NodeID dst);
+    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     virtual void processPWC(NodeID nodeId) {};
 
