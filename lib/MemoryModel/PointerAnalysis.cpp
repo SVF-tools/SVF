@@ -248,7 +248,7 @@ void PointerAnalysis::finalize() {
     if (FuncPointerPrint)
         printIndCSTargets();
 
-    getPTACallGraph()->vefityCallGraph();
+    getPTACallGraph()->verifyCallGraph();
 
     getPTACallGraph()->dump("callgraph_final");
 
@@ -301,7 +301,7 @@ void PointerAnalysis::dumpAllTypes()
  */
 BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) :
 		PointerAnalysis(type) {
-	if (type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
+	if (type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA || type == AndersenSCD_WPA
 			|| type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA) {
 		ptD = new PTDataTy();
 	} else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA) {
@@ -626,7 +626,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
     for (PointsTo::iterator ii = target.begin(), ie = target.end();
             ii != ie; ii++) {
 
-        if(getNumOfResolvedIndCallEdge() > IndirectCallLimit) {
+        if(getNumOfResolvedIndCallEdge() >= IndirectCallLimit) {
             errMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
         }

@@ -139,29 +139,37 @@ void ICFG::processFunBody(WorkList& worklist){
 	/// function body
 	while (!worklist.empty()) {
 		const Instruction* inst = worklist.pop();
-		if (visited.find(inst) == visited.end()) {
-			visited.insert(inst);
-			ICFGNode* srcNode = getBlockICFGNode(inst);
-			InstVec nextInsts;
-			getNextInsts(inst, nextInsts);
-			for (InstVec::const_iterator nit = nextInsts.begin(), enit =
-					nextInsts.end(); nit != enit; ++nit) {
-				const Instruction* succ = *nit;
-				ICFGNode* dstNode = getBlockICFGNode(succ);
-				if (isNonInstricCallSite(inst)){
-					RetBlockNode* retICFGNode = getRetICFGNode(getLLVMCallSite(inst));
-					addIntraEdge(srcNode, retICFGNode);
-					srcNode = retICFGNode;
-				}
-				addIntraEdge(srcNode, dstNode);
-				worklist.push(succ);
-			}
-		}
+        if (visited.find(inst) == visited.end()) {
+            visited.insert(inst);
+            ICFGNode* srcNode = getBlockICFGNode(inst);
+            if (isReturn(inst)) {
+                FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(
+                        inst->getFunction());
+                addIntraEdge(srcNode, FunExitBlockNode);
+            }
+            InstVec nextInsts;
+            getNextInsts(inst, nextInsts);
+            for (InstVec::const_iterator nit = nextInsts.begin(), enit =
+                    nextInsts.end(); nit != enit; ++nit) {
+                const Instruction* succ = *nit;
+                ICFGNode* dstNode = getBlockICFGNode(succ);
+                if (isNonInstricCallSite(inst)) {
+                    RetBlockNode* retICFGNode = getRetICFGNode(
+                            getLLVMCallSite(inst));
+                    addIntraEdge(srcNode, retICFGNode);
+                    srcNode = retICFGNode;
+                }
+                addIntraEdge(srcNode, dstNode);
+                worklist.push(succ);
+            }
+        }
 	}
 }
 
 /*!
- * function exit
+ * function exit e.g., exit(0). In LLVM, it usually manifests as "unreachable" instruction
+ * If a function has multiple exit(0), we will only have one "unreachle" instruction
+ * after the UnifyFunctionExitNodes pass.
  */
 void ICFG::processFunExit(const Function* fun){
 	FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
@@ -200,6 +208,10 @@ void ICFG::connectGlobalToProgEntry()
 {
 	assert(getProgEntryFunction(pag->getModule()));
     const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
+
+    /// Return back if the main function is not found
+    if(mainFunc == NULL)
+        return;
 
     FunEntryBlockNode* entryNode = getFunEntryICFGNode(mainFunc);
     for(ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){

@@ -53,6 +53,12 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy directInEdges;
     ConstraintEdge::ConstraintEdgeSetTy directOutEdges;
 
+    ConstraintEdge::ConstraintEdgeSetTy copyInEdges;
+    ConstraintEdge::ConstraintEdgeSetTy copyOutEdges;
+
+    ConstraintEdge::ConstraintEdgeSetTy gepInEdges;
+    ConstraintEdge::ConstraintEdgeSetTy gepOutEdges;
+
     ConstraintEdge::ConstraintEdgeSetTy addressInEdges; ///< all incoming address edge of this node
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
@@ -87,6 +93,18 @@ public:
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getDirectOutEdges() const {
         return directOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyInEdges() const {
+        return copyInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyOutEdges() const {
+        return copyOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepInEdges() const {
+        return gepInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepOutEdges() const {
+        return gepOutEdges;
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getLoadInEdges() const {
         return loadInEdges;
@@ -186,16 +204,24 @@ public:
     ///  Add constraint graph edges
     //@{
     inline void addIncomingCopyEdge(CopyCGEdge* inEdge) {
+        assert(inEdge->getDstID() == this->getId());
         addIncomingDirectEdge(inEdge);
+        copyInEdges.insert(inEdge);
     }
     inline void addIncomingGepEdge(GepCGEdge* inEdge) {
+        assert(inEdge->getDstID() == this->getId());
         addIncomingDirectEdge(inEdge);
+        gepInEdges.insert(inEdge);
     }
     inline void addOutgoingCopyEdge(CopyCGEdge* outEdge) {
+        assert(outEdge->getSrcID() == this->getId());
         addOutgoingDirectEdge(outEdge);
+        copyOutEdges.insert(outEdge);
     }
     inline void addOutgoingGepEdge(GepCGEdge* outEdge) {
+        assert(outEdge->getSrcID() == this->getId());
         addOutgoingDirectEdge(outEdge);
+        gepOutEdges.insert(outEdge);
     }
     inline void addIncomingAddrEdge(AddrCGEdge* inEdge) {
         addressInEdges.insert(inEdge);

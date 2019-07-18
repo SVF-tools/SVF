@@ -40,7 +40,30 @@ static llvm::cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", llvm::cl::ini
 static llvm::cl::opt<bool> SingleVFG("singleVFG", llvm::cl::init(false),
                                llvm::cl::desc("Create a single VFG shared by multiple analysis"));
 
-SVFGOPT* SVFGBuilder::globalSvfg = NULL;
+static llvm::cl::opt<bool> OPTSVFG("optSVFG", llvm::cl::init(true),
+                               llvm::cl::desc("unoptimized SVFG with formal-in and actual-out"));
+
+SVFG* SVFGBuilder::globalSvfg = NULL;
+
+
+SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta) {
+    return build(pta, VFG::PTRONLYSVFGK);
+}
+
+SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta) {
+    OPTSVFG = false;
+    return build(pta, VFG::PTRONLYSVFGK);
+}
+
+SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta) {
+    return build(pta, VFG::ORIGSVFGK);
+}
+
+SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta) {
+    OPTSVFG = false;
+    return build(pta, VFG::ORIGSVFGK);
+}
+
 
 /*!
  * Create SVFG
@@ -50,11 +73,11 @@ void SVFGBuilder::buildSVFG() {
     svfg->buildSVFG();
     if(mssa->getPTA()->printStat())
         svfg->performStat();
-    svfg->dump("FS_SVFG");
+    svfg->dump("svfg_final");
 }
 
 /// Create DDA SVFG
-SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
+SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind) {
 
 	MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFGK==kind));
 
@@ -62,15 +85,18 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind, bool withAOFI) {
     if(SingleVFG) {
         if(globalSvfg==NULL) {
             /// Note that we use callgraph from andersen analysis here
-            svfg = globalSvfg = new SVFGOPT(mssa, kind);
-            if (withAOFI) globalSvfg->setTokeepActualOutFormalIn();
+            if(OPTSVFG)
+                svfg = globalSvfg = new SVFGOPT(mssa, kind);
+            else
+                svfg = globalSvfg = new SVFG(mssa, kind);
             buildSVFG();
         }
     }
     else {
-        SVFGOPT* vfg = new SVFGOPT(mssa, kind);
-        svfg = vfg;
-        if (withAOFI) vfg->setTokeepActualOutFormalIn();
+        if(OPTSVFG)
+            svfg = new SVFGOPT(mssa, kind);
+        else
+            svfg = new SVFG(mssa,kind);
         buildSVFG();
     }
 

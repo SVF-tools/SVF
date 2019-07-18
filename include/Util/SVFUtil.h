@@ -361,7 +361,7 @@ inline const Value* getForkedFun(const Instruction *inst) {
 }
 //@}
 
-/// Return sole argument of the thread rountine
+/// Return sole argument of the thread routine
 //@{
 inline const Value* getActualParmAtForkSite(const CallSite cs) {
     return ThreadAPI::getThreadAPI()->getActualParmAtForkSite(cs);
@@ -371,7 +371,7 @@ inline const Value* getActualParmAtForkSite(const Instruction *inst) {
 }
 //@}
 
-/// Return the task function of the parallel_for rountine
+/// Return the task function of the parallel_for routine
 //@{
 inline const Value* getTaskFuncAtHareParForSite(const CallSite cs) {
     return ThreadAPI::getThreadAPI()->getTaskFuncAtHareParForSite(cs);

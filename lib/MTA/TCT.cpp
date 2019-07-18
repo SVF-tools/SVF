@@ -414,12 +414,8 @@ void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* call
         return;
 
     if(inSameCallGraphSCC(tcg->getCallGraphNode(caller),tcg->getCallGraphNode(callee))==false) {
-        cxt.push_back(csId);
+        pushCxt(cxt,csId);
         DBOUT(DMTA,dumpCxt(cxt));
-    }
-
-    if(cxt.size() > MaxCxtSize) {
-        MaxCxtSize = cxt.size();
     }
 }
 
