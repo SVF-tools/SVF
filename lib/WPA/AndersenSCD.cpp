@@ -48,17 +48,18 @@ void AndersenSCD::solveWorklist() {
         NodeID nodeId = nodeStack.top();
         nodeStack.pop();
 
-        collapsePWCNode(nodeId);
-
         // This node may be merged during collapseNodePts() which means it is no longer a rep node
         // in the graph. Only rep node needs to be handled.
         if (sccRepNode(nodeId) == nodeId && isInWorklist(nodeId)) {
+            collapsePWCNode(nodeId);
+
             ConstraintNode *node = consCG->getConstraintNode(nodeId);
             handleCopyGep(node);
+
             processPWC(nodeId);
+            collapseFields();
         }
     }
-    collapseFields();
 
     // New nodes will be inserted into workList during processing.
     while (!isWorklistEmpty()) {
