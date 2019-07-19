@@ -161,8 +161,7 @@ protected:
     inline NodeID popFromWorklist() {
         return sccRepNode(worklist.pop());
     }
-
-    virtual inline void pushIntoWorklist(NodeID id) {
+    inline void pushIntoWorklist(NodeID id) {
         worklist.push(sccRepNode(id));
     }
     inline bool isWorklistEmpty() {
