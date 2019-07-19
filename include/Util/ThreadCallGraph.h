@@ -41,8 +41,8 @@ class ThreadForkEdge: public PTACallGraphEdge {
 
 public:
     /// Constructor
-    ThreadForkEdge(PTACallGraphNode* s, PTACallGraphNode* d) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge) {
+    ThreadForkEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge, csId) {
     }
     /// Destructor
     virtual ~ThreadForkEdge() {
@@ -68,8 +68,8 @@ class ThreadJoinEdge: public PTACallGraphEdge {
 
 public:
     /// Constructor
-    ThreadJoinEdge(PTACallGraphNode* s, PTACallGraphNode* d) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge) {
+    ThreadJoinEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge, csId) {
     }
     /// Destructor
     virtual ~ThreadJoinEdge() {
@@ -92,8 +92,8 @@ class HareParForEdge: public PTACallGraphEdge {
 
 public:
     /// Constructor
-    HareParForEdge(PTACallGraphNode* s, PTACallGraphNode* d) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge) {
+    HareParForEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
+        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge, csId) {
     }
     /// Destructor
     virtual ~HareParForEdge() {
@@ -266,7 +266,7 @@ private:
     inline void addThreadForkEdgeSetMap(const Instruction* inst, ThreadForkEdge* edge) {
         if(edge!=NULL) {
             callinstToThreadForkEdgesMap[inst].insert(edge);
-            addCallGraphEdgeSetMap(inst,edge);
+            callinstToCallGraphEdgesMap[inst].insert(edge);
         }
     }
 
@@ -274,7 +274,7 @@ private:
     inline void addThreadJoinEdgeSetMap(const Instruction* inst, ThreadJoinEdge* edge) {
         if(edge!=NULL) {
             callinstToThreadJoinEdgesMap[inst].insert(edge);
-            addCallGraphEdgeSetMap(inst,edge);
+            callinstToCallGraphEdgesMap[inst].insert(edge);
         }
     }
 
@@ -282,13 +282,13 @@ private:
     inline void addHareParForEdgeSetMap(const Instruction* inst, HareParForEdge* edge) {
         if(edge!=NULL) {
             callinstToHareParForEdgesMap[inst].insert(edge);
-            addCallGraphEdgeSetMap(inst,edge);
+            callinstToCallGraphEdgesMap[inst].insert(edge);
         }
     }
 
     /// has thread join edge
-    inline ThreadJoinEdge* hasThreadJoinEdge(const Instruction* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode) const {
-        ThreadJoinEdge joinEdge(joinFunNode,threadRoutineFunNode);
+    inline ThreadJoinEdge* hasThreadJoinEdge(const Instruction* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode, CallSiteID csId) const {
+        ThreadJoinEdge joinEdge(joinFunNode,threadRoutineFunNode, csId);
         CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.find(call);
         if(it != callinstToThreadJoinEdgesMap.end()) {
             JoinEdgeSet::const_iterator jit = it->second.find(&joinEdge);

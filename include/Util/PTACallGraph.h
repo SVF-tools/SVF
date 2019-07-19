@@ -56,20 +56,33 @@ public:
 private:
     CallInstSet directCalls;
     CallInstSet indirectCalls;
-
+    CallSiteID csId;
 public:
     /// Constructor
-    PTACallGraphEdge(PTACallGraphNode* s, PTACallGraphNode* d, CEDGEK kind): GenericCallGraphEdgeTy(s,d,kind) {
-    }
+	PTACallGraphEdge(PTACallGraphNode* s, PTACallGraphNode* d, CEDGEK kind, CallSiteID cs) :
+			GenericCallGraphEdgeTy(s, d, makeEdgeFlagWithInvokeID(kind, cs)), csId(cs) {
+	}
     /// Destructor
     virtual ~PTACallGraphEdge() {
     }
-
+    /// Compute the unique edgeFlag value from edge kind and CallSiteID.
+    static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs) {
+        return (cs << EdgeKindMaskBits) | k;
+    }
     /// Get direct and indirect calls
     //@{
-    inline CallInstSet& getDirectCalls() {
-        return directCalls;
-    }
+	inline CallSiteID getCallSiteID() const {
+		return csId;
+	}
+	inline bool isDirectCallEdge() const {
+		return !directCalls.empty() && indirectCalls.empty();
+	}
+	inline bool isIndirectCallEdge() const {
+		return directCalls.empty() && !indirectCalls.empty();
+	}
+	inline CallInstSet& getDirectCalls() {
+		return directCalls;
+	}
     inline CallInstSet& getIndirectCalls() {
         return indirectCalls;
     }
@@ -192,6 +205,7 @@ private:
     static IdToCallSiteMap idToCSMap;	///< Map a callsite ID to a pair of call instruction and callee
     static CallSiteID totalCallSiteNum;	///< CallSiteIDs, start from 1;
 
+protected:
     FunToCallGraphNodeMap funToCallGraphNodeMap; ///< Call Graph node map
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
@@ -268,7 +282,7 @@ public:
 
     /// Add/Get CallSiteID
     //@{
-    inline void addCallSite(CallSite cs, const Function* callee) {
+    inline CallSiteID addCallSite(CallSite cs, const Function* callee) {
         std::pair<CallSite, const Function*> newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
         //assert(it == csToIdMap.end() && "cannot add a callsite twice");
@@ -276,7 +290,9 @@ public:
             CallSiteID id = totalCallSiteNum++;
             csToIdMap.insert(std::make_pair(newCS, id));
             idToCSMap.insert(std::make_pair(id, newCS));
+            return id;
         }
+        return it->second;
     }
     inline CallSiteID getCallSiteID(CallSite cs, const Function* callee) const {
         CallSitePair newCS(std::make_pair(cs, callee));
@@ -312,9 +328,9 @@ public:
         return svfMod;
     }
     /// Whether we have aleady created this call graph edge
-    PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind) const;
+    PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const;
     /// Get call graph edge via nodes
-    PTACallGraphEdge* getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind);
+    PTACallGraphEdge* getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId);
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
@@ -334,14 +350,6 @@ public:
         return it->second.end();
     }
     //@}
-    /// map call instruction to its CallGraphEdge map
-    inline void addCallGraphEdgeSetMap(const Instruction* inst, PTACallGraphEdge* edge) {
-        if (callinstToCallGraphEdgesMap[inst].insert(edge).second) {
-            /// Record <CallSite,Callee> pair
-            CallSite cs = SVFUtil::getLLVMCallSite(inst);
-            addCallSite(cs, edge->getDstNode()->getFunction());
-        }
-    }
     /// Add call graph edge
     inline void addEdge(PTACallGraphEdge* edge) {
         edge->getDstNode()->addIncomingEdge(edge);
