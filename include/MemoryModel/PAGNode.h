@@ -128,8 +128,6 @@ public:
                 return arg->getParent();
             else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
                 return fun;
-            else
-                assert("unexpected value");
         }
         return NULL;
     }

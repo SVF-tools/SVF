@@ -243,7 +243,7 @@ protected:
 
 public:
     /// Add a function entry node
-public:	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end()) {
 			FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
@@ -253,7 +253,6 @@ public:	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		}
 		return it->second;
 	}
-
 	/// Add a function exit node
 	inline FunExitBlockNode* getFunExitICFGNode(const Function* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
