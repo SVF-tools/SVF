@@ -139,9 +139,8 @@ void AndersenSCD::processAddr(const AddrCGEdge *addr) {
 
     NodeID dst = addr->getDstID();
     NodeID src = addr->getSrcID();
-    if(addPts(dst,src)) {
-        addSccCandidate(dst);
-    }
+    addPts(dst,src);
+    addSccCandidate(dst);
 }
 
 
@@ -178,3 +177,4 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap &ca
 
     return (!newEdges.empty());
 }
+

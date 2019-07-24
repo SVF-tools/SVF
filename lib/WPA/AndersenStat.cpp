@@ -106,6 +106,7 @@ void AndersenStat::constraintGraphStat(){
 
     u32_t totalNodeNumber = 0;
     u32_t cgNodeNumber = 0;
+    u32_t objNodeNumber = 0;
     u32_t addrtotalIn = 0;
     u32_t addrtotalOut = 0;
     u32_t addrmaxIn = 0;
@@ -130,6 +131,9 @@ void AndersenStat::constraintGraphStat(){
         if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
+        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getPAGNode(nodeIt->first)))
+            objNodeNumber++;
+
         u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
         if(nCopyIn > copymaxIn)
             copymaxIn = nCopyIn;
@@ -177,6 +181,7 @@ void AndersenStat::constraintGraphStat(){
 
     PTNumStatMap["NumOfCGNode"] = totalNodeNumber;
     PTNumStatMap["TotalValidNode"] = cgNodeNumber;
+    PTNumStatMap["TotalValidObjNode"] = objNodeNumber;
     PTNumStatMap["NumOfCGEdge"] = consCG->getLoadCGEdges().size() + consCG->getStoreCGEdges().size()
                                     + numOfCopys + numOfGeps;
     PTNumStatMap["NumOfAddrs"] =  consCG->getAddrCGEdges().size();

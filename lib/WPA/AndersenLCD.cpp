@@ -57,21 +57,20 @@ void AndersenLCD::handleCopyGep(ConstraintNode* node) {
     NodeID nodeId = node->getId();
     for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
             node->directOutEdgeEnd(); it != eit; ++it) {
+        NodeID dstNodeId = (*it)->getDstID();
+        PointsTo& srcPts = getPts(nodeId);
+        PointsTo& dstPts = getPts(dstNodeId);
+        // In one edge, if the pts of src node equals to that of dst node, and the edge
+        // is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
+        if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
+            addMetEdge(*it);
+            addLCDCandidate((*it)->getDstID());
+        }
+
         if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
             processGep(nodeId, gepEdge);
-        else {
-            NodeID dstNodeId = (*it)->getDstID();
-            PointsTo& srcPts = getPts(nodeId);
-            PointsTo& dstPts = getPts(dstNodeId);
-
-            // In one edge, if the pts of src node equals to that of dst node, and the edge
-            // is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
-            if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
-                addMetEdge(*it);
-                addLCDCandidate((*it)->getDstID());
-            }
+        else
             processCopy(nodeId, *it);
-        }
     }
 
     double propEnd = stat->getClk();
@@ -83,12 +82,7 @@ void AndersenLCD::handleCopyGep(ConstraintNode* node) {
  */
 void AndersenLCD::mergeSCC() {
     if (hasLCDCandidate()) {
-        NodeStack &topoRepStack = SCCDetect();
-        while (!topoRepStack.empty()) {
-            NodeID node = topoRepStack.top();
-            topoRepStack.pop();
-            pushIntoWorklist(node);
-        }
+        SCCDetect();
         cleanLCDCandidate();
     }
 }
@@ -99,12 +93,11 @@ void AndersenLCD::mergeSCC() {
 NodeStack& AndersenLCD::SCCDetect() {
     numOfSCCDetection++;
 
-    NodeSet sccCandidates = {};
-
-    for (NodeSet::iterator it = lcdCandidates.begin(); it != lcdCandidates.end(); ++it) {
+    NodeSet sccCandidates;
+    sccCandidates.clear();
+    for (NodeSet::iterator it = lcdCandidates.begin(); it != lcdCandidates.end(); ++it)
         if (sccRepNode(*it) == *it)
             sccCandidates.insert(*it);
-    }
 
 	double sccStart = stat->getClk();
 	/// Detect SCC cycles
@@ -121,3 +114,26 @@ NodeStack& AndersenLCD::SCCDetect() {
 	return getSCCDetector()->topoNodeStack();
 }
 
+/*!
+ * merge nodeId to newRepId. Return true if the newRepId is a PWC node
+ */
+bool AndersenLCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
+
+    if(nodeId==newRepId)
+        return false;
+
+    /// union pts of node to rep
+    if (unionPts(newRepId,nodeId))
+        pushIntoWorklist(newRepId);
+
+    /// move the edges from node to rep, and remove the node
+    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
+
+    /// set rep and sub relations
+    updateNodeRepAndSubs(node->getId(),newRepId);
+
+    consCG->removeConstraintNode(node);
+
+    return gepInsideScc;
+}

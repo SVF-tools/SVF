@@ -210,6 +210,9 @@ protected:
 		return updateCallGraph(getIndirectCallsites());
 	}
 
+	/// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
+
 	/// dump statistics
     inline void printStat() {
         PointerAnalysis::dumpStat();
@@ -536,6 +539,7 @@ protected:
     virtual void mergeSCC();
     // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
     NodeStack& SCCDetect();
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
 };
 
 
@@ -641,8 +645,8 @@ protected:
     void solveWorklist() {AndersenHCD::solveWorklist();}
     void handleCopyGep(ConstraintNode* node) {AndersenLCD::handleCopyGep(node);}
     void mergeSCC(NodeID nodeId);
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId) { return AndersenLCD::mergeSrcToTgt(nodeId, newRepId);}
 
 };
-
 
 #endif /* ANDERSENPASS_H_ */

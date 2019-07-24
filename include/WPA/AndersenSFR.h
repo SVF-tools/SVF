@@ -60,14 +60,15 @@ public:
     static void releaseAndersenSCD() {
         if (scdAndersen)
             delete scdAndersen;
+        scdAndersen = NULL;
     }
 
 protected:
     virtual NodeStack& SCCDetect();
     virtual void solveWorklist();
-    void handleLoadStore(ConstraintNode* node);
-    void processAddr(const AddrCGEdge* addr);
-    bool addCopyEdge(NodeID src, NodeID dst);
+    virtual void handleLoadStore(ConstraintNode* node);
+    virtual void processAddr(const AddrCGEdge* addr);
+    virtual bool addCopyEdge(NodeID src, NodeID dst);
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
     virtual void processPWC(NodeID nodeId) {};
