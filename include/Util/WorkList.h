@@ -43,7 +43,7 @@
 #include <set>
 
 /**
- * Worlist with "first come first go" order.
+ * Worklist with "first come first go" order.
  * New nodes pushed at back and popped from front.
  * Elements in the list are unique as they're recorded by std::set.
  */
@@ -115,7 +115,7 @@ private:
 };
 
 /**
- * Worlist with "first in first out" order.
+ * Worklist with "first in first out" order.
  * New nodes will be pushed at back and popped from front.
  * Elements in the list are unique as they're recorded by std::set.
  */
