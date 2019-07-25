@@ -372,7 +372,7 @@ IFDS::Datafact IFDS::concernedDatafact() {
     Datafact fact = {};
     for (PAG::const_iterator it = (icfg->getPAG())->begin(), eit = icfg->getPAG()->end(); it != eit; ++it) {
         PAGNode *node = it->second;
-        if (node->hasIncomingEdge() || node->hasOutgoingEdge() && node->getFunction()) { // nodes has edges
+        if ((node->hasIncomingEdge() || node->hasOutgoingEdge()) && node->getFunction()) { // nodes has edges
             bool excluded = false;    // excluded == false means add into fact
             if (node->isConstantData())
                 excluded = true;
