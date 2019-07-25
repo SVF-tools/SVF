@@ -414,6 +414,27 @@ void PAGBuilder::visitStoreInst(StoreInst &inst) {
         NodeID src = getValueNode(inst.getValueOperand());
 
         pag->addStoreEdge(src, dst);
+    } else {
+        // if this is a vector operand, process the individual operands.
+        if(isa<VectorType>(inst.getValueOperand()->getType()) && dyn_cast<ConstantVector>(inst.getValueOperand())) {
+            ConstantVector *CVExpr = dyn_cast<ConstantVector>(inst.getValueOperand());
+            bool dstCreated = false;
+            NodeID vdst;
+            // iterate for each element in the vector
+            for(unsigned vindex = 0; vindex < CVExpr->getNumOperands(); ++vindex) {
+                if(CVExpr->getOperand(vindex)->getType()->isPointerTy()) {
+                    NodeID vsrc = getValueNode(CVExpr->getOperand(vindex));
+                    // create dst node only if its required. i.e., if any of the element
+                    // of the vector's value is a pointer type.
+                    if(!dstCreated) {
+                        vdst = getValueNode(inst.getPointerOperand());
+                        dstCreated = true;
+                    }
+                    pag->addStoreEdge(vsrc, vdst);
+                }
+
+            }
+        }
     }
 
 }
