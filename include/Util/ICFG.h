@@ -243,7 +243,7 @@ protected:
 
 public:
     /// Add a function entry node
-	inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end()) {
 			FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);

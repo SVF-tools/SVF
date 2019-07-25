@@ -571,6 +571,9 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
             NodeID src = stmtNode->getPAGSrcNodeID();
             NodeID dst = stmtNode->getPAGDstNodeID();
             rawstr << dst << "<--" << src << "\n";
+            std::string srcValueName = stmtNode->getPAGSrcNode()->getValueName();
+            std::string dstValueName = stmtNode->getPAGDstNode()->getValueName();
+            rawstr << dstValueName << "<--" << srcValueName << "\n";
             if(stmtNode->getInst()) {
                 rawstr << getSourceLoc(stmtNode->getInst());
             }
@@ -621,6 +624,9 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
             NodeID src = stmtNode->getPAGSrcNodeID();
             NodeID dst = stmtNode->getPAGDstNodeID();
             rawstr << dst << "<--" << src << "\n";
+            std::string srcValueName = stmtNode->getPAGSrcNode()->getValueName();
+            std::string dstValueName = stmtNode->getPAGDstNode()->getValueName();
+            rawstr << dstValueName << "<--" << srcValueName << "\n";
             if(stmtNode->getInst()) {
                 rawstr << getSourceLoc(stmtNode->getInst());
             }
@@ -647,7 +653,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
         else if(PHIVFGNode* tphi = SVFUtil::dyn_cast<PHIVFGNode>(node)) {
             rawstr << tphi->getRes()->getId() << " = PHI(";
             for(PHIVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
-                    it != eit; it++)
+                it != eit; it++)
                 rawstr << it->second->getId() << ", ";
             rawstr << ")\n";
             rawstr << getSourceLoc(tphi->getRes()->getValue());
@@ -695,17 +701,13 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
                 rawstr <<  "color=blue";
 			} else if (SVFUtil::isa<LoadPE>(edge)) {
 				rawstr << "color=red";
-			} else if (SVFUtil::isa<CmpPE>(edge)) {
-				rawstr << "color=grey";
-			} else if (SVFUtil::isa<BinaryOPPE>(edge)) {
-				rawstr << "color=grey";
 			} else {
 				assert(0 && "No such kind edge!!");
 			}
             rawstr <<  "";
         }
-        else if (SVFUtil::isa<CmpVFGNode> (node)) {
-            rawstr << "color=red";
+        else if (SVFUtil::isa<CmpVFGNode>(node)) {
+            rawstr << "color=grey";
         }
         else if (SVFUtil::isa<BinaryOPVFGNode>(node)) {
             rawstr << "color=grey";

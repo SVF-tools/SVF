@@ -206,6 +206,7 @@ void ICFG::build(){
 
 void ICFG::connectGlobalToProgEntry()
 {
+	assert(getProgEntryFunction(pag->getModule()));
     const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
 
     /// Return back if the main function is not found
@@ -508,39 +509,46 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
-            rawstr << getSourceLoc(bNode->getInst()) << "\n";
-            rawstr << "Fun[" << bNode->getInst()->getName() << "]";
-            if (DumpLLVMInst)
-                rawstr << *(bNode->getInst()) << "\n";
-        } else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<
-                FunEntryBlockNode>(node)) {
-            if (isExtCall(entry->getFun()))
-                rawstr << "Entry(" << ")\n";
-            else
-                rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
-            rawstr << "Fun[" << entry->getFun()->getName() << "]";
-        } else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(
-                node)) {
-            if (isExtCall(exit->getFun()))
-                rawstr << "Exit(" << ")\n";
-            else
-                rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back())) << ")\n";
-            rawstr << "Fun[" << exit->getFun()->getName() << "]";
-        } else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(
-                node)) {
-            rawstr << "Call("
-                    << getSourceLoc(call->getCallSite().getInstruction())
-                    << ")\n";
-            rawstr << "Fun[" << call->getCallSite()->getFunction()->getName()
-                    << "]";
-        } else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
-            rawstr << "Ret("
-                    << getSourceLoc(ret->getCallSite().getInstruction())
-                    << ")\n";
-            rawstr << "Fun[" << ret->getCallSite()->getFunction()->getName()
-                    << "]";
-        }
+		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
+			rawstr << getSourceLoc(bNode->getInst()) << "\n";
+
+			IntraBlockNode::StmtOrPHIVFGNodeVec& nodes = bNode->getVFGNodes();
+			for (IntraBlockNode::StmtOrPHIVFGNodeVec::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it){
+			    const VFGNode* node = *it;
+			    if(const StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node)){
+			        NodeID src = stmtNode->getPAGSrcNodeID();
+			        NodeID dst = stmtNode->getPAGDstNodeID();
+			        rawstr << dst << "<--" << src << "\n";
+			        std::string srcValueName = stmtNode->getPAGSrcNode()->getValueName();
+			        std::string dstValueName = stmtNode->getPAGDstNode()->getValueName();
+			        rawstr << dstValueName << "<--" << srcValueName << "\n";
+			    }
+			}
+
+			if(DumpLLVMInst)
+				rawstr << *(bNode->getInst()) << "\n";
+		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node)) {
+			if (isExtCall(entry->getFun()))
+				rawstr << "Entry(" << ")\n";
+			else
+				rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
+			rawstr << "Fun[" << entry->getFun()->getName() << "]";
+		} else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node)) {
+			if (isExtCall(exit->getFun()))
+				rawstr << "Exit(" << ")\n";
+			else
+				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
+						<< ")\n";
+			rawstr << "Fun[" << exit->getFun()->getName() << "]";
+		} else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node)) {
+			rawstr << "Call("
+					<< getSourceLoc(call->getCallSite().getInstruction())
+					<< ")\n";
+		} else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
+			rawstr << "Ret("
+					<< getSourceLoc(ret->getCallSite().getInstruction())
+					<< ")\n";
+		}
         else
             assert(false && "what else kinds of nodes do we have??");
 
