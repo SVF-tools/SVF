@@ -163,10 +163,16 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta) {
 		PAGNode* node2 = node1;
 		for (PAG::iterator rit = lit, erit = pag->end(); rit != erit; ++rit) {
 			node2 = rit->second;
+			if(node1==node2)
+				continue;
+			const Function* fun1 = node1->getFunction();
+			const Function* fun2 = node2->getFunction();
 			AliasResult result = pta->alias(node1->getId(), node2->getId());
 			SVFUtil::outs()	<< (result == AliasResult::NoAlias ? "NoAlias" : "MayAlias")
-					<< " var" << node1->getId() << "[" << node1->getValueName() << "] --"
-					<< " var" << node2->getId() << "[" << node2->getValueName() << "]\n";
+					<< " var" << node1->getId() << "[" << node1->getValueName()
+					<< "@" << (fun1==NULL?"":fun1->getName()) << "] --"
+					<< " var" << node2->getId() << "[" << node2->getValueName()
+					<< "@" << (fun2==NULL?"":fun2->getName()) << "]\n";
 		}
 	}
 }
