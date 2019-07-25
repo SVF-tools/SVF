@@ -37,6 +37,7 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
+#include "WPA/AndersenSFR.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 

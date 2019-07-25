@@ -210,6 +210,9 @@ protected:
 		return updateCallGraph(getIndirectCallsites());
 	}
 
+	/// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
+
 	/// dump statistics
     inline void printStat() {
         PointerAnalysis::dumpStat();
@@ -644,50 +647,6 @@ protected:
     void mergeSCC(NodeID nodeId);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId) { return AndersenLCD::mergeSrcToTgt(nodeId, newRepId);}
 
-};
-
-
-
-/*!
- * Selective Cycle Detection Based Andersen Analysis
- */
-class AndersenSCD : public Andersen {
-private:
-    static AndersenSCD* scdAndersen;
-//    WorkList repNodes;
-    WorkList indirectNodes;
-    NodeSet sccCandidates;
-
-public:
-    AndersenSCD(PTATY type = AndersenSCD_WPA) :
-            Andersen(type) {
-    }
-
-    /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(SVFModule svfModule) {
-        if (scdAndersen == nullptr) {
-            new AndersenSCD();
-            scdAndersen->analyze(svfModule);
-            return scdAndersen;
-        }
-        return scdAndersen;
-    }
-
-    static void releaseAndersenSCD() {
-        if (scdAndersen)
-            delete scdAndersen;
-    }
-
-protected:
-    virtual void solveWorklist();
-    NodeStack& SCCDetect();
-    void handleLoadStore(ConstraintNode* node);
-    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
-    void processAddr(const AddrCGEdge* addr);
-
-    inline void addSccCandidate(NodeID nodeId) {
-        sccCandidates.insert(sccRepNode(nodeId));
-    }
 };
 
 #endif /* ANDERSENPASS_H_ */

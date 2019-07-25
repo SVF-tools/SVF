@@ -51,7 +51,7 @@ class GNodeSCCInfo;
 template<class GraphType>
 class SCCDetection {
 
-protected:
+private:
     ///Define the GTraits and node iterator for printing
     typedef llvm::GraphTraits<GraphType> GTraits;
     typedef typename GTraits::NodeRef          GNODE;
@@ -164,8 +164,7 @@ public:
     const inline GraphType & graph() {
         return _graph;
     }
-
-protected:
+private:
 
     GNODESCCInfoMap  _NodeSCCAuxInfo;
 

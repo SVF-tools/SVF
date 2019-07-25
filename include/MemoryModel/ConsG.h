@@ -126,25 +126,6 @@ public:
         return false;
     }
 
-    /// Get an edge via its src and dst nodes and kind
-    inline ConstraintEdge* getEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind) {
-        ConstraintEdge edge(src,dst,kind);
-        if(kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep) {
-            auto eit = directEdgeSet.find(&edge);
-            return *eit;
-        } else if(kind == ConstraintEdge::Addr) {
-            auto eit = AddrCGEdgeSet.find(&edge);
-            return *eit;
-        } else if(kind == ConstraintEdge::Store) {
-            auto eit = StoreCGEdgeSet.find(&edge);
-            return *eit;
-        } else if(kind == ConstraintEdge::Load) {
-            auto eit = LoadCGEdgeSet.find(&edge);
-            return *eit;
-        } else
-            assert(false && "no other kind!");
-    }
-
     ///Add a PAG edge into Edge map
     //@{
     /// Add Address edge
@@ -234,9 +215,6 @@ public:
         bool gepOut = moveOutEdgesToRepNode(node, rep);
         return (gepIn || gepOut);
     }
-
-    /// Parameter passing
-    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
 
     /// Check if a given edge is a NormalGepCGEdge with 0 offset.
     inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const {
