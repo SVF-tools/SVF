@@ -88,6 +88,9 @@ public:
     /// Interface expose to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,	const Value* V2);
 
+    /// Print all alias pairs
+    virtual void PrintAliasPairs(PointerAnalysis* pta);
+
     /// We start from here
     virtual bool runOnModule(Module& module) {
         return false;

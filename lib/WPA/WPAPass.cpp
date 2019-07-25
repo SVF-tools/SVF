@@ -70,8 +70,12 @@ static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule(llvm::cl::desc("Select 
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
 
-llvm::cl::opt<bool> anderSVFG("svfg", llvm::cl::init(false),
+static llvm::cl::opt<bool> anderSVFG("svfg", llvm::cl::init(false),
                         llvm::cl::desc("Generate SVFG after Andersen's Analysis"));
+
+static llvm::cl::opt<bool> printAliases("print-aliases", llvm::cl::init(false),
+                        llvm::cl::desc("Print results for all pair aliases"));
+
 
 /*!
  * Destructor
@@ -147,9 +151,25 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
         SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
         svfg->dump("ander_svfg");
     }
+
+	if (printAliases)
+		PrintAliasPairs(_pta);
 }
 
-
+void WPAPass::PrintAliasPairs(PointerAnalysis* pta) {
+	PAG* pag = pta->getPAG();
+	for (PAG::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit) {
+		PAGNode* node1 = lit->second;
+		PAGNode* node2 = node1;
+		for (PAG::iterator rit = lit, erit = pag->end(); rit != erit; ++rit) {
+			node2 = rit->second;
+			AliasResult result = pta->alias(node1->getId(), node2->getId());
+			SVFUtil::outs()	<< (result == AliasResult::NoAlias ? "NoAlias" : "MayAlias")
+					<< " var" << node1->getId() << "[" << node1->getValueName() << "] --"
+					<< " var" << node2->getId() << "[" << node2->getValueName() << "]\n";
+		}
+	}
+}
 
 /*!
  * Return alias results based on our points-to/alias analysis
