@@ -304,7 +304,8 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) :
 	if (type == Andersen_WPA || type == AndersenWave_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA || type == AndersenSCD_WPA
 			|| type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA) {
 		ptD = new PTDataTy();
-	} else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA) {
+	} else if (type == AndersenWaveDiff_WPA || type == AndersenWaveDiffWithType_WPA
+               || type == AndersenDSCD_WPA) {
 		ptD = new DiffPTDataTy();
 	} else if (type == FSSPARSE_WPA) {
 		if (INCDFPTData)

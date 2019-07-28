@@ -123,8 +123,8 @@ bool AndersenLCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
         return false;
 
     /// union pts of node to rep
-    if (unionPts(newRepId,nodeId))
-        pushIntoWorklist(newRepId);
+    unionPts(newRepId,nodeId);
+    pushIntoWorklist(newRepId);
 
     /// move the edges from node to rep, and remove the node
     ConstraintNode* node = consCG->getConstraintNode(nodeId);

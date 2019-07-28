@@ -33,7 +33,10 @@
 using namespace SVFUtil;
 
 AndersenSCD* AndersenSCD::scdAndersen = NULL;
+AndersenDSCD* AndersenDSCD::scdDiff = NULL;
 
+
+//==================== AndersenSCD ==================//
 
 /*!
  *
@@ -176,5 +179,97 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap &ca
     timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
     return (!newEdges.empty());
+}
+
+
+
+//==================== AndersenDSCD ===================//
+
+/*!
+ * Initialize worklist via processing addrs
+ */
+void AndersenDSCD::processAddr(const AddrCGEdge *addr) {
+    numOfProcessedAddr++;
+
+    NodeID dst = addr->getDstID();
+    NodeID src = addr->getSrcID();
+    addPts(dst,src);
+    addSccCandidate(dst);
+    PointsTo& dstDiff =  getDiffPts(dst);
+    dstDiff |= getPts(dst);
+}
+
+
+/*!
+ * Compute diff points-to set before propagation
+ */
+void AndersenDSCD::handleCopyGep(ConstraintNode* node) {
+    computeDiffPts(node->getId());
+    if (!getDiffPts(node->getId()).empty())
+        Andersen::handleCopyGep(node);
+}
+
+
+/*!
+ * Propagate diff points-to set from src to dst
+ */
+bool AndersenDSCD::processCopy(NodeID node, const ConstraintEdge* edge) {
+    numOfProcessedCopy++;
+
+    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
+    NodeID dst = edge->getDstID();
+    PointsTo& srcDiffPts = getDiffPts(node);
+
+    bool changed = unionPts(dst, srcDiffPts);
+    if (changed)
+        pushIntoWorklist(dst);
+    return changed;
+}
+
+
+/*!
+ * Propagate diff points-to set from src to dst
+ */
+bool AndersenDSCD::processGep(NodeID node, const GepCGEdge* edge) {
+    PointsTo& srcDiffPts = getDiffPts(edge->getSrcID());
+    return processGepPts(srcDiffPts, edge);
+}
+
+
+/*!
+ * If one copy edge is successful added, the src node should be added into SCC detection
+ */
+bool AndersenDSCD::addCopyEdge(NodeID src, NodeID dst) {
+    if (consCG->addCopyCGEdge(src, dst)) {
+        updatePropaPts(src, dst);
+        addSccCandidate(src);
+        return true;
+    }
+    return false;
+}
+
+
+/*!
+ * merge nodeId to newRepId. Return true if the newRepId is a PWC node
+ */
+bool AndersenDSCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
+
+    if(nodeId==newRepId)
+        return false;
+
+    /// union pts of node to rep
+    updatePropaPts(newRepId, nodeId);
+    unionPts(newRepId,nodeId);
+
+    /// move the edges from node to rep, and remove the node
+    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
+
+    /// set rep and sub relations
+    updateNodeRepAndSubs(node->getId(),newRepId);
+
+    consCG->removeConstraintNode(node);
+
+    return gepInsideScc;
 }
 
