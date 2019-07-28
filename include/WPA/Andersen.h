@@ -233,7 +233,7 @@ protected:
     void collapsePWCNode(NodeID nodeId);
     void collapseFields();
     bool collapseNodePts(NodeID nodeId);
-    virtual bool collapseField(NodeID nodeId);
+    bool collapseField(NodeID nodeId);
     //@}
 
     /// Updates subnodes of its rep, and rep node of its subs
