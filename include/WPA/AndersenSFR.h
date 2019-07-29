@@ -134,7 +134,6 @@ private:
     }
 
 public:
-    void processAddr(const AddrCGEdge *addr);
     void handleCopyGep(ConstraintNode* node);
     bool processCopy(NodeID node, const ConstraintEdge* edge);
     bool processGep(NodeID node, const GepCGEdge* edge);

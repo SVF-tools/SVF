@@ -186,21 +186,6 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap &ca
 //==================== AndersenDSCD ===================//
 
 /*!
- * Initialize worklist via processing addrs
- */
-void AndersenDSCD::processAddr(const AddrCGEdge *addr) {
-    numOfProcessedAddr++;
-
-    NodeID dst = addr->getDstID();
-    NodeID src = addr->getSrcID();
-    addPts(dst,src);
-    addSccCandidate(dst);
-    PointsTo& dstDiff =  getDiffPts(dst);
-    dstDiff |= getPts(dst);
-}
-
-
-/*!
  * Compute diff points-to set before propagation
  */
 void AndersenDSCD::handleCopyGep(ConstraintNode* node) {
