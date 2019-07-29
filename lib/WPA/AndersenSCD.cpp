@@ -238,23 +238,11 @@ bool AndersenDSCD::addCopyEdge(NodeID src, NodeID dst) {
  * merge nodeId to newRepId. Return true if the newRepId is a PWC node
  */
 bool AndersenDSCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
-
     if(nodeId==newRepId)
         return false;
 
     /// union pts of node to rep
     updatePropaPts(newRepId, nodeId);
-    unionPts(newRepId,nodeId);
-
-    /// move the edges from node to rep, and remove the node
-    ConstraintNode* node = consCG->getConstraintNode(nodeId);
-    bool gepInsideScc = consCG->moveEdgesToRepNode(node, consCG->getConstraintNode(newRepId));
-
-    /// set rep and sub relations
-    updateNodeRepAndSubs(node->getId(),newRepId);
-
-    consCG->removeConstraintNode(node);
-
-    return gepInsideScc;
+    return Andersen::mergeSrcToTgt(nodeId, newRepId);
 }
 
