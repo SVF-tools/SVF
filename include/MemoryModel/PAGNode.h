@@ -404,6 +404,8 @@ public:
     /// Return the type of this gep object
 	inline const llvm::Type* getType() {
 		return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+		//FIXME:
+		//return SymbolTableInfo::Symbolnfo()->getSubStructViaByteOffset(...);
 	}
 
     /// Return name of a LLVM value
