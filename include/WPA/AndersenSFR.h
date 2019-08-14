@@ -64,18 +64,19 @@ public:
     }
 
 protected:
+    inline void addSccCandidate(NodeID nodeId) {
+        sccCandidates.insert(sccRepNode(nodeId));
+    }
+
     virtual NodeStack& SCCDetect();
+    virtual void PWCDetect();
     virtual void solveWorklist();
     virtual void handleLoadStore(ConstraintNode* node);
     virtual void processAddr(const AddrCGEdge* addr);
     virtual bool addCopyEdge(NodeID src, NodeID dst);
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
-
-    virtual void processPWC(NodeID nodeId) {};
-
-    inline void addSccCandidate(NodeID nodeId) {
-        sccCandidates.insert(sccRepNode(nodeId));
-    }
+    virtual void processPWC(ConstraintNode* rep);
+    virtual void handleCopyGep(ConstraintNode* node);
 
 };
 

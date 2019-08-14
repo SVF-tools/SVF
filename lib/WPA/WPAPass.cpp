@@ -55,9 +55,9 @@ static llvm::cl::bits<PointerAnalysis::PTATY> PASelected(llvm::cl::desc("Select 
             clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenHCD_WPA, "hander", "Hybrid cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenHLCD_WPA, "hlander", "Hybrid lazy cycle detection inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::AndersenSCD_WPA, "scdander", "Selective cycle detection inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::AndersenDSCD_WPA, "sander", "Differential selective cycle detection inclusion-based analysis"),
-            clEnumValN(PointerAnalysis::AndersenWave_WPA, "wander", "Wave propagation inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"),
+//            clEnumValN(PointerAnalysis::AndersenDSCD_WPA, "sander", "Differential selective cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
@@ -124,12 +124,12 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
         case PointerAnalysis::AndersenSCD_WPA:
             _pta = new AndersenSCD();
             break;
-        case PointerAnalysis::AndersenDSCD_WPA:
-            _pta = new AndersenDSCD();
-            break;
-        case PointerAnalysis::AndersenWave_WPA:
-            _pta = new AndersenWave();
-            break;
+//        case PointerAnalysis::AndersenDSCD_WPA:
+//            _pta = new AndersenDSCD();
+//            break;
+//        case PointerAnalysis::AndersenWave_WPA:
+//            _pta = new AndersenWave();
+//            break;
         case PointerAnalysis::AndersenWaveDiff_WPA:
             _pta = new AndersenWaveDiff();
             break;

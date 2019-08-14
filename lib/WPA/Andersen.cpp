@@ -55,7 +55,10 @@ static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
                                   llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
                                  llvm::cl::desc("Read Andersen's analysis results from a file"));
-
+static llvm::cl::opt<bool> OpenDiff("diff",  llvm::cl::init(true),
+                                    llvm::cl::desc("Disable diff pts propagation"));
+static llvm::cl::opt<bool> OpenPWC("pwc",  llvm::cl::init(false),
+                                        llvm::cl::desc("Enable PWC in graph solving"));
 
 
 /*!
@@ -63,6 +66,8 @@ static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
  */
 void Andersen::analyze(SVFModule svfModule) {
     /// Initialization for the Solver
+    setDiffOpt(OpenDiff);
+    setPWCOpt(OpenPWC);
     initialize(svfModule);
     
     bool readResultsFromFile = false;
@@ -93,34 +98,38 @@ void Andersen::processNode(NodeID nodeId) {
         return;
 
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    double insertStart = stat->getClk();
     handleLoadStore(node);
+    double insertEnd = stat->getClk();
+    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
+
+    double propStart = stat->getClk();
     handleCopyGep(node);
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
  * Process copy and gep edges
  */
 void Andersen::handleCopyGep(ConstraintNode* node) {
-    double propStart = stat->getClk();
-
     NodeID nodeId = node->getId();
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-            node->directOutEdgeEnd(); it != eit; ++it)
-        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-            processGep(nodeId, gepEdge);
-        else
-            processCopy(nodeId, *it);
+    computeDiffPts(nodeId);
 
-    double propEnd = stat->getClk();
-    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
+    if (!getDiffPts(nodeId).empty()) {
+        for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
+                node->directOutEdgeEnd(); it != eit; ++it)
+            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+                processGep(nodeId, gepEdge);
+            else
+                processCopy(nodeId, *it);
+    }
 }
 
 /*!
  * Process load and store edges
  */
 void Andersen::handleLoadStore(ConstraintNode *node) {
-    double insertStart = stat->getClk();
-
     NodeID nodeId = node->getId();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
             getPts(nodeId).end(); piter != epiter; ++piter) {
@@ -139,8 +148,6 @@ void Andersen::handleLoadStore(ConstraintNode *node) {
                 pushIntoWorklist((*it)->getSrcID());
         }
     }
-    double insertEnd = stat->getClk();
-    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 }
 
 /*!
@@ -216,11 +223,11 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
 
     assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
-    PointsTo& srcPts = getPts(node);
-    bool changed = unionPts(dst,srcPts);
+    PointsTo& srcPts = getDiffPts(node);
+
+    bool changed = unionPts(dst, srcPts);
     if (changed)
         pushIntoWorklist(dst);
-
     return changed;
 }
 
@@ -231,8 +238,7 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
  *		union pts(dst) with tmpDstPts
  */
 bool Andersen::processGep(NodeID node, const GepCGEdge* edge) {
-
-    PointsTo& srcPts = getPts(edge->getSrcID());
+    PointsTo& srcPts = getDiffPts(edge->getSrcID());
     return processGepPts(srcPts, edge);
 }
 
@@ -294,7 +300,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId) {
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
-    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+    if (!openPWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
         reanalyze = true;
 }
 
@@ -428,7 +434,10 @@ NodeStack& Andersen::SCCDetect() {
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
+    if (openPWC())
+        setSCCEdgeFlag(ConstraintNode::Copy);
     WPAConstraintSolver::SCCDetect();
+    setSCCEdgeFlag(ConstraintNode::Direct);
     double sccEnd = stat->getClk();
 
     timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;
@@ -551,6 +560,7 @@ bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
         return false;
 
     /// union pts of node to rep
+    updatePropaPts(newRepId, nodeId);
     unionPts(newRepId,nodeId);
 
     /// move the edges from node to rep, and remove the node

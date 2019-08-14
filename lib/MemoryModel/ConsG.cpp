@@ -37,6 +37,8 @@ static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
 static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
                                     llvm::cl::desc("Print Constraint Graph to Terminal"));
 
+ConstraintNode::SCCEdgeFlag ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
+
 /*!
  * Start building constraint graph
  */
