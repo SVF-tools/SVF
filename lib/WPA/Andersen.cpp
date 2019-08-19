@@ -315,7 +315,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId) {
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
-    if (!openPWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+    if (optPWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
         reanalyze = true;
 }
 
@@ -449,10 +449,7 @@ NodeStack& Andersen::SCCDetect() {
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
-    if (openPWC())
-        setSCCEdgeFlag(ConstraintNode::Copy);
-    WPAConstraintSolver::SCCDetect();
-    setSCCEdgeFlag(ConstraintNode::Direct);
+    detectSCC();
     double sccEnd = stat->getClk();
 
     timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;

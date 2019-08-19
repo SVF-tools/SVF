@@ -87,10 +87,7 @@ NodeStack& AndersenSCD::SCCDetect() {
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
-    if (openPWC())
-        setSCCEdgeFlag(ConstraintNode::Copy);
-    getSCCDetector()->find(sccCandidates);
-    setSCCEdgeFlag(ConstraintNode::Direct);
+    detectSCC(sccCandidates);
     double sccEnd = stat->getClk();
     timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;
 
@@ -99,7 +96,7 @@ NodeStack& AndersenSCD::SCCDetect() {
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
-    if (openPWC()) {
+    if (!optPWC()) {
         double sccStart = stat->getClk();
         PWCDetect();
         double sccEnd = stat->getClk();
@@ -133,7 +130,7 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node) {
     computeDiffPts(nodeId);
 
     if (!getDiffPts(node->getId()).empty()) {
-        if (openPWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
+        if (!optPWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
             processPWC(node);
         else {
             for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =

@@ -101,7 +101,7 @@ NodeStack& AndersenLCD::SCCDetect() {
 
 	double sccStart = stat->getClk();
 	/// Detect SCC cycles
-	WPAConstraintSolver::SCCDetect(sccCandidates);
+	detectSCC(sccCandidates);
 	double sccEnd = stat->getClk();
 	timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
 

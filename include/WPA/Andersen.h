@@ -163,7 +163,7 @@ public:
 
     void setPWCOpt(bool flag) { pwcOpt = flag; }
 
-    const bool openPWC() const { return pwcOpt; }
+    const bool optPWC() const { return pwcOpt; }
 
     void setDiffOpt(bool flag) { diffOpt = flag; }
 
@@ -276,6 +276,20 @@ protected:
 
     /// SCC detection
     virtual NodeStack& SCCDetect();
+
+    virtual void detectSCC() {
+        if (!optPWC())
+            setSCCEdgeFlag(ConstraintNode::Copy);
+        getSCCDetector()->find();
+        setSCCEdgeFlag(ConstraintNode::Direct);
+    };
+
+    virtual void detectSCC(NodeSet& candidates) {
+        if (!optPWC())
+            setSCCEdgeFlag(ConstraintNode::Copy);
+        getSCCDetector()->find(candidates);
+        setSCCEdgeFlag(ConstraintNode::Direct);
+    };
 
     /// Constraint Graph
     ConstraintGraph* consCG;
