@@ -55,9 +55,9 @@ static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
                                   llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
                                  llvm::cl::desc("Read Andersen's analysis results from a file"));
-static llvm::cl::opt<bool> OpenDiff("diff",  llvm::cl::init(true),
+static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
                                     llvm::cl::desc("Disable diff pts propagation"));
-static llvm::cl::opt<bool> OpenPWC("pwc",  llvm::cl::init(false),
+static llvm::cl::opt<bool> MergePWC("-merge-pwc",  llvm::cl::init(true),
                                         llvm::cl::desc("Enable PWC in graph solving"));
 
 
@@ -66,8 +66,6 @@ static llvm::cl::opt<bool> OpenPWC("pwc",  llvm::cl::init(false),
  */
 void Andersen::analyze(SVFModule svfModule) {
     /// Initialization for the Solver
-    setDiffOpt(OpenDiff);
-    setPWCOpt(OpenPWC);
     initialize(svfModule);
     
     bool readResultsFromFile = false;
@@ -87,6 +85,23 @@ void Andersen::analyze(SVFModule svfModule) {
 
 	if (!WriteAnder.empty())
 		this->writeToFile(WriteAnder);
+}
+
+/*!
+ * Initilize analysis
+ */
+void Andersen::initialize(SVFModule svfModule) {
+    resetData();
+    setDiffOpt(PtsDiff);
+    setPWCOpt(!MergePWC);
+    /// Build PAG
+    PointerAnalysis::initialize(svfModule);
+    /// Build Constraint Graph
+    consCG = new ConstraintGraph(pag);
+    setGraph(consCG);
+    /// Create statistic class
+    stat = new AndersenStat(this);
+    consCG->dump("consCG_initial");
 }
 
 /*!

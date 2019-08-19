@@ -90,18 +90,7 @@ public:
     void analyze(SVFModule svfModule);
 
     /// Initialize analysis
-    virtual inline void initialize(SVFModule svfModule) {
-        resetData();
-        /// Build PAG
-        PointerAnalysis::initialize(svfModule);
-        /// Build Constraint Graph
-        consCG = new ConstraintGraph(pag);
-        setGraph(consCG);
-        /// Create statistic class
-        stat = new AndersenStat(this);
-        consCG->dump("consCG_initial");
-    }
-
+    virtual void initialize(SVFModule svfModule);
     //}
 
     /// Finalize analysis
@@ -134,7 +123,6 @@ public:
                 || pta->getAnalysisTy() == AndersenLCD_WPA
                 || pta->getAnalysisTy() == AndersenHCD_WPA
                 || pta->getAnalysisTy() == AndersenHLCD_WPA
-//                || pta->getAnalysisTy() == AndersenWave_WPA
                 || pta->getAnalysisTy() == AndersenWaveDiff_WPA
                 || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA
                 || pta->getAnalysisTy() == AndersenSCD_WPA
@@ -185,11 +173,6 @@ protected:
 
     bool pwcOpt;
     bool diffOpt;
-
-//    PointsTo & getCachePts(const ConstraintEdge* edge) {
-//        EdgeID edgeId = edge->getEdgeID();
-//        return getDiffPTDataTy()->getCachePts(edgeId);
-//    }
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id) {
@@ -337,36 +320,6 @@ class AndersenWaveDiff : public Andersen {
 private:
 
     static AndersenWaveDiff* diffWave; // static instance
-
-    PointsTo & getCachePts(const ConstraintEdge* edge) {
-        EdgeID edgeId = edge->getEdgeID();
-        return getDiffPTDataTy()->getCachePts(edgeId);
-    }
-
-    /// Handle diff points-to set.
-    //@{
-    virtual inline void computeDiffPts(NodeID id) {
-        NodeID rep = sccRepNode(id);
-        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
-    }
-    virtual inline PointsTo& getDiffPts(NodeID id) {
-        NodeID rep = sccRepNode(id);
-        return getDiffPTDataTy()->getDiffPts(rep);
-    }
-    //@}
-
-    /// Handle propagated points-to set.
-    //@{
-    inline void updatePropaPts(NodeID dst, NodeID src) {
-        NodeID srcRep = sccRepNode(src);
-        NodeID dstRep = sccRepNode(dst);
-        getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
-    }
-    inline void clearPropaPts(NodeID src) {
-        NodeID rep = sccRepNode(src);
-        getDiffPTDataTy()->clearPropaPts(rep);
-    }
-    //@}
 
 public:
     AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA): Andersen(type) {}
