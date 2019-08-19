@@ -163,11 +163,11 @@ public:
 
     void setPWCOpt(bool flag) { pwcOpt = flag; }
 
-    const bool optPWC() const { return pwcOpt; }
+    const bool mergePWC() const { return pwcOpt; }
 
     void setDiffOpt(bool flag) { diffOpt = flag; }
 
-    const bool openDiff() const { return diffOpt; }
+    const bool enableDiff() const { return diffOpt; }
 
 protected:
 
@@ -176,14 +176,14 @@ protected:
 
     /// Handle diff points-to set.
     virtual inline void computeDiffPts(NodeID id) {
-        if (openDiff()) {
+        if (enableDiff()) {
             NodeID rep = sccRepNode(id);
             getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
         }
     }
     virtual inline PointsTo& getDiffPts(NodeID id) {
         NodeID rep = sccRepNode(id);
-        if (openDiff())
+        if (enableDiff())
             return getDiffPTDataTy()->getDiffPts(rep);
         else
             return getPTDataTy()->getPts(rep);
@@ -191,14 +191,14 @@ protected:
 
     /// Handle propagated points-to set.
     inline void updatePropaPts(NodeID dstId, NodeID srcId) {
-        if (!openDiff())
+        if (!enableDiff())
             return;
         NodeID srcRep = sccRepNode(srcId);
         NodeID dstRep = sccRepNode(dstId);
         getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
     }
     inline void clearPropaPts(NodeID src) {
-        if (openDiff()) {
+        if (enableDiff()) {
             NodeID rep = sccRepNode(src);
             getDiffPTDataTy()->clearPropaPts(rep);
         }
@@ -278,14 +278,14 @@ protected:
     virtual NodeStack& SCCDetect();
 
     virtual void detectSCC() {
-        if (!optPWC())
+        if (!mergePWC())
             setSCCEdgeFlag(ConstraintNode::Copy);
         getSCCDetector()->find();
         setSCCEdgeFlag(ConstraintNode::Direct);
     };
 
     virtual void detectSCC(NodeSet& candidates) {
-        if (!optPWC())
+        if (!mergePWC())
             setSCCEdgeFlag(ConstraintNode::Copy);
         getSCCDetector()->find(candidates);
         setSCCEdgeFlag(ConstraintNode::Direct);

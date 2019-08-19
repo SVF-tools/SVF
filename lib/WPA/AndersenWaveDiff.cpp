@@ -52,7 +52,7 @@ void AndersenWaveDiff::solveWorklist() {
     }
 
     // This modification is to make WAVE feasible to handle PWC analysis
-    if (!optPWC()) {
+    if (!mergePWC()) {
         NodeStack tmpWorklist;
         while (!isWorklistEmpty()) {
             NodeID nodeId = popFromWorklist();

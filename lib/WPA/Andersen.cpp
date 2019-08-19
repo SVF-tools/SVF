@@ -315,7 +315,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId) {
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
-    if (optPWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+    if (mergePWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
         reanalyze = true;
 }
 
