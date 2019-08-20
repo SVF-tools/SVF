@@ -161,7 +161,13 @@ public:
 
     void dumpTopLevelPtsTo();
 
-    void setPWCOpt(bool flag) { pwcOpt = flag; }
+    void setPWCOpt(bool flag) {
+        pwcOpt = flag;
+        if (pwcOpt)
+            setSCCEdgeFlag(ConstraintNode::Direct);
+        else
+            setSCCEdgeFlag(ConstraintNode::Copy);
+    }
 
     const bool mergePWC() const { return pwcOpt; }
 
@@ -262,7 +268,6 @@ protected:
     void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes);
     void mergeSccCycle();
     //@}
-
     /// Collapse a field object into its base for field insensitive anlaysis
     //@{
     void collapsePWCNode(NodeID nodeId);
@@ -276,20 +281,6 @@ protected:
 
     /// SCC detection
     virtual NodeStack& SCCDetect();
-
-    virtual void detectSCC() {
-        if (!mergePWC())
-            setSCCEdgeFlag(ConstraintNode::Copy);
-        getSCCDetector()->find();
-        setSCCEdgeFlag(ConstraintNode::Direct);
-    };
-
-    virtual void detectSCC(NodeSet& candidates) {
-        if (!mergePWC())
-            setSCCEdgeFlag(ConstraintNode::Copy);
-        getSCCDetector()->find(candidates);
-        setSCCEdgeFlag(ConstraintNode::Direct);
-    };
 
     /// Constraint Graph
     ConstraintGraph* consCG;

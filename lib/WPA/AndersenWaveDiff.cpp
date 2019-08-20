@@ -126,14 +126,14 @@ void AndersenWaveDiff::handleCopyGep(ConstraintNode* node) {
     NodeID nodeId = node->getId();
     computeDiffPts(nodeId);
 
-    if (!getDiffPts(nodeId).empty())
-        for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit = node->directOutEdgeEnd(); it != eit;
-             ++it) {
-            if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(*it))
+    if (!getDiffPts(nodeId).empty()) {
+        for (ConstraintEdge* edge : node->getCopyOutEdges())
+            if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
                 processCopy(nodeId, copyEdge);
-            else if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+        for (ConstraintEdge* edge : node->getGepOutEdges())
+            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 processGep(nodeId, gepEdge);
-        }
+    }
 }
 
 /*!

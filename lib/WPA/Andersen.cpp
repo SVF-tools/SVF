@@ -57,7 +57,7 @@ static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
                                  llvm::cl::desc("Read Andersen's analysis results from a file"));
 static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
                                     llvm::cl::desc("Disable diff pts propagation"));
-static llvm::cl::opt<bool> MergePWC("-merge-pwc",  llvm::cl::init(true),
+static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
                                         llvm::cl::desc("Enable PWC in graph solving"));
 
 
@@ -93,7 +93,7 @@ void Andersen::analyze(SVFModule svfModule) {
 void Andersen::initialize(SVFModule svfModule) {
     resetData();
     setDiffOpt(PtsDiff);
-    setPWCOpt(!MergePWC);
+    setPWCOpt(MergePWC);
     /// Build PAG
     PointerAnalysis::initialize(svfModule);
     /// Build Constraint Graph
@@ -132,12 +132,12 @@ void Andersen::handleCopyGep(ConstraintNode* node) {
     computeDiffPts(nodeId);
 
     if (!getDiffPts(nodeId).empty()) {
-        for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-                node->directOutEdgeEnd(); it != eit; ++it)
-            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+        for (ConstraintEdge* edge : node->getCopyOutEdges())
+            processCopy(nodeId, edge);
+        for (ConstraintEdge* edge : node->getGepOutEdges()) {
+            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 processGep(nodeId, gepEdge);
-            else
-                processCopy(nodeId, *it);
+        }
     }
 }
 
@@ -449,7 +449,7 @@ NodeStack& Andersen::SCCDetect() {
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
-    detectSCC();
+    WPAConstraintSolver::SCCDetect();
     double sccEnd = stat->getClk();
 
     timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;

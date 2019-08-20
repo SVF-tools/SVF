@@ -87,7 +87,7 @@ NodeStack& AndersenSCD::SCCDetect() {
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
-    detectSCC(sccCandidates);
+    getSCCDetector()->find(sccCandidates);
     double sccEnd = stat->getClk();
     timeOfSCCDetection +=  (sccEnd - sccStart)/TIMEINTERVAL;
 
@@ -118,7 +118,14 @@ void AndersenSCD::PWCDetect() {
         sccCandidates.insert(sccRepNode(candidate));
     tmpSccCandidates.clear();
 
+    // set scc edge type as direct edge
+    ConstraintNode::SCCEdgeFlag f = ConstraintNode::sccEdgeFlag;
+    setSCCEdgeFlag(ConstraintNode::Direct);
+
     getSCCDetector()->find(sccCandidates);
+
+    // reset scc edge type
+    setSCCEdgeFlag(f);
 }
 
 
@@ -133,12 +140,11 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node) {
         if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
             processPWC(node);
         else {
-            for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-                    node->directOutEdgeEnd(); it != eit; ++it)
-                if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+            for (ConstraintEdge* edge : node->getCopyOutEdges())
+                processCopy(nodeId, edge);
+            for (ConstraintEdge* edge : node->getGepOutEdges())
+                if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                     processGep(nodeId, gepEdge);
-                else
-                    processCopy(nodeId, *it);
         }
     }
 }
@@ -166,16 +172,17 @@ void AndersenSCD::processPWC(ConstraintNode* rep) {
             double propStart = stat->getClk();
 
             ConstraintNode *node = consCG->getConstraintNode(nodeId);
-            for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-                    node->directOutEdgeEnd(); it != eit; ++it) {
-                bool changed;
-                if (GepCGEdge *gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-                    changed = processGep(nodeId, gepEdge);
-                else
-                    changed = processCopy(nodeId, *it);
-
-                if (changed && pwcNodes.find((*it)->getDstID()) != pwcNodes.end())
-                    tmpWorkList.push((*it)->getDstID());
+            for (ConstraintEdge* edge : node->getCopyOutEdges()) {
+                bool changed = processCopy(nodeId, edge);
+                if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end())
+                    tmpWorkList.push(edge->getDstID());
+            }
+            for (ConstraintEdge* edge : node->getGepOutEdges()) {
+                if (GepCGEdge *gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge)) {
+                    bool changed = processGep(nodeId, gepEdge);
+                    if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end())
+                        tmpWorkList.push(edge->getDstID());
+                }
             }
 
             double propEnd = stat->getClk();

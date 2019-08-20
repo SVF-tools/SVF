@@ -60,6 +60,9 @@ private:
     ConstraintEdge::ConstraintEdgeSetTy copyInEdges;
     ConstraintEdge::ConstraintEdgeSetTy copyOutEdges;
 
+    ConstraintEdge::ConstraintEdgeSetTy gepInEdges;
+    ConstraintEdge::ConstraintEdgeSetTy gepOutEdges;
+
     ConstraintEdge::ConstraintEdgeSetTy addressInEdges; ///< all incoming address edge of this node
     ConstraintEdge::ConstraintEdgeSetTy addressOutEdges; ///< all outgoing address edge of this node
 
@@ -104,6 +107,18 @@ public:
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getDirectOutEdges() const {
         return directOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyInEdges() const {
+        return copyInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getCopyOutEdges() const {
+        return copyOutEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepInEdges() const {
+        return gepInEdges;
+    }
+    inline const ConstraintEdge::ConstraintEdgeSetTy& getGepOutEdges() const {
+        return gepOutEdges;
     }
     inline const ConstraintEdge::ConstraintEdgeSetTy& getLoadInEdges() const {
         return loadInEdges;
@@ -233,20 +248,20 @@ public:
     ///  Add constraint graph edges
     //@{
     inline void addIncomingCopyEdge(CopyCGEdge *inEdge) {
-        assert(inEdge->getDstID() == this->getId());
         addIncomingDirectEdge(inEdge);
         copyInEdges.insert(inEdge);
     }
     inline void addIncomingGepEdge(GepCGEdge* inEdge) {
         addIncomingDirectEdge(inEdge);
+        gepInEdges.insert(inEdge);
     }
     inline void addOutgoingCopyEdge(CopyCGEdge *outEdge) {
-        assert(outEdge->getSrcID() == this->getId());
         addOutgoingDirectEdge(outEdge);
         copyOutEdges.insert(outEdge);
     }
     inline void addOutgoingGepEdge(GepCGEdge* outEdge) {
         addOutgoingDirectEdge(outEdge);
+        gepOutEdges.insert(outEdge);
     }
     inline void addIncomingAddrEdge(AddrCGEdge* inEdge) {
         addressInEdges.insert(inEdge);
@@ -303,17 +318,23 @@ public:
     }
 
     inline void removeOutgoingDirectEdge(ConstraintEdge* outEdge) {
+        if (SVFUtil::isa<GepCGEdge>(outEdge))
+            gepOutEdges.erase(outEdge);
+        else
+            copyOutEdges.erase(outEdge);
         Size_t num1 = directOutEdges.erase(outEdge);
         Size_t num2 = removeOutgoingEdge(outEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
-        copyOutEdges.erase(outEdge);
     }
 
     inline void removeIncomingDirectEdge(ConstraintEdge* inEdge) {
+        if (SVFUtil::isa<GepCGEdge>(inEdge))
+            gepInEdges.erase(inEdge);
+        else
+            copyInEdges.erase(inEdge);
         Size_t num1 = directInEdges.erase(inEdge);
         Size_t num2 = removeIncomingEdge(inEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
-        copyInEdges.erase(inEdge);
     }
 
     inline void removeOutgoingLoadEdge(LoadCGEdge* outEdge) {
