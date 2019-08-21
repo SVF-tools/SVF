@@ -335,10 +335,12 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
         offset = abs(offset);
     }
     u32_t maxOffset = obj->getMaxFieldOffsetLimit();
-    if (maxOffset != 0)
-        offset = offset % maxOffset;
-    else
-        offset = 0;
+//    if (maxOffset != 0)
+//        offset = offset % maxOffset;
+//    else
+//        offset = 0;
+    if (offset > maxOffset)
+        offset = maxOffset;
 
     return LocationSet(offset);
 }

@@ -73,6 +73,9 @@ public:
     static const char* NumOfProcessedCopys;		///< PAG processed copy edge
     static const char* NumOfProcessedGeps;		///< PAG processed gep edge
 
+    static const char* NumOfSfr;                ///< num of field representatives
+    static const char* NumOfFieldExpand;
+
     static const char* NumOfFunctionObjs;	///< Function numbers
     static const char* NumOfGlobalObjs;	///< PAG global object node
     static const char* NumOfHeapObjs;	///< PAG heap object node

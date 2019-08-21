@@ -60,6 +60,8 @@ public:
     static Size_t numOfProcessedGep;	/// Number of processed Gep edge
     static Size_t numOfProcessedLoad;	/// Number of processed Load edge
     static Size_t numOfProcessedStore;	/// Number of processed Store edge
+    static Size_t numOfSfrs;
+    static Size_t numOfFieldExpand;
 
     static Size_t numOfSCCDetection;
     static double timeOfSCCDetection;

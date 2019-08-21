@@ -38,6 +38,8 @@ Size_t Andersen::numOfProcessedCopy = 0;
 Size_t Andersen::numOfProcessedGep = 0;
 Size_t Andersen::numOfProcessedLoad = 0;
 Size_t Andersen::numOfProcessedStore = 0;
+Size_t Andersen::numOfSfrs = 0;
+Size_t Andersen::numOfFieldExpand = 0;
 
 Size_t Andersen::numOfSCCDetection = 0;
 double Andersen::timeOfSCCDetection = 0;

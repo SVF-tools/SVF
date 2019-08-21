@@ -597,4 +597,35 @@ public:
     }
 };
 
+/*!
+ *
+ */
+//class SFRObjPN : public DummyObjPN {
+//public:
+//    NodeID initial;
+//    NodeBS strides;
+//    NodeSet fields;
+//    NodeID baseId;
+//
+//public:
+//    static inline bool classof(const SFRObjPN*) {
+//        return true;
+//    }
+//    static inline bool classof(const PAGNode* node) {
+//        return node->getNodeKind() == PAGNode::SFRObjNode;
+//    }
+//    static inline bool classof(const GenericPAGNodeTy* node) {
+//        return node->getNodeKind() == PAGNode::SFRObjNode;
+//    }
+//    SFRObjPN(NodeID i, const MemObj* m, NodeID initial, NodeID base, const NodeBS& stride) :
+//            DummyObjPN(i, m, SFRObjNode), initial(initial), baseId(base) {
+//        strides |= stride;
+//    }
+//
+//    /// Return name of this node
+//    inline const std::string getValueName() const {
+//        return "sfrObj";
+//    }
+//};
+
 #endif /* PAGNODE_H_ */

@@ -76,6 +76,9 @@ const char* PTAStat:: NumOfProcessedStores = "StoreProcessed";		///< PAG store p
 const char* PTAStat:: NumOfProcessedCopys = "CopyProcessed";		///< PAG copy processed edge
 const char* PTAStat:: NumOfProcessedGeps = "GepProcessed";		///< PAG gep processed edge
 
+const char* PTAStat::NumOfSfr = "NumOfSFRs";                    ///< number of field representatives
+const char* PTAStat::NumOfFieldExpand = "NumOfFieldExpand";
+
 const char* PTAStat:: NumOfPointers = "Pointers";	///< PAG value node, each of them maps to a llvm value
 const char* PTAStat:: NumOfGepFieldPointers = "DYFieldPtrs";	///< PAG gep value node (field value, dynamically created dummy node)
 

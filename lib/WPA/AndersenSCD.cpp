@@ -52,7 +52,7 @@ void AndersenSCD::solveWorklist() {
         NodeID nodeId = nodeStack.top();
         nodeStack.pop();
 
-        if (sccRepNode(nodeId) == nodeId && isInWorklist(nodeId)) {
+        if (sccRepNode(nodeId) == nodeId) {
             collapsePWCNode(nodeId);
 
             double propStart = stat->getClk();
@@ -96,6 +96,13 @@ NodeStack& AndersenSCD::SCCDetect() {
     double mergeEnd = stat->getClk();
     timeOfSCCMerges +=  (mergeEnd - mergeStart)/TIMEINTERVAL;
 
+    // replace scc candidates by their reps
+    NodeSet tmpSccCandidates = sccCandidates;
+    sccCandidates.clear();
+    for (NodeID candidate : tmpSccCandidates)
+        sccCandidates.insert(sccRepNode(candidate));
+    tmpSccCandidates.clear();
+
     if (!mergePWC()) {
         double sccStart = stat->getClk();
         PWCDetect();
@@ -111,13 +118,6 @@ NodeStack& AndersenSCD::SCCDetect() {
  *
  */
 void AndersenSCD::PWCDetect() {
-    // replace scc candidates by their reps
-    NodeSet tmpSccCandidates = sccCandidates;
-    sccCandidates.clear();
-    for (NodeID candidate : tmpSccCandidates)
-        sccCandidates.insert(sccRepNode(candidate));
-    tmpSccCandidates.clear();
-
     // set scc edge type as direct edge
     ConstraintNode::SCCEdgeFlag f = ConstraintNode::sccEdgeFlag;
     setSCCEdgeFlag(ConstraintNode::Direct);
@@ -134,19 +134,11 @@ void AndersenSCD::PWCDetect() {
  */
 void AndersenSCD::handleCopyGep(ConstraintNode* node) {
     NodeID nodeId = node->getId();
-    computeDiffPts(nodeId);
 
-    if (!getDiffPts(node->getId()).empty()) {
-        if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
-            processPWC(node);
-        else {
-            for (ConstraintEdge* edge : node->getCopyOutEdges())
-                processCopy(nodeId, edge);
-            for (ConstraintEdge* edge : node->getGepOutEdges())
-                if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
-                    processGep(nodeId, gepEdge);
-        }
-    }
+    if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
+        processPWC(node);
+    else if (isInWorklist(nodeId))
+        Andersen::handleCopyGep(node);
 }
 
 
@@ -167,10 +159,9 @@ void AndersenSCD::processPWC(ConstraintNode* rep) {
 
     while (!tmpWorkList.empty()) {
         NodeID nodeId = tmpWorkList.pop();
+        computeDiffPts(nodeId);
 
         if (!getDiffPts(nodeId).empty()) {
-            double propStart = stat->getClk();
-
             ConstraintNode *node = consCG->getConstraintNode(nodeId);
             for (ConstraintEdge* edge : node->getCopyOutEdges()) {
                 bool changed = processCopy(nodeId, edge);
@@ -184,9 +175,6 @@ void AndersenSCD::processPWC(ConstraintNode* rep) {
                         tmpWorkList.push(edge->getDstID());
                 }
             }
-
-            double propEnd = stat->getClk();
-            timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
         }
     }
 }
