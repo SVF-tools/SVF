@@ -72,20 +72,6 @@ protected:
         sccCandidates.insert(sccRepNode(nodeId));
     }
 
-//    inline NodeID pwcRepNode(NodeID id) {
-//        id = sccRepNode(id);
-//        NodeToNodeMap::iterator it = pwcReps.find(id);
-//        if (it == pwcReps.end())
-//            return id;
-//        else
-//            return it->second;
-//    }
-
-//    inline void pushIntoWorklist(NodeID id) {
-//        worklist.push(sccRepNode(id));
-//        worklist.push(pwcRepNode(id));
-//    }
-
     virtual NodeStack& SCCDetect();
     virtual void PWCDetect();
     virtual void solveWorklist();
@@ -97,73 +83,5 @@ protected:
     virtual void handleCopyGep(ConstraintNode* node);
 
 };
-
-
-
-/*!
- * Selective Cycle Detection with Stride-based Field Representation
- */
-class AndersenSFR : public AndersenSCD {
-public:
-    typedef llvm::DenseMap<NodeID, NodeBS> NodeStrides;
-    typedef llvm::DenseMap<NodeID, NodeSet> FieldReps;
-    typedef llvm::DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
-
-private:
-    static AndersenSFR* sfrAndersen;
-
-    CSC* csc;
-    NodeSet sfrObjNodes;
-    FieldReps fieldReps;
-
-public:
-    AndersenSFR(PTATY type = AndersenSFR_WPA) :
-            AndersenSCD(type), csc(NULL) {
-    }
-
-    /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(SVFModule svfModule) {
-        if (sfrAndersen == nullptr) {
-            new AndersenSFR();
-            sfrAndersen->analyze(svfModule);
-            return sfrAndersen;
-        }
-        return sfrAndersen;
-    }
-
-    static void releaseAndersenSFR() {
-        if (sfrAndersen)
-            delete sfrAndersen;
-    }
-
-    ~AndersenSFR() {
-        if (csc != NULL) {
-            delete(csc);
-            csc = NULL;
-        }
-    }
-
-protected:
-    void initialize(SVFModule svfModule) {
-        Andersen::initialize(svfModule);
-
-        if (!csc)
-            csc = new CSC(_graph, scc);
-
-        ConstraintNode::sccEdgeFlag = ConstraintNode::Copy;
-        getSCCDetector()->find();
-        ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
-        mergeSccCycle();
-    }
-
-    void PWCDetect();
-//    NodeID getSFRCGNode(NodeID init, NodeID baseId, const NodeBS& strides, NodeID dstId);
-    void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
-//    bool processCopy(NodeID node, const ConstraintEdge* edge);
-    bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
-    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
-
-};
-
 
 #endif //PROJECT_ANDERSENSFR_H
