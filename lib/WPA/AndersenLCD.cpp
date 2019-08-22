@@ -55,22 +55,21 @@ void AndersenLCD::handleCopyGep(ConstraintNode* node) {
     double propStart = stat->getClk();
 
     NodeID nodeId = node->getId();
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-            node->directOutEdgeEnd(); it != eit; ++it) {
-        NodeID dstNodeId = (*it)->getDstID();
+    for (ConstraintEdge* edge : node->getCopyOutEdges()) {
+        NodeID dstNodeId = edge->getDstID();
         PointsTo& srcPts = getPts(nodeId);
         PointsTo& dstPts = getPts(dstNodeId);
         // In one edge, if the pts of src node equals to that of dst node, and the edge
         // is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
-        if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(*it)) {
-            addMetEdge(*it);
-            addLCDCandidate((*it)->getDstID());
+        if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(edge)) {
+            addMetEdge(edge);
+            addLCDCandidate((edge)->getDstID());
         }
-
-        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
+        processCopy(nodeId, edge);
+    }
+    for (ConstraintEdge* edge : node->getGepOutEdges()) {
+        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
             processGep(nodeId, gepEdge);
-        else
-            processCopy(nodeId, *it);
     }
 
     double propEnd = stat->getClk();
@@ -101,7 +100,7 @@ NodeStack& AndersenLCD::SCCDetect() {
 
 	double sccStart = stat->getClk();
 	/// Detect SCC cycles
-	WPAConstraintSolver::SCCDetect(sccCandidates);
+	getSCCDetector()->find(sccCandidates);
 	double sccEnd = stat->getClk();
 	timeOfSCCDetection += (sccEnd - sccStart) / TIMEINTERVAL;
 
@@ -123,8 +122,8 @@ bool AndersenLCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
         return false;
 
     /// union pts of node to rep
-    if (unionPts(newRepId,nodeId))
-        pushIntoWorklist(newRepId);
+    unionPts(newRepId,nodeId);
+    pushIntoWorklist(newRepId);
 
     /// move the edges from node to rep, and remove the node
     ConstraintNode* node = consCG->getConstraintNode(nodeId);

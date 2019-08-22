@@ -314,6 +314,9 @@ void AndersenStat::performStat() {
     PTNumStatMap[NumOfProcessedLoads] = Andersen::numOfProcessedLoad;
     PTNumStatMap[NumOfProcessedStores] = Andersen::numOfProcessedStore;
 
+    PTNumStatMap[NumOfSfr] = Andersen::numOfSfrs;
+    PTNumStatMap[NumOfFieldExpand] = Andersen::numOfFieldExpand;
+
     PTNumStatMap[NumOfPointers] = pag->getValueNodeNum();
     PTNumStatMap[NumOfMemObjects] = pag->getObjectNodeNum();
     PTNumStatMap[NumOfGepFieldPointers] = pag->getFieldValNodeNum();

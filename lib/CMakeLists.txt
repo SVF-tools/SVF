@@ -34,7 +34,7 @@ set(SOURCES
     MSSA/MemRegion.cpp
     MSSA/MemSSA.cpp
     MSSA/SVFGBuilder.cpp
-    MSSA/SVFG.cpp 
+    MSSA/SVFG.cpp
     MSSA/SVFGOPT.cpp
     MSSA/SVFGStat.cpp
     SABER/DoubleFreeChecker.cpp
@@ -51,7 +51,6 @@ set(SOURCES
     WPA/AndersenHLCD.cpp
     WPA/AndersenSCD.cpp
     WPA/AndersenStat.cpp
-    WPA/AndersenWave.cpp
     WPA/AndersenWaveDiff.cpp
     WPA/IFDS.cpp
     WPA/AndersenWaveDiffWithType.cpp

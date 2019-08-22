@@ -38,9 +38,13 @@
  * Selective Cycle Detection Based Andersen Analysis
  */
 class AndersenSCD : public Andersen {
+public:
+    typedef llvm::DenseMap<NodeID, NodeID> NodeToNodeMap;
+
 protected:
     static AndersenSCD* scdAndersen;
     NodeSet sccCandidates;
+    NodeToNodeMap pwcReps;
 
 public:
     AndersenSCD(PTATY type = AndersenSCD_WPA) :
@@ -64,20 +68,20 @@ public:
     }
 
 protected:
+    inline void addSccCandidate(NodeID nodeId) {
+        sccCandidates.insert(sccRepNode(nodeId));
+    }
+
     virtual NodeStack& SCCDetect();
+    virtual void PWCDetect();
     virtual void solveWorklist();
     virtual void handleLoadStore(ConstraintNode* node);
     virtual void processAddr(const AddrCGEdge* addr);
     virtual bool addCopyEdge(NodeID src, NodeID dst);
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
-
-    virtual void processPWC(NodeID nodeId) {};
-
-    inline void addSccCandidate(NodeID nodeId) {
-        sccCandidates.insert(sccRepNode(nodeId));
-    }
+    virtual void processPWC(ConstraintNode* rep);
+    virtual void handleCopyGep(ConstraintNode* node);
 
 };
-
 
 #endif //PROJECT_ANDERSENSFR_H

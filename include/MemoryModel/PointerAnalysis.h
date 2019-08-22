@@ -59,7 +59,7 @@ public:
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
         AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
         AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
-        AndersenWave_WPA,	///< Wave propagation andersen-style WPA
+        AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
         CSCallString_WPA,	///< Call string based context sensitive WPA

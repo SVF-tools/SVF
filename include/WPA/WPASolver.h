@@ -189,7 +189,7 @@ protected:
         return GTraits::getNodeID(node);
     }
 
-private:
+protected:
     /// Graph
     GraphType _graph;
 

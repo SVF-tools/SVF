@@ -38,6 +38,8 @@ Size_t Andersen::numOfProcessedCopy = 0;
 Size_t Andersen::numOfProcessedGep = 0;
 Size_t Andersen::numOfProcessedLoad = 0;
 Size_t Andersen::numOfProcessedStore = 0;
+Size_t Andersen::numOfSfrs = 0;
+Size_t Andersen::numOfFieldExpand = 0;
 
 Size_t Andersen::numOfSCCDetection = 0;
 double Andersen::timeOfSCCDetection = 0;
@@ -55,7 +57,10 @@ static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
                                   llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
                                  llvm::cl::desc("Read Andersen's analysis results from a file"));
-
+static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
+                                    llvm::cl::desc("Disable diff pts propagation"));
+static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
+                                        llvm::cl::desc("Enable PWC in graph solving"));
 
 
 /*!
@@ -85,6 +90,23 @@ void Andersen::analyze(SVFModule svfModule) {
 }
 
 /*!
+ * Initilize analysis
+ */
+void Andersen::initialize(SVFModule svfModule) {
+    resetData();
+    setDiffOpt(PtsDiff);
+    setPWCOpt(MergePWC);
+    /// Build PAG
+    PointerAnalysis::initialize(svfModule);
+    /// Build Constraint Graph
+    consCG = new ConstraintGraph(pag);
+    setGraph(consCG);
+    /// Create statistic class
+    stat = new AndersenStat(this);
+    consCG->dump("consCG_initial");
+}
+
+/*!
  * Start constraint solving
  */
 void Andersen::processNode(NodeID nodeId) {
@@ -93,34 +115,38 @@ void Andersen::processNode(NodeID nodeId) {
         return;
 
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    double insertStart = stat->getClk();
     handleLoadStore(node);
+    double insertEnd = stat->getClk();
+    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
+
+    double propStart = stat->getClk();
     handleCopyGep(node);
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
 }
 
 /*!
  * Process copy and gep edges
  */
 void Andersen::handleCopyGep(ConstraintNode* node) {
-    double propStart = stat->getClk();
-
     NodeID nodeId = node->getId();
-    for (ConstraintNode::const_iterator it = node->directOutEdgeBegin(), eit =
-            node->directOutEdgeEnd(); it != eit; ++it)
-        if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(*it))
-            processGep(nodeId, gepEdge);
-        else
-            processCopy(nodeId, *it);
+    computeDiffPts(nodeId);
 
-    double propEnd = stat->getClk();
-    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
+    if (!getDiffPts(nodeId).empty()) {
+        for (ConstraintEdge* edge : node->getCopyOutEdges())
+            processCopy(nodeId, edge);
+        for (ConstraintEdge* edge : node->getGepOutEdges()) {
+            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+                processGep(nodeId, gepEdge);
+        }
+    }
 }
 
 /*!
  * Process load and store edges
  */
 void Andersen::handleLoadStore(ConstraintNode *node) {
-    double insertStart = stat->getClk();
-
     NodeID nodeId = node->getId();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
             getPts(nodeId).end(); piter != epiter; ++piter) {
@@ -139,8 +165,6 @@ void Andersen::handleLoadStore(ConstraintNode *node) {
                 pushIntoWorklist((*it)->getSrcID());
         }
     }
-    double insertEnd = stat->getClk();
-    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
 }
 
 /*!
@@ -216,11 +240,11 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
 
     assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
-    PointsTo& srcPts = getPts(node);
-    bool changed = unionPts(dst,srcPts);
+    PointsTo& srcPts = getDiffPts(node);
+
+    bool changed = unionPts(dst, srcPts);
     if (changed)
         pushIntoWorklist(dst);
-
     return changed;
 }
 
@@ -231,8 +255,7 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
  *		union pts(dst) with tmpDstPts
  */
 bool Andersen::processGep(NodeID node, const GepCGEdge* edge) {
-
-    PointsTo& srcPts = getPts(edge->getSrcID());
+    PointsTo& srcPts = getDiffPts(edge->getSrcID());
     return processGepPts(srcPts, edge);
 }
 
@@ -294,7 +317,7 @@ inline void Andersen::collapsePWCNode(NodeID nodeId) {
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
-    if (consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
+    if (mergePWC() && consCG->isPWCNode(nodeId) && collapseNodePts(nodeId))
         reanalyze = true;
 }
 
@@ -551,6 +574,7 @@ bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
         return false;
 
     /// union pts of node to rep
+    updatePropaPts(newRepId, nodeId);
     unionPts(newRepId,nodeId);
 
     /// move the edges from node to rep, and remove the node
