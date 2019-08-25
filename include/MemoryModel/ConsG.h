@@ -215,6 +215,9 @@ public:
     inline void setSubs(NodeID node, NodeBS& subs) {
         nodeToSubsMap[node] |= subs;
     }
+    inline void resetSubs(NodeID node) {
+        nodeToSubsMap.erase(node);
+    }
     //@}
 
     /// Move incoming direct edges of a sub node which is outside the SCC to its rep node
