@@ -274,11 +274,9 @@ void ConstraintGraph::reTargetDstOfEdge(ConstraintEdge* edge, ConstraintNode* ne
         removeDirectEdge(gep);
         addVariantGepCGEdge(srcId,newDstNodeID);
     }
-    /// Address edge is removed directly, because it won't participate in solving further
-    /// To be noted: it can not retarget the address edge to newSrc, otherwise it might lead
-    /// non object node flows to points-to set of a pointer (src of the edge maybe non object node after scc)
     else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
         removeAddrEdge(addr);
+        addAddrCGEdge(srcId,newDstNodeID);
     }
     else
         assert(false && "no other edge type!!");
@@ -314,11 +312,9 @@ void ConstraintGraph::reTargetSrcOfEdge(ConstraintEdge* edge, ConstraintNode* ne
         removeDirectEdge(gep);
         addVariantGepCGEdge(newSrcNodeID,dstId);
     }
-    /// Address edge is removed directly, because it won't participate in solving further
-    /// To be noted: it can not retarget the address edge to newSrc, otherwise it might lead
-    /// non object node flows to points-to set of a pointer (src of the edge maybe non object node after scc)
     else if(AddrCGEdge* addr = SVFUtil::dyn_cast<AddrCGEdge>(edge)) {
         removeAddrEdge(addr);
+        addAddrCGEdge(newSrcNodeID,dstId);
     }
     else
         assert(false && "no other edge type!!");

@@ -34,6 +34,21 @@ using namespace SVFUtil;
 
 AndersenSFR *AndersenSFR::sfrAndersen = NULL;
 
+/*!
+ *
+ */
+void AndersenSFR::initialize(SVFModule svfModule) {
+    AndersenSCD::initialize(svfModule);
+    setPWCOpt(false);
+
+    if (!csc)
+        csc = new CSC(_graph, scc);
+
+    // detect and collapse cycles that only comprise copy edges
+    getSCCDetector()->find();
+    mergeSccCycle();
+}
+
 
 /*!
  * Call the PWC stride calculation method of class CSC.

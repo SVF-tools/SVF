@@ -130,12 +130,7 @@ public:
     }
 
 protected:
-    void initialize(SVFModule svfModule) {
-        AndersenSCD::initialize(svfModule);
-        if (!csc)
-            csc = new CSC(_graph, scc);
-    }
-
+    void initialize(SVFModule svfModule);
     void PWCDetect();
     void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
     bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
