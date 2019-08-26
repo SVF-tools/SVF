@@ -55,9 +55,13 @@ void AndersenSCD::solveWorklist() {
         if (sccRepNode(nodeId) == nodeId) {
             collapsePWCNode(nodeId);
 
+            if (isInWorklist(nodeId))
+                // push the rep of node into worklist
+                pushIntoWorklist(nodeId);
+
             double propStart = stat->getClk();
             // propagate pts through copy and gep edges
-            ConstraintNode *node = consCG->getConstraintNode(nodeId);
+            ConstraintNode* node = consCG->getConstraintNode(nodeId);
             handleCopyGep(node);
             double propEnd = stat->getClk();
             timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
@@ -137,7 +141,7 @@ void AndersenSCD::handleCopyGep(ConstraintNode* node) {
 
     if (!mergePWC() && getSCCDetector()->subNodes(nodeId).count() > 1)
         processPWC(node);
-    else
+    else if(isInWorklist(nodeId))
         Andersen::handleCopyGep(node);
 }
 
@@ -184,11 +188,10 @@ void AndersenSCD::processPWC(ConstraintNode* rep) {
  * Source nodes of new added edges are pushed into sccCandidates.
  * Source nodes of new added edges whose pts differ from those of dst nodes are pushed into worklist.
  */
-void AndersenSCD::handleLoadStore(ConstraintNode *node) {
+void AndersenSCD::handleLoadStore(ConstraintNode* node) {
     double insertStart = stat->getClk();
 
     NodeID nodeId = node->getId();
-
     // handle load
     for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
                  eit = node->outgoingLoadsEnd(); it != eit; ++it)
@@ -244,7 +247,7 @@ bool AndersenSCD::addCopyEdge(NodeID src, NodeID dst) {
 /*!
  * Update call graph for the input indirect callsites
  */
-bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap &callsites) {
+bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& callsites) {
     double cgUpdateStart = stat->getClk();
 
     CallEdgeMap newEdges;

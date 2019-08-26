@@ -609,6 +609,7 @@ void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
 void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
     consCG->setRep(nodeId,newRepId);
     NodeBS repSubs;
+    repSubs.set(nodeId);
     /// update nodeToRepMap, for each subs of current node updates its rep to newRepId
     //  update nodeToSubsMap, union its subs with its rep Subs
     NodeBS& nodeSubs = consCG->sccSubNodes(nodeId);
@@ -618,6 +619,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
     }
     repSubs |= nodeSubs;
     consCG->setSubs(newRepId,repSubs);
+    consCG->resetSubs(nodeId);
 }
 
 /*!
