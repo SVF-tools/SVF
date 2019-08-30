@@ -1,9 +1,7 @@
 #include "WPA/Andersen.h"
 #include "MemoryModel/PTAType.h"
-#include <llvm/Support/CommandLine.h> // for tool output file
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 AndersenWaveDiffWithType* AndersenWaveDiffWithType::diffWaveWithType = NULL;
 
@@ -15,9 +13,9 @@ void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge) {
     if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::Copy)) {
         const Value *val = pag->getIntraPAGEdge(srcId, dstId, PAGEdge::Copy)->getValue();
         if (val) {
-            if (const CastInst *castInst = dyn_cast<CastInst>(val)) {
+            if (const CastInst *castInst = SVFUtil::dyn_cast<CastInst>(val)) {
                 updateObjType(castInst->getType(), getPts(edge->getSrcID()));
-            } else if (const ConstantExpr *ce = dyn_cast<ConstantExpr>(val)) {
+            } else if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val)) {
                 if (ce->getOpcode() == Instruction::BitCast) {
                     updateObjType(ce->getType(), getPts(edge->getSrcID()));
                 }
@@ -48,7 +46,7 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
     NodeBS &nodesOfType = typeSystem->getVarsForType(ptaTy);
 
     for (std::set<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit) {
-        if (const NormalGepCGEdge *normalGepEdge = dyn_cast<NormalGepCGEdge>(*nit)) {
+        if (const NormalGepCGEdge *normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*nit)) {
             if (!nodesOfType.test(normalGepEdge->getSrcID()))
                 continue;
             PointsTo tmpPts;

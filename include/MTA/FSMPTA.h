@@ -28,7 +28,7 @@ public:
     typedef std::set<const SVFGNode*> SVFGNodeSet;
     typedef std::vector<const SVFGNode*> SVFGNodeVec;
     typedef NodeBS SVFGNodeIDSet;
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Instruction*> InstSet;
     typedef std::pair<NodeID,NodeID> NodeIDPair;
 
     typedef std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan> SVFGNodeLockSpanPair;
@@ -47,7 +47,7 @@ public:
 
 protected:
     /// Re-write create SVFG method
-    virtual void createSVFG(MemSSA* mssa, SVFG* graph);
+    virtual void buildSVFG();
 
 private:
     /// Record edges

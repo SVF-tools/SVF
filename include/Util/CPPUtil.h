@@ -30,10 +30,6 @@
 #ifndef CPPUtil_H_
 #define CPPUtil_H_
 
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/CallSite.h>
-#include <llvm/IR/Constants.h>
 #include "Util/BasicTypes.h"
 
 class CHGraph;
@@ -51,11 +47,11 @@ struct DemangledName {
 struct DemangledName demangle(const std::string name);
 
 std::string getBeforeBrackets(const std::string name);
-bool isValVtbl(const llvm::Value *val);
-bool isLoadVtblInst(const llvm::LoadInst *loadInst);
-bool isVirtualCallSite(llvm::CallSite cs);
-bool isConstructor(const llvm::Function *F);
-bool isDestructor(const llvm::Function *F);
+bool isValVtbl(const Value *val);
+bool isLoadVtblInst(const LoadInst *loadInst);
+bool isVirtualCallSite(CallSite cs);
+bool isConstructor(const Function *F);
+bool isDestructor(const Function *F);
 
 /*
  * VtableA = {&A::foo}
@@ -78,15 +74,15 @@ bool isDestructor(const llvm::Function *F);
  * getClassNameFromVtblObj(VtableA) return
  * getClassNameFromType(type of p) return type A
  */
-const llvm::Argument* getConstructorThisPtr(const llvm::Function* fun);
-const llvm::Value *getVCallThisPtr(llvm::CallSite cs);
-const llvm::Value *getVCallVtblPtr(llvm::CallSite cs);
-u64_t getVCallIdx(llvm::CallSite cs);
-std::string getClassNameFromVtblObj(const llvm::Value *value);
-std::string getClassNameFromType(const llvm::Type *ty);
-std::string getClassNameOfThisPtr(llvm::CallSite cs);
-std::string getFunNameOfVCallSite(llvm::CallSite cs);
-bool VCallInCtorOrDtor(llvm::CallSite cs);
+const Argument* getConstructorThisPtr(const Function* fun);
+const Value *getVCallThisPtr(CallSite cs);
+const Value *getVCallVtblPtr(CallSite cs);
+u64_t getVCallIdx(CallSite cs);
+std::string getClassNameFromVtblObj(const Value *value);
+std::string getClassNameFromType(const Type *ty);
+std::string getClassNameOfThisPtr(CallSite cs);
+std::string getFunNameOfVCallSite(CallSite cs);
+bool VCallInCtorOrDtor(CallSite cs);
 
 /*
  *  A(A* this){
@@ -97,7 +93,7 @@ bool VCallInCtorOrDtor(llvm::CallSite cs);
  *  }
  *  this and this1 are the same thisPtr in the constructor
  */
-bool isSameThisPtrInConstructor(const llvm::Argument* thisPtr1, const llvm::Value* thisPtr2);
+bool isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2);
 }
 
 #endif /* CPPUtil_H_ */

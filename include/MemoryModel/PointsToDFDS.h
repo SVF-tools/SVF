@@ -31,8 +31,7 @@
 #define POINTSTODSDF_H_
 
 #include "MemoryModel/PointsToDS.h"
-#include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/FileSystem.h>		// for file open flag
+
 
 /*!
  * Data-flow points-to data structure, points-to is maintained for each program point (statement)
@@ -200,9 +199,9 @@ public:
         PTData<Key,Data>::dumpPts(this->ptsMap);
         /// dump points-to of address-taken variables
         std::error_code ErrInfo;
-        llvm::ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
+        ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
         if (!ErrInfo) {
-            llvm::raw_fd_ostream & osm = F.os();
+            raw_fd_ostream & osm = F.os();
             NodeBS locs;
             for(DFPtsMapconstIter it = dfInPtsMap.begin(), eit = dfInPtsMap.end(); it!=eit; ++it)
                 locs.set(it->first);
@@ -226,23 +225,23 @@ public:
             }
             F.os().close();
             if (!F.os().has_error()) {
-                llvm::outs() << "\n";
+                SVFUtil::outs() << "\n";
                 F.keep();
                 return;
             }
         }
-        llvm::outs() << "  error opening file for writing!\n";
+        SVFUtil::outs() << "  error opening file for writing!\n";
         F.os().clear_error();
     }
 
-    virtual inline void dumpPts(const PtsMap & ptsSet,llvm::raw_ostream & O = llvm::outs()) const {
+    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++) {
             const Key& var = nodeIt->first;
             const Data & pts = nodeIt->second;
             if (pts.empty())
                 continue;
             O << "<" << var << ",{";
-            analysisUtil::dumpSet(pts,O);
+            SVFUtil::dumpSet(pts,O);
             O << "}> ";
         }
     }

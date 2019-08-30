@@ -43,7 +43,7 @@
  */
 class DistinctMRG : public MRGenerator {
 public:
-    DistinctMRG(BVDataPTAImpl* p) : MRGenerator(p)
+    DistinctMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
 
     ~DistinctMRG() {}
@@ -53,13 +53,13 @@ protected:
     virtual void partitionMRs();
 
     /// Get memory region at a load
-    virtual void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun);
+    virtual void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun);
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun);
+    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun);
 private:
     /// Create memory regions for each points-to target.
-    void createDistinctMR(const llvm::Function* func, const PointsTo& cpts);
+    void createDistinctMR(const Function* func, const PointsTo& cpts);
 
 };
 
@@ -69,10 +69,10 @@ private:
 class IntraDisjointMRG : public MRGenerator {
 public:
     typedef std::map<PointsTo, PointsToList> PtsToSubPtsMap;
-    typedef std::map<const llvm::Function*, PtsToSubPtsMap> FunToPtsMap;
-    typedef std::map<const llvm::Function*, PointsToList> FunToInterMap;
+    typedef std::map<const Function*, PtsToSubPtsMap> FunToPtsMap;
+    typedef std::map<const Function*, PointsToList> FunToInterMap;
 
-    IntraDisjointMRG(BVDataPTAImpl* p) : MRGenerator(p)
+    IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
 
     ~IntraDisjointMRG() {}
@@ -89,7 +89,7 @@ protected:
      * @param mrs Memory region set contains all possible target memory regions.
      */
     virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const llvm::Function* fun) {
+                                      const Function* fun) {
         const PointsToList& inters = getIntersList(fun);
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }
@@ -97,24 +97,24 @@ protected:
     void getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cpts, const PointsToList& inters);
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun);
+    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun);
 
     /// Create disjoint memory region
-    void createDisjointMR(const llvm::Function* func, const PointsTo& cpts);
+    void createDisjointMR(const Function* func, const PointsTo& cpts);
 
     /// Compute intersections between cpts and computed cpts intersections before.
     void computeIntersections(const PointsTo& cpts, PointsToList& inters);
 
 private:
-    inline PtsToSubPtsMap& getPtsSubSetMap(const llvm::Function* func) {
+    inline PtsToSubPtsMap& getPtsSubSetMap(const Function* func) {
         return funcToPtsMap[func];
     }
 
-    inline PointsToList& getIntersList(const llvm::Function* func) {
+    inline PointsToList& getIntersList(const Function* func) {
         return funcToInterMap[func];
     }
 
-    inline const PtsToSubPtsMap& getPtsSubSetMap(const llvm::Function* func) const {
+    inline const PtsToSubPtsMap& getPtsSubSetMap(const Function* func) const {
         FunToPtsMap::const_iterator it = funcToPtsMap.find(func);
         assert(it != funcToPtsMap.end() && "can not find pts map for specified function");
         return it->second;
@@ -129,7 +129,7 @@ private:
  */
 class InterDisjointMRG : public IntraDisjointMRG {
 public:
-    InterDisjointMRG(BVDataPTAImpl* p) : IntraDisjointMRG(p)
+    InterDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : IntraDisjointMRG(p, ptrOnly)
     {}
 
     ~InterDisjointMRG() {}
@@ -145,7 +145,7 @@ protected:
      * @param mrs Memory region set contains all possible target memory regions.
      */
     virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const llvm::Function* fun) {
+                                      const Function* fun) {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }
 

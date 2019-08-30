@@ -9,11 +9,9 @@
 #define TCTNodeDetector_H_
 
 #include "Util/SCC.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
-#include <llvm/Analysis/LoopInfo.h>
-#include <llvm/IR/InstIterator.h>
 #include <set>
 #include <vector>
 
@@ -27,7 +25,7 @@ class PTALoopInfoBuilder;
 typedef GenericEdge<TCTNode> GenericTCTEdgeTy;
 class TCTEdge: public GenericTCTEdgeTy {
 public:
-    typedef std::set<const llvm::Instruction*> CallInstSet;
+    typedef std::set<const Instruction*> CallInstSet;
     enum CEDGEK {
         ThreadCreateEdge
     };
@@ -64,7 +62,7 @@ public:
     }
 
     void dump() {
-        llvm::outs() << "---\ntid: " << this->getId() << "  inloop:" << ctx.isInloop() << "  incycle:" << ctx.isIncycle() << " multiforked:"<< isMultiforked();
+        SVFUtil::outs() << "---\ntid: " << this->getId() << "  inloop:" << ctx.isInloop() << "  incycle:" << ctx.isIncycle() << " multiforked:"<< isMultiforked();
     }
 
     /// Get CxtThread
@@ -102,21 +100,21 @@ class TCT: public GenericThreadCreateTreeTy {
 public:
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef std::set<const llvm::Function*> FunSet;
-    typedef std::vector<const llvm::Instruction*> InstVec;
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Function*> FunSet;
+    typedef std::vector<const Instruction*> InstVec;
+    typedef std::set<const Instruction*> InstSet;
     typedef std::set<const PTACallGraphNode*> PTACGNodeSet;
     typedef std::map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
     typedef std::map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef std::map<const CxtThread,const llvm::Function*> CxtThreadToFun;
-    typedef std::map<const llvm::Instruction*, const llvm::Loop*> InstToLoopMap;
+    typedef std::map<const CxtThread,const Function*> CxtThreadToFun;
+    typedef std::map<const Instruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0) {
-        tcg = llvm::cast<ThreadCallGraph>(pta->getPTACallGraph());
+        tcg = SVFUtil::cast<ThreadCallGraph>(pta->getPTACallGraph());
         tcg->updateCallGraph(pta);
         //tcg->updateJoinEdge(pta);
         tcgSCC = pta->getCallGraphSCC();
@@ -197,7 +195,7 @@ public:
     //@}
 
     /// Whether it is a candidate function
-    inline bool isCandidateFun(const llvm::Function* fun) const {
+    inline bool isCandidateFun(const Function* fun) const {
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
     }
 
@@ -264,14 +262,14 @@ public:
     }
 
     /// get the start routine function of a thread
-    const llvm::Function* getStartRoutineOfCxtThread(const CxtThread& ct) const {
+    const Function* getStartRoutineOfCxtThread(const CxtThread& ct) const {
         CxtThreadToFun::const_iterator it = ctToRoutineFunMap.find(ct);
         assert(it!=ctToRoutineFunMap.end() && "Cxt Thread not found!!");
         return it->second;
     }
 
     /// Get loop for join site
-    inline const llvm::Loop* getJoinLoop(const llvm::Instruction* join) {
+    inline const Loop* getJoinLoop(const Instruction* join) {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
         if(it!=joinSiteToLoopMap.end())
@@ -279,24 +277,24 @@ public:
         return NULL;
     }
     /// Return true if a join instruction must be executed inside a loop
-    bool isJoinMustExecutedInLoop(const llvm::Loop* lp,const llvm::Instruction* join);
+    bool isJoinMustExecutedInLoop(const Loop* lp,const Instruction* join);
     /// Get loop for an instruction
-    const llvm::Loop* getLoop(const llvm::Instruction* inst);
+    const Loop* getLoop(const Instruction* inst);
     /// Get dominator for a function
-    const llvm::DominatorTree* getDT(const llvm::Function* fun);
+    const DominatorTree* getDT(const Function* fun);
     /// Get dominator for a function
-    const llvm::PostDominatorTree* getPostDT(const llvm::Function* fun);
+    const PostDominatorTree* getPostDT(const Function* fun);
     /// Get loop for fork/join site
-    const llvm::Loop* getLoop(const llvm::BasicBlock* bb);
+    const Loop* getLoop(const BasicBlock* bb);
     /// Get SE for function
-    llvm::ScalarEvolution* getSE(const llvm::Instruction* inst);
+    ScalarEvolution* getSE(const Instruction* inst);
 
     /// Get the next instructions following control flow
-    void getNextInsts(const llvm::Instruction* inst, InstVec& instSet);
+    void getNextInsts(const Instruction* inst, InstVec& instSet);
     /// Push calling context
-    void pushCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
+    void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
     /// Match context
-    bool matchCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee);
+    bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee);
 
     inline void pushCxt(CallStrCxt& cxt, CallSiteID csId) {
 		cxt.push_back(csId);
@@ -304,7 +302,7 @@ public:
 			MaxCxtSize = cxt.size();
     }
     /// Whether a join site is in recursion
-    inline bool isJoinSiteInRecursion(const llvm::Instruction* join) const {
+    inline bool isJoinSiteInRecursion(const Instruction* join) const {
         assert(tcg->getThreadAPI()->isTDJoin(join) && "not a join site");
         return inRecurJoinSites.find(join)!=inRecurJoinSites.end();
     }
@@ -352,7 +350,7 @@ private:
     /// Mark relevant procedures that are backward reachable from any fork/join site
     //@{
     void markRelProcs();
-    void markRelProcs(const llvm::Function* fun);
+    void markRelProcs(const Function* fun);
     //@}
 
     /// Get entry functions that are neither called by other functions nor extern functions
@@ -367,25 +365,25 @@ private:
     /// collect loop info for join sites
     void collectLoopInfoForJoin();
     /// Whether a given bb is a loop head of a inloop join site
-    bool isLoopHeaderOfJoinLoop(const llvm::BasicBlock* bb);
+    bool isLoopHeaderOfJoinLoop(const BasicBlock* bb);
     /// Whether a given bb is an exit of a inloop join site
-    bool isLoopExitOfJoinLoop(const llvm::BasicBlock* bb);
+    bool isLoopExitOfJoinLoop(const BasicBlock* bb);
     //@}
 
     /// Multi-forked threads
     //@{
     /// Whether an instruction is in a loop
-    bool isInLoopInstruction(const llvm::Instruction* inst);
+    bool isInLoopInstruction(const Instruction* inst);
     /// Whether an instruction is in a recursion
-    bool isInRecursion(const llvm::Instruction* inst) const;
+    bool isInRecursion(const Instruction* inst) const;
     //@}
 
     /// Handle call relations
-    void handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, llvm::CallSite call);
+    void handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, CallSite call);
 
     /// Get or create a tct node based on CxtThread
     //@{
-    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const llvm::CallInst* fork,const CallStrCxt& oldCxt, const llvm::Function* routine) {
+    inline TCTNode* getOrCreateTCTNode(const CallStrCxt& cxt, const CallInst* fork,const CallStrCxt& oldCxt, const Function* routine) {
         CxtThread ct(cxt,fork);
         CxtThreadToNodeMap::const_iterator it = ctpToNodeMap.find(ct);
         if(it!=ctpToNodeMap.end()) {
@@ -419,7 +417,7 @@ private:
         ctToForkCxtMap[ct] = cxt;
     }
     /// Add start routine function of a cxt thread
-    void addStartRoutineOfCxtThread(const llvm::Function* fun, const CxtThread& ct) {
+    void addStartRoutineOfCxtThread(const Function* fun, const CxtThread& ct) {
         ctToRoutineFunMap[ct] = fun;
     }
 

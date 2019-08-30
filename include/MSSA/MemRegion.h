@@ -34,7 +34,6 @@
 #include "Util/PTACallGraph.h"
 #include "Util/WorkList.h"
 
-#include <llvm/Support/raw_ostream.h>	// for output
 #include <set>
 
 typedef NodeID MRID;
@@ -93,13 +92,13 @@ public:
     //@{
     typedef struct {
         bool operator()(const MemRegion* lhs, const MemRegion* rhs) const {
-            return analysisUtil::cmpPts(lhs->getPointsTo(), rhs->getPointsTo());
+            return SVFUtil::cmpPts(lhs->getPointsTo(), rhs->getPointsTo());
         }
     } equalMemRegion;
 
     typedef struct {
         bool operator()(const PointsTo& lhs, const PointsTo& rhs) const {
-            return analysisUtil::cmpPts(lhs, rhs);
+            return SVFUtil::cmpPts(lhs, rhs);
         }
     } equalPointsTo;
     //@}
@@ -123,34 +122,34 @@ public:
     //@}
     ///Define mem region set
     typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef std::map<const PAGEdge*, const llvm::Function*> PAGEdgeToFunMap;
+    typedef std::map<const PAGEdge*, const Function*> PAGEdgeToFunMap;
     typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef std::map<const llvm::Function*, PointsToList > FunToPointsToMap;
+    typedef std::map<const Function*, PointsToList > FunToPointsToMap;
     typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
-    typedef llvm::DenseMap<const llvm::Function*, MRSet> FunToMRsMap;
+    typedef llvm::DenseMap<const Function*, MRSet> FunToMRsMap;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
     typedef llvm::DenseMap<const LoadPE*, MRSet> LoadsToMRsMap;
     typedef llvm::DenseMap<const StorePE*, MRSet> StoresToMRsMap;
-    typedef std::map<llvm::CallSite, MRSet> CallSiteToMRsMap;
+    typedef std::map<CallSite, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
     typedef llvm::DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
     typedef llvm::DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef std::map<llvm::CallSite, PointsTo> CallSiteToPointsToMap;
+    typedef std::map<CallSite, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef llvm::DenseMap<const llvm::Function*, NodeBS> FunToNodeBSMap;
+    typedef llvm::DenseMap<const Function*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef std::map<llvm::CallSite, NodeBS> CallSiteToNodeBSMap;
+    typedef std::map<CallSite, NodeBS> CallSiteToNodeBSMap;
     //@}
 
     typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
@@ -168,6 +167,7 @@ private:
     BVDataPTAImpl* pta;
     SCC* callGraphSCC;
     PTACallGraph* callGraph;
+    bool ptrOnlyMSSA;
 
     /// Map a function to all its memory regions
     FunToMRsMap funToMRsMap;
@@ -223,17 +223,17 @@ private:
     const MemRegion* getMR(const PointsTo& cpts) const;
 
     //Get all objects might pass into callee from a callsite
-    void collectCallSitePts(llvm::CallSite cs);
+    void collectCallSitePts(CallSite cs);
 
     //Recursive collect points-to chain
     NodeBS& CollectPtsChain(NodeID id);
 
-    inline NodeBS& getCallSitePts(llvm::CallSite cs) {
+    inline NodeBS& getCallSitePts(CallSite cs) {
         return csToCallPtsMap[cs];
     }
     /// Whether the object node is a non-local object
     /// including global, heap, and stack variable in recursions
-    bool isNonLocalObject(NodeID id, const llvm::Function* curFun) const;
+    bool isNonLocalObject(NodeID id, const Function* curFun) const;
 
     /// Get all global objects from a points-to set
     void getGlobalsAndHeapFromPts(NodeBS& globs, const NodeBS& pts);
@@ -242,8 +242,8 @@ private:
     void getCallGraphSCCRevTopoOrder(WorkList& worklist);
 
 protected:
-    MRGenerator(BVDataPTAImpl* p) :
-        pta(p) {
+    MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
+        pta(p), ptrOnlyMSSA(ptrOnly) {
         callGraph = pta->getPTACallGraph();
         callGraphSCC = new SCC(callGraph);
     }
@@ -254,7 +254,7 @@ protected:
     PtsToRepPtsSetMap cptsToRepCPtsMap;
 
     /// Generate a memory region and put in into functions which use it
-    void createMR(const llvm::Function* fun, const PointsTo& cpts);
+    void createMR(const Function* fun, const PointsTo& cpts);
 
     /// Collect all global variables for later escape analysis
     void collectGlobals();
@@ -279,7 +279,7 @@ protected:
         return mr->getPointsTo().intersects(cpts);
     }
     /// Get all aliased mem regions from function fun according to cpts
-    virtual inline void getAliasMemRegions(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun) {
+    virtual inline void getAliasMemRegions(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
         for(MRSet::const_iterator it = funToMRsMap[fun].begin(), eit = funToMRsMap[fun].end(); it!=eit; ++it) {
             if(isAliasedMR(cpts,*it))
                 aliasMRs.insert(*it);
@@ -287,13 +287,13 @@ protected:
     }
 
     /// Get memory regions for a load statement according to cpts.
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun) {
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
 
     /// Get memory regions for call site ref according to cpts.
-    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const llvm::Function* fun) {
+    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
@@ -303,28 +303,28 @@ protected:
 
     /// Add cpts to store/load
     //@{
-    inline void addCPtsToStore(PointsTo& cpts, const StorePE *st, const llvm::Function* fun) {
+    inline void addCPtsToStore(PointsTo& cpts, const StorePE *st, const Function* fun) {
         storesToPointsToMap[st] = cpts;
         funToPointsToMap[fun].insert(cpts);
         addModSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToLoad(PointsTo& cpts, const LoadPE *ld, const llvm::Function* fun) {
+    inline void addCPtsToLoad(PointsTo& cpts, const LoadPE *ld, const Function* fun) {
         loadsToPointsToMap[ld] = cpts;
         funToPointsToMap[fun].insert(cpts);
         addRefSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToCallSiteRefs(PointsTo& cpts, llvm::CallSite cs) {
+    inline void addCPtsToCallSiteRefs(PointsTo& cpts, CallSite cs) {
         callsiteToRefPointsToMap[cs] = cpts;
         funToPointsToMap[cs.getCaller()].insert(cpts);
     }
-    inline void addCPtsToCallSiteMods(PointsTo& cpts, llvm::CallSite cs) {
+    inline void addCPtsToCallSiteMods(PointsTo& cpts, CallSite cs) {
         callsiteToModPointsToMap[cs] = cpts;
         funToPointsToMap[cs.getCaller()].insert(cpts);
     }
-    inline bool hasCPtsList(const llvm::Function* fun) const {
+    inline bool hasCPtsList(const Function* fun) const {
         return funToPointsToMap.find(fun)!=funToPointsToMap.end();
     }
-    inline PointsToList& getPointsToList(const llvm::Function* fun) {
+    inline PointsToList& getPointsToList(const Function* fun) {
         return funToPointsToMap[fun];
     }
     inline FunToPointsToMap& getFunToPointsToList() {
@@ -334,36 +334,36 @@ protected:
     /// Add/Get methods for side-effect of functions and callsites
     //@{
     /// Add indirect uses an memory object in the function
-    void addRefSideEffectOfFunction(const llvm::Function* fun, const NodeBS& refs);
+    void addRefSideEffectOfFunction(const Function* fun, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    void addModSideEffectOfFunction(const llvm::Function* fun, const NodeBS& mods);
+    void addModSideEffectOfFunction(const Function* fun, const NodeBS& mods);
     /// Add indirect uses an memory object in the function
-    bool addRefSideEffectOfCallSite(llvm::CallSite cs, const NodeBS& refs);
+    bool addRefSideEffectOfCallSite(CallSite cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    bool addModSideEffectOfCallSite(llvm::CallSite cs, const NodeBS& mods);
+    bool addModSideEffectOfCallSite(CallSite cs, const NodeBS& mods);
 
     /// Get indirect refs of a function
-    inline const NodeBS& getRefSideEffectOfFunction(const llvm::Function* fun) {
+    inline const NodeBS& getRefSideEffectOfFunction(const Function* fun) {
         return funToRefsMap[fun];
     }
     /// Get indirect mods of a function
-    inline const NodeBS& getModSideEffectOfFunction(const llvm::Function* fun) {
+    inline const NodeBS& getModSideEffectOfFunction(const Function* fun) {
         return funToModsMap[fun];
     }
     /// Get indirect refs of a callsite
-    inline const NodeBS& getRefSideEffectOfCallSite(llvm::CallSite cs) {
+    inline const NodeBS& getRefSideEffectOfCallSite(CallSite cs) {
         return csToRefsMap[cs];
     }
     /// Get indirect mods of a callsite
-    inline const NodeBS& getModSideEffectOfCallSite(llvm::CallSite cs) {
+    inline const NodeBS& getModSideEffectOfCallSite(CallSite cs) {
         return csToModsMap[cs];
     }
     /// Has indirect refs of a callsite
-    inline bool hasRefSideEffectOfCallSite(llvm::CallSite cs) {
+    inline bool hasRefSideEffectOfCallSite(CallSite cs) {
         return csToRefsMap.find(cs) != csToRefsMap.end();
     }
     /// Has indirect mods of a callsite
-    inline bool hasModSideEffectOfCallSite(llvm::CallSite cs) {
+    inline bool hasModSideEffectOfCallSite(CallSite cs) {
         return csToModsMap.find(cs) != csToModsMap.end();
     }
     //@}
@@ -382,14 +382,14 @@ public:
     virtual void generateMRs();
 
     /// Get the function which PAG Edge located
-    const llvm::Function* getFunction(const PAGEdge* pagEdge) const {
+    const Function* getFunction(const PAGEdge* pagEdge) const {
         PAGEdgeToFunMap::const_iterator it = pagEdgeToFunMap.find(pagEdge);
         assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global PAG edge");
         return it->second;
     }
     /// Get Memory Region set
     //@{
-    inline MRSet& getFunMRSet(const llvm::Function* fun) {
+    inline MRSet& getFunMRSet(const Function* fun) {
         return funToMRsMap[fun];
     }
     inline MRSet& getLoadMRSet(const LoadPE* load) {
@@ -398,26 +398,32 @@ public:
     inline MRSet& getStoreMRSet(const StorePE* store) {
         return storesToMRsMap[store];
     }
-    inline bool hasRefMRSet(llvm::CallSite cs) {
+    inline bool hasRefMRSet(CallSite cs) {
         return callsiteToRefMRsMap.find(cs)!=callsiteToRefMRsMap.end();
     }
-    inline bool hasModMRSet(llvm::CallSite cs) {
+    inline bool hasModMRSet(CallSite cs) {
         return callsiteToModMRsMap.find(cs)!=callsiteToModMRsMap.end();
     }
-    inline MRSet& getCallSiteRefMRSet(llvm::CallSite cs) {
+    inline MRSet& getCallSiteRefMRSet(CallSite cs) {
         return callsiteToRefMRsMap[cs];
     }
-    inline MRSet& getCallSiteModMRSet(llvm::CallSite cs) {
+    inline MRSet& getCallSiteModMRSet(CallSite cs) {
         return callsiteToModMRsMap[cs];
     }
     //@}
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const llvm::Instruction* inst) {
-        return pta->getPAG()->hasPAGEdgeList(inst);
+    inline bool hasPAGEdgeList(const Instruction* inst) {
+		if (ptrOnlyMSSA)
+			return pta->getPAG()->hasPTAPAGEdgeList(inst);
+		else
+			return pta->getPAG()->hasPAGEdgeList(inst);
     }
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
-    inline PAGEdgeList& getPAGEdgesFromInst(const llvm::Instruction* inst) {
-        return pta->getPAG()->getInstPAGEdgeList(inst);
+    inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst) {
+		if (ptrOnlyMSSA)
+			return pta->getPAG()->getInstPTAPAGEdgeList(inst);
+		else
+			return pta->getPAG()->getInstPAGEdgeList(inst);
     }
 
 };

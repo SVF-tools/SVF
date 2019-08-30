@@ -33,8 +33,6 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/PAG.h"
 
-using namespace llvm;
-
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
@@ -77,6 +75,9 @@ const char* PTAStat:: NumOfProcessedLoads = "LoadProcessed";		///< PAG load proc
 const char* PTAStat:: NumOfProcessedStores = "StoreProcessed";		///< PAG store processed edge
 const char* PTAStat:: NumOfProcessedCopys = "CopyProcessed";		///< PAG copy processed edge
 const char* PTAStat:: NumOfProcessedGeps = "GepProcessed";		///< PAG gep processed edge
+
+const char* PTAStat::NumOfSfr = "NumOfSFRs";                    ///< number of field representatives
+const char* PTAStat::NumOfFieldExpand = "NumOfFieldExpand";
 
 const char* PTAStat:: NumOfPointers = "Pointers";	///< PAG value node, each of them maps to a llvm value
 const char* PTAStat:: NumOfGepFieldPointers = "DYFieldPtrs";	///< PAG gep value node (field value, dynamically created dummy node)
@@ -125,11 +126,11 @@ void PTAStat::performStat() {
     std::set<SymID> memObjSet;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it) {
         PAGNode* node = it->second;
-        if(ObjPN* obj = dyn_cast<ObjPN>(node)) {
+        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node)) {
             const MemObj* mem = obj->getMemObj();
             if (memObjSet.insert(mem->getSymId()).second == false)
                 continue;
-            if(mem->isBlackHoleOrConstantObj())
+            if(mem->isBlackHoleObj())
                 continue;
             if(mem->isFunction())
                 numOfFunction++;
@@ -162,11 +163,15 @@ void PTAStat::performStat() {
             }
         }
     }
+
+
+
     generalNumMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
     generalNumMap[TotalNumOfObjects] = pag->getObjectNodeNum();
     generalNumMap[TotalNumOfFieldObjects] = pag->getFieldObjNodeNum();
     generalNumMap[MaxStructSize] = SymbolTableInfo::Symbolnfo()->getMaxStructSize();
     generalNumMap[TotalNumOfEdges] = pag->getPAGEdgeNum();
+    generalNumMap["TotalPTAPAGEdges"] = pag->totalPTAPAGEdge;
     generalNumMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
     generalNumMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 
@@ -195,9 +200,8 @@ void PTAStat::performStat() {
     bitcastInstStat();
     branchStat();
 
-    printStat();
+    printStat("General Stats");
 
-    generalNumMap.clear();
 }
 
 void PTAStat::callgraphStat() {
@@ -246,19 +250,18 @@ void PTAStat::callgraphStat() {
     PTNumStatMap["TotalEdge"] = totalEdge;
     PTNumStatMap["CalRetPairInCycle"] = edgeInCycle;
 
-    std::cout << "\n****CallGraph SCC Stat****\n";
-    PTAStat::printStat();
-
-    PTNumStatMap.clear();
+    PTAStat::printStat("CallGraph Stats");
 
     delete callgraphSCC;
 }
 
-void PTAStat::printStat() {
+void PTAStat::printStat(string statname) {
 
     StringRef fullName(SymbolTableInfo::Symbolnfo()->getModule().getModuleIdentifier());
     StringRef name = fullName.split('/').second;
     moduleName = name.split('.').first.str();
+
+    std::cout << "\n*********" << statname << "***************\n";
     std::cout << "################ (program : " << moduleName << ")###############\n";
     std::cout.flags(std::ios::left);
     unsigned field_width = 20;
@@ -277,7 +280,9 @@ void PTAStat::printStat() {
     }
 
     std::cout << "#######################################################" << std::endl;
-
+    generalNumMap.clear();
+    PTNumStatMap.clear();
+    timeStatMap.clear();
 }
 
 
@@ -286,15 +291,15 @@ void PTAStat::bitcastInstStat() {
     u32_t numberOfBitCast = 0;
     for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
             funIter != funEiter; ++funIter) {
-        const llvm::Function* func = *funIter;
-        for (llvm::Function::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const Function* func = *funIter;
+        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt) {
-            const llvm::BasicBlock& bb = *bbIt;
-            for (llvm::BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
+            const BasicBlock& bb = *bbIt;
+            for (BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
                     instIt != instEit; ++instIt) {
-                const llvm::Instruction& inst = *instIt;
-                if (const llvm::BitCastInst* bitcast = llvm::dyn_cast<llvm::BitCastInst>(&inst)) {
-                    if (llvm::isa<PointerType>(bitcast->getSrcTy()))
+                const Instruction& inst = *instIt;
+                if (const BitCastInst* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst)) {
+                    if (SVFUtil::isa<PointerType>(bitcast->getSrcTy()))
                         numberOfBitCast++;
                 }
             }
@@ -310,10 +315,10 @@ void PTAStat::branchStat() {
     u32_t numOfBB_3Succ = 0;
     for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
             funIter != funEiter; ++funIter) {
-        const llvm::Function* func = *funIter;
-        for (llvm::Function::const_iterator bbIt = func->begin(), bbEit = func->end();
+        const Function* func = *funIter;
+        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
                 bbIt != bbEit; ++bbIt) {
-            const llvm::BasicBlock& bb = *bbIt;
+            const BasicBlock& bb = *bbIt;
             u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;

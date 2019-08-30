@@ -28,18 +28,11 @@
  */
 
 #include <queue>
-#include <llvm/Support/CommandLine.h>
 #include "Util/SVFModule.h"
-#include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
-#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
-
-#include <llvm/IR/IRBuilder.h>
+#include "Util/SVFUtil.h"
 
 using namespace std;
-using namespace llvm;
+
 
 /*
   svf.main() is used to model the real entry point of a C++ program,
@@ -58,29 +51,29 @@ using namespace llvm;
 #define SVF_MAIN_FUNC_NAME           "svf.main"
 #define SVF_GLOBAL_SUB_I_XXX          "_GLOBAL__sub_I_"
 
-static cl::opt<std::string> Graphtxt("graphtxt", cl::value_desc("filename"),
-                                     cl::desc("graph txt file to build PAG"));
-static cl::opt<bool> SVFMain("svfmain", cl::init(false), cl::desc("add svf.main()"));
+static llvm::cl::opt<std::string> Graphtxt("graphtxt", llvm::cl::value_desc("filename"),
+		llvm::cl::desc("graph txt file to build PAG"));
+static llvm::cl::opt<bool> SVFMain("svfmain", llvm::cl::init(false), llvm::cl::desc("add svf.main()"));
 
 LLVMModuleSet *SVFModule::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
 
-LLVMModuleSet::LLVMModuleSet(llvm::Module *mod) {
+LLVMModuleSet::LLVMModuleSet(Module *mod) {
     moduleNum = 1;
     cxts = &(mod->getContext());
     modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<llvm::Module>(mod);
+    modules[0] = std::unique_ptr<Module>(mod);
 
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
 }
 
-LLVMModuleSet::LLVMModuleSet(llvm::Module &mod) {
+LLVMModuleSet::LLVMModuleSet(Module &mod) {
     moduleNum = 1;
     cxts = &(mod.getContext());
     modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<llvm::Module>(&mod);
+    modules[0] = std::unique_ptr<Module>(&mod);
 
     initialize();
     buildFunToFunMap();
@@ -131,7 +124,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec) {
         SMDiagnostic Err;
         modules[i] = parseIRFile(moduleName, Err, cxts[0]);
         if (!modules[i]) {
-            errs() << "load module: " << moduleName << "failed\n";
+        	SVFUtil::errs() << "load module: " << moduleName << "failed\n";
             continue;
         }
     }
@@ -195,9 +188,9 @@ void LLVMModuleSet::addSVFMain(){
             Type::getVoidTy(M.getContext()),
             i32,i8ptr2,i8ptr2
         );
-        svfmain->setCallingConv(CallingConv::C);
+        svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
-        IRBuilder<> Builder(block);
+        IRBuilder Builder(block);
         // emit "call void @_GLOBAL__sub_I_XXX()"
         for(auto & init: init_funcs){
             Function *target = (Function*)M.getOrInsertFunction(
@@ -211,7 +204,7 @@ void LLVMModuleSet::addSVFMain(){
         Value * args[] = {arg_it, arg_it + 1, arg_it + 2 };
         size_t cnt = orgMain->arg_size();
         assert(cnt <= 3 && "Too many arguments for main()");
-        Builder.CreateCall(orgMain, ArrayRef<Value*>(args,args + cnt));
+        Builder.CreateCall(orgMain, llvm::ArrayRef<Value*>(args,args + cnt));
         // return;
         Builder.CreateRetVoid();
     }
@@ -367,7 +360,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix) {
             OutputFilename = moduleName + suffix;
 
         std::error_code EC;
-        llvm::raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
+        raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
         WriteBitcodeToFile(*mod, OS);
         OS.flush();
     }

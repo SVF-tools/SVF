@@ -10,8 +10,6 @@
 
 #include "Util/BasicTypes.h"
 #include "Util/Annotator.h"
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/CallSite.h>
 
 /*!
  * MTA annotation
@@ -27,7 +25,7 @@ public:
     }
     /// Annotation
     //@{
-    void annotateDRCheck(llvm::Instruction* inst);
+    void annotateDRCheck(Instruction* inst);
     //@}
 
 };

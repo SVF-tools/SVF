@@ -30,8 +30,6 @@
 #ifndef PTATYPE_H_
 #define PTATYPE_H_
 
-#include <llvm/IR/Type.h>
-#include <llvm/Support/raw_ostream.h>
 #include <set>
 #include <map>
 #include "Util/BasicTypes.h"
@@ -42,10 +40,10 @@ class PAG;
 class PTAType {
 public:
     /// Constructor
-    PTAType(const llvm::Type *ty): type(ty) {}
+    PTAType(const Type *ty): type(ty) {}
 
     /// Get the contained llvm type
-    inline const llvm::Type *getLLVMType() const {
+    inline const Type *getLLVMType() const {
         return type;
     }
 
@@ -74,7 +72,7 @@ public:
     //@}
 
 private:
-    const llvm::Type *type;
+    const Type *type;
 };
 
 class TypeSet {
@@ -222,7 +220,7 @@ public:
 
     /// Add a ptatype for a var
     /// Return true if the ptatype is new for this var
-    inline bool addTypeForVar(NodeID var, const llvm::Type *type) {
+    inline bool addTypeForVar(NodeID var, const Type *type) {
         PTAType ptaTy(type);
         return addTypeForVar(var, ptaTy);
     }
@@ -239,7 +237,7 @@ public:
         }
     }
 
-    void addVarForType(NodeID var, const llvm::Type *type) {
+    void addVarForType(NodeID var, const Type *type) {
         PTAType ptaTy(type);
         return addVarForType(var, ptaTy);
     }
@@ -261,11 +259,11 @@ public:
     void printTypeSystem() const {
         for (const_iterator it = VarToTypeSetMap.begin(),
                 eit = VarToTypeSetMap.end(); it != eit; ++it) {
-            llvm::errs() << "Var: " << it->first << '\n';
-            llvm::errs() << "types:\n";
+            SVFUtil::errs() << "Var: " << it->first << '\n';
+            SVFUtil::errs() << "types:\n";
             const TypeSet *typeSet = it->second;
             typeSet->dumpTypes();
-            llvm::errs() << '\n';
+            SVFUtil::errs() << '\n';
         }
     }
     //@}
@@ -286,16 +284,16 @@ private:
             if (pagNode->hasValue() == false)
                 continue;
 
-            const llvm::Value *value = pagNode->getValue();
-            const llvm::Type *valType = value->getType();
+            const Value *value = pagNode->getValue();
+            const Type *valType = value->getType();
 
-            const llvm::Type *nodeType = valType;
+            const Type *nodeType = valType;
 
-            if (const GepValPN *gepvalnode = llvm::dyn_cast<GepValPN>(pagNode)) {
+            if (const GepValPN *gepvalnode = SVFUtil::dyn_cast<GepValPN>(pagNode)) {
                 nodeType = gepvalnode->getType();
-            } else if (llvm::isa<RetPN>(pagNode)) {
-                const llvm::PointerType *ptrTy = llvm::dyn_cast<llvm::PointerType>(valType);
-                const llvm::FunctionType *funTy = llvm::dyn_cast<llvm::FunctionType>(ptrTy->getElementType());
+            } else if (SVFUtil::isa<RetPN>(pagNode)) {
+                const llvm::PointerType *ptrTy = SVFUtil::dyn_cast<llvm::PointerType>(valType);
+                const llvm::FunctionType *funTy = SVFUtil::dyn_cast<llvm::FunctionType>(ptrTy->getElementType());
                 nodeType = funTy->getReturnType();
             }
 

@@ -29,27 +29,19 @@
 
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
-#include "Util/AnalysisUtil.h"
+#include "Util/SVFUtil.h"
 #include "MSSA/SVFGStat.h"
 
-#include <llvm/Analysis/DominanceFrontier.h>
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/IR/CFG.h>		// for CFG
-#include <llvm/Analysis/CFG.h>	// for CFG
-#include <llvm/Support/raw_ostream.h>	// for output
-#include <llvm/Support/CommandLine.h>
-
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 
-static cl::opt<bool> DumpMSSA("dump-mssa", cl::init(false),
-                              cl::desc("Dump memory SSA"));
-static cl::opt<string> MSSAFun("mssafun",  cl::init(""),
-                               cl::desc("Please specify which function needs to be dumped"));
+static llvm::cl::opt<bool> DumpMSSA("dump-mssa", llvm::cl::init(false),
+                              llvm::cl::desc("Dump memory SSA"));
+static llvm::cl::opt<string> MSSAFun("mssafun",  llvm::cl::init(""),
+                               llvm::cl::desc("Please specify which function needs to be dumped"));
 
-static cl::opt<std::string> MemPar("mempar", cl::value_desc("memory-partition-type"),
-                                   cl::desc("memory partition strategy"));
+static llvm::cl::opt<std::string> MemPar("mempar", llvm::cl::value_desc("memory-partition-type"),
+                                   llvm::cl::desc("memory partition strategy"));
 static std::string kDistinctMemPar = "distinct";
 static std::string kIntraDisjointMemPar = "intra-disjoint";
 static std::string kInterDisjointMemPar = "inter-disjoint";
@@ -63,7 +55,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p) : df(NULL),dt(NULL) {
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL) {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
@@ -71,16 +63,16 @@ MemSSA::MemSSA(BVDataPTAImpl* p) : df(NULL),dt(NULL) {
     if (!MemPar.getValue().empty()) {
         std::string strategy = MemPar.getValue();
         if (strategy == kDistinctMemPar)
-            mrGen = new DistinctMRG(pta);
+            mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
         else if (strategy == kIntraDisjointMemPar)
-            mrGen = new IntraDisjointMRG(pta);
+            mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
         else if (strategy == kInterDisjointMemPar)
-            mrGen = new InterDisjointMRG(pta);
+            mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
         else
             assert(false && "unrecognised memory partition strategy");
     }
     else {
-        mrGen = new IntraDisjointMRG(pta);
+        mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
     }
 
     stat = new MemSSAStat(this);
@@ -166,7 +158,7 @@ void MemSSA::createMUCHI(const Function& fun) {
             iter != eiter; ++iter) {
         const BasicBlock* bb = *iter;
         varKills.clear();
-        for (llvm::BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
+        for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
                 it != eit; ++it) {
             const Instruction* inst = &*it;
             if(mrGen->hasPAGEdgeList(inst)) {
@@ -174,14 +166,14 @@ void MemSSA::createMUCHI(const Function& fun) {
                 for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit) {
                     const PAGEdge* inst = *bit;
-                    if (const LoadPE* load = dyn_cast<LoadPE>(inst))
+                    if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                         AddLoadMU(bb, load, mrGen->getLoadMRSet(load));
-                    else if (const StorePE* store = dyn_cast<StorePE>(inst))
+                    else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
-            if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
-                CallSite cs = analysisUtil::getLLVMCallSite(inst);
+            if (isNonInstricCallSite(inst)) {
+                CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
 
@@ -236,13 +228,13 @@ void MemSSA::insertPHI(const Function& fun) {
         while (!bbs.empty()) {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
-            DominanceFrontierBase<BasicBlock, false>::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
+            DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
             if(it == df->end()) {
                 wrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
-            const DominanceFrontierBase<BasicBlock, false>::DomSetType& domSet = it->second;
-            for (DominanceFrontierBase<BasicBlock, false>::DomSetType::const_iterator bit =
+            const DominanceFrontierBase::DomSetType& domSet = it->second;
+            for (DominanceFrontierBase::DomSetType::const_iterator bit =
                         domSet.begin(); bit != domSet.end(); ++bit) {
                 const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
@@ -293,7 +285,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     // 		rewrite r' with top mrver of stack(r)
     // 		rewrite r with new name
 
-    for (llvm::BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
+    for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
             it != eit; ++it) {
         const Instruction* inst = &*it;
         if(mrGen->hasPAGEdgeList(inst)) {
@@ -301,16 +293,16 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
             for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                     bit!=ebit; ++bit) {
                 const PAGEdge* inst = *bit;
-                if (const LoadPE* load = dyn_cast<LoadPE>(inst))
+                if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                     RenameMuSet(getMUSet(load));
 
-                else if (const StorePE* store = dyn_cast<StorePE>(inst))
+                else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
                     RenameChiSet(getCHISet(store),memRegs);
 
             }
         }
-        if (isCallSite(inst) && isInstrinsicDbgInst(inst)==false) {
-            CallSite cs = analysisUtil::getLLVMCallSite(inst);
+        if (isNonInstricCallSite(inst)) {
+            CallSite cs = SVFUtil::getLLVMCallSite(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
 
@@ -327,7 +319,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     for (succ_const_iterator sit = succ_begin(&bb), esit = succ_end(&bb);
             sit != esit; ++sit) {
         const BasicBlock* succ = *sit;
-        u32_t pos = getPreBBIndex(&bb, succ);
+        u32_t pos = getBBPredecessorPos(&bb, succ);
         if (hasPHISet(succ))
             RenamePhiOps(getPHISet(succ),pos,memRegs);
     }
@@ -361,22 +353,6 @@ MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def) {
     MRVer* mrVer = new MRVer(mr, version, def);
     mr2VerStackMap[mr].push_back(mrVer);
     return mrVer;
-}
-
-/*!
- * Return a position index from current bb to it successor bb
- */
-u32_t MemSSA::getPreBBIndex(const BasicBlock* bb,
-                            const BasicBlock* succbb) {
-    u32_t pos = 0;
-    for (const_pred_iterator pit = pred_begin(succbb), epit = pred_end(succbb);
-            pit != epit; ++pit, ++pos) {
-        if (bb == *pit)
-            return pos;
-    }
-    assert(false && "did not find bb in predecessors of succ_bb ");
-    return pos;
-
 }
 
 /*!
@@ -569,7 +545,7 @@ u32_t MemSSA::getBBPhiNum() const
 /*!
  * Print SSA
  */
-void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
+void MemSSA::dumpMSSA(raw_ostream& Out) {
     if (!DumpMSSA)
         return;
 
@@ -603,8 +579,8 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isCallSite(&inst) && isExtCall(&inst)==false) {
-                    CallSite cs = analysisUtil::getLLVMCallSite(&inst);
+                if (isNonInstricCallSite(&inst) && isExtCall(&inst)==false) {
+                    CallSite cs = SVFUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {
                             Out << "\n";
@@ -634,7 +610,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit) {
                         const PAGEdge* edge = *bit;
-                        if (const LoadPE* load = dyn_cast<LoadPE>(edge)) {
+                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge)) {
                             MUSet& muSet = getMUSet(load);
                             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it) {
                                 if (!dump_preamble && !last_is_chi) {
@@ -652,7 +628,7 @@ void MemSSA::dumpMSSA(llvm::raw_ostream& Out) {
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit) {
                         const PAGEdge* edge = *bit;
-                        if (const StorePE* store = dyn_cast<StorePE>(edge)) {
+                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge)) {
                             CHISet& chiSet = getCHISet(store);
                             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it) {
                                 has_chi = true;

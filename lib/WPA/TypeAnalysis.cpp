@@ -31,21 +31,34 @@
 #include "MemoryModel/CHA.h"
 #include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
+#include "Util/ICFGStat.h"
+#include "Util/VFG.h"
+#include "WPA/IFDS.h"
 
-using namespace llvm;
+using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
+llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Generate ICFG graph"));
+
 /// Initialize analysis
 void TypeAnalysis::initialize(SVFModule svfModule) {
-    PointerAnalysis::initialize(svfModule);
-    stat = new PTAStat(this);
+    Andersen::initialize(svfModule);
+	if (genICFG) {
+		icfg = new ICFG(ptaCallGraph);
+		IFDS* ifds = new IFDS(icfg);
+		icfg->dump("icfg_initial");
+		icfg->getVFG()->dump("vfg_initial");
+		if (print_stat)
+			icfg->getStat()->performStat();
+	}
 }
 
 /// Finalize analysis
 void TypeAnalysis::finalize() {
-    PointerAnalysis::finalize();
-    dumpCHAStats();
+    Andersen::finalize();
+	if (print_stat)
+		dumpCHAStats();
 }
 
 void TypeAnalysis::analyze(SVFModule svfModule){

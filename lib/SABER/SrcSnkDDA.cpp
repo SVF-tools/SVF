@@ -30,15 +30,14 @@
 
 #include "SABER/SrcSnkDDA.h"
 #include "MSSA/SVFGStat.h"
-#include "Util/GraphUtil.h"
 
-using namespace llvm;
+using namespace SVFUtil;
 
-static cl::opt<bool> DumpSlice("dump-slice", cl::init(false),
-                               cl::desc("Dump dot graph of Saber Slices"));
+static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),
+                               llvm::cl::desc("Dump dot graph of Saber Slices"));
 
-static cl::opt<unsigned> cxtLimit("cxtlimit",  cl::init(3),
-                                  cl::desc("Source-Sink Analysis Contexts Limit"));
+static llvm::cl::opt<unsigned> cxtLimit("cxtlimit",  llvm::cl::init(3),
+                                  llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
 void SrcSnkDDA::analyze(SVFModule module) {
 
@@ -107,10 +106,10 @@ void SrcSnkDDA::forwardpropagate(const DPIm& item, SVFGEdge* edge) {
     // push context for calling
     if (edge->isCallVFGEdge()) {
         CallSiteID csId = 0;
-        if(const CallDirSVFGEdge* callEdge = dyn_cast<CallDirSVFGEdge>(edge))
+        if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
             csId = callEdge->getCallSiteId();
         else
-            csId = cast<CallIndSVFGEdge>(edge)->getCallSiteId();
+            csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
         newItem.pushContext(csId);
         DBOUT(DSaber, outs() << " push cxt [" << csId << "] ");
@@ -118,10 +117,10 @@ void SrcSnkDDA::forwardpropagate(const DPIm& item, SVFGEdge* edge) {
     // match context for return
     else if (edge->isRetVFGEdge()) {
         CallSiteID csId = 0;
-        if(const RetDirSVFGEdge* callEdge = dyn_cast<RetDirSVFGEdge>(edge))
+        if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
             csId = callEdge->getCallSiteId();
         else
-            csId = cast<RetIndSVFGEdge>(edge)->getCallSiteId();
+            csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
         if (newItem.matchContext(csId) == false) {
             DBOUT(DSaber, outs() << "-|-\n");

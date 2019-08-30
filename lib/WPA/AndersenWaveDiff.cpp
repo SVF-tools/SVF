@@ -28,23 +28,142 @@
  */
 
 #include "WPA/Andersen.h"
-#include <llvm/Support/CommandLine.h> // for tool output file
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 AndersenWaveDiff* AndersenWaveDiff::diffWave = NULL;
 
+/*!
+ * solve worklist
+ */
+void AndersenWaveDiff::solveWorklist() {
+    // Initialize the nodeStack via a whole SCC detection
+    // Nodes in nodeStack are in topological order by default.
+    NodeStack& nodeStack = SCCDetect();
+
+    // Process nodeStack and put the changed nodes into workList.
+    while (!nodeStack.empty()) {
+        NodeID nodeId = nodeStack.top();
+        nodeStack.pop();
+        collapsePWCNode(nodeId);
+        // process nodes in nodeStack
+        processNode(nodeId);
+        collapseFields();
+    }
+
+    // This modification is to make WAVE feasible to handle PWC analysis
+    if (!mergePWC()) {
+        NodeStack tmpWorklist;
+        while (!isWorklistEmpty()) {
+            NodeID nodeId = popFromWorklist();
+            collapsePWCNode(nodeId);
+            // process nodes in nodeStack
+            processNode(nodeId);
+            collapseFields();
+            tmpWorklist.push(nodeId);
+        }
+        while (!tmpWorklist.empty()) {
+            NodeID nodeId = tmpWorklist.top();
+            tmpWorklist.pop();
+            pushIntoWorklist(nodeId);
+        }
+    }
+
+    // New nodes will be inserted into workList during processing.
+    while (!isWorklistEmpty()) {
+        NodeID nodeId = popFromWorklist();
+        // process nodes in worklist
+        postProcessNode(nodeId);
+    }
+}
 
 /*!
- * Compute diff points-to set before propagation
+ * Process edge PAGNode
  */
-void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
-{
-    computeDiffPts(node->getId());
+void AndersenWaveDiff::processNode(NodeID nodeId) {
+    // This node may be merged during collapseNodePts() which means it is no longer a rep node
+    // in the graph. Only rep node needs to be handled.
+    if (sccRepNode(nodeId) != nodeId)
+        return;
 
-    if (!getDiffPts(node->getId()).empty())
-        AndersenWave::handleCopyGep(node);
+    double propStart = stat->getClk();
+    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+    handleCopyGep(node);
+    double propEnd = stat->getClk();
+    timeOfProcessCopyGep += (propEnd - propStart) / TIMEINTERVAL;
+}
+
+/*!
+ * Post process node
+ */
+void AndersenWaveDiff::postProcessNode(NodeID nodeId)
+{
+    double insertStart = stat->getClk();
+
+    ConstraintNode* node = consCG->getConstraintNode(nodeId);
+
+    // handle load
+    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
+         it != eit; ++it) {
+        if (handleLoad(nodeId, *it))
+            reanalyze = true;
+    }
+    // handle store
+    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
+         it != eit; ++it) {
+        if (handleStore(nodeId, *it))
+            reanalyze = true;
+    }
+
+    double insertEnd = stat->getClk();
+    timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
+}
+
+/*!
+ * Handle copy gep
+ */
+void AndersenWaveDiff::handleCopyGep(ConstraintNode* node) {
+    NodeID nodeId = node->getId();
+    computeDiffPts(nodeId);
+
+    if (!getDiffPts(nodeId).empty()) {
+        for (ConstraintEdge* edge : node->getCopyOutEdges())
+            if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
+                processCopy(nodeId, copyEdge);
+        for (ConstraintEdge* edge : node->getGepOutEdges())
+            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+                processGep(nodeId, gepEdge);
+    }
+}
+
+/*!
+ * Handle load
+ */
+bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
+{
+    bool changed = false;
+    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
+         piter != epiter; ++piter) {
+        if (processLoad(*piter, edge)) {
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+/*!
+ * Handle store
+ */
+bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
+{
+    bool changed = false;
+    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
+         piter != epiter; ++piter) {
+        if (processStore(*piter, edge)) {
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 /*!
@@ -54,7 +173,7 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
     numOfProcessedCopy++;
 
     bool changed = false;
-    assert((isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
+    assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
     PointsTo& srcDiffPts = getDiffPts(node);
     processCast(edge);
@@ -67,70 +186,19 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
 }
 
 /*!
- * Propagate diff points-to set from src to dst
- */
-void AndersenWaveDiff::processGep(NodeID node, const GepCGEdge* edge) {
-    PointsTo& srcDiffPts = getDiffPts(edge->getSrcID());
-    processGepPts(srcDiffPts, edge);
-}
-
-/*!
- * Add copy edges which haven't been added before
- */
-bool AndersenWaveDiff::handleLoad(NodeID node, const ConstraintEdge* edge)
-{
-    /// calculate diff pts.
-    PointsTo & cache = getCachePts(edge);
-    PointsTo & pts = getPts(node);
-    PointsTo newPts;
-    newPts.intersectWithComplement(pts, cache);
-    cache |= newPts;
-
-    bool changed = false;
-    for (PointsTo::iterator piter = newPts.begin(), epiter = newPts.end(); piter != epiter; ++piter) {
-        NodeID ptdId = *piter;
-        if (processLoad(ptdId, edge)) {
-            changed = true;
-        }
-    }
-
-    return changed;
-}
-
-/*!
- * Add copy edges which haven't been added before
- */
-bool AndersenWaveDiff::handleStore(NodeID node, const ConstraintEdge* edge)
-{
-    /// calculate diff pts.
-    PointsTo & cache = getCachePts(edge);
-    PointsTo & pts = getPts(node);
-    PointsTo newPts;
-    newPts.intersectWithComplement(pts, cache);
-    cache |= newPts;
-
-    bool changed = false;
-    for (PointsTo::iterator piter = newPts.begin(), epiter = newPts.end(); piter != epiter; ++piter) {
-        NodeID ptdId = *piter;
-        if (processStore(ptdId, edge)) {
-            changed = true;
-        }
-    }
-
-    return changed;
-}
-
-/*!
  * Update call graph for the input indirect callsites
  */
 bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+
+    double cgUpdateStart = stat->getClk();
+
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        llvm::CallSite cs = it->first;
+        CallSite cs = it->first;
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
-            consCG->connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }
     }
     for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it) {
@@ -139,6 +207,9 @@ bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
         unionPts(dst, src);
         pushIntoWorklist(dst);
     }
+
+    double cgUpdateEnd = stat->getClk();
+    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
 
     return (!newEdges.empty());
 }

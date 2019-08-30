@@ -37,16 +37,14 @@
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
-
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/CallGraph.h>	// call graph
+#include "WPA/CSC.h"
 
 class CHGraph;
 class CHNode;
 
 class TypeSystem;
 class SVFModule;
-
+class ICFG;
 class PTAStat;
 /*
  * Pointer Analysis Base Class
@@ -59,7 +57,10 @@ public:
         // Whole program analysis
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
-        AndersenWave_WPA,	///< Wave propagation andersen-style WPA
+        AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
+        AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
+        AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
+        AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
         CSCallString_WPA,	///< Call string based context sensitive WPA
@@ -85,18 +86,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef std::set<llvm::CallSite> CallSiteSet;
+    typedef std::set<CallSite> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef	std::set<const llvm::Function*> FunctionSet;
-    typedef std::map<llvm::CallSite, FunctionSet> CallEdgeMap;
+    typedef	std::set<const Function*> FunctionSet;
+    typedef std::map<CallSite, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef std::set<const llvm::GlobalValue*> VTableSet;
-    typedef std::set<const llvm::Function*> VFunSet;
-    //@}
-
-    /// Statistic numbers
-    //@{
-    Size_t numOfIteration;
+    typedef std::set<const GlobalValue*> VTableSet;
+    typedef std::set<const Function*> VFunSet;
     //@}
 
 private:
@@ -110,7 +106,7 @@ protected:
     /// Flag for printing the statistic results
     bool print_stat;
     /// Flag for iteration budget for on-the-fly statistics
-    Size_t OnTheFlyIterBudgetForStat;
+    u32_t OnTheFlyIterBudgetForStat;
     //@}
 
     /// PAG
@@ -125,6 +121,8 @@ protected:
     PTACallGraph* ptaCallGraph;
     /// SCC for CallGraph
     CallGraphSCC* callGraphSCC;
+    /// Interprocedural control-flow graph
+    ICFG* icfg;
     /// CHGraph
     static CHGraph *chgraph;
     /// TypeSystem
@@ -191,15 +189,15 @@ public:
     virtual void computeDDAPts(NodeID id) {}
 
     /// Interface exposed to users of our pointer analysis, given Location infos
-    virtual llvm::AliasResult alias(const llvm::MemoryLocation &LocA,
-                                    const llvm::MemoryLocation &LocB) = 0;
+    virtual AliasResult alias(const MemoryLocation &LocA,
+                                    const MemoryLocation &LocB) = 0;
 
     /// Interface exposed to users of our pointer analysis, given Value infos
-    virtual llvm::AliasResult alias(const llvm::Value* V1,
-                                    const llvm::Value* V2) = 0;
+    virtual AliasResult alias(const Value* V1,
+                                    const Value* V2) = 0;
 
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
-    virtual llvm::AliasResult alias(NodeID node1, NodeID node2) = 0;
+    virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
 
 protected:
     /// Return all indirect callsites
@@ -207,7 +205,7 @@ protected:
         return pag->getIndirectCallsites();
     }
     /// Return function pointer PAGNode at a callsite cs
-    inline NodeID getFunPtr(const llvm::CallSite& cs) const {
+    inline NodeID getFunPtr(const CallSite& cs) const {
         return pag->getFunPtr(cs);
     }
     /// Alias check functions to verify correctness of pointer analysis
@@ -261,7 +259,7 @@ public:
     /// For field-sensitivity
     ///@{
     inline bool isFIObjNode(NodeID id) const {
-        return (llvm::isa<FIObjPN>(pag->getPAGNode(id)));
+        return (SVFUtil::isa<FIObjPN>(pag->getPAGNode(id)));
     }
     inline NodeID getBaseObjNode(NodeID id) {
         return pag->getBaseObjNode(id);
@@ -300,22 +298,22 @@ public:
     inline CallEdgeMap& getIndCallMap() {
         return getPTACallGraph()->getIndCallMap();
     }
-    inline bool hasIndCSCallees(llvm::CallSite cs) const {
+    inline bool hasIndCSCallees(CallSite cs) const {
         return getPTACallGraph()->hasIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(llvm::CallSite cs) const {
+    inline const FunctionSet& getIndCSCallees(CallSite cs) const {
         return getPTACallGraph()->getIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(llvm::CallInst* csInst) const {
-        llvm::CallSite cs = analysisUtil::getLLVMCallSite(csInst);
+    inline const FunctionSet& getIndCSCallees(CallInst* csInst) const {
+        CallSite cs = SVFUtil::getLLVMCallSite(csInst);
         return getIndCSCallees(cs);
     }
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(llvm::CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,llvm::CallGraph* callgraph = NULL);
+    virtual void resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
     /// Match arguments for callsite at caller and callee
-    inline bool matchArgs(llvm::CallSite cs, const llvm::Function* callee) {
+    inline bool matchArgs(CallSite cs, const Function* callee) {
         if(ThreadAPI::getThreadAPI()->isTDFork(cs))
             return true;
         else
@@ -336,12 +334,12 @@ public:
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const llvm::Function* fun1,const llvm::Function* fun2) {
+    inline bool inSameCallGraphSCC(const Function* fun1,const Function* fun2) {
         const PTACallGraphNode* src = ptaCallGraph->getCallGraphNode(fun1);
         const PTACallGraphNode* dst = ptaCallGraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
-    inline bool isInRecursion(const llvm::Function* fun) const {
+    inline bool isInRecursion(const Function* fun) const {
         return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions
@@ -365,7 +363,7 @@ public:
     }
 
     /// Print targets of a function pointer
-    void printIndCSTargets(const llvm::CallSite cs, const FunctionSet& targets);
+    void printIndCSTargets(const CallSite cs, const FunctionSet& targets);
 
     // Debug purpose
     //@{
@@ -382,13 +380,12 @@ public:
         return chgraph;
     }
 
-    void getVFnsFromCHA(llvm::CallSite cs, std::set<const llvm::Function*> &vfns);
-    void getVFnsFromPts(llvm::CallSite cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(llvm::CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges, llvm::CallGraph* callgraph = NULL);
-    virtual void resolveCPPIndCalls(llvm::CallSite cs,
+    void getVFnsFromCHA(CallSite cs, std::set<const Function*> &vfns);
+    void getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges);
+    virtual void resolveCPPIndCalls(CallSite cs,
                                     const PointsTo& target,
-                                    CallEdgeMap& newEdges,
-                                    llvm::CallGraph* callgraph = NULL);
+                                    CallEdgeMap& newEdges);
 
     /// get TypeSystem
     const TypeSystem *getTypeSystem() const {
@@ -453,10 +450,10 @@ protected:
         return ptD;
     }
     inline DiffPTDataTy* getDiffPTDataTy() const {
-        return llvm::cast<DiffPTDataTy>(ptD);
+        return SVFUtil::cast<DiffPTDataTy>(ptD);
     }
     inline IncDFPTDataTy* getDFPTDataTy() const {
-        return llvm::cast<IncDFPTDataTy>(ptD);
+        return SVFUtil::cast<IncDFPTDataTy>(ptD);
     }
 
     /// Union/add points-to. Add the reverse points-to for node collapse purpose
@@ -479,7 +476,7 @@ protected:
     }
 
     /// On the fly call graph construction
-    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges,llvm::CallGraph* callgraph = NULL);
+    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
 private:
     /// Points-to data
@@ -487,18 +484,18 @@ private:
 
 public:
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual llvm::AliasResult alias(const llvm::MemoryLocation  &LocA,
-                                    const llvm::MemoryLocation  &LocB);
+    virtual AliasResult alias(const MemoryLocation  &LocA,
+                                    const MemoryLocation  &LocB);
 
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual llvm::AliasResult alias(const llvm::Value* V1,
-                                    const llvm::Value* V2);
+    virtual AliasResult alias(const Value* V1,
+                                    const Value* V2);
 
     /// Interface expose to users of our pointer analysis, given PAGNodeID
-    virtual llvm::AliasResult alias(NodeID node1, NodeID node2);
+    virtual AliasResult alias(NodeID node1, NodeID node2);
 
     /// Interface expose to users of our pointer analysis, given two pts
-    virtual llvm::AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
+    virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
 
     /// dump and debug, print out conditional pts
     //@{
@@ -708,24 +705,24 @@ public:
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline llvm::AliasResult alias(const llvm::MemoryLocation &LocA,
-                                           const llvm::MemoryLocation  &LocB) {
+    virtual inline AliasResult alias(const MemoryLocation &LocA,
+                                           const MemoryLocation  &LocB) {
         return alias(LocA.Ptr, LocB.Ptr);
     }
     /// Interface expose to users of our pointer analysis, given Value infos
-    virtual inline llvm::AliasResult alias(const llvm::Value* V1, const llvm::Value* V2) {
+    virtual inline AliasResult alias(const Value* V1, const Value* V2) {
         return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
     }
     /// Interface expose to users of our pointer analysis, given two pointers
-    virtual inline llvm::AliasResult alias(NodeID node1, NodeID node2) {
+    virtual inline AliasResult alias(NodeID node1, NodeID node2) {
         return alias(getCondPointsTo(node1),getCondPointsTo(node2));
     }
     /// Interface expose to users of our pointer analysis, given conditional variables
-    virtual llvm::AliasResult alias(const CVar& var1, const CVar& var2) {
+    virtual AliasResult alias(const CVar& var1, const CVar& var2) {
         return alias(getPts(var1),getPts(var2));
     }
     /// Interface expose to users of our pointer analysis, given two conditional points-to sets
-    virtual inline llvm::AliasResult alias(const CPtSet& pts1, const CPtSet& pts2) {
+    virtual inline AliasResult alias(const CPtSet& pts1, const CPtSet& pts2) {
         CPtSet cpts1;
         expandFIObjs(pts1,cpts1);
         CPtSet cpts2;
@@ -764,23 +761,23 @@ public:
         for (NodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter) {
             const PAGNode* node = this->getPAG()->getPAGNode(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node)) {
-                if (llvm::isa<DummyObjPN>(node)) {
-                    llvm::outs() << "##<Blackhole or constant> id:" << node->getId();
+                if (SVFUtil::isa<DummyObjPN>(node)) {
+                    SVFUtil::outs() << "##<Blackhole or constant> id:" << node->getId();
                 }
-                else if (!llvm::isa<DummyValPN>(node)) {
-                    llvm::outs() << "##<" << node->getValue()->getName() << "> ";
-                    llvm::outs() << "Source Loc: " << analysisUtil::getSourceLoc(node->getValue());
+                else if (!SVFUtil::isa<DummyValPN>(node)) {
+                    SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
+                    SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
                 }
 
                 const PointsTo& pts = getPts(node->getId());
-                llvm::outs() << "\nNodeID " << node->getId() << " ";
+                SVFUtil::outs() << "\nNodeID " << node->getId() << " ";
                 if (pts.empty()) {
-                    llvm::outs() << "\t\tPointsTo: {empty}\n\n";
+                    SVFUtil::outs() << "\t\tPointsTo: {empty}\n\n";
                 } else {
-                    llvm::outs() << "\t\tPointsTo: { ";
+                    SVFUtil::outs() << "\t\tPointsTo: { ";
                     for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
-                        llvm::outs() << *it << " ";
-                    llvm::outs() << "}\n\n";
+                        SVFUtil::outs() << *it << " ";
+                    SVFUtil::outs() << "}\n\n";
                 }
             }
         }

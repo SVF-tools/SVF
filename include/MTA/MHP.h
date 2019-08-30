@@ -10,7 +10,6 @@
 
 #include "MTA/TCT.h"
 #include "Util/DataFlowUtil.h"
-#include <llvm/IR/Instructions.h>
 #include <set>
 #include <vector>
 
@@ -25,18 +24,18 @@ class LockAnalysis;
 class MHP {
 
 public:
-    typedef std::set<const llvm::Function*> FunSet;
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Function*> FunSet;
+    typedef std::set<const Instruction*> InstSet;
     typedef std::set<const StmtSVFGNode*> SVFGNodeSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef std::set<CxtThreadStmt> CxtThreadStmtSet;
     typedef std::map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
-    typedef std::map<const llvm::Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    typedef std::map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
 
     typedef std::set<CxtStmt> LockSpan;
 
-    typedef std::pair<const llvm::Function*,const llvm::Function*> FuncPair;
+    typedef std::pair<const Function*,const Function*> FuncPair;
     typedef std::map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
@@ -63,23 +62,23 @@ public:
 
 
     /// Whether the function is connected from main function in thread call graph
-    bool isConnectedfromMain(const llvm::Function* fun);
+    bool isConnectedfromMain(const Function* fun);
 
 //    /// Interface to query whether two instructions are protected by common locks
-//    virtual bool isProtectedByACommonLock(const llvm::Instruction* i1, const llvm::Instruction* i2);
-//    virtual bool isAllCxtInSameLockSpan(const llvm::Instruction *I1, const llvm::Instruction *I2);
-//    virtual bool isOneCxtInSameLockSpan(const llvm::Instruction *I1, const llvm::Instruction *I2);
+//    virtual bool isProtectedByACommonLock(const Instruction* i1, const Instruction* i2);
+//    virtual bool isAllCxtInSameLockSpan(const Instruction *I1, const Instruction *I2);
+//    virtual bool isOneCxtInSameLockSpan(const Instruction *I1, const Instruction *I2);
 //
-//    bool hasOneCxtInLockSpan(const llvm::Instruction *I, LockSpan lspan);
-//    bool hasAllCxtInLockSpan(const llvm::Instruction *I, LockSpan lspan);
+//    bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan);
+//    bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan);
 //
 //
 //    LockSpan getSpanfromCxtLock(NodeID l);
     /// Interface to query whether two instructions may happen-in-parallel
-    virtual bool mayHappenInParallel(const llvm::Instruction* i1, const llvm::Instruction* i2);
-    virtual bool mayHappenInParallelCache(const llvm::Instruction* i1, const llvm::Instruction* i2);
-    virtual bool mayHappenInParallelInst(const llvm::Instruction* i1, const llvm::Instruction* i2);
-    virtual bool executedByTheSameThread(const llvm::Instruction* i1, const llvm::Instruction* i2);
+    virtual bool mayHappenInParallel(const Instruction* i1, const Instruction* i2);
+    virtual bool mayHappenInParallelCache(const Instruction* i1, const Instruction* i2);
+    virtual bool mayHappenInParallelInst(const Instruction* i1, const Instruction* i2);
+    virtual bool executedByTheSameThread(const Instruction* i1, const Instruction* i2);
 
     /// Get interleaving thread for statement inst
     //@{
@@ -93,12 +92,12 @@ public:
 
     /// Get/has ThreadStmt
     //@{
-    inline const CxtThreadStmtSet& getThreadStmtSet(const llvm::Instruction* inst) const {
+    inline const CxtThreadStmtSet& getThreadStmtSet(const Instruction* inst) const {
         InstToThreadStmtSetMap::const_iterator it = instToTSMap.find(inst);
         assert(it!=instToTSMap.end() && "no thread access the instruction?");
         return it->second;
     }
-    inline bool hasThreadStmtSet(const llvm::Instruction* inst) const {
+    inline bool hasThreadStmtSet(const Instruction* inst) const {
         return instToTSMap.find(inst)!=instToTSMap.end();
     }
     //@}
@@ -147,7 +146,7 @@ private:
             pushToCTSWorkList(tgr);
         }
     }
-    inline void rmInterleavingThread(const CxtThreadStmt& tgr, const NodeBS& tids, const llvm::Instruction* joinsite) {
+    inline void rmInterleavingThread(const CxtThreadStmt& tgr, const NodeBS& tids, const Instruction* joinsite) {
         NodeBS joinedTids;
         for(NodeBS::iterator it = tids.begin(), eit = tids.end(); it!=eit; ++it) {
             if(isMustJoin(tgr.getTid(),joinsite))
@@ -169,7 +168,7 @@ private:
     bool isRecurFullJoin(NodeID parentTid, NodeID curTid);
 
     /// Whether a join site must join a thread t
-    bool isMustJoin(const NodeID curTid, const llvm::Instruction* joinsite);
+    bool isMustJoin(const NodeID curTid, const Instruction* joinsite);
 
     /// A thread is a multiForked thread if it is in a loop or recursion
     inline bool isMultiForkedThread(NodeID curTid) {
@@ -177,15 +176,15 @@ private:
     }
 
     /// Get the next instructions following control flow
-    inline void getNextInsts(const llvm::Instruction* inst, InstVec& instVec) {
+    inline void getNextInsts(const Instruction* inst, InstVec& instVec) {
         tct->getNextInsts(inst,instVec);
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee) {
+    inline void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee) {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee) {
+    inline bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee) {
         return tct->matchCxt(cxt,call,callee);
     }
 
@@ -200,19 +199,19 @@ private:
     }
 
     /// Whether it is a fork site
-    inline bool isTDFork(const llvm::Instruction* call) {
+    inline bool isTDFork(const Instruction* call) {
         return tcg->getThreadAPI()->isTDFork(call);
     }
     /// Whether it is a join site
-    inline bool isTDJoin(const llvm::Instruction* call) {
+    inline bool isTDJoin(const Instruction* call) {
         return tcg->getThreadAPI()->isTDJoin(call);
     }
 
     /// Return thread id(s) which are directly or indirectly joined at this join site
-    NodeBS getDirAndIndJoinedTid(const CallStrCxt& cxt, const llvm::Instruction* call);
+    NodeBS getDirAndIndJoinedTid(const CallStrCxt& cxt, const Instruction* call);
 
     /// Whether a context-sensitive join satisfies symmetric loop pattern
-    const llvm::Loop* isJoinInSymmetricLoop(const CallStrCxt& cxt, const llvm::Instruction* call) const;
+    const Loop* isJoinInSymmetricLoop(const CallStrCxt& cxt, const Instruction* call) const;
 
     /// Whether thread t1 happens before t2 based on ForkJoin Analysis
     bool isHBPair(NodeID tid1, NodeID tid2);
@@ -252,9 +251,9 @@ public:
     typedef std::map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
     typedef std::map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
     typedef std::set<NodePair> ThreadPairSet;
-    typedef std::map<const CxtStmt, const llvm::Loop*> CxtStmtToLoopMap;
+    typedef std::map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef std::map<const llvm::Instruction*, PTASCEV> forkjoinToPTASCEVMap;
+    typedef std::map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
     ForkJoinAnalysis(TCT* t) : tct(t) {
         collectSCEVInfo();
     }
@@ -274,7 +273,7 @@ public:
     NodeBS getDirAndIndJoinedTid(const CxtStmt& cs);
 
     /// Whether a context-sensitive join satisfies symmetric loop pattern
-    inline const llvm::Loop* isJoinInSymmetricLoop(const CxtStmt& cs) const {
+    inline const Loop* isJoinInSymmetricLoop(const CxtStmt& cs) const {
         CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
         if(it!=cxtJoinInLoop.end())
             return it->second;
@@ -298,19 +297,19 @@ public:
     }
 
     /// Get exit instruction of the start routine function of tid's parent thread
-    inline const llvm::Instruction* getExitInstOfParentRoutineFun(NodeID tid) const {
+    inline const Instruction* getExitInstOfParentRoutineFun(NodeID tid) const {
         NodeID parentTid = tct->getParentThread(tid);
         const CxtThread& parentct = tct->getTCTNode(parentTid)->getCxtThread();
-        const llvm::Function* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
-        return &(analysisUtil::getFunExitBB(parentRoutine)->back());
+        const Function* parentRoutine = tct->getStartRoutineOfCxtThread(parentct);
+        return &(SVFUtil::getFunExitBB(parentRoutine)->back());
     }
 
     /// Get loop for join site
-    inline const llvm::Loop* getJoinLoop(const llvm::Instruction* inst) {
+    inline const Loop* getJoinLoop(const Instruction* inst) {
         return tct->getJoinLoop(inst);
     }
     /// Get SE for function
-    inline llvm::ScalarEvolution* getSE(const llvm::Instruction* inst) {
+    inline ScalarEvolution* getSE(const Instruction* inst) {
         return tct->getSE(inst);
     }
 private:
@@ -331,13 +330,13 @@ private:
     void handleIntra(const CxtStmt& cts);
 
     /// Return true if the fork and join have the same SCEV
-    bool isSameSCEV(const llvm::Instruction* forkSite, const llvm::Instruction* joinSite);
+    bool isSameSCEV(const Instruction* forkSite, const Instruction* joinSite);
 
     /// Same loop trip count
-    bool sameLoopTripCount(const llvm::Instruction* forkSite, const llvm::Instruction* joinSite);
+    bool sameLoopTripCount(const Instruction* forkSite, const Instruction* joinSite);
 
     /// Whether it is a matched fork join pair
-    bool isAliasedForkJoin(const llvm::Instruction* forkSite, const llvm::Instruction* joinSite) {
+    bool isAliasedForkJoin(const Instruction* forkSite, const Instruction* joinSite) {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
     /// Mark thread flags for cxtStmt
@@ -396,32 +395,32 @@ private:
     //@}
 
     /// Get the next instructions following control flow
-    inline void getNextInsts(const llvm::Instruction* inst, InstVec& instSet) {
+    inline void getNextInsts(const Instruction* inst, InstVec& instSet) {
         tct->getNextInsts(inst,instSet);
     }
     /// Push calling context
-    inline void pushCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee) {
+    inline void pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee) {
         tct->pushCxt(cxt,call,callee);
     }
     /// Match context
-    inline bool matchCxt(CallStrCxt& cxt, const llvm::Instruction* call, const llvm::Function* callee) {
+    inline bool matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee) {
         return tct->matchCxt(cxt,call,callee);
     }
 
     /// Whether it is a fork site
-    inline bool isTDFork(const llvm::Instruction* call) {
+    inline bool isTDFork(const Instruction* call) {
         return getTCG()->getThreadAPI()->isTDFork(call);
     }
     /// Whether it is a join site
-    inline bool isTDJoin(const llvm::Instruction* call) {
+    inline bool isTDJoin(const Instruction* call) {
         return getTCG()->getThreadAPI()->isTDJoin(call);
     }
     /// Get forked thread
-    inline const llvm::Value* getForkedThread(const llvm::Instruction* call) {
+    inline const Value* getForkedThread(const Instruction* call) {
         return getTCG()->getThreadAPI()->getForkedThread(call);
     }
     /// Get joined thread
-    inline const llvm::Value* getJoinedThread(const llvm::Instruction* call) {
+    inline const Value* getJoinedThread(const Instruction* call) {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
     /// ThreadCallGraph
@@ -456,7 +455,7 @@ private:
     //@}
 
     /// Add inloop join
-    inline void addSymmetricLoopJoin(const CxtStmt& cs, const llvm::Loop* lp) {
+    inline void addSymmetricLoopJoin(const CxtStmt& cs, const Loop* lp) {
         cxtJoinInLoop[cs] = lp;
     }
     TCT* tct;

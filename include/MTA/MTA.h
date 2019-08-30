@@ -8,12 +8,9 @@
 #ifndef MTA_H_
 #define MTA_H_
 
-#include <llvm/Pass.h>
-#include <llvm/Analysis/ScalarEvolution.h>
-#include <llvm/Analysis/LoopInfo.h>
-#include <llvm/IR/Instructions.h>
 #include <set>
 #include <vector>
+#include "Util/BasicTypes.h"
 
 class PointerAnalysis;
 class AndersenWaveDiff;
@@ -27,18 +24,18 @@ class SVFModule;
 /*!
  * Base data race detector
  */
-class MTA: public llvm::ModulePass {
+class MTA: public ModulePass {
 
 public:
-    typedef std::set<const llvm::LoadInst*> LoadSet;
-    typedef std::set<const llvm::StoreInst*> StoreSet;
-    typedef std::map<const llvm::Function*, llvm::ScalarEvolution*> FunToSEMap;
-    typedef std::map<const llvm::Function*, llvm::LoopInfo*> FunToLoopInfoMap;
+    typedef std::set<const LoadInst*> LoadSet;
+    typedef std::set<const StoreInst*> StoreSet;
+    typedef std::map<const Function*, ScalarEvolution*> FunToSEMap;
+    typedef std::map<const Function*, LoopInfo*> FunToLoopInfoMap;
 
     /// Pass ID
     static char ID;
 
-    static llvm::ModulePass* modulePass;
+    static ModulePass* modulePass;
 
     /// Constructor
     MTA();
@@ -48,7 +45,8 @@ public:
 
 
     /// We start the pass here
-    virtual bool runOnModule(llvm::Module& module);
+
+    virtual bool runOnModule(Module& module);
     /// We start the pass here
     virtual bool runOnModule(SVFModule module);
     /// Compute MHP
@@ -59,23 +57,25 @@ public:
     virtual void detect(SVFModule module);
 
     /// Pass name
-    virtual llvm::StringRef getPassName() const {
+    virtual StringRef getPassName() const {
         return "Multi threaded program analysis pass";
     }
 
+    void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
+
     /// Get analysis usage
-    inline virtual void getAnalysisUsage(llvm::AnalysisUsage& au) const {
+    inline virtual void getAnalysisUsage(AnalysisUsage& au) const {
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
-        au.addRequired<llvm::ScalarEvolutionWrapperPass>();
+        au.addRequired<ScalarEvolutionWrapperPass>();
     }
 
     // Get ScalarEvolution for Function F.
-    static inline llvm::ScalarEvolution* getSE(const llvm::Function *F) {
+    static inline ScalarEvolution* getSE(const Function *F) {
         FunToSEMap::iterator it = func2ScevMap.find(F);
         if (it != func2ScevMap.end())
             return it->second;
-        llvm::ScalarEvolutionWrapperPass *scev = &modulePass->getAnalysis<llvm::ScalarEvolutionWrapperPass>(*const_cast<llvm::Function*>(F));
+        ScalarEvolutionWrapperPass *scev = &modulePass->getAnalysis<ScalarEvolutionWrapperPass>(*const_cast<Function*>(F));
         func2ScevMap[F] = &scev->getSE();
         return &scev->getSE();
     }

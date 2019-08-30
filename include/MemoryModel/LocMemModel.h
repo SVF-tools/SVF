@@ -47,18 +47,18 @@ public:
     virtual ~LocSymTableInfo() {
     }
     /// Compute gep offset
-    virtual bool computeGepOffset(const llvm::User *V, LocationSet& ls);
+    virtual bool computeGepOffset(const User *V, LocationSet& ls);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(ObjTypeInfo* tyInfo, const LocationSet& ls);
+    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     /// Verify struct size construction
     void verifyStructSize(StInfo *stInfo, u32_t structSize);
 
 protected:
     /// Collect the struct info
-    virtual void collectStructInfo(const llvm::StructType *T);
+    virtual void collectStructInfo(const StructType *T);
     /// Collect the array info
-    virtual void collectArrayInfo(const llvm::ArrayType *T);
+    virtual void collectArrayInfo(const ArrayType *T);
 };
 
 
@@ -66,7 +66,7 @@ class LocObjTypeInfo : public ObjTypeInfo {
 
 public:
     /// Constructor
-    LocObjTypeInfo(const llvm::Value* val, llvm::Type* t, Size_t max) : ObjTypeInfo(val,t,max) {
+    LocObjTypeInfo(const Value* val, Type* t, Size_t max) : ObjTypeInfo(val,t,max) {
 
     }
     /// Destructor
@@ -74,7 +74,7 @@ public:
 
     }
     /// Get the size of this object
-    u32_t getObjSize(const llvm::Value* val);
+    u32_t getObjSize(const Value* val);
 
 };
 

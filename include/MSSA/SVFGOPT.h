@@ -39,7 +39,6 @@
 
 #include "MSSA/SVFG.h"
 #include "Util/WorkList.h"
-#include "MSSA/SVFGStat.h"
 
 /**
  * Optimised SVFG.
@@ -58,7 +57,7 @@ class SVFGOPT : public SVFG {
 
 public:
     /// Constructor
-    SVFGOPT() : SVFG(OPTSVFGK) {
+    SVFGOPT(MemSSA* _mssa, VFGK kind) : SVFG(_mssa, kind) {
         keepAllSelfCycle = keepContextSelfCycle = keepActualOutFormalIn = false;
     }
     /// Destructor
@@ -74,35 +73,16 @@ public:
         keepContextSelfCycle = true;
     }
 
-    static inline bool classof(const SVFGOPT *) {
-        return true;
-    }
-    static inline bool classof(const SVFG *g) {
-        return g->getKind() == OPTSVFGK;
-    }
 protected:
-    virtual inline void buildSVFG(MemSSA* m) {
-        SVFG::buildSVFG(m);
-
-        dump("SVFG_before_opt");
-
-        DBOUT(DGENERAL, llvm::outs() << analysisUtil::pasMsg("\tSVFG Optimisation\n"));
-
-        stat->sfvgOptStart();
-        handleInterValueFlow();
-
-        handleIntraValueFlow();
-        stat->sfvgOptEnd();
-
-    }
+    virtual void buildSVFG();
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         NodeID phiId = getDef(fun_arg);
-        SVFGEdge* edge = addCallDirectVFEdge(getDef(cs_arg), phiId, csId);
+        SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
         if (edge != NULL) {
-            PHISVFGNode* phi = llvm::cast<PHISVFGNode>(getSVFGNode(phiId));
+            PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, cs_arg);
             edges.insert(edge);
         }
@@ -110,9 +90,9 @@ protected:
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
         NodeID phiId = getDef(cs_ret);
-        SVFGEdge* edge = addRetDirectVFEdge(getDef(fun_ret), phiId, csId);
+        SVFGEdge* edge = addRetEdge(getDef(fun_ret), phiId, csId);
         if (edge != NULL) {
-            PHISVFGNode* phi = llvm::cast<PHISVFGNode>(getSVFGNode(phiId));
+            PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, fun_ret);
             edges.insert(edge);
         }
@@ -136,42 +116,6 @@ protected:
             NodeID foDef = getFormalOUTDef(formalOut->getId());
             SVFGEdge* edge = addRetIndirectSVFGEdge(foDef,actualOut->getId(),csId,intersection);
             if (edge != NULL)
-                edges.insert(edge);
-        }
-    }
-    //@}
-
-    /// Get inter value flow edges between indirect call site and callee.
-    //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, llvm::CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
-        SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
-        SVFGEdge* edge = hasInterSVFGEdge(actualParam, formalParam, SVFGEdge::DirCall, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFRToAR(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) {
-        SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
-        SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
-        SVFGEdge* edge = hasInterSVFGEdge(formalRet, actualRet, SVFGEdge::DirRet, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
-        edges.insert(edge);
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
-        SVFGNode* defNode = getSVFGNode(getActualINDef(actualIn->getId()));
-        for (SVFGNode::const_iterator outIt = defNode->OutEdgeBegin(), outEit = defNode->OutEdgeEnd(); outIt != outEit; ++outIt) {
-            SVFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getBB()->getParent() == callee)
-                edges.insert(edge);
-        }
-    }
-
-    virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const llvm::Function* callee, SVFGEdgeSetTy& edges) {
-        for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt) {
-            SVFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getBB()->getParent() == callee)
                 edges.insert(edge);
         }
     }
@@ -239,7 +183,7 @@ private:
     /// 1. it's not def-site of actual-in/formal-out;
     /// 2. it doesn't have incoming and outgoing call/ret at the same time.
     inline bool addIntoWorklist(const SVFGNode* node) {
-        if (const MSSAPHISVFGNode* phi = llvm::dyn_cast<MSSAPHISVFGNode>(node)) {
+        if (const MSSAPHISVFGNode* phi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node)) {
             if (isConnectingTwoCallSites(phi) == false && isDefOfAInFOut(phi) == false)
                 return worklist.push(phi);
         }
@@ -257,8 +201,8 @@ private:
 
     /// Return TRUE if both edges are indirect call/ret edges.
     inline bool bothInterEdges(const SVFGEdge* edge1, const SVFGEdge* edge2) const {
-        bool inter1 = (llvm::isa<CallIndSVFGEdge>(edge1) || llvm::isa<RetIndSVFGEdge>(edge1));
-        bool inter2 = (llvm::isa<CallIndSVFGEdge>(edge2) || llvm::isa<RetIndSVFGEdge>(edge2));
+        bool inter1 = (SVFUtil::isa<CallIndSVFGEdge>(edge1) || SVFUtil::isa<RetIndSVFGEdge>(edge1));
+        bool inter2 = (SVFUtil::isa<CallIndSVFGEdge>(edge2) || SVFUtil::isa<RetIndSVFGEdge>(edge2));
         return (inter1 && inter2);
     }
 
@@ -268,14 +212,14 @@ private:
 
     /// Add inter PHI SVFG node for formal parameter
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp) {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalSVFGNode++,fp);
+        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
         addSVFGNode(sNode);
         resetDef(fp->getParam(),sNode);
         return sNode;
     }
     /// Add inter PHI SVFG node for actual return
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar) {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalSVFGNode++,ar);
+        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
         addSVFGNode(sNode);
         resetDef(ar->getRev(),sNode);
         return sNode;

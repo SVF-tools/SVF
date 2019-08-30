@@ -11,8 +11,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/Annotator.h"
 #include "MTA/MHP.h"
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/CallSite.h>
 
 /*!
  * MTA annotation
@@ -20,7 +18,7 @@
 class MTAAnnotator: public Annotator {
 
 public:
-    typedef std::set<const llvm::Instruction*> InstSet;
+    typedef std::set<const Instruction*> InstSet;
     /// Constructor
     MTAAnnotator(): mhp(NULL),lsa(NULL) {
         numOfAllSt = 0;
@@ -40,7 +38,7 @@ public:
     }
     /// Annotation
     //@{
-    void annotateDRCheck(llvm::Instruction* inst);
+    void annotateDRCheck(Instruction* inst);
     //@}
 
     /// Initialize
@@ -59,19 +57,19 @@ public:
     void collectLoadStoreInst(SVFModule mod);
 
     /// Get operand of store and load
-    const llvm::Value* getStoreOperand(const llvm::Instruction* inst);
-    const llvm::Value* getLoadOperand(const llvm::Instruction* inst);
+    const Value* getStoreOperand(const Instruction* inst);
+    const Value* getLoadOperand(const Instruction* inst);
 
 
     /// Check if Function "F" is memset
-    inline bool isMemset(const llvm::Instruction *I) {
-        const llvm::Function* F =analysisUtil::getCallee(I);
-        return F && F->getName().find("llvm.memset") != llvm::StringRef::npos;
+    inline bool isMemset(const Instruction *I) {
+        const Function* F =SVFUtil::getCallee(I);
+        return F && F->getName().find("llvm.memset") != StringRef::npos;
     }
 
     /// Check if Function "F" is memcpy
-    inline bool isMemcpy(const llvm::Instruction *I) {
-        const llvm::Function* F =analysisUtil::getCallee(I);
+    inline bool isMemcpy(const Instruction *I) {
+        const Function* F =SVFUtil::getCallee(I);
         return F && ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(F);
     }
 

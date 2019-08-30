@@ -33,10 +33,6 @@
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 
-#include <llvm/IR/BasicBlock.h>
-#include <llvm/ADT/DenseMap.h>			// for dense map
-#include <llvm/Analysis/DominanceFrontier.h>
-
 #include <vector>
 
 class PointerAnalysis;
@@ -73,19 +69,19 @@ public:
     //@{
     typedef llvm::DenseMap<const LoadPE*, MUSet> LoadToMUSetMap;
     typedef llvm::DenseMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef std::map<llvm::CallSite, MUSet> CallSiteToMUSetMap;
-    typedef std::map<llvm::CallSite, CHISet> CallSiteToCHISetMap;
-    typedef llvm::DenseMap<const llvm::BasicBlock*, PHISet> BBToPhiSetMap;
+    typedef std::map<CallSite, MUSet> CallSiteToMUSetMap;
+    typedef std::map<CallSite, CHISet> CallSiteToCHISetMap;
+    typedef llvm::DenseMap<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef llvm::DenseMap<const llvm::Function*, CHISet> FunToEntryChiSetMap;
-    typedef llvm::DenseMap<const llvm::Function*, MUSet> FunToReturnMuSetMap;
+    typedef llvm::DenseMap<const Function*, CHISet> FunToEntryChiSetMap;
+    typedef llvm::DenseMap<const Function*, MUSet> FunToReturnMuSetMap;
 
     /// For phi insertion
     //@{
-    typedef std::vector<const llvm::BasicBlock*> BBList;
-    typedef llvm::DenseMap<const llvm::BasicBlock*, MRSet> BBToMRSetMap;
+    typedef std::vector<const BasicBlock*> BBList;
+    typedef llvm::DenseMap<const BasicBlock*, MRSet> BBToMRSetMap;
     typedef llvm::DenseMap<const MemRegion*, BBList> MemRegToBBsMap;
     //@}
 
@@ -107,18 +103,18 @@ public:
 protected:
     BVDataPTAImpl* pta;
     MRGenerator* mrGen;
-    llvm::DominanceFrontier* df;
-    llvm::DominatorTree* dt;
+    DominanceFrontier* df;
+    DominatorTree* dt;
     MemSSAStat* stat;
 
     /// Create mu chi for candidate regions in a function
-    virtual void createMUCHI(const llvm::Function& fun);
+    virtual void createMUCHI(const Function& fun);
     /// Insert phi for candidate regions in a fucntion
-    virtual void insertPHI(const llvm::Function& fun);
+    virtual void insertPHI(const Function& fun);
     /// SSA rename for a function
-    virtual void SSARename(const llvm::Function& fun);
+    virtual void SSARename(const Function& fun);
     /// SSA rename for a basic block
-    virtual void SSARenameBB(const llvm::BasicBlock& bb);
+    virtual void SSARenameBB(const BasicBlock& bb);
 private:
     LoadToMUSetMap load2MuSetMap;
     StoreToChiSetMap store2ChiSetMap;
@@ -146,10 +142,6 @@ private:
     /// Release the memory
     void destroy();
 
-    /// Get previous BB index for phi
-    u32_t getPreBBIndex(const llvm::BasicBlock* bb,
-                        const llvm::BasicBlock* succb);
-
     /// Get a new SSA name of a memory region
     MRVer* newSSAName(const MemRegion* mr, MSSADEF* def);
 
@@ -166,7 +158,7 @@ private:
         if (0 == varKills.count(mr))
             usedRegs.insert(mr);
     }
-    inline void collectRegDefs(const llvm::BasicBlock* bb, const MemRegion* mr) {
+    inline void collectRegDefs(const BasicBlock* bb, const MemRegion* mr) {
         varKills.insert(mr);
         reg2BBMap[mr].push_back(bb);
     }
@@ -174,49 +166,49 @@ private:
 
     /// Add methods for mus/chis/phis
     //@{
-    inline void AddLoadMU(const llvm::BasicBlock* bb, const LoadPE* load, const MRSet& mrSet) {
+    inline void AddLoadMU(const BasicBlock* bb, const LoadPE* load, const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddLoadMU(bb,load,*iter);
     }
-    inline void AddStoreCHI(const llvm::BasicBlock* bb, const StorePE* store, const MRSet& mrSet) {
+    inline void AddStoreCHI(const BasicBlock* bb, const StorePE* store, const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddStoreCHI(bb,store,*iter);
     }
-    inline void AddCallSiteMU(llvm::CallSite cs,  const MRSet& mrSet) {
+    inline void AddCallSiteMU(CallSite cs,  const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteMU(cs,*iter);
     }
-    inline void AddCallSiteCHI(llvm::CallSite cs,  const MRSet& mrSet) {
+    inline void AddCallSiteCHI(CallSite cs,  const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteCHI(cs,*iter);
     }
-    inline void AddMSSAPHI(const llvm::BasicBlock* bb, const MRSet& mrSet) {
+    inline void AddMSSAPHI(const BasicBlock* bb, const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddMSSAPHI(bb,*iter);
     }
-    inline void AddLoadMU(const llvm::BasicBlock* bb, const LoadPE* load, const MemRegion* mr) {
+    inline void AddLoadMU(const BasicBlock* bb, const LoadPE* load, const MemRegion* mr) {
         LOADMU* mu = new LOADMU(bb,load, mr);
         load2MuSetMap[load].insert(mu);
         collectRegUses(mr);
     }
-    inline void AddStoreCHI(const llvm::BasicBlock* bb, const StorePE* store, const MemRegion* mr) {
+    inline void AddStoreCHI(const BasicBlock* bb, const StorePE* store, const MemRegion* mr) {
         STORECHI* chi = new STORECHI(bb,store, mr);
         store2ChiSetMap[store].insert(chi);
         collectRegUses(mr);
         collectRegDefs(bb,mr);
     }
-    inline void AddCallSiteMU(llvm::CallSite cs, const MemRegion* mr) {
+    inline void AddCallSiteMU(CallSite cs, const MemRegion* mr) {
         CALLMU* mu = new CALLMU(cs, mr);
         callsiteToMuSetMap[cs].insert(mu);
         collectRegUses(mr);
     }
-    inline void AddCallSiteCHI(llvm::CallSite cs, const MemRegion* mr) {
+    inline void AddCallSiteCHI(CallSite cs, const MemRegion* mr) {
         CALLCHI* chi = new CALLCHI(cs, mr);
         callsiteToChiSetMap[cs].insert(chi);
         collectRegUses(mr);
         collectRegDefs(chi->getBasicBlock(),mr);
     }
-    inline void AddMSSAPHI(const llvm::BasicBlock* bb, const MemRegion* mr) {
+    inline void AddMSSAPHI(const BasicBlock* bb, const MemRegion* mr) {
         bb2PhiSetMap[bb].insert(new PHI(bb, mr));
     }
     //@}
@@ -265,18 +257,18 @@ private:
     //@}
     /// Get/set methods for dominace frontier/tree
     //@{
-    llvm::DominanceFrontier* getDF(const llvm::Function& fn) {
+    DominanceFrontier* getDF(const Function& fn) {
         return df;
     }
-    llvm::DominatorTree* getDT(const llvm::Function& fn) {
+    DominatorTree* getDT(const Function& fn) {
         return dt;
     }
-    void setCurrentDFDT(llvm::DominanceFrontier* f, llvm::DominatorTree* t);
+    void setCurrentDFDT(DominanceFrontier* f, DominatorTree* t);
     //@}
 
 public:
     /// Constructor
-    MemSSA(BVDataPTAImpl* p);
+    MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA);
 
     /// Destructor
     virtual ~MemSSA() {
@@ -295,7 +287,7 @@ public:
         return mrGen;
     }
     /// We start from here
-    virtual void buildMemSSA(const llvm::Function& fun,llvm::DominanceFrontier*, llvm::DominatorTree*);
+    virtual void buildMemSSA(const Function& fun,DominanceFrontier*, DominatorTree*);
 
     /// Perform statistics
     void performStat();
@@ -303,7 +295,7 @@ public:
     /// Has mu/chi methods
     //@{
     inline bool hasMU(const PAGEdge* inst) const {
-        if (const LoadPE* load = llvm::dyn_cast<LoadPE>(inst)) {
+        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst)) {
             assert(0 != load2MuSetMap.count(load)
                    && "not associated with mem region!");
             return true;
@@ -311,7 +303,7 @@ public:
             return false;
     }
     inline bool hasCHI(const PAGEdge* inst) const {
-        if (const StorePE* store = llvm::dyn_cast<StorePE>(
+        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(
                                        inst)) {
             assert(0 != store2ChiSetMap.count(store)
                    && "not associated with mem region!");
@@ -319,27 +311,27 @@ public:
         } else
             return false;
     }
-    inline bool hasMU(llvm::CallSite cs) const {
+    inline bool hasMU(CallSite cs) const {
         return callsiteToMuSetMap.find(cs)!=callsiteToMuSetMap.end();
     }
-    inline bool hasCHI(llvm::CallSite cs) const {
+    inline bool hasCHI(CallSite cs) const {
         return callsiteToChiSetMap.find(cs)!=callsiteToChiSetMap.end();
     }
     //@}
 
     /// Has function entry chi or return mu
     //@{
-    inline bool hasFuncEntryChi(llvm::Function * fun) const {
+    inline bool hasFuncEntryChi(Function * fun) const {
         return (funToEntryChiSetMap.find(fun) != funToEntryChiSetMap.end());
     }
-    inline bool hasReturnMu(llvm::Function * fun) const {
+    inline bool hasReturnMu(Function * fun) const {
         return (funToReturnMuSetMap.find(fun) != funToReturnMuSetMap.end());
     }
 
-    inline CHISet& getFuncEntryChiSet(const llvm::Function * fun) {
+    inline CHISet& getFuncEntryChiSet(const Function * fun) {
         return funToEntryChiSetMap[fun];
     }
-    inline MUSet& getReturnMuSet(const llvm::Function * fun) {
+    inline MUSet& getReturnMuSet(const Function * fun) {
         return funToReturnMuSetMap[fun];
     }
     //@}
@@ -352,16 +344,16 @@ public:
     inline CHISet& getCHISet(const StorePE* st) {
         return store2ChiSetMap[st];
     }
-    inline MUSet& getMUSet(llvm::CallSite cs) {
+    inline MUSet& getMUSet(CallSite cs) {
         return callsiteToMuSetMap[cs];
     }
-    inline CHISet& getCHISet(llvm::CallSite cs) {
+    inline CHISet& getCHISet(CallSite cs) {
         return callsiteToChiSetMap[cs];
     }
-    inline PHISet& getPHISet(const llvm::BasicBlock* bb) {
+    inline PHISet& getPHISet(const BasicBlock* bb) {
         return bb2PhiSetMap[bb];
     }
-    inline bool hasPHISet(const llvm::BasicBlock* bb) const {
+    inline bool hasPHISet(const BasicBlock* bb) const {
         return bb2PhiSetMap.find(bb)!=bb2PhiSetMap.end();
     }
     inline LoadToMUSetMap& getLoadToMUSetMap() {
@@ -399,7 +391,7 @@ public:
     //@}
 
     /// Print Memory SSA
-    void dumpMSSA(llvm::raw_ostream & Out = llvm::outs());
+    void dumpMSSA(raw_ostream & Out = SVFUtil::outs());
 };
 
 #endif /* MEMORYSSAPASS_H_ */

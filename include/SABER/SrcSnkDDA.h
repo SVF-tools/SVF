@@ -89,7 +89,7 @@ public:
     virtual void initialize(SVFModule module) {
         ptaCallGraph = new PTACallGraph(module);
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
-        svfg =  memSSA.buildSVFG(ander);
+        svfg =  memSSA.buildPTROnlySVFG(ander);
         setGraph(memSSA.getSVFG());
         //AndersenWaveDiff::releaseAndersenWaveDiff();
         /// allocate control-flow graph branch conditions
@@ -142,8 +142,8 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const llvm::Function* fun) = 0;
-    virtual bool isSinkLikeFun(const llvm::Function* fun) = 0;
+    virtual bool isSourceLikeFun(const Function* fun) = 0;
+    virtual bool isSinkLikeFun(const Function* fun) = 0;
     virtual bool isSource(const SVFGNode* node) = 0;
     virtual bool isSink(const SVFGNode* node) = 0;
     ///@}

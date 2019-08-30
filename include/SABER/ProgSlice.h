@@ -44,7 +44,7 @@ public:
     typedef std::map<const SVFGNode*, Condition*> SVFGNodeToCondMap; 	///< map a SVFGNode to its condition during value-flow guard computation
 
     typedef FIFOWorkList<const SVFGNode*> VFWorkList;		    ///< worklist for value-flow guard computation
-    typedef FIFOWorkList<const llvm::BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
     /// Constructor
     ProgSlice(const SVFGNode* src, PathCondAllocator* pa, const SVFG* graph):
@@ -134,12 +134,12 @@ public:
     bool isSatisfiableForPairs();
 
     /// Get llvm value from a SVFGNode
-    const llvm::Value* getLLVMValue(const SVFGNode* node) const;
+    const Value* getLLVMValue(const SVFGNode* node) const;
 
     /// Get callsite ID and get returnsiteID from SVFGEdge
     //@{
-    llvm::CallSite getCallSite(const SVFGEdge* edge) const;
-    llvm::CallSite getRetSite(const SVFGEdge* edge) const;
+    CallSite getCallSite(const SVFGEdge* edge) const;
+    CallSite getRetSite(const SVFGEdge* edge) const;
     //@}
 
     /// Condition operations
@@ -203,13 +203,13 @@ private:
 
     /// Compute guards for value-flows
     //@{
-    inline Condition* ComputeIntraVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst) {
+    inline Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst) {
         return pathAllocator->ComputeIntraVFGGuard(src,dst);
     }
-    inline Condition* ComputeInterCallVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst, const llvm::BasicBlock* callBB) {
+    inline Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB) {
         return pathAllocator->ComputeInterCallVFGGuard(src,dst,callBB);
     }
-    inline Condition* ComputeInterRetVFGGuard(const llvm::BasicBlock* src, const llvm::BasicBlock* dst, const llvm::BasicBlock* retBB) {
+    inline Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB) {
         return pathAllocator->ComputeInterRetVFGGuard(src,dst,retBB);
     }
     //@}
@@ -217,9 +217,9 @@ private:
     /// Return the basic block where a SVFGNode resides in
     /// a SVFGNode may not in a basic block if it is not a program statement
     /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
-    inline const llvm::BasicBlock* getSVFGNodeBB(const SVFGNode* node) const {
-        const llvm::BasicBlock* bb = node->getBB();
-        if(llvm::isa<NullPtrSVFGNode>(node) == false) {
+    inline const BasicBlock* getSVFGNodeBB(const SVFGNode* node) const {
+        const BasicBlock* bb = node->getBB();
+        if(SVFUtil::isa<NullPtrSVFGNode>(node) == false) {
             assert(bb && "this SVFG node should be in a basic block");
             return bb;
         }

@@ -31,7 +31,7 @@
 #define BITVECTORCOND_H_
 
 #include <stdio.h>
-#include "Util/BasicTypes.h"
+#include "Util/SVFUtil.h"
 #include "CUDD/cuddInt.h"
 
 /**
@@ -100,7 +100,7 @@ public:
     void ddClearFlag(DdNode * f) const;
     void BddSupportStep( DdNode * f,  NodeBS &support) const;
     void BddSupport( DdNode * f,  NodeBS &support) const;
-    void dump(DdNode* lhs, llvm::raw_ostream & O = llvm::outs());
+    void dump(DdNode* lhs, raw_ostream & O = SVFUtil::outs());
     std::string dumpStr(DdNode* lhs) const;
     /// print minterms and debug information for the Ddnode
     inline void printMinterms(DdNode* d) {

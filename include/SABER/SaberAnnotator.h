@@ -32,11 +32,8 @@
 
 #include "Util/BasicTypes.h"
 #include "Util/Annotator.h"
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/CallSite.h>
 
 class ProgSlice;
-class SVFGNode;
 /*!
  * Saber annotation
  */
@@ -57,10 +54,10 @@ public:
     //@{
     void annotateSource();
     void annotateSinks();
-    void annotateFeasibleBranch(const llvm::BranchInst *brInst, u32_t succPos);
-    void annotateInfeasibleBranch(const llvm::BranchInst *brInst, u32_t succPos);
+    void annotateFeasibleBranch(const BranchInst *brInst, u32_t succPos);
+    void annotateInfeasibleBranch(const BranchInst *brInst, u32_t succPos);
 
-    void annotateSwitch(llvm::SwitchInst *brInst, u32_t succPos);
+    void annotateSwitch(SwitchInst *brInst, u32_t succPos);
     //@}
 };
 

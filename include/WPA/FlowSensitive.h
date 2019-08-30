@@ -61,6 +61,7 @@ public:
         numOfProcessedPhi = numOfProcessedActualParam = numOfProcessedFormalRet = 0;
         numOfProcessedMSSANode = 0;
         maxSCCSize = numOfSCC = numOfNodesInSCC = 0;
+		iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor

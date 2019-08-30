@@ -29,18 +29,18 @@
  */
 
 #include "Util/DataFlowUtil.h"
-using namespace llvm;
+
 
 char IteratedDominanceFrontier::ID = 0;
 //static RegisterPass<IteratedDominanceFrontier> IDF("IDF",
 //		"IteratedDominanceFrontier Pass");
 
-void IteratedDominanceFrontier::calculate(llvm::BasicBlock * bb,
-        const llvm::DominanceFrontier &DF) {
+void IteratedDominanceFrontier::calculate(BasicBlock * bb,
+        const DominanceFrontier &DF) {
 
     DomSetType worklist;
 
-    DominanceFrontierBase<llvm::BasicBlock, false>::const_iterator it = DF.find(bb);
+    DominanceFrontierBase<BasicBlock, false>::const_iterator it = DF.find(bb);
     assert(it != DF.end());
 
     worklist.insert(it->second.begin(), it->second.end());

@@ -33,8 +33,7 @@
 #ifndef __ExtAPI_H
 #define __ExtAPI_H
 
-#include <llvm/ADT/StringMap.h>
-#include <llvm/IR/Function.h>
+#include "Util/BasicTypes.h"
 #include <map>
 #include <set>
 #include <string>
@@ -42,7 +41,7 @@
 //------------------------------------------------------------------------------
 class ExtAPI {
 public:
-    //External llvm::Function types
+    //External Function types
     //Assume a call in the form LHS= F(arg0, arg1, arg2, arg3).
     enum extf_t {
         EFT_NOOP= 0,      //no effect on pointers
@@ -84,11 +83,11 @@ public:
     };
 private:
 
-    //Each llvm::Function name is mapped to its extf_t
+    //Each Function name is mapped to its extf_t
     //  (hash_map and map are much slower).
     llvm::StringMap<extf_t> info;
-    //A cache of is_ext results for all llvm::Function*'s (hash_map is fastest).
-    std::map<const llvm::Function*, bool> isext_cache;
+    //A cache of is_ext results for all Function*'s (hash_map is fastest).
+    std::map<const Function*, bool> isext_cache;
 
     void init();                          //fill in the map (see ExtAPI.cpp)
 
@@ -111,7 +110,7 @@ public:
     }
 
     //Return the extf_t of (F).
-    extf_t get_type(const llvm::Function *F) const {
+    extf_t get_type(const Function *F) const {
         assert(F);
         std::string funName = F->getName().str();
         if(F->isIntrinsic()) {
@@ -125,26 +124,26 @@ public:
     }
 
     //Does (F) have a static var X (unavailable to us) that its return points to?
-    bool has_static(const llvm::Function *F) const {
+    bool has_static(const Function *F) const {
         extf_t t= get_type(F);
         return t==EFT_STAT || t==EFT_STAT2;
     }
     //Assuming hasStatic(F), does (F) have a second static Y where X -> Y?
-    bool has_static2(const llvm::Function *F) const {
+    bool has_static2(const Function *F) const {
         return get_type(F) == EFT_STAT2;
     }
     //Does (F) allocate a new object and return it?
-    bool is_alloc(const llvm::Function *F) const {
+    bool is_alloc(const Function *F) const {
         extf_t t= get_type(F);
         return t==EFT_ALLOC || t==EFT_NOSTRUCT_ALLOC;
     }
     //Does (F) allocate a new object and assign it to one of its arguments?
-    bool is_arg_alloc(const llvm::Function *F) const {
+    bool is_arg_alloc(const Function *F) const {
         extf_t t= get_type(F);
         return t>=EFT_A0R_NEW && t<=EFT_A11R_NEW;
     }
     //Get the position of argument which holds the new object
-    int get_alloc_arg_pos(const llvm::Function *F) const {
+    int get_alloc_arg_pos(const Function *F) const {
         extf_t t= get_type(F);
         switch(t) {
         case EFT_A0R_NEW:
@@ -163,30 +162,30 @@ public:
         }
     }
     //Does (F) allocate only non-struct objects?
-    bool no_struct_alloc(const llvm::Function *F) const {
+    bool no_struct_alloc(const Function *F) const {
         return get_type(F) == EFT_NOSTRUCT_ALLOC;
     }
     //Does (F) not free/release any memory?
-    bool is_dealloc(const llvm::Function *F) const {
+    bool is_dealloc(const Function *F) const {
         extf_t t= get_type(F);
         return t == EFT_FREE;
     }
     //Does (F) not do anything with the known pointers?
-    bool is_noop(const llvm::Function *F) const {
+    bool is_noop(const Function *F) const {
         extf_t t= get_type(F);
         return t == EFT_NOOP || t == EFT_FREE;
     }
     //Does (F) reallocate a new object?
-    bool is_realloc(const llvm::Function *F) const {
+    bool is_realloc(const Function *F) const {
         extf_t t= get_type(F);
         return t==EFT_REALLOC;
     }
     //Should (F) be considered "external" (either not defined in the program
     //  or a user-defined version of a known alloc or no-op)?
-    bool is_ext(const llvm::Function *F) {
+    bool is_ext(const Function *F) {
         assert(F);
         //Check the cache first; everything below is slower.
-        std::map<const llvm::Function*, bool>::iterator i_iec= isext_cache.find(F);
+        std::map<const Function*, bool>::iterator i_iec= isext_cache.find(F);
         if(i_iec != isext_cache.end())
             return i_iec->second;
 

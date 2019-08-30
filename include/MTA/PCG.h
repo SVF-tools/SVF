@@ -12,7 +12,6 @@
 #include "Util/PTACallGraph.h"
 #include "Util/WorkList.h"
 #include "WPA/Andersen.h"
-#include <llvm/Analysis/LoopInfo.h>
 #include <set>
 #include <vector>
 
@@ -26,11 +25,11 @@
 class PCG {
 
 public:
-    typedef std::set<const llvm::Function*> FunSet;
-    typedef std::vector<const llvm::Function*> FunVec;
-    typedef std::set<const llvm::Instruction*> CallInstSet;
-    typedef FIFOWorkList<const llvm::Function*> FunWorkList;
-    typedef FIFOWorkList<const llvm::BasicBlock*> BBWorkList;
+    typedef std::set<const Function*> FunSet;
+    typedef std::vector<const Function*> FunVec;
+    typedef std::set<const Instruction*> CallInstSet;
+    typedef FIFOWorkList<const Function*> FunWorkList;
+    typedef FIFOWorkList<const BasicBlock*> BBWorkList;
 
 private:
     FunSet spawners;
@@ -47,26 +46,26 @@ private:
 
     /// Add/Get methods for thread properties of a procedure
     //@{
-    inline bool isSpawnerFun(const llvm::Function* fun) const {
+    inline bool isSpawnerFun(const Function* fun) const {
         return spawners.find(fun) != spawners.end();
     }
-    inline bool isSpawneeFun(const llvm::Function* fun) const {
+    inline bool isSpawneeFun(const Function* fun) const {
         return spawnees.find(fun) != spawnees.end();
     }
-    inline bool isFollowerFun(const llvm::Function* fun) const {
+    inline bool isFollowerFun(const Function* fun) const {
         return followers.find(fun) != followers.end();
     }
-    inline bool addSpawnerFun(const llvm::Function* fun) {
+    inline bool addSpawnerFun(const Function* fun) {
         if (fun->isDeclaration())
             return false;
         return spawners.insert(fun).second;
     }
-    inline bool addSpawneeFun(const llvm::Function* fun) {
+    inline bool addSpawneeFun(const Function* fun) {
         if (fun->isDeclaration())
             return false;
         return spawnees.insert(fun).second;
     }
-    inline bool addFollowerFun(const llvm::Function* fun) {
+    inline bool addFollowerFun(const Function* fun) {
         if (fun->isDeclaration())
             return false;
         return followers.insert(fun).second;
@@ -75,10 +74,10 @@ private:
 
     /// Add/search spawn sites which directly or indirectly create a thread
     //@{
-    inline bool addSpawnsite(const llvm::Instruction* callInst) {
+    inline bool addSpawnsite(const Instruction* callInst) {
         return spawnCallSites.insert(callInst).second;
     }
-    inline bool isSpawnsite(const llvm::Instruction* callInst) {
+    inline bool isSpawnsite(const Instruction* callInst) {
         return spawnCallSites.find(callInst) != spawnCallSites.end();
     }
     //@}
@@ -109,9 +108,9 @@ public:
     }
 
     /// Interface to query whether two function may happen-in-parallel
-    virtual bool mayHappenInParallel(const llvm::Instruction* i1, const llvm::Instruction* i2) const;
-    bool mayHappenInParallelBetweenFunctions(const llvm::Function* fun1, const llvm::Function* fun2) const;
-    //bool mayHappenInParallel(const llvm::Function* fun1, const llvm::Function* fun2) const;
+    virtual bool mayHappenInParallel(const Instruction* i1, const Instruction* i2) const;
+    bool mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const;
+    //bool mayHappenInParallel(const Function* fun1, const Function* fun2) const;
     inline const FunSet& getMHPFunctions() const {
         return mhpfuns;
     }
@@ -143,22 +142,22 @@ public:
 
     /// Iterators for thread properties of a procedure
     //@{
-    inline FunSet::iterator spawnersBegin(const llvm::Function* fun) const {
+    inline FunSet::iterator spawnersBegin(const Function* fun) const {
         return spawners.begin();
     }
-    inline FunSet::iterator spawnersEnd(const llvm::Function* fun) const {
+    inline FunSet::iterator spawnersEnd(const Function* fun) const {
         return spawners.end();
     }
-    inline FunSet::iterator spawneesBegin(const llvm::Function* fun) const {
+    inline FunSet::iterator spawneesBegin(const Function* fun) const {
         return spawnees.begin();
     }
-    inline FunSet::iterator spawneesEnd(const llvm::Function* fun) const {
+    inline FunSet::iterator spawneesEnd(const Function* fun) const {
         return spawnees.end();
     }
-    inline FunSet::iterator followersBegin(const llvm::Function* fun) const {
+    inline FunSet::iterator followersBegin(const Function* fun) const {
         return followers.begin();
     }
-    inline FunSet::iterator followersEnd(const llvm::Function* fun) const {
+    inline FunSet::iterator followersEnd(const Function* fun) const {
         return followers.end();
     }
     //@}

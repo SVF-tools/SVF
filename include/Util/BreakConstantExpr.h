@@ -15,10 +15,7 @@
 #ifndef BREAKCONSTANTGEPS_H
 #define BREAKCONSTANTGEPS_H
 
-#include <llvm/IR/Dominators.h>
-#include <llvm/IR/Module.h>
-#include <llvm/Pass.h>
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#include "Util/BasicTypes.h"
 
 //
 // Pass: BreakConstantGEPs
@@ -27,7 +24,7 @@
 //  This pass modifies a function so that it uses GEP instructions instead of
 //  GEP constant expressions.
 //
-class BreakConstantGEPs : public llvm::ModulePass {
+class BreakConstantGEPs : public ModulePass {
 private:
     // Private methods
 
@@ -36,11 +33,11 @@ private:
 public:
     static char ID;
     BreakConstantGEPs() : ModulePass(ID) {}
-    llvm::StringRef getPassName() const {
+    StringRef getPassName() const {
         return "Remove Constant GEP Expressions";
     }
-    virtual bool runOnModule (llvm::Module & M);
-    virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+    virtual bool runOnModule (Module & M);
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
         // This pass does not modify the control-flow graph of the function
         AU.setPreservesCFG();
     }
@@ -53,7 +50,7 @@ public:
 // Description:
 //  This pass modifies a function so that each function only have one unified exit basic block
 //
-class MergeFunctionRets : public llvm::ModulePass {
+class MergeFunctionRets : public ModulePass {
 private:
     // Private methods
 
@@ -62,30 +59,30 @@ private:
 public:
     static char ID;
     MergeFunctionRets() : ModulePass(ID) {}
-    llvm::StringRef getPassName() const {
+    StringRef getPassName() const {
         return "unify function exit into one dummy exit basic block";
     }
-    virtual bool runOnModule (llvm::Module & M) {
+    virtual bool runOnModule (Module & M) {
         UnifyFunctionExit(M);
         return true;
     }
-    inline void UnifyFunctionExit(llvm::Module& module) {
-        for (llvm::Module::const_iterator iter = module.begin(), eiter = module.end();
+    inline void UnifyFunctionExit(Module& module) {
+        for (Module::const_iterator iter = module.begin(), eiter = module.end();
                 iter != eiter; ++iter) {
-            const llvm::Function& fun = *iter;
+            const Function& fun = *iter;
             if(fun.isDeclaration())
                 continue;
-            getUnifyExit(fun)->runOnFunction(const_cast<llvm::Function&>(fun));
+            getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
         }
     }
     /// Get Unified Exit basic block node
-    inline llvm::UnifyFunctionExitNodes* getUnifyExit(const llvm::Function& fn) {
+    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn) {
         assert(!fn.isDeclaration() && "external function does not have DF");
-        return &getAnalysis<llvm::UnifyFunctionExitNodes>(const_cast<llvm::Function&>(fn));
+        return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
     }
-    virtual void getAnalysisUsage(llvm::AnalysisUsage &AU) const {
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
         // This pass does not modify the control-flow graph of the function
-        AU.addRequired<llvm::UnifyFunctionExitNodes>();
+        AU.addRequired<UnifyFunctionExitNodes>();
         AU.addPreserved<BreakConstantGEPs>();
     }
 };

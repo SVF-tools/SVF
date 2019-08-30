@@ -4,7 +4,7 @@ add_subdirectory(CUDD)
 # Otherwise it is impossible to load the dependencies in opt
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
-    Util/AnalysisUtil.cpp
+    Util/SVFUtil.cpp
     Util/CPPUtil.cpp
     Util/DataFlowUtil.cpp
     Util/PTACallGraph.cpp
@@ -17,11 +17,16 @@ set(SOURCES
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
     Util/SVFModule.cpp
+    Util/ICFG.cpp
+    Util/VFG.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/LocMemModel.cpp
     MemoryModel/MemModel.cpp
+    MemoryModel/OfflineConsG.cpp
+    MemoryModel/ExternalPAG.cpp
     MemoryModel/PAGBuilder.cpp
+    MemoryModel/PAGBuilderFromFile.cpp
     MemoryModel/PAG.cpp
     MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
@@ -29,7 +34,7 @@ set(SOURCES
     MSSA/MemRegion.cpp
     MSSA/MemSSA.cpp
     MSSA/SVFGBuilder.cpp
-    MSSA/SVFG.cpp 
+    MSSA/SVFG.cpp
     MSSA/SVFGOPT.cpp
     MSSA/SVFGStat.cpp
     SABER/DoubleFreeChecker.cpp
@@ -42,14 +47,34 @@ set(SOURCES
     SABER/SrcSnkDDA.cpp
     WPA/Andersen.cpp
     WPA/AndersenLCD.cpp
+    WPA/AndersenHCD.cpp
+    WPA/AndersenHLCD.cpp
+    WPA/AndersenSCD.cpp
+    WPA/AndersenSFR.cpp
     WPA/AndersenStat.cpp
-    WPA/AndersenWave.cpp
     WPA/AndersenWaveDiff.cpp
+    WPA/CSC.cpp
+    WPA/IFDS.cpp
     WPA/AndersenWaveDiffWithType.cpp
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
-    WPA/WPAPass.cpp)
+    WPA/WPAPass.cpp
+    DDA/ContextDDA.cpp
+    DDA/DDAClient.cpp
+    DDA/DDAPass.cpp
+    DDA/DDAStat.cpp
+    DDA/FlowDDA.cpp
+    MTA/FSMPTA.cpp
+    MTA/LockAnalysis.cpp
+    MTA/MHP.cpp
+    MTA/MTAAnnotator.cpp
+    MTA/MTA.cpp
+    MTA/MTAResultValidator.cpp
+    MTA/MTAStat.cpp
+    MTA/PCG.cpp
+    MTA/TCT.cpp
+    )
 
 add_llvm_loadable_module(Svf ${SOURCES})
 add_llvm_Library(LLVMSvf ${SOURCES})

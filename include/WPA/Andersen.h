@@ -33,9 +33,9 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
+#include "MemoryModel/PAG.h"
 #include "MemoryModel/ConsG.h"
-#include <llvm/PassAnalysisSupport.h>	// analysis usage
-#include <llvm/Support/Debug.h>		// DEBUG TYPE
+#include "MemoryModel/OfflineConsG.h"
 
 class PTAType;
 class SVFModule;
@@ -48,7 +48,6 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl {
 
 
 public:
-    typedef std::set<const ConstraintEdge*> EdgeSet;
     typedef SCCDetection<ConstraintGraph*> CGSCC;
 
     /// Pass ID
@@ -61,6 +60,8 @@ public:
     static Size_t numOfProcessedGep;	/// Number of processed Gep edge
     static Size_t numOfProcessedLoad;	/// Number of processed Load edge
     static Size_t numOfProcessedStore;	/// Number of processed Store edge
+    static Size_t numOfSfrs;
+    static Size_t numOfFieldExpand;
 
     static Size_t numOfSCCDetection;
     static double timeOfSCCDetection;
@@ -75,9 +76,9 @@ public:
 
     /// Constructor
     Andersen(PTATY type = Andersen_WPA)
-        :  BVDataPTAImpl(type), consCG(NULL)
+        :  BVDataPTAImpl(type), consCG(NULL), diffOpt(true), pwcOpt(false)
     {
-        reanalyze = false;
+		iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
@@ -91,24 +92,13 @@ public:
     void analyze(SVFModule svfModule);
 
     /// Initialize analysis
-    virtual inline void initialize(SVFModule svfModule) {
-        resetData();
-        /// Build PAG
-        PointerAnalysis::initialize(svfModule);
-        /// Build Constraint Graph
-        consCG = new ConstraintGraph(pag);
-        setGraph(consCG);
-        /// Create statistic class
-        stat = new AndersenStat(this);
-
-    }
-
+    virtual void initialize(SVFModule svfModule);
     //}
 
     /// Finalize analysis
     virtual inline void finalize() {
         /// dump constraint graph if PAGDotGraph flag is enabled
-        consCG->dump();
+        consCG->dump("consCG_final");
         consCG->print();
         /// sanitize field insensitive obj
         /// TODO: Fields has been collapsed during Andersen::collapseField().
@@ -133,9 +123,12 @@ public:
     static inline bool classof(const PointerAnalysis *pta) {
         return (pta->getAnalysisTy() == Andersen_WPA
                 || pta->getAnalysisTy() == AndersenLCD_WPA
-                || pta->getAnalysisTy() == AndersenWave_WPA
+                || pta->getAnalysisTy() == AndersenHCD_WPA
+                || pta->getAnalysisTy() == AndersenHLCD_WPA
                 || pta->getAnalysisTy() == AndersenWaveDiff_WPA
-                || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA);
+                || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA
+                || pta->getAnalysisTy() == AndersenSCD_WPA
+                || pta->getAnalysisTy() == AndersenSFR_WPA);
     }
     //@}
 
@@ -149,9 +142,18 @@ public:
     }
     //@}
 
-    /// Get points-to set
+    /// Operation of points-to set
     virtual inline PointsTo& getPts(NodeID id) {
         return getPTDataTy()->getPts(sccRepNode(id));
+    }
+    virtual inline bool unionPts(NodeID id, const PointsTo& target) {
+        id = sccRepNode(id);
+        return getPTDataTy()->unionPts(id, target);
+    }
+    virtual inline bool unionPts(NodeID id, NodeID ptd) {
+        id = sccRepNode(id);
+        ptd = sccRepNode(ptd);
+        return getPTDataTy()->unionPts(id,ptd);
     }
 
     /// Get constraint graph
@@ -159,9 +161,62 @@ public:
         return consCG;
     }
 
+    void dumpTopLevelPtsTo();
+
+    void setPWCOpt(bool flag) {
+        pwcOpt = flag;
+        if (pwcOpt)
+            setSCCEdgeFlag(ConstraintNode::Direct);
+        else
+            setSCCEdgeFlag(ConstraintNode::Copy);
+    }
+
+    const bool mergePWC() const { return pwcOpt; }
+
+    void setDiffOpt(bool flag) { diffOpt = flag; }
+
+    const bool enableDiff() const { return diffOpt; }
+
 protected:
-    /// Reanalyze if any constraint value changed
-    bool reanalyze;
+
+    bool pwcOpt;
+    bool diffOpt;
+
+    /// Handle diff points-to set.
+    virtual inline void computeDiffPts(NodeID id) {
+        if (enableDiff()) {
+            NodeID rep = sccRepNode(id);
+            getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
+        }
+    }
+    virtual inline PointsTo& getDiffPts(NodeID id) {
+        NodeID rep = sccRepNode(id);
+        if (enableDiff())
+            return getDiffPTDataTy()->getDiffPts(rep);
+        else
+            return getPTDataTy()->getPts(rep);
+    }
+
+    /// Handle propagated points-to set.
+    inline void updatePropaPts(NodeID dstId, NodeID srcId) {
+        if (!enableDiff())
+            return;
+        NodeID srcRep = sccRepNode(srcId);
+        NodeID dstRep = sccRepNode(dstId);
+        getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
+    }
+    inline void clearPropaPts(NodeID src) {
+        if (enableDiff()) {
+            NodeID rep = sccRepNode(src);
+            getDiffPTDataTy()->clearPropaPts(rep);
+        }
+    }
+
+    virtual void initWorklist() {}
+
+    virtual void setSCCEdgeFlag(ConstraintNode::SCCEdgeFlag f) {
+        ConstraintNode::sccEdgeFlag = f;
+    }
 
     /// Override WPASolver function in order to use the default solver
     virtual void processNode(NodeID nodeId);
@@ -171,42 +226,60 @@ protected:
     void processAllAddr();
 
     virtual bool processLoad(NodeID node, const ConstraintEdge* load);
-
     virtual bool processStore(NodeID node, const ConstraintEdge* load);
-
     virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
-
+    virtual bool processGep(NodeID node, const GepCGEdge* edge);
+    virtual void handleCopyGep(ConstraintNode* node);
+    virtual void handleLoadStore(ConstraintNode* node);
     virtual void processAddr(const AddrCGEdge* addr);
-
-    virtual void processGep(NodeID node, const GepCGEdge* edge);
-
-    virtual void processGepPts(PointsTo& pts, const GepCGEdge* edge);
+    virtual bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
     //@}
 
     /// Add copy edge on constraint graph
     virtual inline bool addCopyEdge(NodeID src, NodeID dst) {
-        return consCG->addCopyCGEdge(src, dst);
+        if (consCG->addCopyCGEdge(src, dst)) {
+            updatePropaPts(src, dst);
+            return true;
+        }
+        return false;
     }
 
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
+    /// Update call graph for all the indirect callsites
+	virtual inline bool updateCallGraph() {
+		return updateCallGraph(getIndirectCallsites());
+	}
+
+	/// Connect formal and actual parameters for indirect callsites
+    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
+
+	/// dump statistics
+    inline void printStat() {
+        PointerAnalysis::dumpStat();
+    }
+
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
+    virtual bool mergeSrcToTgt(NodeID srcId,NodeID tgtId);
+
     /// Merge sub node in a SCC cycle to their rep node
     //@{
-    void mergeSccNodes(NodeID repNodeId, NodeBS & chanegdRepNodes);
+    void mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes);
     void mergeSccCycle();
     //@}
     /// Collapse a field object into its base for field insensitive anlaysis
     //@{
+    void collapsePWCNode(NodeID nodeId);
+    void collapseFields();
     bool collapseNodePts(NodeID nodeId);
     bool collapseField(NodeID nodeId);
     //@}
 
     /// Updates subnodes of its rep, and rep node of its subs
-    void updateNodeRepAndSubs(NodeID nodeId);
+    void updateNodeRepAndSubs(NodeID nodeId,NodeID newRepId);
 
     /// SCC detection
     virtual NodeStack& SCCDetect();
@@ -244,84 +317,19 @@ protected:
     }
 };
 
-/*
- * Wave propagation based Andersen Analysis
- */
-class AndersenWave : public Andersen {
-
-private:
-    static AndersenWave* waveAndersen; // static instance
-
-public:
-    AndersenWave(PTATY type = AndersenWave_WPA) : Andersen(type) {}
-
-    /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWave* createAndersenWave(SVFModule svfModule) {
-        if(waveAndersen==NULL) {
-            waveAndersen = new AndersenWave();
-            waveAndersen->analyze(svfModule);
-            return waveAndersen;
-        }
-        return waveAndersen;
-    }
-    static void releaseAndersenWave() {
-        if (waveAndersen)
-            delete waveAndersen;
-        waveAndersen = NULL;
-    }
-
-    virtual void processNode(NodeID nodeId);
-    virtual void postProcessNode(NodeID nodeId);
-
-    virtual void handleCopyGep(ConstraintNode* node);
-
-    virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
-    virtual bool handleStore(NodeID id, const ConstraintEdge* store);
-};
-
 
 
 /**
  * Wave propagation with diff points-to set.
  */
-class AndersenWaveDiff : public AndersenWave {
+class AndersenWaveDiff : public Andersen {
 
 private:
 
     static AndersenWaveDiff* diffWave; // static instance
 
-    PointsTo & getCachePts(const ConstraintEdge* edge) {
-        EdgeID edgeId = edge->getEdgeID();
-        return getDiffPTDataTy()->getCachePts(edgeId);
-    }
-
-    /// Handle diff points-to set.
-    //@{
-    virtual inline void computeDiffPts(NodeID id) {
-        NodeID rep = sccRepNode(id);
-        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
-    }
-    virtual inline PointsTo& getDiffPts(NodeID id) {
-        NodeID rep = sccRepNode(id);
-        return getDiffPTDataTy()->getDiffPts(rep);
-    }
-    //@}
-
-    /// Handle propagated points-to set.
-    //@{
-    inline void updatePropaPts(NodeID dst, NodeID src) {
-        NodeID srcRep = sccRepNode(src);
-        NodeID dstRep = sccRepNode(dst);
-        getDiffPTDataTy()->updatePropaPtsMap(srcRep, dstRep);
-    }
-    inline void clearPropaPts(NodeID src) {
-        NodeID rep = sccRepNode(src);
-        getDiffPTDataTy()->clearPropaPts(rep);
-    }
-    //@}
-
 public:
-    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA): AndersenWave(type) {}
+    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA): Andersen(type) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(SVFModule svfModule) {
@@ -338,13 +346,13 @@ public:
         diffWave = NULL;
     }
 
+    virtual void solveWorklist();
+    virtual void processNode(NodeID nodeId);
+    virtual void postProcessNode(NodeID nodeId);
     virtual void handleCopyGep(ConstraintNode* node);
-    virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
-    virtual void processGep(NodeID node, const GepCGEdge* edge);
-
     virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
-
+    virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
 protected:
@@ -432,9 +440,9 @@ protected:
     /// process "bitcast" CopyCGEdge
     virtual void processCast(const ConstraintEdge *edge);
     /// update type of objects when process "bitcast" CopyCGEdge
-    void updateObjType(const llvm::Type *type, PointsTo &objs);
+    void updateObjType(const Type *type, PointsTo &objs);
     /// process mismatched gep edges
-    void processTypeMismatchedGep(NodeID obj, const llvm::Type *type);
+    void processTypeMismatchedGep(NodeID obj, const Type *type);
     /// match types for Gep Edges
     virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge);
     /// add type for newly created GepObjNode
@@ -444,50 +452,177 @@ protected:
 
 
 /*
- * Lazy Cycle Detection based Andersen Analysis
- * TODO: note that this implementaion is incomplete,
- * and the algorithm may not be consistent with the one in paper
+ * Lazy Cycle Detection Based Andersen Analysis
  */
-class AndersenLCD : public Andersen {
+class AndersenLCD : virtual public Andersen {
 
 private:
-    static AndersenLCD* lcdAndersen; // static instance
+    static AndersenLCD* lcdAndersen;
+    EdgeSet metEdges;
+    NodeSet lcdCandidates;
 
 public:
-    AndersenLCD(PTATY type = AndersenLCD_WPA): Andersen(type) {}
+    AndersenLCD(PTATY type = AndersenLCD_WPA) :
+            Andersen(type), lcdCandidates({}), metEdges({}) {
+    }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenWave(SVFModule svfModule) {
-        if(lcdAndersen==NULL) {
+    static AndersenLCD* createAndersenLCD(SVFModule svfModule) {
+        if (lcdAndersen == nullptr) {
             lcdAndersen = new AndersenLCD();
             lcdAndersen->analyze(svfModule);
             return lcdAndersen;
         }
         return lcdAndersen;
     }
+
     static void releaseAndersenLCD() {
         if (lcdAndersen)
             delete lcdAndersen;
-        lcdAndersen = NULL;
+        lcdAndersen = nullptr;
     }
-    /// Overriding functions of Andersen Pass
+
+protected:
+    // 'lcdCandidates' is used to collect nodes need to be visited by SCC detector
     //@{
-    void processNode(NodeID nodeId);
-
-    bool processCopy(NodeID node, const ConstraintEdge* edge);
+    inline bool hasLCDCandidate () const {
+        return !lcdCandidates.empty();
+    };
+    inline void cleanLCDCandidate() {
+        lcdCandidates.clear();
+    };
+    inline void addLCDCandidate(NodeID nodeId) {
+        lcdCandidates.insert(nodeId);
+    };
     //@}
-private:
-    /// Lazy cycle elimination edge, in order to avoid duplicate detection
-    EdgeSet lcdEdges;
 
-    /// LCD edge
-    bool inline isNewLCDEdge(const ConstraintEdge* edge) {
-        if(0==lcdEdges.count(edge)) {
-            lcdEdges.insert(edge);
-            return true;
-        }
-        return false;
+    // 'metEdges' is used to collect edges met by AndersenLCD, to avoid redundant visit
+    //@{
+    bool isMetEdge (ConstraintEdge* edge) const {
+        EdgeSet::iterator it = metEdges.find(edge->getEdgeID());
+        return it != metEdges.end();
+    };
+    void addMetEdge(ConstraintEdge* edge) {
+        metEdges.insert(edge->getEdgeID());
+    };
+    //@}
+
+    //AndersenLCD worklist processer
+    void solveWorklist();
+    // Solve constraints of each nodes
+    virtual void handleCopyGep(ConstraintNode* node);
+    // Collapse nodes and fields based on 'lcdCandidates'
+    virtual void mergeSCC();
+    // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
+    NodeStack& SCCDetect();
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
+};
+
+
+
+/*!
+ * Hybrid Cycle Detection Based Andersen Analysis
+ */
+class AndersenHCD : virtual public Andersen{
+
+public:
+    typedef SCCDetection<OfflineConsG*> OSCC;
+
+private:
+    static AndersenHCD* hcdAndersen;
+    NodeSet mergedNodes;
+    OfflineConsG* oCG;
+
+public:
+    AndersenHCD(PTATY type = AndersenHCD_WPA) :
+            Andersen(type), oCG(NULL){
     }
+
+    /// Create an singleton instance directly instead of invoking llvm pass manager
+    static AndersenHCD *createAndersenHCD(SVFModule svfModule) {
+        if (hcdAndersen == nullptr) {
+            hcdAndersen = new AndersenHCD();
+            hcdAndersen->analyze(svfModule);
+            return hcdAndersen;
+        }
+        return hcdAndersen;
+    }
+
+    static void releaseAndersenHCD() {
+        if (hcdAndersen)
+            delete hcdAndersen;
+        hcdAndersen = nullptr;
+    }
+
+protected:
+    virtual void initialize(SVFModule svfModule);
+
+    // Get offline rep node from offline constraint graph
+    //@{
+    inline bool hasOfflineRep(NodeID nodeId) const {
+        return oCG->hasOCGRep(nodeId);
+    }
+    inline NodeID getOfflineRep(NodeID nodeId) {
+        return oCG->getOCGRep(nodeId);
+    }
+    //@}
+
+    // The set 'mergedNodes' is used to record the merged node, therefore avoiding re-merge nodes
+    //@{
+    inline bool isaMergedNode(NodeID node) const {
+        NodeSet::const_iterator it = mergedNodes.find(node);
+        return it != mergedNodes.end();
+    };
+    inline void setMergedNode(NodeID node) {
+        if (!isaMergedNode(node))
+            mergedNodes.insert(node);
+    };
+    //@}
+
+    virtual void solveWorklist();
+    virtual void mergeSCC(NodeID nodeId);
+    void mergeNodeAndPts(NodeID node, NodeID tgt);
+
+};
+
+
+
+/*!
+ * Hybrid Lazy Cycle Detection Based Andersen Analysis
+ */
+class AndersenHLCD : public AndersenHCD, public AndersenLCD{
+
+private:
+    static AndersenHLCD* hlcdAndersen;
+
+public:
+    AndersenHLCD(PTATY type = AndersenHLCD_WPA) :
+            AndersenHCD(type) {
+    }
+
+    /// Create an singleton instance directly instead of invoking llvm pass manager
+    static AndersenHLCD *createAndersenHLCD(SVFModule svfModule) {
+        if (hlcdAndersen == nullptr) {
+            hlcdAndersen = new AndersenHLCD();
+            hlcdAndersen->analyze(svfModule);
+            return hlcdAndersen;
+        }
+        return hlcdAndersen;
+    }
+
+    static void releaseAndersenHLCD() {
+        if (hlcdAndersen)
+            delete hlcdAndersen;
+        hlcdAndersen = nullptr;
+    }
+
+protected:
+    void initialize(SVFModule svfModule) {AndersenHCD::initialize(svfModule);}
+    void solveWorklist() {AndersenHCD::solveWorklist();}
+    void handleCopyGep(ConstraintNode* node) {AndersenLCD::handleCopyGep(node);}
+    void mergeSCC(NodeID nodeId);
+    bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId) { return AndersenLCD::mergeSrcToTgt(nodeId, newRepId);}
+
 };
 
 #endif /* ANDERSENPASS_H_ */

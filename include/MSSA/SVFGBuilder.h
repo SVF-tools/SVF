@@ -31,17 +31,16 @@
 #define ANDERSENMEMSSA_H_
 
 #include "MSSA/SVFGOPT.h"
-#include <llvm/Analysis/DominanceFrontier.h>
 
 /*!
  * Dominator frontier used in MSSA
  */
-class MemSSADF : public llvm::DominanceFrontier {
+class MemSSADF : public DominanceFrontier {
 public:
-    MemSSADF() : llvm::DominanceFrontier()
+    MemSSADF() : DominanceFrontier()
     {}
 
-    bool runOnDT(llvm::DominatorTree& dt) {
+    bool runOnDT(DominatorTree& dt) {
         releaseMemory();
         analyze(dt);
         return false;
@@ -65,10 +64,12 @@ public:
     /// Destructor
     virtual ~SVFGBuilder() {}
 
-    static SVFGOPT* globalSvfg;
+    static SVFG* globalSvfg;
 
-    /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
-    SVFGOPT* buildSVFG(BVDataPTAImpl* pta, bool withAOFI = false);
+	SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
+    SVFG* buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta);
+	SVFG* buildFullSVFG(BVDataPTAImpl* pta);
+    SVFG* buildFullSVFGWithoutOPT(BVDataPTAImpl* pta);
 
     /// Clean up
     static void releaseSVFG() {
@@ -92,14 +93,15 @@ public:
     }
 
 protected:
-    /// We start from here
-    virtual bool build(SVFG* graph,BVDataPTAImpl* pta);
+    /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
+    SVFG* build(BVDataPTAImpl* pta, VFG::VFGK kind);
+
+    /// Build Memory SSA
+    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
     /// Can be rewritten by subclasses
-    virtual void createSVFG(MemSSA* mssa, SVFG* graph);
+    virtual void buildSVFG();
     /// Release global SVFG
-    virtual void releaseMemory(SVFG* graph);
-    /// Update call graph using pre-analysis points-to results
-    virtual void updateCallGraph(PointerAnalysis* pta);
+    virtual void releaseMemory();
 
     /// SVFG Edges connected at indirect call/ret sites
     SVFGEdgeSet vfEdgesAtIndCallSite;

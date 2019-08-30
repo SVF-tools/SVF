@@ -28,12 +28,10 @@
  */
 
 #include "Util/CPPUtil.h"
+#include "Util/SVFUtil.h"
 #include "MemoryModel/CHA.h"
 #include <cxxabi.h>   // for demangling
-#include "Util/BasicTypes.h"
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
 
-using namespace llvm;
 using namespace std;
 
 // label for global vtbl value before demangle
@@ -108,7 +106,7 @@ string cppUtil::getBeforeBrackets(const string name) {
 }
 
 bool cppUtil::isValVtbl(const Value *val) {
-    if (!isa<GlobalVariable>(val))
+    if (!SVFUtil::isa<GlobalVariable>(val))
         return false;
     string valName = val->getName().str();
     if (valName.compare(0, vtblLabelBeforeDemangle.size(),
@@ -181,12 +179,12 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst) {
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
     for (s32_t i = 0; i < 3; ++i) {
-        if (const PointerType *ptrTy = dyn_cast<PointerType>(elemTy))
+        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = ptrTy->getElementType();
         else
             return false;
     }
-    if (const FunctionType *functy = dyn_cast<FunctionType>(elemTy)) {
+    if (const FunctionType *functy = SVFUtil::dyn_cast<FunctionType>(elemTy)) {
         const Type *paramty = functy->getParamType(0);
         string className = cppUtil::getClassNameFromType(paramty);
         if (className.size() > 0) {
@@ -208,14 +206,14 @@ bool cppUtil::isVirtualCallSite(CallSite cs) {
         return false;
 
     const Value *vfunc = cs.getCalledValue();
-    if (const LoadInst *vfuncloadinst = dyn_cast<LoadInst>(vfunc)) {
+    if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc)) {
         const Value *vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst *vfuncptrgepinst =
-                    dyn_cast<GetElementPtrInst>(vfuncptr)) {
+                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr)) {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
             const Value *vtbl = vfuncptrgepinst->getPointerOperand();
-            if (isa<LoadInst>(vtbl)) {
+            if (SVFUtil::isa<LoadInst>(vtbl)) {
                 return true;
             }
         }
@@ -224,23 +222,36 @@ bool cppUtil::isVirtualCallSite(CallSite cs) {
 }
 
 const Value *cppUtil::getVCallThisPtr(CallSite cs) {
-    if (cs.paramHasAttr(0, Attribute::StructRet)) {
+    if (cs.paramHasAttr(0, llvm::Attribute::StructRet)) {
         return cs.getArgument(1);
     } else {
         return cs.getArgument(0);
     }
 }
 
+/*!
+ * Given a inheritance relation B is a child of A
+ * We assume B::B(thisPtr1){ A::A(thisPtr2) } such that thisPtr1 == thisPtr2
+ * In the following code thisPtr1 is "%class.B1* %this" and thisPtr2 is "%class.A* %0".
+ *
+define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 comdat
+  %this.addr = alloca %class.B1*, align 8
+  store %class.B1* %this, %class.B1** %this.addr, align 8
+  %this1 = load %class.B1*, %class.B1** %this.addr, align 8
+  %0 = bitcast %class.B1* %this1 to %class.A*
+  call void @A::A()(%class.A* %0)
+ */
 bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2) {
 	if (thisPtr1 == thisPtr2){
 		return true;
 	}
 	else {
 		for (const User *thisU : thisPtr1->users()) {
-			if (const StoreInst *store = dyn_cast<StoreInst>(thisU)) {
+			if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU)) {
 				for (const User *storeU : store->getPointerOperand()->users()) {
-					if (const LoadInst *load = dyn_cast<LoadInst>(storeU)) {
-						return load == (thisPtr2->stripPointerCasts());
+					if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU)) {
+					    if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
+					        return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
 					}
 				}
 			}
@@ -264,26 +275,26 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
  * call %x (...)
  */
 const Value *cppUtil::getVCallVtblPtr(CallSite cs) {
-    const LoadInst *loadInst = dyn_cast<LoadInst>(cs.getCalledValue());
+    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != NULL);
     const Value *vfuncptr = loadInst->getPointerOperand();
-    const GetElementPtrInst *gepInst = dyn_cast<GetElementPtrInst>(vfuncptr);
+    const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     assert(gepInst != NULL);
     const Value *vtbl = gepInst->getPointerOperand();
     return vtbl;
 }
 
-u64_t cppUtil::getVCallIdx(llvm::CallSite cs) {
-    const LoadInst *vfuncloadinst = dyn_cast<LoadInst>(cs.getCalledValue());
+u64_t cppUtil::getVCallIdx(CallSite cs) {
+    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != NULL);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
-        dyn_cast<GetElementPtrInst>(vfuncptr);
+        SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt *idx = dyn_cast<ConstantInt>(*oi);
+    const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
     if (idx == NULL) {
-        errs() << "vcall gep idx not constantint\n";
+    	SVFUtil::errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
     } else
         idx_value = idx->getSExtValue();
@@ -292,10 +303,10 @@ u64_t cppUtil::getVCallIdx(llvm::CallSite cs) {
 
 string cppUtil::getClassNameFromType(const Type *ty) {
     string className = "";
-    if (const PointerType *ptrType = dyn_cast<PointerType>(ty)) {
+    if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty)) {
         const Type *elemType = ptrType->getElementType();
-        if (isa<StructType>(elemType) &&
-                !((cast<StructType>(elemType))->isLiteral())) {
+        if (SVFUtil::isa<StructType>(elemType) &&
+                !((SVFUtil::cast<StructType>(elemType))->isLiteral())) {
             string elemTypeName = elemType->getStructName().str();
             if (elemTypeName.compare(0, clsName.size(), clsName) == 0) {
                 className = elemTypeName.substr(clsName.size());
@@ -374,9 +385,9 @@ bool cppUtil::isDestructor(const Function *F) {
 string cppUtil::getClassNameOfThisPtr(CallSite cs) {
     string thisPtrClassName;
     Instruction *inst = cs.getInstruction();
-    if (MDNode *N = inst->getMetadata("VCallPtrType")) {
-        MDString *mdstr = cast<MDString>(N->getOperand(0));
-        thisPtrClassName = mdstr->getString().str();
+    if (const MDNode *N = inst->getMetadata("VCallPtrType")) {
+        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
+        thisPtrClassName = mdstr.getString().str();
     }
     if (thisPtrClassName.size() == 0) {
         const Value *thisPtr = getVCallThisPtr(cs);
@@ -396,9 +407,9 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs) {
 string cppUtil::getFunNameOfVCallSite(CallSite cs) {
     string funName;
     Instruction *inst = cs.getInstruction();
-    if (MDNode *N = inst->getMetadata("VCallFunName")) {
-        MDString *mdstr = cast<MDString>(N->getOperand(0));
-        funName = mdstr->getString().str();
+    if (const MDNode *N = inst->getMetadata("VCallFunName")) {
+        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
+        funName = mdstr.getString().str();
     }
     return funName;
 }

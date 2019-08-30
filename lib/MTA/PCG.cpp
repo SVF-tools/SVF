@@ -6,19 +6,16 @@
  */
 
 #include "MTA/PCG.h"
-#include "Util/AnalysisUtil.h"
-#include <llvm/IR/InstIterator.h> // for inst iteration
-#include <llvm/Support/CommandLine.h> // for llvm command line options
+#include "Util/SVFUtil.h"
 
-using namespace llvm;
-using namespace analysisUtil;
+using namespace SVFUtil;
 
 //=====================================================//
 /*!
  * Whether two functions may happen in parallel
  */
 
-//static cl::opt<bool> TDPrint("print-td", cl::init(true), cl::desc("Print Thread Analysis Results"));
+//static llvm::cl::opt<bool> TDPrint("print-td", llvm::cl::init(true), llvm::cl::desc("Print Thread Analysis Results"));
 bool PCG::analyze() {
 
     //callgraph = new PTACallGraph(mod);
@@ -38,7 +35,7 @@ bool PCG::analyze() {
     return false;
 }
 
-bool PCG::mayHappenInParallelBetweenFunctions(const llvm::Function* fun1, const llvm::Function* fun2) const {
+bool PCG::mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const {
     // if neither of functions are spawnees, then they won't happen in parallel
     if (isSpawneeFun(fun1) == false && isSpawneeFun(fun2) == false)
         return false;
@@ -51,7 +48,7 @@ bool PCG::mayHappenInParallelBetweenFunctions(const llvm::Function* fun1, const 
     return true;
 }
 
-bool PCG::mayHappenInParallel(const llvm::Instruction* i1, const llvm::Instruction* i2) const {
+bool PCG::mayHappenInParallel(const Instruction* i1, const Instruction* i2) const {
     const Function* fun1 = i1->getParent()->getParent();
     const Function* fun2 = i2->getParent()->getParent();
     return mayHappenInParallelBetweenFunctions(fun1, fun2);
@@ -78,7 +75,7 @@ void PCG::initFromThreadAPI(SVFModule module) {
                 /// TODO: handle indirect call here for the fork Fun
                 else {
                     wrnMsg("pthread create");
-                    inst->dump();
+                    outs() << *inst << "\n";
                     wrnMsg("invoke spawnee indirectly");
                 }
             }
@@ -173,11 +170,11 @@ void PCG::identifyFollowers() {
         bb_worklist.push(inst->getParent());
         while (!bb_worklist.empty()) {
             const BasicBlock* bb = bb_worklist.pop();
-            for (llvm::BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
+            for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end(); it != eit; ++it) {
                 const Instruction* inst = &*it;
                 // mark the callee of this callsite as follower
                 // if this is an call/invoke instruction but not a spawn site
-                if ((isa<CallInst>(inst) || isa<InvokeInst>(inst)) && !isSpawnsite(inst)) {
+                if ((SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst)) && !isSpawnsite(inst)) {
                     if (callgraph->hasCallGraphEdge(inst)) {
                         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(inst),
                                 ecgIt = callgraph->getCallEdgeEnd(inst); cgIt != ecgIt; ++cgIt) {
