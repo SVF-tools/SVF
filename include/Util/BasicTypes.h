@@ -59,6 +59,8 @@
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
 #include <llvm/Support/GraphWriter.h>		// for graph write
 #include <llvm/IR/IRBuilder.h>		// for instrument svf.main
+#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
+#include <llvm/IR/DebugInfo.h>
 
 #include <vector>
 #include <list>
