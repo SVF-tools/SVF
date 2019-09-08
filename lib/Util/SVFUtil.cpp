@@ -31,14 +31,6 @@
 #include "Util/Conditions.h"
 #include <sys/resource.h>		/// increase stack size
 
-#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
-#include <llvm/IR/InstrTypes.h>	// for TerminatorInst
-#include <llvm/IR/IntrinsicInst.h>	// for intrinsic instruction
-#include <llvm/IR/DebugInfo.h>
-#include <llvm/Analysis/CFG.h>	// for CFG
-#include <llvm/IR/CFG.h>		// for CFG
-
-
 
 
 /// Color for output format
