@@ -175,11 +175,10 @@ void Andersen::processAllAddr()
     for (ConstraintGraph::const_iterator nodeIt = consCG->begin(), nodeEit = consCG->end(); nodeIt != nodeEit; nodeIt++) {
         ConstraintNode * cgNode = nodeIt->second;
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
-                it != eit; ++it) {
-            AddrCGEdge* addrEdge = SVFUtil::dyn_cast<AddrCGEdge>(*it);
-            processAddr(addrEdge);
-            consCG->removeAddrEdge(addrEdge);
-        }
+                it != eit; ++it)
+            processAddr(SVFUtil::cast<AddrCGEdge>(*it));
+        if (!cgNode->incomingAddrEdges().empty())
+            cgNode->incomingAddrEdges().clear();
     }
 }
 
