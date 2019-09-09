@@ -177,8 +177,6 @@ void Andersen::processAllAddr()
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
                 it != eit; ++it)
             processAddr(SVFUtil::cast<AddrCGEdge>(*it));
-        if (!cgNode->incomingAddrEdges().empty())
-            cgNode->incomingAddrEdges().clear();
     }
 }
 
