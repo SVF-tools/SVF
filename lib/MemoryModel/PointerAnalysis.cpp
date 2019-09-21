@@ -361,7 +361,6 @@ void BVDataPTAImpl::writeToFile(const string& filename) {
     }
 
     // Write GepPAGNodes to file
-    NodeID firstGepObjNode = 0;
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it) {
         PAGNode* pagNode = it->second;
         if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
