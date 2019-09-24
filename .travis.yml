@@ -4,41 +4,41 @@ os: linux
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-7
+      - llvm-toolchain-trusty-9
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
-      - llvm-7
-      - llvm-7-dev
-      - clang-7
-      - libllvm7
+      - llvm-9
+      - llvm-9-dev
+      - clang-9
+      - libllvm9
       - libc++-7-dev
       - libc++abi-7-dev
       - libgcc-4.9-dev
       - libobjc-4.9-dev
-      - libclang-common-7-dev
-      - libclang1-7
-      - llvm-7-runtime
+      - libclang-common-9-dev
+      - libclang1-9
+      - llvm-9-runtime
 matrix:
   include:
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@7/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@7 LDFLAGS:=-L/usr/local/opt/llvm@7/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@9/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@9 LDFLAGS:=-L/usr/local/opt/llvm@9/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
         - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@7
+      install: brew install llvm@9
       cache:
         directories: ~/Library/Caches/Homebrew/
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@7/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@7 LDFLAGS:=-L/usr/local/opt/llvm@7/lib CPPFLAGS=-I/usr/local/opt/llvm@7/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@9/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@9 LDFLAGS:=-L/usr/local/opt/llvm@9/lib CPPFLAGS=-I/usr/local/opt/llvm@9/include
         - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@7
+      install: brew install llvm@9
       cache:
         directories: ~/Library/Caches/Homebrew/
 env:
   global:
-    - CC=clang-7 CXX=clang++-7
+    - CC=clang-9 CXX=clang++-9
     - PATH=$TRAVIS_BUILD_DIR/cmake-3.8.1-Linux-x86_64/bin:$PATH
-    - LLVM_DIR=/usr/lib/llvm-7
+    - LLVM_DIR=/usr/lib/llvm-9
   matrix:
     - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug"
     - CONFIG_ARGS=
