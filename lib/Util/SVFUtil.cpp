@@ -280,13 +280,13 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
  * Get position of a successor basic block
  */
 u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {
-    const TerminatorInst *Term = BB->getTerminator();
-    u32_t e = Term->getNumSuccessors();
-    for (u32_t i = 0; ; ++i) {
-        assert(i != e && "Didn't find succesor edge?");
-        if (Term->getSuccessor(i) == Succ)
+    u32_t i = 0;
+    for (const BasicBlock *SuccBB: successors(BB)) {
+        if (SuccBB == Succ)
             return i;
+        i++;
     }
+    assert(false && "Didn't find succesor edge?");
     return 0;
 }
 

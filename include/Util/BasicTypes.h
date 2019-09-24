@@ -207,7 +207,6 @@ typedef llvm::ReturnInst ReturnInst;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::SelectInst SelectInst;
 typedef llvm::IntToPtrInst IntToPtrInst;
-typedef llvm::TerminatorInst TerminatorInst;
 typedef llvm::CmpInst CmpInst;
 typedef llvm::BranchInst BranchInst;
 typedef llvm::SwitchInst SwitchInst;
@@ -220,10 +219,13 @@ typedef llvm::ExtractElementInst ExtractElementInst;
 typedef llvm::InsertElementInst InsertElementInst;
 typedef llvm::ShuffleVectorInst ShuffleVectorInst;
 typedef llvm::LandingPadInst LandingPadInst;
+typedef llvm::ResumeInst ResumeInst;
+typedef llvm::UnreachableInst UnreachableInst;
 typedef llvm::FenceInst FenceInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::UndefValue UndefValue;
+typedef llvm::FunctionCallee FunctionCallee;
 
 /// LLVM scalar evolution
 typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;

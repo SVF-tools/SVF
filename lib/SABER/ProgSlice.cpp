@@ -175,7 +175,7 @@ std::string ProgSlice::evalFinalCond() const {
     std::set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it) {
         Condition* atom = pathAllocator->getCond(*it);
-        const TerminatorInst* tinst = pathAllocator->getCondInst(atom);
+        const Instruction* tinst = pathAllocator->getCondInst(atom);
         locations.insert(getSourceLoc(tinst));
     }
     /// print leak path after eliminating duplicated element
@@ -199,7 +199,7 @@ void ProgSlice::annotatePaths() {
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it) {
         Condition* atom = pathAllocator->getCond(*it);
-        const TerminatorInst* tinst = pathAllocator->getCondInst(atom);
+        const Instruction* tinst = pathAllocator->getCondInst(atom);
         if(const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(tinst)) {
             annotator.annotateFeasibleBranch(br,0);
             annotator.annotateFeasibleBranch(br,1);
