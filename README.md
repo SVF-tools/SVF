@@ -9,7 +9,7 @@
 * <b>SVF now supports analysis for C++ programs.</b>
 <br />
 
-#### Call for self-motivated PhD stduents to work on SVF (Please send your CV and transcript to [Yulei Sui](https://yuleisui.github.io))
+#### Looking for self-motivated PhD stduents to work on SVF (Please send your CV and transcripts to [Yulei Sui](https://yuleisui.github.io))
 #### Call for industry collabration and sponsorship (Please send your requirements to yulei.sui@uts.edu.au)
 
 
