@@ -252,4 +252,15 @@ typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
 typedef llvm::IRBuilder<> IRBuilder;
 typedef llvm::IntegerType IntegerType;
+
+/// LLVM debug information
+typedef llvm::DebugInfoFinder DebugInfoFinder;
+typedef llvm::DIType DIType;
+typedef llvm::DIBasicType DIBasicType;
+typedef llvm::DICompositeType DICompositeType;
+typedef llvm::DIDerivedType DIDerivedType;
+typedef llvm::DISubroutineType DISubroutineType;
+typedef llvm::DISubprogram DISubprogram;
+namespace dwarf = llvm::dwarf;
+
 #endif /* BASICTYPES_H_ */
