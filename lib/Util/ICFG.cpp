@@ -206,10 +206,9 @@ void ICFG::build(){
 
 void ICFG::connectGlobalToProgEntry()
 {
-	assert(getProgEntryFunction(pag->getModule()));
     const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
 
-    /// Return back if the main function is not found
+    /// Return back if the main function is not found, the bc file might be a library only
     if(mainFunc == NULL)
         return;
 

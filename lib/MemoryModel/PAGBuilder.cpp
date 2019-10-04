@@ -252,6 +252,15 @@ void PAGBuilder::processCE(const Value *val) {
             pag->addBlackHoleAddrEdge(dst);
             pag->setCurrentLocation(cval, cbb);
         }
+        else if (isBinaryConstantExpr(ref)){
+            // we don't handle binary constant expression like add(x,y) now
+            const Value* cval = pag->getCurrentValue();
+            const BasicBlock* cbb = pag->getCurrentBB();
+            pag->setCurrentLocation(ref, NULL);
+            NodeID dst = pag->getValueNode(ref);
+            pag->addBlackHoleAddrEdge(dst);
+            pag->setCurrentLocation(cval, cbb);
+        }
         else if (SVFUtil::isa<ConstantAggregate>(ref)){
             // we don't handle constant agrgregate like constant vectors
         }
@@ -741,7 +750,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
             if (arg->getType()->isPointerTy()) {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addDummyObjNode();
+                NodeID obj = pag->addBlackholeObjNode();
                 if (vnArg && dummy && obj) {
                     pag->addAddrEdge(obj, dummy);
                     pag->addStoreEdge(dummy, vnArg);
