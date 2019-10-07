@@ -183,18 +183,26 @@ void LLVMModuleSet::addSVFMain(){
         Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
         Type * i32 = IntegerType::getInt32Ty(M.getContext());
         // define void @svf.main(i32, i8**, i8**)
+#if (LLVM_VERSION_MAJOR >= 9)
         FunctionCallee svfmainFn = M.getOrInsertFunction(
             SVF_MAIN_FUNC_NAME,
             Type::getVoidTy(M.getContext()),
             i32,i8ptr2,i8ptr2
         );
         Function *svfmain = SVFUtil::dyn_cast<Function>(svfmainFn.getCallee());
+#else
+        Function *svfmain = SVFUtil::dyn_cast<Function>(M.getOrInsertFunction(
+            SVF_MAIN_FUNC_NAME,
+            Type::getVoidTy(M.getContext()),
+            i32,i8ptr2,i8ptr2
+        ));
+#endif
         svfmain->setCallingConv(llvm::CallingConv::C);
         BasicBlock* block = BasicBlock::Create(M.getContext(), "entry", svfmain);
         IRBuilder Builder(block);
         // emit "call void @_GLOBAL__sub_I_XXX()"
         for(auto & init: init_funcs){
-            FunctionCallee target = M.getOrInsertFunction(
+            auto target = M.getOrInsertFunction(
                 init->getName(),
                 Type::getVoidTy(M.getContext())
             );
