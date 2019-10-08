@@ -125,8 +125,6 @@ void VFG::addVFGNodes() {
     // initialize actual parameter nodes
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(), eit = pag->getCallSiteArgsMap().end(); it !=eit; ++it) {
 
-		const Function* fun = getCallee(it->first);
-        fun = getDefFunForMultipleModule(fun);
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
             if (isInterestedPAGNode(pagNode))
@@ -167,16 +165,19 @@ void VFG::addVFGNodes() {
 
         if (func->getFunctionType()->isVarArg()) {
             const PAGNode* varParam = pag->getPAGNode(pag->getVarargNode(func));
-            if (isInterestedPAGNode(varParam) && hasBlackHoleConstObjAddrAsDef(varParam) == false) {
-                CallPESet callPEs;
-                if (varParam->hasIncomingEdges(PAGEdge::Call)) {
-                    for(PAGEdge::PAGEdgeSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(PAGEdge::Call),
-                            ecit = varParam->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit) {
-                        callPEs.insert(SVFUtil::cast<CallPE>(*cit));
-                    }
-                }
-                addFormalParmVFGNode(varParam,func,callPEs);
+            if (isInterestedPAGNode(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
+                continue;
+
+            CallPESet callPEs;
+            if (varParam->hasIncomingEdges(PAGEdge::Call)) {
+                 for(PAGEdge::PAGEdgeSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(PAGEdge::Call),
+                        ecit = varParam->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit) {
+                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
+                     if(isInterestedPAGNode(callPE->getSrcNode()))
+                         callPEs.insert(callPE);
+                 }
             }
+            addFormalParmVFGNode(varParam,func,callPEs);
         }
     }
 
