@@ -225,7 +225,9 @@ typedef llvm::FenceInst FenceInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::UndefValue UndefValue;
+#if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
+#endif
 
 /// LLVM scalar evolution
 typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
