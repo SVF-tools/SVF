@@ -92,7 +92,9 @@ public:
     virtual void PrintAliasPairs(PointerAnalysis* pta);
 
     /// We start from here
-    virtual bool runOnModule(Module& module) {
+    virtual bool runOnModule(llvm::Module& module) {
+        SVFModule svfModule(module);
+        runOnModule(svfModule);
         return false;
     }
 
