@@ -468,11 +468,16 @@ void PathCondAllocator::printPathCond() {
     for(BBCondMap::iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it) {
         const BasicBlock* bb = it->first;
         for(CondPosMap::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
-            const TerminatorInst *Term = bb->getTerminator();
-            const BasicBlock* succ = Term->getSuccessor(cit->first);
-            Condition* cond = cit->second;
-            outs() << bb->getName() << "-->" << succ->getName() << ":";
-            outs() << dumpCond(cond) << "\n";
+            u32_t i=0;
+            for (const BasicBlock *succ: successors(bb)) {
+                if (i == cit->first) {
+                    Condition* cond = cit->second;
+                    outs() << bb->getName() << "-->" << succ->getName() << ":";
+                    outs() << dumpCond(cond) << "\n";
+                    break;
+                }
+                i++;
+            }
         }
     }
 }

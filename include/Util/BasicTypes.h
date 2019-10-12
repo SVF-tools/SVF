@@ -207,7 +207,6 @@ typedef llvm::ReturnInst ReturnInst;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::SelectInst SelectInst;
 typedef llvm::IntToPtrInst IntToPtrInst;
-typedef llvm::TerminatorInst TerminatorInst;
 typedef llvm::CmpInst CmpInst;
 typedef llvm::BranchInst BranchInst;
 typedef llvm::SwitchInst SwitchInst;
@@ -220,10 +219,15 @@ typedef llvm::ExtractElementInst ExtractElementInst;
 typedef llvm::InsertElementInst InsertElementInst;
 typedef llvm::ShuffleVectorInst ShuffleVectorInst;
 typedef llvm::LandingPadInst LandingPadInst;
+typedef llvm::ResumeInst ResumeInst;
+typedef llvm::UnreachableInst UnreachableInst;
 typedef llvm::FenceInst FenceInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::UndefValue UndefValue;
+#if (LLVM_VERSION_MAJOR >= 9)
+typedef llvm::FunctionCallee FunctionCallee;
+#endif
 
 /// LLVM scalar evolution
 typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
@@ -250,4 +254,15 @@ typedef llvm::bridge_gep_iterator bridge_gep_iterator;
 typedef llvm::GraphPrinter GraphPrinter;
 typedef llvm::IRBuilder<> IRBuilder;
 typedef llvm::IntegerType IntegerType;
+
+/// LLVM debug information
+typedef llvm::DebugInfoFinder DebugInfoFinder;
+typedef llvm::DIType DIType;
+typedef llvm::DIBasicType DIBasicType;
+typedef llvm::DICompositeType DICompositeType;
+typedef llvm::DIDerivedType DIDerivedType;
+typedef llvm::DISubroutineType DISubroutineType;
+typedef llvm::DISubprogram DISubprogram;
+namespace dwarf = llvm::dwarf;
+
 #endif /* BASICTYPES_H_ */

@@ -174,7 +174,6 @@ void ThreadCallGraph::addDirectForkEdge(const Instruction* call) {
     const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(call));
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(forkee);
-    SVFModule svfModule = getSVFModule();
     callee = getCallGraphNode(getDefFunForMultipleModule(forkee));
     CallSite cs = SVFUtil::getLLVMCallSite(call);
     CallSiteID csId = addCallSite(cs, callee->getFunction());

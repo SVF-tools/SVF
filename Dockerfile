@@ -4,7 +4,7 @@ FROM ubuntu:16.04
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=7.0.0
+ENV llvm_version=9.0.0
 
 # Define dependencies.
 ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim"

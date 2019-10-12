@@ -328,8 +328,8 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) {
 
 /*!
  * Store pointer analysis result into a file.
- * It includes the points-to data, and the PAG offset nodes, which
- * are created when solving Andersen's constraints.
+ * It includes the points-to relations, and all PAG nodes including those
+ * created when solving Andersen's constraints.
  */
 void BVDataPTAImpl::writeToFile(const string& filename) {
     outs() << "Storing pointer analysis results to '" << filename << "'...";
@@ -360,21 +360,12 @@ void BVDataPTAImpl::writeToFile(const string& filename) {
         F.os() << "}\n";
     }
 
-    // Write PAG offset nodes to file
-    NodeID firstGepObjNode = 0;
+    // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it) {
         PAGNode* pagNode = it->second;
         if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
-            if (firstGepObjNode > gepObjPN->getId()) {
-                firstGepObjNode = gepObjPN->getId();
-            }
-        }
-    }
-    for (NodeID i = firstGepObjNode, e = pag->getTotalNodeNum(); i != e; ++i) {
-        GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(i));
-        if (gepObjPN) {
-            F.os() << i << " ";
-            F.os() << pag->getBaseObjNode(i) << " ";
+            F.os() << it->first << " ";
+            F.os() << pag->getBaseObjNode(it->first) << " ";
             F.os() << gepObjPN->getLocationSet().getOffset() << "\n";
         }
     }

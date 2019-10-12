@@ -134,7 +134,6 @@ public:
     }
     void visitInvokeInst(InvokeInst &II) {
         visitCallSite(&II);
-        visitTerminatorInst(II);
     }
     void visitCallSite(CallSite cs);
     void visitReturnInst(ReturnInst &I);
@@ -144,9 +143,10 @@ public:
     void visitInsertValueInst(InsertValueInst &I) {
 		pag->addBlackHoleAddrEdge(getValueNode(&I));
     }
-    // Terminators
-    void visitTerminatorInst(TerminatorInst &TI) {
-    }
+    // TerminatorInst and UnwindInst have been removed since llvm-8.0.0
+    // void visitTerminatorInst(TerminatorInst &TI) {}
+    // void visitUnwindInst(UnwindInst &I) { /*returns void*/}
+
     void visitBinaryOperator(BinaryOperator &I);
     void visitCmpInst(CmpInst &I);
 
@@ -166,11 +166,9 @@ public:
     }
 
     /// Instruction not that often
-    void visitResumeInst(TerminatorInst &I) { /*returns void*/
+    void visitResumeInst(ResumeInst &I) { /*returns void*/
     }
-    void visitUnwindInst(TerminatorInst &I) { /*returns void*/
-    }
-    void visitUnreachableInst(TerminatorInst &I) { /*returns void*/
+    void visitUnreachableInst(UnreachableInst &I) { /*returns void*/
     }
     void visitFenceInst(FenceInst &I) { /*returns void*/
 		pag->addBlackHoleAddrEdge(getValueNode(&I));

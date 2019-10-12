@@ -73,7 +73,6 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
         		virtualCallSites.insert(cs);
             const Value *vtbl = getVCallVtblPtr(cs);
             assert(pag->hasValueNode(vtbl));
-            NodeID vtblId = pag->getValueNode(vtbl);
             VFunSet vfns;
             getVFnsFromCHA(cs, vfns);
             connectVCallToVFns(cs, vfns, newEdges);

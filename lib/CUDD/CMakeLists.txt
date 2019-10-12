@@ -94,7 +94,7 @@ set(SOURCES
        restart.c
 )
 
-add_llvm_loadable_module(Cudd ${SOURCES})
+add_llvm_library(Cudd ${SOURCES})
 add_llvm_library(LLVMCudd ${SOURCES})
 
 set_target_properties(Cudd PROPERTIES COMPILE_FLAGS "-Wno-format -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -O3 -w -DHAVE_IEEE_754 -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8")
