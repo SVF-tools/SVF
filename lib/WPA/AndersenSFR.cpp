@@ -56,6 +56,10 @@ void AndersenSFR::initialize(SVFModule svfModule) {
 void AndersenSFR::PWCDetect(){
     AndersenSCD::PWCDetect();
     csc->find(getSCCDetector()->topoNodeStack());
+    // update pwcReps
+//    for (CSC::iterator it = csc->begin(); it != csc->end(); ++it)
+//        if (it->first != it->second)
+//            pwcReps[it->first] = it->second;
 }
 
 
@@ -79,6 +83,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge) {
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();
 
+    // TODO: all expand
     if (!dst->strides.empty() && SVFUtil::isa<NormalGepCGEdge>(edge)) {      // dst is in pwc
         PointsTo tmpDstPts;
         PointsTo srcInits = pts - getPts(dstId);
@@ -151,3 +156,23 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
         }
     }
 }
+
+
+/*!
+ *
+ */
+//bool AndersenSFR::processCopy(NodeID node, const ConstraintEdge* edge) {
+//    if (Andersen::processCopy(node, edge)) {
+//        ConstraintNode* src = edge->getSrcNode();
+//        ConstraintNode* dst = edge->getDstNode();
+//        if (!dst->strides.empty()) {                                                                // dst is in pwc
+//            if (dst->strides != src->strides)     // dst and src not in the same cycle
+//                dst->newExpand = true;
+//            else if (!dst->newExpand) {
+//                dst->newExpand = src->newExpand;
+//            }
+//            return true;
+//        }
+//    }
+//    return false;
+//}
