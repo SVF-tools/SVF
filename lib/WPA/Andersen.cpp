@@ -77,7 +77,6 @@ void Andersen::analyze(SVFModule svfModule) {
 	if(!readResultsFromFile) {
 		// Start solving constraints
 		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-		processAllAddr();
 		solve();
 		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
@@ -104,6 +103,8 @@ void Andersen::initialize(SVFModule svfModule) {
     /// Create statistic class
     stat = new AndersenStat(this);
     consCG->dump("consCG_initial");
+    /// Initialize worklist
+    processAllAddr();
 }
 
 /*!
