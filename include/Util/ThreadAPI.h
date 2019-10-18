@@ -156,7 +156,7 @@ public:
         return cs.getArgument(3);
     }
     inline const Value* getActualParmAtForkSite(CallSite cs) const {
-        return getForkedFun(cs.getInstruction());
+        return getActualParmAtForkSite(cs.getInstruction());
     }
     //@}
 
