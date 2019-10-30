@@ -273,6 +273,17 @@ BreakConstantGEPs::runOnModule (Module & module) {
                 for (unsigned index = 0; index < I->getNumOperands(); ++index) {
                     if (hasConstantGEP (I->getOperand(index))) {
                         Worklist.push_back (I);
+                        break;
+                    } else {
+                        ConstantVector *CVOper = dyn_cast<ConstantVector>(I->getOperand(index));
+                        if (CVOper != nullptr) {
+                            for (unsigned vindex = 0; vindex < CVOper->getNumOperands(); ++vindex) {
+                                if (hasConstantGEP(CVOper->getOperand(vindex))) {
+                                    Worklist.push_back(I);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -329,6 +340,17 @@ BreakConstantGEPs::runOnModule (Module & module) {
                         Instruction * NewInst = convertExpression (CE, I);
                         I->replaceUsesOfWith (CE, NewInst);
                         Worklist.push_back (NewInst);
+                    } else {
+                        ConstantVector *CVOper = dyn_cast<ConstantVector>(I->getOperand(index));
+                        if (CVOper != nullptr) {
+                            for (unsigned vindex = 0; vindex < CVOper->getNumOperands(); ++vindex) {
+                                if (ConstantExpr *CE = hasConstantGEP(CVOper->getOperand(vindex))) {
+                                    Instruction *NewInst = convertExpression(CE, I);
+                                    I->replaceUsesOfWith(CE, NewInst);
+                                    Worklist.push_back(NewInst);
+                                }
+                            }
+                        }
                     }
                 }
             }
