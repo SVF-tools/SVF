@@ -99,6 +99,7 @@ void WPAPass::runOnModule(SVFModule svfModule) {
         if (PASelected.isSet(i))
             runPointerAnalysis(svfModule, i);
     }
+    assert(!ptaVector.empty() && "No pointer analysis is specified.\n");
 }
 
 
