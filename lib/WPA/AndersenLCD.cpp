@@ -55,6 +55,8 @@ void AndersenLCD::handleCopyGep(ConstraintNode* node) {
     double propStart = stat->getClk();
 
     NodeID nodeId = node->getId();
+    computeDiffPts(nodeId);
+
     for (ConstraintEdge* edge : node->getCopyOutEdges()) {
         NodeID dstNodeId = edge->getDstID();
         PointsTo& srcPts = getPts(nodeId);
