@@ -415,7 +415,9 @@ private:
     //@}
 
 public:
-    AndersenWaveDiffWithType(PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(type) {}
+    AndersenWaveDiffWithType(PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(type) {
+        assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
+    }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(SVFModule svfModule) {
