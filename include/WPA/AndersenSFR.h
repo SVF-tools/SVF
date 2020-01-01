@@ -133,7 +133,9 @@ public:
 protected:
     void initialize(SVFModule svfModule);
     void PWCDetect();
+//    NodeID getSFRCGNode(NodeID init, NodeID baseId, const NodeBS& strides, NodeID dstId);
     void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
+//    bool processCopy(NodeID node, const ConstraintEdge* edge);
     bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
 
