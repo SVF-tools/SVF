@@ -151,23 +151,3 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
         }
     }
 }
-
-
-/*!
- *
- */
-//bool AndersenSFR::processCopy(NodeID node, const ConstraintEdge* edge) {
-//    if (Andersen::processCopy(node, edge)) {
-//        ConstraintNode* src = edge->getSrcNode();
-//        ConstraintNode* dst = edge->getDstNode();
-//        if (!dst->strides.empty()) {                                                                // dst is in pwc
-//            if (dst->strides != src->strides)     // dst and src not in the same cycle
-//                dst->newExpand = true;
-//            else if (!dst->newExpand) {
-//                dst->newExpand = src->newExpand;
-//            }
-//            return true;
-//        }
-//    }
-//    return false;
-//}
