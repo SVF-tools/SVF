@@ -4,8 +4,9 @@ os: linux
 addons:
   apt:
     sources:
-      - llvm-toolchain-xenial-9 
-      - sourceline: 'ppa:ubuntu-toolchain-r/test'
+      - ubuntu-toolchain-r-test
+      - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
+        key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     packages:
       - llvm-9
       - llvm-9-dev
