@@ -16,19 +16,12 @@ RUN apt-get install -y $build_deps $lib_deps
 
 # Fetch and extract LLVM source.
 RUN echo "Building LLVM ${llvm_version}"
-RUN mkdir -p /home/ysui/llvm-${llvm_version} 
-WORKDIR /home/ysui/llvm-${llvm_version}
-RUN wget "http://llvm.org/releases/${llvm_version}/llvm-${llvm_version}.src.tar.xz"
-RUN tar xvf "llvm-${llvm_version}.src.tar.xz"
-RUN wget "http://llvm.org/releases/${llvm_version}/cfe-${llvm_version}.src.tar.xz"
-RUN tar xvf "cfe-${llvm_version}.src.tar.xz"
-RUN mv "cfe-${llvm_version}.src" "llvm-${llvm_version}.src/tools/clang"
-RUN rm "llvm-${llvm_version}.src.tar.xz"
-RUN rm "cfe-${llvm_version}.src.tar.xz"
-RUN mkdir llvm-${llvm_version}.obj
-WORKDIR /home/ysui/llvm-${llvm_version}/llvm-${llvm_version}.obj
-RUN cmake -DCMAKE_BUILD_TYPE=MinSizeRel ../llvm-${llvm_version}.src
-RUN make -j4
+RUN mkdir -p /home/jason/llvm
+WORKDIR /home/jason/llvm
+RUN wget "http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+RUN tar xf "clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+ENV LLVM_HOME=/home/jason/llvm/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04/bin
+ENV PATH=$LLIVM_HOME:$PATH
 
 # Fetch and extract SVF source.
 RUN echo "Building SVF"
@@ -38,18 +31,4 @@ RUN unzip master.zip
 WORKDIR /SVF-master
 RUN bash ./build.sh
 
-
-# Build and install LLVM from source.
-#RUN mkdir build && cd build
-#RUN cmake -j4 -DCMAKE_BUILD_TYPE=MinSizeRel ..
-#RUN cmake -j4 --build .
-
-
-# Cleanup LLVM source directory.
-#rm -rf /src
-
-# Cleanup build dependencies and apt cache.
 RUN rm -rf /master.zip
-
-
-
