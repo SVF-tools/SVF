@@ -11,9 +11,10 @@ addons:
       - llvm-9
       - clang-9
       - libllvm9
+      - llvm-9-dev
       - llvm-9-runtime
-      - libtinfo5
       - llvm-9-tools
+      - libtinfo5
 
 matrix:
   include:
