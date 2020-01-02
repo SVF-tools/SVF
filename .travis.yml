@@ -9,13 +9,11 @@ addons:
         key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     packages:
       - llvm-9
-      - llvm-9-dev
       - clang-9
       - libllvm9
       - llvm-9-runtime
       - libtinfo5
       - llvm-9-tools
-      - libz3-dev
 
 matrix:
   include:
