@@ -12,13 +12,7 @@ addons:
       - llvm-9-dev
       - clang-9
       - libllvm9
-      - libc++-7-dev
-      - libc++abi-7-dev
-      - libgcc-4.9-dev
-      - libobjc-4.9-dev
-      - libclang-common-9-dev
-      - libclang1-9
-      - llvm-9-runtime
+
 matrix:
   include:
     - os: osx
