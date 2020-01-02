@@ -16,10 +16,12 @@ RUN apt-get install -y $build_deps $lib_deps
 
 # Fetch and extract LLVM source.
 RUN echo "Building LLVM ${llvm_version}"
-RUN mkdir -p /home/jason/llvm-${llvm_version}
-WORKDIR /home/jason/llvm-${llvm_version}
+RUN mkdir -p /home/jason/llvm
+WORKDIR /home/jason/llvm
 RUN wget "http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 RUN tar xf "clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+ENV LLVM_HOME=/home/jason/llvm/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04/bin
+ENV PATH=$LLIVM_HOME:$PATH
 
 # Fetch and extract SVF source.
 RUN echo "Building SVF"
