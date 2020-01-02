@@ -1,5 +1,5 @@
 language: generic
-dist: trusty
+dist: xenial
 os: linux
 addons:
   apt:
@@ -14,7 +14,6 @@ addons:
       - llvm-9-dev
       - llvm-9-runtime
       - llvm-9-tools
-      - libtinfo5
 
 matrix:
   include:
