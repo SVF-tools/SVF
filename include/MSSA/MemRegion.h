@@ -301,6 +301,10 @@ protected:
     /// Mod-Ref analysis for callsite invoking this callGraphNode
     virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
+    /// Get Mod-Ref of a callee function
+    virtual void getModRefofCallee(NodeBS& mod, NodeBS& ref, CallSite cs, const Function* fun);
+
+
     /// Add cpts to store/load
     //@{
     inline void addCPtsToStore(PointsTo& cpts, const StorePE *st, const Function* fun) {

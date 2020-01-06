@@ -214,13 +214,11 @@ void MRGenerator::collectModRefForCall() {
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it) {
         if(hasRefSideEffectOfCallSite(*it)) {
             NodeBS refs = getRefSideEffectOfCallSite(*it);
-            PointsTo rcpts(refs);
-            addCPtsToCallSiteRefs(rcpts,*it);
+            addCPtsToCallSiteRefs(refs,*it);
         }
         if(hasModSideEffectOfCallSite(*it)) {
             NodeBS mods = getModSideEffectOfCallSite(*it);
-            PointsTo mcpts(mods);
-            addCPtsToCallSiteMods(mcpts,*it);
+            addCPtsToCallSiteMods(mods,*it);
         }
     }
 }
@@ -484,6 +482,28 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
     return false;
 }
 
+/*!
+ * Get Mod-Ref of a callee function
+ */
+void MRGenerator::getModRefofCallee(NodeBS& mod, NodeBS& ref, CallSite cs, const Function* fun){
+    /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
+    if(isHeapAllocExtCall(cs)){
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs.getInstruction());
+        for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+            const PAGEdge* edge = *bit;
+            if (const AddrPE* addr = SVFUtil::dyn_cast<AddrPE>(edge))
+                mod.set(addr->getSrcID());
+        }
+    }
+    /// otherwise, we find the mod/ref sets from the callee function
+    else{
+        mod = getModSideEffectOfFunction(fun);
+        ref = getRefSideEffectOfFunction(fun);
+    }
+    /// ref set include all mods
+    ref |= mod;
+}
 
 /*!
  * Call site mod-ref analysis
@@ -499,11 +519,9 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         /// handle direct callsites
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit) {
-            NodeBS mod = getModSideEffectOfFunction(callGraphNode->getFunction());
-            NodeBS ref = getRefSideEffectOfFunction(callGraphNode->getFunction());
-            /// ref set include all mods
-            ref |= mod;
+            NodeBS mod, ref;
             CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            getModRefofCallee(mod, ref, cs, callGraphNode->getFunction());
             // add ref set
             bool refchanged = addRefSideEffectOfCallSite(cs, ref);
             // add mod set
@@ -514,11 +532,9 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         /// handle indirect callsites
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getIndirectCalls().begin(),
                 ecit = edge->getIndirectCalls().end(); cit!=ecit; ++cit) {
-            NodeBS mod = getModSideEffectOfFunction(callGraphNode->getFunction());
-            NodeBS ref = getRefSideEffectOfFunction(callGraphNode->getFunction());
-            /// ref set include all mods
-            ref |= mod;
+            NodeBS mod, ref;
             CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            getModRefofCallee(mod, ref, cs, callGraphNode->getFunction());
             // add ref set
             bool refchanged = addRefSideEffectOfCallSite(cs, ref);
             // add mod set
