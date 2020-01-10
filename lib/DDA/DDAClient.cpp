@@ -44,6 +44,12 @@ static llvm::cl::opt<bool> TaintUninitStack("uninit-stack", llvm::cl::init(true)
 
 void DDAClient::answerQueries(PointerAnalysis* pta) {
 
+    DDAStat* stat = static_cast<DDAStat*>(pta->getStat());
+    u32_t vmrss = 0;
+    u32_t vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    stat->setMemUsageBefore(vmrss, vmsize);
+
     collectCandidateQueries(pta->getPAG());
 
     u32_t count = 0;
@@ -59,6 +65,10 @@ void DDAClient::answerQueries(PointerAnalysis* pta) {
             pta->computeDDAPts(node->getId());
         }
     }
+
+    vmrss = vmsize = 0;
+    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
+    stat->setMemUsageAfter(vmrss, vmsize);
 }
 
 void FunptrDDAClient::performStat(PointerAnalysis* pta) {
@@ -128,5 +138,54 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
     outs() << "Two target callsites: " << twoTargetCallsites << "\n";
     outs() << "More than two target callsites: " << moreThanTwoCallsites << "\n";
     outs() << "=================================================\n";
+}
+
+
+/// Only collect function pointers as query candidates.
+NodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag) {
+    setPAG(pag);
+	PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+			loads.end(); iter != eiter; ++iter) {
+		PAGNode* loadsrc = (*iter)->getSrcNode();
+		loadSrcNodes.insert(loadsrc);
+		addCandidate(loadsrc->getId());
+	}
+
+	PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+			stores.end(); iter != eiter; ++iter) {
+		PAGNode* storedst = (*iter)->getDstNode();
+		storeDstNodes.insert(storedst);
+		addCandidate(storedst->getId());
+	}
+	PAGEdge::PAGEdgeSetTy& geps = pag->getEdgeSet(PAGEdge::NormalGep);
+	for (PAGEdge::PAGEdgeSetTy::iterator iter = geps.begin(), eiter =
+			geps.end(); iter != eiter; ++iter) {
+		PAGNode* gepsrc = (*iter)->getSrcNode();
+		gepSrcNodes.insert(gepsrc);
+		addCandidate(gepsrc->getId());
+	}
+    return candidateQueries;
+}
+
+void AliasDDAClient::performStat(PointerAnalysis* pta){
+
+	for(PAGNodeSet::const_iterator lit = loadSrcNodes.begin(); lit!=loadSrcNodes.end(); lit++){
+		for(PAGNodeSet::const_iterator sit = storeDstNodes.begin(); sit!=storeDstNodes.end(); sit++){
+			const PAGNode* node1 = *lit;
+			const PAGNode* node2 = *sit;
+			if(node1->hasValue() && node2->hasValue()){
+				AliasResult result = pta->alias(node1->getId(),node2->getId());
+
+				outs() << "\n=================================================\n";
+				outs() << "Alias Query for (" << *node1->getValue() << ",";
+				outs() << *node2->getValue() << ") \n";
+				outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
+				outs() << "=================================================\n";
+
+			}
+		}
+	}
 }
 
