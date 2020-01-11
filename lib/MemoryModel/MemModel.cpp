@@ -877,18 +877,19 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val) {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val)) {
         if (cppUtil::isValVtbl(const_cast<GlobalVariable*>(v)))
             return false;
+        else if (!v->hasInitializer())
+            return true;
         else {
-        	if(v->hasInitializer()){
-        		StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
-        		const std::vector<FieldInfo> &fields = stInfo->getFlattenFieldInfoVec();
-        		for (std::vector<FieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it) {
-        			const FieldInfo &field = *it;
-        			const Type *elemTy = field.getFlattenElemTy();
-        			assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
-        			if (SVFUtil::isa<PointerType>(elemTy))
-        				return false;
-        		}
-        	}
+            StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
+            const std::vector<FieldInfo> &fields = stInfo->getFlattenFieldInfoVec();
+            for (std::vector<FieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it) {
+                const FieldInfo &field = *it;
+                const Type *elemTy = field.getFlattenElemTy();
+                assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
+                if (SVFUtil::isa<PointerType>(elemTy))
+                    return false;
+            }
+
             return v->isConstant();
         }
     }
