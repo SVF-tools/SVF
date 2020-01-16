@@ -120,4 +120,30 @@ public:
 };
 
 
+
+/**
+ * DDA client with function pointers as query candidates.
+ */
+class AliasDDAClient : public DDAClient {
+
+public:
+    typedef std::set<const PAGNode*> PAGNodeSet;
+
+    AliasDDAClient(SVFModule module) : DDAClient(module) {}
+    ~AliasDDAClient() {}
+
+    /// Only collect function pointers as query candidates.
+    virtual NodeSet& collectCandidateQueries(PAG* pag);
+
+    virtual void performStat(PointerAnalysis* pta);
+
+private:
+    typedef std::map<NodeID,CallSite> VTablePtrToCallSiteMap;
+    VTablePtrToCallSiteMap vtableToCallSiteMap;
+    PAGNodeSet loadSrcNodes;
+    PAGNodeSet storeDstNodes;
+    PAGNodeSet gepSrcNodes;
+};
+
+
 #endif /* DDACLIENT_H_ */

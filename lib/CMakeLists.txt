@@ -19,6 +19,7 @@ set(SOURCES
     Util/SVFModule.cpp
     Util/ICFG.cpp
     Util/VFG.cpp
+    Util/DataFlowUtil.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/LocMemModel.cpp

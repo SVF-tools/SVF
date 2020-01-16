@@ -10,7 +10,7 @@
 * <b>SVF now supports analysis for C++ programs.</b>
 <br />
 
-#### We are looking for self-motivated PhD students and we welcome industry collaboration/sponsorship for improving SVF (Please contact yulei.sui@uts.edu.au if you are interested)
+#### We are looking for self-motivated PhD students and we welcome industry collaboration/sponsorship to improve SVF (Please contact yulei.sui@uts.edu.au if you are interested)
 
 
 <br />

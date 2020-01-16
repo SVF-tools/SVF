@@ -579,7 +579,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isNonInstricCallSite(&inst) && isExtCall(&inst)==false) {
+                if (isNonInstricCallSite(&inst)) {
                     CallSite cs = SVFUtil::getLLVMCallSite(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {

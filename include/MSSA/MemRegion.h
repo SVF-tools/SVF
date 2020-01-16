@@ -202,7 +202,9 @@ private:
     /// Map a callsite to its indirect defs of memory objects
     CallSiteToNodeBSMap csToModsMap;
     /// Map a callsite to all its object might pass into its callees
-    CallSiteToNodeBSMap csToCallPtsMap;
+    CallSiteToNodeBSMap csToCallSiteArgsPtsMap;
+    /// Map a callsite to all its object might return from its callees
+    CallSiteToNodeBSMap csToCallSiteRetPtsMap;
 
     /// Map a pointer to its cached points-to chain;
     NodeToPTSSMap cachedPtsChainMap;
@@ -228,15 +230,20 @@ private:
     //Recursive collect points-to chain
     NodeBS& CollectPtsChain(NodeID id);
 
-    inline NodeBS& getCallSitePts(CallSite cs) {
-        return csToCallPtsMap[cs];
+    /// Return the pts chain of all callsite arguments
+    inline NodeBS& getCallSiteArgsPts(CallSite cs) {
+        return csToCallSiteArgsPtsMap[cs];
+    }
+    /// Return the pts chain of the return parameter of the callsite
+    inline NodeBS& getCallSiteRetPts(CallSite cs) {
+        return csToCallSiteRetPtsMap[cs];
     }
     /// Whether the object node is a non-local object
     /// including global, heap, and stack variable in recursions
     bool isNonLocalObject(NodeID id, const Function* curFun) const;
 
-    /// Get all global objects from a points-to set
-    void getGlobalsAndHeapFromPts(NodeBS& globs, const NodeBS& pts);
+    /// Get all the objects in callee's modref escaped via global objects (the chain pts of globals)
+    void getEscapObjviaGlobals(NodeBS& globs, const NodeBS& pts);
 
     /// Get reverse topo call graph scc
     void getCallGraphSCCRevTopoOrder(WorkList& worklist);
@@ -300,6 +307,10 @@ protected:
 
     /// Mod-Ref analysis for callsite invoking this callGraphNode
     virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
+
+    /// Get Mod-Ref of a callee function
+    virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, const Function* fun);
+
 
     /// Add cpts to store/load
     //@{
