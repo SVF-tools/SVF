@@ -49,6 +49,7 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl {
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
+    typedef std::map<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Pass ID
     static char ID;
@@ -178,6 +179,9 @@ public:
     const bool enableDiff() const { return diffOpt; }
 
 protected:
+
+    CallSite2DummyValPN callsite2DummyValPN;        ///< Map an instruction to a dummy obj which created at an indirect callsite, which invokes a heap allocator
+    void heapAllocatorViaIndCall(CallSite cs,NodePairSet &cpySrcNodes);
 
     bool pwcOpt;
     bool diffOpt;
@@ -353,7 +357,6 @@ public:
     virtual bool handleLoad(NodeID id, const ConstraintEdge* load);
     virtual bool handleStore(NodeID id, const ConstraintEdge* store);
     virtual bool processCopy(NodeID node, const ConstraintEdge* edge);
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
 protected:
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
