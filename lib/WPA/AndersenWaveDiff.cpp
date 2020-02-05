@@ -185,35 +185,6 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
     return changed;
 }
 
-/*!
- * Update call graph for the input indirect callsites
- */
-bool AndersenWaveDiff::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
-
-    double cgUpdateStart = stat->getClk();
-
-    CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites,newEdges);
-    NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        CallSite cs = it->first;
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
-            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
-        }
-    }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it) {
-        NodeID src = sccRepNode(it->first);
-        NodeID dst = sccRepNode(it->second);
-        unionPts(dst, src);
-        pushIntoWorklist(dst);
-    }
-
-    double cgUpdateEnd = stat->getClk();
-    timeOfUpdateCallGraph += (cgUpdateEnd - cgUpdateStart) / TIMEINTERVAL;
-
-    return (!newEdges.empty());
-}
-
 /*
  * Merge a node to its rep node
  */

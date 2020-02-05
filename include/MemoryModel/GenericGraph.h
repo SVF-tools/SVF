@@ -43,8 +43,8 @@ public:
     typedef NodeTy NodeType;
     /// Edge Flag
     /// Edge format as follows (from lowest bit):
-    ///	(1) 0-3 bits encode an edge kind (allow maximum 16 kinds)
-    /// (2) 4-63 bits encode a callsite instruction
+    ///	(1) 0-7 bits encode an edge kind (allow maximum 16 kinds)
+    /// (2) 8-63 bits encode a callsite instruction
     typedef u64_t GEdgeFlag;
     typedef s32_t GEdgeKind;
 private:
@@ -102,7 +102,7 @@ public:
     //@}
 
 protected:
-    static constexpr unsigned char EdgeKindMaskBits = 4;  ///< We use the lower 4 bits to denote edge kind
+    static constexpr unsigned char EdgeKindMaskBits = 8;  ///< We use the lower 8 bits to denote edge kind
     static constexpr u64_t EdgeKindMask = (~0ULL) >> (64 - EdgeKindMaskBits);
 };
 
