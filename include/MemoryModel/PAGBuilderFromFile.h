@@ -63,6 +63,8 @@ public:
     /// Start building
     PAG* build();
 
+    void addNode(NodeID s_id, std::string node_type);
+    
     // Add edges
     void addEdge(NodeID nodeSrc, NodeID nodeDst, Size_t offset,
                  std::string edge);

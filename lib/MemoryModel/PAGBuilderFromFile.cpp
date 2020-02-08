@@ -31,92 +31,119 @@
 #include <fstream>	// for PAGBuilderFromFile
 #include <string>	// for PAGBuilderFromFile
 #include <sstream>	// for PAGBuilderFromFile
+#include "llvm/Support/JSON.h"
 
 using namespace std;
 using namespace SVFUtil;
 static u32_t gepNodeNumIndex = 100000;
 
-/*
- * You can build a PAG from a file written by yourself
- *
- * The file should follow the format:
- * Node:  nodeID Nodetype
- * Edge:  nodeID edgetype NodeID Offset
- *
- * like:
-5 o
-6 v
-7 v
-8 v
-9 v
-5 addr 6 0
-6 gep 7 4
-7 copy 8 0
-6 store 8 0
-8 load 9 0
- */
+void PAGBuilderFromFile::addNode(NodeID ID, string node_type){
+	// outs()<<"type:"<<node_type<<"\n";
+	if(node_type=="DummyValNode"){
+		pag->addDummyValNode(ID);
+		// outs()<<"add dummyvalnode:"<<ID<<"\n"<<"\n\n\n\n\n";
+	}
+	if(node_type=="FIObjNode"){
+		const MemObj* mem = pag->addDummyMemObj(ID, NULL);
+		pag->addFIObjNode(mem);
+		// outs()<<"add FIOBJNODE:"<<ID<<"\n"<<"\n\n\n\n\n";
+	}
+	// else
+	// 	assert(false && "format not support, pls specify node type");
+	
+}
+
 PAG* PAGBuilderFromFile::build() {
 
-	string line;
 	ifstream myfile(file.c_str());
-	if (myfile.is_open()) {
-		while (myfile.good()) {
-			getline(myfile, line);
+	if(myfile.is_open()){
+		std::stringstream jsonStringStream;
+		while(myfile >> jsonStringStream.rdbuf());
+		llvm::json::Value root_value = llvm::json::parse(jsonStringStream.str()).get();
+		llvm::json::Object* root_obj;
+		root_obj = root_value.getAsObject();
 
-			Size_t token_count = 0;
-			string tmps;
-			istringstream ss(line);
-			while (ss.good()) {
-				ss >> tmps;
-				token_count++;
-			}
+		//get the Instructions array
+		llvm::json::Value* root_array_value;
+		root_array_value= root_obj->get("Instructions");
+		llvm::json::Array* root_array;
+		root_array = root_array_value->getAsArray();
 
-			if (token_count == 0)
-				continue;
+		//get the global edge array
+		llvm::json::Value* global_edges_value;
+		global_edges_value = root_obj->get("global edge");
+		llvm::json::Array* global_edges_array;
+		global_edges_array = global_edges_value->getAsArray();
 
-			else if (token_count == 2) {
-				NodeID nodeId;
-				string nodetype;
-				istringstream ss(line);
-				ss >> nodeId;
-				ss >> nodetype;
-				outs() << "reading node :" << nodeId << "\n";
-				if (nodetype == "v")
-					pag->addDummyValNode(nodeId);
-				else if (nodetype == "o") {
-					const MemObj* mem = pag->addDummyMemObj(nodeId, NULL);
-					pag->addFIObjNode(mem);
-				} else
-					assert(false && "format not support, pls specify node type");
-			}
-
-			// do consider gep edge
-			else if (token_count == 4) {
-				NodeID nodeSrc;
-				NodeID nodeDst;
-				Size_t offsetOrCSId;
-				string edge;
-				istringstream ss(line);
-				ss >> nodeSrc;
-				ss >> edge;
-				ss >> nodeDst;
-				ss >> offsetOrCSId;
-				outs() << "reading edge :" << nodeSrc << " " << edge << " "
-						<< nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
-				addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-			} else {
-				if (!line.empty()) {
-					outs() << "format not supported, token count = "
-							<< token_count << "\n";
-					assert(false && "format not supported");
+		for(llvm::json::Array::const_iterator it = root_array->begin(); 
+		it!=root_array->end();it++){
+			llvm::json::Value currentInst_value = *it;
+			llvm::json::Object* currentInst_obj;
+			currentInst_obj = currentInst_value.getAsObject();
+			llvm::json::Value* edges_array_value;
+			edges_array_value = currentInst_obj->get("edges");
+			llvm::json::Array* edges_array;
+			edges_array = edges_array_value->getAsArray();
+			for(llvm::json::Array::const_iterator eit = edges_array->begin();
+			eit!=edges_array->end(); eit++){
+				llvm::json::Value edge_value = *eit;
+				llvm::json::Object* edge_obj;
+				edge_obj = edge_value.getAsObject();
+				NodeID source_node;
+				source_node = edge_obj->get("source node")->getAsInteger().getValue();
+				NodeID destination_node;
+				destination_node = edge_obj->get("destination node")->getAsInteger().getValue();
+				string source_node_type;
+				source_node_type = edge_obj->get("source node type")->getAsString()->str();
+				string destination_node_type;
+				destination_node_type = edge_obj->get("destination node type")->getAsString()->str();
+				string edge_type;
+				edge_type = edge_obj->get("edge type")->getAsString()->str();
+				llvm::json::Value* offset_value = edge_obj->get("offset");
+				string offset;
+				if(offset_value!=NULL){
+					offset = offset_value->getAsString()->str();
+				}
+				//add new node
+				if(!pag->hasGNode(source_node)){
+					addNode(source_node,source_node_type);
+				}else if(!pag->hasGNode(destination_node)){
+					addNode(destination_node,destination_node_type);
+				}else{
+					addEdge(source_node, destination_node, std::stol(offset), edge_type);
 				}
 			}
 		}
+		for(llvm::json::Array::const_iterator it = global_edges_array->begin();
+		it!=global_edges_array->end();it++){
+			llvm::json::Object global_edge_obj = *it->getAsObject();
+			NodeID source_node;
+			source_node = global_edge_obj.get("source node")->getAsInteger().getValue();
+			NodeID destination_node;
+			destination_node = global_edge_obj.get("destination node")->getAsInteger().getValue();
+			string source_node_type;
+			source_node_type = global_edge_obj.get("source node type")->getAsString()->str();
+			string destination_node_type;
+			destination_node_type = global_edge_obj.get("destination node type")->getAsString()->str();
+			string edge_type;
+			edge_type = global_edge_obj.get("edge type")->getAsString()->str();
+			llvm::json::Value* offset_value = global_edge_obj.get("offset");
+			string offset;
+			if(offset_value!=NULL)
+				offset = offset_value->getAsString()->str();
+			//add new node
+			if(!pag->hasGNode(source_node)){
+				addNode(source_node,source_node_type);
+			}else if(!pag->hasGNode(destination_node)){
+				addNode(destination_node,destination_node_type);
+			}else{
+				addEdge(source_node, destination_node, std::stol(offset), edge_type);
+			}
+		}
 		myfile.close();
-	}
-
-	else
+	}else{
 		outs() << "Unable to open file\n";
+	}
 
 	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
 	u32_t lower_bound = gepNodeNumIndex;
@@ -145,26 +172,26 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else
 		assert(!SVFUtil::isa<ObjPN>(srcNode) && "src not an object node?");
 
-    if (edge == "addr"){
+    if (edge == "Addr"){
         pag->addAddrEdge(srcID, dstID);
     }
-    else if (edge == "copy")
+    else if (edge == "Copy")
         pag->addCopyEdge(srcID, dstID);
-    else if (edge == "load")
+    else if (edge == "Load")
         pag->addLoadEdge(srcID, dstID);
-    else if (edge == "store")
+    else if (edge == "Store")
         pag->addStoreEdge(srcID, dstID);
-    else if (edge == "gep")
+    else if (edge == "NormalGep")
         pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
-    else if (edge == "variant-gep")
+    else if (edge == "VariantGep")
         pag->addVariantGepEdge(srcID, dstID);
-    else if (edge == "call")
+    else if (edge == "Call")
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
-    else if (edge == "ret")
+    else if (edge == "Ret")
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
-    else if (edge == "cmp")
+    else if (edge == "Cmp")
         pag->addCmpEdge(srcID, dstID);
-    else if (edge == "binary-op")
+    else if (edge == "BinaryOp")
         pag->addBinaryOPEdge(srcID, dstID);
     else
         assert(false && "format not support, can not create such edge");
