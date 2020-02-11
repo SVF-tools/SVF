@@ -374,8 +374,8 @@ protected:
     IDToNodeMapTy IDToNodeMap; ///< node map
 
 public:
-    Size_t edgeNum;		///< total num of node
-    Size_t nodeNum;		///< total num of edge
+    u32_t edgeNum;		///< total num of node
+    u32_t nodeNum;		///< total num of edge
 };
 
 

@@ -69,15 +69,17 @@
 #include <stack>
 #include <deque>
 
-typedef unsigned NodeID;
-typedef unsigned EdgeID;
-typedef unsigned SymID;
-typedef unsigned CallSiteID;
-typedef unsigned ThreadID;
+
 typedef unsigned u32_t;
 typedef unsigned long long u64_t;
 typedef signed s32_t;
 typedef signed long Size_t;
+
+typedef u32_t NodeID;
+typedef u32_t EdgeID;
+typedef unsigned SymID;
+typedef unsigned CallSiteID;
+typedef unsigned ThreadID;
 
 typedef llvm::SparseBitVector<> NodeBS;
 typedef NodeBS PointsTo;
