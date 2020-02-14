@@ -342,6 +342,8 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls) {
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
+    //for a gep id, base id is set at lower bits, and offset is set at higher bits
+    //e.g. 1100050 denotes base=50 and offset=11
     NodeID gepMultiplier = pow(10, ceil(log10(
             getNodeNumAfterPAGBuild() > SymbolTableInfo::getMaxFieldLimit() ?
             getNodeNumAfterPAGBuild() : SymbolTableInfo::getMaxFieldLimit()
