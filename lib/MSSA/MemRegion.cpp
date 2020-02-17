@@ -218,7 +218,9 @@ void MRGenerator::collectModRefForCall() {
         }
         if(hasModSideEffectOfCallSite(*it)) {
             NodeBS mods = getModSideEffectOfCallSite(*it);
+            /// mods are treated as both def and use of memory objects
             addCPtsToCallSiteMods(mods,*it);
+            addCPtsToCallSiteRefs(mods,*it);
         }
     }
 }
@@ -515,9 +517,6 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, co
     else{
         mod = getModSideEffectOfFunction(callee);
         ref = getRefSideEffectOfFunction(callee);
-
-        /// ref set include all mods
-        ref |= mod;
     }
     // add ref set
     bool refchanged = addRefSideEffectOfCallSite(cs, ref);
