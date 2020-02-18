@@ -436,6 +436,13 @@ public:
 		else
 			return pta->getPAG()->getInstPAGEdgeList(inst);
     }
+    
+    /// getModRefInfo APIs
+    //@{
+    ModRefInfo getModRefInfo(CallSite cs);
+    ModRefInfo getModRefInfo(CallSite cs, const Value* V);
+    ModRefInfo getModRefInfo(CallSite cs1, CallSite cs2);
+    //@}
 
 };
 
