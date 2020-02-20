@@ -40,6 +40,7 @@
 #include "MemoryModel/PointerAnalysis.h"
 
 class SVFModule;
+class SVFG;
 
 /*!
  * Whole program pointer analysis.
@@ -91,6 +92,20 @@ public:
     /// Print all alias pairs
     virtual void PrintAliasPairs(PointerAnalysis* pta);
 
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref any memory location
+    virtual ModRefInfo getModRefInfo(const CallInst* callInst);
+
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
+    virtual inline ModRefInfo getModRefInfo(const CallInst* callInst, const MemoryLocation& Loc) {
+        return getModRefInfo(callInst, Loc.Ptr);
+    }
+
+    /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Value infos
+    virtual ModRefInfo getModRefInfo(const CallInst* callInst, const Value* V);
+
+    /// Interface of mod-ref analysis between two CallSite instructions
+    virtual ModRefInfo getModRefInfo(const CallInst* callInst1, const CallInst* callInst2);
+
     /// We start from here
     virtual bool runOnModule(llvm::Module& module) {
         SVFModule svfModule(module);
@@ -112,6 +127,7 @@ private:
 
     PTAVector ptaVector;	///< all pointer analysis to be executed.
     PointerAnalysis* _pta;	///<  pointer analysis to be executed.
+    SVFG* _svfg;  ///< svfg generated through -ander pointer analysis
 };
 
 
