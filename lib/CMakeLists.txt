@@ -7,6 +7,8 @@ set(SOURCES
     Util/SVFUtil.cpp
     Util/CPPUtil.cpp
     Util/DataFlowUtil.cpp
+    Util/SVFFunction.cpp
+    Util/SVFPTACallGraph.cpp
     Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
     Util/ThreadCallGraph.cpp
