@@ -69,6 +69,7 @@ public:
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<const VFGNode*> GlobalVFGNodeSet;
+    typedef std::set<const PAGNode*> PAGNodeSet;
 
 
 protected:

@@ -182,22 +182,35 @@ void VFG::addVFGNodes() {
     }
 
     // initialize formal return nodes (callee return)
-    for(PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it !=eit; ++it) {
+	for (PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it != eit; ++it) {
 		const Function* func = it->first;
 
-		const PAGNode* retNode = it->second;
-        if (isInterestedPAGNode(retNode) == false)
-            continue;
+		const PAGNode* uniqueFunRetNode = it->second;
 
-        RetPESet retPEs;
-        if(retNode->hasOutgoingEdges(PAGEdge::Ret)) {
-            for(PAGEdge::PAGEdgeSetTy::const_iterator cit = retNode->getOutgoingEdgesBegin(PAGEdge::Ret),
-                    ecit = retNode->getOutgoingEdgesEnd(PAGEdge::Ret); cit!=ecit; ++cit) {
-                retPEs.insert(SVFUtil::cast<RetPE>(*cit));
-            }
-        }
-        addFormalRetVFGNode(retNode,func,retPEs);
-    }
+		RetPESet retPEs;
+		if (uniqueFunRetNode->hasOutgoingEdges(PAGEdge::Ret)) {
+			for (PAGEdge::PAGEdgeSetTy::const_iterator cit = uniqueFunRetNode->getOutgoingEdgesBegin(PAGEdge::Ret),
+					ecit = uniqueFunRetNode->getOutgoingEdgesEnd(PAGEdge::Ret);
+					cit != ecit; ++cit) {
+				const RetPE* retPE = SVFUtil::cast<RetPE>(*cit);
+				retPEs.insert(retPE);
+			}
+		}
+
+		PAGNodeSet retPAGNodes;
+		if (uniqueFunRetNode->hasOutgoingEdges(PAGEdge::Copy)) {
+			for (PAGEdge::PAGEdgeSetTy::const_iterator cit = uniqueFunRetNode->getIncomingEdgesBegin(PAGEdge::Copy),
+					ecit = uniqueFunRetNode->getIncomingEdgesEnd(PAGEdge::Copy);
+					cit != ecit; ++cit) {
+				const CopyPE* copyPE = SVFUtil::cast<CopyPE>(*cit);
+				retPAGNodes.insert(copyPE->getSrcNode());
+			}
+		}
+
+		for (PAGNodeSet::const_iterator it = retPAGNodes.begin(), eit = retPAGNodes.end(); it != eit; ++it)
+			if (isInterestedPAGNode(*it) == false)
+				addFormalRetVFGNode(*it, func, retPEs);
+	}
 
     // initialize llvm phi nodes (phi of top level pointers)
 	PAG::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
