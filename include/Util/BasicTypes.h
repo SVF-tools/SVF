@@ -186,6 +186,7 @@ typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::AliasResult AliasResult;
+typedef llvm::ModRefInfo ModRefInfo;
 typedef llvm::AnalysisID AnalysisID;
 typedef llvm::ConstantDataArray ConstantDataArray;
 

@@ -325,11 +325,11 @@ protected:
         addRefSideEffectOfFunction(fun,cpts);
     }
     inline void addCPtsToCallSiteRefs(PointsTo& cpts, CallSite cs) {
-        callsiteToRefPointsToMap[cs] = cpts;
+        callsiteToRefPointsToMap[cs] |= cpts;
         funToPointsToMap[cs.getCaller()].insert(cpts);
     }
     inline void addCPtsToCallSiteMods(PointsTo& cpts, CallSite cs) {
-        callsiteToModPointsToMap[cs] = cpts;
+        callsiteToModPointsToMap[cs] |= cpts;
         funToPointsToMap[cs.getCaller()].insert(cpts);
     }
     inline bool hasCPtsList(const Function* fun) const {
@@ -436,6 +436,13 @@ public:
 		else
 			return pta->getPAG()->getInstPAGEdgeList(inst);
     }
+    
+    /// getModRefInfo APIs
+    //@{
+    ModRefInfo getModRefInfo(CallSite cs);
+    ModRefInfo getModRefInfo(CallSite cs, const Value* V);
+    ModRefInfo getModRefInfo(CallSite cs1, CallSite cs2);
+    //@}
 
 };
 

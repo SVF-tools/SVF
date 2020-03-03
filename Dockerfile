@@ -21,7 +21,8 @@ WORKDIR /home/jason/llvm
 RUN wget "http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 RUN tar xf "clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 ENV LLVM_HOME=/home/jason/llvm/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04/bin
-ENV PATH=$LLIVM_HOME:$PATH
+ENV LLVM_DIR=$LLVM_HOME
+ENV PATH=$LLVM_HOME:$PATH
 
 # Fetch and extract SVF source.
 RUN echo "Building SVF"
@@ -30,5 +31,5 @@ RUN wget "https://github.com/SVF-tools/SVF/archive/master.zip"
 RUN unzip master.zip
 WORKDIR /SVF-master
 RUN bash ./build.sh
-
+ENV PATH=/SVF-master/Release-build/bin:$PATH
 RUN rm -rf /master.zip
