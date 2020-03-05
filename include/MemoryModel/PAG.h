@@ -585,11 +585,11 @@ public:
     inline NodeID addDummyValNode(NodeID i) {
         return addValNode(NULL, new DummyValPN(i), i);
     }
-    inline NodeID addDummyObjNode() {
-        return addDummyObjNode(nodeNum);
+    inline NodeID addDummyObjNode(const Type* type = NULL) {
+        return addDummyObjNode(nodeNum, type);
     }
-    inline NodeID addDummyObjNode(NodeID i) {
-        const MemObj* mem = addDummyMemObj(i, NULL);
+    inline NodeID addDummyObjNode(NodeID i, const Type* type) {
+        const MemObj* mem = addDummyMemObj(i, type);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type) {

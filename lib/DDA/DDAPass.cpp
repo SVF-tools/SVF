@@ -82,8 +82,11 @@ void DDAPass::selectClient(SVFModule module) {
 
     if (!userInputQuery.empty()) {
         /// solve function pointer
-        if(userInputQuery == "funptr") {
+        if (userInputQuery == "funptr") {
             _client = new FunptrDDAClient(module);
+        }
+        else if (userInputQuery == "alias"){
+            _client = new AliasDDAClient(module);
         }
         /// allow user specify queries
         else {
@@ -132,7 +135,7 @@ void DDAPass::runPointerAnalysis(SVFModule module, u32_t kind)
         ///initialize
         _pta->initialize(module);
         ///compute points-to
-        answerQueries(_pta);
+        _client->answerQueries(_pta);
         ///finalize
         _pta->finalize();
         if(printCPts)
@@ -144,24 +147,6 @@ void DDAPass::runPointerAnalysis(SVFModule module, u32_t kind)
         if (printQueryPts)
             printQueryPTS();
     }
-}
-
-/*!
- * Initialize queries
- */
-void DDAPass::answerQueries(PointerAnalysis* pta) {
-
-    DDAStat* stat = static_cast<DDAStat*>(pta->getStat());
-    u32_t vmrss = 0;
-    u32_t vmsize = 0;
-    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
-    stat->setMemUsageBefore(vmrss, vmsize);
-
-    _client->answerQueries(pta);
-
-    vmrss = vmsize = 0;
-    SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
-    stat->setMemUsageAfter(vmrss, vmsize);
 }
 
 
@@ -271,6 +256,17 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
     }
 }
 
+AliasResult DDAPass::alias(NodeID node1, NodeID node2){
+    PAG* pag = _pta->getPAG();
+
+    if(pag->isValidTopLevelPtr(pag->getPAGNode(node1)))
+        _pta->computeDDAPts(node1);
+
+    if(pag->isValidTopLevelPtr(pag->getPAGNode(node2)))
+        _pta->computeDDAPts(node2);
+
+    return _pta->alias(node1,node2);
+}
 /*!
  * Return alias results based on our points-to/alias analysis
  * TODO: Need to handle PartialAlias and MustAlias here.

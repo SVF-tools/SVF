@@ -31,7 +31,7 @@
 #define RCG_H_
 
 #include <Util/PTACallGraph.h>
-#include "WPA/Andersen.h"
+#include "MemoryModel/PointerAnalysis.h"
 
 class SVFModule;
 /*!

@@ -8,19 +8,6 @@
 //#include "MemoryModel/ComTypeModel.h"
 #include "DDA/DDAPass.h"
 
-#include <llvm-c/Core.h> // for LLVMGetGlobalContext()
-#include <llvm/Support/CommandLine.h>	// for cl
-#include <llvm/Support/FileSystem.h>	// for sys::fs::F_None
-#include <llvm/Bitcode/BitcodeWriterPass.h>  // for bitcode write
-#include <llvm/IR/LegacyPassManager.h>		// pass manager
-#include <llvm/Support/Signals.h>	// singal for command line
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Support/ToolOutputFile.h> // for tool output file
-#include <llvm/Support/PrettyStackTrace.h> // for pass list
-#include <llvm/IR/LLVMContext.h>		// for llvm LLVMContext
-#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Bitcode/BitcodeWriterPass.h>		// for createBitcodeWriterPass
-
 using namespace llvm;
 
 static cl::opt<std::string> InputFilename(cl::Positional,

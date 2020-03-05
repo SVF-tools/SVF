@@ -21,6 +21,7 @@ set(SOURCES
     Util/SVFModule.cpp
     Util/ICFG.cpp
     Util/VFG.cpp
+    Util/DataFlowUtil.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/LocMemModel.cpp
@@ -83,11 +84,11 @@ add_llvm_library(LLVMSvf ${SOURCES})
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
 llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
-target_link_libraries(LLVMSvf ${llvm_libs})
+target_link_libraries(LLVMSvf )
 if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    target_link_libraries(Svf LLVMCudd ${llvm_libs})
+    target_link_libraries(Svf LLVMCudd )
 else()
-    target_link_libraries(Svf ${llvm_libs})
+    target_link_libraries(Svf )
 endif()
 
 if(DEFINED IN_SOURCE_BUILD)

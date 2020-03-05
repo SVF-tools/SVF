@@ -494,6 +494,29 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     return (!newEdges.empty());
 }
 
+void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
+    assert(SVFUtil::getCallee(cs) == NULL && "not an indirect callsite?");
+    const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    NodeID srcret;
+    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
+    if(it != callsite2DummyValPN.end()){
+        srcret = sccRepNode(it->second);
+    }
+    else{
+        NodeID valNode = pag->addDummyValNode();
+        NodeID objNode = pag->addDummyObjNode(cs.getType());
+        addPts(valNode,objNode);
+        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
+        consCG->addConstraintNode(new ConstraintNode(valNode),valNode);
+        consCG->addConstraintNode(new ConstraintNode(objNode),objNode);
+        srcret = valNode;
+    }
+
+    NodeID dstrec = sccRepNode(cs_return->getId());
+    if(addCopyEdge(srcret, dstrec))
+        cpySrcNodes.insert(std::make_pair(srcret,dstrec));
+}
+
 /*!
  * Connect formal and actual parameters for indirect callsites
  */
@@ -501,6 +524,10 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePa
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
+
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(cs)){
+        heapAllocatorViaIndCall(cs,cpySrcNodes);
+    }
 
     if (pag->funHasRet(F) && pag->callsiteHasRet(cs)) {
         const PAGNode* cs_return = pag->getCallSiteRet(cs);

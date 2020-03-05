@@ -32,6 +32,7 @@
 
 
 #include "WPA/Andersen.h"
+#include "WPA/CSC.h"
 
 
 /*!
