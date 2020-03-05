@@ -46,9 +46,11 @@ void TypeAnalysis::initialize(SVFModule svfModule) {
 	if (genICFG) {
 		icfg = new ICFG(ptaCallGraph);
 		icfg->dump("icfg_initial");
-		icfg->getVFG()->dump("vfg_initial");
-		if (print_stat)
-			icfg->getStat()->performStat();
+		icfg->dump("vfg_initial");
+		if (print_stat){
+			ICFGStat stat(icfg);
+			stat.performStat();
+		}
 	}
 }
 
