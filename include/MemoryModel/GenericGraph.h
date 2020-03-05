@@ -356,10 +356,10 @@ public:
     }
 
     /// Get total number of node/edge
-    inline Size_t getTotalNodeNum() const {
+    inline u32_t getTotalNodeNum() const {
         return nodeNum;
     }
-    inline Size_t getTotalEdgeNum() const {
+    inline u32_t getTotalEdgeNum() const {
         return edgeNum;
     }
     /// Increase number of node/edge
@@ -374,8 +374,8 @@ protected:
     IDToNodeMapTy IDToNodeMap; ///< node map
 
 public:
-    Size_t edgeNum;		///< total num of node
-    Size_t nodeNum;		///< total num of edge
+    u32_t edgeNum;		///< total num of node
+    u32_t nodeNum;		///< total num of edge
 };
 
 

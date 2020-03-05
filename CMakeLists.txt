@@ -4,15 +4,19 @@ cmake_minimum_required(VERSION 3.4.3)
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
 if(NOT COMMAND add_llvm_library)
+    if (DEFINED LLVM_DIR)
+        set(ENV{LLVM_DIR} "${LLVM_DIR}")
+    endif()
     if (DEFINED ENV{LLVM_DIR})
         # We need to match the build environment for LLVM:
         # In particular, we need C++11 and the -fno-rtti flag
         set(CMAKE_CXX_STANDARD 11)
 	if(CMAKE_BUILD_TYPE MATCHES "Debug")
-		set(CMAKE_CXX_FLAGS "-std=gnu++11 -O0 -fno-rtti")
+		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++11 -O0 -fno-rtti")
 	else()
-		set(CMAKE_CXX_FLAGS "-std=gnu++11 -O3 -fno-rtti")
+		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++11 -O3 -fno-rtti")
 	endif()
+	set(CMAKE_C_FLAGS "-fPIC")
 
 	find_package(LLVM REQUIRED CONFIG)
         
