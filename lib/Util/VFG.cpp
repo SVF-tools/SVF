@@ -207,6 +207,11 @@ void VFG::addVFGNodes() {
 			}
 		}
 
+		/// If the function does not have a return value (e.g., return 0), then we add the return PAGNode to be NullPtr PAGNode
+		if(retPAGNodes.empty())
+			addFormalRetVFGNode(pag->getPAGNode(pag->getNullPtr()), func, retPEs);
+
+		/// Otherwise, we add the corresponding PAGNode of 'v' (e.g., return v) to FormalRetVFGNode
 		for (PAGNodeSet::const_iterator it = retPAGNodes.begin(), eit = retPAGNodes.end(); it != eit; ++it)
 			if (isInterestedPAGNode(*it) == false)
 				addFormalRetVFGNode(*it, func, retPEs);

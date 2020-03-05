@@ -432,6 +432,10 @@ protected:
             sNode->addRetPE(*it);
 
         PAGNodeToFormalRetMap[ret] = sNode;
+
+        /// map the function unique return node to this VFGNode
+        const PAGNode* funUniqueRet = pag->getFunRet(fun);
+        PAGNodeToFormalRetMap[funUniqueRet] = sNode;
         /// do not set def here, this node is not a variable definition
     }
     /// Add a callsite Receive VFG node
