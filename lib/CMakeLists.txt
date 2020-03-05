@@ -29,6 +29,7 @@ set(SOURCES
     MemoryModel/ExternalPAG.cpp
     MemoryModel/PAGBuilder.cpp
     MemoryModel/PAGBuilderFromFile.cpp
+    MemoryModel/ICFGBuilderFromFile.cpp
     MemoryModel/PAG.cpp
     MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp

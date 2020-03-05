@@ -82,6 +82,7 @@ protected:
 public:
     /// Constructor
     ICFG(PTACallGraph* callgraph);
+    ICFG();
 
     /// Destructor
     virtual ~ICFG() {
@@ -120,6 +121,14 @@ public:
     ICFGEdge* hasThreadICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
     //@}
 
+
+    /// Add control-flow edges for top level pointers
+    //@{
+    ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
+    //@}
+
     /// Get a SVFG edge according to src and dst
     ICFGEdge* getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
 
@@ -153,13 +162,6 @@ protected:
     inline void removeICFGNode(ICFGNode* node) {
         removeGNode(node);
     }
-
-    /// Add control-flow edges for top level pointers
-    //@{
-    ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
-    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
-    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
-    //@}
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode) {

@@ -58,6 +58,8 @@ ICFG::ICFG(PTACallGraph* cg): totalICFGNode(0), callgraph(cg), pag(PAG::getPAG()
 	addVFGToICFG();
 }
 
+ICFG::ICFG(){}
+
 /*!
  * Memory has been cleaned up at GenericGraph
  */

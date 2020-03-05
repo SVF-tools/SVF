@@ -155,6 +155,61 @@ PAG* PAGBuilderFromFile::build() {
 	return pag;
 }
 
+//build pag from icfg file
+PAG* PAGBuilderFromFile::buildFromICFG(){
+	ifstream myfile(file.c_str());
+	if(myfile.is_open()){
+		std::stringstream jsonStringStream;
+		while(myfile >> jsonStringStream.rdbuf());
+		llvm::json::Value root_value = llvm::json::parse(jsonStringStream.str()).get();
+		llvm::json::Array* root_array = root_value.getAsArray();
+		for(llvm::json::Array::const_iterator it = root_array->begin(); 
+		it!=root_array->end();it++){
+			llvm::json::Value ICFG_Node_obj_val = *it;
+			llvm::json::Object* ICFG_Node_obj = ICFG_Node_obj_val.getAsObject();
+			string node_type = ICFG_Node_obj->get("Node Type")->getAsString()->str();
+			if(node_type == "IntraBlock"){
+				llvm::json::Array* pag_edges_array = ICFG_Node_obj->get("PAG Edges")->getAsArray();
+				for(llvm::json::Array::const_iterator eit = pag_edges_array->begin();
+				eit!=pag_edges_array->end();eit++){
+					llvm::json::Value edge_value = *eit;
+					llvm::json::Object* edge_obj = edge_value.getAsObject();
+					NodeID source_node = edge_obj->get("Source Node")->getAsInteger().getValue();
+					NodeID destination_node = edge_obj->get("Destination Node")->getAsInteger().getValue();
+					string source_node_type = edge_obj->get("Source Type")->getAsString()->str();
+					string destination_node_type = edge_obj->get("Destination Type")->getAsString()->str();
+					string edge_type = edge_obj->get("Edge Type")->getAsString()->str();
+					llvm::json::Value* offset_value = edge_obj->get("offset");
+					string offset;
+					if(offset_value!=NULL){
+						offset = offset_value->getAsString()->str();
+					}
+					//add new node
+					if(!pag->hasGNode(source_node)){
+						addNode(source_node,source_node_type);
+					}else if(!pag->hasGNode(destination_node)){
+						addNode(destination_node,destination_node_type);
+					}else{
+						addEdge(source_node, destination_node, std::stol(offset), edge_type);
+					}
+				}
+			}
+		}
+		myfile.close();
+	}else{
+		outs() << "Unable to open file\n";
+	}
+
+	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
+	u32_t lower_bound = gepNodeNumIndex;
+	for(u32_t i = 0; i < lower_bound; i++)
+		pag->incNodeNum();
+
+    pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+
+	return pag;
+}
+
 /*!
  * Add PAG edge according to a file format
  */

@@ -31,6 +31,7 @@
 #define INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
 
 #include "MemoryModel/PAG.h"
+#include "Util/ICFG.h"
 
 
 /*!
@@ -60,10 +61,10 @@ public:
         return file;
     }
 
+    PAG* buildFromICFG();
+    
     /// Start building
     PAG* build();
-
-    // PAG* buildFromJSON();
 
     void addNode(NodeID s_id, std::string node_type);
 

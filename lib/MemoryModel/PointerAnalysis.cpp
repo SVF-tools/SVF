@@ -30,6 +30,7 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/PAGBuilder.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
+#include "MemoryModel/ICFGBuilderFromFile.h"
 #include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ThreadCallGraph.h"
@@ -136,7 +137,10 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
         if (SVFModule::pagReadFromTXT()) {
             PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
-            pag = fileBuilder.build();
+            //pag = fileBuilder.build();
+            ICFGBuilderFromFile icfgFileBuilder(SVFModule::pagFileName());
+            icfg = icfgFileBuilder.build();
+            pag = fileBuilder.buildFromICFG();
 
         } else {
             DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
@@ -155,10 +159,10 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         // dump the PAG graph
         if (dumpGraph())
             PAG::getPAG()->dump("pag_initial");
-
         // print to command line of the PAG graph
         if (PAGPrint)
             pag->print();
+        icfg->dump("icfg-dump");
     }
 
     /// initialise pta call graph for every pointer analysis instance
