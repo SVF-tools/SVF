@@ -619,16 +619,31 @@ public:
     inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
+
+    inline NodeID addValNodeFromFile(const std::string val, PAGNode* node, NodeID i){
+        return addNode(node,i);
+    }
     /// Add a memory obj node
     inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+
+    inline NodeID addObjNodeFromFile(const std::string str_val, PAGNode* node, NodeID i){
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const Function* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
+    inline NodeID addRetNodeFromFile(const std::string str_val, PAGNode *node, NodeID i){
+        return addNode(node, i);
+    }
     /// Add a unique vararg node for a procedure
     inline NodeID addVarargNode(const Function* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+
+    inline NodeID addVarargNodeFromFile(const std::string val, PAGNode * node, NodeID i){
         return addNode(node,i);
     }
 

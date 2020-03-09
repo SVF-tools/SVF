@@ -37,16 +37,32 @@ using namespace std;
 using namespace SVFUtil;
 static u32_t gepNodeNumIndex = 100000;
 
-void PAGBuilderFromFile::addNode(NodeID ID, string node_type){
+void PAGBuilderFromFile::addNode(NodeID ID, string node_type, const char*  str_val){
 	if(node_type=="DummyValNode"){
 		pag->addDummyValNode(ID);
 	}
-	if(node_type=="FIObjNode"){
+	else if(node_type=="FIObjNode"){
 		const MemObj* mem = pag->addDummyMemObj(ID, NULL);
 		pag->addFIObjNode(mem);
+	}else if(node_type=="ValNode"){
+		ValPN* node = new ValPN(ID,str_val,PAGNode::ValNode);
+		pag->addValNodeFromFile(str_val,node,ID);
 	}
-	if(node_type == "DummyObjNode"){
-		pag->addDummyObjNode(ID);
+	else if(node_type == "DummyObjNode"){
+		pag->addDummyObjNode(ID,NULL);
+	}
+	else if(node_type=="ObjNode"){
+		const MemObj* mem = pag->addDummyMemObj(ID, NULL);
+		ObjPN* node = new ObjPN(ID,str_val,mem,PAGNode::ObjNode);
+		pag->addObjNodeFromFile(str_val,node,ID);
+	}
+	else if(node_type == "RetNode"){
+		RetPN *node = new RetPN(str_val,ID,PAGNode::RetNode);
+		pag->addRetNodeFromFile(str_val,node,ID);
+	}
+	else if(node_type == "VarargNode"){
+		VarArgPN* node = new VarArgPN(ID,str_val,PAGNode::VarargNode);
+		pag->addVarargNodeFromFile(str_val,node,ID);
 	}
 	// else
 	// 	assert(false && "format not support, pls specify node type");
@@ -104,13 +120,18 @@ PAG* PAGBuilderFromFile::build() {
 				if(offset_value!=NULL){
 					offset = offset_value->getAsString()->str();
 				}
+				string var = "hello world";
+				const char *val = var.c_str(); 
 				//add new node
 				if(!pag->hasGNode(source_node)){
-					addNode(source_node,source_node_type);
+					addNode(source_node,source_node_type,val);
 				}else if(!pag->hasGNode(destination_node)){
-					addNode(destination_node,destination_node_type);
+					addNode(destination_node,destination_node_type,"a");
 				}else{
-					addEdge(source_node, destination_node, std::stol(offset), edge_type);
+					if(offset!="")
+						addEdge(source_node, destination_node, std::stol(offset), edge_type);
+					else
+						addEdge(source_node, destination_node, NULL, edge_type);
 				}
 			}
 		}
@@ -132,12 +153,17 @@ PAG* PAGBuilderFromFile::build() {
 			if(offset_value!=NULL)
 				offset = offset_value->getAsString()->str();
 			//add new node
+			string var = "hello world";
+			const char *val = var.c_str(); 
 			if(!pag->hasGNode(source_node)){
-				addNode(source_node,source_node_type);
+				addNode(source_node,source_node_type,val);
 			}else if(!pag->hasGNode(destination_node)){
-				addNode(destination_node,destination_node_type);
+				addNode(destination_node,destination_node_type,val);
 			}else{
-				addEdge(source_node, destination_node, std::stol(offset), edge_type);
+				if(offset!="")
+					addEdge(source_node, destination_node, std::stol(offset), edge_type);
+				else
+					addEdge(source_node, destination_node, NULL, edge_type);
 			}
 		}
 		myfile.close();
@@ -185,12 +211,17 @@ PAG* PAGBuilderFromFile::buildFromICFG(){
 						offset = offset_value->getAsString()->str();
 					}
 					//add new node
+					string var = "hello world";
+					const char *val = var.c_str(); 
 					if(!pag->hasGNode(source_node)){
-						addNode(source_node,source_node_type);
+						addNode(source_node,source_node_type,val);
 					}else if(!pag->hasGNode(destination_node)){
-						addNode(destination_node,destination_node_type);
+						addNode(destination_node,destination_node_type,val);
 					}else{
-						addEdge(source_node, destination_node, std::stol(offset), edge_type);
+						if(offset!="")
+							addEdge(source_node, destination_node, std::stol(offset), edge_type);
+						else
+							addEdge(source_node, destination_node, NULL, edge_type);
 					}
 				}
 			}

@@ -67,13 +67,15 @@ protected:
     PAGEdge::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
     bool isTLPointer;	/// top-level pointer
     bool isATPointer;	/// address-taken pointer
-
+    const char* str_value;
 public:
     /// Constructor
+    PAGNode(NodeID i,PNODEK k,const char* str_val);
     PAGNode(const Value* val, NodeID i, PNODEK k);
     /// Destructor
     virtual ~PAGNode() {
     }
+
 
     ///  Get/has methods of the components
     //@{
@@ -273,6 +275,10 @@ public:
     ValPN(const Value* val, NodeID i, PNODEK ty = ValNode) :
         PAGNode(val, i, ty) {
     }
+    ValPN(NodeID i, const char* str_val, PNODEK ty = ValNode):
+        PAGNode(i, ty, str_val ){
+
+    }
     /// Return name of a LLVM value
     inline const std::string getValueName() const {
         if (value && value->hasName())
@@ -294,6 +300,9 @@ protected:
         PAGNode(val, i, ty), mem(m) {
     }
 public:
+    ObjPN( NodeID i, const char* str_val, const MemObj* m, PNODEK ty = ObjNode) :
+        PAGNode(i, ty, str_val ), mem(m) {
+    }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const ObjPN *) {
@@ -363,6 +372,10 @@ public:
     /// Constructor
     GepValPN(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
         ValPN(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx) {
+    }
+
+    GepValPN(const char* str_val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
+        ValPN(i, str_val, GepValNode), ls(l), gepValType(ty), fieldIdx(idx) {
     }
 
     /// offset of the base value node
@@ -463,6 +476,10 @@ public:
         ObjPN(val, i, mem, FIObjNode) {
     }
 
+    FIObjPN(const char* str_val, NodeID i, const MemObj* mem) :
+        ObjPN(i,str_val, mem, FIObjNode) {
+    }
+
     /// Return name of a LLVM value
     inline const std::string getValueName() const {
         if (value && value->hasName())
@@ -495,6 +512,10 @@ public:
         PAGNode(val, i, RetNode) {
     }
 
+    RetPN(const char* str_val, NodeID i, PNODEK ty=RetNode) :
+        PAGNode( i, RetNode, str_val) {
+    }
+
     /// Return name of a LLVM value
     const std::string getValueName() const {
         const Function* fun = SVFUtil::cast<Function>(value);
@@ -525,6 +546,10 @@ public:
     /// Constructor
     VarArgPN(const Function* val, NodeID i) :
         PAGNode(val, i, VarargNode) {
+    }
+
+    VarArgPN(NodeID i,const char* str_val,PNODEK ty=VarargNode) :
+        PAGNode( i, VarargNode, str_val) {
     }
 
     /// Return name of a LLVM value
