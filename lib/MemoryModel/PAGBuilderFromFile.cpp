@@ -153,7 +153,7 @@ PAG* PAGBuilderFromFile::build() {
 			if(offset_value!=NULL)
 				offset = offset_value->getAsString()->str();
 			//add new node
-			string var = "hello world";
+			string var = "";
 			const char *val = var.c_str(); 
 			if(!pag->hasGNode(source_node)){
 				addNode(source_node,source_node_type,val);

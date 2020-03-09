@@ -32,11 +32,8 @@
 
 #include "Util/ICFGNode.h"
 #include "Util/ICFGEdge.h"
-
-class PointerAnalysis;
-class ICFGStat;
-class StmtVFGNode;
-class VFG;
+#include "Util/WorkList.h"
+#include "Util/PTACallGraph.h"
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -47,7 +44,6 @@ class ICFG : public GenericICFGTy {
 public:
 
     typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
-    typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
 
     typedef std::map<const Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
@@ -71,10 +67,8 @@ protected:
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
-    ICFGStat * stat;
     PTACallGraph* callgraph;
     PAG* pag;
-	VFG* vfg;
 
     /// Clean up memory
     void destroy();
@@ -89,20 +83,10 @@ public:
         destroy();
     }
 
-    /// Return statistics
-    inline ICFGStat* getStat() const {
-        return stat;
-    }
-
     /// Return PAG
     inline PAG* getPAG() {
         return PAG::getPAG();
     }
-
-    /// Return VFG
-	inline VFG* getVFG() const{
-		return vfg;
-	}
 
     /// Get a ICFG node
     inline ICFGNode* getICFGNode(NodeID id) const {
@@ -131,9 +115,6 @@ public:
 
     /// Get a SVFG edge according to src and dst
     ICFGEdge* getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
-
-	/// Connect interprocedural CFG edges based on pointer analysis results
-	void updateCallgraph(PointerAnalysis* pta);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
@@ -193,8 +174,8 @@ protected:
 
     /// Add VFG nodes to ICFG
     //@{
-    /// Add VFGNodes to ICFG
-    void addVFGToICFG();
+    /// Add PAGEdges to ICFG
+    void addPAGEdgeToICFG();
     /// Add global stores to the function entry ICFGNode of main
     void connectGlobalToProgEntry();
     /// Add VFGStmtNode into IntraBlockNode
@@ -288,6 +269,8 @@ public:
 		}
 		return it->second;
     }
+
+    void printICFGToJson(const std::string& filename);
 };
 
 
