@@ -33,6 +33,7 @@
 #include "Util/PTAStat.h"
 #include "Util/ICFGStat.h"
 #include "Util/VFG.h"
+#include "Util/ICFGBuilder.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;
@@ -45,6 +46,8 @@ void TypeAnalysis::initialize(SVFModule svfModule) {
     Andersen::initialize(svfModule);
 	if (genICFG) {
 		icfg = new ICFG();
+		ICFGBuilder builder(icfg);
+		builder.build();
 		icfg->dump("icfg_initial");
 		icfg->dump("vfg_initial");
 		if (print_stat){
