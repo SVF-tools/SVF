@@ -33,7 +33,6 @@
 #include "Util/ICFGNode.h"
 #include "Util/ICFGEdge.h"
 #include "Util/WorkList.h"
-#include "Util/PTACallGraph.h"
 
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
@@ -44,38 +43,26 @@ class ICFG : public GenericICFGTy {
 public:
 
     typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
-
-    typedef std::map<const Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
-    typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
-    typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
-
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
-    typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef std::vector<const Instruction*> InstVec;
-    typedef std::set<const Instruction*> BBSet;
-    typedef FIFOWorkList<const Instruction*> WorkList;
 
+	typedef std::map<const Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
+    typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
 
-protected:
     NodeID totalICFGNode;
+
+private:
     FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitBlockNode
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
-    InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
-    PTACallGraph* callgraph;
-    PAG* pag;
-
-    /// Clean up memory
-    void destroy();
 
 public:
     /// Constructor
-    ICFG(PTACallGraph* callgraph);
+    ICFG();
 
     /// Destructor
     virtual ~ICFG() {
@@ -100,7 +87,7 @@ public:
     /// Whether we has a SVFG edge
     //@{
     ICFGEdge* hasIntraICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
-    ICFGEdge* hasInterICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdgeK kind, CallSiteID csId);
+    ICFGEdge* hasInterICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
     ICFGEdge* hasThreadICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdgeK kind);
     //@}
 
@@ -110,20 +97,7 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
-    /// Get callsite given a callsiteID
-    //@{
-    inline CallSiteID getCallSiteID(CallSite cs, const Function* func) const {
-        return callgraph->getCallSiteID(cs, func);
-    }
-    inline CallSite getCallSite(CallSiteID id) const {
-        return callgraph->getCallSite(id);
-    }
-    //@}
-
-    /// Whether a node is function entry ICFGNode
-    const Function* isFunEntryICFGNode(const ICFGNode* node) const;
-
-protected:
+public:
     /// Remove a SVFG edge
     inline void removeICFGEdge(ICFGEdge* edge) {
         edge->getDstNode()->removeIncomingEdge(edge);
@@ -138,8 +112,8 @@ protected:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
-    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
-    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSiteID csId);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs);
     //@}
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
@@ -159,113 +133,65 @@ protected:
         return true;
     }
 
-    /// Create edges between ICFG nodes within a function
-    ///@{
-    void build();
-
-    void processFunEntry(const Function* fun, WorkList& worklist);
-
-    void processFunBody(WorkList& worklist);
-
-    void processFunExit(const Function* fun);
-    //@}
-
-    /// Add VFG nodes to ICFG
-    //@{
-    /// Add PAGEdges to ICFG
-    void addPAGEdgeToICFG();
-    /// Add global stores to the function entry ICFGNode of main
-    void connectGlobalToProgEntry();
-    /// Add VFGStmtNode into IntraBlockNode
-    void handleIntraBlock(IntraBlockNode* intraICFGNode);
-    /// Add ArgumentVFGNode into InterBlockNode
-    void handleInterBlock(InterBlockNode* interICFGNode);
-    //@}
-    /// Within handleInterBlock: handle 4 kinds of ArgumentNodes
-    void handleFormalParm(FunEntryBlockNode* funEntryBlockNode);
-    void handleFormalRet(FunExitBlockNode* funExitBlockNode);
-    void handleActualParm(CallBlockNode* callBlockNode);
-    void handleActualRet(RetBlockNode* retBlockNode);
-
-    /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(CallSite cs, const Function* callee);
-
-    inline bool isPhiCopyEdge(const PAGEdge* copy) const {
-        return pag->isPhiNode(copy->getDstNode());
-    }
-    inline bool isBinaryEdge(const PAGEdge* copy) const {
-        return pag->isBinaryNode(copy->getDstNode());
-    }
-    inline bool isCmpEdge(const PAGEdge* copy) const {
-        return pag->isCmpNode(copy->getDstNode());
-    }
-
     /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node) {
         addGNode(node->getId(),node);
     }
 
-    /// Create InterBlockNode at direct callsites
-    void handleCall(IntraBlockNode* instICFGNode, const Instruction* inst);
-
-    /// Add/Get an intra block ICFGNode
-    IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst);
-
-    /// Add/Get an inter block ICFGNode
-    InterBlockNode* getInterBlockICFGNode(const Instruction* inst);
-
-	/// Add/Get a basic block ICFGNode
-	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
-		if(SVFUtil::isNonInstricCallSite(inst))
-			return getInterBlockICFGNode(inst);
-		else
-			return getIntraBlockICFGNode(inst);
-	}
-
-public:
-    /// Add a function entry node
+    /// Get/Add a function entry node
     inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
-		if (it == FunToFunEntryNodeMap.end()) {
-			FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
-			addICFGNode(sNode);
-			FunToFunEntryNodeMap[fun] = sNode;
-			return sNode;
-		}
+		if (it == FunToFunEntryNodeMap.end())
+			return NULL;
 		return it->second;
 	}
-	/// Add a function exit node
+    inline FunEntryBlockNode* addFunEntryICFGNode(const Function* fun) {
+		FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
+		addICFGNode(sNode);
+		FunToFunEntryNodeMap[fun] = sNode;
+		return sNode;
+	}
+
+	/// Get/Add a function exit node
 	inline FunExitBlockNode* getFunExitICFGNode(const Function* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
-		if (it == FunToFunExitNodeMap.end()) {
-			FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
-			addICFGNode(sNode);
-			FunToFunExitNodeMap[fun] = sNode;
-			return sNode;
-		}
+		if (it == FunToFunExitNodeMap.end())
+			return NULL;
 		return it->second;
 	}
-    /// Add a call node
+	inline FunExitBlockNode* addFunExitICFGNode(const Function* fun) {
+		FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
+		addICFGNode(sNode);
+		FunToFunExitNodeMap[fun] = sNode;
+		return sNode;
+	}
+
+    /// Get/Add a call node
     inline CallBlockNode* getCallICFGNode(CallSite cs) {
 		CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
-		if (it == CSToCallNodeMap.end()) {
-			CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
-			addICFGNode(sNode);
-			CSToCallNodeMap[cs] = sNode;
-			return sNode;
-		}
+		if (it == CSToCallNodeMap.end())
+			return NULL;
 		return it->second;
     }
-    /// Add a return node
+    inline CallBlockNode* addCallICFGNode(CallSite cs) {
+		CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
+		addICFGNode(sNode);
+		CSToCallNodeMap[cs] = sNode;
+		return sNode;
+    }
+
+    /// Get/Add a return node
     inline RetBlockNode* getRetICFGNode(CallSite cs) {
 		CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
-		if (it == CSToRetNodeMap.end()) {
-			RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs);
-			addICFGNode(sNode);
-			CSToRetNodeMap[cs] = sNode;
-			return sNode;
-		}
+		if (it == CSToRetNodeMap.end())
+			return NULL;
 		return it->second;
+    }
+    inline RetBlockNode* addRetICFGNode(CallSite cs) {
+		RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs);
+		addICFGNode(sNode);
+		CSToRetNodeMap[cs] = sNode;
+		return sNode;
     }
 
     void printICFGToJson(const std::string& filename);

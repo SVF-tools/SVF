@@ -114,15 +114,15 @@ public:
 class CallCFGEdge : public ICFGEdge {
 
 private:
-    CallSiteID csId;
+    CallSite cs;
 public:
     /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        ICFGEdge(s,d,makeEdgeFlagWithInvokeID(CallCF,id)),csId(id) {
+    CallCFGEdge(ICFGNode* s, ICFGNode* d, CallSite c):
+        ICFGEdge(s,d,CallCF),cs(c) {
     }
     /// Return callsite ID
-    inline CallSiteID getCallSiteId() const {
-        return csId;
+    inline CallSite getCallSite() const {
+        return cs;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -144,15 +144,15 @@ public:
 class RetCFGEdge : public ICFGEdge {
 
 private:
-    CallSiteID csId;
+    CallSite cs;
 public:
     /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, CallSiteID id):
-        ICFGEdge(s,d,makeEdgeFlagWithInvokeID(RetCF,id)),csId(id) {
+    RetCFGEdge(ICFGNode* s, ICFGNode* d, CallSite c):
+        ICFGEdge(s,d,RetCF),cs(c) {
     }
     /// Return callsite ID
-    inline CallSiteID getCallSiteId() const {
-        return csId;
+    inline CallSite getCallSite() const {
+        return cs;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
