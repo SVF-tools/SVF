@@ -541,7 +541,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit) {
             NodeBS mod, ref;
-            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            CallSite cs = *cit;
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
@@ -550,7 +550,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getIndirectCalls().begin(),
                 ecit = edge->getIndirectCalls().end(); cit!=ecit; ++cit) {
             NodeBS mod, ref;
-            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            CallSite cs = *cit;
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());

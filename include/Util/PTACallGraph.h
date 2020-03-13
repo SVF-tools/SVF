@@ -47,7 +47,7 @@ typedef GenericEdge<PTACallGraphNode> GenericCallGraphEdgeTy;
 class PTACallGraphEdge : public GenericCallGraphEdgeTy {
 
 public:
-    typedef std::set<const Instruction*> CallInstSet;
+    typedef std::set<CallSite> CallInstSet;
     enum CEDGEK {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
     };
@@ -96,14 +96,12 @@ public:
 
     /// Add direct and indirect callsite
     //@{
-    void addDirectCallSite(const Instruction* call) {
-        assert((SVFUtil::isa<CallInst>(call) || SVFUtil::isa<InvokeInst>(call)) && "not a call or inovke??");
+    void addDirectCallSite(CallSite call) {
         assert(SVFUtil::getCallee(call) && "not a direct callsite??");
         directCalls.insert(call);
     }
 
-    void addInDirectCallSite(const Instruction* call) {
-        assert((SVFUtil::isa<CallInst>(call) || SVFUtil::isa<InvokeInst>(call)) && "not a call or inovke??");
+    void addInDirectCallSite(CallSite call) {
         assert((NULL == SVFUtil::getCallee(call) || NULL == SVFUtil::dyn_cast<Function> (SVFUtil::getForkedFun(call))) && "not an indirect callsite??");
         indirectCalls.insert(call);
     }
@@ -180,7 +178,7 @@ class PTACallGraph : public GenericCallGraphTy {
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
     typedef llvm::DenseMap<const Function*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef llvm::DenseMap<const Instruction*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
+    typedef llvm::DenseMap<CallSite, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<CallSite, const Function*> CallSitePair;
     typedef std::map<CallSitePair, CallSiteID> CallSiteToIdMap;
     typedef std::map<CallSiteID, CallSitePair> IdToCallSiteMap;
@@ -247,10 +245,6 @@ public:
         CallEdgeMap::const_iterator it = indirectCallMap.find(cs);
         assert(it!=indirectCallMap.end() && "not an indirect callsite!");
         return it->second;
-    }
-    inline const FunctionSet& getIndCSCallees(CallInst* csInst) const {
-        CallSite cs = SVFUtil::getLLVMCallSite(csInst);
-        return getIndCSCallees(cs);
     }
     //@}
     inline u32_t getTotalCallSiteNumber() const {
@@ -334,16 +328,16 @@ public:
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
-    inline bool hasCallGraphEdge(const Instruction* inst) const {
+    inline bool hasCallGraphEdge(CallSite inst) const {
         return callinstToCallGraphEdgesMap.find(inst)!=callinstToCallGraphEdgesMap.end();
     }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const Instruction* inst) const {
+    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(CallSite inst) const {
         CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");
         return it->second.begin();
     }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(const Instruction* inst) const {
+    inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(CallSite inst) const {
         CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");
@@ -358,8 +352,8 @@ public:
 
     /// Add direct/indirect call edges
     //@{
-    void addDirectCallGraphEdge(const Instruction* call);
-    void addIndirectCallGraphEdge(const Instruction* call, const Function* callee);
+    void addDirectCallGraphEdge(CallSite call);
+    void addIndirectCallGraphEdge(CallSite call, const Function* callee);
     //@}
 
     /// Get callsites invoking the callee

@@ -91,7 +91,7 @@ void PTACallGraph::buildCallGraph(SVFModule svfModule) {
             const Instruction *inst = &*II;
             if (isNonInstricCallSite(inst)) {
                 if(getCallee(inst))
-                    addDirectCallGraphEdge(inst);
+                    addDirectCallGraphEdge(getLLVMCallSite(inst));
             }
         }
     }
@@ -147,13 +147,13 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraph
 /*!
  * Add direct call edges
  */
-void PTACallGraph::addDirectCallGraphEdge(const Instruction* call) {
+void PTACallGraph::addDirectCallGraphEdge(CallSite cs) {
+	const Instruction* call = cs.getInstruction();
     assert(getCallee(call) && "no callee found");
 
     PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
     PTACallGraphNode* callee = getCallGraphNode(getCallee(call));
 
-    CallSite cs = SVFUtil::getLLVMCallSite(call);
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
@@ -161,22 +161,23 @@ void PTACallGraph::addDirectCallGraphEdge(const Instruction* call) {
                && "callee instruction not inside caller??");
 
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge,csId);
-        edge->addDirectCallSite(call);
+        edge->addDirectCallSite(cs);
         addEdge(edge);
-        callinstToCallGraphEdgesMap[call].insert(edge);
+        callinstToCallGraphEdgesMap[cs].insert(edge);
     }
 }
 
 /*!
  * Add indirect call edge to update call graph
  */
-void PTACallGraph::addIndirectCallGraphEdge(const Instruction* call, const Function* calleefun) {
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+void PTACallGraph::addIndirectCallGraphEdge(CallSite cs, const Function* calleefun) {
+
+	const Instruction* call = cs.getInstruction();
+	PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
     numOfResolvedIndCallEdge++;
 
-    CallSite cs = SVFUtil::getLLVMCallSite(call);
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
@@ -184,9 +185,9 @@ void PTACallGraph::addIndirectCallGraphEdge(const Instruction* call, const Funct
                && "callee instruction not inside caller??");
 
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge, csId);
-        edge->addInDirectCallSite(call);
+        edge->addInDirectCallSite(cs);
         addEdge(edge);
-        callinstToCallGraphEdgesMap[call].insert(edge);
+        callinstToCallGraphEdgesMap[cs].insert(edge);
     }
 }
 
