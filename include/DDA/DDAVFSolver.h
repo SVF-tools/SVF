@@ -406,7 +406,7 @@ protected:
             /// use pre-analysis call graph to approximate all potential callsites
             _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it) {
-                CallSite cs = SVFUtil::getLLVMCallSite(*it);
+                CallSite cs = *it;
                 NodeID funPtr = _pag->getFunPtr(cs);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);

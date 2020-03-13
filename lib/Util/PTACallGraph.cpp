@@ -148,16 +148,15 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraph
  * Add direct call edges
  */
 void PTACallGraph::addDirectCallGraphEdge(CallSite cs) {
-	const Instruction* call = cs.getInstruction();
-    assert(getCallee(call) && "no callee found");
+    assert(getCallee(cs) && "no callee found");
 
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
-    PTACallGraphNode* callee = getCallGraphNode(getCallee(call));
+    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
+    PTACallGraphNode* callee = getCallGraphNode(getCallee(cs));
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction()
+        assert(cs.getCaller() == caller->getFunction()
                && "callee instruction not inside caller??");
 
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge,csId);
@@ -172,8 +171,7 @@ void PTACallGraph::addDirectCallGraphEdge(CallSite cs) {
  */
 void PTACallGraph::addIndirectCallGraphEdge(CallSite cs, const Function* calleefun) {
 
-	const Instruction* call = cs.getInstruction();
-	PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+	PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
     numOfResolvedIndCallEdge++;
@@ -181,7 +179,7 @@ void PTACallGraph::addIndirectCallGraphEdge(CallSite cs, const Function* calleef
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction()
+        assert(cs.getCaller() == caller->getFunction()
                && "callee instruction not inside caller??");
 
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge, csId);

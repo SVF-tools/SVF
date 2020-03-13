@@ -101,7 +101,6 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
     PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {
         CallSite cs = iter->first;
-        const Instruction *callInst = cs.getInstruction();
         const PTACallGraph::FunctionSet &functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter =
                     functions.begin(); func_iter != functions.end(); func_iter++) {
@@ -172,17 +171,16 @@ void ThreadCallGraph::updateJoinEdge(PointerAnalysis* pta) {
  * Add direct fork edges
  */
 void ThreadCallGraph::addDirectForkEdge(CallSite cs) {
-	const Instruction* call = cs.getInstruction();
 
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
-    const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(call));
+    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
+    const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(cs));
     assert(forkee && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(forkee);
     callee = getCallGraphNode(getDefFunForMultipleModule(forkee));
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs.getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addDirectCallSite(cs);
@@ -196,14 +194,13 @@ void ThreadCallGraph::addDirectForkEdge(CallSite cs) {
  * Add indirect fork edge to update call graph
  */
 void ThreadCallGraph::addIndirectForkEdge(CallSite cs, const Function* calleefun) {
-	const Instruction* call = cs.getInstruction();
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs.getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 
         ThreadForkEdge* edge = new ThreadForkEdge(caller, callee, csId);
         edge->addInDirectCallSite(cs);
@@ -221,9 +218,7 @@ void ThreadCallGraph::addIndirectForkEdge(CallSite cs, const Function* calleefun
  */
 void ThreadCallGraph::addDirectJoinEdge(CallSite cs,const CallSiteSet& forkset) {
 
-	const Instruction* call = cs.getInstruction();
-
-    PTACallGraphNode* joinFunNode = getCallGraphNode(call->getParent()->getParent());
+    PTACallGraphNode* joinFunNode = getCallGraphNode(cs.getCaller());
 
     for (CallSiteSet::const_iterator it = forkset.begin(), eit = forkset.end(); it != eit; ++it) {
 
@@ -231,11 +226,10 @@ void ThreadCallGraph::addDirectJoinEdge(CallSite cs,const CallSiteSet& forkset) 
         const Function* threadRoutineFun = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(forksite));
         assert(threadRoutineFun && "thread routine function does not exist");
         PTACallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
-        CallSite cs = SVFUtil::getLLVMCallSite(call);
         CallSiteID csId = addCallSite(cs, threadRoutineFun);
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId)) {
-            assert(call->getParent()->getParent() == joinFunNode->getFunction() && "callee instruction not inside caller??");
+            assert(cs.getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
             ThreadJoinEdge* edge = new ThreadJoinEdge(joinFunNode,threadRoutineFunNode,csId);
             edge->addDirectCallSite(cs);
 
@@ -249,17 +243,15 @@ void ThreadCallGraph::addDirectJoinEdge(CallSite cs,const CallSiteSet& forkset) 
  */
 void ThreadCallGraph::addDirectParForEdge(CallSite cs) {
 
-	const Instruction* call = cs.getInstruction();
-
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
-    const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(call));
+    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
+    const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(cs));
     assert(taskFunc && "callee does not exist");
     PTACallGraphNode* callee = getCallGraphNode(taskFunc);
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs.getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 
         HareParForEdge* edge = new HareParForEdge(caller, callee, csId);
         edge->addDirectCallSite(cs);

@@ -60,11 +60,11 @@ set(SOURCES
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
-#    DDA/ContextDDA.cpp
-#    DDA/DDAClient.cpp
-#    DDA/DDAPass.cpp
-#    DDA/DDAStat.cpp
-#    DDA/FlowDDA.cpp
+    DDA/ContextDDA.cpp
+    DDA/DDAClient.cpp
+    DDA/DDAPass.cpp
+    DDA/DDAStat.cpp
+    DDA/FlowDDA.cpp
 #    MTA/FSMPTA.cpp
 #    MTA/LockAnalysis.cpp
 #    MTA/MHP.cpp
