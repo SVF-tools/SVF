@@ -135,7 +135,7 @@ public:
     typedef std::map<CallSite, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
-    ThreadCallGraph(SVFModule svfModule);
+    ThreadCallGraph();
     /// Destructor
     virtual ~ThreadCallGraph() {
     }
@@ -261,7 +261,40 @@ public:
         return tdAPI;
     }
 
-private:
+    /// Add fork sites which directly or indirectly create a thread
+    //@{
+    inline bool addForksite(CallSite cs) {
+        callinstToThreadForkEdgesMap[cs];
+        return forksites.insert(cs).second;
+    }
+    inline bool addJoinsite(CallSite cs) {
+        callinstToThreadJoinEdgesMap[cs];
+        return joinsites.insert(cs).second;
+    }
+    inline bool addParForSite(CallSite cs) {
+        callinstToHareParForEdgesMap[cs];
+        return parForSites.insert(cs).second;
+    }
+    //@}
+
+    /// Add direct/indirect thread fork edges
+    //@{
+    void addDirectForkEdge(CallSite cs);
+    void addIndirectForkEdge(CallSite cs, const Function* callee);
+    //@}
+
+    /// Add thread join edges
+    //@{
+    void addDirectJoinEdge(CallSite cs,const CallSiteSet& forksite);
+    //@}
+
+    /// Add direct/indirect parallel for edges
+    //@{
+    void addDirectParForEdge(CallSite cs);
+    void addIndirectParForEdge(CallSite cs, const Function* callee);
+    //@}
+
+
     /// map call instruction to its CallGraphEdge map
     inline void addThreadForkEdgeSetMap(CallSite cs, ThreadForkEdge* edge) {
         if(edge!=NULL) {
@@ -297,42 +330,6 @@ private:
         }
         return NULL;
     }
-
-    /// Add direct/indirect thread fork edges
-    //@{
-    void addDirectForkEdge(CallSite cs);
-    void addIndirectForkEdge(CallSite cs, const Function* callee);
-    //@}
-
-    /// Add thread join edges
-    //@{
-    void addDirectJoinEdge(CallSite cs,const CallSiteSet& forksite);
-    //@}
-
-    /// Add direct/indirect parallel for edges
-    //@{
-    void addDirectParForEdge(CallSite cs);
-    void addIndirectParForEdge(CallSite cs, const Function* callee);
-    //@}
-
-    /// Start building Thread Call graph
-    virtual void build(SVFModule svfModule);
-
-    /// Add fork sites which directly or indirectly create a thread
-    //@{
-    inline bool addForksite(CallSite cs) {
-        callinstToThreadForkEdgesMap[cs];
-        return forksites.insert(cs).second;
-    }
-    inline bool addJoinsite(CallSite cs) {
-        callinstToThreadJoinEdgesMap[cs];
-        return joinsites.insert(cs).second;
-    }
-    inline bool addParForSite(CallSite cs) {
-        callinstToHareParForEdgesMap[cs];
-        return parForSites.insert(cs).second;
-    }
-    //@}
 
 private:
     ThreadAPI* tdAPI;		///< Thread API

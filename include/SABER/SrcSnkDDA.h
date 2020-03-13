@@ -35,6 +35,7 @@
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
 #include "WPA/Andersen.h"
+#include "Util/CallGraphBuilder.h"
 
 typedef CFLSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
 
@@ -87,10 +88,10 @@ public:
 
     /// Initialize analysis
     virtual void initialize(SVFModule module) {
-        ptaCallGraph = new PTACallGraph(module);
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         svfg =  memSSA.buildPTROnlySVFG(ander);
         setGraph(memSSA.getSVFG());
+        ptaCallGraph = ander->getPTACallGraph();
         //AndersenWaveDiff::releaseAndersenWaveDiff();
         /// allocate control-flow graph branch conditions
         getPathAllocator()->allocate(module);

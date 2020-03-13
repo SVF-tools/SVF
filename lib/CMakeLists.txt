@@ -20,6 +20,7 @@ set(SOURCES
     Util/ICFG.cpp
     Util/VFG.cpp
     Util/DataFlowUtil.cpp
+    Util/CallGraphBuilder.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/LocMemModel.cpp

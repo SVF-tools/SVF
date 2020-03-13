@@ -36,6 +36,7 @@
 #include "Util/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/ICFG.h"
+#include "Util/CallGraphBuilder.h"
 #include "MemoryModel/CHA.h"
 #include "MemoryModel/PTAType.h"
 #include "MemoryModel/ExternalPAG.h"
@@ -162,10 +163,16 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     }
 
     /// initialise pta call graph for every pointer analysis instance
-    if(EnableThreadCallGraph)
-        ptaCallGraph = new ThreadCallGraph(svfModule);
-    else
-        ptaCallGraph = new PTACallGraph(svfModule);
+    if(EnableThreadCallGraph) {
+    	ThreadCallGraph* cg = new ThreadCallGraph();
+    	ThreadCallGraphBuilder bd(cg);
+        ptaCallGraph = bd.buildThreadCallGraph(svfModule);
+    }
+    else {
+    	PTACallGraph* cg = new PTACallGraph();
+        CallGraphBuilder bd(cg);
+        ptaCallGraph = bd.buildCallGraph(svfModule);
+    }
     callGraphSCCDetection();
     svfMod = svfModule;
 }

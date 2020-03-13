@@ -67,36 +67,9 @@ bool PTACallGraphNode::isReachableFromProgEntry() const
 
 
 /// Constructor
-PTACallGraph::PTACallGraph(SVFModule svfModule, CGEK k): kind(k) {
-    svfMod = svfModule;
+PTACallGraph::PTACallGraph(CGEK k): kind(k) {
     callGraphNodeNum = 0;
     numOfResolvedIndCallEdge = 0;
-    buildCallGraph(svfModule);
-}
-
-/*!
- * Build call graph, connect direct call edge only
- */
-void PTACallGraph::buildCallGraph(SVFModule svfModule) {
-
-    /// create nodes
-    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
-        addCallGraphNode(*F);
-    }
-
-    /// create edges
-    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
-        Function *fun = *F;
-        for (inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
-            const Instruction *inst = &*II;
-            if (isNonInstricCallSite(inst)) {
-                if(getCallee(inst))
-                    addDirectCallGraphEdge(getLLVMCallSite(inst));
-            }
-        }
-    }
-
-    dump("callgraph_initial");
 }
 
 /*!

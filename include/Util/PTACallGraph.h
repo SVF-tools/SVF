@@ -193,8 +193,6 @@ public:
 private:
     CGEK kind;
 
-    SVFModule svfMod;
-
     /// Indirect call map
     CallEdgeMap indirectCallMap;
 
@@ -210,18 +208,15 @@ protected:
     NodeID callGraphNodeNum;
     Size_t numOfResolvedIndCallEdge;
 
-    /// Build Call Graph
-    void buildCallGraph(SVFModule svfModule);
-
-    /// Add callgraph Node
-    void addCallGraphNode(const Function* fun);
-
     /// Clean up memory
     void destroy();
 
 public:
     /// Constructor
-    PTACallGraph(SVFModule svfModule, CGEK k = NormCallGraph);
+    PTACallGraph(CGEK k = NormCallGraph);
+
+    /// Add callgraph Node
+    void addCallGraphNode(const Function* fun);
 
     /// Destructor
     virtual ~PTACallGraph() {
@@ -314,13 +309,6 @@ public:
         return getCallSitePair(id).second;
     }
     //@}
-    /// Get Module
-    inline SVFModule getModule() {
-        return svfMod;
-    }
-    inline SVFModule getSVFModule() {
-        return svfMod;
-    }
     /// Whether we have aleady created this call graph edge
     PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const;
     /// Get call graph edge via nodes

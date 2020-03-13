@@ -35,59 +35,11 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ThreadCallGraph::ThreadCallGraph(SVFModule svfModule) :
-    PTACallGraph(svfModule, ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI()) {
+ThreadCallGraph::ThreadCallGraph() :
+    PTACallGraph(ThdCallGraph), tdAPI(ThreadAPI::getThreadAPI()) {
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Building ThreadCallGraph\n"));
-    this->build(svfModule);
 }
 
-/*!
- * Start building Thread Call Graph
- */
-void ThreadCallGraph::build(SVFModule svfModule) {
-    // create thread fork edges and record fork sites
-    for (SVFModule::const_iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi; ++fi) {
-        const Function *fun = *fi;
-        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
-            const Instruction *inst = &*II;
-            if (tdAPI->isTDFork(inst)) {
-            	CallSite cs = getLLVMCallSite(inst);
-                addForksite(cs);
-                const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
-                if (forkee) {
-                    addDirectForkEdge(cs);
-                }
-                // indirect call to the start routine function
-                else {
-                    addThreadForkEdgeSetMap(cs,NULL);
-                }
-            }
-            else if (tdAPI->isHareParFor(inst)) {
-            	CallSite cs = getLLVMCallSite(inst);
-                addParForSite(cs);
-                const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
-                if (taskFunc) {
-                    addDirectParForEdge(cs);
-                }
-                // indirect call to the start routine function
-                else {
-                    addHareParForEdgeSetMap(cs,NULL);
-                }
-            }
-        }
-    }
-    // record join sites
-    for (SVFModule::const_iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi; ++fi) {
-        const Function *fun = *fi;
-        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
-            const Instruction *inst = &*II;
-            if (tdAPI->isTDJoin(inst)) {
-            	CallSite cs = getLLVMCallSite(inst);
-                addJoinsite(cs);
-            }
-        }
-    }
-}
 
 /*
  * Update call graph using pointer analysis results
@@ -265,15 +217,14 @@ void ThreadCallGraph::addDirectParForEdge(CallSite cs) {
  * Add an indirect ParFor edge to update call graph
  */
 void ThreadCallGraph::addIndirectParForEdge(CallSite cs, const Function* calleefun) {
-	const Instruction* call = cs.getInstruction();
 
-    PTACallGraphNode* caller = getCallGraphNode(call->getParent()->getParent());
+    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::HareParForEdge,csId)) {
-        assert(call->getParent()->getParent() == caller->getFunction() && "callee instruction not inside caller??");
+        assert(cs.getCaller() == caller->getFunction() && "callee instruction not inside caller??");
 
         HareParForEdge* edge = new HareParForEdge(caller, callee, csId);
         edge->addInDirectCallSite(cs);
