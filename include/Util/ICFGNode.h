@@ -90,14 +90,22 @@ public:
 
 private:
     const Instruction *inst;
+    const std::string* str_value;
     StmtOrPHIVec vnodes;
 public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i) {
         bb = inst->getParent();
     }
 
+    IntraBlockNode(NodeID id, const std::string *i) : ICFGNode(id, IntraBlock), str_value(i) {
+    }
+
     inline const Instruction *getInst() const {
         return inst;
+    }
+
+    inline const std::string *getInst_str_value() const {
+        return str_value;
     }
 
     inline void addPAGEdge(const PAGEdge *s) {
@@ -176,6 +184,7 @@ public:
     typedef std::vector<const PAGNode *> FormalParmNodeVec;
 private:
     const Function *fun;
+    const std::string* str_fun;
     FormalParmNodeVec FPNodes;
 public:
     FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock), fun(f) {
@@ -183,9 +192,16 @@ public:
             bb = &(fun->getEntryBlock());
     }
 
+    FunEntryBlockNode(NodeID id, const std::string *f) : InterBlockNode(id, FunEntryBlock), str_fun(f) {
+    }
+
     /// Return function
     inline const Function *getFun() const {
         return fun;
+    }
+
+    inline const std::string *getStr_fun() const {
+        return str_fun;
     }
 
     /// Return the set of formal parameters
@@ -224,6 +240,7 @@ public:
 class FunExitBlockNode : public InterBlockNode {
 
 private:
+    const std::string *str_fun;
     const Function *fun;
     const PAGNode *formalRet;
 public:
@@ -232,9 +249,17 @@ public:
             bb = SVFUtil::getFunExitBB(fun);
     }
 
+    FunExitBlockNode(NodeID id, const std::string *f) : InterBlockNode(id, FunExitBlock), str_fun(f), formalRet(NULL) {
+    }
+
     /// Return function
     inline const Function *getFun() const {
         return fun;
+    }
+
+
+    inline const std::string *getStrFun() const {
+        return str_fun;
     }
 
     /// Return actual return parameter

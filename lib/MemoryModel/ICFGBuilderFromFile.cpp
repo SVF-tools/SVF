@@ -26,7 +26,11 @@ ICFG* ICFGBuilderFromFile::build(){
 			llvm::json::Object* ICFG_Node_obj = ICFG_Node_obj_val.getAsObject();
 			string node_type = ICFG_Node_obj->get("Node Type")->getAsString()->str();
             NodeID nodeID = ICFG_Node_obj->get("ICFG_ID")->getAsInteger().getValue();
-            addNode(nodeID,node_type);
+            if(node_type=="IntraBlock"){
+                llvm::json::Array* pagEdges = ICFG_Node_obj->get("PAG Edges")->getAsArray();
+                addNode(nodeID,node_type,pagEdges);
+            }
+            addNode(nodeID,node_type,NULL);
         }
         
         //add all edges
@@ -46,30 +50,78 @@ ICFG* ICFGBuilderFromFile::build(){
 	return icfg;
 }
 
-void ICFGBuilderFromFile::addNode(NodeID nodeId, std::string nodeType){
+void ICFGBuilderFromFile::addNode(NodeID nodeId, std::string nodeType,llvm::json::Array* pagEdges){
+    const std::string *value = new std::string("");
     if(!icfg->hasICFGNode(nodeId)){
         if(nodeType=="IntraBlock"){
-            ICFGNode* node = new ICFGNode(nodeId,ICFGNode::IntraBlock);
+            IntraBlockNode *node = new IntraBlockNode(nodeId,value);
+            for(llvm::json::Array::const_iterator it = pagEdges->begin(); it!=pagEdges->end();it++){
+                llvm::json::Value pagEdge_value = *it;
+                llvm::json::Object* pagEdge = pagEdge_value.getAsObject();
+                NodeID source_node = pagEdge->get("Source Node")->getAsInteger().getValue();
+				NodeID destination_node = pagEdge->get("Destination Node")->getAsInteger().getValue();
+				string source_node_type = pagEdge->get("Source Type")->getAsString()->str();
+				string destination_node_type = pagEdge->get("Destination Type")->getAsString()->str();
+				string edge_type = pagEdge->get("Edge Type")->getAsString()->str();
+				llvm::json::Value* offset_value = pagEdge->get("offset");
+				string offset;
+				if(offset_value!=NULL){
+					offset = offset_value->getAsString()->str();
+				}
+                PAGNode* srcNode = pag.getPAGNode(source_node);
+                PAGNode* dstNode = pag.getPAGNode(destination_node);
+                PAGEdge* edge = NULL;
+                if (edge_type == "Addr"){
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Addr);
+                }
+                else if (edge_type == "Copy")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Copy);
+                else if (edge_type == "Load")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Load);
+                else if (edge_type == "Store")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Store);
+                else if (edge_type == "NormalGep")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::NormalGep);
+                else if (edge_type == "VariantGep")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::VariantGep);
+                else if (edge_type == "Call")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Call);
+                else if (edge_type == "Ret")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Ret);
+                else if (edge_type == "Cmp")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::Cmp);
+                else if (edge_type == "BinaryOp")
+                    edge = pag.getIntraPAGEdge(srcNode,dstNode,PAGEdge::BinaryOp);
+                else
+                    assert(false && "format not support, can not create such edge");
+                //add pag edge to the node
+                if(edge!=NULL)
+                    node->addPAGEdge(edge);
+            }
             icfg->addGNode(nodeId,node);
             outs()<<"adding IntraBlock node....\n";
         }
         else if(nodeType=="FunEntryBlock"){
-            ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunEntryBlock);
+            FunEntryBlockNode *node = new FunEntryBlockNode(nodeId,value);
+            // ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunEntryBlock);
             icfg->addGNode(nodeId,node);
             outs()<<"adding FunEntryBlock node....\n";
         }
         else if(nodeType=="FunExitBlock"){
-            ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunExitBlock);
+            FunExitBlockNode *node = new FunExitBlockNode(nodeId,value);
+            // ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunExitBlock);
             icfg->addGNode(nodeId,node);
             outs()<<"adding FunExitBlock node....\n";
         }
         else if(nodeType=="FunCallBlock"){
-            ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunCallBlock);
+            CallBlockNode *node = new CallBlockNode(nodeId,*(new CallSite()));
+            // ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunCallBlock);
             icfg->addGNode(nodeId,node);
             outs()<<"adding FunCallBlock node....\n";
         }
         else if(nodeType=="FunRetBlock"){
-            ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunCallBlock);
+            RetBlockNode *node = new RetBlockNode(nodeId,*(new CallSite()));
+            // ICFGNode* node = new ICFGNode(nodeId,ICFGNode::FunCallBlock);
             icfg->addGNode(nodeId,node);
             outs()<<"adding FunRetBlock node....\n";
         }

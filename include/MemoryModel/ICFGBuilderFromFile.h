@@ -2,6 +2,7 @@
 #define INCLUDE_MEMORYMODEL_ICFGBUILDERFROMFILE_H_
 
 #include "Util/ICFG.h"
+#include "MemoryModel/PAG.h"
 #include "llvm/Support/JSON.h"
 
 
@@ -13,10 +14,13 @@ class ICFGBuilderFromFile{
 private:
     ICFG* icfg;
     std::string file;
+    PAG pag;
 
 public: 
     //Constructor
-    ICFGBuilderFromFile(std::string f){}
+    ICFGBuilderFromFile(std::string f, PAG pag){
+        this->pag = pag;
+    }
 
     // Destructor
     ~ICFGBuilderFromFile() {}
@@ -30,10 +34,13 @@ public:
         return file;
     }
 
+    PAG getPAG() const{
+        return pag;
+    }
     //Start building
     ICFG* build();
 
-    void addNode(NodeID nodeID, std::string nodeType);
+    void addNode(NodeID nodeID, std::string nodeType, llvm::json::Array* pagEdges);
 
     void addEdge(llvm::json::Object* edge_obj);
 };

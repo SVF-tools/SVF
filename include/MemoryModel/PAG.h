@@ -97,17 +97,17 @@ private:
     NodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
 
-    /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
-        symInfo = SymbolTableInfo::Symbolnfo();
-    }
-
     /// Clean up memory
     void destroy();
 
 public:
     u32_t totalPTAPAGEdge;
 
+    /// Constructor
+    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
+        symInfo = SymbolTableInfo::Symbolnfo();
+    }
+    PAG(){}
     /// Return valid pointers
     inline NodeSet& getAllValidPtrs() {
         return candidatePointers;

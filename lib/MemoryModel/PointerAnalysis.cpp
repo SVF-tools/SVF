@@ -138,9 +138,10 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         if (SVFModule::pagReadFromTXT()) {
             PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
             // pag = fileBuilder.build();
-            ICFGBuilderFromFile icfgFileBuilder(SVFModule::pagFileName());
-            icfg = icfgFileBuilder.build();
             pag = fileBuilder.buildFromICFG();
+            ICFGBuilderFromFile* icfgFileBuilder = new ICFGBuilderFromFile(SVFModule::pagFileName(),pag);
+            icfg = icfgFileBuilder->build();
+            outs()<<"pag build successed ....\n\n\n";
 
         } else {
             DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
@@ -160,9 +161,8 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
         // if (dumpGraph())
         //     PAG::getPAG()->dump("pag_initial");
         // // print to command line of the PAG graph
-        if (PAGPrint)
-            pag->print();
-        // icfg->dump("icfg-dump");
+        // if (PAGPrint)
+        //     pag->print();
     }
 
     /// initialise pta call graph for every pointer analysis instance
@@ -214,7 +214,6 @@ bool PointerAnalysis::dumpGraph() {
  */
 
 void PointerAnalysis::dumpStat() {
-
     if(print_stat && stat)
         stat->performStat();
 }
@@ -227,8 +226,7 @@ void PointerAnalysis::dumpStat() {
 void PointerAnalysis::finalize() {
 
     /// Print statistics
-    dumpStat();
-
+    //dumpStat();
     PAG* pag = PAG::getPAG();
     // dump the PAG graph
     if (dumpGraph())
@@ -245,7 +243,6 @@ void PointerAnalysis::finalize() {
 
     if (TYPEPrint)
         dumpAllTypes();
-
     if(PTSAllPrint)
         dumpAllPts();
 
