@@ -64,8 +64,6 @@ void PAGBuilderFromFile::addNode(NodeID ID, string node_type, const char*  str_v
 		VarArgPN* node = new VarArgPN(ID,str_val,PAGNode::VarargNode);
 		pag->addVarargNodeFromFile(str_val,node,ID);
 	}
-	// else
-	// 	assert(false && "format not support, pls specify node type");
 	
 }
 
