@@ -69,118 +69,6 @@ void PAGBuilderFromFile::addNode(NodeID ID, string node_type, const char*  str_v
 	
 }
 
-PAG* PAGBuilderFromFile::build() {
-
-	ifstream myfile(file.c_str());
-	if(myfile.is_open()){
-		std::stringstream jsonStringStream;
-		while(myfile >> jsonStringStream.rdbuf());
-		llvm::json::Value root_value = llvm::json::parse(jsonStringStream.str()).get();
-		llvm::json::Object* root_obj;
-		root_obj = root_value.getAsObject();
-
-		//get the Instructions array
-		llvm::json::Value* root_array_value;
-		root_array_value= root_obj->get("Instructions");
-		llvm::json::Array* root_array;
-		root_array = root_array_value->getAsArray();
-
-		//get the global edge array
-		llvm::json::Value* global_edges_value;
-		global_edges_value = root_obj->get("global edge");
-		llvm::json::Array* global_edges_array;
-		global_edges_array = global_edges_value->getAsArray();
-
-		for(llvm::json::Array::const_iterator it = root_array->begin(); 
-		it!=root_array->end();it++){
-			llvm::json::Value currentInst_value = *it;
-			llvm::json::Object* currentInst_obj;
-			currentInst_obj = currentInst_value.getAsObject();
-			llvm::json::Value* edges_array_value;
-			edges_array_value = currentInst_obj->get("edges");
-			llvm::json::Array* edges_array;
-			edges_array = edges_array_value->getAsArray();
-			for(llvm::json::Array::const_iterator eit = edges_array->begin();
-			eit!=edges_array->end(); eit++){
-				llvm::json::Value edge_value = *eit;
-				llvm::json::Object* edge_obj;
-				edge_obj = edge_value.getAsObject();
-				NodeID source_node;
-				source_node = edge_obj->get("source node")->getAsInteger().getValue();
-				NodeID destination_node;
-				destination_node = edge_obj->get("destination node")->getAsInteger().getValue();
-				string source_node_type;
-				source_node_type = edge_obj->get("source node type")->getAsString()->str();
-				string destination_node_type;
-				destination_node_type = edge_obj->get("destination node type")->getAsString()->str();
-				string edge_type;
-				edge_type = edge_obj->get("edge type")->getAsString()->str();
-				llvm::json::Value* offset_value = edge_obj->get("offset");
-				string offset;
-				if(offset_value!=NULL){
-					offset = offset_value->getAsString()->str();
-				}
-				string var = "hello world";
-				const char *val = var.c_str(); 
-				//add new node
-				if(!pag->hasGNode(source_node)){
-					addNode(source_node,source_node_type,val);
-				}else if(!pag->hasGNode(destination_node)){
-					addNode(destination_node,destination_node_type,"a");
-				}else{
-					if(offset!="")
-						addEdge(source_node, destination_node, std::stol(offset), edge_type);
-					else
-						addEdge(source_node, destination_node, NULL, edge_type);
-				}
-			}
-		}
-		for(llvm::json::Array::const_iterator it = global_edges_array->begin();
-		it!=global_edges_array->end();it++){
-			llvm::json::Object global_edge_obj = *it->getAsObject();
-			NodeID source_node;
-			source_node = global_edge_obj.get("source node")->getAsInteger().getValue();
-			NodeID destination_node;
-			destination_node = global_edge_obj.get("destination node")->getAsInteger().getValue();
-			string source_node_type;
-			source_node_type = global_edge_obj.get("source node type")->getAsString()->str();
-			string destination_node_type;
-			destination_node_type = global_edge_obj.get("destination node type")->getAsString()->str();
-			string edge_type;
-			edge_type = global_edge_obj.get("edge type")->getAsString()->str();
-			llvm::json::Value* offset_value = global_edge_obj.get("offset");
-			string offset;
-			if(offset_value!=NULL)
-				offset = offset_value->getAsString()->str();
-			//add new node
-			string var = "";
-			const char *val = var.c_str(); 
-			if(!pag->hasGNode(source_node)){
-				addNode(source_node,source_node_type,val);
-			}else if(!pag->hasGNode(destination_node)){
-				addNode(destination_node,destination_node_type,val);
-			}else{
-				if(offset!="")
-					addEdge(source_node, destination_node, std::stol(offset), edge_type);
-				else
-					addEdge(source_node, destination_node, NULL, edge_type);
-			}
-		}
-		myfile.close();
-	}else{
-		outs() << "Unable to open file\n";
-	}
-
-	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
-	u32_t lower_bound = gepNodeNumIndex;
-	for(u32_t i = 0; i < lower_bound; i++)
-		pag->incNodeNum();
-
-    pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
-
-	return pag;
-}
-
 //build pag from icfg file
 PAG* PAGBuilderFromFile::buildFromICFG(){
 	ifstream myfile(file.c_str());
@@ -194,6 +82,8 @@ PAG* PAGBuilderFromFile::buildFromICFG(){
 			llvm::json::Value ICFG_Node_obj_val = *it;
 			llvm::json::Object* ICFG_Node_obj = ICFG_Node_obj_val.getAsObject();
 			string node_type = ICFG_Node_obj->get("Node Type")->getAsString()->str();
+
+			//add pag edges to IntraBlock node
 			if(node_type == "IntraBlock"){
 				llvm::json::Array* pag_edges_array = ICFG_Node_obj->get("PAG Edges")->getAsArray();
 				for(llvm::json::Array::const_iterator eit = pag_edges_array->begin();
@@ -210,8 +100,9 @@ PAG* PAGBuilderFromFile::buildFromICFG(){
 					if(offset_value!=NULL){
 						offset = offset_value->getAsString()->str();
 					}
+
 					//add new node
-					string var = "hello world";
+					string var = "";
 					const char *val = var.c_str(); 
 					if(!pag->hasGNode(source_node))
 						addNode(source_node,source_node_type,val);

@@ -61,11 +61,10 @@ public:
         return file;
     }
 
+    //start building pag from ICFG json file
     PAG* buildFromICFG();
-    
-    /// Start building
-    PAG* build();
 
+    //add pag nodes
     void addNode(NodeID s_id, std::string node_type,const char* str_val);
 
     // Add edges
