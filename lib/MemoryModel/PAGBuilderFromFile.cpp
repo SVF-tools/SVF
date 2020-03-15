@@ -213,11 +213,11 @@ PAG* PAGBuilderFromFile::buildFromICFG(){
 					//add new node
 					string var = "hello world";
 					const char *val = var.c_str(); 
-					if(!pag->hasGNode(source_node)){
+					if(!pag->hasGNode(source_node))
 						addNode(source_node,source_node_type,val);
-					}else if(!pag->hasGNode(destination_node)){
+					if(!pag->hasGNode(destination_node))
 						addNode(destination_node,destination_node_type,val);
-					}else{
+					if(pag->hasGNode(source_node)&&pag->hasGNode(destination_node)){
 						if(offset!="")
 							addEdge(source_node, destination_node, std::stol(offset), edge_type);
 						else
@@ -251,34 +251,36 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     PAGNode* srcNode = pag->getPAGNode(srcID);
     PAGNode* dstNode = pag->getPAGNode(dstID);
 
-    /// sanity check for PAG from txt
-	assert(SVFUtil::isa<ValPN>(dstNode) && "dst not an value node?");
-    if(edge=="addr")
-    		assert(SVFUtil::isa<ObjPN>(srcNode) && "src not an value node?");
-    else
-		assert(!SVFUtil::isa<ObjPN>(srcNode) && "src not an object node?");
-
     if (edge == "Addr"){
         pag->addAddrEdge(srcID, dstID);
     }
-    else if (edge == "Copy")
-        pag->addCopyEdge(srcID, dstID);
-    else if (edge == "Load")
-        pag->addLoadEdge(srcID, dstID);
-    else if (edge == "Store")
-        pag->addStoreEdge(srcID, dstID);
-    else if (edge == "NormalGep")
-        pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));
-    else if (edge == "VariantGep")
-        pag->addVariantGepEdge(srcID, dstID);
-    else if (edge == "Call")
+    else if (edge == "Copy"){
+		pag->addCopyEdge(srcID, dstID);
+	}
+    else if (edge == "Load"){
+		pag->addLoadEdge(srcID, dstID);
+	}
+    else if (edge == "Store"){
+		pag->addStoreEdge(srcID, dstID);
+	}
+    else if (edge == "NormalGep"){
+		pag->addNormalGepEdge(srcID, dstID, LocationSet(offsetOrCSId));	
+	}
+    else if (edge == "VariantGep"){
+		pag->addVariantGepEdge(srcID, dstID);
+	}
+    else if (edge == "Call"){
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
-    else if (edge == "Ret")
+	}
+    else if (edge == "Ret"){
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
-    else if (edge == "Cmp")
+	}
+    else if (edge == "Cmp"){
         pag->addCmpEdge(srcID, dstID);
-    else if (edge == "BinaryOp")
+	}
+    else if (edge == "BinaryOp"){
         pag->addBinaryOPEdge(srcID, dstID);
+	}
     else
         assert(false && "format not support, can not create such edge");
 }

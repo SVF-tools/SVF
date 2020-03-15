@@ -29,6 +29,7 @@
 
 #include "MemoryModel/PAG.h"
 #include "Util/SVFUtil.h"
+#include "llvm/Support/JSON.h"
 
 using namespace SVFUtil;
 
@@ -244,6 +245,172 @@ bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const Argument *arg)
     bool added = addBlackHoleAddrEdge(node);
     setCurrentLocation(cval,cbb);
     return added;
+}
+
+void PAG::printInst2JsonFile(const std::string& filename){
+    outs() << "write symbols to '" << filename << "'...";
+
+    std::error_code err;
+    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
+    if (err) {
+        outs() << "  error opening file for writing!\n";
+        F.os().clear_error();
+        return;
+    }
+    
+    llvm::json::Array root_array;
+    for(Inst2PAGEdgesMap::const_iterator it = inst2PAGEdgesMap.begin();
+     it!=inst2PAGEdgesMap.end(); it++){
+        llvm::json::Object currentInst;
+        char hex_char[30];
+        const Instruction* inst = it->first;
+		const PAGEdgeList& pagEdgeList = it->second;
+        std::sprintf(hex_char,"%p",inst);
+        currentInst["current Inst"] =std::string(hex_char);
+
+        llvm::json::Array next_inst_array;
+        std::vector<const Instruction*> instList;
+		getNextInsts(inst,instList);
+        for (std::vector<const Instruction*>::const_iterator nit = instList.begin();
+        nit!=instList.end(); ++nit){
+            std::sprintf(hex_char,"%p",*nit);
+            next_inst_array.push_back(std::string(hex_char));
+		}
+        llvm::json::Value next_inst_value = llvm::json::Array{next_inst_array};
+        currentInst["next Inst"] = next_inst_value;
+
+        llvm::json::Array edges_array;
+                for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+            const PAGEdge* edge = *bit;
+            llvm::json::Object edge_obj;
+            edge_obj["source node"] = edge->getSrcID();
+            edge_obj["destination node"] = edge->getDstID();
+            edge_obj["source node type"] = getNodeKindValue(edge->getSrcNode()->getNodeKind());
+            edge_obj["destination node type"] = getNodeKindValue(edge->getDstNode()->getNodeKind());
+            edge_obj["edge type"] = getEdgeKindValue(edge->getEdgeKind());
+            if(edge->getEdgeKind()==PAGEdge::NormalGep){
+                const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
+                edge_obj["offset"] = gepEdge->getOffset();
+            }
+            llvm::json::Value edge_value = llvm::json::Object{edge_obj};
+            edges_array.push_back(edge_value);
+        }
+        
+        llvm::json::Value edges_array_value = llvm::json::Array{edges_array};
+        currentInst["edges"] = edges_array_value;
+
+        llvm::json::Value currentInst_value = llvm::json::Object{currentInst};
+        root_array.push_back(currentInst_value);    
+    }
+
+    llvm::json::Value root_array_value = llvm::json::Array{root_array};
+    llvm::json::Object root;
+    root["Instructions"] = root_array_value;
+    llvm::json::Array global_edge_array;
+    for(PAGEdgeSet::const_iterator it = globPAGEdgesSet.begin(); it!=globPAGEdgesSet.end(); it++){
+        const PAGEdge* edge = *it;
+        llvm::json::Object global_edge_obj;
+        global_edge_obj["source node"] = edge->getSrcID();
+        global_edge_obj["destination node"]= edge->getDstID();
+        global_edge_obj["source node type"] = getNodeKindValue(edge->getSrcNode()->getNodeKind());
+        global_edge_obj["destination node type"] = getNodeKindValue(edge->getDstNode()->getNodeKind());
+        global_edge_obj["edge type"] = getEdgeKindValue(edge->getEdgeKind());
+        if(edge->getEdgeKind()==PAGEdge::NormalGep){
+                const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
+                global_edge_obj["offset"] = gepEdge->getOffset();
+        }
+        llvm::json::Value edge_value = llvm::json::Object{global_edge_obj};
+        global_edge_array.push_back(edge_value);
+	}
+    llvm::json::Value global_edge_array_value = llvm::json::Array{global_edge_array};
+    root["global edge"] = global_edge_array_value;
+    llvm::json::Value root_value = llvm::json::Object{root};
+
+    llvm::json::operator<<(F.os(),root_value);
+
+    F.os().close();
+    if (!F.os().has_error()) {
+        outs() << "\n";
+        F.keep();
+        return;
+    }
+
+}
+
+std::string PAG::getNodeKindValue(int kind){
+    switch (kind){
+        case (PAGNode::ValNode):
+            return "ValNode";
+            break;
+        case PAGNode::ObjNode:
+            return "ObjNode";
+            break;
+        case PAGNode::RetNode:
+            return "RetNode";
+            break;
+        case PAGNode::VarargNode:
+            return "VarargNode";
+            break;
+        case PAGNode::GepValNode:
+            return "GepValNode";
+            break;
+        case PAGNode::GepObjNode:
+            return "GepObjNode";
+            break;
+        case PAGNode::FIObjNode:
+            return "FIObjNode";
+            break;
+        case PAGNode::DummyValNode:
+            return "DummyValNode";
+            break;
+        case PAGNode::DummyObjNode:
+            return "DummyObjNode";
+            break;
+    }
+    return "";
+}
+
+std::string PAG::getEdgeKindValue(int kind){
+    switch(kind){
+        case (PAGEdge::Addr):
+            return "Addr";
+            break;
+        case (PAGEdge::Copy):
+            return "Copy";
+            break;
+        case (PAGEdge::Store):
+            return "Store";
+            break;
+        case (PAGEdge::Load):
+            return "Load";
+            break;
+        case (PAGEdge::Call):
+            return "Call";
+            break;
+        case (PAGEdge::Ret):
+            return "Ret";
+            break;
+        case (PAGEdge::NormalGep):
+            return "NormalGep";
+            break;
+        case (PAGEdge::VariantGep):
+            return "VariantGep";
+            break;
+        case (PAGEdge::ThreadFork):
+            return "ThreadFork";
+            break;
+        case (PAGEdge::ThreadJoin):
+            return "ThreadJoin";
+            break;
+        case (PAGEdge::Cmp):
+            return "Cmp";
+            break;
+        case (PAGEdge::BinaryOp):
+            return "BinaryOp";
+            break;
+    }
+    return "";
 }
 
 

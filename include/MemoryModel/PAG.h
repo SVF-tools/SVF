@@ -720,6 +720,12 @@ public:
     /// Print PAG
     void print();
 
+    void printInst2JsonFile(const std::string& filename);
+    
+    std::string getNodeKindValue(int kind);
+
+    std::string getEdgeKindValue(int kind);
+    
     /// Dump PAG
     void dump(std::string name);
 
