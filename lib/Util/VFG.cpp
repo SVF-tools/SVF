@@ -154,12 +154,14 @@ void VFG::addVFGNodes() {
                 continue;
 
             CallPESet callPEs;
-            if(param->hasIncomingEdges(PAGEdge::Call)) {
-                for(PAGEdge::PAGEdgeSetTy::const_iterator cit = param->getIncomingEdgesBegin(PAGEdge::Call),
-                        ecit = param->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit) {
-                    callPEs.insert(SVFUtil::cast<CallPE>(*cit));
-                }
-            }
+			if (param->hasIncomingEdges(PAGEdge::Call)) {
+				for (PAGEdge::PAGEdgeSetTy::const_iterator cit = param->getIncomingEdgesBegin(PAGEdge::Call), ecit =
+						param->getIncomingEdgesEnd(PAGEdge::Call); cit != ecit; ++cit) {
+					CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
+					if (isInterestedPAGNode(callPE->getSrcNode()))
+						callPEs.insert(callPE);
+				}
+			}
             addFormalParmVFGNode(param,func,callPEs);
         }
 
@@ -193,7 +195,8 @@ void VFG::addVFGNodes() {
 					ecit = uniqueFunRetNode->getOutgoingEdgesEnd(PAGEdge::Ret);
 					cit != ecit; ++cit) {
 				const RetPE* retPE = SVFUtil::cast<RetPE>(*cit);
-				retPEs.insert(retPE);
+				if (isInterestedPAGNode(retPE->getDstNode()))
+					retPEs.insert(retPE);
 			}
 		}
 
@@ -213,7 +216,7 @@ void VFG::addVFGNodes() {
 
 		/// Otherwise, we add the corresponding PAGNode of 'v' (e.g., return v) to FormalRetVFGNode
 		for (PAGNodeSet::const_iterator it = retPAGNodes.begin(), eit = retPAGNodes.end(); it != eit; ++it)
-			if (isInterestedPAGNode(*it) == false)
+			if (isInterestedPAGNode(*it))
 				addFormalRetVFGNode(*it, func, retPEs);
 	}
 

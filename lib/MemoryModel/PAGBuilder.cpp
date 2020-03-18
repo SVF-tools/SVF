@@ -323,10 +323,12 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             pag->setCurrentLocation(C, NULL);
             pag->addStoreEdge(src, field);
         } else {
-            pag->setCurrentLocation(C, NULL);
-            pag->addStoreEdge(src, field);
-        }
-
+			pag->setCurrentLocation(C, NULL);
+			pag->addStoreEdge(src, field);
+			/// src should not point to anything yet
+			if (C->getType()->isPtrOrPtrVectorTy() && src != pag->getNullPtr())
+				pag->addCopyEdge(pag->getNullPtr(), src);
+		}
     } else if (SVFUtil::isa<ConstantArray>(C)) {
         if (cppUtil::isValVtbl(gvar) == false)
             for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
