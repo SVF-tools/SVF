@@ -75,7 +75,7 @@ typedef unsigned long long u64_t;
 typedef signed s32_t;
 typedef signed long Size_t;
 
-typedef u64_t NodeID;
+typedef u32_t NodeID;
 typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
@@ -186,7 +186,6 @@ typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
 typedef llvm::AliasResult AliasResult;
-typedef llvm::ModRefInfo ModRefInfo;
 typedef llvm::AnalysisID AnalysisID;
 typedef llvm::ConstantDataArray ConstantDataArray;
 

@@ -30,9 +30,10 @@
 #ifndef ICFGNODE_H_
 #define ICFGNODE_H_
 
+#include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/GenericGraph.h"
-#include "MemoryModel/PAG.h"
 #include "Util/ICFGEdge.h"
+#include "Util/VFGNode.h"
 
 class ICFGNode;
 
@@ -84,13 +85,13 @@ protected:
  */
 class IntraBlockNode : public ICFGNode {
 public:
-    typedef std::vector<const PAGEdge *> StmtOrPHIVec;
-    typedef StmtOrPHIVec::iterator iterator;
-    typedef StmtOrPHIVec::const_iterator const_iterator;
+    typedef std::vector<const VFGNode *> StmtOrPHIVFGNodeVec;
+    typedef StmtOrPHIVFGNodeVec::iterator iterator;
+    typedef StmtOrPHIVFGNodeVec::const_iterator const_iterator;
 
 private:
     const Instruction *inst;
-    StmtOrPHIVec vnodes;
+    StmtOrPHIVFGNodeVec vnodes;
 public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i) {
         bb = inst->getParent();
@@ -100,24 +101,24 @@ public:
         return inst;
     }
 
-    inline void addPAGEdge(const PAGEdge *s) {
+    inline void addVFGNode(const VFGNode *s) {
         // avoid duplicate element
-        for(StmtOrPHIVec::const_iterator it = vnodes.begin(), eit = vnodes.end(); it!=eit; ++it)
+        for(StmtOrPHIVFGNodeVec::const_iterator it = vnodes.begin(), eit = vnodes.end(); it!=eit; ++it)
             if(*it==s)
                 return;
 
         vnodes.push_back(s);
     }
 
-    inline StmtOrPHIVec &getPAGEdges() {
+    inline StmtOrPHIVFGNodeVec &getVFGNodes() {
         return vnodes;
     }
 
-    inline const_iterator vPAGEdgeBegin() const {
+    inline const_iterator vNodeBegin() const {
         return vnodes.begin();
     }
 
-    inline const_iterator vPAGEdgeEnd() const {
+    inline const_iterator vNodeEnd() const {
         return vnodes.end();
     }
 
@@ -173,10 +174,10 @@ public:
 class FunEntryBlockNode : public InterBlockNode {
 
 public:
-    typedef std::vector<const PAGNode *> FormalParmNodeVec;
+    typedef std::vector<const FormalParmVFGNode *> FormalParmVFGNodeVec;
 private:
     const Function *fun;
-    FormalParmNodeVec FPNodes;
+    FormalParmVFGNodeVec FPNodes;
 public:
     FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock), fun(f) {
         if (!SVFUtil::isExtCall(fun))
@@ -189,12 +190,12 @@ public:
     }
 
     /// Return the set of formal parameters
-    inline const FormalParmNodeVec &getFormalParms() const {
+    inline const FormalParmVFGNodeVec &getFormalParms() const {
         return FPNodes;
     }
 
     /// Add formal parameters
-    inline void addFormalParms(const PAGNode *fp) {
+    inline void addFormalParms(const FormalParmVFGNode *fp) {
         FPNodes.push_back(fp);
     }
 
@@ -225,7 +226,7 @@ class FunExitBlockNode : public InterBlockNode {
 
 private:
     const Function *fun;
-    const PAGNode *formalRet;
+    const FormalRetVFGNode *formalRet;
 public:
     FunExitBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL) {
         if (!SVFUtil::isExtCall(fun))
@@ -238,12 +239,12 @@ public:
     }
 
     /// Return actual return parameter
-    inline const PAGNode *getFormalRet() const {
+    inline const FormalRetVFGNode *getFormalRet() const {
         return formalRet;
     }
 
     /// Add actual return parameter
-    inline void addFormalRet(const PAGNode *fr) {
+    inline void addFormalRet(const FormalRetVFGNode *fr) {
         formalRet = fr;
     }
 
@@ -273,7 +274,7 @@ public:
 class CallBlockNode : public InterBlockNode {
 
 public:
-    typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
+    typedef std::vector<const ActualParmVFGNode *> ActualParmVFGNodeVec;
 private:
     CallSite cs;
     ActualParmVFGNodeVec APNodes;
@@ -293,7 +294,7 @@ public:
     }
 
     /// Add actual parameters
-    inline void addActualParms(const PAGNode *ap) {
+    inline void addActualParms(const ActualParmVFGNode *ap) {
         APNodes.push_back(ap);
     }
 
@@ -325,7 +326,7 @@ class RetBlockNode : public InterBlockNode {
 
 private:
     CallSite cs;
-    const PAGNode *actualRet;
+    const ActualRetVFGNode *actualRet;
 public:
     RetBlockNode(NodeID id, CallSite c) : InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL) {
         bb = cs.getInstruction()->getParent();
@@ -337,12 +338,12 @@ public:
     }
 
     /// Return actual return parameter
-    inline const PAGNode *getActualRet() const {
+    inline const ActualRetVFGNode *getActualRet() const {
         return actualRet;
     }
 
     /// Add actual return parameter
-    inline void addActualRet(const PAGNode *ar) {
+    inline void addActualRet(const ActualRetVFGNode *ar) {
         actualRet = ar;
     }
 

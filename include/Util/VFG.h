@@ -69,7 +69,6 @@ public:
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::set<const VFGNode*> GlobalVFGNodeSet;
-    typedef std::set<const PAGNode*> PAGNodeSet;
 
 
 protected:
@@ -432,10 +431,6 @@ protected:
             sNode->addRetPE(*it);
 
         PAGNodeToFormalRetMap[ret] = sNode;
-
-        /// map the function unique return node to this VFGNode
-        const PAGNode* funUniqueRet = pag->getFunRet(fun);
-        PAGNodeToFormalRetMap[funUniqueRet] = sNode;
         /// do not set def here, this node is not a variable definition
     }
     /// Add a callsite Receive VFG node

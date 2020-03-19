@@ -33,7 +33,6 @@
  */
 
 
-#include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAPass.h"
@@ -152,9 +151,6 @@ void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
         SVFGBuilder memSSA(true);
         assert(SVFUtil::isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
         SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
-        /// support mod-ref queries only for -ander
-        if (PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
-            _svfg = svfg;
         svfg->dump("ander_svfg");
     }
 
@@ -223,28 +219,4 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
     }
 
     return result;
-}
-
-/*!
- * Return mod-ref result of a CallInst
- */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst) {
-    assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst));
-}
-
-/*!
- * Return mod-ref results of a CallInst to a specific memory location
- */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V) {
-    assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst), V);
-}
-
-/*!
- * Return mod-ref result between two CallInsts
- */
-ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst1, const CallInst* callInst2) {
-    assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst1), SVFUtil::getLLVMCallSite(callInst2));
 }

@@ -218,9 +218,7 @@ void MRGenerator::collectModRefForCall() {
         }
         if(hasModSideEffectOfCallSite(*it)) {
             NodeBS mods = getModSideEffectOfCallSite(*it);
-            /// mods are treated as both def and use of memory objects
             addCPtsToCallSiteMods(mods,*it);
-            addCPtsToCallSiteRefs(mods,*it);
         }
     }
 }
@@ -517,6 +515,9 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, co
     else{
         mod = getModSideEffectOfFunction(callee);
         ref = getRefSideEffectOfFunction(callee);
+
+        /// ref set include all mods
+        ref |= mod;
     }
     // add ref set
     bool refchanged = addRefSideEffectOfCallSite(cs, ref);
@@ -556,84 +557,4 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
                 worklist.push(edge->getSrcID());
         }
     }
-}
-
-/*!
- * Determine whether a CallSite instruction can mod or ref
- * any memory location
- */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs) {
-    bool ref = hasRefSideEffectOfCallSite(cs);
-    bool mod = hasModSideEffectOfCallSite(cs);
-
-    if (mod && ref)
-        return ModRefInfo::ModRef;
-    else if (ref)
-        return ModRefInfo::Ref;
-    else if (mod)
-        return ModRefInfo::Mod;
-    else
-        return ModRefInfo::NoModRef;
-}
-
-/*!
- * Determine whether a CallSite instruction can mod or ref
- * a specific memory location pointed by V
- */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs, const Value* V) {
-    bool ref = false;
-    bool mod = false;
-
-    if (pta->getPAG()->hasValueNode(V)) {
-        const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V)));
-        if (hasRefSideEffectOfCallSite(cs) && getRefSideEffectOfCallSite(cs).intersects(pts))
-            ref = true;
-        if (hasModSideEffectOfCallSite(cs) && getModSideEffectOfCallSite(cs).intersects(pts))
-            mod = true;
-    }
-
-    if (mod && ref)
-        return ModRefInfo::ModRef;
-    else if (ref)
-        return ModRefInfo::Ref;
-    else if (mod)
-        return ModRefInfo::Mod;
-    else
-        return ModRefInfo::NoModRef;
-}
-
-/*!
- * Determine mod-ref relations between two CallSite instructions
- */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs1, CallSite cs2) {
-    bool ref = false;
-    bool mod = false;
-
-    /// return NoModRef neither two callsites ref or mod any memory
-    if (getModRefInfo(cs1) == ModRefInfo::NoModRef || getModRefInfo(cs2) == ModRefInfo::NoModRef)
-        return ModRefInfo::NoModRef;
-
-    const PointsTo& cs1Ref = getRefSideEffectOfCallSite(cs1);
-    const PointsTo& cs1Mod = getModSideEffectOfCallSite(cs1);
-    const PointsTo& cs2Ref = getRefSideEffectOfCallSite(cs2);
-    const PointsTo& cs2Mod = getModSideEffectOfCallSite(cs2);
-
-    /// Ref: cs1 ref memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod))
-        ref = true;
-    /// Mod: cs1 mod memory ref or mod by cs2
-    if (cs1Mod.intersects(cs2Ref) || cs1Mod.intersects(cs2Mod))
-        mod = true;
-    /// ModRef: cs1 ref and mod memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod) && cs1Mod.intersects(cs2Mod))
-        ref = mod = true;
-
-    if (ref && mod)
-        return ModRefInfo::ModRef;
-    else if (ref)
-        return ModRefInfo::Ref;
-    else if (mod)
-        return ModRefInfo::Mod;
-    else
-        return ModRefInfo::NoModRef;
 }
