@@ -16,6 +16,7 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
+#include "Util/ICFG.h"
 
 using namespace SVFUtil;
 
@@ -84,7 +85,8 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
         // Does it actually return a pointer?
         if (SVFUtil::isa<PointerType>(function->getReturnType())) {
             if (retNode != NULL) {
-                pag->addRetEdge(retNode->getId(), dstrec, cs->getInstruction());
+                RetBlockNode* icfgNode = pag->getICFG()->getRetBlockNode(cs->getInstruction());
+                pag->addRetEdge(retNode->getId(), dstrec, icfgNode);
             }
         } else {
             // This is a int2ptr cast during parameter passing
@@ -115,8 +117,8 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
         if (!SVFUtil::isa<PointerType>(formalArg->getType())) continue;
 
         if (SVFUtil::isa<PointerType>((*itA)->getType())) {
-            pag->addCallEdge(actualArgNodeId, formalArgNode->getId(),
-                             cs->getInstruction());
+            CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs->getInstruction());
+            pag->addCallEdge(actualArgNodeId, formalArgNode->getId(), icfgNode);
         } else {
             // This is a int2ptr cast during parameter passing
             pag->addFormalParamBlackHoleAddrEdge(formalArgNode->getId(), &*itF);
@@ -238,7 +240,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
                 currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
              it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
             CallPE *callEdge = static_cast<CallPE *>(*it);
-            const Instruction *inst = callEdge->getCallInst();
+            const Instruction *inst = callEdge->getCallInst()->getCallSite().getInstruction();
             ::Function *currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
 

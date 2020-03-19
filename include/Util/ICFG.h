@@ -140,10 +140,33 @@ public:
 		ICFGNode* node;
 		if(SVFUtil::isNonInstricCallSite(inst))
 			node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+		else if(SVFUtil::isInstrinsicDbgInst(inst))
+			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
 		else
 			node = getIntraBlockICFGNode(inst);
 
     	assert (node!=NULL && "no ICFGNode for this instruction?");
+		return node;
+	}
+
+	/// Get a basic block ICFGNode
+	inline CallBlockNode* getCallBlockNode(const Instruction* inst) {
+		assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
+		assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+		CallBlockNode* node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+		if(node==NULL)
+			node = addCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+    	assert (node!=NULL && "no CallBlockNode for this instruction?");
+		return node;
+	}
+
+	inline RetBlockNode* getRetBlockNode(const Instruction* inst) {
+		assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
+		assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+		RetBlockNode* node = getRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+		if(node==NULL)
+			node = addRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+    	assert (node!=NULL && "no RetBlockNode for this instruction?");
 		return node;
 	}
 
@@ -217,7 +240,6 @@ public:
 		return sNode;
     }
 
-    void printICFGToJson(const std::string& filename);
 };
 
 

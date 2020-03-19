@@ -34,6 +34,7 @@
 #include "MemoryModel/MemModel.h"
 #include "MemoryModel/GenericGraph.h"
 #include "Util/SVFUtil.h"
+#include "Util/ICFGNode.h"
 
 class PAGNode;
 
@@ -112,7 +113,7 @@ public:
     //@}
 
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.
-    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const Instruction* cs) {
+    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const ICFGNode* cs) {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : callEdgeLabelCounter++;
@@ -122,8 +123,8 @@ public:
     /// Compute the unique edgeFlag value from edge kind and store Instruction.
     /// Two store instructions may share the same StorePAGEdge
     static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const Value* store) {
-        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
-        u64_t label = (iter != inst2LabelMap.end()) ?
+        Value2LabelMap::const_iterator iter = value2LabelMap.find(store);
+        u64_t label = (iter != value2LabelMap.end()) ?
                       iter->second : storeEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
     }
@@ -133,8 +134,10 @@ public:
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
 
 private:
-    typedef llvm::DenseMap<const Value*, u32_t> Inst2LabelMap;
+    typedef llvm::DenseMap<const ICFGNode*, u32_t> Inst2LabelMap;
+    typedef llvm::DenseMap<const Value*, u32_t> Value2LabelMap;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
+    static Value2LabelMap value2LabelMap; ///< Store Instruction or const expr to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
 };
@@ -426,7 +429,7 @@ private:
     CallPE(const CallPE &);  ///< place holder
     void operator=(const CallPE &); ///< place holder
 
-    const Instruction* inst;		///< llvm instruction for this call
+    const CallBlockNode* inst;		///< llvm instruction for this call
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -442,18 +445,17 @@ public:
     //@}
 
     /// constructor
-    CallPE(PAGNode* s, PAGNode* d, const Instruction* i) :
+    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i) {
     }
 
     /// Get method for the call instruction
     //@{
-    inline const Instruction* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const {
         return inst;
     }
     inline CallSite getCallSite() const {
-        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
-        return cs;
+        return inst->getCallSite();
     }
     //@}
 };
@@ -468,7 +470,7 @@ private:
     RetPE(const RetPE &);  ///< place holder
     void operator=(const RetPE &); ///< place holder
 
-    const Instruction* inst;		/// the callsite instruction return to
+    const RetBlockNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -484,18 +486,17 @@ public:
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const Instruction* i) :
+    RetPE(PAGNode* s, PAGNode* d, const RetBlockNode* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i) {
     }
 
     /// Get method for call instruction at caller
     //@{
-    inline const Instruction* getCallInst() const {
+    inline const RetBlockNode* getCallInst() const {
         return inst;
     }
     inline CallSite getCallSite() const {
-        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
-        return cs;
+        return inst->getCallSite();
     }
     //@}
 };
@@ -510,7 +511,7 @@ private:
     TDForkPE(const TDForkPE &);  ///< place holder
     void operator=(const TDForkPE &); ///< place holder
 
-    const Instruction* inst;		///< llvm instruction at the fork site
+    const CallBlockNode* inst;		///< llvm instruction at the fork site
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -526,18 +527,17 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(PAGNode* s, PAGNode* d, const Instruction* i) :
+    TDForkPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i) {
     }
 
     /// Get method for the instruction at the fork site
     //@{
-    inline const Instruction* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const {
         return inst;
     }
     inline CallSite getCallSite() const {
-        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
-        return cs;
+        return inst->getCallSite();
     }
     //@}
 };
@@ -553,7 +553,7 @@ private:
     TDJoinPE(const TDJoinPE &);  ///< place holder
     void operator=(const TDJoinPE &); ///< place holder
 
-    const Instruction* inst;		/// the callsite instruction return to
+    const CallBlockNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -569,18 +569,17 @@ public:
     //@}
 
     /// Constructor
-    TDJoinPE(PAGNode* s, PAGNode* d, const Instruction* i) :
+    TDJoinPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i) {
     }
 
     /// Get method for the instruction at the join site
     //@{
-    inline const Instruction* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const {
         return inst;
     }
     inline CallSite getCallSite() const {
-        CallSite cs = SVFUtil::getLLVMCallSite(getCallInst());
-        return cs;
+        return inst->getCallSite();
     }
     //@}
 };

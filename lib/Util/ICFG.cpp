@@ -30,6 +30,7 @@
 #include "Util/ICFG.h"
 #include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
+#include "MemoryModel/PAG.h"
 
 using namespace SVFUtil;
 
@@ -161,67 +162,6 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs) {
     }
 }
 
-void ICFG::printICFGToJson(const std::string& filename){
-
-    std::string str;
-    raw_string_ostream rawstr(str);
-	for(ICFG::iterator it = begin(), eit = end(); it!=eit; ++it){
-		ICFGNode* node = it->second;
-		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
-			rawstr << getSourceLoc(bNode->getInst()) << "\n";
-
-			IntraBlockNode::StmtOrPHIVec& edges = bNode->getPAGEdges();
-			for (IntraBlockNode::StmtOrPHIVec::iterator it = edges.begin(),
-					eit = edges.end(); it != eit; ++it) {
-				const PAGEdge* edge = *it;
-				NodeID src = edge->getSrcID();
-				NodeID dst = edge->getDstID();
-				rawstr << dst << "<--" << src << "\n";
-				std::string srcValueName = edge->getSrcNode()->getValueName();
-				std::string dstValueName = edge->getDstNode()->getValueName();
-				rawstr << dstValueName << "<--" << srcValueName << "\n";
-
-			}
-		} else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<
-				FunEntryBlockNode>(node)) {
-			if (isExtCall(entry->getFun()))
-				rawstr << "Entry(" << ")\n";
-			else
-				rawstr << "Entry(" << getSourceLoc(entry->getFun()) << ")\n";
-			rawstr << "Fun[" << entry->getFun()->getName() << "]";
-		} else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(
-				node)) {
-			if (isExtCall(exit->getFun()))
-				rawstr << "Exit(" << ")\n";
-			else
-				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
-						<< ")\n";
-			rawstr << "Fun[" << exit->getFun()->getName() << "]";
-		} else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(
-				node)) {
-			rawstr << "Call("
-					<< getSourceLoc(call->getCallSite().getInstruction())
-					<< ")\n";
-		} else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node)) {
-			rawstr << "Ret("
-					<< getSourceLoc(ret->getCallSite().getInstruction())
-					<< ")\n";
-		} else
-			assert(false && "what else kinds of nodes do we have??");
-
-		for(ICFGNode::iterator sit = node->OutEdgeBegin(), esit = node->OutEdgeEnd(); sit!=esit; ++sit){
-			ICFGEdge* edge = *sit;
-			if (CallCFGEdge* call = SVFUtil::dyn_cast<CallCFGEdge>(edge))
-				rawstr << "call edge " << call->getCallSite().getInstruction();
-			else if (SVFUtil::isa<RetCFGEdge>(edge))
-				rawstr << "return edge " << call->getCallSite().getInstruction();
-			else
-				rawstr << "intra edge";
-		}
-	}
-
-
-}
 
 /*!
  * Dump ICFG

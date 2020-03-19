@@ -338,10 +338,9 @@ void VFG::connectDirectVFGEdges() {
         else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
             for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
                     it!=eit; ++it) {
-                const Instruction* callInst = (*it)->getCallInst();
-                CallSite cs = SVFUtil::getLLVMCallSite(callInst);
+                CallSite cs = (*it)->getCallSite();
                 ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getSrcNode(),cs);
-                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID((*it)->getCallSite(), formalParm->getFun()));
+                addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
             }
         }
         else if(FormalRetVFGNode* calleeRet = SVFUtil::dyn_cast<FormalRetVFGNode>(node)) {

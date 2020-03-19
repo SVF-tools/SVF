@@ -40,6 +40,7 @@ static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
 u64_t PAGEdge::callEdgeLabelCounter = 0;
 u64_t PAGEdge::storeEdgeLabelCounter = 0;
 PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
+PAGEdge::Value2LabelMap PAGEdge::value2LabelMap;
 
 PAG* PAG::pag = NULL;
 
@@ -128,7 +129,7 @@ bool PAG::addStoreEdge(NodeID src, NodeID dst) {
 /*!
  * Add Call edge
  */
-bool PAG::addCallEdge(NodeID src, NodeID dst, const Instruction* cs) {
+bool PAG::addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Call, cs))
@@ -140,7 +141,7 @@ bool PAG::addCallEdge(NodeID src, NodeID dst, const Instruction* cs) {
 /*!
  * Add Return edge
  */
-bool PAG::addRetEdge(NodeID src, NodeID dst, const Instruction* cs) {
+bool PAG::addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Ret, cs))
@@ -162,7 +163,7 @@ bool PAG::addBlackHoleAddrEdge(NodeID node) {
 /*!
  * Add Thread fork edge for parameter passing from a spawner to its spawnees
  */
-bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const Instruction* cs) {
+bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadFork, cs))
@@ -174,7 +175,7 @@ bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const Instruction* cs) {
 /*!
  * Add Thread fork edge for parameter passing from a spawnee back to its spawners
  */
-bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const Instruction* cs) {
+bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadJoin, cs))
@@ -387,7 +388,7 @@ bool PAG::hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind) {
 /*!
  * Return true if it is an inter-procedural edge
  */
-bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const Instruction* callInst) {
+bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* callInst) {
     PAGEdge edge(src,dst,PAGEdge::makeEdgeFlagWithCallInst(kind,callInst));
     return PAGEdgeKindToSetMap[kind].find(&edge) != PAGEdgeKindToSetMap[kind].end();
 }
@@ -826,11 +827,11 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge)) {
-            const Instruction* callInst= calledge->getCallInst();
+            const Instruction* callInst= calledge->getCallSite().getInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge)) {
-            const Instruction* callInst= retedge->getCallInst();
+            const Instruction* callInst= retedge->getCallSite().getInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         return "";

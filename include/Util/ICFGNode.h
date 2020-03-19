@@ -31,10 +31,14 @@
 #define ICFGNODE_H_
 
 #include "MemoryModel/GenericGraph.h"
-#include "MemoryModel/PAG.h"
 #include "Util/ICFGEdge.h"
+#include "Util/SVFUtil.h"
 
 class ICFGNode;
+class CallPE;
+class RetPE;
+class PAGEdge;
+class PAGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements

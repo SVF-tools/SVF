@@ -36,6 +36,9 @@
 #include "Util/SVFUtil.h"
 
 class ICFG;
+class ICFGNode;
+class CallBlockNode;
+class RetBlockNode;
 
 /*!
  * Program Assignment Graph for pointer analysis
@@ -646,7 +649,7 @@ public:
 
     //// Return true if this edge exits
     bool hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
-    bool hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const Instruction* cs);
+    bool hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
 
     /// Add Address edge
     bool addAddrEdge(NodeID src, NodeID dst);
@@ -661,9 +664,9 @@ public:
     /// Add Store edge
     bool addStoreEdge(NodeID src, NodeID dst);
     /// Add Call edge
-    bool addCallEdge(NodeID src, NodeID dst, const Instruction* cs);
+    bool addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Return edge
-    bool addRetEdge(NodeID src, NodeID dst, const Instruction* cs);
+    bool addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs);
     /// Add Gep edge
     bool addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
@@ -671,9 +674,9 @@ public:
     /// Add Variant(Gep) edge
     bool addVariantGepEdge(NodeID src, NodeID dst);
     /// Add Thread fork edge for parameter passing
-    bool addThreadForkEdge(NodeID src, NodeID dst, const Instruction* cs);
+    bool addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Thread join edge for parameter passing
-    bool addThreadJoinEdge(NodeID src, NodeID dst, const Instruction* cs);
+    bool addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
     //@}
 
     /// Add global edges

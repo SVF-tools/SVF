@@ -37,7 +37,6 @@ class ICFGBuilder {
 
 public:
 
-    typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::vector<const Instruction*> InstVec;
     typedef std::set<const Instruction*> BBSet;
 

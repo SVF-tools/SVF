@@ -645,7 +645,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
     //Does it actually return a ptr?
     if (F->getReturnType()->isVoidTy() == false) {
         NodeID srcret = getReturnNode(F);
-        pag->addRetEdge(srcret, dstrec, cs.getInstruction());
+        RetBlockNode* icfgNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+        pag->addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
@@ -663,8 +664,9 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
 
         NodeID dstFA = getValueNode(FA);
-            NodeID srcAA = getValueNode(AA);
-            pag->addCallEdge(srcAA, dstFA, cs.getInstruction());
+        NodeID srcAA = getValueNode(AA);
+        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+        pag->addCallEdge(srcAA, dstFA, icfgNode);
     }
     //Any remaining actual args must be varargs.
     if (F->isVarArg()) {
@@ -673,7 +675,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         for (; itA != ieA; ++itA) {
             Value *AA = *itA;
                 NodeID vnAA = getValueNode(AA);
-                pag->addCallEdge(vnAA,vaF, cs.getInstruction());
+                CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+                pag->addCallEdge(vnAA,vaF, icfgNode);
         }
     }
     if(itA != ieA) {
@@ -1008,8 +1011,10 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 if(forkedFun->arg_size() <= 2 && forkedFun->arg_size() >= 1) {
                     const Argument* formalParm = &(*forkedFun->arg_begin());
                     /// Connect actual parameter to formal parameter of the start routine
-                    if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
-                        pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
+                    if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) ){
+                        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                        pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
+                    }
                 }
             }
             else {
@@ -1031,8 +1036,10 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                 const Value* actualParm = getTaskDataAtHareParForSite(inst);
                 const Argument* formalParm = &(*taskFunc->arg_begin());
                 /// Connect actual parameter to formal parameter of the start routine
-                if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
-                    pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),inst);
+                if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) ){
+                    CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                	pag->addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
+                }
             }
             else {
                 /// handle indirect calls at hare_parallel_for (e.g., hare_parallel_for(..., fp, ...);
