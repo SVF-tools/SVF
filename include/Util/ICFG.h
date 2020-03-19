@@ -51,6 +51,7 @@ public:
     typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
     typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
     typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
+    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
 
@@ -59,6 +60,7 @@ private:
     FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
+    InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
 
 public:
     /// Constructor
@@ -67,11 +69,6 @@ public:
     /// Destructor
     virtual ~ICFG() {
         destroy();
-    }
-
-    /// Return PAG
-    inline PAG* getPAG() {
-        return PAG::getPAG();
     }
 
     /// Get a ICFG node
@@ -136,6 +133,32 @@ public:
     /// Add a ICFG node
     virtual inline void addICFGNode(ICFGNode* node) {
         addGNode(node->getId(),node);
+    }
+
+	/// Get a basic block ICFGNode
+	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
+		ICFGNode* node;
+		if(SVFUtil::isNonInstricCallSite(inst))
+			node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+		else
+			node = getIntraBlockICFGNode(inst);
+
+    	assert (node!=NULL && "no ICFGNode for this instruction?");
+		return node;
+	}
+
+    /// Get/Add IntraBlock ICFGNode
+    inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst) {
+    	InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
+		if (it == InstToBlockNodeMap.end())
+			return NULL;
+    	return it->second;
+    }
+    inline IntraBlockNode* addIntraBlockICFGNode(const Instruction* inst) {
+		IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
+		addICFGNode(sNode);
+		InstToBlockNodeMap[inst] = sNode;
+		return sNode;
     }
 
     /// Get/Add a function entry node

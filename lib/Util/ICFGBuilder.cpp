@@ -34,8 +34,7 @@ using namespace SVFUtil;
 /*!
  * Create ICFG nodes and edges
  */
-void ICFGBuilder::build(){
-    SVFModule svfModule = pag->getModule();
+void ICFGBuilder::build(SVFModule svfModule){
     for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
         const Function *fun = *iter;
         if (SVFUtil::isExtCall(fun))
@@ -47,14 +46,14 @@ void ICFGBuilder::build(){
 
     }
 
-	addPAGEdgeToICFG();
+	//addPAGEdgeToICFG();
 }
 
 /*!
  * function entry
  */
 void ICFGBuilder::processFunEntry(const Function* fun, WorkList& worklist){
-	FunEntryBlockNode* FunEntryBlockNode = getFunEntryICFGNode(fun);
+	FunEntryBlockNode* FunEntryBlockNode = getOrAddFunEntryICFGNode(fun);
 	const Instruction* entryInst = &((fun->getEntryBlock()).front());
 	InstVec insts;
 	if (isInstrinsicDbgInst(entryInst))
@@ -63,7 +62,7 @@ void ICFGBuilder::processFunEntry(const Function* fun, WorkList& worklist){
 		insts.push_back(entryInst);
 	for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
 			nit != enit; ++nit) {
-		ICFGNode* instNode = getBlockICFGNode(*nit);           //add interprocedure edge
+		ICFGNode* instNode = getOrAddBlockICFGNode(*nit);           //add interprocedure edge
 		icfg->addIntraEdge(FunEntryBlockNode, instNode);
 		worklist.push(*nit);
 	}
@@ -79,9 +78,9 @@ void ICFGBuilder::processFunBody(WorkList& worklist){
 		const Instruction* inst = worklist.pop();
         if (visited.find(inst) == visited.end()) {
             visited.insert(inst);
-            ICFGNode* srcNode = getBlockICFGNode(inst);
+            ICFGNode* srcNode = getOrAddBlockICFGNode(inst);
             if (isReturn(inst)) {
-                FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(
+                FunExitBlockNode* FunExitBlockNode = getOrAddFunExitICFGNode(
                         inst->getFunction());
                 icfg->addIntraEdge(srcNode, FunExitBlockNode);
             }
@@ -90,9 +89,9 @@ void ICFGBuilder::processFunBody(WorkList& worklist){
             for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                     nextInsts.end(); nit != enit; ++nit) {
                 const Instruction* succ = *nit;
-                ICFGNode* dstNode = getBlockICFGNode(succ);
+                ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
                 if (isNonInstricCallSite(inst)) {
-                    RetBlockNode* retICFGNode = getRetICFGNode(
+                    RetBlockNode* retICFGNode = getOrAddRetICFGNode(
                             getLLVMCallSite(inst));
                     icfg->addIntraEdge(srcNode, retICFGNode);
                     srcNode = retICFGNode;
@@ -110,7 +109,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist){
  * after the UnifyFunctionExitNodes pass.
  */
 void ICFGBuilder::processFunExit(const Function* fun){
-	FunExitBlockNode* FunExitBlockNode = getFunExitICFGNode(fun);
+	FunExitBlockNode* FunExitBlockNode = getOrAddFunExitICFGNode(fun);
 	const Instruction* exitInst = &(getFunExitBB(fun)->back());
 	InstVec insts;
 	if (isInstrinsicDbgInst(exitInst))
@@ -119,7 +118,7 @@ void ICFGBuilder::processFunExit(const Function* fun){
 		insts.push_back(exitInst);
 	for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
 			nit != enit; ++nit) {
-		ICFGNode* instNode = getBlockICFGNode(*nit);
+		ICFGNode* instNode = getOrAddBlockICFGNode(*nit);
 		icfg->addIntraEdge(instNode, FunExitBlockNode);
 	}
 }
@@ -131,10 +130,10 @@ void ICFGBuilder::processFunExit(const Function* fun){
  * (1) Add and get CallBlockICFGNode
  * (2) Handle call instruction by creating interprocedural edges
  */
-InterBlockNode* ICFGBuilder::getInterBlockICFGNode(const Instruction* inst){
+InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst){
 	CallSite cs = getLLVMCallSite(inst);
-	CallBlockNode* callICFGNode = getCallICFGNode(cs);
-	RetBlockNode* retICFGNode = getRetICFGNode(cs);
+	CallBlockNode* callICFGNode = getOrAddCallICFGNode(cs);
+	RetBlockNode* retICFGNode = getOrAddRetICFGNode(cs);
 	if (const Function* callee = getCallee(inst))
 		addICFGInterEdges(cs, callee);                       //creating interprocedural edges
 	return callICFGNode;
@@ -146,13 +145,13 @@ InterBlockNode* ICFGBuilder::getInterBlockICFGNode(const Instruction* inst){
 void ICFGBuilder::addICFGInterEdges(CallSite cs, const Function* callee){
 	const Function* caller = cs.getCaller();
 
-	CallBlockNode* CallBlockNode = getCallICFGNode(cs);
-	FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+	CallBlockNode* CallBlockNode = getOrAddCallICFGNode(cs);
+	FunEntryBlockNode* calleeEntryNode = getOrAddFunEntryICFGNode(callee);
 	icfg->addCallEdge(CallBlockNode, calleeEntryNode, cs);
 
 	if (!isExtCall(callee)) {
-		RetBlockNode* retBlockNode = getRetICFGNode(cs);
-		FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+		RetBlockNode* retBlockNode = getOrAddRetICFGNode(cs);
+		FunExitBlockNode* calleeExitNode = getOrAddFunExitICFGNode(callee);
 		icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
 	}
 }
@@ -177,17 +176,17 @@ void ICFGBuilder::addPAGEdgeToICFG(){
 
 void ICFGBuilder::connectGlobalToProgEntry()
 {
-    const Function* mainFunc = SVFUtil::getProgEntryFunction(pag->getModule());
+    const Function* mainFunc = SVFUtil::getProgEntryFunction(PAG::getPAG()->getModule());
 
     /// Return back if the main function is not found, the bc file might be a library only
     if(mainFunc == NULL)
         return;
 
-    FunEntryBlockNode* entryNode = getFunEntryICFGNode(mainFunc);
+    FunEntryBlockNode* entryNode = getOrAddFunEntryICFGNode(mainFunc);
     for(ICFG::ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){
         if(const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it)){
             if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(intraEdge->getDstNode())){
-                const PAG::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
+                const PAG::PAGEdgeSet& globaledges = PAG::getPAG()->getGlobalPAGEdgeSet();
                 for (PAG::PAGEdgeSet::const_iterator edgeIt = globaledges.begin(), edgeEit = globaledges.end(); edgeIt != edgeEit; ++edgeIt)
                     intra->addPAGEdge(*edgeIt);
             }
@@ -206,7 +205,7 @@ void ICFGBuilder::connectGlobalToProgEntry()
 void ICFGBuilder::handleIntraBlock(IntraBlockNode* intraICFGNode){
 	const Instruction* inst = intraICFGNode->getInst();
 	if (!SVFUtil::isNonInstricCallSite(inst)) {
-		PAG::PAGEdgeList& pagEdgeList = pag->getInstPAGEdgeList(inst);
+		PAG::PAGEdgeList& pagEdgeList = PAG::getPAG()->getInstPAGEdgeList(inst);
 		for (PAG::PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
 				ebit = pagEdgeList.end(); bit != ebit; ++bit) {
 			const PAGEdge* edge = *bit;
@@ -238,8 +237,8 @@ void ICFGBuilder::handleInterBlock(InterBlockNode* interICFGNode){
 /// Add FormalParmVFGNode(VFG) to FunEntryBlockNode (ICFG)
 void ICFGBuilder::handleFormalParm(FunEntryBlockNode* funEntryBlockNode){
     const Function* func = funEntryBlockNode->getFun();
-    if (pag->hasFunArgsMap(func)){
-        const PAG::PAGNodeList& pagNodeList =  pag->getFunArgsList(func);
+    if (PAG::getPAG()->hasFunArgsMap(func)){
+        const PAG::PAGNodeList& pagNodeList =  PAG::getPAG()->getFunArgsList(func);
         for(PAG::PAGNodeList::const_iterator it = pagNodeList.begin(),
                     eit = pagNodeList.end(); it != eit; ++it){
 			const PAGNode* param = *it;
@@ -251,8 +250,8 @@ void ICFGBuilder::handleFormalParm(FunEntryBlockNode* funEntryBlockNode){
 /// Add FormalRetNode(VFG) to FunExitBlockNode (ICFG)
 void ICFGBuilder::handleFormalRet(FunExitBlockNode* funExitBlockNode){
     const Function* func = funExitBlockNode->getFun();
-    if (pag->funHasRet(func)){
-        const PAGNode* retNode =  pag->getFunRet(func);
+    if (PAG::getPAG()->funHasRet(func)){
+        const PAGNode* retNode =  PAG::getPAG()->getFunRet(func);
         funExitBlockNode->addFormalRet(retNode);
     }
 }
@@ -260,8 +259,8 @@ void ICFGBuilder::handleFormalRet(FunExitBlockNode* funExitBlockNode){
 /// Add ActualParmVFGNode(VFG) to CallBlockNode (ICFG)
 void ICFGBuilder::handleActualParm(CallBlockNode* callBlockNode){
     CallSite cs = callBlockNode->getCallSite();
-	if (pag->hasCallSiteArgsMap(cs)) {
-		const PAG::PAGNodeList& pagNodeList = pag->getCallSiteArgsList(cs);
+	if (PAG::getPAG()->hasCallSiteArgsMap(cs)) {
+		const PAG::PAGNodeList& pagNodeList = PAG::getPAG()->getCallSiteArgsList(cs);
 		for (PAG::PAGNodeList::const_iterator it = pagNodeList.begin(), eit =
 				pagNodeList.end(); it != eit; ++it) {
 			callBlockNode->addActualParms(*it);
@@ -272,8 +271,8 @@ void ICFGBuilder::handleActualParm(CallBlockNode* callBlockNode){
 /// Add ActualRetVFGNode(VFG) to RetBlockNode (ICFG)
 void ICFGBuilder::handleActualRet(RetBlockNode* retBlockNode){
     CallSite cs = retBlockNode->getCallSite();
-    if (pag->callsiteHasRet(cs)){
-        const PAGNode* retNode =  pag->getCallSiteRet(cs);
+    if (PAG::getPAG()->callsiteHasRet(cs)){
+        const PAGNode* retNode =  PAG::getPAG()->getCallSiteRet(cs);
         /// if this retNode is returned from a malloc-like instruction (e.g., ret=malloc()),
         /// we have already created an address node
         /// if this is a copy edge from an external call (e.g., ret = fgets(i8* %arraydecay);

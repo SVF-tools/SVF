@@ -45,9 +45,7 @@ llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Gen
 void TypeAnalysis::initialize(SVFModule svfModule) {
     Andersen::initialize(svfModule);
 	if (genICFG) {
-		icfg = new ICFG();
-		ICFGBuilder builder(icfg);
-		builder.build();
+		icfg = PAG::getPAG()->getICFG();
 		icfg->dump("icfg_initial");
 		icfg->dump("vfg_initial");
 		if (print_stat){

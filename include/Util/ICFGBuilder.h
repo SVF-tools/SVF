@@ -37,24 +37,20 @@ class ICFGBuilder {
 
 public:
 
-    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
     typedef std::vector<const Instruction*> InstVec;
     typedef std::set<const Instruction*> BBSet;
 
 private:
 	ICFG* icfg;
-	PAG* pag;
-
-    InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
 
 public:
     typedef FIFOWorkList<const Instruction*> WorkList;
 
-	ICFGBuilder(ICFG* i): icfg(i), pag(PAG::getPAG()){
+	ICFGBuilder(ICFG* i): icfg(i) {
 
 	}
-    void build();
+    void build(SVFModule svfModule);
 
 private:
     /// Create edges between ICFG nodes within a function
@@ -67,27 +63,15 @@ private:
     //@}
 
 
-    /// Add and get IntraBlock ICFGNode
-    IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst) {
-    	InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
-    	if (it == InstToBlockNodeMap.end()) {
-    		IntraBlockNode* sNode = new IntraBlockNode(icfg->totalICFGNode++,inst);
-    		icfg->addICFGNode(sNode);
-    		InstToBlockNodeMap[inst] = sNode;
-    		return sNode;
-    	}
-    	return it->second;
-    }
-
     /// Add/Get an inter block ICFGNode
-    InterBlockNode* getInterBlockICFGNode(const Instruction* inst);
+    InterBlockNode* getOrAddInterBlockICFGNode(const Instruction* inst);
 
 	/// Add/Get a basic block ICFGNode
-	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
+	inline ICFGNode* getOrAddBlockICFGNode(const Instruction* inst) {
 		if(SVFUtil::isNonInstricCallSite(inst))
-			return getInterBlockICFGNode(inst);
+			return getOrAddInterBlockICFGNode(inst);
 		else
-			return getIntraBlockICFGNode(inst);
+			return getOrAddIntraBlockICFGNode(inst);
 	}
 
     /// Create edges between ICFG nodes across functions
@@ -113,7 +97,7 @@ private:
 	//@}
 
     /// Add a function entry node
-    inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const Function* fun) {
 		FunEntryBlockNode* b = icfg->getFunEntryICFGNode(fun);
 		if (b == NULL)
 			return icfg->addFunEntryICFGNode(fun);
@@ -121,7 +105,7 @@ private:
 			return b;
 	}
 	/// Add a function exit node
-	inline FunExitBlockNode* getFunExitICFGNode(const Function* fun) {
+	inline FunExitBlockNode* getOrAddFunExitICFGNode(const Function* fun) {
 		FunExitBlockNode* b = icfg->getFunExitICFGNode(fun);
 		if (b == NULL)
 			return icfg->addFunExitICFGNode(fun);
@@ -129,7 +113,7 @@ private:
 			return b;
 	}
     /// Add a call node
-    inline CallBlockNode* getCallICFGNode(CallSite cs) {
+    inline CallBlockNode* getOrAddCallICFGNode(CallSite cs) {
     	CallBlockNode* b = icfg->getCallICFGNode(cs);
 		if (b == NULL) {
 			return icfg->addCallICFGNode(cs);
@@ -137,7 +121,7 @@ private:
 		return b;
     }
     /// Add a return node
-    inline RetBlockNode* getRetICFGNode(CallSite cs) {
+    inline RetBlockNode* getOrAddRetICFGNode(CallSite cs) {
     	RetBlockNode* b = icfg->getRetICFGNode(cs);
 		if (b == NULL)
 			return icfg->addRetICFGNode(cs);
@@ -145,6 +129,14 @@ private:
 			return b;
     }
 
+    /// Add and get IntraBlock ICFGNode
+    IntraBlockNode* getOrAddIntraBlockICFGNode(const Instruction* inst) {
+		IntraBlockNode* b = icfg->getIntraBlockICFGNode(inst);
+		if (b == NULL)
+			return icfg->addIntraBlockICFGNode(inst);
+		else
+			return b;
+    }
 };
 
 

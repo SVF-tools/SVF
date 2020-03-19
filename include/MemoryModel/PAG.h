@@ -35,6 +35,8 @@
 #include "PAGNode.h"
 #include "Util/SVFUtil.h"
 
+class ICFG;
+
 /*!
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
@@ -96,17 +98,21 @@ private:
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
+    ICFG* icfg; // ICFG
 
     /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
-        symInfo = SymbolTableInfo::Symbolnfo();
-    }
+    PAG(bool buildFromFile);
 
     /// Clean up memory
     void destroy();
 
 public:
     u32_t totalPTAPAGEdge;
+
+    /// Return ICFG
+    inline ICFG* getICFG() {
+        return icfg;
+    }
 
     /// Return valid pointers
     inline NodeSet& getAllValidPtrs() {

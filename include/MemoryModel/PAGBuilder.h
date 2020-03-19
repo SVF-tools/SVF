@@ -32,6 +32,8 @@
 
 #include "MemoryModel/PAG.h"
 #include "Util/ExtAPI.h"
+#include "Util/ICFGBuilder.h"
+
 
 class SVFModule;
 /*!

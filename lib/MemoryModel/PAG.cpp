@@ -29,6 +29,7 @@
 
 #include "MemoryModel/PAG.h"
 #include "Util/SVFUtil.h"
+#include "Util/ICFGBuilder.h"
 
 using namespace SVFUtil;
 
@@ -42,6 +43,13 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
 
+
+PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
+    symInfo = SymbolTableInfo::Symbolnfo();
+    icfg = new ICFG();
+	ICFGBuilder builder(icfg);
+	builder.build(getModule());
+}
 
 /*!
  * Add Address edge
