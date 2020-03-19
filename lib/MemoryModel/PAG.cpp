@@ -348,7 +348,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls) {
             getNodeNumAfterPAGBuild() > SymbolTableInfo::getMaxFieldLimit() ?
             getNodeNumAfterPAGBuild() : SymbolTableInfo::getMaxFieldLimit()
     )));
-    NodeID gepId = base * gepMultiplier + ls.getOffset();
+    NodeID gepId = ls.getOffset() * gepMultiplier + base;
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
 	GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
