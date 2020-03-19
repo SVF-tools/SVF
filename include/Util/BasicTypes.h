@@ -75,7 +75,7 @@ typedef unsigned long long u64_t;
 typedef signed s32_t;
 typedef signed long Size_t;
 
-typedef u32_t NodeID;
+typedef u64_t NodeID;
 typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
