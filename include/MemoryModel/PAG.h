@@ -349,11 +349,6 @@ public:
     		return iter->second;
     }
 
-    /// Get all callsites
-    inline const std::set<CallSite>& getCallSiteSet() const {
-        return symInfo->getCallSiteSet();
-    }
-
     /// Add/get indirect callsites
     //@{
     inline const CallSiteToFunPtrMap& getIndirectCallsites() const {
