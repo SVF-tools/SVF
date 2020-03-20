@@ -145,10 +145,10 @@ public:
     /// Get callsite given a callsiteID
     //@{
     inline CallSiteID getCallSiteID(CallSite cs, const Function* func) const {
-        return callgraph->getCallSiteID(cs, func);
+        return callgraph->getCallSiteID(pag->getICFG()->getCallBlockNode(cs.getInstruction()), func);
     }
     inline CallSite getCallSite(CallSiteID id) const {
-        return callgraph->getCallSite(id);
+        return callgraph->getCallSite(id)->getCallSite();
     }
     //@}
 

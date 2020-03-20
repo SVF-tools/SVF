@@ -162,7 +162,7 @@ void SVFG::connectIndirectSVFGEdges() {
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = *it;
+                CallSite cs = (*it)->getCallSite();
                 if(!mssa->hasMU(cs))
                     continue;
                 ActualINSVFGNodeSet& actualIns = getActualINSVFGNodes(cs);
@@ -177,7 +177,7 @@ void SVFG::connectIndirectSVFGEdges() {
             const MemSSA::RETMU* retMu = formalOut->getRetMU();
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = *it;
+                CallSite cs = (*it)->getCallSite();
                 if(!mssa->hasCHI(cs))
                     continue;
                 ActualOUTSVFGNodeSet& actualOuts = getActualOUTSVFGNodes(cs);

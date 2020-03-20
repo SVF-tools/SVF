@@ -71,14 +71,15 @@ void TypeAnalysis::analyze(SVFModule svfModule){
 
 void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
-        CallSite cs = iter->first;
+        const CallBlockNode* cbn = iter->first;
+    	CallSite cs = cbn->getCallSite();
         if (isVirtualCallSite(cs)) {
         		virtualCallSites.insert(cs);
             const Value *vtbl = getVCallVtblPtr(cs);
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;
-            getVFnsFromCHA(cs, vfns);
-            connectVCallToVFns(cs, vfns, newEdges);
+            getVFnsFromCHA(cbn, vfns);
+            connectVCallToVFns(cbn, vfns, newEdges);
         }
     }
 }

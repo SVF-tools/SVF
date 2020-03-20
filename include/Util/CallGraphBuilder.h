@@ -34,13 +34,15 @@
 #include "Util/PTACallGraph.h"
 #include "Util/ThreadCallGraph.h"
 
+class ICFG;
+
 class CallGraphBuilder {
 
 protected:
 	PTACallGraph* callgraph;
-
+	ICFG* icfg;
 public:
-	CallGraphBuilder(PTACallGraph* cg): callgraph(cg){
+	CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i){
 	}
 
 	/// Build normal callgraph
@@ -51,7 +53,7 @@ public:
 class ThreadCallGraphBuilder : public CallGraphBuilder {
 
 public:
-	ThreadCallGraphBuilder(ThreadCallGraph* cg): CallGraphBuilder(cg) {
+	ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i) {
 	}
 
 	/// Build thread-aware callgraph

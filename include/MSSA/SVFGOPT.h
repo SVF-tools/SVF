@@ -254,10 +254,14 @@ private:
     /// Check if actual-in/actual-out exist at indirect call site.
     //@{
     inline bool actualInOfIndCS(const ActualINSVFGNode* ai) const {
-        return (PAG::getPAG()->isIndirectCallSites(ai->getCallSite()));
+    	ICFG* icfg = PAG::getPAG()->getICFG();
+    	const CallBlockNode* cbn = icfg->getCallBlockNode(ai->getCallSite().getInstruction());
+        return (PAG::getPAG()->isIndirectCallSites(cbn));
     }
     inline bool actualOutOfIndCS(const ActualOUTSVFGNode* ao) const {
-        return (PAG::getPAG()->isIndirectCallSites(ao->getCallSite()));
+    	ICFG* icfg = PAG::getPAG()->getICFG();
+    	const CallBlockNode* cbn = icfg->getCallBlockNode(ao->getCallSite().getInstruction());
+        return (PAG::getPAG()->isIndirectCallSites(cbn));
     }
     //@}
 

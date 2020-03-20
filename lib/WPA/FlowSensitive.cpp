@@ -551,7 +551,7 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
     CallEdgeMap::const_iterator iter = newEdges.begin();
     CallEdgeMap::const_iterator eiter = newEdges.end();
     for (; iter != eiter; iter++) {
-        CallSite cs = iter->first;
+        CallSite cs = iter->first->getCallSite();
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
             const Function * func = *func_iter;

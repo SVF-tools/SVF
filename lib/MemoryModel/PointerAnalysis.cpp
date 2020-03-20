@@ -165,12 +165,12 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     /// initialise pta call graph for every pointer analysis instance
     if(EnableThreadCallGraph) {
     	ThreadCallGraph* cg = new ThreadCallGraph();
-    	ThreadCallGraphBuilder bd(cg);
+    	ThreadCallGraphBuilder bd(cg, pag->getICFG());
         ptaCallGraph = bd.buildThreadCallGraph(svfModule);
     }
     else {
     	PTACallGraph* cg = new PTACallGraph();
-        CallGraphBuilder bd(cg);
+        CallGraphBuilder bd(cg,pag->getICFG());
         ptaCallGraph = bd.buildCallGraph(svfModule);
     }
     callGraphSCCDetection();
@@ -542,12 +542,12 @@ void BVDataPTAImpl::dumpAllPts() {
 /*!
  * Print indirect call targets at an indirect callsite
  */
-void PointerAnalysis::printIndCSTargets(const CallSite cs, const FunctionSet& targets)
+void PointerAnalysis::printIndCSTargets(const CallBlockNode* cs, const FunctionSet& targets)
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    cs.getInstruction()->print(outs());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs.getInstruction());
+    cs->getCallSite().getInstruction()->print(outs());
+    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite().getInstruction());
     outs() << "\t with Targets: ";
 
     if (!targets.empty()) {
@@ -575,7 +575,7 @@ void PointerAnalysis::printIndCSTargets()
     CallEdgeMap::const_iterator it = callEdges.begin();
     CallEdgeMap::const_iterator eit = callEdges.end();
     for (; it != eit; ++it) {
-        const CallSite cs = it->first;
+        const CallBlockNode* cs = it->first;
         const FunctionSet& targets = it->second;
         printIndCSTargets(cs, targets);
     }
@@ -584,12 +584,12 @@ void PointerAnalysis::printIndCSTargets()
     CallSiteToFunPtrMap::const_iterator csIt = indCS.begin();
     CallSiteToFunPtrMap::const_iterator csEit = indCS.end();
     for (; csIt != csEit; ++csIt) {
-        const CallSite& cs = csIt->first;
+        const CallBlockNode* cs = csIt->first;
         if (hasIndCSCallees(cs) == false) {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            cs.getInstruction()->print(outs());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs.getInstruction());
+            cs->getCallSite().getInstruction()->print(outs());
+            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite().getInstruction());
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
@@ -602,9 +602,9 @@ void PointerAnalysis::printIndCSTargets()
  */
 void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
-        CallSite cs = iter->first;
-        if (isVirtualCallSite(cs)) {
-            const Value *vtbl = getVCallVtblPtr(cs);
+        const CallBlockNode* cs = iter->first;
+        if (isVirtualCallSite(cs->getCallSite())) {
+            const Value *vtbl = getVCallVtblPtr(cs->getCallSite());
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
             resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
@@ -616,7 +616,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 /*!
  * Resolve indirect calls
  */
-void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph) {
+void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph) {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
     /// discover indirect pointer target
@@ -644,7 +644,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
                     newEdges[cs].insert(callee);
                     getIndCallMap()[cs].insert(callee);
 
-                    ptaCallGraph->addIndirectCallGraphEdge(cs, callee);
+                    ptaCallGraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
                     // The indirect call is maintained by ourself, We may update llvm's when we need to
                     //CallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
@@ -658,19 +658,19 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
 /*
  * Get virtual functions "vfns" based on CHA
  */
-void PointerAnalysis::getVFnsFromCHA(CallSite cs, VFunSet &vfns) {
-    if (chgraph->csHasVFnsBasedonCHA(cs))
-        vfns = chgraph->getCSVFsBasedonCHA(cs);
+void PointerAnalysis::getVFnsFromCHA(const CallBlockNode* cs, VFunSet &vfns) {
+    if (chgraph->csHasVFnsBasedonCHA(cs->getCallSite()))
+        vfns = chgraph->getCSVFsBasedonCHA(cs->getCallSite());
 }
 
 /*
  * Get virtual functions "vfns" from PoninsTo set "target" for callsite "cs"
  */
-void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns) {
+void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &target, VFunSet &vfns) {
 
-    if (chgraph->csHasVtblsBasedonCHA(cs)) {
+    if (chgraph->csHasVtblsBasedonCHA(cs->getCallSite())) {
         std::set<const GlobalValue*> vtbls;
-        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
+        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs->getCallSite());
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it) {
             const PAGNode *ptdnode = pag->getPAGNode(*it);
 			if (ptdnode->hasValue()) {
@@ -680,14 +680,14 @@ void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSe
 				}
 			}
         }
-        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
+        chgraph->getVFnsFromVtbls(cs->getCallSite(), vtbls, vfns);
     }
 }
 
 /*
  * Connect callsite "cs" to virtual functions in "vfns"
  */
-void PointerAnalysis::connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges) {
+void PointerAnalysis::connectVCallToVFns(const CallBlockNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges) {
     //// connect all valid functions
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
@@ -696,18 +696,19 @@ void PointerAnalysis::connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallE
             callee = svfMod.getDefinition(callee);
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
-        if(cs.arg_size() == callee->arg_size() ||
-                (cs.getFunctionType()->isVarArg() && callee->isVarArg())) {
+        if(cs->getCallSite().arg_size() == callee->arg_size() ||
+                (cs->getCallSite().getFunctionType()->isVarArg() && callee->isVarArg())) {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
-            ptaCallGraph->addIndirectCallGraphEdge(cs, callee);
+            const CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction());
+            ptaCallGraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
         }
     }
 }
 
 /// Resolve cpp indirect call edges
-void PointerAnalysis::resolveCPPIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges) {
-    assert(isVirtualCallSite(cs) && "not cpp virtual call");
+void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges) {
+    assert(isVirtualCallSite(cs->getCallSite()) && "not cpp virtual call");
 
     VFunSet vfns;
     if (connectVCallOnCHA)

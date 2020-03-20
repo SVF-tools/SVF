@@ -104,12 +104,12 @@ public:
         setPAG(p);
         for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
                 eit = pag->getIndirectCallsites().end(); it!=eit; ++it) {
-            if (cppUtil::isVirtualCallSite(it->first)) {
-                const Value *vtblPtr = cppUtil::getVCallVtblPtr(it->first);
+            if (cppUtil::isVirtualCallSite(it->first->getCallSite())) {
+                const Value *vtblPtr = cppUtil::getVCallVtblPtr(it->first->getCallSite());
                 assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
                 NodeID vtblId = pag->getValueNode(vtblPtr);
                 addCandidate(vtblId);
-                vtableToCallSiteMap[vtblId] = it->first;
+                vtableToCallSiteMap[vtblId] = it->first->getCallSite();
             } else {
                 addCandidate(it->second);
             }

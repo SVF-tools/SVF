@@ -1063,7 +1063,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
  * Indirect call is resolved on-the-fly during pointer analysis
  */
 void PAGBuilder::handleIndCall(CallSite cs) {
-    pag->addIndirectCallsites(cs,pag->getValueNode(cs.getCalledValue()));
+	const CallBlockNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
 }
 
 /*

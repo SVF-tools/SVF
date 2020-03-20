@@ -43,8 +43,8 @@
 class PAG : public GenericGraph<PAGNode,PAGEdge> {
 
 public:
-    typedef std::set<CallSite> CallSiteSet;
-    typedef std::map<CallSite,NodeID> CallSiteToFunPtrMap;
+    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef std::map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
     typedef std::map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef llvm::DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::set<const PAGEdge*> PAGEdgeSet;
@@ -350,7 +350,7 @@ public:
     }
 
     /// Get all callsites
-    inline const CallSiteSet& getCallSiteSet() const {
+    inline const std::set<CallSite>& getCallSiteSet() const {
         return symInfo->getCallSiteSet();
     }
 
@@ -359,12 +359,12 @@ public:
     inline const CallSiteToFunPtrMap& getIndirectCallsites() const {
         return indCallSiteToFunPtrMap;
     }
-    inline void addIndirectCallsites(const CallSite cs,NodeID funPtr) {
+    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr) {
         bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
         funPtrToCallSitesMap[funPtr].insert(cs);
         assert(added && "fail to add the indirect callsite?");
     }
-    inline NodeID getFunPtr(const CallSite cs) const {
+    inline NodeID getFunPtr(const CallBlockNode* cs) const {
         CallSiteToFunPtrMap::const_iterator it = indCallSiteToFunPtrMap.find(cs);
         assert(it!=indCallSiteToFunPtrMap.end() && "indirect callsite not have a function pointer?");
         return it->second;
@@ -374,7 +374,7 @@ public:
         assert(it!=funPtrToCallSitesMap.end() && "function pointer not used at any indirect callsite?");
         return it->second;
     }
-    inline bool isIndirectCallSites(const CallSite cs) const {
+    inline bool isIndirectCallSites(const CallBlockNode* cs) const {
         return (indCallSiteToFunPtrMap.find(cs) != indCallSiteToFunPtrMap.end());
     }
     inline bool isFunPtr(NodeID id) const {

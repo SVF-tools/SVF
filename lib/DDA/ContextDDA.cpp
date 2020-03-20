@@ -150,8 +150,9 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
 }
 
 bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, CallSite cs) {
-    if(getPAG()->isIndirectCallSites(cs)) {
-        NodeID id = getPAG()->getFunPtr(cs);
+    const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
+	if(getPAG()->isIndirectCallSites(cbn)) {
+        NodeID id = getPAG()->getFunPtr(cbn);
         PAGNode* node = getPAG()->getPAGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
@@ -179,8 +180,9 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     CallSite cs = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getDstNode()->getBB()->getParent();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -201,8 +203,9 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     CallSite cs = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getSrcNode()->getBB()->getParent();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;

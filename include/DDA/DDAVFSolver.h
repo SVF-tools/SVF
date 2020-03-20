@@ -190,7 +190,7 @@ protected:
         if(_pag->isFunPtr(dpm.getCurNodeID())) {
             const CallSiteSet& csSet = _pag->getIndCallSites(dpm.getCurNodeID());
             for(CallSiteSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
-                updateCallGraphAndSVFG(dpm,*it,newIndirectEdges);
+                updateCallGraphAndSVFG(dpm, (*it)->getCallSite(),newIndirectEdges);
         }
         /// callgraph scc detection for local variable in recursion
         if(!newIndirectEdges.empty())
@@ -394,8 +394,9 @@ protected:
     void resolveFunPtr(const DPIm& dpm) {
         if(Instruction* callInst= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc())) {
             CallSite cs = SVFUtil::getLLVMCallSite(callInst);
-            if(_pag->isIndirectCallSites(cs)) {
-                NodeID funPtr = _pag->getFunPtr(cs);
+            const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(callInst);
+            if(_pag->isIndirectCallSites(cbn)) {
+                NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
@@ -406,8 +407,8 @@ protected:
             /// use pre-analysis call graph to approximate all potential callsites
             _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it) {
-                CallSite cs = *it;
-                NodeID funPtr = _pag->getFunPtr(cs);
+                CallSite cs = (*it)->getCallSite();
+                NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);

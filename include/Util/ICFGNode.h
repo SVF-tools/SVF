@@ -291,6 +291,11 @@ public:
         return cs;
     }
 
+    /// Return callsite
+    inline const Function* getCaller() const {
+        return cs.getCaller();
+    }
+
     /// Return the set of actual parameters
     inline const ActualParmVFGNodeVec &getActualParms() const {
         return APNodes;

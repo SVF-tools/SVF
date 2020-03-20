@@ -460,7 +460,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
     PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
     PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {
-        CallSite newcs = iter->first;
+        CallSite newcs = iter->first->getCallSite();
         const PointerAnalysis::FunctionSet & functions = iter->second;
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
             const Function * func = *func_iter;

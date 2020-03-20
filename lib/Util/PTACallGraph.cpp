@@ -120,18 +120,14 @@ PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraph
 /*!
  * Add direct call edges
  */
-void PTACallGraph::addDirectCallGraphEdge(CallSite cs) {
-    assert(getCallee(cs) && "no callee found");
+void PTACallGraph::addDirectCallGraphEdge(const CallBlockNode* cs,const Function* callerFun, const Function* calleeFun) {
 
-    PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
-    PTACallGraphNode* callee = getCallGraphNode(getCallee(cs));
+    PTACallGraphNode* caller = getCallGraphNode(callerFun);
+    PTACallGraphNode* callee = getCallGraphNode(calleeFun);
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
-        assert(cs.getCaller() == caller->getFunction()
-               && "callee instruction not inside caller??");
-
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge,csId);
         edge->addDirectCallSite(cs);
         addEdge(edge);
@@ -142,19 +138,16 @@ void PTACallGraph::addDirectCallGraphEdge(CallSite cs) {
 /*!
  * Add indirect call edge to update call graph
  */
-void PTACallGraph::addIndirectCallGraphEdge(CallSite cs, const Function* calleefun) {
+void PTACallGraph::addIndirectCallGraphEdge(const CallBlockNode* cs,const Function* callerFun, const Function* calleeFun) {
 
-	PTACallGraphNode* caller = getCallGraphNode(cs.getCaller());
-    PTACallGraphNode* callee = getCallGraphNode(calleefun);
+	PTACallGraphNode* caller = getCallGraphNode(callerFun);
+    PTACallGraphNode* callee = getCallGraphNode(calleeFun);
 
     numOfResolvedIndCallEdge++;
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if(!hasGraphEdge(caller,callee, PTACallGraphEdge::CallRetEdge,csId)) {
-        assert(cs.getCaller() == caller->getFunction()
-               && "callee instruction not inside caller??");
-
         PTACallGraphEdge* edge = new PTACallGraphEdge(caller,callee,PTACallGraphEdge::CallRetEdge, csId);
         edge->addInDirectCallSite(cs);
         addEdge(edge);
@@ -218,8 +211,8 @@ void PTACallGraph::verifyCallGraph()
     for (; it != eit; ++it) {
         const FunctionSet& targets = it->second;
         if (targets.empty() == false) {
-            CallSite cs = it->first;
-            const Function* func = cs.getInstruction()->getParent()->getParent();
+            const CallBlockNode* cs = it->first;
+            const Function* func = cs->getCaller();
             if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
                 wrnMsg(func->getName().str() + " has indirect call site but not reachable from main");
         }

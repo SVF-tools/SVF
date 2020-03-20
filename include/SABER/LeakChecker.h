@@ -43,7 +43,7 @@ public:
     typedef FIFOWorkList<CallSite> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
-    typedef PAG::CallSiteSet CallSiteSet;
+    typedef std::set<CallSite> CallSiteSet;
     enum LEAK_TYPE {
         NEVER_FREE_LEAK,
         CONTEXT_LEAK,

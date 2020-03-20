@@ -88,12 +88,14 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        if(!callgraph->hasIndCSCallees(nIter->second)) {
+        const CallBlockNode* cbn = ander->getPAG()->getICFG()->getCallBlockNode(nIter->second.getInstruction());
+
+        if(!callgraph->hasIndCSCallees(cbn)) {
             //outs() << "virtual callsite has no callee" << *(nIter->second.getInstruction()) << "\n";
             continue;
         }
 
-        const PTACallGraph::FunctionSet& callees = callgraph->getIndCSCallees(nIter->second);
+        const PTACallGraph::FunctionSet& callees = callgraph->getIndCSCallees(cbn);
         totalCallsites++;
         if(callees.size() == 0)
             zeroTargetCallsites++;
@@ -109,8 +111,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
 
         std::set<const Function*> ander_vfns;
         std::set<const Function*> dda_vfns;
-        ander->getVFnsFromPts(nIter->second,anderPts, ander_vfns);
-        pta->getVFnsFromPts(nIter->second,ddaPts, dda_vfns);
+        ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
+        pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
