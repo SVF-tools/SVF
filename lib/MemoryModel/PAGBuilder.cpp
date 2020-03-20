@@ -93,6 +93,9 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
             }
         }
     }
+
+    connectGlobalToProgEntry();
+
     sanityCheck();
 
     pag->initialiseCandidatePointers();
@@ -1141,17 +1144,42 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
  	/// We assume every GepValPN and its GepPE are unique across whole program
 	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
 		assert(curBB && "instruction does not have a basic block??");
-		pag->addToInstPAGEdgeList(curInst,edge);
+		IntraBlockNode* intraBlockNode = pag->getICFG()->getIntraBlockNode(curInst);
+		pag->addToInstPAGEdgeList(intraBlockNode,edge);
     } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
         if (!curBB)
-            pag->getGlobalPAGEdgeSet().insert(edge);
+            pag->addGlobalPAGEdge(edge);
     } else if (SVFUtil::isa<GlobalVariable>(curVal) ||
                SVFUtil::isa<Function>(curVal) ||
 			   SVFUtil::isa<Constant>(curVal)) {
-    	pag->getGlobalPAGEdgeSet().insert(edge);
+    	pag->addGlobalPAGEdge(edge);
     } else {
         assert(false && "what else value can we have?");
+    }
+}
+
+void PAGBuilder::connectGlobalToProgEntry()
+{
+    const Function* mainFunc = SVFUtil::getProgEntryFunction(PAG::getPAG()->getModule());
+
+    /// Return back if the main function is not found, the bc file might be a library only
+    if(mainFunc == NULL)
+        return;
+
+    FunEntryBlockNode* entryNode = pag->getICFG()->getFunEntryICFGNode(mainFunc);
+    for(ICFG::ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){
+        if(const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it)){
+            if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(intraEdge->getDstNode())){
+                const PAG::PAGEdgeSet& globaledges = PAG::getPAG()->getGlobalPAGEdgeSet();
+                for (PAG::PAGEdgeSet::const_iterator edgeIt = globaledges.begin(), edgeEit = globaledges.end(); edgeIt != edgeEit; ++edgeIt)
+                    intra->addPAGEdge(*edgeIt);
+            }
+            else
+                assert(SVFUtil::isa<CallBlockNode>(intraEdge->getDstNode()) && " the dst node of an intra edge is not an intra block node or a callblocknode?");
+        }
+        else
+            assert(false && "the edge from main's functionEntryBlock is not an intra edge?");
     }
 }

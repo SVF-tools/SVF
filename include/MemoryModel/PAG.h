@@ -34,11 +34,7 @@
 #include "PAGEdge.h"
 #include "PAGNode.h"
 #include "Util/SVFUtil.h"
-
-class ICFG;
-class ICFGNode;
-class CallBlockNode;
-class RetBlockNode;
+#include "Util/ICFG.h"
 
 /*!
  * Program Assignment Graph for pointer analysis
@@ -64,7 +60,7 @@ public:
     typedef llvm::DenseMap<const Function*,const PAGNode*> FunToRetMap;
     typedef llvm::DenseMap<const Function*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef llvm::DenseMap<const BasicBlock*,PAGEdgeList> BB2PAGEdgesMap;
-    typedef llvm::DenseMap<const Instruction*,PAGEdgeList> Inst2PAGEdgesMap;
+    typedef llvm::DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef std::map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
@@ -176,25 +172,30 @@ public:
         return PTAPAGEdgeKindToSetMap[kind];
     }
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const Instruction* inst) const {
+    inline bool hasPAGEdgeList(const IntraBlockNode* inst) const {
         return inst2PAGEdgesMap.find(inst)!=inst2PAGEdgesMap.end();
     }
-    inline bool hasPTAPAGEdgeList(const Instruction* inst) const {
+    inline bool hasPTAPAGEdgeList(const IntraBlockNode* inst) const {
         return inst2PTAPAGEdgesMap.find(inst)!=inst2PTAPAGEdgesMap.end();
     }
     /// Given an instruction, get all its PAGEdges
-    inline PAGEdgeList& getInstPAGEdgeList(const Instruction* inst) {
+    inline PAGEdgeList& getInstPAGEdgeList(const IntraBlockNode* inst) {
         return inst2PAGEdgesMap[inst];
     }
     /// Given an instruction, get all its PTA PAGEdges
-    inline PAGEdgeList& getInstPTAPAGEdgeList(const Instruction* inst) {
+    inline PAGEdgeList& getInstPTAPAGEdgeList(const IntraBlockNode* inst) {
         return inst2PTAPAGEdgesMap[inst];
     }
     /// Add a PAGEdge into instruction map
-    inline void addToInstPAGEdgeList(const Instruction* inst, PAGEdge* edge) {
+    inline void addToInstPAGEdgeList(IntraBlockNode* inst, PAGEdge* edge) {
+    	inst->addPAGEdge(edge);
 		inst2PAGEdgesMap[inst].push_back(edge);
 		if (edge->isPTAEdge())
 			inst2PTAPAGEdgesMap[inst].push_back(edge);
+    }
+    /// Get global PAGEdges (not in a procedure)
+    inline void addGlobalPAGEdge(const PAGEdge* edge) {
+        globPAGEdgesSet.insert(edge);
     }
     /// Get global PAGEdges (not in a procedure)
     inline PAGEdgeSet& getGlobalPAGEdgeSet() {
@@ -242,18 +243,26 @@ public:
     //@{
     /// Add function arguments
     inline void addFunArgs(const Function* fun, const PAGNode* arg) {
+    	FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
+		funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
     inline void addFunRet(const Function* fun, const PAGNode* ret) {
+    	FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
+    	funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
     /// Add callsite arguments
     inline void addCallSiteArgs(CallSite cs,const PAGNode* arg) {
+    	CallBlockNode* callBlockNode = icfg->getCallBlockNode(cs.getInstruction());
+    	callBlockNode->addActualParms(arg);
         callSiteArgsListMap[cs].push_back(arg);
     }
     /// Add callsite returns
     inline void addCallSiteRets(CallSite cs,const PAGNode* arg) {
+    	RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs.getInstruction());
+    	retBlockNode->addActualRet(arg);
         callSiteRetMap[cs]= arg;
     }
     /// Function has arguments list

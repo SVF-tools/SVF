@@ -33,6 +33,7 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "Util/PTACallGraph.h"
 #include "Util/WorkList.h"
+#include "Util/ICFG.h"
 
 #include <set>
 
@@ -424,17 +425,19 @@ public:
     //@}
     /// Whether this instruction has PAG Edge
     inline bool hasPAGEdgeList(const Instruction* inst) {
+    	PAG* pag = pta->getPAG();
 		if (ptrOnlyMSSA)
-			return pta->getPAG()->hasPTAPAGEdgeList(inst);
+			return pag->hasPTAPAGEdgeList(pag->getICFG()->getIntraBlockICFGNode(inst));
 		else
-			return pta->getPAG()->hasPAGEdgeList(inst);
+			return pag->hasPAGEdgeList(pag->getICFG()->getIntraBlockICFGNode(inst));
     }
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
     inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst) {
+    	PAG* pag = pta->getPAG();
 		if (ptrOnlyMSSA)
-			return pta->getPAG()->getInstPTAPAGEdgeList(inst);
+			return pta->getPAG()->getInstPTAPAGEdgeList(pag->getICFG()->getIntraBlockICFGNode(inst));
 		else
-			return pta->getPAG()->getInstPAGEdgeList(inst);
+			return pta->getPAG()->getInstPAGEdgeList(pag->getICFG()->getIntraBlockICFGNode(inst));
     }
     
     /// getModRefInfo APIs

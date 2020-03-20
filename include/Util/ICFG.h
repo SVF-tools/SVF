@@ -150,6 +150,8 @@ public:
 	}
 
 	/// Get a basic block ICFGNode
+	/// TODO:: need to fix the assertions
+	//@{
 	inline CallBlockNode* getCallBlockNode(const Instruction* inst) {
 		assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
 		assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
@@ -169,6 +171,14 @@ public:
     	assert (node!=NULL && "no RetBlockNode for this instruction?");
 		return node;
 	}
+
+    inline IntraBlockNode* getIntraBlockNode(const Instruction* inst) {
+    	IntraBlockNode* node = getIntraBlockICFGNode(inst);
+		if(node==NULL)
+			node = addIntraBlockICFGNode(inst);
+    	return node;
+    }
+    //@}
 
     /// Get/Add IntraBlock ICFGNode
     inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst) {

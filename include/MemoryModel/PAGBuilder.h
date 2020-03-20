@@ -230,6 +230,8 @@ public:
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
+    void connectGlobalToProgEntry();
+
     /// Add Address edge
     inline void addAddrEdge(NodeID src, NodeID dst){
     	if(AddrPE* edge = pag->addAddrPE(src,dst))

@@ -76,25 +76,6 @@ private:
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(CallSite cs, const Function* callee);
 
-
-	/// Add VFG nodes to ICFG
-	//@{
-	/// Add PAGEdges to ICFG
-	void addPAGEdgeToICFG();
-	/// Add global stores to the function entry ICFGNode of main
-	void connectGlobalToProgEntry();
-	/// Add VFGStmtNode into IntraBlockNode
-	void handleIntraBlock(IntraBlockNode* intraICFGNode);
-	/// Add ArgumentVFGNode into InterBlockNode
-	void handleInterBlock(InterBlockNode* interICFGNode);
-	//@}
-	/// Within handleInterBlock: handle 4 kinds of ArgumentNodes
-	void handleFormalParm(FunEntryBlockNode* funEntryBlockNode);
-	void handleFormalRet(FunExitBlockNode* funExitBlockNode);
-	void handleActualParm(CallBlockNode* callBlockNode);
-	void handleActualRet(RetBlockNode* retBlockNode);
-	//@}
-
     /// Add a function entry node
     inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const Function* fun) {
 		FunEntryBlockNode* b = icfg->getFunEntryICFGNode(fun);
