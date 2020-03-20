@@ -45,7 +45,7 @@ PAGEdge::Value2LabelMap PAGEdge::value2LabelMap;
 PAG* PAG::pag = NULL;
 
 
-PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
+PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
     symInfo = SymbolTableInfo::Symbolnfo();
     icfg = new ICFG();
 	ICFGBuilder builder(icfg);
@@ -55,99 +55,123 @@ PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL)
 /*!
  * Add Address edge
  */
-bool PAG::addAddrEdge(NodeID src, NodeID dst) {
+AddrPE* PAG::addAddrPE(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Addr))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new AddrPE(srcNode, dstNode));
+        return NULL;
+    else {
+    	AddrPE* addrPE = new AddrPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, addrPE);
+        return addrPE;
+    }
 }
 
 /*!
  * Add Copy edge
  */
-bool PAG::addCopyEdge(NodeID src, NodeID dst) {
+CopyPE* PAG::addCopyPE(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Copy))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new CopyPE(srcNode, dstNode));
+        return NULL;
+    else {
+    	CopyPE* copyPE = new CopyPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, copyPE);
+        return copyPE;
+    }
 }
 
 /*!
  * Add Compare edge
  */
-bool PAG::addCmpEdge(NodeID src, NodeID dst) {
+CmpPE* PAG::addCmpPE(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Cmp))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new CmpPE(srcNode, dstNode));
+        return NULL;
+    else {
+    	CmpPE* cmp = new CmpPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, cmp);
+        return cmp;
+    }
 }
 
 
 /*!
  * Add Compare edge
  */
-bool PAG::addBinaryOPEdge(NodeID src, NodeID dst) {
+BinaryOPPE* PAG::addBinaryOPPE(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::BinaryOp))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new BinaryOPPE(srcNode, dstNode));
+        return NULL;
+    else {
+    	BinaryOPPE* binaryOP = new BinaryOPPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, binaryOP);
+        return binaryOP;
+    }
 }
 
 /*!
  * Add Load edge
  */
-bool PAG::addLoadEdge(NodeID src, NodeID dst) {
+LoadPE* PAG::addLoadPE(NodeID src, NodeID dst) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Load))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new LoadPE(srcNode, dstNode));
+        return NULL;
+    else {
+    	LoadPE* loadPE = new LoadPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, loadPE);
+        return loadPE;
+    }
 }
 
 /*!
  * Add Store edge
  * Note that two store instructions may share the same Store PAGEdge
  */
-bool PAG::addStoreEdge(NodeID src, NodeID dst) {
+StorePE* PAG::addStorePE(NodeID src, NodeID dst, const Value* curVal) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Store))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new StorePE(srcNode, dstNode, curVal));
+        return NULL;
+    else {
+    	StorePE* storePE = new StorePE(srcNode, dstNode, curVal);
+        addEdge(srcNode,dstNode, storePE);
+        return storePE;
+    }
 }
 
 /*!
  * Add Call edge
  */
-bool PAG::addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
+CallPE* PAG::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Call, cs))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new CallPE(srcNode, dstNode, cs));
+        return NULL;
+    else {
+    	CallPE* callPE = new CallPE(srcNode, dstNode, cs);
+        addEdge(srcNode,dstNode, callPE);
+        return callPE;
+    }
 }
 
 /*!
  * Add Return edge
  */
-bool PAG::addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs) {
+RetPE* PAG::addRetPE(NodeID src, NodeID dst, const RetBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Ret, cs))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new RetPE(srcNode, dstNode, cs));
+        return NULL;
+    else {
+    	RetPE* retPE = new RetPE(srcNode, dstNode, cs);
+        addEdge(srcNode,dstNode, retPE);
+        return retPE;
+    }
 }
 
 /*!
@@ -155,33 +179,39 @@ bool PAG::addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs) {
  */
 bool PAG::addBlackHoleAddrEdge(NodeID node) {
     if(HANDBLACKHOLE)
-        return pag->addAddrEdge(pag->getBlackHoleNode(), node);
+        return pag->addAddrPE(pag->getBlackHoleNode(), node);
     else
-        return pag->addCopyEdge(pag->getNullPtr(), node);
+        return pag->addCopyPE(pag->getNullPtr(), node);
 }
 
 /*!
  * Add Thread fork edge for parameter passing from a spawner to its spawnees
  */
-bool PAG::addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
+TDForkPE* PAG::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadFork, cs))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new TDForkPE(srcNode, dstNode, cs));
+        return NULL;
+    else {
+    	TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs);
+        addEdge(srcNode,dstNode, forkPE);
+        return forkPE;
+    }
 }
 
 /*!
  * Add Thread fork edge for parameter passing from a spawnee back to its spawners
  */
-bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
+TDJoinPE* PAG::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::ThreadJoin, cs))
-        return false;
-    else
-        return addEdge(srcNode,dstNode, new TDJoinPE(srcNode, dstNode, cs));
+        return NULL;
+    else{
+    	TDJoinPE* joinPE = new TDJoinPE(srcNode, dstNode, cs);
+        addEdge(srcNode,dstNode, joinPE);
+        return joinPE;
+    }
 }
 
 
@@ -190,104 +220,53 @@ bool PAG::addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs) {
  * Find the base node id of src and connect base node to dst node
  * Create gep offset:  (offset + baseOff <nested struct gep size>)
  */
-bool PAG::addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep) {
+GepPE* PAG::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep) {
 
     PAGNode* node = getPAGNode(src);
     if (!constGep || node->hasIncomingVariantGepEdge()) {
         /// Since the offset from base to src is variant,
         /// the new gep edge being created is also a VariantGepPE edge.
-        return addVariantGepEdge(src, dst);
+        return addVariantGepPE(src, dst);
     }
     else {
-        return addNormalGepEdge(src, dst, ls);
+        return addNormalGepPE(src, dst, ls);
     }
 }
 
 /*!
  * Add normal (Gep) edge
  */
-bool PAG::addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls) {
+NormalGepPE* PAG::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls) {
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     PAGNode* baseNode = getPAGNode(getBaseValNode(src));
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(baseNode, dstNode, PAGEdge::NormalGep))
-        return false;
-    else
-        return addEdge(baseNode, dstNode, new NormalGepPE(baseNode, dstNode, ls+baseLS));
+        return NULL;
+    else {
+    	NormalGepPE* gepPE = new NormalGepPE(baseNode, dstNode, ls+baseLS);
+        addEdge(baseNode, dstNode, gepPE);
+        return gepPE;
+    }
 }
 
 /*!
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
  */
-bool PAG::addVariantGepEdge(NodeID src, NodeID dst) {
+VariantGepPE* PAG::addVariantGepPE(NodeID src, NodeID dst) {
 
     PAGNode* baseNode = getPAGNode(getBaseValNode(src));
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(baseNode, dstNode, PAGEdge::VariantGep))
-        return false;
-    else
-        return addEdge(baseNode, dstNode, new VariantGepPE(baseNode, dstNode));
-}
-
-/*!
- * Add global black hole address edge
- */
-bool PAG::addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
-    const Value* cval = curVal;
-    const BasicBlock* cbb = curBB;
-    setCurrentLocation(int2Ptrce,NULL);
-    bool added = addBlackHoleAddrEdge(node);
-    setCurrentLocation(cval,cbb);
-    return added;
-}
-
-/*!
- * Add black hole Address edge for formal params
- */
-bool PAG::addFormalParamBlackHoleAddrEdge(NodeID node, const Argument *arg)
-{
-    const Value* cval = curVal;
-    const BasicBlock* cbb = curBB;
-    setCurrentLocation(arg,&(arg->getParent()->getEntryBlock()));
-    bool added = addBlackHoleAddrEdge(node);
-    setCurrentLocation(cval,cbb);
-    return added;
+        return NULL;
+    else {
+    	VariantGepPE* gepPE = new VariantGepPE(baseNode, dstNode);
+        addEdge(baseNode, dstNode, gepPE);
+        return gepPE;
+    }
 }
 
 
-/*!
- * Add a temp field value node according to base value and offset
- * this node is after the initial node method, it is out of scope of symInfo table
- */
-NodeID PAG::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx) {
-    NodeID base = getBaseValNode(getValueNode(val));
-    NodeLocationSetMap::iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
-    if (iter == GepValNodeMap.end()) {
-        /*
-         * getGepValNode can only be called from two places:
-         * 1. PAGBuilder::addComplexConsForExt to handle external calls
-         * 2. PAGBuilder::getGlobalVarField to initialize global variable
-         * so curVal can only be
-         * 1. Instruction
-         * 2. GlobalVariable
-         */
-        assert((SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
-        const std::vector<FieldInfo> &fieldinfo = symInfo->getFlattenFieldInfoVec(baseType);
-        const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
-
-        // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
-        // We preserve the current BB information to restore it after creating the gepNode
-        const Value* cval = pag->getCurrentValue();
-        const BasicBlock* cbb = pag->getCurrentBB();
-        pag->setCurrentLocation(curVal, NULL);
-        NodeID gepNode= addGepValNode(val,ls,nodeNum,type,fieldidx);
-        addGepEdge(base, gepNode, ls, true);
-        pag->setCurrentLocation(cval, cbb);
-        return gepNode;
-    } else
-        return iter->second;
-}
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
@@ -393,41 +372,6 @@ bool PAG::hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const I
     return PAGEdgeKindToSetMap[kind].find(&edge) != PAGEdgeKindToSetMap[kind].end();
 }
 
-/*
- * curVal   <-------->  PAGEdge
- * Instruction          Any Edge
- * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
- * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
- *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
- * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr PAG::addNullPtrNode)
- *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr PAG::addNullPtrNode)
- * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
- *                      GepEdge   (PAGBuilder::getGlobalVarField)
- * Function             AddrEdge  (PAGBuilder::visitGlobal)
- * Constant             StoreEdge (PAGBuilder::InitialGlobal)
- */
-void PAG::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
-    assert(curVal && "current Val is NULL?");
-    edge->setBB(curBB);
-    edge->setValue(curVal);
-    if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal)) {
- 	/// We assume every GepValPN and its GepPE are unique across whole program
-	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
-		assert(curBB && "instruction does not have a basic block??");
-		addToInstPAGEdgeList(curInst,edge);
-    } else if (SVFUtil::isa<Argument>(curVal)) {
-        assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
-    } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
-        if (!curBB)
-            globPAGEdgesSet.insert(edge);
-    } else if (SVFUtil::isa<GlobalVariable>(curVal) ||
-               SVFUtil::isa<Function>(curVal) ||
-			   SVFUtil::isa<Constant>(curVal)) {
-        globPAGEdgesSet.insert(edge);
-    } else {
-        assert(false && "what else value can we have?");
-    }
-}
 
 /*!
  * Add a PAG edge into edge map
@@ -446,8 +390,6 @@ bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge) {
 	    totalPTAPAGEdge++;
 		PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
 	}
-	if (!SVFModule::pagReadFromTXT())
-		setCurrentBBAndValueForPAGEdge(edge);
     return true;
 }
 

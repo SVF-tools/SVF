@@ -40,12 +40,16 @@ class SVFModule;
  *  PAG Builder
  */
 class PAGBuilder: public llvm::InstVisitor<PAGBuilder> {
+
 private:
     PAG* pag;
     SVFModule svfMod;
+    const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
+    const Value* curVal;	///< Current Value during PAG construction when visiting the module
+
 public:
     /// Constructor
-    PAGBuilder(): pag(PAG::getPAG()) {
+    PAGBuilder(): pag(PAG::getPAG()), curBB(NULL),curVal(NULL){
     }
     /// Destructor
     virtual ~PAGBuilder() {
@@ -188,6 +192,112 @@ public:
         // TODO: ignore here:
     }
     //}@
+
+    /// Set current basic block in order to keep track of control flow information
+    inline void setCurrentLocation(const Value* val, const BasicBlock* bb) {
+        curBB = bb;
+        curVal = val;
+    }
+    inline const Value *getCurrentValue() const {
+        return curVal;
+    }
+    inline const BasicBlock *getCurrentBB() const {
+        return curBB;
+    }
+
+    /// Add global black hole Address edge
+    bool addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
+        const Value* cval = getCurrentValue();
+        const BasicBlock* cbb = getCurrentBB();
+        setCurrentLocation(int2Ptrce,NULL);
+        bool added = pag->addBlackHoleAddrEdge(node);
+        setCurrentLocation(cval,cbb);
+        return added;
+    }
+
+    /// Add NullPtr PAGNode
+    inline NodeID addNullPtrNode() {
+        NodeID nullPtr = pag->addDummyValNode(pag->getNullPtr());
+        /// let all undef value or non-determined pointers points-to black hole
+        LLVMContext &cxt = pag->getModule().getContext();
+        ConstantPointerNull *constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
+        setCurrentLocation(constNull, NULL);
+        pag->addBlackHoleAddrEdge(pag->getBlkPtr());
+        return nullPtr;
+    }
+
+    NodeID getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
+
+    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
+
+    /// Add Address edge
+    inline void addAddrEdge(NodeID src, NodeID dst){
+    	if(AddrPE* edge = pag->addAddrPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Copy edge
+    inline void addCopyEdge(NodeID src, NodeID dst){
+    	if(CopyPE* edge = pag->addCopyPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Copy edge
+    inline void addCmpEdge(NodeID src, NodeID dst){
+    	if(CmpPE* edge = pag->addCmpPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Copy edge
+    inline void addBinaryOPEdge(NodeID src, NodeID dst){
+    	if(BinaryOPPE* edge = pag->addBinaryOPPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Load edge
+    inline void addLoadEdge(NodeID src, NodeID dst){
+    	if(LoadPE* edge = pag->addLoadPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Store edge
+    inline void addStoreEdge(NodeID src, NodeID dst){
+    	if(StorePE* edge = pag->addStorePE(src,dst,curVal)){
+    		setCurrentBBAndValueForPAGEdge(edge);
+    	}
+    }
+    /// Add Call edge
+    inline void addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+    	if(CallPE* edge = pag->addCallPE(src,dst,cs))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Return edge
+    inline void addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs){
+    	if(RetPE* edge = pag->addRetPE(src,dst,cs))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Gep edge
+    inline void addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep){
+    	if(GepPE* edge = pag->addGepPE(src,dst,ls, constGep))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Offset(Gep) edge
+    void addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls){
+    	if(NormalGepPE* edge = pag->addNormalGepPE(src,dst,ls))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Variant(Gep) edge
+    inline void addVariantGepEdge(NodeID src, NodeID dst){
+    	if(VariantGepPE* edge = pag->addVariantGepPE(src,dst))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Thread fork edge for parameter passing
+    inline void addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+    	if(TDForkPE* edge = pag->addThreadForkPE(src,dst,cs))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Thread join edge for parameter passing
+    inline void addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+    	if(TDJoinPE* edge = pag->addThreadJoinPE(src,dst,cs))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
+    //@}
+
 };
 
 #endif /* PAGBUILDER_H_ */

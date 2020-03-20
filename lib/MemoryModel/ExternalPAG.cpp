@@ -86,7 +86,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
         if (SVFUtil::isa<PointerType>(function->getReturnType())) {
             if (retNode != NULL) {
                 RetBlockNode* icfgNode = pag->getICFG()->getRetBlockNode(cs->getInstruction());
-                pag->addRetEdge(retNode->getId(), dstrec, icfgNode);
+                pag->addRetPE(retNode->getId(), dstrec, icfgNode);
             }
         } else {
             // This is a int2ptr cast during parameter passing
@@ -118,10 +118,12 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
 
         if (SVFUtil::isa<PointerType>((*itA)->getType())) {
             CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs->getInstruction());
-            pag->addCallEdge(actualArgNodeId, formalArgNode->getId(), icfgNode);
+            pag->addCallPE(actualArgNodeId, formalArgNode->getId(), icfgNode);
         } else {
             // This is a int2ptr cast during parameter passing
-            pag->addFormalParamBlackHoleAddrEdge(formalArgNode->getId(), &*itF);
+            //addFormalParamBlackHoleAddrEdge(formalArgNode->getId(), &*itF);
+            assert(false && "you need to set the current location of this PAGEdge");
+            pag->addBlackHoleAddrEdge(formalArgNode->getId());
         }
         // TODO proofread.
     }
@@ -377,25 +379,25 @@ bool ExternalPAG::addExternalPAG(Function *function) {
         NodeID dstId = dstNode->getId();
 
         if (extEdgeType == "addr") {
-            pag->addAddrEdge(srcId, dstId);
+            pag->addAddrPE(srcId, dstId);
         } else if (extEdgeType == "copy") {
-            pag->addCopyEdge(srcId, dstId);
+            pag->addCopyPE(srcId, dstId);
         } else if (extEdgeType == "load") {
-            pag->addLoadEdge(srcId, dstId);
+            pag->addLoadPE(srcId, dstId);
         } else if (extEdgeType == "store") {
-            pag->addStoreEdge(srcId, dstId);
+            pag->addStorePE(srcId, dstId, NULL);
         } else if (extEdgeType == "gep") {
-            pag->addNormalGepEdge(srcId, dstId, LocationSet(extOffsetOrCSId));
+            pag->addNormalGepPE(srcId, dstId, LocationSet(extOffsetOrCSId));
         } else if (extEdgeType == "variant-gep") {
-            pag->addVariantGepEdge(srcId, dstId);
+            pag->addVariantGepPE(srcId, dstId);
         } else if (extEdgeType == "call") {
             pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, NULL));
         } else if (extEdgeType == "ret") {
             pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, NULL));
         } else if (extEdgeType == "cmp") {
-            pag->addCmpEdge(srcId, dstId);
+            pag->addCmpPE(srcId, dstId);
         } else if (extEdgeType == "binary-op") {
-            pag->addBinaryOPEdge(srcId, dstId);
+            pag->addBinaryOPPE(srcId, dstId);
         } else {
             outs() << "Bad edge type found during extpag addition\n";
         }

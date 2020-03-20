@@ -95,8 +95,6 @@ private:
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
     bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
-    const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
-    const Value* curVal;	///< Current Value during PAG construction when visiting the module
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
     NodeSet candidatePointers;
@@ -169,17 +167,6 @@ public:
     }
     /// Get/set methods to get control flow information of a PAGEdge
     //@{
-    /// Set current basic block in order to keep track of control flow information
-    inline void setCurrentLocation(const Value* val, const BasicBlock* bb) {
-        curBB = bb;
-        curVal = val;
-    }
-    inline const Value *getCurrentValue() const {
-        return curVal;
-    }
-    inline const BasicBlock *getCurrentBB() const {
-        return curBB;
-    }
     /// Get edges set according to its kind
     inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind) {
         return PAGEdgeKindToSetMap[kind];
@@ -347,6 +334,14 @@ public:
     }
     //@}
 
+    inline NodeID getGepValNode(NodeID base, const LocationSet& ls) const {
+        NodeLocationSetMap::const_iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
+    	if(iter==GepValNodeMap.end())
+    		return -1;
+    	else
+    		return iter->second;
+    }
+
     /// Get all callsites
     inline const CallSiteSet& getCallSiteSet() const {
         return symInfo->getCallSiteSet();
@@ -446,8 +441,6 @@ public:
     inline NodeID getVarargNode(const Function *func) const {
         return symInfo->getVarargSym(func);
     }
-    /// Get a field PAG Value node according to base value and offset
-    NodeID getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
     /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Get a field obj PAG node according to a mem obj and a given offset
@@ -578,6 +571,7 @@ public:
         PAGNode *node = new VarArgPN(val,i);
         return addNode(node,i);
     }
+
     /// Add a temp field value node, this method can only invoked by getGepValNode
     NodeID addGepValNode(const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
     /// Add a field obj node, this method can only invoked by getGepObjNode
@@ -613,15 +607,6 @@ public:
     inline NodeID addBlackholePtrNode() {
         return addDummyValNode(getBlkPtr());
     }
-    inline NodeID addNullPtrNode() {
-        NodeID nullPtr = addDummyValNode(getNullPtr());
-        /// let all undef value or non-determined pointers points-to black hole
-        LLVMContext &cxt = getModule().getContext();
-        ConstantPointerNull *constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
-        setCurrentLocation(constNull, NULL);
-        addBlackHoleAddrEdge(symInfo->blkPtrSymID());
-        return nullPtr;
-    }
     //@}
 
     /// Add a value (pointer) node
@@ -645,46 +630,37 @@ public:
     //@{
     /// Add a PAG edge
     bool addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge);
-    void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     //// Return true if this edge exits
     bool hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
     bool hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
 
     /// Add Address edge
-    bool addAddrEdge(NodeID src, NodeID dst);
+    AddrPE* addAddrPE(NodeID src, NodeID dst);
     /// Add Copy edge
-    bool addCopyEdge(NodeID src, NodeID dst);
+    CopyPE* addCopyPE(NodeID src, NodeID dst);
     /// Add Copy edge
-    bool addCmpEdge(NodeID src, NodeID dst);
+    CmpPE* addCmpPE(NodeID src, NodeID dst);
     /// Add Copy edge
-    bool addBinaryOPEdge(NodeID src, NodeID dst);
+    BinaryOPPE* addBinaryOPPE(NodeID src, NodeID dst);
     /// Add Load edge
-    bool addLoadEdge(NodeID src, NodeID dst);
+    LoadPE* addLoadPE(NodeID src, NodeID dst);
     /// Add Store edge
-    bool addStoreEdge(NodeID src, NodeID dst);
+    StorePE* addStorePE(NodeID src, NodeID dst, const Value* val);
     /// Add Call edge
-    bool addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
+    CallPE* addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Return edge
-    bool addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs);
+    RetPE* addRetPE(NodeID src, NodeID dst, const RetBlockNode* cs);
     /// Add Gep edge
-    bool addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
+    GepPE* addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
-    bool addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    NormalGepPE* addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Variant(Gep) edge
-    bool addVariantGepEdge(NodeID src, NodeID dst);
+    VariantGepPE* addVariantGepPE(NodeID src, NodeID dst);
     /// Add Thread fork edge for parameter passing
-    bool addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
+    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Thread join edge for parameter passing
-    bool addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs);
-    //@}
-
-    /// Add global edges
-    //{@
-    /// Add global black hole Address edge
-    bool addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce);
-    /// Add black hole Address edge for formal params
-    bool addFormalParamBlackHoleAddrEdge(NodeID node, const Argument *arg);
+    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)

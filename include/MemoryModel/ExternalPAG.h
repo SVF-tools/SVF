@@ -115,6 +115,7 @@ public:
     /// the main PAG. function is used as a key for future lookups.
     /// Returns true on success, false otherwise (incl. if it already exists).
     bool addExternalPAG(Function *function);
+
 };
 
 #endif  /* EXTERNALPAG_H_ */
