@@ -259,7 +259,12 @@ public:
     }
     /// Add Store edge
     inline void addStoreEdge(NodeID src, NodeID dst){
-    	if(StorePE* edge = pag->addStorePE(src,dst,curVal)){
+    	IntraBlockNode* node;
+    	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
+    		node = pag->getICFG()->getIntraBlockNode(inst);
+		else
+			node = NULL;
+    	if(StorePE* edge = pag->addStorePE(src,dst,node)){
     		setCurrentBBAndValueForPAGEdge(edge);
     	}
     }

@@ -45,10 +45,10 @@ static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),
 void LeakChecker::initSrcs() {
 
     PAG* pag = getPAG();
-
+    ICFG* icfg = pag->getICFG();
     for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it) {
-        CallSite cs = it->first;
+        CallSite cs = it->first->getCallSite();
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction p = malloc is in a dead function, then program won't allocate this memory
         if(isPtrInDeadFunction(cs.getInstruction()))
@@ -58,10 +58,11 @@ void LeakChecker::initSrcs() {
         if(isSourceLikeFun(fun)) {
             CSWorkList worklist;
             SVFGNodeBS visited;
-            worklist.push(it->first);
+            worklist.push(it->first->getCallSite());
             while (!worklist.empty()) {
                 CallSite cs = worklist.pop();
-                const PAGNode* pagNode = pag->getCallSiteRet(cs);
+                RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs.getInstruction());
+                const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                 const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                 if(visited.test(node->getId())==0)
                     visited.set(node->getId());
@@ -98,12 +99,12 @@ void LeakChecker::initSnks() {
 
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const Function* fun = getCallee(it->first);
+        const Function* fun = getCallee(it->first->getCallSite());
         if(isSinkLikeFun(fun)) {
             PAG::PAGNodeList& arglist =	it->second;
             assert(!arglist.empty() && "no actual parameter at deallocation site?");
             /// we only pick the first parameter of all the actual parameters
-            const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(),it->first);
+            const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(),it->first->getCallSite());
             addToSinks(snk);
         }
     }

@@ -560,12 +560,15 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     DBOUT(DPAGBuild,
           outs() << "process callsite " << *cs.getInstruction() << "\n");
 
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+
     /// Collect callsite arguments and returns
     for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
-        pag->addCallSiteArgs(cs,pag->getPAGNode(getValueNode(*itA)));
+        pag->addCallSiteArgs(callBlockNode,pag->getPAGNode(getValueNode(*itA)));
 
     if(!cs.getType()->isVoidTy())
-        pag->addCallSiteRets(cs,pag->getPAGNode(getValueNode(cs.getInstruction())));
+        pag->addCallSiteRets(retBlockNode,pag->getPAGNode(getValueNode(cs.getInstruction())));
 
     const Function *callee = getCallee(cs);
 

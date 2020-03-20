@@ -161,13 +161,13 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes() {
     PAG* pag = PAG::getPAG();
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const Function* fun = getCallee(it->first);
+        const Function* fun = getCallee(it->first->getCallSite());
         if(SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                 || SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
             PAG::PAGNodeList& arglist =	it->second;
             const PAGNode* pagNode = arglist.front();
-            svfg->addActualParmVFGNode(pagNode,it->first);
-            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmVFGNode(pagNode,it->first)->getId());
+            svfg->addActualParmVFGNode(pagNode,it->first->getCallSite());
+            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmVFGNode(pagNode,it->first->getCallSite())->getId());
         }
     }
 }

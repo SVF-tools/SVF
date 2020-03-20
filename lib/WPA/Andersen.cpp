@@ -496,7 +496,8 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
 
 void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
     assert(SVFUtil::getCallee(cs) == NULL && "not an indirect callsite?");
-    const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
     if(it != callsite2DummyValPN.end()){
@@ -525,12 +526,15 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePa
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(cs)){
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode)){
         heapAllocatorViaIndCall(cs,cpySrcNodes);
     }
 
-    if (pag->funHasRet(F) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode)) {
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(F);
         if (cs_return->isPointer() && fun_return->isPointer()) {
             NodeID dstrec = sccRepNode(cs_return->getId());
@@ -544,10 +548,10 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePa
         }
     }
 
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(F)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(F)) {
 
         // connect actual and formal param
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
+        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");

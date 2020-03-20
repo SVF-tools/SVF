@@ -40,7 +40,6 @@ static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
 u64_t PAGEdge::callEdgeLabelCounter = 0;
 u64_t PAGEdge::storeEdgeLabelCounter = 0;
 PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
-PAGEdge::Value2LabelMap PAGEdge::value2LabelMap;
 
 PAG* PAG::pag = NULL;
 
@@ -132,7 +131,7 @@ LoadPE* PAG::addLoadPE(NodeID src, NodeID dst) {
  * Add Store edge
  * Note that two store instructions may share the same Store PAGEdge
  */
-StorePE* PAG::addStorePE(NodeID src, NodeID dst, const Value* curVal) {
+StorePE* PAG::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasIntraEdge(srcNode,dstNode, PAGEdge::Store))

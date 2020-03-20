@@ -55,8 +55,8 @@ public:
     typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
     typedef llvm::DenseMap<const Function*,PAGNodeList> FunToArgsListMap;
-    typedef std::map<CallSite,PAGNodeList> CSToArgsListMap;
-    typedef std::map<CallSite,const PAGNode*> CSToRetMap;
+    typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
+    typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
     typedef llvm::DenseMap<const Function*,const PAGNode*> FunToRetMap;
     typedef llvm::DenseMap<const Function*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef llvm::DenseMap<const BasicBlock*,PAGEdgeList> BB2PAGEdgesMap;
@@ -254,16 +254,14 @@ public:
         funRetMap[fun] = ret;
     }
     /// Add callsite arguments
-    inline void addCallSiteArgs(CallSite cs,const PAGNode* arg) {
-    	CallBlockNode* callBlockNode = icfg->getCallBlockNode(cs.getInstruction());
+    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const PAGNode* arg) {
     	callBlockNode->addActualParms(arg);
-        callSiteArgsListMap[cs].push_back(arg);
+        callSiteArgsListMap[callBlockNode].push_back(arg);
     }
     /// Add callsite returns
-    inline void addCallSiteRets(CallSite cs,const PAGNode* arg) {
-    	RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs.getInstruction());
+    inline void addCallSiteRets(RetBlockNode* retBlockNode,const PAGNode* arg) {
     	retBlockNode->addActualRet(arg);
-        callSiteRetMap[cs]= arg;
+        callSiteRetMap[retBlockNode]= arg;
     }
     /// Function has arguments list
     inline bool hasFunArgsMap(const Function* func) const {
@@ -280,7 +278,7 @@ public:
         return it->second;
     }
     /// Callsite has argument list
-    inline bool hasCallSiteArgsMap(const CallSite cs) const {
+    inline bool hasCallSiteArgsMap(const CallBlockNode* cs) const {
         return (callSiteArgsListMap.find(cs) != callSiteArgsListMap.end());
     }
     /// Get callsite argument list
@@ -288,7 +286,7 @@ public:
         return callSiteArgsListMap;
     }
     /// Get callsite argument list
-    inline const PAGNodeList& getCallSiteArgsList(const CallSite cs) const {
+    inline const PAGNodeList& getCallSiteArgsList(const CallBlockNode* cs) const {
         CSToArgsListMap::const_iterator it = callSiteArgsListMap.find(cs);
         assert(it != callSiteArgsListMap.end() && "this call site doesn't have arguments");
         return it->second;
@@ -298,12 +296,12 @@ public:
         return callSiteRetMap;
     }
     /// Get callsite return
-    inline const PAGNode* getCallSiteRet(const CallSite cs) const {
+    inline const PAGNode* getCallSiteRet(const RetBlockNode* cs) const {
         CSToRetMap::const_iterator it = callSiteRetMap.find(cs);
         assert(it != callSiteRetMap.end() && "this call site doesn't have return");
         return it->second;
     }
-    inline bool callsiteHasRet(const CallSite cs) const {
+    inline bool callsiteHasRet(const RetBlockNode* cs) const {
         return callSiteRetMap.find(cs) != callSiteRetMap.end();
     }
     /// Get function return list
@@ -655,7 +653,7 @@ public:
     /// Add Load edge
     LoadPE* addLoadPE(NodeID src, NodeID dst);
     /// Add Store edge
-    StorePE* addStorePE(NodeID src, NodeID dst, const Value* val);
+    StorePE* addStorePE(NodeID src, NodeID dst, const IntraBlockNode* val);
     /// Add Call edge
     CallPE* addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Return edge

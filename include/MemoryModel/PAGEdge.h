@@ -122,9 +122,9 @@ public:
 
     /// Compute the unique edgeFlag value from edge kind and store Instruction.
     /// Two store instructions may share the same StorePAGEdge
-    static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const Value* store) {
-        Value2LabelMap::const_iterator iter = value2LabelMap.find(store);
-        u64_t label = (iter != value2LabelMap.end()) ?
+    static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const ICFGNode* store) {
+        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
+        u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : storeEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
     }
@@ -135,9 +135,7 @@ public:
 
 private:
     typedef llvm::DenseMap<const ICFGNode*, u32_t> Inst2LabelMap;
-    typedef llvm::DenseMap<const Value*, u32_t> Value2LabelMap;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
-    static Value2LabelMap value2LabelMap; ///< Store Instruction or const expr to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
 };
@@ -280,7 +278,7 @@ public:
     //@}
 
     /// constructor
-	StorePE(PAGNode* s, PAGNode* d, const Value* st) :
+	StorePE(PAGNode* s, PAGNode* d, const IntraBlockNode* st) :
 			PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st)) {
 	}
 };

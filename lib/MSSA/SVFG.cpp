@@ -362,9 +362,12 @@ void SVFG::dump(const std::string& file, bool simple) {
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(cs, callee);
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+
     // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(callee)) {
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
+        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
         PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -389,8 +392,8 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
     }
 
     // Find inter direct return edges between actual return and formal return.
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    if (pag->funHasRet(callee) && pag->callsiteHasRet(retBlockNode)) {
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
         if (cs_return->isPointer() && fun_return->isPointer())
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);

@@ -400,10 +400,13 @@ void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist) {
 void MRGenerator::collectCallSitePts(CallSite cs) {
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
+    PAG* pag = pta->getPAG();
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
 
     WorkList worklist;
-    if (pta->getPAG()->hasCallSiteArgsMap(cs)) {
-        const PAG::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(cs);
+    if (pag->hasCallSiteArgsMap(callBlockNode)) {
+        const PAG::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
         for(PAG::PAGNodeList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA) {
             const PAGNode* node = *itA;
             if(node->isPointer())
@@ -421,8 +424,8 @@ void MRGenerator::collectCallSitePts(CallSite cs) {
     /// collect the pts chain of the return argument
     NodeBS& retPts = csToCallSiteRetPtsMap[cs];
 
-    if (pta->getPAG()->callsiteHasRet(cs)) {
-        const PAGNode* node = pta->getPAG()->getCallSiteRet(cs);
+    if (pta->getPAG()->callsiteHasRet(retBlockNode)) {
+        const PAGNode* node = pta->getPAG()->getCallSiteRet(retBlockNode);
         if(node->isPointer()){
             PointsTo& tmp = pta->getPts(node->getId());
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)

@@ -128,7 +128,7 @@ void VFG::addVFGNodes() {
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
             if (isInterestedPAGNode(pagNode))
-                addActualParmVFGNode(pagNode,it->first);
+                addActualParmVFGNode(pagNode,it->first->getCallSite());
         }
     }
 
@@ -141,7 +141,7 @@ void VFG::addVFGNodes() {
         if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
             continue;
 
-        addActualRetVFGNode(it->second,it->first);
+        addActualRetVFGNode(it->second,it->first->getCallSite());
     }
 
     // initialize formal parameter nodes
@@ -476,10 +476,13 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
 void VFG::connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSetTy& edges)
 {
     PAG * pag = PAG::getPAG();
+    ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(cs, callee);
+    CallBlockNode* callBlockNode = icfg->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs.getInstruction());
     // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(callee)) {
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
+        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
         PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -504,8 +507,8 @@ void VFG::connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSet
     }
 
     // connect actual return and formal return
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    if (pag->funHasRet(callee) && pag->callsiteHasRet(retBlockNode)) {
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
         if (cs_return->isPointer() && fun_return->isPointer())
             connectFRetAndARet(fun_return, cs_return, csId, edges);
