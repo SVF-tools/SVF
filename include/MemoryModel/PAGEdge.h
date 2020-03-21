@@ -452,8 +452,8 @@ public:
     inline const CallBlockNode* getCallInst() const {
         return inst;
     }
-    inline CallSite getCallSite() const {
-        return inst->getCallSite();
+    inline const CallBlockNode* getCallSite() const {
+        return inst;
     }
     //@}
 };
@@ -468,7 +468,7 @@ private:
     RetPE(const RetPE &);  ///< place holder
     void operator=(const RetPE &); ///< place holder
 
-    const RetBlockNode* inst;		/// the callsite instruction return to
+    const CallBlockNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -484,17 +484,17 @@ public:
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const RetBlockNode* i) :
+    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
         PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i) {
     }
 
     /// Get method for call instruction at caller
     //@{
-    inline const RetBlockNode* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const {
         return inst;
     }
-    inline CallSite getCallSite() const {
-        return inst->getCallSite();
+    inline const CallBlockNode* getCallSite() const {
+        return inst;
     }
     //@}
 };
@@ -534,8 +534,8 @@ public:
     inline const CallBlockNode* getCallInst() const {
         return inst;
     }
-    inline CallSite getCallSite() const {
-        return inst->getCallSite();
+    inline const CallBlockNode* getCallSite() const {
+        return inst;
     }
     //@}
 };
@@ -576,8 +576,8 @@ public:
     inline const CallBlockNode* getCallInst() const {
         return inst;
     }
-    inline CallSite getCallSite() const {
-        return inst->getCallSite();
+    inline const CallBlockNode* getCallSite() const {
+        return inst;
     }
     //@}
 };

@@ -296,6 +296,11 @@ public:
         return cs.getCaller();
     }
 
+    /// Return callsite
+    inline bool isIndirectCall() const {
+        return NULL == SVFUtil::getCallee(cs);
+    }
+
     /// Return the set of actual parameters
     inline const ActualParmVFGNodeVec &getActualParms() const {
         return APNodes;
@@ -335,8 +340,10 @@ class RetBlockNode : public InterBlockNode {
 private:
     CallSite cs;
     const PAGNode *actualRet;
+    const CallBlockNode* callBlockNode;
 public:
-    RetBlockNode(NodeID id, CallSite c) : InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL) {
+    RetBlockNode(NodeID id, CallSite c, CallBlockNode* cb) :
+    	InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb) {
         bb = cs.getInstruction()->getParent();
     }
 
@@ -345,6 +352,9 @@ public:
         return cs;
     }
 
+    inline const CallBlockNode* getCallBlockNode() const{
+    	return callBlockNode;
+    }
     /// Return actual return parameter
     inline const PAGNode *getActualRet() const {
         return actualRet;

@@ -162,7 +162,7 @@ void SVFG::connectIndirectSVFGEdges() {
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = (*it)->getCallSite();
+                const CallBlockNode* cs = *it;
                 if(!mssa->hasMU(cs))
                     continue;
                 ActualINSVFGNodeSet& actualIns = getActualINSVFGNodes(cs);
@@ -177,7 +177,7 @@ void SVFG::connectIndirectSVFGEdges() {
             const MemSSA::RETMU* retMu = formalOut->getRetMU();
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it) {
-                CallSite cs = (*it)->getCallSite();
+                const CallBlockNode* cs = *it;
                 if(!mssa->hasCHI(cs))
                     continue;
                 ActualOUTSVFGNodeSet& actualOuts = getActualOUTSVFGNodes(cs);
@@ -359,11 +359,10 @@ void SVFG::dump(const std::string& file, bool simple) {
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode, const Function* callee, SVFGEdgeSetTy& edges)
 {
-    CallSiteID csId = getCallSiteID(cs, callee);
-    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    CallSiteID csId = getCallSiteID(callBlockNode, callee);
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
@@ -375,7 +374,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
             if (fun_arg->isPointer() && cs_arg->isPointer())
-                getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, cs, csId, edges);
+                getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
         if (callee->isVarArg()) {
@@ -385,7 +384,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
                 for (; csArgIt != csArgEit; csArgIt++) {
                     const PAGNode *cs_arg = *csArgIt;
                     if (cs_arg->isPointer())
-                        getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, cs, csId, edges);
+                        getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callBlockNode, csId, edges);
                 }
             }
         }
@@ -400,8 +399,8 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
     }
 
     // Find inter indirect call edges between actual-in and formal-in svfg nodes.
-    if (hasFuncEntryChi(callee) && hasCallSiteMu(cs)) {
-        SVFG::ActualINSVFGNodeSet& actualInNodes = getActualINSVFGNodes(cs);
+    if (hasFuncEntryChi(callee) && hasCallSiteMu(callBlockNode)) {
+        SVFG::ActualINSVFGNodeSet& actualInNodes = getActualINSVFGNodes(callBlockNode);
         for(SVFG::ActualINSVFGNodeSet::iterator ai_it = actualInNodes.begin(),
                 ai_eit = actualInNodes.end(); ai_it!=ai_eit; ++ai_it) {
             ActualINSVFGNode * actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(*ai_it));
@@ -410,8 +409,8 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
     }
 
     // Find inter indirect return edges between actual-out and formal-out svfg nodes.
-    if (hasFuncRetMu(callee) && hasCallSiteChi(cs)) {
-        SVFG::ActualOUTSVFGNodeSet& actualOutNodes = getActualOUTSVFGNodes(cs);
+    if (hasFuncRetMu(callee) && hasCallSiteChi(callBlockNode)) {
+        SVFG::ActualOUTSVFGNodeSet& actualOutNodes = getActualOUTSVFGNodes(callBlockNode);
         for(SVFG::ActualOUTSVFGNodeSet::iterator ao_it = actualOutNodes.begin(),
                 ao_eit = actualOutNodes.end(); ao_it!=ao_eit; ++ao_it) {
             ActualOUTSVFGNode* actualOut = SVFUtil::cast<ActualOUTSVFGNode>(getSVFGNode(*ao_it));
@@ -424,7 +423,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function*
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void SVFG::connectCallerAndCallee(CallSite cs, const Function* callee, SVFGEdgeSetTy& edges)
+void SVFG::connectCallerAndCallee(const CallBlockNode* cs, const Function* callee, SVFGEdgeSetTy& edges)
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
@@ -489,18 +488,18 @@ const Function* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const {
  */
 Instruction* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const {
     if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node)) {
-        return ar->getCallSite().getInstruction();
+        return ar->getCallSite()->getCallSite().getInstruction();
     }
     else if(const InterPHISVFGNode* phi = SVFUtil::dyn_cast<InterPHISVFGNode>(node)) {
         if(phi->isActualRetPHI())
-            return phi->getCallSite().getInstruction();
+            return phi->getCallSite()->getCallSite().getInstruction();
     }
     else if(const ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node)) {
-        return ao->getCallSite().getInstruction();
+        return ao->getCallSite()->getCallSite().getInstruction();
     }
     else if(const InterMSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<InterMSSAPHISVFGNode>(node)) {
         if(mphi->isActualOUTPHI())
-            return mphi->getCallSite().getInstruction();
+            return mphi->getCallSite()->getCallSite().getInstruction();
     }
     return NULL;
 }
@@ -567,11 +566,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node)) {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node)) {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node)) {
             rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
@@ -587,11 +586,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(ActualINSVFGNode* ai = SVFUtil::dyn_cast<ActualINSVFGNode>(node)) {
             rawstr << "CSMU\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite().getInstruction())  << "]";
+            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite().getInstruction())  << "]";
         }
         else if(ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node)) {
             rawstr << "CSCHI\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite().getInstruction())  << "]";
+            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite().getInstruction())  << "]";
         }
         else if(MSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node)) {
             rawstr << "MSSAPHI\n";
@@ -676,24 +675,24 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
         else if(ActualINSVFGNode* ai = SVFUtil::dyn_cast<ActualINSVFGNode>(node)) {
             rawstr << "CSMU(" << ai->getCallMU()->getMR()->getMRID() << "V_" << ai->getCallMU()->getVer()->getSSAVersion() << ")\n";
             rawstr << ai->getCallMU()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if(ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node)) {
             rawstr <<  ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getResVer()->getSSAVersion() <<
                    " = CSCHI(MR_" << ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getOpVer()->getSSAVersion() << ")\n";
             rawstr << ao->getCallCHI()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite().getInstruction()) << "]" ;
+            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite().getInstruction()) << "]" ;
         }
         else if(ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node)) {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node)) {
             rawstr << "NullPtr";
         }
         else if (ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node)) {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node)) {
             rawstr << "FRet(" << fr->getRet()->getId() << ")\n";

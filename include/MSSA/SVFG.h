@@ -74,8 +74,8 @@ public:
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef std::map<CallSite, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef std::map<CallSite, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef std::map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef std::map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
     typedef llvm::DenseMap<const Function*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
     typedef llvm::DenseMap<const Function*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
@@ -147,13 +147,13 @@ public:
 	}
 
     /// Get all inter value flow edges of a indirect call site
-    void getInterVFEdgesForIndirectCallSite(const CallSite cs, const Function* callee, SVFGEdgeSetTy& edges);
+    void getInterVFEdgesForIndirectCallSite(const CallBlockNode* cs, const Function* callee, SVFGEdgeSetTy& edges);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
     /// Connect SVFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(CallSite cs, const Function* callee, SVFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(const CallBlockNode* cs, const Function* callee, SVFGEdgeSetTy& edges);
 
     /// Given a pagNode, return its definition site
     inline const SVFGNode* getDefSVFGNode(const PAGNode* pagNode) const {
@@ -165,11 +165,11 @@ public:
 
     /// Has a SVFGNode
     //@{
-    inline bool hasActualINSVFGNodes(CallSite cs) const {
+    inline bool hasActualINSVFGNodes(const CallBlockNode* cs) const {
         return callSiteToActualINMap.find(cs)!=callSiteToActualINMap.end();
     }
 
-    inline bool hasActualOUTSVFGNodes(CallSite cs) const {
+    inline bool hasActualOUTSVFGNodes(const CallBlockNode* cs) const {
         return callSiteToActualOUTMap.find(cs)!=callSiteToActualOUTMap.end();
     }
 
@@ -184,11 +184,11 @@ public:
 
     /// Get SVFGNode set
     //@{
-    inline ActualINSVFGNodeSet& getActualINSVFGNodes(CallSite cs) {
+    inline ActualINSVFGNodeSet& getActualINSVFGNodes(const CallBlockNode* cs) {
         return callSiteToActualINMap[cs];
     }
 
-    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(CallSite cs) {
+    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(const CallBlockNode* cs) {
         return callSiteToActualOUTMap[cs];
     }
 
@@ -249,7 +249,7 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, CallSite cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cs, CallSiteID csId, SVFGEdgeSetTy& edges) {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
         SVFGEdge* edge = hasInterVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
@@ -374,10 +374,10 @@ protected:
     inline bool hasFuncRetMu(const Function * func) const {
         return (funToFormalOUTMap.find(func) != funToFormalOUTMap.end());
     }
-    inline bool hasCallSiteChi(CallSite cs) const {
+    inline bool hasCallSiteChi(const CallBlockNode* cs) const {
         return (callSiteToActualOUTMap.find(cs) != callSiteToActualOUTMap.end());
     }
-    inline bool hasCallSiteMu(CallSite cs) const {
+    inline bool hasCallSiteMu(const CallBlockNode* cs) const {
         return (callSiteToActualINMap.find(cs) != callSiteToActualINMap.end());
     }
     //@}

@@ -651,7 +651,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
     //Does it actually return a ptr?
     if (F->getReturnType()->isVoidTy() == false) {
         NodeID srcret = getReturnNode(F);
-        RetBlockNode* icfgNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
@@ -1148,8 +1148,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
  	/// We assume every GepValPN and its GepPE are unique across whole program
 	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
 		assert(curBB && "instruction does not have a basic block??");
-		IntraBlockNode* intraBlockNode = pag->getICFG()->getIntraBlockNode(curInst);
-		pag->addToInstPAGEdgeList(intraBlockNode,edge);
+		ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
+		pag->addToInstPAGEdgeList(icfgNode,edge);
     } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {

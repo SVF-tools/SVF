@@ -85,7 +85,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
         // Does it actually return a pointer?
         if (SVFUtil::isa<PointerType>(function->getReturnType())) {
             if (retNode != NULL) {
-                RetBlockNode* icfgNode = pag->getICFG()->getRetBlockNode(cs->getInstruction());
+                CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs->getInstruction());
                 pag->addRetPE(retNode->getId(), dstrec, icfgNode);
             }
         } else {

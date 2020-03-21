@@ -136,48 +136,15 @@ public:
     }
 
 	/// Get a basic block ICFGNode
-	inline ICFGNode* getBlockICFGNode(const Instruction* inst) {
-		ICFGNode* node;
-		if(SVFUtil::isNonInstricCallSite(inst))
-			node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
-		else if(SVFUtil::isInstrinsicDbgInst(inst))
-			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
-		else
-			node = getIntraBlockICFGNode(inst);
-
-    	assert (node!=NULL && "no ICFGNode for this instruction?");
-		return node;
-	}
-
-	/// Get a basic block ICFGNode
 	/// TODO:: need to fix the assertions
 	//@{
-	inline CallBlockNode* getCallBlockNode(const Instruction* inst) {
-		assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-		assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-		CallBlockNode* node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
-		if(node==NULL)
-			node = addCallICFGNode(SVFUtil::getLLVMCallSite(inst));
-    	assert (node!=NULL && "no CallBlockNode for this instruction?");
-		return node;
-	}
+	ICFGNode* getBlockICFGNode(const Instruction* inst);
 
-	inline RetBlockNode* getRetBlockNode(const Instruction* inst) {
-		assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
-		assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-		RetBlockNode* node = getRetICFGNode(SVFUtil::getLLVMCallSite(inst));
-		if(node==NULL)
-			node = addRetICFGNode(SVFUtil::getLLVMCallSite(inst));
-    	assert (node!=NULL && "no RetBlockNode for this instruction?");
-		return node;
-	}
+    CallBlockNode* getCallBlockNode(const Instruction* inst);
 
-    inline IntraBlockNode* getIntraBlockNode(const Instruction* inst) {
-    	IntraBlockNode* node = getIntraBlockICFGNode(inst);
-		if(node==NULL)
-			node = addIntraBlockICFGNode(inst);
-    	return node;
-    }
+	RetBlockNode* getRetBlockNode(const Instruction* inst);
+
+    IntraBlockNode* getIntraBlockNode(const Instruction* inst);
     //@}
 
     /// Get/Add IntraBlock ICFGNode
@@ -244,7 +211,8 @@ public:
 		return it->second;
     }
     inline RetBlockNode* addRetICFGNode(CallSite cs) {
-		RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs);
+    	CallBlockNode* callBlockNode = getCallBlockNode(cs.getInstruction());
+		RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs, callBlockNode);
 		addICFGNode(sNode);
 		CSToRetNodeMap[cs] = sNode;
 		return sNode;

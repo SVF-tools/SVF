@@ -117,16 +117,16 @@ bool ProgSlice::isSatisfiableForPairs() {
 CallSite ProgSlice::getCallSite(const SVFGEdge* edge) const {
     assert(edge->isCallVFGEdge() && "not a call svfg edge?");
     if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
-        return getSVFG()->getCallSite(callEdge->getCallSiteId());
+        return getSVFG()->getCallSite(callEdge->getCallSiteId())->getCallSite();
     else
-        return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
+        return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId())->getCallSite();
 }
 CallSite ProgSlice::getRetSite(const SVFGEdge* edge) const {
     assert(edge->isRetVFGEdge() && "not a return svfg edge?");
     if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
-        return getSVFG()->getCallSite(callEdge->getCallSiteId());
+        return getSVFG()->getCallSite(callEdge->getCallSiteId())->getCallSite();
     else
-        return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
+        return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId())->getCallSite();
 }
 
 /*!

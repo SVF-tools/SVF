@@ -172,23 +172,24 @@ public:
         return PTAPAGEdgeKindToSetMap[kind];
     }
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const IntraBlockNode* inst) const {
+    inline bool hasPAGEdgeList(const ICFGNode* inst) const {
         return inst2PAGEdgesMap.find(inst)!=inst2PAGEdgesMap.end();
     }
-    inline bool hasPTAPAGEdgeList(const IntraBlockNode* inst) const {
+    inline bool hasPTAPAGEdgeList(const ICFGNode* inst) const {
         return inst2PTAPAGEdgesMap.find(inst)!=inst2PTAPAGEdgesMap.end();
     }
     /// Given an instruction, get all its PAGEdges
-    inline PAGEdgeList& getInstPAGEdgeList(const IntraBlockNode* inst) {
+    inline PAGEdgeList& getInstPAGEdgeList(const ICFGNode* inst) {
         return inst2PAGEdgesMap[inst];
     }
     /// Given an instruction, get all its PTA PAGEdges
-    inline PAGEdgeList& getInstPTAPAGEdgeList(const IntraBlockNode* inst) {
+    inline PAGEdgeList& getInstPTAPAGEdgeList(const ICFGNode* inst) {
         return inst2PTAPAGEdgesMap[inst];
     }
     /// Add a PAGEdge into instruction map
-    inline void addToInstPAGEdgeList(IntraBlockNode* inst, PAGEdge* edge) {
-    	inst->addPAGEdge(edge);
+    inline void addToInstPAGEdgeList(ICFGNode* inst, PAGEdge* edge) {
+    	if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(inst))
+    		intra->addPAGEdge(edge);
 		inst2PAGEdgesMap[inst].push_back(edge);
 		if (edge->isPTAEdge())
 			inst2PTAPAGEdgesMap[inst].push_back(edge);
@@ -652,7 +653,7 @@ public:
     /// Add Call edge
     CallPE* addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Return edge
-    RetPE* addRetPE(NodeID src, NodeID dst, const RetBlockNode* cs);
+    RetPE* addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Gep edge
     GepPE* addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge

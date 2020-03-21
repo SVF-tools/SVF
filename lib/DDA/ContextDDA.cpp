@@ -177,10 +177,9 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getDstNode()->getBB()->getParent();
 
-    const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
@@ -200,10 +199,9 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getSrcNode()->getBB()->getParent();
 
-    const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);
     }

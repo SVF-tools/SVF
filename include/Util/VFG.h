@@ -36,6 +36,7 @@
 
 class PointerAnalysis;
 class VFGStat;
+class CallBlockNode;
 
 /*!
  * Interprocedural Control-Flow Graph (VFG)
@@ -51,7 +52,7 @@ public:
 
     typedef llvm::DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef std::map<std::pair<NodeID,CallSite>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
+    typedef std::map<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
     typedef llvm::DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
@@ -140,15 +141,15 @@ public:
     void updateCallGraph(PointerAnalysis* pta);
 
     /// Connect VFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(const CallBlockNode* cs, const Function* callee, VFGEdgeSetTy& edges);
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(CallSite cs, const Function* func) const {
-        return callgraph->getCallSiteID(pag->getICFG()->getCallBlockNode(cs.getInstruction()), func);
+    inline CallSiteID getCallSiteID(const CallBlockNode* cs, const Function* func) const {
+        return callgraph->getCallSiteID(cs, func);
     }
-    inline CallSite getCallSite(CallSiteID id) const {
-        return callgraph->getCallSite(id)->getCallSite();
+    inline const CallBlockNode* getCallSite(CallSiteID id) const {
+        return callgraph->getCallSite(id);
     }
     //@}
 
@@ -182,7 +183,7 @@ public:
         assert(it != PAGNodeToCmpVFGNodeMap.end() && "CmpVFGNode can not be found??");
         return it->second;
     }
-    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,CallSite cs) const {
+    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,const CallBlockNode* cs) const {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
         assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter VFG node can not be found??");
         return it->second;
@@ -267,20 +268,29 @@ protected:
         return addRetEdge(src->getId(),dst->getId(),csId);
     }
 
+    /// Add inter VF edge from actual to formal parameters
+    inline VFGEdge* addInterEdgeFromAPToFP(NodeID src, NodeID dst, CallSiteID csId) {
+        return addCallEdge(src,dst,csId);
+    }
+    /// Add inter VF edge from callee return to callsite receive parameter
+    inline VFGEdge* addInterEdgeFromFRToAR(NodeID src, NodeID dst, CallSiteID csId) {
+        return addRetEdge(src,dst,csId);
+    }
+
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, CallSite cs, CallSiteID csId, VFGEdgeSetTy& edges) {
-        ActualParmVFGNode* actualParam = getActualParmVFGNode(cs_arg,cs);
-        FormalParmVFGNode* formalParam = getFormalParmVFGNode(fun_arg);
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cs, CallSiteID csId, VFGEdgeSetTy& edges) {
+        NodeID actualParam = getDef(cs_arg);
+        NodeID formalParam = getDef(fun_arg);
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, VFGEdgeSetTy& edges) {
-        FormalRetVFGNode* formalRet = getFormalRetVFGNode(fun_return);
-        ActualRetVFGNode* actualRet = getActualRetVFGNode(cs_return);
+        NodeID formalRet = getDef(fun_return);
+        NodeID actualRet = getDef(cs_return);
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
@@ -339,7 +349,7 @@ protected:
     void connectDirectVFGEdges();
 
     /// Create edges between VFG nodes across functions
-    void addVFGInterEdges(CallSite cs, const Function* callee);
+    void addVFGInterEdges(const CallBlockNode* cs, const Function* callee);
 
     inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
@@ -404,7 +414,7 @@ protected:
     /// Add an actual parameter VFG node
     /// To be noted that multiple actual parameters may have same value (PAGNode)
     /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
-    inline void addActualParmVFGNode(const PAGNode* aparm, CallSite cs) {
+    inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs) {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
         addVFGNode(sNode);
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
@@ -439,7 +449,7 @@ protected:
         /// do not set def here, this node is not a variable definition
     }
     /// Add a callsite Receive VFG node
-    inline void addActualRetVFGNode(const PAGNode* ret,CallSite cs) {
+    inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs) {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
         addVFGNode(sNode);
         setDef(ret,sNode);

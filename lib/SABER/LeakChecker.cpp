@@ -104,7 +104,7 @@ void LeakChecker::initSnks() {
             PAG::PAGNodeList& arglist =	it->second;
             assert(!arglist.empty() && "no actual parameter at deallocation site?");
             /// we only pick the first parameter of all the actual parameters
-            const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(),it->first->getCallSite());
+            const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(),it->first);
             addToSinks(snk);
         }
     }
@@ -140,7 +140,7 @@ bool LeakChecker::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet) {
             // if this is a return edge
             else if(edge->isRetDirectVFGEdge()) {
                 reachFunExit = true;
-                csIdSet.insert(getSVFG()->getCallSite(SVFUtil::cast<RetDirSVFGEdge>(edge)->getCallSiteId()));
+                csIdSet.insert(getSVFG()->getCallSite(SVFUtil::cast<RetDirSVFGEdge>(edge)->getCallSiteId())->getCallSite());
             }
             // if this is an intra edge
             else {

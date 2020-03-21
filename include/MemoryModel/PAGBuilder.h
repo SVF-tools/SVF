@@ -274,7 +274,7 @@ public:
     		setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Return edge
-    inline void addRetEdge(NodeID src, NodeID dst, const RetBlockNode* cs){
+    inline void addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
     	if(RetPE* edge = pag->addRetPE(src,dst,cs))
     		setCurrentBBAndValueForPAGEdge(edge);
     }

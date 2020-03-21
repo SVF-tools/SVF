@@ -152,16 +152,16 @@ public:
 class ActualINSVFGNode : public MRSVFGNode {
 private:
     const MemSSA::CALLMU* mu;
-    CallSite cs;
+    const CallBlockNode* cs;
 public:
     /// Constructor
-    ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, CallSite c):
+    ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, const CallBlockNode* c):
         MRSVFGNode(id, APIN), mu(m), cs(c) {
         cpts = m->getMR()->getPointsTo();
-        bb = cs.getInstruction()->getParent();
+        bb = cs->getCallSite().getInstruction()->getParent();
     }
     /// Callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return cs;
     }
     /// CallMU
@@ -190,17 +190,17 @@ public:
 class ActualOUTSVFGNode : public MRSVFGNode {
 private:
     const MemSSA::CALLCHI* chi;
-    CallSite cs;
+    const CallBlockNode* cs;
 
 public:
     /// Constructor
-    ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, CallSite cal):
+    ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, const CallBlockNode* cal):
         MRSVFGNode(id, APOUT), chi(c), cs(cal) {
         cpts = c->getMR()->getPointsTo();
-        bb = cs.getInstruction()->getParent();
+        bb = cs->getCallSite().getInstruction()->getParent();
     }
     /// Callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return cs;
     }
     /// CallCHI
@@ -328,7 +328,7 @@ public:
     /// Constructor interPHI for formal parameter
     InterMSSAPHISVFGNode(NodeID id, const FormalINSVFGNode* fi) : MSSAPHISVFGNode(id, fi->getEntryChi(), MInterPhi),fun(fi->getFun()),callInst(NULL) {}
     /// Constructor interPHI for actual return
-    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getCallCHI(), MInterPhi), fun(NULL),callInst(ao->getCallSite().getInstruction()) {}
+    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getCallCHI(), MInterPhi), fun(NULL),callInst(ao->getCallSite()) {}
 
     inline bool isFormalINPHI() const {
         return (fun!=NULL) && (callInst == NULL);
@@ -343,10 +343,9 @@ public:
         return fun;
     }
 
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         assert(isActualOUTPHI() && "expect a actual return phi");
-        CallSite cs = SVFUtil::getLLVMCallSite(callInst);
-        return cs;
+        return callInst;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -369,7 +368,7 @@ public:
     //@}
 private:
     const Function* fun;
-    Instruction* callInst;
+    const CallBlockNode* callInst;
 };
 
 #endif /* INCLUDE_MSSA_SVFGNODE_H_ */

@@ -590,16 +590,16 @@ public:
  */
 class ActualParmVFGNode : public ArgumentVFGNode {
 private:
-    CallSite cs;
+    const CallBlockNode* cs;
 public:
     /// Constructor
-	ActualParmVFGNode(NodeID id, const PAGNode* n, CallSite c) :
+	ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
 			ArgumentVFGNode(id, n, AParm), cs(c) {
-		bb = cs.getInstruction()->getParent();
+		bb = cs->getCallSite().getInstruction()->getParent();
 	}
 
     /// Return callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return cs;
     }
 
@@ -686,7 +686,7 @@ public:
  */
 class ActualRetVFGNode: public ArgumentVFGNode {
 private:
-    CallSite cs;
+    const CallBlockNode* cs;
 
     ActualRetVFGNode();                      ///< place holder
     ActualRetVFGNode(const ActualRetVFGNode &);  ///< place holder
@@ -694,12 +694,12 @@ private:
 
 public:
     /// Constructor
-	ActualRetVFGNode(NodeID id, const PAGNode* n, CallSite c) :
+	ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
 			ArgumentVFGNode(id, n, ARet), cs(c) {
-		bb = cs.getInstruction()->getParent();
+		bb = cs->getCallSite().getInstruction()->getParent();
 	}
     /// Return callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return cs;
     }
     /// Receive parameter at callsite
@@ -786,7 +786,7 @@ public:
     /// Constructor interPHI for formal parameter
     InterPHIVFGNode(NodeID id, const FormalParmVFGNode* fp) : PHIVFGNode(id, fp->getParam(), TInterPhi),fun(fp->getFun()),callInst(NULL) {}
     /// Constructor interPHI for actual return
-    InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(NULL),callInst(ar->getCallSite().getInstruction()) {}
+    InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(NULL),callInst(ar->getCallSite()) {}
 
     inline bool isFormalParmPHI() const {
         return (fun!=NULL) && (callInst == NULL);
@@ -801,10 +801,9 @@ public:
         return fun;
     }
 
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         assert(isActualRetPHI() && "expect a actual return phi");
-        CallSite cs = SVFUtil::getLLVMCallSite(callInst);
-        return cs;
+        return callInst;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -825,7 +824,7 @@ public:
 
 private:
     const Function* fun;
-    Instruction* callInst;
+    const CallBlockNode* callInst;
 };
 
 

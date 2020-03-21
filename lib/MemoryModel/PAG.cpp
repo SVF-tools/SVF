@@ -161,7 +161,7 @@ CallPE* PAG::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
 /*!
  * Add Return edge
  */
-RetPE* PAG::addRetPE(NodeID src, NodeID dst, const RetBlockNode* cs) {
+RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
     PAGNode* srcNode = getPAGNode(src);
     PAGNode* dstNode = getPAGNode(dst);
     if(hasInterEdge(srcNode,dstNode, PAGEdge::Ret, cs))
@@ -768,11 +768,11 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge)) {
-            const Instruction* callInst= calledge->getCallSite().getInstruction();
+            const Instruction* callInst= calledge->getCallSite()->getCallSite().getInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge)) {
-            const Instruction* callInst= retedge->getCallSite().getInstruction();
+            const Instruction* callInst= retedge->getCallSite()->getCallSite().getInstruction();
             return SVFUtil::getSourceLoc(callInst);
         }
         return "";

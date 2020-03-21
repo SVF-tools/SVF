@@ -132,6 +132,8 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
  */
 void MemSSA::createMUCHI(const Function& fun) {
 
+	PAG* pag = pta->getPAG();
+
     DBOUT(DMSSA,
           outs() << "\t creating mu chi for function " << fun.getName()
           << "\n");
@@ -173,7 +175,7 @@ void MemSSA::createMUCHI(const Function& fun) {
                 }
             }
             if (isNonInstricCallSite(inst)) {
-                CallSite cs = SVFUtil::getLLVMCallSite(inst);
+                const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
 
@@ -268,6 +270,7 @@ void MemSSA::SSARename(const Function& fun) {
  */
 void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
+	PAG* pag = pta->getPAG();
     // record which mem region needs to pop stack
     MRVector memRegs;
 
@@ -302,7 +305,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
             }
         }
         if (isNonInstricCallSite(inst)) {
-            CallSite cs = SVFUtil::getLLVMCallSite(inst);
+            const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
 
@@ -549,6 +552,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
     if (!DumpMSSA)
         return;
 
+    PAG* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule().begin(), efit = pta->getModule().end();
             fit != efit; ++fit) {
@@ -580,7 +584,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
                     it != eit; ++it) {
                 Instruction& inst = *it;
                 if (isNonInstricCallSite(&inst)) {
-                    CallSite cs = SVFUtil::getLLVMCallSite(&inst);
+                    const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {
                             Out << "\n";

@@ -105,7 +105,7 @@ public:
         const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
         resolveIndCalls(cbn, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
-            CallSite newcs = iter->first->getCallSite();
+            const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
                 const Function * func = *func_iter;

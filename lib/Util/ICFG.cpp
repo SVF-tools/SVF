@@ -54,6 +54,49 @@ ICFG::ICFG(): totalICFGNode(0) {
 }
 
 
+/// Get a basic block ICFGNode
+ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst) {
+	ICFGNode* node;
+	if(SVFUtil::isNonInstricCallSite(inst))
+		node = getCallBlockNode(inst);
+	else if(SVFUtil::isInstrinsicDbgInst(inst))
+		node = getIntraBlockNode(inst);
+//			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
+	else
+		node = getIntraBlockNode(inst);
+
+	assert (node!=NULL && "no ICFGNode for this instruction?");
+	return node;
+}
+
+
+CallBlockNode* ICFG::getCallBlockNode(const Instruction* inst) {
+	assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
+	assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+	CallBlockNode* node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+	if(node==NULL)
+		node = addCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+	assert (node!=NULL && "no CallBlockNode for this instruction?");
+	return node;
+}
+
+RetBlockNode* ICFG::getRetBlockNode(const Instruction* inst) {
+	assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
+	assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+	RetBlockNode* node = getRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+	if(node==NULL)
+		node = addRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+	assert (node!=NULL && "no RetBlockNode for this instruction?");
+	return node;
+}
+
+IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst) {
+	IntraBlockNode* node = getIntraBlockICFGNode(inst);
+	if(node==NULL)
+		node = addIntraBlockICFGNode(inst);
+	return node;
+}
+
 /*!
  * Whether we has an intra ICFG edge
  */

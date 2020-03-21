@@ -128,7 +128,7 @@ void VFG::addVFGNodes() {
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* pagNode = *pit;
             if (isInterestedPAGNode(pagNode))
-                addActualParmVFGNode(pagNode,it->first->getCallSite());
+                addActualParmVFGNode(pagNode,it->first);
         }
     }
 
@@ -141,7 +141,7 @@ void VFG::addVFGNodes() {
         if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
             continue;
 
-        addActualRetVFGNode(it->second,it->first->getCallSite());
+        addActualRetVFGNode(it->second,it->first->getCallBlockNode());
     }
 
     // initialize formal parameter nodes
@@ -338,7 +338,7 @@ void VFG::connectDirectVFGEdges() {
         else if(FormalParmVFGNode* formalParm = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
             for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
                     it!=eit; ++it) {
-                CallSite cs = (*it)->getCallSite();
+                const CallBlockNode* cs = (*it)->getCallSite();
                 ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getSrcNode(),cs);
                 addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
             }
@@ -350,7 +350,9 @@ void VFG::connectDirectVFGEdges() {
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it) {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getDstNode());
-                addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID((*it)->getCallSite(), calleeRet->getFun()));
+                const CallBlockNode* retBlockNode = (*it)->getCallSite();
+                CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite().getInstruction());
+                addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
         /// Do not process FormalRetVFGNode, as they are connected by copy within callee
@@ -460,7 +462,8 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
     PointerAnalysis::CallEdgeMap::const_iterator iter = pta->getIndCallMap().begin();
     PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++) {
-        CallSite newcs = iter->first->getCallSite();
+        const CallBlockNode* newcs = iter->first;
+        assert(newcs->isIndirectCall() && "this is not an indirect call?");
         const PointerAnalysis::FunctionSet & functions = iter->second;
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
             const Function * func = *func_iter;
@@ -473,13 +476,12 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void VFG::connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSetTy& edges)
+void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const Function* callee, VFGEdgeSetTy& edges)
 {
     PAG * pag = PAG::getPAG();
     ICFG * icfg = pag->getICFG();
-    CallSiteID csId = getCallSiteID(cs, callee);
-    CallBlockNode* callBlockNode = icfg->getCallBlockNode(cs.getInstruction());
-    RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs.getInstruction());
+    CallSiteID csId = getCallSiteID(callBlockNode, callee);
+    RetBlockNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
@@ -490,7 +492,7 @@ void VFG::connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSet
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
             if (fun_arg->isPointer() && cs_arg->isPointer())
-                connectAParamAndFParam(cs_arg, fun_arg, cs, csId, edges);
+                connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
         if (callee->isVarArg()) {
@@ -500,7 +502,7 @@ void VFG::connectCallerAndCallee(CallSite cs, const Function* callee, VFGEdgeSet
                 for (; csArgIt != csArgEit; csArgIt++) {
                     const PAGNode *cs_arg = *csArgIt;
                     if (cs_arg->isPointer())
-                        connectAParamAndFParam(cs_arg, varFunArgNode, cs, csId, edges);
+                        connectAParamAndFParam(cs_arg, varFunArgNode, callBlockNode, csId, edges);
                 }
             }
         }
@@ -619,11 +621,11 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node)) {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node)) {
             rawstr << "FRet(" << fr->getRet()->getId() << ")\n";
@@ -688,14 +690,14 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node)) {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if(SVFUtil::isa<NullPtrVFGNode>(node)) {
             rawstr << "NullPtr";
         }
         else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node)) {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
         }
         else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node)) {
             rawstr << "FRet(" << fr->getRet()->getId() << ")\n";

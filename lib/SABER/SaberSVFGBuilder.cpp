@@ -166,8 +166,8 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes() {
                 || SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
             PAG::PAGNodeList& arglist =	it->second;
             const PAGNode* pagNode = arglist.front();
-            svfg->addActualParmVFGNode(pagNode,it->first->getCallSite());
-            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmVFGNode(pagNode,it->first->getCallSite())->getId());
+            svfg->addActualParmVFGNode(pagNode,it->first);
+            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmVFGNode(pagNode,it->first)->getId());
         }
     }
 }
