@@ -5,17 +5,16 @@ add_subdirectory(CUDD)
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
     SVF-FE/LLVMUtil.cpp
-    SVF-FE/SVFUtil.cpp
     SVF-FE/CPPUtil.cpp
     SVF-FE/DataFlowUtil.cpp
     SVF-FE/BreakConstantExpr.cpp
     SVF-FE/SVFModule.cpp
     SVF-FE/CallGraphBuilder.cpp
     SVF-FE/ICFGBuilder.cpp
-    SVF-FE/MemModel.cpp
     SVF-FE/SymbolTableInfo.cpp
     SVF-FE/PAGBuilder.cpp
     SVF-FE/CHA.cpp
+    Util/SVFUtil.cpp
     Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
     Util/ThreadCallGraph.cpp
@@ -26,6 +25,7 @@ set(SOURCES
     Util/ThreadAPI.cpp
     Util/ICFG.cpp
     Util/VFG.cpp
+    MemoryModel/MemModel.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/OfflineConsG.cpp
@@ -40,14 +40,6 @@ set(SOURCES
     MSSA/SVFG.cpp
     MSSA/SVFGOPT.cpp
     MSSA/SVFGStat.cpp
-    SABER/DoubleFreeChecker.cpp
-    SABER/FileChecker.cpp
-    SABER/LeakChecker.cpp
-    SABER/ProgSlice.cpp
-    SABER/SaberAnnotator.cpp
-    SABER/SaberCheckerAPI.cpp
-    SABER/SaberSVFGBuilder.cpp
-    SABER/SrcSnkDDA.cpp
     WPA/Andersen.cpp
     WPA/AndersenLCD.cpp
     WPA/AndersenHCD.cpp
@@ -62,6 +54,14 @@ set(SOURCES
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
+    SABER/DoubleFreeChecker.cpp
+    SABER/FileChecker.cpp
+    SABER/LeakChecker.cpp
+    SABER/ProgSlice.cpp
+    SABER/SaberAnnotator.cpp
+    SABER/SaberCheckerAPI.cpp
+    SABER/SaberSVFGBuilder.cpp
+    SABER/SrcSnkDDA.cpp
     DDA/ContextDDA.cpp
     DDA/DDAClient.cpp
     DDA/DDAPass.cpp

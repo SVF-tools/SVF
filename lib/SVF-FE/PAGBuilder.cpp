@@ -29,7 +29,7 @@
 
 #include "SVF-FE/PAGBuilder.h"
 #include "SVF-FE/SVFModule.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "MemoryModel/ExternalPAG.h"

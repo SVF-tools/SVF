@@ -31,7 +31,7 @@
 #define THREADAPI_CPP_
 
 #include "Util/ThreadAPI.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 
 #include <iostream>		/// std output
 #include <stdio.h>

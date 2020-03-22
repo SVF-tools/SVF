@@ -8,7 +8,7 @@
  */
 
 
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/CPPUtil.h"
 
 #include "DDA/DDAClient.h"

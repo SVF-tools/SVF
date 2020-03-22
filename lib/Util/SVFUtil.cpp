@@ -27,7 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
 #include "Util/Conditions.h"

@@ -31,7 +31,7 @@
 #define PAGNODE_H_
 
 #include "MemoryModel/GenericGraph.h"
-#include "SVF-FE/MemModel.h"
+#include "MemoryModel/MemModel.h"
 #include "SVF-FE/SymbolTableInfo.h"
 
 /*

@@ -33,7 +33,7 @@
 
 #include "PAGEdge.h"
 #include "PAGNode.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "Util/ICFG.h"
 
 /*!

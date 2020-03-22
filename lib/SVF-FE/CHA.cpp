@@ -39,7 +39,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/CHA.h"
 #include "SVF-FE/SymbolTableInfo.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/SVFModule.h"
 

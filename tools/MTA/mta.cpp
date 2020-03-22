@@ -5,7 +5,7 @@
  */
 
 #include "MTA/MTA.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include <llvm/IR/LegacyPassManager.h>
 
 

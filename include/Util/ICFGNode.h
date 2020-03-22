@@ -30,7 +30,7 @@
 #ifndef ICFGNODE_H_
 #define ICFGNODE_H_
 
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "MemoryModel/GenericGraph.h"
 #include "Util/ICFGEdge.h"
 

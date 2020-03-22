@@ -6,7 +6,7 @@
  */
 
 #include "MTA/PCG.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 

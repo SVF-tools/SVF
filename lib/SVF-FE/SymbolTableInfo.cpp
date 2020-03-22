@@ -29,9 +29,9 @@
  */
 
 #include "SVF-FE/SymbolTableInfo.h"
-#include "SVF-FE/MemModel.h"
+#include "MemoryModel/MemModel.h"
 #include "SVF-FE/SVFModule.h"
-#include "SVF-FE/SVFUtil.h"
+#include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"

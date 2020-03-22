@@ -30,7 +30,7 @@
 #ifndef INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 #define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 
-#include "SVF-FE/MemModel.h"
+#include "MemoryModel/MemModel.h"
 
 /*!
  * Symbol table of the memory model for analysis
