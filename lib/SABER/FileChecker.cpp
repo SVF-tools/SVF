@@ -40,15 +40,15 @@ static llvm::RegisterPass<FileChecker> FILECHECKER("file-checker",
 
 
 void FileChecker::reportNeverClose(const SVFGNode* src) {
-    CallSite cs = getSrcCSID(src);
+    const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-           << getSourceLoc(cs.getInstruction()) << ")\n";
+           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
 void FileChecker::reportPartialClose(const SVFGNode* src) {
-    CallSite cs = getSrcCSID(src);
+    const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-           << getSourceLoc(cs.getInstruction()) << ")\n";
+           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
 void FileChecker::reportBug(ProgSlice* slice) {

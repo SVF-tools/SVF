@@ -88,7 +88,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        const CallBlockNode* cbn = ander->getPAG()->getICFG()->getCallBlockNode(nIter->second.getInstruction());
+        const CallBlockNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn)) {
             //outs() << "virtual callsite has no callee" << *(nIter->second.getInstruction()) << "\n";
@@ -116,8 +116,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << *(nIter->second).getInstruction() << "\n";
-        outs() << getSourceLoc((nIter->second).getInstruction()) << "\n";
+        outs() << *(nIter->second)->getCallSite().getInstruction() << "\n";
+        outs() << getSourceLoc((nIter->second)->getCallSite().getInstruction()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";

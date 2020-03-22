@@ -92,11 +92,10 @@ public:
 
     /// Update call graph.
     //@{
-    void updateCallGraphAndSVFG(const LocDPItem& dpm,CallSite cs,SVFGEdgeSet& svfgEdges)
+    void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges)
     {
         CallEdgeMap newEdges;
-        const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
-        resolveIndCalls(cbn, getCachedPointsTo(dpm), newEdges);
+        resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
             const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;

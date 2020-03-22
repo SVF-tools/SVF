@@ -296,7 +296,12 @@ public:
         return cs.getCaller();
     }
 
-    /// Return callsite
+    /// Return Basic Block
+    inline const BasicBlock* getParent() const {
+        return cs.getInstruction()->getParent();
+    }
+
+    /// Return true if this is an indirect call
     inline bool isIndirectCall() const {
         return NULL == SVFUtil::getCallee(cs);
     }

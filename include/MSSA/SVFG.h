@@ -205,7 +205,7 @@ public:
     const Function* isFunEntrySVFGNode(const SVFGNode* node) const;
 
     /// Whether a node is callsite return SVFGNode
-    Instruction* isCallSiteRetSVFGNode(const SVFGNode* node) const;
+    const CallBlockNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
 protected:
     /// Remove a SVFG edge

@@ -62,10 +62,10 @@ void ProgSlice::AllPathReachableSolve() {
                 clearCFCond();
 
                 if(edge->isCallVFGEdge()) {
-                    vfCond = ComputeInterCallVFGGuard(nodeBB,succBB, getCallSite(edge).getInstruction()->getParent());
+                    vfCond = ComputeInterCallVFGGuard(nodeBB,succBB, getCallSite(edge)->getParent());
                 }
                 else if(edge->isRetVFGEdge()) {
-                    vfCond = ComputeInterRetVFGGuard(nodeBB,succBB, getRetSite(edge).getInstruction()->getParent());
+                    vfCond = ComputeInterRetVFGGuard(nodeBB,succBB, getRetSite(edge)->getParent());
                 }
                 else
                     vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
@@ -114,19 +114,19 @@ bool ProgSlice::isSatisfiableForPairs() {
     return true;
 }
 
-CallSite ProgSlice::getCallSite(const SVFGEdge* edge) const {
+const CallBlockNode* ProgSlice::getCallSite(const SVFGEdge* edge) const {
     assert(edge->isCallVFGEdge() && "not a call svfg edge?");
     if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
-        return getSVFG()->getCallSite(callEdge->getCallSiteId())->getCallSite();
+        return getSVFG()->getCallSite(callEdge->getCallSiteId());
     else
-        return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId())->getCallSite();
+        return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
 }
-CallSite ProgSlice::getRetSite(const SVFGEdge* edge) const {
+const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const {
     assert(edge->isRetVFGEdge() && "not a return svfg edge?");
     if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
-        return getSVFG()->getCallSite(callEdge->getCallSiteId())->getCallSite();
+        return getSVFG()->getCallSite(callEdge->getCallSiteId());
     else
-        return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId())->getCallSite();
+        return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
 /*!

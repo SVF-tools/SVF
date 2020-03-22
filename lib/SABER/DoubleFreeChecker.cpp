@@ -42,9 +42,9 @@ void DoubleFreeChecker::reportBug(ProgSlice* slice) {
 
     if(isSatisfiableForPairs(slice) == false) {
         const SVFGNode* src = slice->getSource();
-        CallSite cs = getSrcCSID(src);
+        const CallBlockNode* cs = getSrcCSID(src);
         SVFUtil::errs() << bugMsg2("\t Double Free :") <<  " memory allocation at : ("
-               << getSourceLoc(cs.getInstruction()) << ")\n";
+               << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
         SVFUtil::errs() << "\t\t double free path: \n" << slice->evalFinalCond() << "\n";
         slice->annotatePaths();
     }

@@ -93,7 +93,7 @@ private:
  */
 class FunptrDDAClient : public DDAClient {
 private:
-    typedef std::map<NodeID,CallSite> VTablePtrToCallSiteMap;
+    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
     FunptrDDAClient(SVFModule module) : DDAClient(module) {}
@@ -109,7 +109,7 @@ public:
                 assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
                 NodeID vtblId = pag->getValueNode(vtblPtr);
                 addCandidate(vtblId);
-                vtableToCallSiteMap[vtblId] = it->first->getCallSite();
+                vtableToCallSiteMap[vtblId] = it->first;
             } else {
                 addCandidate(it->second);
             }
@@ -138,7 +138,7 @@ public:
     virtual void performStat(PointerAnalysis* pta);
 
 private:
-    typedef std::map<NodeID,CallSite> VTablePtrToCallSiteMap;
+    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

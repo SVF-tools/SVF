@@ -73,7 +73,7 @@ public:
     bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store);
 
     /// refine indirect call edge
-    bool testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, CallSite cs);
+    bool testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, const CallBlockNode* cs);
 
     /// get callsite id from call, return 0 if it is a spurious call edge
     CallSiteID getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge);
@@ -99,11 +99,10 @@ public:
     }
     /// Update call graph.
     //@{
-    void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,CallSite cs,SVFGEdgeSet& svfgEdges)
+    void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges)
     {
         CallEdgeMap newEdges;
-        const CallBlockNode* cbn = _pag->getICFG()->getCallBlockNode(cs.getInstruction());
-        resolveIndCalls(cbn, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
+        resolveIndCalls(cs, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
             const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;

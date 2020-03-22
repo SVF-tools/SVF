@@ -563,6 +563,8 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
 
+    pag->addCallSite(callBlockNode);
+
     /// Collect callsite arguments and returns
     for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
         pag->addCallSiteArgs(callBlockNode,pag->getPAGNode(getValueNode(*itA)));

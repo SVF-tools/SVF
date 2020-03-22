@@ -486,20 +486,20 @@ const Function* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const {
 /*!
  * Whether this is an callsite return SVFGNode (actual return, actual out)
  */
-Instruction* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const {
+const CallBlockNode* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const {
     if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node)) {
-        return ar->getCallSite()->getCallSite().getInstruction();
+        return ar->getCallSite();
     }
     else if(const InterPHISVFGNode* phi = SVFUtil::dyn_cast<InterPHISVFGNode>(node)) {
         if(phi->isActualRetPHI())
-            return phi->getCallSite()->getCallSite().getInstruction();
+            return phi->getCallSite();
     }
     else if(const ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node)) {
-        return ao->getCallSite()->getCallSite().getInstruction();
+        return ao->getCallSite();
     }
     else if(const InterMSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<InterMSSAPHISVFGNode>(node)) {
         if(mphi->isActualOUTPHI())
-            return mphi->getCallSite()->getCallSite().getInstruction();
+            return mphi->getCallSite();
     }
     return NULL;
 }

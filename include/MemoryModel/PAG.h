@@ -96,6 +96,7 @@ private:
     NodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
     ICFG* icfg; // ICFG
+    CallSiteSet callSiteSet; /// all the callsites of a program
 
     /// Constructor
     PAG(bool buildFromFile);
@@ -160,6 +161,12 @@ public:
     /// Get LLVM Module
     inline SVFModule getModule() {
         return SymbolTableInfo::Symbolnfo()->getModule();
+    }
+    inline void addCallSite(const CallBlockNode* call){
+    	callSiteSet.insert(call);
+    }
+    inline const CallSiteSet& getCallSiteSet() const{
+    	return callSiteSet;
     }
     /// Get/set methods to get control flow information of a PAGEdge
     //@{
