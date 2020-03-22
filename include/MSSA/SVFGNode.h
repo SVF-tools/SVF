@@ -119,10 +119,8 @@ private:
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit) {
-        cpts = exit->getMR()->getPointsTo();
-        bb = SVFUtil::getFunExitBB(exit->getFunction());
-    }
+    FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit);
+
     /// RetMU
     inline const MemSSA::RETMU* getRetMU() const {
         return mu;

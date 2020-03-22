@@ -680,16 +680,7 @@ public:
     //@{
     bool isValidPointer(NodeID nodeId) const;
 
-    bool isValidTopLevelPtr(const PAGNode* node) {
-        if (node->isTopLevelPtr()) {
-            if (isValidPointer(node->getId()) && node->hasValue()) {
-                if (SVFUtil::ArgInNoCallerFunction(node->getValue()))
-                    return false;
-                return true;
-            }
-        }
-        return false;
-    }
+    bool isValidTopLevelPtr(const PAGNode* node);
     //@}
 
     /// Return graph name

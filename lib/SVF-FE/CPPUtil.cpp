@@ -29,6 +29,8 @@
 
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
+
 
 #include <cxxabi.h>   // for demangling
 

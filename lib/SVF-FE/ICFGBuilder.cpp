@@ -28,6 +28,7 @@
  *      Author: yulei
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 #include "MemoryModel/PAG.h"
 

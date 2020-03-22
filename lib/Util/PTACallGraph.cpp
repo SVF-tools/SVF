@@ -29,6 +29,7 @@
  */
 
 #include "SVF-FE/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "Util/PTACallGraph.h"
 
 using namespace SVFUtil;
@@ -40,6 +41,20 @@ static llvm::cl::opt<bool> CallGraphDotGraph("dump-callgraph", llvm::cl::init(fa
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
 PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
 CallSiteID PTACallGraph::totalCallSiteNum = 1;
+
+
+/// Add direct and indirect callsite
+//@{
+void PTACallGraphEdge::addDirectCallSite(const CallBlockNode* call) {
+    assert(SVFUtil::getCallee(call->getCallSite()) && "not a direct callsite??");
+    directCalls.insert(call);
+}
+
+void PTACallGraphEdge::addInDirectCallSite(const CallBlockNode* call) {
+    assert((NULL == SVFUtil::getCallee(call->getCallSite()) || NULL == SVFUtil::dyn_cast<Function> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
+    indirectCalls.insert(call);
+}
+//@}
 
 bool PTACallGraphNode::isReachableFromProgEntry() const
 {

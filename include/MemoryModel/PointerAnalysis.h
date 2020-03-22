@@ -308,12 +308,7 @@ public:
     /// Resolve indirect call edges
     virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
     /// Match arguments for callsite at caller and callee
-    inline bool matchArgs(const CallBlockNode* cs, const Function* callee) {
-        if(ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
-            return true;
-        else
-            return cs->getCallSite().arg_size() == callee->arg_size();
-    }
+    bool matchArgs(const CallBlockNode* cs, const Function* callee);
 
     /// CallGraph SCC related methods
     //@{
@@ -761,7 +756,7 @@ public:
                 }
                 else if (!SVFUtil::isa<DummyValPN>(node)) {
                     SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
-                    SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
+                    //SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
                 }
 
                 const PointsTo& pts = getPts(node->getId());

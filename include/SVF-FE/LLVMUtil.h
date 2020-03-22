@@ -30,77 +30,26 @@
 #ifndef INCLUDE_SVF_FE_LLVMUTIL_H_
 #define INCLUDE_SVF_FE_LLVMUTIL_H_
 
-#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/SVFUtil.h"
 #include "Util/BasicTypes.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 
 namespace SVFUtil {
 
-/// Return true if this function is llvm dbg intrinsic function/instruction
-//@{
-inline bool isIntrinsicDbgFun(const Function* fun) {
-    return fun->getName().startswith("llvm.dbg.declare") ||
-           fun->getName().startswith("llvm.dbg.value");
-}
-bool isInstrinsicDbgInst(const Instruction* inst);
-//@}
+
 
 /// This function servers a allocation wrapper detector
 inline bool isAnAllocationWraper(const Instruction *inst) {
     return false;
 }
-/// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const Instruction* inst) {
-    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
-}
-/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
-inline bool isNonInstricCallSite(const Instruction* inst) {
-	if(isInstrinsicDbgInst(inst))
-		return false;
-    return isCallSite(inst);
-}
-/// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst) {
-    return SVFUtil::isa<ReturnInst>(inst);
-}
+
 /// Return LLVM function if this value is
 inline const Function* getLLVMFunction(const Value* val) {
     const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
     return fun;
 }
-/// Return LLVM callsite given a instruction
-inline CallSite getLLVMCallSite(const Instruction* inst) {
-    assert(SVFUtil::isa<CallInst>(inst)|| SVFUtil::isa<InvokeInst>(inst));
-    CallSite cs(const_cast<Instruction*>(inst));
-    return cs;
-}
 
-/// Get the definition of a function across multiple modules
-inline const Function* getDefFunForMultipleModule(const Function* fun) {
-	if(fun == NULL) return NULL;
-
-    SVFModule svfModule;
-    if (fun->isDeclaration() && svfModule.hasDefinition(fun))
-        fun = svfModule.getDefinition(fun);
-    return fun;
-}
-
-/// Return callee of a callsite. Return null if this is an indirect call
-//@{
-inline const Function* getCallee(const CallSite cs) {
-    // FIXME: do we need to strip-off the casts here to discover more library functions
-    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
-    return getDefFunForMultipleModule(callee);
-}
-
-inline const Function* getCallee(const Instruction *inst) {
-    if (!SVFUtil::isa<CallInst>(inst) && !SVFUtil::isa<InvokeInst>(inst))
-        return NULL;
-    CallSite cs(const_cast<Instruction*>(inst));
-    return getCallee(cs);
-}
-//@}
 
 /// Return true if the call is an external call (external library in function summary table)
 //@{
@@ -557,11 +506,6 @@ u32_t getBBPredecessorPos(const BasicBlock *BB, const BasicBlock *Pred);
 /// Get num of BB's predecessors
 u32_t getBBPredecessorNum(const BasicBlock *BB);
 
-/// Return source code including line number and file name from debug information
-//@{
-std::string  getSourceLoc(const Value *val);
-std::string  getSourceLocOfFunction(const Function *F);
-//@}
 
 
 /// Check whether a file is an LLVM IR file

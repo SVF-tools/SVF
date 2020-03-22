@@ -97,15 +97,9 @@ public:
 
     /// Add direct and indirect callsite
     //@{
-    void addDirectCallSite(const CallBlockNode* call) {
-        assert(SVFUtil::getCallee(call->getCallSite()) && "not a direct callsite??");
-        directCalls.insert(call);
-    }
+    void addDirectCallSite(const CallBlockNode* call);
 
-    void addInDirectCallSite(const CallBlockNode* call) {
-        assert((NULL == SVFUtil::getCallee(call->getCallSite()) || NULL == SVFUtil::dyn_cast<Function> (SVFUtil::getForkedFun(call->getCallSite()))) && "not an indirect callsite??");
-        indirectCalls.insert(call);
-    }
+    void addInDirectCallSite(const CallBlockNode* call);
     //@}
 
     /// Iterators for direct and indirect callsites

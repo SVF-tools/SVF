@@ -413,25 +413,7 @@ protected:
 
 public:
     /// Constructor
-    PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k = TPhi): VFGNode(id, k), res(r) {
-        const Value* val = r->getValue();
-        if(const Function* fun =  SVFUtil::dyn_cast<Function>(val)) {
-            assert(SVFUtil::isa<VarArgPN>(r) && "not a varag function?");
-            bb = &fun->getEntryBlock();
-        }
-        /// the value can be an instruction phi, or a formal argument at function entry (due to SVFGOPT)
-        else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val)) {
-            bb = inst->getParent();
-        }
-        else {
-            assert((SVFUtil::isa<Argument>(val) || SVFUtil::isSelectConstantExpr(val))
-                   && "Phi svf node is not an instruction, a select constantExpr or an formal parameter??");
-            if(const Argument* arg = SVFUtil::dyn_cast<Argument>(val))
-                bb = &arg->getParent()->getEntryBlock();
-            else
-                bb = NULL;	/// bb is null when we have a select constant expression
-        }
-    }
+    PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k = TPhi);
 
     /// Whether this phi node is of pointer type (used for pointer analysis).
     inline bool isPTANode() const{
@@ -737,10 +719,8 @@ private:
 
 public:
     /// Constructor
-	FormalRetVFGNode(NodeID id, const PAGNode* n, const Function* f) :
-			ArgumentVFGNode(id, n, FRet), fun(f) {
-		bb = SVFUtil::getFunExitBB(fun);
-	}
+	FormalRetVFGNode(NodeID id, const PAGNode* n, const Function* f);
+
     /// Return value at callee
     inline const PAGNode* getRet() const {
         return param;

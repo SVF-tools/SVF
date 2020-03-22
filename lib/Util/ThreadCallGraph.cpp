@@ -29,6 +29,7 @@
 
 #include "SVF-FE/SVFModule.h"
 #include "Util/ThreadCallGraph.h"
+#include "Util/ThreadAPI.h"
 
 using namespace SVFUtil;
 

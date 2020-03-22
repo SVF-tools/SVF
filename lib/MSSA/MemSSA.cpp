@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/SVFGStat.h"

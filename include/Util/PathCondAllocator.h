@@ -30,9 +30,8 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/SVFModule.h"
 #include "SVF-FE/DataFlowUtil.h"
-
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
 

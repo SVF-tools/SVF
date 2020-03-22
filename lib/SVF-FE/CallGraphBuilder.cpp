@@ -28,6 +28,7 @@
  *      Author: Yulei
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CallGraphBuilder.h"
 #include "Util/ICFG.h"
 

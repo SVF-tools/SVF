@@ -31,7 +31,6 @@
 #define AnalysisUtil_H_
 
 #include "SVF-FE/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
 #include "Util/BasicTypes.h"
 #include <time.h>
 
@@ -105,6 +104,72 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts) {
     }
 }
 
+
+/// Return true if this function is llvm dbg intrinsic function/instruction
+//@{
+inline bool isIntrinsicDbgFun(const Function* fun) {
+    return fun->getName().startswith("llvm.dbg.declare") ||
+           fun->getName().startswith("llvm.dbg.value");
+}
+/// Return true if it is an intric debug instruction
+inline bool isInstrinsicDbgInst(const Instruction* inst) {
+    return SVFUtil::isa<llvm::DbgInfoIntrinsic>(inst);
+}
+//@}
+
+/// Whether an instruction is a call or invoke instruction
+inline bool isCallSite(const Instruction* inst) {
+    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
+}
+/// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
+inline bool isNonInstricCallSite(const Instruction* inst) {
+	if(isInstrinsicDbgInst(inst))
+		return false;
+    return isCallSite(inst);
+}
+/// Whether an instruction is a return instruction
+inline bool isReturn(const Instruction* inst) {
+    return SVFUtil::isa<ReturnInst>(inst);
+}
+
+/// Return LLVM callsite given a instruction
+inline CallSite getLLVMCallSite(const Instruction* inst) {
+    assert(SVFUtil::isa<CallInst>(inst)|| SVFUtil::isa<InvokeInst>(inst));
+    CallSite cs(const_cast<Instruction*>(inst));
+    return cs;
+}
+
+/// Get the definition of a function across multiple modules
+inline const Function* getDefFunForMultipleModule(const Function* fun) {
+	if(fun == NULL) return NULL;
+
+    SVFModule svfModule;
+    if (fun->isDeclaration() && svfModule.hasDefinition(fun))
+        fun = svfModule.getDefinition(fun);
+    return fun;
+}
+
+/// Return callee of a callsite. Return null if this is an indirect call
+//@{
+inline const Function* getCallee(const CallSite cs) {
+    // FIXME: do we need to strip-off the casts here to discover more library functions
+    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    return getDefFunForMultipleModule(callee);
+}
+
+inline const Function* getCallee(const Instruction *inst) {
+    if (!SVFUtil::isa<CallInst>(inst) && !SVFUtil::isa<InvokeInst>(inst))
+        return NULL;
+    CallSite cs(const_cast<Instruction*>(inst));
+    return getCallee(cs);
+}
+//@}
+
+/// Return source code including line number and file name from debug information
+//@{
+std::string  getSourceLoc(const Value *val);
+std::string  getSourceLocOfFunction(const Function *F);
+//@}
 
 }
 

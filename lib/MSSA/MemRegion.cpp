@@ -30,7 +30,7 @@
 #include "SVF-FE/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
-
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVFUtil;
 

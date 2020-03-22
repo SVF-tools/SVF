@@ -28,6 +28,7 @@
  */
 
 #include "MemoryModel/PAG.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 
 using namespace SVFUtil;
@@ -580,6 +581,16 @@ bool PAG::isValidPointer(NodeID nodeId) const {
     return node->isPointer();
 }
 
+bool PAG::isValidTopLevelPtr(const PAGNode* node) {
+    if (node->isTopLevelPtr()) {
+        if (isValidPointer(node->getId()) && node->hasValue()) {
+            if (SVFUtil::ArgInNoCallerFunction(node->getValue()))
+                return false;
+            return true;
+        }
+    }
+    return false;
+}
 /*!
  * PAGEdge constructor
  */

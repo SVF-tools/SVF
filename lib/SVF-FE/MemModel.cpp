@@ -31,6 +31,7 @@
 #include "SVF-FE/MemModel.h"
 #include "SVF-FE/SVFModule.h"
 #include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
 #include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator

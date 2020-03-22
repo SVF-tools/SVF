@@ -30,6 +30,7 @@
 #include <queue>
 #include "SVF-FE/SVFModule.h"
 #include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace std;
 

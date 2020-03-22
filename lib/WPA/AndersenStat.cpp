@@ -26,6 +26,8 @@
  *  Created on: Oct 12, 2013
  *      Author: Yulei Sui
  */
+
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 

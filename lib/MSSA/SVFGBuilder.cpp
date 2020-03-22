@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 #include "SVF-FE/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
@@ -128,7 +129,7 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
             iter != eiter; ++iter) {
 
         Function *fun = *iter;
-        if (SVFUtil::isExtCall(fun))
+        if (isExtCall(fun))
             continue;
 
         dt.recalculate(*fun);

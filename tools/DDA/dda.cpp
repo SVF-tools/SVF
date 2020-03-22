@@ -6,6 +6,7 @@
 
 //#include "AliasUtil/AliasAnalysisCounter.h"
 //#include "MemoryModel/ComTypeModel.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "DDA/DDAPass.h"
 
 using namespace llvm;

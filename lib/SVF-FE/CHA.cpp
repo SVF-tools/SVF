@@ -40,6 +40,7 @@
 #include "SVF-FE/CHA.h"
 #include "SVF-FE/SymbolTableInfo.h"
 #include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/SVFModule.h"
 
 using namespace SVFUtil;

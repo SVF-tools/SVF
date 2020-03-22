@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
 
 using namespace SVFUtil;

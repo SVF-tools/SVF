@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-
 #include "SABER/DoubleFreeChecker.h"
 
 using namespace SVFUtil;

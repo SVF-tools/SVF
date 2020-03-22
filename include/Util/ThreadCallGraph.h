@@ -30,10 +30,11 @@
 #ifndef RCG_H_
 #define RCG_H_
 
-#include <Util/PTACallGraph.h>
+#include "Util/PTACallGraph.h"
 #include "MemoryModel/PointerAnalysis.h"
 
 class SVFModule;
+class ThreadAPI;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */

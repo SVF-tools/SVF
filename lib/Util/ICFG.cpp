@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/SVFModule.h"
 #include "Util/ICFG.h"
 #include "MemoryModel/PAG.h"
@@ -39,6 +40,17 @@ static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
 
 static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
                              llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
+
+
+FunEntryBlockNode::FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock), fun(f) {
+    if (!SVFUtil::isExtCall(fun))
+        bb = &(fun->getEntryBlock());
+}
+
+FunExitBlockNode::FunExitBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL) {
+    if (!SVFUtil::isExtCall(fun))
+        bb = SVFUtil::getFunExitBB(fun);
+}
 
 /*!
  * Constructor

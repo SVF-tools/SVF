@@ -30,9 +30,9 @@
 #ifndef ICFGNODE_H_
 #define ICFGNODE_H_
 
+#include "SVF-FE/SVFUtil.h"
 #include "MemoryModel/GenericGraph.h"
 #include "Util/ICFGEdge.h"
-#include "SVF-FE/SVFUtil.h"
 
 class ICFGNode;
 class CallPE;
@@ -182,10 +182,7 @@ private:
     const Function *fun;
     FormalParmNodeVec FPNodes;
 public:
-    FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock), fun(f) {
-        if (!SVFUtil::isExtCall(fun))
-            bb = &(fun->getEntryBlock());
-    }
+    FunEntryBlockNode(NodeID id, const Function *f);
 
     /// Return function
     inline const Function *getFun() const {
@@ -231,10 +228,7 @@ private:
     const Function *fun;
     const PAGNode *formalRet;
 public:
-    FunExitBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL) {
-        if (!SVFUtil::isExtCall(fun))
-            bb = SVFUtil::getFunExitBB(fun);
-    }
+    FunExitBlockNode(NodeID id, const Function *f);
 
     /// Return function
     inline const Function *getFun() const {

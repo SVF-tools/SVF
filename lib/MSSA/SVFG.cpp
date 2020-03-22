@@ -28,6 +28,7 @@
  */
 
 #include "SVF-FE/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/SVFG.h"
 #include "MSSA/SVFGOPT.h"
 #include "MSSA/SVFGStat.h"
@@ -38,6 +39,11 @@ using namespace SVFUtil;
 
 static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
                              llvm::cl::desc("Dump dot graph of SVFG"));
+
+FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit) {
+    cpts = exit->getMR()->getPointsTo();
+    bb = SVFUtil::getFunExitBB(exit->getFunction());
+}
 
 /*!
  * Constructor

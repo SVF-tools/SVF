@@ -33,6 +33,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/SVFModule.h"
 #include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 
 #include "MemoryModel/PointerAnalysis.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
@@ -654,6 +655,16 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             }
         }
     }
+}
+
+/*!
+ * Match arguments for callsite at caller and callee
+ */
+bool PointerAnalysis::matchArgs(const CallBlockNode* cs, const Function* callee) {
+    if(ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
+        return true;
+    else
+        return cs->getCallSite().arg_size() == callee->arg_size();
 }
 
 /*
