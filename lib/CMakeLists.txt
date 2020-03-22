@@ -4,6 +4,7 @@ add_subdirectory(CUDD)
 # Otherwise it is impossible to load the dependencies in opt
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
+    SVF-FE/LLVMUtil.cpp
     SVF-FE/SVFUtil.cpp
     SVF-FE/CPPUtil.cpp
     SVF-FE/DataFlowUtil.cpp
@@ -11,8 +12,8 @@ set(SOURCES
     SVF-FE/SVFModule.cpp
     SVF-FE/CallGraphBuilder.cpp
     SVF-FE/ICFGBuilder.cpp
-    SVF-FE/LocMemModel.cpp
     SVF-FE/MemModel.cpp
+    SVF-FE/SymbolTableInfo.cpp
     SVF-FE/PAGBuilder.cpp
     SVF-FE/CHA.cpp
     Util/PTACallGraph.cpp

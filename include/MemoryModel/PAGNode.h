@@ -32,6 +32,7 @@
 
 #include "MemoryModel/GenericGraph.h"
 #include "SVF-FE/MemModel.h"
+#include "SVF-FE/SymbolTableInfo.h"
 
 /*
  * PAG node

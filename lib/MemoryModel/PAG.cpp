@@ -331,8 +331,8 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls) {
     //for a gep id, base id is set at lower bits, and offset is set at higher bits
     //e.g. 1100050 denotes base=50 and offset=11
     NodeID gepMultiplier = pow(10, ceil(log10(
-            getNodeNumAfterPAGBuild() > SymbolTableInfo::getMaxFieldLimit() ?
-            getNodeNumAfterPAGBuild() : SymbolTableInfo::getMaxFieldLimit()
+            getNodeNumAfterPAGBuild() > StInfo::getMaxFieldLimit() ?
+            getNodeNumAfterPAGBuild() : StInfo::getMaxFieldLimit()
     )));
     NodeID gepId = ls.getOffset() * gepMultiplier + base;
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;

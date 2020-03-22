@@ -30,52 +30,6 @@
 #ifndef LOCMEMMODEL_H_
 #define LOCMEMMODEL_H_
 
-#include "SVF-FE/MemModel.h"
 
-/*!
- * Bytes/bits-level modeling of memory locations to handle weakly type languages.
- * (declared with one type but accessed as another)
- * Abstract memory objects are created according to the static allocated size.
- */
-class LocSymTableInfo : public SymbolTableInfo {
-
-public:
-    /// Constructor
-    LocSymTableInfo() {
-    }
-    /// Destructor
-    virtual ~LocSymTableInfo() {
-    }
-    /// Compute gep offset
-    virtual bool computeGepOffset(const User *V, LocationSet& ls);
-    /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
-
-    /// Verify struct size construction
-    void verifyStructSize(StInfo *stInfo, u32_t structSize);
-
-protected:
-    /// Collect the struct info
-    virtual void collectStructInfo(const StructType *T);
-    /// Collect the array info
-    virtual void collectArrayInfo(const ArrayType *T);
-};
-
-
-class LocObjTypeInfo : public ObjTypeInfo {
-
-public:
-    /// Constructor
-    LocObjTypeInfo(const Value* val, Type* t, Size_t max) : ObjTypeInfo(val,t,max) {
-
-    }
-    /// Destructor
-    virtual ~LocObjTypeInfo() {
-
-    }
-    /// Get the size of this object
-    u32_t getObjSize(const Value* val);
-
-};
 
 #endif /* LOCMEMMODEL_H_ */
