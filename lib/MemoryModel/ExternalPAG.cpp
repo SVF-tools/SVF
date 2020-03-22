@@ -14,8 +14,6 @@
 #include "MemoryModel/PAG.h"
 #include "MemoryModel/ExternalPAG.h"
 #include "Util/BasicTypes.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFModule.h"
 #include "Util/ICFG.h"
 
 using namespace SVFUtil;

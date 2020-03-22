@@ -28,7 +28,6 @@
  */
 
 #include "SABER/LeakChecker.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 

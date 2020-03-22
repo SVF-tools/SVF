@@ -36,7 +36,6 @@
 #ifndef SVFGSTAT_H_
 #define SVFGSTAT_H_
 
-#include "MemoryModel/MemModel.h"
 #include "MSSA/SVFG.h"
 #include "Util/PTAStat.h"
 #include "Util/SCC.h"

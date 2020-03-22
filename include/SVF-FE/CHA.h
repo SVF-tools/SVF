@@ -30,8 +30,8 @@
 #ifndef CHA_H_
 #define CHA_H_
 
+#include "SVF-FE/SVFModule.h"
 #include "MemoryModel/GenericGraph.h"
-#include "Util/SVFModule.h"
 #include "Util/WorkList.h"
 
 class SVFModule;

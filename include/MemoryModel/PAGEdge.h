@@ -31,9 +31,8 @@
 #ifndef PAGEDGE_H_
 #define PAGEDGE_H_
 
-#include "MemoryModel/MemModel.h"
 #include "MemoryModel/GenericGraph.h"
-#include "Util/SVFUtil.h"
+#include "MemoryModel/LocationSet.h"
 #include "Util/ICFGNode.h"
 
 class PAGNode;

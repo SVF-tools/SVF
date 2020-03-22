@@ -33,13 +33,14 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>   // setw() for formatting cout
-#include "Util/CPPUtil.h"
 #include <assert.h>
 #include <stack>
-#include "MemoryModel/CHA.h"
-#include "MemoryModel/MemModel.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFModule.h"
+
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/CHA.h"
+#include "SVF-FE/MemModel.h"
+#include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/SVFModule.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;

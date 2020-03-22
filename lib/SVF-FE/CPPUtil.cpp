@@ -27,9 +27,9 @@
  *      Author: Xiaokang Fan
  */
 
-#include "Util/CPPUtil.h"
-#include "Util/SVFUtil.h"
-#include "MemoryModel/CHA.h"
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/SVFUtil.h"
+
 #include <cxxabi.h>   // for demangling
 
 using namespace std;

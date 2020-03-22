@@ -33,7 +33,6 @@
 #define POINTSTO_H_
 
 #include "MemoryModel/ConditionalPT.h"
-#include "Util/SVFUtil.h"
 
 /// Overloading operator << for dumping conditional variable
 //@{

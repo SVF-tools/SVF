@@ -27,11 +27,11 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/SVFModule.h"
 #include "MSSA/SVFG.h"
 #include "MSSA/SVFGOPT.h"
 #include "MSSA/SVFGStat.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFModule.h"
+
 
 using namespace SVFUtil;
 

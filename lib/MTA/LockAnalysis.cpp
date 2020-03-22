@@ -8,7 +8,7 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/MTA.h"
 #include "MTA/MTAResultValidator.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
 
 using namespace SVFUtil;
 

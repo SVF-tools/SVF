@@ -27,9 +27,8 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/SVFModule.h"
 #include "Util/ICFG.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFModule.h"
 #include "MemoryModel/PAG.h"
 
 using namespace SVFUtil;

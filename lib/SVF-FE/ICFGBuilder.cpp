@@ -28,7 +28,7 @@
  *      Author: yulei
  */
 
-#include "Util/ICFGBuilder.h"
+#include "SVF-FE/ICFGBuilder.h"
 #include "MemoryModel/PAG.h"
 
 using namespace SVFUtil;

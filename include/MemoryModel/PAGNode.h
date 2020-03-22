@@ -31,6 +31,7 @@
 #define PAGNODE_H_
 
 #include "MemoryModel/GenericGraph.h"
+#include "SVF-FE/MemModel.h"
 
 /*
  * PAG node
@@ -79,7 +80,7 @@ public:
     //@{
     inline const Value* getValue() const {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
-        assert((SymbolTableInfo::isBlkObjOrConstantObj(this->getId())==false) && "blackhole and constant obj do not have value");
+        assert((this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj) && "blackhole and constant obj do not have value");
         assert(value && "value is null!!");
         return value;
     }
@@ -94,7 +95,7 @@ public:
     inline bool hasValue() const {
         return (this->getNodeKind() != DummyValNode &&
                 this->getNodeKind() != DummyObjNode &&
-                (SymbolTableInfo::isBlkObjOrConstantObj(this->getId())==false)) ;
+				(this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj)) ;
     }
     /// Whether it is a pointer
     virtual inline bool isPointer() const {

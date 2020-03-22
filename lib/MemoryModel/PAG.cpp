@@ -28,8 +28,7 @@
  */
 
 #include "MemoryModel/PAG.h"
-#include "Util/SVFUtil.h"
-#include "Util/ICFGBuilder.h"
+#include "SVF-FE/ICFGBuilder.h"
 
 using namespace SVFUtil;
 

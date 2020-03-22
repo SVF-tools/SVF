@@ -28,10 +28,10 @@
  */
 
 
-#include "MemoryModel/LocMemModel.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/LocMemModel.h"
+#include "SVF-FE/SVFUtil.h"
 
-#include "Util/GEPTypeBridgeIterator.h" // include bridge_gep_iterator 
+#include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 #include <vector>
 
 using namespace std;

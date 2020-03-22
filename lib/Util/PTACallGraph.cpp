@@ -28,7 +28,7 @@
  *      Author: Yulei Sui
  */
 
-#include "Util/SVFModule.h"
+#include "SVF-FE/SVFModule.h"
 #include "Util/PTACallGraph.h"
 
 using namespace SVFUtil;

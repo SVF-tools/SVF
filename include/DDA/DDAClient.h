@@ -11,13 +11,10 @@
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
 
-
 #include "MemoryModel/PAG.h"
-#include "MemoryModel/PAGBuilder.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "MSSA/SVFG.h"
 #include "Util/BasicTypes.h"
-#include "Util/CPPUtil.h"
 
 
 /**
@@ -100,22 +97,7 @@ public:
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual inline NodeSet& collectCandidateQueries(PAG* p) {
-        setPAG(p);
-        for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
-                eit = pag->getIndirectCallsites().end(); it!=eit; ++it) {
-            if (cppUtil::isVirtualCallSite(it->first->getCallSite())) {
-                const Value *vtblPtr = cppUtil::getVCallVtblPtr(it->first->getCallSite());
-                assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
-                NodeID vtblId = pag->getValueNode(vtblPtr);
-                addCandidate(vtblId);
-                vtableToCallSiteMap[vtblId] = it->first;
-            } else {
-                addCandidate(it->second);
-            }
-        }
-        return candidateQueries;
-    }
+    virtual NodeSet& collectCandidateQueries(PAG* p);
     virtual void performStat(PointerAnalysis* pta);
 };
 

@@ -28,7 +28,6 @@
  */
 
 #include "MemoryModel/ConsG.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 

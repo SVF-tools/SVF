@@ -8,6 +8,8 @@
  */
 
 
+#include "SVF-FE/CPPUtil.h"
+
 #include "DDA/DDAClient.h"
 #include "DDA/FlowDDA.h"
 #include <iostream>
@@ -69,6 +71,23 @@ void DDAClient::answerQueries(PointerAnalysis* pta) {
     vmrss = vmsize = 0;
     SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
     stat->setMemUsageAfter(vmrss, vmsize);
+}
+
+NodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p) {
+    setPAG(p);
+    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+            eit = pag->getIndirectCallsites().end(); it!=eit; ++it) {
+        if (cppUtil::isVirtualCallSite(it->first->getCallSite())) {
+            const Value *vtblPtr = cppUtil::getVCallVtblPtr(it->first->getCallSite());
+            assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
+            NodeID vtblId = pag->getValueNode(vtblPtr);
+            addCandidate(vtblId);
+            vtableToCallSiteMap[vtblId] = it->first;
+        } else {
+            addCandidate(it->second);
+        }
+    }
+    return candidateQueries;
 }
 
 void FunptrDDAClient::performStat(PointerAnalysis* pta) {

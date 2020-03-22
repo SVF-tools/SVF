@@ -27,11 +27,11 @@
  *      Author: Yulei Sui
  */
 
-#include "MemoryModel/PAGBuilder.h"
+#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/CPPUtil.h"
 #include "MemoryModel/ExternalPAG.h"
-#include "Util/SVFModule.h"
-#include "Util/SVFUtil.h"
-#include "Util/CPPUtil.h"
 #include "Util/BasicTypes.h"
 
 using namespace std;

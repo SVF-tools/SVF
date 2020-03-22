@@ -30,7 +30,7 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
-#include "Util/SVFModule.h"
+#include "SVF-FE/SVFModule.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
 #include "Util/BasicTypes.h"

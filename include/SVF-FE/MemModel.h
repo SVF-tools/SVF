@@ -31,7 +31,7 @@
 #define OBJECTANDSYMBOL_H_
 
 #include "MemoryModel/LocationSet.h"
-#include "Util/SVFModule.h"
+#include "SVF-FE/SVFModule.h"
 
 
 /// Symbol types

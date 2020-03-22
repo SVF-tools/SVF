@@ -30,9 +30,7 @@
 #ifndef CONDVAR_H_
 #define CONDVAR_H_
 
-#include "MemoryModel/MemModel.h"
 #include "Util/Conditions.h"
-#include "Util/SVFUtil.h"
 #include "llvm/Support/raw_ostream.h"
 
 /*!

@@ -27,13 +27,13 @@
  *      Author: Yulei Sui
  */
 
-#include "MemoryModel/MemModel.h"
-#include "MemoryModel/LocMemModel.h"
-#include "Util/SVFModule.h"
-#include "Util/SVFUtil.h"
-#include "Util/CPPUtil.h"
-#include "Util/BreakConstantExpr.h"
-#include "Util/GEPTypeBridgeIterator.h" // include bridge_gep_iterator 
+#include "SVF-FE/MemModel.h"
+#include "SVF-FE/LocMemModel.h"
+#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/BreakConstantExpr.h"
+#include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace std;
 using namespace SVFUtil;

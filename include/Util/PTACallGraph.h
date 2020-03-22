@@ -31,7 +31,6 @@
 #define PTACALLGRAPH_H_
 
 #include "MemoryModel/GenericGraph.h"
-#include "Util/SVFUtil.h"
 #include "Util/BasicTypes.h"
 #include "Util/ICFG.h"
 #include <set>

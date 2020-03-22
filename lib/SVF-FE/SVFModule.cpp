@@ -28,8 +28,8 @@
  */
 
 #include <queue>
-#include "Util/SVFModule.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/SVFUtil.h"
 
 using namespace std;
 

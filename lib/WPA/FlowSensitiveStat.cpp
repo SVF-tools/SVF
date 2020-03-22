@@ -28,7 +28,6 @@
  */
 
 #include "WPA/WPAStat.h"
-#include "Util/SVFUtil.h"
 #include "WPA/FlowSensitive.h"
 
 using namespace SVFUtil;

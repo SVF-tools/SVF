@@ -9,7 +9,7 @@
 #define TCTNodeDetector_H_
 
 #include "Util/SCC.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
 #include "Util/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
 #include <set>

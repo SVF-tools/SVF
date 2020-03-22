@@ -30,7 +30,7 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
-#include "Util/GEPTypeBridgeIterator.h"
+#include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Util/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SmallVector.h>		// for small vector

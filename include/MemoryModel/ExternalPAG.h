@@ -73,7 +73,7 @@ private:
 
 public:
     ExternalPAG(std::string functionName) : functionName(functionName),
-                                            hasReturn(false) {}
+                                            hasReturn(false), returnNode(-1) {}
 
     ~ExternalPAG() {}
 

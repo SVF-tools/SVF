@@ -27,13 +27,13 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/ICFGBuilder.h"
+#include "SVF-FE/CHA.h"
 #include "WPA/TypeAnalysis.h"
-#include "MemoryModel/CHA.h"
-#include "Util/CPPUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ICFGStat.h"
 #include "Util/VFG.h"
-#include "Util/ICFGBuilder.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;

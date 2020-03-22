@@ -31,7 +31,8 @@
 #define THREADAPI_H_
 
 #include "Util/BasicTypes.h"
-#include "Util/SVFModule.h"
+
+class SVFModule;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs

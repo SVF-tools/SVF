@@ -8,7 +8,6 @@
 #include "DDA/DDAStat.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
-#include "Util/SVFUtil.h"
 #include "MSSA/SVFGStat.h"
 
 #include <iomanip>

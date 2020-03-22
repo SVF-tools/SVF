@@ -11,7 +11,7 @@
 #include <MemoryModel/PointerAnalysis.h>
 #include "MTA/TCT.h"
 #include "MTA/MHP.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
 #include "Util/ThreadCallGraph.h"
 
 /*!

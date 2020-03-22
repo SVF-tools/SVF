@@ -34,7 +34,6 @@
 
 #include "MSSA/SVFGOPT.h"
 #include "MSSA/SVFGStat.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 

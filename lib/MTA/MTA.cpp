@@ -12,7 +12,7 @@
 #include "MTA/MTAStat.h"
 #include "WPA/Andersen.h"
 #include "MTA/FSMPTA.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
 
 using namespace SVFUtil;
 

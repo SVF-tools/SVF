@@ -29,7 +29,6 @@
 
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
-#include "Util/SVFUtil.h"
 #include "MSSA/SVFGStat.h"
 
 using namespace SVFUtil;

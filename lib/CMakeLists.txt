@@ -4,34 +4,33 @@ add_subdirectory(CUDD)
 # Otherwise it is impossible to load the dependencies in opt
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
-    Util/SVFUtil.cpp
-    Util/CPPUtil.cpp
-    Util/DataFlowUtil.cpp
+    SVF-FE/SVFUtil.cpp
+    SVF-FE/CPPUtil.cpp
+    SVF-FE/DataFlowUtil.cpp
+    SVF-FE/BreakConstantExpr.cpp
+    SVF-FE/SVFModule.cpp
+    SVF-FE/CallGraphBuilder.cpp
+    SVF-FE/ICFGBuilder.cpp
+    SVF-FE/LocMemModel.cpp
+    SVF-FE/MemModel.cpp
+    SVF-FE/PAGBuilder.cpp
+    SVF-FE/CHA.cpp
     Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
     Util/ThreadCallGraph.cpp
-    Util/BreakConstantExpr.cpp
     Util/Conditions.cpp
     Util/ExtAPI.cpp
     Util/PathCondAllocator.cpp
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
-    Util/SVFModule.cpp
     Util/ICFG.cpp
     Util/VFG.cpp
-    Util/DataFlowUtil.cpp
-    Util/CallGraphBuilder.cpp
-    Util/ICFGBuilder.cpp
     MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
-    MemoryModel/LocMemModel.cpp
-    MemoryModel/MemModel.cpp
     MemoryModel/OfflineConsG.cpp
     MemoryModel/ExternalPAG.cpp
-    MemoryModel/PAGBuilder.cpp
     MemoryModel/PAGBuilderFromFile.cpp
     MemoryModel/PAG.cpp
-    MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
     MSSA/MemPartition.cpp
     MSSA/MemRegion.cpp

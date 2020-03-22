@@ -32,7 +32,7 @@
 
 #include "MemoryModel/GenericGraph.h"
 #include "Util/ICFGEdge.h"
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
 
 class ICFGNode;
 class CallPE;

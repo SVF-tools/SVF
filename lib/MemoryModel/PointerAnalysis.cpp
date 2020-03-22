@@ -24,20 +24,21 @@
  * PointerAnalysis.cpp
  *
  *  Created on: May 14, 2013
- *      Author: rocky
+ *      Author: Yulei Sui
  */
 
+#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/CallGraphBuilder.h"
+#include "SVF-FE/CHA.h"
+#include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/SVFUtil.h"
+
 #include "MemoryModel/PointerAnalysis.h"
-#include "MemoryModel/PAGBuilder.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
-#include "Util/SVFUtil.h"
 #include "Util/PTAStat.h"
 #include "Util/ThreadCallGraph.h"
-#include "Util/CPPUtil.h"
-#include "Util/SVFModule.h"
 #include "Util/ICFG.h"
-#include "Util/CallGraphBuilder.h"
-#include "MemoryModel/CHA.h"
 #include "MemoryModel/PTAType.h"
 #include "MemoryModel/ExternalPAG.h"
 #include <fstream>

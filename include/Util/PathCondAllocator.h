@@ -30,10 +30,11 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "Util/SVFUtil.h"
+#include "SVF-FE/SVFUtil.h"
+#include "SVF-FE/DataFlowUtil.h"
+
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
-#include "Util/DataFlowUtil.h"
 
 /**
  * PathCondAllocator allocates conditions for each basic block of a certain CFG.
