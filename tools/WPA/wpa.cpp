@@ -45,7 +45,7 @@ int main(int argc, char ** argv) {
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
 
-    SVFModule* svfModule = new SVFModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
 
     WPAPass *wpa = new WPAPass();
     wpa->runOnModule(svfModule);

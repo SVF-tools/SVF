@@ -62,7 +62,7 @@ void ExternalPAG::initialise(SVFModule* svfModule) {
 
         ExternalPAG extpag = ExternalPAG(fname);
         extpag.readFromFile(path);
-        extpag.addExternalPAG(svfModule->getFunction(fname));
+        extpag.addExternalPAG(getFunction(fname));
     }
 }
 

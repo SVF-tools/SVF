@@ -30,7 +30,7 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
-#include "SVF-FE/SVFModule.h"
+#include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
 #include <time.h>
 
@@ -137,6 +137,19 @@ inline CallSite getLLVMCallSite(const Instruction* inst) {
     assert(SVFUtil::isa<CallInst>(inst)|| SVFUtil::isa<InvokeInst>(inst));
     CallSite cs(const_cast<Instruction*>(inst));
     return cs;
+}
+
+/// Get the corresponding Function based on its name
+inline Function* getFunction(StringRef name) {
+    Function* fun = NULL;
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i) {
+        Module *mod = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+        fun = mod->getFunction(name);
+        if(fun && !fun->isDeclaration()) {
+            return fun;
+        }
+    }
+    return fun;
 }
 
 /// Get the definition of a function across multiple modules

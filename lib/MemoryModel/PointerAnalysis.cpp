@@ -704,8 +704,7 @@ void PointerAnalysis::connectVCallToVFns(const CallBlockNode* cs, const VFunSet 
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
         const Function* callee = *fit;
-        if (callee->isDeclaration() && svfMod->hasDefinition(callee))
-            callee = svfMod->getDefinition(callee);
+        callee = getDefFunForMultipleModule(callee);
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
         if(cs->getCallSite().arg_size() == callee->arg_size() ||
@@ -737,7 +736,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
 void PointerAnalysis::validateSuccessTests(const char* fun) {
 
     // check for must alias cases, whether our alias analysis produce the correct results
-        if (Function* checkFun = svfMod->getFunction(fun)) {
+        if (Function* checkFun = getFunction(fun)) {
             if(!checkFun->use_empty())
                 outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
@@ -790,7 +789,7 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
  */
 void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
 
-    if (Function* checkFun = getModule()->getFunction(fun)) {
+    if (Function* checkFun = getFunction(fun)) {
         if(!checkFun->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 

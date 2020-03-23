@@ -31,6 +31,7 @@
 #define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 
 #include "MemoryModel/MemModel.h"
+#include "SVF-FE/LLVMModule.h"
 
 /*!
  * Symbol table of the memory model for analysis
@@ -258,8 +259,8 @@ public:
     /// find the unique defined global across multiple modules
     inline const Value* getGlobalRep(const Value* val) const{
         if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
-            if (symlnfo->getModule()->hasGlobalRep(gvar))
-                val = symlnfo->getModule()->getGlobalRep(gvar);
+            if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
+                val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
         }
         return val;
     }

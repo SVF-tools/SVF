@@ -8,7 +8,7 @@ set(SOURCES
     SVF-FE/CPPUtil.cpp
     SVF-FE/DataFlowUtil.cpp
     SVF-FE/BreakConstantExpr.cpp
-    SVF-FE/SVFModule.cpp
+    SVF-FE/LLVMModule.cpp
     SVF-FE/CallGraphBuilder.cpp
     SVF-FE/ICFGBuilder.cpp
     SVF-FE/SymbolTableInfo.cpp

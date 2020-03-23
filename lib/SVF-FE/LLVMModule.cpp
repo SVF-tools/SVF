@@ -59,36 +59,24 @@ static llvm::cl::opt<bool> SVFMain("svfmain", llvm::cl::init(false), llvm::cl::d
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
 
-LLVMModuleSet::LLVMModuleSet(Module *mod) {
-    moduleNum = 1;
-    cxts = &(mod->getContext());
-    modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<Module>(mod);
+SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec) {
+	assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
-    initialize();
-    buildFunToFunMap();
-    buildGlobalDefToRepMap();
-}
-
-LLVMModuleSet::LLVMModuleSet(Module &mod) {
-    moduleNum = 1;
-    cxts = &(mod.getContext());
-    modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<Module>(&mod);
-
-    initialize();
-    buildFunToFunMap();
-    buildGlobalDefToRepMap();
-}
-
-LLVMModuleSet::LLVMModuleSet(const vector<string> &moduleNameVec) {
 	// We read PAG from LLVM IR
 	if(Graphtxt.getValue().empty())
 		assert(!moduleNameVec.empty() && "no module is found from LLVM bc file!");
 	// We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
 	else
 		SVFModule::setPagFromTXT(Graphtxt.getValue());
+
+    if(moduleNameVec.empty()==false)
+    	svfModule = new SVFModule(*moduleNameVec.begin());
+    else
+    	svfModule = new SVFModule();
+
     build(moduleNameVec);
+
+    return svfModule;
 }
 
 void LLVMModuleSet::build(const vector<string> &moduleNameVec) {
@@ -142,21 +130,21 @@ void LLVMModuleSet::initialize() {
         for (Module::iterator it = mod->begin(), eit = mod->end();
                 it != eit; ++it) {
             Function *func = &*it;
-            FunctionSet.push_back(func);
+            svfModule->addFunctionSet(func);
         }
 
         /// GlobalVariable
         for (Module::global_iterator it = mod->global_begin(),
                 eit = mod->global_end(); it != eit; ++it) {
             GlobalVariable *global = &*it;
-            GlobalSet.push_back(global);
+            svfModule->addGlobalSet(global);
         }
 
         /// GlobalAlias
         for (Module::alias_iterator it = mod->alias_begin(),
                 eit = mod->alias_end(); it != eit; ++it) {
             GlobalAlias *alias = &*it;
-            AliasSet.push_back(alias);
+            svfModule->addAliasSet(alias);
         }
     }
 }
@@ -227,8 +215,8 @@ void LLVMModuleSet::buildFunToFunMap() {
     typedef std::map<string, Function*> NameToFunDefMapTy;
     typedef std::map<string, std::set<Function*>> NameToFunDeclsMapTy;
 
-    for (FunctionSetType::iterator it = FunctionSet.begin(),
-            eit = FunctionSet.end(); it != eit; ++it) {
+    for (FunctionSetType::iterator it = svfModule->begin(),
+            eit = svfModule->end(); it != eit; ++it) {
         Function *fun = *it;
         if (fun->isDeclaration()) {
             funDecls.insert(fun);
@@ -319,8 +307,8 @@ void LLVMModuleSet::buildFunToFunMap() {
 void LLVMModuleSet::buildGlobalDefToRepMap() {
     typedef std::map<string, std::set<GlobalVariable*>> NameToGlobalsMapTy;
     NameToGlobalsMapTy nameToGlobalsMap;
-    for (GlobalSetType::iterator it = GlobalSet.begin(),
-            eit = GlobalSet.end(); it != eit; ++it) {
+    for (SVFModule::global_iterator it = svfModule->global_begin(),
+            eit = svfModule->global_end(); it != eit; ++it) {
         GlobalVariable *global = *it;
         if (global->hasPrivateLinkage())
             continue;
