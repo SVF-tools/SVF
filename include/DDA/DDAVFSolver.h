@@ -238,7 +238,7 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(SVFModule module) {
+    virtual inline void buildSVFG(SVFModule* module) {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
         _pag = _svfg->getPAG();

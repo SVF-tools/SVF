@@ -37,7 +37,7 @@ private:
     FunSet followers;
     FunSet mhpfuns;
     PTACallGraph* callgraph;
-    SVFModule mod;
+    SVFModule* mod;
     PointerAnalysis* pta;
     ThreadAPI* tdAPI;
 
@@ -116,7 +116,7 @@ public:
     }
 
     /// Initialize spawner and spawnee sets with threadAPI
-    void initFromThreadAPI(SVFModule module);
+    void initFromThreadAPI(SVFModule* module);
 
     /// Infer spawner spawnee and followers sets by traversing on callGraph
     //@{

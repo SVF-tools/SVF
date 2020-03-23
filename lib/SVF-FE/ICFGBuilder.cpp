@@ -37,8 +37,8 @@ using namespace SVFUtil;
 /*!
  * Create ICFG nodes and edges
  */
-void ICFGBuilder::build(SVFModule svfModule){
-    for (SVFModule::const_iterator iter = svfModule.begin(), eiter = svfModule.end(); iter != eiter; ++iter) {
+void ICFGBuilder::build(SVFModule* svfModule){
+    for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end(); iter != eiter; ++iter) {
         const Function *fun = *iter;
         if (SVFUtil::isExtCall(fun))
             continue;

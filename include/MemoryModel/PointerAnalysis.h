@@ -111,7 +111,7 @@ protected:
     /// PAG
     static PAG* pag;
     /// Module
-    SVFModule svfMod;
+    SVFModule* svfMod;
     /// Pointer analysis Type
     PTATY ptaTy;
     /// Statistics
@@ -164,7 +164,7 @@ public:
         return stat;
     }
     /// Module
-    inline SVFModule getModule() const {
+    inline SVFModule* getModule() const {
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
@@ -176,13 +176,13 @@ public:
     virtual ~PointerAnalysis();
 
     /// Initialization of a pointer analysis, including building symbol table and PAG etc.
-    virtual void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule* svfModule);
 
     /// Finalization of a pointer analysis, including checking alias correctness
     virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis). It needs to be implemented in child class
-    virtual void analyze(SVFModule svfModule) = 0;
+    virtual void analyze(SVFModule* svfModule) = 0;
 
     /// Compute points-to results on-demand, overridden by derived classes
     virtual void computeDDAPts(NodeID id) {}

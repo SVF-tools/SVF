@@ -1,4 +1,4 @@
-//===- CallGraphBuilder.h ----------------------------------------------------------------//
+//===- SVFModuleBuilder.h -- SVFModule* Builder class-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -20,48 +20,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 /*
- * CallGraphBuilder.h
+ * SVFModuleBuilder.h
  *
- *  Created on: 13Mar.,2020
+ *  Created on: 23 Mar.2020
  *      Author: Yulei Sui
  */
 
-#ifndef INCLUDE_UTIL_CALLGRAPHBUILDER_H_
-#define INCLUDE_UTIL_CALLGRAPHBUILDER_H_
-
-#include "Util/PTACallGraph.h"
-#include "Util/ThreadCallGraph.h"
-
-class ICFG;
-
-class CallGraphBuilder {
-
-protected:
-	PTACallGraph* callgraph;
-	ICFG* icfg;
-public:
-	CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i){
-	}
-
-	/// Build normal callgraph
-	PTACallGraph* buildCallGraph(SVFModule* svfModule);
-
-};
-
-class ThreadCallGraphBuilder : public CallGraphBuilder {
-
-public:
-	ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i) {
-	}
-
-	/// Build thread-aware callgraph
-	PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
-
-};
+#ifndef INCLUDE_SVF_FE_SVFMODULEBUILDER_H_
+#define INCLUDE_SVF_FE_SVFMODULEBUILDER_H_
 
 
 
 
-#endif /* INCLUDE_UTIL_CALLGRAPHBUILDER_H_ */
+
+#endif /* INCLUDE_SVF_FE_SVFMODULEBUILDER_H_ */

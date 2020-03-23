@@ -143,9 +143,8 @@ inline CallSite getLLVMCallSite(const Instruction* inst) {
 inline const Function* getDefFunForMultipleModule(const Function* fun) {
 	if(fun == NULL) return NULL;
 
-    SVFModule svfModule;
-    if (fun->isDeclaration() && svfModule.hasDefinition(fun))
-        fun = svfModule.getDefinition(fun);
+    if (fun->isDeclaration() && LLVMModuleSet::getLLVMModuleSet()->hasDefinition(fun))
+        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
     return fun;
 }
 

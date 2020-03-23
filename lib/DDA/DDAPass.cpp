@@ -61,7 +61,7 @@ DDAPass::~DDAPass() {
 }
 
 
-bool DDAPass::runOnModule(SVFModule module)
+bool DDAPass::runOnModule(SVFModule* module)
 {
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
@@ -78,7 +78,7 @@ bool DDAPass::runOnModule(SVFModule module)
 }
 
 /// select a client to initialize queries
-void DDAPass::selectClient(SVFModule module) {
+void DDAPass::selectClient(SVFModule* module) {
 
     if (!userInputQuery.empty()) {
         /// solve function pointer
@@ -107,7 +107,7 @@ void DDAPass::selectClient(SVFModule module) {
 }
 
 /// Create pointer analysis according to specified kind and analyze the module.
-void DDAPass::runPointerAnalysis(SVFModule module, u32_t kind)
+void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
     VFPathCond::setMaxPathLen(maxPathLen);

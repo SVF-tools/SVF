@@ -45,12 +45,10 @@ int main(int argc, char ** argv) {
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
 
-    SVFModule svfModule(moduleNameVec);
+    SVFModule* svfModule = new SVFModule(moduleNameVec);
 
     WPAPass *wpa = new WPAPass();
     wpa->runOnModule(svfModule);
-
-    svfModule.dumpModulesToFile(".wpa");
 
     return 0;
 }

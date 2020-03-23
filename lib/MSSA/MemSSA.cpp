@@ -554,7 +554,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
 
     PAG* pag = pta->getPAG();
 
-    for (SVFModule::iterator fit = pta->getModule().begin(), efit = pta->getModule().end();
+    for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit) {
         Function* fun = *fit;
         if(MSSAFun!="" && MSSAFun!=fun->getName())

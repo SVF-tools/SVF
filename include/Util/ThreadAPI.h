@@ -283,7 +283,7 @@ public:
     }
     //@}
 
-    void performAPIStat(SVFModule m);
+    void performAPIStat(SVFModule* m);
     void statInit(llvm::StringMap<u32_t>& tdAPIStatMap);
 };
 

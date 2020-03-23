@@ -36,7 +36,7 @@ AndersenSFR *AndersenSFR::sfrAndersen = NULL;
 /*!
  *
  */
-void AndersenSFR::initialize(SVFModule svfModule) {
+void AndersenSFR::initialize(SVFModule* svfModule) {
     AndersenSCD::initialize(svfModule);
     setPWCOpt(false);
 

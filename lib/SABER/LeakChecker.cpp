@@ -34,8 +34,6 @@ using namespace SVFUtil;
 
 char LeakChecker::ID = 0;
 
-static llvm::RegisterPass<LeakChecker> LEAKCHECKER("leak-checker",
-        "Memory Leak Checker");
 static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),
                                    llvm::cl::desc("Validate memory leak tests"));
 

@@ -193,7 +193,7 @@ public:
     }
 
     /// Initialization
-    void init(SVFModule M) {
+    void init(SVFModule* M) {
         this->M = M;
         selectedValidationScenarios = RC_MHP | RC_ALIASES | RC_PROTECTED | RC_RACE;
         collectValidationTargets();
@@ -336,7 +336,7 @@ protected:
     }
 
 private:
-    SVFModule M;
+    SVFModule* M;
     std::vector<AccessPair> accessPairs;
     RC_FLAG selectedValidationScenarios;
 

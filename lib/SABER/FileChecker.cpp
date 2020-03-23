@@ -33,10 +33,6 @@ using namespace SVFUtil;
 
 char FileChecker::ID = 0;
 
-static llvm::RegisterPass<FileChecker> FILECHECKER("file-checker",
-        "File Open/Close Checker");
-
-
 
 void FileChecker::reportNeverClose(const SVFGNode* src) {
     const CallBlockNode* cs = getSrcCSID(src);

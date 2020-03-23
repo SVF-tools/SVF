@@ -50,14 +50,9 @@ public:
     /// Destructor
     virtual ~FileChecker() {
     }
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        return runOnModule(svfModule);
-    }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;

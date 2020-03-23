@@ -82,7 +82,7 @@ public:
     //@}
 
     /// Perform path allocation
-    void allocate(const SVFModule module);
+    void allocate(const SVFModule* module);
 
     /// Get llvm conditional expression
     inline const Instruction* getCondInst(const Condition* cond) const {

@@ -72,7 +72,7 @@ public:
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FlowSensitive* createFSWPA(SVFModule svfModule) {
+    static FlowSensitive* createFSWPA(SVFModule* svfModule) {
         if (fspta == NULL) {
             fspta = new FlowSensitive();
             fspta->analyze(svfModule);
@@ -88,15 +88,15 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         return false;
     }
 
     /// Flow sensitive analysis
-    virtual void analyze(SVFModule svfModule);
+    virtual void analyze(SVFModule* svfModule);
 
     /// Initialize analysis
-    virtual void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule* svfModule);
 
     /// Finalize analysis
     virtual void finalize();

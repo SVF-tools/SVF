@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Source-Sink Bug Detector\n");
 
-    SVFModule svfModule(moduleNameVec);
+    SVFModule* svfModule = new SVFModule(moduleNameVec);
 
     LeakChecker *saber;
 
@@ -71,8 +71,6 @@ int main(int argc, char ** argv) {
 	saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
 
     saber->runOnModule(svfModule);
-
-    svfModule.dumpModulesToFile(".dvf");
 
     return 0;
 

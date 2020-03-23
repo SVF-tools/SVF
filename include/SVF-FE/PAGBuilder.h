@@ -43,7 +43,7 @@ class PAGBuilder: public llvm::InstVisitor<PAGBuilder> {
 
 private:
     PAG* pag;
-    SVFModule svfMod;
+    SVFModule* svfMod;
     const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
     const Value* curVal;	///< Current Value during PAG construction when visiting the module
 
@@ -56,7 +56,7 @@ public:
     }
 
     /// Start building PAG here
-    PAG* build(SVFModule svfModule);
+    PAG* build(SVFModule* svfModule);
 
     /// Return PAG
     PAG* getPAG() const {
@@ -102,7 +102,7 @@ public:
 
     /// Handle globals including (global variable and functions)
     //@{
-    void visitGlobal(SVFModule svfModule);
+    void visitGlobal(SVFModule* svfModule);
     void InitialGlobal(const GlobalVariable *gvar, Constant *C,
                        u32_t offset);
     NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset);
@@ -219,7 +219,7 @@ public:
     inline NodeID addNullPtrNode() {
         NodeID nullPtr = pag->addDummyValNode(pag->getNullPtr());
         /// let all undef value or non-determined pointers points-to black hole
-        LLVMContext &cxt = pag->getModule().getContext();
+        LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
         ConstantPointerNull *constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
         setCurrentLocation(constNull, NULL);
         pag->addBlackHoleAddrEdge(pag->getBlkPtr());

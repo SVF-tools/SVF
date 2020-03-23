@@ -1,4 +1,4 @@
-//===- SVFModule.h -- SVFModule class-----------------------------------------//
+//===- SVFModule.h -- SVFModule* class-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -51,6 +51,8 @@ public:
     typedef AliasSetType::const_iterator const_alias_iterator;
 
 private:
+    static LLVMModuleSet *llvmModuleSet;
+
     u32_t moduleNum;
     LLVMContext *cxts;
     std::unique_ptr<Module> *modules;
@@ -72,6 +74,23 @@ public:
     LLVMModuleSet(Module *mod);
     LLVMModuleSet(Module &mod);
     LLVMModuleSet() {}
+
+    static inline LLVMModuleSet *getLLVMModuleSet() {
+        if (llvmModuleSet == NULL)
+            llvmModuleSet = new LLVMModuleSet;
+        return llvmModuleSet;
+    }
+
+    static inline void getLLVMModuleSet(const std::vector<std::string> &moduleNameVec) {
+        if (llvmModuleSet == NULL)
+            llvmModuleSet = new LLVMModuleSet(moduleNameVec);
+    }
+
+    static void releaseLLVMModuleSet() {
+        if (llvmModuleSet)
+            delete llvmModuleSet;
+        llvmModuleSet = NULL;
+    }
 
     void build(const std::vector<std::string> &moduleNameVec);
 
@@ -174,6 +193,20 @@ public:
     }
     ///@}
 
+    Module *getMainLLVMModule() const {
+        return getModule(0);
+    }
+
+    LLVMContext& getContext() const {
+        assert(!empty() && "empty LLVM module!!");
+        return getMainLLVMModule()->getContext();
+    }
+
+    bool empty() const {
+        return getModuleNum() == 0;
+    }
+
+
 private:
     void loadModules(const std::vector<std::string> &moduleNameVec);
     void addSVFMain();
@@ -201,32 +234,14 @@ public:
     typedef AliasSetType::const_iterator const_alias_iterator;
 
 private:
-    static LLVMModuleSet *llvmModuleSet;
     static std::string pagReadFromTxt;
 
 public:
     /// Constructors
     SVFModule(const std::vector<std::string> &moduleNameVec) {
-        if (llvmModuleSet == NULL)
-            llvmModuleSet = new LLVMModuleSet(moduleNameVec);
-    }
-    SVFModule(Module *mod) {
-        if (llvmModuleSet == NULL)
-            llvmModuleSet = new LLVMModuleSet(mod);
-    }
-    SVFModule(Module &mod) {
-        if (llvmModuleSet == NULL)
-            llvmModuleSet = new LLVMModuleSet(mod);
+    	LLVMModuleSet::getLLVMModuleSet(moduleNameVec);
     }
     SVFModule() {
-        if (llvmModuleSet == NULL)
-            llvmModuleSet = new LLVMModuleSet;
-    }
-
-    static inline LLVMModuleSet *getLLVMModuleSet() {
-        if (llvmModuleSet == NULL)
-            llvmModuleSet = new LLVMModuleSet;
-        return llvmModuleSet;
     }
 
     static inline void setPagFromTXT(std::string txt) {
@@ -244,98 +259,61 @@ public:
     			return true;
     }
 
-    static void releaseLLVMModuleSet() {
-        if (llvmModuleSet)
-            delete llvmModuleSet;
-        llvmModuleSet = NULL;
-    }
-
-    bool empty() const {
-        return getModuleNum() == 0;
-    }
-
-    /// Methods from LLVMModuleSet
-    u32_t getModuleNum() const {
-        return llvmModuleSet->getModuleNum();
-    }
-
-    Module *getModule(u32_t idx) const {
-        return llvmModuleSet->getModule(idx);
-    }
-
-    Module &getModuleRef(u32_t idx) const {
-        return llvmModuleSet->getModuleRef(idx);
-    }
-
-    // Dump modules to files
-    void dumpModulesToFile(const std::string suffix) const {
-        llvmModuleSet->dumpModulesToFile(suffix);
-    }
-
     /// Fun decl --> def
     bool hasDefinition(const Function *fun) const {
-        return llvmModuleSet->hasDefinition(fun);
+        return LLVMModuleSet::getLLVMModuleSet()->hasDefinition(fun);
     }
 
     Function *getDefinition(const Function *fun) const {
-        return llvmModuleSet->getDefinition(fun);
+        return LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
     }
 
     /// Fun def --> decl
     bool hasDeclaration(const Function *fun) const {
-        return llvmModuleSet->hasDeclaration(fun);
+        return LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun);
     }
 
     const FunctionSetType &getDeclaration(const Function *fun) const {
-        return llvmModuleSet->getDeclaration(fun);
+        return LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
     }
 
     /// Global to rep
     bool hasGlobalRep(const GlobalVariable *val) const {
-        return llvmModuleSet->hasGlobalRep(val);
+        return LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(val);
     }
 
     GlobalVariable *getGlobalRep(const GlobalVariable *val) const {
-        return llvmModuleSet->getGlobalRep(val);
+        return LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(val);
     }
 
     /// Iterators
     ///@{
     iterator begin() {
-        return llvmModuleSet->begin();
+        return LLVMModuleSet::getLLVMModuleSet()->begin();
     }
     const_iterator begin() const {
-        return llvmModuleSet->begin();
+        return LLVMModuleSet::getLLVMModuleSet()->begin();
     }
     iterator end() {
-        return llvmModuleSet->end();
+        return LLVMModuleSet::getLLVMModuleSet()->end();
     }
     const_iterator end() const {
-        return llvmModuleSet->end();
-    }
-
-    Module *getMainLLVMModule() const {
-        return llvmModuleSet->getModule(0);
+        return LLVMModuleSet::getLLVMModuleSet()->end();
     }
 
 	const std::string& getModuleIdentifier() const {
 		if (pagReadFromTxt.empty()) {
-			assert(!empty() && "empty LLVM module!!");
-			return getMainLLVMModule()->getModuleIdentifier();
+			assert(!LLVMModuleSet::getLLVMModuleSet()->empty() && "empty LLVM module! Are you reading from a file other than LLVM-IR?");
+			return LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule()->getModuleIdentifier();
 		} else {
 			return pagReadFromTxt;
 		}
 	}
 
-    LLVMContext& getContext() const {
-        assert(!empty() && "empty LLVM module!!");
-        return getMainLLVMModule()->getContext();
-    }
-
     inline Function* getFunction(StringRef name) const {
         Function* fun = NULL;
-        for (u32_t i = 0; i < getModuleNum(); ++i) {
-            Module *mod = llvmModuleSet->getModule(i);
+        for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i) {
+            Module *mod = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
             fun = mod->getFunction(name);
             if(fun && !fun->isDeclaration()) {
                 return fun;
@@ -345,29 +323,29 @@ public:
     }
 
     global_iterator global_begin() {
-        return llvmModuleSet->global_begin();
+        return LLVMModuleSet::getLLVMModuleSet()->global_begin();
     }
     const_global_iterator global_begin() const {
-        return llvmModuleSet->global_begin();
+        return LLVMModuleSet::getLLVMModuleSet()->global_begin();
     }
     global_iterator global_end() {
-        return llvmModuleSet->global_end();
+        return LLVMModuleSet::getLLVMModuleSet()->global_end();
     }
     const_global_iterator global_end() const {
-        return llvmModuleSet->global_end();
+        return LLVMModuleSet::getLLVMModuleSet()->global_end();
     }
 
     alias_iterator alias_begin() {
-        return llvmModuleSet->alias_begin();
+        return LLVMModuleSet::getLLVMModuleSet()->alias_begin();
     }
     const_alias_iterator alias_begin() const {
-        return llvmModuleSet->alias_begin();
+        return LLVMModuleSet::getLLVMModuleSet()->alias_begin();
     }
     alias_iterator alias_end() {
-        return llvmModuleSet->alias_end();
+        return LLVMModuleSet::getLLVMModuleSet()->alias_end();
     }
     const_alias_iterator alias_end() const {
-        return llvmModuleSet->alias_end();
+        return LLVMModuleSet::getLLVMModuleSet()->alias_end();
     }
     ///@}
 };

@@ -49,7 +49,7 @@ public:
 	ICFGBuilder(ICFG* i): icfg(i) {
 
 	}
-    void build(SVFModule svfModule);
+    void build(SVFModule* svfModule);
 
 private:
     /// Create edges between ICFG nodes within a function

@@ -43,8 +43,8 @@
 
 char WPAPass::ID = 0;
 
-static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
-        "Whole Program Pointer Analysis Pass");
+//static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
+//        "Whole Program Pointer Analysis Pass");
 
 /// register this into alias analysis group
 ///static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
@@ -94,7 +94,7 @@ WPAPass::~WPAPass() {
 /*!
  * We start from here
  */
-void WPAPass::runOnModule(SVFModule svfModule) {
+void WPAPass::runOnModule(SVFModule* svfModule) {
     for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
             runPointerAnalysis(svfModule, i);
@@ -106,7 +106,7 @@ void WPAPass::runOnModule(SVFModule svfModule) {
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
-void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
+void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
     /// Initialize pointer analysis.
     switch (kind) {

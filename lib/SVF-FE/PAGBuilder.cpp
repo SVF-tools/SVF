@@ -42,7 +42,7 @@ using namespace SVFUtil;
 /*!
  * Start building PAG here
  */
-PAG* PAGBuilder::build(SVFModule svfModule) {
+PAG* PAGBuilder::build(SVFModule* svfModule) {
     svfMod = svfModule;
     /// initial external library information
     /// initial PAG nodes
@@ -55,7 +55,7 @@ PAG* PAGBuilder::build(SVFModule svfModule) {
     ExternalPAG::initialise(svfModule);
 
     /// handle functions
-    for (SVFModule::iterator fit = svfModule.begin(), efit = svfModule.end();
+    for (SVFModule::iterator fit = svfModule->begin(), efit = svfModule->end();
             fit != efit; ++fit) {
         Function& fun = **fit;
         /// collect return node of function fun
@@ -355,11 +355,11 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
 /*!
  *  Visit global variables for building PAG
  */
-void PAGBuilder::visitGlobal(SVFModule svfModule) {
+void PAGBuilder::visitGlobal(SVFModule* svfModule) {
 
     /// initialize global variable
-    for (SVFModule::global_iterator I = svfModule.global_begin(), E =
-                svfModule.global_end(); I != E; ++I) {
+    for (SVFModule::global_iterator I = svfModule->global_begin(), E =
+                svfModule->global_end(); I != E; ++I) {
         GlobalVariable *gvar = *I;
         NodeID idx = getValueNode(gvar);
         NodeID obj = getObjectNode(gvar);
@@ -375,8 +375,8 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
     }
 
     /// initialize global functions
-    for (SVFModule::iterator I = svfModule.begin(), E =
-                svfModule.end(); I != E; ++I) {
+    for (SVFModule::iterator I = svfModule->begin(), E =
+                svfModule->end(); I != E; ++I) {
         Function *fun = *I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
@@ -387,7 +387,7 @@ void PAGBuilder::visitGlobal(SVFModule svfModule) {
     }
 
     // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
-    for (SVFModule::alias_iterator I = svfModule.alias_begin(), E = svfModule.alias_end(); I != E; I++) {
+    for (SVFModule::alias_iterator I = svfModule->alias_begin(), E = svfModule->alias_end(); I != E; I++) {
         NodeID dst = pag->getValueNode(*I);
         NodeID src = pag->getValueNode((*I)->getAliasee());
         processCE((*I)->getAliasee());

@@ -39,7 +39,7 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(SVFModule svfModule) {
+void FlowSensitive::initialize(SVFModule* svfModule) {
     PointerAnalysis::initialize(svfModule);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
@@ -53,7 +53,7 @@ void FlowSensitive::initialize(SVFModule svfModule) {
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(SVFModule svfModule) {
+void FlowSensitive::analyze(SVFModule* svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
 

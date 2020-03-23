@@ -136,8 +136,8 @@ void MRGenerator::generateMRs() {
  */
 void MRGenerator::collectModRefForLoadStore() {
 
-    SVFModule svfModule = pta->getModule();
-    for (SVFModule::iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi;
+    SVFModule* svfModule = pta->getModule();
+    for (SVFModule::iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi;
             ++fi) {
         const Function& fun = **fi;
 

@@ -22,11 +22,11 @@
  */
 class DDAClient {
 public:
-    DDAClient(SVFModule mod) : pag(NULL), module(mod), curPtr(0), solveAll(true) {}
+    DDAClient(SVFModule* mod) : pag(NULL), module(mod), curPtr(0), solveAll(true) {}
 
     virtual ~DDAClient() {}
 
-    virtual inline void initialise(SVFModule module) {}
+    virtual inline void initialise(SVFModule* module) {}
 
     /// Collect candidate pointers for query.
     virtual inline NodeSet& collectCandidateQueries(PAG* p) {
@@ -60,14 +60,14 @@ public:
         solveAll = false;
     }
     /// Get LLVM module
-    inline SVFModule getModule() const {
+    inline SVFModule* getModule() const {
         return module;
     }
     virtual void answerQueries(PointerAnalysis* pta);
 
     virtual inline void performStat(PointerAnalysis* pta) {}
 
-    virtual inline void collectWPANum(SVFModule mod) {}
+    virtual inline void collectWPANum(SVFModule* mod) {}
 protected:
     void addCandidate(NodeID id) {
         if (pag->isValidTopLevelPtr(pag->getPAGNode(id)))
@@ -75,7 +75,7 @@ protected:
     }
 
     PAG*   pag;					///< PAG graph used by current DDA analysis
-    SVFModule module;		///< LLVM module
+    SVFModule* module;		///< LLVM module
     NodeID curPtr;				///< current pointer being queried
     NodeSet candidateQueries;	///< store all candidate pointers to be queried
 
@@ -93,7 +93,7 @@ private:
     typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
-    FunptrDDAClient(SVFModule module) : DDAClient(module) {}
+    FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
@@ -111,7 +111,7 @@ class AliasDDAClient : public DDAClient {
 public:
     typedef std::set<const PAGNode*> PAGNodeSet;
 
-    AliasDDAClient(SVFModule module) : DDAClient(module) {}
+    AliasDDAClient(SVFModule* module) : DDAClient(module) {}
     ~AliasDDAClient() {}
 
     /// Only collect function pointers as query candidates.

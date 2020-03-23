@@ -56,7 +56,7 @@ static llvm::cl::opt<std::string> Graphtxt("graphtxt", llvm::cl::value_desc("fil
 		llvm::cl::desc("graph txt file to build PAG"));
 static llvm::cl::opt<bool> SVFMain("svfmain", llvm::cl::init(false), llvm::cl::desc("add svf.main()"));
 
-LLVMModuleSet *SVFModule::llvmModuleSet = NULL;
+LLVMModuleSet *LLVMModuleSet::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
 
 LLVMModuleSet::LLVMModuleSet(Module *mod) {

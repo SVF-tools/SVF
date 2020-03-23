@@ -79,7 +79,7 @@ public:
 
     /// Parses command line arguments and attaches external PAGs to main
     /// PAG.
-    static void initialise(SVFModule svfModule);
+    static void initialise(SVFModule* svfModule);
 
     /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.

@@ -33,9 +33,6 @@ using namespace SVFUtil;
 
 char DoubleFreeChecker::ID = 0;
 
-static llvm::RegisterPass<DoubleFreeChecker> DFREECHECKER("dfree-checker",
-        "File Open/Close Checker");
-
 void DoubleFreeChecker::reportBug(ProgSlice* slice) {
 
     if(isSatisfiableForPairs(slice) == false) {

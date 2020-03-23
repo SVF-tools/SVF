@@ -74,13 +74,13 @@ private:
     static SymbolTableInfo* symlnfo;
 
     /// Module
-    SVFModule mod;
+    SVFModule* mod;
 
     /// Max field limit
     static u32_t maxFieldLimit;
 
     /// Invoke llvm passes to modify module
-    void prePassSchedule(SVFModule svfModule);
+    void prePassSchedule(SVFModule* svfModule);
 
     /// Clean up memory
     void destroy();
@@ -131,7 +131,7 @@ public:
     //@}
 
     /// Module
-    inline SVFModule getModule() {
+    inline SVFModule* getModule() {
         return mod;
     }
 
@@ -149,7 +149,7 @@ public:
     //@}
 
     /// Start building memory model
-    void buildMemModel(SVFModule svfModule);
+    void buildMemModel(SVFModule* svfModule);
 
     /// collect the syms
     //@{
@@ -258,8 +258,8 @@ public:
     /// find the unique defined global across multiple modules
     inline const Value* getGlobalRep(const Value* val) const{
         if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
-            if (symlnfo->getModule().hasGlobalRep(gvar))
-                val = symlnfo->getModule().getGlobalRep(gvar);
+            if (symlnfo->getModule()->hasGlobalRep(gvar))
+                val = symlnfo->getModule()->getGlobalRep(gvar);
         }
         return val;
     }

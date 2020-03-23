@@ -82,8 +82,8 @@ void CHGraph::buildCHG() {
 
 	double timeStart, timeEnd;
 	timeStart = CLOCK_IN_MS();
-	for (u32_t i = 0; i < svfMod.getModuleNum(); ++i) {
-		Module *M = svfMod.getModule(i);
+	for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i) {
+		Module *M = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
 		assert(M && "module not found?");
 		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("construct CHGraph From module "
 										+ M->getName().str() + "...\n"));

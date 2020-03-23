@@ -257,7 +257,7 @@ void PTAStat::callgraphStat() {
 
 void PTAStat::printStat(string statname) {
 
-    StringRef fullName(SymbolTableInfo::Symbolnfo()->getModule().getModuleIdentifier());
+    StringRef fullName(SymbolTableInfo::Symbolnfo()->getModule()->getModuleIdentifier());
     StringRef name = fullName.split('/').second;
     moduleName = name.split('.').first.str();
 
@@ -287,9 +287,9 @@ void PTAStat::printStat(string statname) {
 
 
 void PTAStat::bitcastInstStat() {
-    SVFModule module = pta->getModule();
+    SVFModule* module = pta->getModule();
     u32_t numberOfBitCast = 0;
-    for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
+    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
             funIter != funEiter; ++funIter) {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
@@ -310,10 +310,10 @@ void PTAStat::bitcastInstStat() {
 }
 
 void PTAStat::branchStat() {
-    SVFModule module = pta->getModule();
+    SVFModule* module = pta->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::const_iterator funIter = module.begin(), funEiter = module.end();
+    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
             funIter != funEiter; ++funIter) {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();

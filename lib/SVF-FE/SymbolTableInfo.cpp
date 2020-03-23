@@ -231,7 +231,7 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
     llvm::APInt byteOffset(64,0,true);
-    DataLayout * dataLayout = getDataLayout(getModule().getMainLLVMModule());
+    DataLayout * dataLayout = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset)){
         Size_t bo = byteOffset.getSExtValue();
         ls.setByteOffset(bo + ls.getByteOffset());
@@ -382,18 +382,18 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 /*!
  * Invoke llvm passes to modify module
  */
-void SymbolTableInfo::prePassSchedule(SVFModule svfModule)
+void SymbolTableInfo::prePassSchedule(SVFModule* svfModule)
 {
     /// BreakConstantGEPs Pass
     BreakConstantGEPs* p1 = new BreakConstantGEPs();
-    for (u32_t i = 0; i < svfModule.getModuleNum(); ++i) {
-        Module *module = svfModule.getModule(i);
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i) {
+        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
         p1->runOnModule(*module);
     }
 
     /// MergeFunctionRets Pass
     UnifyFunctionExitNodes* p2 = new UnifyFunctionExitNodes();
-    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
         Function *fun = *F;
         if (fun->isDeclaration())
             continue;
@@ -404,7 +404,7 @@ void SymbolTableInfo::prePassSchedule(SVFModule svfModule)
 /*!
  *  This method identify which is value sym and which is object sym
  */
-void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
+void SymbolTableInfo::buildMemModel(SVFModule* svfModule) {
     SVFUtil::increaseStackSize();
 
     prePassSchedule(svfModule);
@@ -432,20 +432,20 @@ void SymbolTableInfo::buildMemModel(SVFModule svfModule) {
     symTyMap.insert(std::make_pair(totalSymNum, NullPtr));
 
     // Add symbols for all the globals .
-    for (SVFModule::global_iterator I = svfModule.global_begin(), E =
-                svfModule.global_end(); I != E; ++I) {
+    for (SVFModule::global_iterator I = svfModule->global_begin(), E =
+                svfModule->global_end(); I != E; ++I) {
         collectSym(*I);
     }
 
     // Add symbols for all the global aliases
-    for (SVFModule::alias_iterator I = svfModule.alias_begin(), E =
-                svfModule.alias_end(); I != E; I++) {
+    for (SVFModule::alias_iterator I = svfModule->alias_begin(), E =
+                svfModule->alias_end(); I != E; I++) {
         collectSym(*I);
         collectSym((*I)->getAliasee());
     }
 
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::iterator F = svfModule.begin(), E = svfModule.end(); F != E; ++F) {
+    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
         Function *fun = *F;
         collectSym(fun);
         collectRet(fun);
@@ -860,14 +860,14 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const Type* type) {
 
     // if the type has size then simply return it, otherwise just return 0
     if(type->isSized())
-        return  getDataLayout(getModule().getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
+        return  getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
     else
         return 0;
 }
 
 u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx){
 
-    const StructLayout *stTySL = getDataLayout(getModule().getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
+    const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
     /// if this struct type does not have any element, i.e., opaque
     if(sty->isOpaque())
         return 0;

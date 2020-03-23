@@ -120,9 +120,8 @@ bool SVFUtil::isDeadFunction (const Function * fun) {
         if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
             return false;
     }
-    SVFModule svfModule;
-    if (svfModule.hasDeclaration(fun)) {
-        const SVFModule::FunctionSetType &decls = svfModule.getDeclaration(fun);
+    if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun)) {
+        const SVFModule::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
         for (SVFModule::FunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it) {
             const Function *decl = *it;

@@ -659,7 +659,7 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta) {
 /*!
  * Initialize analysis
  */
-void FSMPTA::initialize(SVFModule module) {
+void FSMPTA::initialize(SVFModule* module) {
     PointerAnalysis::initialize(module);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);

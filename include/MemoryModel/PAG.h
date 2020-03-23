@@ -159,7 +159,7 @@ public:
     static void handleBlackHole(bool b);
     //@}
     /// Get LLVM Module
-    inline SVFModule getModule() {
+    inline SVFModule* getModule() {
         return SymbolTableInfo::Symbolnfo()->getModule();
     }
     inline void addCallSite(const CallBlockNode* call){

@@ -66,7 +66,7 @@ static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
 /*!
  * Andersen analysis
  */
-void Andersen::analyze(SVFModule svfModule) {
+void Andersen::analyze(SVFModule* svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
     
@@ -91,7 +91,7 @@ void Andersen::analyze(SVFModule svfModule) {
 /*!
  * Initilize analysis
  */
-void Andersen::initialize(SVFModule svfModule) {
+void Andersen::initialize(SVFModule* svfModule) {
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);

@@ -83,10 +83,10 @@ public:
     }
 
     /// Start analysis here
-    virtual void analyze(SVFModule module);
+    virtual void analyze(SVFModule* module);
 
     /// Initialize analysis
-    virtual void initialize(SVFModule module) {
+    virtual void initialize(SVFModule* module) {
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         svfg =  memSSA.buildPTROnlySVFG(ander);
         setGraph(memSSA.getSVFG());

@@ -44,12 +44,12 @@ int main(int argc, char ** argv) {
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Analysis for Multithreaded programs\n");
 
-    SVFModule svfModule(moduleNameVec);
+    SVFModule* svfModule(moduleNameVec);
 
     Passes.add(new MTA());
-    Passes.run(*svfModule.getMainLLVMModule());
+    Passes.run(*svfModule->getMainLLVMModule());
 
-    svfModule.dumpModulesToFile(".mta");
+    svfModule->dumpModulesToFile(".mta");
 
     return 0;
 

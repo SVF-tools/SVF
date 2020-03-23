@@ -164,7 +164,7 @@ public:
         DESTRUCTOR = 0x2 // connect node based on destructor
     } RELATIONTYPE;
 
-    CHGraph(const SVFModule svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0) {
+    CHGraph(SVFModule* svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0) {
     }
     ~CHGraph();
 
@@ -244,7 +244,7 @@ public:
 	}
 
 private:
-    SVFModule svfMod;
+    SVFModule* svfMod;
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;

@@ -25,7 +25,7 @@ public:
     typedef BVDataPTAImpl::CallEdgeMap	CallEdgeMap;
     typedef BVDataPTAImpl::FunctionSet	FunctionSet;
     /// Constructor
-    FlowDDA(SVFModule m, DDAClient* client): BVDataPTAImpl(PointerAnalysis::FlowS_DDA),
+    FlowDDA(SVFModule* m, DDAClient* client): BVDataPTAImpl(PointerAnalysis::FlowS_DDA),
         DDAVFSolver<NodeID,PointsTo,LocDPItem>(),
         _client(client) {
     }
@@ -33,7 +33,7 @@ public:
     inline virtual ~FlowDDA() {
     }
     /// dummy analyze method
-    virtual void analyze(SVFModule mod) {}
+    virtual void analyze(SVFModule* mod) {}
 
     /// Compute points-to set for all top variable
     void computeDDAPts(NodeID id);
@@ -48,7 +48,7 @@ public:
     bool testIndCallReachability(LocDPItem& dpm, const Function* callee, CallSiteID csId);
 
     /// Initialization of the analysis
-    inline virtual void initialize(SVFModule module) {
+    inline virtual void initialize(SVFModule* module) {
         BVDataPTAImpl::initialize(module);
         buildSVFG(module);
         setCallGraph(getPTACallGraph());

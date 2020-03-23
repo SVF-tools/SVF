@@ -48,7 +48,7 @@ std::vector<std::pair<std::string, std::string>>
     return parsedExternalPAGs;
 }
 
-void ExternalPAG::initialise(SVFModule svfModule) {
+void ExternalPAG::initialise(SVFModule* svfModule) {
     PAG *pag = PAG::getPAG();
 
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
@@ -62,7 +62,7 @@ void ExternalPAG::initialise(SVFModule svfModule) {
 
         ExternalPAG extpag = ExternalPAG(fname);
         extpag.readFromFile(path);
-        extpag.addExternalPAG(svfModule.getFunction(fname));
+        extpag.addExternalPAG(svfModule->getFunction(fname));
     }
 }
 

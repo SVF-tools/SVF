@@ -36,7 +36,7 @@
 /*!
  * Static Memory Leak Detector
  */
-class LeakChecker : public SrcSnkDDA, public ModulePass {
+class LeakChecker : public SrcSnkDDA {
 
 public:
     typedef std::map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
@@ -55,19 +55,14 @@ public:
     static char ID;
 
     /// Constructor
-    LeakChecker(char id = ID): ModulePass(ID) {
+    LeakChecker(char id = ID) {
     }
     /// Destructor
     virtual ~LeakChecker() {
     }
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        return runOnModule(svfModule);
-    }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;
