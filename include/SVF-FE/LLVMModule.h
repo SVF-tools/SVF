@@ -31,7 +31,7 @@
 #define INCLUDE_SVF_FE_LLVMMODULE_H_
 
 #include "Util/BasicTypes.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 
 class LLVMModuleSet {
 public:

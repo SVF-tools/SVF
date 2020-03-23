@@ -28,7 +28,7 @@
  */
 
 #include "SVF-FE/PAGBuilder.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"

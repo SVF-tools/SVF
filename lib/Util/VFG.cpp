@@ -29,7 +29,7 @@
 
 
 #include "Util/VFG.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 
 using namespace SVFUtil;

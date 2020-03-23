@@ -30,12 +30,11 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
+#include "Util/SVFBasicTypes.h"
 #include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Util/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SmallVector.h>		// for small vector
-#include <llvm/ADT/DenseSet.h>		// for dense map, set
-#include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/CallSite.h>
 #include <llvm/Support/raw_ostream.h>	// for output
@@ -61,75 +60,6 @@
 #include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
-
-#include <vector>
-#include <list>
-#include <set>
-#include <map>
-#include <stack>
-#include <deque>
-
-
-typedef unsigned u32_t;
-typedef unsigned long long u64_t;
-typedef signed s32_t;
-typedef signed long Size_t;
-
-typedef u32_t NodeID;
-typedef u32_t EdgeID;
-typedef unsigned SymID;
-typedef unsigned CallSiteID;
-typedef unsigned ThreadID;
-
-typedef llvm::SparseBitVector<> NodeBS;
-typedef NodeBS PointsTo;
-typedef PointsTo AliasSet;
-
-typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::set<NodeID> NodeSet;
-typedef llvm::DenseSet<NodePair,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairSet;
-typedef llvm::DenseMap<NodePair,NodeID,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairMap;
-typedef std::vector<NodeID> NodeVector;
-typedef std::vector<EdgeID> EdgeVector;
-typedef std::stack<NodeID> NodeStack;
-typedef std::list<NodeID> NodeList;
-typedef std::deque<NodeID> NodeDeque;
-typedef llvm::SmallVector<u32_t,16> SmallVector16;
-typedef llvm::SmallVector<u32_t,8> SmallVector8;
-typedef NodeSet EdgeSet;
-typedef SmallVector16 CallStrCxt;
-typedef llvm::StringMap<u32_t> StringMap;
-
-/// LLVM debug macros, define type of your DEBUG model of each pass
-#define DBOUT(TYPE, X) 	DEBUG_WITH_TYPE(TYPE, X)
-#define DOSTAT(X) 	X
-#define DOTIMESTAT(X) 	X
-
-/// General debug flag is for each phase of a pass, it is often in a colorful output format
-#define DGENERAL "general"
-
-#define DPAGBuild "pag"
-#define DMemModel "mm"
-#define DMemModelCE "mmce"
-#define DCOMModel "comm"
-#define DDDA "dda"
-#define DDumpPT "dumppt"
-#define DRefinePT "sbpt"
-#define DCache "cache"
-#define DWPA "wpa"
-#define DMSSA "mssa"
-#define DInstrument "ins"
-#define DAndersen "ander"
-#define DSaber "saber"
-#define DMTA "mta"
-#define DCHA "cha"
-
-/*
- * Number of clock ticks per second. A clock tick is the unit by which
- * processor time is measured and is returned by 'clock'.
- */
-#define TIMEINTERVAL 1000
-#define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
 class BddCond;
 

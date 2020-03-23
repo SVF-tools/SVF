@@ -31,7 +31,7 @@
 #include "SVF-FE/CallGraphBuilder.h"
 #include "SVF-FE/CHA.h"
 #include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 

@@ -33,7 +33,7 @@
  */
 
 
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"

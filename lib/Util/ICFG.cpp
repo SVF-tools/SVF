@@ -28,7 +28,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "Util/ICFG.h"
 #include "MemoryModel/PAG.h"
 

@@ -26,7 +26,7 @@
  *  Created on: Apr 15, 2014
  *      Author: Yulei Sui
  */
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemSSA.h"
 #include "MSSA/SVFG.h"

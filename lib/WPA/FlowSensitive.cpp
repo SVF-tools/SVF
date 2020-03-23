@@ -27,7 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"

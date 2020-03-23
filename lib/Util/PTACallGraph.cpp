@@ -28,7 +28,7 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/PTACallGraph.h"
 

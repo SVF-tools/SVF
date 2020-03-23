@@ -27,7 +27,7 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
 #include "SVF-FE/LLVMUtil.h"

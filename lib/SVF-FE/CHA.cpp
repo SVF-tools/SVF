@@ -41,7 +41,7 @@
 #include "SVF-FE/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SVFModule.h"
+#include "Util/SVFModule.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;
