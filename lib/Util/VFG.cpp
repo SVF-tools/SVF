@@ -201,7 +201,7 @@ void VFG::addVFGNodes() {
 		}
 
 		PAGNodeSet retPAGNodes;
-		if (uniqueFunRetNode->hasOutgoingEdges(PAGEdge::Copy)) {
+		if (uniqueFunRetNode->hasIncomingEdges(PAGEdge::Copy)) {
 			for (PAGEdge::PAGEdgeSetTy::const_iterator cit = uniqueFunRetNode->getIncomingEdgesBegin(PAGEdge::Copy),
 					ecit = uniqueFunRetNode->getIncomingEdgesEnd(PAGEdge::Copy);
 					cit != ecit; ++cit) {
