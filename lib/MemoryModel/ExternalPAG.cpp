@@ -88,7 +88,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
             }
         } else {
             // This is a int2ptr cast during parameter passing
-            pag->addBlackHoleAddrEdge(dstrec);
+            pag->addBlackHoleAddrPE(dstrec);
         }
     }
 
@@ -121,7 +121,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
             // This is a int2ptr cast during parameter passing
             //addFormalParamBlackHoleAddrEdge(formalArgNode->getId(), &*itF);
             assert(false && "you need to set the current location of this PAGEdge");
-            pag->addBlackHoleAddrEdge(formalArgNode->getId());
+            pag->addBlackHoleAddrPE(formalArgNode->getId());
         }
         // TODO proofread.
     }

@@ -113,7 +113,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec) {
         SMDiagnostic Err;
         modules[i] = parseIRFile(moduleName, Err, cxts[0]);
         if (!modules[i]) {
-        	SVFUtil::errs() << "load module: " << moduleName << "failed\n";
+        	SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
             continue;
         }
     }

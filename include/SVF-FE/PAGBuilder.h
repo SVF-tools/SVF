@@ -147,7 +147,7 @@ public:
     void visitSelectInst(SelectInst &I);
     void visitExtractValueInst(ExtractValueInst  &EVI);
     void visitInsertValueInst(InsertValueInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
     // TerminatorInst and UnwindInst have been removed since llvm-8.0.0
     // void visitTerminatorInst(TerminatorInst &TI) {}
@@ -162,13 +162,13 @@ public:
     void visitExtractElementInst(ExtractElementInst &I);
 
     void visitInsertElementInst(InsertElementInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitShuffleVectorInst(ShuffleVectorInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitLandingPadInst(LandingPadInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Instruction not that often
@@ -177,13 +177,13 @@ public:
     void visitUnreachableInst(UnreachableInst &I) { /*returns void*/
     }
     void visitFenceInst(FenceInst &I) { /*returns void*/
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitAtomicCmpXchgInst(AtomicCmpXchgInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
     void visitAtomicRMWInst(AtomicRMWInst &I) {
-		pag->addBlackHoleAddrEdge(getValueNode(&I));
+		addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Provide base case for our instruction visit.
@@ -206,13 +206,12 @@ public:
     }
 
     /// Add global black hole Address edge
-    bool addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
+    void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,NULL);
-        bool added = pag->addBlackHoleAddrEdge(node);
+        addBlackHoleAddrEdge(node);
         setCurrentLocation(cval,cbb);
-        return added;
     }
 
     /// Add NullPtr PAGNode
@@ -222,7 +221,7 @@ public:
         LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
         ConstantPointerNull *constNull = ConstantPointerNull::get(Type::getInt8PtrTy(cxt));
         setCurrentLocation(constNull, NULL);
-        pag->addBlackHoleAddrEdge(pag->getBlkPtr());
+        addBlackHoleAddrEdge(pag->getBlkPtr());
         return nullPtr;
     }
 
@@ -231,6 +230,11 @@ public:
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     void connectGlobalToProgEntry();
+
+    inline void addBlackHoleAddrEdge(NodeID node) {
+    	if(PAGEdge* edge = pag->addBlackHoleAddrPE(node))
+    		setCurrentBBAndValueForPAGEdge(edge);
+    }
 
     /// Add Address edge
     inline void addAddrEdge(NodeID src, NodeID dst){

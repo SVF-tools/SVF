@@ -78,7 +78,7 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
                 // or a dead function, we may create a black hole address edge for it
                 if(SVFUtil::ArgInNoCallerFunction(&*I)) {
                     if(I->getType()->isPointerTy())
-                        pag->addBlackHoleAddrEdge(argValNodeId);
+                        addBlackHoleAddrEdge(argValNodeId);
                 }
                 pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
             }
@@ -253,7 +253,7 @@ void PAGBuilder::processCE(const Value *val) {
             const BasicBlock* cbb = getCurrentBB();
             setCurrentLocation(ref, NULL);
             NodeID dst = pag->getValueNode(ref);
-            pag->addBlackHoleAddrEdge(dst);
+            addBlackHoleAddrEdge(dst);
             setCurrentLocation(cval, cbb);
         }
         else if (isBinaryConstantExpr(ref)){
@@ -262,7 +262,7 @@ void PAGBuilder::processCE(const Value *val) {
             const BasicBlock* cbb = getCurrentBB();
             setCurrentLocation(ref, NULL);
             NodeID dst = pag->getValueNode(ref);
-            pag->addBlackHoleAddrEdge(dst);
+            addBlackHoleAddrEdge(dst);
             setCurrentLocation(cval, cbb);
         }
         else if (SVFUtil::isa<ConstantAggregate>(ref)){
@@ -470,7 +470,7 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst) {
     // GetElementPtrInst should always be a pointer or a vector contains pointers
     // for now we don't handle vector type here
     if(SVFUtil::isa<VectorType>(inst.getType())){
-    	pag->addBlackHoleAddrEdge(dst);
+    	addBlackHoleAddrEdge(dst);
         return;
     }
 
@@ -494,7 +494,7 @@ void PAGBuilder::visitCastInst(CastInst &inst) {
 	NodeID dst = getValueNode(&inst);
 
 	if (SVFUtil::isa<IntToPtrInst>(&inst)) {
-		pag->addBlackHoleAddrEdge(dst);
+		addBlackHoleAddrEdge(dst);
 	} else {
 		Value * opnd = inst.getOperand(0);
 		if (!SVFUtil::isa<PointerType>(opnd->getType()))
@@ -623,7 +623,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
  */
 void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst) {
 	NodeID dst = getValueNode(&inst);
-	pag->addBlackHoleAddrEdge(dst);
+	addBlackHoleAddrEdge(dst);
 }
 
 /*!
@@ -636,7 +636,7 @@ void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst) {
  */
 void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst) {
 	NodeID dst = getValueNode(&inst);
-	pag->addBlackHoleAddrEdge(dst);
+	addBlackHoleAddrEdge(dst);
 }
 
 /*!
@@ -818,7 +818,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                     NodeID srcNode = getValueNode(src);
                     addCopyEdge(srcNode, dstNode);
                 } else
-                    pag->addBlackHoleAddrEdge(dstNode);
+                    addBlackHoleAddrEdge(dstNode);
                 break;
                 break;
             }
@@ -868,7 +868,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
                         if(vnS)
                             addCopyEdge(vnS,vnD);
                     } else
-                        pag->addBlackHoleAddrEdge(vnD);
+                        addBlackHoleAddrEdge(vnD);
                 }
                 //Do the A2R_A0 part.
                 NodeID vnD= getValueNode(cs.getArgument(2));

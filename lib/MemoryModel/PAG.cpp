@@ -176,7 +176,7 @@ RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs) {
 /*!
  * Add blackhole/constant edge
  */
-bool PAG::addBlackHoleAddrEdge(NodeID node) {
+PAGEdge* PAG::addBlackHoleAddrPE(NodeID node) {
     if(HANDBLACKHOLE)
         return pag->addAddrPE(pag->getBlackHoleNode(), node);
     else

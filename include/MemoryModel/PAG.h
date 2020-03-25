@@ -674,7 +674,7 @@ public:
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)
-    bool addBlackHoleAddrEdge(NodeID node);
+    PAGEdge* addBlackHoleAddrPE(NodeID node);
 
     /// Whether a node is a valid pointer
     //@{
