@@ -97,17 +97,17 @@ private:
     NodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
 
-    /// Constructor
-    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
-        symInfo = SymbolTableInfo::Symbolnfo();
-    }
-
     /// Clean up memory
     void destroy();
 
 public:
     u32_t totalPTAPAGEdge;
 
+    /// Constructor
+    PAG(bool buildFromFile) : fromFile(buildFromFile), curBB(NULL),curVal(NULL), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0) {
+        symInfo = SymbolTableInfo::Symbolnfo();
+    }
+    PAG(){}
     /// Return valid pointers
     inline NodeSet& getAllValidPtrs() {
         return candidatePointers;
@@ -619,16 +619,31 @@ public:
     inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
+
+    inline NodeID addValNodeFromFile(const std::string val, PAGNode* node, NodeID i){
+        return addNode(node,i);
+    }
     /// Add a memory obj node
     inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+
+    inline NodeID addObjNodeFromFile(const std::string str_val, PAGNode* node, NodeID i){
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
     inline NodeID addRetNode(const Function* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
+    inline NodeID addRetNodeFromFile(const std::string str_val, PAGNode *node, NodeID i){
+        return addNode(node, i);
+    }
     /// Add a unique vararg node for a procedure
     inline NodeID addVarargNode(const Function* val, PAGNode *node, NodeID i) {
+        return addNode(node,i);
+    }
+
+    inline NodeID addVarargNodeFromFile(const std::string val, PAGNode * node, NodeID i){
         return addNode(node,i);
     }
 
@@ -705,6 +720,12 @@ public:
     /// Print PAG
     void print();
 
+    void printInst2JsonFile(const std::string& filename);
+    
+    std::string getNodeKindValue(int kind);
+
+    std::string getEdgeKindValue(int kind);
+    
     /// Dump PAG
     void dump(std::string name);
 

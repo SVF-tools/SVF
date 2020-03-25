@@ -30,6 +30,7 @@
 
 #include "Util/SVFModule.h"
 #include "Util/PTACallGraph.h"
+#include "Util/SVFFunction.h"
 
 using namespace SVFUtil;
 
