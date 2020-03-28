@@ -110,7 +110,7 @@ int main(int argc, char ** argv) {
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+    PointerAnalysis* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
 
     /// Query aliases
     /// aliasQuery(ander,value1,value2);
