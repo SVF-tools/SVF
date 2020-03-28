@@ -31,7 +31,7 @@
 #define CHA_H_
 
 #include "Util/SVFModule.h"
-#include "MemoryModel/GenericGraph.h"
+#include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
 class SVFModule;

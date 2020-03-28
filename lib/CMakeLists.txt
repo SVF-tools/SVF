@@ -14,32 +14,33 @@ set(SOURCES
     SVF-FE/SymbolTableInfo.cpp
     SVF-FE/PAGBuilder.cpp
     SVF-FE/CHA.cpp
+    Graphs/PTACallGraph.cpp
+    Graphs/ThreadCallGraph.cpp
+    Graphs/PAG.cpp
+    Graphs/ICFG.cpp
+    Graphs/ConsG.cpp
+    Graphs/VFG.cpp
+    Graphs/SVFG.cpp
+    Graphs/OfflineConsG.cpp
+    Graphs/ExternalPAG.cpp
+    Graphs/SVFGOPT.cpp
+    Graphs/SVFGStat.cpp    
     Util/SVFUtil.cpp
-    Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
-    Util/ThreadCallGraph.cpp
     Util/Conditions.cpp
     Util/ExtAPI.cpp
     Util/PathCondAllocator.cpp
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
-    Util/ICFG.cpp
-    Util/VFG.cpp
     MemoryModel/MemModel.cpp
-    MemoryModel/ConsG.cpp
     MemoryModel/LocationSet.cpp
-    MemoryModel/OfflineConsG.cpp
-    MemoryModel/ExternalPAG.cpp
     MemoryModel/PAGBuilderFromFile.cpp
-    MemoryModel/PAG.cpp
     MemoryModel/PointerAnalysis.cpp
+    MemoryModel/PointerAnalysisImpl.cpp    
     MSSA/MemPartition.cpp
     MSSA/MemRegion.cpp
     MSSA/MemSSA.cpp
     MSSA/SVFGBuilder.cpp
-    MSSA/SVFG.cpp
-    MSSA/SVFGOPT.cpp
-    MSSA/SVFGStat.cpp
     WPA/Andersen.cpp
     WPA/AndersenLCD.cpp
     WPA/AndersenHCD.cpp

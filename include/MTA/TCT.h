@@ -10,7 +10,7 @@
 
 #include "Util/SCC.h"
 #include "Util/SVFUtil.h"
-#include "Util/ThreadCallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
 #include <set>
 #include <vector>

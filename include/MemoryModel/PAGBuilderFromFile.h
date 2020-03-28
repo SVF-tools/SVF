@@ -30,7 +30,7 @@
 #ifndef INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
 #define INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_
 
-#include "MemoryModel/PAG.h"
+#include "Graphs/PAG.h"
 
 
 /*!

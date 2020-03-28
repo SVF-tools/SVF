@@ -31,9 +31,9 @@
 #include "SVF-FE/ICFGBuilder.h"
 #include "SVF-FE/CHA.h"
 #include "WPA/TypeAnalysis.h"
-#include "Util/PTAStat.h"
-#include "Util/ICFGStat.h"
-#include "Util/VFG.h"
+#include "MemoryModel/PTAStat.h"
+#include "Graphs/ICFGStat.h"
+#include "Graphs/VFG.h"
 
 using namespace SVFUtil;
 using namespace cppUtil;

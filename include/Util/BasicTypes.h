@@ -32,7 +32,7 @@
 
 #include "Util/SVFBasicTypes.h"
 #include "SVF-FE/GEPTypeBridgeIterator.h"
-#include "Util/GraphPrinter.h"
+#include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SmallVector.h>		// for small vector
 #include <llvm/IR/Instructions.h>

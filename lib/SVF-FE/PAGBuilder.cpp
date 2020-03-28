@@ -32,7 +32,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
-#include "MemoryModel/ExternalPAG.h"
+#include "Graphs/ExternalPAG.h"
 #include "Util/BasicTypes.h"
 
 using namespace std;

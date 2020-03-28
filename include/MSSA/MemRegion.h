@@ -30,10 +30,10 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "MemoryModel/PointerAnalysis.h"
-#include "Util/PTACallGraph.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/WorkList.h"
-#include "Util/ICFG.h"
+#include "Graphs/ICFG.h"
 
 #include <set>
 

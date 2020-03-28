@@ -30,7 +30,7 @@
 
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CallGraphBuilder.h"
-#include "Util/ICFG.h"
+#include "Graphs/ICFG.h"
 
 using namespace SVFUtil;
 

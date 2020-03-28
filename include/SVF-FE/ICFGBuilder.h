@@ -30,7 +30,7 @@
 #ifndef INCLUDE_UTIL_ICFGBUILDER_H_
 #define INCLUDE_UTIL_ICFGBUILDER_H_
 
-#include "Util/ICFG.h"
+#include "Graphs/ICFG.h"
 #include "Util/WorkList.h"
 
 class ICFGBuilder {

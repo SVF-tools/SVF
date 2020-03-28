@@ -32,7 +32,7 @@
 
 #include "Util/PathCondAllocator.h"
 #include "Util/WorkList.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
 
 class ProgSlice {

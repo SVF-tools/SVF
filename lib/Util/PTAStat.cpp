@@ -28,10 +28,10 @@
  */
 
 #include <iomanip>
-#include "Util/PTACallGraph.h"
-#include "Util/PTAStat.h"
-#include "MemoryModel/PointerAnalysis.h"
-#include "MemoryModel/PAG.h"
+#include "Graphs/PTACallGraph.h"
+#include "MemoryModel/PTAStat.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/PAG.h"
 
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time

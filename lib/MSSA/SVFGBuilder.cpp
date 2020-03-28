@@ -29,7 +29,7 @@
 #include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemSSA.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 

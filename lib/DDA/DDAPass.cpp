@@ -5,7 +5,7 @@
  */
 
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAPass.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"

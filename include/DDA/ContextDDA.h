@@ -8,7 +8,7 @@
 #ifndef ContextDDA_H_
 #define ContextDDA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAVFSolver.h"
 #include "Util/DPItem.h"
 

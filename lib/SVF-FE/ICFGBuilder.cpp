@@ -30,7 +30,7 @@
 
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
-#include "MemoryModel/PAG.h"
+#include "Graphs/PAG.h"
 
 using namespace SVFUtil;
 

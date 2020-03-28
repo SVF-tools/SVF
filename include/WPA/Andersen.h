@@ -30,12 +30,12 @@
 #ifndef ANDERSENPASS_H_
 #define ANDERSENPASS_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
-#include "MemoryModel/PAG.h"
-#include "MemoryModel/ConsG.h"
-#include "MemoryModel/OfflineConsG.h"
+#include "Graphs/PAG.h"
+#include "Graphs/ConsG.h"
+#include "Graphs/OfflineConsG.h"
 
 class PTAType;
 class SVFModule;

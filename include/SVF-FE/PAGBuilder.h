@@ -30,7 +30,7 @@
 #ifndef PAGBUILDER_H_
 #define PAGBUILDER_H_
 
-#include "MemoryModel/PAG.h"
+#include "Graphs/PAG.h"
 #include "Util/ExtAPI.h"
 #include "SVF-FE/ICFGBuilder.h"
 

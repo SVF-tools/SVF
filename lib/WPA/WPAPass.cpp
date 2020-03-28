@@ -34,7 +34,7 @@
 
 
 #include "Util/SVFModule.h"
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
 #include "WPA/AndersenSFR.h"

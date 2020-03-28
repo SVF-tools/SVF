@@ -11,7 +11,7 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/FSMPTA.h"
 #include "MTA/MTAAnnotator.h"
-#include "Util/ThreadCallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 
 static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm::cl::desc("All pair MHP computation"));
 

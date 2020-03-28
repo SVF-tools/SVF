@@ -32,7 +32,7 @@
 
 #include "Util/SCC.h"
 #include "Util/BasicTypes.h"    // for NodeBS
-#include "MemoryModel/ConsG.h"
+#include "Graphs/ConsG.h"
 #include "Util/WorkList.h"
 #include <limits.h>
 #include <stack>

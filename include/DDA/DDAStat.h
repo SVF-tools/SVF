@@ -8,7 +8,7 @@
 #ifndef DDASTAT_H_
 #define DDASTAT_H_
 
-#include "Util/PTAStat.h"
+#include "MemoryModel/PTAStat.h"
 
 class FlowDDA;
 class ContextDDA;

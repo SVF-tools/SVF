@@ -10,7 +10,7 @@
 #ifndef WPA_H_
 #define WPA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAClient.h"
 #include "Util/SCC.h"
 

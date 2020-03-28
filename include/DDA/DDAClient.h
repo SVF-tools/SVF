@@ -11,9 +11,9 @@
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
 
-#include "MemoryModel/PAG.h"
-#include "MemoryModel/PointerAnalysis.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/PAG.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/SVFG.h"
 #include "Util/BasicTypes.h"
 
 

@@ -31,8 +31,8 @@
 #ifndef INCLUDE_UTIL_CALLGRAPHBUILDER_H_
 #define INCLUDE_UTIL_CALLGRAPHBUILDER_H_
 
-#include "Util/PTACallGraph.h"
-#include "Util/ThreadCallGraph.h"
+#include "Graphs/PTACallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 
 class ICFG;
 

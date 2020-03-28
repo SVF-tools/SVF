@@ -31,7 +31,7 @@
 #define SABERCHECKERAPI_H_
 
 #include "Util/SVFUtil.h"
-#include "Util/ICFGNode.h"
+#include "Graphs/ICFGNode.h"
 
 /*
  * Saber Checker API class contains interfaces for various bug checking

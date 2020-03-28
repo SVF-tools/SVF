@@ -8,7 +8,7 @@
 #ifndef FlowDDA_H_
 #define FlowDDA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/DPItem.h"
 #include "DDA/DDAVFSolver.h"
 

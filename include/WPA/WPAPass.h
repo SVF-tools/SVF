@@ -37,7 +37,7 @@
 #ifndef WPA_H_
 #define WPA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 
 class SVFModule;
 class SVFG;

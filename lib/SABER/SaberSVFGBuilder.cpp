@@ -29,7 +29,7 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 #include "SABER/SaberCheckerAPI.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 
 using namespace SVFUtil;
 

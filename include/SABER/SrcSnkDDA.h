@@ -31,7 +31,7 @@
 #define SRCSNKANALYSIS_H_
 
 #include "Util/CFLSolver.h"
-#include "MSSA/SVFGOPT.h"
+#include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
 #include "WPA/Andersen.h"
