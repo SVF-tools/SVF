@@ -122,7 +122,7 @@ int main(int argc, char ** argv) {
     PAG* pag = ander->getPAG();
 
     /// Call Graph
-    PTACallGraph callgraph = ander->getPTACallGraph();
+    PTACallGraph* callgraph = ander->getPTACallGraph();
 
     /// ICFG
     ICFG* icfg = pag->getICFG();
