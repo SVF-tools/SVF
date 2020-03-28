@@ -28,7 +28,6 @@
  */
 
 #include "WPA/AndersenSFR.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 
@@ -254,7 +253,7 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& ca
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        CallSite cs = it->first;
+        CallSite cs = it->first->getCallSite();
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }

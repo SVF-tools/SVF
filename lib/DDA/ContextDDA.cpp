@@ -16,7 +16,7 @@ static llvm::cl::opt<unsigned long long> cxtBudget("cxtbg",  llvm::cl::init(1000
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(SVFModule m, DDAClient* client)
+ContextDDA::ContextDDA(SVFModule* m, DDAClient* client)
     : CondPTAImpl<ContextCond>(PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client) {
     flowDDA = new FlowDDA(m, client);
@@ -34,7 +34,7 @@ ContextDDA::~ContextDDA() {
 /*!
  * Analysis initialization
  */
-void ContextDDA::initialize(SVFModule module) {
+void ContextDDA::initialize(SVFModule* module) {
     CondPTAImpl<ContextCond>::initialize(module);
     buildSVFG(module);
     setCallGraph(getPTACallGraph());
@@ -149,8 +149,8 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, CallSite cs) {
-    if(getPAG()->isIndirectCallSites(cs)) {
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, const CallBlockNode* cs) {
+	if(getPAG()->isIndirectCallSites(cs)) {
         NodeID id = getPAG()->getFunPtr(cs);
         PAGNode* node = getPAG()->getPAGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
@@ -176,11 +176,11 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getDstNode()->getBB()->getParent();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -198,11 +198,11 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const Function* callee = edge->getSrcNode()->getBB()->getParent();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;

@@ -8,7 +8,7 @@
 #ifndef ContextDDA_H_
 #define ContextDDA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAVFSolver.h"
 #include "Util/DPItem.h"
 
@@ -23,13 +23,13 @@ class ContextDDA : public CondPTAImpl<ContextCond>, public DDAVFSolver<CxtVar,Cx
 
 public:
     /// Constructor
-    ContextDDA(SVFModule mod, DDAClient* client);
+    ContextDDA(SVFModule* mod, DDAClient* client);
 
     /// Destructor
     virtual ~ContextDDA();
 
     /// Initialization of the analysis
-    virtual void initialize(SVFModule module);
+    virtual void initialize(SVFModule* module);
 
     /// Finalize analysis
     virtual inline void finalize() {
@@ -37,7 +37,7 @@ public:
     }
 
     /// dummy analyze method
-    virtual void analyze(SVFModule mod) {}
+    virtual void analyze(SVFModule* mod) {}
 
     /// Compute points-to set for an unconditional pointer
     void computeDDAPts(NodeID id);
@@ -73,7 +73,7 @@ public:
     bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store);
 
     /// refine indirect call edge
-    bool testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, CallSite cs);
+    bool testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, const CallBlockNode* cs);
 
     /// get callsite id from call, return 0 if it is a spurious call edge
     CallSiteID getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge);
@@ -99,12 +99,12 @@ public:
     }
     /// Update call graph.
     //@{
-    void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,CallSite cs,SVFGEdgeSet& svfgEdges)
+    void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges)
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
-            CallSite newcs = iter->first;
+            const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
                 const Function * func = *func_iter;

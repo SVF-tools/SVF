@@ -45,10 +45,10 @@ public:
     }
 
     /// Type analysis
-    void analyze(SVFModule svfModule);
+    void analyze(SVFModule* svfModule);
 
     /// Initialize analysis
-    void initialize(SVFModule svfModule);
+    void initialize(SVFModule* svfModule);
 
     /// Finalize analysis
     virtual inline void finalize();

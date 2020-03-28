@@ -29,7 +29,7 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 #include "SABER/SaberCheckerAPI.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 
 using namespace SVFUtil;
 
@@ -161,7 +161,7 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes() {
     PAG* pag = PAG::getPAG();
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const Function* fun = getCallee(it->first);
+        const Function* fun = getCallee(it->first->getCallSite());
         if(SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                 || SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
             PAG::PAGNodeList& arglist =	it->second;

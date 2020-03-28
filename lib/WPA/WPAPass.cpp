@@ -33,9 +33,8 @@
  */
 
 
-#include "Util/SVFUtil.h"
 #include "Util/SVFModule.h"
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAPass.h"
 #include "WPA/Andersen.h"
 #include "WPA/AndersenSFR.h"
@@ -44,8 +43,8 @@
 
 char WPAPass::ID = 0;
 
-static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
-        "Whole Program Pointer Analysis Pass");
+//static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
+//        "Whole Program Pointer Analysis Pass");
 
 /// register this into alias analysis group
 ///static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
@@ -95,7 +94,7 @@ WPAPass::~WPAPass() {
 /*!
  * We start from here
  */
-void WPAPass::runOnModule(SVFModule svfModule) {
+void WPAPass::runOnModule(SVFModule* svfModule) {
     for (u32_t i = 0; i<= PointerAnalysis::Default_PTA; i++) {
         if (PASelected.isSet(i))
             runPointerAnalysis(svfModule, i);
@@ -107,7 +106,7 @@ void WPAPass::runOnModule(SVFModule svfModule) {
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
  */
-void WPAPass::runPointerAnalysis(SVFModule svfModule, u32_t kind)
+void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
     /// Initialize pointer analysis.
     switch (kind) {
@@ -230,7 +229,9 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2) {
  */
 ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst) {
     assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst));
+    ICFG* icfg = _svfg->getPAG()->getICFG();
+    const CallBlockNode* cbn = icfg->getCallBlockNode(callInst);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
 }
 
 /*!
@@ -238,7 +239,9 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst) {
  */
 ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V) {
     assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst), V);
+    ICFG* icfg = _svfg->getPAG()->getICFG();
+    const CallBlockNode* cbn = icfg->getCallBlockNode(callInst);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
 }
 
 /*!
@@ -246,5 +249,8 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V) {
  */
 ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst1, const CallInst* callInst2) {
     assert(PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && anderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
-    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(SVFUtil::getLLVMCallSite(callInst1), SVFUtil::getLLVMCallSite(callInst2));
+    ICFG* icfg = _svfg->getPAG()->getICFG();
+    const CallBlockNode* cbn1 = icfg->getCallBlockNode(callInst1);
+    const CallBlockNode* cbn2 = icfg->getCallBlockNode(callInst2);
+    return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn1, cbn2);
 }

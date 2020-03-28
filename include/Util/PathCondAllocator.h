@@ -30,10 +30,10 @@
 #ifndef PATHALLOCATOR_H_
 #define PATHALLOCATOR_H_
 
-#include "Util/SVFUtil.h"
+#include "Util/SVFModule.h"
+#include "SVF-FE/DataFlowUtil.h"
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
-#include "Util/DataFlowUtil.h"
 
 /**
  * PathCondAllocator allocates conditions for each basic block of a certain CFG.
@@ -82,7 +82,7 @@ public:
     //@}
 
     /// Perform path allocation
-    void allocate(const SVFModule module);
+    void allocate(const SVFModule* module);
 
     /// Get llvm conditional expression
     inline const Instruction* getCondInst(const Condition* cond) const {

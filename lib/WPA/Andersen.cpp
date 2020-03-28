@@ -27,8 +27,8 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 
@@ -66,7 +66,7 @@ static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
 /*!
  * Andersen analysis
  */
-void Andersen::analyze(SVFModule svfModule) {
+void Andersen::analyze(SVFModule* svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
     
@@ -91,7 +91,7 @@ void Andersen::analyze(SVFModule svfModule) {
 /*!
  * Initilize analysis
  */
-void Andersen::initialize(SVFModule svfModule) {
+void Andersen::initialize(SVFModule* svfModule) {
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
@@ -479,7 +479,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
     for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        CallSite cs = it->first;
+        CallSite cs = it->first->getCallSite();
         for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }
@@ -496,7 +496,8 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
 
 void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
     assert(SVFUtil::getCallee(cs) == NULL && "not an indirect callsite?");
-    const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
     if(it != callsite2DummyValPN.end()){
@@ -525,12 +526,15 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePa
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(cs)){
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode)){
         heapAllocatorViaIndCall(cs,cpySrcNodes);
     }
 
-    if (pag->funHasRet(F) && pag->callsiteHasRet(cs)) {
-        const PAGNode* cs_return = pag->getCallSiteRet(cs);
+    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode)) {
+        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(F);
         if (cs_return->isPointer() && fun_return->isPointer()) {
             NodeID dstrec = sccRepNode(cs_return->getId());
@@ -544,10 +548,10 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePa
         }
     }
 
-    if (pag->hasCallSiteArgsMap(cs) && pag->hasFunArgsMap(F)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(F)) {
 
         // connect actual and formal param
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(cs);
+        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");

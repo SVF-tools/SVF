@@ -190,7 +190,7 @@ protected:
         if(_pag->isFunPtr(dpm.getCurNodeID())) {
             const CallSiteSet& csSet = _pag->getIndCallSites(dpm.getCurNodeID());
             for(CallSiteSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
-                updateCallGraphAndSVFG(dpm,*it,newIndirectEdges);
+                updateCallGraphAndSVFG(dpm, (*it),newIndirectEdges);
         }
         /// callgraph scc detection for local variable in recursion
         if(!newIndirectEdges.empty())
@@ -238,7 +238,7 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(SVFModule module) {
+    virtual inline void buildSVFG(SVFModule* module) {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
         _pag = _svfg->getPAG();
@@ -392,10 +392,9 @@ protected:
     }
     /// resolve function pointer
     void resolveFunPtr(const DPIm& dpm) {
-        if(Instruction* callInst= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc())) {
-            CallSite cs = SVFUtil::getLLVMCallSite(callInst);
-            if(_pag->isIndirectCallSites(cs)) {
-                NodeID funPtr = _pag->getFunPtr(cs);
+        if(const CallBlockNode* cbn= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc())) {
+            if(_pag->isIndirectCallSites(cbn)) {
+                NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
@@ -406,8 +405,7 @@ protected:
             /// use pre-analysis call graph to approximate all potential callsites
             _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
             for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it) {
-                CallSite cs = SVFUtil::getLLVMCallSite(*it);
-                NodeID funPtr = _pag->getFunPtr(cs);
+                NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
@@ -429,7 +427,7 @@ protected:
         return true;
     }
     /// Update call graph
-    virtual inline void updateCallGraphAndSVFG(const DPIm& dpm,CallSite cs,SVFGEdgeSet& svfgEdges) {}
+    virtual inline void updateCallGraphAndSVFG(const DPIm& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) {}
     //@}
 
     ///Visited flags to avoid cycles

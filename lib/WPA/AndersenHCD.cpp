@@ -28,7 +28,6 @@
  */
 
 #include "WPA/Andersen.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 
@@ -41,7 +40,7 @@ AndersenHCD *AndersenHCD::hcdAndersen = nullptr;
  * AndersenHCD initilizer,
  * including initilization of PAG, constraint graph and offline constraint graph
  */
-void AndersenHCD::initialize(SVFModule svfModule) {
+void AndersenHCD::initialize(SVFModule* svfModule) {
     Andersen::initialize(svfModule);
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);

@@ -28,27 +28,22 @@
  */
 
 #include "SABER/FileChecker.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVFUtil;
 
 char FileChecker::ID = 0;
 
-static llvm::RegisterPass<FileChecker> FILECHECKER("file-checker",
-        "File Open/Close Checker");
-
-
 
 void FileChecker::reportNeverClose(const SVFGNode* src) {
-    CallSite cs = getSrcCSID(src);
+    const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-           << getSourceLoc(cs.getInstruction()) << ")\n";
+           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
 void FileChecker::reportPartialClose(const SVFGNode* src) {
-    CallSite cs = getSrcCSID(src);
+    const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-           << getSourceLoc(cs.getInstruction()) << ")\n";
+           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
 void FileChecker::reportBug(ProgSlice* slice) {

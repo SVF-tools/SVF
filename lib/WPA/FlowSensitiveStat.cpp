@@ -27,8 +27,8 @@
  *      Author: yesen
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAStat.h"
-#include "Util/SVFUtil.h"
 #include "WPA/FlowSensitive.h"
 
 using namespace SVFUtil;

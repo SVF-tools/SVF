@@ -69,8 +69,8 @@ public:
     //@{
     typedef llvm::DenseMap<const LoadPE*, MUSet> LoadToMUSetMap;
     typedef llvm::DenseMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef std::map<CallSite, MUSet> CallSiteToMUSetMap;
-    typedef std::map<CallSite, CHISet> CallSiteToCHISetMap;
+    typedef std::map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
+    typedef std::map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
     typedef llvm::DenseMap<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
@@ -174,11 +174,11 @@ private:
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddStoreCHI(bb,store,*iter);
     }
-    inline void AddCallSiteMU(CallSite cs,  const MRSet& mrSet) {
+    inline void AddCallSiteMU(const CallBlockNode* cs,  const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteMU(cs,*iter);
     }
-    inline void AddCallSiteCHI(CallSite cs,  const MRSet& mrSet) {
+    inline void AddCallSiteCHI(const CallBlockNode* cs,  const MRSet& mrSet) {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteCHI(cs,*iter);
     }
@@ -197,12 +197,12 @@ private:
         collectRegUses(mr);
         collectRegDefs(bb,mr);
     }
-    inline void AddCallSiteMU(CallSite cs, const MemRegion* mr) {
+    inline void AddCallSiteMU(const CallBlockNode* cs, const MemRegion* mr) {
         CALLMU* mu = new CALLMU(cs, mr);
         callsiteToMuSetMap[cs].insert(mu);
         collectRegUses(mr);
     }
-    inline void AddCallSiteCHI(CallSite cs, const MemRegion* mr) {
+    inline void AddCallSiteCHI(const CallBlockNode* cs, const MemRegion* mr) {
         CALLCHI* chi = new CALLCHI(cs, mr);
         callsiteToChiSetMap[cs].insert(chi);
         collectRegUses(mr);
@@ -311,10 +311,10 @@ public:
         } else
             return false;
     }
-    inline bool hasMU(CallSite cs) const {
+    inline bool hasMU(const CallBlockNode* cs) const {
         return callsiteToMuSetMap.find(cs)!=callsiteToMuSetMap.end();
     }
-    inline bool hasCHI(CallSite cs) const {
+    inline bool hasCHI(const CallBlockNode* cs) const {
         return callsiteToChiSetMap.find(cs)!=callsiteToChiSetMap.end();
     }
     //@}
@@ -344,10 +344,10 @@ public:
     inline CHISet& getCHISet(const StorePE* st) {
         return store2ChiSetMap[st];
     }
-    inline MUSet& getMUSet(CallSite cs) {
+    inline MUSet& getMUSet(const CallBlockNode* cs) {
         return callsiteToMuSetMap[cs];
     }
-    inline CHISet& getCHISet(CallSite cs) {
+    inline CHISet& getCHISet(const CallBlockNode* cs) {
         return callsiteToChiSetMap[cs];
     }
     inline PHISet& getPHISet(const BasicBlock* bb) {

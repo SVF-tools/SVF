@@ -36,14 +36,14 @@
 /*!
  * Static Memory Leak Detector
  */
-class LeakChecker : public SrcSnkDDA, public ModulePass {
+class LeakChecker : public SrcSnkDDA {
 
 public:
-    typedef std::map<const SVFGNode*,CallSite> SVFGNodeToCSIDMap;
-    typedef FIFOWorkList<CallSite> CSWorkList;
+    typedef std::map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
+    typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
-    typedef PAG::CallSiteSet CallSiteSet;
+    typedef std::set<const CallBlockNode*> CallSiteSet;
     enum LEAK_TYPE {
         NEVER_FREE_LEAK,
         CONTEXT_LEAK,
@@ -55,19 +55,14 @@ public:
     static char ID;
 
     /// Constructor
-    LeakChecker(char id = ID): ModulePass(ID) {
+    LeakChecker(char id = ID) {
     }
     /// Destructor
     virtual ~LeakChecker() {
     }
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        return runOnModule(svfModule);
-    }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;
@@ -128,10 +123,10 @@ protected:
 
     /// Record a source to its callsite
     //@{
-    inline void addSrcToCSID(const SVFGNode* src, CallSite cs) {
+    inline void addSrcToCSID(const SVFGNode* src, const CallBlockNode* cs) {
         srcToCSIDMap[src] = cs;
     }
-    inline CallSite getSrcCSID(const SVFGNode* src) {
+    inline const CallBlockNode* getSrcCSID(const SVFGNode* src) {
         SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;

@@ -4,48 +4,43 @@ add_subdirectory(CUDD)
 # Otherwise it is impossible to load the dependencies in opt
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 set(SOURCES
+    SVF-FE/LLVMUtil.cpp
+    SVF-FE/CPPUtil.cpp
+    SVF-FE/DataFlowUtil.cpp
+    SVF-FE/BreakConstantExpr.cpp
+    SVF-FE/LLVMModule.cpp
+    SVF-FE/CallGraphBuilder.cpp
+    SVF-FE/ICFGBuilder.cpp
+    SVF-FE/SymbolTableInfo.cpp
+    SVF-FE/PAGBuilder.cpp
+    SVF-FE/CHA.cpp
+    Graphs/PTACallGraph.cpp
+    Graphs/ThreadCallGraph.cpp
+    Graphs/PAG.cpp
+    Graphs/ICFG.cpp
+    Graphs/ConsG.cpp
+    Graphs/VFG.cpp
+    Graphs/SVFG.cpp
+    Graphs/OfflineConsG.cpp
+    Graphs/ExternalPAG.cpp
+    Graphs/SVFGOPT.cpp
+    Graphs/SVFGStat.cpp    
     Util/SVFUtil.cpp
-    Util/CPPUtil.cpp
-    Util/DataFlowUtil.cpp
-    Util/PTACallGraph.cpp
     Util/RaceAnnotator.cpp
-    Util/ThreadCallGraph.cpp
-    Util/BreakConstantExpr.cpp
     Util/Conditions.cpp
     Util/ExtAPI.cpp
     Util/PathCondAllocator.cpp
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
-    Util/SVFModule.cpp
-    Util/ICFG.cpp
-    Util/VFG.cpp
-    Util/DataFlowUtil.cpp
-    MemoryModel/ConsG.cpp
-    MemoryModel/LocationSet.cpp
-    MemoryModel/LocMemModel.cpp
     MemoryModel/MemModel.cpp
-    MemoryModel/OfflineConsG.cpp
-    MemoryModel/ExternalPAG.cpp
-    MemoryModel/PAGBuilder.cpp
+    MemoryModel/LocationSet.cpp
     MemoryModel/PAGBuilderFromFile.cpp
-    MemoryModel/PAG.cpp
-    MemoryModel/CHA.cpp
     MemoryModel/PointerAnalysis.cpp
+    MemoryModel/PointerAnalysisImpl.cpp    
     MSSA/MemPartition.cpp
     MSSA/MemRegion.cpp
     MSSA/MemSSA.cpp
     MSSA/SVFGBuilder.cpp
-    MSSA/SVFG.cpp
-    MSSA/SVFGOPT.cpp
-    MSSA/SVFGStat.cpp
-    SABER/DoubleFreeChecker.cpp
-    SABER/FileChecker.cpp
-    SABER/LeakChecker.cpp
-    SABER/ProgSlice.cpp
-    SABER/SaberAnnotator.cpp
-    SABER/SaberCheckerAPI.cpp
-    SABER/SaberSVFGBuilder.cpp
-    SABER/SrcSnkDDA.cpp
     WPA/Andersen.cpp
     WPA/AndersenLCD.cpp
     WPA/AndersenHCD.cpp
@@ -60,11 +55,19 @@ set(SOURCES
     WPA/FlowSensitiveStat.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
-#    DDA/ContextDDA.cpp
-#    DDA/DDAClient.cpp
-#    DDA/DDAPass.cpp
-#    DDA/DDAStat.cpp
-#    DDA/FlowDDA.cpp
+    SABER/DoubleFreeChecker.cpp
+    SABER/FileChecker.cpp
+    SABER/LeakChecker.cpp
+    SABER/ProgSlice.cpp
+    SABER/SaberAnnotator.cpp
+    SABER/SaberCheckerAPI.cpp
+    SABER/SaberSVFGBuilder.cpp
+    SABER/SrcSnkDDA.cpp
+    DDA/ContextDDA.cpp
+    DDA/DDAClient.cpp
+    DDA/DDAPass.cpp
+    DDA/DDAStat.cpp
+    DDA/FlowDDA.cpp
 #    MTA/FSMPTA.cpp
 #    MTA/LockAnalysis.cpp
 #    MTA/MHP.cpp

@@ -31,7 +31,8 @@
 #define THREADAPI_H_
 
 #include "Util/BasicTypes.h"
-#include "Util/SVFModule.h"
+
+class SVFModule;
 
 /*
  * ThreadAPI class contains interfaces for pthread programs
@@ -282,7 +283,7 @@ public:
     }
     //@}
 
-    void performAPIStat(SVFModule m);
+    void performAPIStat(SVFModule* m);
     void statInit(llvm::StringMap<u32_t>& tdAPIStatMap);
 };
 

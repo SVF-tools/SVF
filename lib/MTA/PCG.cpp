@@ -60,8 +60,8 @@ bool PCG::mayHappenInParallel(const Instruction* i1, const Instruction* i2) cons
  * a procedure is a spawner if it creates a thread and the created thread is still existent on its return
  * a procedure is a spawnee if it is created by fork call
  */
-void PCG::initFromThreadAPI(SVFModule module) {
-    for (SVFModule::const_iterator fi = module.begin(), efi = module.end(); fi != efi; ++fi) {
+void PCG::initFromThreadAPI(SVFModule* module) {
+    for (SVFModule::const_iterator fi = module->begin(), efi = module->end(); fi != efi; ++fi) {
         const Function* fun = *fi;
         for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II) {
             const Instruction *inst = &*II;
@@ -237,7 +237,7 @@ void PCG::interferenceAnalysis() {
 //	DBOUT(DMTA, outs() << pasMsg("Starting Race Detection\n"));
 
     PCG::FunVec worklist;
-    for (SVFModule::const_iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
+    for (SVFModule::const_iterator F = mod->begin(), E = mod->end(); F != E; ++F) {
         const Function* fun = *F;
         if (isExtCall(fun))
             continue;

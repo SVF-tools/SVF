@@ -26,6 +26,7 @@
  // Author: Yulei Sui,
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAPass.h"
 
 using namespace llvm;
@@ -44,12 +45,10 @@ int main(int argc, char ** argv) {
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
 
-    SVFModule svfModule(moduleNameVec);
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
 
     WPAPass *wpa = new WPAPass();
     wpa->runOnModule(svfModule);
-
-    svfModule.dumpModulesToFile(".wpa");
 
     return 0;
 }

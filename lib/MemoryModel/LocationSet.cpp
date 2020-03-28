@@ -46,14 +46,14 @@ void LocationSet::addElemNumStridePair(const NodePair& pair) {
 
     if (singleStride) {
         if (numStridePair.empty())
-            numStridePair.push_back(std::make_pair(SymbolTableInfo::getMaxFieldLimit(),pair.second));
+            numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),pair.second));
         else {
             /// Find the GCD stride
             NodeID existStride = (*numStridePair.begin()).second;
             NodeID newStride = gcd(pair.second, existStride);
             if (newStride != existStride) {
                 numStridePair.pop_back();
-                numStridePair.push_back(std::make_pair(SymbolTableInfo::getMaxFieldLimit(),newStride));
+                numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),newStride));
             }
         }
     }

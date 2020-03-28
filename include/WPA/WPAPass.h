@@ -37,7 +37,7 @@
 #ifndef WPA_H_
 #define WPA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 
 class SVFModule;
 class SVFG;
@@ -48,7 +48,7 @@ class SVFG;
  */
 // excised ", public llvm::AliasAnalysis" as that has a very light interface
 // and I want to see what breaks.
-class WPAPass: public ModulePass {
+class WPAPass {
     typedef std::vector<PointerAnalysis*> PTAVector;
 
 public:
@@ -62,7 +62,7 @@ public:
     };
 
     /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
-    WPAPass() : ModulePass(ID) {
+    WPAPass()  {
 
     }
 
@@ -106,15 +106,8 @@ public:
     /// Interface of mod-ref analysis between two CallSite instructions
     virtual ModRefInfo getModRefInfo(const CallInst* callInst1, const CallInst* callInst2);
 
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        runOnModule(svfModule);
-        return false;
-    }
-
     /// Run pointer analysis on SVFModule
-    void runOnModule(SVFModule svfModule);
+    void runOnModule(SVFModule* svfModule);
 
     /// PTA name
     virtual inline StringRef getPassName() const {
@@ -123,7 +116,7 @@ public:
 
 private:
     /// Create pointer analysis according to specified kind and analyze the module.
-    void runPointerAnalysis(SVFModule svfModule, u32_t kind);
+    void runPointerAnalysis(SVFModule* svfModule, u32_t kind);
 
     PTAVector ptaVector;	///< all pointer analysis to be executed.
     PointerAnalysis* _pta;	///<  pointer analysis to be executed.

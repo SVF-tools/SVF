@@ -11,7 +11,7 @@
 #include "MTA/LockAnalysis.h"
 #include "MTA/FSMPTA.h"
 #include "MTA/MTAAnnotator.h"
-#include "Util/ThreadCallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 
 static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm::cl::desc("All pair MHP computation"));
 
@@ -84,8 +84,8 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
     if(AllPairMHP) {
         InstSet instSet1;
         InstSet instSet2;
-        SVFModule mod = mhp->getThreadCallGraph()->getModule();
-        for (SVFModule::iterator F = mod.begin(), E = mod.end(); F != E; ++F) {
+        SVFModule* mod = mhp->getThreadCallGraph()->getModule();
+        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F) {
             const Function* fun = (*F);
             if(SVFUtil::isExtCall(fun))
                 continue;

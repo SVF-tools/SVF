@@ -27,8 +27,9 @@
  *      Author: Yulei Sui
  */
 #include "Util/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemSSA.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
@@ -123,12 +124,12 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
     DominatorTree dt;
     MemSSADF df;
 
-    SVFModule svfModule = mssa->getPTA()->getModule();
-    for (SVFModule::iterator iter = svfModule.begin(), eiter = svfModule.end();
+    SVFModule* svfModule = mssa->getPTA()->getModule();
+    for (SVFModule::iterator iter = svfModule->begin(), eiter = svfModule->end();
             iter != eiter; ++iter) {
 
         Function *fun = *iter;
-        if (SVFUtil::isExtCall(fun))
+        if (isExtCall(fun))
             continue;
 
         dt.recalculate(*fun);

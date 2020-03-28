@@ -39,7 +39,7 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(SVFModule svfModule) {
+void FlowSensitive::initialize(SVFModule* svfModule) {
     PointerAnalysis::initialize(svfModule);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
@@ -53,7 +53,7 @@ void FlowSensitive::initialize(SVFModule svfModule) {
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(SVFModule svfModule) {
+void FlowSensitive::analyze(SVFModule* svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
 
@@ -551,7 +551,7 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
     CallEdgeMap::const_iterator iter = newEdges.begin();
     CallEdgeMap::const_iterator eiter = newEdges.end();
     for (; iter != eiter; iter++) {
-        CallSite cs = iter->first;
+        const CallBlockNode* cs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
             const Function * func = *func_iter;

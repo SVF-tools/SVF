@@ -8,7 +8,7 @@
 #ifndef FlowDDA_H_
 #define FlowDDA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/DPItem.h"
 #include "DDA/DDAVFSolver.h"
 
@@ -25,7 +25,7 @@ public:
     typedef BVDataPTAImpl::CallEdgeMap	CallEdgeMap;
     typedef BVDataPTAImpl::FunctionSet	FunctionSet;
     /// Constructor
-    FlowDDA(SVFModule m, DDAClient* client): BVDataPTAImpl(PointerAnalysis::FlowS_DDA),
+    FlowDDA(SVFModule* m, DDAClient* client): BVDataPTAImpl(PointerAnalysis::FlowS_DDA),
         DDAVFSolver<NodeID,PointsTo,LocDPItem>(),
         _client(client) {
     }
@@ -33,7 +33,7 @@ public:
     inline virtual ~FlowDDA() {
     }
     /// dummy analyze method
-    virtual void analyze(SVFModule mod) {}
+    virtual void analyze(SVFModule* mod) {}
 
     /// Compute points-to set for all top variable
     void computeDDAPts(NodeID id);
@@ -48,7 +48,7 @@ public:
     bool testIndCallReachability(LocDPItem& dpm, const Function* callee, CallSiteID csId);
 
     /// Initialization of the analysis
-    inline virtual void initialize(SVFModule module) {
+    inline virtual void initialize(SVFModule* module) {
         BVDataPTAImpl::initialize(module);
         buildSVFG(module);
         setCallGraph(getPTACallGraph());
@@ -92,12 +92,12 @@ public:
 
     /// Update call graph.
     //@{
-    void updateCallGraphAndSVFG(const LocDPItem& dpm,CallSite cs,SVFGEdgeSet& svfgEdges)
+    void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges)
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
-            CallSite newcs = iter->first;
+            const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
                 const Function * func = *func_iter;

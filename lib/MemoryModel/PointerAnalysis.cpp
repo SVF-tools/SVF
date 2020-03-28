@@ -24,21 +24,24 @@
  * PointerAnalysis.cpp
  *
  *  Created on: May 14, 2013
- *      Author: rocky
+ *      Author: Yulei Sui
  */
 
-#include "MemoryModel/PointerAnalysis.h"
-#include "MemoryModel/PAGBuilder.h"
-#include "MemoryModel/PAGBuilderFromFile.h"
-#include "Util/SVFUtil.h"
-#include "Util/PTAStat.h"
-#include "Util/ThreadCallGraph.h"
-#include "Util/CPPUtil.h"
+#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/CallGraphBuilder.h"
+#include "SVF-FE/CHA.h"
+#include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
-#include "Util/ICFG.h"
-#include "MemoryModel/CHA.h"
+#include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
+
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/PAGBuilderFromFile.h"
+#include "MemoryModel/PTAStat.h"
+#include "Graphs/ThreadCallGraph.h"
+#include "Graphs/ICFG.h"
 #include "MemoryModel/PTAType.h"
-#include "MemoryModel/ExternalPAG.h"
+#include "Graphs/ExternalPAG.h"
 #include <fstream>
 #include <sstream>
 
@@ -80,9 +83,6 @@ static llvm::cl::opt<bool> EnableAliasCheck("alias-check", llvm::cl::init(true),
 
 static llvm::cl::opt<bool> EnableThreadCallGraph("enable-tcg", llvm::cl::init(true),
         llvm::cl::desc("Enable pointer analysis to use thread call graph"));
-
-static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
-                                 llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
 static llvm::cl::opt<bool> connectVCallOnCHA("vcall-cha", llvm::cl::init(false),
                                        llvm::cl::desc("connect virtual calls using cha"));
@@ -127,7 +127,7 @@ void PointerAnalysis::destroy()
 /*!
  * Initialization of pointer analysis
  */
-void PointerAnalysis::initialize(SVFModule svfModule) {
+void PointerAnalysis::initialize(SVFModule* svfModule) {
 
     /// whether we have already built PAG
     if(pag == NULL) {
@@ -162,10 +162,16 @@ void PointerAnalysis::initialize(SVFModule svfModule) {
     }
 
     /// initialise pta call graph for every pointer analysis instance
-    if(EnableThreadCallGraph)
-        ptaCallGraph = new ThreadCallGraph(svfModule);
-    else
-        ptaCallGraph = new PTACallGraph(svfModule);
+    if(EnableThreadCallGraph) {
+    	ThreadCallGraph* cg = new ThreadCallGraph();
+    	ThreadCallGraphBuilder bd(cg, pag->getICFG());
+        ptaCallGraph = bd.buildThreadCallGraph(svfModule);
+    }
+    else {
+    	PTACallGraph* cg = new PTACallGraph();
+        CallGraphBuilder bd(cg,pag->getICFG());
+        ptaCallGraph = bd.buildCallGraph(svfModule);
+    }
     callGraphSCCDetection();
     svfMod = svfModule;
 }
@@ -295,184 +301,6 @@ void PointerAnalysis::dumpAllTypes()
     }
 }
 
-
-/*!
- * Constructor
- */
-BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) :
-		PointerAnalysis(type) {
-	if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
-        || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
-        || type == AndersenSCD_WPA || type == AndersenSFR_WPA) {
-		ptD = new DiffPTDataTy();
-	} else if (type == FSSPARSE_WPA) {
-		if (INCDFPTData)
-			ptD = new IncDFPTDataTy();
-		else
-			ptD = new DFPTDataTy();
-	} else
-		assert(false && "no points-to data available");
-}
-
-/*!
- * Expand all fields of an aggregate in all points-to sets
- */
-void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) {
-    expandedPts = pts;;
-    for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit) {
-        if(pag->getBaseObjNode(*pit)==*pit) {
-            expandedPts |= pag->getAllFieldsObjNode(*pit);
-        }
-    }
-}
-
-/*!
- * Store pointer analysis result into a file.
- * It includes the points-to relations, and all PAG nodes including those
- * created when solving Andersen's constraints.
- */
-void BVDataPTAImpl::writeToFile(const string& filename) {
-    outs() << "Storing pointer analysis results to '" << filename << "'...";
-
-    error_code err;
-    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
-    if (err) {
-        outs() << "  error opening file for writing!\n";
-        F.os().clear_error();
-        return;
-    }
-
-    // Write analysis results to file
-    PTDataTy *ptD = getPTDataTy();
-    auto &ptsMap = ptD->getPtsMap();
-    for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it) {
-        NodeID var = it->first;
-        const PointsTo &pts = getPts(var);
-
-        F.os() << var << " -> { ";
-        if (pts.empty()) {
-            F.os() << " ";
-        } else {
-            for (auto it = pts.begin(), ie = pts.end(); it != ie; ++it) {
-                F.os() << *it << " ";
-            }
-        }
-        F.os() << "}\n";
-    }
-
-    // Write GepPAGNodes to file
-    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it) {
-        PAGNode* pagNode = it->second;
-        if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
-            F.os() << it->first << " ";
-            F.os() << pag->getBaseObjNode(it->first) << " ";
-            F.os() << gepObjPN->getLocationSet().getOffset() << "\n";
-        }
-    }
-
-    // Job finish and close file
-    F.os().close();
-    if (!F.os().has_error()) {
-        outs() << "\n";
-        F.keep();
-        return;
-    }
-}
-
-/*!
- * Load pointer analysis result form a file.
- * It populates BVDataPTAImpl with the points-to data, and updates PAG with
- * the PAG offset nodes created during Andersen's solving stage.
- */
-bool BVDataPTAImpl::readFromFile(const string& filename) {
-    outs() << "Loading pointer analysis results from '" << filename << "'...";
-
-    ifstream F(filename.c_str());
-    if (!F.is_open()) {
-        outs() << "  error opening file for reading!\n";
-        return false;
-    }
-
-    // Read analysis results from file
-    PTDataTy *ptD = getPTDataTy();
-    string line;
-
-    // Read points-to sets
-    string delimiter1 = " -> { ";
-    string delimiter2 = " }";
-    while (F.good()) {
-        // Parse a single line in the form of "var -> { obj1 obj2 obj3 }"
-        getline(F, line);
-        size_t pos = line.find(delimiter1);
-        if (pos == string::npos)    break;
-        if (line.back() != '}')     break;
-
-        // var
-        NodeID var = atoi(line.substr(0, pos).c_str());
-        PointsTo &pts = ptD->getPts(var);
-
-        // objs
-        pos = pos + delimiter1.length();
-        size_t len = line.length() - pos - delimiter2.length();
-        string objs = line.substr(pos, len);
-        if (!objs.empty()) {
-            istringstream ss(objs);
-            NodeID obj;
-            while (ss.good()) {
-                ss >> obj;
-                pts.set(obj);
-            }
-        }
-    }
-
-    // Read PAG offset nodes
-    while (F.good()) {
-        // Parse a single line in the form of "ID baseNodeID offset"
-        istringstream ss(line);
-        NodeID id;
-        NodeID base;
-        size_t offset;
-        ss >> id >> base >> offset;
-
-        NodeID n = pag->getGepObjNode(pag->getObject(base), LocationSet(offset));
-        assert(id == n && "Error adding GepObjNode into PAG!");
-
-        getline(F, line);
-    }
-
-    // Update callgraph
-    updateCallGraph(pag->getIndirectCallsites());
-
-    F.close();
-    outs() << "\n";
-
-    return true;
-}
-
-/*!
- * Dump points-to of each pag node
- */
-void BVDataPTAImpl::dumpTopLevelPtsTo() {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
-            nIter != this->getAllValidPtrs().end(); ++nIter) {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
-        if (getPAG()->isValidTopLevelPtr(node)) {
-            PointsTo& pts = this->getPts(node->getId());
-            outs() << "\nNodeID " << node->getId() << " ";
-
-            if (pts.empty()) {
-                outs() << "\t\tPointsTo: {empty}\n\n";
-            } else {
-                outs() << "\t\tPointsTo: { ";
-                for (PointsTo::iterator it = pts.begin(), eit = pts.end();
-                        it != eit; ++it)
-                    outs() << *it << " ";
-                outs() << "}\n\n";
-            }
-        }
-    }
-}
-
 /*!
  * Dump points-to of top-level pointers (ValPN)
  */
@@ -520,27 +348,15 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts) {
     }
 }
 
-
-/*!
- * Dump all points-to including top-level (ValPN) and address-taken (ObjPN) variables
- */
-void BVDataPTAImpl::dumpAllPts() {
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++) {
-        outs() << "----------------------------------------------\n";
-        dumpPts(it->first, this->getPts(it->first));
-        outs() << "----------------------------------------------\n";
-    }
-}
-
 /*!
  * Print indirect call targets at an indirect callsite
  */
-void PointerAnalysis::printIndCSTargets(const CallSite cs, const FunctionSet& targets)
+void PointerAnalysis::printIndCSTargets(const CallBlockNode* cs, const FunctionSet& targets)
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    cs.getInstruction()->print(outs());
-    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs.getInstruction());
+    cs->getCallSite().getInstruction()->print(outs());
+    outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite().getInstruction());
     outs() << "\t with Targets: ";
 
     if (!targets.empty()) {
@@ -568,7 +384,7 @@ void PointerAnalysis::printIndCSTargets()
     CallEdgeMap::const_iterator it = callEdges.begin();
     CallEdgeMap::const_iterator eit = callEdges.end();
     for (; it != eit; ++it) {
-        const CallSite cs = it->first;
+        const CallBlockNode* cs = it->first;
         const FunctionSet& targets = it->second;
         printIndCSTargets(cs, targets);
     }
@@ -577,39 +393,23 @@ void PointerAnalysis::printIndCSTargets()
     CallSiteToFunPtrMap::const_iterator csIt = indCS.begin();
     CallSiteToFunPtrMap::const_iterator csEit = indCS.end();
     for (; csIt != csEit; ++csIt) {
-        const CallSite& cs = csIt->first;
+        const CallBlockNode* cs = csIt->first;
         if (hasIndCSCallees(cs) == false) {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            cs.getInstruction()->print(outs());
-            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs.getInstruction());
+            cs->getCallSite().getInstruction()->print(outs());
+            outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite().getInstruction());
             outs() << "\n\t!!!has no targets!!!\n";
         }
     }
 }
 
-/*!
- * On the fly call graph construction
- * callsites is candidate indirect callsites need to be analyzed based on points-to results
- * newEdges is the new indirect call edges discovered
- */
-void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
-        CallSite cs = iter->first;
-        if (isVirtualCallSite(cs)) {
-            const Value *vtbl = getVCallVtblPtr(cs);
-            assert(pag->hasValueNode(vtbl));
-            NodeID vtblId = pag->getValueNode(vtbl);
-            resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
-        } else
-            resolveIndCalls(iter->first,getPts(iter->second),newEdges);
-    }
-}
+
 
 /*!
  * Resolve indirect calls
  */
-void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph) {
+void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph) {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
     /// discover indirect pointer target
@@ -637,7 +437,7 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
                     newEdges[cs].insert(callee);
                     getIndCallMap()[cs].insert(callee);
 
-                    ptaCallGraph->addIndirectCallGraphEdge(cs.getInstruction(), callee);
+                    ptaCallGraph->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
                     // FIXME: do we need to update llvm call graph here?
                     // The indirect call is maintained by ourself, We may update llvm's when we need to
                     //CallGraphNode* callgraphNode = callgraph->getOrInsertFunction(cs.getCaller());
@@ -648,22 +448,32 @@ void PointerAnalysis::resolveIndCalls(CallSite cs, const PointsTo& target, CallE
     }
 }
 
+/*!
+ * Match arguments for callsite at caller and callee
+ */
+bool PointerAnalysis::matchArgs(const CallBlockNode* cs, const Function* callee) {
+    if(ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
+        return true;
+    else
+        return cs->getCallSite().arg_size() == callee->arg_size();
+}
+
 /*
  * Get virtual functions "vfns" based on CHA
  */
-void PointerAnalysis::getVFnsFromCHA(CallSite cs, VFunSet &vfns) {
-    if (chgraph->csHasVFnsBasedonCHA(cs))
-        vfns = chgraph->getCSVFsBasedonCHA(cs);
+void PointerAnalysis::getVFnsFromCHA(const CallBlockNode* cs, VFunSet &vfns) {
+    if (chgraph->csHasVFnsBasedonCHA(cs->getCallSite()))
+        vfns = chgraph->getCSVFsBasedonCHA(cs->getCallSite());
 }
 
 /*
  * Get virtual functions "vfns" from PoninsTo set "target" for callsite "cs"
  */
-void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns) {
+void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &target, VFunSet &vfns) {
 
-    if (chgraph->csHasVtblsBasedonCHA(cs)) {
+    if (chgraph->csHasVtblsBasedonCHA(cs->getCallSite())) {
         std::set<const GlobalValue*> vtbls;
-        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs);
+        const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(cs->getCallSite());
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it) {
             const PAGNode *ptdnode = pag->getPAGNode(*it);
 			if (ptdnode->hasValue()) {
@@ -673,34 +483,34 @@ void PointerAnalysis::getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSe
 				}
 			}
         }
-        chgraph->getVFnsFromVtbls(cs, vtbls, vfns);
+        chgraph->getVFnsFromVtbls(cs->getCallSite(), vtbls, vfns);
     }
 }
 
 /*
  * Connect callsite "cs" to virtual functions in "vfns"
  */
-void PointerAnalysis::connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges) {
+void PointerAnalysis::connectVCallToVFns(const CallBlockNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges) {
     //// connect all valid functions
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
         const Function* callee = *fit;
-        if (callee->isDeclaration() && svfMod.hasDefinition(callee))
-            callee = svfMod.getDefinition(callee);
+        callee = getDefFunForMultipleModule(callee);
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
-        if(cs.arg_size() == callee->arg_size() ||
-                (cs.getFunctionType()->isVarArg() && callee->isVarArg())) {
+        if(cs->getCallSite().arg_size() == callee->arg_size() ||
+                (cs->getCallSite().getFunctionType()->isVarArg() && callee->isVarArg())) {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
-            ptaCallGraph->addIndirectCallGraphEdge(cs.getInstruction(), callee);
+            const CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction());
+            ptaCallGraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
         }
     }
 }
 
 /// Resolve cpp indirect call edges
-void PointerAnalysis::resolveCPPIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges) {
-    assert(isVirtualCallSite(cs) && "not cpp virtual call");
+void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges) {
+    assert(isVirtualCallSite(cs->getCallSite()) && "not cpp virtual call");
 
     VFunSet vfns;
     if (connectVCallOnCHA)
@@ -717,9 +527,7 @@ void PointerAnalysis::resolveCPPIndCalls(CallSite cs, const PointsTo& target, Ca
 void PointerAnalysis::validateSuccessTests(const char* fun) {
 
     // check for must alias cases, whether our alias analysis produce the correct results
-    for (u32_t i = 0; i < svfMod.getModuleNum(); ++i) {
-        Module *module = svfMod.getModule(i);
-        if (Function* checkFun = module->getFunction(fun)) {
+        if (Function* checkFun = getFunction(fun)) {
             if(!checkFun->use_empty())
                 outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
@@ -765,7 +573,6 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
                     assert(false && "alias check functions not only used at callsite??");
 
         }
-    }
 }
 
 /*!
@@ -773,7 +580,7 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
  */
 void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
 
-    if (Function* checkFun = getModule().getFunction(fun)) {
+    if (Function* checkFun = getFunction(fun)) {
         if(!checkFun->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
@@ -811,43 +618,4 @@ void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
             else
                 assert(false && "alias check functions not only used at callsite??");
     }
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(const MemoryLocation &LocA,
-                                       const MemoryLocation &LocB) {
-    return alias(LocA.Ptr, LocB.Ptr);
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(const Value* V1,
-                                       const Value* V2) {
-    return alias(pag->getValueNode(V1),pag->getValueNode(V2));
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(NodeID node1, NodeID node2) {
-    return alias(getPts(node1),getPts(node2));
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(const PointsTo& p1, const PointsTo& p2) {
-
-    PointsTo pts1;
-    expandFIObjs(p1,pts1);
-    PointsTo pts2;
-    expandFIObjs(p2,pts2);
-
-    if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2))
-        return llvm::MayAlias;
-    else
-        return llvm::NoAlias;
 }

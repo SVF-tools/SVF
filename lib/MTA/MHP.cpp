@@ -156,8 +156,8 @@ void MHP::analyzeInterleaving() {
  * Update non-candidate functions' interleaving
  */
 void MHP::updateNonCandidateFunInterleaving() {
-    SVFModule module = tcg->getModule();
-    for (SVFModule::iterator F = module.begin(), E = module.end(); F != E; ++F) {
+    SVFModule* module = tcg->getModule();
+    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F) {
         const Function* fun = *F;
         if (!tct->isCandidateFun(fun) && !isExtCall(fun)) {
             const Instruction *entryinst = &(fun->getEntryBlock().front());

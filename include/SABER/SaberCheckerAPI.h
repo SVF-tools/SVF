@@ -31,6 +31,7 @@
 #define SABERCHECKERAPI_H_
 
 #include "Util/SVFUtil.h"
+#include "Graphs/ICFGNode.h"
 
 /*
  * Saber Checker API class contains interfaces for various bug checking
@@ -92,8 +93,8 @@ public:
     inline bool isMemAlloc(const Instruction *inst) const {
         return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
     }
-    inline bool isMemAlloc(CallSite cs) const {
-        return isMemAlloc(cs.getInstruction());
+    inline bool isMemAlloc(const CallBlockNode* cs) const {
+        return isMemAlloc(cs->getCallSite().getInstruction());
     }
     //@}
 
@@ -105,8 +106,8 @@ public:
     inline bool isMemDealloc(const Instruction *inst) const {
         return getType(SVFUtil::getCallee(inst)) == CK_FREE;
     }
-    inline bool isMemDealloc(CallSite cs) const {
-        return isMemDealloc(cs.getInstruction());
+    inline bool isMemDealloc(const CallBlockNode* cs) const {
+        return isMemDealloc(cs->getCallSite().getInstruction());
     }
     //@}
 
@@ -118,8 +119,8 @@ public:
     inline bool isFOpen(const Instruction *inst) const {
         return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
     }
-    inline bool isFOpen(CallSite cs) const {
-        return isFOpen(cs.getInstruction());
+    inline bool isFOpen(const CallBlockNode* cs) const {
+        return isFOpen(cs->getCallSite().getInstruction());
     }
     //@}
 
@@ -131,8 +132,8 @@ public:
     inline bool isFClose(const Instruction *inst) const {
         return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
     }
-    inline bool isFClose(CallSite cs) const {
-        return isFClose(cs.getInstruction());
+    inline bool isFClose(const CallBlockNode* cs) const {
+        return isFClose(cs->getCallSite().getInstruction());
     }
     //@}
 

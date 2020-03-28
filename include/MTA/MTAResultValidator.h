@@ -8,11 +8,11 @@
 #ifndef MTARESULTVALIDATOR_H_
 #define MTARESULTVALIDATOR_H_
 
-#include <MemoryModel/PointerAnalysis.h>
+#include <MemoryModel/PointerAnalysisImpl.h>
 #include "MTA/TCT.h"
 #include "MTA/MHP.h"
 #include "Util/SVFUtil.h"
-#include "Util/ThreadCallGraph.h"
+#include "Graphs/ThreadCallGraph.h"
 
 /*!
  * Validate the result of context-sensitive analysis, including context-sensitive
@@ -193,7 +193,7 @@ public:
     }
 
     /// Initialization
-    void init(SVFModule M) {
+    void init(SVFModule* M) {
         this->M = M;
         selectedValidationScenarios = RC_MHP | RC_ALIASES | RC_PROTECTED | RC_RACE;
         collectValidationTargets();
@@ -336,7 +336,7 @@ protected:
     }
 
 private:
-    SVFModule M;
+    SVFModule* M;
     std::vector<AccessPair> accessPairs;
     RC_FLAG selectedValidationScenarios;
 

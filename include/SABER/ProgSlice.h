@@ -32,7 +32,7 @@
 
 #include "Util/PathCondAllocator.h"
 #include "Util/WorkList.h"
-#include "MSSA/SVFG.h"
+#include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
 
 class ProgSlice {
@@ -138,8 +138,8 @@ public:
 
     /// Get callsite ID and get returnsiteID from SVFGEdge
     //@{
-    CallSite getCallSite(const SVFGEdge* edge) const;
-    CallSite getRetSite(const SVFGEdge* edge) const;
+    const CallBlockNode* getCallSite(const SVFGEdge* edge) const;
+    const CallBlockNode* getRetSite(const SVFGEdge* edge) const;
     //@}
 
     /// Condition operations

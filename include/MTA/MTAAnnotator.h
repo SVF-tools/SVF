@@ -54,7 +54,7 @@ public:
     void performAnnotate();
 
     /// Collect all load and store instruction
-    void collectLoadStoreInst(SVFModule mod);
+    void collectLoadStoreInst(SVFModule* mod);
 
     /// Get operand of store and load
     const Value* getStoreOperand(const Instruction* inst);
