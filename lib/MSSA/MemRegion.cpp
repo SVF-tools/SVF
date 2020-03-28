@@ -590,10 +590,17 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V) {
     bool mod = false;
 
     if (pta->getPAG()->hasValueNode(V)) {
-        const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V)));
-        if (hasRefSideEffectOfCallSite(cs) && getRefSideEffectOfCallSite(cs).intersects(pts))
+        const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V))); 
+        const PointsTo& csRef = getRefSideEffectOfCallSite(cs);
+        const PointsTo& csMod = getModSideEffectOfCallSite(cs);
+        PointsTo ptsExpanded, csRefExpanded, csModExpanded;
+        pta->expandFIObjs(pts, ptsExpanded);
+        pta->expandFIObjs(csRef, csRefExpanded);
+        pta->expandFIObjs(csMod, csModExpanded);
+        
+        if (csRefExpanded.intersects(ptsExpanded))
             ref = true;
-        if (hasModSideEffectOfCallSite(cs) && getModSideEffectOfCallSite(cs).intersects(pts))
+        if (csModExpanded.intersects(ptsExpanded))
             mod = true;
     }
 
@@ -622,15 +629,20 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockN
     const PointsTo& cs1Mod = getModSideEffectOfCallSite(cs1);
     const PointsTo& cs2Ref = getRefSideEffectOfCallSite(cs2);
     const PointsTo& cs2Mod = getModSideEffectOfCallSite(cs2);
+    PointsTo cs1RefExpanded, cs1ModExpanded, cs2RefExpanded, cs2ModExpanded;
+    pta->expandFIObjs(cs1Ref, cs1RefExpanded);
+    pta->expandFIObjs(cs1Mod, cs1ModExpanded);
+    pta->expandFIObjs(cs2Ref, cs2RefExpanded);
+    pta->expandFIObjs(cs2Mod, cs2ModExpanded);
 
     /// Ref: cs1 ref memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod))
+    if (cs1RefExpanded.intersects(cs2ModExpanded))
         ref = true;
     /// Mod: cs1 mod memory ref or mod by cs2
-    if (cs1Mod.intersects(cs2Ref) || cs1Mod.intersects(cs2Mod))
+    if (cs1ModExpanded.intersects(cs2RefExpanded) || cs1ModExpanded.intersects(cs2ModExpanded))
         mod = true;
     /// ModRef: cs1 ref and mod memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod) && cs1Mod.intersects(cs2Mod))
+    if (cs1RefExpanded.intersects(cs2ModExpanded) && cs1ModExpanded.intersects(cs2ModExpanded))
         ref = mod = true;
 
     if (ref && mod)
