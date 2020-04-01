@@ -37,7 +37,6 @@
 #include <llvm/ADT/SmallVector.h>		// for small vector
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/CallSite.h>
-#include <llvm/Support/raw_ostream.h>	// for output
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 #include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator

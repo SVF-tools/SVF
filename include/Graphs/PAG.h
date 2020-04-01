@@ -50,7 +50,7 @@ public:
     typedef std::set<const PAGEdge*> PAGEdgeSet;
     typedef std::list<const PAGEdge*> PAGEdgeList;
     typedef std::list<const PAGNode*> PAGNodeList;
-    typedef std::list<std::pair<const PAGNode*, const BasicBlock*> > PNodeBBPairList;
+    typedef std::list<std::pair<const PAGNode*, const ICFGNode*> > PNodeBBPairList;
     typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
@@ -59,7 +59,6 @@ public:
     typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
     typedef llvm::DenseMap<const Function*,const PAGNode*> FunToRetMap;
     typedef llvm::DenseMap<const Function*,PAGEdgeSet> FunToPAGEdgeSetMap;
-    typedef llvm::DenseMap<const BasicBlock*,PAGEdgeList> BB2PAGEdgesMap;
     typedef llvm::DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef std::map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
@@ -210,7 +209,7 @@ public:
         return globPAGEdgesSet;
     }
     /// Add phi node information
-    inline void addPhiNode(const PAGNode* res, const PAGNode* op,const BasicBlock* bb) {
+    inline void addPhiNode(const PAGNode* res, const PAGNode* op,const ICFGNode* bb) {
         phiNodeMap[res].push_back(std::make_pair(op,bb));
     }
     /// Whether this PAGNode is a result operand a of phi node

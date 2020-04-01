@@ -33,6 +33,7 @@
 
 #include <llvm/ADT/DenseSet.h>		// for dense map, set
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
+#include <llvm/Support/raw_ostream.h>	// for output
 #include <vector>
 #include <list>
 #include <set>
@@ -102,6 +103,45 @@ typedef llvm::StringMap<u32_t> StringMap;
 #define TIMEINTERVAL 1000
 #define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
+class SVFValue{
+
+private:
+	const std::string value;
+
+public:
+    /// Constructor
+    SVFValue(const std::string& val): value(val) {
+
+    }
+
+    /// Add the hash function for std::set (we also can overload operator< to implement this)
+    //  and duplicated elements in the set are not inserted (binary tree comparison)
+    //@{
+	bool operator()(const SVFValue* lhs, const SVFValue* rhs) const {
+		return lhs->value < rhs->value;
+	}
+
+    inline bool operator==(SVFValue* rhs) const {
+        return value == rhs->value;
+    }
+
+    inline bool operator!=(SVFValue* rhs) const {
+        return value != rhs->value;
+    }
+    //@}
+
+    const std::string& getName() const {
+    	return value;
+    }
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node) {
+        o << node.getName();
+        return o;
+    }
+    //@}
+};
 
 
 

@@ -124,9 +124,6 @@ public:
     typedef InstSet CallSiteSet;
     typedef std::vector<const Instruction*> InstVector;
     typedef std::map<const Instruction*, InstSet> CallToInstMap;
-    typedef std::set<const BasicBlock*> BBSet;
-    typedef std::vector<const BasicBlock*> BBVector;
-    typedef std::map<const BasicBlock*, const Instruction*> BBToInstMap;
     typedef std::set<CallSiteSet*> CtxSet;
     typedef ThreadForkEdge::ForkEdgeSet ForkEdgeSet;
     typedef std::map<const CallBlockNode*, ForkEdgeSet> CallInstToForkEdgesMap;

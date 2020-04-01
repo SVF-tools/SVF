@@ -62,13 +62,13 @@ public:
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), bb(NULL) {
+    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL) {
 
     }
 
-    /// We should know the program location (basic block level) of each ICFG node
-    virtual const BasicBlock *getBB() const {
-        return bb;
+    /// Return the function of this ICFGNode
+    virtual const Function *getFun() const {
+        return fun;
     }
 
     /// Overloading operator << for dumping ICFG node ID
@@ -79,7 +79,7 @@ public:
     }
     //@}
 protected:
-    const BasicBlock *bb;
+    const Function *fun;
 };
 
 
@@ -97,7 +97,7 @@ private:
     StmtOrPHIVec vnodes;
 public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i) {
-        bb = inst->getParent();
+        fun = inst->getFunction();
     }
 
     inline const Instruction *getInst() const {
@@ -179,7 +179,6 @@ class FunEntryBlockNode : public InterBlockNode {
 public:
     typedef std::vector<const PAGNode *> FormalParmNodeVec;
 private:
-    const Function *fun;
     FormalParmNodeVec FPNodes;
 public:
     FunEntryBlockNode(NodeID id, const Function *f);
@@ -277,7 +276,7 @@ private:
     ActualParmVFGNodeVec APNodes;
 public:
     CallBlockNode(NodeID id, CallSite c) : InterBlockNode(id, FunCallBlock), cs(c) {
-        bb = cs.getInstruction()->getParent();
+        fun = cs.getCaller();
     }
 
     /// Return callsite
@@ -343,7 +342,7 @@ private:
 public:
     RetBlockNode(NodeID id, CallSite c, CallBlockNode* cb) :
     	InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb) {
-        bb = cs.getInstruction()->getParent();
+        fun = cs.getCaller();
     }
 
     /// Return callsite

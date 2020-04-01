@@ -268,7 +268,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromAInToFIn(ActualINSVFGNode* actualIn, const Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator outIt = actualIn->OutEdgeBegin(), outEit = actualIn->OutEdgeEnd(); outIt != outEit; ++outIt) {
             SVFGEdge* edge = *outIt;
-            if (edge->getDstNode()->getBB()->getParent() == callee)
+            if (edge->getDstNode()->getFun() == callee)
                 edges.insert(edge);
         }
     }
@@ -276,7 +276,7 @@ protected:
     virtual inline void getInterVFEdgeAtIndCSFromFOutToAOut(ActualOUTSVFGNode* actualOut, const Function* callee, SVFGEdgeSetTy& edges) {
         for (SVFGNode::const_iterator inIt = actualOut->InEdgeBegin(), inEit = actualOut->InEdgeEnd(); inIt != inEit; ++inIt) {
             SVFGEdge* edge = *inIt;
-            if (edge->getSrcNode()->getBB()->getParent() == callee)
+            if (edge->getSrcNode()->getFun() == callee)
                 edges.insert(edge);
         }
     }

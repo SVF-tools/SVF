@@ -600,7 +600,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(MSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node)) {
             rawstr << "MSSAPHI\n";
-            rawstr << getSourceLoc(&mphi->getBB()->back());
+//            rawstr << getSourceLoc(&mphi->getBB()->back());
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node)) {
             rawstr << "NullPtr";
@@ -653,7 +653,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
             rawstr << ")\n";
 
             rawstr << mphi->getRes()->getMR()->dumpStr() << "\n";
-            rawstr << getSourceLoc(&mphi->getBB()->back());
+//            rawstr << getSourceLoc(&mphi->getBB()->back());
         }
         else if(PHISVFGNode* tphi = SVFUtil::dyn_cast<PHISVFGNode>(node)) {
             rawstr << tphi->getRes()->getId() << " = PHI(";

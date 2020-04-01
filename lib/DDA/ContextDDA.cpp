@@ -177,7 +177,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getDstNode()->getBB()->getParent();
+    const Function* callee = edge->getDstNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);
@@ -199,7 +199,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getSrcNode()->getBB()->getParent();
+    const Function* callee = edge->getSrcNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);

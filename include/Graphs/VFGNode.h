@@ -465,7 +465,7 @@ public:
 class IntraPHIVFGNode : public PHIVFGNode {
 
 public:
-    typedef llvm::DenseMap<u32_t,const BasicBlock*> OPIncomingBBs;
+    typedef llvm::DenseMap<u32_t,const ICFGNode*> OPIncomingBBs;
 
 private:
     OPIncomingBBs opIncomingBBs;
@@ -474,12 +474,12 @@ public:
     IntraPHIVFGNode(NodeID id, const PAGNode* r): PHIVFGNode(id, r, TIntraPhi) {
     }
 
-    inline const BasicBlock* getOpIncomingBB(u32_t pos) const {
+    inline const ICFGNode* getOpIncomingBB(u32_t pos) const {
         OPIncomingBBs::const_iterator it = opIncomingBBs.find(pos);
         assert(it!=opIncomingBBs.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const BasicBlock* bb) {
+    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const ICFGNode* bb) {
         opVers[pos] = node;
         opIncomingBBs[pos] = bb;
     }
@@ -685,6 +685,10 @@ public:
         return cs;
     }
     /// Receive parameter at callsite
+    inline const Function* getCaller() const {
+        return cs->getCaller();
+    }
+    /// Receive parameter at callsite
     inline const PAGNode* getRev() const {
         return param;
     }
@@ -766,18 +770,18 @@ public:
     /// Constructor interPHI for formal parameter
     InterPHIVFGNode(NodeID id, const FormalParmVFGNode* fp) : PHIVFGNode(id, fp->getParam(), TInterPhi),fun(fp->getFun()),callInst(NULL) {}
     /// Constructor interPHI for actual return
-    InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(NULL),callInst(ar->getCallSite()) {}
+    InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(ar->getCaller()),callInst(ar->getCallSite()) {}
 
     inline bool isFormalParmPHI() const {
         return (fun!=NULL) && (callInst == NULL);
     }
 
     inline bool isActualRetPHI() const {
-        return (fun==NULL) && (callInst != NULL);
+        return (fun!=NULL) && (callInst != NULL);
     }
 
     inline const Function* getFun() const {
-        assert(isFormalParmPHI() && "expect a formal parameter phi");
+        assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
     }
 

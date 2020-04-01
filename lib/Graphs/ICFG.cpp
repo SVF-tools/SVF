@@ -42,14 +42,12 @@ static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
                              llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
 
 
-FunEntryBlockNode::FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock), fun(f) {
-    if (!SVFUtil::isExtCall(fun))
-        bb = &(fun->getEntryBlock());
+FunEntryBlockNode::FunEntryBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunEntryBlock) {
+	fun = f;
 }
 
 FunExitBlockNode::FunExitBlockNode(NodeID id, const Function *f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL) {
-    if (!SVFUtil::isExtCall(fun))
-        bb = SVFUtil::getFunExitBB(fun);
+	fun = f;
 }
 
 /*!
@@ -279,8 +277,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 			if (isExtCall(exit->getFun()))
 				rawstr << "Exit(" << ")\n";
 			else
-				rawstr << "Exit(" << getSourceLoc(&(exit->getBB()->back()))
-						<< ")\n";
+				rawstr << "Exit(" << ")\n";
 			rawstr << "Fun[" << exit->getFun()->getName() << "]";
 		} else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node)) {
 			rawstr << "Call("

@@ -115,10 +115,10 @@ public:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode) {
-        const BasicBlock *srcBB = srcNode->getBB();
-        const BasicBlock *dstBB = dstNode->getBB();
-        if(srcBB != nullptr && dstBB != nullptr) {
-            assert(srcBB->getParent() == dstBB->getParent());
+        const Function *srcfun = srcNode->getFun();
+        const Function *dstfun = dstNode->getFun();
+        if(srcfun != nullptr && dstfun != nullptr) {
+            assert((srcfun == dstfun) && "src and dst nodes of an intra edge should in the same function!" );
         }
     }
 

@@ -75,8 +75,8 @@ void ProgSlice::AllPathReachableSolve() {
                     worklist.push(succ);
             }
 
-            DBOUT(DSaber, outs() << " node (" << node->getId() << ":" << node->getBB()->getName() <<
-                  ") --> " << "succ (" << succ->getId() << ":" << succ->getBB()->getName() << ") condition: " << getVFCond(succ) << "\n");
+            DBOUT(DSaber, outs() << " node (" << node->getId()  <<
+                  ") --> " << "succ (" << succ->getId() << ") condition: " << getVFCond(succ) << "\n");
         }
     }
 

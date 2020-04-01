@@ -424,10 +424,17 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
 	NodeID dst = getValueNode(&inst);
 
 	for (Size_t i = 0; i < inst.getNumIncomingValues(); ++i) {
-		NodeID src = getValueNode(inst.getIncomingValue(i));
+		const Value* val = inst.getIncomingValue(i);
+		const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
+		assert((incomingInst==NULL) || (incomingInst->getFunction() == inst.getFunction()));
+		const IntraBlockNode* intraBlockNode = NULL;
+		if (incomingInst != NULL)
+			intraBlockNode = pag->getICFG()->getIntraBlockNode(incomingInst);
+
+		NodeID src = getValueNode(val);
 		const BasicBlock* bb = inst.getIncomingBlock(i);
 		addCopyEdge(src, dst);
-		pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src), bb);
+		pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src), intraBlockNode);
 	}
 }
 
@@ -544,9 +551,12 @@ void PAGBuilder::visitSelectInst(SelectInst &inst) {
 	NodeID src2 = getValueNode(inst.getFalseValue());
 	addCopyEdge(src1, dst);
 	addCopyEdge(src2, dst);
+
+	const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
+
 	/// Two operands have same incoming basic block, both are the current BB
-	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src1), inst.getParent());
-	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src2), inst.getParent());
+	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src1), block);
+	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src2), block);
 }
 
 /*
