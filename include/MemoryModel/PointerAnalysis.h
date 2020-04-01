@@ -104,6 +104,8 @@ protected:
     //@{
     /// Flag for printing the statistic results
     bool print_stat;
+    /// Flag for validating points-to/alias results
+    bool alias_validation;
     /// Flag for iteration budget for on-the-fly statistics
     u32_t OnTheFlyIterBudgetForStat;
     //@}
@@ -142,7 +144,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(PTATY ty = Default_PTA);
+    PointerAnalysis(PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const {

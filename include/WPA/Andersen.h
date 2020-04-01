@@ -76,8 +76,8 @@ public:
     //@}
 
     /// Constructor
-    Andersen(PTATY type = Andersen_WPA)
-        :  BVDataPTAImpl(type), consCG(NULL), diffOpt(true), pwcOpt(false)
+    Andersen(PTATY type = Andersen_WPA, bool alias_check = true)
+        :  BVDataPTAImpl(type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
     {
 		iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -333,12 +333,12 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA): Andersen(type) {}
+    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(SVFModule* svfModule) {
         if(diffWave==NULL) {
-            diffWave = new AndersenWaveDiff();
+            diffWave = new AndersenWaveDiff(AndersenWaveDiff_WPA, false);
             diffWave->analyze(svfModule);
             return diffWave;
         }

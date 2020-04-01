@@ -93,10 +93,11 @@ PAG* PointerAnalysis::pag = NULL;
 /*!
  * Constructor
  */
-PointerAnalysis::PointerAnalysis(PTATY ty) :
-    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL) {
+PointerAnalysis::PointerAnalysis(PTATY ty, bool alias_check) :
+    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL), svfMod(NULL) {
     OnTheFlyIterBudgetForStat = statBudget;
     print_stat = PStat;
+    alias_validation = (alias_check && EnableAliasCheck);
 }
 
 /*!
@@ -258,7 +259,7 @@ void PointerAnalysis::finalize() {
 
     getPTACallGraph()->dump("callgraph_final");
 
-    if(!pag->isBuiltFromFile() && EnableAliasCheck)
+    if(!pag->isBuiltFromFile() && alias_validation)
         validateTests();
 
     if (!UsePreCompFieldSensitive)

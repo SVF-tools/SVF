@@ -22,8 +22,8 @@ static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type) :
-		PointerAnalysis(type) {
+BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check) :
+		PointerAnalysis(type, alias_check) {
 	if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
         || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
         || type == AndersenSCD_WPA || type == AndersenSFR_WPA) {

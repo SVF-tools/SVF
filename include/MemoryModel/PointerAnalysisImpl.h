@@ -44,7 +44,7 @@ public:
     typedef IncDFPTData<NodeID,PointsTo> IncDFPTDataTy;	/// Points-to data structure type
 
     /// Constructor
-    BVDataPTAImpl(PointerAnalysis::PTATY type);
+    BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
     virtual ~BVDataPTAImpl() {
