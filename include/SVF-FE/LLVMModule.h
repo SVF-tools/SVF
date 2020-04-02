@@ -71,6 +71,7 @@ public:
         llvmModuleSet = NULL;
     }
 
+    SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
 
     void build(const std::vector<std::string> &moduleNameVec);
