@@ -59,6 +59,20 @@ static llvm::cl::opt<bool> SVFMain("svfmain", llvm::cl::init(false), llvm::cl::d
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
 
+SVFModule* LLVMModuleSet::buildSVFModule(Module &mod) {
+  svfModule = new SVFModule();
+  moduleNum = 1;
+  cxts = &(mod.getContext());
+  modules = new unique_ptr<Module>[moduleNum];
+  modules[0] = std::unique_ptr<Module>(&mod);
+
+  initialize();
+  buildFunToFunMap();
+  buildGlobalDefToRepMap();
+
+  return svfModule;
+}
+
 SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleNameVec) {
 	assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
