@@ -227,8 +227,8 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store) {
 
     numOfProcessedStore++;
 
-    NodeID src = store->getSrcID();
-    return addCopyEdge(src, node);
+    NodeID dst = store->getDstID();
+    return addCopyEdge(node, dst);
 }
 
 /*!

@@ -157,7 +157,9 @@ bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
+    NodeID srcNode = edge->getSrcID(); 
+
+    for (PointsTo::iterator piter = getPts(srcNode).begin(), epiter = getPts(srcNode).end();
          piter != epiter; ++piter) {
         if (processStore(*piter, edge)) {
             changed = true;
