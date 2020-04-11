@@ -103,15 +103,30 @@ typedef llvm::StringMap<u32_t> StringMap;
 #define TIMEINTERVAL 1000
 #define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
-class SVFValue{
+class SVFValue {
+
+public:
+    typedef s32_t GNodeK;
+
+    enum SVFValKind {
+        SVFVal,
+        SVFFunc,
+        SVFGlob,
+        SVFBB,
+        SVFInst,
+    };
 
 private:
 	const std::string value;
-
+    GNodeK kind;	///< Type of this SVFValue
 public:
     /// Constructor
-    SVFValue(const std::string& val): value(val) {
+    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k) {
+    }
 
+    /// Get the type of this SVFValue
+    inline GNodeK getKind() const {
+        return kind;
     }
 
     /// Add the hash function for std::set (we also can overload operator< to implement this)
@@ -134,6 +149,10 @@ public:
     	return value;
     }
 
+    const std::string& getValue() const {
+    	return value;
+    }
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node) {
@@ -141,8 +160,48 @@ public:
         return o;
     }
     //@}
+
+    static inline bool classof(const SVFValue *node) {
+        return node->getKind() == SVFValue::SVFVal ||
+               node->getKind() == SVFValue::SVFFunc ||
+               node->getKind() == SVFValue::SVFGlob ||
+               node->getKind() == SVFValue::SVFBB ||
+			   node->getKind() == SVFValue::SVFInst;
+    }
 };
 
+
+class SVFFunction : public SVFValue {
+
+public:
+	SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc) {
+    }
+
+};
+
+class SVFGlobal : public SVFValue {
+
+public:
+	SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob) {
+    }
+
+};
+
+class SVFBasicBlock : public SVFValue {
+
+public:
+	SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB) {
+    }
+
+};
+
+class SVFInstruction : public SVFValue {
+
+public:
+	SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst) {
+    }
+
+};
 
 
 #endif /* INCLUDE_UTIL_SVFBASICTYPES_H_ */
