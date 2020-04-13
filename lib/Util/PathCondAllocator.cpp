@@ -53,7 +53,7 @@ static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
 void PathCondAllocator::allocate(const SVFModule* M) {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit) {
+    for (SVFModule::llvm_const_iterator fit = M->llvmFunBegin(); fit != M->llvmFunEnd(); ++fit) {
         const Function * func = *fit;
         if (!SVFUtil::isExtCall(func)) {
             // Allocate conditions for a program.

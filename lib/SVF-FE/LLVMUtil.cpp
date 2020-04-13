@@ -121,8 +121,8 @@ bool SVFUtil::isDeadFunction (const Function * fun) {
             return false;
     }
     if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun)) {
-        const SVFModule::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
-        for (SVFModule::FunctionSetType::const_iterator it = decls.begin(),
+        const SVFModule::LLVMFunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
+        for (SVFModule::LLVMFunctionSetType::const_iterator it = decls.begin(),
                 eit = decls.end(); it != eit; ++it) {
             const Function *decl = *it;
             if(decl->hasAddressTaken())

@@ -393,7 +393,7 @@ void SymbolTableInfo::prePassSchedule(SVFModule* svfModule)
 
     /// MergeFunctionRets Pass
     UnifyFunctionExitNodes* p2 = new UnifyFunctionExitNodes();
-    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
         Function *fun = *F;
         if (fun->isDeclaration())
             continue;
@@ -445,7 +445,7 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule) {
     }
 
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
         Function *fun = *F;
         collectSym(fun);
         collectRet(fun);

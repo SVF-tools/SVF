@@ -36,12 +36,12 @@ using namespace SVFUtil;
 
 PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule){
     /// create nodes
-    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
         callgraph->addCallGraphNode(*F);
     }
 
     /// create edges
-    for (SVFModule::iterator F = svfModule->begin(), E = svfModule->end(); F != E; ++F) {
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
         Function *fun = *F;
         for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I) {
             const Instruction *inst = &*I;
@@ -67,7 +67,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
 	assert(cg && "not a thread callgraph?");
 
 	ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi; ++fi) {
+    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi) {
         const Function *fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;
@@ -98,7 +98,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
         }
     }
     // record join sites
-    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi; ++fi) {
+    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi) {
         const Function *fun = *fi;
         for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
             const Instruction *inst = &*II;

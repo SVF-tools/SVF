@@ -352,7 +352,7 @@ inline bool isProgEntryFunction (const Function * fun) {
 
 /// Get program entry function from module.
 inline const Function* getProgEntryFunction(SVFModule* svfModule) {
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it) {
+    for (SVFModule::llvm_const_iterator it = svfModule->llvmFunBegin(), eit = svfModule->llvmFunEnd(); it != eit; ++it) {
         const Function *fun = *it;
         if (isProgEntryFunction(fun))
             return (fun);

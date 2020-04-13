@@ -229,8 +229,8 @@ void LLVMModuleSet::buildFunToFunMap() {
     typedef std::map<string, Function*> NameToFunDefMapTy;
     typedef std::map<string, std::set<Function*>> NameToFunDeclsMapTy;
 
-    for (FunctionSetType::iterator it = svfModule->begin(),
-            eit = svfModule->end(); it != eit; ++it) {
+    for (FunctionSetType::iterator it = svfModule->llvmFunBegin(),
+            eit = svfModule->llvmFunEnd(); it != eit; ++it) {
         Function *fun = *it;
         if (fun->isDeclaration()) {
             funDecls.insert(fun);

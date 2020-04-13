@@ -184,7 +184,7 @@ void ThreadAPI::performAPIStat(SVFModule* module) {
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::iterator it = module->begin(), eit = module->end(); it != eit;
+    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it) {
 
         for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;

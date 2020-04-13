@@ -55,7 +55,7 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
     ExternalPAG::initialise(svfModule);
 
     /// handle functions
-    for (SVFModule::iterator fit = svfModule->begin(), efit = svfModule->end();
+    for (SVFModule::llvm_iterator fit = svfModule->llvmFunBegin(), efit = svfModule->llvmFunEnd();
             fit != efit; ++fit) {
         Function& fun = **fit;
         /// collect return node of function fun
@@ -375,9 +375,9 @@ void PAGBuilder::visitGlobal(SVFModule* svfModule) {
     }
 
     /// initialize global functions
-    for (SVFModule::iterator I = svfModule->begin(), E =
-                svfModule->end(); I != E; ++I) {
-        Function *fun = *I;
+    for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
+                svfModule->llvmFunEnd(); I != E; ++I) {
+        const Function *fun = *I;
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 

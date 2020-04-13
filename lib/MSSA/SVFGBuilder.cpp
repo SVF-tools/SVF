@@ -125,7 +125,7 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
     MemSSADF df;
 
     SVFModule* svfModule = mssa->getPTA()->getModule();
-    for (SVFModule::iterator iter = svfModule->begin(), eiter = svfModule->end();
+    for (SVFModule::llvm_iterator iter = svfModule->llvmFunBegin(), eiter = svfModule->llvmFunEnd();
             iter != eiter; ++iter) {
 
         Function *fun = *iter;
