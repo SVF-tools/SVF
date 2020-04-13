@@ -197,4 +197,66 @@ typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DISubprogram DISubprogram;
 namespace dwarf = llvm::dwarf;
 
+
+
+class SVFFunction : public SVFValue {
+private:
+	bool isDecl;
+	bool isIntri;
+	Function* fun;
+public:
+	SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
+		isDecl(false), isIntri(false), fun(NULL) {
+    }
+
+	SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
+		isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f) {
+	}
+	inline Function* getLLVMFun() const{
+		assert(fun && "no LLVM Function found!");
+		return fun;
+	}
+
+	inline bool isDeclaration() const{
+		return isDecl;
+	}
+
+	inline bool isIntrinsic() const{
+		return isIntri;
+	}
+
+	inline u32_t arg_size() const{
+		return getLLVMFun()->arg_size();
+	}
+
+	inline bool isVarArg() const{
+		return getLLVMFun()->isVarArg();
+	}
+
+};
+
+class SVFGlobal : public SVFValue {
+
+public:
+	SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob) {
+    }
+
+};
+
+class SVFBasicBlock : public SVFValue {
+
+public:
+	SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB) {
+    }
+
+};
+
+class SVFInstruction : public SVFValue {
+
+public:
+	SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst) {
+    }
+
+};
+
 #endif /* BASICTYPES_H_ */

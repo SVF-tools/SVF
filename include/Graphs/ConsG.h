@@ -73,11 +73,11 @@ protected:
         return sccRepNode(pag->getValueNode(value));
     }
 
-    inline NodeID getReturnNode(const Function* value) const {
+    inline NodeID getReturnNode(const SVFFunction* value) const {
         return pag->getReturnNode(value);
     }
 
-    inline NodeID getVarargNode(const Function* value) const {
+    inline NodeID getVarargNode(const SVFFunction* value) const {
         return pag->getVarargNode(value);
     }
     //@}

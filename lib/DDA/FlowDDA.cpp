@@ -54,7 +54,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm) {
     addOutOfBudgetDpm(dpm);
 }
 
-bool FlowDDA::testIndCallReachability(LocDPItem& dpm, const Function* callee, CallSiteID csId) {
+bool FlowDDA::testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId) {
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(csId);
 
@@ -83,7 +83,7 @@ bool FlowDDA::handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) {
 //        else
 //            csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 //
-//        const Function* callee = edge->getDstNode()->getBB()->getParent();
+//        const SVFFunction* callee = edge->getDstNode()->getBB()->getParent();
 //        if(testIndCallReachability(dpm,callee,csId)==false){
 //            return false;
 //        }
@@ -97,7 +97,7 @@ bool FlowDDA::handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) {
 //        else
 //            csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 //
-//        const Function* callee = edge->getSrcNode()->getBB()->getParent();
+//        const SVFFunction* callee = edge->getSrcNode()->getBB()->getParent();
 //        if(testIndCallReachability(dpm,callee,csId)==false){
 //            return false;
 //        }
@@ -147,8 +147,8 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store)  {
     assert(mem && "memory object is null??");
     if(mem->isHeap()) {
 //        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
-//            const Function* fun = mallocSite->getParent()->getParent();
-//            const Function* curFun = store->getBB() ? store->getBB()->getParent() : NULL;
+//            const SVFFunction* fun = mallocSite->getParent()->getParent();
+//            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : NULL;
 //            if(fun!=curFun)
 //                return true;
 //            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))

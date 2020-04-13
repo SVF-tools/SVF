@@ -80,7 +80,7 @@ private:
     static ThreadAPI* tdAPI;
 
     /// Get the function type if it is a threadAPI function
-    inline TD_TYPE getType(const Function* F) const {
+    inline TD_TYPE getType(const SVFFunction* F) const {
         if(F) {
             TDAPIMap::const_iterator it= tdAPIMap.find(F->getName().str());
             if(it != tdAPIMap.end())
@@ -100,8 +100,8 @@ public:
 
     /// Return the callee/callsite/func
     //@{
-    const Function* getCallee(const Instruction *inst) const;
-    const Function* getCallee(const CallSite cs) const;
+    const SVFFunction* getCallee(const Instruction *inst) const;
+    const SVFFunction* getCallee(const CallSite cs) const;
     const CallSite getLLVMCallSite(const Instruction *inst) const;
     //@}
 

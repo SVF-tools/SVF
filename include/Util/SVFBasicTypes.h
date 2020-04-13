@@ -145,7 +145,7 @@ public:
     }
     //@}
 
-    const std::string& getName() const {
+    const llvm::StringRef getName() const {
     	return value;
     }
 
@@ -168,39 +168,6 @@ public:
                node->getKind() == SVFValue::SVFBB ||
 			   node->getKind() == SVFValue::SVFInst;
     }
-};
-
-
-class SVFFunction : public SVFValue {
-
-public:
-	SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc) {
-    }
-
-};
-
-class SVFGlobal : public SVFValue {
-
-public:
-	SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob) {
-    }
-
-};
-
-class SVFBasicBlock : public SVFValue {
-
-public:
-	SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB) {
-    }
-
-};
-
-class SVFInstruction : public SVFValue {
-
-public:
-	SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst) {
-    }
-
 };
 
 

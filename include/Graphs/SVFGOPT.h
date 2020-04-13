@@ -264,10 +264,10 @@ private:
     /// Check if formal-in/formal-out reside in address-taken function.
     //@{
     inline bool formalInOfAddressTakenFunc(const FormalINSVFGNode* fi) const {
-        return (fi->getEntryChi()->getFunction()->hasAddressTaken());
+        return (fi->getEntryChi()->getFunction()->getLLVMFun()->hasAddressTaken());
     }
     inline bool formalOutOfAddressTakenFunc(const FormalOUTSVFGNode* fo) const {
-        return (fo->getRetMU()->getFunction()->hasAddressTaken());
+        return (fo->getRetMU()->getFunction()->getLLVMFun()->hasAddressTaken());
     }
     //@}
 

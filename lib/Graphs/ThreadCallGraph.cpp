@@ -57,7 +57,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
         const PTACallGraph::FunctionSet &functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter =
                     functions.begin(); func_iter != functions.end(); func_iter++) {
-            const Function *callee = *func_iter;
+            const SVFFunction* callee = *func_iter;
             this->addIndirectCallGraphEdge(cs, cs->getCaller(), callee);
         }
     }
@@ -73,7 +73,8 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction()) {
                         const Function* callee = SVFUtil::cast<Function>(obj->getRefVal());
-                        this->addIndirectForkEdge(*it, callee);
+                        const SVFFunction* svfCallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                        this->addIndirectForkEdge(*it, svfCallee);
                     }
                 }
             }
@@ -91,7 +92,8 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta) {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction()) {
                         const Function* callee = SVFUtil::cast<Function>(obj->getRefVal());
-                        this->addIndirectForkEdge(*it, callee);
+                        const SVFFunction* svfCallee = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(callee);
+                        this->addIndirectForkEdge(*it, svfCallee);
                     }
                 }
             }
@@ -128,8 +130,7 @@ void ThreadCallGraph::addDirectForkEdge(const CallBlockNode* cs) {
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(cs->getCallSite()));
     assert(forkee && "callee does not exist");
-    PTACallGraphNode* callee = getCallGraphNode(forkee);
-    callee = getCallGraphNode(getDefFunForMultipleModule(forkee));
+    PTACallGraphNode* callee = getCallGraphNode(getDefFunForMultipleModule(forkee));
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
     if (!hasGraphEdge(caller, callee, PTACallGraphEdge::TDForkEdge, csId)) {
@@ -146,7 +147,7 @@ void ThreadCallGraph::addDirectForkEdge(const CallBlockNode* cs) {
 /*!
  * Add indirect fork edge to update call graph
  */
-void ThreadCallGraph::addIndirectForkEdge(const CallBlockNode* cs, const Function* calleefun) {
+void ThreadCallGraph::addIndirectForkEdge(const CallBlockNode* cs, const SVFFunction* calleefun) {
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);
 
@@ -177,8 +178,9 @@ void ThreadCallGraph::addDirectJoinEdge(const CallBlockNode* cs,const CallSiteSe
 
         const Function* threadRoutineFun = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun((*it)->getCallSite()));
         assert(threadRoutineFun && "thread routine function does not exist");
-        PTACallGraphNode* threadRoutineFunNode = getCallGraphNode(threadRoutineFun);
-        CallSiteID csId = addCallSite(cs, threadRoutineFun);
+        const SVFFunction* svfRoutineFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(threadRoutineFun);
+        PTACallGraphNode* threadRoutineFunNode = getCallGraphNode(svfRoutineFun);
+        CallSiteID csId = addCallSite(cs, svfRoutineFun);
 
         if (!hasThreadJoinEdge(cs,joinFunNode,threadRoutineFunNode, csId)) {
             assert(cs->getCaller() == joinFunNode->getFunction() && "callee instruction not inside caller??");
@@ -198,7 +200,9 @@ void ThreadCallGraph::addDirectParForEdge(const CallBlockNode* cs) {
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(cs->getCallSite()));
     assert(taskFunc && "callee does not exist");
-    PTACallGraphNode* callee = getCallGraphNode(taskFunc);
+    const SVFFunction* svfTaskFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(taskFunc);
+
+    PTACallGraphNode* callee = getCallGraphNode(svfTaskFun);
 
     CallSiteID csId = addCallSite(cs, callee->getFunction());
 
@@ -216,7 +220,7 @@ void ThreadCallGraph::addDirectParForEdge(const CallBlockNode* cs) {
 /*!
  * Add an indirect ParFor edge to update call graph
  */
-void ThreadCallGraph::addIndirectParForEdge(const CallBlockNode* cs, const Function* calleefun) {
+void ThreadCallGraph::addIndirectParForEdge(const CallBlockNode* cs, const SVFFunction* calleefun) {
 
     PTACallGraphNode* caller = getCallGraphNode(cs->getCaller());
     PTACallGraphNode* callee = getCallGraphNode(calleefun);

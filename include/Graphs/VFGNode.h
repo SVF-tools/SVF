@@ -68,9 +68,9 @@ public:
     }
 
     /// Get the function of this SVFGNode
-    virtual const Function* getFun() const {
+    virtual const SVFFunction* getFun() const {
         if(bb)
-            return bb->getParent();
+            return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
         else
             return NULL;
     }
@@ -613,14 +613,14 @@ public:
  */
 class FormalParmVFGNode : public ArgumentVFGNode {
 private:
-    const Function* fun;
+    const SVFFunction* fun;
     CallPESet callPEs;
 
 public:
     /// Constructor
-    FormalParmVFGNode(NodeID id, const PAGNode* n, const Function* f):
+    FormalParmVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f):
     		ArgumentVFGNode(id, n, FParm),  fun(f) {
-        bb = &fun->getEntryBlock();
+        bb = &fun->getLLVMFun()->getEntryBlock();
     }
 
     /// Return parameter
@@ -629,7 +629,7 @@ public:
     }
 
     /// Return function
-    inline const Function* getFun() const {
+    inline const SVFFunction* getFun() const {
         return fun;
     }
     /// Return call edge
@@ -685,7 +685,7 @@ public:
         return cs;
     }
     /// Receive parameter at callsite
-    inline const Function* getCaller() const {
+    inline const SVFFunction* getCaller() const {
         return cs->getCaller();
     }
     /// Receive parameter at callsite
@@ -714,7 +714,7 @@ public:
  */
 class FormalRetVFGNode: public ArgumentVFGNode {
 private:
-    const Function* fun;
+    const SVFFunction* fun;
     RetPESet retPEs;
 
     FormalRetVFGNode();                      ///< place holder
@@ -723,14 +723,14 @@ private:
 
 public:
     /// Constructor
-	FormalRetVFGNode(NodeID id, const PAGNode* n, const Function* f);
+	FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f);
 
     /// Return value at callee
     inline const PAGNode* getRet() const {
         return param;
     }
     /// Function
-    inline const Function* getFun() const {
+    inline const SVFFunction* getFun() const {
         return fun;
     }
     /// RetPE
@@ -780,7 +780,7 @@ public:
         return (fun!=NULL) && (callInst != NULL);
     }
 
-    inline const Function* getFun() const {
+    inline const SVFFunction* getFun() const {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
     }
@@ -807,7 +807,7 @@ public:
     //@}
 
 private:
-    const Function* fun;
+    const SVFFunction* fun;
     const CallBlockNode* callInst;
 };
 

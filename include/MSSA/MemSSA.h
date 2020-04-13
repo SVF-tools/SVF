@@ -75,8 +75,8 @@ public:
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef llvm::DenseMap<const Function*, CHISet> FunToEntryChiSetMap;
-    typedef llvm::DenseMap<const Function*, MUSet> FunToReturnMuSetMap;
+    typedef llvm::DenseMap<const SVFFunction*, CHISet> FunToEntryChiSetMap;
+    typedef llvm::DenseMap<const SVFFunction*, MUSet> FunToReturnMuSetMap;
 
     /// For phi insertion
     //@{
@@ -108,11 +108,11 @@ protected:
     MemSSAStat* stat;
 
     /// Create mu chi for candidate regions in a function
-    virtual void createMUCHI(const Function& fun);
+    virtual void createMUCHI(const SVFFunction& fun);
     /// Insert phi for candidate regions in a fucntion
-    virtual void insertPHI(const Function& fun);
+    virtual void insertPHI(const SVFFunction& fun);
     /// SSA rename for a function
-    virtual void SSARename(const Function& fun);
+    virtual void SSARename(const SVFFunction& fun);
     /// SSA rename for a basic block
     virtual void SSARenameBB(const BasicBlock& bb);
 private:
@@ -257,10 +257,10 @@ private:
     //@}
     /// Get/set methods for dominace frontier/tree
     //@{
-    DominanceFrontier* getDF(const Function& fn) {
+    DominanceFrontier* getDF(const SVFFunction& fn) {
         return df;
     }
-    DominatorTree* getDT(const Function& fn) {
+    DominatorTree* getDT(const SVFFunction& fn) {
         return dt;
     }
     void setCurrentDFDT(DominanceFrontier* f, DominatorTree* t);
@@ -287,7 +287,7 @@ public:
         return mrGen;
     }
     /// We start from here
-    virtual void buildMemSSA(const Function& fun,DominanceFrontier*, DominatorTree*);
+    virtual void buildMemSSA(const SVFFunction& fun,DominanceFrontier*, DominatorTree*);
 
     /// Perform statistics
     void performStat();
@@ -321,17 +321,17 @@ public:
 
     /// Has function entry chi or return mu
     //@{
-    inline bool hasFuncEntryChi(Function * fun) const {
+    inline bool hasFuncEntryChi(const SVFFunction * fun) const {
         return (funToEntryChiSetMap.find(fun) != funToEntryChiSetMap.end());
     }
-    inline bool hasReturnMu(Function * fun) const {
+    inline bool hasReturnMu(const SVFFunction * fun) const {
         return (funToReturnMuSetMap.find(fun) != funToReturnMuSetMap.end());
     }
 
-    inline CHISet& getFuncEntryChiSet(const Function * fun) {
+    inline CHISet& getFuncEntryChiSet(const SVFFunction * fun) {
         return funToEntryChiSetMap[fun];
     }
-    inline MUSet& getReturnMuSet(const Function * fun) {
+    inline MUSet& getReturnMuSet(const SVFFunction * fun) {
         return funToReturnMuSetMap[fun];
     }
     //@}

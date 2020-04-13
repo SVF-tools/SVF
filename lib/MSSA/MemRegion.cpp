@@ -59,7 +59,7 @@ void MRGenerator::destroy() {
 /*!
  * Generate a memory region and put in into functions which use it
  */
-void MRGenerator::createMR(const Function* fun, const PointsTo& cpts) {
+void MRGenerator::createMR(const SVFFunction* fun, const PointsTo& cpts) {
     const PointsTo& repCPts = getRepPointsTo(cpts);
     MemRegion mr(repCPts);
     MRSet::const_iterator mit = memRegSet.find(&mr);
@@ -137,15 +137,15 @@ void MRGenerator::generateMRs() {
 void MRGenerator::collectModRefForLoadStore() {
 
     SVFModule* svfModule = pta->getModule();
-    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi;
+    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi;
             ++fi) {
-        const Function& fun = **fi;
+        const SVFFunction& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
-        if (IgnoreDeadFun && isDeadFunction(&fun))
+        if (IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
             continue;
 
-        for (Function::const_iterator iter = fun.begin(), eiter = fun.end();
+        for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();
                 iter != eiter; ++iter) {
             const BasicBlock& bb = *iter;
             for (BasicBlock::const_iterator bit = bb.begin(), ebit = bb.end();
@@ -276,7 +276,7 @@ void MRGenerator::partitionMRs() {
     /// Generate memory regions according to condition pts after computing superset
     for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it) {
-        const Function* fun = it->first;
+        const SVFFunction* fun = it->first;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             createMR(fun,*cit);
         }
@@ -292,7 +292,7 @@ void MRGenerator::updateAliasMRs() {
     /// update stores with its aliased regions
     for(StoresToPointsToMap::const_iterator it = storesToPointsToMap.begin(), eit = storesToPointsToMap.end(); it!=eit; ++it) {
         MRSet aliasMRs;
-        const Function* fun = getFunction(it->first);
+        const SVFFunction* fun = getFunction(it->first);
         const PointsTo& storeCPts = it->second;
         getAliasMemRegions(aliasMRs,storeCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait) {
@@ -302,7 +302,7 @@ void MRGenerator::updateAliasMRs() {
 
     for(LoadsToPointsToMap::const_iterator it = loadsToPointsToMap.begin(), eit = loadsToPointsToMap.end(); it!=eit; ++it) {
         MRSet aliasMRs;
-        const Function* fun = getFunction(it->first);
+        const SVFFunction* fun = getFunction(it->first);
         const PointsTo& loadCPts = it->second;
         getMRsForLoad(aliasMRs, loadCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait) {
@@ -313,7 +313,7 @@ void MRGenerator::updateAliasMRs() {
     /// update callsites with its aliased regions
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToModPointsToMap.begin(),
             eit = callsiteToModPointsToMap.end(); it!=eit; ++it) {
-        const Function* fun = it->first->getCaller();
+        const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
         const PointsTo& callsiteModCPts = it->second;
         getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
@@ -323,7 +323,7 @@ void MRGenerator::updateAliasMRs() {
     }
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToRefPointsToMap.begin(),
             eit = callsiteToRefPointsToMap.end(); it!=eit; ++it) {
-        const Function* fun = it->first->getCaller();
+        const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
         const PointsTo& callsiteRefCPts = it->second;
         getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
@@ -337,7 +337,7 @@ void MRGenerator::updateAliasMRs() {
 /*!
  * Add indirect uses an memory object in the function
  */
-void MRGenerator::addRefSideEffectOfFunction(const Function* fun, const NodeBS& refs) {
+void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs) {
     for(NodeBS::iterator it = refs.begin(), eit = refs.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToRefsMap[fun].set(*it);
@@ -347,7 +347,7 @@ void MRGenerator::addRefSideEffectOfFunction(const Function* fun, const NodeBS& 
 /*!
  * Add indirect def an memory object in the function
  */
-void MRGenerator::addModSideEffectOfFunction(const Function* fun, const NodeBS& mods) {
+void MRGenerator::addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods) {
     for(NodeBS::iterator it = mods.begin(), eit = mods.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToModsMap[fun].set(*it);
@@ -483,7 +483,7 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  * Whether the object node is a non-local object
  * including global, heap, and stack variable in recursions
  */
-bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
+bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const {
     const MemObj* obj = pta->getPAG()->getObject(id);
     assert(obj && "object not found!!");
     /// if the object is heap or global
@@ -493,7 +493,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
     /// or a local variable is in function recursion cycles
     else if(obj->isStack()) {
         if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal())) {
-            const Function* fun = local->getParent()->getParent();
+            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
             if(fun!=curFun)
                 return true;
             else
@@ -507,7 +507,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
 /*!
  * Get Mod-Ref of a callee function
  */
-bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const Function* callee){
+bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const SVFFunction* callee){
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs->getCallSite())){
         PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());

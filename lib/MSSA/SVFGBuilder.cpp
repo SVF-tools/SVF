@@ -125,14 +125,14 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA){
     MemSSADF df;
 
     SVFModule* svfModule = mssa->getPTA()->getModule();
-    for (SVFModule::llvm_iterator iter = svfModule->llvmFunBegin(), eiter = svfModule->llvmFunEnd();
+    for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
             iter != eiter; ++iter) {
 
-        Function *fun = *iter;
+        const SVFFunction *fun = *iter;
         if (isExtCall(fun))
             continue;
 
-        dt.recalculate(*fun);
+        dt.recalculate(*fun->getLLVMFun());
         df.runOnDT(dt);
 
         mssa->buildMemSSA(*fun, &df, &dt);

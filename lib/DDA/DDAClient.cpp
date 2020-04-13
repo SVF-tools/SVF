@@ -129,8 +129,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
         if(ddaPts.count() >= anderPts.count() || ddaPts.empty())
             continue;
 
-        std::set<const Function*> ander_vfns;
-        std::set<const Function*> dda_vfns;
+        std::set<const SVFFunction*> ander_vfns;
+        std::set<const SVFFunction*> dda_vfns;
         ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
         pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
 

@@ -229,7 +229,7 @@ void LLVMModuleSet::buildFunToFunMap() {
     typedef std::map<string, Function*> NameToFunDefMapTy;
     typedef std::map<string, std::set<Function*>> NameToFunDeclsMapTy;
 
-    for (FunctionSetType::iterator it = svfModule->llvmFunBegin(),
+    for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it) {
         Function *fun = *it;
         if (fun->isDeclaration()) {
@@ -289,32 +289,31 @@ void LLVMModuleSet::buildFunToFunMap() {
     /// Fun decl --> def
     for (std::set<Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it) {
-        Function *fdecl = *it;
+        const Function *fdecl = *it;
         string funName = fdecl->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         NameToFunDefMapTy::iterator mit = nameToFunDefMap.find(funName);
         if (mit == nameToFunDefMap.end())
             continue;
-        FunDeclToDefMap[fdecl] = mit->second;
+        FunDeclToDefMap[svfModule->getSVFFunction(fdecl)] = svfModule->getSVFFunction(mit->second);
     }
 
     /// Fun def --> decls
     for (std::set<Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it) {
-        Function *fdef = *it;
+        const Function *fdef = *it;
         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
-        FunctionSetType decls;
+        std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
         for (std::set<Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit) {
-            decls.push_back(*sit);
+            decls.push_back(svfModule->getSVFFunction(*sit));
         }
-        FunDefToDeclsMap[fdef] = decls;
     }
 }
 

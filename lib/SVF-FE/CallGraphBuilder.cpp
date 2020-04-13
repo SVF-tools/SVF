@@ -37,7 +37,8 @@ using namespace SVFUtil;
 PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule){
     /// create nodes
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
-        callgraph->addCallGraphNode(*F);
+    	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(*F);
+    	callgraph->addCallGraphNode(fun);
     }
 
     /// create edges
@@ -46,9 +47,10 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule){
         for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I) {
             const Instruction *inst = &*I;
             if (SVFUtil::isNonInstricCallSite(inst)) {
-                if(const Function* callee = getCallee(inst)){
+                if(const SVFFunction* callee = getCallee(inst)){
                 	const CallBlockNode* callBlockNode = icfg->getCallBlockNode(inst);
-                	callgraph->addDirectCallGraphEdge(callBlockNode,fun,callee);
+                	const SVFFunction* caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+                	callgraph->addDirectCallGraphEdge(callBlockNode,caller,callee);
                 }
             }
         }

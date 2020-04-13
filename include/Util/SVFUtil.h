@@ -140,36 +140,39 @@ inline CallSite getLLVMCallSite(const Instruction* inst) {
 }
 
 /// Get the corresponding Function based on its name
-inline Function* getFunction(StringRef name) {
-    Function* fun = NULL;
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i) {
-        Module *mod = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+inline const SVFFunction* getFunction(StringRef name) {
+	Function* fun = NULL;
+	LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+
+    for (u32_t i = 0; i < llvmModuleset->getModuleNum(); ++i) {
+        Module *mod = llvmModuleset->getModule(i);
         fun = mod->getFunction(name);
         if(fun && !fun->isDeclaration()) {
-            return fun;
+            return llvmModuleset->getSVFFunction(fun);
         }
     }
-    return fun;
+    return NULL;
 }
 
 /// Get the definition of a function across multiple modules
-inline const Function* getDefFunForMultipleModule(const Function* fun) {
+inline const SVFFunction* getDefFunForMultipleModule(const Function* fun) {
 	if(fun == NULL) return NULL;
-
-    if (fun->isDeclaration() && LLVMModuleSet::getLLVMModuleSet()->hasDefinition(fun))
-        fun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
-    return fun;
+	LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+	const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
+    if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
+        svfFun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
+    return svfFun;
 }
 
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
-inline const Function* getCallee(const CallSite cs) {
+inline const SVFFunction* getCallee(const CallSite cs) {
     // FIXME: do we need to strip-off the casts here to discover more library functions
     Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
-inline const Function* getCallee(const Instruction *inst) {
+inline const SVFFunction* getCallee(const Instruction *inst) {
     if (!SVFUtil::isa<CallInst>(inst) && !SVFUtil::isa<InvokeInst>(inst))
         return NULL;
     CallSite cs(const_cast<Instruction*>(inst));

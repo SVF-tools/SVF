@@ -36,9 +36,9 @@
 class LLVMModuleSet {
 public:
 
-    typedef SVFModule::LLVMFunctionSetType FunctionSetType;
-    typedef std::map<const Function*, Function*> FunDeclToDefMapTy;
-    typedef std::map<const Function*, FunctionSetType> FunDefToDeclsMapTy;
+    typedef std::vector<const SVFFunction*> FunctionSetType;
+    typedef std::map<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
+    typedef std::map<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
     typedef std::map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
 private:
@@ -93,14 +93,26 @@ public:
     // Dump modules to files
     void dumpModulesToFile(const std::string suffix);
 
+    const SVFFunction *getSVFFunction(const Function *fun) const {
+    	return svfModule->getSVFFunction(fun);
+    }
+
     /// Fun decl --> def
     bool hasDefinition(const Function *fun) const {
+    	return hasDefinition(svfModule->getSVFFunction(fun));
+    }
+
+    bool hasDefinition(const SVFFunction *fun) const {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
-    Function *getDefinition(const Function *fun) const {
+    const SVFFunction *getDefinition(const Function *fun) const {
+    	return getDefinition(svfModule->getSVFFunction(fun));
+    }
+
+    const SVFFunction *getDefinition(const SVFFunction *fun) const {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         assert(it != FunDeclToDefMap.end() && "has no definition?");
@@ -109,12 +121,20 @@ public:
 
     /// Fun def --> decl
     bool hasDeclaration(const Function *fun) const {
+        return hasDeclaration(svfModule->getSVFFunction(fun));
+    }
+
+    bool hasDeclaration(const SVFFunction *fun) const {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         return it != FunDefToDeclsMap.end();
     }
 
-    const FunctionSetType &getDeclaration(const Function *fun) const {
+    const FunctionSetType& getDeclaration(const Function *fun) const {
+        return getDeclaration(svfModule->getSVFFunction(fun));
+    }
+
+    const FunctionSetType& getDeclaration(const SVFFunction *fun) const {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         assert(it != FunDefToDeclsMap.end() && "has no declaration?");

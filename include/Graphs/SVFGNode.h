@@ -85,15 +85,15 @@ public:
     /// Constructor
     FormalINSVFGNode(NodeID id, const MemSSA::ENTRYCHI* entry): MRSVFGNode(id, FPIN), chi(entry) {
         cpts = entry->getMR()->getPointsTo();
-        bb = &entry->getFunction()->getEntryBlock();
+        bb = &entry->getFunction()->getLLVMFun()->getEntryBlock();
     }
     /// EntryCHI
     inline const MemSSA::ENTRYCHI* getEntryChi() const {
         return chi;
     }
     /// Return function
-    inline const Function* getFun() const {
-        return bb->getParent();
+    inline const SVFFunction* getFun() const {
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -126,8 +126,8 @@ public:
         return mu;
     }
     /// Function
-    inline const Function* getFun() const {
-        return bb->getParent();
+    inline const SVFFunction* getFun() const {
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -239,7 +239,7 @@ public:
         if(const MemSSA::PHI* phi = SVFUtil::dyn_cast<const MemSSA::PHI>(def))
             bb = phi->getBasicBlock();
         else if(const MemSSA::ENTRYCHI* enChi = SVFUtil::dyn_cast<const MemSSA::ENTRYCHI>(def))
-            bb = &enChi->getFunction()->getEntryBlock();
+            bb = &enChi->getFunction()->getLLVMFun()->getEntryBlock();
         else if(const MemSSA::CALLCHI* calChi = SVFUtil::dyn_cast<const MemSSA::CALLCHI>(def))
             bb = calChi->getBasicBlock();
         else
@@ -336,7 +336,7 @@ public:
         return (fun==NULL) && (callInst != NULL);
     }
 
-    inline const Function* getFun() const {
+    inline const SVFFunction* getFun() const {
         assert(isFormalINPHI() && "expect a formal parameter phi");
         return fun;
     }
@@ -365,7 +365,7 @@ public:
     }
     //@}
 private:
-    const Function* fun;
+    const SVFFunction* fun;
     const CallBlockNode* callInst;
 };
 

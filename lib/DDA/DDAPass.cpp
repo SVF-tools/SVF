@@ -174,8 +174,12 @@ bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge) {
     const BasicBlock* srcBB = edge->getSrcNode()->getBB();
     const BasicBlock* dstBB = edge->getDstNode()->getBB();
 
-    if(srcBB && dstBB)
-        return pta->inSameCallGraphSCC(srcBB->getParent(),dstBB->getParent());
+    if(srcBB && dstBB){
+    	const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
+    	const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
+
+    	return pta->inSameCallGraphSCC(srcFun,dstFun);
+    }
 
     assert(edge->isRetVFGEdge() == false && "should not be an inter-procedural return edge" );
 
@@ -221,8 +225,11 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                     const BasicBlock* dstBB = edge->getDstNode()->getBB();
 
                     if(srcBB && dstBB) {
-                        NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcBB->getParent())->getId();
-                        NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstBB->getParent())->getId();
+                    	const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
+                    	const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
+
+                        NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcFun)->getId();
+                        NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstFun)->getId();
                         insensitvefunPairs.insert(std::make_pair(src,dst));
                         insensitvefunPairs.insert(std::make_pair(dst,src));
                     }
@@ -244,8 +251,11 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 const BasicBlock* dstBB = edge->getDstNode()->getBB();
 
                 if(srcBB && dstBB) {
-                    NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcBB->getParent())->getId();
-                    NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstBB->getParent())->getId();
+                	const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
+                	const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
+
+                    NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcFun)->getId();
+                    NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstFun)->getId();
                     if(insensitvefunPairs.find(std::make_pair(src,dst))!=insensitvefunPairs.end())
                         insensitveEdges.insert(edge);
                     else if(insensitvefunPairs.find(std::make_pair(dst,src))!=insensitvefunPairs.end())

@@ -73,7 +73,7 @@ public:
     bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store);
 
     /// refine indirect call edge
-    bool testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, const CallBlockNode* cs);
+    bool testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs);
 
     /// get callsite id from call, return 0 if it is a spurious call edge
     CallSiteID getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge);
@@ -93,8 +93,8 @@ public:
     }
     /// Whether call/return inside recursion
     inline virtual bool isEdgeInRecursion(CallSiteID csId) {
-        const Function* caller = getPTACallGraph()->getCallerOfCallSite(csId);
-        const Function* callee = getPTACallGraph()->getCalleeOfCallSite(csId);
+        const SVFFunction* caller = getPTACallGraph()->getCallerOfCallSite(csId);
+        const SVFFunction* callee = getPTACallGraph()->getCalleeOfCallSite(csId);
         return inSameCallGraphSCC(caller, callee);
     }
     /// Update call graph.
@@ -107,7 +107,7 @@ public:
             const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-                const Function * func = *func_iter;
+                const SVFFunction*  func = *func_iter;
                 getSVFG()->connectCallerAndCallee(newcs, func, svfgEdges);
             }
         }
@@ -116,8 +116,8 @@ public:
 
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.
     inline bool edgeInCallGraphSCC(const SVFGEdge* edge) {
-        const Function* srcfun = edge->getSrcNode()->getFun();
-        const Function* dstfun = edge->getDstNode()->getFun();
+        const SVFFunction* srcfun = edge->getSrcNode()->getFun();
+        const SVFFunction* dstfun = edge->getDstNode()->getFun();
 
         if(srcfun && dstfun)
             return inSameCallGraphSCC(srcfun,dstfun);

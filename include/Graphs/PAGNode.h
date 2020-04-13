@@ -493,14 +493,13 @@ public:
     //@}
 
     /// Constructor
-    RetPN(const Function* val, NodeID i) :
-        PAGNode(val, i, RetNode) {
+    RetPN(const SVFFunction* val, NodeID i) :
+        PAGNode(val->getLLVMFun(), i, RetNode) {
     }
 
     /// Return name of a LLVM value
     const std::string getValueName() const {
-        const Function* fun = SVFUtil::cast<Function>(value);
-        return fun->getName().str() + "_ret";
+        return value->getName().str() + "_ret";
     }
 };
 
@@ -525,14 +524,13 @@ public:
     //@}
 
     /// Constructor
-    VarArgPN(const Function* val, NodeID i) :
-        PAGNode(val, i, VarargNode) {
+    VarArgPN(const SVFFunction* val, NodeID i) :
+        PAGNode(val->getLLVMFun(), i, VarargNode) {
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const {
-        const Function* fun = SVFUtil::cast<Function>(value);
-        return fun->getName().str() + "_vararg";
+        return value->getName().str() + "_vararg";
     }
 };
 

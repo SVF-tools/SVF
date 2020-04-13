@@ -554,7 +554,7 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
         const CallBlockNode* cs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const Function * func = *func_iter;
+            const SVFFunction*  func = *func_iter;
             svfg->connectCallerAndCallee(cs, func, edges);
         }
     }

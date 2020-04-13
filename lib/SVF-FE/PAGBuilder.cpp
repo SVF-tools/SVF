@@ -55,9 +55,9 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
     ExternalPAG::initialise(svfModule);
 
     /// handle functions
-    for (SVFModule::llvm_iterator fit = svfModule->llvmFunBegin(), efit = svfModule->llvmFunEnd();
+    for (SVFModule::iterator fit = svfModule->begin(), efit = svfModule->end();
             fit != efit; ++fit) {
-        Function& fun = **fit;
+        const SVFFunction& fun = **fit;
         /// collect return node of function fun
         if(!SVFUtil::isExtCall(&fun)) {
             /// Return PAG node will not be created for function which can not
@@ -65,14 +65,14 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
             /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
             /// c-lang.c shows an example when fun.doesNotReturn() evaluates
             /// to TRUE because of abort().
-            if(fun.doesNotReturn() == false && fun.getReturnType()->isVoidTy() == false)
+            if(fun.getLLVMFun()->doesNotReturn() == false && fun.getLLVMFun()->getReturnType()->isVoidTy() == false)
                 pag->addFunRet(&fun,pag->getPAGNode(pag->getReturnNode(&fun)));
         }
-        for (Function::arg_iterator I = fun.arg_begin(), E = fun.arg_end();
+        for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
                 I != E; ++I) {
             /// To be noted, we do not record arguments which are in declared function without body
             if(!SVFUtil::isExtCall(&fun)) {
-                setCurrentLocation(&*I,&fun.getEntryBlock());
+                setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
                 // or a dead function, we may create a black hole address edge for it
@@ -83,7 +83,7 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
                 pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
             }
         }
-        for (Function::iterator bit = fun.begin(), ebit = fun.end();
+        for (Function::iterator bit = fun.getLLVMFun()->begin(), ebit = fun.getLLVMFun()->end();
                 bit != ebit; ++bit) {
             BasicBlock& bb = *bit;
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
@@ -141,14 +141,16 @@ void PAGBuilder::initalNode() {
                 symTable->retSyms().begin(); iter != symTable->retSyms().end();
             ++iter) {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
-        pag->addRetNode(iter->first, iter->second);
+        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(iter->first);
+        pag->addRetNode(fun, iter->second);
     }
 
     for (SymbolTableInfo::FunToIDMapTy::iterator iter =
                 symTable->varargSyms().begin();
             iter != symTable->varargSyms().end(); ++iter) {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
-        pag->addVarargNode(iter->first, iter->second);
+        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(iter->first);
+        pag->addVarargNode(fun, iter->second);
     }
 
     /// add address edges for constant nodes.
@@ -583,7 +585,7 @@ void PAGBuilder::visitCallSite(CallSite cs) {
     if(!cs.getType()->isVoidTy())
         pag->addCallSiteRets(retBlockNode,pag->getPAGNode(getValueNode(cs.getInstruction())));
 
-    const Function *callee = getCallee(cs);
+    const SVFFunction *callee = getCallee(cs);
 
     if (callee) {
         if (isExtCall(callee)) {
@@ -613,7 +615,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
     DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
     if(Value *src = inst.getReturnValue()){
-        Function *F = inst.getParent()->getParent();
+        const SVFFunction *F = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst.getParent()->getParent());
 
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
@@ -652,7 +654,7 @@ void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst) {
 /*!
  * Add the constraints for a direct, non-external call.
  */
-void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
+void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F) {
 
     assert(F);
 
@@ -662,14 +664,14 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
     //Does it actually return a ptr?
-    if (F->getReturnType()->isVoidTy() == false) {
+    if (F->getLLVMFun()->getReturnType()->isVoidTy() == false) {
         NodeID srcret = getReturnNode(F);
         CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
-    Function::const_arg_iterator itF = F->arg_begin(), ieF = F->arg_end();
+    Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin(), ieF = F->getLLVMFun()->arg_end();
     //Go through the fixed parameters.
     DBOUT(DPAGBuild, outs() << "      args:");
     for (; itF != ieF; ++itA, ++itF) {
@@ -688,7 +690,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const Function *F) {
         addCallEdge(srcAA, dstFA, icfgNode);
     }
     //Any remaining actual args must be varargs.
-    if (F->isVarArg()) {
+    if (F->getLLVMFun()->isVarArg()) {
         NodeID vaF = getVarargNode(F);
         DBOUT(DPAGBuild, outs() << "\n      varargs:");
         for (; itA != ieA; ++itA) {
@@ -757,7 +759,7 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz) {
 /*!
  * Handle external calls
  */
-void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
+void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee) {
     const Instruction* inst = cs.getInstruction();
     if (isHeapAllocOrStaticExtCall(cs)) {
         // case 1: ret = new obj
@@ -1022,7 +1024,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const Function *callee) {
         /// create inter-procedural PAG edges for thread forks
         if(isThreadForkCall(inst)) {
             if(const Function* forkedFun = getLLVMFunction(getForkedFun(inst)) ) {
-                forkedFun = getDefFunForMultipleModule(forkedFun);
+                forkedFun = getDefFunForMultipleModule(forkedFun)->getLLVMFun();
                 const Value* actualParm = getActualParmAtForkSite(inst);
                 /// pthread_create has 1 arg.
                 /// apr_thread_create has 2 arg.
@@ -1179,7 +1181,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
 
 void PAGBuilder::connectGlobalToProgEntry()
 {
-    const Function* mainFunc = SVFUtil::getProgEntryFunction(PAG::getPAG()->getModule());
+    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(PAG::getPAG()->getModule());
 
     /// Return back if the main function is not found, the bc file might be a library only
     if(mainFunc == NULL)

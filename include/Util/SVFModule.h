@@ -81,7 +81,7 @@ public:
 
     ///@{
     inline void addFunctionSet(Function* fun){
-    	SVFFunction* svfFunc = new SVFFunction(fun->getName());
+    	SVFFunction* svfFunc = new SVFFunction(fun);
     	FunctionSet.push_back(svfFunc);
     	LLVMFunctionSet.push_back(fun);
     	LLVMFunc2SVFFunc[fun] = svfFunc;
@@ -94,7 +94,7 @@ public:
     }
     ///@}
 
-    inline const SVFFunction* getSVFFunction(const Function* fun) {
+    inline const SVFFunction* getSVFFunction(const Function* fun) const {
     	LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
     	assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
     	return it->second;

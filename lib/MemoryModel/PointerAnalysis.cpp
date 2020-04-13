@@ -187,7 +187,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(obj && "object not found!!");
     if(obj->isStack()) {
         if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal())) {
-            const Function* fun = local->getParent()->getParent();
+            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
             return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(fun)->getId());
         }
     }
@@ -364,7 +364,7 @@ void PointerAnalysis::printIndCSTargets(const CallBlockNode* cs, const FunctionS
         FunctionSet::const_iterator fit = targets.begin();
         FunctionSet::const_iterator feit = targets.end();
         for (; fit != feit; ++fit) {
-            const Function* callee = *fit;
+            const SVFFunction* callee = *fit;
             outs() << "\n\t" << callee->getName();
         }
     }
@@ -426,8 +426,8 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             const MemObj* obj = pag->getObject(objPN);
 
             if(obj->isFunction()) {
-                const Function* callee = SVFUtil::cast<Function>(obj->getRefVal());
-                callee = getDefFunForMultipleModule(callee);
+                const Function* calleefun = SVFUtil::cast<Function>(obj->getRefVal());
+                const SVFFunction* callee = getDefFunForMultipleModule(calleefun);
 
                 /// if the arg size does not match then we do not need to connect this parameter
                 /// even if the callee is a variadic function (the first parameter of variadic function is its paramter number)
@@ -452,7 +452,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
 /*!
  * Match arguments for callsite at caller and callee
  */
-bool PointerAnalysis::matchArgs(const CallBlockNode* cs, const Function* callee) {
+bool PointerAnalysis::matchArgs(const CallBlockNode* cs, const SVFFunction* callee) {
     if(ThreadAPI::getThreadAPI()->isTDFork(cs->getCallSite()))
         return true;
     else
@@ -495,8 +495,8 @@ void PointerAnalysis::connectVCallToVFns(const CallBlockNode* cs, const VFunSet 
     //// connect all valid functions
     for (VFunSet::const_iterator fit = vfns.begin(),
             feit = vfns.end(); fit != feit; ++fit) {
-        const Function* callee = *fit;
-        callee = getDefFunForMultipleModule(callee);
+        const SVFFunction* callee = *fit;
+        callee = getDefFunForMultipleModule(callee->getLLVMFun());
         if (getIndCallMap()[cs].count(callee) > 0)
             continue;
         if(cs->getCallSite().arg_size() == callee->arg_size() ||
@@ -528,12 +528,12 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
 void PointerAnalysis::validateSuccessTests(const char* fun) {
 
     // check for must alias cases, whether our alias analysis produce the correct results
-        if (Function* checkFun = getFunction(fun)) {
-            if(!checkFun->use_empty())
+        if (const SVFFunction* checkFun = getFunction(fun)) {
+            if(!checkFun->getLLVMFun()->use_empty())
                 outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-            for (Value::user_iterator i = checkFun->user_begin(), e =
-                        checkFun->user_end(); i != e; ++i)
+            for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+                        checkFun->getLLVMFun()->user_end(); i != e; ++i)
                 if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i)) {
 
                     CallSite cs(*i);
@@ -581,12 +581,12 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
  */
 void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
 
-    if (Function* checkFun = getFunction(fun)) {
-        if(!checkFun->use_empty())
+    if (const SVFFunction* checkFun = getFunction(fun)) {
+        if(!checkFun->getLLVMFun()->use_empty())
             outs() << "[" << this->PTAName() << "] Checking " << fun << "\n";
 
-        for (Value::user_iterator i = checkFun->user_begin(), e =
-                    checkFun->user_end(); i != e; ++i)
+        for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
+                    checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (CallInst *call = SVFUtil::dyn_cast<CallInst>(*i)) {
                 assert(call->getNumArgOperands() == 2
                        && "arguments should be two pointers!!");
