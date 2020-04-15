@@ -378,6 +378,10 @@ protected:
     inline bool hasModSideEffectOfCallSite(const CallBlockNode* cs) {
         return csToModsMap.find(cs) != csToModsMap.end();
     }
+    /// Has indirect refs or mods of a callsite
+    inline bool hasSideEffectOfCallSite(const CallBlockNode* cs) {
+        return (hasRefSideEffectOfCallSite(cs) || hasModSideEffectOfCallSite(cs));
+    }
     //@}
 
 public:

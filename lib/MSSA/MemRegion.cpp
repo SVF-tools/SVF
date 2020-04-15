@@ -571,7 +571,10 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs) {
     bool ref = hasRefSideEffectOfCallSite(cs);
     bool mod = hasModSideEffectOfCallSite(cs);
 
-    if (mod && ref)
+    /// return ModRef if tracks nothing of an external call
+    if (isExtCall(cs->getCallSite()) && !ref && !mod)
+        return ModRefInfo::ModRef;
+    else if (mod && ref)
         return ModRefInfo::ModRef;
     else if (ref)
         return ModRefInfo::Ref;
@@ -588,6 +591,9 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs) {
 ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V) {
     bool ref = false;
     bool mod = false;
+
+    if (isExtCall(cs->getCallSite()) && !hasSideEffectOfCallSite(cs))
+      return ModRefInfo::ModRef;
 
     if (pta->getPAG()->hasValueNode(V)) {
         const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V))); 
@@ -621,6 +627,9 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockN
     bool ref = false;
     bool mod = false;
 
+    if ((isExtCall(cs1->getCallSite()) && !hasSideEffectOfCallSite(cs1)) ||
+        (isExtCall(cs2->getCallSite()) && !hasSideEffectOfCallSite(cs2)))
+        return ModRefInfo::ModRef;
     /// return NoModRef neither two callsites ref or mod any memory
     if (getModRefInfo(cs1) == ModRefInfo::NoModRef || getModRefInfo(cs2) == ModRefInfo::NoModRef)
         return ModRefInfo::NoModRef;
