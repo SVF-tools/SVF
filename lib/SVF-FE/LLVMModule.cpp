@@ -60,7 +60,7 @@ LLVMModuleSet *LLVMModuleSet::llvmModuleSet = NULL;
 std::string SVFModule::pagReadFromTxt = "";
 
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod) {
-  svfModule = new SVFModule();
+  svfModule = new SVFModule(mod.getModuleIdentifier());
   moduleNum = 1;
   cxts = &(mod.getContext());
   modules = new unique_ptr<Module>[moduleNum];
