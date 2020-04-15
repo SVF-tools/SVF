@@ -191,6 +191,7 @@ void MRGenerator::collectModRefForCall() {
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it){
         collectCallSitePts((*it));
+        collectModRefForExtCallSiteOtherThanHeapAlloc((*it));
     }
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
@@ -438,6 +439,24 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs) {
 }
 
 /*!
+ * Collect and set mod ref sets of external callsites
+ * other than heap alloc external call
+ */
+void MRGenerator::collectModRefForExtCallSiteOtherThanHeapAlloc(const CallBlockNode* cs) {
+    if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+        for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+            const PAGEdge* edge = *bit;
+            if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
+                addRefSideEffectOfCallSite(cs, pta->getPts(ld->getSrcID()));
+            else if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
+                addModSideEffectOfCallSite(cs, pta->getPts(st->getDstID()));
+        }
+    }
+}
+
+/*!
  * Recurisively collect all points-to of the whole struct fields
  */
 NodeBS& MRGenerator::CollectPtsChain(NodeID id) {
@@ -518,7 +537,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlock
                 mod.set(addr->getSrcID());
         }
     }
-    /// otherwise, we find the mod/ref sets from the callee function
+    /// otherwise, we find the mod/ref sets from the callee function, who has definition and been processed
     else{
         mod = getModSideEffectOfFunction(callee);
         ref = getRefSideEffectOfFunction(callee);
