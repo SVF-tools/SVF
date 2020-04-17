@@ -306,6 +306,9 @@ protected:
         aliasMRs.insert(mr);
     }
 
+    /// Collect mod ref for external callsite other than heap alloc external call
+    virtual void collectModRefForExtCallSiteOtherThanHeapAlloc(const CallBlockNode* cs);
+
     /// Mod-Ref analysis for callsite invoking this callGraphNode
     virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
