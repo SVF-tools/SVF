@@ -118,6 +118,8 @@ void PAGBuilder::initalNode() {
     pag->addConstantObjNode();
     pag->addBlackholePtrNode();
     addNullPtrNode();
+    pag->addIOBufferObjNode();
+    pag->addIOBufferPtrNode();
 
     for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
                 symTable->valSyms().begin(); iter != symTable->valSyms().end();
@@ -164,6 +166,12 @@ void PAGBuilder::initalNode() {
 			}
 		}
     }
+
+    /// add address edge for IO buffer node
+    DBOUT(DPAGBuild, outs() << "add address edge for I/O buffer node\n");
+    NodeID ptr = pag->getIOBufferPtr();
+    NodeID obj = pag->getIOBufferNode();
+    addAddrEdge(obj, ptr);
 
     assert(pag->getTotalNodeNum() >= symTable->getTotalSymNum()
            && "not all node been inititalize!!!");

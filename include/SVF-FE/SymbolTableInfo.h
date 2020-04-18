@@ -179,6 +179,9 @@ public:
     static inline bool isNullPtr(NodeID id) {
         return (id == NullPtr);
     }
+    static inline bool isIOBufferPtr(NodeID id) {
+        return (id == IOBufferPtr);
+    }
     static inline bool isBlkObj(NodeID id) {
         return (id == BlackHole);
     }
@@ -188,6 +191,9 @@ public:
     static inline bool isBlkObjOrConstantObj(NodeID id) {
         return (isBlkObj(id) || isConstantObj(id));
     }
+    static inline bool isIOBufferObj(NodeID id) {
+        return (id == IOBufferObj);
+    }
 
     inline void createBlkOrConstantObj(SymID symId) {
         assert(isBlkObjOrConstantObj(symId));
@@ -195,11 +201,20 @@ public:
         objMap[symId] = new MemObj(symId);;
     }
 
+    inline void createIOBufferObj(SymID symId) {
+        assert(isIOBufferObj(symId));
+        assert(objMap.find(symId)==objMap.end());
+        objMap[symId] = new MemObj(symId, Type::getInt8Ty(LLVMModuleSet::getLLVMModuleSet()->getContext()));
+    }
+
     inline MemObj* getBlkObj() const {
         return getObj(blackholeSymID());
     }
     inline MemObj* getConstantObj() const {
         return getObj(constantSymID());
+    }
+    inline MemObj* getIOBufferObj() const {
+        return getObj(IOBufferSymID());
     }
 
     inline SymID blkPtrSymID() const {
@@ -210,12 +225,20 @@ public:
         return NullPtr;
     }
 
+    inline SymID IOBufferPtrSymID() const {
+        return IOBufferPtr;
+    }
+
     inline SymID constantSymID() const {
         return ConstantObj;
     }
 
     inline SymID blackholeSymID() const {
         return BlackHole;
+    }
+
+    inline SymID IOBufferSymID() const {
+        return IOBufferObj;
     }
 
     /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.

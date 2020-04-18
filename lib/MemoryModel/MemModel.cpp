@@ -216,8 +216,12 @@ void MemObj::setFieldSensitive() {
  */
 void MemObj::init(const Type* type) {
     typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
-    typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
-    typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    if (isIOBufferObj())
+        typeInfo->setFlag(ObjTypeInfo::STATIC_OBJ);
+    else {
+        typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    }
 }
 
 /*!
@@ -241,6 +245,13 @@ MemObj::MemObj(SymID id, const Type* type) :
  */
 bool MemObj::isBlackHoleObj() const {
     return SymbolTableInfo::isBlkObj(GSymID);
+}
+
+/*!
+ * Whether it is an I/O buffer object
+ */
+bool MemObj::isIOBufferObj() const {
+    return SymbolTableInfo::isIOBufferObj(GSymID);
 }
 
 

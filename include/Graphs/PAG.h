@@ -522,6 +522,25 @@ public:
     }
     //@}
 
+    /// Get I/O buffer
+    //@{
+    inline NodeID getIOBufferNode() const {
+        return symInfo->IOBufferSymID();
+    }
+    inline NodeID getIOBufferPtr() const {
+        return symInfo->IOBufferPtrSymID();
+    }
+    inline bool isIOBufferObj(NodeID id) const {
+        return (SymbolTableInfo::isIOBufferObj(id));
+    }
+    inline bool isIOBufferPtr(NodeID id) const {
+        return (SymbolTableInfo::isIOBufferPtr(id));
+    }
+    inline const MemObj* getIOBufferObj() const {
+        return symInfo->getIOBufferObj();
+    }
+    //@}
+
     inline u32_t getNodeNumAfterPAGBuild() const {
         return nodeNumAfterPAGBuild;
     }
@@ -615,6 +634,12 @@ public:
     }
     inline NodeID addBlackholePtrNode() {
         return addDummyValNode(getBlkPtr());
+    }
+    inline NodeID addIOBufferObjNode() {
+        return addObjNode(NULL, new DummyObjPN(getIOBufferNode(),getIOBufferObj()), getIOBufferNode());
+    }
+    inline NodeID addIOBufferPtrNode() {
+        return addDummyValNode(getIOBufferPtr());
     }
     //@}
 

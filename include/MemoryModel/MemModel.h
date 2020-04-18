@@ -40,6 +40,8 @@ enum SYMTYPE {
     ConstantObj,
     BlkPtr,
     NullPtr,
+    IOBufferObj,
+    IOBufferPtr,
     ValSym,
     ObjSym,
     RetSym,
@@ -259,7 +261,7 @@ public:
     /// Constructor
     MemObj(const Value *val, SymID id);
 
-    /// Constructor for black hole and constant obj
+    /// Constructor for black hole, constant obj and I/O buffer obj
     MemObj(SymID id, const Type* type = NULL);
 
     /// Destructor
@@ -270,7 +272,7 @@ public:
     /// Initialize the object
     void init(const Value *val);
 
-    /// Initialize black hole and constant object
+    /// Initialize black hole, constant object and I/O buffer obj
     void init(const Type* type);
 
     /// Get obj type
@@ -306,6 +308,9 @@ public:
 
     /// Whether it is a black hole object
     bool isBlackHoleObj() const;
+
+    /// Whether it is an IO buffer object
+    bool isIOBufferObj() const;
 
     /// object attributes methods
     //@{

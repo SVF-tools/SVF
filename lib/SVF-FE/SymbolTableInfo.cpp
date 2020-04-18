@@ -429,7 +429,16 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule) {
 
     // Pointer #3 always represents the null pointer.
     assert(totalSymNum == NullPtr && "Something changed!");
-    symTyMap.insert(std::make_pair(totalSymNum, NullPtr));
+    symTyMap.insert(std::make_pair(totalSymNum++, NullPtr));
+
+    // Object #4 always represents the I/O buffer
+    assert(totalSymNum == IOBufferObj && "Something changed!");
+    symTyMap.insert(std::make_pair(totalSymNum++, IOBufferObj));
+    createIOBufferObj(IOBufferObj);
+
+    // Pointer #5 always represents the pointer points-to I/O buffer
+    assert(totalSymNum == IOBufferPtr && "Something changed!");
+    symTyMap.insert(std::make_pair(totalSymNum, IOBufferPtr));
 
     // Add symbols for all the globals .
     for (SVFModule::global_iterator I = svfModule->global_begin(), E =
