@@ -584,7 +584,7 @@ PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs) {
 }
 
 /*!
- * Obtain the mod sets for a call, used for external ModRefInfo queries
+ * Obtain the ref sets for a call, used for external ModRefInfo queries
  */
 PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs) {
 	if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
@@ -595,12 +595,10 @@ PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs) {
 			const PAGEdge* edge = *bit;
 			if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
 				refs |= pta->getPts(ld->getSrcID());
-			else if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
-				refs |= pta->getPts(st->getDstID());
 		}
 		return refs;
 	} else {
-		return getModSideEffectOfCallSite(cs);
+		return getRefSideEffectOfCallSite(cs);
 	}
 }
 
