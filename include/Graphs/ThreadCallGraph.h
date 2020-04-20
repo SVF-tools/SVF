@@ -278,7 +278,7 @@ public:
     /// Add direct/indirect thread fork edges
     //@{
     void addDirectForkEdge(const CallBlockNode* cs);
-    void addIndirectForkEdge(const CallBlockNode* cs, const Function* callee);
+    void addIndirectForkEdge(const CallBlockNode* cs, const SVFFunction* callee);
     //@}
 
     /// Add thread join edges
@@ -289,7 +289,7 @@ public:
     /// Add direct/indirect parallel for edges
     //@{
     void addDirectParForEdge(const CallBlockNode* cs);
-    void addIndirectParForEdge(const CallBlockNode* cs, const Function* callee);
+    void addIndirectParForEdge(const CallBlockNode* cs, const SVFFunction* callee);
     //@}
 
 

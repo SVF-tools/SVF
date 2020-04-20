@@ -52,7 +52,7 @@ void LeakChecker::initSrcs() {
         if(isPtrInDeadFunction(cs->getCallSite().getInstruction()))
             continue;
 
-        const Function* fun = getCallee(cs->getCallSite());
+        const SVFFunction* fun = getCallee(cs->getCallSite());
         if(isSourceLikeFun(fun)) {
             CSWorkList worklist;
             SVFGNodeBS visited;
@@ -97,7 +97,7 @@ void LeakChecker::initSnks() {
 
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const Function* fun = getCallee(it->first->getCallSite());
+        const SVFFunction* fun = getCallee(it->first->getCallSite());
         if(isSinkLikeFun(fun)) {
             PAG::PAGNodeList& arglist =	it->second;
             assert(!arglist.empty() && "no actual parameter at deallocation site?");
@@ -195,7 +195,7 @@ void LeakChecker::reportBug(ProgSlice* slice) {
 void LeakChecker::testsValidation(const ProgSlice* slice) {
     const SVFGNode* source = slice->getSource();
     const CallBlockNode* cs = getSrcCSID(source);
-    const Function* fun = getCallee(cs->getCallSite());
+    const SVFFunction* fun = getCallee(cs->getCallSite());
     if(fun==NULL)
         return;
 
@@ -204,7 +204,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice) {
 }
 
 
-void LeakChecker::validateSuccessTests(const SVFGNode* source, const Function* fun) {
+void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun) {
 
     const CallBlockNode* cs = getSrcCSID(source);
 
@@ -247,7 +247,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const Function* f
                << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
-void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const Function* fun) {
+void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun) {
 
     const CallBlockNode* cs = getSrcCSID(source);
 

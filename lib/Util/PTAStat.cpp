@@ -289,7 +289,7 @@ void PTAStat::printStat(string statname) {
 void PTAStat::bitcastInstStat() {
     SVFModule* module = pta->getModule();
     u32_t numberOfBitCast = 0;
-    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
+    for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
             funIter != funEiter; ++funIter) {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
@@ -313,7 +313,7 @@ void PTAStat::branchStat() {
     SVFModule* module = pta->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::const_iterator funIter = module->begin(), funEiter = module->end();
+    for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
             funIter != funEiter; ++funIter) {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();

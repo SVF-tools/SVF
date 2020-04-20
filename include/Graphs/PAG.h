@@ -54,11 +54,11 @@ public:
     typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
-    typedef llvm::DenseMap<const Function*,PAGNodeList> FunToArgsListMap;
+    typedef llvm::DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
-    typedef llvm::DenseMap<const Function*,const PAGNode*> FunToRetMap;
-    typedef llvm::DenseMap<const Function*,PAGEdgeSet> FunToPAGEdgeSetMap;
+    typedef llvm::DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
+    typedef llvm::DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef llvm::DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef std::map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
@@ -249,13 +249,13 @@ public:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const Function* fun, const PAGNode* arg) {
+    inline void addFunArgs(const SVFFunction* fun, const PAGNode* arg) {
     	FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
 		funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
-    inline void addFunRet(const Function* fun, const PAGNode* ret) {
+    inline void addFunRet(const SVFFunction* fun, const PAGNode* ret) {
     	FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
     	funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
@@ -271,7 +271,7 @@ public:
         callSiteRetMap[retBlockNode]= arg;
     }
     /// Function has arguments list
-    inline bool hasFunArgsMap(const Function* func) const {
+    inline bool hasFunArgsMap(const SVFFunction* func) const {
         return (funArgsListMap.find(func) != funArgsListMap.end());
     }
     /// Get function arguments list
@@ -279,7 +279,7 @@ public:
         return funArgsListMap;
     }
     /// Get function arguments list
-    inline const PAGNodeList& getFunArgsList(const Function * func) const {
+    inline const PAGNodeList& getFunArgsList(const SVFFunction*  func) const {
         FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
         return it->second;
@@ -316,12 +316,12 @@ public:
         return funRetMap;
     }
     /// Get function return list
-    inline const PAGNode* getFunRet(const Function * func) const {
+    inline const PAGNode* getFunRet(const SVFFunction*  func) const {
         FunToRetMap::const_iterator it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
         return it->second;
     }
-    inline bool funHasRet(const Function* func) const {
+    inline bool funHasRet(const SVFFunction* func) const {
         return funRetMap.find(func) != funRetMap.end();
     }
     //@}
@@ -443,12 +443,12 @@ public:
     //@}
 
     /// GetReturnNode - Return the unique node representing the return value of a function
-    inline NodeID getReturnNode(const Function *func) const {
-        return symInfo->getRetSym(func);
+    inline NodeID getReturnNode(const SVFFunction* func) const {
+        return symInfo->getRetSym(func->getLLVMFun());
     }
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
-    inline NodeID getVarargNode(const Function *func) const {
-        return symInfo->getVarargSym(func);
+    inline NodeID getVarargNode(const SVFFunction* func) const {
+        return symInfo->getVarargSym(func->getLLVMFun());
     }
     /// Get a field PAG Object node according to base mem obj and offset
     NodeID getGepObjNode(const MemObj* obj, const LocationSet& ls);
@@ -571,12 +571,12 @@ public:
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const Function* val, NodeID i) {
+    inline NodeID addRetNode(const SVFFunction* val, NodeID i) {
         PAGNode *node = new RetPN(val,i);
         return addRetNode(val, node, i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const Function* val, NodeID i) {
+    inline NodeID addVarargNode(const SVFFunction* val, NodeID i) {
         PAGNode *node = new VarArgPN(val,i);
         return addNode(node,i);
     }
@@ -627,11 +627,11 @@ public:
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const Function* val, PAGNode *node, NodeID i) {
+    inline NodeID addRetNode(const SVFFunction* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const Function* val, PAGNode *node, NodeID i) {
+    inline NodeID addVarargNode(const SVFFunction* val, PAGNode *node, NodeID i) {
         return addNode(node,i);
     }
 

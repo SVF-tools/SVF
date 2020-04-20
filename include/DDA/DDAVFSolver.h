@@ -377,7 +377,7 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack()) {
             if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal())) {
-                const Function* fun = local->getParent()->getParent();
+                const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId());
             }
         }
@@ -400,7 +400,7 @@ protected:
                 findPT(funPtrDpm);
             }
         }
-        else if(const Function* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc())) {
+        else if(const SVFFunction* fun = getSVFG()->isFunEntrySVFGNode(dpm.getLoc())) {
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
             _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);

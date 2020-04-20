@@ -87,11 +87,11 @@ public:
     typedef llvm::AliasAnalysis AliasAnalysis;
     typedef std::set<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef	std::set<const Function*> FunctionSet;
+    typedef	std::set<const SVFFunction*> FunctionSet;
     typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const Function*> VFunSet;
+    typedef std::set<const SVFFunction*> VFunSet;
     //@}
 
 private:
@@ -334,7 +334,7 @@ public:
     /// Resolve indirect call edges
     virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
     /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallBlockNode* cs, const Function* callee);
+    bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{
@@ -350,12 +350,12 @@ public:
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const Function* fun1,const Function* fun2) {
+    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2) {
         const PTACallGraphNode* src = ptaCallGraph->getCallGraphNode(fun1);
         const PTACallGraphNode* dst = ptaCallGraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
-    inline bool isInRecursion(const Function* fun) const {
+    inline bool isInRecursion(const SVFFunction* fun) const {
         return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions

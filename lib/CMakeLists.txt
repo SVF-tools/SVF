@@ -26,7 +26,6 @@ set(SOURCES
     Graphs/SVFGOPT.cpp
     Graphs/SVFGStat.cpp    
     Util/SVFUtil.cpp
-    Util/RaceAnnotator.cpp
     Util/Conditions.cpp
     Util/ExtAPI.cpp
     Util/PathCondAllocator.cpp

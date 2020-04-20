@@ -39,7 +39,7 @@ using namespace SVFUtil;
  */
 void ICFGBuilder::build(SVFModule* svfModule){
     for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end(); iter != eiter; ++iter) {
-        const Function *fun = *iter;
+        const SVFFunction *fun = *iter;
         if (SVFUtil::isExtCall(fun))
             continue;
         WorkList worklist;
@@ -53,9 +53,9 @@ void ICFGBuilder::build(SVFModule* svfModule){
 /*!
  * function entry
  */
-void ICFGBuilder::processFunEntry(const Function* fun, WorkList& worklist){
+void ICFGBuilder::processFunEntry(const SVFFunction*  fun, WorkList& worklist){
 	FunEntryBlockNode* FunEntryBlockNode = getOrAddFunEntryICFGNode(fun);
-	const Instruction* entryInst = &((fun->getEntryBlock()).front());
+	const Instruction* entryInst = &((fun->getLLVMFun()->getEntryBlock()).front());
 	InstVec insts;
 	if (isInstrinsicDbgInst(entryInst))
 		getNextInsts(entryInst, insts);
@@ -81,8 +81,9 @@ void ICFGBuilder::processFunBody(WorkList& worklist){
             visited.insert(inst);
             ICFGNode* srcNode = getOrAddBlockICFGNode(inst);
             if (isReturn(inst)) {
-                FunExitBlockNode* FunExitBlockNode = getOrAddFunExitICFGNode(
-                        inst->getFunction());
+            	const Function* fun = inst->getFunction();
+            	const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+                FunExitBlockNode* FunExitBlockNode = getOrAddFunExitICFGNode(svfFun);
                 icfg->addIntraEdge(srcNode, FunExitBlockNode);
             }
             InstVec nextInsts;
@@ -109,9 +110,9 @@ void ICFGBuilder::processFunBody(WorkList& worklist){
  * If a function has multiple exit(0), we will only have one "unreachle" instruction
  * after the UnifyFunctionExitNodes pass.
  */
-void ICFGBuilder::processFunExit(const Function* fun){
+void ICFGBuilder::processFunExit(const SVFFunction*  fun){
 	FunExitBlockNode* FunExitBlockNode = getOrAddFunExitICFGNode(fun);
-	const Instruction* exitInst = &(getFunExitBB(fun)->back());
+	const Instruction* exitInst = &(getFunExitBB(fun->getLLVMFun())->back());
 	InstVec insts;
 	if (isInstrinsicDbgInst(exitInst))
 		getPrevInsts(exitInst, insts);
@@ -135,7 +136,7 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 	CallSite cs = getLLVMCallSite(inst);
 	CallBlockNode* callICFGNode = getOrAddCallICFGNode(cs);
 	RetBlockNode* retICFGNode = getOrAddRetICFGNode(cs);
-	if (const Function* callee = getCallee(inst))
+	if (const SVFFunction*  callee = getCallee(inst))
 		addICFGInterEdges(cs, callee);                       //creating interprocedural edges
 	return callICFGNode;
 }
@@ -143,8 +144,8 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 /*!
  * Create edges between ICFG nodes across functions
  */
-void ICFGBuilder::addICFGInterEdges(CallSite cs, const Function* callee){
-	const Function* caller = cs.getCaller();
+void ICFGBuilder::addICFGInterEdges(CallSite cs, const SVFFunction*  callee){
+	const SVFFunction*  caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
 
 	CallBlockNode* CallBlockNode = getOrAddCallICFGNode(cs);
 	FunEntryBlockNode* calleeEntryNode = getOrAddFunEntryICFGNode(callee);

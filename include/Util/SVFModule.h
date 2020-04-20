@@ -34,14 +34,17 @@
 
 class SVFModule {
 public:
-    typedef std::vector<Function*> FunctionSetType;
+    typedef std::vector<const SVFFunction*> FunctionSetType;
+    typedef std::vector<Function*> LLVMFunctionSetType;
     typedef std::vector<GlobalVariable*> GlobalSetType;
     typedef std::vector<GlobalAlias*> AliasSetType;
-
+    typedef std::map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;
     typedef FunctionSetType::const_iterator const_iterator;
+    typedef LLVMFunctionSetType::iterator llvm_iterator;
+    typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
     typedef GlobalSetType::iterator global_iterator;
     typedef GlobalSetType::const_iterator const_global_iterator;
     typedef AliasSetType::iterator alias_iterator;
@@ -51,9 +54,10 @@ private:
     static std::string pagReadFromTxt;
     std::string moduleIdentifier;
     FunctionSetType FunctionSet;  ///< The Functions in the module
+    LLVMFunctionSetType LLVMFunctionSet;  ///< The Functions in the module
     GlobalSetType GlobalSet;      ///< The Global Variables in the module
     AliasSetType AliasSet;        ///< The Aliases in the module
-
+    LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
 public:
     /// Constructors
     SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {
@@ -77,7 +81,10 @@ public:
 
     ///@{
     inline void addFunctionSet(Function* fun){
-    	FunctionSet.push_back(fun);
+    	SVFFunction* svfFunc = new SVFFunction(fun);
+    	FunctionSet.push_back(svfFunc);
+    	LLVMFunctionSet.push_back(fun);
+    	LLVMFunc2SVFFunc[fun] = svfFunc;
     }
     inline void addGlobalSet(GlobalVariable* glob){
     	GlobalSet.push_back(glob);
@@ -87,8 +94,27 @@ public:
     }
     ///@}
 
+    inline const SVFFunction* getSVFFunction(const Function* fun) const {
+    	LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+    	assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+    	return it->second;
+    }
+
     /// Iterators
     ///@{
+    llvm_iterator llvmFunBegin() {
+        return LLVMFunctionSet.begin();
+    }
+    llvm_const_iterator llvmFunBegin() const {
+        return LLVMFunctionSet.begin();
+    }
+    llvm_iterator llvmFunEnd() {
+        return LLVMFunctionSet.end();
+    }
+    llvm_const_iterator llvmFunEnd() const {
+        return LLVMFunctionSet.end();
+    }
+
     iterator begin() {
         return FunctionSet.begin();
     }

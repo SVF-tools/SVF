@@ -37,16 +37,16 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> DumpVFG("dump-VFG", llvm::cl::init(false),
                              llvm::cl::desc("Dump dot graph of VFG"));
 
-FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const Function* f) :
+FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f) :
 		ArgumentVFGNode(id, n, FRet), fun(f) {
-	bb = SVFUtil::getFunExitBB(fun);
+	bb = SVFUtil::getFunExitBB(fun->getLLVMFun());
 }
 
 PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k): VFGNode(id, k), res(r) {
     const Value* val = r->getValue();
     if(const Function* fun =  SVFUtil::dyn_cast<Function>(val)) {
         assert(SVFUtil::isa<VarArgPN>(r) && "not a varag function?");
-        bb = &fun->getEntryBlock();
+        bb = &(fun->getEntryBlock());
     }
     /// the value can be an instruction phi, or a formal argument at function entry (due to SVFGOPT)
     else if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val)) {
@@ -171,7 +171,7 @@ void VFG::addVFGNodes() {
 
     // initialize formal parameter nodes
     for(PAG::FunToArgsListMap::iterator it = pag->getFunArgsMap().begin(), eit = pag->getFunArgsMap().end(); it !=eit; ++it) {
-		const Function* func = it->first;
+		const SVFFunction* func = it->first;
 
         for(PAG::PAGNodeList::iterator pit = it->second.begin(), epit = it->second.end(); pit!=epit; ++pit) {
             const PAGNode* param = *pit;
@@ -190,7 +190,7 @@ void VFG::addVFGNodes() {
             addFormalParmVFGNode(param,func,callPEs);
         }
 
-        if (func->getFunctionType()->isVarArg()) {
+        if (func->getLLVMFun()->getFunctionType()->isVarArg()) {
             const PAGNode* varParam = pag->getPAGNode(pag->getVarargNode(func));
             if (isInterestedPAGNode(varParam) == false || hasBlackHoleConstObjAddrAsDef(varParam))
                 continue;
@@ -210,7 +210,7 @@ void VFG::addVFGNodes() {
 
     // initialize formal return nodes (callee return)
 	for (PAG::FunToRetMap::iterator it = pag->getFunRets().begin(), eit = pag->getFunRets().end(); it != eit; ++it) {
-		const Function* func = it->first;
+		const SVFFunction* func = it->first;
 
 		const PAGNode* uniqueFunRetNode = it->second;
 
@@ -491,7 +491,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
         assert(newcs->isIndirectCall() && "this is not an indirect call?");
         const PointerAnalysis::FunctionSet & functions = iter->second;
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const Function * func = *func_iter;
+            const SVFFunction*  func = *func_iter;
             connectCallerAndCallee(newcs, func, vfEdgesAtIndCallSite);
         }
     }
@@ -501,7 +501,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const Function* callee, VFGEdgeSetTy& edges)
+void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
     PAG * pag = PAG::getPAG();
     ICFG * icfg = pag->getICFG();
@@ -520,7 +520,7 @@ void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const Funct
                 connectAParamAndFParam(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
-        if (callee->isVarArg()) {
+        if (callee->getLLVMFun()->isVarArg()) {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getPAGNode(varFunArg);
             if (varFunArgNode->isPointer()) {
@@ -575,7 +575,7 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const {
 /*!
  * Whether this is an function entry VFGNode (formal parameter, formal In)
  */
-const Function* VFG::isFunEntryVFGNode(const VFGNode* node) const {
+const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const {
     if(const FormalParmVFGNode* fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node)) {
         return fp->getFun();
     }

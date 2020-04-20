@@ -257,7 +257,7 @@ protected:
 	}
 
 	/// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
 	/// dump statistics
     inline void printStat() {

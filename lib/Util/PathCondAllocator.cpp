@@ -54,10 +54,10 @@ void PathCondAllocator::allocate(const SVFModule* M) {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
     for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit) {
-        const Function * func = *fit;
+        const SVFFunction * func = *fit;
         if (!SVFUtil::isExtCall(func)) {
             // Allocate conditions for a program.
-            for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit) {
+            for (Function::const_iterator bit = func->getLLVMFun()->begin(), ebit = func->getLLVMFun()->end(); bit != ebit; ++bit) {
                 const BasicBlock & bb = *bit;
                 collectBBCallingProgExit(bb);
                 allocateForBB(bb);

@@ -67,7 +67,7 @@ public:
     }
 
     /// Return the function of this ICFGNode
-    virtual const Function *getFun() const {
+    virtual const SVFFunction* getFun() const {
         return fun;
     }
 
@@ -79,7 +79,7 @@ public:
     }
     //@}
 protected:
-    const Function *fun;
+    const SVFFunction* fun;
 };
 
 
@@ -97,7 +97,7 @@ private:
     StmtOrPHIVec vnodes;
 public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i) {
-        fun = inst->getFunction();
+        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getFunction());
     }
 
     inline const Instruction *getInst() const {
@@ -181,10 +181,10 @@ public:
 private:
     FormalParmNodeVec FPNodes;
 public:
-    FunEntryBlockNode(NodeID id, const Function *f);
+    FunEntryBlockNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const Function *getFun() const {
+    inline const SVFFunction* getFun() const {
         return fun;
     }
 
@@ -224,13 +224,13 @@ public:
 class FunExitBlockNode : public InterBlockNode {
 
 private:
-    const Function *fun;
+    const SVFFunction* fun;
     const PAGNode *formalRet;
 public:
-    FunExitBlockNode(NodeID id, const Function *f);
+    FunExitBlockNode(NodeID id, const SVFFunction* f);
 
     /// Return function
-    inline const Function *getFun() const {
+    inline const SVFFunction* getFun() const {
         return fun;
     }
 
@@ -276,7 +276,7 @@ private:
     ActualParmVFGNodeVec APNodes;
 public:
     CallBlockNode(NodeID id, CallSite c) : InterBlockNode(id, FunCallBlock), cs(c) {
-        fun = cs.getCaller();
+        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
     }
 
     /// Return callsite
@@ -285,8 +285,8 @@ public:
     }
 
     /// Return callsite
-    inline const Function* getCaller() const {
-        return cs.getCaller();
+    inline const SVFFunction* getCaller() const {
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
     }
 
     /// Return Basic Block
@@ -342,7 +342,7 @@ private:
 public:
     RetBlockNode(NodeID id, CallSite c, CallBlockNode* cb) :
     	InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb) {
-        fun = cs.getCaller();
+        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
     }
 
     /// Return callsite

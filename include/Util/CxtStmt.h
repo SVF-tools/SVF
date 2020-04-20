@@ -257,7 +257,7 @@ protected:
 class CxtProc {
 public:
     /// Constructor
-    CxtProc(const CallStrCxt& c, const Function* f) :
+    CxtProc(const CallStrCxt& c, const SVFFunction* f) :
         cxt(c), fun(f) {
     }
     /// Copy constructor
@@ -268,7 +268,7 @@ public:
     virtual ~CxtProc() {
     }
     /// Return current procedure
-    inline const Function* getProc() const {
+    inline const SVFFunction* getProc() const {
         return fun;
     }
     /// Return current context
@@ -317,7 +317,7 @@ public:
 
 protected:
     CallStrCxt cxt;
-    const Function* fun;
+    const SVFFunction* fun;
 };
 
 
@@ -330,7 +330,7 @@ protected:
 class CxtThreadProc : public CxtProc {
 public:
     /// Constructor
-    CxtThreadProc(NodeID t, const CallStrCxt& c, const Function* f) :CxtProc(c,f),tid(t) {
+    CxtThreadProc(NodeID t, const CallStrCxt& c, const SVFFunction* f) :CxtProc(c,f),tid(t) {
     }
     /// Copy constructor
     CxtThreadProc(const CxtThreadProc& ctm) : CxtProc(ctm.getContext(),ctm.getProc()), tid(ctm.getTid()) {

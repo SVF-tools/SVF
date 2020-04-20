@@ -53,7 +53,7 @@ inline const Function* getLLVMFunction(const Value* val) {
 
 /// Return true if the call is an external call (external library in function summary table)
 //@{
-inline bool isExtCall(const Function* fun) {
+inline bool isExtCall(const SVFFunction* fun) {
     return fun && ExtAPI::getExtAPI()->is_ext(fun);
 }
 
@@ -69,11 +69,11 @@ inline bool isExtCall(const Instruction *inst) {
 /// Return true if the call is a heap allocator/reallocator
 //@{
 /// note that these two functions are not suppose to be used externally
-inline bool isHeapAllocExtFunViaRet(const Function *fun) {
+inline bool isHeapAllocExtFunViaRet(const SVFFunction* fun) {
     return fun && (ExtAPI::getExtAPI()->is_alloc(fun)
                    || ExtAPI::getExtAPI()->is_realloc(fun));
 }
-inline bool isHeapAllocExtFunViaArg(const Function *fun) {
+inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun) {
     return fun && ExtAPI::getExtAPI()->is_arg_alloc(fun);
 }
 
@@ -107,7 +107,7 @@ inline bool isHeapAllocExtCall(const Instruction *inst) {
 
 /// Get the position of argument that holds an allocated heap object.
 //@{
-inline int getHeapAllocHoldingArgPosition(const Function *fun) {
+inline int getHeapAllocHoldingArgPosition(const SVFFunction* fun) {
     return ExtAPI::getExtAPI()->get_alloc_arg_pos(fun);
 }
 
@@ -123,7 +123,7 @@ inline int getHeapAllocHoldingArgPosition(const Instruction *inst) {
 /// Return true if the call is a heap reallocator
 //@{
 /// note that this function is not suppose to be used externally
-inline bool isReallocExtFun(const Function *fun) {
+inline bool isReallocExtFun(const SVFFunction* fun) {
     return fun && (ExtAPI::getExtAPI()->is_realloc(fun));
 }
 
@@ -141,7 +141,7 @@ inline bool isReallocExtCall(const Instruction *inst) {
 /// Return true if the call is a heap dealloc or not
 //@{
 /// note that this function is not suppose to be used externally
-inline bool isDeallocExtFun(const Function *fun) {
+inline bool isDeallocExtFun(const SVFFunction* fun) {
     return fun && (ExtAPI::getExtAPI()->is_dealloc(fun));
 }
 
@@ -158,7 +158,7 @@ inline bool isDeallocExtCall(const Instruction *inst) {
 /// Return true if the call is a static global call
 //@{
 /// note that this function is not suppose to be used externally
-inline bool isStaticExtFun(const Function *fun) {
+inline bool isStaticExtFun(const SVFFunction* fun) {
     return fun && ExtAPI::getExtAPI()->has_static(fun);
 }
 
@@ -185,7 +185,7 @@ inline bool isHeapAllocOrStaticExtCall(const Instruction *inst) {
 //@}
 
 /// Return external call type
-inline ExtAPI::extf_t extCallTy(const Function* fun) {
+inline ExtAPI::extf_t extCallTy(const SVFFunction* fun) {
     return ExtAPI::getExtAPI()->get_type(fun);
 }
 
@@ -346,14 +346,18 @@ inline bool ArgInDeadFunction (const Value * val) {
 /// Program entry function e.g. main
 //@{
 /// Return true if this is a program entry function (e.g. main)
+inline bool isProgEntryFunction (const SVFFunction * fun) {
+    return fun && fun->getName().str() == "main";
+}
+
 inline bool isProgEntryFunction (const Function * fun) {
     return fun && fun->getName().str() == "main";
 }
 
 /// Get program entry function from module.
-inline const Function* getProgEntryFunction(SVFModule* svfModule) {
+inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule) {
     for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it) {
-        const Function *fun = *it;
+        const SVFFunction *fun = *it;
         if (isProgEntryFunction(fun))
             return (fun);
     }
@@ -371,7 +375,7 @@ bool isPtrInDeadFunction (const Value * value);
 
 /// Return true if this is a program exit function call
 //@{
-inline bool isProgExitFunction (const Function * fun) {
+inline bool isProgExitFunction (const SVFFunction * fun) {
     return fun && (fun->getName().str() == "exit" ||
                    fun->getName().str() == "__assert_rtn" ||
                    fun->getName().str() == "__assert_fail" );

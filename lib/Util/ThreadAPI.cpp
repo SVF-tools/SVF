@@ -118,14 +118,14 @@ void ThreadAPI::init() {
 /*!
  *
  */
-const Function* ThreadAPI::getCallee(const Instruction *inst) const {
+const SVFFunction* ThreadAPI::getCallee(const Instruction *inst) const {
     return SVFUtil::getCallee(inst);
 }
 
 /*!
  *
  */
-const Function* ThreadAPI::getCallee(const CallSite cs) const {
+const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const {
     return SVFUtil::getCallee(cs);
 }
 
@@ -184,7 +184,7 @@ void ThreadAPI::performAPIStat(SVFModule* module) {
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::iterator it = module->begin(), eit = module->end(); it != eit;
+    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it) {
 
         for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
@@ -192,7 +192,7 @@ void ThreadAPI::performAPIStat(SVFModule* module) {
             const Instruction *inst = &*II;
             if (!SVFUtil::isa<CallInst>(inst))
                 continue;
-            const Function* fun = SVFUtil::getCallee(inst);
+            const SVFFunction* fun = getCallee(inst);
             TD_TYPE type = getType(fun);
             switch (type) {
             case TD_FORK: {

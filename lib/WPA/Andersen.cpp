@@ -521,7 +521,7 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
 /*!
  * Connect formal and actual parameters for indirect callsites
  */
-void Andersen::connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet &cpySrcNodes) {
+void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet &cpySrcNodes) {
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");

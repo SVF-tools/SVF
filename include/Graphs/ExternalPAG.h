@@ -20,9 +20,9 @@ class ExternalPAG {
 private:
     /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
-    static std::map<const Function *, std::map<int, PAGNode *>>
+    static std::map<const SVFFunction*, std::map<int, PAGNode *>>
         functionToExternalPAGEntries;
-    static std::map<const Function *, PAGNode *> functionToExternalPAGReturns;
+    static std::map<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
 
     /// Name of the function this external PAG represents.
     std::string functionName;
@@ -87,7 +87,7 @@ public:
     static bool connectCallsiteToExternalPAG(CallSite *cs);
 
     /// Whether an external PAG implementing function exists.
-    static bool hasExternalPAG(const Function *function);
+    static bool hasExternalPAG(const SVFFunction* function);
 
     /// Dump individual PAGs of specified functions. Currently to outs().
     static void dumpFunctions(std::vector<std::string> functions);
@@ -114,7 +114,7 @@ public:
     /// Adds (creates new equivalents) all the nodes and edges of this extpag to
     /// the main PAG. function is used as a key for future lookups.
     /// Returns true on success, false otherwise (incl. if it already exists).
-    bool addExternalPAG(Function *function);
+    bool addExternalPAG(const SVFFunction* function);
 
 };
 

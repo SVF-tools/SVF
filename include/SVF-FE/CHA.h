@@ -69,7 +69,7 @@ public:
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
 
-    typedef std::vector<const Function*> FuncVector;
+    typedef std::vector<const SVFFunction*> FuncVector;
 
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(NULL), className(name), flags(0) {
@@ -143,7 +143,7 @@ private:
      *
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
-    std::vector<std::vector<const Function*>> virtualFunctionVectors;
+    std::vector<std::vector<const SVFFunction*>> virtualFunctionVectors;
 };
 
 /// class hierarchy graph
@@ -155,7 +155,7 @@ public:
     typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
     typedef std::map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
     typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const Function*> VFunSet;
+    typedef std::set<const SVFFunction*> VFunSet;
     typedef std::map<CallSite, VTableSet> CallSiteToVTableSetMap;
     typedef std::map<CallSite, VFunSet> CallSiteToVFunSetMap;
 
@@ -171,10 +171,10 @@ public:
     void buildCHG();
     void buildInternalMaps();
     void buildCHGNodes(const GlobalValue *V);
-    void buildCHGNodes(const Function *F);
-    void buildCHGEdges(const Function *F);
-    void connectInheritEdgeViaCall(const Function *caller, CallSite cs);
-    void connectInheritEdgeViaStore(const Function *caller, const StoreInst* store);
+    void buildCHGNodes(const SVFFunction* F);
+    void buildCHGEdges(const SVFFunction* F);
+    void connectInheritEdgeViaCall(const SVFFunction* caller, CallSite cs);
+    void connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* store);
     void addEdge(const std::string className,
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
@@ -191,16 +191,16 @@ public:
     void dump(const std::string& filename);
     void printCH();
 
-    inline s32_t getVirtualFunctionID(const Function *vfn) const {
-		std::map<const Function*, s32_t>::const_iterator it =
+    inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const {
+		std::map<const SVFFunction*, s32_t>::const_iterator it =
 				virtualFunctionToIDMap.find(vfn);
 		if (it != virtualFunctionToIDMap.end())
 			return it->second;
 		else
 			return -1;
 	}
-	inline const Function *getVirtualFunctionBasedonID(s32_t id) const {
-		std::map<const Function*, s32_t>::const_iterator it, eit;
+	inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const {
+		std::map<const SVFFunction*, s32_t>::const_iterator it, eit;
 		for (it = virtualFunctionToIDMap.begin(), eit =
 				virtualFunctionToIDMap.end(); it != eit; ++it) {
 			if (it->second == id)
@@ -255,7 +255,7 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallSiteToCHNodesMap csToClassesMap;
 
-    std::map<const Function*, s32_t> virtualFunctionToIDMap;
+    std::map<const SVFFunction*, s32_t> virtualFunctionToIDMap;
     CallSiteToVTableSetMap csToCHAVtblsMap;
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };

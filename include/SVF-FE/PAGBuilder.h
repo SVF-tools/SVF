@@ -90,12 +90,12 @@ public:
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
-    inline NodeID getReturnNode(const Function *func) {
+    inline NodeID getReturnNode(const SVFFunction *func) {
         return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
-    inline NodeID getVarargNode(const Function *func) {
+    inline NodeID getVarargNode(const SVFFunction *func) {
         return pag->getVarargNode(func);
     }
     //@}
@@ -115,14 +115,14 @@ public:
     bool computeGepOffset(const User *V, LocationSet& ls);
 
     /// Handle direct call
-    void handleDirectCall(CallSite cs, const Function *F);
+    void handleDirectCall(CallSite cs, const SVFFunction *F);
 
     /// Handle indirect call
     void handleIndCall(CallSite cs);
 
     /// Handle external call
     //@{
-    virtual void handleExtCall(CallSite cs, const Function *F);
+    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
     const Type *getBaseTypeAndFlattenedFields(Value* v, std::vector<LocationSet> &fields);
     void addComplexConsForExt(Value *D, Value *S,u32_t sz = 0);
     //@}

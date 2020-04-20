@@ -142,8 +142,8 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const Function* fun) = 0;
-    virtual bool isSinkLikeFun(const Function* fun) = 0;
+    virtual bool isSourceLikeFun(const SVFFunction* fun) = 0;
+    virtual bool isSinkLikeFun(const SVFFunction* fun) = 0;
     virtual bool isSource(const SVFGNode* node) = 0;
     virtual bool isSink(const SVFGNode* node) = 0;
     ///@}

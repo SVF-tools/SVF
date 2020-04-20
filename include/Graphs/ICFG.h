@@ -47,8 +47,8 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-	typedef std::map<const Function*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const Function*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+	typedef std::map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef std::map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
     typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
     typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
     typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
@@ -115,8 +115,8 @@ public:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const ICFGNode *srcNode, const ICFGNode *dstNode) {
-        const Function *srcfun = srcNode->getFun();
-        const Function *dstfun = dstNode->getFun();
+        const SVFFunction* srcfun = srcNode->getFun();
+        const SVFFunction* dstfun = dstNode->getFun();
         if(srcfun != nullptr && dstfun != nullptr) {
             assert((srcfun == dstfun) && "src and dst nodes of an intra edge should in the same function!" );
         }
@@ -162,13 +162,13 @@ public:
     }
 
     /// Get/Add a function entry node
-    inline FunEntryBlockNode* getFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* getFunEntryICFGNode(const SVFFunction* fun) {
 		FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
 		if (it == FunToFunEntryNodeMap.end())
 			return NULL;
 		return it->second;
 	}
-    inline FunEntryBlockNode* addFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* addFunEntryICFGNode(const SVFFunction* fun) {
 		FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
 		addICFGNode(sNode);
 		FunToFunEntryNodeMap[fun] = sNode;
@@ -176,13 +176,13 @@ public:
 	}
 
 	/// Get/Add a function exit node
-	inline FunExitBlockNode* getFunExitICFGNode(const Function* fun) {
+	inline FunExitBlockNode* getFunExitICFGNode(const SVFFunction* fun) {
 		FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
 		if (it == FunToFunExitNodeMap.end())
 			return NULL;
 		return it->second;
 	}
-	inline FunExitBlockNode* addFunExitICFGNode(const Function* fun) {
+	inline FunExitBlockNode* addFunExitICFGNode(const SVFFunction* fun) {
 		FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
 		addICFGNode(sNode);
 		FunToFunExitNodeMap[fun] = sNode;

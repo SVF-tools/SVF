@@ -27,9 +27,9 @@ llvm::cl::list<std::string> DumpPAGFunctions("dump-function-pags",
                                              llvm::cl::CommaSeparated);
 
 
-std::map<const Function *, std::map<int, PAGNode *>>
+std::map<const SVFFunction* , std::map<int, PAGNode *>>
     ExternalPAG::functionToExternalPAGEntries;
-std::map<const Function *, PAGNode *> ExternalPAG::functionToExternalPAGReturns;
+std::map<const SVFFunction* , PAGNode *> ExternalPAG::functionToExternalPAGReturns;
 
 std::vector<std::pair<std::string, std::string>>
     ExternalPAG::parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs) {
@@ -69,13 +69,14 @@ void ExternalPAG::initialise(SVFModule* svfModule) {
 bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
     PAG *pag = PAG::getPAG();
 
-    Function *function = cs->getCalledFunction();
+    Function* function = cs->getCalledFunction();
     std::string functionName = function->getName();
-    if (!hasExternalPAG(function)) return false;
+    const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(function);
+    if (!hasExternalPAG(svfFun)) return false;
 
     std::map<int, PAGNode*> argNodes =
-        functionToExternalPAGEntries[function];
-    PAGNode *retNode = functionToExternalPAGReturns[function];
+        functionToExternalPAGEntries[svfFun];
+    PAGNode *retNode = functionToExternalPAGReturns[svfFun];
 
     // Handle the return.
     if (llvm::isa<PointerType>(cs->getType())) {
@@ -129,15 +130,15 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs) {
     return true;
 }
 
-bool ExternalPAG::hasExternalPAG(const Function *function) {
+bool ExternalPAG::hasExternalPAG(const SVFFunction* function) {
     bool ret = functionToExternalPAGEntries.find(function)
            != functionToExternalPAGEntries.end();
     return ret;
 }
 
-int getArgNo(Function *function, const Value *arg) {
+int getArgNo(const SVFFunction* function, const Value *arg) {
     int argNo = 0;
-    for (auto it = function->arg_begin(); it != function->arg_end();
+    for (auto it = function->getLLVMFun()->arg_begin(); it != function->getLLVMFun()->arg_end();
          ++it, ++argNo) {
         if (arg->getName() == it->getName()) return argNo;
     }
@@ -228,7 +229,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
     PAG *pag = PAG::getPAG();
 
     // Naive: first map functions to entries in PAG, then dump them.
-    std::map<Function *, std::vector<PAGNode *>> functionToPAGNodes;
+    std::map<const SVFFunction* , std::vector<PAGNode *>> functionToPAGNodes;
 
     std::set<PAGNode *> callDsts;
     for (PAG::iterator it = pag->begin(); it != pag->end(); ++it) {
@@ -241,7 +242,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
              it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it) {
             CallPE *callEdge = static_cast<CallPE *>(*it);
             const Instruction *inst = callEdge->getCallInst()->getCallSite().getInstruction();
-            ::Function *currFunction =
+            :: Function* currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
 
             if (currFunction != NULL) {
@@ -254,7 +255,8 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
                     // due to multiple actual->arg call edges.
                     if (callDsts.find(callEdge->getDstNode()) == callDsts.end()) {
                         callDsts.insert(callEdge->getDstNode());
-                        functionToPAGNodes[currFunction].push_back(callEdge->getDstNode());
+                        const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(currFunction);
+                        functionToPAGNodes[svfFun].push_back(callEdge->getDstNode());
                     }
                 }
             }
@@ -263,7 +265,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
 
     for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
          ++it) {
-        Function *function = it->first;
+        const SVFFunction* function = it->first;
         std::string functionName = it->first->getName();
 
         // The final nodes and edges we will print.
@@ -326,7 +328,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions) {
     }
 }
 
-bool ExternalPAG::addExternalPAG(Function *function) {
+bool ExternalPAG::addExternalPAG(const SVFFunction* function) {
     // The function does not exist in the module - bad arg?
     // TODO: maybe some warning?
     if (function == NULL) return false;

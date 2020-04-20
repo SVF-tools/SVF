@@ -93,7 +93,7 @@ void CHGraph::buildCHG() {
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
 			buildCHGNodes(&(*F));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
-			buildCHGEdges(&(*F));
+			buildCHGEdges(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&(*F)));
 
 		analyzeVTables(*M);
 	}
@@ -122,7 +122,7 @@ void CHGraph::buildCHGNodes(const GlobalValue *globalvalue) {
 			for (u32_t i = 0; i < vtbl->getNumOperands(); ++i) {
 				if(const ConstantExpr *ce = isCastConstantExpr(vtbl->getOperand(i))){
 					const Value *bitcastValue = ce->getOperand(0);
-					if (const Function *func = SVFUtil::dyn_cast<Function>(bitcastValue)) {
+					if (const  Function* func = SVFUtil::dyn_cast<Function>(bitcastValue)) {
 						struct DemangledName dname = demangle(func->getName().str());
 						if (!getNode(dname.className))
 							createNode(dname.className);
@@ -133,7 +133,8 @@ void CHGraph::buildCHGNodes(const GlobalValue *globalvalue) {
 	}
 }
 
-void CHGraph::buildCHGNodes(const Function *F) {
+void CHGraph::buildCHGNodes(const SVFFunction* fun) {
+	const Function* F = fun->getLLVMFun();
 	if (isConstructor(F) || isDestructor(F)) {
 		struct DemangledName dname = demangle(F->getName().str());
 		DBOUT(DCHA, outs() << "\t build CHANode for class " + dname.className + "...\n");
@@ -142,15 +143,17 @@ void CHGraph::buildCHGNodes(const Function *F) {
 	}
 }
 
-void CHGraph::buildCHGEdges(const Function *F) {
+void CHGraph::buildCHGEdges(const SVFFunction* fun) {
+	const Function* F = fun->getLLVMFun();
+
 	if (isConstructor(F) || isDestructor(F)) {
 		for (Function::const_iterator B = F->begin(), E = F->end(); B != E; ++B) {
 			for (BasicBlock::const_iterator I = B->begin(), E = B->end(); I != E; ++I) {
 				if (SVFUtil::isa<CallInst>(&(*I)) || SVFUtil::isa<InvokeInst>(&(*I))) {
 					CallSite cs = SVFUtil::getLLVMCallSite(&(*I));
-					connectInheritEdgeViaCall(F, cs);
+					connectInheritEdgeViaCall(fun, cs);
 				} else if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(&(*I))) {
-					connectInheritEdgeViaStore(F, store);
+					connectInheritEdgeViaStore(fun, store);
 				}
 			}
 		}
@@ -164,8 +167,9 @@ void CHGraph::buildInternalMaps() {
     buildCSToCHAVtblsAndVfnsMap();
 }
 
-void CHGraph::connectInheritEdgeViaCall(const Function* caller, CallSite cs){
-    const Function *callee = SVFUtil::getCallee(cs);
+void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite cs){
+    const Function* callee = SVFUtil::getCallee(cs)->getLLVMFun();
+    const Function* caller = callerfun->getLLVMFun();
     if (callee == NULL)
         return;
 
@@ -186,7 +190,7 @@ void CHGraph::connectInheritEdgeViaCall(const Function* caller, CallSite cs){
     }
 }
 
-void CHGraph::connectInheritEdgeViaStore(const Function* caller, const StoreInst* storeInst){
+void CHGraph::connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* storeInst){
     struct DemangledName dname = demangle(caller->getName().str());
     if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(storeInst->getValueOperand())) {
         if (ce->getOpcode() == Instruction::BitCast) {
@@ -429,7 +433,8 @@ void CHGraph::analyzeVTables(const Module &M) {
                              */
                             assert(SVFUtil::isa<Function>(bitcastValue) ||
                                    SVFUtil::isa<GlobalValue>(bitcastValue));
-                            if (const Function *func = SVFUtil::dyn_cast<Function>(bitcastValue)) {
+                            if (const Function* f = SVFUtil::dyn_cast<Function>(bitcastValue)) {
+                            	const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
                                 virtualFunctions.push_back(func);
                                 if (func->getName().str().compare(pureVirtualFunName) == 0) {
                                     pure_abstract &= true;
@@ -445,19 +450,21 @@ void CHGraph::analyzeVTables(const Module &M) {
                                 if (const GlobalAlias *alias =
                                             SVFUtil::dyn_cast<GlobalAlias>(bitcastValue)) {
                                     const Constant *aliasValue = alias->getAliasee();
-                                    if (const Function *aliasFunc =
+                                    if (const Function* aliasFunc =
                                                 SVFUtil::dyn_cast<Function>(aliasValue)) {
-                                        virtualFunctions.push_back(aliasFunc);
+                                    	const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasFunc);
+                                        virtualFunctions.push_back(func);
                                     } else if (const ConstantExpr *aliasconst =
                                                    SVFUtil::dyn_cast<ConstantExpr>(aliasValue)) {
                                         u32_t aliasopcode = aliasconst->getOpcode();
                                         assert(aliasopcode == Instruction::BitCast &&
                                                "aliased constantexpr in vtable not a bitcast");
-                                        const Function *aliasbitcastfunc =
+                                        const Function* aliasbitcastfunc =
                                             SVFUtil::dyn_cast<Function>(aliasconst->getOperand(0));
                                         assert(aliasbitcastfunc &&
                                                "aliased bitcast in vtable not a function");
-                                        virtualFunctions.push_back(aliasbitcastfunc);
+                                    	const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasbitcastfunc);
+                                        virtualFunctions.push_back(func);
                                     } else {
                                         assert(false && "alias not function or bitcast");
                                     }
@@ -473,7 +480,7 @@ void CHGraph::analyzeVTables(const Module &M) {
                     }
                     if (is_virtual && virtualFunctions.size() > 0) {
                         for (int i = 0; i < null_ptr_num; ++i) {
-                            const Function *fun = virtualFunctions[i];
+                            const SVFFunction* fun = virtualFunctions[i];
                             virtualFunctions.insert(virtualFunctions.begin(), fun);
                         }
                     }
@@ -535,13 +542,13 @@ void CHGraph::buildVirtualFunctionToIDMap() {
         /*
          * get all virtual functions in a specific group
          */
-        set<const Function*> virtualFunctions;
+        set<const SVFFunction*> virtualFunctions;
         for (CHNodeSetTy::iterator it = group.begin(),
                 eit = group.end(); it != eit; ++it) {
             const vector<CHNode::FuncVector> &vecs = (*it)->getVirtualFunctionVectors();
             for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
                     veit = vecs.end(); vit != veit; ++vit) {
-                for (vector<const Function*>::const_iterator fit = (*vit).begin(),
+                for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
                         feit = (*vit).end(); fit != feit; ++fit) {
                         virtualFunctions.insert(*fit);
                 }
@@ -563,14 +570,14 @@ void CHGraph::buildVirtualFunctionToIDMap() {
          * <~C, C::~C>
          * ...
          */
-        set<pair<string, const Function*>> fNameSet;
-        for (set<const Function*>::iterator fit = virtualFunctions.begin(),
+        set<pair<string, const SVFFunction*>> fNameSet;
+        for (set<const SVFFunction*>::iterator fit = virtualFunctions.begin(),
                 feit = virtualFunctions.end(); fit != feit; ++fit) {
-            const Function *f = *fit;
+            const SVFFunction* f = *fit;
             struct DemangledName dname = demangle(f->getName().str());
-            fNameSet.insert(pair<string, const Function*>(dname.funcName, f));
+            fNameSet.insert(pair<string, const SVFFunction*>(dname.funcName, f));
         }
-        for (set<pair<string, const Function*>>::iterator it = fNameSet.begin(),
+        for (set<pair<string, const SVFFunction*>>::iterator it = fNameSet.begin(),
                 eit = fNameSet.end(); it != eit; ++it) {
             virtualFunctionToIDMap[it->second] = vfID++;
         }
@@ -613,7 +620,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, VTableSet &vtbls, VFunSet &virtualFu
         child->getVirtualFunctions(idx, vfns);
         for (CHNode::FuncVector::const_iterator fit = vfns.begin(),
                 feit = vfns.end(); fit != feit; ++fit) {
-            const Function* callee = *fit;
+            const SVFFunction* callee = *fit;
             if (cs.arg_size() == callee->arg_size() ||
                     (cs.getFunctionType()->isVarArg() && callee->isVarArg())) {
                 DemangledName dname = demangle(callee->getName().str());

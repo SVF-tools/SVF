@@ -42,7 +42,7 @@ static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
 
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit) {
     cpts = exit->getMR()->getPointsTo();
-    bb = SVFUtil::getFunExitBB(exit->getFunction());
+    bb = SVFUtil::getFunExitBB(exit->getFunction()->getLLVMFun());
 }
 
 /*!
@@ -224,7 +224,7 @@ void SVFG::connectIndirectSVFGEdges() {
 void SVFG::connectFromGlobalToProgEntry()
 {
     SVFModule* svfModule = mssa->getPTA()->getModule();
-    const Function* mainFunc =
+    const SVFFunction* mainFunc =
         SVFUtil::getProgEntryFunction(svfModule);
     FormalINSVFGNodeSet& formalIns = getFormalINSVFGNodes(mainFunc);
     if (formalIns.empty())
@@ -365,7 +365,7 @@ void SVFG::dump(const std::string& file, bool simple) {
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode, const Function* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
@@ -383,7 +383,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
                 getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callBlockNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
-        if (callee->isVarArg()) {
+        if (callee->getLLVMFun()->isVarArg()) {
             NodeID varFunArg = pag->getVarargNode(callee);
             const PAGNode* varFunArgNode = pag->getPAGNode(varFunArg);
             if (varFunArgNode->isPointer()) {
@@ -429,7 +429,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void SVFG::connectCallerAndCallee(const CallBlockNode* cs, const Function* callee, SVFGEdgeSetTy& edges)
+void SVFG::connectCallerAndCallee(const CallBlockNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
@@ -471,7 +471,7 @@ void SVFG::connectCallerAndCallee(const CallBlockNode* cs, const Function* calle
 /*!
  * Whether this is an function entry SVFGNode (formal parameter, formal In)
  */
-const Function* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const {
+const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const {
     if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node)) {
         return fp->getFun();
     }

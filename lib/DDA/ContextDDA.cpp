@@ -149,14 +149,14 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, const CallBlockNode* cs) {
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs) {
 	if(getPAG()->isIndirectCallSites(cs)) {
         NodeID id = getPAG()->getFunPtr(cs);
         PAGNode* node = getPAG()->getPAGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee)))
+        if(pts.test(getPAG()->getObjectNode(callee->getLLVMFun())))
             return true;
         else
             return false;
@@ -177,7 +177,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getDstNode()->getFun();
+    const SVFFunction* callee = edge->getDstNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);
@@ -199,7 +199,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getSrcNode()->getFun();
+    const SVFFunction* callee = edge->getSrcNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
         return getPTACallGraph()->getCallSiteID(cbn,callee);
@@ -280,8 +280,9 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store)
     assert(mem && "memory object is null??");
     if(mem->isHeap()) {
         if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
-            const Function* fun = mallocSite->getParent()->getParent();
-            if(_ander->isInRecursion(fun))
+            const Function* fun = mallocSite->getFunction();
+            const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            if(_ander->isInRecursion(svfFun))
                 return true;
             if(var.get_cond().isConcreteCxt() == false)
                 return true;

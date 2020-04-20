@@ -97,7 +97,7 @@ void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t) {
 /*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTree* t) {
+void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, DominatorTree* t) {
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
 
@@ -130,7 +130,7 @@ void MemSSA::buildMemSSA(const Function& fun, DominanceFrontier* f, DominatorTre
  * Create mu/chi according to memory regions
  * collect used mrs in usedRegs and construction map from region to BB for prune SSA phi insertion
  */
-void MemSSA::createMUCHI(const Function& fun) {
+void MemSSA::createMUCHI(const SVFFunction& fun) {
 
 	PAG* pag = pta->getPAG();
 
@@ -154,7 +154,7 @@ void MemSSA::createMUCHI(const Function& fun) {
     /// get all reachable basic blocks from function entry
     /// ignore dead basic blocks
     BBList reachableBBs;
-    getFunReachableBBs(&fun,getDT(fun),reachableBBs);
+    getFunReachableBBs(fun.getLLVMFun(),getDT(fun),reachableBBs);
 
     for (BBList::const_iterator iter = reachableBBs.begin(), eiter = reachableBBs.end();
             iter != eiter; ++iter) {
@@ -200,7 +200,7 @@ void MemSSA::createMUCHI(const Function& fun) {
 
         /// if the function does not have a reachable return instruction from function entry
         /// then we won't create return mu for it
-        if(functionDoesNotRet(&fun) == false) {
+        if(functionDoesNotRet(fun.getLLVMFun()) == false) {
             RETMU* mu = new RETMU(&fun, mr);
             funToReturnMuSetMap[&fun].insert(mu);
         }
@@ -212,7 +212,7 @@ void MemSSA::createMUCHI(const Function& fun) {
 /*
  * Insert phi node
  */
-void MemSSA::insertPHI(const Function& fun) {
+void MemSSA::insertPHI(const SVFFunction& fun) {
 
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
@@ -256,12 +256,12 @@ void MemSSA::insertPHI(const Function& fun) {
 /*!
  * SSA construction algorithm
  */
-void MemSSA::SSARename(const Function& fun) {
+void MemSSA::SSARename(const SVFFunction& fun) {
 
     DBOUT(DMSSA,
           outs() << "\t ssa rename for function " << fun.getName() << "\n");
 
-    SSARenameBB(fun.getEntryBlock());
+    SSARenameBB(fun.getLLVMFun()->getEntryBlock());
 }
 
 /*!
@@ -313,7 +313,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
                 RenameChiSet(getCHISet(cs),memRegs);
         }
         else if(isReturn(inst)) {
-            RenameMuSet(getReturnMuSet(bb.getParent()));
+        	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+            RenameMuSet(getReturnMuSet(fun));
         }
     }
 
@@ -328,7 +329,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     }
 
     // for succ basic block in dominator tree
-    DominatorTree* dt = getDT(*bb.getParent());
+	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+    DominatorTree* dt = getDT(*fun);
     if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(&bb))) {
         for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
                 DI != DE; ++DI) {
@@ -556,7 +558,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit) {
-        Function* fun = *fit;
+        const SVFFunction* fun = *fit;
         if(MSSAFun!="" && MSSAFun!=fun->getName())
             continue;
 
@@ -569,7 +571,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             }
         }
 
-        for (Function::iterator bit = fun->begin(), ebit = fun->end();
+        for (Function::iterator bit = fun->getLLVMFun()->begin(), ebit = fun->getLLVMFun()->end();
                 bit != ebit; ++bit) {
             BasicBlock& bb = *bit;
             if (bb.hasName())
@@ -583,7 +585,8 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isNonInstricCallSite(&inst)) {
+                bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
+                if (isAppCall || isHeapAllocExtCall(&inst)) {
                     const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {

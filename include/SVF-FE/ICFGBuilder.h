@@ -54,11 +54,11 @@ public:
 private:
     /// Create edges between ICFG nodes within a function
     ///@{
-    void processFunEntry(const Function* fun, WorkList& worklist);
+    void processFunEntry(const SVFFunction*  fun, WorkList& worklist);
 
     void processFunBody(WorkList& worklist);
 
-    void processFunExit(const Function* fun);
+    void processFunExit(const SVFFunction*  fun);
     //@}
 
 
@@ -74,10 +74,10 @@ private:
 	}
 
     /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(CallSite cs, const Function* callee);
+    void addICFGInterEdges(CallSite cs, const SVFFunction*  callee);
 
     /// Add a function entry node
-    inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const Function* fun) {
+    inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const SVFFunction*  fun) {
 		FunEntryBlockNode* b = icfg->getFunEntryICFGNode(fun);
 		if (b == NULL)
 			return icfg->addFunEntryICFGNode(fun);
@@ -85,7 +85,7 @@ private:
 			return b;
 	}
 	/// Add a function exit node
-	inline FunExitBlockNode* getOrAddFunExitICFGNode(const Function* fun) {
+	inline FunExitBlockNode* getOrAddFunExitICFGNode(const SVFFunction*  fun) {
 		FunExitBlockNode* b = icfg->getFunExitICFGNode(fun);
 		if (b == NULL)
 			return icfg->addFunExitICFGNode(fun);

@@ -141,11 +141,11 @@ public:
     void updateCallGraph(PointerAnalysis* pta);
 
     /// Connect VFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(const CallBlockNode* cs, const Function* callee, VFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(const CallBlockNode* cs, const SVFFunction* callee, VFGEdgeSetTy& edges);
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(const CallBlockNode* cs, const Function* func) const {
+    inline CallSiteID getCallSiteID(const CallBlockNode* cs, const SVFFunction* func) const {
         return callgraph->getCallSiteID(cs, func);
     }
     inline const CallBlockNode* getCallSite(CallSiteID id) const {
@@ -206,7 +206,7 @@ public:
     //@}
 
     /// Whether a node is function entry VFGNode
-    const Function* isFunEntryVFGNode(const VFGNode* node) const;
+    const SVFFunction* isFunEntryVFGNode(const VFGNode* node) const;
 
     /// Whether a PAGNode has a blackhole or const object as its definition
     inline bool hasBlackHoleConstObjAddrAsDef(const PAGNode* pagNode) const {
@@ -252,8 +252,8 @@ protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode) {
-        const Function *srcfun = srcNode->getFun();
-        const Function *dstfun = dstNode->getFun();
+        const SVFFunction *srcfun = srcNode->getFun();
+        const SVFFunction *dstfun = dstNode->getFun();
         if(srcfun != nullptr && dstfun != nullptr) {
             assert((srcfun == dstfun) && "src and dst nodes of an intra VFG edge are not in the same function?");
         }
@@ -349,7 +349,7 @@ protected:
     void connectDirectVFGEdges();
 
     /// Create edges between VFG nodes across functions
-    void addVFGInterEdges(const CallBlockNode* cs, const Function* callee);
+    void addVFGInterEdges(const CallBlockNode* cs, const SVFFunction* callee);
 
     inline bool isPhiCopyEdge(const PAGEdge* copy) const {
         return pag->isPhiNode(copy->getDstNode());
@@ -421,7 +421,7 @@ protected:
         /// do not set def here, this node is not a variable definition
     }
     /// Add a formal parameter VFG node
-    inline void addFormalParmVFGNode(const PAGNode* fparm, const Function* fun, CallPESet& callPEs) {
+    inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs) {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
         addVFGNode(sNode);
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
@@ -434,7 +434,7 @@ protected:
     /// Add a callee Return VFG node
     /// To be noted that here we assume returns of a procedure have already been unified into one
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
-    inline void addFormalRetVFGNode(const PAGNode* ret, const Function* fun, RetPESet& retPEs) {
+    inline void addFormalRetVFGNode(const PAGNode* ret, const SVFFunction* fun, RetPESet& retPEs) {
         FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,ret,fun);
         addVFGNode(sNode);
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
