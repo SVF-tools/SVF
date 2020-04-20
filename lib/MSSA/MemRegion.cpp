@@ -191,7 +191,6 @@ void MRGenerator::collectModRefForCall() {
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it){
         collectCallSitePts((*it));
-        collectModRefForExtCallSiteOtherThanHeapAlloc((*it));
     }
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
@@ -438,23 +437,6 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs) {
 
 }
 
-/*!
- * Collect and set mod ref sets of external callsites
- * other than heap alloc external call
- */
-void MRGenerator::collectModRefForExtCallSiteOtherThanHeapAlloc(const CallBlockNode* cs) {
-    if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
-        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
-        for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
-                ebit = pagEdgeList.end(); bit != ebit; ++bit) {
-            const PAGEdge* edge = *bit;
-            if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
-                addRefSideEffectOfCallSite(cs, pta->getPts(ld->getSrcID()));
-            else if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
-                addModSideEffectOfCallSite(cs, pta->getPts(st->getDstID()));
-        }
-    }
-}
 
 /*!
  * Recurisively collect all points-to of the whole struct fields
@@ -583,12 +565,52 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
 }
 
 /*!
+ * Obtain the mod sets for a call, used for external ModRefInfo queries
+ */
+PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs) {
+	if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
+		PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+		PointsTo mods;
+		for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
+				pagEdgeList.end(); bit != ebit; ++bit) {
+			const PAGEdge* edge = *bit;
+			if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
+				mods |= pta->getPts(st->getDstID());
+		}
+		return mods;
+	} else {
+		return getModSideEffectOfCallSite(cs);
+	}
+}
+
+/*!
+ * Obtain the mod sets for a call, used for external ModRefInfo queries
+ */
+PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs) {
+	if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
+		PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+		PointsTo refs;
+		for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
+				pagEdgeList.end(); bit != ebit; ++bit) {
+			const PAGEdge* edge = *bit;
+			if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
+				refs |= pta->getPts(ld->getSrcID());
+			else if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
+				refs |= pta->getPts(st->getDstID());
+		}
+		return refs;
+	} else {
+		return getModSideEffectOfCallSite(cs);
+	}
+}
+
+/*!
  * Determine whether a CallSite instruction can mod or ref
  * any memory location
  */
 ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs) {
-    bool ref = hasRefSideEffectOfCallSite(cs);
-    bool mod = hasModSideEffectOfCallSite(cs);
+    bool ref = !getRefInfoForCall(cs).empty();
+    bool mod = !getModInfoForCall(cs).empty();
 
     if (mod && ref)
         return ModRefInfo::ModRef;
@@ -609,9 +631,9 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V) {
     bool mod = false;
 
     if (pta->getPAG()->hasValueNode(V)) {
-        const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V))); 
-        const PointsTo& csRef = getRefSideEffectOfCallSite(cs);
-        const PointsTo& csMod = getModSideEffectOfCallSite(cs);
+        const PointsTo pts(pta->getPts(pta->getPAG()->getValueNode(V)));
+        const PointsTo csRef = getRefInfoForCall(cs);
+        const PointsTo csMod = getModInfoForCall(cs);
         PointsTo ptsExpanded, csRefExpanded, csModExpanded;
         pta->expandFIObjs(pts, ptsExpanded);
         pta->expandFIObjs(csRef, csRefExpanded);
@@ -644,10 +666,10 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockN
     if (getModRefInfo(cs1) == ModRefInfo::NoModRef || getModRefInfo(cs2) == ModRefInfo::NoModRef)
         return ModRefInfo::NoModRef;
 
-    const PointsTo& cs1Ref = getRefSideEffectOfCallSite(cs1);
-    const PointsTo& cs1Mod = getModSideEffectOfCallSite(cs1);
-    const PointsTo& cs2Ref = getRefSideEffectOfCallSite(cs2);
-    const PointsTo& cs2Mod = getModSideEffectOfCallSite(cs2);
+    const PointsTo cs1Ref = getRefInfoForCall(cs1);
+    const PointsTo cs1Mod = getModInfoForCall(cs1);
+    const PointsTo cs2Ref = getRefInfoForCall(cs2);
+    const PointsTo cs2Mod = getModInfoForCall(cs2);
     PointsTo cs1RefExpanded, cs1ModExpanded, cs2RefExpanded, cs2ModExpanded;
     pta->expandFIObjs(cs1Ref, cs1RefExpanded);
     pta->expandFIObjs(cs1Mod, cs1ModExpanded);

@@ -585,7 +585,8 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it) {
                 Instruction& inst = *it;
-                if (isNonInstricCallSite(&inst)) {
+                bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
+                if (isAppCall || isHeapAllocExtCall(&inst)) {
                     const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(&inst);
                     if(hasMU(cs)) {
                         if (!last_is_chi) {
