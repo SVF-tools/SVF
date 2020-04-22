@@ -235,6 +235,35 @@ void PTACallGraph::verifyCallGraph()
 }
 
 /*!
+ * Whether its reachable between two functions
+ */
+bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const {
+    PTACallGraphNode* srcNode = getCallGraphNode(srcFn);
+    PTACallGraphNode* dstNode = getCallGraphNode(dstFn);
+
+    std::stack<const PTACallGraphNode*> nodeStack;
+    NodeBS visitedNodes;
+    nodeStack.push(dstNode);
+    visitedNodes.set(dstNode->getId());
+
+    while (nodeStack.empty() == false) {
+        PTACallGraphNode* node = const_cast<PTACallGraphNode*>(nodeStack.top());
+        nodeStack.pop();
+
+        if (node->getFunction() == srcFn)
+            return true;
+
+        for (CallGraphEdgeConstIter it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it != eit; ++it) {
+            PTACallGraphEdge* edge = *it;
+            if (visitedNodes.test_and_set(edge->getSrcID()))
+                nodeStack.push(edge->getSrcNode());
+        }
+    }
+
+    return false;
+}
+
+/*!
  * Dump call graph into dot file
  */
 void PTACallGraph::dump(const std::string& filename) {

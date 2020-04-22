@@ -179,7 +179,8 @@ public:
     typedef std::map<CallSiteID, CallSitePair> IdToCallSiteMap;
     typedef	std::set<const SVFFunction*> FunctionSet;
     typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
-    typedef CallGraphEdgeSet::iterator CallGraphNodeIter;
+    typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
+    typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 
     enum CGEK {
         NormCallGraph, ThdCallGraph
@@ -345,6 +346,9 @@ public:
     void getDirCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
     void getIndCallSitesInvokingCallee(const SVFFunction* callee, PTACallGraphEdge::CallInstSet& csSet);
     //@}
+
+    /// Whether its reachable between two functions
+    bool isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const;
 
     /// Dump the graph
     void dump(const std::string& filename);
