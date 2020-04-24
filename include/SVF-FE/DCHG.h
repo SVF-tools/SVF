@@ -199,7 +199,7 @@ public:
     static bool isAgg(const DIType *t);
 
 public:
-    DCHGraph(const SVFModule svfMod)
+    DCHGraph(const SVFModule *svfMod)
         : svfModule(svfMod), numTypes(0) { // vfID(0), buildingCHGTime(0) {
         this->kind = DI;
     }
@@ -317,7 +317,7 @@ public:
 
 protected:
     /// SVF Module this CHG is built from.
-    SVFModule svfModule;
+    const SVFModule *svfModule;
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.

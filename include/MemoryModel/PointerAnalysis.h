@@ -38,8 +38,7 @@
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
 
-class CHGraph;
-class CHNode;
+class CommonCHGraph;
 
 class TypeSystem;
 class SVFModule;
@@ -66,6 +65,7 @@ public:
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
         FSSPARSE_WPA,		///< Sparse flow sensitive WPA
+        FSTBHC_WPA,		///< Sparse flow-sensitive type-based heap cloning WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
         ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA
@@ -82,6 +82,13 @@ public:
         Default_PTA		///< default pta without any analysis
     };
 
+    /// Implementation type: BVDataPTAImpl or CondPTAImpl.
+    enum PTAImplTy {
+        BaseImpl,   ///< Represents PointerAnalaysis.
+        BVDataImpl, ///< Represents BVDataPTAImpl.
+        CondImpl,   ///< Represents CondPTAImpl.
+    };
+
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
@@ -93,6 +100,19 @@ public:
     typedef std::set<const GlobalValue*> VTableSet;
     typedef std::set<const SVFFunction*> VFunSet;
     //@}
+
+    static const std::string aliasTestMayAlias;
+    static const std::string aliasTestMayAliasMangled;
+    static const std::string aliasTestNoAlias;
+    static const std::string aliasTestNoAliasMangled;
+    static const std::string aliasTestPartialAlias;
+    static const std::string aliasTestPartialAliasMangled;
+    static const std::string aliasTestMustAlias;
+    static const std::string aliasTestMustAliasMangled;
+    static const std::string aliasTestFailMayAlias;
+    static const std::string aliasTestFailMayAliasMangled;
+    static const std::string aliasTestFailNoAlias;
+    static const std::string aliasTestFailNoAliasMangled;
 
 private:
     /// Release the memory
@@ -116,6 +136,8 @@ protected:
     SVFModule* svfMod;
     /// Pointer analysis Type
     PTATY ptaTy;
+    /// PTA implementation type.
+    PTAImplTy ptaImplTy;
     /// Statistics
     PTAStat* stat;
     /// Call graph used for pointer analysis
@@ -125,7 +147,7 @@ protected:
     /// Interprocedural control-flow graph
     ICFG* icfg;
     /// CHGraph
-    static CHGraph *chgraph;
+    static CommonCHGraph *chgraph;
     /// TypeSystem
     TypeSystem *typeSystem;
 
@@ -149,6 +171,11 @@ public:
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const {
         return ptaTy;
+    }
+
+    /// Return implementation type of the pointer analysis.
+    inline PTAImplTy getImplTy() const {
+        return ptaImplTy;
     }
 
     /// Get/set PAG
@@ -236,8 +263,8 @@ protected:
     /// Alias check functions to verify correctness of pointer analysis
     //@{
     virtual void validateTests();
-    virtual void validateSuccessTests(const char* fun);
-    virtual void validateExpectedFailureTests(const char* fun);
+    virtual void validateSuccessTests(std::string fun);
+    virtual void validateExpectedFailureTests(std::string fun);
     //@}
 
     /// Whether to dump the graph for debugging purpose
@@ -245,6 +272,10 @@ protected:
 
     /// Reset all object node as field-sensitive.
     void resetObjFieldSensitive();
+
+    /// Prints some easily parseable stats on the call graph.
+    /// Format: eval-indirect-calls #UNIQUE_TARGETS #TARGETS_FOR_CS_0 #TARGETS_FOR_CS_1 ...
+    virtual void printCallGraphStats(void);
 
 public:
     /// Dump the statistics
@@ -258,7 +289,7 @@ public:
     inline bool containConstantNode(PointsTo& pts) {
         return pts.test(pag->getConstantNode());
     }
-    inline bool isBlkObjOrConstantObj(NodeID ptd) const {
+    virtual inline bool isBlkObjOrConstantObj(NodeID ptd) const {
         return pag->isBlkObjOrConstantObj(ptd);
     }
     inline bool isNonPointerObj(NodeID ptd) const {
@@ -295,7 +326,7 @@ public:
     inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
         return pag->getGepObjNode(id,ls);
     }
-    inline const NodeBS& getAllFieldsObjNode(NodeID id) {
+    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id) {
         return pag->getAllFieldsObjNode(id);
     }
     inline void setObjFieldInsensitive(NodeID id) {
@@ -368,7 +399,7 @@ public:
     }
 
     /// get CHGraph
-    CHGraph *getCHGraph() const {
+    CommonCHGraph *getCHGraph() const {
         return chgraph;
     }
 

@@ -88,8 +88,21 @@ static llvm::cl::opt<bool> EnableThreadCallGraph("enable-tcg", llvm::cl::init(tr
 static llvm::cl::opt<bool> connectVCallOnCHA("vcall-cha", llvm::cl::init(false),
                                        llvm::cl::desc("connect virtual calls using cha"));
 
-CHGraph* PointerAnalysis::chgraph = NULL;
+CommonCHGraph* PointerAnalysis::chgraph = NULL;
 PAG* PointerAnalysis::pag = NULL;
+
+const std::string PointerAnalysis::aliasTestMayAlias            = "MAYALIAS";
+const std::string PointerAnalysis::aliasTestMayAliasMangled     = "_Z8MAYALIASPvS_";
+const std::string PointerAnalysis::aliasTestNoAlias             = "NOALIAS";
+const std::string PointerAnalysis::aliasTestNoAliasMangled      = "_Z7NOALIASPvS_";
+const std::string PointerAnalysis::aliasTestPartialAlias        = "PARTIALALIAS";
+const std::string PointerAnalysis::aliasTestPartialAliasMangled = "_Z12PARTIALALIASPvS_";
+const std::string PointerAnalysis::aliasTestMustAlias           = "MUSTALIAS";
+const std::string PointerAnalysis::aliasTestMustAliasMangled    = "_Z9MUSTALIASPvS_";
+const std::string PointerAnalysis::aliasTestFailMayAlias        = "EXPECTEDFAIL_MAYALIAS";
+const std::string PointerAnalysis::aliasTestFailMayAliasMangled = "_Z21EXPECTEDFAIL_MAYALIASPvS_";
+const std::string PointerAnalysis::aliasTestFailNoAlias         = "EXPECTEDFAIL_NOALIAS";
+const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDFAIL_NOALIASPvS_";
 
 /*!
  * Constructor
@@ -98,6 +111,7 @@ PointerAnalysis::PointerAnalysis(PTATY ty, bool alias_check) :
     ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL), svfMod(NULL) {
     OnTheFlyIterBudgetForStat = statBudget;
     print_stat = PStat;
+    ptaImplTy = BaseImpl;
     alias_validation = (alias_check && EnableAliasCheck);
 }
 
@@ -148,8 +162,17 @@ void PointerAnalysis::initialize(SVFModule* svfModule) {
             PAGBuilder builder;
             pag = builder.build(svfModule);
 
-            chgraph = new CHGraph(svfModule);
-            chgraph->buildCHG();
+
+            if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
+                DCHGraph *dchg = new DCHGraph(svfModule);
+                // TODO: we might want to have an option for extending.
+                dchg->buildCHG(true);
+                chgraph = dchg;
+            } else {
+                CHGraph *chg = new CHGraph(svfModule);
+                chg->buildCHG();
+                chgraph = chg;
+            }
 
             //typeSystem = new TypeSystem(pag);
         }
@@ -224,6 +247,39 @@ void PointerAnalysis::dumpStat() {
 }
 
 
+void PointerAnalysis::printCallGraphStats(void) {
+    FunctionSet uniqueFunctions;
+
+    std::set<const CallBlockNode *> callsites;
+    const CallEdgeMap& callEdges = getIndCallMap();
+    for (CallEdgeMap::const_iterator ce = callEdges.begin(); ce != callEdges.end(); ++ce) {
+        callsites.insert(ce->first);
+        uniqueFunctions.insert(ce->second.begin(), ce->second.end());
+    }
+
+    const CallSiteToFunPtrMap& indCS = getIndirectCallsites();
+    for (CallSiteToFunPtrMap::const_iterator cs = indCS.begin(); cs != indCS.end(); ++cs) {
+        callsites.insert(cs->first);
+    }
+
+    SVFUtil::outs() << "eval-indirect-calls"
+                 << " "
+                 << uniqueFunctions.size()
+                 << " ";
+    for (const CallBlockNode *cbn : callsites) {
+        unsigned int n;
+        if (!hasIndCSCallees(cbn)) {
+            n = 0;
+        } else {
+            n = callEdges.at(cbn).size();
+            assert(n != 0);
+        }
+
+        SVFUtil::outs() << n << " ";
+    }
+    SVFUtil::outs() << "\n";
+}
+
 /*!
  * Finalize the analysis after solving
  * Given the alias results, verify whether it is correct or not using alias check functions
@@ -271,16 +327,19 @@ void PointerAnalysis::finalize() {
  * Validate test cases
  */
 void PointerAnalysis::validateTests() {
-    validateSuccessTests("MAYALIAS");
-    validateSuccessTests("NOALIAS");
-    validateSuccessTests("MUSTALIAS");
-    validateSuccessTests("PARTIALALIAS");
-    validateSuccessTests("_Z8MAYALIASPvS_");
-    validateSuccessTests("_Z7NOALIASPvS_");
-    validateSuccessTests("_Z9MUSTALIASPvS_");
-    validateSuccessTests("_Z12PARTIALALIASPvS_");
-    validateExpectedFailureTests("EXPECTEDFAIL_MAYALIAS");
-    validateExpectedFailureTests("EXPECTEDFAIL_NOALIAS");
+    validateSuccessTests(aliasTestMayAlias);
+    validateSuccessTests(aliasTestNoAlias);
+    validateSuccessTests(aliasTestMustAlias);
+    validateSuccessTests(aliasTestPartialAlias);
+    validateExpectedFailureTests(aliasTestFailMayAlias);
+    validateExpectedFailureTests(aliasTestFailNoAlias);
+
+    validateSuccessTests(aliasTestMayAliasMangled);
+    validateSuccessTests(aliasTestNoAliasMangled);
+    validateSuccessTests(aliasTestMustAliasMangled);
+    validateSuccessTests(aliasTestPartialAliasMangled);
+    validateExpectedFailureTests(aliasTestFailMayAliasMangled);
+    validateExpectedFailureTests(aliasTestFailNoAliasMangled);
 }
 
 
@@ -526,7 +585,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
  * Find the alias check functions annotated in the C files
  * check whether the alias analysis results consistent with the alias check function itself
  */
-void PointerAnalysis::validateSuccessTests(const char* fun) {
+void PointerAnalysis::validateSuccessTests(std::string fun) {
 
     // check for must alias cases, whether our alias analysis produce the correct results
         if (const SVFFunction* checkFun = getFunction(fun)) {
@@ -545,17 +604,17 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
                     AliasResult aliasRes = alias(V1, V2);
 
                     bool checkSuccessful = false;
-                    if (strcmp(fun, "MAYALIAS") == 0 || strcmp(fun, "_Z8MAYALIASPvS_") == 0) {
+                    if (fun == aliasTestMayAlias || fun == aliasTestMayAliasMangled) {
                         if (aliasRes == llvm::MayAlias || aliasRes == llvm::MustAlias)
                             checkSuccessful = true;
-                    } else if (strcmp(fun, "NOALIAS") == 0 || strcmp(fun, "_Z7NOALIASPvS_") == 0) {
+                    } else if (fun == aliasTestNoAlias || fun == aliasTestNoAliasMangled) {
                         if (aliasRes == llvm::NoAlias)
                             checkSuccessful = true;
-                    } else if (strcmp(fun, "MUSTALIAS") == 0 || strcmp(fun, "_Z9MUSTALIASPvS_") == 0) {
+                    } else if (fun == aliasTestMustAlias || fun == aliasTestMustAliasMangled) {
                         // change to must alias when our analysis support it
                         if (aliasRes == llvm::MayAlias || aliasRes == llvm::MustAlias)
                             checkSuccessful = true;
-                    } else if (strcmp(fun, "PARTIALALIAS") == 0 || strcmp(fun, "_Z12PARTIALALIASPvS_") == 0) {
+                    } else if (fun == aliasTestPartialAlias || fun == aliasTestPartialAliasMangled) {
                         // change to partial alias when our analysis support it
                         if (aliasRes == llvm::MayAlias)
                             checkSuccessful = true;
@@ -580,7 +639,7 @@ void PointerAnalysis::validateSuccessTests(const char* fun) {
 /*!
  * Pointer analysis validator
  */
-void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
+void PointerAnalysis::validateExpectedFailureTests(std::string fun) {
 
     if (const SVFFunction* checkFun = getFunction(fun)) {
         if(!checkFun->getLLVMFun()->use_empty())
@@ -596,11 +655,11 @@ void PointerAnalysis::validateExpectedFailureTests(const char* fun) {
                 AliasResult aliasRes = alias(V1, V2);
 
                 bool expectedFailure = false;
-                if (strcmp(fun, "EXPECTEDFAIL_MAYALIAS") == 0) {
+                if (fun == aliasTestFailMayAlias || fun == aliasTestFailMayAliasMangled) {
                     // change to must alias when our analysis support it
                     if (aliasRes == llvm::NoAlias)
                         expectedFailure = true;
-                } else if (strcmp(fun, "EXPECTEDFAIL_NOALIAS") == 0) {
+                } else if (fun == aliasTestFailNoAlias || fun == aliasTestFailNoAliasMangled) {
                     // change to partial alias when our analysis support it
                     if (aliasRes == llvm::MayAlias || aliasRes == llvm::PartialAlias || aliasRes == llvm::MustAlias)
                         expectedFailure = true;
