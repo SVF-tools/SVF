@@ -457,7 +457,7 @@ static bool isAliasTestFunction(std::string name) {
            || name == PointerAnalysis::aliasTestFailNoAliasMangled;
 }
 
-void TypeBasedHeapCloning::validateTBHCTests(SVFModule &svfMod) {
+void TypeBasedHeapCloning::validateTBHCTests(SVFModule *svfMod) {
     SVFUtil::outs() << "!!!!!! VALIDATING TBHC TESTS !!!!!!\n";
     const LLVMModuleSet *llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
     for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i) {

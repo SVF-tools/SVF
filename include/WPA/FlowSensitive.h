@@ -156,10 +156,10 @@ protected:
     //@{
     bool propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, const SVFGNode* dst);
 
-    inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
         return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
-    inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
         return getDFPTDataTy()->updateAllDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
     //@}
@@ -169,17 +169,17 @@ protected:
     inline bool updateOutFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
         return getDFPTDataTy()->updateDFOutFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
-    inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
         return getDFPTDataTy()->updateDFInFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
-    inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
         return getDFPTDataTy()->updateDFInFromOut(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
 
-    inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
+    virtual inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
         return getDFPTDataTy()->updateTLVPts(stmt->getId(),srcVar,dstVar);
     }
-    inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
+    virtual inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
         return getDFPTDataTy()->updateATVPts(srcVar,stmt->getId(),dstVar);
     }
 
@@ -192,12 +192,12 @@ protected:
     //@{
     virtual void processNode(NodeID nodeId);
     bool processSVFGNode(SVFGNode* node);
-    bool processAddr(const AddrSVFGNode* addr);
-    bool processCopy(const CopySVFGNode* copy);
-    bool processPhi(const PHISVFGNode* phi);
-    bool processGep(const GepSVFGNode* edge);
-    bool processLoad(const LoadSVFGNode* load);
-    bool processStore(const StoreSVFGNode* store);
+    virtual bool processAddr(const AddrSVFGNode* addr);
+    virtual bool processCopy(const CopySVFGNode* copy);
+    virtual bool processPhi(const PHISVFGNode* phi);
+    virtual bool processGep(const GepSVFGNode* edge);
+    virtual bool processLoad(const LoadSVFGNode* load);
+    virtual bool processStore(const StoreSVFGNode* store);
     //@}
 
     /// Update call graph
@@ -213,8 +213,14 @@ protected:
     /// Return TRUE if this is a strong update STORE statement.
     bool isStrongUpdate(const SVFGNode* node, NodeID& singleton);
 
+    /// Prints some easily parseable stats on aliasing of relevant CTir TL PTS.
+    /// Format: eval-ctir-aliases #TOTAL_TESTS #MAY_ALIAS #NO_ALIAS
+    virtual void printCTirAliasStats(void);
+
+    /// Fills may/noAliases for the location/pointer pairs in cmp.
+    virtual void countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
+
     SVFG* svfg;
-private:
     ///Get points-to set for a node from data flow IN/OUT set at a statement.
     //@{
     inline const PointsTo& getDFInPtsSet(const SVFGNode* stmt, const NodeID node) {

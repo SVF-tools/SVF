@@ -124,7 +124,7 @@ protected:
     ///   call deref()
     /// We want to test the points-to sets of %n and
     /// %n+n after filtering with !t1 and !t2 respectively.
-    void validateTBHCTests(SVFModule &svfMod);
+    void validateTBHCTests(SVFModule *svfMod);
 
     /// Dump some statistics we tracked.
     void dumpStats(void);
