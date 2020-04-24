@@ -13,7 +13,8 @@ set(SOURCES
     SVF-FE/ICFGBuilder.cpp
     SVF-FE/SymbolTableInfo.cpp
     SVF-FE/PAGBuilder.cpp
-    SVF-FE/CHA.cpp
+    SVF-FE/CHG.cpp
+    SVF-FE/DCHG.cpp
     Graphs/PTACallGraph.cpp
     Graphs/ThreadCallGraph.cpp
     Graphs/PAG.cpp

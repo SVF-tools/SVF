@@ -29,7 +29,7 @@
 
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
-#include "SVF-FE/CHA.h"
+#include "SVF-FE/CHG.h"
 #include "WPA/TypeAnalysis.h"
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ICFGStat.h"
@@ -87,7 +87,11 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
 
 void TypeAnalysis::dumpCHAStats() {
 
-	const CHGraph *chgraph = getCHGraph();
+    const CHGraph *chgraph = SVFUtil::dyn_cast<CHGraph>(getCHGraph());
+    if (chgraph == nullptr) {
+        SVFUtil::errs() << "dumpCHAStats only implemented for standard CHGraph.\n";
+        return;
+    }
 
     s32_t pure_abstract_class_num = 0,
           multi_inheritance_class_num = 0;

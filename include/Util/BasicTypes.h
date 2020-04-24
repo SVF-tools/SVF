@@ -195,6 +195,10 @@ typedef llvm::DICompositeType DICompositeType;
 typedef llvm::DIDerivedType DIDerivedType;
 typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DISubprogram DISubprogram;
+typedef llvm::DISubrange DISubrange;
+typedef llvm::DINode DINode;
+typedef llvm::DINodeArray DINodeArray;
+typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
 
