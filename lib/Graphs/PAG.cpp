@@ -641,7 +641,10 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
     case ObjNode:
     case GepObjNode:
     case FIObjNode:
-    case DummyObjNode: {
+    case DummyObjNode:
+    case CloneGepObjNode:
+    case CloneFIObjNode:
+    case CloneDummyObjNode: {
         isTLPointer = false;
         isATPointer = true;
         break;
