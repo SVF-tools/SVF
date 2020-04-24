@@ -591,8 +591,8 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
             }
         }
         if(csArgIt != csArgEit) {
-            wrnMsg("too many args to non-vararg func.");
-            wrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
+            writeWrnMsg("too many args to non-vararg func.");
+            writeWrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
         }
     }
 }

@@ -113,7 +113,7 @@ void TCT::markRelProcs() {
     }
 
     if(candidateFuncSet.empty())
-        wrnMsg("We didn't recognize any fork site, this is single thread program?");
+        writeWrnMsg("We didn't recognize any fork site, this is single thread program?");
 }
 
 /*!

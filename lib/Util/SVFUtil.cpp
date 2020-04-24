@@ -59,9 +59,13 @@ std::string SVFUtil::sucMsg(std::string msg) {
 /*!
  * print warning message by converting a string into yellow string output
  */
-void SVFUtil::wrnMsg(std::string msg) {
+std::string SVFUtil::wrnMsg(std::string msg) {
+    return KYEL + msg + KNRM;
+}
+
+void SVFUtil::writeWrnMsg(std::string msg) {
     if(DisableWarn) return;
-    outs() << KYEL + msg + KNRM << "\n";
+    outs() << wrnMsg(msg) << "\n";
 }
 
 /*!

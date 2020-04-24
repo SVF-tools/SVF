@@ -353,7 +353,7 @@ void SVFGOPT::parseSelfCycleHandleOption()
     else if (choice == KeepNoneSelfCycle)
         keepAllSelfCycle = keepContextSelfCycle = false;
     else {
-        SVFUtil::wrnMsg("Unrecognised option. All self cycle edges will be kept.");
+        SVFUtil::writeWrnMsg("Unrecognised option. All self cycle edges will be kept.");
         keepAllSelfCycle = true;
     }
 }

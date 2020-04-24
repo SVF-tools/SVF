@@ -80,9 +80,9 @@ void MemObj::init(const Value *val) {
             typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
         typeInfo->init(val);
     } else {
-        wrnMsg("try to create an object with a non-pointer type.");
-        wrnMsg(val->getName());
-        wrnMsg("(" + getSourceLoc(val) + ")");
+        writeWrnMsg("try to create an object with a non-pointer type.");
+        writeWrnMsg(val->getName());
+        writeWrnMsg("(" + getSourceLoc(val) + ")");
         assert(false && "Memory object must be held by a pointer-typed ref value.");
     }
 }
@@ -366,7 +366,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 
     Size_t offset = ls.getOffset();
     if(offset < 0) {
-        wrnMsg("try to create a gep node with negative offset.");
+        writeWrnMsg("try to create a gep node with negative offset.");
         offset = abs(offset);
     }
     u32_t maxOffset = obj->getMaxFieldOffsetLimit();
