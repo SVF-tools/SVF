@@ -72,6 +72,7 @@ typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
 typedef llvm::CallSite CallSite;
+typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;

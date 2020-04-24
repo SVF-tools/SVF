@@ -32,6 +32,7 @@ set(SOURCES
     Util/PathCondAllocator.cpp
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
+    Util/TypeBasedHeapCloning.cpp
     MemoryModel/MemModel.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/PAGBuilderFromFile.cpp
