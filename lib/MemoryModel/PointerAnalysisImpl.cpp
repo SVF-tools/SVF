@@ -35,6 +35,8 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check) :
 			ptD = new DFPTDataTy();
 	} else
 		assert(false && "no points-to data available");
+
+	ptaImplTy = BVDataImpl;
 }
 
 /*!

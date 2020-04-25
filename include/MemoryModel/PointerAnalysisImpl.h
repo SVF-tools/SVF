@@ -171,6 +171,8 @@ public:
             ptD = new PTDataTy();
         else
             assert(false && "no points-to data available");
+
+        ptaImplTy = CondImpl;
     }
 
     /// Destructor
