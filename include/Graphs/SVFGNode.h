@@ -226,7 +226,7 @@ public:
  */
 class MSSAPHISVFGNode : public MRSVFGNode {
 public:
-    typedef llvm::DenseMap<u32_t,const MRVer*> OPVers;
+    typedef DenseMap<u32_t,const MRVer*> OPVers;
 
 protected:
     const MemSSA::MDEF* res;

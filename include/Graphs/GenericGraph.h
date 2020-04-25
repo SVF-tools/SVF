@@ -285,7 +285,7 @@ public:
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
     /// NodeID to GenericNode map
-    typedef llvm::DenseMap<NodeID, NodeType*> IDToNodeMapTy;
+    typedef DenseMap<NodeID, NodeType*> IDToNodeMapTy;
 
     /// Node Iterators
     //@{

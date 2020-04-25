@@ -202,6 +202,20 @@ typedef llvm::DINodeArray DINodeArray;
 typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
+/// LLVM containers
+template <typename T>
+using DenseMapInfo = llvm::DenseMapInfo<T>;
+
+template <typename KeyT, typename ValueT>
+using DenseMapPair = llvm::detail::DenseMapPair<KeyT, ValueT>;
+
+template <typename KeyT, typename ValueT,
+          typename KeyInfoT = DenseMapInfo<KeyT>,
+          typename BucketT = DenseMapPair<KeyT, ValueT>>
+using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
+
+template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
+using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
 
 class SVFFunction : public SVFValue {

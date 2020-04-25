@@ -183,7 +183,7 @@ void DCHGraph::buildVTables(const Module &module) {
 
 const NodeBS &DCHGraph::cha(const DIType *type, bool firstField) {
     type = getCanonicalType(type);
-    llvm::DenseMap<const DIType *, NodeBS> &cacheMap = firstField ? chaFFMap : chaMap;
+    DenseMap<const DIType *, NodeBS> &cacheMap = firstField ? chaFFMap : chaMap;
 
     // Check if we've already computed.
     if (cacheMap.find(type) != cacheMap.end()) {
@@ -997,7 +997,7 @@ void DCHGraph::print(void) {
 
         currIndent += singleIndent;
 
-        const llvm::DenseSet<const DIDerivedType *> &typedefs = node->getTypedefs();
+        const DenseSet<const DIDerivedType *> &typedefs = node->getTypedefs();
         for (const DIDerivedType *tdef : typedefs) {
             std::string typedefName = "void";
             if (tdef != NULL) {

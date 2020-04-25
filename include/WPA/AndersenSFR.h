@@ -40,7 +40,7 @@
  */
 class AndersenSCD : public Andersen {
 public:
-    typedef llvm::DenseMap<NodeID, NodeID> NodeToNodeMap;
+    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
 
 protected:
     static AndersenSCD* scdAndersen;
@@ -92,9 +92,9 @@ protected:
  */
 class AndersenSFR : public AndersenSCD {
 public:
-    typedef llvm::DenseMap<NodeID, NodeBS> NodeStrides;
-    typedef llvm::DenseMap<NodeID, NodeSet> FieldReps;
-    typedef llvm::DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+    typedef DenseMap<NodeID, NodeBS> NodeStrides;
+    typedef DenseMap<NodeID, NodeSet> FieldReps;
+    typedef DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
 
 private:
     static AndersenSFR* sfrAndersen;

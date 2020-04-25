@@ -42,7 +42,7 @@ class ICFG : public GenericICFGTy {
 
 public:
 
-    typedef llvm::DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
+    typedef DenseMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;

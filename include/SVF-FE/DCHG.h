@@ -127,7 +127,7 @@ public:
         typedefs.insert(diTypedef);
     }
 
-    const llvm::DenseSet<const DIDerivedType *> &getTypedefs(void) const {
+    const DenseSet<const DIDerivedType *> &getTypedefs(void) const {
         return typedefs;
     }
 
@@ -157,7 +157,7 @@ private:
     /// Type of this node.
     const DIType *diType;
     /// Typedefs which map to this type.
-    llvm::DenseSet<const DIDerivedType *> typedefs;
+    DenseSet<const DIDerivedType *> typedefs;
     const GlobalValue* vtable;
     std::string typeName;
     size_t flags;
@@ -297,7 +297,7 @@ public:
     }
 
     /// Returns all the aggregates contained (transitively) in base.
-    const llvm::DenseSet<const DIType *> &getAggs(const DIType *base) {
+    const DenseSet<const DIType *> &getAggs(const DIType *base) {
         base = getCanonicalType(base);
         assert(containingAggs.find(base) != containingAggs.end() && "DCHG: aggregates not gathered for base!");
         return containingAggs[base];
@@ -311,25 +311,25 @@ protected:
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.
-    llvm::DenseMap<const DIType *, DCHNode *> diTypeToNodeMap;
+    DenseMap<const DIType *, DCHNode *> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    llvm::DenseMap<const GlobalValue *, const DIType *> vtblToTypeMap;
+    DenseMap<const GlobalValue *, const DIType *> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
-    llvm::DenseMap<const DIType *, NodeBS> chaMap;
+    DenseMap<const DIType *, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.
-    llvm::DenseMap<const DIType *, NodeBS> chaFFMap;
+    DenseMap<const DIType *, NodeBS> chaFFMap;
     /// Maps types to a set with their vtable and all their children's.
-    llvm::DenseMap<const DIType *, VTableSet> vtblCHAMap;
+    DenseMap<const DIType *, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
-    llvm::DenseMap<CallSite, VFunSet> csCHAMap;
+    DenseMap<CallSite, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
-    llvm::DenseMap<const DIType *, const DIType *> canonicalTypeMap;
+    DenseMap<const DIType *, const DIType *> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).
-    llvm::DenseSet<const DIType *> canonicalTypes;
+    DenseSet<const DIType *> canonicalTypes;
     /// Maps types to their flattened fields' types.
-    llvm::DenseMap<const DIType *, std::vector<const DIType *>> fieldTypes;
+    DenseMap<const DIType *, std::vector<const DIType *>> fieldTypes;
     /// Maps aggregate types to all the aggregate types it transitively contains.
-    llvm::DenseMap<const DIType *, llvm::DenseSet<const DIType *>> containingAggs;
+    DenseMap<const DIType *, DenseSet<const DIType *>> containingAggs;
 
 private:
     /// Construction helper to process DIBasicTypes.

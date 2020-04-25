@@ -43,18 +43,18 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef llvm::DenseMap<const Value *, SymID> ValueToIDMapTy;
+    typedef DenseMap<const Value *, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef llvm::DenseMap<SymID,MemObj*> IDToMemMapTy;
+    typedef DenseMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
-    typedef llvm::DenseMap<const Function *, SymID> FunToIDMapTy;
+    typedef DenseMap<const Function *, SymID> FunToIDMapTy;
     /// sym id to sym type map
-    typedef llvm::DenseMap<SymID,SYMTYPE> IDToSymTyMapTy;
+    typedef DenseMap<SymID,SYMTYPE> IDToSymTyMapTy;
     /// struct type to struct info map
-    typedef llvm::DenseMap<const Type*, StInfo*> TypeToFieldInfoMap;
+    typedef DenseMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef std::set<CallSite> CallSiteSet;
-    typedef llvm::DenseMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef llvm::DenseMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
+    typedef DenseMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
+    typedef DenseMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
 
     //@}
 

@@ -94,7 +94,7 @@ private:
     bool allReuse;
 
     /// Maps GEP objects to the SVFG nodes that retrieved them with getGepObjClones.
-    llvm::DenseMap<NodeID, NodeBS> gepToSVFGRetrievers;
+    DenseMap<NodeID, NodeBS> gepToSVFGRetrievers;
     /// Maps whether a (SVFG) GEP node is a load or not.
     NodeBS loadGeps;
 };

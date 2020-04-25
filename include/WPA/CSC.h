@@ -46,7 +46,7 @@ typedef SCCDetection<ConstraintGraph *> CGSCC;
  */
 class CSC {
 public:
-    typedef llvm::DenseMap<NodeID, NodeID> IdToIdMap;
+    typedef DenseMap<NodeID, NodeID> IdToIdMap;
     typedef FILOWorkList<NodeID> WorkStack;
     typedef typename IdToIdMap::iterator iterator;
 
