@@ -303,16 +303,6 @@ public:
         return containingAggs[base];
     }
 
-    /// Returns the type corresponding to constructor.
-    const DIType *getConstructorType(const Function *constructor) const {
-        if (constructorToType.find(constructor) == constructorToType.end()) {
-            return nullptr;
-        }
-
-        // constructorToType types are already the canonical type.
-        return constructorToType.lookup(constructor);
-    }
-
     bool isFirstField(const DIType *f, const DIType *b);
 
 protected:
@@ -338,8 +328,6 @@ protected:
     llvm::DenseSet<const DIType *> canonicalTypes;
     /// Maps types to their flattened fields' types.
     llvm::DenseMap<const DIType *, std::vector<const DIType *>> fieldTypes;
-    /// Maps constructors to their (canonical) type.
-    llvm::DenseMap<const Function *, const DIType *> constructorToType;
     /// Maps aggregate types to all the aggregate types it transitively contains.
     llvm::DenseMap<const DIType *, llvm::DenseSet<const DIType *>> containingAggs;
 

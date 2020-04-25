@@ -437,28 +437,6 @@ void DCHGraph::buildCHG(bool extend) {
         }
     }
 
-    // Build the constructor to type map.
-    for (const DISubprogram *sp : finder.subprograms()) {
-        // Use linkage type to ensure we have the "distinct" item.
-        const Function *fn = SVFUtil::getFunction(sp->getLinkageName())->getLLVMFun();
-        if (fn != nullptr && cppUtil::isConstructor(fn)) {
-            // We get the type which is a DISubroutineType.
-            const DISubroutineType *st = SVFUtil::dyn_cast<DISubroutineType>(sp->getType());
-            assert(st && "DCHG: subprogram type is not a subroutine?");
-            // From the subroutine we get the list of types.
-            const DITypeRefArray types = st->getTypeArray();
-            // The first type is the return type (null, here), and the second type is
-            // for the first argument (`this` since this is a constructor).
-            assert(types.size() >= 2 && "DCHG: constructor does not have 2+ types?");
-            // The first argument must have a pointer type (C *this).
-            const DIDerivedType *pt = SVFUtil::dyn_cast<DIDerivedType>(types[1]);
-            assert(pt != nullptr && pt->getTag() == dwarf::DW_TAG_pointer_type
-                   && "DCHG: type of this argument is not pointer type?");
-            // Base type is the type corresponding to the constructor.
-            constructorToType[fn] = getCanonicalType(pt->getBaseType());
-        }
-    }
-
     if (printDCHG) {
         print();
     }
@@ -1036,14 +1014,6 @@ void DCHGraph::print(void) {
         currIndent -= singleIndent;
 
         currIndent -= singleIndent;
-    }
-
-    SVFUtil::outs() << thickLine;
-    SVFUtil::outs() << "Constructor to type mapping\n";
-    SVFUtil::outs() << line;
-    for (std::map<const Function *, const DIType *>::value_type ct : constructorToType) {
-        cppUtil::DemangledName dname = cppUtil::demangle(ct.first->getName().str());
-        SVFUtil::outs() << dname.className << "::" << dname.funcName << " : " << diTypeToStr(ct.second) << "\n";
     }
 
     SVFUtil::outs() << thickLine;
