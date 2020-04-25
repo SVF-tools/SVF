@@ -423,7 +423,8 @@ public:
                || node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node) {
-        return node->getNodeKind() == PAGNode::GepObjNode;
+        return node->getNodeKind() == PAGNode::GepObjNode
+               || node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
     //@}
 
