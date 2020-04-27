@@ -69,7 +69,7 @@ std::string printPts(PointerAnalysis* pta, Value* val){
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
-void collectUsesOnVFG(const SVFG* vfg, Value* val){
+void traverseOnVFG(const SVFG* vfg, Value* val){
 	PAG* pag = PAG::getPAG();
 
     PAGNode* pNode = pag->getPAGNode(pag->getValueNode(val));
@@ -78,16 +78,19 @@ void collectUsesOnVFG(const SVFG* vfg, Value* val){
     std::set<const VFGNode*> visited;
     worklist.push(vNode);
 
-    /// Traverse along VFG
-    while(!worklist.empty()){
-    	const VFGNode* vNode = worklist.pop();
-    	for(VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it!=eit; ++it) {
-            if(visited.find(vNode)==visited.end()){
-            	visited.insert(vNode);
-            	worklist.push(vNode);
-            }
-    	}
-    }
+	/// Traverse along VFG
+	while (!worklist.empty()) {
+		const VFGNode* vNode = worklist.pop();
+		for (VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit =
+				vNode->OutEdgeEnd(); it != eit; ++it) {
+			VFGEdge* edge = *it;
+			VFGNode* succNode = edge->getDstNode();
+			if (visited.find(succNode) == visited.end()) {
+				visited.insert(succNode);
+				worklist.push(succNode);
+			}
+		}
+	}
 
     /// Collect all LLVM Values
     for(std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it){
@@ -98,6 +101,29 @@ void collectUsesOnVFG(const SVFG* vfg, Value* val){
     }
 }
 
+/*!
+ * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
+ */
+void traverseOnICFG(ICFG* icfg, const Instruction* inst){
+	ICFGNode* iNode = icfg->getBlockICFGNode(inst);
+    FIFOWorkList<const ICFGNode*> worklist;
+    std::set<const ICFGNode*> visited;
+    worklist.push(iNode);
+
+	/// Traverse along VFG
+	while (!worklist.empty()) {
+		const ICFGNode* vNode = worklist.pop();
+		for (ICFGNode::const_iterator it = iNode->OutEdgeBegin(), eit =
+				iNode->OutEdgeEnd(); it != eit; ++it) {
+			ICFGEdge* edge = *it;
+			ICFGNode* succNode = edge->getDstNode();
+			if (visited.find(succNode) == visited.end()) {
+				visited.insert(succNode);
+				worklist.push(succNode);
+			}
+		}
+	}
+}
 
 int main(int argc, char ** argv) {
 
@@ -132,7 +158,10 @@ int main(int argc, char ** argv) {
     SVFG* svfg = svfBuilder.buildFullSVFG(ander);
 
     /// Collect uses of an LLVM Value
-    /// collectUsesOnVFG(svfg, value);
+    /// traverseOnVFG(svfg, value);
+
+    /// Collect all successor nodes on ICFG
+    /// traverseOnICFG(svfg, value);
 
     return 0;
 }
