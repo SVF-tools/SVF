@@ -66,6 +66,31 @@ std::string printPts(PointerAnalysis* pta, Value* val){
 
 }
 
+
+/*!
+ * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
+ */
+void traverseOnICFG(ICFG* icfg, const Instruction* inst){
+	ICFGNode* iNode = icfg->getBlockICFGNode(inst);
+	FIFOWorkList<const ICFGNode*> worklist;
+	std::set<const ICFGNode*> visited;
+	worklist.push(iNode);
+
+	/// Traverse along VFG
+	while (!worklist.empty()) {
+		const ICFGNode* vNode = worklist.pop();
+		for (ICFGNode::const_iterator it = iNode->OutEdgeBegin(), eit =
+				iNode->OutEdgeEnd(); it != eit; ++it) {
+			ICFGEdge* edge = *it;
+			ICFGNode* succNode = edge->getDstNode();
+			if (visited.find(succNode) == visited.end()) {
+				visited.insert(succNode);
+				worklist.push(succNode);
+			}
+		}
+	}
+}
+
 /*!
  * An example to query/collect all the uses of a definition of a value along value-flow graph (VFG)
  */
@@ -99,30 +124,6 @@ void traverseOnVFG(const SVFG* vfg, Value* val){
     	/// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
     	/// Value* val = pNode->getValue();
     }
-}
-
-/*!
- * An example to query/collect all successor nodes from a ICFGNode (iNode) along control-flow graph (ICFG)
- */
-void traverseOnICFG(ICFG* icfg, const Instruction* inst){
-	ICFGNode* iNode = icfg->getBlockICFGNode(inst);
-    FIFOWorkList<const ICFGNode*> worklist;
-    std::set<const ICFGNode*> visited;
-    worklist.push(iNode);
-
-	/// Traverse along VFG
-	while (!worklist.empty()) {
-		const ICFGNode* vNode = worklist.pop();
-		for (ICFGNode::const_iterator it = iNode->OutEdgeBegin(), eit =
-				iNode->OutEdgeEnd(); it != eit; ++it) {
-			ICFGEdge* edge = *it;
-			ICFGNode* succNode = edge->getDstNode();
-			if (visited.find(succNode) == visited.end()) {
-				visited.insert(succNode);
-				worklist.push(succNode);
-			}
-		}
-	}
 }
 
 int main(int argc, char ** argv) {
@@ -161,7 +162,7 @@ int main(int argc, char ** argv) {
     /// traverseOnVFG(svfg, value);
 
     /// Collect all successor nodes on ICFG
-    /// traverseOnICFG(svfg, value);
+    /// traverseOnICFG(icfg, value);
 
     return 0;
 }
