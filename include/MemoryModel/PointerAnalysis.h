@@ -273,10 +273,6 @@ protected:
     /// Reset all object node as field-sensitive.
     void resetObjFieldSensitive();
 
-    /// Prints some easily parseable stats on the call graph.
-    /// Format: eval-indirect-calls #UNIQUE_TARGETS #TARGETS_FOR_CS_0 #TARGETS_FOR_CS_1 ...
-    virtual void printCallGraphStats(void);
-
 public:
     /// Dump the statistics
     void dumpStat();

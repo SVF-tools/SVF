@@ -83,7 +83,6 @@ void FlowSensitive::analyze(SVFModule* svfModule) {
     double end = stat->getClk();
     solveTime += (end - start) / TIMEINTERVAL;
 
-    printCallGraphStats();
     if (CTirAliasEval) {
         printCTirAliasStats();
     }

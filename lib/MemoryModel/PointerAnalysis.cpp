@@ -246,40 +246,6 @@ void PointerAnalysis::dumpStat() {
         stat->performStat();
 }
 
-
-void PointerAnalysis::printCallGraphStats(void) {
-    FunctionSet uniqueFunctions;
-
-    std::set<const CallBlockNode *> callsites;
-    const CallEdgeMap& callEdges = getIndCallMap();
-    for (CallEdgeMap::const_iterator ce = callEdges.begin(); ce != callEdges.end(); ++ce) {
-        callsites.insert(ce->first);
-        uniqueFunctions.insert(ce->second.begin(), ce->second.end());
-    }
-
-    const CallSiteToFunPtrMap& indCS = getIndirectCallsites();
-    for (CallSiteToFunPtrMap::const_iterator cs = indCS.begin(); cs != indCS.end(); ++cs) {
-        callsites.insert(cs->first);
-    }
-
-    SVFUtil::outs() << "eval-indirect-calls"
-                 << " "
-                 << uniqueFunctions.size()
-                 << " ";
-    for (const CallBlockNode *cbn : callsites) {
-        unsigned int n;
-        if (!hasIndCSCallees(cbn)) {
-            n = 0;
-        } else {
-            n = callEdges.at(cbn).size();
-            assert(n != 0);
-        }
-
-        SVFUtil::outs() << n << " ";
-    }
-    SVFUtil::outs() << "\n";
-}
-
 /*!
  * Finalize the analysis after solving
  * Given the alias results, verify whether it is correct or not using alias check functions
