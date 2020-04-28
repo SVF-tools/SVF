@@ -517,7 +517,7 @@ bool FlowSensitiveTBHC::propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, con
 
 bool FlowSensitiveTBHC::propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
     // OUT/IN sets only have original objects.
-    return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar,
+    return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), getOriginalObj(srcVar),
                                                  dstStmt->getId(), getOriginalObj(dstVar));
 }
 
