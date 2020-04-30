@@ -103,6 +103,13 @@ protected:
     /// as a result of reuse.
     NodeID cloneObject(NodeID o, const DIType *type, bool reuse);
 
+    /// Add clone dummy object node to PAG.
+    inline NodeID addCloneDummyObjNode(const MemObj *mem);
+    /// Add clone GEP object node to PAG.
+    inline NodeID addCloneGepObjNode(const MemObj *mem, const LocationSet &l);
+    /// Add clone FI object node to PAG.
+    inline NodeID addCloneFIObjNode(const MemObj *mem);
+
     /// Returns the ctir type attached to the value, nullptr if non-existant.
     /// Not static because it needs the DCHG to return the canonical type.
     /// Not static because we need dchg's getCanonicalType.

@@ -183,7 +183,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
         if (isClone(base)) {
             // Don't use ppag->getGepObjNode because base and it's original object
             // have the same memory object which is the key PAG uses.
-            newGep = ppag->addCloneGepObjNode(baseNode->getMemObj(), newLS);
+            newGep = addCloneGepObjNode(baseNode->getMemObj(), newLS);
         } else {
             newGep = ppag->getGepObjNode(base, newLS);
         }
@@ -354,10 +354,10 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool reus
         }
 
         if (!reuse) {
-            clone = ppag->addCloneGepObjNode(gepObj->getMemObj(), gepObj->getLocationSet());
+            clone = addCloneGepObjNode(gepObj->getMemObj(), gepObj->getLocationSet());
         } else {
             // Reuse is occurring in the middle of an object: it's a new object itself.
-            clone = ppag->addCloneFIObjNode(gepObj->getMemObj());
+            clone = addCloneFIObjNode(gepObj->getMemObj());
         }
 
         // The base needs to know about the new clone.
@@ -383,9 +383,9 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool reus
         }
 
         if (const FIObjPN *fiObj = SVFUtil::dyn_cast<FIObjPN>(obj)) {
-            clone = ppag->addCloneFIObjNode(fiObj->getMemObj());
+            clone = addCloneFIObjNode(fiObj->getMemObj());
         } else if (const DummyObjPN *dummyObj = SVFUtil::dyn_cast<DummyObjPN>(obj)) {
-            clone = ppag->addCloneDummyObjNode(dummyObj->getMemObj());
+            clone = addCloneDummyObjNode(dummyObj->getMemObj());
         }
         // We checked above that it's an FIObj or a DummyObj.
 
@@ -417,6 +417,21 @@ const MDNode *TypeBasedHeapCloning::getRawCTirMetadata(const Value *v) {
 
     // Will be nullptr if metadata isn't there.
     return mdNode;
+}
+
+NodeID TypeBasedHeapCloning::addCloneDummyObjNode(const MemObj *mem) {
+    NodeID id = ppag->getPAGNodeNum();
+    return ppag->addObjNode(NULL, new CloneDummyObjPN(id, mem), id);
+}
+
+NodeID TypeBasedHeapCloning::addCloneGepObjNode(const MemObj *mem, const LocationSet &l) {
+    NodeID id = ppag->getPAGNodeNum();
+    return ppag->addObjNode(mem->getRefVal(), new CloneGepObjPN(mem, id, l), id);
+}
+
+NodeID TypeBasedHeapCloning::addCloneFIObjNode(const MemObj *mem) {
+    NodeID id = ppag->getPAGNodeNum();
+    return ppag->addObjNode(mem->getRefVal(), new CloneFIObjPN(mem->getRefVal(), id, mem), id);
 }
 
 const DIType *TypeBasedHeapCloning::getTypeFromCTirMetadata(const Value *v) {
