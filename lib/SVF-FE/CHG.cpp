@@ -91,9 +91,9 @@ void CHGraph::buildCHG() {
 		for (Module::const_global_iterator I = M->global_begin(), E = M->global_end(); I != E; ++I)
 			buildCHGNodes(&(*I));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
-			buildCHGNodes(&(*F));
+			buildCHGNodes(getDefFunForMultipleModule(&(*F)));
 		for (Module::const_iterator F = M->begin(), E = M->end(); F != E; ++F)
-			buildCHGEdges(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(&(*F)));
+			buildCHGEdges(getDefFunForMultipleModule(&(*F)));
 
 		analyzeVTables(*M);
 	}
