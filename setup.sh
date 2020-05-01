@@ -1,21 +1,24 @@
-echo "Setting up environment for PTA"
+echo "Setting up environment for SVF"
 
 
 #########
-# Please change LLVM_OBJ_ROOT before using it
+# Please change LLVM_DIR_RELEASE before using it
 ########
 
-export LLVM_OBJ_ROOT=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
+export LLVM_DIR_RELEASE=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
 
-export PATH=$LLVM_OBJ_ROOT/bin:$PATH
-export LLVM_DIR=$LLVM_OBJ_ROOT
-#export LLVM_OBJ_ROOT=$LLVM_HOME/llvm-$llvm_version.dbg
-#export PATH=$LLVM_OBJ_ROOT/Debug+Asserts/bin:$PATH
-export LLVMOPT=opt
-export CLANG=$LLVM_OBJ_ROOT/bin/clang
-export CLANGCPP=$LLVM_OBJ_ROOT/bin/clang++
-export LLVMDIS=llvm-dis
-export LLVMLLC=llc
+if [ -z "$LLVM_DIR" ]
+then
+	echo "\$LLVM_DIR is not configured, using the default one"
+	export LLVM_DIR=$LLVM_DIR_RELEASE
+fi
+
+export PATH=$LLVM_DIR/bin:$PATH
+export LLVMOPT=$LLVM_DIR/bin/opt
+export CLANG=$LLVM_DIR/bin/clang
+export CLANGCPP=$LLVM_DIR/bin/clang++
+export LLVMDIS=$LLVM_DIR/bin/llvm-dis
+export LLVMLLC=$LLVM_DIR/bin/llc
 
 ##############astyle code formatting###############
 AstyleDir=/home/ysui/astyle/build/clang
