@@ -40,6 +40,7 @@ cmake ../
 make -j4
 
 ## set up environment variables of SVF
+cd ../
 if [[ $1 == 'debug' ]]
 then
 . ./setup.sh debug
