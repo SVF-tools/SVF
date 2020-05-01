@@ -13,6 +13,8 @@ then
 	export LLVM_DIR=$LLVM_DIR_RELEASE
 fi
 
+echo "LLVM_DIR =" $LLVM_DIR
+
 export PATH=$LLVM_DIR/bin:$PATH
 export LLVMOPT=$LLVM_DIR/bin/opt
 export CLANG=$LLVM_DIR/bin/clang

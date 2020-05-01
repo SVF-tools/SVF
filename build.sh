@@ -29,6 +29,7 @@ rm -rf ./$Build
 mkdir ./$Build
 cd ./$Build
 
+## start building SVF
 if [[ $1 == 'debug' ]]
 then
 cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
@@ -38,6 +39,13 @@ fi
 cmake ../
 make -j4
 
+## set up environment variables of SVF
+if [[ $1 == 'debug' ]]
+then
+. ./setup.sh debug
+else
+. ./setup.sh
+fi
 #########
 # Optionally, you can also specify a CXX_COMPILER and your $LLVM_HOME for your build
 # cmake -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++ -DLLVM_DIR=$LLVM_DIR
