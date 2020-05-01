@@ -5,24 +5,29 @@
 #########
 # Please change the following home directories of your LLVM builds
 ########
-LLVMRELEASE=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
-LLVMDEBUG=/home/ysui/llvm-9.0.0/llvm-9.0.0.dbg
+LLVM_DIR_RELEASE=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
+LLVM_DIR_DEBUG=/home/ysui/llvm-9.0.0/llvm-9.0.0.dbg
 
-if [[ $1 == 'debug' ]]
+if [ -z "$LLVM_DIR" ]
 then
-BuildTY='Debug'
-export LLVM_DIR=$LLVMDEBUG
-else
-BuildTY='Release'
-export LLVM_DIR=$LLVMRELEASE
+	echo "\$LLVM_DIR is not configured, using the default one"
+	if [[ $1 == 'debug' ]]
+	then
+	BuildTY='Debug'
+	export LLVM_DIR=$LLVM_DIR_DEBUG
+	else
+	BuildTY='Release'
+	export LLVM_DIR=$LLVM_DIR_RELEASE
+	fi
 fi
+echo "LLVM_DIR =" $LLVM_DIR
 
 export PATH=$LLVM_DIR/bin:$PATH
 Build=$BuildTY'-build'
 
-rm -rf $Build
-mkdir $Build
-cd $Build
+rm -rf ./$Build
+mkdir ./$Build
+cd ./$Build
 
 if [[ $1 == 'debug' ]]
 then
