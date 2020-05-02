@@ -6,7 +6,7 @@ else()
     llvm_map_components_to_libnames(llvm_libs BitWriter Core IPO IrReader InstCombine Instrumentation Target Linker Analysis ScalarOpts Support TransformUtils)
     add_executable( dvf dda.cpp )
 
-    target_link_libraries( dvf LLVMSvf LLVMCudd ${llvm_libs} )
+    target_link_libraries( dvf Svf Cudd ${llvm_libs} )
 
     set_target_properties( dvf PROPERTIES
                            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
