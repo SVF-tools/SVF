@@ -8,15 +8,19 @@
 LLVM_DIR_RELEASE=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
 LLVM_DIR_DEBUG=/home/ysui/llvm-9.0.0/llvm-9.0.0.dbg
 
-if [ -z "$LLVM_DIR" ]
+if [[ $1 == 'debug' ]]
 then
-	echo "\$LLVM_DIR is not configured, using the default one"
-	if [[ $1 == 'debug' ]]
+BuildTY='Debug'
+	if [ -z "$LLVM_DIR" ]
 	then
-	BuildTY='Debug'
+	echo "\$LLVM_DIR is not configured, using the default one"
 	export LLVM_DIR=$LLVM_DIR_DEBUG
-	else
-	BuildTY='Release'
+	fi
+else
+BuildTY='Release'
+	if [ -z "$LLVM_DIR" ]
+	then
+	echo "\$LLVM_DIR is not configured, using the default one"
 	export LLVM_DIR=$LLVM_DIR_RELEASE
 	fi
 fi
