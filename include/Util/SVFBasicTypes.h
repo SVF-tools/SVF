@@ -34,6 +34,9 @@
 #include <llvm/ADT/DenseSet.h>		// for dense map, set
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/Support/raw_ostream.h>	// for output
+#include <llvm/Support/CommandLine.h>	// for command line options
+#include <llvm/ADT/StringMap.h>	// for StringMap
+
 #include <vector>
 #include <list>
 #include <set>
