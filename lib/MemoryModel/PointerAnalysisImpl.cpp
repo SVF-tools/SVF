@@ -8,6 +8,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/DCHG.h"
 #include <fstream>
 #include <sstream>
 
@@ -219,7 +220,12 @@ void BVDataPTAImpl::dumpAllPts() {
 void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
         const CallBlockNode* cs = iter->first;
-        if (isVirtualCallSite(cs->getCallSite())) {
+
+        // If we have a DCHG (i.e., ctir available), use that to check for virtualness.
+        bool isVirtual = LLVMModuleSet::getLLVMModuleSet()->allCTir() ?
+                         static_cast<DCHGraph *>(chgraph)->isVirtualCallSite(cs->getCallSite())
+                         : isVirtualCallSite(cs->getCallSite());
+        if (isVirtual) {
             const Value *vtbl = getVCallVtblPtr(cs->getCallSite());
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);
