@@ -1,41 +1,41 @@
 language: generic
-dist: xenial
+dist: bionic
 os: linux
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main'
+      - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
         key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
     packages:
-      - llvm-9
-      - clang-9
-      - libllvm9
-      - llvm-9-dev
-      - llvm-9-runtime
-      - llvm-9-tools
+      - llvm-10
+      - clang-10
+      - libllvm10
+      - llvm-10-dev
+      - llvm-10-runtime
+      - llvm-10-tools
 
 matrix:
   include:
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@9/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@9 LDFLAGS:=-L/usr/local/opt/llvm@9/lib CPPFLAGS=-I/usr/local/opt/llvm@6/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@10/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@10 LDFLAGS:=-L/usr/local/opt/llvm@10/lib CPPFLAGS=-I/usr/local/opt/llvm@10/include
         - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@9
+      install: brew install llvm@10
       cache:
         directories: ~/Library/Caches/Homebrew/
     - os: osx
       env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@9/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@9 LDFLAGS:=-L/usr/local/opt/llvm@9/lib CPPFLAGS=-I/usr/local/opt/llvm@9/include
+        - CXX=clang++ PATH=/usr/local/opt/llvm@10/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@10 LDFLAGS:=-L/usr/local/opt/llvm@10/lib CPPFLAGS=-I/usr/local/opt/llvm@10/include
         - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@9
+      install: brew install llvm@10
       cache:
         directories: ~/Library/Caches/Homebrew/
 env:
   global:
-    - CC=clang-9 CXX=clang++-9
+    - CC=clang-10 CXX=clang++-10
     - PATH=$TRAVIS_BUILD_DIR/cmake-3.8.1-Linux-x86_64/bin:$PATH
-    - LLVM_DIR=/usr/lib/llvm-9
+    - LLVM_DIR=/usr/lib/llvm-10
   matrix:
     - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug"
     - CONFIG_ARGS=
