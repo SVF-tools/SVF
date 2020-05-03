@@ -82,7 +82,7 @@ add_llvm_library(Svf ${SOURCES})
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
 llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
-target_link_libraries(Svf Cudd)
+target_link_libraries(Cudd)
 #if ( CMAKE_SYSTEM_NAME MATCHES "Darwin")
 #    target_link_libraries(Svf Cudd )
 #else()
