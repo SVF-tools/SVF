@@ -221,11 +221,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
         const CallBlockNode* cs = iter->first;
 
-        // If we have a DCHG (i.e., ctir available), use that to check for virtualness.
-        bool isVirtual = LLVMModuleSet::getLLVMModuleSet()->allCTir() ?
-                         static_cast<DCHGraph *>(chgraph)->isVirtualCallSite(cs->getCallSite())
-                         : isVirtualCallSite(cs->getCallSite());
-        if (isVirtual) {
+        if (isVirtualCallSite(cs->getCallSite())) {
             const Value *vtbl = getVCallVtblPtr(cs->getCallSite());
             assert(pag->hasValueNode(vtbl));
             NodeID vtblId = pag->getValueNode(vtbl);

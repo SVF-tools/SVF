@@ -190,11 +190,6 @@ public:
     /// Returns a human-readable version of the DIType.
     static std::string diTypeToStr(const DIType *);
 
-    static bool isVirtualCallSite(CallSite cs) {
-        MDNode *md = cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName);
-        return md != nullptr;
-    }
-
     // Returns whether t is an array, a struct, a class, a union, or neither.
     static bool isAgg(const DIType *t);
 
