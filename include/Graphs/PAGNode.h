@@ -61,9 +61,9 @@ public:
         FIObjNode,
         DummyValNode,
         DummyObjNode,
-        CloneGepObjNode,
-        CloneFIObjNode,
-        CloneDummyObjNode
+        CloneGepObjNode,   // NOTE: only used for TBHC.
+        CloneFIObjNode,    // NOTE: only used for TBHC.
+        CloneDummyObjNode  // NOTE: only used for TBHC.
     };
 
 
