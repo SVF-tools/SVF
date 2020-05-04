@@ -46,7 +46,7 @@ public:
     typedef std::set<const CallBlockNode*> CallSiteSet;
     typedef std::map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
     typedef std::map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
-    typedef llvm::DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
+    typedef DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::set<const PAGEdge*> PAGEdgeSet;
     typedef std::list<const PAGEdge*> PAGEdgeList;
     typedef std::list<const PAGNode*> PAGNodeList;
@@ -54,16 +54,16 @@ public:
     typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
     typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
-    typedef llvm::DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
+    typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
-    typedef llvm::DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
-    typedef llvm::DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
-    typedef llvm::DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
+    typedef DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
+    typedef DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
+    typedef DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef std::map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
-    typedef llvm::DenseMap<NodeOffset,NodeID,llvm::DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
+    typedef DenseMap<NodeOffset,NodeID,DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
     typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
     typedef std::map<NodePair,NodeID> NodePairSetMap;
 

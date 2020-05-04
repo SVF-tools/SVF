@@ -1,4 +1,4 @@
-//===----- CHA.h -- Base class of pointer analyses ---------------------------//
+//===----- CHG.h -- Base class of pointer analyses ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CHA.h
+ * CHG.h (previously CHA.h)
  *
  *  Created on: Apr 13, 2016
  *      Author: Xiaokang Fan
@@ -31,6 +31,7 @@
 #define CHA_H_
 
 #include "Util/SVFModule.h"
+#include "SVF-FE/CommonCHG.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -148,14 +149,12 @@ private:
 
 /// class hierarchy graph
 typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
-class CHGraph: public GenericCHGraphTy {
+class CHGraph: public CommonCHGraph, public GenericCHGraphTy {
 public:
     typedef std::set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
     typedef std::map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const SVFFunction*> VFunSet;
     typedef std::map<CallSite, VTableSet> CallSiteToVTableSetMap;
     typedef std::map<CallSite, VFunSet> CallSiteToVFunSetMap;
 
@@ -165,6 +164,7 @@ public:
     } RELATIONTYPE;
 
     CHGraph(SVFModule* svfModule): svfMod(svfModule), classNum(0), vfID(0), buildingCHGTime(0) {
+        this->kind = Standard;
     }
     ~CHGraph();
 
@@ -187,7 +187,7 @@ public:
     void analyzeVTables(const Module &M);
     const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
     const CHNodeSetTy& getCSClasses(CallSite cs);
-    void getVFnsFromVtbls(CallSite cs,VTableSet &vtbls, VFunSet &virtualFunctions) const;
+    void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
     void printCH();
 
@@ -224,23 +224,27 @@ public:
 		return templateNameToInstancesMap[className];
 	}
 
-	inline const bool csHasVtblsBasedonCHA(CallSite cs) const {
+	inline const bool csHasVtblsBasedonCHA(CallSite cs) override {
 		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
 		return it != csToCHAVtblsMap.end();
 	}
-	inline const bool csHasVFnsBasedonCHA(CallSite cs) const {
+	inline const bool csHasVFnsBasedonCHA(CallSite cs) override {
 		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
 		return it != csToCHAVFnsMap.end();
 	}
-	inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) const {
+	inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override {
 		CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
 		assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
 		return it->second;
 	}
-	inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) const {
+	inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) override {
 		CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
 		assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
 		return it->second;
+	}
+
+	static inline bool classof(const CommonCHGraph *chg) {
+		return chg->getKind() == Standard;
 	}
 
 private:

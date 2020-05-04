@@ -604,6 +604,13 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node)) {
             rawstr << "NullPtr";
+        } else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node)) {
+            rawstr << "BinOp\n";
+            rawstr << getSourceLoc(&bop->getBB()->back());
+        }
+        else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node)) {
+            rawstr << "Cmp\n";
+            rawstr << getSourceLoc(&cmp->getBB()->back());
         }
         else
             assert(false && "what else kinds of nodes do we have??");
@@ -621,8 +628,20 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*> {
             NodeID src = stmtNode->getPAGSrcNodeID();
             NodeID dst = stmtNode->getPAGDstNodeID();
             rawstr << dst << "<--" << src << "\n";
+            rawstr << stmtNode->getPAGDstNode()->getValueName()
+                   << "<--"
+                   << stmtNode->getPAGSrcNode()->getValueName()
+                   << "\n";
             if(stmtNode->getInst()) {
-                rawstr << getSourceLoc(stmtNode->getInst());
+                std::string str;
+                llvm::raw_string_ostream rso(str);
+                stmtNode->getInst()->print(rso);
+                rawstr << getSourceLoc(stmtNode->getInst()) << "\n";
+                rawstr << "["
+                       << stmtNode->getInst()->getFunction()->getName().substr(0, 30)
+                       << "]\n";
+                rawstr << str.substr(0, 30) << "\n";
+                if (str.size() > 30) rawstr << str.substr(30, 60) << "\n";
             }
             else if(stmtNode->getPAGDstNode()->hasValue()) {
                 rawstr << getSourceLoc(stmtNode->getPAGDstNode()->getValue());

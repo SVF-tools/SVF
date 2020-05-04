@@ -232,7 +232,7 @@ void MemSSA::insertPHI(const SVFFunction& fun) {
             bbs.pop_back();
             DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
             if(it == df->end()) {
-                wrnMsg("bb not in the dominance frontier map??");
+                writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
             const DominanceFrontierBase::DomSetType& domSet = it->second;

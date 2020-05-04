@@ -29,7 +29,7 @@ public:
     typedef std::map<DPIm, CPtSet> DPImToCPtSetMap;
     typedef std::map<DPIm,CVar> DPMToCVarMap;
     typedef std::map<DPIm,DPIm> DPMToDPMMap;
-    typedef llvm::DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
+    typedef DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
     typedef std::set<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
     typedef std::map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;

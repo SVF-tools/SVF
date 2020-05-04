@@ -68,16 +68,16 @@ class SVFG : public VFG {
 
 public:
     typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
-    typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef llvm::DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
+    typedef DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
+    typedef DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef NodeBS ActualINSVFGNodeSet;
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
     typedef std::map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
     typedef std::map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
-    typedef llvm::DenseMap<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
-    typedef llvm::DenseMap<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
+    typedef DenseMap<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
+    typedef DenseMap<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
     typedef MemSSA::CHISet CHISet;
     typedef MemSSA::PHISet PHISet;

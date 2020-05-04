@@ -58,11 +58,14 @@ void dumpPointsToSet(unsigned node, NodeBS To) ;
 /// Dump alias set
 void dumpAliasSet(unsigned node, NodeBS To) ;
 
-/// Print successful message by converting a string into green string output
+/// Returns successful message by converting a string into green string output
 std::string sucMsg(std::string msg);
 
-/// Print warning message by converting a string into yellow string output
-void wrnMsg(std::string msg);
+/// Returns warning message by converting a string into yellow string output
+std::string wrnMsg(std::string msg);
+
+/// Writes a message run through wrnMsg.
+void writeWrnMsg(std::string msg);
 
 /// Print error message by converting a string into red string output
 //@{

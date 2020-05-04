@@ -50,12 +50,12 @@ public:
         ORIGSVFGK, PTRONLYSVFGK
     };
 
-    typedef llvm::DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
-    typedef llvm::DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
+    typedef DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
+    typedef DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef std::map<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
-    typedef llvm::DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
-    typedef llvm::DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
-    typedef llvm::DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
+    typedef DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
+    typedef DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
+    typedef DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
     typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
     typedef std::map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
     typedef std::map<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;

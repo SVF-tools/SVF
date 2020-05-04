@@ -8,6 +8,7 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
+#include "SVF-FE/DCHG.h"
 #include <fstream>
 #include <sstream>
 
@@ -28,13 +29,15 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check) :
         || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
         || type == AndersenSCD_WPA || type == AndersenSFR_WPA) {
 		ptD = new DiffPTDataTy();
-	} else if (type == FSSPARSE_WPA) {
+	} else if (type == FSSPARSE_WPA || type == FSTBHC_WPA) {
 		if (INCDFPTData)
 			ptD = new IncDFPTDataTy();
 		else
 			ptD = new DFPTDataTy();
 	} else
 		assert(false && "no points-to data available");
+
+	ptaImplTy = BVDataImpl;
 }
 
 /*!
@@ -217,6 +220,7 @@ void BVDataPTAImpl::dumpAllPts() {
 void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
         const CallBlockNode* cs = iter->first;
+
         if (isVirtualCallSite(cs->getCallSite())) {
             const Value *vtbl = getVCallVtblPtr(cs->getCallSite());
             assert(pag->hasValueNode(vtbl));

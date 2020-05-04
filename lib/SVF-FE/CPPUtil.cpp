@@ -207,6 +207,12 @@ bool cppUtil::isVirtualCallSite(CallSite cs) {
     if (cs.getCalledFunction() != NULL)
         return false;
 
+    // When compiled with ctir, we'd be using the DCHG which has its own
+    // virtual annotations.
+    if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
+        return cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName) != nullptr;
+    }
+
     const Value *vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc)) {
         const Value *vfuncptr = vfuncloadinst->getPointerOperand();

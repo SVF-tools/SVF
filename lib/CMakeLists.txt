@@ -13,7 +13,8 @@ set(SOURCES
     SVF-FE/ICFGBuilder.cpp
     SVF-FE/SymbolTableInfo.cpp
     SVF-FE/PAGBuilder.cpp
-    SVF-FE/CHA.cpp
+    SVF-FE/CHG.cpp
+    SVF-FE/DCHG.cpp
     Graphs/PTACallGraph.cpp
     Graphs/ThreadCallGraph.cpp
     Graphs/PAG.cpp
@@ -31,6 +32,7 @@ set(SOURCES
     Util/PathCondAllocator.cpp
     Util/PTAStat.cpp
     Util/ThreadAPI.cpp
+    Util/TypeBasedHeapCloning.cpp
     MemoryModel/MemModel.cpp
     MemoryModel/LocationSet.cpp
     MemoryModel/PAGBuilderFromFile.cpp
@@ -52,6 +54,7 @@ set(SOURCES
     WPA/AndersenWaveDiffWithType.cpp
     WPA/FlowSensitive.cpp
     WPA/FlowSensitiveStat.cpp
+    WPA/FlowSensitiveTBHC.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
     SABER/DoubleFreeChecker.cpp

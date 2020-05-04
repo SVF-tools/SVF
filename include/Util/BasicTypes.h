@@ -72,6 +72,7 @@ typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
 typedef llvm::CallSite CallSite;
+typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
@@ -195,8 +196,26 @@ typedef llvm::DICompositeType DICompositeType;
 typedef llvm::DIDerivedType DIDerivedType;
 typedef llvm::DISubroutineType DISubroutineType;
 typedef llvm::DISubprogram DISubprogram;
+typedef llvm::DISubrange DISubrange;
+typedef llvm::DINode DINode;
+typedef llvm::DINodeArray DINodeArray;
+typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
+/// LLVM containers
+template <typename T>
+using DenseMapInfo = llvm::DenseMapInfo<T>;
+
+template <typename KeyT, typename ValueT>
+using DenseMapPair = llvm::detail::DenseMapPair<KeyT, ValueT>;
+
+template <typename KeyT, typename ValueT,
+          typename KeyInfoT = DenseMapInfo<KeyT>,
+          typename BucketT = DenseMapPair<KeyT, ValueT>>
+using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
+
+template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
+using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
 
 class SVFFunction : public SVFValue {

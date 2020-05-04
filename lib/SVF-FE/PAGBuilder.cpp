@@ -703,8 +703,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F) {
     if(itA != ieA) {
         /// FIXME: this assertion should be placed for correct checking except
         /// bug program like 188.ammp, 300.twolf
-        wrnMsg("too many args to non-vararg func.");
-        wrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
+        writeWrnMsg("too many args to non-vararg func.");
+        writeWrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
 
     }
 }
@@ -782,7 +782,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee) {
                     addStoreEdge(dummy, vnArg);
                 }
             } else {
-                wrnMsg("Arg receiving new object must be pointer type");
+                writeWrnMsg("Arg receiving new object must be pointer type");
             }
         }
     }
@@ -905,7 +905,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee) {
                     assert(!"alloc type func. are not handled here");
                 else {
                     // fdopen will return an integer in LLVM IR.
-                    wrnMsg("alloc type func do not return pointer type");
+                    writeWrnMsg("alloc type func do not return pointer type");
                 }
                 break;
             case ExtAPI::EFT_NOOP:
@@ -1014,7 +1014,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee) {
                     std::string str;
                     raw_string_ostream rawstr(str);
                     rawstr << "function " << callee->getName() << " not in the external function summary list";
-                    wrnMsg(rawstr.str());
+                    writeWrnMsg(rawstr.str());
                     //assert("unknown ext.func type");
                 }
             }

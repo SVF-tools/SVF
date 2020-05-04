@@ -497,7 +497,7 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
         /// struct to represent this obj.
         Size_t offset = ls.getOffset();
         if(offset < 0) {
-            wrnMsg("try to create a gep node with negative offset.");
+            writeWrnMsg("try to create a gep node with negative offset.");
             offset = abs(offset);
         }
         u32_t maxOffset = obj->getMaxFieldOffsetLimit();

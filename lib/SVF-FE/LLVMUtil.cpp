@@ -103,7 +103,7 @@ bool SVFUtil::functionDoesNotRet (const Function * fun) {
         }
     }
 //    if(isProgEntryFunction(fun)==false) {
-//        wrnMsg(fun->getName().str() + " does not have return");
+//        writeWrnMsg(fun->getName().str() + " does not have return");
 //    }
     return true;
 }

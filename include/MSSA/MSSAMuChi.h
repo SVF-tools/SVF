@@ -540,7 +540,7 @@ template<class Cond>
 class MSSAPHI : public MSSADEF {
 
 public:
-    typedef llvm::DenseMap<u32_t,const MRVer*> OPVers;
+    typedef DenseMap<u32_t,const MRVer*> OPVers;
 private:
     const BasicBlock* bb;
     OPVers opVers;

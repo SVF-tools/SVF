@@ -51,6 +51,10 @@ public:
         destroy();
     }
 
+    static inline bool classof(const PointerAnalysis *pta) {
+        return pta->getImplTy() == BVDataImpl;
+    }
+
     /// Release memory
     inline void destroy() {
         delete ptD;
@@ -68,7 +72,7 @@ public:
     //@}
 
     /// Expand FI objects
-    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
+    virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
 
     /// Interface for analysis result storage on filesystem.
     //@{
@@ -167,11 +171,17 @@ public:
             ptD = new PTDataTy();
         else
             assert(false && "no points-to data available");
+
+        ptaImplTy = CondImpl;
     }
 
     /// Destructor
     virtual ~CondPTAImpl() {
         destroy();
+    }
+
+    static inline bool classof(const PointerAnalysis *pta) {
+        return pta->getImplTy() == CondImpl;
     }
 
     /// Release memory

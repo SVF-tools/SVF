@@ -1,4 +1,4 @@
-//===----- CHA.cpp  Base class of pointer analyses ---------------------------//
+//===----- CHG.cpp  Base class of pointer analyses ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CHA.cpp
+ * CHG.cpp (previously CHA.cpp)
  *
  *  Created on: Apr 13, 2016
  *      Author: Xiaokang Fan
@@ -37,7 +37,7 @@
 #include <stack>
 
 #include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/CHA.h"
+#include "SVF-FE/CHG.h"
 #include "SVF-FE/SymbolTableInfo.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -606,7 +606,7 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs) {
  * Get virtual functions for callsite "cs" based on vtbls (calculated
  * based on pointsto set)
  */
-void CHGraph::getVFnsFromVtbls(CallSite cs, VTableSet &vtbls, VFunSet &virtualFunctions) const {
+void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) {
 
     /// get target virtual functions
     size_t idx = getVCallIdx(cs);

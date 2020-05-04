@@ -231,7 +231,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
         return;
     }
     else {
-        wrnMsg("\t can not validate, check function not found, please put it at the right place!!");
+        writeWrnMsg("\t can not validate, check function not found, please put it at the right place!!");
         return;
     }
 
@@ -270,7 +270,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
         return;
     }
     else {
-        wrnMsg("\t can not validate, check function not found, please put it at the right place!!");
+        writeWrnMsg("\t can not validate, check function not found, please put it at the right place!!");
         return;
     }
 

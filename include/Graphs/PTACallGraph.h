@@ -172,8 +172,8 @@ class PTACallGraph : public GenericCallGraphTy {
 
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef llvm::DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef llvm::DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
+    typedef DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
+    typedef DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
     typedef std::map<CallSitePair, CallSiteID> CallSiteToIdMap;
     typedef std::map<CallSiteID, CallSitePair> IdToCallSiteMap;

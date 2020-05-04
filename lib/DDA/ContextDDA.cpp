@@ -250,7 +250,7 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge) {
                 ///       to solve this later.
                 if (dpm.getCond().containCallStr(csId)) {
                     outOfBudgetQuery = true;
-                    SVFUtil::wrnMsg("Call site ID is contained in call string. Is this a recursion?");
+                    SVFUtil::writeWrnMsg("Call site ID is contained in call string. Is this a recursion?");
                     return false;
                 }
                 else {
