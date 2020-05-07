@@ -168,10 +168,11 @@ void CHGraph::buildInternalMaps() {
 }
 
 void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite cs){
-    const Function* callee = SVFUtil::getCallee(cs)->getLLVMFun();
-    const Function* caller = callerfun->getLLVMFun();
-    if (callee == NULL)
+	if (getCallee(cs) == NULL)
         return;
+
+	const Function* callee = getCallee(cs)->getLLVMFun();
+    const Function* caller = callerfun->getLLVMFun();
 
     struct DemangledName dname = demangle(caller->getName().str());
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee))) {
