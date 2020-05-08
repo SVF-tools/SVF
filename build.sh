@@ -40,7 +40,6 @@ cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
 cmake ../
 fi
-cmake ../
 make -j4
 
 ## set up environment variables of SVF
