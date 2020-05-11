@@ -31,8 +31,6 @@
 
 using namespace SVFUtil;
 
-char FileChecker::ID = 0;
-
 
 void FileChecker::reportNeverClose(const SVFGNode* src) {
     const CallBlockNode* cs = getSrcCSID(src);

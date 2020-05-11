@@ -50,6 +50,9 @@ public:
     typedef CxtDPItem DPIm;
     typedef std::set<DPIm> DPImSet;							///< dpitem set
     typedef std::map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
+    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef NodeBS SVFGNodeBS;
+    typedef ProgSlice::VFWorkList WorkList;
 
 private:
     ProgSlice* _curSlice;		/// current program slice
@@ -147,6 +150,9 @@ public:
     virtual bool isSource(const SVFGNode* node) = 0;
     virtual bool isSink(const SVFGNode* node) = 0;
     ///@}
+
+    /// Identify allocation wrappers
+    bool isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet);
 
     /// report bug on the current analyzed slice
     virtual void reportBug(ProgSlice* slice) = 0;

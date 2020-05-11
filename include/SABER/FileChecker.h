@@ -40,11 +40,8 @@ class FileChecker : public LeakChecker {
 
 public:
 
-    /// Pass ID
-    static char ID;
-
     /// Constructor
-    FileChecker(char id = ID): LeakChecker(ID) {
+    FileChecker(): LeakChecker() {
     }
 
     /// Destructor
@@ -56,17 +53,6 @@ public:
         /// start analysis
         analyze(module);
         return false;
-    }
-
-    /// Get pass name
-    virtual inline StringRef getPassName() const {
-        return "File Open/Close Analysis";
-    }
-
-    /// Pass dependence
-    virtual void getAnalysisUsage(AnalysisUsage& au) const {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
     }
 
     inline bool isSourceLikeFun(const SVFFunction* fun) {

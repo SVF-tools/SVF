@@ -43,7 +43,6 @@ public:
     typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
-    typedef std::set<const CallBlockNode*> CallSiteSet;
     enum LEAK_TYPE {
         NEVER_FREE_LEAK,
         CONTEXT_LEAK,
@@ -51,11 +50,8 @@ public:
         GLOBAL_LEAK
     };
 
-    /// Pass ID
-    static char ID;
-
     /// Constructor
-    LeakChecker(char id = ID) {
+    LeakChecker() {
     }
     /// Destructor
     virtual ~LeakChecker() {
@@ -66,17 +62,6 @@ public:
         /// start analysis
         analyze(module);
         return false;
-    }
-
-    /// Get pass name
-    virtual StringRef getPassName() const {
-        return "Static Memory Leak Analysis";
-    }
-
-    /// Pass dependence
-    virtual void getAnalysisUsage(AnalysisUsage& au) const {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
     }
 
     /// Initialize sources and sinks

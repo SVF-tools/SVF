@@ -31,8 +31,6 @@
 
 using namespace SVFUtil;
 
-char DoubleFreeChecker::ID = 0;
-
 void DoubleFreeChecker::reportBug(ProgSlice* slice) {
 
     if(isSatisfiableForPairs(slice) == false) {

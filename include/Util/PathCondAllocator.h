@@ -52,6 +52,8 @@ public:
     typedef std::map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
+    typedef std::map<u32_t,Condition*> IndexToConditionMap;
+
     /// Constructor
     PathCondAllocator() {
         getBddCondManager();
@@ -123,7 +125,9 @@ public:
     }
     /// Given an index, get its condition
     inline Condition* getCond(u32_t i) const {
-        return bddCondMgr->getCond(i);
+    	IndexToConditionMap::const_iterator it = indexToDDNodeMap.find(i);
+        assert(it!=indexToDDNodeMap.end() && "condition not found!");
+        return it->second;
     }
     /// Iterator every element of the bdd
     inline NodeBS exactCondElem(Condition* cond) {
@@ -238,13 +242,21 @@ private:
     }
     //@}
 
+    /// Create new BDD condition
+    inline Condition* createNewCond(u32_t i) {
+        assert(indexToDDNodeMap.find(i)==indexToDDNodeMap.end() && "This should be fresh index to create new BDD");
+        Condition* d = bddCondMgr->Cudd_bdd(i);
+        indexToDDNodeMap[i] = d;
+        return d;
+    }
     /// Allocate a new condition
     inline Condition* newCond(const Instruction* inst) {
-        Condition* cond = bddCondMgr->createNewCond(totalCondNum++);
+        Condition* cond = createNewCond(totalCondNum++);
         assert(condToInstMap.find(cond)==condToInstMap.end() && "this should be a fresh condition");
         condToInstMap[cond] = inst;
         return cond;
     }
+
     /// Used internally, not supposed to be exposed to other classes
     static BddCondManager* getBddCondManager() {
         if(bddCondMgr==NULL)
@@ -264,6 +276,7 @@ private:
 protected:
     static BddCondManager* bddCondMgr;		///< bbd manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
+    IndexToConditionMap indexToDDNodeMap;
 
 };
 
