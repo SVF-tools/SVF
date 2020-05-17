@@ -204,11 +204,17 @@ void BVDataPTAImpl::dumpTopLevelPtsTo() {
  * Dump all points-to including top-level (ValPN) and address-taken (ObjPN) variables
  */
 void BVDataPTAImpl::dumpAllPts() {
+    std::set<NodeID> pagNodes;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++) {
-        outs() << "----------------------------------------------\n";
-        dumpPts(it->first, this->getPts(it->first));
-        outs() << "----------------------------------------------\n";
+        pagNodes.insert(it->first);
     }
+
+    for (NodeID n : pagNodes) {
+        outs() << "----------------------------------------------\n";
+        dumpPts(n, this->getPts(n));
+    }
+
+    outs() << "----------------------------------------------\n";
 }
 
 
