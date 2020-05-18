@@ -5,7 +5,7 @@ echo "Setting up environment for SVF"
 # Please change LLVM_DIR_RELEASE before using it
 ########
 
-export LLVM_DIR_RELEASE=/home/ysui/llvm-9.0.0/llvm-9.0.0.obj
+export LLVM_DIR_RELEASE=/Users/yulei/Documents/llvm-10.0.0/llvm-10.0.0.obj
 
 if [ -z "$LLVM_DIR" ]
 then
