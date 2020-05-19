@@ -1,10 +1,10 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Stop script if any individual command fails.
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=9.0.0
+ENV llvm_version=10.0.0
 
 # Define dependencies.
 ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim"
@@ -18,11 +18,10 @@ RUN apt-get install -y $build_deps $lib_deps
 RUN echo "Building LLVM ${llvm_version}"
 RUN mkdir -p /home/jason/llvm
 WORKDIR /home/jason/llvm
-RUN wget "http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-RUN tar xf "clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-ENV LLVM_HOME=/home/jason/llvm/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-16.04/bin
-ENV LLVM_DIR=$LLVM_HOME
-ENV PATH=$LLVM_HOME:$PATH
+RUN wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+RUN tar -xvf "clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+ENV LLVM_DIR=/home/jason/llvm/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04
+ENV PATH=$LLVM_DIR:$PATH
 
 # Fetch and extract SVF source.
 RUN echo "Building SVF"

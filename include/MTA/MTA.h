@@ -48,13 +48,13 @@ public:
 
     virtual bool runOnModule(Module& module);
     /// We start the pass here
-    virtual bool runOnModule(SVFModule module);
+    virtual bool runOnModule(SVFModule* module);
     /// Compute MHP
-    virtual MHP* computeMHP(SVFModule module);
+    virtual MHP* computeMHP(SVFModule* module);
     /// Compute locksets
     virtual LockAnalysis* computeLocksets(TCT* tct);
     /// Perform detection
-    virtual void detect(SVFModule module);
+    virtual void detect(SVFModule* module);
 
     /// Pass name
     virtual StringRef getPassName() const {

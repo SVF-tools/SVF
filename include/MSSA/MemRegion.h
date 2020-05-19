@@ -30,9 +30,10 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "MemoryModel/PointerAnalysis.h"
-#include "Util/PTACallGraph.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/WorkList.h"
+#include "Graphs/ICFG.h"
 
 #include <set>
 
@@ -122,34 +123,34 @@ public:
     //@}
     ///Define mem region set
     typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef std::map<const PAGEdge*, const Function*> PAGEdgeToFunMap;
+    typedef std::map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
     typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef std::map<const Function*, PointsToList > FunToPointsToMap;
+    typedef std::map<const SVFFunction*, PointsToList > FunToPointsToMap;
     typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
-    typedef llvm::DenseMap<const Function*, MRSet> FunToMRsMap;
+    typedef DenseMap<const SVFFunction*, MRSet> FunToMRsMap;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef llvm::DenseMap<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef llvm::DenseMap<const StorePE*, MRSet> StoresToMRsMap;
-    typedef std::map<CallSite, MRSet> CallSiteToMRsMap;
+    typedef DenseMap<const LoadPE*, MRSet> LoadsToMRsMap;
+    typedef DenseMap<const StorePE*, MRSet> StoresToMRsMap;
+    typedef std::map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef llvm::DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
-    typedef llvm::DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef std::map<CallSite, PointsTo> CallSiteToPointsToMap;
+    typedef DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
+    typedef DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
+    typedef std::map<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef llvm::DenseMap<const Function*, NodeBS> FunToNodeBSMap;
+    typedef DenseMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef std::map<CallSite, NodeBS> CallSiteToNodeBSMap;
+    typedef std::map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
     typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
@@ -225,22 +226,22 @@ private:
     const MemRegion* getMR(const PointsTo& cpts) const;
 
     //Get all objects might pass into callee from a callsite
-    void collectCallSitePts(CallSite cs);
+    void collectCallSitePts(const CallBlockNode* cs);
 
     //Recursive collect points-to chain
     NodeBS& CollectPtsChain(NodeID id);
 
     /// Return the pts chain of all callsite arguments
-    inline NodeBS& getCallSiteArgsPts(CallSite cs) {
+    inline NodeBS& getCallSiteArgsPts(const CallBlockNode* cs) {
         return csToCallSiteArgsPtsMap[cs];
     }
     /// Return the pts chain of the return parameter of the callsite
-    inline NodeBS& getCallSiteRetPts(CallSite cs) {
+    inline NodeBS& getCallSiteRetPts(const CallBlockNode* cs) {
         return csToCallSiteRetPtsMap[cs];
     }
     /// Whether the object node is a non-local object
     /// including global, heap, and stack variable in recursions
-    bool isNonLocalObject(NodeID id, const Function* curFun) const;
+    bool isNonLocalObject(NodeID id, const SVFFunction* curFun) const;
 
     /// Get all the objects in callee's modref escaped via global objects (the chain pts of globals)
     void getEscapObjviaGlobals(NodeBS& globs, const NodeBS& pts);
@@ -261,7 +262,7 @@ protected:
     PtsToRepPtsSetMap cptsToRepCPtsMap;
 
     /// Generate a memory region and put in into functions which use it
-    void createMR(const Function* fun, const PointsTo& cpts);
+    void createMR(const SVFFunction* fun, const PointsTo& cpts);
 
     /// Collect all global variables for later escape analysis
     void collectGlobals();
@@ -286,7 +287,7 @@ protected:
         return mr->getPointsTo().intersects(cpts);
     }
     /// Get all aliased mem regions from function fun according to cpts
-    virtual inline void getAliasMemRegions(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
+    virtual inline void getAliasMemRegions(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) {
         for(MRSet::const_iterator it = funToMRsMap[fun].begin(), eit = funToMRsMap[fun].end(); it!=eit; ++it) {
             if(isAliasedMR(cpts,*it))
                 aliasMRs.insert(*it);
@@ -294,13 +295,13 @@ protected:
     }
 
     /// Get memory regions for a load statement according to cpts.
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
 
     /// Get memory regions for call site ref according to cpts.
-    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun) {
+    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
@@ -309,33 +310,33 @@ protected:
     virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
     /// Get Mod-Ref of a callee function
-    virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, const Function* fun);
+    virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const SVFFunction* fun);
 
 
     /// Add cpts to store/load
     //@{
-    inline void addCPtsToStore(PointsTo& cpts, const StorePE *st, const Function* fun) {
+    inline void addCPtsToStore(PointsTo& cpts, const StorePE *st, const SVFFunction* fun) {
         storesToPointsToMap[st] = cpts;
         funToPointsToMap[fun].insert(cpts);
         addModSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToLoad(PointsTo& cpts, const LoadPE *ld, const Function* fun) {
+    inline void addCPtsToLoad(PointsTo& cpts, const LoadPE *ld, const SVFFunction* fun) {
         loadsToPointsToMap[ld] = cpts;
         funToPointsToMap[fun].insert(cpts);
         addRefSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToCallSiteRefs(PointsTo& cpts, CallSite cs) {
+    inline void addCPtsToCallSiteRefs(PointsTo& cpts, const CallBlockNode* cs) {
         callsiteToRefPointsToMap[cs] |= cpts;
-        funToPointsToMap[cs.getCaller()].insert(cpts);
+        funToPointsToMap[cs->getCaller()].insert(cpts);
     }
-    inline void addCPtsToCallSiteMods(PointsTo& cpts, CallSite cs) {
+    inline void addCPtsToCallSiteMods(PointsTo& cpts, const CallBlockNode* cs) {
         callsiteToModPointsToMap[cs] |= cpts;
-        funToPointsToMap[cs.getCaller()].insert(cpts);
+        funToPointsToMap[cs->getCaller()].insert(cpts);
     }
-    inline bool hasCPtsList(const Function* fun) const {
+    inline bool hasCPtsList(const SVFFunction* fun) const {
         return funToPointsToMap.find(fun)!=funToPointsToMap.end();
     }
-    inline PointsToList& getPointsToList(const Function* fun) {
+    inline PointsToList& getPointsToList(const SVFFunction* fun) {
         return funToPointsToMap[fun];
     }
     inline FunToPointsToMap& getFunToPointsToList() {
@@ -345,36 +346,36 @@ protected:
     /// Add/Get methods for side-effect of functions and callsites
     //@{
     /// Add indirect uses an memory object in the function
-    void addRefSideEffectOfFunction(const Function* fun, const NodeBS& refs);
+    void addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    void addModSideEffectOfFunction(const Function* fun, const NodeBS& mods);
+    void addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods);
     /// Add indirect uses an memory object in the function
-    bool addRefSideEffectOfCallSite(CallSite cs, const NodeBS& refs);
+    bool addRefSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    bool addModSideEffectOfCallSite(CallSite cs, const NodeBS& mods);
+    bool addModSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& mods);
 
     /// Get indirect refs of a function
-    inline const NodeBS& getRefSideEffectOfFunction(const Function* fun) {
+    inline const NodeBS& getRefSideEffectOfFunction(const SVFFunction* fun) {
         return funToRefsMap[fun];
     }
     /// Get indirect mods of a function
-    inline const NodeBS& getModSideEffectOfFunction(const Function* fun) {
+    inline const NodeBS& getModSideEffectOfFunction(const SVFFunction* fun) {
         return funToModsMap[fun];
     }
     /// Get indirect refs of a callsite
-    inline const NodeBS& getRefSideEffectOfCallSite(CallSite cs) {
+    inline const NodeBS& getRefSideEffectOfCallSite(const CallBlockNode* cs) {
         return csToRefsMap[cs];
     }
     /// Get indirect mods of a callsite
-    inline const NodeBS& getModSideEffectOfCallSite(CallSite cs) {
+    inline const NodeBS& getModSideEffectOfCallSite(const CallBlockNode* cs) {
         return csToModsMap[cs];
     }
     /// Has indirect refs of a callsite
-    inline bool hasRefSideEffectOfCallSite(CallSite cs) {
+    inline bool hasRefSideEffectOfCallSite(const CallBlockNode* cs) {
         return csToRefsMap.find(cs) != csToRefsMap.end();
     }
     /// Has indirect mods of a callsite
-    inline bool hasModSideEffectOfCallSite(CallSite cs) {
+    inline bool hasModSideEffectOfCallSite(const CallBlockNode* cs) {
         return csToModsMap.find(cs) != csToModsMap.end();
     }
     //@}
@@ -393,14 +394,14 @@ public:
     virtual void generateMRs();
 
     /// Get the function which PAG Edge located
-    const Function* getFunction(const PAGEdge* pagEdge) const {
+    const SVFFunction* getFunction(const PAGEdge* pagEdge) const {
         PAGEdgeToFunMap::const_iterator it = pagEdgeToFunMap.find(pagEdge);
         assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global PAG edge");
         return it->second;
     }
     /// Get Memory Region set
     //@{
-    inline MRSet& getFunMRSet(const Function* fun) {
+    inline MRSet& getFunMRSet(const SVFFunction* fun) {
         return funToMRsMap[fun];
     }
     inline MRSet& getLoadMRSet(const LoadPE* load) {
@@ -409,39 +410,44 @@ public:
     inline MRSet& getStoreMRSet(const StorePE* store) {
         return storesToMRsMap[store];
     }
-    inline bool hasRefMRSet(CallSite cs) {
+    inline bool hasRefMRSet(const CallBlockNode* cs) {
         return callsiteToRefMRsMap.find(cs)!=callsiteToRefMRsMap.end();
     }
-    inline bool hasModMRSet(CallSite cs) {
+    inline bool hasModMRSet(const CallBlockNode* cs) {
         return callsiteToModMRsMap.find(cs)!=callsiteToModMRsMap.end();
     }
-    inline MRSet& getCallSiteRefMRSet(CallSite cs) {
+    inline MRSet& getCallSiteRefMRSet(const CallBlockNode* cs) {
         return callsiteToRefMRsMap[cs];
     }
-    inline MRSet& getCallSiteModMRSet(CallSite cs) {
+    inline MRSet& getCallSiteModMRSet(const CallBlockNode* cs) {
         return callsiteToModMRsMap[cs];
     }
     //@}
     /// Whether this instruction has PAG Edge
     inline bool hasPAGEdgeList(const Instruction* inst) {
+    	PAG* pag = pta->getPAG();
 		if (ptrOnlyMSSA)
-			return pta->getPAG()->hasPTAPAGEdgeList(inst);
+			return pag->hasPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
 		else
-			return pta->getPAG()->hasPAGEdgeList(inst);
+			return pag->hasPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
     }
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
     inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst) {
+    	PAG* pag = pta->getPAG();
 		if (ptrOnlyMSSA)
-			return pta->getPAG()->getInstPTAPAGEdgeList(inst);
+			return pag->getInstPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
 		else
-			return pta->getPAG()->getInstPAGEdgeList(inst);
+			return pag->getInstPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
     }
     
     /// getModRefInfo APIs
     //@{
-    ModRefInfo getModRefInfo(CallSite cs);
-    ModRefInfo getModRefInfo(CallSite cs, const Value* V);
-    ModRefInfo getModRefInfo(CallSite cs1, CallSite cs2);
+    /// Collect mod ref for external callsite other than heap alloc external call
+    PointsTo getModInfoForCall(const CallBlockNode* cs);
+    PointsTo getRefInfoForCall(const CallBlockNode* cs);
+    ModRefInfo getModRefInfo(const CallBlockNode* cs);
+    ModRefInfo getModRefInfo(const CallBlockNode* cs, const Value* V);
+    ModRefInfo getModRefInfo(const CallBlockNode* cs1, const CallBlockNode* cs2);
     //@}
 
 };

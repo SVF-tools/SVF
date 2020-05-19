@@ -27,10 +27,10 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
-#include "Util/SVFUtil.h"
-#include "Util/SVFModule.h"
+#include "SVF-FE/LLVMUtil.h"
 
 using namespace SVFUtil;
 
@@ -59,7 +59,7 @@ void MRGenerator::destroy() {
 /*!
  * Generate a memory region and put in into functions which use it
  */
-void MRGenerator::createMR(const Function* fun, const PointsTo& cpts) {
+void MRGenerator::createMR(const SVFFunction* fun, const PointsTo& cpts) {
     const PointsTo& repCPts = getRepPointsTo(cpts);
     MemRegion mr(repCPts);
     MRSet::const_iterator mit = memRegSet.find(&mr);
@@ -119,7 +119,7 @@ void MRGenerator::generateMRs() {
     /// collect mod-ref for loads/stores
     collectModRefForLoadStore();
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For CallSite\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For const CallBlockNode*\n"));
 
     /// collect mod-ref for calls
     collectModRefForCall();
@@ -136,16 +136,16 @@ void MRGenerator::generateMRs() {
  */
 void MRGenerator::collectModRefForLoadStore() {
 
-    SVFModule svfModule = pta->getModule();
-    for (SVFModule::iterator fi = svfModule.begin(), efi = svfModule.end(); fi != efi;
+    SVFModule* svfModule = pta->getModule();
+    for (SVFModule::const_iterator fi = svfModule->begin(), efi = svfModule->end(); fi != efi;
             ++fi) {
-        const Function& fun = **fi;
+        const SVFFunction& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
-        if (IgnoreDeadFun && isDeadFunction(&fun))
+        if (IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
             continue;
 
-        for (Function::const_iterator iter = fun.begin(), eiter = fun.end();
+        for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();
                 iter != eiter; ++iter) {
             const BasicBlock& bb = *iter;
             for (BasicBlock::const_iterator bit = bb.begin(), ebit = bb.end();
@@ -189,8 +189,9 @@ void MRGenerator::collectModRefForCall() {
 
     /// collect points-to information for callsites
     for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
-            eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it)
-        collectCallSitePts(*it);
+            eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it){
+        collectCallSitePts((*it));
+    }
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tPerform Callsite Mod-Ref \n"));
 
@@ -210,17 +211,18 @@ void MRGenerator::collectModRefForCall() {
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tAdd PointsTo to Callsites \n"));
 
-    for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
-            eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it) {
-        if(hasRefSideEffectOfCallSite(*it)) {
-            NodeBS refs = getRefSideEffectOfCallSite(*it);
-            addCPtsToCallSiteRefs(refs,*it);
+    for(std::set<CallSite>::const_iterator it =  SymbolTableInfo::Symbolnfo()->getCallSiteSet().begin(),
+            eit = SymbolTableInfo::Symbolnfo()->getCallSiteSet().end(); it!=eit; ++it) {
+    	const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode((*it).getInstruction());
+        if(hasRefSideEffectOfCallSite(callBlockNode)) {
+            NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);
+            addCPtsToCallSiteRefs(refs,callBlockNode);
         }
-        if(hasModSideEffectOfCallSite(*it)) {
-            NodeBS mods = getModSideEffectOfCallSite(*it);
+        if(hasModSideEffectOfCallSite(callBlockNode)) {
+            NodeBS mods = getModSideEffectOfCallSite(callBlockNode);
             /// mods are treated as both def and use of memory objects
-            addCPtsToCallSiteMods(mods,*it);
-            addCPtsToCallSiteRefs(mods,*it);
+            addCPtsToCallSiteMods(mods,callBlockNode);
+            addCPtsToCallSiteRefs(mods,callBlockNode);
         }
     }
 }
@@ -274,7 +276,7 @@ void MRGenerator::partitionMRs() {
     /// Generate memory regions according to condition pts after computing superset
     for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it) {
-        const Function* fun = it->first;
+        const SVFFunction* fun = it->first;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
             createMR(fun,*cit);
         }
@@ -290,7 +292,7 @@ void MRGenerator::updateAliasMRs() {
     /// update stores with its aliased regions
     for(StoresToPointsToMap::const_iterator it = storesToPointsToMap.begin(), eit = storesToPointsToMap.end(); it!=eit; ++it) {
         MRSet aliasMRs;
-        const Function* fun = getFunction(it->first);
+        const SVFFunction* fun = getFunction(it->first);
         const PointsTo& storeCPts = it->second;
         getAliasMemRegions(aliasMRs,storeCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait) {
@@ -300,7 +302,7 @@ void MRGenerator::updateAliasMRs() {
 
     for(LoadsToPointsToMap::const_iterator it = loadsToPointsToMap.begin(), eit = loadsToPointsToMap.end(); it!=eit; ++it) {
         MRSet aliasMRs;
-        const Function* fun = getFunction(it->first);
+        const SVFFunction* fun = getFunction(it->first);
         const PointsTo& loadCPts = it->second;
         getMRsForLoad(aliasMRs, loadCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait) {
@@ -311,7 +313,7 @@ void MRGenerator::updateAliasMRs() {
     /// update callsites with its aliased regions
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToModPointsToMap.begin(),
             eit = callsiteToModPointsToMap.end(); it!=eit; ++it) {
-        const Function* fun = it->first.getCaller();
+        const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
         const PointsTo& callsiteModCPts = it->second;
         getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
@@ -321,7 +323,7 @@ void MRGenerator::updateAliasMRs() {
     }
     for(CallSiteToPointsToMap::const_iterator it =  callsiteToRefPointsToMap.begin(),
             eit = callsiteToRefPointsToMap.end(); it!=eit; ++it) {
-        const Function* fun = it->first.getCaller();
+        const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
         const PointsTo& callsiteRefCPts = it->second;
         getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
@@ -335,7 +337,7 @@ void MRGenerator::updateAliasMRs() {
 /*!
  * Add indirect uses an memory object in the function
  */
-void MRGenerator::addRefSideEffectOfFunction(const Function* fun, const NodeBS& refs) {
+void MRGenerator::addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs) {
     for(NodeBS::iterator it = refs.begin(), eit = refs.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToRefsMap[fun].set(*it);
@@ -345,7 +347,7 @@ void MRGenerator::addRefSideEffectOfFunction(const Function* fun, const NodeBS& 
 /*!
  * Add indirect def an memory object in the function
  */
-void MRGenerator::addModSideEffectOfFunction(const Function* fun, const NodeBS& mods) {
+void MRGenerator::addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods) {
     for(NodeBS::iterator it = mods.begin(), eit = mods.end(); it!=eit; ++it) {
         if(isNonLocalObject(*it,fun))
             funToModsMap[fun].set(*it);
@@ -355,12 +357,12 @@ void MRGenerator::addModSideEffectOfFunction(const Function* fun, const NodeBS& 
 /*!
  * Add indirect uses an memory object in the function
  */
-bool MRGenerator::addRefSideEffectOfCallSite(CallSite cs, const NodeBS& refs) {
+bool MRGenerator::addRefSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& refs) {
     if(!refs.empty()) {
         NodeBS refset = refs;
         refset &= getCallSiteArgsPts(cs);
         getEscapObjviaGlobals(refset,refs);
-        addRefSideEffectOfFunction(cs.getCaller(),refset);
+        addRefSideEffectOfFunction(cs->getCaller(),refset);
         return csToRefsMap[cs] |= refset;
     }
     return false;
@@ -369,12 +371,12 @@ bool MRGenerator::addRefSideEffectOfCallSite(CallSite cs, const NodeBS& refs) {
 /*!
  * Add indirect def an memory object in the function
  */
-bool MRGenerator::addModSideEffectOfCallSite(CallSite cs, const NodeBS& mods) {
+bool MRGenerator::addModSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& mods) {
     if(!mods.empty()) {
         NodeBS modset = mods;
         modset &= (getCallSiteArgsPts(cs) | getCallSiteRetPts(cs));
         getEscapObjviaGlobals(modset,mods);
-        addModSideEffectOfFunction(cs.getCaller(),modset);
+        addModSideEffectOfFunction(cs->getCaller(),modset);
         return csToModsMap[cs] |= modset;
     }
     return false;
@@ -397,13 +399,16 @@ void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist) {
 /*!
  * Get all objects might pass into and pass out of callee(s) from a callsite
  */
-void MRGenerator::collectCallSitePts(CallSite cs) {
+void MRGenerator::collectCallSitePts(const CallBlockNode* cs) {
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
+    PAG* pag = pta->getPAG();
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite().getInstruction());
 
     WorkList worklist;
-    if (pta->getPAG()->hasCallSiteArgsMap(cs)) {
-        const PAG::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(cs);
+    if (pag->hasCallSiteArgsMap(callBlockNode)) {
+        const PAG::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
         for(PAG::PAGNodeList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA) {
             const PAGNode* node = *itA;
             if(node->isPointer())
@@ -421,8 +426,8 @@ void MRGenerator::collectCallSitePts(CallSite cs) {
     /// collect the pts chain of the return argument
     NodeBS& retPts = csToCallSiteRetPtsMap[cs];
 
-    if (pta->getPAG()->callsiteHasRet(cs)) {
-        const PAGNode* node = pta->getPAG()->getCallSiteRet(cs);
+    if (pta->getPAG()->callsiteHasRet(retBlockNode)) {
+        const PAGNode* node = pta->getPAG()->getCallSiteRet(retBlockNode);
         if(node->isPointer()){
             PointsTo& tmp = pta->getPts(node->getId());
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
@@ -431,6 +436,7 @@ void MRGenerator::collectCallSitePts(CallSite cs) {
     }
 
 }
+
 
 /*!
  * Recurisively collect all points-to of the whole struct fields
@@ -478,7 +484,7 @@ void MRGenerator::getEscapObjviaGlobals(NodeBS& globs, const NodeBS& calleeModRe
  * Whether the object node is a non-local object
  * including global, heap, and stack variable in recursions
  */
-bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
+bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const {
     const MemObj* obj = pta->getPAG()->getObject(id);
     assert(obj && "object not found!!");
     /// if the object is heap or global
@@ -488,7 +494,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
     /// or a local variable is in function recursion cycles
     else if(obj->isStack()) {
         if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal())) {
-            const Function* fun = local->getParent()->getParent();
+            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
             if(fun!=curFun)
                 return true;
             else
@@ -502,10 +508,10 @@ bool MRGenerator::isNonLocalObject(NodeID id, const Function* curFun) const {
 /*!
  * Get Mod-Ref of a callee function
  */
-bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, const Function* callee){
+bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const SVFFunction* callee){
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
-    if(isHeapAllocExtCall(cs)){
-        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs.getInstruction());
+    if(isHeapAllocExtCall(cs->getCallSite())){
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
                 ebit = pagEdgeList.end(); bit != ebit; ++bit) {
             const PAGEdge* edge = *bit;
@@ -513,7 +519,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, CallSite cs, co
                 mod.set(addr->getSrcID());
         }
     }
-    /// otherwise, we find the mod/ref sets from the callee function
+    /// otherwise, we find the mod/ref sets from the callee function, who has definition and been processed
     else{
         mod = getModSideEffectOfFunction(callee);
         ref = getRefSideEffectOfFunction(callee);
@@ -541,7 +547,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getDirectCalls().begin(),
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit) {
             NodeBS mod, ref;
-            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            const CallBlockNode* cs = (*cit);
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
@@ -550,7 +556,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
         for(PTACallGraphEdge::CallInstSet::iterator cit = edge->getIndirectCalls().begin(),
                 ecit = edge->getIndirectCalls().end(); cit!=ecit; ++cit) {
             NodeBS mod, ref;
-            CallSite cs = SVFUtil::getLLVMCallSite(*cit);
+            const CallBlockNode* cs = (*cit);
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
@@ -559,12 +565,50 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
 }
 
 /*!
+ * Obtain the mod sets for a call, used for external ModRefInfo queries
+ */
+PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs) {
+	if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
+		PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+		PointsTo mods;
+		for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
+				pagEdgeList.end(); bit != ebit; ++bit) {
+			const PAGEdge* edge = *bit;
+			if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
+				mods |= pta->getPts(st->getDstID());
+		}
+		return mods;
+	} else {
+		return getModSideEffectOfCallSite(cs);
+	}
+}
+
+/*!
+ * Obtain the ref sets for a call, used for external ModRefInfo queries
+ */
+PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs) {
+	if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite())) {
+		PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+		PointsTo refs;
+		for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
+				pagEdgeList.end(); bit != ebit; ++bit) {
+			const PAGEdge* edge = *bit;
+			if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
+				refs |= pta->getPts(ld->getSrcID());
+		}
+		return refs;
+	} else {
+		return getRefSideEffectOfCallSite(cs);
+	}
+}
+
+/*!
  * Determine whether a CallSite instruction can mod or ref
  * any memory location
  */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs) {
-    bool ref = hasRefSideEffectOfCallSite(cs);
-    bool mod = hasModSideEffectOfCallSite(cs);
+ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs) {
+    bool ref = !getRefInfoForCall(cs).empty();
+    bool mod = !getModInfoForCall(cs).empty();
 
     if (mod && ref)
         return ModRefInfo::ModRef;
@@ -577,18 +621,25 @@ ModRefInfo MRGenerator::getModRefInfo(CallSite cs) {
 }
 
 /*!
- * Determine whether a CallSite instruction can mod or ref
+ * Determine whether a const CallBlockNode* instruction can mod or ref
  * a specific memory location pointed by V
  */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs, const Value* V) {
+ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V) {
     bool ref = false;
     bool mod = false;
 
     if (pta->getPAG()->hasValueNode(V)) {
-        const PointsTo& pts(pta->getPts(pta->getPAG()->getValueNode(V)));
-        if (hasRefSideEffectOfCallSite(cs) && getRefSideEffectOfCallSite(cs).intersects(pts))
+        const PointsTo pts(pta->getPts(pta->getPAG()->getValueNode(V)));
+        const PointsTo csRef = getRefInfoForCall(cs);
+        const PointsTo csMod = getModInfoForCall(cs);
+        PointsTo ptsExpanded, csRefExpanded, csModExpanded;
+        pta->expandFIObjs(pts, ptsExpanded);
+        pta->expandFIObjs(csRef, csRefExpanded);
+        pta->expandFIObjs(csMod, csModExpanded);
+        
+        if (csRefExpanded.intersects(ptsExpanded))
             ref = true;
-        if (hasModSideEffectOfCallSite(cs) && getModSideEffectOfCallSite(cs).intersects(pts))
+        if (csModExpanded.intersects(ptsExpanded))
             mod = true;
     }
 
@@ -603,9 +654,9 @@ ModRefInfo MRGenerator::getModRefInfo(CallSite cs, const Value* V) {
 }
 
 /*!
- * Determine mod-ref relations between two CallSite instructions
+ * Determine mod-ref relations between two const CallBlockNode* instructions
  */
-ModRefInfo MRGenerator::getModRefInfo(CallSite cs1, CallSite cs2) {
+ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockNode* cs2) {
     bool ref = false;
     bool mod = false;
 
@@ -613,19 +664,24 @@ ModRefInfo MRGenerator::getModRefInfo(CallSite cs1, CallSite cs2) {
     if (getModRefInfo(cs1) == ModRefInfo::NoModRef || getModRefInfo(cs2) == ModRefInfo::NoModRef)
         return ModRefInfo::NoModRef;
 
-    const PointsTo& cs1Ref = getRefSideEffectOfCallSite(cs1);
-    const PointsTo& cs1Mod = getModSideEffectOfCallSite(cs1);
-    const PointsTo& cs2Ref = getRefSideEffectOfCallSite(cs2);
-    const PointsTo& cs2Mod = getModSideEffectOfCallSite(cs2);
+    const PointsTo cs1Ref = getRefInfoForCall(cs1);
+    const PointsTo cs1Mod = getModInfoForCall(cs1);
+    const PointsTo cs2Ref = getRefInfoForCall(cs2);
+    const PointsTo cs2Mod = getModInfoForCall(cs2);
+    PointsTo cs1RefExpanded, cs1ModExpanded, cs2RefExpanded, cs2ModExpanded;
+    pta->expandFIObjs(cs1Ref, cs1RefExpanded);
+    pta->expandFIObjs(cs1Mod, cs1ModExpanded);
+    pta->expandFIObjs(cs2Ref, cs2RefExpanded);
+    pta->expandFIObjs(cs2Mod, cs2ModExpanded);
 
     /// Ref: cs1 ref memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod))
+    if (cs1RefExpanded.intersects(cs2ModExpanded))
         ref = true;
     /// Mod: cs1 mod memory ref or mod by cs2
-    if (cs1Mod.intersects(cs2Ref) || cs1Mod.intersects(cs2Mod))
+    if (cs1ModExpanded.intersects(cs2RefExpanded) || cs1ModExpanded.intersects(cs2ModExpanded))
         mod = true;
     /// ModRef: cs1 ref and mod memory mod by cs2
-    if (cs1Ref.intersects(cs2Mod) && cs1Mod.intersects(cs2Mod))
+    if (cs1RefExpanded.intersects(cs2ModExpanded) && cs1ModExpanded.intersects(cs2ModExpanded))
         ref = mod = true;
 
     if (ref && mod)

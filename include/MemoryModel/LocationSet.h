@@ -34,7 +34,7 @@
 #define LOCATIONSET_H_
 
 
-#include "Util/SVFUtil.h"
+#include "Util/BasicTypes.h"
 
 /*!
  * Field information of an aggregate object
@@ -212,18 +212,21 @@ public:
     }
 
     /// Dump location set
-    void dump() const {
+    std::string dump() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
 
-        SVFUtil::outs() << "LocationSet\tField_Index: " << getOffset();
-        SVFUtil::outs() << "\tOffset: " << getByteOffset()
+        rawstr << "LocationSet\tField_Index: " << getOffset();
+        rawstr << "\tOffset: " << getByteOffset()
                      << ",\tNum-Stride: {";
         const ElemNumStridePairVec& vec = getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
         ElemNumStridePairVec::const_iterator eit = vec.end();
         for (; it != eit; ++it) {
-            SVFUtil::outs() << " (" << it->first << "," << it->second << ")";
+        	rawstr << " (" << it->first << "," << it->second << ")";
         }
-        SVFUtil::outs() << " }\n";
+        rawstr << " }\n";
+        return rawstr.str();
     }
 private:
     /// Return TRUE if successfully increased any index by 1

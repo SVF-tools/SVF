@@ -29,7 +29,7 @@
 
 
 #include "SABER/SrcSnkDDA.h"
-#include "MSSA/SVFGStat.h"
+#include "Graphs/SVFGStat.h"
 
 using namespace SVFUtil;
 
@@ -39,7 +39,7 @@ static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),
 static llvm::cl::opt<unsigned> cxtLimit("cxtlimit",  llvm::cl::init(3),
                                   llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
-void SrcSnkDDA::analyze(SVFModule module) {
+void SrcSnkDDA::analyze(SVFModule* module) {
 
     initialize(module);
 
@@ -80,6 +80,59 @@ void SrcSnkDDA::analyze(SVFModule module) {
     }
 
     finalize();
+}
+
+
+/*!
+ * determine whether a SVFGNode n is in a allocation wrapper function,
+ * if so, return all SVFGNodes which receive the value of node n
+ */
+bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet) {
+
+    bool reachFunExit = false;
+
+    WorkList worklist;
+    worklist.push(src);
+    SVFGNodeBS visited;
+    while (!worklist.empty()) {
+        const SVFGNode* node  = worklist.pop();
+
+        if(visited.test(node->getId())==0)
+            visited.set(node->getId());
+        else
+            continue;
+
+        for (SVFGNode::const_iterator it = node->OutEdgeBegin(), eit =
+                    node->OutEdgeEnd(); it != eit; ++it) {
+            const SVFGEdge* edge = (*it);
+            assert(edge->isDirectVFGEdge() && "the edge should always be direct VF");
+            // if this is a call edge
+            if(edge->isCallDirectVFGEdge()) {
+                return false;
+            }
+            // if this is a return edge
+            else if(edge->isRetDirectVFGEdge()) {
+                reachFunExit = true;
+                csIdSet.insert(getSVFG()->getCallSite(SVFUtil::cast<RetDirSVFGEdge>(edge)->getCallSiteId()));
+            }
+            // if this is an intra edge
+            else {
+                const SVFGNode* succ = edge->getDstNode();
+                if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
+                        || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
+                        || SVFUtil::isa<ActualRetSVFGNode>(succ)) {
+                    worklist.push(succ);
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+    }
+    if(reachFunExit)
+        return true;
+    else
+        return false;
 }
 
 

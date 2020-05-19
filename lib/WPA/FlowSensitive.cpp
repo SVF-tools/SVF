@@ -27,10 +27,14 @@
  *      Author: Yulei Sui
  */
 
+#include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
+#include "Util/TypeBasedHeapCloning.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
+
+static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false), llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses"));
 
 using namespace SVFUtil;
 
@@ -39,11 +43,12 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(SVFModule svfModule) {
+void FlowSensitive::initialize(SVFModule* svfModule) {
     PointerAnalysis::initialize(svfModule);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
-    svfg = memSSA.buildPTROnlySVFG(ander);
+    // When evaluating ctir aliases, we want the whole SVFG.
+    svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
@@ -53,7 +58,7 @@ void FlowSensitive::initialize(SVFModule svfModule) {
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(SVFModule svfModule) {
+void FlowSensitive::analyze(SVFModule* svfModule) {
     /// Initialization for the Solver
     initialize(svfModule);
 
@@ -77,6 +82,10 @@ void FlowSensitive::analyze(SVFModule svfModule) {
 
     double end = stat->getClk();
     solveTime += (end - start) / TIMEINTERVAL;
+
+    if (CTirAliasEval) {
+        printCTirAliasStats();
+    }
 
     /// finalize the analysis
     finalize();
@@ -551,10 +560,10 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
     CallEdgeMap::const_iterator iter = newEdges.begin();
     CallEdgeMap::const_iterator eiter = newEdges.end();
     for (; iter != eiter; iter++) {
-        CallSite cs = iter->first;
+        const CallBlockNode* cs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
-            const Function * func = *func_iter;
+            const SVFFunction*  func = *func_iter;
             svfg->connectCallerAndCallee(cs, func, edges);
         }
     }
@@ -621,4 +630,81 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
             return true;
     }
     return false;
+}
+
+void FlowSensitive::printCTirAliasStats(void) {
+    DCHGraph *dchg = SVFUtil::dyn_cast<DCHGraph>(chgraph);
+    assert(dchg && "eval-ctir-aliases needs DCHG.");
+
+    // < SVFG node ID (loc), PAG node of interest (top-level pointer) >.
+    std::set<std::pair<NodeID, NodeID>> cmpLocs;
+    for (SVFG::iterator npair = svfg->begin(); npair != svfg->end(); ++npair) {
+        NodeID loc = npair->first;
+        SVFGNode *node = npair->second;
+
+        // Only care about loads, stores, and GEPs.
+        if (StmtSVFGNode *stmt = SVFUtil::dyn_cast<StmtSVFGNode>(node)) {
+            if (!SVFUtil::isa<LoadSVFGNode>(stmt) && !SVFUtil::isa<StoreSVFGNode>(stmt)
+                && !SVFUtil::isa<GepSVFGNode>(stmt)) {
+                continue;
+            }
+
+            if (!TypeBasedHeapCloning::getRawCTirMetadata(stmt->getInst() ? stmt->getInst() : stmt->getPAGEdge()->getValue())) {
+                continue;
+            }
+
+            NodeID p = 0;
+            if (SVFUtil::isa<LoadSVFGNode>(stmt)) {
+                p = stmt->getPAGSrcNodeID();
+            } else if (SVFUtil::isa<StoreSVFGNode>(stmt)) {
+                p = stmt->getPAGDstNodeID();
+            } else if (SVFUtil::isa<GepSVFGNode>(stmt)) {
+                p = stmt->getPAGSrcNodeID();
+            } else {
+                // Not interested.
+                continue;
+            }
+
+            cmpLocs.insert(std::make_pair(loc, p));
+        }
+    }
+
+    unsigned mayAliases = 0, noAliases = 0;
+    countAliases(cmpLocs, &mayAliases, &noAliases);
+
+    unsigned total = mayAliases + noAliases;
+    llvm::outs() << "eval-ctir-aliases "
+                 << total << " "
+                 << mayAliases << " "
+                 << noAliases << " "
+                 << "\n";
+    llvm::outs() << "  " << "TOTAL : " << total << "\n"
+                 << "  " << "MAY   : " << mayAliases << "\n"
+                 << "  " << "MAY % : " << 100 * ((double)mayAliases/(double)(total)) << "\n"
+                 << "  " << "NO    : " << noAliases << "\n"
+                 << "  " << "NO  % : " << 100 * ((double)noAliases/(double)(total)) << "\n";
+}
+
+void FlowSensitive::countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) {
+    for (std::pair<NodeID, NodeID> locPA : cmp) {
+        // loc doesn't make a difference for FSPTA.
+        NodeID p = locPA.second;
+        for (std::pair<NodeID, NodeID> locPB : cmp) {
+            if (locPB == locPA) continue;
+
+            NodeID q = locPB.second;
+
+            switch (alias(p, q)) {
+            case llvm::NoAlias:
+                ++(*noAliases);
+                break;
+            case llvm::MayAlias:
+                ++(*mayAliases);
+                break;
+            default:
+                assert("Not May/NoAlias?");
+            }
+        }
+    }
+
 }

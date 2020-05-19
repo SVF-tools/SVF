@@ -36,14 +36,13 @@
 /*!
  * Static Memory Leak Detector
  */
-class LeakChecker : public SrcSnkDDA, public ModulePass {
+class LeakChecker : public SrcSnkDDA {
 
 public:
-    typedef std::map<const SVFGNode*,CallSite> SVFGNodeToCSIDMap;
-    typedef FIFOWorkList<CallSite> CSWorkList;
+    typedef std::map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
+    typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
-    typedef PAG::CallSiteSet CallSiteSet;
     enum LEAK_TYPE {
         NEVER_FREE_LEAK,
         CONTEXT_LEAK,
@@ -51,37 +50,18 @@ public:
         GLOBAL_LEAK
     };
 
-    /// Pass ID
-    static char ID;
-
     /// Constructor
-    LeakChecker(char id = ID): ModulePass(ID) {
+    LeakChecker() {
     }
     /// Destructor
     virtual ~LeakChecker() {
     }
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        return runOnModule(svfModule);
-    }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;
-    }
-
-    /// Get pass name
-    virtual StringRef getPassName() const {
-        return "Static Memory Leak Analysis";
-    }
-
-    /// Pass dependence
-    virtual void getAnalysisUsage(AnalysisUsage& au) const {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
     }
 
     /// Initialize sources and sinks
@@ -90,11 +70,11 @@ public:
     virtual void initSrcs();
     virtual void initSnks();
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const Function* fun) {
+    virtual inline bool isSourceLikeFun(const SVFFunction* fun) {
         return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const Function* fun) {
+    virtual inline bool isSinkLikeFun(const SVFFunction* fun) {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
     /// Identify allocation wrappers
@@ -123,15 +103,15 @@ protected:
 
     /// Validate test cases for regression test purpose
     void testsValidation(const ProgSlice* slice);
-    void validateSuccessTests(const SVFGNode* source, const Function* fun);
-    void validateExpectedFailureTests(const SVFGNode* source, const Function* fun);
+    void validateSuccessTests(const SVFGNode* source, const SVFFunction* fun);
+    void validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun);
 
     /// Record a source to its callsite
     //@{
-    inline void addSrcToCSID(const SVFGNode* src, CallSite cs) {
+    inline void addSrcToCSID(const SVFGNode* src, const CallBlockNode* cs) {
         srcToCSIDMap[src] = cs;
     }
-    inline CallSite getSrcCSID(const SVFGNode* src) {
+    inline const CallBlockNode* getSrcCSID(const SVFGNode* src) {
         SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;

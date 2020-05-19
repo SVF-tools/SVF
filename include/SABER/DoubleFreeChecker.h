@@ -39,11 +39,8 @@
 class DoubleFreeChecker : public LeakChecker {
 
 public:
-    /// Pass ID
-    static char ID;
-
     /// Constructor
-    DoubleFreeChecker(char id = ID): LeakChecker(ID) {
+    DoubleFreeChecker(): LeakChecker() {
     }
 
     /// Destructor
@@ -51,21 +48,10 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;
-    }
-
-    /// Get pass name
-    virtual inline StringRef getPassName() const {
-        return "Double Free Analysis";
-    }
-
-    /// Pass dependence
-    virtual void getAnalysisUsage(AnalysisUsage& au) const {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
     }
 
     /// Report file/close bugs

@@ -29,8 +29,8 @@
  */
 
 
+#include "SVF-FE/LLVMUtil.h"
 #include "Util/PathCondAllocator.h"
-#include "Util/DataFlowUtil.h"
 #include "Util/DPItem.h"
 #include <limits.h>
 
@@ -50,14 +50,14 @@ static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
 /*!
  * Allocate path condition for each branch
  */
-void PathCondAllocator::allocate(const SVFModule M) {
+void PathCondAllocator::allocate(const SVFModule* M) {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (SVFModule::const_iterator fit = M.begin(); fit != M.end(); ++fit) {
-        const Function * func = *fit;
+    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit) {
+        const SVFFunction * func = *fit;
         if (!SVFUtil::isExtCall(func)) {
             // Allocate conditions for a program.
-            for (Function::const_iterator bit = func->begin(), ebit = func->end(); bit != ebit; ++bit) {
+            for (Function::const_iterator bit = func->getLLVMFun()->begin(), ebit = func->getLLVMFun()->end(); bit != ebit; ++bit) {
                 const BasicBlock & bb = *bit;
                 collectBBCallingProgExit(bb);
                 allocateForBB(bb);

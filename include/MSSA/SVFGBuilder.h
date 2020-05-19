@@ -30,7 +30,7 @@
 #ifndef ANDERSENMEMSSA_H_
 #define ANDERSENMEMSSA_H_
 
-#include "MSSA/SVFGOPT.h"
+#include "Graphs/SVFGOPT.h"
 
 /*!
  * Dominator frontier used in MSSA

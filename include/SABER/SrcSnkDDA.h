@@ -31,7 +31,7 @@
 #define SRCSNKANALYSIS_H_
 
 #include "Util/CFLSolver.h"
-#include "MSSA/SVFGOPT.h"
+#include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
 #include "WPA/Andersen.h"
@@ -50,6 +50,9 @@ public:
     typedef CxtDPItem DPIm;
     typedef std::set<DPIm> DPImSet;							///< dpitem set
     typedef std::map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
+    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef NodeBS SVFGNodeBS;
+    typedef ProgSlice::VFWorkList WorkList;
 
 private:
     ProgSlice* _curSlice;		/// current program slice
@@ -83,14 +86,14 @@ public:
     }
 
     /// Start analysis here
-    virtual void analyze(SVFModule module);
+    virtual void analyze(SVFModule* module);
 
     /// Initialize analysis
-    virtual void initialize(SVFModule module) {
-        ptaCallGraph = new PTACallGraph(module);
+    virtual void initialize(SVFModule* module) {
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         svfg =  memSSA.buildPTROnlySVFG(ander);
         setGraph(memSSA.getSVFG());
+        ptaCallGraph = ander->getPTACallGraph();
         //AndersenWaveDiff::releaseAndersenWaveDiff();
         /// allocate control-flow graph branch conditions
         getPathAllocator()->allocate(module);
@@ -142,11 +145,14 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const Function* fun) = 0;
-    virtual bool isSinkLikeFun(const Function* fun) = 0;
+    virtual bool isSourceLikeFun(const SVFFunction* fun) = 0;
+    virtual bool isSinkLikeFun(const SVFFunction* fun) = 0;
     virtual bool isSource(const SVFGNode* node) = 0;
     virtual bool isSink(const SVFGNode* node) = 0;
     ///@}
+
+    /// Identify allocation wrappers
+    bool isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet);
 
     /// report bug on the current analyzed slice
     virtual void reportBug(ProgSlice* slice) = 0;

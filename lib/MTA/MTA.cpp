@@ -41,14 +41,14 @@ MTA::~MTA() {
 }
 
 bool MTA::runOnModule(Module& module) {
-	SVFModule m(module);
+	SVFModule* m(module);
     return runOnModule(m);
 }
 
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(SVFModule module) {
+bool MTA::runOnModule(SVFModule* module) {
 
 
     modulePass = this;
@@ -111,7 +111,7 @@ LockAnalysis* MTA::computeLocksets(TCT* tct) {
     return lsa;
 }
 
-MHP* MTA::computeMHP(SVFModule module) {
+MHP* MTA::computeMHP(SVFModule* module) {
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
@@ -154,7 +154,7 @@ MHP* MTA::computeMHP(SVFModule module) {
 // * when two memory access may-happen in parallel and are not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
-void MTA::detect(SVFModule module) {
+void MTA::detect(SVFModule* module) {
 
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
@@ -163,7 +163,7 @@ void MTA::detect(SVFModule module) {
 
     std::set<const Instruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::iterator F = module.begin(), E = module.end(); F != E; ++F) {
+    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F) {
         // collect and create symbols inside the function body
         for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
             const Instruction *inst = &*II;

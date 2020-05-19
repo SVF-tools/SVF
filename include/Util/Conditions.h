@@ -30,8 +30,8 @@
 #ifndef BITVECTORCOND_H_
 #define BITVECTORCOND_H_
 
+#include "Util/BasicTypes.h"
 #include <stdio.h>
-#include "Util/SVFUtil.h"
 #include "CUDD/cuddInt.h"
 
 /**
@@ -39,7 +39,6 @@
  */
 class BddCondManager {
 public:
-    typedef std::map<unsigned,DdNode*> IndexToDDNodeMap;
 
     /// Constructor
     BddCondManager() {
@@ -50,18 +49,9 @@ public:
     ~BddCondManager() {
         Cudd_Quit(m_bdd_mgr);
     }
-    /// Create new BDD condition
-    inline DdNode* createNewCond(unsigned i) {
-        assert(indexToDDNodeMap.find(i)==indexToDDNodeMap.end() && "This should be fresh index to create new BDD");
-        DdNode* d = Cudd_bddIthVar(m_bdd_mgr, i);
-        indexToDDNodeMap[i] = d;
-        return  d;
-    }
-    /// Get existing BDD condition
-    inline DdNode* getCond(unsigned i) const {
-        IndexToDDNodeMap::const_iterator it = indexToDDNodeMap.find(i);
-        assert(it!=indexToDDNodeMap.end() && "condition not found!");
-        return it->second;
+
+    DdNode* Cudd_bdd(u32_t i){
+    	return Cudd_bddIthVar(m_bdd_mgr, i);
     }
     inline unsigned BddVarNum() {
         return Cudd_ReadSize(m_bdd_mgr);
@@ -100,7 +90,7 @@ public:
     void ddClearFlag(DdNode * f) const;
     void BddSupportStep( DdNode * f,  NodeBS &support) const;
     void BddSupport( DdNode * f,  NodeBS &support) const;
-    void dump(DdNode* lhs, raw_ostream & O = SVFUtil::outs());
+    void dump(DdNode* lhs, raw_ostream & O);
     std::string dumpStr(DdNode* lhs) const;
     /// print minterms and debug information for the Ddnode
     inline void printMinterms(DdNode* d) {
@@ -118,7 +108,6 @@ private:
     }
 
     DdManager *m_bdd_mgr;
-    IndexToDDNodeMap indexToDDNodeMap;
 };
 
 #endif /* BITVECTORCOND_H_ */

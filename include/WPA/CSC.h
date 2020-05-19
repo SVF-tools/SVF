@@ -32,7 +32,7 @@
 
 #include "Util/SCC.h"
 #include "Util/BasicTypes.h"    // for NodeBS
-#include "MemoryModel/ConsG.h"
+#include "Graphs/ConsG.h"
 #include "Util/WorkList.h"
 #include <limits.h>
 #include <stack>
@@ -46,7 +46,7 @@ typedef SCCDetection<ConstraintGraph *> CGSCC;
  */
 class CSC {
 public:
-    typedef llvm::DenseMap<NodeID, NodeID> IdToIdMap;
+    typedef DenseMap<NodeID, NodeID> IdToIdMap;
     typedef FILOWorkList<NodeID> WorkStack;
     typedef typename IdToIdMap::iterator iterator;
 

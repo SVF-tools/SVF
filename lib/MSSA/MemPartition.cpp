@@ -41,7 +41,7 @@ void DistinctMRG::partitionMRs()
 {
     for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it) {
-        const Function* fun = it->first;
+        const SVFFunction* fun = it->first;
         /// Collect all points-to target in a function scope.
         PointsTo mergePts;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
@@ -57,7 +57,7 @@ void DistinctMRG::partitionMRs()
  * 1. collect all points-to targets in a function scope.
  * 2. create memory region for each point-to target.
  */
-void DistinctMRG::createDistinctMR(const Function* func, const PointsTo& pts)
+void DistinctMRG::createDistinctMR(const SVFFunction* func, const PointsTo& pts)
 {
     /// Create memory regions for each points-to target.
 
@@ -83,7 +83,7 @@ void DistinctMRG::createDistinctMR(const Function* func, const PointsTo& pts)
  * @param fun The function being analyzed.
  * @param mrs Memory region set contains all possible target memory regions.
  */
-void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const Function* fun)
+void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const SVFFunction* fun)
 {
     /// Get memory regions for each points-to element in cpts.
 
@@ -106,7 +106,7 @@ void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const Function*
  * Get memory regions to be inserted at a load statement.
  * Just process as getMRsForLoad().
  */
-void DistinctMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun)
+void DistinctMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
 {
     getMRsForLoad(aliasMRs, cpts, fun);
 }
@@ -117,7 +117,7 @@ void IntraDisjointMRG::partitionMRs()
 {
     for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(),
             eit = getFunToPointsToList().end(); it!=eit; ++it) {
-        const Function* fun = it->first;
+        const SVFFunction* fun = it->first;
 
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
                 cit!=ecit; ++cit) {
@@ -211,7 +211,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
 /**
  * Create memory regions for each points-to target.
  */
-void IntraDisjointMRG::createDisjointMR(const Function* func, const PointsTo& cpts)
+void IntraDisjointMRG::createDisjointMR(const SVFFunction* func, const PointsTo& cpts)
 {
     // set the rep cpts as itself.
     cptsToRepCPtsMap[cpts] = cpts;
@@ -239,7 +239,7 @@ void IntraDisjointMRG::getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cp
  * Get memory regions to be inserted at a load statement.
  * Just process as getMRsForLoad().
  */
-void IntraDisjointMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const Function* fun)
+void IntraDisjointMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
 {
     getMRsForLoad(aliasMRs, cpts, fun);
 }
@@ -262,7 +262,7 @@ void InterDisjointMRG::partitionMRs()
     /// Create memory regions.
     for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(),
             eit = getFunToPointsToList().end(); it!=eit; ++it) {
-        const Function* fun = it->first;
+        const SVFFunction* fun = it->first;
 
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
                 cit!=ecit; ++cit) {

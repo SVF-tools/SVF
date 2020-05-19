@@ -8,7 +8,7 @@
 #ifndef MTASTAT_H_
 #define MTASTAT_H_
 
-#include "Util/PTAStat.h"
+#include "MemoryModel/PTAStat.h"
 
 class ThreadCallGraph;
 class TCT;

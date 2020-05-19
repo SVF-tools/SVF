@@ -31,7 +31,7 @@
 #ifndef FLOWSENSITIVESTAT_H_
 #define FLOWSENSITIVESTAT_H_
 
-#include "Util/PTAStat.h"
+#include "MemoryModel/PTAStat.h"
 #include "WPA/FlowSensitive.h"
 
 class Andersen;

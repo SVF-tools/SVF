@@ -189,12 +189,12 @@ template<class Cond>
 class CallMU : public MSSAMU<Cond> {
 
 private:
-    const CallSite callsite;
+    const CallBlockNode* callsite;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    CallMU(const CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    CallMU(const CallBlockNode* cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSAMU<Cond>(MSSAMU<Cond>::CallMSSAMU,m,c), callsite(cs) {
     }
     virtual ~CallMU() {
@@ -203,13 +203,13 @@ public:
     //@}
 
     /// Return callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return callsite;
     }
 
     /// Return basic block
     inline const BasicBlock* getBasicBlock() const {
-        return callsite.getInstruction()->getParent();
+        return callsite->getCallSite().getInstruction()->getParent();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -236,18 +236,18 @@ public:
 template<class Cond>
 class RetMU : public MSSAMU<Cond> {
 private:
-    const Function* fun;
+    const SVFFunction* fun;
 public:
     /// Constructor/Destructor for MU
     //@{
-    RetMU(const Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    RetMU(const SVFFunction* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSAMU<Cond>(MSSAMU<Cond>::RetMSSAMU,m,c), fun(f) {
     }
     virtual ~RetMU() {}
     //@}
 
     /// Return function
-    inline const Function* getFunction() const {
+    inline const SVFFunction* getFunction() const {
         return fun;
     }
 
@@ -448,11 +448,11 @@ public:
 template<class Cond>
 class CallCHI : public MSSACHI<Cond> {
 private:
-    const CallSite callsite;
+    const CallBlockNode* callsite;
 public:
     /// Constructors for StoreCHI
     //@{
-    CallCHI(const CallSite cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    CallCHI(const CallBlockNode* cs, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs) {
     }
     virtual ~CallCHI() {
@@ -461,11 +461,11 @@ public:
 
     /// Return basic block
     inline const BasicBlock* getBasicBlock() const {
-        return callsite.getInstruction()->getParent();
+        return callsite->getCallSite().getInstruction()->getParent();
     }
 
     /// Return callsite
-    inline CallSite getCallSite() const {
+    inline const CallBlockNode* getCallSite() const {
         return callsite;
     }
 
@@ -496,11 +496,11 @@ public:
 template<class Cond>
 class EntryCHI : public MSSACHI<Cond> {
 private:
-    const Function* fun;
+    const SVFFunction* fun;
 public:
     /// Constructors for EntryCHI
     //@{
-    EntryCHI(const Function* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
+    EntryCHI(const SVFFunction* f, const MemRegion* m, Cond c = PathCondAllocator::trueCond()) :
         MSSACHI<Cond>(MSSADEF::EntryMSSACHI,m,c),fun(f) {
     }
     virtual ~EntryCHI() {
@@ -508,7 +508,7 @@ public:
     //@}
 
     /// Return function
-    inline const Function* getFunction() const {
+    inline const SVFFunction* getFunction() const {
         return fun;
     }
 
@@ -540,7 +540,7 @@ template<class Cond>
 class MSSAPHI : public MSSADEF {
 
 public:
-    typedef llvm::DenseMap<u32_t,const MRVer*> OPVers;
+    typedef DenseMap<u32_t,const MRVer*> OPVers;
 private:
     const BasicBlock* bb;
     OPVers opVers;

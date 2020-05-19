@@ -27,8 +27,8 @@
  *      Author: yesen
  */
 
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAStat.h"
-#include "Util/SVFUtil.h"
 #include "WPA/FlowSensitive.h"
 
 using namespace SVFUtil;
@@ -277,13 +277,13 @@ void FlowSensitiveStat::statNullPtr()
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
                                << ") PtrName:" << pagNode->getValue()->getName();
-                        wrnMsg(rawstr.str());
+                        writeWrnMsg(rawstr.str());
                     }
                 }
                 else {
                     _NumOfNullPtr++;
                     rawstr << "##Null Pointer : (NodeID " << pagNode->getId();
-                    wrnMsg(rawstr.str());
+                    writeWrnMsg(rawstr.str());
                 }
             }
         }

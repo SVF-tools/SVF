@@ -30,16 +30,15 @@
 #ifndef POINTERANALYSIS_H_
 #define POINTERANALYSIS_H_
 
-#include "MemoryModel/PAG.h"
+#include "Graphs/PAG.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/PointsToDS.h"
-#include "Util/PTACallGraph.h"
+#include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
 
-class CHGraph;
-class CHNode;
+class CommonCHGraph;
 
 class TypeSystem;
 class SVFModule;
@@ -66,6 +65,7 @@ public:
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
         FSSPARSE_WPA,		///< Sparse flow sensitive WPA
+        FSTBHC_WPA,		///< Sparse flow-sensitive type-based heap cloning WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
         ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA
@@ -82,17 +82,37 @@ public:
         Default_PTA		///< default pta without any analysis
     };
 
+    /// Implementation type: BVDataPTAImpl or CondPTAImpl.
+    enum PTAImplTy {
+        BaseImpl,   ///< Represents PointerAnalaysis.
+        BVDataImpl, ///< Represents BVDataPTAImpl.
+        CondImpl,   ///< Represents CondPTAImpl.
+    };
+
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef std::set<CallSite> CallSiteSet;
+    typedef std::set<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef	std::set<const Function*> FunctionSet;
-    typedef std::map<CallSite, FunctionSet> CallEdgeMap;
+    typedef	std::set<const SVFFunction*> FunctionSet;
+    typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const Function*> VFunSet;
+    typedef std::set<const SVFFunction*> VFunSet;
     //@}
+
+    static const std::string aliasTestMayAlias;
+    static const std::string aliasTestMayAliasMangled;
+    static const std::string aliasTestNoAlias;
+    static const std::string aliasTestNoAliasMangled;
+    static const std::string aliasTestPartialAlias;
+    static const std::string aliasTestPartialAliasMangled;
+    static const std::string aliasTestMustAlias;
+    static const std::string aliasTestMustAliasMangled;
+    static const std::string aliasTestFailMayAlias;
+    static const std::string aliasTestFailMayAliasMangled;
+    static const std::string aliasTestFailNoAlias;
+    static const std::string aliasTestFailNoAliasMangled;
 
 private:
     /// Release the memory
@@ -104,6 +124,8 @@ protected:
     //@{
     /// Flag for printing the statistic results
     bool print_stat;
+    /// Flag for validating points-to/alias results
+    bool alias_validation;
     /// Flag for iteration budget for on-the-fly statistics
     u32_t OnTheFlyIterBudgetForStat;
     //@}
@@ -111,9 +133,11 @@ protected:
     /// PAG
     static PAG* pag;
     /// Module
-    SVFModule svfMod;
+    SVFModule* svfMod;
     /// Pointer analysis Type
     PTATY ptaTy;
+    /// PTA implementation type.
+    PTAImplTy ptaImplTy;
     /// Statistics
     PTAStat* stat;
     /// Call graph used for pointer analysis
@@ -123,7 +147,7 @@ protected:
     /// Interprocedural control-flow graph
     ICFG* icfg;
     /// CHGraph
-    static CHGraph *chgraph;
+    static CommonCHGraph *chgraph;
     /// TypeSystem
     TypeSystem *typeSystem;
 
@@ -142,11 +166,16 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(PTATY ty = Default_PTA);
+    PointerAnalysis(PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const {
         return ptaTy;
+    }
+
+    /// Return implementation type of the pointer analysis.
+    inline PTAImplTy getImplTy() const {
+        return ptaImplTy;
     }
 
     /// Get/set PAG
@@ -164,7 +193,7 @@ public:
         return stat;
     }
     /// Module
-    inline SVFModule getModule() const {
+    inline SVFModule* getModule() const {
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
@@ -176,13 +205,13 @@ public:
     virtual ~PointerAnalysis();
 
     /// Initialization of a pointer analysis, including building symbol table and PAG etc.
-    virtual void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule* svfModule);
 
     /// Finalization of a pointer analysis, including checking alias correctness
     virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis). It needs to be implemented in child class
-    virtual void analyze(SVFModule svfModule) = 0;
+    virtual void analyze(SVFModule* svfModule) = 0;
 
     /// Compute points-to results on-demand, overridden by derived classes
     virtual void computeDDAPts(NodeID id) {}
@@ -198,20 +227,44 @@ public:
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
 
+    /// Get points-to targets of a pointer. It needs to be implemented in child class
+    virtual PointsTo& getPts(NodeID ptr) = 0;
+
+    /// Given an object, get all the nodes having whose pointsto contains the object.
+    /// Similar to getPts, this also needs to be implemented in child classes.
+    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
+
+    /// Clear points-to data
+    virtual void clearPts() {
+    }
+
+    /// Print targets of a function pointer
+    void printIndCSTargets(const CallBlockNode* cs, const FunctionSet& targets);
+
+    // Debug purpose
+    //@{
+    virtual void dumpTopLevelPtsTo() {}
+    virtual void dumpAllPts() {}
+    virtual void dumpCPts() {}
+    virtual void dumpPts(NodeID ptr, const PointsTo& pts);
+    void printIndCSTargets();
+    void dumpAllTypes();
+    //@}
+
 protected:
     /// Return all indirect callsites
     inline const CallSiteToFunPtrMap& getIndirectCallsites() const {
         return pag->getIndirectCallsites();
     }
     /// Return function pointer PAGNode at a callsite cs
-    inline NodeID getFunPtr(const CallSite& cs) const {
+    inline NodeID getFunPtr(const CallBlockNode* cs) const {
         return pag->getFunPtr(cs);
     }
     /// Alias check functions to verify correctness of pointer analysis
     //@{
     virtual void validateTests();
-    virtual void validateSuccessTests(const char* fun);
-    virtual void validateExpectedFailureTests(const char* fun);
+    virtual void validateSuccessTests(std::string fun);
+    virtual void validateExpectedFailureTests(std::string fun);
     //@}
 
     /// Whether to dump the graph for debugging purpose
@@ -232,7 +285,7 @@ public:
     inline bool containConstantNode(PointsTo& pts) {
         return pts.test(pag->getConstantNode());
     }
-    inline bool isBlkObjOrConstantObj(NodeID ptd) const {
+    virtual inline bool isBlkObjOrConstantObj(NodeID ptd) const {
         return pag->isBlkObjOrConstantObj(ptd);
     }
     inline bool isNonPointerObj(NodeID ptd) const {
@@ -269,7 +322,7 @@ public:
     inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
         return pag->getGepObjNode(id,ls);
     }
-    inline const NodeBS& getAllFieldsObjNode(NodeID id) {
+    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id) {
         return pag->getAllFieldsObjNode(id);
     }
     inline void setObjFieldInsensitive(NodeID id) {
@@ -297,27 +350,18 @@ public:
     inline CallEdgeMap& getIndCallMap() {
         return getPTACallGraph()->getIndCallMap();
     }
-    inline bool hasIndCSCallees(CallSite cs) const {
+    inline bool hasIndCSCallees(const CallBlockNode* cs) const {
         return getPTACallGraph()->hasIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(CallSite cs) const {
+    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const {
         return getPTACallGraph()->getIndCSCallees(cs);
-    }
-    inline const FunctionSet& getIndCSCallees(CallInst* csInst) const {
-        CallSite cs = SVFUtil::getLLVMCallSite(csInst);
-        return getIndCSCallees(cs);
     }
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(CallSite cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
+    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
     /// Match arguments for callsite at caller and callee
-    inline bool matchArgs(CallSite cs, const Function* callee) {
-        if(ThreadAPI::getThreadAPI()->isTDFork(cs))
-            return true;
-        else
-            return cs.arg_size() == callee->arg_size();
-    }
+    bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{
@@ -333,12 +377,12 @@ public:
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const Function* fun1,const Function* fun2) {
+    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2) {
         const PTACallGraphNode* src = ptaCallGraph->getCallGraphNode(fun1);
         const PTACallGraphNode* dst = ptaCallGraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
-    inline bool isInRecursion(const Function* fun) const {
+    inline bool isInRecursion(const SVFFunction* fun) const {
         return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions
@@ -350,436 +394,21 @@ public:
         return "Pointer Analysis";
     }
 
-    /// Get points-to targets of a pointer. It needs to be implemented in child class
-    virtual PointsTo& getPts(NodeID ptr) = 0;
-    
-    /// Given an object, get all the nodes having whose pointsto contains the object. 
-    /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
-
-    /// Clear points-to data
-    virtual void clearPts() {
-    }
-
-    /// Print targets of a function pointer
-    void printIndCSTargets(const CallSite cs, const FunctionSet& targets);
-
-    // Debug purpose
-    //@{
-    virtual void dumpTopLevelPtsTo() {}
-    virtual void dumpAllPts() {}
-    virtual void dumpCPts() {}
-    virtual void dumpPts(NodeID ptr, const PointsTo& pts);
-    void printIndCSTargets();
-    void dumpAllTypes();
-    //@}
-
     /// get CHGraph
-    CHGraph *getCHGraph() const {
+    CommonCHGraph *getCHGraph() const {
         return chgraph;
     }
 
-    void getVFnsFromCHA(CallSite cs, std::set<const Function*> &vfns);
-    void getVFnsFromPts(CallSite cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(CallSite cs, const VFunSet &vfns, CallEdgeMap& newEdges);
-    virtual void resolveCPPIndCalls(CallSite cs,
+    void getVFnsFromCHA(const CallBlockNode* cs, VFunSet &vfns);
+    void getVFnsFromPts(const CallBlockNode* cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(const CallBlockNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
+    virtual void resolveCPPIndCalls(const CallBlockNode* cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges);
 
     /// get TypeSystem
     const TypeSystem *getTypeSystem() const {
         return typeSystem;
-    }
-};
-
-/*!
- * Pointer analysis implementation which uses bit vector based points-to data structure
- */
-class BVDataPTAImpl : public PointerAnalysis {
-
-public:
-    typedef PTData<NodeID,PointsTo> PTDataTy;	/// Points-to data structure type
-    typedef DiffPTData<NodeID,PointsTo,EdgeID> DiffPTDataTy;	/// Points-to data structure type
-    typedef DFPTData<NodeID,PointsTo> DFPTDataTy;	/// Points-to data structure type
-    typedef IncDFPTData<NodeID,PointsTo> IncDFPTDataTy;	/// Points-to data structure type
-
-    /// Constructor
-    BVDataPTAImpl(PointerAnalysis::PTATY type);
-
-    /// Destructor
-    virtual ~BVDataPTAImpl() {
-        destroy();
-    }
-
-    /// Release memory
-    inline void destroy() {
-        delete ptD;
-        ptD = NULL;
-    }
-
-    /// Get points-to and reverse points-to
-    ///@{
-    virtual inline PointsTo& getPts(NodeID id) {
-        return ptD->getPts(id);
-    }
-    virtual inline PointsTo& getRevPts(NodeID nodeId) {
-        return ptD->getRevPts(nodeId);
-    }
-    //@}
-
-    /// Expand FI objects
-    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
-
-    /// Interface for analysis result storage on filesystem.
-    //@{
-    virtual void writeToFile(const std::string& filename);
-    virtual bool readFromFile(const std::string& filename);
-    //@}
-
-protected:
-
-    /// Update callgraph. This should be implemented by its subclass.
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap& callsites) {
-        assert(false && "Virtual function not implemented!");
-        return false;
-    }
-
-    /// Get points-to data structure
-    inline PTDataTy* getPTDataTy() const {
-        return ptD;
-    }
-    inline DiffPTDataTy* getDiffPTDataTy() const {
-        return SVFUtil::cast<DiffPTDataTy>(ptD);
-    }
-    inline IncDFPTDataTy* getDFPTDataTy() const {
-        return SVFUtil::cast<IncDFPTDataTy>(ptD);
-    }
-
-    /// Union/add points-to. Add the reverse points-to for node collapse purpose
-    /// To be noted that adding reverse pts might incur 10% total overhead during solving
-    //@{
-    virtual inline bool unionPts(NodeID id, const PointsTo& target) {
-        return ptD->unionPts(id, target);
-    }
-    virtual inline bool unionPts(NodeID id, NodeID ptd) {
-        return ptD->unionPts(id,ptd);
-    }
-    virtual inline bool addPts(NodeID id, NodeID ptd) {
-        return ptD->addPts(id,ptd);
-    }
-    //@}
-
-    /// Clear all data
-    virtual inline void clearPts() {
-        ptD->clear();
-    }
-
-    /// On the fly call graph construction
-    virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
-
-private:
-    /// Points-to data
-    PTDataTy* ptD;
-
-public:
-    /// Interface expose to users of our pointer analysis, given Location infos
-    virtual AliasResult alias(const MemoryLocation  &LocA,
-                                    const MemoryLocation  &LocB);
-
-    /// Interface expose to users of our pointer analysis, given Value infos
-    virtual AliasResult alias(const Value* V1,
-                                    const Value* V2);
-
-    /// Interface expose to users of our pointer analysis, given PAGNodeID
-    virtual AliasResult alias(NodeID node1, NodeID node2);
-
-    /// Interface expose to users of our pointer analysis, given two pts
-    virtual AliasResult alias(const PointsTo& pts1, const PointsTo& pts2);
-
-    /// dump and debug, print out conditional pts
-    //@{
-    virtual void dumpCPts() {
-        ptD->dumpPTData();
-    }
-
-    virtual void dumpTopLevelPtsTo();
-
-    virtual void dumpAllPts();
-    //@}
-};
-
-/*!
- * Pointer analysis implementation which uses conditional points-to map data structure (context/path sensitive analysis)
- */
-template<class Cond>
-class CondPTAImpl : public PointerAnalysis {
-
-public:
-    typedef CondVar<Cond> CVar;
-    typedef CondStdSet<CVar>  CPtSet;
-    typedef PTData<CVar,CPtSet> PTDataTy;	         /// Points-to data structure type
-    typedef std::map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef std::map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
-
-    /// Constructor
-    CondPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type), normalized(false) {
-        if (type == PathS_DDA || type == Cxt_DDA)
-            ptD = new PTDataTy();
-        else
-            assert(false && "no points-to data available");
-    }
-
-    /// Destructor
-    virtual ~CondPTAImpl() {
-        destroy();
-    }
-
-    /// Release memory
-    inline void destroy() {
-        delete ptD;
-        ptD = NULL;
-    }
-
-    /// Get points-to data
-    inline PTDataTy* getPTDataTy() const {
-        return ptD;
-    }
-
-    /// Get points-to and reverse points-to
-    ///@{
-    virtual inline CPtSet& getPts(CVar id) {
-        return ptD->getPts(id);
-    }
-    virtual inline CPtSet& getRevPts(CVar nodeId) {
-        return ptD->getRevPts(nodeId);
-    }
-    //@}
-
-    /// Clear all data
-    virtual inline void clearPts() {
-        ptD->clear();
-    }
-
-    /// Whether cpts1 and cpts2 have overlap points-to targets
-    bool overlap(const CPtSet& cpts1, const CPtSet& cpts2) const {
-        for (typename CPtSet::const_iterator it1 = cpts1.begin(); it1 != cpts1.end(); ++it1) {
-            for (typename CPtSet::const_iterator it2 = cpts2.begin(); it2 != cpts2.end(); ++it2) {
-                if(isSameVar(*it1,*it2))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    /// Expand all fields of an aggregate in all points-to sets
-    void expandFIObjs(const CPtSet& cpts, CPtSet& expandedCpts) {
-        expandedCpts = cpts;;
-        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
-            if(pag->getBaseObjNode(cit->get_id())==cit->get_id()) {
-                NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
-                for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it) {
-                    CVar cvar(cit->get_cond(),*it);
-                    expandedCpts.set(cvar);
-                }
-            }
-        }
-    }
-
-protected:
-
-    /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
-    virtual void finalize() {
-        NormalizePointsTo();
-        PointerAnalysis::finalize();
-    }
-    /// Union/add points-to, and add the reverse points-to for node collapse purpose
-    /// To be noted that adding reverse pts might incur 10% total overhead during solving
-    //@{
-    virtual inline bool unionPts(CVar id, const CPtSet& target) {
-        return ptD->unionPts(id, target);
-    }
-
-    virtual inline bool unionPts(CVar id, CVar ptd) {
-        return ptD->unionPts(id,ptd);
-    }
-
-    virtual inline bool addPts(CVar id, CVar ptd) {
-        return ptD->addPts(id,ptd);
-    }
-    //@}
-
-    /// Internal interface to be used for conditional points-to set queries
-    //@{
-    inline bool mustAlias(const CVar& var1, const CVar& var2) {
-        if(isSameVar(var1,var2))
-            return true;
-
-        bool singleton = !(isHeapMemObj(var1.get_id()) || isLocalVarInRecursiveFun(var1.get_id()));
-        if(isCondCompatible(var1.get_cond(),var2.get_cond(),singleton) == false)
-            return false;
-
-        const CPtSet& cpts1 = getPts(var1);
-        const CPtSet& cpts2 = getPts(var2);
-        return (contains(cpts1,cpts2) && contains(cpts2,cpts1));
-    }
-
-    //  Whether cpts1 contains all points-to targets of pts2
-    bool contains(const CPtSet& cpts1, const CPtSet& cpts2) {
-        if (cpts1.empty() || cpts2.empty())
-            return false;
-
-        for (typename CPtSet::const_iterator it2 = cpts2.begin(); it2 != cpts2.end(); ++it2) {
-            bool hasObj = false;
-            for (typename CPtSet::const_iterator it1 = cpts1.begin(); it1 != cpts1.end(); ++it1) {
-                if(isSameVar(*it1,*it2)) {
-                    hasObj = true;
-                    break;
-                }
-            }
-            if(hasObj == false)
-                return false;
-        }
-        return true;
-    }
-
-    /// Whether two pointers/objects are the same one by considering their conditions
-    bool isSameVar(const CVar& var1, const CVar& var2) const {
-        if(var1.get_id() != var2.get_id())
-            return false;
-
-        /// we distinguish context sensitive memory allocation here
-        bool singleton = !(isHeapMemObj(var1.get_id()) || isLocalVarInRecursiveFun(var1.get_id()));
-        return isCondCompatible(var1.get_cond(),var2.get_cond(),singleton);
-    }
-    //@}
-
-    /// Normalize points-to information to BitVector/conditional representation
-    virtual void NormalizePointsTo() {
-        normalized = true;
-        const typename PTDataTy::PtsMap& ptsMap = getPTDataTy()->getPtsMap();
-        for(typename PTDataTy::PtsMap::const_iterator it = ptsMap.begin(), eit=ptsMap.end(); it!=eit; ++it) {
-            for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit) {
-                ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
-                objToBVRevPtsMap[cit->get_id()].set((it->first).get_id());
-                ptrToCPtsMap[(it->first).get_id()].set(*cit);
-            }
-        }
-    }
-    /// Points-to data
-    PTDataTy* ptD;
-    /// Normalized flag
-    bool normalized;
-    /// Normal points-to representation (without conditions)
-    PtrToBVPtsMap ptrToBVPtsMap;
-    /// Normal points-to representation (without conditions)
-    PtrToBVPtsMap objToBVRevPtsMap;
-    /// Conditional points-to representation (with conditions)
-    PtrToCPtsMap ptrToCPtsMap;
-public:
-    /// Print out conditional pts
-    virtual void dumpCPts() {
-        ptD->dumpPTData();
-    }
-    /// Given a conditional pts return its bit vector points-to
-    virtual inline PointsTo getBVPointsTo(const CPtSet& cpts) const {
-        PointsTo pts;
-        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit)
-            pts.set(cit->get_id());
-        return pts;
-    }
-    /// Given a pointer return its bit vector points-to
-    virtual inline PointsTo& getPts(NodeID ptr) {
-        assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
-        return ptrToBVPtsMap[ptr];
-    }
-    /// Given a pointer return its conditional points-to
-    virtual inline const CPtSet& getCondPointsTo(NodeID ptr) {
-        assert(normalized && "Pts of all context-vars have to be merged/normalized. Want to use getPts(CVar cvar)??");
-        return ptrToCPtsMap[ptr];
-    }
-    /// Given an object return all pointers points to this object
-    virtual inline PointsTo& getRevPts(NodeID obj) {
-        assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
-        return objToBVRevPtsMap[obj];
-    }
-
-    /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasResult alias(const MemoryLocation &LocA,
-                                           const MemoryLocation  &LocB) {
-        return alias(LocA.Ptr, LocB.Ptr);
-    }
-    /// Interface expose to users of our pointer analysis, given Value infos
-    virtual inline AliasResult alias(const Value* V1, const Value* V2) {
-        return  alias(pag->getValueNode(V1),pag->getValueNode(V2));
-    }
-    /// Interface expose to users of our pointer analysis, given two pointers
-    virtual inline AliasResult alias(NodeID node1, NodeID node2) {
-        return alias(getCondPointsTo(node1),getCondPointsTo(node2));
-    }
-    /// Interface expose to users of our pointer analysis, given conditional variables
-    virtual AliasResult alias(const CVar& var1, const CVar& var2) {
-        return alias(getPts(var1),getPts(var2));
-    }
-    /// Interface expose to users of our pointer analysis, given two conditional points-to sets
-    virtual inline AliasResult alias(const CPtSet& pts1, const CPtSet& pts2) {
-        CPtSet cpts1;
-        expandFIObjs(pts1,cpts1);
-        CPtSet cpts2;
-        expandFIObjs(pts2,cpts2);
-        if (containBlackHoleNode(cpts1) || containBlackHoleNode(cpts2))
-            return llvm::MayAlias;
-        else if(this->getAnalysisTy()==PathS_DDA && contains(cpts1,cpts2) && contains(cpts2,cpts1)) {
-            return llvm::MustAlias;
-        }
-        else if(overlap(cpts1,cpts2))
-            return llvm::MayAlias;
-        else
-            return llvm::NoAlias;
-    }
-    /// Test blk node for cpts
-    inline bool containBlackHoleNode(const CPtSet& cpts) {
-        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
-            if(cit->get_id() == pag->getBlackHoleNode())
-                return true;
-        }
-        return false;
-    }
-    /// Test constant node for cpts
-    inline bool containConstantNode(const CPtSet& cpts) {
-        for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit) {
-            if(cit->get_id() == pag->getConstantNode())
-                return true;
-        }
-        return false;
-    }
-    /// Whether two conditions are compatible (to be implemented by child class)
-    virtual bool isCondCompatible(const Cond& cxt1, const Cond& cxt2, bool singleton) const = 0;
-
-    /// Dump points-to information of top-level pointers
-    void dumpTopLevelPtsTo() {
-        for (NodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter) {
-            const PAGNode* node = this->getPAG()->getPAGNode(*nIter);
-            if (this->getPAG()->isValidTopLevelPtr(node)) {
-                if (SVFUtil::isa<DummyObjPN>(node)) {
-                    SVFUtil::outs() << "##<Blackhole or constant> id:" << node->getId();
-                }
-                else if (!SVFUtil::isa<DummyValPN>(node)) {
-                    SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
-                    SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
-                }
-
-                const PointsTo& pts = getPts(node->getId());
-                SVFUtil::outs() << "\nNodeID " << node->getId() << " ";
-                if (pts.empty()) {
-                    SVFUtil::outs() << "\t\tPointsTo: {empty}\n\n";
-                } else {
-                    SVFUtil::outs() << "\t\tPointsTo: { ";
-                    for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
-                        SVFUtil::outs() << *it << " ";
-                    SVFUtil::outs() << "}\n\n";
-                }
-            }
-        }
     }
 };
 #endif /* POINTERANALYSIS_H_ */

@@ -8,6 +8,9 @@
  */
 
 
+#include "Util/SVFUtil.h"
+#include "SVF-FE/CPPUtil.h"
+
 #include "DDA/DDAClient.h"
 #include "DDA/FlowDDA.h"
 #include <iostream>
@@ -71,6 +74,23 @@ void DDAClient::answerQueries(PointerAnalysis* pta) {
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
+NodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p) {
+    setPAG(p);
+    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+            eit = pag->getIndirectCallsites().end(); it!=eit; ++it) {
+        if (cppUtil::isVirtualCallSite(it->first->getCallSite())) {
+            const Value *vtblPtr = cppUtil::getVCallVtblPtr(it->first->getCallSite());
+            assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
+            NodeID vtblId = pag->getValueNode(vtblPtr);
+            addCandidate(vtblId);
+            vtableToCallSiteMap[vtblId] = it->first;
+        } else {
+            addCandidate(it->second);
+        }
+    }
+    return candidateQueries;
+}
+
 void FunptrDDAClient::performStat(PointerAnalysis* pta) {
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pta->getModule());
@@ -88,12 +108,14 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        if(!callgraph->hasIndCSCallees(nIter->second)) {
+        const CallBlockNode* cbn = nIter->second;
+
+        if(!callgraph->hasIndCSCallees(cbn)) {
             //outs() << "virtual callsite has no callee" << *(nIter->second.getInstruction()) << "\n";
             continue;
         }
 
-        const PTACallGraph::FunctionSet& callees = callgraph->getIndCSCallees(nIter->second);
+        const PTACallGraph::FunctionSet& callees = callgraph->getIndCSCallees(cbn);
         totalCallsites++;
         if(callees.size() == 0)
             zeroTargetCallsites++;
@@ -107,15 +129,15 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta) {
         if(ddaPts.count() >= anderPts.count() || ddaPts.empty())
             continue;
 
-        std::set<const Function*> ander_vfns;
-        std::set<const Function*> dda_vfns;
-        ander->getVFnsFromPts(nIter->second,anderPts, ander_vfns);
-        pta->getVFnsFromPts(nIter->second,ddaPts, dda_vfns);
+        std::set<const SVFFunction*> ander_vfns;
+        std::set<const SVFFunction*> dda_vfns;
+        ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
+        pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << *(nIter->second).getInstruction() << "\n";
-        outs() << getSourceLoc((nIter->second).getInstruction()) << "\n";
+        outs() << *(nIter->second)->getCallSite().getInstruction() << "\n";
+        outs() << getSourceLoc((nIter->second)->getCallSite().getInstruction()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";

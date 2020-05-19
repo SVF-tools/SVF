@@ -40,7 +40,7 @@
  */
 class AndersenSCD : public Andersen {
 public:
-    typedef llvm::DenseMap<NodeID, NodeID> NodeToNodeMap;
+    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
 
 protected:
     static AndersenSCD* scdAndersen;
@@ -53,7 +53,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(SVFModule svfModule) {
+    static AndersenSCD *createAndersenSCD(SVFModule* svfModule) {
         if (scdAndersen == nullptr) {
             new AndersenSCD();
             scdAndersen->analyze(svfModule);
@@ -92,9 +92,9 @@ protected:
  */
 class AndersenSFR : public AndersenSCD {
 public:
-    typedef llvm::DenseMap<NodeID, NodeBS> NodeStrides;
-    typedef llvm::DenseMap<NodeID, NodeSet> FieldReps;
-    typedef llvm::DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+    typedef DenseMap<NodeID, NodeBS> NodeStrides;
+    typedef DenseMap<NodeID, NodeSet> FieldReps;
+    typedef DenseMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
 
 private:
     static AndersenSFR* sfrAndersen;
@@ -109,7 +109,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(SVFModule svfModule) {
+    static AndersenSFR *createAndersenSFR(SVFModule* svfModule) {
         if (sfrAndersen == nullptr) {
             new AndersenSFR();
             sfrAndersen->analyze(svfModule);
@@ -131,7 +131,7 @@ public:
     }
 
 protected:
-    void initialize(SVFModule svfModule);
+    void initialize(SVFModule* svfModule);
     void PWCDetect();
     void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
     bool processGepPts(PointsTo& pts, const GepCGEdge* edge);

@@ -40,45 +40,26 @@ class FileChecker : public LeakChecker {
 
 public:
 
-    /// Pass ID
-    static char ID;
-
     /// Constructor
-    FileChecker(char id = ID): LeakChecker(ID) {
+    FileChecker(): LeakChecker() {
     }
 
     /// Destructor
     virtual ~FileChecker() {
     }
-    /// We start from here
-    virtual bool runOnModule(llvm::Module& module) {
-        SVFModule svfModule(module);
-        return runOnModule(svfModule);
-    }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule module) {
+    virtual bool runOnModule(SVFModule* module) {
         /// start analysis
         analyze(module);
         return false;
     }
 
-    /// Get pass name
-    virtual inline StringRef getPassName() const {
-        return "File Open/Close Analysis";
-    }
-
-    /// Pass dependence
-    virtual void getAnalysisUsage(AnalysisUsage& au) const {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
-    }
-
-    inline bool isSourceLikeFun(const Function* fun) {
+    inline bool isSourceLikeFun(const SVFFunction* fun) {
         return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    inline bool isSinkLikeFun(const Function* fun) {
+    inline bool isSinkLikeFun(const SVFFunction* fun) {
         return SaberCheckerAPI::getCheckerAPI()->isFClose(fun);
     }
     /// Report file/close bugs

@@ -30,12 +30,12 @@
 #ifndef ANDERSENPASS_H_
 #define ANDERSENPASS_H_
 
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
-#include "MemoryModel/PAG.h"
-#include "MemoryModel/ConsG.h"
-#include "MemoryModel/OfflineConsG.h"
+#include "Graphs/PAG.h"
+#include "Graphs/ConsG.h"
+#include "Graphs/OfflineConsG.h"
 
 class PTAType;
 class SVFModule;
@@ -76,8 +76,8 @@ public:
     //@}
 
     /// Constructor
-    Andersen(PTATY type = Andersen_WPA)
-        :  BVDataPTAImpl(type), consCG(NULL), diffOpt(true), pwcOpt(false)
+    Andersen(PTATY type = Andersen_WPA, bool alias_check = true)
+        :  BVDataPTAImpl(type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
     {
 		iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -90,10 +90,10 @@ public:
     }
 
     /// Andersen analysis
-    void analyze(SVFModule svfModule);
+    void analyze(SVFModule* svfModule);
 
     /// Initialize analysis
-    virtual void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule* svfModule);
     //}
 
     /// Finalize analysis
@@ -257,7 +257,7 @@ protected:
 	}
 
 	/// Connect formal and actual parameters for indirect callsites
-    void connectCaller2CalleeParams(CallSite cs, const Function *F, NodePairSet& cpySrcNodes);
+    void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
 	/// dump statistics
     inline void printStat() {
@@ -333,12 +333,12 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA): Andersen(type) {}
+    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiff* createAndersenWaveDiff(SVFModule svfModule) {
+    static AndersenWaveDiff* createAndersenWaveDiff(SVFModule* svfModule) {
         if(diffWave==NULL) {
-            diffWave = new AndersenWaveDiff();
+            diffWave = new AndersenWaveDiff(AndersenWaveDiff_WPA, false);
             diffWave->analyze(svfModule);
             return diffWave;
         }
@@ -423,7 +423,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(SVFModule svfModule) {
+    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(SVFModule* svfModule) {
         if(diffWaveWithType==NULL) {
             diffWaveWithType = new AndersenWaveDiffWithType();
             diffWaveWithType->analyze(svfModule);
@@ -472,7 +472,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenLCD(SVFModule svfModule) {
+    static AndersenLCD* createAndersenLCD(SVFModule* svfModule) {
         if (lcdAndersen == nullptr) {
             lcdAndersen = new AndersenLCD();
             lcdAndersen->analyze(svfModule);
@@ -544,7 +544,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHCD *createAndersenHCD(SVFModule svfModule) {
+    static AndersenHCD *createAndersenHCD(SVFModule* svfModule) {
         if (hcdAndersen == nullptr) {
             hcdAndersen = new AndersenHCD();
             hcdAndersen->analyze(svfModule);
@@ -560,7 +560,7 @@ public:
     }
 
 protected:
-    virtual void initialize(SVFModule svfModule);
+    virtual void initialize(SVFModule* svfModule);
 
     // Get offline rep node from offline constraint graph
     //@{
@@ -606,7 +606,7 @@ public:
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHLCD *createAndersenHLCD(SVFModule svfModule) {
+    static AndersenHLCD *createAndersenHLCD(SVFModule* svfModule) {
         if (hlcdAndersen == nullptr) {
             hlcdAndersen = new AndersenHLCD();
             hlcdAndersen->analyze(svfModule);
@@ -622,7 +622,7 @@ public:
     }
 
 protected:
-    void initialize(SVFModule svfModule) {AndersenHCD::initialize(svfModule);}
+    void initialize(SVFModule* svfModule) {AndersenHCD::initialize(svfModule);}
     void solveWorklist() {AndersenHCD::solveWorklist();}
     void handleCopyGep(ConstraintNode* node) {AndersenLCD::handleCopyGep(node);}
     void mergeSCC(NodeID nodeId);

@@ -32,6 +32,7 @@
 
 #include "Util/ThreadAPI.h"
 #include "Util/SVFUtil.h"
+
 #include <iostream>		/// std output
 #include <stdio.h>
 #include <iomanip>		/// for setw
@@ -117,14 +118,14 @@ void ThreadAPI::init() {
 /*!
  *
  */
-const Function* ThreadAPI::getCallee(const Instruction *inst) const {
+const SVFFunction* ThreadAPI::getCallee(const Instruction *inst) const {
     return SVFUtil::getCallee(inst);
 }
 
 /*!
  *
  */
-const Function* ThreadAPI::getCallee(const CallSite cs) const {
+const SVFFunction* ThreadAPI::getCallee(const CallSite cs) const {
     return SVFUtil::getCallee(cs);
 }
 
@@ -177,13 +178,13 @@ void ThreadAPI::statInit(StringMap& tdAPIStatMap) {
     tdAPIStatMap["hare_parallel_for"] = 0;
 }
 
-void ThreadAPI::performAPIStat(SVFModule module) {
+void ThreadAPI::performAPIStat(SVFModule* module) {
 
     StringMap tdAPIStatMap;
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::iterator it = module.begin(), eit = module.end(); it != eit;
+    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
             ++it) {
 
         for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
@@ -191,7 +192,7 @@ void ThreadAPI::performAPIStat(SVFModule module) {
             const Instruction *inst = &*II;
             if (!SVFUtil::isa<CallInst>(inst))
                 continue;
-            const Function* fun = SVFUtil::getCallee(inst);
+            const SVFFunction* fun = getCallee(inst);
             TD_TYPE type = getType(fun);
             switch (type) {
             case TD_FORK: {
@@ -274,7 +275,7 @@ void ThreadAPI::performAPIStat(SVFModule module) {
 
     }
 
-    StringRef n(module.getModuleIdentifier());
+    StringRef n(module->getModuleIdentifier());
     StringRef name = n.split('/').second;
     name = name.split('.').first;
     std::cout << "################ (program : " << name.str()

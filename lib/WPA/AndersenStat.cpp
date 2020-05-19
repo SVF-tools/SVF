@@ -26,6 +26,8 @@
  *  Created on: Oct 12, 2013
  *      Author: Yulei Sui
  */
+
+#include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
@@ -237,14 +239,14 @@ void AndersenStat::statNullPtr() {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
                                << ") PtrName:" << pagNode->getValue()->getName();
-                        wrnMsg(rawstr.str());
+                        writeWrnMsg(rawstr.str());
                         //pagNode->getValue()->dump();
                     }
                 }
                 else {
                     _NumOfNullPtr++;
                     rawstr << "##Null Pointer : (NodeID " << pagNode->getId() << ")";
-                    wrnMsg(rawstr.str());
+                    writeWrnMsg(rawstr.str());
                 }
             }
         }

@@ -16,7 +16,7 @@ static llvm::cl::opt<unsigned long long> cxtBudget("cxtbg",  llvm::cl::init(1000
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(SVFModule m, DDAClient* client)
+ContextDDA::ContextDDA(SVFModule* m, DDAClient* client)
     : CondPTAImpl<ContextCond>(PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client) {
     flowDDA = new FlowDDA(m, client);
@@ -34,7 +34,7 @@ ContextDDA::~ContextDDA() {
 /*!
  * Analysis initialization
  */
-void ContextDDA::initialize(SVFModule module) {
+void ContextDDA::initialize(SVFModule* module) {
     CondPTAImpl<ContextCond>::initialize(module);
     buildSVFG(module);
     setCallGraph(getPTACallGraph());
@@ -149,14 +149,14 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const Function* callee, CallSite cs) {
-    if(getPAG()->isIndirectCallSites(cs)) {
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs) {
+	if(getPAG()->isIndirectCallSites(cs)) {
         NodeID id = getPAG()->getFunPtr(cs);
         PAGNode* node = getPAG()->getPAGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
-        if(pts.test(getPAG()->getObjectNode(callee)))
+        if(pts.test(getPAG()->getObjectNode(callee->getLLVMFun())))
             return true;
         else
             return false;
@@ -176,11 +176,11 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getDstNode()->getBB()->getParent();
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const SVFFunction* callee = edge->getDstNode()->getFun();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -198,11 +198,11 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge) {
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
-    CallSite cs = getSVFG()->getCallSite(svfg_csId);
-    const Function* callee = edge->getSrcNode()->getBB()->getParent();
+    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const SVFFunction* callee = edge->getSrcNode()->getFun();
 
-    if(getPTACallGraph()->hasCallSiteID(cs,callee)) {
-        return getPTACallGraph()->getCallSiteID(cs,callee);
+    if(getPTACallGraph()->hasCallSiteID(cbn,callee)) {
+        return getPTACallGraph()->getCallSiteID(cbn,callee);
     }
 
     return 0;
@@ -250,7 +250,7 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge) {
                 ///       to solve this later.
                 if (dpm.getCond().containCallStr(csId)) {
                     outOfBudgetQuery = true;
-                    SVFUtil::wrnMsg("Call site ID is contained in call string. Is this a recursion?");
+                    SVFUtil::writeWrnMsg("Call site ID is contained in call string. Is this a recursion?");
                     return false;
                 }
                 else {
@@ -280,8 +280,9 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store)
     assert(mem && "memory object is null??");
     if(mem->isHeap()) {
         if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
-            const Function* fun = mallocSite->getParent()->getParent();
-            if(_ander->isInRecursion(fun))
+            const Function* fun = mallocSite->getFunction();
+            const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            if(_ander->isInRecursion(svfFun))
                 return true;
             if(var.get_cond().isConcreteCxt() == false)
                 return true;
