@@ -57,19 +57,19 @@ set(SOURCES
     WPA/FlowSensitiveTBHC.cpp
     WPA/TypeAnalysis.cpp
     WPA/WPAPass.cpp
-#    SABER/DoubleFreeChecker.cpp
-#    SABER/FileChecker.cpp
-#    SABER/LeakChecker.cpp
-#    SABER/ProgSlice.cpp
-#    SABER/SaberAnnotator.cpp
-#    SABER/SaberCheckerAPI.cpp
-#    SABER/SaberSVFGBuilder.cpp
-#    SABER/SrcSnkDDA.cpp
-#    DDA/ContextDDA.cpp
-#    DDA/DDAClient.cpp
-#    DDA/DDAPass.cpp
-#    DDA/DDAStat.cpp
-#    DDA/FlowDDA.cpp
+    SABER/DoubleFreeChecker.cpp
+    SABER/FileChecker.cpp
+    SABER/LeakChecker.cpp
+    SABER/ProgSlice.cpp
+    SABER/SaberAnnotator.cpp
+    SABER/SaberCheckerAPI.cpp
+    SABER/SaberSVFGBuilder.cpp
+    SABER/SrcSnkDDA.cpp
+    DDA/ContextDDA.cpp
+    DDA/DDAClient.cpp
+    DDA/DDAPass.cpp
+    DDA/DDAStat.cpp
+    DDA/FlowDDA.cpp
 #    MTA/FSMPTA.cpp
 #    MTA/LockAnalysis.cpp
 #    MTA/MHP.cpp

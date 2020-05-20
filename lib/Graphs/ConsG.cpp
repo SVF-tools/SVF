@@ -400,9 +400,8 @@ bool ConstraintGraph::moveInEdgesToRepNode(ConstraintNode* node, ConstraintNode*
             // then it brings impact on field-sensitivity.
             if (!isZeroOffsettedGepCGEdge(edge)) {
                 criticalGepInsideSCC = true;
-                removeDirectEdge(edge);
-            } else
-                reTargetDstOfEdge(edge,rep);
+            }
+            removeDirectEdge(edge);
         }
         else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetDstOfEdge(edge,rep);
@@ -452,9 +451,8 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
             // then it brings impact on field-sensitivity.
             if (!isZeroOffsettedGepCGEdge(edge)) {
                 criticalGepInsideSCC = true;
-                removeDirectEdge(edge);
-            } else
-                reTargetSrcOfEdge(edge,rep);
+            }
+            removeDirectEdge(edge);
         }
         else if(SVFUtil::isa<LoadCGEdge>(edge) || SVFUtil::isa<StoreCGEdge>(edge))
             reTargetSrcOfEdge(edge,rep);
