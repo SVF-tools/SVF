@@ -361,16 +361,16 @@ public:
 protected:
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
-    virtual inline bool addCopyEdge(NodeID src, NodeID dst) {
-        if (Andersen::addCopyEdge(src, dst)) {
-            if (unionPts(sccRepNode(dst), sccRepNode(src)))
-                pushIntoWorklist(sccRepNode(dst));
-
-            return true;
-        }
-        else
-            return false;
-    }
+//    virtual inline bool addCopyEdge(NodeID src, NodeID dst) {
+//        if (Andersen::addCopyEdge(src, dst)) {
+//            if (unionPts(sccRepNode(dst), sccRepNode(src)))
+//                pushIntoWorklist(sccRepNode(dst));
+//
+//            return true;
+//        }
+//        else
+//            return false;
+//    }
 
     /// process "bitcast" CopyCGEdge
     virtual void processCast(const ConstraintEdge *edge) {
