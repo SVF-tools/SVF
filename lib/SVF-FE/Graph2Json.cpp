@@ -2,7 +2,6 @@
 #include <fstream>	// for ICFGBuilderFromFile
 #include <string>	// for ICFGBuilderFromFile
 #include <sstream>	// for ICFGBuilderFromFile
-#include "llvm/Support/JSON.h"
 
 using namespace std;
 using namespace SVFUtil;

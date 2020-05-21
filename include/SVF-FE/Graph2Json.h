@@ -4,7 +4,6 @@
 #include "Graphs/PAG.h"
 #include "Graphs/PAGEdge.h"
 #include "Graphs/PAGNode.h"
-#include "llvm/Support/JSON.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"
