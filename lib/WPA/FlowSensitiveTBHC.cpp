@@ -92,7 +92,7 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge) {
 
     // TODO: the conditional bool may be unnecessary.
     // Adding all clones is redundant, and introduces too many calls to propVarPts...
-    // This + preparePtsFromIn introduces performance and precision penalties.
+    // This introduces performance and precision penalties.
     // We should filter out according to src.
     bool isStore = false;
     const DIType *tildet = nullptr;
@@ -307,8 +307,6 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep) {
 bool FlowSensitiveTBHC::processLoad(const LoadSVFGNode* load) {
     double start = stat->getClk();
 
-    //preparePtsFromIn(load, load->getPAGSrcNodeID());
-
     const DIType *tildet = getTypeFromCTirMetadata(load);
     if (tildet != undefType) {
         init(load->getId(), load->getPAGSrcNodeID(), tildet, TBHCAllReuse);
@@ -455,37 +453,6 @@ bool FlowSensitiveTBHC::processCopy(const CopySVFGNode* copy) {
 const NodeBS& FlowSensitiveTBHC::getAllFieldsObjNode(NodeID id) {
     return getGepObjs(id);
 }
-
-void FlowSensitiveTBHC::preparePtsFromIn(const StmtSVFGNode *stmt, NodeID pId) {
-    PointsTo &pPt = getPts(pId);
-    PointsTo originalObjs;
-    for (NodeID c : pPt) {
-        originalObjs.set(getOriginalObj(c));
-    }
-
-    const DIType *tildet = getTypeFromCTirMetadata(stmt);
-    const PtsMap &ptsInMap = getDFPTDataTy()->getDFInPtsMap(stmt->getId());
-    for (PtsMap::value_type kv : ptsInMap) {
-        NodeID o = kv.first;
-        if (isClone(o) && originalObjs.test(getOriginalObj(o))) {
-            // Clone of an object in p's set is in in's set.
-            pPt.set(o);
-        }
-    }
-
-    // There are some Geps missing.
-    for (NodeID o : originalObjs) {
-        if (const GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(o))) {
-            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getLocationSet().getOffset());
-            for (NodeID g : geps) {
-                if (ptsInMap.find(g) != ptsInMap.end()) {
-                    pPt.set(g);
-                }
-            }
-        }
-    }
-}
-
 
 bool FlowSensitiveTBHC::updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
     // IN sets are only based on the original object.

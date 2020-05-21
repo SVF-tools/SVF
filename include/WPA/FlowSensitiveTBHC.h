@@ -74,10 +74,6 @@ public:
 
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) override;
 
-    /// Updates the PTS of pId to reflect changes (clones of what is in its current PTS)
-    /// coming from the in set.
-    virtual void preparePtsFromIn(const StmtSVFGNode *stmt, NodeID pId);
-
     /// Extracts the value from SVFGNode (if it exists), and calls
     /// getTypeFromCTirMetadata(const Value *).
     /// If no ctir type exists, returns null (void).
