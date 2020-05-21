@@ -50,37 +50,44 @@ void LeakChecker::initSrcs() {
         if(isPtrInDeadFunction(cs->getCallSite().getInstruction()))
             continue;
 
-        const SVFFunction* fun = getCallee(cs->getCallSite());
-        if(isSourceLikeFun(fun)) {
-            CSWorkList worklist;
-            SVFGNodeBS visited;
-            worklist.push(it->first->getCallBlockNode());
-            while (!worklist.empty()) {
-            	const CallBlockNode* cs = worklist.pop();
-            	const RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite().getInstruction());
-                const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
-                const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
-                if(visited.test(node->getId())==0)
-                    visited.set(node->getId());
-                else
-                    continue;
+        PTACallGraph::FunctionSet callees;
+        getCallgraph()->getCallees(cs->getCallBlockNode(),callees);
+        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++){
+			const SVFFunction* fun = *cit;
+			if (isSourceLikeFun(fun)) {
+				CSWorkList worklist;
+				SVFGNodeBS visited;
+				worklist.push(it->first->getCallBlockNode());
+				while (!worklist.empty()) {
+					const CallBlockNode* cs = worklist.pop();
+					const RetBlockNode* retBlockNode = icfg->getRetBlockNode(
+							cs->getCallSite().getInstruction());
+					const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
+					const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
+					if (visited.test(node->getId()) == 0)
+						visited.set(node->getId());
+					else
+						continue;
 
-                CallSiteSet csSet;
-                // if this node is in an allocation wrapper, find all its call nodes
-                if(isInAWrapper(node,csSet)) {
-                    for(CallSiteSet::iterator it = csSet.begin(), eit = csSet.end(); it!=eit ; ++it) {
-                        worklist.push(*it);
-                    }
-                }
-                // otherwise, this is the source we are interested
-                else {
-                    // exclude sources in dead functions
-                    if(isPtrInDeadFunction(cs->getCallSite().getInstruction()) == false) {
-                        addToSources(node);
-                        addSrcToCSID(node,cs);
-                    }
-                }
-            }
+					CallSiteSet csSet;
+					// if this node is in an allocation wrapper, find all its call nodes
+					if (isInAWrapper(node, csSet)) {
+						for (CallSiteSet::iterator it = csSet.begin(), eit =
+								csSet.end(); it != eit; ++it) {
+							worklist.push(*it);
+						}
+					}
+					// otherwise, this is the source we are interested
+					else {
+						// exclude sources in dead functions
+						if (isPtrInDeadFunction(
+								cs->getCallSite().getInstruction()) == false) {
+							addToSources(node);
+							addSrcToCSID(node, cs);
+						}
+					}
+				}
+			}
         }
     }
 

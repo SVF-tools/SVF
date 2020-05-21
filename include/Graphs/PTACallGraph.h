@@ -309,13 +309,22 @@ public:
     PTACallGraphEdge* hasGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId) const;
     /// Get call graph edge via nodes
     PTACallGraphEdge* getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId);
+
+    /// Get all callees for a callsite
+	inline void getCallees(const CallBlockNode* cs, FunctionSet& callees) {
+		for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
+				getCallEdgeEnd(cs); it != eit; ++it) {
+			callees.insert((*it)->getDstNode()->getFunction());
+		}
+	}
+
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
     inline bool hasCallGraphEdge(const CallBlockNode* inst) const {
         return callinstToCallGraphEdgesMap.find(inst)!=callinstToCallGraphEdgesMap.end();
     }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallBlockNode* inst) const {
+        inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallBlockNode* inst) const {
         CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");

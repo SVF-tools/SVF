@@ -112,6 +112,11 @@ public:
         return graph();
     }
 
+    /// Get Callgraph
+    inline PTACallGraph* getCallgraph() const {
+        return ptaCallGraph;
+    }
+
     /// Whether this svfg node may access global variable
     inline bool isGlobalSVFGNode(const SVFGNode* node) const {
         return memSSA.isGlobalSVFGNode(node);
