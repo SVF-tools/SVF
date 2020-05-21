@@ -15,6 +15,7 @@ set(SOURCES
     SVF-FE/PAGBuilder.cpp
     SVF-FE/CHG.cpp
     SVF-FE/DCHG.cpp
+    SVF-FE/Graph2Json.cpp
     Graphs/PTACallGraph.cpp
     Graphs/ThreadCallGraph.cpp
     Graphs/PAG.cpp
