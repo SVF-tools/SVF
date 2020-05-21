@@ -41,6 +41,16 @@ public:
         return "FSTBHC";
     }
 
+    /// For LLVM RTTI.
+    static inline bool classof(const FlowSensitiveTBHC *) {
+        return true;
+    }
+
+    /// For LLVM RTTI.
+    static inline bool classof(const PointerAnalysis *pta) {
+        return pta->getAnalysisTy() == FSTBHC_WPA;
+    }
+
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override;
     virtual bool propAlongDirectEdge(const DirectSVFGEdge* edge) override;
 
