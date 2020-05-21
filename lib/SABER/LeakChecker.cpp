@@ -102,13 +102,18 @@ void LeakChecker::initSnks() {
 
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const SVFFunction* fun = getCallee(it->first->getCallSite());
-        if(isSinkLikeFun(fun)) {
-            PAG::PAGNodeList& arglist =	it->second;
-            assert(!arglist.empty() && "no actual parameter at deallocation site?");
-            /// we only pick the first parameter of all the actual parameters
-            const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(),it->first);
-            addToSinks(snk);
+
+        PTACallGraph::FunctionSet callees;
+        getCallgraph()->getCallees(it->first,callees);
+        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++){
+			const SVFFunction* fun = *cit;
+			if (isSinkLikeFun(fun)) {
+				PAG::PAGNodeList& arglist = it->second;
+				assert(!arglist.empty() && "no actual parameter at deallocation site?");
+				/// we only pick the first parameter of all the actual parameters
+				const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(), it->first);
+				addToSinks(snk);
+			}
         }
     }
 }

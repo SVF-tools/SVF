@@ -48,7 +48,7 @@ void SaberSVFGBuilder::buildSVFG() {
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
-    AddExtActualParmSVFGNodes();
+    AddExtActualParmSVFGNodes(pta->getPTACallGraph());
 
     if(pta->printStat())
         svfg->performStat();
@@ -157,17 +157,24 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta) {
 
 
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
-void SaberSVFGBuilder::AddExtActualParmSVFGNodes() {
+void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph) {
     PAG* pag = PAG::getPAG();
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
-        const SVFFunction* fun = getCallee(it->first->getCallSite());
-        if(SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
-                || SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
-            PAG::PAGNodeList& arglist =	it->second;
-            const PAGNode* pagNode = arglist.front();
-            svfg->addActualParmVFGNode(pagNode,it->first);
-            svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(),svfg->getActualParmVFGNode(pagNode,it->first)->getId());
-        }
+		PTACallGraph::FunctionSet callees;
+		callgraph->getCallees(it->first, callees);
+		for (PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+				ecit = callees.end(); cit != ecit; cit++) {
+
+			const SVFFunction* fun = *cit;
+			if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
+					|| SaberCheckerAPI::getCheckerAPI()->isFClose(fun)) {
+				PAG::PAGNodeList& arglist = it->second;
+				const PAGNode* pagNode = arglist.front();
+				svfg->addActualParmVFGNode(pagNode, it->first);
+				svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+			}
+
+		}
     }
 }
