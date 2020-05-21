@@ -467,7 +467,6 @@ static bool isAliasTestFunction(std::string name) {
 }
 
 void TypeBasedHeapCloning::validateTBHCTests(SVFModule *svfMod) {
-    SVFUtil::outs() << "!!!!!! VALIDATING TBHC TESTS !!!!!!\n";
     const LLVMModuleSet *llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
     for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i) {
         Module *module = llvmModuleSet->getModule(i);
