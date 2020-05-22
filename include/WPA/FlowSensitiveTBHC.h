@@ -41,6 +41,16 @@ public:
         return "FSTBHC";
     }
 
+    /// For LLVM RTTI.
+    static inline bool classof(const FlowSensitiveTBHC *) {
+        return true;
+    }
+
+    /// For LLVM RTTI.
+    static inline bool classof(const PointerAnalysis *pta) {
+        return pta->getAnalysisTy() == FSTBHC_WPA;
+    }
+
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override;
     virtual bool propAlongDirectEdge(const DirectSVFGEdge* edge) override;
 
@@ -63,10 +73,6 @@ public:
     virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
 
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) override;
-
-    /// Updates the PTS of pId to reflect changes (clones of what is in its current PTS)
-    /// coming from the in set.
-    virtual void preparePtsFromIn(const StmtSVFGNode *stmt, NodeID pId);
 
     /// Extracts the value from SVFGNode (if it exists), and calls
     /// getTypeFromCTirMetadata(const Value *).

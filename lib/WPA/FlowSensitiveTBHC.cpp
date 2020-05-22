@@ -92,7 +92,7 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge) {
 
     // TODO: the conditional bool may be unnecessary.
     // Adding all clones is redundant, and introduces too many calls to propVarPts...
-    // This + preparePtsFromIn introduces performance and precision penalties.
+    // This introduces performance and precision penalties.
     // We should filter out according to src.
     bool isStore = false;
     const DIType *tildet = nullptr;
@@ -307,19 +307,16 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep) {
 bool FlowSensitiveTBHC::processLoad(const LoadSVFGNode* load) {
     double start = stat->getClk();
 
-    //preparePtsFromIn(load, load->getPAGSrcNodeID());
-
+    bool changed = false;
     const DIType *tildet = getTypeFromCTirMetadata(load);
     if (tildet != undefType) {
-        init(load->getId(), load->getPAGSrcNodeID(), tildet, TBHCAllReuse);
+        changed = init(load->getId(), load->getPAGSrcNodeID(), tildet, TBHCAllReuse);
     }
 
     // We want to perform the initialisation for non-pointer nodes but not process the load.
     if (!load->getPAGEdge()->isPTAEdge()) {
-        return false;
+        return changed;
     }
-
-    bool changed = false;
 
     NodeID dstVar = load->getPAGDstNodeID();
 
@@ -358,16 +355,17 @@ bool FlowSensitiveTBHC::processLoad(const LoadSVFGNode* load) {
 bool FlowSensitiveTBHC::processStore(const StoreSVFGNode* store) {
     double start = stat->getClk();
 
+    bool changed = false;
     const DIType *tildet = getTypeFromCTirMetadata(store);
     if (tildet != undefType) {
-        init(store->getId(), store->getPAGDstNodeID(), tildet, TBHCAllReuse || TBHCStoreReuse);
+        changed = init(store->getId(), store->getPAGDstNodeID(), tildet, TBHCAllReuse || TBHCStoreReuse);
     }
 
     // Like processLoad: we want to perform initialisation for non-pointers but not the store.
     if (!store->getPAGEdge()->isPTAEdge()) {
         // Pass through and return because there may be some pointer nodes
         // relying on this node's parents.
-        bool changed = getDFPTDataTy()->updateAllDFOutFromIn(store->getId(), 0, false);
+        changed = getDFPTDataTy()->updateAllDFOutFromIn(store->getId(), 0, false);
         return changed;
     }
 
@@ -380,10 +378,10 @@ bool FlowSensitiveTBHC::processStore(const StoreSVFGNode* store) {
     /// update, we can't remove those points-to information computed
     /// before this strong update from the OUT set.
     if (dstPts.empty()) {
-        return false;
+        return changed;
     }
 
-    bool changed = false;
+    changed = false;
     const PointsTo &filterSet = getFilterSet(store->getId());
     if(getPts(store->getPAGSrcNodeID()).empty() == false) {
         for (NodeID ptd : dstPts) {
@@ -423,8 +421,7 @@ bool FlowSensitiveTBHC::processStore(const StoreSVFGNode* store) {
 
 bool FlowSensitiveTBHC::processPhi(const PHISVFGNode* phi) {
     if (!phi->isPTANode()) return false;
-    bool changed = FlowSensitive::processPhi(phi);
-    return changed;
+    return FlowSensitive::processPhi(phi);
 }
 
 /// Returns whether this instruction initialisates an object's
@@ -444,48 +441,18 @@ static const DIType *getVTInitType(const CopySVFGNode *copy, DCHGraph *dchg) {
 
 bool FlowSensitiveTBHC::processCopy(const CopySVFGNode* copy) {
     const DIType *vtInitType = getVTInitType(copy, dchg);
+    bool changed = false;
     if (vtInitType != nullptr) {
         // Setting the virtual table pointer.
-        init(copy->getId(), copy->getPAGSrcNodeID(), vtInitType, true);
+        changed = init(copy->getId(), copy->getPAGSrcNodeID(), vtInitType, true);
     }
 
-    return FlowSensitive::processCopy(copy);
+    return FlowSensitive::processCopy(copy) || changed;
 }
 
 const NodeBS& FlowSensitiveTBHC::getAllFieldsObjNode(NodeID id) {
     return getGepObjs(id);
 }
-
-void FlowSensitiveTBHC::preparePtsFromIn(const StmtSVFGNode *stmt, NodeID pId) {
-    PointsTo &pPt = getPts(pId);
-    PointsTo originalObjs;
-    for (NodeID c : pPt) {
-        originalObjs.set(getOriginalObj(c));
-    }
-
-    const DIType *tildet = getTypeFromCTirMetadata(stmt);
-    const PtsMap &ptsInMap = getDFPTDataTy()->getDFInPtsMap(stmt->getId());
-    for (PtsMap::value_type kv : ptsInMap) {
-        NodeID o = kv.first;
-        if (isClone(o) && originalObjs.test(getOriginalObj(o))) {
-            // Clone of an object in p's set is in in's set.
-            pPt.set(o);
-        }
-    }
-
-    // There are some Geps missing.
-    for (NodeID o : originalObjs) {
-        if (const GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(o))) {
-            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getLocationSet().getOffset());
-            for (NodeID g : geps) {
-                if (ptsInMap.find(g) != ptsInMap.end()) {
-                    pPt.set(g);
-                }
-            }
-        }
-    }
-}
-
 
 bool FlowSensitiveTBHC::updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
     // IN sets are only based on the original object.
