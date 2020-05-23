@@ -701,7 +701,6 @@ static const ei_pair ei_pairs[]= {
     {"mremap", ExtAPI::EFT_L_A0}, 
     {"strchr", ExtAPI::EFT_L_A0},
     {"strerror_r", ExtAPI::EFT_L_A0},
-
     {"strpbrk", ExtAPI::EFT_L_A0},
     {"strptime", ExtAPI::EFT_L_A0},
     {"strrchr", ExtAPI::EFT_L_A0},
