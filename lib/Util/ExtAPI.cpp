@@ -701,8 +701,7 @@ static const ei_pair ei_pairs[]= {
     {"mremap", ExtAPI::EFT_L_A0}, 
     {"strchr", ExtAPI::EFT_L_A0},
     {"strerror_r", ExtAPI::EFT_L_A0},
-    {"strncat", ExtAPI::EFT_L_A0},
-    {"strncpy", ExtAPI::EFT_L_A0},
+
     {"strpbrk", ExtAPI::EFT_L_A0},
     {"strptime", ExtAPI::EFT_L_A0},
     {"strrchr", ExtAPI::EFT_L_A0},
@@ -734,6 +733,8 @@ static const ei_pair ei_pairs[]= {
     {"stpcpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"strcat", ExtAPI::EFT_L_A0__A0R_A1R},
     {"strcpy", ExtAPI::EFT_L_A0__A0R_A1R},
+    {"strncat", ExtAPI::EFT_L_A0__A0R_A1R},
+    {"strncpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memmove", ExtAPI::EFT_L_A0__A0R_A1R},
     {"bcopy", ExtAPI::EFT_A1R_A0R},
     {"iconv", ExtAPI::EFT_A3R_A1R_NS},
