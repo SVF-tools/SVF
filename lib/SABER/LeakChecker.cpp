@@ -287,11 +287,12 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
     std::string funName = source->getFun()->getName();
 
     if (expectedFailure)
-        outs() << sucMsg("\t EXPECTED FAIL :") << funName << " check <src id:" << source->getId()
+        outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
                << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
     else
-    	SVFUtil::errs() << errMsg("\t UNEXPECTED FAIL :") << funName << " check <src id:" << source->getId()
+		SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
+				<< " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
                << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }

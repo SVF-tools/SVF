@@ -444,7 +444,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             ii != ie; ii++) {
 
         if(getNumOfResolvedIndCallEdge() >= IndirectCallLimit) {
-            errMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
+			wrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
         }
 
@@ -594,7 +594,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun) {
                         outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                                << getSourceLoc(*i) << ")\n";
                     else
-                        SVFUtil::errs() << errMsg("\t FAIL :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
+                        SVFUtil::errs() << errMsg("\t FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                                << getSourceLoc(*i) << ")\n";
                 } else
                     assert(false && "alias check functions not only used at callsite??");
@@ -636,10 +636,10 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun) {
                 NodeID id2 = pag->getValueNode(V2);
 
                 if (expectedFailure)
-                    outs() << sucMsg("\t EXPECTED FAIL :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
+                    outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                            << getSourceLoc(call) << ")\n";
                 else
-                    SVFUtil::errs() << errMsg("\t UNEXPECTED FAIL :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
+                    SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                            << getSourceLoc(call) << ")\n";
             }
             else
