@@ -28,6 +28,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
+#include "llvm/Support/JSON.h"
 
 /*!
  * A value represents an object if it is
