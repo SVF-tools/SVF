@@ -43,6 +43,7 @@
 #include "Graphs/ICFG.h"
 #include "MemoryModel/PTAType.h"
 #include "Graphs/ExternalPAG.h"
+#include "WPA/FlowSensitiveTBHC.h"
 #include <fstream>
 #include <sstream>
 
@@ -282,7 +283,9 @@ void PointerAnalysis::finalize() {
 
     getPTACallGraph()->dump("callgraph_final");
 
-    if(!pag->isBuiltFromFile() && alias_validation)
+    // FSTBHC has its own TBHC-specific test validation.
+    if(!pag->isBuiltFromFile() && alias_validation
+        && !SVFUtil::isa<FlowSensitiveTBHC>(this))
         validateTests();
 
     if (!UsePreCompFieldSensitive)
