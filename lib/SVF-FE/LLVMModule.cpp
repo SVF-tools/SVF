@@ -77,8 +77,11 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 	assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
 	// We read PAG from LLVM IR
-	if(Graphtxt.getValue().empty())
-		assert(!moduleNameVec.empty() && "no module is found from LLVM bc file!");
+	if(Graphtxt.getValue().empty()){
+		SVFUtil::outs() << "no LLVM bc file is found!\n";
+		exit(0);
+		//assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
+	}
 	// We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
 	else
 		SVFModule::setPagFromTXT(Graphtxt.getValue());
