@@ -92,13 +92,6 @@ else
 fi
 make -j4
 
-#########
-# Run ctest
-########
-if [[ $sysOS == "Linux" ]] ; then
-  ctest
-fi
-
 ########
 # Set up environment variables of SVF
 ########
@@ -109,9 +102,21 @@ then
 else
   . ./setup.sh
 fi
+
+#########
+# Run ctest
+########
+if [[ $sysOS == "Linux" ]] ; then
+   if [[ $1 == 'debug' ]]
+   then
+     cd ./'Debug-build'
+   else 
+     cd ./'Release-build'
+  ctest
+fi
+
 #########
 # Optionally, you can also specify a CXX_COMPILER and your $LLVM_HOME for your build
 # cmake -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++ -DLLVM_DIR=$LLVM_DIR
 #########
-
 
