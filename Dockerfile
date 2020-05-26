@@ -14,17 +14,8 @@ ENV build_deps="wget xz-utils cmake python"
 RUN apt-get update
 RUN apt-get install -y $build_deps $lib_deps
 
-# Fetch and extract LLVM source.
-RUN echo "Building LLVM ${llvm_version}"
-RUN mkdir -p /home/jason/llvm
-WORKDIR /home/jason/llvm
-RUN wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
-RUN tar -xvf "clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
-ENV LLVM_DIR=/home/jason/llvm/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04
-ENV PATH=$LLVM_DIR:$PATH
-
 # Fetch and extract SVF source.
-RUN echo "Building SVF"
+RUN echo "Downloading LLVM and building SVF"
 WORKDIR /
 RUN wget "https://github.com/SVF-tools/SVF/archive/master.zip"
 RUN unzip master.zip
