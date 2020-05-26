@@ -578,6 +578,8 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule *svfMod) {
                       << " : " << testName
                       << " check <id:" << p << ", id:" << q << "> "
                       << "at (" << SVFUtil::getSourceLoc(cs.getInstruction()) << ")\n";
+			if (!passed)
+				assert(false && "test case failed!");
 
             if (pPtsFiltered.empty()) {
                 msgStream << SVFUtil::wrnMsg("\t WARNING")

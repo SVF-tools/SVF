@@ -596,9 +596,12 @@ void PointerAnalysis::validateSuccessTests(std::string fun) {
                     if (checkSuccessful)
                         outs() << sucMsg("\t SUCCESS :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                                << getSourceLoc(*i) << ")\n";
-                    else
-                        SVFUtil::errs() << errMsg("\t FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
-                               << getSourceLoc(*i) << ")\n";
+                    else{
+                    	SVFUtil::errs() << errMsg("\t FAILURE :") << fun
+							<< " check <id:" << id1 << ", id:" << id2
+							<< "> at (" << getSourceLoc(*i) << ")\n";
+						assert(false && "test case failed!");
+                    }
                 } else
                     assert(false && "alias check functions not only used at callsite??");
 
@@ -641,9 +644,11 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun) {
                 if (expectedFailure)
                     outs() << sucMsg("\t EXPECTED-FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                            << getSourceLoc(call) << ")\n";
-                else
+                else{
                     SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << fun << " check <id:" << id1 << ", id:" << id2 << "> at ("
                            << getSourceLoc(call) << ")\n";
+            		assert(false && "test case failed!");
+                }
             }
             else
                 assert(false && "alias check functions not only used at callsite??");
