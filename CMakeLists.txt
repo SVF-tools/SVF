@@ -39,6 +39,8 @@ set(Z3_DIR $ENV{Z3_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_BINARY_DIR}/include
                     ${Z3_DIR}/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
+
 LINK_DIRECTORIES(${Z3_DIR}/bin)
 add_subdirectory(lib)
 add_subdirectory(tools)
@@ -50,3 +52,6 @@ INSTALL(
     FILES_MATCHING
     PATTERN "**/*.h"
     )
+enable_testing()
+add_subdirectory(Test-Suite)
+include(CTest)
