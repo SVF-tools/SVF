@@ -2,13 +2,12 @@ echo "Setting up environment for SVF"
 
 
 #########
-# Please change LLVM_DIR_RELEASE before using it
+# Please change LLVM_DIR before using it
 ########
-
-export LLVM_DIR=/Users/yulei/Documents/llvm-10.0.0/llvm-10.0.0.obj
 
 if [ -z "$LLVM_DIR" ]
 then
+	export LLVM_DIR=/Users/yulei/Documents/llvm-10.0.0/llvm-10.0.0.obj
 	echo "\$LLVM_DIR is not configured, using the default one"
 fi
 
