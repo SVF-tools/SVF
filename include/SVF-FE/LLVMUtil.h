@@ -34,6 +34,7 @@
 #include "Util/BasicTypes.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
+#include "llvm/Support/JSON.h"
 
 namespace SVFUtil {
 
