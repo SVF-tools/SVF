@@ -1,43 +1,17 @@
 language: generic
-dist: bionic
-os: linux
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - sourceline: 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
-        key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-    packages:
-      - llvm-10
-      - clang-10
-      - libllvm10
-      - llvm-10-dev
-      - llvm-10-runtime
-      - llvm-10-tools
 
 matrix:
-  include:
-    - os: osx
-      env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@10/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@10 LDFLAGS:=-L/usr/local/opt/llvm@10/lib CPPFLAGS=-I/usr/local/opt/llvm@10/include
-        - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@10
-      cache:
-        directories: ~/Library/Caches/Homebrew/
-    - os: osx
-      env:
-        - CXX=clang++ PATH=/usr/local/opt/llvm@10/bin:$PATH LLVM_DIR=/usr/local/opt/llvm@10 LDFLAGS:=-L/usr/local/opt/llvm@10/lib CPPFLAGS=-I/usr/local/opt/llvm@10/include
-        - CONFIG_ARGS="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-      install: brew install llvm@10
-      cache:
-        directories: ~/Library/Caches/Homebrew/
-env:
-  global:
-    - CC=clang-10 CXX=clang++-10
-    - PATH=$TRAVIS_BUILD_DIR/cmake-3.8.1-Linux-x86_64/bin:$PATH
-    - LLVM_DIR=/usr/lib/llvm-10
-  matrix:
-    - CONFIG_ARGS="-DCMAKE_BUILD_TYPE:STRING=Debug"
-    - CONFIG_ARGS=
-install: curl https://cmake.org/files/v3.8/cmake-3.8.1-Linux-x86_64.tar.gz | tar xz
-script: mkdir build && pushd build && cmake $CONFIG_ARGS $TRAVIS_BUILD_DIR && make -j4 && popd
+    include:
+      - os: linux
+        dist: bionic
+        sudo: required
+      - os: osx
+        osx_image: xcode7.2
+
+
+before_script:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++ libstdc++6; fi
+
+script:
+  - . ./build.sh
