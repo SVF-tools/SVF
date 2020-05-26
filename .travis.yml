@@ -11,7 +11,7 @@ matrix:
 
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++ libstdc++6; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++; fi
 
 script:
   - . ./build.sh
