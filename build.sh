@@ -106,12 +106,14 @@ fi
 #########
 # Run ctest
 ########
-if [[ $sysOS == "Linux" ]] ; then
+if [[ $sysOS == "Linux" ]]  
+then
    if [[ $1 == 'debug' ]]
    then
      cd ./'Debug-build'
    else 
      cd ./'Release-build'
+   fi
   ctest
 fi
 
@@ -119,4 +121,3 @@ fi
 # Optionally, you can also specify a CXX_COMPILER and your $LLVM_HOME for your build
 # cmake -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++ -DLLVM_DIR=$LLVM_DIR
 #########
-
