@@ -114,7 +114,7 @@ then
    else 
      cd ./'Release-build'
    fi
-#  ctest --v
+  ctest --v
 fi
 
 #########

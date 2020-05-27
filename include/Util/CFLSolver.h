@@ -86,13 +86,13 @@ protected:
 
         while (!isWorklistEmpty()) {
             DPIm item = popFromWorklist();
-            forwardProcess(item);
+            FWProcessCurNode(item);
 
             GNODE* v = getNode(getNodeIDFromItem(item));
             child_iterator EI = GTraits::child_begin(v);
             child_iterator EE = GTraits::child_end(v);
             for (; EI != EE; ++EI) {
-                forwardpropagate(item,*(EI.getCurrent()) );
+            	FWProcessOutgoingEdge(item,*(EI.getCurrent()) );
             }
         }
     }
@@ -102,31 +102,31 @@ protected:
 
         while (!isWorklistEmpty()) {
             DPIm item = popFromWorklist();
-            backwardProcess(item);
+            BWProcessCurNode(item);
 
             GNODE* v = getNode(getNodeIDFromItem(item));
             inv_child_iterator EI = InvGTraits::child_begin(v);
             inv_child_iterator EE = InvGTraits::child_end(v);
             for (; EI != EE; ++EI) {
-                backwardpropagate(item,*(EI.getCurrent()) );
+            	BWProcessIncomingEdge(item,*(EI.getCurrent()) );
             }
         }
     }
     /// Process the DP item
     //@{
-    virtual void forwardProcess(const DPIm& item) {
+    virtual void FWProcessCurNode(const DPIm& item) {
     }
-    virtual void backwardProcess(const DPIm& item) {
+    virtual void BWProcessCurNode(const DPIm& item) {
     }
     //@}
     /// Propagation for the solving, to be implemented in the child class
     //@{
-    virtual void forwardpropagate(const DPIm& item, GEDGE* edge) {
+    virtual void FWProcessOutgoingEdge(const DPIm& item, GEDGE* edge) {
         DPIm newItem(item);
         newItem.setCurNodeID(edge->getDstID());
         pushIntoWorklist(newItem);
     }
-    virtual void backwardpropagate(const DPIm& item, GEDGE* edge) {
+    virtual void BWProcessIncomingEdge(const DPIm& item, GEDGE* edge) {
         DPIm newItem(item);
         newItem.setCurNodeID(edge->getSrcID());
         pushIntoWorklist(newItem);

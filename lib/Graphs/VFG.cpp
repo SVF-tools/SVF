@@ -45,7 +45,7 @@ FormalRetVFGNode::FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunctio
 PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k): VFGNode(id, k), res(r) {
     const Value* val = r->getValue();
     if(const Function* fun =  SVFUtil::dyn_cast<Function>(val)) {
-        assert(SVFUtil::isa<VarArgPN>(r) && "not a varag function?");
+        //assert(SVFUtil::isa<VarArgPN>(r) && "not a varag function?");
         bb = &(fun->getEntryBlock());
     }
     /// the value can be an instruction phi, or a formal argument at function entry (due to SVFGOPT)
@@ -231,7 +231,8 @@ void VFG::addVFGNodes() {
 					ecit = uniqueFunRetNode->getIncomingEdgesEnd(PAGEdge::Copy);
 					cit != ecit; ++cit) {
 				const CopyPE* copyPE = SVFUtil::cast<CopyPE>(*cit);
-				retPAGNodes.insert(copyPE->getSrcNode());
+				if (isInterestedPAGNode(copyPE->getSrcNode()))
+					retPAGNodes.insert(copyPE->getSrcNode());
 			}
 		}
 
@@ -239,10 +240,11 @@ void VFG::addVFGNodes() {
 		if(retPAGNodes.empty())
 			addFormalRetVFGNode(pag->getPAGNode(pag->getNullPtr()), func, retPEs);
 
-		/// Otherwise, we add the corresponding PAGNode of 'v' (e.g., return v) to FormalRetVFGNode
-		for (PAGNodeSet::const_iterator it = retPAGNodes.begin(), eit = retPAGNodes.end(); it != eit; ++it)
-			if (isInterestedPAGNode(*it))
-				addFormalRetVFGNode(*it, func, retPEs);
+		/// Otherwise, we add the unique function return node
+		else{
+			if(isInterestedPAGNode(uniqueFunRetNode))
+				addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
+		}
 	}
 
     // initialize llvm phi nodes (phi of top level pointers)
