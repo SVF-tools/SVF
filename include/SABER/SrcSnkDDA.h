@@ -197,7 +197,7 @@ public:
 
 protected:
     /// Forward traverse
-    virtual inline void forwardProcess(const DPIm& item) {
+    virtual inline void FWProcessCurNode(const DPIm& item) {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isSink(node)) {
             addSinkToCurSlice(node);
@@ -207,16 +207,16 @@ protected:
             addToCurForwardSlice(node);
     }
     /// Backward traverse
-    virtual inline void backwardProcess(const DPIm& item) {
+    virtual inline void BWProcessCurNode(const DPIm& item) {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isInCurForwardSlice(node)) {
             addToCurBackwardSlice(node);
         }
     }
     /// Propagate information forward by matching context
-    virtual void forwardpropagate(const DPIm& item, SVFGEdge* edge);
+    virtual void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge);
     /// Propagate information backward without matching context, as forward analysis already did it
-    virtual void backwardpropagate(const DPIm& item, SVFGEdge* edge);
+    virtual void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge);
     /// Whether has been visited or not, in order to avoid recursion on SVFG
     //@{
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item) {
@@ -241,16 +241,6 @@ protected:
     }
     //@}
 
-    /// Guarded reachability search
-    //@{
-    virtual void AllPathReachability();
-    inline bool isSatisfiableForAll(ProgSlice* slice) {
-        return slice->isSatisfiableForAll();
-    }
-    inline bool isSatisfiableForPairs(ProgSlice* slice) {
-        return slice->isSatisfiableForPairs();
-    }
-    //@}
     /// Whether it is all path reachable from a source
     virtual bool isAllPathReachable() {
         return _curSlice->isAllReachable();

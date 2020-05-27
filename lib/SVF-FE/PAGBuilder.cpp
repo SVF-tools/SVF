@@ -620,7 +620,9 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
+    	const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
         addCopyEdge(vnS, rnF);
+		pag->addPhiNode(pag->getPAGNode(rnF), pag->getPAGNode(vnS), block);
     }
 }
 

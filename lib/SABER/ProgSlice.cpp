@@ -42,7 +42,7 @@ using namespace z3;
  * C = \bigvee Guard(path_i),  0 < i < m
  * Guard(path_i) = \bigwedge VFGGuard(x,y),  suppose (x,y) are two SVFGNode nodes on path_i
  */
-void ProgSlice::AllPathReachableSolve() {
+bool ProgSlice::AllPathReachableSolve() {
     const SVFGNode* source = getSource();
     VFWorkList worklist;
     worklist.push(source);
@@ -82,6 +82,7 @@ void ProgSlice::AllPathReachableSolve() {
         }
     }
 
+    return isSatisfiableForAll();
 }
 
 /*!

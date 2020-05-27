@@ -434,19 +434,15 @@ protected:
     /// Add a callee Return VFG node
     /// To be noted that here we assume returns of a procedure have already been unified into one
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
-    inline void addFormalRetVFGNode(const PAGNode* ret, const SVFFunction* fun, RetPESet& retPEs) {
-        FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,ret,fun);
+    inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs) {
+        FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
         addVFGNode(sNode);
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
                 it!=eit; ++it)
             sNode->addRetPE(*it);
 
-        PAGNodeToFormalRetMap[ret] = sNode;
-
-        /// map the function unique return node to this VFGNode
-        const PAGNode* funUniqueRet = pag->getFunRet(fun);
-        PAGNodeToFormalRetMap[funUniqueRet] = sNode;
-        /// do not set def here, this node is not a variable definition
+        PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
+        /// there is no need to setDef here, since uniqueFunRet is treated as a phi node to receive values from multiple return instructions of fun
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs) {
