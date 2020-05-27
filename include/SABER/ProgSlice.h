@@ -129,7 +129,7 @@ public:
     //@}
 
     /// Guarded reachability solve
-    void AllPathReachableSolve();
+    bool AllPathReachableSolve();
     bool isSatisfiableForAll();
     bool isSatisfiableForPairs();
 

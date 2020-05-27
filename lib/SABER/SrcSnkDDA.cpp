@@ -71,7 +71,11 @@ void SrcSnkDDA::analyze(SVFModule* module) {
 
             DBOUT(DSaber, outs() << "Backward process for slice:" << (*iter)->getId() << " (size = " << getCurSlice()->getBackwardSliceSize() << ")\n");
 
-            AllPathReachability();
+            if(DumpSlice)
+                annotateSlice(_curSlice);
+
+            if(_curSlice->AllPathReachableSolve()== true)
+                _curSlice->setAllReachable();
 
             DBOUT(DSaber, outs() << "Guard computation for slice:" << (*iter)->getId() << ")\n");
         }
@@ -139,7 +143,7 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet) {
 /*!
  * Propagate information forward by matching context
  */
-void SrcSnkDDA::forwardpropagate(const DPIm& item, SVFGEdge* edge) {
+void SrcSnkDDA::FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge) {
     DBOUT(DSaber,outs() << "\n##processing source: " << getCurSlice()->getSource()->getId() <<" forward propagate from (" << edge->getSrcID());
 
     // for indirect SVFGEdge, the propagation should follow the def-use chains
@@ -198,7 +202,7 @@ void SrcSnkDDA::forwardpropagate(const DPIm& item, SVFGEdge* edge) {
 /*!
  * Propagate information backward without matching context, as forward analysis already did it
  */
-void SrcSnkDDA::backwardpropagate(const DPIm& item, SVFGEdge* edge) {
+void SrcSnkDDA::BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge) {
     DBOUT(DSaber,outs() << "backward propagate from (" << edge->getDstID() << " --> " << edge->getSrcID() << ")\n");
     const SVFGNode* srcNode = edge->getSrcNode();
     if(backwardVisited(srcNode))
@@ -209,18 +213,6 @@ void SrcSnkDDA::backwardpropagate(const DPIm& item, SVFGEdge* edge) {
     ContextCond cxt;
     DPIm newItem(srcNode->getId(), cxt);
     pushIntoWorklist(newItem);
-}
-
-/// Guarded reachability search
-void SrcSnkDDA::AllPathReachability() {
-    /// annotate SVFG with slice information for debugging purpose
-    if(DumpSlice)
-        annotateSlice(_curSlice);
-
-    _curSlice->AllPathReachableSolve();
-
-    if(isSatisfiableForAll(_curSlice)== true)
-        _curSlice->setAllReachable();
 }
 
 /// Set current slice
