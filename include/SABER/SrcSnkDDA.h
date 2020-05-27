@@ -107,6 +107,11 @@ public:
         dumpSlices();
     }
 
+    /// Get PAG
+    PAG* getPAG() const {
+        return PAG::getPAG();
+    }
+
     /// Get SVFG
     inline const SVFG* getSVFG() const {
         return graph();

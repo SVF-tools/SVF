@@ -31,7 +31,6 @@
 #include "SABER/SaberAnnotator.h"
 #include <z3++.h>
 using namespace SVFUtil;
-//testing init namespace of Z3
 using namespace z3;
 
 /*!

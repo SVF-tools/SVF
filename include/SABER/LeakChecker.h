@@ -77,8 +77,6 @@ public:
     virtual inline bool isSinkLikeFun(const SVFFunction* fun) {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
-    /// Identify allocation wrappers
-    bool isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet);
     /// A SVFG node is source if it is an actualRet at malloc site
     inline bool isSource(const SVFGNode* node) {
         return getSources().find(node)!=getSources().end();
@@ -90,10 +88,6 @@ public:
     //@}
 
 protected:
-    /// Get PAG
-    PAG* getPAG() const {
-        return PAG::getPAG();
-    }
     /// Report leaks
     //@{
     virtual void reportBug(ProgSlice* slice);
