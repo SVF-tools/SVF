@@ -5,7 +5,7 @@
 #########
 # VARs and Links
 ########
-ROOT_PATH=$(pwd)
+SVFHOME=$(pwd)
 sysOS=`uname -s`
 MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-apple-darwin.tar.xz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
@@ -55,8 +55,8 @@ else
 fi
 
 
-export LLVM_DIR=$ROOT_PATH/$LLVMHome
-export Z3_DIR=$ROOT_PATH/$Z3Home
+export LLVM_DIR=$SVFHOME/$LLVMHome
+export Z3_DIR=$SVFHOME/$Z3Home
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR =" $LLVM_DIR
 

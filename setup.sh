@@ -2,24 +2,31 @@ echo "Setting up environment for SVF"
 
 
 #########
-# Please change LLVM_DIR before using it
+# export LLVM_DIR and Z3_DIR
+# Please change LLVM_DIR and Z3_DIR if they are different 
 ########
 
+export SVFHOME=`pwd`
 if [ -z "$LLVM_DIR" ]
 then
-	export LLVM_DIR=/Users/yulei/Documents/llvm-10.0.0/llvm-10.0.0.obj
-	echo "\$LLVM_DIR is not configured, using the default one"
+   export LLVM_DIR=$SVFHOME/llvm-10.0.0.obj
 fi
 
 echo "LLVM_DIR =" $LLVM_DIR
+
+if [ -z "$Z3_DIR" ]
+then
+  export Z3_DIR=$SVFHOME/z3.obj
+fi
+
+echo "Z3_DIR =" $Z3_DIR
 
 export PATH=$LLVM_DIR/bin:$PATH
 
 
 #########
-#PATH FOR SVF's executables
+#export PATH FOR SVF and LLVM executables
 #########                                                                 
-export SVF_HOME=`pwd`
 if [[ $1 == 'debug' ]]
 then
 PTAOBJTY='Debug'
@@ -27,8 +34,9 @@ else
 PTAOBJTY='Release'
 fi
 Build=$PTAOBJTY'-build'
-export SVF_HOME=`pwd`
-export PTABIN=$SVF_HOME/$Build/bin
+
+export PATH=$LLVM_DIR/bin:$PATH
+export PTABIN=$SVFHOME/$Build/bin
 export PATH=$PTABIN:$PATH
 
 
