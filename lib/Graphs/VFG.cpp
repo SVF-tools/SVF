@@ -510,7 +510,7 @@ void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const SVFFu
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
     RetBlockNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
     // connect actual and formal param
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee)) {
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
         PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();

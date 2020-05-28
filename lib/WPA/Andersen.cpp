@@ -548,7 +548,7 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
         }
     }
 
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(F)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F)) {
 
         // connect actual and formal param
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);

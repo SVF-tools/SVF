@@ -271,7 +271,7 @@ public:
         callSiteRetMap[retBlockNode]= arg;
     }
     /// Function has arguments list
-    inline bool hasFunArgsMap(const SVFFunction* func) const {
+    inline bool hasFunArgsList(const SVFFunction* func) const {
         return (funArgsListMap.find(func) != funArgsListMap.end());
     }
     /// Get function arguments list

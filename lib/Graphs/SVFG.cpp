@@ -371,7 +371,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
 
     // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsMap(callee)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee)) {
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
         PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
