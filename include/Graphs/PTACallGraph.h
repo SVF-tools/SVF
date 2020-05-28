@@ -312,9 +312,11 @@ public:
 
     /// Get all callees for a callsite
 	inline void getCallees(const CallBlockNode* cs, FunctionSet& callees) {
-		for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
-				getCallEdgeEnd(cs); it != eit; ++it) {
-			callees.insert((*it)->getDstNode()->getFunction());
+		if(hasCallGraphEdge(cs)){
+			for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
+					getCallEdgeEnd(cs); it != eit; ++it) {
+				callees.insert((*it)->getDstNode()->getFunction());
+			}
 		}
 	}
 
