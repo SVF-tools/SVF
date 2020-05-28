@@ -29,9 +29,7 @@
 
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberAnnotator.h"
-#include <z3++.h>
 using namespace SVFUtil;
-using namespace z3;
 
 /*!
  * Compute path conditions for nodes on the backward slice
