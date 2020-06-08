@@ -11,52 +11,93 @@ MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/c
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
+MacCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c2/ctir-clang-v10.c2-macos10.15.zip"
+UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c2/ctir-clang-v10.c2-ubuntu18.04.zip"
 LLVMHome="llvm-10.0.0.obj"
 Z3Home="z3.obj"
+CTIRHome="ctir.obj"
 SVFTests="Test-Suite"
 
-########
-# Download LLVM binary and Z3 binary
-########
+# Downloads $1 to $2.
+function generic_dl {
+    if [ $# -ne 2 ]
+    then
+        echo "$0: bad args to dl_file!"
+        exit 1
+    fi
+
+    if [[ "$sysOS" == "Darwin" ]]
+    then
+        curl -L "$1" > "$2"
+    elif [[ "$sysOS" == "Linux" ]]
+    then
+        wget -c "$1" -O "$2"
+    else
+        echo "Cannot download file for non-Darwin/-Linux."
+    fi
+}
+
+# OS-specific values.
+urlLLVM=""
+urlZ3=""
+urlCTIR=""
+OSDisplayName=""
+
 if [[ $sysOS == "Darwin" ]]
 then
-       if [ ! -d "$LLVMHome" ]
-       then
-       		echo 'Downloading LLVM binary for MacOS '
-      		curl -L $MacLLVM > llvm-mac.tar.xz
-      	 	mkdir ./$LLVMHome && tar -xf "llvm-mac.tar.xz" -C ./$LLVMHome --strip-components 1
-		rm llvm-mac.tar.xz
-       fi
-       if [ ! -d "$Z3Home" ]
-       then
-       		echo 'Downloading Z3 binary for MacOS '
-      		curl -L $MacZ3 -o z3_mac.zip
-      		unzip -q "z3_mac.zip" && mv ./z3-* ./$Z3Home
-		rm z3_mac.zip
-       fi
+    urlLLVM="$MacLLVM"
+    urlZ3="$MacZ3"
+    urlCTIR="$MacCTIR"
+    OSDisplayName="macOS"
 elif [[ $sysOS == "Linux" ]]
 then
-       if [ ! -d "$LLVMHome" ]
-       then
-       		echo 'Downloading LLVM binary for Ubuntu'
-      		wget -c $UbuntuLLVM -O llvm-ubuntu.tar.xz
-      		mkdir ./$LLVMHome && tar -xf "llvm-ubuntu.tar.xz" -C ./$LLVMHome --strip-components 1
-		rm llvm-ubuntu.tar.xz
-       fi
-       if [ ! -d "$Z3Home" ]
-       then
-       		echo 'Downloading LLVM binary for Ubuntu'
-      		wget -c $UbuntuZ3 -O z3_ubuntu.zip
-      		unzip -q "z3_ubuntu.zip" && mv ./z3-* ./$Z3Home
-		rm z3_ubuntu.zip
-       fi
+    urlLLVM="$UbuntuLLVM"
+    urlZ3="$UbuntuZ3"
+    urlCTIR="$UbuntuCTIR"
+    OSDisplayName="Ubuntu"
 else
-	echo 'not support builds in OS other than Ubuntu and Mac'
+    echo "Builds outside Ubuntu and macOS are not supported."
 fi
 
+if [ ! -d "$LLVM_DIR" ]
+then
+    if [ ! -d "$LLVMHome" ]
+    then
+        echo "Downloading LLVM binary for $OSDisplayName"
+        generic_dl "$urlLLVM" llvm.tar.xz
+        mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+        rm llvm.tar.xz
+    fi
 
-export LLVM_DIR=$SVFHOME/$LLVMHome
-export Z3_DIR=$SVFHOME/$Z3Home
+    export LLVM_DIR="$SVFHOME/$LLVMHome"
+fi
+
+if [ ! -d "$Z3_DIR" ]
+then
+    if [ ! -d "$Z3Home" ]
+    then
+        echo "Downloading Z3 binary for $OSDisplayName"
+        generic_dl "$urlZ3" z3.zip
+        unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
+        rm z3.zip
+    fi
+
+    export Z3_DIR="$SVFHOME/$Z3Home"
+fi
+
+if [ ! -d "$CTIR_DIR" ]
+then
+    if [ ! -d "$CTIRHome" ]
+    then
+        echo "Downloading ctir Clang binary for $OSDisplayName"
+        generic_dl "$urlCTIR" ctir.zip
+        mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
+        rm ctir.zip
+    fi
+
+    export CTIR_DIR="$SVFHOME/$CTIRHome"
+fi
+
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR =" $LLVM_DIR
 
