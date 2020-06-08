@@ -22,7 +22,7 @@ SVFTests="Test-Suite"
 function generic_dl {
     if [ $# -ne 2 ]
     then
-        echo "$0: bad args to dl_file!"
+        echo "$0: bad args to generic_dl!"
         exit 1
     fi
 
