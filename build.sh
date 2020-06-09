@@ -28,7 +28,7 @@ function generic_dl {
 
     if [[ "$sysOS" == "Darwin" ]]
     then
-        curl -L "$1" > "$2"
+        curl -L "$1" -o "$2"
     elif [[ "$sysOS" == "Linux" ]]
     then
         wget -c "$1" -O "$2"
