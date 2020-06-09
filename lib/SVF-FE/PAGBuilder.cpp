@@ -75,11 +75,12 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
-                // or a dead function, we may create a black hole address edge for it
-                if(SVFUtil::ArgInNoCallerFunction(&*I)) {
-                    if(I->getType()->isPointerTy())
-                        addBlackHoleAddrEdge(argValNodeId);
-                }
+                // or a dead function, shall we create a black hole address edge for it? 
+		// it is (1) too conservative, and (2) make FormalParmVFGNode defined at blackhole address PAGEdge.
+                // if(SVFUtil::ArgInNoCallerFunction(&*I)) {
+                //    if(I->getType()->isPointerTy())
+                //        addBlackHoleAddrEdge(argValNodeId);
+                //}
                 pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
             }
         }

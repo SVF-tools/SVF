@@ -142,13 +142,19 @@ public:
     /// Destructor
     ~PTACFInfoBuilder() {
         for(FunToLoopInfoMap::iterator it = funToLoopInfoMap.begin(), eit = funToLoopInfoMap.end(); it!=eit; ++it) {
-            delete it->second;
+            if(it->second != nullptr) {
+                delete it->second;
+            }
         }
         for(FunToDTMap::iterator it = funToDTMap.begin(), eit = funToDTMap.end(); it!=eit; ++it) {
-            delete it->second;
+            if(it->second != nullptr) {
+                delete it->second;
+            }
         }
         for(FunToPostDTMap::iterator it = funToPDTMap.begin(), eit = funToPDTMap.end(); it!=eit; ++it) {
-            delete it->second;
+            if(it->second != nullptr) {
+                delete it->second;
+            }
         }
     }
 
