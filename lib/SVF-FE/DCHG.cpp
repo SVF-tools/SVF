@@ -34,11 +34,19 @@ void DCHGraph::handleDICompositeType(const DICompositeType *compositeType) {
         if (extended) {
             DINodeArray fields = compositeType->getElements();
             if (!fields.empty()) {
-                // fields[0] gives a type which is DW_TAG_member, we want the member's type (getBaseType).
-                // It can also give a Subprogram type if the class just had non-virtual functions.
-                // We can happily ignore that.
-                DIDerivedType *firstMember = SVFUtil::dyn_cast<DIDerivedType>(fields[0]);
+                // We want the first non-static, non-function member; it may not exist.
+                DIDerivedType *firstMember = NULL;
+                for (DINode *n : fields) {
+                    if (DIDerivedType *fm = SVFUtil::dyn_cast<DIDerivedType>(n)) {
+                        if (fm->getTag() == dwarf::DW_TAG_member && !fm->isStaticMember()) {
+                            firstMember = fm;
+                            break;
+                        }
+                    }
+                }
+
                 if (firstMember != NULL) {
+                    // firstMember is a DW_TAG_member, we want the base type beneath it.
                     addEdge(compositeType, firstMember->getBaseType(), DCHEdge::FIRST_FIELD);
                 }
             }
