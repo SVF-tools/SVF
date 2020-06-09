@@ -18,11 +18,13 @@ Z3Home="z3.obj"
 CTIRHome="ctir.obj"
 SVFTests="Test-Suite"
 
-# Downloads $1 to $2.
-function generic_dl {
+# Downloads $1 (URL) to $2 (target destination) using wget or curl,
+# depending on OS.
+# E.g. generic_download_file www.url.com/my.zip loc/my.zip
+function generic_download_file {
     if [ $# -ne 2 ]
     then
-        echo "$0: bad args to generic_dl!"
+        echo "$0: bad args to generic_download_file!"
         exit 1
     fi
 
@@ -43,6 +45,9 @@ urlZ3=""
 urlCTIR=""
 OSDisplayName=""
 
+########
+# Set OS-specific values, mainly URLs to download binaries from.
+#######
 if [[ $sysOS == "Darwin" ]]
 then
     urlLLVM="$MacLLVM"
@@ -59,12 +64,15 @@ else
     echo "Builds outside Ubuntu and macOS are not supported."
 fi
 
+########
+# Download LLVM if need be.
+#######
 if [ ! -d "$LLVM_DIR" ]
 then
     if [ ! -d "$LLVMHome" ]
     then
         echo "Downloading LLVM binary for $OSDisplayName"
-        generic_dl "$urlLLVM" llvm.tar.xz
+        generic_download_file "$urlLLVM" llvm.tar.xz
         mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
         rm llvm.tar.xz
     fi
@@ -72,12 +80,15 @@ then
     export LLVM_DIR="$SVFHOME/$LLVMHome"
 fi
 
+########
+# Download Z3 if need be.
+#######
 if [ ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
         echo "Downloading Z3 binary for $OSDisplayName"
-        generic_dl "$urlZ3" z3.zip
+        generic_download_file "$urlZ3" z3.zip
         unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
         rm z3.zip
     fi
@@ -85,12 +96,16 @@ then
     export Z3_DIR="$SVFHOME/$Z3Home"
 fi
 
+########
+# Download ctir Clang if need be.
+# This is required to compile fstbhc tests in Test-Suite.
+#######
 if [ ! -d "$CTIR_DIR" ]
 then
     if [ ! -d "$CTIRHome" ]
     then
         echo "Downloading ctir Clang binary for $OSDisplayName"
-        generic_dl "$urlCTIR" ctir.zip
+        generic_download_file "$urlCTIR" ctir.zip
         mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
         rm ctir.zip
     fi
