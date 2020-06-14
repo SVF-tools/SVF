@@ -99,8 +99,9 @@ fi
 ########
 # Download ctir Clang if need be.
 # This is required to compile fstbhc tests in Test-Suite.
+# We will only download if $CTIR is set (and if $CTIR_DIR doesn't exist).
 #######
-if [ ! -d "$CTIR_DIR" ]
+if [ -n "$CTIR" -a ! -d "$CTIR_DIR" ]
 then
     if [ ! -d "$CTIRHome" ]
     then
