@@ -50,10 +50,12 @@ public:
     typedef std::set<const PAGEdge*> PAGEdgeSet;
     typedef std::list<const PAGEdge*> PAGEdgeList;
     typedef std::list<const PAGNode*> PAGNodeList;
-    typedef std::list<std::pair<const PAGNode*, const ICFGNode*> > PNodeBBPairList;
-    typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
-    typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
-    typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
+    typedef std::list<const CopyPE*> CopyPEList;
+    typedef std::list<const BinaryOPPE*> BinaryOPList;
+    typedef std::list<const CmpPE*> CmpPEList;
+    typedef std::map<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef std::map<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef std::map<const PAGNode*,CmpPEList> CmpNodeMap;
     typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
@@ -194,8 +196,7 @@ public:
     }
     /// Add a PAGEdge into instruction map
     inline void addToInstPAGEdgeList(ICFGNode* inst, PAGEdge* edge) {
-    	if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(inst))
-    		intra->addPAGEdge(edge);
+		edge->setICFGNode(inst);
 		inst2PAGEdgesMap[inst].push_back(edge);
 		if (edge->isPTAEdge())
 			inst2PTAPAGEdgesMap[inst].push_back(edge);
@@ -209,8 +210,8 @@ public:
         return globPAGEdgesSet;
     }
     /// Add phi node information
-    inline void addPhiNode(const PAGNode* res, const PAGNode* op,const ICFGNode* bb) {
-        phiNodeMap[res].push_back(std::make_pair(op,bb));
+    inline void addPhiNode(const PAGNode* res, const CopyPE* edge) {
+        phiNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
     inline bool isPhiNode(const PAGNode* node) const {
@@ -221,8 +222,8 @@ public:
         return phiNodeMap;
     }
     /// Add phi node information
-    inline void addBinaryNode(const PAGNode* res, const PAGNode* op) {
-        binaryNodeMap[res].push_back(op);
+    inline void addBinaryNode(const PAGNode* res, const BinaryOPPE* edge) {
+        binaryNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
     inline bool isBinaryNode(const PAGNode* node) const {
@@ -233,8 +234,8 @@ public:
         return binaryNodeMap;
     }
     /// Add phi node information
-    inline void addCmpNode(const PAGNode* res, const PAGNode* op) {
-        cmpNodeMap[res].push_back(op);
+    inline void addCmpNode(const PAGNode* res, const CmpPE* edge) {
+        cmpNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
     inline bool isCmpNode(const PAGNode* node) const {
@@ -641,8 +642,8 @@ public:
     bool addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge);
 
     //// Return true if this edge exits
-    bool hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
-    bool hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
+    PAGEdge* hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
+    PAGEdge* hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
 
     /// Add Address edge
     AddrPE* addAddrPE(NodeID src, NodeID dst);

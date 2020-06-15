@@ -327,40 +327,40 @@ protected:
     void connectFromGlobalToProgEntry();
 
     /// Add SVFG node
-    virtual inline void addSVFGNode(SVFGNode* node) {
-        addVFGNode(node);
+    virtual inline void addSVFGNode(SVFGNode* node, ICFGNode* icfgNode) {
+        addVFGNode(node, icfgNode);
     }
 
     /// Add memory Function entry chi SVFG node
     inline void addFormalINSVFGNode(const MemSSA::ENTRYCHI* chi) {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++,chi);
-        addSVFGNode(sNode);
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(chi->getFunction()));
         setDef(chi->getResVer(),sNode);
         funToFormalINMap[chi->getFunction()].set(sNode->getId());
     }
     /// Add memory Function return mu SVFG node
     inline void addFormalOUTSVFGNode(const MemSSA::RETMU* mu) {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++,mu);
-        addSVFGNode(sNode);
+        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(mu->getFunction()));
         funToFormalOUTMap[mu->getFunction()].set(sNode->getId());
     }
     /// Add memory callsite mu SVFG node
     inline void addActualINSVFGNode(const MemSSA::CALLMU* mu) {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(totalVFGNode++,mu, mu->getCallSite());
-        addSVFGNode(sNode);
+        addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(mu->getCallSite()->getCallSite().getInstruction()));
         callSiteToActualINMap[mu->getCallSite()].set(sNode->getId());
     }
     /// Add memory callsite chi SVFG node
     inline void addActualOUTSVFGNode(const MemSSA::CALLCHI* chi) {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalVFGNode++,chi,chi->getCallSite());
-        addSVFGNode(sNode);
+        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(chi->getCallSite()->getCallSite().getInstruction()));
         setDef(chi->getResVer(),sNode);
         callSiteToActualOUTMap[chi->getCallSite()].set(sNode->getId());
     }
     /// Add memory SSA PHI SVFG node
     inline void addIntraMSSAPHISVFGNode(const MemSSA::PHI* phi) {
         IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++,phi);
-        addSVFGNode(sNode);
+        addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(phi->getBasicBlock()->getFirstNonPHI()));
         for(MemSSA::PHI::OPVers::const_iterator it = phi->opVerBegin(), eit=phi->opVerEnd(); it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);
         setDef(phi->getResVer(),sNode);

@@ -46,8 +46,8 @@ void ICFGBuilder::build(SVFModule* svfModule){
         processFunEntry(fun,worklist);
         processFunBody(worklist);
         processFunExit(fun);
-
     }
+    connectGlobalToProgEntry(svfModule);
 }
 
 /*!
@@ -158,4 +158,17 @@ void ICFGBuilder::addICFGInterEdges(CallSite cs, const SVFFunction*  callee){
 	}
 }
 
+void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
+{
+    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(svfModule);
+
+    /// Return back if the main function is not found, the bc file might be a library only
+    if(mainFunc == NULL)
+        return;
+
+    FunEntryBlockNode* entryNode = icfg->getFunEntryICFGNode(mainFunc);
+    GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
+    IntraCFGEdge* intraEdge = new IntraCFGEdge(entryNode,globalNode);
+    icfg->addICFGEdge(intraEdge);
+}
 

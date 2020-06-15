@@ -39,6 +39,7 @@ class CallPE;
 class RetPE;
 class PAGEdge;
 class PAGNode;
+class VFGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
@@ -52,13 +53,14 @@ public:
     /// 22 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum ICFGNodeK {
-        IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock
+        IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock, GlobalBlock
     };
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
     typedef ICFGEdge::ICFGEdgeSetTy::const_iterator const_iterator;
     typedef std::set<const CallPE *> CallPESet;
     typedef std::set<const RetPE *> RetPESet;
+    typedef std::list<const VFGNode*> VFGNodeList;
 
 public:
     /// Constructor
@@ -78,23 +80,55 @@ public:
         return o;
     }
     //@}
+
+	/// Set/Get methods of VFGNodes
+	///@{
+	inline void addVFGNode(const VFGNode *vfgNode) {
+		VFGNodes.push_back(vfgNode);
+	}
+
+	inline const VFGNodeList& getVFGNodes() const {
+		return VFGNodes;
+	}
+	///@}
 protected:
     const SVFFunction* fun;
+    VFGNodeList VFGNodes; //< a set of VFGNodes
+
 };
 
+/*!
+ * Unique ICFG node stands for all global initializations
+ */
+class GlobalBlockNode : public ICFGNode {
+
+public:
+	GlobalBlockNode(NodeID id) : ICFGNode(id, GlobalBlock) {
+    }
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const GlobalBlockNode *) {
+        return true;
+    }
+
+    static inline bool classof(const ICFGNode *node) {
+        return node->getNodeKind() == GlobalBlock;
+    }
+
+    static inline bool classof(const GenericICFGNodeTy *node) {
+        return node->getNodeKind() == GlobalBlock;
+    }
+    //@}
+};
 
 /*!
  * ICFG node stands for a program statement
  */
 class IntraBlockNode : public ICFGNode {
-public:
-    typedef std::vector<const PAGEdge *> StmtOrPHIVec;
-    typedef StmtOrPHIVec::iterator iterator;
-    typedef StmtOrPHIVec::const_iterator const_iterator;
-
 private:
     const Instruction *inst;
-    StmtOrPHIVec vnodes;
+
 public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i) {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getFunction());
@@ -104,26 +138,6 @@ public:
         return inst;
     }
 
-    inline void addPAGEdge(const PAGEdge *s) {
-        // avoid duplicate element
-        for(StmtOrPHIVec::const_iterator it = vnodes.begin(), eit = vnodes.end(); it!=eit; ++it)
-            if(*it==s)
-                return;
-
-        vnodes.push_back(s);
-    }
-
-    inline StmtOrPHIVec &getPAGEdges() {
-        return vnodes;
-    }
-
-    inline const_iterator vPAGEdgeBegin() const {
-        return vnodes.begin();
-    }
-
-    inline const_iterator vPAGEdgeEnd() const {
-        return vnodes.end();
-    }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{

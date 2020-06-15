@@ -35,6 +35,7 @@
 #include "Graphs/VFGEdge.h"
 
 class VFGNode;
+class ICFGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
@@ -59,12 +60,22 @@ public:
 
 public:
     /// Constructor
-    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), bb(NULL) {
+    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), bb(NULL), icfgNode(NULL) {
 
     }
     /// We should know the program location (basic block level) of each ICFG node
     virtual const BasicBlock* getBB() const {
         return bb;
+    }
+
+    /// Return corresponding ICFG node
+    virtual const ICFGNode* getICFGNode() const {
+        return icfgNode;
+    }
+
+    /// Set corresponding ICFG node
+    virtual void setICFGNode(const ICFGNode* node ) {
+        icfgNode = node;
     }
 
     /// Get the function of this SVFGNode
@@ -84,6 +95,7 @@ public:
     //@}
 protected:
     const BasicBlock* bb;
+    const ICFGNode* icfgNode;
 };
 
 /*!

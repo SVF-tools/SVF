@@ -26,11 +26,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename){
         ICFGNode_Obj["Node Type"] = getICFGKind(node->getNodeKind());
         if(IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)){
             ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
-            IntraBlockNode::StmtOrPHIVec& edges = bNode->getPAGEdges();
+            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
             llvm::json::Array PAGEdge_array;
 
             //dump pag edges
-			for (IntraBlockNode::StmtOrPHIVec::iterator it = edges.begin(),
+			for (PAG::PAGEdgeList::iterator it = edges.begin(),
 					eit = edges.end(); it != eit; ++it) {
 				const PAGEdge* edge = *it;
                 llvm::json::Object edge_obj;

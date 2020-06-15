@@ -213,14 +213,14 @@ private:
     /// Add inter PHI SVFG node for formal parameter
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp) {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
-        addSVFGNode(sNode);
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()));
         resetDef(fp->getParam(),sNode);
         return sNode;
     }
     /// Add inter PHI SVFG node for actual return
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar) {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
-        addSVFGNode(sNode);
+        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(ar->getCallSite()->getCallSite().getInstruction()));
         resetDef(ar->getRev(),sNode);
         return sNode;
     }

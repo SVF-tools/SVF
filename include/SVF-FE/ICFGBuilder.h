@@ -61,6 +61,7 @@ private:
     void processFunExit(const SVFFunction*  fun);
     //@}
 
+    void connectGlobalToProgEntry(SVFModule* svfModule);
 
     /// Add/Get an inter block ICFGNode
     InterBlockNode* getOrAddInterBlockICFGNode(const Instruction* inst);
