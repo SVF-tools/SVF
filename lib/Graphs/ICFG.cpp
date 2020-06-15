@@ -60,6 +60,8 @@ FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlock
  */
 ICFG::ICFG(): totalICFGNode(0) {
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
+    globalBlockNode = new GlobalBlockNode(totalICFGNode++);
+	addICFGNode(globalBlockNode);
 }
 
 
@@ -253,8 +255,8 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 		if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node)) {
 			rawstr << getSourceLoc(bNode->getInst()) << "\n";
 
-			IntraBlockNode::StmtOrPHIVec& edges = bNode->getPAGEdges();
-			for (IntraBlockNode::StmtOrPHIVec::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it){
+            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
+			for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it){
 			    const PAGEdge* edge = *it;
 			        NodeID src = edge->getSrcID();
 			        NodeID dst = edge->getDstID();
@@ -287,6 +289,17 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*> {
 			rawstr << "Ret("
 					<< getSourceLoc(ret->getCallSite().getInstruction())
 					<< ")\n";
+		} else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) ){
+            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
+			for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it){
+			    const PAGEdge* edge = *it;
+			        NodeID src = edge->getSrcID();
+			        NodeID dst = edge->getDstID();
+			        rawstr << dst << "<--" << src << "\n";
+			        std::string srcValueName = edge->getSrcNode()->getValueName();
+			        std::string dstValueName = edge->getDstNode()->getValueName();
+			        rawstr << dstValueName << "<--" << srcValueName << "\n";
+			}
 		}
         else
             assert(false && "what else kinds of nodes do we have??");

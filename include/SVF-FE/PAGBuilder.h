@@ -229,83 +229,94 @@ public:
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
-    void connectGlobalToProgEntry();
-
-    inline void addBlackHoleAddrEdge(NodeID node) {
-    	if(PAGEdge* edge = pag->addBlackHoleAddrPE(node))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline PAGEdge* addBlackHoleAddrEdge(NodeID node) {
+		PAGEdge *edge = pag->addBlackHoleAddrPE(node);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
 
     /// Add Address edge
-    inline void addAddrEdge(NodeID src, NodeID dst){
-    	if(AddrPE* edge = pag->addAddrPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline AddrPE* addAddrEdge(NodeID src, NodeID dst){
+		AddrPE *edge = pag->addAddrPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Copy edge
-    inline void addCopyEdge(NodeID src, NodeID dst){
-    	if(CopyPE* edge = pag->addCopyPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CopyPE* addCopyEdge(NodeID src, NodeID dst){
+		CopyPE *edge = pag->addCopyPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Copy edge
-    inline void addCmpEdge(NodeID src, NodeID dst){
-    	if(CmpPE* edge = pag->addCmpPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CmpPE* addCmpEdge(NodeID src, NodeID dst){
+		CmpPE *edge = pag->addCmpPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Copy edge
-    inline void addBinaryOPEdge(NodeID src, NodeID dst){
-    	if(BinaryOPPE* edge = pag->addBinaryOPPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline BinaryOPPE* addBinaryOPEdge(NodeID src, NodeID dst){
+		BinaryOPPE *edge = pag->addBinaryOPPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Load edge
-    inline void addLoadEdge(NodeID src, NodeID dst){
-    	if(LoadPE* edge = pag->addLoadPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline LoadPE* addLoadEdge(NodeID src, NodeID dst){
+		LoadPE *edge = pag->addLoadPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Store edge
-    inline void addStoreEdge(NodeID src, NodeID dst){
+    inline StorePE* addStoreEdge(NodeID src, NodeID dst){
     	IntraBlockNode* node;
     	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
     		node = pag->getICFG()->getIntraBlockNode(inst);
 		else
 			node = NULL;
-    	if(StorePE* edge = pag->addStorePE(src,dst,node)){
-    		setCurrentBBAndValueForPAGEdge(edge);
-    	}
+		StorePE *edge = pag->addStorePE(src, dst, node);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Call edge
-    inline void addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(CallPE* edge = pag->addCallPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+		CallPE *edge = pag->addCallPE(src, dst, cs);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Return edge
-    inline void addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(RetPE* edge = pag->addRetPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+		RetPE *edge = pag->addRetPE(src, dst, cs);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Gep edge
-    inline void addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep){
-    	if(GepPE* edge = pag->addGepPE(src,dst,ls, constGep))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline GepPE* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep){
+		GepPE *edge = pag->addGepPE(src, dst, ls, constGep);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Offset(Gep) edge
-    void addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls){
-    	if(NormalGepPE* edge = pag->addNormalGepPE(src,dst,ls))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline NormalGepPE* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls){
+		NormalGepPE *edge = pag->addNormalGepPE(src, dst, ls);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Variant(Gep) edge
-    inline void addVariantGepEdge(NodeID src, NodeID dst){
-    	if(VariantGepPE* edge = pag->addVariantGepPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline VariantGepPE* addVariantGepEdge(NodeID src, NodeID dst){
+		VariantGepPE *edge = pag->addVariantGepPE(src, dst);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Thread fork edge for parameter passing
-    inline void addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(TDForkPE* edge = pag->addThreadForkPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+		TDForkPE *edge = pag->addThreadForkPE(src, dst, cs);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     /// Add Thread join edge for parameter passing
-    inline void addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(TDJoinPE* edge = pag->addThreadJoinPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
+		TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs);
+		setCurrentBBAndValueForPAGEdge(edge);
+		return edge;
     }
     //@}
 

@@ -96,8 +96,6 @@ PAG* PAGBuilder::build(SVFModule* svfModule) {
         }
     }
 
-    connectGlobalToProgEntry();
-
     sanityCheck();
 
     pag->initialiseCandidatePointers();
@@ -231,10 +229,10 @@ void PAGBuilder::processCE(const Value *val) {
             NodeID nsrc1 = pag->getValueNode(src1);
             NodeID nsrc2 = pag->getValueNode(src2);
             NodeID nres = pag->getValueNode(selectce);
-            addCopyEdge(nsrc1, nres);
-            addCopyEdge(nsrc2, nres);
-            pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc1),NULL);
-            pag->addPhiNode(pag->getPAGNode(nres),pag->getPAGNode(nsrc2),NULL);
+            const CopyPE* cpy1 = addCopyEdge(nsrc1, nres);
+            const CopyPE* cpy2 = addCopyEdge(nsrc2, nres);
+            pag->addPhiNode(pag->getPAGNode(nres),cpy1);
+            pag->addPhiNode(pag->getPAGNode(nres),cpy2);
             setCurrentLocation(cval, cbb);
         }
         // if we meet a int2ptr, then it points-to black hole
@@ -436,8 +434,8 @@ void PAGBuilder::visitPHINode(PHINode &inst) {
 
 		NodeID src = getValueNode(val);
 		const BasicBlock* bb = inst.getIncomingBlock(i);
-		addCopyEdge(src, dst);
-		pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src), intraBlockNode);
+		const CopyPE* copy = addCopyEdge(src, dst);
+		pag->addPhiNode(pag->getPAGNode(dst), copy);
 	}
 }
 
@@ -523,8 +521,8 @@ void PAGBuilder::visitBinaryOperator(BinaryOperator &inst) {
     for (u32_t i = 0; i < inst.getNumOperands(); i++) {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
-        addBinaryOPEdge(src, dst);
-        pag->addBinaryNode(pag->getPAGNode(dst),pag->getPAGNode(src));
+        const BinaryOPPE* binayPE = addBinaryOPEdge(src, dst);
+        pag->addBinaryNode(pag->getPAGNode(dst),binayPE);
     }
 }
 
@@ -536,8 +534,8 @@ void PAGBuilder::visitCmpInst(CmpInst &inst) {
     for (u32_t i = 0; i < inst.getNumOperands(); i++) {
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
-        addCmpEdge(src, dst);
-        pag->addCmpNode(pag->getPAGNode(dst),pag->getPAGNode(src));
+        const CmpPE* cmpPE = addCmpEdge(src, dst);
+        pag->addCmpNode(pag->getPAGNode(dst),cmpPE);
     }
 }
 
@@ -552,14 +550,14 @@ void PAGBuilder::visitSelectInst(SelectInst &inst) {
 	NodeID dst = getValueNode(&inst);
 	NodeID src1 = getValueNode(inst.getTrueValue());
 	NodeID src2 = getValueNode(inst.getFalseValue());
-	addCopyEdge(src1, dst);
-	addCopyEdge(src2, dst);
+	const CopyPE* cpy1 = addCopyEdge(src1, dst);
+	const CopyPE* cpy2 = addCopyEdge(src2, dst);
 
 	const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
 
 	/// Two operands have same incoming basic block, both are the current BB
-	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src1), block);
-	pag->addPhiNode(pag->getPAGNode(dst), pag->getPAGNode(src2), block);
+	pag->addPhiNode(pag->getPAGNode(dst), cpy1);
+	pag->addPhiNode(pag->getPAGNode(dst), cpy2);
 }
 
 /*
@@ -622,8 +620,8 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst) {
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
     	const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
-        addCopyEdge(vnS, rnF);
-		pag->addPhiNode(pag->getPAGNode(rnF), pag->getPAGNode(vnS), block);
+        const CopyPE* copy = addCopyEdge(vnS, rnF);
+		pag->addPhiNode(pag->getPAGNode(rnF), copy);
     }
 }
 
@@ -1162,12 +1160,13 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
     assert(curVal && "current Val is NULL?");
     edge->setBB(curBB);
     edge->setValue(curVal);
+    ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal)) {
- 	/// We assume every GepValPN and its GepPE are unique across whole program
-	if(!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
-		assert(curBB && "instruction does not have a basic block??");
-		ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
-		pag->addToInstPAGEdgeList(icfgNode,edge);
+		/// We assume every GepValPN and its GepPE are unique across whole program
+		if (!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
+			assert(curBB && "instruction does not have a basic block??");
+
+		icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
     } else if (SVFUtil::isa<Argument>(curVal)) {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
     } else if (SVFUtil::isa<ConstantExpr>(curVal)) {
@@ -1180,28 +1179,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge) {
     } else {
         assert(false && "what else value can we have?");
     }
+
+	pag->addToInstPAGEdgeList(icfgNode,edge);
 }
 
-void PAGBuilder::connectGlobalToProgEntry()
-{
-    const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(PAG::getPAG()->getModule());
 
-    /// Return back if the main function is not found, the bc file might be a library only
-    if(mainFunc == NULL)
-        return;
-
-    FunEntryBlockNode* entryNode = pag->getICFG()->getFunEntryICFGNode(mainFunc);
-    for(ICFG::ICFGEdgeSetTy::const_iterator it = entryNode->getOutEdges().begin(), eit = entryNode->getOutEdges().end(); it!=eit; ++it){
-        if(const IntraCFGEdge* intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it)){
-            if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(intraEdge->getDstNode())){
-                const PAG::PAGEdgeSet& globaledges = PAG::getPAG()->getGlobalPAGEdgeSet();
-                for (PAG::PAGEdgeSet::const_iterator edgeIt = globaledges.begin(), edgeEit = globaledges.end(); edgeIt != edgeEit; ++edgeIt)
-                    intra->addPAGEdge(*edgeIt);
-            }
-            else
-                assert(SVFUtil::isa<CallBlockNode>(intraEdge->getDstNode()) && " the dst node of an intra edge is not an intra block node or a callblocknode?");
-        }
-        else
-            assert(false && "the edge from main's functionEntryBlock is not an intra edge?");
-    }
-}

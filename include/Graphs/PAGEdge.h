@@ -54,6 +54,7 @@ public:
 private:
     const Value* value;	///< LLVM value
     const BasicBlock *basicBlock;   ///< LLVM BasicBlock
+    ICFGNode *icfgNode;   ///< ICFGNode
     EdgeID edgeId;					///< Edge ID
 public:
     static Size_t totalEdgeNum;		///< Total edge number
@@ -109,6 +110,12 @@ public:
     inline const BasicBlock* getBB() const {
         return basicBlock;
     }
+	inline void setICFGNode(ICFGNode *node) {
+		icfgNode = node;
+	}
+	inline ICFGNode* getICFGNode() const {
+		return icfgNode;
+	}
     //@}
 
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.

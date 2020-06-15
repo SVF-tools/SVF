@@ -356,14 +356,16 @@ protected:
     }
 
     /// Add a VFG node
-    virtual inline void addVFGNode(VFGNode* node) {
-        addGNode(node->getId(),node);
+    virtual inline void addVFGNode(VFGNode* vfgNode, ICFGNode* icfgNode) {
+		addGNode(vfgNode->getId(), vfgNode);
+		vfgNode->setICFGNode(icfgNode);
+		icfgNode->addVFGNode(vfgNode);
     }
     /// Add a VFG node for program statement
     inline void addStmtVFGNode(StmtVFGNode* node, const PAGEdge* pagEdge) {
         assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
         PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
-        addVFGNode(node);
+        addVFGNode(node, pagEdge->getICFGNode());
 
         const PAGEdgeSet& globalPAGEdges = getPAG()->getGlobalPAGEdgeSet();
         if (globalPAGEdges.find(pagEdge) != globalPAGEdges.end())
@@ -373,7 +375,7 @@ protected:
     /// To be noted for black hole pointer it has already has address edge connected
     inline void addNullPtrVFGNode(const PAGNode* pagNode) {
         NullPtrVFGNode* sNode = new NullPtrVFGNode(totalVFGNode++,pagNode);
-        addVFGNode(sNode);
+        addVFGNode(sNode, pag->getICFG()->getGlobalBlockNode());
         setDef(pagNode,sNode);
     }
     /// Add an Address VFG node
@@ -416,14 +418,14 @@ protected:
     /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
     inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs) {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
-        addVFGNode(sNode);
+        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction()));
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
         /// do not set def here, this node is not a variable definition
     }
     /// Add a formal parameter VFG node
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs) {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
-        addVFGNode(sNode);
+        addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
                 it!=eit; ++it)
             sNode->addCallPE(*it);
@@ -436,7 +438,7 @@ protected:
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs) {
         FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
-        addVFGNode(sNode);
+        addVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(fun));
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
                 it!=eit; ++it)
             sNode->addRetPE(*it);
@@ -447,37 +449,50 @@ protected:
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs) {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
-        addVFGNode(sNode);
+        addVFGNode(sNode, pag->getICFG()->getRetBlockNode(cs->getCallSite().getInstruction()));
         setDef(ret,sNode);
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, PAG::PNodeBBPairList& oplist) {
+    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, PAG::CopyPEList& oplist) {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
-        addVFGNode(sNode);
         u32_t pos = 0;
-        for(PAG::PNodeBBPairList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-            sNode->setOpVerAndBB(pos,it->first,it->second);
+        const PAGEdge* edge = NULL;
+        for(PAG::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos){
+			edge = *it;
+			sNode->setOpVerAndBB(pos, edge->getSrcNode(), edge->getICFGNode());
+        }
+        assert(edge && "edge not found?");
+        addVFGNode(sNode,edge->getICFGNode());
         setDef(phiResNode,sNode);
         PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
     }
     /// Add a Compare VFG node
-    inline void addCmpVFGNode(const PAGNode* resNode, PAG::PAGNodeList& oplist) {
+    inline void addCmpVFGNode(const PAGNode* resNode, PAG::CmpPEList& oplist) {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
-        addVFGNode(sNode);
         u32_t pos = 0;
-        for(PAG::PAGNodeList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-            sNode->setOpVer(pos,*it);
+        const PAGEdge* edge = NULL;
+        for(PAG::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos){
+			edge = *it;
+			sNode->setOpVer(pos, edge->getSrcNode());
+        }
+        assert(edge && "edge not found?");
+        addVFGNode(sNode,edge->getICFGNode());
         setDef(resNode,sNode);
         PAGNodeToCmpVFGNodeMap[resNode] = sNode;
     }
     /// Add a BinaryOperator VFG node
-    inline void addBinaryOPVFGNode(const PAGNode* resNode, PAG::PAGNodeList& oplist) {
+    inline void addBinaryOPVFGNode(const PAGNode* resNode, PAG::BinaryOPList& oplist) {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
-        addVFGNode(sNode);
         u32_t pos = 0;
-        for(PAG::PAGNodeList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-            sNode->setOpVer(pos,*it);
+        const PAGEdge* edge = NULL;
+        for(PAG::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos){
+			edge = *it;
+			sNode->setOpVer(pos, (*it)->getSrcNode());
+        }
+
+        assert(edge && "edge not found?");
+        addVFGNode(sNode,edge->getICFGNode());
         setDef(resNode,sNode);
         PAGNodeToBinaryOPVFGNodeMap[resNode] = sNode;
     }

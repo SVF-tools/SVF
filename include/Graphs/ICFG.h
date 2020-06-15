@@ -61,6 +61,7 @@ private:
     CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
     CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
+    GlobalBlockNode* globalBlockNode; ///< unique basic block for all globals
 
 public:
     /// Constructor
@@ -145,6 +146,10 @@ public:
 	RetBlockNode* getRetBlockNode(const Instruction* inst);
 
     IntraBlockNode* getIntraBlockNode(const Instruction* inst);
+
+	GlobalBlockNode* getGlobalBlockNode() const {
+		return globalBlockNode;
+	}
     //@}
 
     /// Get/Add IntraBlock ICFGNode
