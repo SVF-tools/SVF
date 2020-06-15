@@ -1,4 +1,4 @@
-#  !bash
+#!/bin/bash
 # type './build.sh'  for release build
 # type './build.sh debug'  for debug build
 
