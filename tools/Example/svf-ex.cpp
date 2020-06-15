@@ -154,9 +154,12 @@ int main(int argc, char ** argv) {
     /// ICFG
     ICFG* icfg = pag->getICFG();
 
+    /// Value-Flow Graph (VFG)
+    VFG* vfg = new VFG(callgraph);
+
     /// Sparse value-flow graph (SVFG)
     SVFGBuilder svfBuilder;
-    SVFG* svfg = svfBuilder.buildFullSVFG(ander);
+    SVFG* svfg = svfBuilder.buildFullSVFGWithoutOPT(ander);
 
     /// Collect uses of an LLVM Value
     /// traverseOnVFG(svfg, value);
