@@ -83,7 +83,7 @@ fi
 ########
 # Download Z3 if need be.
 #######
-if [ ! -d "$Z3_DIR" ]
+if [ -n "$Z3" -a ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
@@ -111,7 +111,6 @@ then
         rm ctir.zip
     fi
 
-    export CTIR
     export CTIR_DIR="$SVFHOME/$CTIRHome/bin"
 fi
 
