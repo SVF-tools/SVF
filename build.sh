@@ -111,7 +111,8 @@ then
         rm ctir.zip
     fi
 
-    export CTIR_DIR="$SVFHOME/$CTIRHome"
+    export CTIR
+    export CTIR_DIR="$SVFHOME/$CTIRHome/bin"
 fi
 
 export PATH=$LLVM_DIR/bin:$PATH
