@@ -51,36 +51,44 @@ const string mInheritanceVFunLabel = "non-virtual thunk to ";
 const string clsName = "class.";
 const string structName = "struct.";
 
-static bool isOperOverload(const string name) {
+static bool isOperOverload(const string name)
+{
     s32_t leftnum = 0, rightnum = 0;
     string subname = name;
     size_t leftpos, rightpos;
     leftpos = subname.find("<");
-    while (leftpos != string::npos) {
+    while (leftpos != string::npos)
+    {
         subname = subname.substr(leftpos+1);
         leftpos = subname.find("<");
         leftnum++;
     }
     subname = name;
     rightpos = subname.find(">");
-    while (rightpos != string::npos) {
+    while (rightpos != string::npos)
+    {
         subname = subname.substr(rightpos+1);
         rightpos = subname.find(">");
         rightnum++;
     }
-    if (leftnum != rightnum) {
+    if (leftnum != rightnum)
+    {
         return true;
-    } else {
+    }
+    else
+    {
         return false;
     }
 }
 
-static string getBeforeParenthesis(const string name) {
+static string getBeforeParenthesis(const string name)
+{
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
 
     s32_t paren_num = 1, pos;
-    for (pos = lastRightParen - 1; pos >= 0; pos--) {
+    for (pos = lastRightParen - 1; pos >= 0; pos--)
+    {
         if (name[pos] == ')')
             paren_num++;
         if (name[pos] == '(')
@@ -91,12 +99,15 @@ static string getBeforeParenthesis(const string name) {
     return name.substr(0, pos);
 }
 
-string cppUtil::getBeforeBrackets(const string name) {
-    if (name[name.size() - 1] != '>') {
+string cppUtil::getBeforeBrackets(const string name)
+{
+    if (name[name.size() - 1] != '>')
+    {
         return name;
     }
     s32_t bracket_num = 1, pos;
-    for (pos = name.size() - 2; pos >= 0; pos--) {
+    for (pos = name.size() - 2; pos >= 0; pos--)
+    {
         if (name[pos] == '>')
             bracket_num++;
         if (name[pos] == '<')
@@ -107,7 +118,8 @@ string cppUtil::getBeforeBrackets(const string name) {
     return name.substr(0, pos);
 }
 
-bool cppUtil::isValVtbl(const Value *val) {
+bool cppUtil::isValVtbl(const Value *val)
+{
     if (!SVFUtil::isa<GlobalVariable>(val))
         return false;
     string valName = val->getName().str();
@@ -139,28 +151,38 @@ bool cppUtil::isValVtbl(const Value *val) {
  * functionName: f<...::...>
  */
 
-struct cppUtil::DemangledName cppUtil::demangle(const string name) {
+struct cppUtil::DemangledName cppUtil::demangle(const string name)
+{
     struct cppUtil::DemangledName dname;
 
     s32_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-    if (realname == NULL) {
+    if (realname == NULL)
+    {
         dname.className = "";
         dname.funcName = "";
-    } else {
+    }
+    else
+    {
         string realnameStr = string(realname);
         string beforeParenthesis = getBeforeParenthesis(realnameStr);
         if (beforeParenthesis.find("::") == string::npos ||
-                isOperOverload(beforeParenthesis)) {
+                isOperOverload(beforeParenthesis))
+        {
             dname.className = "";
             dname.funcName = "";
-        } else {
+        }
+        else
+        {
             string beforeBracket = getBeforeBrackets(beforeParenthesis);
             size_t colon = beforeBracket.rfind("::");
-            if (colon == string::npos) {
+            if (colon == string::npos)
+            {
                 dname.className = "";
                 dname.funcName = "";
-            } else {
+            }
+            else
+            {
                 dname.className = beforeParenthesis.substr(0, colon);
                 dname.funcName = beforeParenthesis.substr(colon + 2);
             }
@@ -169,27 +191,32 @@ struct cppUtil::DemangledName cppUtil::demangle(const string name) {
     /// multiple inheritance
     if (dname.className.size() > mInheritanceVFunLabel.size() &&
             dname.className.compare(0, mInheritanceVFunLabel.size(),
-                                    mInheritanceVFunLabel) == 0) {
+                                    mInheritanceVFunLabel) == 0)
+    {
         dname.className = dname.className.substr(mInheritanceVFunLabel.size());
     }
 
     return dname;
 }
 
-bool cppUtil::isLoadVtblInst(const LoadInst *loadInst) {
+bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
+{
     const Value *loadSrc = loadInst->getPointerOperand();
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
-    for (s32_t i = 0; i < 3; ++i) {
+    for (s32_t i = 0; i < 3; ++i)
+    {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = ptrTy->getElementType();
         else
             return false;
     }
-    if (const FunctionType *functy = SVFUtil::dyn_cast<FunctionType>(elemTy)) {
+    if (const FunctionType *functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
+    {
         const Type *paramty = functy->getParamType(0);
         string className = cppUtil::getClassNameFromType(paramty);
-        if (className.size() > 0) {
+        if (className.size() > 0)
+        {
             return true;
         }
     }
@@ -203,25 +230,30 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst) {
  * %x = load %vfn
  * call %x (...)
  */
-bool cppUtil::isVirtualCallSite(CallSite cs) {
+bool cppUtil::isVirtualCallSite(CallSite cs)
+{
     if (cs.getCalledFunction() != NULL)
         return false;
 
     // When compiled with ctir, we'd be using the DCHG which has its own
     // virtual annotations.
-    if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
+    if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
+    {
         return cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName) != nullptr;
     }
 
     const Value *vfunc = cs.getCalledValue();
-    if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc)) {
+    if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
+    {
         const Value *vfuncptr = vfuncloadinst->getPointerOperand();
         if (const GetElementPtrInst *vfuncptrgepinst =
-                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr)) {
+                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+        {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
             const Value *vtbl = vfuncptrgepinst->getPointerOperand();
-            if (SVFUtil::isa<LoadInst>(vtbl)) {
+            if (SVFUtil::isa<LoadInst>(vtbl))
+            {
                 return true;
             }
         }
@@ -229,10 +261,14 @@ bool cppUtil::isVirtualCallSite(CallSite cs) {
     return false;
 }
 
-const Value *cppUtil::getVCallThisPtr(CallSite cs) {
-    if (cs.paramHasAttr(0, llvm::Attribute::StructRet)) {
+const Value *cppUtil::getVCallThisPtr(CallSite cs)
+{
+    if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
+    {
         return cs.getArgument(1);
-    } else {
+    }
+    else
+    {
         return cs.getArgument(0);
     }
 }
@@ -249,30 +285,38 @@ define linkonce_odr dso_local void @B1::B1()(%class.B1* %this) unnamed_addr #6 c
   %0 = bitcast %class.B1* %this1 to %class.A*
   call void @A::A()(%class.A* %0)
  */
-bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2) {
-	if (thisPtr1 == thisPtr2){
-		return true;
-	}
-	else {
-		for (const User *thisU : thisPtr1->users()) {
-			if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU)) {
-				for (const User *storeU : store->getPointerOperand()->users()) {
-					if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU)) {
-					    if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
-					        return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
-					}
-				}
-			}
-		}
-		return false;
-	}
+bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2)
+{
+    if (thisPtr1 == thisPtr2)
+    {
+        return true;
+    }
+    else
+    {
+        for (const User *thisU : thisPtr1->users())
+        {
+            if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
+            {
+                for (const User *storeU : store->getPointerOperand()->users())
+                {
+                    if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
+                    {
+                        if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
+                            return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }
 
-const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
-	assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
-	assert(fun->arg_size() >=1 && "argument size >= 1?");
-	const Argument* thisPtr =  &*(fun->arg_begin());
-	return thisPtr;
+const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
+{
+    assert((isConstructor(fun) || isDestructor(fun)) && "not a constructor?");
+    assert(fun->arg_size() >=1 && "argument size >= 1?");
+    const Argument* thisPtr =  &*(fun->arg_begin());
+    return thisPtr;
 }
 
 /*
@@ -282,7 +326,8 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun) {
  * %x = load %vfn
  * call %x (...)
  */
-const Value *cppUtil::getVCallVtblPtr(CallSite cs) {
+const Value *cppUtil::getVCallVtblPtr(CallSite cs)
+{
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != NULL);
     const Value *vfuncptr = loadInst->getPointerOperand();
@@ -292,7 +337,8 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs) {
     return vtbl;
 }
 
-u64_t cppUtil::getVCallIdx(CallSite cs) {
+u64_t cppUtil::getVCallIdx(CallSite cs)
+{
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != NULL);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
@@ -301,24 +347,32 @@ u64_t cppUtil::getVCallIdx(CallSite cs) {
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
-    if (idx == NULL) {
-    	SVFUtil::errs() << "vcall gep idx not constantint\n";
+    if (idx == NULL)
+    {
+        SVFUtil::errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
-    } else
+    }
+    else
         idx_value = idx->getSExtValue();
     return idx_value;
 }
 
-string cppUtil::getClassNameFromType(const Type *ty) {
+string cppUtil::getClassNameFromType(const Type *ty)
+{
     string className = "";
-    if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty)) {
+    if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
+    {
         const Type *elemType = ptrType->getElementType();
         if (SVFUtil::isa<StructType>(elemType) &&
-                !((SVFUtil::cast<StructType>(elemType))->isLiteral())) {
+                !((SVFUtil::cast<StructType>(elemType))->isLiteral()))
+        {
             string elemTypeName = elemType->getStructName().str();
-            if (elemTypeName.compare(0, clsName.size(), clsName) == 0) {
+            if (elemTypeName.compare(0, clsName.size(), clsName) == 0)
+            {
                 className = elemTypeName.substr(clsName.size());
-            } else if (elemTypeName.compare(0, structName.size(), structName) == 0) {
+            }
+            else if (elemTypeName.compare(0, structName.size(), structName) == 0)
+            {
                 className = elemTypeName.substr(structName.size());
             }
         }
@@ -326,59 +380,72 @@ string cppUtil::getClassNameFromType(const Type *ty) {
     return className;
 }
 
-string cppUtil::getClassNameFromVtblObj(const Value *value) {
+string cppUtil::getClassNameFromVtblObj(const Value *value)
+{
     string className = "";
 
     string vtblName = value->getName().str();
     s32_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
-    if (realname != NULL) {
+    if (realname != NULL)
+    {
         string realnameStr = string(realname);
         if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),
-                                vtblLabelAfterDemangle) == 0) {
+                                vtblLabelAfterDemangle) == 0)
+        {
             className = realnameStr.substr(vtblLabelAfterDemangle.size());
         }
     }
     return className;
 }
 
-bool cppUtil::isConstructor(const Function *F) {
+bool cppUtil::isConstructor(const Function *F)
+{
     if (F->isDeclaration())
         return false;
     string funcName = F->getName().str();
-    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
+    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
         return false;
     }
     struct cppUtil::DemangledName dname = demangle(funcName.c_str());
     dname.funcName = getBeforeBrackets(dname.funcName);
     dname.className = getBeforeBrackets(dname.className);
     size_t colon = dname.className.rfind("::");
-    if (colon == string::npos) {
+    if (colon == string::npos)
+    {
         dname.className = getBeforeBrackets(dname.className);
-    } else {
+    }
+    else
+    {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
-	if (dname.className.size() > 0 && (dname.className.compare(dname.funcName) == 0))
-		/// TODO: on mac os function name is an empty string after demangling
-		return true;
-	else
-		return false;
+    if (dname.className.size() > 0 && (dname.className.compare(dname.funcName) == 0))
+        /// TODO: on mac os function name is an empty string after demangling
+        return true;
+    else
+        return false;
 }
 
-bool cppUtil::isDestructor(const Function *F) {
+bool cppUtil::isDestructor(const Function *F)
+{
     if (F->isDeclaration())
         return false;
     string funcName = F->getName().str();
-    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0) {
+    if (funcName.compare(0, vfunPreLabel.size(), vfunPreLabel) != 0)
+    {
         return false;
     }
     struct cppUtil::DemangledName dname = demangle(funcName.c_str());
     dname.funcName = getBeforeBrackets(dname.funcName);
     dname.className = getBeforeBrackets(dname.className);
     size_t colon = dname.className.rfind("::");
-    if (colon == string::npos) {
+    if (colon == string::npos)
+    {
         dname.className = getBeforeBrackets(dname.className);
-    } else {
+    }
+    else
+    {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
     if (dname.className.size() > 0 && dname.funcName.size() > 0 &&
@@ -390,21 +457,26 @@ bool cppUtil::isDestructor(const Function *F) {
         return false;
 }
 
-string cppUtil::getClassNameOfThisPtr(CallSite cs) {
+string cppUtil::getClassNameOfThisPtr(CallSite cs)
+{
     string thisPtrClassName;
     Instruction *inst = cs.getInstruction();
-    if (const MDNode *N = inst->getMetadata("VCallPtrType")) {
+    if (const MDNode *N = inst->getMetadata("VCallPtrType"))
+    {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
         thisPtrClassName = mdstr.getString().str();
     }
-    if (thisPtrClassName.size() == 0) {
+    if (thisPtrClassName.size() == 0)
+    {
         const Value *thisPtr = getVCallThisPtr(cs);
         thisPtrClassName = getClassNameFromType(thisPtr->getType());
     }
 
     size_t found = thisPtrClassName.find_last_not_of("0123456789");
-    if (found != string::npos) {
-        if (found != thisPtrClassName.size() - 1 && thisPtrClassName[found] == '.') {
+    if (found != string::npos)
+    {
+        if (found != thisPtrClassName.size() - 1 && thisPtrClassName[found] == '.')
+        {
             return thisPtrClassName.substr(0, found);
         }
     }
@@ -412,10 +484,12 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs) {
     return thisPtrClassName;
 }
 
-string cppUtil::getFunNameOfVCallSite(CallSite cs) {
+string cppUtil::getFunNameOfVCallSite(CallSite cs)
+{
     string funName;
     Instruction *inst = cs.getInstruction();
-    if (const MDNode *N = inst->getMetadata("VCallFunName")) {
+    if (const MDNode *N = inst->getMetadata("VCallFunName"))
+    {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
         funName = mdstr.getString().str();
     }
@@ -426,10 +500,12 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs) {
 /*
  * Is this virtual call inside its own constructor or destructor?
  */
-bool cppUtil::VCallInCtorOrDtor(CallSite cs)  {
+bool cppUtil::VCallInCtorOrDtor(CallSite cs)
+{
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
     const Function *func = cs.getCaller();
-    if (isConstructor(func) || isDestructor(func)) {
+    if (isConstructor(func) || isDestructor(func))
+    {
         struct DemangledName dname = demangle(func->getName().str());
         if (classNameOfThisPtr.compare(dname.className) == 0)
             return true;

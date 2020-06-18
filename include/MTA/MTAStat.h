@@ -18,13 +18,15 @@ class MTAAnnotator;
 /*!
  * Statistics for MTA
  */
-class MTAStat : public PTAStat {
+class MTAStat : public PTAStat
+{
 
 public:
     typedef std::set<const Instruction*> InstSet;
 
     /// Constructor
-    MTAStat():PTAStat(NULL),TCTTime(0),MHPTime(0),FSMPTATime(0),AnnotationTime(0) {
+    MTAStat():PTAStat(NULL),TCTTime(0),MHPTime(0),FSMPTATime(0),AnnotationTime(0)
+    {
     }
     /// Statistics for thread call graph
     void performThreadCallGraphStat(ThreadCallGraph* tcg);

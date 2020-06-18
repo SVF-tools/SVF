@@ -35,21 +35,24 @@
 #include "Graphs/VFGEdge.h"
 
 class VFGNode;
+class ICFGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
  * including top-level pointers (ValPN) and address-taken objects (ObjPN)
  */
 typedef GenericNode<VFGNode,VFGEdge> GenericVFGNodeTy;
-class VFGNode : public GenericVFGNodeTy {
+class VFGNode : public GenericVFGNodeTy
+{
 
 public:
     /// 20 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
-    enum VFGNodeK {
+    enum VFGNodeK
+    {
         Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-		FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
+        FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
@@ -59,16 +62,31 @@ public:
 
 public:
     /// Constructor
-    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), bb(NULL) {
+    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), bb(NULL), icfgNode(NULL)
+    {
 
     }
     /// We should know the program location (basic block level) of each ICFG node
-    virtual const BasicBlock* getBB() const {
+    virtual const BasicBlock* getBB() const
+    {
         return bb;
     }
 
+    /// Return corresponding ICFG node
+    virtual const ICFGNode* getICFGNode() const
+    {
+        return icfgNode;
+    }
+
+    /// Set corresponding ICFG node
+    virtual void setICFGNode(const ICFGNode* node )
+    {
+        icfgNode = node;
+    }
+
     /// Get the function of this SVFGNode
-    virtual const SVFFunction* getFun() const {
+    virtual const SVFFunction* getFun() const
+    {
         if(bb)
             return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
         else
@@ -77,78 +95,92 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node) {
+    friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
+    {
         o << "VFGNode ID:" << node.getId();
         return o;
     }
     //@}
 protected:
     const BasicBlock* bb;
+    const ICFGNode* icfgNode;
 };
 
 /*!
  * ICFG node stands for a program statement
  */
-class StmtVFGNode : public VFGNode {
+class StmtVFGNode : public VFGNode
+{
 
 private:
     const PAGEdge* pagEdge;
 
 public:
     /// Constructor
-    StmtVFGNode(NodeID id, const PAGEdge* e, VFGNodeK k): VFGNode(id,k), pagEdge(e) {
+    StmtVFGNode(NodeID id, const PAGEdge* e, VFGNodeK k): VFGNode(id,k), pagEdge(e)
+    {
         bb = e->getBB();
     }
 
     /// Whether this node is used for pointer analysis. Both src and dst PAGNodes are of ptr type.
-    inline bool isPTANode() const{
-		return pagEdge->isPTAEdge();
+    inline bool isPTANode() const
+    {
+        return pagEdge->isPTAEdge();
     }
 
     /// PAGNode and PAGEdge
     ///@{
-    inline const PAGEdge* getPAGEdge() const {
+    inline const PAGEdge* getPAGEdge() const
+    {
         return pagEdge;
     }
 
-    inline NodeID getPAGSrcNodeID() const {
+    inline NodeID getPAGSrcNodeID() const
+    {
         return pagEdge->getSrcID();
     }
 
-    inline NodeID getPAGDstNodeID() const {
+    inline NodeID getPAGDstNodeID() const
+    {
         return pagEdge->getDstID();
     }
 
-    inline PAGNode* getPAGSrcNode() const {
+    inline PAGNode* getPAGSrcNode() const
+    {
         return pagEdge->getSrcNode();
     }
 
-    inline PAGNode* getPAGDstNode() const {
+    inline PAGNode* getPAGDstNode() const
+    {
         return pagEdge->getDstNode();
     }
     //@}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const StmtVFGNode *) {
+    static inline bool classof(const StmtVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
-		return node->getNodeKind() == Addr
-				|| node->getNodeKind() == Copy
-				|| node->getNodeKind() == Gep
-				|| node->getNodeKind() == Store
-				|| node->getNodeKind() == Load;
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == Addr
+               || node->getNodeKind() == Copy
+               || node->getNodeKind() == Gep
+               || node->getNodeKind() == Store
+               || node->getNodeKind() == Load;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
-		return node->getNodeKind() == Addr
-				|| node->getNodeKind() == Copy
-				|| node->getNodeKind() == Gep
-				|| node->getNodeKind() == Store
-				|| node->getNodeKind() == Load;
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Addr
+               || node->getNodeKind() == Copy
+               || node->getNodeKind() == Gep
+               || node->getNodeKind() == Store
+               || node->getNodeKind() == Load;
     }
 
-    inline const Instruction* getInst() const {
+    inline const Instruction* getInst() const
+    {
         /// should return a valid instruction unless it is a global PAGEdge
         return pagEdge->getInst();
     }
@@ -158,7 +190,8 @@ public:
 /*!
  * VFGNode for loads
  */
-class LoadVFGNode: public StmtVFGNode {
+class LoadVFGNode: public StmtVFGNode
+{
 private:
     LoadVFGNode();                      ///< place holder
     LoadVFGNode(const LoadVFGNode &);  ///< place holder
@@ -166,21 +199,26 @@ private:
 
 public:
     /// Constructor
-    LoadVFGNode(NodeID id, const LoadPE* edge): StmtVFGNode(id, edge,Load) {
+    LoadVFGNode(NodeID id, const LoadPE* edge): StmtVFGNode(id, edge,Load)
+    {
 
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const LoadVFGNode *) {
+    static inline bool classof(const LoadVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
+    static inline bool classof(const StmtVFGNode *node)
+    {
         return node->getNodeKind() == Load;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Load;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Load;
     }
     //@}
@@ -189,7 +227,8 @@ public:
 /*!
  * VFGNode for stores
  */
-class StoreVFGNode: public StmtVFGNode {
+class StoreVFGNode: public StmtVFGNode
+{
 private:
     StoreVFGNode();                      ///< place holder
     StoreVFGNode(const StoreVFGNode &);  ///< place holder
@@ -197,21 +236,26 @@ private:
 
 public:
     /// Constructor
-    StoreVFGNode(NodeID id,const StorePE* edge): StmtVFGNode(id,edge,Store) {
+    StoreVFGNode(NodeID id,const StorePE* edge): StmtVFGNode(id,edge,Store)
+    {
 
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const StoreVFGNode *) {
+    static inline bool classof(const StoreVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
+    static inline bool classof(const StmtVFGNode *node)
+    {
         return node->getNodeKind() == Store;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Store;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Store;
     }
     //@}
@@ -220,7 +264,8 @@ public:
 /*!
  * VFGNode for copies
  */
-class CopyVFGNode: public StmtVFGNode {
+class CopyVFGNode: public StmtVFGNode
+{
 private:
     CopyVFGNode();                      ///< place holder
     CopyVFGNode(const CopyVFGNode &);  ///< place holder
@@ -228,21 +273,26 @@ private:
 
 public:
     /// Constructor
-    CopyVFGNode(NodeID id,const CopyPE* copy): StmtVFGNode(id,copy,Copy) {
+    CopyVFGNode(NodeID id,const CopyPE* copy): StmtVFGNode(id,copy,Copy)
+    {
 
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CopyVFGNode *) {
+    static inline bool classof(const CopyVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
+    static inline bool classof(const StmtVFGNode *node)
+    {
         return node->getNodeKind() == Copy;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Copy;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Copy;
     }
     //@}
@@ -253,7 +303,8 @@ public:
  * VFGNode for compare instruction, e.g., bool b = (a!=c);
  */
 
-class CmpVFGNode: public VFGNode {
+class CmpVFGNode: public VFGNode
+{
 public:
     typedef std::map<u32_t,const PAGNode*> OPVers;
 protected:
@@ -267,43 +318,53 @@ private:
 
 public:
     /// Constructor
-    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r) {
+    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
+    {
         const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
         assert(cmp && "not a binary operator?");
         bb = cmp->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CmpVFGNode *) {
+    static inline bool classof(const CmpVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Cmp;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Cmp;
     }
     //@}
     /// Operands at a BinaryNode
     //@{
-    inline const PAGNode* getOpVer(u32_t pos) const {
+    inline const PAGNode* getOpVer(u32_t pos) const
+    {
         OPVers::const_iterator it = opVers.find(pos);
         assert(it!=opVers.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVer(u32_t pos, const PAGNode* node) {
+    inline void setOpVer(u32_t pos, const PAGNode* node)
+    {
         opVers[pos] = node;
     }
-    inline const PAGNode* getRes() const {
+    inline const PAGNode* getRes() const
+    {
         return res;
     }
-    inline u32_t getOpVerNum() const {
+    inline u32_t getOpVerNum() const
+    {
         return opVers.size();
     }
-    inline OPVers::const_iterator opVerBegin() const {
+    inline OPVers::const_iterator opVerBegin() const
+    {
         return opVers.begin();
     }
-    inline OPVers::const_iterator opVerEnd() const {
+    inline OPVers::const_iterator opVerEnd() const
+    {
         return opVers.end();
     }
     //@}
@@ -313,7 +374,8 @@ public:
 /*!
  * VFGNode for binary operator instructions, e.g., a = b + c;
  */
-class BinaryOPVFGNode: public VFGNode {
+class BinaryOPVFGNode: public VFGNode
+{
 public:
     typedef std::map<u32_t,const PAGNode*> OPVers;
 protected:
@@ -321,49 +383,59 @@ protected:
     OPVers opVers;
 
 private:
-	BinaryOPVFGNode();                      ///< place holder
-	BinaryOPVFGNode(const BinaryOPVFGNode &);  ///< place holder
+    BinaryOPVFGNode();                      ///< place holder
+    BinaryOPVFGNode(const BinaryOPVFGNode &);  ///< place holder
     void operator=(const BinaryOPVFGNode &); ///< place holder
 
 public:
     /// Constructor
-    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r) {
+    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r)
+    {
         const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
         assert(binary && "not a binary operator?");
         bb = binary->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const BinaryOPVFGNode *) {
+    static inline bool classof(const BinaryOPVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == BinaryOp;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == BinaryOp;
     }
     //@}
     /// Operands at a BinaryNode
     //@{
-    inline const PAGNode* getOpVer(u32_t pos) const {
+    inline const PAGNode* getOpVer(u32_t pos) const
+    {
         OPVers::const_iterator it = opVers.find(pos);
         assert(it!=opVers.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVer(u32_t pos, const PAGNode* node) {
+    inline void setOpVer(u32_t pos, const PAGNode* node)
+    {
         opVers[pos] = node;
     }
-    inline const PAGNode* getRes() const {
+    inline const PAGNode* getRes() const
+    {
         return res;
     }
-    inline u32_t getOpVerNum() const {
+    inline u32_t getOpVerNum() const
+    {
         return opVers.size();
     }
-    inline OPVers::const_iterator opVerBegin() const {
+    inline OPVers::const_iterator opVerBegin() const
+    {
         return opVers.begin();
     }
-    inline OPVers::const_iterator opVerEnd() const {
+    inline OPVers::const_iterator opVerEnd() const
+    {
         return opVers.end();
     }
     //@}
@@ -372,7 +444,8 @@ public:
 /*!
  * VFGNode for Gep
  */
-class GepVFGNode: public StmtVFGNode {
+class GepVFGNode: public StmtVFGNode
+{
 private:
     GepVFGNode();                      ///< place holder
     GepVFGNode(const GepVFGNode &);  ///< place holder
@@ -380,21 +453,26 @@ private:
 
 public:
     /// Constructor
-    GepVFGNode(NodeID id,const GepPE* edge): StmtVFGNode(id,edge,Gep) {
+    GepVFGNode(NodeID id,const GepPE* edge): StmtVFGNode(id,edge,Gep)
+    {
 
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepVFGNode *) {
+    static inline bool classof(const GepVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
+    static inline bool classof(const StmtVFGNode *node)
+    {
         return node->getNodeKind() == Gep;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Gep;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Gep;
     }
     //@}
@@ -403,7 +481,8 @@ public:
 /*
  * ICFG Node stands for a top level pointer ssa phi node or a formal parameter or a return parameter
  */
-class PHIVFGNode : public VFGNode {
+class PHIVFGNode : public VFGNode
+{
 
 public:
     typedef std::map<u32_t,const PAGNode*> OPVers;
@@ -416,43 +495,53 @@ public:
     PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k = TPhi);
 
     /// Whether this phi node is of pointer type (used for pointer analysis).
-    inline bool isPTANode() const{
-		return res->isPointer();
+    inline bool isPTANode() const
+    {
+        return res->isPointer();
     }
 
     /// Operands at a llvm PHINode
     //@{
-    inline const PAGNode* getOpVer(u32_t pos) const {
+    inline const PAGNode* getOpVer(u32_t pos) const
+    {
         OPVers::const_iterator it = opVers.find(pos);
         assert(it!=opVers.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVer(u32_t pos, const PAGNode* node) {
+    inline void setOpVer(u32_t pos, const PAGNode* node)
+    {
         opVers[pos] = node;
     }
-    inline const PAGNode* getRes() const {
+    inline const PAGNode* getRes() const
+    {
         return res;
     }
-    inline u32_t getOpVerNum() const {
+    inline u32_t getOpVerNum() const
+    {
         return opVers.size();
     }
-    inline OPVers::const_iterator opVerBegin() const {
+    inline OPVers::const_iterator opVerBegin() const
+    {
         return opVers.begin();
     }
-    inline OPVers::const_iterator opVerEnd() const {
+    inline OPVers::const_iterator opVerEnd() const
+    {
         return opVers.end();
     }
     //@}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const PHIVFGNode *) {
+    static inline bool classof(const PHIVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
     //@}
@@ -462,7 +551,8 @@ public:
 /*
  * Intra LLVM PHI Node
  */
-class IntraPHIVFGNode : public PHIVFGNode {
+class IntraPHIVFGNode : public PHIVFGNode
+{
 
 public:
     typedef DenseMap<u32_t,const ICFGNode*> OPIncomingBBs;
@@ -471,38 +561,46 @@ private:
     OPIncomingBBs opIncomingBBs;
 public:
     /// Constructor
-    IntraPHIVFGNode(NodeID id, const PAGNode* r): PHIVFGNode(id, r, TIntraPhi) {
+    IntraPHIVFGNode(NodeID id, const PAGNode* r): PHIVFGNode(id, r, TIntraPhi)
+    {
     }
 
-    inline const ICFGNode* getOpIncomingBB(u32_t pos) const {
+    inline const ICFGNode* getOpIncomingBB(u32_t pos) const
+    {
         OPIncomingBBs::const_iterator it = opIncomingBBs.find(pos);
         assert(it!=opIncomingBBs.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const ICFGNode* bb) {
+    inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const ICFGNode* bb)
+    {
         opVers[pos] = node;
         opIncomingBBs[pos] = bb;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IntraPHIVFGNode *node) {
+    static inline bool classof(const IntraPHIVFGNode *node)
+    {
         return true;
     }
-    static inline bool classof(const PHIVFGNode *node) {
+    static inline bool classof(const PHIVFGNode *node)
+    {
         return node->getNodeKind() == TIntraPhi;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == TIntraPhi;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == TIntraPhi;
     }
     //@}
 };
 
 
-class AddrVFGNode: public StmtVFGNode {
+class AddrVFGNode: public StmtVFGNode
+{
 private:
     AddrVFGNode();                      ///< place holder
     AddrVFGNode(const AddrVFGNode &);  ///< place holder
@@ -510,58 +608,69 @@ private:
 
 public:
     /// Constructor
-    AddrVFGNode(NodeID id, const AddrPE* edge): StmtVFGNode(id, edge,Addr) {
+    AddrVFGNode(NodeID id, const AddrPE* edge): StmtVFGNode(id, edge,Addr)
+    {
 
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const AddrVFGNode *) {
+    static inline bool classof(const AddrVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const StmtVFGNode *node) {
+    static inline bool classof(const StmtVFGNode *node)
+    {
         return node->getNodeKind() == Addr;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == Addr;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == Addr;
     }
     //@}
 };
 
 
-class ArgumentVFGNode : public VFGNode {
+class ArgumentVFGNode : public VFGNode
+{
 
 protected:
     const PAGNode* param;
 
 public:
     /// Constructor
-    ArgumentVFGNode(NodeID id, const PAGNode* p, VFGNodeK k): VFGNode(id,k), param(p) {
+    ArgumentVFGNode(NodeID id, const PAGNode* p, VFGNodeK k): VFGNode(id,k), param(p)
+    {
     }
 
     /// Whether this argument node is of pointer type (used for pointer analysis).
-    inline bool isPTANode() const{
-		return param->isPointer();
+    inline bool isPTANode() const
+    {
+        return param->isPointer();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ArgumentVFGNode *) {
+    static inline bool classof(const ArgumentVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
-		return node->getNodeKind() == FRet
-				|| node->getNodeKind() == ARet
-				|| node->getNodeKind() == AParm
-				|| node->getNodeKind() == FParm;
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == FRet
+               || node->getNodeKind() == ARet
+               || node->getNodeKind() == AParm
+               || node->getNodeKind() == FParm;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
-		return node->getNodeKind() == FRet
-				|| node->getNodeKind() == ARet
-				|| node->getNodeKind() == AParm
-				|| node->getNodeKind() == FParm;
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == FRet
+               || node->getNodeKind() == ARet
+               || node->getNodeKind() == AParm
+               || node->getNodeKind() == FParm;
     }
     //@}
 
@@ -570,38 +679,46 @@ public:
 /*
  * ICFG Node stands for acutal parameter node (top level pointers)
  */
-class ActualParmVFGNode : public ArgumentVFGNode {
+class ActualParmVFGNode : public ArgumentVFGNode
+{
 private:
     const CallBlockNode* cs;
 public:
     /// Constructor
-	ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
-			ArgumentVFGNode(id, n, AParm), cs(c) {
-		bb = cs->getCallSite().getInstruction()->getParent();
-	}
+    ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+        ArgumentVFGNode(id, n, AParm), cs(c)
+    {
+        bb = cs->getCallSite().getInstruction()->getParent();
+    }
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return cs;
     }
 
     /// Return parameter
-    inline const PAGNode* getParam() const {
+    inline const PAGNode* getParam() const
+    {
         return param;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ActualParmVFGNode *) {
+    static inline bool classof(const ActualParmVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const ArgumentVFGNode *node) {
-    		return node->getNodeKind() == AParm;
-    }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const ArgumentVFGNode *node)
+    {
         return node->getNodeKind() == AParm;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == AParm;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == AParm;
     }
     //@}
@@ -611,7 +728,8 @@ public:
 /*
  * ICFG Node stands for formal parameter node (top level pointers)
  */
-class FormalParmVFGNode : public ArgumentVFGNode {
+class FormalParmVFGNode : public ArgumentVFGNode
+{
 private:
     const SVFFunction* fun;
     CallPESet callPEs;
@@ -619,45 +737,55 @@ private:
 public:
     /// Constructor
     FormalParmVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f):
-    		ArgumentVFGNode(id, n, FParm),  fun(f) {
+        ArgumentVFGNode(id, n, FParm),  fun(f)
+    {
         bb = &fun->getLLVMFun()->getEntryBlock();
     }
 
     /// Return parameter
-    inline const PAGNode* getParam() const {
+    inline const PAGNode* getParam() const
+    {
         return param;
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         return fun;
     }
     /// Return call edge
-    inline void addCallPE(const CallPE* call) {
+    inline void addCallPE(const CallPE* call)
+    {
         callPEs.insert(call);
     }
     /// Call edge iterator
     ///@{
-    inline CallPESet::const_iterator callPEBegin() const {
+    inline CallPESet::const_iterator callPEBegin() const
+    {
         return callPEs.begin();
     }
-    inline CallPESet::const_iterator callPEEnd() const {
+    inline CallPESet::const_iterator callPEEnd() const
+    {
         return callPEs.end();
     }
     //@}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FormalParmVFGNode *) {
+    static inline bool classof(const FormalParmVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == FParm;
     }
-    static inline bool classof(const ArgumentVFGNode *node) {
+    static inline bool classof(const ArgumentVFGNode *node)
+    {
         return node->getNodeKind() == FParm;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == FParm;
     }
     //@}
@@ -666,7 +794,8 @@ public:
 /*!
  * Callsite receive paramter
  */
-class ActualRetVFGNode: public ArgumentVFGNode {
+class ActualRetVFGNode: public ArgumentVFGNode
+{
 private:
     const CallBlockNode* cs;
 
@@ -676,34 +805,42 @@ private:
 
 public:
     /// Constructor
-	ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
-			ArgumentVFGNode(id, n, ARet), cs(c) {
-		bb = cs->getCallSite().getInstruction()->getParent();
-	}
+    ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+        ArgumentVFGNode(id, n, ARet), cs(c)
+    {
+        bb = cs->getCallSite().getInstruction()->getParent();
+    }
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return cs;
     }
     /// Receive parameter at callsite
-    inline const SVFFunction* getCaller() const {
+    inline const SVFFunction* getCaller() const
+    {
         return cs->getCaller();
     }
     /// Receive parameter at callsite
-    inline const PAGNode* getRev() const {
+    inline const PAGNode* getRev() const
+    {
         return param;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ActualRetVFGNode *) {
+    static inline bool classof(const ActualRetVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const ArgumentVFGNode *node) {
+    static inline bool classof(const ArgumentVFGNode *node)
+    {
         return node->getNodeKind() == ARet;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == ARet;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == ARet;
     }
     //@}
@@ -712,7 +849,8 @@ public:
 /*!
  * Callee return ICFG node
  */
-class FormalRetVFGNode: public ArgumentVFGNode {
+class FormalRetVFGNode: public ArgumentVFGNode
+{
 private:
     const SVFFunction* fun;
     RetPESet retPEs;
@@ -723,39 +861,48 @@ private:
 
 public:
     /// Constructor
-	FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f);
+    FormalRetVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f);
 
     /// Return value at callee
-    inline const PAGNode* getRet() const {
+    inline const PAGNode* getRet() const
+    {
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         return fun;
     }
     /// RetPE
-    inline void addRetPE(const RetPE* retPE) {
+    inline void addRetPE(const RetPE* retPE)
+    {
         retPEs.insert(retPE);
     }
     /// RetPE iterators
-    inline RetPESet::const_iterator retPEBegin() const {
+    inline RetPESet::const_iterator retPEBegin() const
+    {
         return retPEs.begin();
     }
-    inline RetPESet::const_iterator retPEEnd() const {
+    inline RetPESet::const_iterator retPEEnd() const
+    {
         return retPEs.end();
     }
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FormalRetVFGNode *) {
+    static inline bool classof(const FormalRetVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == FRet;
     }
-    static inline bool classof(const ArgumentVFGNode *node) {
+    static inline bool classof(const ArgumentVFGNode *node)
+    {
         return node->getNodeKind() == FRet;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == FRet;
     }
     //@}
@@ -764,7 +911,8 @@ public:
 /*
  * Inter LLVM PHI node (formal parameter)
  */
-class InterPHIVFGNode : public PHIVFGNode {
+class InterPHIVFGNode : public PHIVFGNode
+{
 
 public:
     /// Constructor interPHI for formal parameter
@@ -772,36 +920,44 @@ public:
     /// Constructor interPHI for actual return
     InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(ar->getCaller()),callInst(ar->getCallSite()) {}
 
-    inline bool isFormalParmPHI() const {
+    inline bool isFormalParmPHI() const
+    {
         return (fun!=NULL) && (callInst == NULL);
     }
 
-    inline bool isActualRetPHI() const {
+    inline bool isActualRetPHI() const
+    {
         return (fun!=NULL) && (callInst != NULL);
     }
 
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
     }
 
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         assert(isActualRetPHI() && "expect a actual return phi");
         return callInst;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const InterPHIVFGNode *node) {
+    static inline bool classof(const InterPHIVFGNode *node)
+    {
         return true;
     }
-    static inline bool classof(const PHIVFGNode *node) {
+    static inline bool classof(const PHIVFGNode *node)
+    {
         return node->getNodeKind() == TInterPhi;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == TInterPhi;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == TInterPhi;
     }
     //@}
@@ -816,31 +972,38 @@ private:
 /*!
  * Dummy Definition for undef and null pointers
  */
-class NullPtrVFGNode : public VFGNode {
+class NullPtrVFGNode : public VFGNode
+{
 private:
     const PAGNode* node;
 public:
     /// Constructor
-    NullPtrVFGNode(NodeID id, const PAGNode* n) : VFGNode(id,NPtr), node(n) {
+    NullPtrVFGNode(NodeID id, const PAGNode* n) : VFGNode(id,NPtr), node(n)
+    {
 
     }
     /// Whether this node is of pointer type (used for pointer analysis).
-    inline bool isPTANode() const{
-		return node->isPointer();
+    inline bool isPTANode() const
+    {
+        return node->isPointer();
     }
     /// Return corresponding PAGNode
-    const PAGNode* getPAGNode() const {
+    const PAGNode* getPAGNode() const
+    {
         return node;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const NullPtrVFGNode *) {
+    static inline bool classof(const NullPtrVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == NPtr;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == NPtr;
     }
     //@}

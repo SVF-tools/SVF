@@ -32,16 +32,19 @@
 
 #include "WPA/Andersen.h"
 
-class TypeAnalysis:  public Andersen {
+class TypeAnalysis:  public Andersen
+{
 
 public:
     /// Constructor
-	TypeAnalysis(PTATY type = TypeCPP_WPA)
-        :  Andersen(type){
+    TypeAnalysis(PTATY type = TypeCPP_WPA)
+        :  Andersen(type)
+    {
     }
 
     /// Destructor
-    virtual ~TypeAnalysis() {
+    virtual ~TypeAnalysis()
+    {
     }
 
     /// Type analysis
@@ -61,10 +64,12 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TypeAnalysis *) {
+    static inline bool classof(const TypeAnalysis *)
+    {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta) {
+    static inline bool classof(const PointerAnalysis *pta)
+    {
         return (pta->getAnalysisTy() == TypeCPP_WPA);
     }
     //@}

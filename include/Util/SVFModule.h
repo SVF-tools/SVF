@@ -32,7 +32,8 @@
 
 #include "Util/BasicTypes.h"
 
-class SVFModule {
+class SVFModule
+{
 public:
     typedef std::vector<const SVFFunction*> FunctionSetType;
     typedef std::vector<Function*> LLVMFunctionSetType;
@@ -60,109 +61,137 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
 public:
     /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {
+    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
+    {
     }
 
 
-    static inline void setPagFromTXT(std::string txt) {
+    static inline void setPagFromTXT(std::string txt)
+    {
         pagReadFromTxt = txt;
     }
 
-    static inline std::string pagFileName() {
+    static inline std::string pagFileName()
+    {
         return pagReadFromTxt;
     }
 
-    static inline bool pagReadFromTXT() {
-    		if(pagReadFromTxt.empty())
-    			return false;
-    		else
-    			return true;
+    static inline bool pagReadFromTXT()
+    {
+        if(pagReadFromTxt.empty())
+            return false;
+        else
+            return true;
     }
 
     ///@{
-    inline void addFunctionSet(Function* fun){
-    	SVFFunction* svfFunc = new SVFFunction(fun);
-    	FunctionSet.push_back(svfFunc);
-    	LLVMFunctionSet.push_back(fun);
-    	LLVMFunc2SVFFunc[fun] = svfFunc;
+    inline void addFunctionSet(Function* fun)
+    {
+        SVFFunction* svfFunc = new SVFFunction(fun);
+        FunctionSet.push_back(svfFunc);
+        LLVMFunctionSet.push_back(fun);
+        LLVMFunc2SVFFunc[fun] = svfFunc;
     }
-    inline void addGlobalSet(GlobalVariable* glob){
-    	GlobalSet.push_back(glob);
+    inline void addGlobalSet(GlobalVariable* glob)
+    {
+        GlobalSet.push_back(glob);
     }
-    inline void addAliasSet(GlobalAlias* alias){
-    	AliasSet.push_back(alias);
+    inline void addAliasSet(GlobalAlias* alias)
+    {
+        AliasSet.push_back(alias);
     }
     ///@}
 
-    inline const SVFFunction* getSVFFunction(const Function* fun) const {
-    	LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
-    	assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-    	return it->second;
+    inline const SVFFunction* getSVFFunction(const Function* fun) const
+    {
+        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+        return it->second;
     }
 
     /// Iterators
     ///@{
-    llvm_iterator llvmFunBegin() {
+    llvm_iterator llvmFunBegin()
+    {
         return LLVMFunctionSet.begin();
     }
-    llvm_const_iterator llvmFunBegin() const {
+    llvm_const_iterator llvmFunBegin() const
+    {
         return LLVMFunctionSet.begin();
     }
-    llvm_iterator llvmFunEnd() {
+    llvm_iterator llvmFunEnd()
+    {
         return LLVMFunctionSet.end();
     }
-    llvm_const_iterator llvmFunEnd() const {
+    llvm_const_iterator llvmFunEnd() const
+    {
         return LLVMFunctionSet.end();
     }
 
-    iterator begin() {
+    iterator begin()
+    {
         return FunctionSet.begin();
     }
-    const_iterator begin() const {
+    const_iterator begin() const
+    {
         return FunctionSet.begin();
     }
-    iterator end() {
+    iterator end()
+    {
         return FunctionSet.end();
     }
-    const_iterator end() const {
+    const_iterator end() const
+    {
         return FunctionSet.end();
     }
 
-    global_iterator global_begin() {
+    global_iterator global_begin()
+    {
         return GlobalSet.begin();
     }
-    const_global_iterator global_begin() const {
+    const_global_iterator global_begin() const
+    {
         return GlobalSet.begin();
     }
-    global_iterator global_end() {
+    global_iterator global_end()
+    {
         return GlobalSet.end();
     }
-    const_global_iterator global_end() const {
+    const_global_iterator global_end() const
+    {
         return GlobalSet.end();
     }
 
-    alias_iterator alias_begin() {
+    alias_iterator alias_begin()
+    {
         return AliasSet.begin();
     }
-    const_alias_iterator alias_begin() const {
+    const_alias_iterator alias_begin() const
+    {
         return AliasSet.begin();
     }
-    alias_iterator alias_end() {
+    alias_iterator alias_end()
+    {
         return AliasSet.end();
     }
-    const_alias_iterator alias_end() const {
+    const_alias_iterator alias_end() const
+    {
         return AliasSet.end();
     }
     ///@}
 
-	const std::string& getModuleIdentifier() const {
-		if (pagReadFromTxt.empty()) {
-			assert(moduleIdentifier.empty()==false && "No LLVM module found! Are you reading from a file other than LLVM-IR?");
-			return moduleIdentifier;
-		} else {
-			return pagReadFromTxt;
-		}
-	}
+    const std::string& getModuleIdentifier() const
+    {
+        if (pagReadFromTxt.empty())
+        {
+            assert(moduleIdentifier.empty()==false && "No LLVM module found! Are you reading from a file other than LLVM-IR?");
+            return moduleIdentifier;
+        }
+        else
+        {
+            return pagReadFromTxt;
+        }
+    }
 
 };
 

@@ -36,7 +36,8 @@ char IteratedDominanceFrontier::ID = 0;
 //		"IteratedDominanceFrontier Pass");
 
 void IteratedDominanceFrontier::calculate(BasicBlock * bb,
-        const DominanceFrontier &DF) {
+        const DominanceFrontier &DF)
+{
 
     DomSetType worklist;
 
@@ -44,10 +45,12 @@ void IteratedDominanceFrontier::calculate(BasicBlock * bb,
     assert(it != DF.end());
 
     worklist.insert(it->second.begin(), it->second.end());
-    while (!worklist.empty()) {
+    while (!worklist.empty())
+    {
         BasicBlock *item = *worklist.begin();
         worklist.erase(worklist.begin());
-        if (Frontiers[bb].find(item) == Frontiers[bb].end()) {
+        if (Frontiers[bb].find(item) == Frontiers[bb].end())
+        {
             Frontiers[bb].insert(item);
             const_iterator parent = DF.find(item);
             assert(parent != DF.end());

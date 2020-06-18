@@ -36,19 +36,23 @@
  * Double free checker to check deallocations of memory
  */
 
-class DoubleFreeChecker : public LeakChecker {
+class DoubleFreeChecker : public LeakChecker
+{
 
 public:
     /// Constructor
-    DoubleFreeChecker(): LeakChecker() {
+    DoubleFreeChecker(): LeakChecker()
+    {
     }
 
     /// Destructor
-    virtual ~DoubleFreeChecker() {
+    virtual ~DoubleFreeChecker()
+    {
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module) {
+    virtual bool runOnModule(SVFModule* module)
+    {
         /// start analysis
         analyze(module);
         return false;

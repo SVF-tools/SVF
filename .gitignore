@@ -1,7 +1,6 @@
 Release*/
 Debug*/
 build/
-build*
 html/
 Release+Asserts/
 Debug+Asserts/

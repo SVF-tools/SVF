@@ -39,7 +39,8 @@ static cl::opt<bool> ENABLECONTEXT("cdaa", cl::init(false),
 static cl::opt<bool> ENABLEFLOW("ldaa", cl::init(false),
                                 cl::desc("enable flow-sensitivity for demand-driven analysis"));
 
-int main(int argc, char ** argv) {
+int main(int argc, char ** argv)
+{
 
     int arg_num = 0;
     char **arg_value = new char*[argc];

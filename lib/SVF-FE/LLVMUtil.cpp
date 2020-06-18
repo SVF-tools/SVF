@@ -37,7 +37,8 @@
  * 3) stack
  * 4) heap
  */
-bool SVFUtil::isObject(const Value * ref) {
+bool SVFUtil::isObject(const Value * ref)
+{
     bool createobj = false;
     if (SVFUtil::isa<Instruction>(ref) && SVFUtil::isStaticExtCall(SVFUtil::cast<Instruction>(ref)) )
         createobj = true;
@@ -54,17 +55,21 @@ bool SVFUtil::isObject(const Value * ref) {
 /*!
  * Return reachable bbs from function entry
  */
-void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs) {
+void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
+{
     std::set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
     bbVec.push_back(&fun->getEntryBlock());
-    while(!bbVec.empty()) {
+    while(!bbVec.empty())
+    {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
         reachableBBs.push_back(bb);
-        if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(bb))) {
+        if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(bb)))
+        {
             for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
-                    DI != DE; ++DI) {
+                    DI != DE; ++DI)
+            {
                 const BasicBlock* succbb = (*DI)->getBlock();
                 if(visited.find(succbb)==visited.end())
                     visited.insert(succbb);
@@ -79,22 +84,26 @@ void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::
 /*!
  * Return true if the function has a return instruction reachable from function entry
  */
-bool SVFUtil::functionDoesNotRet (const Function * fun) {
+bool SVFUtil::functionDoesNotRet (const Function * fun)
+{
 
     std::vector<const BasicBlock*> bbVec;
     std::set<const BasicBlock*> visited;
     bbVec.push_back(&fun->getEntryBlock());
-    while(!bbVec.empty()) {
+    while(!bbVec.empty())
+    {
         const BasicBlock* bb = bbVec.back();
         bbVec.pop_back();
         for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
-                it != eit; ++it) {
+                it != eit; ++it)
+        {
             if(SVFUtil::isa<ReturnInst>(*it))
                 return false;
         }
 
         for (succ_const_iterator sit = succ_begin(bb), esit = succ_end(bb);
-                sit != esit; ++sit) {
+                sit != esit; ++sit)
+        {
             const BasicBlock* succbb = (*sit);
             if(visited.find(succbb)==visited.end())
                 visited.insert(succbb);
@@ -112,23 +121,28 @@ bool SVFUtil::functionDoesNotRet (const Function * fun) {
 /*!
  * Return true if this is a function without any possible caller
  */
-bool SVFUtil::isDeadFunction (const Function * fun) {
+bool SVFUtil::isDeadFunction (const Function * fun)
+{
     if(fun->hasAddressTaken())
         return false;
     if(isProgEntryFunction(fun))
         return false;
-    for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i) {
+    for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
+    {
         if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
             return false;
     }
-    if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun)) {
+    if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
+    {
         const SVFModule::FunctionSetType &decls = LLVMModuleSet::getLLVMModuleSet()->getDeclaration(fun);
         for (SVFModule::FunctionSetType::const_iterator it = decls.begin(),
-                eit = decls.end(); it != eit; ++it) {
+                eit = decls.end(); it != eit; ++it)
+        {
             const Function *decl = (*it)->getLLVMFun();
             if(decl->hasAddressTaken())
                 return false;
-            for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i) {
+            for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
+            {
                 if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
                     return false;
             }
@@ -140,12 +154,15 @@ bool SVFUtil::isDeadFunction (const Function * fun) {
 /*!
  * Return true if this is a value in a dead function (function without any caller)
  */
-bool SVFUtil::isPtrInDeadFunction (const Value * value) {
-    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value)) {
+bool SVFUtil::isPtrInDeadFunction (const Value * value)
+{
+    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+    {
         if(isDeadFunction(inst->getParent()->getParent()))
             return true;
     }
-    else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value)) {
+    else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+    {
         if(isDeadFunction(arg->getParent()))
             return true;
     }
@@ -155,10 +172,12 @@ bool SVFUtil::isPtrInDeadFunction (const Value * value) {
 /*!
  * Strip constant casts
  */
-const Value * SVFUtil::stripConstantCasts(const Value *val) {
+const Value * SVFUtil::stripConstantCasts(const Value *val)
+{
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
-    else if (const ConstantExpr *CE = SVFUtil::dyn_cast<ConstantExpr>(val)) {
+    else if (const ConstantExpr *CE = SVFUtil::dyn_cast<ConstantExpr>(val))
+    {
         if (Instruction::isCast(CE->getOpcode()))
             return stripConstantCasts(CE->getOperand(0));
     }
@@ -168,14 +187,21 @@ const Value * SVFUtil::stripConstantCasts(const Value *val) {
 /*!
  * Strip all casts
  */
-Value * SVFUtil::stripAllCasts(Value *val) {
-    while (true) {
-        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val)) {
+Value * SVFUtil::stripAllCasts(Value *val)
+{
+    while (true)
+    {
+        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
+        {
             val = ci->getOperand(0);
-        } else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val)) {
+        }
+        else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
+        {
             if(ce->isCast())
                 val = ce->getOperand(0);
-        } else {
+        }
+        else
+        {
             return val;
         }
     }
@@ -183,81 +209,97 @@ Value * SVFUtil::stripAllCasts(Value *val) {
 }
 
 /// Get the next instructions following control flow
-void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
-	if (!curInst->isTerminator()) {
-		const Instruction* nextInst = curInst->getNextNode();
-		if (isInstrinsicDbgInst(nextInst))
-			getNextInsts(nextInst, instList);
-		else
-			instList.push_back(nextInst);
-	} else {
-		const BasicBlock *BB = curInst->getParent();
-		// Visit all successors of BB in the CFG
-		for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it) {
-			const Instruction* nextInst = &((*it)->front());
-			if (isInstrinsicDbgInst(nextInst))
-				getNextInsts(nextInst, instList);
-			else
-				instList.push_back(nextInst);
-		}
-	}
+void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+{
+    if (!curInst->isTerminator())
+    {
+        const Instruction* nextInst = curInst->getNextNode();
+        if (isInstrinsicDbgInst(nextInst))
+            getNextInsts(nextInst, instList);
+        else
+            instList.push_back(nextInst);
+    }
+    else
+    {
+        const BasicBlock *BB = curInst->getParent();
+        // Visit all successors of BB in the CFG
+        for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
+        {
+            const Instruction* nextInst = &((*it)->front());
+            if (isInstrinsicDbgInst(nextInst))
+                getNextInsts(nextInst, instList);
+            else
+                instList.push_back(nextInst);
+        }
+    }
 }
 
 
 /// Get the previous instructions following control flow
-void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList) {
-	if (curInst != &(curInst->getParent()->front())) {
-		const Instruction* prevInst = curInst->getPrevNode();
-		if (isInstrinsicDbgInst(prevInst))
-			getPrevInsts(prevInst, instList);
-		else
-			instList.push_back(prevInst);
-	} else {
-		const BasicBlock *BB = curInst->getParent();
-		// Visit all successors of BB in the CFG
-		for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it) {
-			const Instruction* prevInst = &((*it)->back());
-			if (isInstrinsicDbgInst(prevInst))
-				getPrevInsts(prevInst, instList);
-			else
-				instList.push_back(prevInst);
-		}
-	}
+void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruction*>& instList)
+{
+    if (curInst != &(curInst->getParent()->front()))
+    {
+        const Instruction* prevInst = curInst->getPrevNode();
+        if (isInstrinsicDbgInst(prevInst))
+            getPrevInsts(prevInst, instList);
+        else
+            instList.push_back(prevInst);
+    }
+    else
+    {
+        const BasicBlock *BB = curInst->getParent();
+        // Visit all successors of BB in the CFG
+        for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
+        {
+            const Instruction* prevInst = &((*it)->back());
+            if (isInstrinsicDbgInst(prevInst))
+                getPrevInsts(prevInst, instList);
+            else
+                instList.push_back(prevInst);
+        }
+    }
 }
 
 
 /*!
  * Return the type of the object from a heap allocation
  */
-const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst){
+const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
+{
     const PointerType* type = SVFUtil::dyn_cast<PointerType>(inst->getType());
 
-	if(isHeapAllocExtCallViaRet(inst)){
-		const Instruction* nextInst = inst->getNextNode();
-		if(nextInst && nextInst->getOpcode() == Instruction::BitCast)
-	           // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
-	            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
-	}
-	else if(isHeapAllocExtCallViaArg(inst)){
-	    CallSite cs = getLLVMCallSite(inst);
+    if(isHeapAllocExtCallViaRet(inst))
+    {
+        const Instruction* nextInst = inst->getNextNode();
+        if(nextInst && nextInst->getOpcode() == Instruction::BitCast)
+            // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
+            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
+    }
+    else if(isHeapAllocExtCallViaArg(inst))
+    {
+        CallSite cs = getLLVMCallSite(inst);
         int arg_pos = getHeapAllocHoldingArgPosition(getCallee(cs));
         const Value *arg = cs.getArgument(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
-	}
-	else{
-	    assert( false && "not a heap allocation instruction?");
-	}
+    }
+    else
+    {
+        assert( false && "not a heap allocation instruction?");
+    }
 
-	assert(type && "not a pointer type?");
-	return type->getElementType();
+    assert(type && "not a pointer type?");
+    return type->getElementType();
 }
 
 /*!
  * Get position of a successor basic block
  */
-u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {
+u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ)
+{
     u32_t i = 0;
-    for (const BasicBlock *SuccBB: successors(BB)) {
+    for (const BasicBlock *SuccBB: successors(BB))
+    {
         if (SuccBB == Succ)
             return i;
         i++;
@@ -270,9 +312,11 @@ u32_t SVFUtil::getBBSuccessorPos(const BasicBlock *BB, const BasicBlock *Succ) {
 /*!
  * Return a position index from current bb to it successor bb
  */
-u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb) {
+u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succbb)
+{
     u32_t pos = 0;
-    for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos) {
+    for (const_pred_iterator it = pred_begin(succbb), et = pred_end(succbb); it != et; ++it, ++pos)
+    {
         if(*it==bb)
             return pos;
     }
@@ -283,14 +327,16 @@ u32_t SVFUtil::getBBPredecessorPos(const BasicBlock *bb, const BasicBlock *succb
 /*!
  *  Get the num of BB's successors
  */
-u32_t SVFUtil::getBBSuccessorNum(const BasicBlock *BB) {
+u32_t SVFUtil::getBBSuccessorNum(const BasicBlock *BB)
+{
     return BB->getTerminator()->getNumSuccessors();
 }
 
 /*!
  * Get the num of BB's predecessors
  */
-u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB) {
+u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB)
+{
     u32_t num = 0;
     for (const_pred_iterator it = pred_begin(BB), et = pred_end(BB); it != et; ++it)
         num++;
@@ -302,8 +348,9 @@ u32_t SVFUtil::getBBPredecessorNum(const BasicBlock *BB) {
  * llvm::parseIRFile (lib/IRReader/IRReader.cpp)
  * llvm::parseIR (lib/IRReader/IRReader.cpp)
  */
-bool SVFUtil::isIRFile(const std::string &filename) {
-	llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
+bool SVFUtil::isIRFile(const std::string &filename)
+{
+    llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> FileOrErr = llvm::MemoryBuffer::getFileOrSTDIN(filename);
     if (FileOrErr.getError())
         return false;
     llvm::MemoryBufferRef Buffer = FileOrErr.get()->getMemBufferRef();
@@ -319,20 +366,26 @@ bool SVFUtil::isIRFile(const std::string &filename) {
 /// Get the names of all modules into a vector
 /// And process arguments
 void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_value,
-                                    std::vector<std::string> &moduleNameVec) {
+                               std::vector<std::string> &moduleNameVec)
+{
     bool first_ir_file = true;
-    for (s32_t i = 0; i < argc; ++i) {
+    for (s32_t i = 0; i < argc; ++i)
+    {
         std::string argument(argv[i]);
-        if (SVFUtil::isIRFile(argument)) {
+        if (SVFUtil::isIRFile(argument))
+        {
             if (find(moduleNameVec.begin(), moduleNameVec.end(), argument)
                     == moduleNameVec.end())
                 moduleNameVec.push_back(argument);
-            if (first_ir_file) {
+            if (first_ir_file)
+            {
                 arg_value[arg_num] = argv[i];
                 arg_num++;
                 first_ir_file = false;
             }
-        } else {
+        }
+        else
+        {
             arg_value[arg_num] = argv[i];
             arg_num++;
         }

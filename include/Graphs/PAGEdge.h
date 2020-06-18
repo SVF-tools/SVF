@@ -41,19 +41,22 @@ class PAGNode;
  * PAG edge between nodes
  */
 typedef GenericEdge<PAGNode> GenericPAGEdgeTy;
-class PAGEdge : public GenericPAGEdgeTy {
+class PAGEdge : public GenericPAGEdgeTy
+{
 
 public:
     /// Ten kinds of PAG edges
     /// Gep represents offset edge for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
-    enum PEDGEK {
+    enum PEDGEK
+    {
         Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin, Cmp, BinaryOp
     };
 
 private:
     const Value* value;	///< LLVM value
     const BasicBlock *basicBlock;   ///< LLVM BasicBlock
+    ICFGNode *icfgNode;   ///< ICFGNode
     EdgeID edgeId;					///< Edge ID
 public:
     static Size_t totalEdgeNum;		///< Total edge number
@@ -61,15 +64,18 @@ public:
     /// Constructor
     PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k);
     /// Destructor
-    ~PAGEdge() {
+    ~PAGEdge()
+    {
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return true;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Addr ||
                edge->getEdgeKind() == PAGEdge::Copy ||
                edge->getEdgeKind() == PAGEdge::Store ||
@@ -86,7 +92,8 @@ public:
     ///@}
 
     /// Return Edge ID
-    inline EdgeID getEdgeID() const {
+    inline EdgeID getEdgeID() const
+    {
         return edgeId;
     }
     /// Whether src and dst nodes are both of pointer type
@@ -94,25 +101,39 @@ public:
 
     /// Get/set methods for llvm instruction
     //@{
-    inline const Instruction* getInst() const {
+    inline const Instruction* getInst() const
+    {
         return SVFUtil::dyn_cast<Instruction>(value);
     }
-    inline void setValue(const Value *val) {
+    inline void setValue(const Value *val)
+    {
         value = val;
     }
-    inline const Value* getValue() const {
+    inline const Value* getValue() const
+    {
         return value;
     }
-    inline void setBB(const BasicBlock *bb) {
+    inline void setBB(const BasicBlock *bb)
+    {
         basicBlock = bb;
     }
-    inline const BasicBlock* getBB() const {
+    inline const BasicBlock* getBB() const
+    {
         return basicBlock;
+    }
+    inline void setICFGNode(ICFGNode *node)
+    {
+        icfgNode = node;
+    }
+    inline ICFGNode* getICFGNode() const
+    {
+        return icfgNode;
     }
     //@}
 
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.
-    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const ICFGNode* cs) {
+    static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const ICFGNode* cs)
+    {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : callEdgeLabelCounter++;
@@ -121,7 +142,8 @@ public:
 
     /// Compute the unique edgeFlag value from edge kind and store Instruction.
     /// Two store instructions may share the same StorePAGEdge
-    static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const ICFGNode* store) {
+    static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const ICFGNode* store)
+    {
         Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : storeEdgeLabelCounter++;
@@ -144,7 +166,8 @@ private:
 /*!
  * Copy edge
  */
-class AddrPE: public PAGEdge {
+class AddrPE: public PAGEdge
+{
 private:
     AddrPE();                      ///< place holder
     AddrPE(const AddrPE &);  ///< place holder
@@ -152,19 +175,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const AddrPE *) {
+    static inline bool classof(const AddrPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Addr;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Addr;
     }
     //@}
 
     /// constructor
-    AddrPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Addr) {
+    AddrPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Addr)
+    {
     }
 };
 
@@ -172,7 +199,8 @@ public:
 /*!
  * Copy edge
  */
-class CopyPE: public PAGEdge {
+class CopyPE: public PAGEdge
+{
 private:
     CopyPE();                      ///< place holder
     CopyPE(const CopyPE &);  ///< place holder
@@ -180,19 +208,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CopyPE *) {
+    static inline bool classof(const CopyPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Copy;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Copy;
     }
     //@}
 
     /// constructor
-    CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy) {
+    CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy)
+    {
     }
 };
 
@@ -200,27 +232,32 @@ public:
 /*!
  * Compare instruction edge
  */
-class CmpPE: public PAGEdge {
+class CmpPE: public PAGEdge
+{
 private:
-	CmpPE();                      ///< place holder
-	CmpPE(const CmpPE &);  ///< place holder
+    CmpPE();                      ///< place holder
+    CmpPE(const CmpPE &);  ///< place holder
     void operator=(const CmpPE &); ///< place holder
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CmpPE *) {
+    static inline bool classof(const CmpPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Cmp;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Cmp;
     }
     //@}
 
     /// constructor
-    CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp) {
+    CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp)
+    {
     }
 };
 
@@ -228,27 +265,32 @@ public:
 /*!
  * Binary instruction edge
  */
-class BinaryOPPE: public PAGEdge {
+class BinaryOPPE: public PAGEdge
+{
 private:
-	BinaryOPPE();                      ///< place holder
-	BinaryOPPE(const BinaryOPPE &);  ///< place holder
+    BinaryOPPE();                      ///< place holder
+    BinaryOPPE(const BinaryOPPE &);  ///< place holder
     void operator=(const BinaryOPPE &); ///< place holder
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const BinaryOPPE *) {
+    static inline bool classof(const BinaryOPPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::BinaryOp;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::BinaryOp;
     }
     //@}
 
     /// constructor
-    BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp) {
+    BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp)
+    {
     }
 };
 
@@ -256,7 +298,8 @@ public:
 /*!
  * Store edge
  */
-class StorePE: public PAGEdge {
+class StorePE: public PAGEdge
+{
 private:
     StorePE();                      ///< place holder
     StorePE(const StorePE &);  ///< place holder
@@ -265,28 +308,33 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const StorePE *) {
+    static inline bool classof(const StorePE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Store;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Store;
     }
     //@}
 
     /// constructor
-	StorePE(PAGNode* s, PAGNode* d, const IntraBlockNode* st) :
-			PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st)) {
-	}
+    StorePE(PAGNode* s, PAGNode* d, const IntraBlockNode* st) :
+        PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st))
+    {
+    }
 };
 
 
 /*!
  * Load edge
  */
-class LoadPE: public PAGEdge {
+class LoadPE: public PAGEdge
+{
 private:
     LoadPE();                      ///< place holder
     LoadPE(const LoadPE &);  ///< place holder
@@ -295,19 +343,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const LoadPE *) {
+    static inline bool classof(const LoadPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Load;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Load;
     }
     //@}
 
     /// constructor
-    LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load) {
+    LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load)
+    {
     }
 };
 
@@ -315,7 +367,8 @@ public:
 /*!
  * Gep edge
  */
-class GepPE: public PAGEdge {
+class GepPE: public PAGEdge
+{
 private:
     GepPE();                      ///< place holder
     GepPE(const GepPE &);  ///< place holder
@@ -324,14 +377,17 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepPE *) {
+    static inline bool classof(const GepPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return 	edge->getEdgeKind() == PAGEdge::NormalGep ||
                 edge->getEdgeKind() == PAGEdge::VariantGep;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return	edge->getEdgeKind() == PAGEdge::NormalGep ||
                 edge->getEdgeKind() == PAGEdge::VariantGep;
     }
@@ -339,7 +395,8 @@ public:
 
 protected:
     /// constructor
-    GepPE(PAGNode* s, PAGNode* d, PEDGEK k) : PAGEdge(s,d,k) {
+    GepPE(PAGNode* s, PAGNode* d, PEDGEK k) : PAGEdge(s,d,k)
+    {
 
     }
 };
@@ -348,7 +405,8 @@ protected:
 /*!
  * Gep edge with a fixed offset
  */
-class NormalGepPE : public GepPE {
+class NormalGepPE : public GepPE
+{
 private:
     NormalGepPE(); ///< place holder
     NormalGepPE(const NormalGepPE&); ///< place holder
@@ -359,16 +417,20 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const NormalGepPE *) {
+    static inline bool classof(const NormalGepPE *)
+    {
         return true;
     }
-    static inline bool classof(const GepPE *edge) {
+    static inline bool classof(const GepPE *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::NormalGep;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::NormalGep;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::NormalGep;
     }
     //@}
@@ -378,10 +440,12 @@ public:
     {}
 
     /// offset of the gep edge
-    inline u32_t getOffset() const {
+    inline u32_t getOffset() const
+    {
         return ls.getOffset();
     }
-    inline const LocationSet& getLocationSet() const {
+    inline const LocationSet& getLocationSet() const
+    {
         return ls;
     }
 };
@@ -389,7 +453,8 @@ public:
 /*!
  * Gep edge with a variant offset
  */
-class VariantGepPE : public GepPE {
+class VariantGepPE : public GepPE
+{
 private:
     VariantGepPE(); ///< place holder
     VariantGepPE(const VariantGepPE&); ///< place holder
@@ -398,16 +463,20 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const VariantGepPE *) {
+    static inline bool classof(const VariantGepPE *)
+    {
         return true;
     }
-    static inline bool classof(const GepPE *edge) {
+    static inline bool classof(const GepPE *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::VariantGep;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::VariantGep;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::VariantGep;
     }
     //@}
@@ -420,7 +489,8 @@ public:
 /*!
  * Call edge
  */
-class CallPE: public PAGEdge {
+class CallPE: public PAGEdge
+{
 private:
     CallPE();                      ///< place holder
     CallPE(const CallPE &);  ///< place holder
@@ -430,28 +500,34 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CallPE *) {
+    static inline bool classof(const CallPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Call;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Call;
     }
     //@}
 
     /// constructor
     CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i) {
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i)
+    {
     }
 
     /// Get method for the call instruction
     //@{
-    inline const CallBlockNode* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const
+    {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return inst;
     }
     //@}
@@ -461,7 +537,8 @@ public:
 /*!
  * Return edge
  */
-class RetPE: public PAGEdge {
+class RetPE: public PAGEdge
+{
 private:
     RetPE();                      ///< place holder
     RetPE(const RetPE &);  ///< place holder
@@ -471,28 +548,34 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const RetPE *) {
+    static inline bool classof(const RetPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Ret;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::Ret;
     }
     //@}
 
     /// constructor
     RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i) {
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i)
+    {
     }
 
     /// Get method for call instruction at caller
     //@{
-    inline const CallBlockNode* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const
+    {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return inst;
     }
     //@}
@@ -502,7 +585,8 @@ public:
 /*!
  * Thread Fork Edge
  */
-class TDForkPE: public PAGEdge {
+class TDForkPE: public PAGEdge
+{
 private:
     TDForkPE();                      ///< place holder
     TDForkPE(const TDForkPE &);  ///< place holder
@@ -512,28 +596,34 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TDForkPE *) {
+    static inline bool classof(const TDForkPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
     //@}
 
     /// constructor
     TDForkPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i) {
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i)
+    {
     }
 
     /// Get method for the instruction at the fork site
     //@{
-    inline const CallBlockNode* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const
+    {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return inst;
     }
     //@}
@@ -544,7 +634,8 @@ public:
 /*!
  * Thread Join Edge
  */
-class TDJoinPE: public PAGEdge {
+class TDJoinPE: public PAGEdge
+{
 private:
     TDJoinPE();                      ///< place holder
     TDJoinPE(const TDJoinPE &);  ///< place holder
@@ -554,28 +645,34 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const TDJoinPE *) {
+    static inline bool classof(const TDJoinPE *)
+    {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge) {
+    static inline bool classof(const PAGEdge *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
-    static inline bool classof(const GenericPAGEdgeTy *edge) {
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
         return edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     //@}
 
     /// Constructor
     TDJoinPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i) {
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i)
+    {
     }
 
     /// Get method for the instruction at the join site
     //@{
-    inline const CallBlockNode* getCallInst() const {
+    inline const CallBlockNode* getCallInst() const
+    {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return inst;
     }
     //@}

@@ -46,24 +46,27 @@
 #define KWHT  "\x1B[1;37m"
 
 static llvm::cl::opt<bool> DisableWarn("dwarn", llvm::cl::init(true),
-                                 llvm::cl::desc("Disable warning"));
+                                       llvm::cl::desc("Disable warning"));
 
 
 /*!
  * print successful message by converting a string into green string output
  */
-std::string SVFUtil::sucMsg(std::string msg) {
+std::string SVFUtil::sucMsg(std::string msg)
+{
     return KGRN + msg + KNRM;
 }
 
 /*!
  * print warning message by converting a string into yellow string output
  */
-std::string SVFUtil::wrnMsg(std::string msg) {
+std::string SVFUtil::wrnMsg(std::string msg)
+{
     return KYEL + msg + KNRM;
 }
 
-void SVFUtil::writeWrnMsg(std::string msg) {
+void SVFUtil::writeWrnMsg(std::string msg)
+{
     if(DisableWarn) return;
     outs() << wrnMsg(msg) << "\n";
 }
@@ -71,33 +74,39 @@ void SVFUtil::writeWrnMsg(std::string msg) {
 /*!
  * print error message by converting a string into red string output
  */
-std::string SVFUtil::errMsg(std::string msg) {
+std::string SVFUtil::errMsg(std::string msg)
+{
     return KRED + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg1(std::string msg) {
+std::string SVFUtil::bugMsg1(std::string msg)
+{
     return KYEL + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg2(std::string msg) {
+std::string SVFUtil::bugMsg2(std::string msg)
+{
     return KPUR + msg + KNRM;
 }
 
-std::string SVFUtil::bugMsg3(std::string msg) {
+std::string SVFUtil::bugMsg3(std::string msg)
+{
     return KCYA + msg + KNRM;
 }
 
 /*!
  * print each pass/phase message by converting a string into blue string output
  */
-std::string SVFUtil::pasMsg(std::string msg) {
+std::string SVFUtil::pasMsg(std::string msg)
+{
     return KBLU + msg + KNRM;
 }
 
 /*!
  * Dump points-to set
  */
-void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs) {
+void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs)
+{
     outs() << "node " << node << " points-to: {";
     dumpSet(bs);
     outs() << "}\n";
@@ -107,7 +116,8 @@ void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs) {
 /*!
  * Dump alias set
  */
-void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs) {
+void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs)
+{
     outs() << "node " << node << " alias set: {";
     dumpSet(bs);
     outs() << "}\n";
@@ -116,9 +126,11 @@ void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs) {
 /*!
  * Dump bit vector set
  */
-void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O) {
+void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
+{
     for (NodeBS::iterator ii = bs.begin(), ie = bs.end();
-            ii != ie; ii++) {
+            ii != ie; ii++)
+    {
         O << " " << *ii << " ";
     }
 }
@@ -141,13 +153,16 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
     /* Get the the current process' status file from the proc filesystem */
     char buffer[8192];
     FILE* procfile = fopen("/proc/self/status", "r");
-    if(procfile) {
+    if(procfile)
+    {
         u32_t result = fread(buffer, sizeof(char), 8192, procfile);
-        if (result == 0) {
+        if (result == 0)
+        {
             fputs ("Reading error\n",stderr);
         }
     }
-    else {
+    else
+    {
         fputs ("/proc/self/status file not exit\n",stderr);
         return false;
     }
@@ -160,13 +175,16 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
     bool found_vmrss = false;
     bool found_vmsize = false;
 
-    while (line != NULL && (found_vmrss == false || found_vmsize == false)) {
-        if (strstr(line, "VmRSS:") != NULL)	{
+    while (line != NULL && (found_vmrss == false || found_vmsize == false))
+    {
+        if (strstr(line, "VmRSS:") != NULL)
+        {
             sscanf(line, "%*s %u", vmrss_kb);
             found_vmrss = true;
         }
 
-        if (strstr(line, "VmSize:") != NULL) {
+        if (strstr(line, "VmSize:") != NULL)
+        {
             sscanf(line, "%*s %u", vmsize_kb);
             found_vmsize = true;
         }
@@ -185,8 +203,10 @@ void SVFUtil::increaseStackSize()
     const rlim_t kStackSize = 256L * 1024L * 1024L;   // min stack size = 256 Mb
     struct rlimit rl;
     int result = getrlimit(RLIMIT_STACK, &rl);
-    if (result == 0) {
-        if (rl.rlim_cur < kStackSize) {
+    if (result == 0)
+    {
+        if (rl.rlim_cur < kStackSize)
+        {
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
@@ -203,11 +223,12 @@ std::string SVFUtil::getSourceLocOfFunction(const Function *F)
 {
     std::string str;
     raw_string_ostream rawstr(str);
-   /*
-    * https://reviews.llvm.org/D18074?id=50385
-    * looks like the relevant
-    */
-    if (llvm::DISubprogram *SP =  F->getSubprogram()) {
+    /*
+     * https://reviews.llvm.org/D18074?id=50385
+     * looks like the relevant
+     */
+    if (llvm::DISubprogram *SP =  F->getSubprogram())
+    {
         if (SP->describes(F))
             rawstr << "in line: " << SP->getLine() << " file: " << SP->getFilename();
     }
@@ -217,30 +238,37 @@ std::string SVFUtil::getSourceLocOfFunction(const Function *F)
 /*!
  * Get the meta data (line number and file name) info of a LLVM value
  */
-std::string SVFUtil::getSourceLoc(const Value* val) {
+std::string SVFUtil::getSourceLoc(const Value* val)
+{
     if(val==NULL)  return "empty val";
 
     std::string str;
     raw_string_ostream rawstr(str);
-    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val)) {
-        if (SVFUtil::isa<AllocaInst>(inst)) {
-            for (llvm::DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst))) {
-                if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII)) {
-                	llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
+    if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val))
+    {
+        if (SVFUtil::isa<AllocaInst>(inst))
+        {
+            for (llvm::DbgInfoIntrinsic *DII : FindDbgAddrUses(const_cast<Instruction*>(inst)))
+            {
+                if (llvm::DbgDeclareInst *DDI = SVFUtil::dyn_cast<llvm::DbgDeclareInst>(DII))
+                {
+                    llvm::DIVariable *DIVar = SVFUtil::cast<llvm::DIVariable>(DDI->getVariable());
                     rawstr << "ln: " << DIVar->getLine() << " fl: " << DIVar->getFilename();
                     break;
                 }
             }
         }
-        else if (MDNode *N = inst->getMetadata("dbg")) { // Here I is an LLVM instruction
-        	llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
+        else if (MDNode *N = inst->getMetadata("dbg"))   // Here I is an LLVM instruction
+        {
+            llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
             unsigned Line = Loc->getLine();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
             rawstr << "ln: " << Line << " fl: " << File;
         }
     }
-    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val)) {
+    else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))
+    {
         if (argument->getArgNo()%10 == 1)
             rawstr << argument->getArgNo() << "st";
         else if (argument->getArgNo()%10 == 2)
@@ -252,16 +280,21 @@ std::string SVFUtil::getSourceLoc(const Value* val) {
         rawstr << " arg " << argument->getParent()->getName() << " "
                << getSourceLocOfFunction(argument->getParent());
     }
-    else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
+    else if (const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
         rawstr << "Glob ";
         NamedMDNode* CU_Nodes = gvar->getParent()->getNamedMetadata("llvm.dbg.cu");
-        if(CU_Nodes) {
-            for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i) {
-            	llvm::DICompileUnit *CUNode = SVFUtil::cast<llvm::DICompileUnit>(CU_Nodes->getOperand(i));
-                for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables()) {
-                	llvm::DIGlobalVariable * DGV = GV->getVariable();
+        if(CU_Nodes)
+        {
+            for (unsigned i = 0, e = CU_Nodes->getNumOperands(); i != e; ++i)
+            {
+                llvm::DICompileUnit *CUNode = SVFUtil::cast<llvm::DICompileUnit>(CU_Nodes->getOperand(i));
+                for (llvm::DIGlobalVariableExpression *GV : CUNode->getGlobalVariables())
+                {
+                    llvm::DIGlobalVariable * DGV = GV->getVariable();
 
-                    if(DGV->getName() == gvar->getName()){
+                    if(DGV->getName() == gvar->getName())
+                    {
                         rawstr << "ln: " << DGV->getLine() << " fl: " << DGV->getFilename();
                     }
 
@@ -269,10 +302,12 @@ std::string SVFUtil::getSourceLoc(const Value* val) {
             }
         }
     }
-    else if (const Function* func = SVFUtil::dyn_cast<Function>(val)) {
+    else if (const Function* func = SVFUtil::dyn_cast<Function>(val))
+    {
         rawstr << getSourceLocOfFunction(func);
     }
-    else {
+    else
+    {
         rawstr << "Can only get source location for instruction, argument, global var or function.";
     }
     return rawstr.str();

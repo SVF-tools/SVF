@@ -39,7 +39,8 @@ class SVFModule;
 /*!
  *  PAG Builder
  */
-class PAGBuilder: public llvm::InstVisitor<PAGBuilder> {
+class PAGBuilder: public llvm::InstVisitor<PAGBuilder>
+{
 
 private:
     PAG* pag;
@@ -49,17 +50,20 @@ private:
 
 public:
     /// Constructor
-    PAGBuilder(): pag(PAG::getPAG()), curBB(NULL),curVal(NULL){
+    PAGBuilder(): pag(PAG::getPAG()), curBB(NULL),curVal(NULL)
+    {
     }
     /// Destructor
-    virtual ~PAGBuilder() {
+    virtual ~PAGBuilder()
+    {
     }
 
     /// Start building PAG here
     PAG* build(SVFModule* svfModule);
 
     /// Return PAG
-    PAG* getPAG() const {
+    PAG* getPAG() const
+    {
         return pag;
     }
 
@@ -76,7 +80,8 @@ public:
     /// Get different kinds of node
     //@{
     // GetValNode - Return the value node according to a LLVM Value.
-    NodeID getValueNode(const Value *V) {
+    NodeID getValueNode(const Value *V)
+    {
         // first handle gep edge if val if a constant expression
         processCE(V);
 
@@ -85,17 +90,20 @@ public:
     }
 
     /// GetObject - Return the object node (stack/global/heap/function) according to a LLVM Value
-    inline NodeID getObjectNode(const Value *V) {
+    inline NodeID getObjectNode(const Value *V)
+    {
         return pag->getObjectNode(V);
     }
 
     /// getReturnNode - Return the node representing the unique return value of a function.
-    inline NodeID getReturnNode(const SVFFunction *func) {
+    inline NodeID getReturnNode(const SVFFunction *func)
+    {
         return pag->getReturnNode(func);
     }
 
     /// getVarargNode - Return the node representing the unique variadic argument of a function.
-    inline NodeID getVarargNode(const SVFFunction *func) {
+    inline NodeID getVarargNode(const SVFFunction *func)
+    {
         return pag->getVarargNode(func);
     }
     //@}
@@ -135,10 +143,12 @@ public:
     void visitStoreInst(StoreInst &I);
     void visitLoadInst(LoadInst &I);
     void visitGetElementPtrInst(GetElementPtrInst &I);
-    void visitCallInst(CallInst &I) {
+    void visitCallInst(CallInst &I)
+    {
         visitCallSite(&I);
     }
-    void visitInvokeInst(InvokeInst &II) {
+    void visitInvokeInst(InvokeInst &II)
+    {
         visitCallSite(&II);
     }
     void visitCallSite(CallSite cs);
@@ -146,8 +156,9 @@ public:
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);
     void visitExtractValueInst(ExtractValueInst  &EVI);
-    void visitInsertValueInst(InsertValueInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitInsertValueInst(InsertValueInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
     // TerminatorInst and UnwindInst have been removed since llvm-8.0.0
     // void visitTerminatorInst(TerminatorInst &TI) {}
@@ -157,56 +168,70 @@ public:
     void visitCmpInst(CmpInst &I);
 
     /// TODO: do we need to care about these corner cases?
-    void visitVAArgInst(VAArgInst &I) {
+    void visitVAArgInst(VAArgInst &I)
+    {
     }
     void visitExtractElementInst(ExtractElementInst &I);
 
-    void visitInsertElementInst(InsertElementInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitInsertElementInst(InsertElementInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
-    void visitShuffleVectorInst(ShuffleVectorInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitShuffleVectorInst(ShuffleVectorInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
-    void visitLandingPadInst(LandingPadInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitLandingPadInst(LandingPadInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Instruction not that often
-    void visitResumeInst(ResumeInst &I) { /*returns void*/
+    void visitResumeInst(ResumeInst &I)   /*returns void*/
+    {
     }
-    void visitUnreachableInst(UnreachableInst &I) { /*returns void*/
+    void visitUnreachableInst(UnreachableInst &I)   /*returns void*/
+    {
     }
-    void visitFenceInst(FenceInst &I) { /*returns void*/
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitFenceInst(FenceInst &I)   /*returns void*/
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
-    void visitAtomicCmpXchgInst(AtomicCmpXchgInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitAtomicCmpXchgInst(AtomicCmpXchgInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
-    void visitAtomicRMWInst(AtomicRMWInst &I) {
-		addBlackHoleAddrEdge(getValueNode(&I));
+    void visitAtomicRMWInst(AtomicRMWInst &I)
+    {
+        addBlackHoleAddrEdge(getValueNode(&I));
     }
 
     /// Provide base case for our instruction visit.
-    inline void visitInstruction(Instruction &I) {
+    inline void visitInstruction(Instruction &I)
+    {
         // If a new instruction is added to LLVM that we don't handle.
         // TODO: ignore here:
     }
     //}@
 
     /// Set current basic block in order to keep track of control flow information
-    inline void setCurrentLocation(const Value* val, const BasicBlock* bb) {
+    inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
+    {
         curBB = bb;
         curVal = val;
     }
-    inline const Value *getCurrentValue() const {
+    inline const Value *getCurrentValue() const
+    {
         return curVal;
     }
-    inline const BasicBlock *getCurrentBB() const {
+    inline const BasicBlock *getCurrentBB() const
+    {
         return curBB;
     }
 
     /// Add global black hole Address edge
-    void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce) {
+    void addGlobalBlackHoleAddrEdge(NodeID node, const ConstantExpr *int2Ptrce)
+    {
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(int2Ptrce,NULL);
@@ -215,7 +240,8 @@ public:
     }
 
     /// Add NullPtr PAGNode
-    inline NodeID addNullPtrNode() {
+    inline NodeID addNullPtrNode()
+    {
         NodeID nullPtr = pag->addDummyValNode(pag->getNullPtr());
         /// let all undef value or non-determined pointers points-to black hole
         LLVMContext &cxt = LLVMModuleSet::getLLVMModuleSet()->getContext();
@@ -229,83 +255,108 @@ public:
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
-    void connectGlobalToProgEntry();
-
-    inline void addBlackHoleAddrEdge(NodeID node) {
-    	if(PAGEdge* edge = pag->addBlackHoleAddrPE(node))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline PAGEdge* addBlackHoleAddrEdge(NodeID node)
+    {
+        PAGEdge *edge = pag->addBlackHoleAddrPE(node);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
 
     /// Add Address edge
-    inline void addAddrEdge(NodeID src, NodeID dst){
-    	if(AddrPE* edge = pag->addAddrPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline AddrPE* addAddrEdge(NodeID src, NodeID dst)
+    {
+        AddrPE *edge = pag->addAddrPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Copy edge
-    inline void addCopyEdge(NodeID src, NodeID dst){
-    	if(CopyPE* edge = pag->addCopyPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CopyPE* addCopyEdge(NodeID src, NodeID dst)
+    {
+        CopyPE *edge = pag->addCopyPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Copy edge
-    inline void addCmpEdge(NodeID src, NodeID dst){
-    	if(CmpPE* edge = pag->addCmpPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CmpPE* addCmpEdge(NodeID src, NodeID dst)
+    {
+        CmpPE *edge = pag->addCmpPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Copy edge
-    inline void addBinaryOPEdge(NodeID src, NodeID dst){
-    	if(BinaryOPPE* edge = pag->addBinaryOPPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline BinaryOPPE* addBinaryOPEdge(NodeID src, NodeID dst)
+    {
+        BinaryOPPE *edge = pag->addBinaryOPPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Load edge
-    inline void addLoadEdge(NodeID src, NodeID dst){
-    	if(LoadPE* edge = pag->addLoadPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline LoadPE* addLoadEdge(NodeID src, NodeID dst)
+    {
+        LoadPE *edge = pag->addLoadPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Store edge
-    inline void addStoreEdge(NodeID src, NodeID dst){
-    	IntraBlockNode* node;
-    	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
-    		node = pag->getICFG()->getIntraBlockNode(inst);
-		else
-			node = NULL;
-    	if(StorePE* edge = pag->addStorePE(src,dst,node)){
-    		setCurrentBBAndValueForPAGEdge(edge);
-    	}
+    inline StorePE* addStoreEdge(NodeID src, NodeID dst)
+    {
+        IntraBlockNode* node;
+        if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
+            node = pag->getICFG()->getIntraBlockNode(inst);
+        else
+            node = NULL;
+        StorePE *edge = pag->addStorePE(src, dst, node);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Call edge
-    inline void addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(CallPE* edge = pag->addCallPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    {
+        CallPE *edge = pag->addCallPE(src, dst, cs);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Return edge
-    inline void addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(RetPE* edge = pag->addRetPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    {
+        RetPE *edge = pag->addRetPE(src, dst, cs);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Gep edge
-    inline void addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep){
-    	if(GepPE* edge = pag->addGepPE(src,dst,ls, constGep))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline GepPE* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+    {
+        GepPE *edge = pag->addGepPE(src, dst, ls, constGep);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Offset(Gep) edge
-    void addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls){
-    	if(NormalGepPE* edge = pag->addNormalGepPE(src,dst,ls))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline NormalGepPE* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    {
+        NormalGepPE *edge = pag->addNormalGepPE(src, dst, ls);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Variant(Gep) edge
-    inline void addVariantGepEdge(NodeID src, NodeID dst){
-    	if(VariantGepPE* edge = pag->addVariantGepPE(src,dst))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline VariantGepPE* addVariantGepEdge(NodeID src, NodeID dst)
+    {
+        VariantGepPE *edge = pag->addVariantGepPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Thread fork edge for parameter passing
-    inline void addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(TDForkPE* edge = pag->addThreadForkPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    {
+        TDForkPE *edge = pag->addThreadForkPE(src, dst, cs);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     /// Add Thread join edge for parameter passing
-    inline void addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs){
-    	if(TDJoinPE* edge = pag->addThreadJoinPE(src,dst,cs))
-    		setCurrentBBAndValueForPAGEdge(edge);
+    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    {
+        TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
     }
     //@}
 

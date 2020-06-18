@@ -36,7 +36,8 @@
 
 class PAGNode;
 
-class SaberSVFGBuilder : public SVFGBuilder {
+class SaberSVFGBuilder : public SVFGBuilder
+{
 
 public:
     typedef std::set<const SVFGNode*> SVFGNodeSet;
@@ -49,7 +50,8 @@ public:
     /// Destructor
     virtual ~SaberSVFGBuilder() {}
 
-    inline bool isGlobalSVFGNode(const SVFGNode* node) const {
+    inline bool isGlobalSVFGNode(const SVFGNode* node) const
+    {
         return globSVFGNodes.find(node)!=globSVFGNodes.end();
     }
 protected:

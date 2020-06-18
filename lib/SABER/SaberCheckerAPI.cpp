@@ -34,14 +34,16 @@ using namespace std;
 SaberCheckerAPI* SaberCheckerAPI::ckAPI = NULL;
 
 /// string and type pair
-struct ei_pair {
+struct ei_pair
+{
     const char *n;
     SaberCheckerAPI::CHECKER_TYPE t;
 };
 
 //Each (name, type) pair will be inserted into the map.
 //All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]= {
+static const ei_pair ei_pairs[]=
+{
     {"alloc", SaberCheckerAPI::CK_ALLOC},
     {"alloc_check", SaberCheckerAPI::CK_ALLOC},
     {"alloc_clear", SaberCheckerAPI::CK_ALLOC},
@@ -130,15 +132,19 @@ static const ei_pair ei_pairs[]= {
 /*!
  * initialize the map
  */
-void SaberCheckerAPI::init() {
+void SaberCheckerAPI::init()
+{
     set<CHECKER_TYPE> t_seen;
     CHECKER_TYPE prev_t= CK_DUMMY;
     t_seen.insert(CK_DUMMY);
-    for(const ei_pair *p= ei_pairs; p->n; ++p) {
-        if(p->t != prev_t) {
+    for(const ei_pair *p= ei_pairs; p->n; ++p)
+    {
+        if(p->t != prev_t)
+        {
             //This will detect if you move an entry to another block
             //  but forget to change the type.
-            if(t_seen.count(p->t)) {
+            if(t_seen.count(p->t))
+            {
                 fputs(p->n, stderr);
                 putc('\n', stderr);
                 assert(!"ei_pairs not grouped by type");
@@ -146,7 +152,8 @@ void SaberCheckerAPI::init() {
             t_seen.insert(p->t);
             prev_t= p->t;
         }
-        if(tdAPIMap.count(p->n)) {
+        if(tdAPIMap.count(p->n))
+        {
             fputs(p->n, stderr);
             putc('\n', stderr);
             assert(!"duplicate name in ei_pairs");

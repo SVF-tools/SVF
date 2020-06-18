@@ -36,7 +36,8 @@
 /*!
  * Build PAG from a user specified file (for debugging purpose)
  */
-class PAGBuilderFromFile {
+class PAGBuilderFromFile
+{
 
 private:
     PAG* pag;
@@ -44,19 +45,23 @@ private:
 public:
     /// Constructor
     PAGBuilderFromFile(std::string f) :
-        pag(PAG::getPAG(true)), file(f) {
+        pag(PAG::getPAG(true)), file(f)
+    {
     }
     /// Destructor
-    ~PAGBuilderFromFile() {
+    ~PAGBuilderFromFile()
+    {
     }
 
     /// Return PAG
-    PAG* getPAG() const {
+    PAG* getPAG() const
+    {
         return pag;
     }
 
     /// Return file name
-    std::string getFileName() const {
+    std::string getFileName() const
+    {
         return file;
     }
 

@@ -38,23 +38,28 @@ class ThreadAPI;
 /*!
  * PTA thread fork edge from fork site to the entry of a start routine function
  */
-class ThreadForkEdge: public PTACallGraphEdge {
+class ThreadForkEdge: public PTACallGraphEdge
+{
 
 public:
     /// Constructor
     ThreadForkEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge, csId) {
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDForkEdge, csId)
+    {
     }
     /// Destructor
-    virtual ~ThreadForkEdge() {
+    virtual ~ThreadForkEdge()
+    {
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const ThreadForkEdge *edge) {
+    static inline bool classof(const ThreadForkEdge *edge)
+    {
         return true;
     }
-    static inline bool classof(const PTACallGraphEdge *edge) {
+    static inline bool classof(const PTACallGraphEdge *edge)
+    {
         return edge->getEdgeKind() == PTACallGraphEdge::TDForkEdge;
     }
     //@}
@@ -65,21 +70,26 @@ public:
 /*!
  * PTA thread join edge from the exit of a start routine function to a join point of the thread
  */
-class ThreadJoinEdge: public PTACallGraphEdge {
+class ThreadJoinEdge: public PTACallGraphEdge
+{
 
 public:
     /// Constructor
     ThreadJoinEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge, csId) {
+        PTACallGraphEdge(s, d, PTACallGraphEdge::TDJoinEdge, csId)
+    {
     }
     /// Destructor
-    virtual ~ThreadJoinEdge() {
+    virtual ~ThreadJoinEdge()
+    {
     }
 
-    static inline bool classof(const ThreadJoinEdge *edge) {
+    static inline bool classof(const ThreadJoinEdge *edge)
+    {
         return true;
     }
-    static inline bool classof(const PTACallGraphEdge *edge) {
+    static inline bool classof(const PTACallGraphEdge *edge)
+    {
         return edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
 
@@ -89,23 +99,28 @@ public:
 /*!
  * hare_parallel_for edge from fork site to the entry of a start routine function
  */
-class HareParForEdge: public PTACallGraphEdge {
+class HareParForEdge: public PTACallGraphEdge
+{
 
 public:
     /// Constructor
     HareParForEdge(PTACallGraphNode* s, PTACallGraphNode* d, CallSiteID csId) :
-        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge, csId) {
+        PTACallGraphEdge(s, d, PTACallGraphEdge::HareParForEdge, csId)
+    {
     }
     /// Destructor
-    virtual ~HareParForEdge() {
+    virtual ~HareParForEdge()
+    {
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const HareParForEdge *edge) {
+    static inline bool classof(const HareParForEdge *edge)
+    {
         return true;
     }
-    static inline bool classof(const PTACallGraphEdge *edge) {
+    static inline bool classof(const PTACallGraphEdge *edge)
+    {
         return edge->getEdgeKind() == PTACallGraphEdge::HareParForEdge;
     }
     //@}
@@ -117,7 +132,8 @@ public:
 /*!
  * Thread sensitive call graph
  */
-class ThreadCallGraph: public PTACallGraph {
+class ThreadCallGraph: public PTACallGraph
+{
 
 public:
     typedef std::set<const CallBlockNode*> InstSet;
@@ -135,15 +151,18 @@ public:
     /// Constructor
     ThreadCallGraph();
     /// Destructor
-    virtual ~ThreadCallGraph() {
+    virtual ~ThreadCallGraph()
+    {
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const ThreadCallGraph *) {
+    static inline bool classof(const ThreadCallGraph *)
+    {
         return true;
     }
-    static inline bool classof(const PTACallGraph *g) {
+    static inline bool classof(const PTACallGraph *g)
+    {
         return g->getKind() == PTACallGraph::ThdCallGraph;
     }
     //@}
@@ -157,15 +176,18 @@ public:
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
-    inline bool hasThreadForkEdge(const CallBlockNode* cs) const {
+    inline bool hasThreadForkEdge(const CallBlockNode* cs) const
+    {
         return callinstToThreadForkEdgesMap.find(cs) != callinstToThreadForkEdgesMap.end();
     }
-    inline ForkEdgeSet::const_iterator getForkEdgeBegin(const CallBlockNode* cs) const {
+    inline ForkEdgeSet::const_iterator getForkEdgeBegin(const CallBlockNode* cs) const
+    {
         CallInstToForkEdgesMap::const_iterator it = callinstToThreadForkEdgesMap.find(cs);
         assert(it != callinstToThreadForkEdgesMap.end() && "call instruction not found");
         return it->second.begin();
     }
-    inline ForkEdgeSet::const_iterator getForkEdgeEnd(const CallBlockNode* cs) const {
+    inline ForkEdgeSet::const_iterator getForkEdgeEnd(const CallBlockNode* cs) const
+    {
         CallInstToForkEdgesMap::const_iterator it = callinstToThreadForkEdgesMap.find(cs);
         assert(it != callinstToThreadForkEdgesMap.end() && "call instruction not found");
         return it->second.end();
@@ -174,23 +196,30 @@ public:
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
-    inline bool hasThreadJoinEdge(const CallBlockNode* cs) const {
+    inline bool hasThreadJoinEdge(const CallBlockNode* cs) const
+    {
         return callinstToThreadJoinEdgesMap.find(cs) != callinstToThreadJoinEdgesMap.end();
     }
-    inline JoinEdgeSet::const_iterator getJoinEdgeBegin(const CallBlockNode* cs) const {
+    inline JoinEdgeSet::const_iterator getJoinEdgeBegin(const CallBlockNode* cs) const
+    {
         CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.find(cs);
         assert(it != callinstToThreadJoinEdgesMap.end() && "call instruction does not have a valid callee");
         return it->second.begin();
     }
-    inline JoinEdgeSet::const_iterator getJoinEdgeEnd(const CallBlockNode* cs) const {
+    inline JoinEdgeSet::const_iterator getJoinEdgeEnd(const CallBlockNode* cs) const
+    {
         CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.find(cs);
         assert(it != callinstToThreadJoinEdgesMap.end() && "call instruction does not have a valid callee");
         return it->second.end();
     }
-    inline void getJoinSites(const PTACallGraphNode* routine, InstSet& csSet) {
-        for(CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.begin(), eit = callinstToThreadJoinEdgesMap.end(); it!=eit; ++it) {
-            for(JoinEdgeSet::const_iterator jit = it->second.begin(), ejit = it->second.end(); jit!=ejit; ++jit) {
-                if((*jit)->getDstNode() == routine) {
+    inline void getJoinSites(const PTACallGraphNode* routine, InstSet& csSet)
+    {
+        for(CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.begin(), eit = callinstToThreadJoinEdgesMap.end(); it!=eit; ++it)
+        {
+            for(JoinEdgeSet::const_iterator jit = it->second.begin(), ejit = it->second.end(); jit!=ejit; ++jit)
+            {
+                if((*jit)->getDstNode() == routine)
+                {
                     csSet.insert(it->first);
                 }
             }
@@ -200,76 +229,92 @@ public:
 
     /// Whether a callsite is a fork or join or hare_parallel_for
     ///@{
-    inline bool isForksite(const CallBlockNode* csInst) {
+    inline bool isForksite(const CallBlockNode* csInst)
+    {
         return forksites.find(csInst) != forksites.end();
     }
-    inline bool isJoinsite(const CallBlockNode* csInst) {
+    inline bool isJoinsite(const CallBlockNode* csInst)
+    {
         return joinsites.find(csInst) != joinsites.end();
     }
-    inline bool isParForSite(const CallBlockNode* csInst) {
+    inline bool isParForSite(const CallBlockNode* csInst)
+    {
         return parForSites.find(csInst) != parForSites.end();
     }
     ///
 
     /// Fork sites iterators
     //@{
-    inline CallSiteSet::iterator forksitesBegin() const {
+    inline CallSiteSet::iterator forksitesBegin() const
+    {
         return forksites.begin();
     }
-    inline CallSiteSet::iterator forksitesEnd() const {
+    inline CallSiteSet::iterator forksitesEnd() const
+    {
         return forksites.end();
     }
     //@}
 
     /// Join sites iterators
     //@{
-    inline CallSiteSet::iterator joinsitesBegin() const {
+    inline CallSiteSet::iterator joinsitesBegin() const
+    {
         return joinsites.begin();
     }
-    inline CallSiteSet::iterator joinsitesEnd() const {
+    inline CallSiteSet::iterator joinsitesEnd() const
+    {
         return joinsites.end();
     }
     //@}
 
     /// hare_parallel_for sites iterators
     //@{
-    inline CallSiteSet::iterator parForSitesBegin() const {
+    inline CallSiteSet::iterator parForSitesBegin() const
+    {
         return parForSites.begin();
     }
-    inline CallSiteSet::iterator parForSitesEnd() const {
+    inline CallSiteSet::iterator parForSitesEnd() const
+    {
         return parForSites.end();
     }
     //@}
 
     /// Num of fork/join sites
     //@{
-    inline u32_t getNumOfForksite() const {
+    inline u32_t getNumOfForksite() const
+    {
         return forksites.size();
     }
-    inline u32_t getNumOfJoinsite() const {
+    inline u32_t getNumOfJoinsite() const
+    {
         return joinsites.size();
     }
-    inline u32_t getNumOfParForSite() const {
+    inline u32_t getNumOfParForSite() const
+    {
         return parForSites.size();
     }
     //@}
 
     /// Thread API
-    inline ThreadAPI* getThreadAPI() const {
+    inline ThreadAPI* getThreadAPI() const
+    {
         return tdAPI;
     }
 
     /// Add fork sites which directly or indirectly create a thread
     //@{
-    inline bool addForksite(const CallBlockNode* cs) {
+    inline bool addForksite(const CallBlockNode* cs)
+    {
         callinstToThreadForkEdgesMap[cs];
         return forksites.insert(cs).second;
     }
-    inline bool addJoinsite(const CallBlockNode* cs) {
+    inline bool addJoinsite(const CallBlockNode* cs)
+    {
         callinstToThreadJoinEdgesMap[cs];
         return joinsites.insert(cs).second;
     }
-    inline bool addParForSite(const CallBlockNode* cs) {
+    inline bool addParForSite(const CallBlockNode* cs)
+    {
         callinstToHareParForEdgesMap[cs];
         return parForSites.insert(cs).second;
     }
@@ -294,34 +339,42 @@ public:
 
 
     /// map call instruction to its CallGraphEdge map
-    inline void addThreadForkEdgeSetMap(const CallBlockNode* cs, ThreadForkEdge* edge) {
-        if(edge!=NULL) {
+    inline void addThreadForkEdgeSetMap(const CallBlockNode* cs, ThreadForkEdge* edge)
+    {
+        if(edge!=NULL)
+        {
             callinstToThreadForkEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 
     /// map call instruction to its CallGraphEdge map
-    inline void addThreadJoinEdgeSetMap(const CallBlockNode* cs, ThreadJoinEdge* edge) {
-        if(edge!=NULL) {
+    inline void addThreadJoinEdgeSetMap(const CallBlockNode* cs, ThreadJoinEdge* edge)
+    {
+        if(edge!=NULL)
+        {
             callinstToThreadJoinEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 
     /// map call instruction to its CallGraphEdge map
-    inline void addHareParForEdgeSetMap(const CallBlockNode* cs, HareParForEdge* edge) {
-        if(edge!=NULL) {
+    inline void addHareParForEdgeSetMap(const CallBlockNode* cs, HareParForEdge* edge)
+    {
+        if(edge!=NULL)
+        {
             callinstToHareParForEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
         }
     }
 
     /// has thread join edge
-    inline ThreadJoinEdge* hasThreadJoinEdge(const CallBlockNode* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode, CallSiteID csId) const {
+    inline ThreadJoinEdge* hasThreadJoinEdge(const CallBlockNode* call, PTACallGraphNode* joinFunNode, PTACallGraphNode* threadRoutineFunNode, CallSiteID csId) const
+    {
         ThreadJoinEdge joinEdge(joinFunNode,threadRoutineFunNode, csId);
         CallInstToJoinEdgesMap::const_iterator it = callinstToThreadJoinEdgesMap.find(call);
-        if(it != callinstToThreadJoinEdgesMap.end()) {
+        if(it != callinstToThreadJoinEdgesMap.end())
+        {
             JoinEdgeSet::const_iterator jit = it->second.find(&joinEdge);
             if(jit!=it->second.end())
                 return *jit;

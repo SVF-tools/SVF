@@ -24,7 +24,8 @@
 //  This pass modifies a function so that it uses GEP instructions instead of
 //  GEP constant expressions.
 //
-class BreakConstantGEPs : public ModulePass {
+class BreakConstantGEPs : public ModulePass
+{
 private:
     // Private methods
 
@@ -33,11 +34,13 @@ private:
 public:
     static char ID;
     BreakConstantGEPs() : ModulePass(ID) {}
-    StringRef getPassName() const {
+    StringRef getPassName() const
+    {
         return "Remove Constant GEP Expressions";
     }
     virtual bool runOnModule (Module & M);
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const
+    {
         // This pass does not modify the control-flow graph of the function
         AU.setPreservesCFG();
     }
@@ -50,7 +53,8 @@ public:
 // Description:
 //  This pass modifies a function so that each function only have one unified exit basic block
 //
-class MergeFunctionRets : public ModulePass {
+class MergeFunctionRets : public ModulePass
+{
 private:
     // Private methods
 
@@ -59,16 +63,20 @@ private:
 public:
     static char ID;
     MergeFunctionRets() : ModulePass(ID) {}
-    StringRef getPassName() const {
+    StringRef getPassName() const
+    {
         return "unify function exit into one dummy exit basic block";
     }
-    virtual bool runOnModule (Module & M) {
+    virtual bool runOnModule (Module & M)
+    {
         UnifyFunctionExit(M);
         return true;
     }
-    inline void UnifyFunctionExit(Module& module) {
+    inline void UnifyFunctionExit(Module& module)
+    {
         for (Module::const_iterator iter = module.begin(), eiter = module.end();
-                iter != eiter; ++iter) {
+                iter != eiter; ++iter)
+        {
             const Function& fun = *iter;
             if(fun.isDeclaration())
                 continue;
@@ -76,11 +84,13 @@ public:
         }
     }
     /// Get Unified Exit basic block node
-    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn) {
+    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn)
+    {
         assert(!fn.isDeclaration() && "external function does not have DF");
         return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
     }
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const
+    {
         // This pass does not modify the control-flow graph of the function
         AU.addRequired<UnifyFunctionExitNodes>();
         AU.addPreserved<BreakConstantGEPs>();

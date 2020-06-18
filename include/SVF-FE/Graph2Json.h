@@ -11,10 +11,11 @@
 
 
 class GraphWriter;
-class ICFGPrinter : public ICFG{
-    public:
+class ICFGPrinter : public ICFG
+{
+public:
     ICFGPrinter();
-    
+
     void printICFGToJson(const std::string& filename);
 
     std::string getPAGNodeKindValue(int kind);

@@ -40,7 +40,8 @@ AndersenHCD *AndersenHCD::hcdAndersen = nullptr;
  * AndersenHCD initilizer,
  * including initilization of PAG, constraint graph and offline constraint graph
  */
-void AndersenHCD::initialize(SVFModule* svfModule) {
+void AndersenHCD::initialize(SVFModule* svfModule)
+{
     Andersen::initialize(svfModule);
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);
@@ -53,8 +54,10 @@ void AndersenHCD::initialize(SVFModule* svfModule) {
 /*!
  * AndersenHCD worklist solver
  */
-void AndersenHCD::solveWorklist() {
-    while (!isWorklistEmpty()) {
+void AndersenHCD::solveWorklist()
+{
+    while (!isWorklistEmpty())
+    {
         NodeID nodeId = popFromWorklist();
         collapsePWCNode(nodeId);
 
@@ -70,14 +73,17 @@ void AndersenHCD::solveWorklist() {
 /*!
  * Collapse nodes and fields based on the result of offline SCC detection
  */
-void AndersenHCD::mergeSCC(NodeID nodeId) {
-    if (hasOfflineRep(nodeId)) {
+void AndersenHCD::mergeSCC(NodeID nodeId)
+{
+    if (hasOfflineRep(nodeId))
+    {
         // get offline rep node
         NodeID oRep = getOfflineRep(nodeId);
         // get online rep node
         NodeID rep = consCG->sccRepNode(oRep);
         PointsTo &pts = getPts(nodeId);
-        for (PointsTo::iterator ptIt = pts.begin(), ptEit = pts.end(); ptIt != ptEit; ++ptIt) {
+        for (PointsTo::iterator ptIt = pts.begin(), ptEit = pts.end(); ptIt != ptEit; ++ptIt)
+        {
             NodeID tgt = *ptIt;
             assert(!oCG->isaRef(tgt) && "Point-to target should not be a ref node!");
             mergeNodeAndPts(tgt, rep);
@@ -88,10 +94,12 @@ void AndersenHCD::mergeSCC(NodeID nodeId) {
 /*!
  * Merge node and its pts to the rep node
  */
-void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep) {
+void AndersenHCD::mergeNodeAndPts(NodeID node, NodeID rep)
+{
     node = sccRepNode(node);
     rep = sccRepNode(rep);
-    if (!isaMergedNode(node)) {
+    if (!isaMergedNode(node))
+    {
         if (unionPts(rep, node))
             pushIntoWorklist(rep);
         // Once a 'Node' is merged to its rep, it is collapsed,

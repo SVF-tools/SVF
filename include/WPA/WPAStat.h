@@ -42,7 +42,8 @@ class PAGNode;
 /*!
  * Statistics of Andersen's analysis
  */
-class AndersenStat : public PTAStat {
+class AndersenStat : public PTAStat
+{
 
 private:
     Andersen* pta;
@@ -61,7 +62,8 @@ public:
 
     AndersenStat(Andersen* p);
 
-    virtual ~AndersenStat() {
+    virtual ~AndersenStat()
+    {
 
     }
 
@@ -77,14 +79,16 @@ public:
 /*!
  * Statistics of flow-sensitive analysis
  */
-class FlowSensitiveStat : public PTAStat {
+class FlowSensitiveStat : public PTAStat
+{
 public:
     typedef FlowSensitive::DFInOutMap DFInOutMap;
     typedef FlowSensitive::PtsMap PtsMap;
 
     FlowSensitive * fspta;
 
-    FlowSensitiveStat(FlowSensitive* pta): PTAStat(pta) {
+    FlowSensitiveStat(FlowSensitive* pta): PTAStat(pta)
+    {
         fspta = pta;
         clearStat();
         startClk();
@@ -95,7 +99,8 @@ public:
     virtual void performStat();
 
 private:
-    enum ENUM_INOUT {
+    enum ENUM_INOUT
+    {
         IN,
         OUT
     };

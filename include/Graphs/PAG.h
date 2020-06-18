@@ -40,7 +40,8 @@
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
  */
-class PAG : public GenericGraph<PAGNode,PAGEdge> {
+class PAG : public GenericGraph<PAGNode,PAGEdge>
+{
 
 public:
     typedef std::set<const CallBlockNode*> CallSiteSet;
@@ -50,10 +51,12 @@ public:
     typedef std::set<const PAGEdge*> PAGEdgeSet;
     typedef std::list<const PAGEdge*> PAGEdgeList;
     typedef std::list<const PAGNode*> PAGNodeList;
-    typedef std::list<std::pair<const PAGNode*, const ICFGNode*> > PNodeBBPairList;
-    typedef std::map<const PAGNode*,PNodeBBPairList> PHINodeMap;
-    typedef std::map<const PAGNode*,PAGNodeList> BinaryNodeMap;
-    typedef std::map<const PAGNode*,PAGNodeList> CmpNodeMap;
+    typedef std::list<const CopyPE*> CopyPEList;
+    typedef std::list<const BinaryOPPE*> BinaryOPList;
+    typedef std::list<const CmpPE*> CmpPEList;
+    typedef std::map<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef std::map<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef std::map<const PAGNode*,CmpPEList> CmpNodeMap;
     typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
@@ -107,18 +110,22 @@ public:
     u32_t totalPTAPAGEdge;
 
     /// Return ICFG
-    inline ICFG* getICFG() {
+    inline ICFG* getICFG()
+    {
         return icfg;
     }
 
     /// Return valid pointers
-    inline NodeSet& getAllValidPtrs() {
+    inline NodeSet& getAllValidPtrs()
+    {
         return candidatePointers;
     }
     /// Initialize candidate pointers
-    inline void initialiseCandidatePointers() {
+    inline void initialiseCandidatePointers()
+    {
         // collect candidate pointers for demand-driven analysis
-        for (iterator nIter = begin(); nIter != end(); ++nIter) {
+        for (iterator nIter = begin(); nIter != end(); ++nIter)
+        {
             NodeID nodeId = nIter->first;
             // do not compute points-to for isolated node
             if (isValidPointer(nodeId) == false)
@@ -130,13 +137,16 @@ public:
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
-    static inline PAG* getPAG(bool buildFromFile = false) {
-        if (pag == NULL) {
+    static inline PAG* getPAG(bool buildFromFile = false)
+    {
+        if (pag == NULL)
+        {
             pag = new PAG(buildFromFile);
         }
         return pag;
     }
-    static void releasePAG() {
+    static void releasePAG()
+    {
         if (pag)
             delete pag;
         pag = NULL;
@@ -144,12 +154,14 @@ public:
     //@}
 
     /// Destructor
-    virtual ~PAG() {
+    virtual ~PAG()
+    {
         destroy();
     }
 
     /// Whether this PAG built from a txt file
-    inline bool isBuiltFromFile() {
+    inline bool isBuiltFromFile()
+    {
         return fromFile;
     }
     /// PAG build configurations
@@ -158,90 +170,110 @@ public:
     static void handleBlackHole(bool b);
     //@}
     /// Get LLVM Module
-    inline SVFModule* getModule() {
+    inline SVFModule* getModule()
+    {
         return SymbolTableInfo::Symbolnfo()->getModule();
     }
-    inline void addCallSite(const CallBlockNode* call){
-    	callSiteSet.insert(call);
+    inline void addCallSite(const CallBlockNode* call)
+    {
+        callSiteSet.insert(call);
     }
-    inline const CallSiteSet& getCallSiteSet() const{
-    	return callSiteSet;
+    inline const CallSiteSet& getCallSiteSet() const
+    {
+        return callSiteSet;
     }
     /// Get/set methods to get control flow information of a PAGEdge
     //@{
     /// Get edges set according to its kind
-    inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind) {
+    inline PAGEdge::PAGEdgeSetTy& getEdgeSet(PAGEdge::PEDGEK kind)
+    {
         return PAGEdgeKindToSetMap[kind];
     }
     /// Get PTA edges set according to its kind
-    inline PAGEdge::PAGEdgeSetTy& getPTAEdgeSet(PAGEdge::PEDGEK kind) {
+    inline PAGEdge::PAGEdgeSetTy& getPTAEdgeSet(PAGEdge::PEDGEK kind)
+    {
         return PTAPAGEdgeKindToSetMap[kind];
     }
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const ICFGNode* inst) const {
+    inline bool hasPAGEdgeList(const ICFGNode* inst) const
+    {
         return inst2PAGEdgesMap.find(inst)!=inst2PAGEdgesMap.end();
     }
-    inline bool hasPTAPAGEdgeList(const ICFGNode* inst) const {
+    inline bool hasPTAPAGEdgeList(const ICFGNode* inst) const
+    {
         return inst2PTAPAGEdgesMap.find(inst)!=inst2PTAPAGEdgesMap.end();
     }
     /// Given an instruction, get all its PAGEdges
-    inline PAGEdgeList& getInstPAGEdgeList(const ICFGNode* inst) {
+    inline PAGEdgeList& getInstPAGEdgeList(const ICFGNode* inst)
+    {
         return inst2PAGEdgesMap[inst];
     }
     /// Given an instruction, get all its PTA PAGEdges
-    inline PAGEdgeList& getInstPTAPAGEdgeList(const ICFGNode* inst) {
+    inline PAGEdgeList& getInstPTAPAGEdgeList(const ICFGNode* inst)
+    {
         return inst2PTAPAGEdgesMap[inst];
     }
     /// Add a PAGEdge into instruction map
-    inline void addToInstPAGEdgeList(ICFGNode* inst, PAGEdge* edge) {
-    	if(IntraBlockNode* intra = SVFUtil::dyn_cast<IntraBlockNode>(inst))
-    		intra->addPAGEdge(edge);
-		inst2PAGEdgesMap[inst].push_back(edge);
-		if (edge->isPTAEdge())
-			inst2PTAPAGEdgesMap[inst].push_back(edge);
+    inline void addToInstPAGEdgeList(ICFGNode* inst, PAGEdge* edge)
+    {
+        edge->setICFGNode(inst);
+        inst2PAGEdgesMap[inst].push_back(edge);
+        if (edge->isPTAEdge())
+            inst2PTAPAGEdgesMap[inst].push_back(edge);
     }
     /// Get global PAGEdges (not in a procedure)
-    inline void addGlobalPAGEdge(const PAGEdge* edge) {
+    inline void addGlobalPAGEdge(const PAGEdge* edge)
+    {
         globPAGEdgesSet.insert(edge);
     }
     /// Get global PAGEdges (not in a procedure)
-    inline PAGEdgeSet& getGlobalPAGEdgeSet() {
+    inline PAGEdgeSet& getGlobalPAGEdgeSet()
+    {
         return globPAGEdgesSet;
     }
     /// Add phi node information
-    inline void addPhiNode(const PAGNode* res, const PAGNode* op,const ICFGNode* bb) {
-        phiNodeMap[res].push_back(std::make_pair(op,bb));
+    inline void addPhiNode(const PAGNode* res, const CopyPE* edge)
+    {
+        phiNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
-    inline bool isPhiNode(const PAGNode* node) const {
+    inline bool isPhiNode(const PAGNode* node) const
+    {
         return phiNodeMap.find(node) != phiNodeMap.end();
     }
     /// Get all phi copy edges
-    inline PHINodeMap& getPhiNodeMap() {
+    inline PHINodeMap& getPhiNodeMap()
+    {
         return phiNodeMap;
     }
     /// Add phi node information
-    inline void addBinaryNode(const PAGNode* res, const PAGNode* op) {
-        binaryNodeMap[res].push_back(op);
+    inline void addBinaryNode(const PAGNode* res, const BinaryOPPE* edge)
+    {
+        binaryNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
-    inline bool isBinaryNode(const PAGNode* node) const {
+    inline bool isBinaryNode(const PAGNode* node) const
+    {
         return binaryNodeMap.find(node) != binaryNodeMap.end();
     }
     /// Get all phi copy edges
-    inline BinaryNodeMap& getBinaryNodeMap() {
+    inline BinaryNodeMap& getBinaryNodeMap()
+    {
         return binaryNodeMap;
     }
     /// Add phi node information
-    inline void addCmpNode(const PAGNode* res, const PAGNode* op) {
-        cmpNodeMap[res].push_back(op);
+    inline void addCmpNode(const PAGNode* res, const CmpPE* edge)
+    {
+        cmpNodeMap[res].push_back(edge);
     }
     /// Whether this PAGNode is a result operand a of phi node
-    inline bool isCmpNode(const PAGNode* node) const {
+    inline bool isCmpNode(const PAGNode* node) const
+    {
         return cmpNodeMap.find(node) != cmpNodeMap.end();
     }
     /// Get all phi copy edges
-    inline CmpNodeMap& getCmpNodeMap() {
+    inline CmpNodeMap& getCmpNodeMap()
+    {
         return cmpNodeMap;
     }
     //@}
@@ -249,152 +281,184 @@ public:
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
-    inline void addFunArgs(const SVFFunction* fun, const PAGNode* arg) {
-    	FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
-		funEntryBlockNode->addFormalParms(arg);
+    inline void addFunArgs(const SVFFunction* fun, const PAGNode* arg)
+    {
+        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
+        funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
-    inline void addFunRet(const SVFFunction* fun, const PAGNode* ret) {
-    	FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
-    	funExitBlockNode->addFormalRet(ret);
+    inline void addFunRet(const SVFFunction* fun, const PAGNode* ret)
+    {
+        FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
+        funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
     /// Add callsite arguments
-    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const PAGNode* arg) {
-    	callBlockNode->addActualParms(arg);
+    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const PAGNode* arg)
+    {
+        callBlockNode->addActualParms(arg);
         callSiteArgsListMap[callBlockNode].push_back(arg);
     }
     /// Add callsite returns
-    inline void addCallSiteRets(RetBlockNode* retBlockNode,const PAGNode* arg) {
-    	retBlockNode->addActualRet(arg);
+    inline void addCallSiteRets(RetBlockNode* retBlockNode,const PAGNode* arg)
+    {
+        retBlockNode->addActualRet(arg);
         callSiteRetMap[retBlockNode]= arg;
     }
     /// Function has arguments list
-    inline bool hasFunArgsList(const SVFFunction* func) const {
+    inline bool hasFunArgsList(const SVFFunction* func) const
+    {
         return (funArgsListMap.find(func) != funArgsListMap.end());
     }
     /// Get function arguments list
-    inline FunToArgsListMap& getFunArgsMap() {
+    inline FunToArgsListMap& getFunArgsMap()
+    {
         return funArgsListMap;
     }
     /// Get function arguments list
-    inline const PAGNodeList& getFunArgsList(const SVFFunction*  func) const {
+    inline const PAGNodeList& getFunArgsList(const SVFFunction*  func) const
+    {
         FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
         return it->second;
     }
     /// Callsite has argument list
-    inline bool hasCallSiteArgsMap(const CallBlockNode* cs) const {
+    inline bool hasCallSiteArgsMap(const CallBlockNode* cs) const
+    {
         return (callSiteArgsListMap.find(cs) != callSiteArgsListMap.end());
     }
     /// Get callsite argument list
-    inline CSToArgsListMap& getCallSiteArgsMap() {
+    inline CSToArgsListMap& getCallSiteArgsMap()
+    {
         return callSiteArgsListMap;
     }
     /// Get callsite argument list
-    inline const PAGNodeList& getCallSiteArgsList(const CallBlockNode* cs) const {
+    inline const PAGNodeList& getCallSiteArgsList(const CallBlockNode* cs) const
+    {
         CSToArgsListMap::const_iterator it = callSiteArgsListMap.find(cs);
         assert(it != callSiteArgsListMap.end() && "this call site doesn't have arguments");
         return it->second;
     }
     /// Get callsite return
-    inline CSToRetMap& getCallSiteRets() {
+    inline CSToRetMap& getCallSiteRets()
+    {
         return callSiteRetMap;
     }
     /// Get callsite return
-    inline const PAGNode* getCallSiteRet(const RetBlockNode* cs) const {
+    inline const PAGNode* getCallSiteRet(const RetBlockNode* cs) const
+    {
         CSToRetMap::const_iterator it = callSiteRetMap.find(cs);
         assert(it != callSiteRetMap.end() && "this call site doesn't have return");
         return it->second;
     }
-    inline bool callsiteHasRet(const RetBlockNode* cs) const {
+    inline bool callsiteHasRet(const RetBlockNode* cs) const
+    {
         return callSiteRetMap.find(cs) != callSiteRetMap.end();
     }
     /// Get function return list
-    inline FunToRetMap& getFunRets() {
+    inline FunToRetMap& getFunRets()
+    {
         return funRetMap;
     }
     /// Get function return list
-    inline const PAGNode* getFunRet(const SVFFunction*  func) const {
+    inline const PAGNode* getFunRet(const SVFFunction*  func) const
+    {
         FunToRetMap::const_iterator it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
         return it->second;
     }
-    inline bool funHasRet(const SVFFunction* func) const {
+    inline bool funHasRet(const SVFFunction* func) const
+    {
         return funRetMap.find(func) != funRetMap.end();
     }
     //@}
 
     /// Node and edge statistics
     //@{
-    inline Size_t getPAGNodeNum() const {
+    inline Size_t getPAGNodeNum() const
+    {
         return nodeNum;
     }
-    inline Size_t getPAGEdgeNum() const {
+    inline Size_t getPAGEdgeNum() const
+    {
         return edgeNum;
     }
-    inline Size_t getValueNodeNum() const {
+    inline Size_t getValueNodeNum() const
+    {
         return symInfo->valSyms().size();
     }
-    inline Size_t getObjectNodeNum() const {
+    inline Size_t getObjectNodeNum() const
+    {
         return symInfo->idToObjMap().size();
     }
-    inline Size_t getFieldValNodeNum() const {
+    inline Size_t getFieldValNodeNum() const
+    {
         return GepValNodeMap.size();
     }
-    inline Size_t getFieldObjNodeNum() const {
+    inline Size_t getFieldObjNodeNum() const
+    {
         return GepObjNodeMap.size();
     }
     //@}
 
-    inline NodeID getGepValNode(NodeID base, const LocationSet& ls) const {
+    inline NodeID getGepValNode(NodeID base, const LocationSet& ls) const
+    {
         NodeLocationSetMap::const_iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
-    	if(iter==GepValNodeMap.end())
-    		return -1;
-    	else
-    		return iter->second;
+        if(iter==GepValNodeMap.end())
+            return -1;
+        else
+            return iter->second;
     }
 
     /// Add/get indirect callsites
     //@{
-    inline const CallSiteToFunPtrMap& getIndirectCallsites() const {
+    inline const CallSiteToFunPtrMap& getIndirectCallsites() const
+    {
         return indCallSiteToFunPtrMap;
     }
-    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr) {
+    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr)
+    {
         bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
         funPtrToCallSitesMap[funPtr].insert(cs);
         assert(added && "fail to add the indirect callsite?");
     }
-    inline NodeID getFunPtr(const CallBlockNode* cs) const {
+    inline NodeID getFunPtr(const CallBlockNode* cs) const
+    {
         CallSiteToFunPtrMap::const_iterator it = indCallSiteToFunPtrMap.find(cs);
         assert(it!=indCallSiteToFunPtrMap.end() && "indirect callsite not have a function pointer?");
         return it->second;
     }
-    inline const CallSiteSet& getIndCallSites(NodeID funPtr) const {
+    inline const CallSiteSet& getIndCallSites(NodeID funPtr) const
+    {
         FunPtrToCallSitesMap::const_iterator it = funPtrToCallSitesMap.find(funPtr);
         assert(it!=funPtrToCallSitesMap.end() && "function pointer not used at any indirect callsite?");
         return it->second;
     }
-    inline bool isIndirectCallSites(const CallBlockNode* cs) const {
+    inline bool isIndirectCallSites(const CallBlockNode* cs) const
+    {
         return (indCallSiteToFunPtrMap.find(cs) != indCallSiteToFunPtrMap.end());
     }
-    inline bool isFunPtr(NodeID id) const {
+    inline bool isFunPtr(NodeID id) const
+    {
         return (funPtrToCallSitesMap.find(id) != funPtrToCallSitesMap.end());
     }
     //@}
 
     /// Get a pag node according to its ID
-    inline bool findPAGNode(NodeID id) const {
+    inline bool findPAGNode(NodeID id) const
+    {
         return hasGNode(id);
     }
 
     /// Get an edge according to src, dst and kind
     //@{
-    inline PAGEdge* getIntraPAGEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind) {
+    inline PAGEdge* getIntraPAGEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind)
+    {
         return getIntraPAGEdge(getPAGNode(src), getPAGNode(dst), kind);
     }
-    inline PAGEdge* getIntraPAGEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind) {
+    inline PAGEdge* getIntraPAGEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind)
+    {
         PAGEdge edge(src,dst,kind);
         const PAGEdge::PAGEdgeSetTy& edgeSet = getEdgeSet(kind);
         PAGEdge::PAGEdgeSetTy::const_iterator it = edgeSet.find(&edge);
@@ -404,50 +468,59 @@ public:
     //@}
 
     /// Get PAGNode ID
-    inline PAGNode* getPAGNode(NodeID id) const {
+    inline PAGNode* getPAGNode(NodeID id) const
+    {
         return getGNode(id);
     }
 
     /// Get PAG Node according to LLVM value
     //@{
     ///getNode - Return the node corresponding to the specified pointer.
-    inline NodeID getValueNode(const Value *V) {
+    inline NodeID getValueNode(const Value *V)
+    {
         return symInfo->getValSym(V);
     }
-    inline bool hasValueNode(const Value* V) {
+    inline bool hasValueNode(const Value* V)
+    {
         return symInfo->hasValSym(V);
     }
     /// getObject - Return the obj node id refer to the memory object for the
     /// specified global, heap or alloca instruction according to llvm value.
-    inline NodeID getObjectNode(const Value *V) {
+    inline NodeID getObjectNode(const Value *V)
+    {
         return symInfo->getObjSym(V);
     }
     /// getObject - return mem object id
-    inline NodeID getObjectNode(const MemObj *mem) {
+    inline NodeID getObjectNode(const MemObj *mem)
+    {
         return mem->getSymId();
     }
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
     /// return NULL is this node is not a ObjPN type
     //@{
-    inline const MemObj*getObject(NodeID id) const {
+    inline const MemObj*getObject(NodeID id) const
+    {
         const PAGNode* node = getPAGNode(id);
         if(const ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(node))
             return getObject(objPN);
         else
             return NULL;
     }
-    inline const MemObj*getObject(const ObjPN* node) const {
+    inline const MemObj*getObject(const ObjPN* node) const
+    {
         return node->getMemObj();
     }
     //@}
 
     /// GetReturnNode - Return the unique node representing the return value of a function
-    inline NodeID getReturnNode(const SVFFunction* func) const {
+    inline NodeID getReturnNode(const SVFFunction* func) const
+    {
         return symInfo->getRetSym(func->getLLVMFun());
     }
     /// getVarargNode - Return the unique node representing the variadic argument of a variadic function.
-    inline NodeID getVarargNode(const SVFFunction* func) const {
+    inline NodeID getVarargNode(const SVFFunction* func) const
+    {
         return symInfo->getVarargSym(func->getLLVMFun());
     }
     /// Get a field PAG Object node according to base mem obj and offset
@@ -456,10 +529,12 @@ public:
     NodeID getGepObjNode(NodeID id, const LocationSet& ls) ;
     /// Get a field-insensitive obj PAG node according to a mem obj
     //@{
-    inline NodeID getFIObjNode(const MemObj* obj) const {
+    inline NodeID getFIObjNode(const MemObj* obj) const
+    {
         return obj->getSymId();
     }
-    inline NodeID getFIObjNode(NodeID id) const {
+    inline NodeID getFIObjNode(NodeID id) const
+    {
         PAGNode* node = pag->getPAGNode(id);
         assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
         ObjPN* obj = SVFUtil::cast<ObjPN>(node);
@@ -469,63 +544,81 @@ public:
 
     /// Get black hole and constant id
     //@{
-    inline NodeID getBlackHoleNode() const {
+    inline NodeID getBlackHoleNode() const
+    {
         return symInfo->blackholeSymID();
     }
-    inline NodeID getConstantNode() const {
+    inline NodeID getConstantNode() const
+    {
         return symInfo->constantSymID();
     }
-    inline NodeID getBlkPtr() const {
+    inline NodeID getBlkPtr() const
+    {
         return symInfo->blkPtrSymID();
     }
-    inline NodeID getNullPtr() const {
+    inline NodeID getNullPtr() const
+    {
         return symInfo->nullPtrSymID();
     }
-    inline bool isBlkPtr(NodeID id) const {
+    inline bool isBlkPtr(NodeID id) const
+    {
         return (SymbolTableInfo::isBlkPtr(id));
     }
-    inline bool isNullPtr(NodeID id) const {
+    inline bool isNullPtr(NodeID id) const
+    {
         return (SymbolTableInfo::isNullPtr(id));
     }
-    inline bool isBlkObjOrConstantObj(NodeID id) const {
+    inline bool isBlkObjOrConstantObj(NodeID id) const
+    {
         return (isBlkObj(id) || isConstantObj(id));
     }
-    inline bool isBlkObj(NodeID id) const {
+    inline bool isBlkObj(NodeID id) const
+    {
         return SymbolTableInfo::isBlkObj(id);
     }
-	inline bool isConstantObj(NodeID id) const {
-		const MemObj* obj = getObject(id);
-		assert(obj && "not an object node?");
-		return SymbolTableInfo::isConstantObj(id) || obj->isConstant();
-	}
-    inline bool isNonPointerObj(NodeID id) const {
+    inline bool isConstantObj(NodeID id) const
+    {
+        const MemObj* obj = getObject(id);
+        assert(obj && "not an object node?");
+        return SymbolTableInfo::isConstantObj(id) || obj->isConstant();
+    }
+    inline bool isNonPointerObj(NodeID id) const
+    {
         PAGNode* node = getPAGNode(id);
-        if (FIObjPN* fiNode = SVFUtil::dyn_cast<FIObjPN>(node)) {
+        if (FIObjPN* fiNode = SVFUtil::dyn_cast<FIObjPN>(node))
+        {
             return (fiNode->getMemObj()->hasPtrObj() == false);
         }
-        else if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node)) {
+        else if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
+        {
             return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
         }
-        else if (SVFUtil::isa<DummyObjPN>(node)) {
+        else if (SVFUtil::isa<DummyObjPN>(node))
+        {
             return false;
         }
-        else {
+        else
+        {
             assert(false && "expecting a object node");
             return false;
         }
     }
-    inline const MemObj* getBlackHoleObj() const {
+    inline const MemObj* getBlackHoleObj() const
+    {
         return symInfo->getBlkObj();
     }
-    inline const MemObj* getConstantObj() const {
+    inline const MemObj* getConstantObj() const
+    {
         return symInfo->getConstantObj();
     }
     //@}
 
-    inline u32_t getNodeNumAfterPAGBuild() const {
+    inline u32_t getNodeNumAfterPAGBuild() const
+    {
         return nodeNumAfterPAGBuild;
     }
-    inline void setNodeNumAfterPAGBuild(u32_t num) {
+    inline void setNodeNumAfterPAGBuild(u32_t num)
+    {
         nodeNumAfterPAGBuild = num;
     }
 
@@ -534,10 +627,12 @@ public:
     /// Get a base pointer node given a field pointer
     NodeID getBaseValNode(NodeID nodeId);
     LocationSet getLocationSetFromBaseNode(NodeID nodeId);
-    inline NodeID getBaseObjNode(NodeID id) const {
+    inline NodeID getBaseObjNode(NodeID id) const
+    {
         return getBaseObj(id)->getSymId();
     }
-    inline const MemObj* getBaseObj(NodeID id) const {
+    inline const MemObj* getBaseObj(NodeID id) const
+    {
         const PAGNode* node = pag->getPAGNode(id);
         assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
         const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
@@ -555,28 +650,33 @@ public:
     /// add node into PAG
     //@{
     /// Add a PAG node into Node map
-    inline NodeID addNode(PAGNode* node, NodeID i) {
+    inline NodeID addNode(PAGNode* node, NodeID i)
+    {
         addGNode(i,node);
         return i;
     }
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value* val, NodeID i) {
+    inline NodeID addValNode(const Value* val, NodeID i)
+    {
         PAGNode *node = new ValPN(val,i);
         return addValNode(val, node, i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value* val, NodeID i) {
+    inline NodeID addObjNode(const Value* val, NodeID i)
+    {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
         assert(((mem->getSymId() == i) || (symInfo->getGlobalRep(val)!=val)) && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction* val, NodeID i) {
+    inline NodeID addRetNode(const SVFFunction* val, NodeID i)
+    {
         PAGNode *node = new RetPN(val,i);
         return addRetNode(val, node, i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction* val, NodeID i) {
+    inline NodeID addVarargNode(const SVFFunction* val, NodeID i)
+    {
         PAGNode *node = new VarArgPN(val,i);
         return addNode(node,i);
     }
@@ -591,47 +691,59 @@ public:
 
     ///  Add a dummy value/object node according to node ID (llvm value is null)
     //@{
-    inline NodeID addDummyValNode() {
+    inline NodeID addDummyValNode()
+    {
         return addDummyValNode(nodeNum);
     }
-    inline NodeID addDummyValNode(NodeID i) {
+    inline NodeID addDummyValNode(NodeID i)
+    {
         return addValNode(NULL, new DummyValPN(i), i);
     }
-    inline NodeID addDummyObjNode(const Type* type = NULL) {
+    inline NodeID addDummyObjNode(const Type* type = NULL)
+    {
         return addDummyObjNode(nodeNum, type);
     }
-    inline NodeID addDummyObjNode(NodeID i, const Type* type) {
+    inline NodeID addDummyObjNode(NodeID i, const Type* type)
+    {
         const MemObj* mem = addDummyMemObj(i, type);
         return addObjNode(NULL, new DummyObjPN(i,mem), i);
     }
-    inline const MemObj* addDummyMemObj(NodeID i, const Type* type) {
+    inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
+    {
         return SymbolTableInfo::Symbolnfo()->createDummyObj(i,type);
     }
-    inline NodeID addBlackholeObjNode() {
+    inline NodeID addBlackholeObjNode()
+    {
         return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }
-    inline NodeID addConstantObjNode() {
+    inline NodeID addConstantObjNode()
+    {
         return addObjNode(NULL, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
     }
-    inline NodeID addBlackholePtrNode() {
+    inline NodeID addBlackholePtrNode()
+    {
         return addDummyValNode(getBlkPtr());
     }
     //@}
 
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i) {
+    inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i)
+    {
         return addNode(node,i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i) {
+    inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i)
+    {
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction* val, PAGNode *node, NodeID i) {
+    inline NodeID addRetNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    {
         return addNode(node,i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction* val, PAGNode *node, NodeID i) {
+    inline NodeID addVarargNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    {
         return addNode(node,i);
     }
 
@@ -641,8 +753,10 @@ public:
     bool addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge);
 
     //// Return true if this edge exits
-    bool hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
-    bool hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
+    PAGEdge* hasNonlabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
+    /// Return true if this labeled edge exits, including store, call and load
+    /// two store edge can have same dst and src but located in different basic blocks, thus flags are needed to distinguish them
+    PAGEdge* hasLabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
 
     /// Add Address edge
     AddrPE* addAddrPE(NodeID src, NodeID dst);
@@ -683,7 +797,8 @@ public:
     //@}
 
     /// Return graph name
-    inline std::string getGraphName() const {
+    inline std::string getGraphName() const
+    {
         return "PAG";
     }
 
@@ -695,19 +810,23 @@ public:
 
 };
 
-namespace llvm {
+namespace llvm
+{
 /* !
  * GraphTraits specializations of PAG to be used for the generic graph algorithms.
  * Provide graph traits for tranversing from a PAG node using standard graph traversals.
  */
-template<> struct GraphTraits<PAGNode*> : public GraphTraits<GenericNode<PAGNode,PAGEdge>*  > {
+template<> struct GraphTraits<PAGNode*> : public GraphTraits<GenericNode<PAGNode,PAGEdge>*  >
+{
 };
 
 /// Inverse GraphTraits specializations for PAG node, it is used for inverse traversal.
-template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<GenericNode<PAGNode,PAGEdge>* > > {
+template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<GenericNode<PAGNode,PAGEdge>* > >
+{
 };
 
-template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* > {
+template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* >
+{
     typedef PAGNode *NodeRef;
 };
 }

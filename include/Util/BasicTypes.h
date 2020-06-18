@@ -218,62 +218,76 @@ template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
 using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
 
-class SVFFunction : public SVFValue {
+class SVFFunction : public SVFValue
+{
 private:
-	bool isDecl;
-	bool isIntri;
-	Function* fun;
+    bool isDecl;
+    bool isIntri;
+    Function* fun;
 public:
-	SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-		isDecl(false), isIntri(false), fun(NULL) {
+    SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
+        isDecl(false), isIntri(false), fun(NULL)
+    {
     }
 
-	SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
-		isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f) {
-	}
-	inline Function* getLLVMFun() const{
-		assert(fun && "no LLVM Function found!");
-		return fun;
-	}
-
-	inline bool isDeclaration() const{
-		return isDecl;
-	}
-
-	inline bool isIntrinsic() const{
-		return isIntri;
-	}
-
-	inline u32_t arg_size() const{
-		return getLLVMFun()->arg_size();
-	}
-
-	inline bool isVarArg() const{
-		return getLLVMFun()->isVarArg();
-	}
-
-};
-
-class SVFGlobal : public SVFValue {
-
-public:
-	SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob) {
+    SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
+        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
+    {
+    }
+    inline Function* getLLVMFun() const
+    {
+        assert(fun && "no LLVM Function found!");
+        return fun;
     }
 
-};
+    inline bool isDeclaration() const
+    {
+        return isDecl;
+    }
 
-class SVFBasicBlock : public SVFValue {
+    inline bool isIntrinsic() const
+    {
+        return isIntri;
+    }
 
-public:
-	SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB) {
+    inline u32_t arg_size() const
+    {
+        return getLLVMFun()->arg_size();
+    }
+
+    inline bool isVarArg() const
+    {
+        return getLLVMFun()->isVarArg();
     }
 
 };
 
-class SVFInstruction : public SVFValue {
+class SVFGlobal : public SVFValue
+{
 
 public:
-	SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst) {
+    SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob)
+    {
+    }
+
+};
+
+class SVFBasicBlock : public SVFValue
+{
+
+public:
+    SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB)
+    {
+    }
+
+};
+
+class SVFInstruction : public SVFValue
+{
+
+public:
+    SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst)
+    {
     }
 
 };
