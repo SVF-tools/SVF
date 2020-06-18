@@ -45,19 +45,23 @@ u32_t VFPathCond::maximumPath = 0;
 u32_t PathCondAllocator::totalCondNum = 0;
 BddCondManager* PathCondAllocator::bddCondMgr = NULL;
 static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
-                                   llvm::cl::desc("Print out path condition"));
+        llvm::cl::desc("Print out path condition"));
 
 /*!
  * Allocate path condition for each branch
  */
-void PathCondAllocator::allocate(const SVFModule* M) {
+void PathCondAllocator::allocate(const SVFModule* M)
+{
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit) {
+    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit)
+    {
         const SVFFunction * func = *fit;
-        if (!SVFUtil::isExtCall(func)) {
+        if (!SVFUtil::isExtCall(func))
+        {
             // Allocate conditions for a program.
-            for (Function::const_iterator bit = func->getLLVMFun()->begin(), ebit = func->getLLVMFun()->end(); bit != ebit; ++bit) {
+            for (Function::const_iterator bit = func->getLLVMFun()->begin(), ebit = func->getLLVMFun()->end(); bit != ebit; ++bit)
+            {
                 const BasicBlock & bb = *bit;
                 collectBBCallingProgExit(bb);
                 allocateForBB(bb);
@@ -80,21 +84,24 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
     u32_t succ_number = getBBSuccessorNum(&bb);
 
     // if successor number greater than 1, allocate new decision variable for successors
-    if(succ_number > 1) {
+    if(succ_number > 1)
+    {
 
         //allocate log2(num_succ) decision variables
         double num = log(succ_number)/log(2);
         u32_t bit_num = (u32_t)ceil(num);
         u32_t succ_index = 0;
         std::vector<Condition*> condVec;
-        for(u32_t i = 0 ; i < bit_num; i++) {
+        for(u32_t i = 0 ; i < bit_num; i++)
+        {
             condVec.push_back(newCond(bb.getTerminator()));
         }
 
         // iterate each successor
         for (succ_const_iterator succ_it = succ_begin(&bb);
                 succ_it != succ_end(&bb);
-                succ_it++, succ_index++) {
+                succ_it++, succ_index++)
+        {
 
             const BasicBlock* succ = *succ_it;
 
@@ -105,13 +112,16 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
             // for each successor decide its bit representation
             // decide whether each bit of succ_index is 1 or 0, if (three successor) succ_index is 000 then use C1^C2^C3
             // if 001 use C1^C2^negC3
-            for(u32_t j = 0 ; j < bit_num; j++) {
+            for(u32_t j = 0 ; j < bit_num; j++)
+            {
                 //test each bit of this successor's index (binary representation)
                 u32_t tool = 0x01 << j;
-                if(tool & succ_index) {
+                if(tool & succ_index)
+                {
                     path_cond = condAnd(path_cond, condVec.at(j));
                 }
-                else {
+                else
+                {
                     path_cond = condAnd(path_cond, (condNeg(condVec.at(j))));
                 }
             }
@@ -124,11 +134,13 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 /*!
  * Get a branch condition
  */
-PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const {
+PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const
+{
     u32_t pos = getBBSuccessorPos(bb,succ);
     if(getBBSuccessorNum(bb) == 1)
         return getTrueCond();
-    else {
+    else
+    {
         BBCondMap::const_iterator it = bbConds.find(bb);
         assert(it!=bbConds.end() && "basic block does not have branch and conditions??");
         CondPosMap::const_iterator cit = it->second.find(pos);
@@ -140,7 +152,8 @@ PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock 
 /*!
  * Set a branch condition
  */
-void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond) {
+void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond)
+{
     /// we only care about basic blocks have more than one successor
     assert(getBBSuccessorNum(bb) > 1 && "not more than one successor??");
     u32_t pos = getBBSuccessorPos(bb,succ);
@@ -156,11 +169,13 @@ void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *su
 /*!
  * Evaluate null like expression for source-sink related bug detection in SABER
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ, const Value* val) {
+PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ, const Value* val)
+{
 
     const BasicBlock* succ1 = brInst->getSuccessor(0);
 
-    if(isTestNullExpr(brInst->getCondition(),val)) {
+    if(isTestNullExpr(brInst->getCondition(),val))
+    {
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
@@ -168,7 +183,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         else
             return getTrueCond();
     }
-    if(isTestNotNullExpr(brInst->getCondition(),val)) {
+    if(isTestNotNullExpr(brInst->getCondition(),val))
+    {
         // succ is then branch
         if(succ1 == succ)
             return getTrueCond();
@@ -183,7 +199,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
 /*!
  * Evaluate condition for program exit (e.g., exit(0))
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ) {
+PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ)
+{
     const BasicBlock* succ1 = brInst->getSuccessor(0);
     const BasicBlock* succ2 = brInst->getSuccessor(1);
 
@@ -191,7 +208,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
     bool branch2 = isBBCallsProgExit(succ2);
 
     /// then branch calls program exit
-    if(branch1 == true && branch2 == false) {
+    if(branch1 == true && branch2 == false)
+    {
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
@@ -200,7 +218,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     /// else branch calls program exit
-    else if(branch1 == false && branch2 == true) {
+    else if(branch1 == false && branch2 == true)
+    {
         // succ is else branch
         if(succ2 == succ)
             return getFalseCond();
@@ -209,7 +228,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     // two branches both call program exit
-    else if(branch1 == true && branch2 == true) {
+    else if(branch1 == true && branch2 == true)
+    {
         return getFalseCond();
     }
     /// no branch call program exit
@@ -223,18 +243,21 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
  * bb is loop header and succ is the only exit basic block outside the loop (excluding exit bbs which call program exit)
  * for all other case, we conservatively evaluate false for now
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *dst) {
+PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *dst)
+{
     const Function* fun = bb->getParent();
     assert(fun==dst->getParent() && "two basic blocks should be in the same function");
 
     const LoopInfo* loopInfo = getLoopInfo(fun);
-    if(loopInfo->isLoopHeader(const_cast<BasicBlock*>(bb))) {
+    if(loopInfo->isLoopHeader(const_cast<BasicBlock*>(bb)))
+    {
         const Loop *loop = loopInfo->getLoopFor(bb);
         SmallBBVector exitbbs;
         std::set<BasicBlock*> filteredbbs;
         loop->getExitBlocks(exitbbs);
         /// exclude exit bb which calls program exit
-        while(!exitbbs.empty()) {
+        while(!exitbbs.empty())
+        {
             BasicBlock* eb = exitbbs.pop_back_val();
             if(isBBCallsProgExit(eb) == false)
                 filteredbbs.insert(eb);
@@ -243,7 +266,8 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
         PostDominatorTree* pdt = getPostDT(fun);
-        for(std::set<BasicBlock*>::iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it) {
+        for(std::set<BasicBlock*>::iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
+        {
             if(pdt->dominates(dst,*it) == false)
                 allPDT =false;
         }
@@ -259,13 +283,16 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
  *  (2) Evaluate a branch when it is loop exit branch
  *  (3) Evaluate a branch when it is a test null like condition
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ, const Value* val) {
-    if(getBBSuccessorNum(bb) == 1) {
+PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ, const Value* val)
+{
+    if(getBBSuccessorNum(bb) == 1)
+    {
         assert(bb->getTerminator()->getSuccessor(0) == succ && "not the unique successor?");
         return getTrueCond();
     }
 
-    if(const BranchInst* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator())) {
+    if(const BranchInst* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator()))
+    {
         assert(brInst->getNumSuccessors() == 2 && "not a two successors branch??");
         const BasicBlock* succ1 = brInst->getSuccessor(0);
         const BasicBlock* succ2 = brInst->getSuccessor(1);
@@ -287,29 +314,36 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
     return getBranchCond(bb, succ);
 }
 
-bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const {
+bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const
+{
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool PathCondAllocator::isNECmp(const CmpInst* cmp) const {
+bool PathCondAllocator::isNECmp(const CmpInst* cmp) const
+{
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const {
-    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test)) {
+bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
+{
+    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    {
         return isTestContainsNullAndTheValue(cmp,val) && isEQCmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const {
-    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test)) {
+bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const
+{
+    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    {
         return isTestContainsNullAndTheValue(cmp,val) && isNECmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const {
+bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const
+{
 
     const Value* op0 = cmp->getOperand(0);
     const Value* op1 = cmp->getOperand(1);
@@ -323,12 +357,15 @@ bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const 
 /*!
  * Whether this basic block contains program exit function call
  */
-void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb) {
+void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb)
+{
 
-    for(BasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it!=eit; it++) {
+    for(BasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it!=eit; it++)
+    {
         const Instruction* inst = &*it;
         if(SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst))
-            if(SVFUtil::isProgExitCall(inst)) {
+            if(SVFUtil::isProgExitCall(inst))
+            {
                 funToExitBBsMap[bb.getParent()].insert(&bb);
             }
     }
@@ -337,12 +374,15 @@ void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb) {
 /*!
  * Whether this basic block contains program exit function call
  */
-bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb) {
+bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
+{
     const Function* fun = bb->getParent();
     FunToExitBBsMap::const_iterator it = funToExitBBsMap.find(fun);
-    if(it!=funToExitBBsMap.end()) {
+    if(it!=funToExitBBsMap.end())
+    {
         PostDominatorTree* pdt = getPostDT(fun);
-        for(BasicBlockSet::iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++) {
+        for(BasicBlockSet::iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++)
+        {
             if(pdt->dominates(*bit,bb))
                 return true;
         }
@@ -356,12 +396,14 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb) {
  * Assume B0 (phi node) is the successor of both B1 and B2.
  * If B1 dominates B2, and B0 not dominate B2 then condition from B1-->B0 = neg(B1-->B2)^(B1-->B0)
  */
-PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0) {
+PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0)
+{
     assert(BB1 && BB2 && "expect NULL BB here!");
 
     DominatorTree* dt = getDT(BB1->getParent());
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
-    if(dt->dominates(BB1,BB2) && !dt->dominates(BB0,BB2)) {
+    if(dt->dominates(BB1,BB2) && !dt->dominates(BB0,BB2))
+    {
         Condition* cond =  ComputeIntraVFGGuard(BB1,BB2);
         return condNeg(cond);
     }
@@ -374,7 +416,8 @@ PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const Basi
  * src --c1--> callBB --true--> funEntryBB --c2--> dst
  * the InterCallVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB, const BasicBlock* callBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB, const BasicBlock* callBB)
+{
     const BasicBlock* funEntryBB = &dstBB->getParent()->getEntryBlock();
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,callBB);
@@ -388,7 +431,8 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const 
  * src --c1--> funExitBB --true--> retBB --c2--> dst
  * the InterRetVFGGuard is c1 ^ c2
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const BasicBlock*  srcBB, const BasicBlock*  dstBB, const BasicBlock* retBB)
+{
     const BasicBlock* funExitBB = getFunExitBB(srcBB->getParent());
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,funExitBB);
@@ -400,7 +444,8 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const B
 /*!
  * Compute intra-procedural guards between two SVFGNodes (inside same function)
  */
-PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB) {
+PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const BasicBlock* srcBB, const BasicBlock* dstBB)
+{
 
     assert(srcBB->getParent() == dstBB->getParent() && "two basic blocks are not in the same function??");
 
@@ -412,7 +457,8 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
     worklist.push(srcBB);
     setCFCond(srcBB,getTrueCond());
 
-    while(!worklist.empty()) {
+    while(!worklist.empty())
+    {
         const BasicBlock* bb = worklist.pop();
         Condition* cond = getCFCond(bb);
 
@@ -423,7 +469,8 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
 
 
         for (succ_const_iterator succ_it = succ_begin(bb);
-                succ_it != succ_end(bb); succ_it++) {
+                succ_it != succ_end(bb); succ_it++)
+        {
             const BasicBlock* succ = *succ_it;
             /// calculate the branch condition
             /// if succ post dominate bb, then we get brCond quicker by using postDT
@@ -453,7 +500,8 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
 /*!
  * Release memory
  */
-void PathCondAllocator::destroy() {
+void PathCondAllocator::destroy()
+{
     delete bddCondMgr;
     bddCondMgr = NULL;
 }
@@ -461,16 +509,21 @@ void PathCondAllocator::destroy() {
 /*!
  * Print path conditions
  */
-void PathCondAllocator::printPathCond() {
+void PathCondAllocator::printPathCond()
+{
 
     outs() << "print path condition\n";
 
-    for(BBCondMap::iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it) {
+    for(BBCondMap::iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it)
+    {
         const BasicBlock* bb = it->first;
-        for(CondPosMap::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
+        for(CondPosMap::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        {
             u32_t i=0;
-            for (const BasicBlock *succ: successors(bb)) {
-                if (i == cit->first) {
+            for (const BasicBlock *succ: successors(bb))
+            {
+                if (i == cit->first)
+                {
                     Condition* cond = cit->second;
                     outs() << bb->getName() << "-->" << succ->getName() << ":";
                     outs() << dumpCond(cond) << "\n";

@@ -37,16 +37,19 @@
 /*
  * Util class to assist pointer analysis
  */
-namespace SVFUtil {
+namespace SVFUtil
+{
 
 /// Overwrite llvm::outs()
-inline raw_ostream &outs(){
-	return llvm::outs();
+inline raw_ostream &outs()
+{
+    return llvm::outs();
 }
 
 /// Overwrite llvm::errs()
-inline raw_ostream &errs(){
-	return llvm::errs();
+inline raw_ostream &errs()
+{
+    return llvm::errs();
 }
 
 /// Dump sparse bitvector set
@@ -92,13 +95,16 @@ void increaseStackSize();
  * 1. PointsTo with smaller size is smaller than the other;
  * 2. If the sizes are equal, comparing the points-to targets.
  */
-inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts) {
+inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
+{
     if (lpts.count() != rpts.count())
         return (lpts.count() < rpts.count());
-    else {
+    else
+    {
         PointsTo::iterator bit = lpts.begin(), eit = lpts.end();
         PointsTo::iterator rbit = rpts.begin(), reit = rpts.end();
-        for (; bit != eit && rbit != reit; bit++, rbit++) {
+        for (; bit != eit && rbit != reit; bit++, rbit++)
+        {
             if (*bit != *rbit)
                 return (*bit < *rbit);
         }
@@ -110,47 +116,56 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts) {
 
 /// Return true if this function is llvm dbg intrinsic function/instruction
 //@{
-inline bool isIntrinsicDbgFun(const Function* fun) {
+inline bool isIntrinsicDbgFun(const Function* fun)
+{
     return fun->getName().startswith("llvm.dbg.declare") ||
            fun->getName().startswith("llvm.dbg.value");
 }
 /// Return true if it is an intric debug instruction
-inline bool isInstrinsicDbgInst(const Instruction* inst) {
+inline bool isInstrinsicDbgInst(const Instruction* inst)
+{
     return SVFUtil::isa<llvm::DbgInfoIntrinsic>(inst);
 }
 //@}
 
 /// Whether an instruction is a call or invoke instruction
-inline bool isCallSite(const Instruction* inst) {
+inline bool isCallSite(const Instruction* inst)
+{
     return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
 }
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
-inline bool isNonInstricCallSite(const Instruction* inst) {
-	if(isInstrinsicDbgInst(inst))
-		return false;
+inline bool isNonInstricCallSite(const Instruction* inst)
+{
+    if(isInstrinsicDbgInst(inst))
+        return false;
     return isCallSite(inst);
 }
 /// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst) {
+inline bool isReturn(const Instruction* inst)
+{
     return SVFUtil::isa<ReturnInst>(inst);
 }
 
 /// Return LLVM callsite given a instruction
-inline CallSite getLLVMCallSite(const Instruction* inst) {
+inline CallSite getLLVMCallSite(const Instruction* inst)
+{
     assert(SVFUtil::isa<CallInst>(inst)|| SVFUtil::isa<InvokeInst>(inst));
     CallSite cs(const_cast<Instruction*>(inst));
     return cs;
 }
 
 /// Get the corresponding Function based on its name
-inline const SVFFunction* getFunction(StringRef name) {
-	Function* fun = NULL;
-	LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+inline const SVFFunction* getFunction(StringRef name)
+{
+    Function* fun = NULL;
+    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
 
-    for (u32_t i = 0; i < llvmModuleset->getModuleNum(); ++i) {
+    for (u32_t i = 0; i < llvmModuleset->getModuleNum(); ++i)
+    {
         Module *mod = llvmModuleset->getModule(i);
         fun = mod->getFunction(name);
-        if(fun && !fun->isDeclaration()) {
+        if(fun && !fun->isDeclaration())
+        {
             return llvmModuleset->getSVFFunction(fun);
         }
     }
@@ -158,10 +173,11 @@ inline const SVFFunction* getFunction(StringRef name) {
 }
 
 /// Get the definition of a function across multiple modules
-inline const SVFFunction* getDefFunForMultipleModule(const Function* fun) {
-	if(fun == NULL) return NULL;
-	LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
-	const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
+inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
+{
+    if(fun == NULL) return NULL;
+    LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
+    const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
     if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
         svfFun = LLVMModuleSet::getLLVMModuleSet()->getDefinition(fun);
     return svfFun;
@@ -169,13 +185,15 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun) {
 
 /// Return callee of a callsite. Return null if this is an indirect call
 //@{
-inline const SVFFunction* getCallee(const CallSite cs) {
+inline const SVFFunction* getCallee(const CallSite cs)
+{
     // FIXME: do we need to strip-off the casts here to discover more library functions
     Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
-inline const SVFFunction* getCallee(const Instruction *inst) {
+inline const SVFFunction* getCallee(const Instruction *inst)
+{
     if (!SVFUtil::isa<CallInst>(inst) && !SVFUtil::isa<InvokeInst>(inst))
         return NULL;
     CallSite cs(const_cast<Instruction*>(inst));

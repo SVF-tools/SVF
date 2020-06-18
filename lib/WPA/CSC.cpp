@@ -35,7 +35,8 @@ using namespace SVFUtil;
 /*!
  *
  */
-void CSC::clear() {
+void CSC::clear()
+{
     _I = 0;
     _D.clear();
 }
@@ -44,11 +45,13 @@ void CSC::clear() {
 /*!
  *
  */
-void CSC::find(NodeStack& candidates) {
+void CSC::find(NodeStack& candidates)
+{
     clear();
 
     NodeStack revCandidates;
-    while (!candidates.empty()) {
+    while (!candidates.empty())
+    {
         NodeID nId = candidates.top();
         revCandidates.push(nId);
         candidates.pop();
@@ -57,7 +60,8 @@ void CSC::find(NodeStack& candidates) {
             visit(nId, 0);
     }
 
-    while (!revCandidates.empty()) {
+    while (!revCandidates.empty())
+    {
         NodeID nId = revCandidates.top();
         candidates.push(nId);
         revCandidates.pop();
@@ -68,7 +72,8 @@ void CSC::find(NodeStack& candidates) {
 /*!
  *
  */
-void CSC::visit(NodeID nodeId, Size_t _w) {
+void CSC::visit(NodeID nodeId, Size_t _w)
+{
 //    pwcReps[nodeId] = _scc->repNode(nodeId);
     setVisited(nodeId);
 
@@ -77,7 +82,8 @@ void CSC::visit(NodeID nodeId, Size_t _w) {
     _S.push(nodeId);
 
     ConstraintNode* node = _consG->getConstraintNode(nodeId);
-    for (ConstraintNode::const_iterator eit = node->directOutEdgeBegin(); eit != node->directOutEdgeEnd(); ++eit) {
+    for (ConstraintNode::const_iterator eit = node->directOutEdgeBegin(); eit != node->directOutEdgeEnd(); ++eit)
+    {
         Size_t offset;
         if (NormalGepCGEdge* gepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit))
             offset = gepCGEdge->getOffset();
@@ -91,20 +97,24 @@ void CSC::visit(NodeID nodeId, Size_t _w) {
     NodeStack _revS;
     NodeSet _C;
 
-    while (!_S.empty()) {
+    while (!_S.empty())
+    {
         NodeID backNodeId = _S.top();
         _S.pop();
         _revS.push(backNodeId);
         ConstraintNode* backNode = _consG->getConstraintNode(backNodeId);
-        if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep)) {
+        if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
+        {
             NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
             Size_t _w = normalGep->getLocationSet().getOffset();
             Size_t _l = _D[nodeId] +_w - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)
                 _consG->getConstraintNode(cNodeId)->strides.set(_l);
-        } else if (_consG->hasEdge(node, backNode, ConstraintEdge::VariantGep) ||
-                   _consG->hasEdge(node, backNode, ConstraintEdge::Copy)) {
+        }
+        else if (_consG->hasEdge(node, backNode, ConstraintEdge::VariantGep) ||
+                 _consG->hasEdge(node, backNode, ConstraintEdge::Copy))
+        {
             Size_t _l = _D[nodeId] - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)
@@ -113,7 +123,8 @@ void CSC::visit(NodeID nodeId, Size_t _w) {
         _C.insert(backNodeId);
     }
 
-    while (!_revS.empty()) {
+    while (!_revS.empty())
+    {
         NodeID backedId = _revS.top();
         _S.push(backedId);
         _revS.pop();

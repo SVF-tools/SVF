@@ -55,97 +55,110 @@ static u32_t gepNodeNumIndex = 100000;
 6 store 8 0
 8 load 9 0
  */
-PAG* PAGBuilderFromFile::build() {
+PAG* PAGBuilderFromFile::build()
+{
 
-	string line;
-	ifstream myfile(file.c_str());
-	if (myfile.is_open()) {
-		while (myfile.good()) {
-			getline(myfile, line);
+    string line;
+    ifstream myfile(file.c_str());
+    if (myfile.is_open())
+    {
+        while (myfile.good())
+        {
+            getline(myfile, line);
 
-			Size_t token_count = 0;
-			string tmps;
-			istringstream ss(line);
-			while (ss.good()) {
-				ss >> tmps;
-				token_count++;
-			}
+            Size_t token_count = 0;
+            string tmps;
+            istringstream ss(line);
+            while (ss.good())
+            {
+                ss >> tmps;
+                token_count++;
+            }
 
-			if (token_count == 0)
-				continue;
+            if (token_count == 0)
+                continue;
 
-			else if (token_count == 2) {
-				NodeID nodeId;
-				string nodetype;
-				istringstream ss(line);
-				ss >> nodeId;
-				ss >> nodetype;
-				outs() << "reading node :" << nodeId << "\n";
-				if (nodetype == "v")
-					pag->addDummyValNode(nodeId);
-				else if (nodetype == "o") {
-					const MemObj* mem = pag->addDummyMemObj(nodeId, NULL);
-					pag->addFIObjNode(mem);
-				} else
-					assert(false && "format not support, pls specify node type");
-			}
+            else if (token_count == 2)
+            {
+                NodeID nodeId;
+                string nodetype;
+                istringstream ss(line);
+                ss >> nodeId;
+                ss >> nodetype;
+                outs() << "reading node :" << nodeId << "\n";
+                if (nodetype == "v")
+                    pag->addDummyValNode(nodeId);
+                else if (nodetype == "o")
+                {
+                    const MemObj* mem = pag->addDummyMemObj(nodeId, NULL);
+                    pag->addFIObjNode(mem);
+                }
+                else
+                    assert(false && "format not support, pls specify node type");
+            }
 
-			// do consider gep edge
-			else if (token_count == 4) {
-				NodeID nodeSrc;
-				NodeID nodeDst;
-				Size_t offsetOrCSId;
-				string edge;
-				istringstream ss(line);
-				ss >> nodeSrc;
-				ss >> edge;
-				ss >> nodeDst;
-				ss >> offsetOrCSId;
-				outs() << "reading edge :" << nodeSrc << " " << edge << " "
-						<< nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
-				addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-			} else {
-				if (!line.empty()) {
-					outs() << "format not supported, token count = "
-							<< token_count << "\n";
-					assert(false && "format not supported");
-				}
-			}
-		}
-		myfile.close();
-	}
+            // do consider gep edge
+            else if (token_count == 4)
+            {
+                NodeID nodeSrc;
+                NodeID nodeDst;
+                Size_t offsetOrCSId;
+                string edge;
+                istringstream ss(line);
+                ss >> nodeSrc;
+                ss >> edge;
+                ss >> nodeDst;
+                ss >> offsetOrCSId;
+                outs() << "reading edge :" << nodeSrc << " " << edge << " "
+                       << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
+                addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
+            }
+            else
+            {
+                if (!line.empty())
+                {
+                    outs() << "format not supported, token count = "
+                           << token_count << "\n";
+                    assert(false && "format not supported");
+                }
+            }
+        }
+        myfile.close();
+    }
 
-	else
-		outs() << "Unable to open file\n";
+    else
+        outs() << "Unable to open file\n";
 
-	/// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
-	u32_t lower_bound = gepNodeNumIndex;
-	for(u32_t i = 0; i < lower_bound; i++)
-		pag->incNodeNum();
+    /// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
+    u32_t lower_bound = gepNodeNumIndex;
+    for(u32_t i = 0; i < lower_bound; i++)
+        pag->incNodeNum();
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
-	return pag;
+    return pag;
 }
 
 /*!
  * Add PAG edge according to a file format
  */
 void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 Size_t offsetOrCSId, std::string edge) {
+                                 Size_t offsetOrCSId, std::string edge)
+{
 
     //check whether these two nodes available
     PAGNode* srcNode = pag->getPAGNode(srcID);
     PAGNode* dstNode = pag->getPAGNode(dstID);
 
     /// sanity check for PAG from txt
-	assert(SVFUtil::isa<ValPN>(dstNode) && "dst not an value node?");
+    assert(SVFUtil::isa<ValPN>(dstNode) && "dst not an value node?");
     if(edge=="addr")
-    		assert(SVFUtil::isa<ObjPN>(srcNode) && "src not an value node?");
+        assert(SVFUtil::isa<ObjPN>(srcNode) && "src not an value node?");
     else
-		assert(!SVFUtil::isa<ObjPN>(srcNode) && "src not an object node?");
+        assert(!SVFUtil::isa<ObjPN>(srcNode) && "src not an object node?");
 
-    if (edge == "addr"){
+    if (edge == "addr")
+    {
         pag->addAddrPE(srcID, dstID);
     }
     else if (edge == "copy")

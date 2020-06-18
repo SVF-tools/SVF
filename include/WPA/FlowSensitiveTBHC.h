@@ -20,7 +20,8 @@ class SVFModule;
 /*!
  * Flow sensitive whole program pointer analysis with type-based heap cloning.
  */
-class FlowSensitiveTBHC : public FlowSensitive, public TypeBasedHeapCloning {
+class FlowSensitiveTBHC : public FlowSensitive, public TypeBasedHeapCloning
+{
 public:
     /// Returns raw ctir metadata of the instruction behind a SVFG node.
     /// Wraps getRawCTirMetadata(const Value *). Returns null if it doesn't exist.
@@ -37,17 +38,20 @@ public:
     virtual void finalize() override;
 
     /// Get PTA name
-    virtual const std::string PTAName() const override{
+    virtual const std::string PTAName() const override
+    {
         return "FSTBHC";
     }
 
     /// For LLVM RTTI.
-    static inline bool classof(const FlowSensitiveTBHC *) {
+    static inline bool classof(const FlowSensitiveTBHC *)
+    {
         return true;
     }
 
     /// For LLVM RTTI.
-    static inline bool classof(const PointerAnalysis *pta) {
+    static inline bool classof(const PointerAnalysis *pta)
+    {
         return pta->getAnalysisTy() == FSTBHC_WPA;
     }
 

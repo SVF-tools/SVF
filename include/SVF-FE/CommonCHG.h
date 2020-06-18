@@ -15,9 +15,11 @@ typedef std::set<const GlobalValue*> VTableSet;
 typedef std::set<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
-class CommonCHGraph {
+class CommonCHGraph
+{
 public:
-    enum CHGKind {
+    enum CHGKind
+    {
         Standard,
         DI
     };
@@ -28,7 +30,8 @@ public:
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
     virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
 
-    CHGKind getKind(void) const {
+    CHGKind getKind(void) const
+    {
         return kind;
     }
 

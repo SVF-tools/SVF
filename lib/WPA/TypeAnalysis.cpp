@@ -42,39 +42,47 @@ using namespace std;
 llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Generate ICFG graph"));
 
 /// Initialize analysis
-void TypeAnalysis::initialize(SVFModule* svfModule) {
+void TypeAnalysis::initialize(SVFModule* svfModule)
+{
     Andersen::initialize(svfModule);
-	if (genICFG) {
-		icfg = PAG::getPAG()->getICFG();
-		icfg->dump("icfg_initial");
-		icfg->dump("vfg_initial");
-		if (print_stat){
-			ICFGStat stat(icfg);
-			stat.performStat();
-		}
-	}
+    if (genICFG)
+    {
+        icfg = PAG::getPAG()->getICFG();
+        icfg->dump("icfg_initial");
+        icfg->dump("vfg_initial");
+        if (print_stat)
+        {
+            ICFGStat stat(icfg);
+            stat.performStat();
+        }
+    }
 }
 
 /// Finalize analysis
-void TypeAnalysis::finalize() {
+void TypeAnalysis::finalize()
+{
     Andersen::finalize();
-	if (print_stat)
-		dumpCHAStats();
+    if (print_stat)
+        dumpCHAStats();
 }
 
-void TypeAnalysis::analyze(SVFModule* svfModule){
-	initialize(svfModule);
+void TypeAnalysis::analyze(SVFModule* svfModule)
+{
+    initialize(svfModule);
     CallEdgeMap newEdges;
-	callGraphSolveBasedOnCHA(getIndirectCallsites(), newEdges);
-	finalize();
+    callGraphSolveBasedOnCHA(getIndirectCallsites(), newEdges);
+    finalize();
 }
 
-void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges) {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter) {
+void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
+{
+    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    {
         const CallBlockNode* cbn = iter->first;
-    	CallSite cs = cbn->getCallSite();
-        if (isVirtualCallSite(cs)) {
-        		virtualCallSites.insert(cs);
+        CallSite cs = cbn->getCallSite();
+        if (isVirtualCallSite(cs))
+        {
+            virtualCallSites.insert(cs);
             const Value *vtbl = getVCallVtblPtr(cs);
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;
@@ -85,10 +93,12 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
 }
 
 
-void TypeAnalysis::dumpCHAStats() {
+void TypeAnalysis::dumpCHAStats()
+{
 
     const CHGraph *chgraph = SVFUtil::dyn_cast<CHGraph>(getCHGraph());
-    if (chgraph == nullptr) {
+    if (chgraph == nullptr)
+    {
         SVFUtil::errs() << "dumpCHAStats only implemented for standard CHGraph.\n";
         return;
     }
@@ -96,7 +106,8 @@ void TypeAnalysis::dumpCHAStats() {
     s32_t pure_abstract_class_num = 0,
           multi_inheritance_class_num = 0;
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it) {
+            it != eit; ++it)
+    {
         CHNode *node = it->second;
         outs() << "class " << node->getName() << "\n";
         if (node->isPureAbstract())
@@ -121,7 +132,8 @@ void TypeAnalysis::dumpCHAStats() {
           pure_abstract = 0;
     set<const SVFFunction*> allVirtualFunctions;
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it) {
+            it != eit; ++it)
+    {
         CHNode *node = it->second;
         if (node->isPureAbstract())
             pure_abstract++;
@@ -129,17 +141,21 @@ void TypeAnalysis::dumpCHAStats() {
         s32_t vfuncs_size = 0;
         const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
         for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
-                veit = vecs.end(); vit != veit; ++vit) {
+                veit = vecs.end(); vit != veit; ++vit)
+        {
             vfuncs_size += (*vit).size();
             for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
-                    feit = (*vit).end(); fit != feit; ++fit) {
+                    feit = (*vit).end(); fit != feit; ++fit)
+            {
                 const SVFFunction* func = *fit;
                 allVirtualFunctions.insert(func);
             }
         }
-        if (vfuncs_size > 0) {
+        if (vfuncs_size > 0)
+        {
             vtblnum++;
-            if (vfuncs_size > vtbl_max) {
+            if (vfuncs_size > vtbl_max)
+            {
                 vtbl_max = vfuncs_size;
             }
         }

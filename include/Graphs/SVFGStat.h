@@ -42,7 +42,8 @@
 
 class MemSSA;
 
-class MemSSAStat : public PTAStat {
+class MemSSAStat : public PTAStat
+{
 
 public:
     static const char* TotalTimeOfConstructMemSSA;	///< Total time for constructing memory SSA
@@ -72,7 +73,8 @@ public:
 
     MemSSAStat(MemSSA*);
 
-    virtual ~MemSSAStat() {
+    virtual ~MemSSAStat()
+    {
 
     }
     virtual void performStat();
@@ -84,7 +86,8 @@ private:
 };
 
 
-class SVFGStat : public PTAStat {
+class SVFGStat : public PTAStat
+{
 public:
     typedef std::set<const SVFGNode*> SVFGNodeSet;
     typedef std::set<const SVFGEdge*> SVFGEdgeSet;
@@ -100,43 +103,53 @@ public:
 
     virtual void performSCCStat(SVFGEdgeSet insensitiveCalRetEdges);
 
-    void dirVFEdgeStart() {
+    void dirVFEdgeStart()
+    {
         connectDirSVFGEdgeTimeStart = CLOCK_IN_MS();
     }
 
-    void dirVFEdgeEnd() {
+    void dirVFEdgeEnd()
+    {
         connectDirSVFGEdgeTimeEnd = CLOCK_IN_MS();
     }
 
-    void indVFEdgeStart() {
+    void indVFEdgeStart()
+    {
         connectIndSVFGEdgeTimeStart = CLOCK_IN_MS();
     }
 
-    void indVFEdgeEnd() {
+    void indVFEdgeEnd()
+    {
         connectIndSVFGEdgeTimeEnd = CLOCK_IN_MS();
     }
 
-    void TLVFNodeStart() {
+    void TLVFNodeStart()
+    {
         addTopLevelNodeTimeStart = CLOCK_IN_MS();
     }
 
-    void TLVFNodeEnd() {
+    void TLVFNodeEnd()
+    {
         addTopLevelNodeTimeEnd = CLOCK_IN_MS();
     }
 
-    void ATVFNodeStart() {
+    void ATVFNodeStart()
+    {
         addAddrTakenNodeTimeStart = CLOCK_IN_MS();
     }
 
-    void ATVFNodeEnd() {
+    void ATVFNodeEnd()
+    {
         addAddrTakenNodeTimeEnd = CLOCK_IN_MS();
     }
 
-    void sfvgOptStart() {
+    void sfvgOptStart()
+    {
         svfgOptTimeStart = CLOCK_IN_MS();
     }
 
-    void sfvgOptEnd() {
+    void sfvgOptEnd()
+    {
         svfgOptTimeEnd = CLOCK_IN_MS();
     }
 
@@ -217,28 +230,36 @@ private:
     SVFGNodeSet	sinks;
 
 public:
-    inline void addToSources(const SVFGNode* node) {
+    inline void addToSources(const SVFGNode* node)
+    {
         sources.insert(node);
     }
-    inline void addToSinks(const SVFGNode* node) {
+    inline void addToSinks(const SVFGNode* node)
+    {
         sinks.insert(node);
     }
-    inline void addToForwardSlice(const SVFGNode* node) {
+    inline void addToForwardSlice(const SVFGNode* node)
+    {
         forwardSlice.insert(node);
     }
-    inline void addToBackwardSlice(const SVFGNode* node) {
+    inline void addToBackwardSlice(const SVFGNode* node)
+    {
         backwardSlice.insert(node);
     }
-    inline bool inForwardSlice(const SVFGNode* node) const {
+    inline bool inForwardSlice(const SVFGNode* node) const
+    {
         return forwardSlice.find(node)!=forwardSlice.end();
     }
-    inline bool inBackwardSlice(const SVFGNode* node) const {
+    inline bool inBackwardSlice(const SVFGNode* node) const
+    {
         return backwardSlice.find(node)!=backwardSlice.end();
     }
-    inline bool isSource(const SVFGNode* node) const {
+    inline bool isSource(const SVFGNode* node) const
+    {
         return sources.find(node)!=sources.end();
     }
-    inline bool isSink(const SVFGNode* node) const {
+    inline bool isSink(const SVFGNode* node) const
+    {
         return sinks.find(node)!=sinks.end();
     }
 };

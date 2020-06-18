@@ -33,17 +33,19 @@
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),
-                                   llvm::cl::desc("Validate memory leak tests"));
+        llvm::cl::desc("Validate memory leak tests"));
 
 /*!
  * Initialize sources
  */
-void LeakChecker::initSrcs() {
+void LeakChecker::initSrcs()
+{
 
     PAG* pag = getPAG();
     ICFG* icfg = pag->getICFG();
     for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
-            eit = pag->getCallSiteRets().end(); it!=eit; ++it) {
+            eit = pag->getCallSiteRets().end(); it!=eit; ++it)
+    {
         const RetBlockNode* cs = it->first;
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction p = malloc is in a dead function, then program won't allocate this memory
@@ -52,42 +54,49 @@ void LeakChecker::initSrcs() {
 
         PTACallGraph::FunctionSet callees;
         getCallgraph()->getCallees(cs->getCallBlockNode(),callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++){
-			const SVFFunction* fun = *cit;
-			if (isSourceLikeFun(fun)) {
-				CSWorkList worklist;
-				SVFGNodeBS visited;
-				worklist.push(it->first->getCallBlockNode());
-				while (!worklist.empty()) {
-					const CallBlockNode* cs = worklist.pop();
-					const RetBlockNode* retBlockNode = icfg->getRetBlockNode(
-							cs->getCallSite().getInstruction());
-					const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
-					const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
-					if (visited.test(node->getId()) == 0)
-						visited.set(node->getId());
-					else
-						continue;
+        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        {
+            const SVFFunction* fun = *cit;
+            if (isSourceLikeFun(fun))
+            {
+                CSWorkList worklist;
+                SVFGNodeBS visited;
+                worklist.push(it->first->getCallBlockNode());
+                while (!worklist.empty())
+                {
+                    const CallBlockNode* cs = worklist.pop();
+                    const RetBlockNode* retBlockNode = icfg->getRetBlockNode(
+                                                           cs->getCallSite().getInstruction());
+                    const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
+                    const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
+                    if (visited.test(node->getId()) == 0)
+                        visited.set(node->getId());
+                    else
+                        continue;
 
-					CallSiteSet csSet;
-					// if this node is in an allocation wrapper, find all its call nodes
-					if (isInAWrapper(node, csSet)) {
-						for (CallSiteSet::iterator it = csSet.begin(), eit =
-								csSet.end(); it != eit; ++it) {
-							worklist.push(*it);
-						}
-					}
-					// otherwise, this is the source we are interested
-					else {
-						// exclude sources in dead functions
-						if (isPtrInDeadFunction(
-								cs->getCallSite().getInstruction()) == false) {
-							addToSources(node);
-							addSrcToCSID(node, cs);
-						}
-					}
-				}
-			}
+                    CallSiteSet csSet;
+                    // if this node is in an allocation wrapper, find all its call nodes
+                    if (isInAWrapper(node, csSet))
+                    {
+                        for (CallSiteSet::iterator it = csSet.begin(), eit =
+                                    csSet.end(); it != eit; ++it)
+                        {
+                            worklist.push(*it);
+                        }
+                    }
+                    // otherwise, this is the source we are interested
+                    else
+                    {
+                        // exclude sources in dead functions
+                        if (isPtrInDeadFunction(
+                                    cs->getCallSite().getInstruction()) == false)
+                        {
+                            addToSources(node);
+                            addSrcToCSID(node, cs);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -96,47 +105,56 @@ void LeakChecker::initSrcs() {
 /*!
  * Initialize sinks
  */
-void LeakChecker::initSnks() {
+void LeakChecker::initSnks()
+{
 
     PAG* pag = getPAG();
 
     for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
-            eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it) {
+            eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
+    {
 
         PTACallGraph::FunctionSet callees;
         getCallgraph()->getCallees(it->first,callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++){
-			const SVFFunction* fun = *cit;
-			if (isSinkLikeFun(fun)) {
-				PAG::PAGNodeList& arglist = it->second;
-				assert(!arglist.empty() && "no actual parameter at deallocation site?");
-				/// we only pick the first parameter of all the actual parameters
-				const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(), it->first);
-				addToSinks(snk);
-			}
+        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        {
+            const SVFFunction* fun = *cit;
+            if (isSinkLikeFun(fun))
+            {
+                PAG::PAGNodeList& arglist = it->second;
+                assert(!arglist.empty() && "no actual parameter at deallocation site?");
+                /// we only pick the first parameter of all the actual parameters
+                const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(), it->first);
+                addToSinks(snk);
+            }
         }
     }
 }
 
 
-void LeakChecker::reportNeverFree(const SVFGNode* src) {
+void LeakChecker::reportNeverFree(const SVFGNode* src)
+{
     const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                    << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
-void LeakChecker::reportPartialLeak(const SVFGNode* src) {
+void LeakChecker::reportPartialLeak(const SVFGNode* src)
+{
     const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-           << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                    << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
 }
 
-void LeakChecker::reportBug(ProgSlice* slice) {
+void LeakChecker::reportBug(ProgSlice* slice)
+{
 
-    if(isAllPathReachable() == false && isSomePathReachable() == false) {
+    if(isAllPathReachable() == false && isSomePathReachable() == false)
+    {
         reportNeverFree(slice->getSource());
     }
-    else if (isAllPathReachable() == false && isSomePathReachable() == true) {
+    else if (isAllPathReachable() == false && isSomePathReachable() == true)
+    {
         reportPartialLeak(slice->getSource());
         SVFUtil::errs() << "\t\t conditional free path: \n" << slice->evalFinalCond() << "\n";
         slice->annotatePaths();
@@ -150,7 +168,8 @@ void LeakChecker::reportBug(ProgSlice* slice) {
 /*!
  * Validate test cases for regression test purpose
  */
-void LeakChecker::testsValidation(const ProgSlice* slice) {
+void LeakChecker::testsValidation(const ProgSlice* slice)
+{
     const SVFGNode* source = slice->getSource();
     const CallBlockNode* cs = getSrcCSID(source);
     const SVFFunction* fun = getCallee(cs->getCallSite());
@@ -162,33 +181,40 @@ void LeakChecker::testsValidation(const ProgSlice* slice) {
 }
 
 
-void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun) {
+void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun)
+{
 
     const CallBlockNode* cs = getSrcCSID(source);
 
     bool success = false;
 
-    if(fun->getName() == "SAFEMALLOC") {
+    if(fun->getName() == "SAFEMALLOC")
+    {
         if(isAllPathReachable() == true && isSomePathReachable() == true)
             success = true;
     }
-    else if(fun->getName() == "NFRMALLOC") {
+    else if(fun->getName() == "NFRMALLOC")
+    {
         if(isAllPathReachable() == false && isSomePathReachable() == false)
             success = true;
     }
-    else if(fun->getName() == "PLKMALLOC") {
+    else if(fun->getName() == "PLKMALLOC")
+    {
         if(isAllPathReachable() == false && isSomePathReachable() == true)
             success = true;
     }
-    else if(fun->getName() == "CLKMALLOC") {
+    else if(fun->getName() == "CLKMALLOC")
+    {
         if(isAllPathReachable() == false && isSomePathReachable() == false)
             success = true;
     }
     else if(fun->getName() == "NFRLEAKFP" || fun->getName() == "PLKLEAKFP"
-            || fun->getName() == "LEAKFN") {
+            || fun->getName() == "LEAKFN")
+    {
         return;
     }
-    else {
+    else
+    {
         writeWrnMsg("\t can not validate, check function not found, please put it at the right place!!");
         return;
     }
@@ -199,37 +225,44 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
                << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
-    else{
-    	SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-               << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
-		assert(false && "test case failed!");
+    else
+    {
+        SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
+                        << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+        assert(false && "test case failed!");
     }
 }
 
-void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun) {
+void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun)
+{
 
     const CallBlockNode* cs = getSrcCSID(source);
 
     bool expectedFailure = false;
 
-    if(fun->getName() == "NFRLEAKFP") {
+    if(fun->getName() == "NFRLEAKFP")
+    {
         if(isAllPathReachable() == false && isSomePathReachable() == false)
             expectedFailure = true;
     }
-    else if(fun->getName() == "PLKLEAKFP") {
+    else if(fun->getName() == "PLKLEAKFP")
+    {
         if(isAllPathReachable() == false && isSomePathReachable() == true)
             expectedFailure = true;
     }
-    else if(fun->getName() == "LEAKFN") {
+    else if(fun->getName() == "LEAKFN")
+    {
         if(isAllPathReachable() == true && isSomePathReachable() == true)
             expectedFailure = true;
     }
     else if(fun->getName() == "SAFEMALLOC" || fun->getName() == "NFRMALLOC"
-            || fun->getName() == "PLKMALLOC" || fun->getName() == "CLKLEAKFN") {
+            || fun->getName() == "PLKMALLOC" || fun->getName() == "CLKLEAKFN")
+    {
         return;
     }
-    else {
+    else
+    {
         writeWrnMsg("\t can not validate, check function not found, please put it at the right place!!");
         return;
     }
@@ -240,11 +273,12 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
                << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
                << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
-    else{
-		SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
-				<< " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-               << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
-		assert(false && "test case failed!");
+    else
+    {
+        SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
+                        << " check <src id:" << source->getId()
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
+                        << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+        assert(false && "test case failed!");
     }
 }

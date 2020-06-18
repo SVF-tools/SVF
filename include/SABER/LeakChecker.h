@@ -36,14 +36,16 @@
 /*!
  * Static Memory Leak Detector
  */
-class LeakChecker : public SrcSnkDDA {
+class LeakChecker : public SrcSnkDDA
+{
 
 public:
     typedef std::map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
     typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
-    enum LEAK_TYPE {
+    enum LEAK_TYPE
+    {
         NEVER_FREE_LEAK,
         CONTEXT_LEAK,
         PATH_LEAK,
@@ -51,14 +53,17 @@ public:
     };
 
     /// Constructor
-    LeakChecker() {
+    LeakChecker()
+    {
     }
     /// Destructor
-    virtual ~LeakChecker() {
+    virtual ~LeakChecker()
+    {
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module) {
+    virtual bool runOnModule(SVFModule* module)
+    {
         /// start analysis
         analyze(module);
         return false;
@@ -70,19 +75,23 @@ public:
     virtual void initSrcs();
     virtual void initSnks();
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const SVFFunction* fun) {
+    virtual inline bool isSourceLikeFun(const SVFFunction* fun)
+    {
         return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const SVFFunction* fun) {
+    virtual inline bool isSinkLikeFun(const SVFFunction* fun)
+    {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
     /// A SVFG node is source if it is an actualRet at malloc site
-    inline bool isSource(const SVFGNode* node) {
+    inline bool isSource(const SVFGNode* node)
+    {
         return getSources().find(node)!=getSources().end();
     }
     /// A SVFG node is source if it is an actual parameter at dealloca site
-    inline bool isSink(const SVFGNode* node) {
+    inline bool isSink(const SVFGNode* node)
+    {
         return getSinks().find(node)!=getSinks().end();
     }
     //@}
@@ -102,10 +111,12 @@ protected:
 
     /// Record a source to its callsite
     //@{
-    inline void addSrcToCSID(const SVFGNode* src, const CallBlockNode* cs) {
+    inline void addSrcToCSID(const SVFGNode* src, const CallBlockNode* cs)
+    {
         srcToCSIDMap[src] = cs;
     }
-    inline const CallBlockNode* getSrcCSID(const SVFGNode* src) {
+    inline const CallBlockNode* getSrcCSID(const SVFGNode* src)
+    {
         SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;

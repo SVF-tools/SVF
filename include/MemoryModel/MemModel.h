@@ -35,7 +35,8 @@
 
 
 /// Symbol types
-enum SYMTYPE {
+enum SYMTYPE
+{
     BlackHole,
     ConstantObj,
     BlkPtr,
@@ -49,7 +50,8 @@ enum SYMTYPE {
 /*!
  * Struct information
  */
-class StInfo {
+class StInfo
+{
 
 private:
     /// flattened field indices of a struct
@@ -68,55 +70,67 @@ private:
 
 public:
     /// Constructor
-    StInfo() {
+    StInfo()
+    {
     }
     /// Destructor
-    ~StInfo() {
+    ~StInfo()
+    {
     }
 
-    static inline void setMaxFieldLimit(u32_t limit) {
+    static inline void setMaxFieldLimit(u32_t limit)
+    {
         maxFieldLimit = limit;
     }
 
-    static inline u32_t getMaxFieldLimit() {
+    static inline u32_t getMaxFieldLimit()
+    {
         return maxFieldLimit;
     }
 
     /// Get method for fields of a struct
     //{@
-	inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx) {
-		return fldIdx2TypeMap[fldIdx];
-	}
-	inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset) {
-		return offset2TypeMap[offset];
-	}
-	inline std::vector<u32_t>& getFieldIdxVec() {
+    inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx)
+    {
+        return fldIdx2TypeMap[fldIdx];
+    }
+    inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset)
+    {
+        return offset2TypeMap[offset];
+    }
+    inline std::vector<u32_t>& getFieldIdxVec()
+    {
         return fldIdxVec;
     }
-	inline std::vector<u32_t>& getFieldOffsetVec() {
+    inline std::vector<u32_t>& getFieldOffsetVec()
+    {
         return foffset;
     }
-	inline std::vector<FieldInfo>& getFlattenFieldInfoVec() {
+    inline std::vector<FieldInfo>& getFlattenFieldInfoVec()
+    {
         return finfo;
     }
     //@}
 
     /// Add field (index and offset) with its corresponding type
-	inline void addFldWithType(u32_t fldIdx, u32_t offset, const llvm::Type* type) {
-		fldIdxVec.push_back(fldIdx);
-		foffset.push_back(offset);
-		fldIdx2TypeMap[fldIdx] = type;
-		offset2TypeMap[offset] = type;
-	}
+    inline void addFldWithType(u32_t fldIdx, u32_t offset, const llvm::Type* type)
+    {
+        fldIdxVec.push_back(fldIdx);
+        foffset.push_back(offset);
+        fldIdx2TypeMap[fldIdx] = type;
+        offset2TypeMap[offset] = type;
+    }
 };
 
 /*!
  * Type Info of an abstract memory object
  */
-class ObjTypeInfo {
+class ObjTypeInfo
+{
 
 public:
-    typedef enum {
+    typedef enum
+    {
         FUNCTION_OBJ = 0x1,  // object is a function
         GLOBVAR_OBJ = 0x2,  // object is a global variable
         STATIC_OBJ = 0x4,  // object is a static variable allocated before main
@@ -143,14 +157,17 @@ public:
 
     /// Constructors
     ObjTypeInfo(const Value* val, const Type* t, u32_t max) :
-        type(t), flags(0), maxOffsetLimit(max) {
+        type(t), flags(0), maxOffsetLimit(max)
+    {
     }
     /// Constructor
-    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max) {
+    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max)
+    {
 
     }
     /// Destructor
-    virtual ~ObjTypeInfo() {
+    virtual ~ObjTypeInfo()
+    {
 
     }
     /// Initialize the object type
@@ -167,45 +184,55 @@ public:
     void analyzeHeapStaticObjType(const Value* val);
 
     /// Get LLVM type
-    inline const Type* getType() const{
+    inline const Type* getType() const
+    {
         return type;
     }
 
     /// Get max field offset limit
-    inline u32_t getMaxFieldOffsetLimit() {
+    inline u32_t getMaxFieldOffsetLimit()
+    {
         return maxOffsetLimit;
     }
 
     /// Get max field offset limit
-    inline void setMaxFieldOffsetLimit(u32_t limit) {
+    inline void setMaxFieldOffsetLimit(u32_t limit)
+    {
         maxOffsetLimit = limit;
     }
 
     /// Flag for this object type
     //@{
-    inline void setFlag(MEMTYPE mask) {
+    inline void setFlag(MEMTYPE mask)
+    {
         flags |= mask;
     }
-    inline bool hasFlag(MEMTYPE mask) {
+    inline bool hasFlag(MEMTYPE mask)
+    {
         return (flags & mask) == mask;
     }
     //@}
 
     /// Object attributes
     //@{
-    inline bool isFunction() {
+    inline bool isFunction()
+    {
         return hasFlag(FUNCTION_OBJ);
     }
-    inline bool isGlobalObj() {
+    inline bool isGlobalObj()
+    {
         return hasFlag(GLOBVAR_OBJ);
     }
-    inline bool isStaticObj() {
+    inline bool isStaticObj()
+    {
         return hasFlag(STATIC_OBJ);
     }
-    inline bool isStack() {
+    inline bool isStack()
+    {
         return hasFlag(STACK_OBJ);
     }
-    inline bool isHeap() {
+    inline bool isHeap()
+    {
         return hasFlag(HEAP_OBJ);
     }
     //@}
@@ -213,28 +240,36 @@ public:
     /// Object attributes (noted that an object can be a nested compound types)
     /// e.g. both isStruct and isArray can return true
     //@{
-    inline bool isVarStruct() {
+    inline bool isVarStruct()
+    {
         return hasFlag(VAR_STRUCT_OBJ);
     }
-    inline bool isConstStruct() {
+    inline bool isConstStruct()
+    {
         return hasFlag(CONST_STRUCT_OBJ);
     }
-    inline bool isStruct() {
+    inline bool isStruct()
+    {
         return hasFlag(VAR_STRUCT_OBJ) || hasFlag(CONST_STRUCT_OBJ);
     }
-    inline bool isVarArray() {
+    inline bool isVarArray()
+    {
         return hasFlag(VAR_ARRAY_OBJ);
     }
-    inline bool isConstArray() {
+    inline bool isConstArray()
+    {
         return  hasFlag(CONST_ARRAY_OBJ);
     }
-    inline bool isArray() {
+    inline bool isArray()
+    {
         return hasFlag(VAR_ARRAY_OBJ) || hasFlag(CONST_ARRAY_OBJ);
     }
-    inline bool isConstant() {
+    inline bool isConstant()
+    {
         return hasFlag(CONST_OBJ);
     }
-    inline bool hasPtrObj() {
+    inline bool hasPtrObj()
+    {
         return hasFlag(HASPTR_OBJ);
     }
     virtual bool isNonPtrFieldObj(const LocationSet& ls);
@@ -244,7 +279,8 @@ public:
 /*!
  * Memory Object
  */
-class MemObj {
+class MemObj
+{
 
 private:
     /// The unique pointer value refer this object
@@ -263,7 +299,8 @@ public:
     MemObj(SymID id, const Type* type = NULL);
 
     /// Destructor
-    ~MemObj() {
+    ~MemObj()
+    {
         destroy();
     }
 
@@ -277,27 +314,32 @@ public:
     const llvm::Type* getType() const;
 
     /// Get max field offset limit
-    inline Size_t getMaxFieldOffsetLimit() const {
+    inline Size_t getMaxFieldOffsetLimit() const
+    {
         return typeInfo->getMaxFieldOffsetLimit();
     }
 
     /// Get the reference value to this object
-    inline const Value *getRefVal() const {
+    inline const Value *getRefVal() const
+    {
         return refVal;
     }
 
     /// Get the memory object id
-    inline SymID getSymId() const {
+    inline SymID getSymId() const
+    {
         return GSymID;
     }
 
     /// Return true if its field limit is 0
-    inline bool isFieldInsensitive() const {
+    inline bool isFieldInsensitive() const
+    {
         return getMaxFieldOffsetLimit() == 0;
     }
 
     /// Set the memory object to be field insensitive
-    inline void setFieldInsensitive() {
+    inline void setFieldInsensitive()
+    {
         typeInfo->setMaxFieldOffsetLimit(0);
     }
 
@@ -309,53 +351,68 @@ public:
 
     /// object attributes methods
     //@{
-    inline bool isFunction() const {
+    inline bool isFunction() const
+    {
         return typeInfo->isFunction();
     }
-    inline bool isGlobalObj() const {
+    inline bool isGlobalObj() const
+    {
         return typeInfo->isGlobalObj();
     }
-    inline bool isStaticObj() const {
+    inline bool isStaticObj() const
+    {
         return typeInfo->isStaticObj();
     }
-    inline bool isStack() const {
+    inline bool isStack() const
+    {
         return typeInfo->isStack();
     }
-    inline bool isHeap() const {
+    inline bool isHeap() const
+    {
         return typeInfo->isHeap();
     }
 
-    inline bool isStruct() const {
+    inline bool isStruct() const
+    {
         return typeInfo->isStruct();
     }
-    inline bool isArray() const {
+    inline bool isArray() const
+    {
         return typeInfo->isArray();
     }
-    inline bool isVarStruct() const {
+    inline bool isVarStruct() const
+    {
         return typeInfo->isVarStruct();
     }
-    inline bool isVarArray() const {
+    inline bool isVarArray() const
+    {
         return typeInfo->isVarArray();
     }
-    inline bool isConstStruct() const {
+    inline bool isConstStruct() const
+    {
         return typeInfo->isConstStruct();
     }
-    inline bool isConstArray() const {
+    inline bool isConstArray() const
+    {
         return typeInfo->isConstArray();
     }
-    inline bool isConstant() const {
+    inline bool isConstant() const
+    {
         return typeInfo->isConstant();
     }
-    inline bool hasPtrObj() const {
+    inline bool hasPtrObj() const
+    {
         return typeInfo->hasPtrObj();
     }
-    inline bool isNonPtrFieldObj(const LocationSet& ls) const {
+    inline bool isNonPtrFieldObj(const LocationSet& ls) const
+    {
         return typeInfo->isNonPtrFieldObj(ls);
     }
     //@}
 
     /// Operator overloading
-    inline bool operator==(const MemObj &mem) const {
+    inline bool operator==(const MemObj &mem) const
+    {
         return refVal == mem.getRefVal();
     }
 

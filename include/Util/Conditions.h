@@ -37,43 +37,54 @@
 /**
  * Using Cudd as conditions.
  */
-class BddCondManager {
+class BddCondManager
+{
 public:
 
     /// Constructor
-    BddCondManager() {
+    BddCondManager()
+    {
         m_bdd_mgr = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
     }
 
     /// Destructor
-    ~BddCondManager() {
+    ~BddCondManager()
+    {
         Cudd_Quit(m_bdd_mgr);
     }
 
-    DdNode* Cudd_bdd(u32_t i){
-    	return Cudd_bddIthVar(m_bdd_mgr, i);
+    DdNode* Cudd_bdd(u32_t i)
+    {
+        return Cudd_bddIthVar(m_bdd_mgr, i);
     }
-    inline unsigned BddVarNum() {
+    inline unsigned BddVarNum()
+    {
         return Cudd_ReadSize(m_bdd_mgr);
     }
 
-    inline DdNode* getTrueCond() const {
+    inline DdNode* getTrueCond() const
+    {
         return BddOne();
     }
-    inline DdNode* getFalseCond() const {
+    inline DdNode* getFalseCond() const
+    {
         return BddZero();
     }
 
-    inline u32_t getBDDMemUsage() {
+    inline u32_t getBDDMemUsage()
+    {
         return Cudd_ReadMemoryInUse(m_bdd_mgr);
     }
-    inline u32_t getCondNumber() {
+    inline u32_t getCondNumber()
+    {
         return Cudd_ReadNodeCount(m_bdd_mgr);
     }
-    inline u32_t getMaxLiveCondNumber() {
+    inline u32_t getMaxLiveCondNumber()
+    {
         return Cudd_ReadPeakLiveNodeCount(m_bdd_mgr);
     }
-    inline void markForRelease(DdNode* cond) {
+    inline void markForRelease(DdNode* cond)
+    {
         Cudd_RecursiveDeref(m_bdd_mgr,cond);
     }
     /// Operations on conditions.
@@ -93,17 +104,21 @@ public:
     void dump(DdNode* lhs, raw_ostream & O);
     std::string dumpStr(DdNode* lhs) const;
     /// print minterms and debug information for the Ddnode
-    inline void printMinterms(DdNode* d) {
+    inline void printMinterms(DdNode* d)
+    {
         Cudd_PrintMinterm(m_bdd_mgr,d);
     }
-    inline void printDbg(DdNode* d) {
+    inline void printDbg(DdNode* d)
+    {
         Cudd_PrintDebug(m_bdd_mgr,d,0,3);
     }
 private:
-    inline DdNode* BddOne() const	{
+    inline DdNode* BddOne() const
+    {
         return Cudd_ReadOne(m_bdd_mgr);
     }
-    inline DdNode* BddZero() const	{
+    inline DdNode* BddZero() const
+    {
         return Cudd_ReadLogicZero(m_bdd_mgr);
     }
 

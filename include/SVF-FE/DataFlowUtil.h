@@ -36,14 +36,17 @@
 /*!
  * Wrapper for SCEV collected from function pass ScalarEvolution
  */
-class PTASCEV {
+class PTASCEV
+{
 
 public:
     PTASCEV():scev(NULL), start(NULL), step(NULL),ptr(NULL),inloop(false),tripcount(0) {}
 
     /// Constructor
-    PTASCEV(const Value* p, const SCEV* s, ScalarEvolution* SE): scev(s),start(NULL), step(NULL), ptr(p), inloop(false), tripcount(0) {
-        if(const SCEVAddRecExpr* ar = SVFUtil::dyn_cast<SCEVAddRecExpr>(s)) {
+    PTASCEV(const Value* p, const SCEV* s, ScalarEvolution* SE): scev(s),start(NULL), step(NULL), ptr(p), inloop(false), tripcount(0)
+    {
+        if(const SCEVAddRecExpr* ar = SVFUtil::dyn_cast<SCEVAddRecExpr>(s))
+        {
             if (const SCEVConstant *startExpr = SVFUtil::dyn_cast<SCEVConstant>(ar->getStart()))
                 start = startExpr->getValue();
             if (const SCEVConstant *stepExpr = SVFUtil::dyn_cast<SCEVConstant>(ar->getStepRecurrence(*SE)))
@@ -53,12 +56,14 @@ public:
         }
     }
     /// Copy Constructor
-    PTASCEV(const PTASCEV& ptase): scev(ptase.scev), start(ptase.start), step(ptase.step), ptr(ptase.ptr), inloop(ptase.inloop),tripcount(ptase.tripcount) {
+    PTASCEV(const PTASCEV& ptase): scev(ptase.scev), start(ptase.start), step(ptase.step), ptr(ptase.ptr), inloop(ptase.inloop),tripcount(ptase.tripcount)
+    {
 
     }
 
     /// Destructor
-    virtual ~PTASCEV() {
+    virtual ~PTASCEV()
+    {
     }
 
     const SCEV *scev;
@@ -70,7 +75,8 @@ public:
 
     /// Enable compare operator to avoid duplicated item insertion in map or set
     /// to be noted that two vectors can also overload operator()
-    inline bool operator< (const PTASCEV& rhs) const {
+    inline bool operator< (const PTASCEV& rhs) const
+    {
         if(start!=rhs.start)
             return start < rhs.start;
         else if(step!=rhs.step)
@@ -83,8 +89,10 @@ public:
             return inloop < rhs.inloop;
     }
     /// Overloading operator=
-    inline PTASCEV& operator= (const PTASCEV& rhs) {
-        if(*this!=rhs) {
+    inline PTASCEV& operator= (const PTASCEV& rhs)
+    {
+        if(*this!=rhs)
+        {
             start = rhs.start;
             step = rhs.step;
             ptr = rhs.ptr;
@@ -94,11 +102,13 @@ public:
         return *this;
     }
     /// Overloading operator==
-    inline bool operator== (const PTASCEV& rhs) const {
+    inline bool operator== (const PTASCEV& rhs) const
+    {
         return (start == rhs.start && step == rhs.step && ptr == rhs.ptr && tripcount == rhs.tripcount && inloop == rhs.inloop);
     }
     /// Overloading operator==
-    inline bool operator!= (const PTASCEV& rhs) const {
+    inline bool operator!= (const PTASCEV& rhs) const
+    {
         return !(*this==rhs);
     }
 };
@@ -107,13 +117,15 @@ public:
 /*!
  * LoopInfo used in PTA
  */
-class PTALoopInfo : public LoopInfo {
+class PTALoopInfo : public LoopInfo
+{
 public:
 
     PTALoopInfo() : LoopInfo()
     {}
 
-    bool runOnLI(Function& fun) {
+    bool runOnLI(Function& fun)
+    {
         releaseMemory();
         DominatorTree dt;
         dt.recalculate(fun);
@@ -128,7 +140,8 @@ public:
  * (2) Dominator/PostDominator
  * (3) SCEV
  */
-class PTACFInfoBuilder {
+class PTACFInfoBuilder
+{
 
 public:
     typedef std::map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
@@ -136,33 +149,43 @@ public:
     typedef std::map<const Function*, PTALoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
 
     /// Constructor
-    PTACFInfoBuilder() {
+    PTACFInfoBuilder()
+    {
 
     }
     /// Destructor
-    ~PTACFInfoBuilder() {
-        for(FunToLoopInfoMap::iterator it = funToLoopInfoMap.begin(), eit = funToLoopInfoMap.end(); it!=eit; ++it) {
-            if(it->second != nullptr) {
+    ~PTACFInfoBuilder()
+    {
+        for(FunToLoopInfoMap::iterator it = funToLoopInfoMap.begin(), eit = funToLoopInfoMap.end(); it!=eit; ++it)
+        {
+            if(it->second != nullptr)
+            {
                 delete it->second;
             }
         }
-        for(FunToDTMap::iterator it = funToDTMap.begin(), eit = funToDTMap.end(); it!=eit; ++it) {
-            if(it->second != nullptr) {
+        for(FunToDTMap::iterator it = funToDTMap.begin(), eit = funToDTMap.end(); it!=eit; ++it)
+        {
+            if(it->second != nullptr)
+            {
                 delete it->second;
             }
         }
-        for(FunToPostDTMap::iterator it = funToPDTMap.begin(), eit = funToPDTMap.end(); it!=eit; ++it) {
-            if(it->second != nullptr) {
+        for(FunToPostDTMap::iterator it = funToPDTMap.begin(), eit = funToPDTMap.end(); it!=eit; ++it)
+        {
+            if(it->second != nullptr)
+            {
                 delete it->second;
             }
         }
     }
 
     /// Get loop info of a function
-    PTALoopInfo* getLoopInfo(const Function* f) {
+    PTALoopInfo* getLoopInfo(const Function* f)
+    {
         Function* fun = const_cast<Function*>(f);
         FunToLoopInfoMap::iterator it = funToLoopInfoMap.find(fun);
-        if(it==funToLoopInfoMap.end()) {
+        if(it==funToLoopInfoMap.end())
+        {
             PTALoopInfo* loopInfo = new PTALoopInfo();
             loopInfo->runOnLI(*fun);
             funToLoopInfoMap[fun] = loopInfo;
@@ -173,10 +196,12 @@ public:
     }
 
     /// Get post dominator tree of a function
-    PostDominatorTree* getPostDT(const Function* f) {
+    PostDominatorTree* getPostDT(const Function* f)
+    {
         Function* fun = const_cast<Function*>(f);
         FunToPostDTMap::iterator it = funToPDTMap.find(fun);
-        if(it==funToPDTMap.end()) {
+        if(it==funToPDTMap.end())
+        {
             PostDominatorTreeWrapperPass* postDT = new PostDominatorTreeWrapperPass();
             postDT->runOnFunction(*fun);
             PostDominatorTree * PDT = &(postDT->getPostDomTree());
@@ -188,10 +213,12 @@ public:
     }
 
     /// Get dominator tree of a function
-    DominatorTree* getDT(const Function* f) {
+    DominatorTree* getDT(const Function* f)
+    {
         Function* fun = const_cast<Function*>(f);
         FunToDTMap::iterator it = funToDTMap.find(fun);
-        if(it==funToDTMap.end()) {
+        if(it==funToDTMap.end())
+        {
             DominatorTree* dt = new DominatorTree();
             dt->recalculate(*fun);
             funToDTMap[fun] = dt;
@@ -210,7 +237,8 @@ private:
 /*!
  * Iterated dominance frontier
  */
-class IteratedDominanceFrontier: public llvm::DominanceFrontierBase<BasicBlock, false> {
+class IteratedDominanceFrontier: public llvm::DominanceFrontierBase<BasicBlock, false>
+{
 
 private:
     const DominanceFrontier *DF;
@@ -221,13 +249,16 @@ public:
     static char ID;
 
     IteratedDominanceFrontier() :
-    	DominanceFrontierBase(), DF(NULL) {
+        DominanceFrontierBase(), DF(NULL)
+    {
     }
 
-    virtual ~IteratedDominanceFrontier() {
+    virtual ~IteratedDominanceFrontier()
+    {
     }
 
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+    virtual void getAnalysisUsage(AnalysisUsage &AU) const
+    {
         AU.setPreservesAll();
         // AU.addRequired<DominanceFrontier>();
     }
@@ -238,7 +269,8 @@ public:
 //		return false;
 //	}
 
-    iterator getIDFSet(BasicBlock *B) {
+    iterator getIDFSet(BasicBlock *B)
+    {
         if (Frontiers.find(B) == Frontiers.end())
             calculate(B, *DF);
         return Frontiers.find(B);

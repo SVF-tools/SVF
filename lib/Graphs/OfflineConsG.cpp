@@ -37,13 +37,15 @@ static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
 /*!
  * Builder of offline constraint graph
  */
-void OfflineConsG::buildOfflineCG() {
-	LoadEdges loads;
-	StoreEdges stores;
+void OfflineConsG::buildOfflineCG()
+{
+    LoadEdges loads;
+    StoreEdges stores;
 
     // Add a copy edge between the ref node of src node and dst node
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = LoadCGEdgeSet.begin(), eit =
-            LoadCGEdgeSet.end(); it != eit; ++it) {
+                LoadCGEdgeSet.end(); it != eit; ++it)
+    {
         LoadCGEdge *load = SVFUtil::dyn_cast<LoadCGEdge>(*it);
         loads.insert(load);
         NodeID src = load->getSrcID();
@@ -52,7 +54,8 @@ void OfflineConsG::buildOfflineCG() {
     }
     // Add a copy edge between src node and the ref node of dst node
     for (ConstraintEdge::ConstraintEdgeSetTy::iterator it = StoreCGEdgeSet.begin(), eit =
-            StoreCGEdgeSet.end(); it != eit; ++it) {
+                StoreCGEdgeSet.end(); it != eit; ++it)
+    {
         StoreCGEdge *store = SVFUtil::dyn_cast<StoreCGEdge>(*it);
         stores.insert(store);
         NodeID src = store->getSrcID();
@@ -64,10 +67,12 @@ void OfflineConsG::buildOfflineCG() {
     dump("oCG_initial");
 
     // Remove load and store edges in offline constraint graph
-    for (LoadEdges::iterator it = loads.begin(), eit = loads.end(); it != eit; ++it) {
+    for (LoadEdges::iterator it = loads.begin(), eit = loads.end(); it != eit; ++it)
+    {
         removeLoadEdge(*it);
     }
-    for (StoreEdges::iterator it = stores.begin(), eit = stores.end(); it != eit; ++it) {
+    for (StoreEdges::iterator it = stores.begin(), eit = stores.end(); it != eit; ++it)
+    {
         removeStoreEdge(*it);
     }
 
@@ -79,7 +84,8 @@ void OfflineConsG::buildOfflineCG() {
  * Add a copy edge between the ref node of src node and dst node,
  * while meeting a LOAD constraint.
  */
-bool  OfflineConsG::addRefLoadEdge(NodeID src, NodeID dst) {
+bool  OfflineConsG::addRefLoadEdge(NodeID src, NodeID dst)
+{
     createRefNode(src);
     NodeID ref = nodeToRefMap[src];
     return addCopyCGEdge(ref, dst);
@@ -89,7 +95,8 @@ bool  OfflineConsG::addRefLoadEdge(NodeID src, NodeID dst) {
  * Add a copy edge between src node and the ref node of dst node,
  * while meeting a STORE constraint.
  */
-bool OfflineConsG::addRefStoreEdge(NodeID src, NodeID dst) {
+bool OfflineConsG::addRefStoreEdge(NodeID src, NodeID dst)
+{
     createRefNode(dst);
     NodeID ref = nodeToRefMap[dst];
     return addCopyCGEdge(src, ref);
@@ -98,7 +105,8 @@ bool OfflineConsG::addRefStoreEdge(NodeID src, NodeID dst) {
 /*!
  * Create a ref node for a constraint node if it does not have one
  */
-bool OfflineConsG::createRefNode(NodeID nodeId) {
+bool OfflineConsG::createRefNode(NodeID nodeId)
+{
     if (hasRef(nodeId))
         return false;
 
@@ -114,16 +122,19 @@ bool OfflineConsG::createRefNode(NodeID nodeId) {
  * Use a offline SCC detector to solve node relations in OCG.
  * Generally, the 'oscc' should be solved first.
  */
-void OfflineConsG::solveOfflineSCC(OSCC* oscc) {
-	// Build offline nodeToRepMap
-	buildOfflineMap(oscc);
+void OfflineConsG::solveOfflineSCC(OSCC* oscc)
+{
+    // Build offline nodeToRepMap
+    buildOfflineMap(oscc);
 }
 
 /*!
  * Build offline node to rep map, which only collect nodes having a ref node
  */
-void OfflineConsG::buildOfflineMap(OSCC* oscc) {
-    for (NodeToRepMap::const_iterator it = nodeToRefMap.begin(); it != nodeToRefMap.end(); ++it) {
+void OfflineConsG::buildOfflineMap(OSCC* oscc)
+{
+    for (NodeToRepMap::const_iterator it = nodeToRefMap.begin(); it != nodeToRefMap.end(); ++it)
+    {
         NodeID node = it->first;
         NodeID ref = getRef(node);
         NodeID rep = solveRep(oscc,oscc->repNode(ref));
@@ -136,11 +147,15 @@ void OfflineConsG::buildOfflineMap(OSCC* oscc) {
  * The rep nodes of offline constraint graph are possible to be 'ref' nodes.
  * These nodes should be replaced by one of its sub nodes which is not a ref node.
  */
-NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep) {
-    if (isaRef(rep)) {
+NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep)
+{
+    if (isaRef(rep))
+    {
         NodeBS subNodes = oscc->subNodes(rep);
-        for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt) {
-            if (isaRef(*subIt)) {
+        for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt)
+        {
+            if (isaRef(*subIt))
+            {
                 rep = *subIt;
                 break;
             }
@@ -152,7 +167,8 @@ NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep) {
 /*!
  * Dump offline constraint graph
  */
-void OfflineConsG::dump(std::string name) {
+void OfflineConsG::dump(std::string name)
+{
     if (OCGDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
@@ -161,111 +177,150 @@ void OfflineConsG::dump(std::string name) {
 
 // --- GraphTraits specialization for offline constraint graph ---
 
-namespace llvm {
-    template<>
-    struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*> {
+namespace llvm
+{
+template<>
+struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
+{
 
-        typedef ConstraintNode NodeType;
-        DOTGraphTraits(bool isSimple = false) :
-                DOTGraphTraits<PAG*>(isSimple) {
-        }
+    typedef ConstraintNode NodeType;
+    DOTGraphTraits(bool isSimple = false) :
+        DOTGraphTraits<PAG*>(isSimple)
+    {
+    }
 
-        /// Return name of the graph
-        static std::string getGraphName(OfflineConsG *graph) {
-            return "Offline Constraint Graph";
-        }
+    /// Return name of the graph
+    static std::string getGraphName(OfflineConsG *graph)
+    {
+        return "Offline Constraint Graph";
+    }
 
-        /// Return label of a VFG node with two display mode
-        /// Either you can choose to display the name of the value or the whole instruction
-        static std::string getNodeLabel(NodeType *n, OfflineConsG *graph) {
-            std::string str;
-            raw_string_ostream rawstr(str);
-            if (PAG::getPAG()->findPAGNode(n->getId())) {
-                PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-                bool briefDisplay = true;
-                bool nameDisplay = true;
+    /// Return label of a VFG node with two display mode
+    /// Either you can choose to display the name of the value or the whole instruction
+    static std::string getNodeLabel(NodeType *n, OfflineConsG *graph)
+    {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        if (PAG::getPAG()->findPAGNode(n->getId()))
+        {
+            PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
+            bool briefDisplay = true;
+            bool nameDisplay = true;
 
 
-                if (briefDisplay) {
-                    if (SVFUtil::isa<ValPN>(node)) {
-                        if (nameDisplay)
-                            rawstr << node->getId() << ":" << node->getValueName();
-                        else
-                            rawstr << node->getId();
-                    } else
+            if (briefDisplay)
+            {
+                if (SVFUtil::isa<ValPN>(node))
+                {
+                    if (nameDisplay)
+                        rawstr << node->getId() << ":" << node->getValueName();
+                    else
                         rawstr << node->getId();
-                } else {
-                    // print the whole value
-                    if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
-                        rawstr << *node->getValue();
-                    else
-                        rawstr << "";
-
                 }
-
-                return rawstr.str();
-            } else {
-                rawstr<< n->getId();
-                return rawstr.str();
+                else
+                    rawstr << node->getId();
             }
-        }
+            else
+            {
+                // print the whole value
+                if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
+                    rawstr << *node->getValue();
+                else
+                    rawstr << "";
 
-        static std::string getNodeAttributes(NodeType *n, OfflineConsG *graph) {
-            if (PAG::getPAG()->findPAGNode(n->getId())) {
-                PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-                if (SVFUtil::isa<ValPN>(node)) {
-                    if (SVFUtil::isa<GepValPN>(node))
-                        return "shape=hexagon";
-                    else if (SVFUtil::isa<DummyValPN>(node))
-                        return "shape=diamond";
-                    else
-                        return "shape=circle";
-                } else if (SVFUtil::isa<ObjPN>(node)) {
-                    if (SVFUtil::isa<GepObjPN>(node))
-                        return "shape=doubleoctagon";
-                    else if (SVFUtil::isa<FIObjPN>(node))
-                        return "shape=septagon";
-                    else if (SVFUtil::isa<DummyObjPN>(node))
-                        return "shape=Mcircle";
-                    else
-                        return "shape=doublecircle";
-                } else if (SVFUtil::isa<RetPN>(node)) {
-                    return "shape=Mrecord";
-                } else if (SVFUtil::isa<VarArgPN>(node)) {
-                    return "shape=octagon";
-                } else {
-                    assert(0 && "no such kind node!!");
-                }
-                return "";
-            } else {
-                return "shape=doublecircle";
             }
-        }
 
-        template<class EdgeIter>
-        static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, OfflineConsG *pag) {
-            ConstraintEdge* edge = *(EI.getCurrent());
-            assert(edge && "No edge found!!");
-            if (edge->getEdgeKind() == ConstraintEdge::Addr) {
-                return "color=green";
-            } else if (edge->getEdgeKind() == ConstraintEdge::Copy) {
-                return "color=black";
-            } else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
-                       || edge->getEdgeKind() == ConstraintEdge::VariantGep) {
-                return "color=purple";
-            } else if (edge->getEdgeKind() == ConstraintEdge::Store) {
-                return "color=blue";
-            } else if (edge->getEdgeKind() == ConstraintEdge::Load) {
-                return "color=red";
-            } else {
-                assert(0 && "No such kind edge!!");
+            return rawstr.str();
+        }
+        else
+        {
+            rawstr<< n->getId();
+            return rawstr.str();
+        }
+    }
+
+    static std::string getNodeAttributes(NodeType *n, OfflineConsG *graph)
+    {
+        if (PAG::getPAG()->findPAGNode(n->getId()))
+        {
+            PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
+            if (SVFUtil::isa<ValPN>(node))
+            {
+                if (SVFUtil::isa<GepValPN>(node))
+                    return "shape=hexagon";
+                else if (SVFUtil::isa<DummyValPN>(node))
+                    return "shape=diamond";
+                else
+                    return "shape=circle";
+            }
+            else if (SVFUtil::isa<ObjPN>(node))
+            {
+                if (SVFUtil::isa<GepObjPN>(node))
+                    return "shape=doubleoctagon";
+                else if (SVFUtil::isa<FIObjPN>(node))
+                    return "shape=septagon";
+                else if (SVFUtil::isa<DummyObjPN>(node))
+                    return "shape=Mcircle";
+                else
+                    return "shape=doublecircle";
+            }
+            else if (SVFUtil::isa<RetPN>(node))
+            {
+                return "shape=Mrecord";
+            }
+            else if (SVFUtil::isa<VarArgPN>(node))
+            {
+                return "shape=octagon";
+            }
+            else
+            {
+                assert(0 && "no such kind node!!");
             }
             return "";
         }
-
-        template<class EdgeIter>
-        static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI) {
-            return "";
+        else
+        {
+            return "shape=doublecircle";
         }
-    };
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, OfflineConsG *pag)
+    {
+        ConstraintEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+        if (edge->getEdgeKind() == ConstraintEdge::Addr)
+        {
+            return "color=green";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Copy)
+        {
+            return "color=black";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
+                 || edge->getEdgeKind() == ConstraintEdge::VariantGep)
+        {
+            return "color=purple";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Store)
+        {
+            return "color=blue";
+        }
+        else if (edge->getEdgeKind() == ConstraintEdge::Load)
+        {
+            return "color=red";
+        }
+        else
+        {
+            assert(0 && "No such kind edge!!");
+        }
+        return "";
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    {
+        return "";
+    }
+};
 }

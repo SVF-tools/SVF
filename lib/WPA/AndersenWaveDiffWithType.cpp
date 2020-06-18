@@ -7,16 +7,23 @@ AndersenWaveDiffWithType* AndersenWaveDiffWithType::diffWaveWithType = NULL;
 
 
 /// process "bitcast" CopyCGEdge
-void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge) {
+void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge)
+{
     NodeID srcId = edge->getSrcID();
     NodeID dstId = edge->getDstID();
-    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::Copy)) {
+    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::Copy))
+    {
         const Value *val = pag->getIntraPAGEdge(srcId, dstId, PAGEdge::Copy)->getValue();
-        if (val) {
-            if (const CastInst *castInst = SVFUtil::dyn_cast<CastInst>(val)) {
+        if (val)
+        {
+            if (const CastInst *castInst = SVFUtil::dyn_cast<CastInst>(val))
+            {
                 updateObjType(castInst->getType(), getPts(edge->getSrcID()));
-            } else if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val)) {
-                if (ce->getOpcode() == Instruction::BitCast) {
+            }
+            else if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
+            {
+                if (ce->getOpcode() == Instruction::BitCast)
+                {
                     updateObjType(ce->getType(), getPts(edge->getSrcID()));
                 }
             }
@@ -25,9 +32,12 @@ void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge) {
 }
 
 /// update type of objects when process "bitcast" CopyCGEdge
-void AndersenWaveDiffWithType::updateObjType(const Type *type, PointsTo &objs) {
-    for (PointsTo::iterator it = objs.begin(), eit = objs.end(); it != eit; ++it) {
-        if (typeSystem->addTypeForVar(*it, type)) {
+void AndersenWaveDiffWithType::updateObjType(const Type *type, PointsTo &objs)
+{
+    for (PointsTo::iterator it = objs.begin(), eit = objs.end(); it != eit; ++it)
+    {
+        if (typeSystem->addTypeForVar(*it, type))
+        {
             typeSystem->addVarForType(*it, type);
             processTypeMismatchedGep(*it, type);
         }
@@ -35,7 +45,8 @@ void AndersenWaveDiffWithType::updateObjType(const Type *type, PointsTo &objs) {
 }
 
 /// process mismatched gep edges
-void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *type) {
+void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *type)
+{
     TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
     if (it == typeMismatchedObjToEdges.end())
         return;
@@ -45,8 +56,10 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
     PTAType ptaTy(type);
     NodeBS &nodesOfType = typeSystem->getVarsForType(ptaTy);
 
-    for (std::set<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit) {
-        if (const NormalGepCGEdge *normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*nit)) {
+    for (std::set<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit)
+    {
+        if (const NormalGepCGEdge *normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*nit))
+        {
             if (!nodesOfType.test(normalGepEdge->getSrcID()))
                 continue;
             PointsTo tmpPts;
@@ -61,26 +74,33 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
 }
 
 /// match types for Gep Edges
-bool AndersenWaveDiffWithType::matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge) {
+bool AndersenWaveDiffWithType::matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge)
+{
     if (!typeSystem->hasTypeSet(ptrid) || !typeSystem->hasTypeSet(objid))
         return true;
     const TypeSet *ptrTypeSet = typeSystem->getTypeSet(ptrid);
     const TypeSet *objTypeSet = typeSystem->getTypeSet(objid);
-    if (ptrTypeSet->intersect(objTypeSet)) {
+    if (ptrTypeSet->intersect(objTypeSet))
+    {
         return true;
-    } else {
+    }
+    else
+    {
         recordTypeMismatchedGep(objid, normalGepEdge);
         return false;
     }
 }
 
 /// add type for newly created GepObjNode
-void AndersenWaveDiffWithType::addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge) {
+void AndersenWaveDiffWithType::addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge)
+{
     NodeID srcId = normalGepEdge->getSrcID();
     NodeID dstId = normalGepEdge->getDstID();
-    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::NormalGep)) {
+    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::NormalGep))
+    {
         const Value *val = pag->getIntraPAGEdge(srcId, dstId, PAGEdge::NormalGep)->getValue();
-        if (val) {
+        if (val)
+        {
             PTAType ptaTy(val->getType());
             if(typeSystem->addTypeForVar(id, ptaTy))
                 typeSystem->addVarForType(id, ptaTy);
@@ -88,12 +108,14 @@ void AndersenWaveDiffWithType::addTypeForGepObjNode(NodeID id, const NormalGepCG
     }
 }
 
-NodeStack& AndersenWaveDiffWithType::SCCDetect() {
+NodeStack& AndersenWaveDiffWithType::SCCDetect()
+{
     Andersen::SCCDetect();
 
     /// merge types of nodes in SCC
     const NodeBS &repNodes = getSCCDetector()->getRepNodes();
-    for (NodeBS::iterator it = repNodes.begin(), eit = repNodes.end(); it != eit; ++it) {
+    for (NodeBS::iterator it = repNodes.begin(), eit = repNodes.end(); it != eit; ++it)
+    {
         NodeBS subNodes = getSCCDetector()->subNodes(*it);
         mergeTypeOfNodes(subNodes);
     }
@@ -102,14 +124,18 @@ NodeStack& AndersenWaveDiffWithType::SCCDetect() {
 }
 
 /// merge types of nodes in a cycle
-void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes) {
+void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes)
+{
 
     /// collect types in a cycle
     std::set<PTAType> typesInSCC;
-    for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it) {
-        if (typeSystem->hasTypeSet(*it)) {
+    for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
+    {
+        if (typeSystem->hasTypeSet(*it))
+        {
             const TypeSet *typeSet = typeSystem->getTypeSet(*it);
-            for (TypeSet::const_iterator tyit = typeSet->begin(), tyeit = typeSet->end(); tyit != tyeit; ++tyit) {
+            for (TypeSet::const_iterator tyit = typeSet->begin(), tyeit = typeSet->end(); tyit != tyeit; ++tyit)
+            {
                 const PTAType &ptaTy = *tyit;
                 typesInSCC.insert(ptaTy);
             }
@@ -117,8 +143,10 @@ void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes) {
     }
 
     /// merge types of nodes in a cycle
-    for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it) {
-        for (std::set<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit) {
+    for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
+    {
+        for (std::set<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit)
+        {
             const PTAType &ptaTy = *tyit;
             if (typeSystem->addTypeForVar(*it, ptaTy))
                 typeSystem->addVarForType(*it, ptaTy);

@@ -36,7 +36,8 @@ static llvm::cl::opt<std::string> InputFilename(cl::Positional,
         llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
 
 
-int main(int argc, char ** argv) {
+int main(int argc, char ** argv)
+{
 
     int arg_num = 0;
     char **arg_value = new char*[argc];

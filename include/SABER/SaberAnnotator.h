@@ -37,17 +37,20 @@ class ProgSlice;
 /*!
  * Saber annotation
  */
-class SaberAnnotator : public Annotator {
+class SaberAnnotator : public Annotator
+{
 
 private:
     const ProgSlice* _curSlice;
 public:
     /// Constructor
-    SaberAnnotator(ProgSlice* slice): _curSlice(slice) {
+    SaberAnnotator(ProgSlice* slice): _curSlice(slice)
+    {
 
     }
     /// Destructor
-    virtual ~SaberAnnotator() {
+    virtual ~SaberAnnotator()
+    {
 
     }
     /// Annotation
