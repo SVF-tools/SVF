@@ -1305,9 +1305,6 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     if (SVFModule::pagReadFromTXT())
         return;
 
-    if(edge->getEdgeID() == 13){
-    	outs() << *edge->getDstNode()->getValue() << "\n";
-    }
     assert(curVal && "current Val is NULL?");
     edge->setBB(curBB);
     edge->setValue(curVal);

@@ -264,7 +264,6 @@ void SVFG::connectFromGlobalToProgEntry()
     {
         if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(*storeIt))
         {
-        	outs() << *store->getPAGDstNode()->getValue() << "\n";
             /// connect this store to main function entry
             const PointsTo& storePts = mssa->getPTA()->getPts(
                                            store->getPAGDstNodeID());
