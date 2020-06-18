@@ -11,7 +11,7 @@ void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge)
 {
     NodeID srcId = edge->getSrcID();
     NodeID dstId = edge->getDstID();
-    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::Copy))
+    if (pag->hasNonlabeledEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::Copy))
     {
         const Value *val = pag->getIntraPAGEdge(srcId, dstId, PAGEdge::Copy)->getValue();
         if (val)
@@ -96,7 +96,7 @@ void AndersenWaveDiffWithType::addTypeForGepObjNode(NodeID id, const NormalGepCG
 {
     NodeID srcId = normalGepEdge->getSrcID();
     NodeID dstId = normalGepEdge->getDstID();
-    if (pag->hasIntraEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::NormalGep))
+    if (pag->hasNonlabeledEdge(pag->getPAGNode(srcId), pag->getPAGNode(dstId), PAGEdge::NormalGep))
     {
         const Value *val = pag->getIntraPAGEdge(srcId, dstId, PAGEdge::NormalGep)->getValue();
         if (val)

@@ -1305,6 +1305,9 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     if (SVFModule::pagReadFromTXT())
         return;
 
+    if(edge->getEdgeID() == 13){
+    	outs() << *edge->getDstNode()->getValue() << "\n";
+    }
     assert(curVal && "current Val is NULL?");
     edge->setBB(curBB);
     edge->setValue(curVal);
@@ -1317,14 +1320,18 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
         icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
     }
-    else if (SVFUtil::isa<Argument>(curVal))
+    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
+        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
+        icfgNode = pag->getICFG()->getFunEntryICFGNode(fun);
     }
     else if (SVFUtil::isa<ConstantExpr>(curVal))
     {
         if (!curBB)
             pag->addGlobalPAGEdge(edge);
+        else
+    		icfgNode = pag->getICFG()->getBlockICFGNode(&curBB->front());
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
              SVFUtil::isa<Function>(curVal) ||

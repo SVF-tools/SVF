@@ -401,7 +401,7 @@ protected:
     inline void addIntraMSSAPHISVFGNode(const MemSSA::PHI* phi)
     {
         IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++,phi);
-        addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(phi->getBasicBlock()->getFirstNonPHI()));
+        addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(&(phi->getBasicBlock()->front())));
         for(MemSSA::PHI::OPVers::const_iterator it = phi->opVerBegin(), eit=phi->opVerEnd(); it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);
         setDef(phi->getResVer(),sNode);

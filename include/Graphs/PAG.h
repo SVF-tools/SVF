@@ -753,8 +753,10 @@ public:
     bool addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge);
 
     //// Return true if this edge exits
-    PAGEdge* hasIntraEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
-    PAGEdge* hasInterEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
+    PAGEdge* hasNonlabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind);
+    /// Return true if this labeled edge exits, including store, call and load
+    /// two store edge can have same dst and src but located in different basic blocks, thus flags are needed to distinguish them
+    PAGEdge* hasLabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* cs);
 
     /// Add Address edge
     AddrPE* addAddrPE(NodeID src, NodeID dst);
