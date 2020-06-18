@@ -37,7 +37,8 @@
 /// Overloading operator << for dumping conditional variable
 //@{
 template<class Cond>
-raw_ostream& operator<< (raw_ostream &o, const CondVar<Cond> &cvar) {
+raw_ostream& operator<< (raw_ostream &o, const CondVar<Cond> &cvar)
+{
     o << cvar.toString();
     return o;
 }
@@ -53,7 +54,8 @@ raw_ostream& operator<< (raw_ostream &o, const CondVar<Cond> &cvar) {
  * Context and heap sensitive:     Key --> CondVar,  Data --> CondPointsToSet
  */
 template<class Key, class Data>
-class PTData {
+class PTData
+{
 public:
     typedef std::map<const Key, Data> PtsMap;
     typedef typename PtsMap::iterator PtsMapIter;
@@ -61,57 +63,68 @@ public:
     typedef typename Data::iterator iterator;
 
     /// Types of a points-to data structure
-    enum PTDataTY {
+    enum PTDataTY
+    {
         DFPTD,
         IncDFPTD,
         DiffPTD,
         Default
     };
     /// Constructor
-    PTData(PTDataTY ty = Default): ptdTy(ty) {
+    PTData(PTDataTY ty = Default): ptdTy(ty)
+    {
     }
 
     /// Destructor
-    virtual ~PTData() {
+    virtual ~PTData()
+    {
     }
 
     /// Clear maps
-    virtual void clear() {
+    virtual void clear()
+    {
         ptsMap.clear();
         revPtsMap.clear();
     }
 
     /// Get the type of a points-to data structure
-    inline PTDataTY getPTDTY() const {
+    inline PTDataTY getPTDTY() const
+    {
         return ptdTy;
     }
 
     /// Return Points-to map
-    inline const PtsMap& getPtsMap() const {
+    inline const PtsMap& getPtsMap() const
+    {
         return ptsMap;
     }
 
     // Get conditional points-to set of the pointer
-    inline Data& getPts(const Key& var) {
+    inline Data& getPts(const Key& var)
+    {
         return ptsMap[var];
     }
 
     // Get conditional reverse points-to set of the pointer
-    inline Data& getRevPts(const Key& var) {
+    inline Data& getRevPts(const Key& var)
+    {
         return revPtsMap[var];
     }
 
     /// Union/add points-to, used internally
     //@{
-    inline bool addPts(const Key &dstKey, const Key& srcKey) {
+    inline bool addPts(const Key &dstKey, const Key& srcKey)
+    {
         addSingleRevPts(getRevPts(srcKey),dstKey);
         return addPts(getPts(dstKey),srcKey);
     }
-    inline bool unionPts(const Key& dstKey, const Key& srcKey) {
+    inline bool unionPts(const Key& dstKey, const Key& srcKey)
+    {
         addRevPts(getPts(srcKey),dstKey);
         return unionPts(getPts(dstKey),getPts(srcKey));
     }
-    inline bool unionPts(const Key& dstKey, const Data& srcData) {
+    inline bool unionPts(const Key& dstKey, const Data& srcData)
+    {
         addRevPts(srcData,dstKey);
         return unionPts(getPts(dstKey),srcData);
     }
@@ -123,16 +136,20 @@ protected:
 private:
     /// Union/add points-to
     //@{
-    inline bool unionPts(Data& dstData, const Data& srcData) {
+    inline bool unionPts(Data& dstData, const Data& srcData)
+    {
         return dstData |= srcData;
     }
-    inline bool addPts(Data &d, const Key& e) {
+    inline bool addPts(Data &d, const Key& e)
+    {
         return d.test_and_set(e);
     }
-    inline void addSingleRevPts(Data &revData, const Key& tgr) {
+    inline void addSingleRevPts(Data &revData, const Key& tgr)
+    {
         addPts(revData,tgr);
     }
-    inline void addRevPts(const Data &ptsData, const Key& tgr) {
+    inline void addRevPts(const Data &ptsData, const Key& tgr)
+    {
         for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
             addSingleRevPts(getRevPts(*it),tgr);
     }
@@ -143,20 +160,24 @@ private:
 public:
     /// Debugging functions
     //@{
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const {
-        for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++) {
+    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    {
+        for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
+        {
             const Key& var = nodeIt->first;
             const Data & pts = nodeIt->second;
             if (pts.empty())
                 continue;
             O << var << " ==> { ";
-            for(typename Data::iterator cit = pts.begin(), ecit=pts.end(); cit!=ecit; ++cit) {
+            for(typename Data::iterator cit = pts.begin(), ecit=pts.end(); cit!=ecit; ++cit)
+            {
                 O << *cit << " ";
             }
             O << "}\n";
         }
     }
-    virtual inline void dumpPTData() {
+    virtual inline void dumpPTData()
+    {
         dumpPts(ptsMap);
     }
     //@}
@@ -170,24 +191,28 @@ public:
  * CahcePtsMap is an additional map which maintains cached points-to.
  */
 template<class Key, class Data, class CacheKey>
-class DiffPTData : public PTData<Key,Data> {
+class DiffPTData : public PTData<Key,Data>
+{
 public:
     typedef typename PTData<Key,Data>::PtsMap PtsMap;
     typedef typename PTData<CacheKey,Data>::PtsMap CahcePtsMap;
     typedef typename PTData<Key,Data>::PTDataTY PTDataTy;
     /// Constructor
-    DiffPTData(PTDataTy ty = (PTData<Key,Data>::DiffPTD)): PTData<Key,Data>(ty) {
+    DiffPTData(PTDataTy ty = (PTData<Key,Data>::DiffPTD)): PTData<Key,Data>(ty)
+    {
     }
 
     /// Destructor
     ~DiffPTData() {}
 
     /// Get diff points to.
-    inline Data & getDiffPts(Key& var) {
+    inline Data & getDiffPts(Key& var)
+    {
         return diffPtsMap[var];
     }
     /// Get propagated points to.
-    inline Data & getPropaPts(Key& var) {
+    inline Data & getPropaPts(Key& var)
+    {
         return propaPtsMap[var];
     }
 
@@ -196,7 +221,8 @@ public:
      * 1. calculate diff by: diff = all - propa;
      * 2. update propagated pts: propa = all.
      */
-    inline bool computeDiffPts(Key& var, Data& all) {
+    inline bool computeDiffPts(Key& var, Data& all)
+    {
         /// clear diff pts.
         Data& diff = getDiffPts(var);
         diff.clear();
@@ -211,33 +237,39 @@ public:
      * Update dst's propagated points-to set with src's.
      * The final result is the intersection of these two sets.
      */
-    inline void updatePropaPtsMap(Key& src, Key&dst) {
+    inline void updatePropaPtsMap(Key& src, Key&dst)
+    {
         Data& srcPropa = getPropaPts(src);
         Data& dstPropa = getPropaPts(dst);
         dstPropa &= srcPropa;
     }
 
     /// Clear propagated pts
-    inline void clearPropaPts(Key& var) {
+    inline void clearPropaPts(Key& var)
+    {
         getPropaPts(var).clear();
     }
 
     /// Get cached points-to
-    inline Data& getCachePts(CacheKey& cache) {
+    inline Data& getCachePts(CacheKey& cache)
+    {
         return CacheMap[cache];
     }
 
     /// Add cached points-to
-    inline void addCachePts(CacheKey& cache, Data& data) {
+    inline void addCachePts(CacheKey& cache, Data& data)
+    {
         CacheMap[cache] |= data;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const DiffPTData<Key,Data,CacheKey> *) {
+    static inline bool classof(const DiffPTData<Key,Data,CacheKey> *)
+    {
         return true;
     }
-    static inline bool classof(const PTData<Key,Data>* ptd) {
+    static inline bool classof(const PTData<Key,Data>* ptd)
+    {
         return ptd->getPTDTY() == PTData<Key,Data>::DiffPTD;
     }
     //@}

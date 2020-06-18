@@ -42,7 +42,8 @@
  * Flow-sensitive Solver
  */
 template<class GraphType>
-class WPAFSSolver : public WPASolver<GraphType> {
+class WPAFSSolver : public WPASolver<GraphType>
+{
 public:
     /// Constructor
     WPAFSSolver() : WPASolver<GraphType>()
@@ -51,7 +52,8 @@ public:
     virtual ~WPAFSSolver() {}
 
     /// SCC methods
-    virtual inline NodeID sccRepNode(NodeID id) const {
+    virtual inline NodeID sccRepNode(NodeID id) const
+    {
         return id;
     }
 
@@ -59,7 +61,8 @@ protected:
     NodeStack nodeStack;	///< stack used for processing nodes.
 
     /// SCC detection
-    virtual NodeStack& SCCDetect() {
+    virtual NodeStack& SCCDetect()
+    {
         /// SCC detection
         this->getSCCDetector()->find();
 
@@ -67,11 +70,13 @@ protected:
         /// Collect sub nodes from SCCDetector.
         NodeStack revTopoStack;
         NodeStack& topoStack = this->getSCCDetector()->topoNodeStack();
-        while (!topoStack.empty()) {
+        while (!topoStack.empty())
+        {
             NodeID nodeId = topoStack.top();
             topoStack.pop();
             const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
-            for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it) {
+            for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
+            {
                 revTopoStack.push(*it);
             }
         }
@@ -79,7 +84,8 @@ protected:
         assert(nodeStack.empty() && "node stack is not empty, some nodes are not popped properly.");
 
         /// restore the topological order.
-        while (!revTopoStack.empty()) {
+        while (!revTopoStack.empty())
+        {
             NodeID nodeId = revTopoStack.top();
             revTopoStack.pop();
             nodeStack.push(nodeId);
@@ -95,7 +101,8 @@ protected:
  * Solver based on SCC cycles.
  */
 template<class GraphType>
-class WPASCCSolver : public WPAFSSolver<GraphType> {
+class WPASCCSolver : public WPAFSSolver<GraphType>
+{
 public:
     typedef typename WPASolver<GraphType>::GTraits GTraits;
     typedef typename WPASolver<GraphType>::GNODE GNODE;
@@ -106,7 +113,8 @@ public:
     virtual ~WPASCCSolver() {}
 
 protected:
-    virtual void solve() {
+    virtual void solve()
+    {
         /// All nodes will be solved afterwards, so the worklist
         /// can be cleared before each solve iteration.
         while (!this->isWorklistEmpty())
@@ -114,7 +122,8 @@ protected:
 
         NodeStack& nodeStack = this->SCCDetect();
 
-        while (!nodeStack.empty()) {
+        while (!nodeStack.empty())
+        {
             NodeID rep = nodeStack.top();
             nodeStack.pop();
 
@@ -130,24 +139,29 @@ protected:
     }
 
     /// Propagation for the solving, to be implemented in the child class
-    virtual void propagate(GNODE* v) {
+    virtual void propagate(GNODE* v)
+    {
         child_iterator EI = GTraits::direct_child_begin(v);
         child_iterator EE = GTraits::direct_child_end(v);
-        for (; EI != EE; ++EI) {
+        for (; EI != EE; ++EI)
+        {
             if (this->propFromSrcToDst(*(EI.getCurrent())))
                 addNodeIntoWorkList(this->Node_Index(*EI));
         }
     }
 
-    virtual inline void addNodeIntoWorkList(NodeID node) {
+    virtual inline void addNodeIntoWorkList(NodeID node)
+    {
         if (isInCurrentSCC(node))
             this->pushIntoWorklist(node);
     }
 
-    inline bool isInCurrentSCC(NodeID node) {
+    inline bool isInCurrentSCC(NodeID node)
+    {
         return (const_cast<NodeBS&>(this->getSCCDetector()->subNodes(curSCCID))).test(node);
     }
-    inline void setCurrentSCC(NodeID id) {
+    inline void setCurrentSCC(NodeID id)
+    {
         curSCCID = this->getSCCDetector()->repNode(id);
     }
 
@@ -160,7 +174,8 @@ protected:
  * Only solve nodes which need to be analyzed.
  */
 template<class GraphType>
-class WPAMinimumSolver : public WPASCCSolver<GraphType> {
+class WPAMinimumSolver : public WPASCCSolver<GraphType>
+{
 public:
     typedef typename WPASolver<GraphType>::GTraits GTraits;
     typedef typename WPASolver<GraphType>::GNODE GNODE;
@@ -171,11 +186,13 @@ public:
     virtual ~WPAMinimumSolver() {}
 
 protected:
-    virtual void solve() {
+    virtual void solve()
+    {
         bool solveAll = true;
         /// If the worklist is not empty, then only solve these nodes contained in
         /// worklist. Otherwise all nodes in the graph will be processed.
-        if (!this->isWorklistEmpty()) {
+        if (!this->isWorklistEmpty())
+        {
             solveAll = false;
             while (!this->isWorklistEmpty())
                 addNewCandidate(this->popFromWorklist());
@@ -183,7 +200,8 @@ protected:
 
         NodeStack& nodeStack = this->SCCDetect();
 
-        while (!nodeStack.empty()) {
+        while (!nodeStack.empty())
+        {
             NodeID rep = nodeStack.top();
             nodeStack.pop();
 
@@ -203,7 +221,8 @@ protected:
         }
     }
 
-    virtual inline void addNodeIntoWorkList(NodeID node) {
+    virtual inline void addNodeIntoWorkList(NodeID node)
+    {
         if (this->isInCurrentSCC(node))
             this->pushIntoWorklist(node);
         else
@@ -211,13 +230,16 @@ protected:
     }
 
 private:
-    inline void addNewCandidate(NodeID node) {
+    inline void addNewCandidate(NodeID node)
+    {
         candidates.set(node);
     }
-    inline const NodeBS& getCandidates() const {
+    inline const NodeBS& getCandidates() const
+    {
         return candidates;
     }
-    inline void removeCandidates(const NodeBS& nodes) {
+    inline void removeCandidates(const NodeBS& nodes)
+    {
         candidates.intersectWithComplement(nodes);
     }
 

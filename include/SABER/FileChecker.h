@@ -36,30 +36,36 @@
  * File open/close checker to check consistency of file operations
  */
 
-class FileChecker : public LeakChecker {
+class FileChecker : public LeakChecker
+{
 
 public:
 
     /// Constructor
-    FileChecker(): LeakChecker() {
+    FileChecker(): LeakChecker()
+    {
     }
 
     /// Destructor
-    virtual ~FileChecker() {
+    virtual ~FileChecker()
+    {
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module) {
+    virtual bool runOnModule(SVFModule* module)
+    {
         /// start analysis
         analyze(module);
         return false;
     }
 
-    inline bool isSourceLikeFun(const SVFFunction* fun) {
+    inline bool isSourceLikeFun(const SVFFunction* fun)
+    {
         return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    inline bool isSinkLikeFun(const SVFFunction* fun) {
+    inline bool isSinkLikeFun(const SVFFunction* fun)
+    {
         return SaberCheckerAPI::getCheckerAPI()->isFClose(fun);
     }
     /// Report file/close bugs

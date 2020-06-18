@@ -47,11 +47,13 @@ class PTAStat;
 /*
  * Pointer Analysis Base Class
  */
-class PointerAnalysis {
+class PointerAnalysis
+{
 
 public:
     /// Pointer analysis type list
-    enum PTATY {
+    enum PTATY
+    {
         // Whole program analysis
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
@@ -83,7 +85,8 @@ public:
     };
 
     /// Implementation type: BVDataPTAImpl or CondPTAImpl.
-    enum PTAImplTy {
+    enum PTAImplTy
+    {
         BaseImpl,   ///< Represents PointerAnalaysis.
         BVDataImpl, ///< Represents BVDataPTAImpl.
         CondImpl,   ///< Represents CondPTAImpl.
@@ -153,15 +156,18 @@ protected:
 
 public:
     /// Return number of resolved indirect call edges
-    inline Size_t getNumOfResolvedIndCallEdge() const {
+    inline Size_t getNumOfResolvedIndCallEdge() const
+    {
         return getPTACallGraph()->getNumOfResolvedIndCallEdge();
     }
     /// Return call graph
-    inline PTACallGraph* getPTACallGraph() const {
+    inline PTACallGraph* getPTACallGraph() const
+    {
         return ptaCallGraph;
     }
     /// Return call graph SCC
-    inline CallGraphSCC* getCallGraphSCC() const {
+    inline CallGraphSCC* getCallGraphSCC() const
+    {
         return callGraphSCC;
     }
 
@@ -169,35 +175,42 @@ public:
     PointerAnalysis(PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
-    inline PTATY getAnalysisTy() const {
+    inline PTATY getAnalysisTy() const
+    {
         return ptaTy;
     }
 
     /// Return implementation type of the pointer analysis.
-    inline PTAImplTy getImplTy() const {
+    inline PTAImplTy getImplTy() const
+    {
         return ptaImplTy;
     }
 
     /// Get/set PAG
     ///@{
-    inline PAG* getPAG() const {
+    inline PAG* getPAG() const
+    {
         return pag;
     }
-    static inline void setPAG(PAG* g) {
+    static inline void setPAG(PAG* g)
+    {
         pag = g;
     }
     //@}
 
     /// Get PTA stat
-    inline PTAStat* getStat() const {
+    inline PTAStat* getStat() const
+    {
         return stat;
     }
     /// Module
-    inline SVFModule* getModule() const {
+    inline SVFModule* getModule() const
+    {
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
-    inline NodeSet& getAllValidPtrs() {
+    inline NodeSet& getAllValidPtrs()
+    {
         return pag->getAllValidPtrs();
     }
 
@@ -218,11 +231,11 @@ public:
 
     /// Interface exposed to users of our pointer analysis, given Location infos
     virtual AliasResult alias(const MemoryLocation &LocA,
-                                    const MemoryLocation &LocB) = 0;
+                              const MemoryLocation &LocB) = 0;
 
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,
-                                    const Value* V2) = 0;
+                              const Value* V2) = 0;
 
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
@@ -235,7 +248,8 @@ public:
     virtual PointsTo& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
-    virtual void clearPts() {
+    virtual void clearPts()
+    {
     }
 
     /// Print targets of a function pointer
@@ -253,11 +267,13 @@ public:
 
 protected:
     /// Return all indirect callsites
-    inline const CallSiteToFunPtrMap& getIndirectCallsites() const {
+    inline const CallSiteToFunPtrMap& getIndirectCallsites() const
+    {
         return pag->getIndirectCallsites();
     }
     /// Return function pointer PAGNode at a callsite cs
-    inline NodeID getFunPtr(const CallBlockNode* cs) const {
+    inline NodeID getFunPtr(const CallBlockNode* cs) const
+    {
         return pag->getFunPtr(cs);
     }
     /// Alias check functions to verify correctness of pointer analysis
@@ -279,29 +295,35 @@ public:
 
     /// Determine whether a points-to contains a black hole or constant node
     //@{
-    inline bool containBlackHoleNode(PointsTo& pts) {
+    inline bool containBlackHoleNode(PointsTo& pts)
+    {
         return pts.test(pag->getBlackHoleNode());
     }
-    inline bool containConstantNode(PointsTo& pts) {
+    inline bool containConstantNode(PointsTo& pts)
+    {
         return pts.test(pag->getConstantNode());
     }
-    virtual inline bool isBlkObjOrConstantObj(NodeID ptd) const {
+    virtual inline bool isBlkObjOrConstantObj(NodeID ptd) const
+    {
         return pag->isBlkObjOrConstantObj(ptd);
     }
-    inline bool isNonPointerObj(NodeID ptd) const {
+    inline bool isNonPointerObj(NodeID ptd) const
+    {
         return pag->isNonPointerObj(ptd);
     }
     //@}
 
     /// Whether this object is heap or array
     //@{
-    inline bool isHeapMemObj(NodeID id) const {
+    inline bool isHeapMemObj(NodeID id) const
+    {
         const MemObj* mem = pag->getObject(id);
         assert(mem && "memory object is null??");
         return mem->isHeap();
     }
 
-    inline bool isArrayMemObj(NodeID id) const {
+    inline bool isArrayMemObj(NodeID id) const
+    {
         const MemObj* mem = pag->getObject(id);
         assert(mem && "memory object is null??");
         return mem->isArray();
@@ -310,50 +332,62 @@ public:
 
     /// For field-sensitivity
     ///@{
-    inline bool isFIObjNode(NodeID id) const {
+    inline bool isFIObjNode(NodeID id) const
+    {
         return (SVFUtil::isa<FIObjPN>(pag->getPAGNode(id)));
     }
-    inline NodeID getBaseObjNode(NodeID id) {
+    inline NodeID getBaseObjNode(NodeID id)
+    {
         return pag->getBaseObjNode(id);
     }
-    inline NodeID getFIObjNode(NodeID id) {
+    inline NodeID getFIObjNode(NodeID id)
+    {
         return pag->getFIObjNode(id);
     }
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
+    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    {
         return pag->getGepObjNode(id,ls);
     }
-    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id) {
+    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id)
+    {
         return pag->getAllFieldsObjNode(id);
     }
-    inline void setObjFieldInsensitive(NodeID id) {
+    inline void setObjFieldInsensitive(NodeID id)
+    {
         MemObj* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
         mem->setFieldInsensitive();
     }
-    inline bool isFieldInsensitive(NodeID id) const {
+    inline bool isFieldInsensitive(NodeID id) const
+    {
         const MemObj* mem =  pag->getBaseObj(id);
         return mem->isFieldInsensitive();
     }
     ///@}
 
     /// Whether print statistics
-    inline bool printStat() {
+    inline bool printStat()
+    {
         return print_stat;
     }
 
     /// Whether print statistics
-    inline void disablePrintStat() {
+    inline void disablePrintStat()
+    {
         print_stat = false;
     }
 
     /// Get callees from an indirect callsite
     //@{
-    inline CallEdgeMap& getIndCallMap() {
+    inline CallEdgeMap& getIndCallMap()
+    {
         return getPTACallGraph()->getIndCallMap();
     }
-    inline bool hasIndCSCallees(const CallBlockNode* cs) const {
+    inline bool hasIndCSCallees(const CallBlockNode* cs) const
+    {
         return getPTACallGraph()->hasIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const {
+    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const
+    {
         return getPTACallGraph()->getIndCSCallees(cs);
     }
     //@}
@@ -366,23 +400,27 @@ public:
     /// CallGraph SCC related methods
     //@{
     /// CallGraph SCC detection
-    inline void callGraphSCCDetection() {
+    inline void callGraphSCCDetection()
+    {
         if(callGraphSCC==NULL)
             callGraphSCC = new CallGraphSCC(ptaCallGraph);
 
         callGraphSCC->find();
     }
     /// Get SCC rep node of a SVFG node.
-    inline NodeID getCallGraphSCCRepNode(NodeID id) const {
+    inline NodeID getCallGraphSCCRepNode(NodeID id) const
+    {
         return callGraphSCC->repNode(id);
     }
     /// Return TRUE if this edge is inside a CallGraph SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2) {
+    inline bool inSameCallGraphSCC(const SVFFunction* fun1,const SVFFunction* fun2)
+    {
         const PTACallGraphNode* src = ptaCallGraph->getCallGraphNode(fun1);
         const PTACallGraphNode* dst = ptaCallGraph->getCallGraphNode(fun2);
         return (getCallGraphSCCRepNode(src->getId()) == getCallGraphSCCRepNode(dst->getId()));
     }
-    inline bool isInRecursion(const SVFFunction* fun) const {
+    inline bool isInRecursion(const SVFFunction* fun) const
+    {
         return callGraphSCC->isInCycle(ptaCallGraph->getCallGraphNode(fun)->getId());
     }
     /// Whether a local variable is in function recursions
@@ -390,12 +428,14 @@ public:
     //@}
 
     /// Return PTA name
-    virtual const std::string PTAName() const {
+    virtual const std::string PTAName() const
+    {
         return "Pointer Analysis";
     }
 
     /// get CHGraph
-    CommonCHGraph *getCHGraph() const {
+    CommonCHGraph *getCHGraph() const
+    {
         return chgraph;
     }
 
@@ -407,7 +447,8 @@ public:
                                     CallEdgeMap& newEdges);
 
     /// get TypeSystem
-    const TypeSystem *getTypeSystem() const {
+    const TypeSystem *getTypeSystem() const
+    {
         return typeSystem;
     }
 };

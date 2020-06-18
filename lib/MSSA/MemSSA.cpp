@@ -36,12 +36,12 @@ using namespace SVFUtil;
 
 
 static llvm::cl::opt<bool> DumpMSSA("dump-mssa", llvm::cl::init(false),
-                              llvm::cl::desc("Dump memory SSA"));
+                                    llvm::cl::desc("Dump memory SSA"));
 static llvm::cl::opt<string> MSSAFun("mssafun",  llvm::cl::init(""),
-                               llvm::cl::desc("Please specify which function needs to be dumped"));
+                                     llvm::cl::desc("Please specify which function needs to be dumped"));
 
 static llvm::cl::opt<std::string> MemPar("mempar", llvm::cl::value_desc("memory-partition-type"),
-                                   llvm::cl::desc("memory partition strategy"));
+        llvm::cl::desc("memory partition strategy"));
 static std::string kDistinctMemPar = "distinct";
 static std::string kIntraDisjointMemPar = "intra-disjoint";
 static std::string kInterDisjointMemPar = "inter-disjoint";
@@ -55,12 +55,14 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL) {
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL)
+{
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (!MemPar.getValue().empty()) {
+    if (!MemPar.getValue().empty())
+    {
         std::string strategy = MemPar.getValue();
         if (strategy == kDistinctMemPar)
             mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
@@ -71,7 +73,8 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL) {
         else
             assert(false && "unrecognised memory partition strategy");
     }
-    else {
+    else
+    {
         mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
     }
 
@@ -87,7 +90,8 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL) {
 /*!
  * Set DF/DT
  */
-void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t) {
+void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t)
+{
     df = f;
     dt = t;
     usedRegs.clear();
@@ -97,7 +101,8 @@ void MemSSA::setCurrentDFDT(DominanceFrontier* f, DominatorTree* t) {
 /*!
  * Start building memory SSA
  */
-void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, DominatorTree* t) {
+void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, DominatorTree* t)
+{
 
     assert(!isExtCall(&fun) && "we do not build memory ssa for external functions");
 
@@ -130,9 +135,10 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
  * Create mu/chi according to memory regions
  * collect used mrs in usedRegs and construction map from region to BB for prune SSA phi insertion
  */
-void MemSSA::createMUCHI(const SVFFunction& fun) {
+void MemSSA::createMUCHI(const SVFFunction& fun)
+{
 
-	PAG* pag = pta->getPAG();
+    PAG* pag = pta->getPAG();
 
     DBOUT(DMSSA,
           outs() << "\t creating mu chi for function " << fun.getName()
@@ -157,16 +163,20 @@ void MemSSA::createMUCHI(const SVFFunction& fun) {
     getFunReachableBBs(fun.getLLVMFun(),getDT(fun),reachableBBs);
 
     for (BBList::const_iterator iter = reachableBBs.begin(), eiter = reachableBBs.end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         const BasicBlock* bb = *iter;
         varKills.clear();
         for (BasicBlock::const_iterator it = bb->begin(), eit = bb->end();
-                it != eit; ++it) {
+                it != eit; ++it)
+        {
             const Instruction* inst = &*it;
-            if(mrGen->hasPAGEdgeList(inst)) {
+            if(mrGen->hasPAGEdgeList(inst))
+            {
                 PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
                 for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
-                        ebit = pagEdgeList.end(); bit != ebit; ++bit) {
+                        ebit = pagEdgeList.end(); bit != ebit; ++bit)
+                {
                     const PAGEdge* inst = *bit;
                     if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                         AddLoadMU(bb, load, mrGen->getLoadMRSet(load));
@@ -174,7 +184,8 @@ void MemSSA::createMUCHI(const SVFFunction& fun) {
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
-            if (isNonInstricCallSite(inst)) {
+            if (isNonInstricCallSite(inst))
+            {
                 const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
@@ -188,7 +199,8 @@ void MemSSA::createMUCHI(const SVFFunction& fun) {
     // create entry chi for this function including all memory regions
     // initialize them with version 0 and 1 r_1 = chi (r_0)
     for (MRSet::iterator iter = usedRegs.begin(), eiter = usedRegs.end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         const MemRegion* mr = *iter;
         // initialize mem region version and stack for renaming phase
         mr2CounterMap[mr] = 0;
@@ -200,7 +212,8 @@ void MemSSA::createMUCHI(const SVFFunction& fun) {
 
         /// if the function does not have a reachable return instruction from function entry
         /// then we won't create return mu for it
-        if(functionDoesNotRet(fun.getLLVMFun()) == false) {
+        if(functionDoesNotRet(fun.getLLVMFun()) == false)
+        {
             RETMU* mu = new RETMU(&fun, mr);
             funToReturnMuSetMap[&fun].insert(mu);
         }
@@ -212,7 +225,8 @@ void MemSSA::createMUCHI(const SVFFunction& fun) {
 /*
  * Insert phi node
  */
-void MemSSA::insertPHI(const SVFFunction& fun) {
+void MemSSA::insertPHI(const SVFFunction& fun)
+{
 
     DBOUT(DMSSA,
           outs() << "\t insert phi for function " << fun.getName() << "\n");
@@ -223,24 +237,29 @@ void MemSSA::insertPHI(const SVFFunction& fun) {
 
     // start inserting phi node
     for (MRSet::iterator iter = usedRegs.begin(), eiter = usedRegs.end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         const MemRegion* mr = *iter;
 
         BBList bbs = reg2BBMap[mr];
-        while (!bbs.empty()) {
+        while (!bbs.empty())
+        {
             const BasicBlock* bb = bbs.back();
             bbs.pop_back();
             DominanceFrontierBase::const_iterator it = df->find(const_cast<BasicBlock*>(bb));
-            if(it == df->end()) {
+            if(it == df->end())
+            {
                 writeWrnMsg("bb not in the dominance frontier map??");
                 continue;
             }
             const DominanceFrontierBase::DomSetType& domSet = it->second;
             for (DominanceFrontierBase::DomSetType::const_iterator bit =
-                        domSet.begin(); bit != domSet.end(); ++bit) {
+                        domSet.begin(); bit != domSet.end(); ++bit)
+            {
                 const BasicBlock* pbb = *bit;
                 // if we never insert this phi node before
-                if (0 == bb2MRSetMap[pbb].count(mr)) {
+                if (0 == bb2MRSetMap[pbb].count(mr))
+                {
                     bb2MRSetMap[pbb].insert(mr);
                     // insert phi node
                     AddMSSAPHI(pbb,mr);
@@ -256,7 +275,8 @@ void MemSSA::insertPHI(const SVFFunction& fun) {
 /*!
  * SSA construction algorithm
  */
-void MemSSA::SSARename(const SVFFunction& fun) {
+void MemSSA::SSARename(const SVFFunction& fun)
+{
 
     DBOUT(DMSSA,
           outs() << "\t ssa rename for function " << fun.getName() << "\n");
@@ -268,9 +288,10 @@ void MemSSA::SSARename(const SVFFunction& fun) {
  * Renaming for each memory regions
  * See the renaming algorithm in book Engineering A Compiler (Figure 9.12)
  */
-void MemSSA::SSARenameBB(const BasicBlock& bb) {
+void MemSSA::SSARenameBB(const BasicBlock& bb)
+{
 
-	PAG* pag = pta->getPAG();
+    PAG* pag = pta->getPAG();
     // record which mem region needs to pop stack
     MRVector memRegs;
 
@@ -289,12 +310,15 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     // 		rewrite r with new name
 
     for (BasicBlock::const_iterator it = bb.begin(), eit = bb.end();
-            it != eit; ++it) {
+            it != eit; ++it)
+    {
         const Instruction* inst = &*it;
-        if(mrGen->hasPAGEdgeList(inst)) {
+        if(mrGen->hasPAGEdgeList(inst))
+        {
             PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
             for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
-                    bit!=ebit; ++bit) {
+                    bit!=ebit; ++bit)
+            {
                 const PAGEdge* inst = *bit;
                 if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
                     RenameMuSet(getMUSet(load));
@@ -304,7 +328,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
             }
         }
-        if (isNonInstricCallSite(inst)) {
+        if (isNonInstricCallSite(inst))
+        {
             const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
@@ -312,8 +337,9 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
             if(mrGen->hasModMRSet(cs))
                 RenameChiSet(getCHISet(cs),memRegs);
         }
-        else if(isReturn(inst)) {
-        	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+        else if(isReturn(inst))
+        {
+            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
             RenameMuSet(getReturnMuSet(fun));
         }
     }
@@ -321,7 +347,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
     // fill phi operands of succ basic blocks
     for (succ_const_iterator sit = succ_begin(&bb), esit = succ_end(&bb);
-            sit != esit; ++sit) {
+            sit != esit; ++sit)
+    {
         const BasicBlock* succ = *sit;
         u32_t pos = getBBPredecessorPos(&bb, succ);
         if (hasPHISet(succ))
@@ -329,17 +356,20 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
     }
 
     // for succ basic block in dominator tree
-	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
+    const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb.getParent());
     DominatorTree* dt = getDT(*fun);
-    if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(&bb))) {
+    if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(&bb)))
+    {
         for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
-                DI != DE; ++DI) {
+                DI != DE; ++DI)
+        {
             SSARenameBB(*((*DI)->getBlock()));
         }
     }
     // for each r = chi(..), and r = phi(..)
     // 		pop ver stack(r)
-    while (!memRegs.empty()) {
+    while (!memRegs.empty())
+    {
         const MemRegion* mr = memRegs.back();
         memRegs.pop_back();
         mr2VerStackMap[mr].pop_back();
@@ -347,7 +377,8 @@ void MemSSA::SSARenameBB(const BasicBlock& bb) {
 
 }
 
-MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def) {
+MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def)
+{
     assert(0 != mr2CounterMap.count(mr)
            && "did not find initial version in map? ");
     assert(0 != mr2VerStackMap.count(mr)
@@ -363,60 +394,75 @@ MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def) {
 /*!
  * Clean up memory
  */
-void MemSSA::destroy() {
+void MemSSA::destroy()
+{
 
     for (LoadToMUSetMap::iterator iter = load2MuSetMap.begin(), eiter =
-                load2MuSetMap.end(); iter != eiter; ++iter) {
+                load2MuSetMap.end(); iter != eiter; ++iter)
+    {
         for (MUSet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (StoreToChiSetMap::iterator iter = store2ChiSetMap.begin(), eiter =
-                store2ChiSetMap.end(); iter != eiter; ++iter) {
+                store2ChiSetMap.end(); iter != eiter; ++iter)
+    {
         for (CHISet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (CallSiteToMUSetMap::iterator iter = callsiteToMuSetMap.begin(),
-            eiter = callsiteToMuSetMap.end(); iter != eiter; ++iter) {
+            eiter = callsiteToMuSetMap.end(); iter != eiter; ++iter)
+    {
         for (MUSet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (CallSiteToCHISetMap::iterator iter = callsiteToChiSetMap.begin(),
-            eiter = callsiteToChiSetMap.end(); iter != eiter; ++iter) {
+            eiter = callsiteToChiSetMap.end(); iter != eiter; ++iter)
+    {
         for (CHISet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (FunToEntryChiSetMap::iterator iter = funToEntryChiSetMap.begin(),
-            eiter = funToEntryChiSetMap.end(); iter != eiter; ++iter) {
+            eiter = funToEntryChiSetMap.end(); iter != eiter; ++iter)
+    {
         for (CHISet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (FunToReturnMuSetMap::iterator iter = funToReturnMuSetMap.begin(),
-            eiter = funToReturnMuSetMap.end(); iter != eiter; ++iter) {
+            eiter = funToReturnMuSetMap.end(); iter != eiter; ++iter)
+    {
         for (MUSet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
 
     for (BBToPhiSetMap::iterator iter = bb2PhiSetMap.begin(), eiter =
-                bb2PhiSetMap.end(); iter != eiter; ++iter) {
+                bb2PhiSetMap.end(); iter != eiter; ++iter)
+    {
         for (PHISet::iterator it = iter->second.begin(), eit =
-                    iter->second.end(); it != eit; ++it) {
+                    iter->second.end(); it != eit; ++it)
+        {
             delete *it;
         }
     }
@@ -431,7 +477,8 @@ void MemSSA::destroy() {
 /*!
  * Perform statistics
  */
-void MemSSA::performStat() {
+void MemSSA::performStat()
+{
     if(pta->printStat())
         stat->performStat();
 }
@@ -444,7 +491,8 @@ u32_t MemSSA::getLoadMuNum() const
     u32_t num = 0;
     LoadToMUSetMap::const_iterator it = load2MuSetMap.begin();
     LoadToMUSetMap::const_iterator eit = load2MuSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const MUSet & muSet = it->second;
         num+= muSet.size();
     }
@@ -460,7 +508,8 @@ u32_t MemSSA::getStoreChiNum() const
     u32_t num = 0;
     StoreToChiSetMap::const_iterator it = store2ChiSetMap.begin();
     StoreToChiSetMap::const_iterator eit = store2ChiSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const CHISet& chiSet = it->second;
         num += chiSet.size();
     }
@@ -476,7 +525,8 @@ u32_t MemSSA::getFunEntryChiNum() const
     u32_t num = 0;
     FunToEntryChiSetMap::const_iterator it = funToEntryChiSetMap.begin();
     FunToEntryChiSetMap::const_iterator eit = funToEntryChiSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const CHISet& chiSet = it->second;
         num += chiSet.size();
     }
@@ -492,7 +542,8 @@ u32_t MemSSA::getFunRetMuNum() const
     u32_t num = 0;
     FunToReturnMuSetMap::const_iterator it = funToReturnMuSetMap.begin();
     FunToReturnMuSetMap::const_iterator eit = funToReturnMuSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const MUSet & muSet = it->second;
         num+= muSet.size();
     }
@@ -508,7 +559,8 @@ u32_t MemSSA::getCallSiteMuNum() const
     u32_t num = 0;
     CallSiteToMUSetMap::const_iterator it = callsiteToMuSetMap.begin();
     CallSiteToMUSetMap::const_iterator eit = callsiteToMuSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const MUSet & muSet = it->second;
         num+= muSet.size();
     }
@@ -524,7 +576,8 @@ u32_t MemSSA::getCallSiteChiNum() const
     u32_t num = 0;
     CallSiteToCHISetMap::const_iterator it = callsiteToChiSetMap.begin();
     CallSiteToCHISetMap::const_iterator eit = callsiteToChiSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const CHISet & chiSet = it->second;
         num+= chiSet.size();
     }
@@ -540,7 +593,8 @@ u32_t MemSSA::getBBPhiNum() const
     u32_t num = 0;
     BBToPhiSetMap::const_iterator it = bb2PhiSetMap.begin();
     BBToPhiSetMap::const_iterator eit = bb2PhiSetMap.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const PHISet & phiSet = it->second;
         num+= phiSet.size();
     }
@@ -550,59 +604,72 @@ u32_t MemSSA::getBBPhiNum() const
 /*!
  * Print SSA
  */
-void MemSSA::dumpMSSA(raw_ostream& Out) {
+void MemSSA::dumpMSSA(raw_ostream& Out)
+{
     if (!DumpMSSA)
         return;
 
     PAG* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
-            fit != efit; ++fit) {
+            fit != efit; ++fit)
+    {
         const SVFFunction* fun = *fit;
         if(MSSAFun!="" && MSSAFun!=fun->getName())
             continue;
 
         Out << "==========FUNCTION: " << fun->getName() << "==========\n";
         // dump function entry chi nodes
-        if (hasFuncEntryChi(fun)) {
+        if (hasFuncEntryChi(fun))
+        {
             CHISet & entry_chis = getFuncEntryChiSet(fun);
-            for (CHISet::iterator chi_it = entry_chis.begin(); chi_it != entry_chis.end(); chi_it++) {
+            for (CHISet::iterator chi_it = entry_chis.begin(); chi_it != entry_chis.end(); chi_it++)
+            {
                 (*chi_it)->dump();
             }
         }
 
         for (Function::iterator bit = fun->getLLVMFun()->begin(), ebit = fun->getLLVMFun()->end();
-                bit != ebit; ++bit) {
+                bit != ebit; ++bit)
+        {
             BasicBlock& bb = *bit;
             if (bb.hasName())
                 Out << bb.getName() << "\n";
             PHISet& phiSet = getPHISet(&bb);
-            for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi) {
+            for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)
+            {
                 (*pi)->dump();
             }
 
             bool last_is_chi = false;
             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
-                    it != eit; ++it) {
+                    it != eit; ++it)
+            {
                 Instruction& inst = *it;
                 bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
-                if (isAppCall || isHeapAllocExtCall(&inst)) {
+                if (isAppCall || isHeapAllocExtCall(&inst))
+                {
                     const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(&inst);
-                    if(hasMU(cs)) {
-                        if (!last_is_chi) {
+                    if(hasMU(cs))
+                    {
+                        if (!last_is_chi)
+                        {
                             Out << "\n";
                         }
                         for (MUSet::iterator mit = getMUSet(cs).begin(), emit = getMUSet(cs).end();
-                                mit != emit; ++mit) {
+                                mit != emit; ++mit)
+                        {
                             (*mit)->dump();
                         }
                     }
 
                     Out << inst << "\n";
 
-                    if(hasCHI(cs)) {
+                    if(hasCHI(cs))
+                    {
                         for (CHISet::iterator cit = getCHISet(cs).begin(), ecit = getCHISet(cs).end();
-                                cit != ecit; ++cit) {
+                                cit != ecit; ++cit)
+                        {
                             (*cit)->dump();
                         }
                         Out << "\n";
@@ -611,16 +678,21 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
                     else
                         last_is_chi = false;
                 }
-                else {
+                else
+                {
                     bool dump_preamble = false;
                     PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
-                            bit!=ebit; ++bit) {
+                            bit!=ebit; ++bit)
+                    {
                         const PAGEdge* edge = *bit;
-                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge)) {
+                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge))
+                        {
                             MUSet& muSet = getMUSet(load);
-                            for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it) {
-                                if (!dump_preamble && !last_is_chi) {
+                            for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
+                            {
+                                if (!dump_preamble && !last_is_chi)
+                                {
                                     Out << "\n";
                                     dump_preamble = true;
                                 }
@@ -633,17 +705,21 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
 
                     bool has_chi = false;
                     for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
-                            bit!=ebit; ++bit) {
+                            bit!=ebit; ++bit)
+                    {
                         const PAGEdge* edge = *bit;
-                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge)) {
+                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge))
+                        {
                             CHISet& chiSet = getCHISet(store);
-                            for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it) {
+                            for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
+                            {
                                 has_chi = true;
                                 (*it)->dump();
                             }
                         }
                     }
-                    if (has_chi) {
+                    if (has_chi)
+                    {
                         Out << "\n";
                         last_is_chi = true;
                     }
@@ -654,9 +730,11 @@ void MemSSA::dumpMSSA(raw_ostream& Out) {
         }
 
         // dump return mu nodes
-        if (hasReturnMu(fun)) {
+        if (hasReturnMu(fun))
+        {
             MUSet & return_mus = getReturnMuSet(fun);
-            for (MUSet::iterator mu_it = return_mus.begin(); mu_it != return_mus.end(); mu_it++) {
+            for (MUSet::iterator mu_it = return_mus.begin(); mu_it != return_mus.end(); mu_it++)
+            {
                 (*mu_it)->dump();
             }
         }

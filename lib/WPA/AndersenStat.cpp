@@ -44,7 +44,8 @@ const char* AndersenStat::CollapseTime = "CollapseTime";
 /*!
  * Constructor
  */
-AndersenStat::AndersenStat(Andersen* p): PTAStat(p),pta(p) {
+AndersenStat::AndersenStat(Andersen* p): PTAStat(p),pta(p)
+{
     _NumOfNullPtr = 0;
     _NumOfConstantPtr= 0;
     _NumOfBlackholePtr = 0;
@@ -54,29 +55,35 @@ AndersenStat::AndersenStat(Andersen* p): PTAStat(p),pta(p) {
 /*!
  * Collect cycle information
  */
-void AndersenStat::collectCycleInfo(ConstraintGraph* consCG) {
+void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
+{
     _NumOfCycles = 0;
     _NumOfPWCCycles = 0;
     _NumOfNodesInCycles = 0;
     std::set<NodeID> repNodes;
     repNodes.clear();
-    for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it) {
+    for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
+    {
         // sub nodes have been removed from the constraint graph, only rep nodes are left.
         NodeID repNode = consCG->sccRepNode(it->first);
         NodeBS& subNodes = pta->sccSubNodes(repNode);
         NodeBS clone = subNodes;
-        for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it) {
+        for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
+        {
             NodeID nodeId = *it;
             PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
-            if (SVFUtil::isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId)) {
+            if (SVFUtil::isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId))
+            {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
                 clone.reset(nodeId);
                 clone.set(baseId);
             }
         }
         u32_t num = clone.count();
-        if (num > 1) {
-            if(repNodes.insert(repNode).second) {
+        if (num > 1)
+        {
+            if(repNodes.insert(repNode).second)
+            {
                 _NumOfNodesInCycles += num;
                 if(consCG->isPWCNode(repNode))
                     _NumOfPWCCycles ++;
@@ -88,7 +95,8 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG) {
     _NumOfCycles += repNodes.size();
 }
 
-void AndersenStat::constraintGraphStat(){
+void AndersenStat::constraintGraphStat()
+{
 
 
     ConstraintGraph* consCG = pta->getConstraintGraph();
@@ -97,7 +105,8 @@ void AndersenStat::constraintGraphStat(){
     u32_t numOfGeps = 0;
     // collect copy and gep edges
     for(ConstraintEdge::ConstraintEdgeSetTy::iterator it = consCG->getDirectCGEdges().begin(),
-            eit = consCG->getDirectCGEdges().end(); it!=eit; ++it) {
+            eit = consCG->getDirectCGEdges().end(); it!=eit; ++it)
+    {
         if(SVFUtil::isa<CopyCGEdge>(*it))
             numOfCopys++;
         else if(SVFUtil::isa<GepCGEdge>(*it))
@@ -128,7 +137,8 @@ void AndersenStat::constraintGraphStat(){
 
 
     for (ConstraintGraph::ConstraintNodeIDToNodeMapTy::iterator nodeIt = consCG->begin(), nodeEit = consCG->end();
-            nodeIt != nodeEit; nodeIt++) {
+            nodeIt != nodeEit; nodeIt++)
+    {
         totalNodeNumber++;
         if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
@@ -185,7 +195,7 @@ void AndersenStat::constraintGraphStat(){
     PTNumStatMap["TotalValidNode"] = cgNodeNumber;
     PTNumStatMap["TotalValidObjNode"] = objNodeNumber;
     PTNumStatMap["NumOfCGEdge"] = consCG->getLoadCGEdges().size() + consCG->getStoreCGEdges().size()
-                                    + numOfCopys + numOfGeps;
+                                  + numOfCopys + numOfGeps;
     PTNumStatMap["NumOfAddrs"] =  consCG->getAddrCGEdges().size();
     PTNumStatMap["NumOfCopys"] = numOfCopys;
     PTNumStatMap["NumOfGeps"] =  numOfGeps;
@@ -210,32 +220,38 @@ void AndersenStat::constraintGraphStat(){
 /*!
  * Stat null pointers
  */
-void AndersenStat::statNullPtr() {
+void AndersenStat::statNullPtr()
+{
 
     _NumOfNullPtr = 0;
     for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
-		if (pagNode->isTopLevelPtr() == false)
-			continue;
+        if (pagNode->isTopLevelPtr() == false)
+            continue;
         PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
         PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
-        if (inComingStore.empty()==false || outGoingLoad.empty()==false) {
+        if (inComingStore.empty()==false || outGoingLoad.empty()==false)
+        {
             ///TODO: change the condition here to fetch the points-to set
             PointsTo& pts = pta->getPts(pagNodeId);
-			if (pta->containBlackHoleNode(pts))
-				_NumOfBlackholePtr++;
+            if (pta->containBlackHoleNode(pts))
+                _NumOfBlackholePtr++;
 
-			if (pta->containConstantNode(pts))
-				_NumOfConstantPtr++;
+            if (pta->containConstantNode(pts))
+                _NumOfConstantPtr++;
 
-            if(pts.empty()) {
+            if(pts.empty())
+            {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode) ) {
+                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode) )
+                {
                     // if a pointer is in dead function, we do not care
-                    if(isPtrInDeadFunction(pagNode->getValue()) == false) {
+                    if(isPtrInDeadFunction(pagNode->getValue()) == false)
+                    {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
                                << ") PtrName:" << pagNode->getValue()->getName();
@@ -243,7 +259,8 @@ void AndersenStat::statNullPtr() {
                         //pagNode->getValue()->dump();
                     }
                 }
-                else {
+                else
+                {
                     _NumOfNullPtr++;
                     rawstr << "##Null Pointer : (NodeID " << pagNode->getId() << ")";
                     writeWrnMsg(rawstr.str());
@@ -257,7 +274,8 @@ void AndersenStat::statNullPtr() {
 /*!
  * Start here
  */
-void AndersenStat::performStat() {
+void AndersenStat::performStat()
+{
 
     assert(SVFUtil::isa<Andersen>(pta) && "not an andersen pta pass!! what else??");
     endClk();
@@ -276,14 +294,16 @@ void AndersenStat::performStat() {
     u32_t totalPtsSize = 0;
     u32_t totalTopLevPtsSize = 0;
     for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         NodeID node = iter->first;
         PointsTo& pts = pta->getPts(node);
         u32_t size = pts.count();
         totalPointers++;
         totalPtsSize+=size;
 
-        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getPAGNode(node))) {
+        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getPAGNode(node)))
+        {
             totalTopLevPointers++;
             totalTopLevPtsSize+=size;
         }

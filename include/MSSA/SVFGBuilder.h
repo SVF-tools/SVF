@@ -35,12 +35,14 @@
 /*!
  * Dominator frontier used in MSSA
  */
-class MemSSADF : public DominanceFrontier {
+class MemSSADF : public DominanceFrontier
+{
 public:
     MemSSADF() : DominanceFrontier()
     {}
 
-    bool runOnDT(DominatorTree& dt) {
+    bool runOnDT(DominatorTree& dt)
+    {
         releaseMemory();
         analyze(dt);
         return false;
@@ -50,7 +52,8 @@ public:
 /*!
  * SVFG Builder
  */
-class SVFGBuilder {
+class SVFGBuilder
+{
 
 public:
     typedef PointerAnalysis::CallSiteSet CallSiteSet;
@@ -66,29 +69,33 @@ public:
 
     static SVFG* globalSvfg;
 
-	SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
+    SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
     SVFG* buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta);
-	SVFG* buildFullSVFG(BVDataPTAImpl* pta);
+    SVFG* buildFullSVFG(BVDataPTAImpl* pta);
     SVFG* buildFullSVFGWithoutOPT(BVDataPTAImpl* pta);
 
     /// Clean up
-    static void releaseSVFG() {
+    static void releaseSVFG()
+    {
         if (globalSvfg)
             delete globalSvfg;
         globalSvfg = NULL;
     }
     /// Get SVFG instance
-    inline SVFG* getSVFG() const {
+    inline SVFG* getSVFG() const
+    {
         return svfg;
     }
 
     /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
-    inline void markValidVFEdge(SVFGEdgeSet& edges) {
+    inline void markValidVFEdge(SVFGEdgeSet& edges)
+    {
         for(SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
             vfEdgesAtIndCallSite.erase(*it);
     }
     /// Return true if this is an VF Edge pre-connected by Andersen's analysis
-    inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge) {
+    inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge)
+    {
         return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge))!=vfEdgesAtIndCallSite.end();
     }
 

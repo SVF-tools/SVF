@@ -40,7 +40,8 @@ class SVFModule;
  * Flow sensitive whole program pointer analysis
  */
 typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
-class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl {
+class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl
+{
     friend class FlowSensitiveStat;
 private:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
@@ -61,19 +62,22 @@ public:
         numOfProcessedPhi = numOfProcessedActualParam = numOfProcessedFormalRet = 0;
         numOfProcessedMSSANode = 0;
         maxSCCSize = numOfSCC = numOfNodesInSCC = 0;
-		iterationForPrintStat = OnTheFlyIterBudgetForStat;
+        iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
-    virtual ~FlowSensitive() {
+    virtual ~FlowSensitive()
+    {
         if (svfg != NULL)
             delete svfg;
         svfg = NULL;
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FlowSensitive* createFSWPA(SVFModule* svfModule) {
-        if (fspta == NULL) {
+    static FlowSensitive* createFSWPA(SVFModule* svfModule)
+    {
+        if (fspta == NULL)
+        {
             fspta = new FlowSensitive();
             fspta->analyze(svfModule);
         }
@@ -81,14 +85,16 @@ public:
     }
 
     /// Release flow-sensitive pointer analysis
-    static void releaseFSWPA() {
+    static void releaseFSWPA()
+    {
         if (fspta)
             delete fspta;
         fspta = NULL;
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module) {
+    virtual bool runOnModule(SVFModule* module)
+    {
         return false;
     }
 
@@ -102,22 +108,26 @@ public:
     virtual void finalize();
 
     /// Get PTA name
-    virtual const std::string PTAName() const {
+    virtual const std::string PTAName() const
+    {
         return "FlowSensitive";
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast
     //@{
-    static inline bool classof(const FlowSensitive *) {
+    static inline bool classof(const FlowSensitive *)
+    {
         return true;
     }
-    static inline bool classof(const PointerAnalysis *pta) {
+    static inline bool classof(const PointerAnalysis *pta)
+    {
         return pta->getAnalysisTy() == FSSPARSE_WPA;
     }
     //@}
 
     /// Return SVFG
-    inline SVFG* getSVFG() const {
+    inline SVFG* getSVFG() const
+    {
         return svfg;
     }
 
@@ -142,11 +152,13 @@ protected:
     /// Not necessary if SVFGOPT is used instead of original SVFG.
     virtual bool propagateFromFRToAR(const FormalRetSVFGNode* fr, const SVFGNode* dst);
     /// Handle weak updates
-    virtual bool weakUpdateOutFromIn(const SVFGNode* node) {
+    virtual bool weakUpdateOutFromIn(const SVFGNode* node)
+    {
         return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(),0,false);
     }
     /// Handle strong updates
-    virtual bool strongUpdateOutFromIn(const SVFGNode* node, NodeID singleton) {
+    virtual bool strongUpdateOutFromIn(const SVFGNode* node, NodeID singleton)
+    {
         return getDFPTDataTy()->updateAllDFOutFromIn(node->getId(),singleton,true);
     }
     //@}
@@ -156,34 +168,42 @@ protected:
     //@{
     bool propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, const SVFGNode* dst);
 
-    virtual inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateAllDFInFromOut(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
-    virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateAllDFInFromIn(srcStmt->getId(), srcVar, dstStmt->getId(),dstVar);
     }
     //@}
 
     /// Update data-flow points-to data
     //@{
-    inline bool updateOutFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    inline bool updateOutFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateDFOutFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
-    virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateDFInFromIn(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
-    virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) {
+    virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateDFInFromOut(srcStmt->getId(),srcVar, dstStmt->getId(),dstVar);
     }
 
-    virtual inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
+    virtual inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateTLVPts(stmt->getId(),srcVar,dstVar);
     }
-    virtual inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) {
+    virtual inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar)
+    {
         return getDFPTDataTy()->updateATVPts(srcVar,stmt->getId(),dstVar);
     }
 
-    inline void clearAllDFOutVarFlag(const SVFGNode* stmt) {
+    inline void clearAllDFOutVarFlag(const SVFGNode* stmt)
+    {
         getDFPTDataTy()->clearAllDFOutUpdatedVar(stmt->getId());
     }
     //@}
@@ -223,20 +243,24 @@ protected:
     SVFG* svfg;
     ///Get points-to set for a node from data flow IN/OUT set at a statement.
     //@{
-    inline const PointsTo& getDFInPtsSet(const SVFGNode* stmt, const NodeID node) {
+    inline const PointsTo& getDFInPtsSet(const SVFGNode* stmt, const NodeID node)
+    {
         return getDFPTDataTy()->getDFInPtsSet(stmt->getId(),node);
     }
-    inline const PointsTo& getDFOutPtsSet(const SVFGNode* stmt, const NodeID node) {
+    inline const PointsTo& getDFOutPtsSet(const SVFGNode* stmt, const NodeID node)
+    {
         return getDFPTDataTy()->getDFOutPtsSet(stmt->getId(),node);
     }
     //@}
 
     ///Get IN/OUT data flow map;
     //@{
-    inline const DFInOutMap& getDFInputMap() const {
+    inline const DFInOutMap& getDFInputMap() const
+    {
         return getDFPTDataTy()->getDFIn();
     }
-    inline const DFInOutMap& getDFOutputMap() const {
+    inline const DFInOutMap& getDFOutputMap() const
+    {
         return getDFPTDataTy()->getDFOut();
     }
     //@}

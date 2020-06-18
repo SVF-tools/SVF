@@ -19,7 +19,8 @@ class LockAnalysis;
 /*!
  * SVFG builder for DDA
  */
-class MTASVFGBuilder : public SVFGBuilder {
+class MTASVFGBuilder : public SVFGBuilder
+{
 
 public:
     typedef PointerAnalysis::CallSiteSet CallSiteSet;
@@ -34,7 +35,8 @@ public:
     typedef std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan> SVFGNodeLockSpanPair;
     typedef std::map<SVFGNodeLockSpanPair, bool> PairToBoolMap;
     /// Constructor
-    MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la) {
+    MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la)
+    {
     }
 
     /// Destructor
@@ -123,25 +125,30 @@ private:
 /*!
  * Flow-sensitive pointer analysis for multithreaded programs
  */
-class FSMPTA : public FlowSensitive {
+class FSMPTA : public FlowSensitive
+{
 
 
 public:
 
     /// Constructor
-    FSMPTA(MHP* m, LockAnalysis* la) : FlowSensitive(), mhp(m), lockana(la) {
+    FSMPTA(MHP* m, LockAnalysis* la) : FlowSensitive(), mhp(m), lockana(la)
+    {
     }
 
     /// Destructor
-    ~FSMPTA() {
+    ~FSMPTA()
+    {
     }
 
     /// Initialize analysis
     void initialize(SVFModule* module);
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FSMPTA* createFSMPTA(SVFModule* module, MHP* m, LockAnalysis* la) {
-        if (mfspta == NULL) {
+    static FSMPTA* createFSMPTA(SVFModule* module, MHP* m, LockAnalysis* la)
+    {
+        if (mfspta == NULL)
+        {
             mfspta = new FSMPTA(m,la);
             mfspta->analyze(module);
         }
@@ -149,14 +156,16 @@ public:
     }
 
     /// Release flow-sensitive pointer analysis
-    static void releaseFSMPTA() {
+    static void releaseFSMPTA()
+    {
         if (mfspta)
             delete mfspta;
         mfspta = NULL;
     }
 
     /// Get MHP
-    inline MHP* getMHP() const {
+    inline MHP* getMHP() const
+    {
         return mhp;
     }
 

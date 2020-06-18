@@ -15,12 +15,14 @@
 /*!
  * MTA annotation
  */
-class MTAAnnotator: public Annotator {
+class MTAAnnotator: public Annotator
+{
 
 public:
     typedef std::set<const Instruction*> InstSet;
     /// Constructor
-    MTAAnnotator(): mhp(NULL),lsa(NULL) {
+    MTAAnnotator(): mhp(NULL),lsa(NULL)
+    {
         numOfAllSt = 0;
         numOfAllLd = 0;
         numOfNonLocalSt = 0;
@@ -33,7 +35,8 @@ public:
         numOfAnnotatedLd = 0;
     }
     /// Destructor
-    virtual ~MTAAnnotator() {
+    virtual ~MTAAnnotator()
+    {
 
     }
     /// Annotation
@@ -62,13 +65,15 @@ public:
 
 
     /// Check if Function "F" is memset
-    inline bool isMemset(const Instruction *I) {
+    inline bool isMemset(const Instruction *I)
+    {
         const Function* F =SVFUtil::getCallee(I);
         return F && F->getName().find("llvm.memset") != StringRef::npos;
     }
 
     /// Check if Function "F" is memcpy
-    inline bool isMemcpy(const Instruction *I) {
+    inline bool isMemcpy(const Instruction *I)
+    {
         const Function* F =SVFUtil::getCallee(I);
         return F && ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(F);
     }

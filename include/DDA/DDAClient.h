@@ -20,7 +20,8 @@
 /**
  * General DDAClient which queries all top level pointers by default.
  */
-class DDAClient {
+class DDAClient
+{
 public:
     DDAClient(SVFModule* mod) : pag(NULL), module(mod), curPtr(0), solveAll(true) {}
 
@@ -29,38 +30,45 @@ public:
     virtual inline void initialise(SVFModule* module) {}
 
     /// Collect candidate pointers for query.
-    virtual inline NodeSet& collectCandidateQueries(PAG* p) {
+    virtual inline NodeSet& collectCandidateQueries(PAG* p)
+    {
         setPAG(p);
         if (solveAll)
             candidateQueries = pag->getAllValidPtrs();
-        else {
+        else
+        {
             for (NodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
                 addCandidate(*it);
         }
         return candidateQueries;
     }
     /// Get candidate queries
-    inline const NodeSet& getCandidateQueries() const {
+    inline const NodeSet& getCandidateQueries() const
+    {
         return candidateQueries;
     }
 
     /// Call back used by DDAVFSolver.
     virtual inline void handleStatement(const SVFGNode* stmt, NodeID var) {}
     /// Set PAG graph.
-    inline void setPAG(PAG* g) {
+    inline void setPAG(PAG* g)
+    {
         pag = g;
     }
     /// Set the pointer being queried.
-    void setCurrentQueryPtr(NodeID ptr) {
+    void setCurrentQueryPtr(NodeID ptr)
+    {
         curPtr = ptr;
     }
     /// Set pointer to be queried by DDA analysis.
-    void setQuery(NodeID ptr) {
+    void setQuery(NodeID ptr)
+    {
         userInput.insert(ptr);
         solveAll = false;
     }
     /// Get LLVM module
-    inline SVFModule* getModule() const {
+    inline SVFModule* getModule() const
+    {
         return module;
     }
     virtual void answerQueries(PointerAnalysis* pta);
@@ -69,7 +77,8 @@ public:
 
     virtual inline void collectWPANum(SVFModule* mod) {}
 protected:
-    void addCandidate(NodeID id) {
+    void addCandidate(NodeID id)
+    {
         if (pag->isValidTopLevelPtr(pag->getPAGNode(id)))
             candidateQueries.insert(id);
     }
@@ -88,7 +97,8 @@ private:
 /**
  * DDA client with function pointers as query candidates.
  */
-class FunptrDDAClient : public DDAClient {
+class FunptrDDAClient : public DDAClient
+{
 private:
     typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
@@ -106,7 +116,8 @@ public:
 /**
  * DDA client with function pointers as query candidates.
  */
-class AliasDDAClient : public DDAClient {
+class AliasDDAClient : public DDAClient
+{
 
 public:
     typedef std::set<const PAGNode*> PAGNodeSet;

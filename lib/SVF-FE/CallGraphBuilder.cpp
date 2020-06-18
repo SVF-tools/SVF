@@ -34,23 +34,29 @@
 
 using namespace SVFUtil;
 
-PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule){
+PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
+{
     /// create nodes
-    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
-    	const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(*F);
-    	callgraph->addCallGraphNode(fun);
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
+    {
+        const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(*F);
+        callgraph->addCallGraphNode(fun);
     }
 
     /// create edges
-    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F) {
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
+    {
         Function *fun = *F;
-        for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I) {
+        for (inst_iterator I = inst_begin(*fun), J = inst_end(*fun); I != J; ++I)
+        {
             const Instruction *inst = &*I;
-            if (SVFUtil::isNonInstricCallSite(inst)) {
-                if(const SVFFunction* callee = getCallee(inst)){
-                	const CallBlockNode* callBlockNode = icfg->getCallBlockNode(inst);
-                	const SVFFunction* caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-                	callgraph->addDirectCallGraphEdge(callBlockNode,caller,callee);
+            if (SVFUtil::isNonInstricCallSite(inst))
+            {
+                if(const SVFFunction* callee = getCallee(inst))
+                {
+                    const CallBlockNode* callBlockNode = icfg->getCallBlockNode(inst);
+                    const SVFFunction* caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+                    callgraph->addDirectCallGraphEdge(callBlockNode,caller,callee);
                 }
             }
         }
@@ -61,52 +67,64 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule){
     return callgraph;
 }
 
-PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule){
+PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
+{
 
-	buildCallGraph(svfModule);
+    buildCallGraph(svfModule);
 
-	ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
-	assert(cg && "not a thread callgraph?");
+    ThreadCallGraph* cg = dyn_cast<ThreadCallGraph>(callgraph);
+    assert(cg && "not a thread callgraph?");
 
-	ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
-    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi) {
+    ThreadAPI* tdAPI = ThreadAPI::getThreadAPI();
+    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi)
+    {
         const Function *fun = *fi;
-        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
+        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
+        {
             const Instruction *inst = &*II;
-            if (tdAPI->isTDFork(inst)) {
-            	const CallBlockNode* cs = icfg->getCallBlockNode(inst);
-            	cg->addForksite(cs);
+            if (tdAPI->isTDFork(inst))
+            {
+                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                cg->addForksite(cs);
                 const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
-                if (forkee) {
-                	cg->addDirectForkEdge(cs);
+                if (forkee)
+                {
+                    cg->addDirectForkEdge(cs);
                 }
                 // indirect call to the start routine function
-                else {
-                	cg->addThreadForkEdgeSetMap(cs,NULL);
+                else
+                {
+                    cg->addThreadForkEdgeSetMap(cs,NULL);
                 }
             }
-            else if (tdAPI->isHareParFor(inst)) {
-            	const CallBlockNode* cs = icfg->getCallBlockNode(inst);
-            	cg->addParForSite(cs);
+            else if (tdAPI->isHareParFor(inst))
+            {
+                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                cg->addParForSite(cs);
                 const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
-                if (taskFunc) {
-                	cg->addDirectParForEdge(cs);
+                if (taskFunc)
+                {
+                    cg->addDirectParForEdge(cs);
                 }
                 // indirect call to the start routine function
-                else {
-                	cg->addHareParForEdgeSetMap(cs,NULL);
+                else
+                {
+                    cg->addHareParForEdgeSetMap(cs,NULL);
                 }
             }
         }
     }
     // record join sites
-    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi) {
+    for (SVFModule::llvm_const_iterator fi = svfModule->llvmFunBegin(), efi = svfModule->llvmFunEnd(); fi != efi; ++fi)
+    {
         const Function *fun = *fi;
-        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II) {
+        for (const_inst_iterator II = inst_begin(*fun), E = inst_end(*fun); II != E; ++II)
+        {
             const Instruction *inst = &*II;
-            if (tdAPI->isTDJoin(inst)) {
-            	const CallBlockNode* cs = icfg->getCallBlockNode(inst);
-            	cg->addJoinsite(cs);
+            if (tdAPI->isTDJoin(inst))
+            {
+                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                cg->addJoinsite(cs);
             }
         }
     }

@@ -36,13 +36,15 @@ AndersenWaveDiff* AndersenWaveDiff::diffWave = NULL;
 /*!
  * solve worklist
  */
-void AndersenWaveDiff::solveWorklist() {
+void AndersenWaveDiff::solveWorklist()
+{
     // Initialize the nodeStack via a whole SCC detection
     // Nodes in nodeStack are in topological order by default.
     NodeStack& nodeStack = SCCDetect();
 
     // Process nodeStack and put the changed nodes into workList.
-    while (!nodeStack.empty()) {
+    while (!nodeStack.empty())
+    {
         NodeID nodeId = nodeStack.top();
         nodeStack.pop();
         collapsePWCNode(nodeId);
@@ -52,9 +54,11 @@ void AndersenWaveDiff::solveWorklist() {
     }
 
     // This modification is to make WAVE feasible to handle PWC analysis
-    if (!mergePWC()) {
+    if (!mergePWC())
+    {
         NodeStack tmpWorklist;
-        while (!isWorklistEmpty()) {
+        while (!isWorklistEmpty())
+        {
             NodeID nodeId = popFromWorklist();
             collapsePWCNode(nodeId);
             // process nodes in nodeStack
@@ -62,7 +66,8 @@ void AndersenWaveDiff::solveWorklist() {
             collapseFields();
             tmpWorklist.push(nodeId);
         }
-        while (!tmpWorklist.empty()) {
+        while (!tmpWorklist.empty())
+        {
             NodeID nodeId = tmpWorklist.top();
             tmpWorklist.pop();
             pushIntoWorklist(nodeId);
@@ -70,7 +75,8 @@ void AndersenWaveDiff::solveWorklist() {
     }
 
     // New nodes will be inserted into workList during processing.
-    while (!isWorklistEmpty()) {
+    while (!isWorklistEmpty())
+    {
         NodeID nodeId = popFromWorklist();
         // process nodes in worklist
         postProcessNode(nodeId);
@@ -80,7 +86,8 @@ void AndersenWaveDiff::solveWorklist() {
 /*!
  * Process edge PAGNode
  */
-void AndersenWaveDiff::processNode(NodeID nodeId) {
+void AndersenWaveDiff::processNode(NodeID nodeId)
+{
     // This node may be merged during collapseNodePts() which means it is no longer a rep node
     // in the graph. Only rep node needs to be handled.
     if (sccRepNode(nodeId) != nodeId)
@@ -104,13 +111,15 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 
     // handle load
     for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
-         it != eit; ++it) {
+            it != eit; ++it)
+    {
         if (handleLoad(nodeId, *it))
             reanalyze = true;
     }
     // handle store
     for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
-         it != eit; ++it) {
+            it != eit; ++it)
+    {
         if (handleStore(nodeId, *it))
             reanalyze = true;
     }
@@ -122,11 +131,13 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
 /*!
  * Handle copy gep
  */
-void AndersenWaveDiff::handleCopyGep(ConstraintNode* node) {
+void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
+{
     NodeID nodeId = node->getId();
     computeDiffPts(nodeId);
 
-    if (!getDiffPts(nodeId).empty()) {
+    if (!getDiffPts(nodeId).empty())
+    {
         for (ConstraintEdge* edge : node->getCopyOutEdges())
             if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
                 processCopy(nodeId, copyEdge);
@@ -143,8 +154,10 @@ bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-         piter != epiter; ++piter) {
-        if (processLoad(*piter, edge)) {
+            piter != epiter; ++piter)
+    {
+        if (processLoad(*piter, edge))
+        {
             changed = true;
         }
     }
@@ -158,8 +171,10 @@ bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-         piter != epiter; ++piter) {
-        if (processStore(*piter, edge)) {
+            piter != epiter; ++piter)
+    {
+        if (processStore(*piter, edge))
+        {
             changed = true;
         }
     }
@@ -169,7 +184,8 @@ bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
 /*!
  * Propagate diff points-to set from src to dst
  */
-bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
+bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge)
+{
     numOfProcessedCopy++;
 
     bool changed = false;
@@ -177,7 +193,8 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
     NodeID dst = edge->getDstID();
     PointsTo& srcDiffPts = getDiffPts(node);
     processCast(edge);
-    if(unionPts(dst,srcDiffPts)) {
+    if(unionPts(dst,srcDiffPts))
+    {
         changed = true;
         pushIntoWorklist(dst);
     }
@@ -188,7 +205,8 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge) {
 /*
  * Merge a node to its rep node
  */
-void AndersenWaveDiff::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
+void AndersenWaveDiff::mergeNodeToRep(NodeID nodeId,NodeID newRepId)
+{
     if(nodeId==newRepId)
         return;
 

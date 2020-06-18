@@ -24,7 +24,8 @@ class SVFModule;
 /*!
  * Base data race detector
  */
-class MTA: public ModulePass {
+class MTA: public ModulePass
+{
 
 public:
     typedef std::set<const LoadInst*> LoadSet;
@@ -57,21 +58,24 @@ public:
     virtual void detect(SVFModule* module);
 
     /// Pass name
-    virtual StringRef getPassName() const {
+    virtual StringRef getPassName() const
+    {
         return "Multi threaded program analysis pass";
     }
 
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
     /// Get analysis usage
-    inline virtual void getAnalysisUsage(AnalysisUsage& au) const {
+    inline virtual void getAnalysisUsage(AnalysisUsage& au) const
+    {
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
         au.addRequired<ScalarEvolutionWrapperPass>();
     }
 
     // Get ScalarEvolution for Function F.
-    static inline ScalarEvolution* getSE(const Function *F) {
+    static inline ScalarEvolution* getSE(const Function *F)
+    {
         FunToSEMap::iterator it = func2ScevMap.find(F);
         if (it != func2ScevMap.end())
             return it->second;

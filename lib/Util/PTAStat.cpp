@@ -102,11 +102,13 @@ const char* PTAStat:: MaxNumOfNodesInSCC = "MaxNodesInSCC";	///< max Number of n
 
 const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers points-to null
 
-PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p) {
+PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
+{
 
 }
 
-void PTAStat::performStat() {
+void PTAStat::performStat()
+{
 
     callgraphStat();
 
@@ -124,9 +126,11 @@ void PTAStat::performStat() {
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     std::set<SymID> memObjSet;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it) {
+    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    {
         PAGNode* node = it->second;
-        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node)) {
+        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node))
+        {
             const MemObj* mem = obj->getMemObj();
             if (memObjSet.insert(mem->getSymId()).second == false)
                 continue;
@@ -158,7 +162,8 @@ void PTAStat::performStat() {
             else
                 fsObjNumber++;
 
-            if(pta->isLocalVarInRecursiveFun(node->getId())) {
+            if(pta->isLocalVarInRecursiveFun(node->getId()))
+            {
                 localVarInRecursion.set(node->getId());
             }
         }
@@ -204,7 +209,8 @@ void PTAStat::performStat() {
 
 }
 
-void PTAStat::callgraphStat() {
+void PTAStat::callgraphStat()
+{
 
     PTACallGraph* graph = pta->getPTACallGraph();
     PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
@@ -220,9 +226,11 @@ void PTAStat::callgraphStat() {
     std::set<NodeID> sccRepNodeSet;
     PTACallGraph::iterator it = graph->begin();
     PTACallGraph::iterator eit = graph->end();
-    for (; it != eit; ++it) {
+    for (; it != eit; ++it)
+    {
         totalNode++;
-        if(callgraphSCC->isInCycle(it->first)) {
+        if(callgraphSCC->isInCycle(it->first))
+        {
             sccRepNodeSet.insert(callgraphSCC->repNode(it->first));
             nodeInCycle++;
             const NodeBS& subNodes = callgraphSCC->subNodes(it->first);
@@ -232,10 +240,12 @@ void PTAStat::callgraphStat() {
 
         PTACallGraphNode::const_iterator edgeIt = it->second->InEdgeBegin();
         PTACallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
-        for (; edgeIt != edgeEit; ++edgeIt) {
+        for (; edgeIt != edgeEit; ++edgeIt)
+        {
             PTACallGraphEdge *edge = *edgeIt;
             totalEdge+= edge->getDirectCalls().size() + edge->getIndirectCalls().size();
-            if(callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID())) {
+            if(callgraphSCC->repNode(edge->getSrcID()) == callgraphSCC->repNode(edge->getDstID()))
+            {
                 edgeInCycle+=edge->getDirectCalls().size() + edge->getIndirectCalls().size();
             }
         }
@@ -255,7 +265,8 @@ void PTAStat::callgraphStat() {
     delete callgraphSCC;
 }
 
-void PTAStat::printStat(string statname) {
+void PTAStat::printStat(string statname)
+{
 
     StringRef fullName(SymbolTableInfo::Symbolnfo()->getModule()->getModuleIdentifier());
     StringRef name = fullName.split('/').second;
@@ -265,16 +276,19 @@ void PTAStat::printStat(string statname) {
     std::cout << "################ (program : " << moduleName << ")###############\n";
     std::cout.flags(std::ios::left);
     unsigned field_width = 20;
-    for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it) {
+    for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it)
+    {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
     std::cout << "-------------------------------------------------------\n";
-    for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it) {
+    for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it)
+    {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
-    for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it) {
+    for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
+    {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
@@ -286,19 +300,24 @@ void PTAStat::printStat(string statname) {
 }
 
 
-void PTAStat::bitcastInstStat() {
+void PTAStat::bitcastInstStat()
+{
     SVFModule* module = pta->getModule();
     u32_t numberOfBitCast = 0;
     for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
-            funIter != funEiter; ++funIter) {
+            funIter != funEiter; ++funIter)
+    {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
-                bbIt != bbEit; ++bbIt) {
+                bbIt != bbEit; ++bbIt)
+        {
             const BasicBlock& bb = *bbIt;
             for (BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
-                    instIt != instEit; ++instIt) {
+                    instIt != instEit; ++instIt)
+            {
                 const Instruction& inst = *instIt;
-                if (const BitCastInst* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst)) {
+                if (const BitCastInst* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst))
+                {
                     if (SVFUtil::isa<PointerType>(bitcast->getSrcTy()))
                         numberOfBitCast++;
                 }
@@ -309,15 +328,18 @@ void PTAStat::bitcastInstStat() {
     generalNumMap["BitCastNumber"] = numberOfBitCast;
 }
 
-void PTAStat::branchStat() {
+void PTAStat::branchStat()
+{
     SVFModule* module = pta->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
     for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
-            funIter != funEiter; ++funIter) {
+            funIter != funEiter; ++funIter)
+    {
         const Function* func = *funIter;
         for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
-                bbIt != bbEit; ++bbIt) {
+                bbIt != bbEit; ++bbIt)
+        {
             const BasicBlock& bb = *bbIt;
             u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
             if (numOfSucc == 2)

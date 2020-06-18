@@ -38,7 +38,8 @@
 /*!
  * Selective Cycle Detection Based Andersen Analysis
  */
-class AndersenSCD : public Andersen {
+class AndersenSCD : public Andersen
+{
 public:
     typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
 
@@ -49,12 +50,15 @@ protected:
 
 public:
     AndersenSCD(PTATY type = AndersenSCD_WPA) :
-            Andersen(type) {
+        Andersen(type)
+    {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(SVFModule* svfModule) {
-        if (scdAndersen == nullptr) {
+    static AndersenSCD *createAndersenSCD(SVFModule* svfModule)
+    {
+        if (scdAndersen == nullptr)
+        {
             new AndersenSCD();
             scdAndersen->analyze(svfModule);
             return scdAndersen;
@@ -62,14 +66,16 @@ public:
         return scdAndersen;
     }
 
-    static void releaseAndersenSCD() {
+    static void releaseAndersenSCD()
+    {
         if (scdAndersen)
             delete scdAndersen;
         scdAndersen = NULL;
     }
 
 protected:
-    inline void addSccCandidate(NodeID nodeId) {
+    inline void addSccCandidate(NodeID nodeId)
+    {
         sccCandidates.insert(sccRepNode(nodeId));
     }
 
@@ -90,7 +96,8 @@ protected:
 /*!
  * Selective Cycle Detection with Stride-based Field Representation
  */
-class AndersenSFR : public AndersenSCD {
+class AndersenSFR : public AndersenSCD
+{
 public:
     typedef DenseMap<NodeID, NodeBS> NodeStrides;
     typedef DenseMap<NodeID, NodeSet> FieldReps;
@@ -105,12 +112,15 @@ private:
 
 public:
     AndersenSFR(PTATY type = AndersenSFR_WPA) :
-            AndersenSCD(type), csc(NULL) {
+        AndersenSCD(type), csc(NULL)
+    {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(SVFModule* svfModule) {
-        if (sfrAndersen == nullptr) {
+    static AndersenSFR *createAndersenSFR(SVFModule* svfModule)
+    {
+        if (sfrAndersen == nullptr)
+        {
             new AndersenSFR();
             sfrAndersen->analyze(svfModule);
             return sfrAndersen;
@@ -118,13 +128,16 @@ public:
         return sfrAndersen;
     }
 
-    static void releaseAndersenSFR() {
+    static void releaseAndersenSFR()
+    {
         if (sfrAndersen)
             delete sfrAndersen;
     }
 
-    ~AndersenSFR() {
-        if (csc != NULL) {
+    ~AndersenSFR()
+    {
+        if (csc != NULL)
+        {
             delete(csc);
             csc = NULL;
         }

@@ -32,26 +32,30 @@
 #include "Util/SVFUtil.h"
 
 static llvm::cl::opt<unsigned> maxBddSize("maxbddsize",  llvm::cl::init(100000),
-                                    llvm::cl::desc("Maximum context limit for DDA"));
+        llvm::cl::desc("Maximum context limit for DDA"));
 
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
-DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs) {
+DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
+{
     if (lhs == getFalseCond() || rhs == getFalseCond())
         return getFalseCond();
     else if (lhs == getTrueCond())
         return rhs;
     else if (rhs == getTrueCond())
         return lhs;
-    else {
+    else
+    {
         DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==NULL) {
+        if(tmp==NULL)
+        {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             ///drop the rhs condition
             return lhs;
         }
-        else {
+        else
+        {
             Cudd_Ref(tmp);
             return tmp;
         }
@@ -61,28 +65,33 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs) {
 /*!
  * Use Cudd_bddOrLimit interface to avoid bdds blow up
  */
-DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs) {
+DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
+{
     if (lhs == getTrueCond() || rhs == getTrueCond())
         return getTrueCond();
     else if (lhs == getFalseCond())
         return rhs;
     else if (rhs == getFalseCond())
         return lhs;
-    else {
+    else
+    {
         DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==NULL) {
+        if(tmp==NULL)
+        {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             /// drop the two conditions here
             return getTrueCond();
         }
-        else {
+        else
+        {
             Cudd_Ref(tmp);
             return tmp;
         }
     }
 }
 
-DdNode* BddCondManager::NEG(DdNode* lhs) {
+DdNode* BddCondManager::NEG(DdNode* lhs)
+{
     if (lhs == getTrueCond())
         return getFalseCond();
     else if (lhs == getFalseCond())
@@ -96,7 +105,8 @@ DdNode* BddCondManager::NEG(DdNode* lhs) {
  * Utilities for dumping conditions. These methods use global functions from CUDD
  * package and they can be removed outside this class scope to be used by others.
  */
-void BddCondManager::ddClearFlag(DdNode * f) const {
+void BddCondManager::ddClearFlag(DdNode * f) const
+{
     if (!Cudd_IsComplement(f->next))
         return;
     /* Clear visited flag. */
@@ -108,7 +118,8 @@ void BddCondManager::ddClearFlag(DdNode * f) const {
     return;
 }
 
-void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const {
+void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const
+{
     if (cuddIsConstant(f) || Cudd_IsComplement(f->next))
         return;
 
@@ -120,7 +131,8 @@ void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const {
     f->next = Cudd_Complement(f->next);
 }
 
-void BddCondManager::BddSupport(DdNode * f, NodeBS &support) const {
+void BddCondManager::BddSupport(DdNode * f, NodeBS &support) const
+{
     BddSupportStep( Cudd_Regular(f), support);
     ddClearFlag(Cudd_Regular(f));
 }
@@ -128,14 +140,17 @@ void BddCondManager::BddSupport(DdNode * f, NodeBS &support) const {
 /*!
  * Dump BDD
  */
-void BddCondManager::dump(DdNode* lhs, raw_ostream & O) {
+void BddCondManager::dump(DdNode* lhs, raw_ostream & O)
+{
     if (lhs == getTrueCond())
         O << "T";
-    else {
+    else
+    {
         NodeBS support;
         BddSupport(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter) {
+                ++iter)
+        {
             unsigned rid = *iter;
             O << rid << " ";
         }
@@ -145,15 +160,18 @@ void BddCondManager::dump(DdNode* lhs, raw_ostream & O) {
 /*!
  * Dump BDD
  */
-std::string BddCondManager::dumpStr(DdNode* lhs) const {
+std::string BddCondManager::dumpStr(DdNode* lhs) const
+{
     std::string str;
     if (lhs == getTrueCond())
         str += "T";
-    else {
+    else
+    {
         NodeBS support;
         BddSupport(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter) {
+                ++iter)
+        {
             unsigned rid = *iter;
             char int2str[16];
             sprintf(int2str, "%d", rid);
