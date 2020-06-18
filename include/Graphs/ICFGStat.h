@@ -151,6 +151,7 @@ public:
             std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
         PTNumStatMap.clear();
+        std::cout.flush();
     }
 };
 

@@ -753,5 +753,7 @@ void Andersen::dumpTopLevelPtsTo()
             }
         }
     }
+
+    outs().flush();
 }
 

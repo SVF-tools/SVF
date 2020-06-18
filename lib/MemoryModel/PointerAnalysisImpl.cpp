@@ -227,6 +227,8 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
             }
         }
     }
+
+    outs().flush();
 }
 
 
