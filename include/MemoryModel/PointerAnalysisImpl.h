@@ -497,6 +497,8 @@ public:
                 }
             }
         }
+
+        SVFUtil::outs().flush();
     }
 };
 
