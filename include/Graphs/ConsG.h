@@ -38,7 +38,8 @@
  * ConstraintNodes are same as PAGNodes
  * ConstraintEdges are self-defined edges (initialized with ConstraintEdges)
  */
-class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge> {
+class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
+{
 
 public:
     typedef DenseMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
@@ -63,54 +64,65 @@ protected:
 
     void destroy();
 
-    PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind){
-		return pag->getPTAEdgeSet(kind);
+    PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    {
+        return pag->getPTAEdgeSet(kind);
     }
 
     /// Wappers used internally, not expose to Andernsen Pass
     //@{
-    inline NodeID getValueNode(const Value* value) const {
+    inline NodeID getValueNode(const Value* value) const
+    {
         return sccRepNode(pag->getValueNode(value));
     }
 
-    inline NodeID getReturnNode(const SVFFunction* value) const {
+    inline NodeID getReturnNode(const SVFFunction* value) const
+    {
         return pag->getReturnNode(value);
     }
 
-    inline NodeID getVarargNode(const SVFFunction* value) const {
+    inline NodeID getVarargNode(const SVFFunction* value) const
+    {
         return pag->getVarargNode(value);
     }
     //@}
 
 public:
     /// Constructor
-    ConstraintGraph(PAG* p): pag(p), edgeIndex(0) {
+    ConstraintGraph(PAG* p): pag(p), edgeIndex(0)
+    {
         buildCG();
     }
     /// Destructor
-    virtual ~ConstraintGraph() {
+    virtual ~ConstraintGraph()
+    {
         destroy();
     }
 
     /// Get/add/remove constraint node
     //@{
-    inline ConstraintNode* getConstraintNode(NodeID id) const {
+    inline ConstraintNode* getConstraintNode(NodeID id) const
+    {
         id = sccRepNode(id);
         return getGNode(id);
     }
-    inline void addConstraintNode(ConstraintNode* node, NodeID id) {
+    inline void addConstraintNode(ConstraintNode* node, NodeID id)
+    {
         addGNode(id,node);
     }
-    inline bool hasConstraintNode(NodeID id) const {
+    inline bool hasConstraintNode(NodeID id) const
+    {
         return hasGNode(id);
     }
-    inline void removeConstraintNode(ConstraintNode* node) {
+    inline void removeConstraintNode(ConstraintNode* node)
+    {
         removeGNode(node);
     }
     //@}
 
     //// Return true if this edge exits
-    inline bool hasEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind) {
+    inline bool hasEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind)
+    {
         ConstraintEdge edge(src,dst,kind);
         if(kind == ConstraintEdge::Copy ||
                 kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
@@ -127,21 +139,30 @@ public:
     }
 
     /// Get an edge via its src and dst nodes and kind
-    inline ConstraintEdge* getEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind) {
+    inline ConstraintEdge* getEdge(ConstraintNode* src, ConstraintNode* dst, ConstraintEdge::ConstraintEdgeK kind)
+    {
         ConstraintEdge edge(src,dst,kind);
-        if(kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep) {
+        if(kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep)
+        {
             auto eit = directEdgeSet.find(&edge);
             return *eit;
-        } else if(kind == ConstraintEdge::Addr) {
+        }
+        else if(kind == ConstraintEdge::Addr)
+        {
             auto eit = AddrCGEdgeSet.find(&edge);
             return *eit;
-        } else if(kind == ConstraintEdge::Store) {
+        }
+        else if(kind == ConstraintEdge::Store)
+        {
             auto eit = StoreCGEdgeSet.find(&edge);
             return *eit;
-        } else if(kind == ConstraintEdge::Load) {
+        }
+        else if(kind == ConstraintEdge::Load)
+        {
             auto eit = LoadCGEdgeSet.find(&edge);
             return *eit;
-        } else
+        }
+        else
             assert(false && "no other kind!");
     }
 
@@ -163,19 +184,23 @@ public:
     ///Get PAG edge
     //@{
     /// Get Address edges
-    inline ConstraintEdge::ConstraintEdgeSetTy& getAddrCGEdges() {
+    inline ConstraintEdge::ConstraintEdgeSetTy& getAddrCGEdges()
+    {
         return AddrCGEdgeSet;
     }
     /// Get Copy/call/ret/gep edges
-    inline ConstraintEdge::ConstraintEdgeSetTy& getDirectCGEdges() {
+    inline ConstraintEdge::ConstraintEdgeSetTy& getDirectCGEdges()
+    {
         return directEdgeSet;
     }
     /// Get Load edges
-    inline ConstraintEdge::ConstraintEdgeSetTy& getLoadCGEdges() {
+    inline ConstraintEdge::ConstraintEdgeSetTy& getLoadCGEdges()
+    {
         return LoadCGEdgeSet;
     }
     /// Get Store edges
-    inline ConstraintEdge::ConstraintEdgeSetTy& getStoreCGEdges() {
+    inline ConstraintEdge::ConstraintEdgeSetTy& getStoreCGEdges()
+    {
         return StoreCGEdgeSet;
     }
     //@}
@@ -198,24 +223,29 @@ public:
 
     /// SCC rep/sub nodes methods
     //@{
-    inline NodeID sccRepNode(NodeID id) const {
+    inline NodeID sccRepNode(NodeID id) const
+    {
         NodeToRepMap::const_iterator it = nodeToRepMap.find(id);
         if(it==nodeToRepMap.end())
             return id;
         else
             return it->second;
     }
-    inline NodeBS& sccSubNodes(NodeID id) {
+    inline NodeBS& sccSubNodes(NodeID id)
+    {
         nodeToSubsMap[id].set(id);
         return nodeToSubsMap[id];
     }
-    inline void setRep(NodeID node, NodeID rep) {
+    inline void setRep(NodeID node, NodeID rep)
+    {
         nodeToRepMap[node] = rep;
     }
-    inline void setSubs(NodeID node, NodeBS& subs) {
+    inline void setSubs(NodeID node, NodeBS& subs)
+    {
         nodeToSubsMap[node] |= subs;
     }
-    inline void resetSubs(NodeID node) {
+    inline void resetSubs(NodeID node)
+    {
         nodeToSubsMap.erase(node);
     }
     //@}
@@ -232,14 +262,16 @@ public:
 
     /// Move incoming/outgoing direct edges of a sub node to its rep node
     /// Return TRUE if there's a gep edge inside this SCC (PWC).
-    inline bool moveEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep ) {
+    inline bool moveEdgesToRepNode(ConstraintNode*node, ConstraintNode* rep )
+    {
         bool gepIn = moveInEdgesToRepNode(node, rep);
         bool gepOut = moveOutEdgesToRepNode(node, rep);
         return (gepIn || gepOut);
     }
 
     /// Check if a given edge is a NormalGepCGEdge with 0 offset.
-    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const {
+    inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
+    {
         if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
             if (0 == normalGepCGEdge->getLocationSet().getOffset())
                 return true;
@@ -248,35 +280,44 @@ public:
 
     /// Wrappers for invoking PAG methods
     //@{
-    inline const PAG::CallSiteToFunPtrMap& getIndirectCallsites() const {
+    inline const PAG::CallSiteToFunPtrMap& getIndirectCallsites() const
+    {
         return pag->getIndirectCallsites();
     }
-    inline NodeID getBlackHoleNode() {
+    inline NodeID getBlackHoleNode()
+    {
         return pag->getBlackHoleNode();
     }
-    inline bool isBlkObjOrConstantObj(NodeID id) {
+    inline bool isBlkObjOrConstantObj(NodeID id)
+    {
         return pag->isBlkObjOrConstantObj(id);
     }
-    inline NodeBS& getAllFieldsObjNode(NodeID id) {
+    inline NodeBS& getAllFieldsObjNode(NodeID id)
+    {
         return pag->getAllFieldsObjNode(id);
     }
-    inline NodeID getBaseObjNode(NodeID id) {
+    inline NodeID getBaseObjNode(NodeID id)
+    {
         return pag->getBaseObjNode(id);
     }
-    inline void setObjFieldInsensitive(NodeID id) {
+    inline void setObjFieldInsensitive(NodeID id)
+    {
         MemObj* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
         mem->setFieldInsensitive();
     }
-    inline bool isFieldInsensitiveObj(NodeID id) const {
+    inline bool isFieldInsensitiveObj(NodeID id) const
+    {
         const MemObj* mem =  pag->getBaseObj(id);
         return mem->isFieldInsensitive();
     }
-    inline bool isSingleFieldObj(NodeID id) const {
+    inline bool isSingleFieldObj(NodeID id) const
+    {
         const MemObj* mem = pag->getBaseObj(id);
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls) {
+    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    {
         NodeID gep =  pag->getGepObjNode(id,ls);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
@@ -284,7 +325,8 @@ public:
         return gep;
     }
     /// Get a field-insensitive node of a memory object
-    inline NodeID getFIObjNode(NodeID id) {
+    inline NodeID getFIObjNode(NodeID id)
+    {
         NodeID fi = pag->getFIObjNode(id);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if (sccRepNode(fi) == fi && hasConstraintNode(fi)==false)
@@ -295,23 +337,28 @@ public:
 
     /// Check/Set PWC (positive weight cycle) flag
     //@{
-    inline bool isPWCNode(NodeID nodeId) {
+    inline bool isPWCNode(NodeID nodeId)
+    {
         return getConstraintNode(nodeId)->isPWCNode();
     }
-    inline void setPWCNode(NodeID nodeId) {
+    inline void setPWCNode(NodeID nodeId)
+    {
         getConstraintNode(nodeId)->setPWCNode();
     }
     //@}
 
     /// Add/get nodes to be collapsed
     //@{
-    inline bool hasNodesToBeCollapsed() const {
+    inline bool hasNodesToBeCollapsed() const
+    {
         return (!nodesToBeCollapsed.empty());
     }
-    inline void addNodeToBeCollapsed(NodeID id) {
+    inline void addNodeToBeCollapsed(NodeID id)
+    {
         nodesToBeCollapsed.push(id);
     }
-    inline NodeID getNextCollapseNode() {
+    inline NodeID getNextCollapseNode()
+    {
         return nodesToBeCollapsed.pop();
     }
     //@}
@@ -323,20 +370,24 @@ public:
 };
 
 
-namespace llvm {
+namespace llvm
+{
 /* !
  * GraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<ConstraintNode*> : public GraphTraits<GenericNode<ConstraintNode,ConstraintEdge>*  > {
+template<> struct GraphTraits<ConstraintNode*> : public GraphTraits<GenericNode<ConstraintNode,ConstraintEdge>*  >
+{
 };
 
 /// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<ConstraintNode *> > : public GraphTraits<Inverse<GenericNode<ConstraintNode,ConstraintEdge>* > > {
+struct GraphTraits<Inverse<ConstraintNode *> > : public GraphTraits<Inverse<GenericNode<ConstraintNode,ConstraintEdge>* > >
+{
 };
 
-template<> struct GraphTraits<ConstraintGraph*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* > {
+template<> struct GraphTraits<ConstraintGraph*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* >
+{
     typedef ConstraintNode *NodeRef;
 };
 

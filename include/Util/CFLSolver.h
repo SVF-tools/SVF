@@ -38,7 +38,8 @@
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
 template<class GraphType, class DPIm = DPItem>
-class CFLSolver {
+class CFLSolver
+{
 
 public:
     ///Define the GTraits and node iterator
@@ -62,71 +63,86 @@ protected:
     {
     }
     /// Destructor
-    virtual ~CFLSolver() {
+    virtual ~CFLSolver()
+    {
     }
     /// Get/Set graph methods
     //@{
-    const inline GraphType graph() const {
+    const inline GraphType graph() const
+    {
         return _graph;
     }
-    inline void setGraph(GraphType g) {
+    inline void setGraph(GraphType g)
+    {
         _graph = g;
     }
     //@}
 
-    inline GNODE* getNode(NodeID id) const {
+    inline GNODE* getNode(NodeID id) const
+    {
         return _graph->getGNode(id);
     }
-    virtual inline NodeID getNodeIDFromItem(const DPIm& item) const {
+    virtual inline NodeID getNodeIDFromItem(const DPIm& item) const
+    {
         return item.getCurNodeID();
     }
     /// CFL forward traverse solve
-    virtual void forwardTraverse(DPIm& it) {
+    virtual void forwardTraverse(DPIm& it)
+    {
         pushIntoWorklist(it);
 
-        while (!isWorklistEmpty()) {
+        while (!isWorklistEmpty())
+        {
             DPIm item = popFromWorklist();
             FWProcessCurNode(item);
 
             GNODE* v = getNode(getNodeIDFromItem(item));
             child_iterator EI = GTraits::child_begin(v);
             child_iterator EE = GTraits::child_end(v);
-            for (; EI != EE; ++EI) {
-            	FWProcessOutgoingEdge(item,*(EI.getCurrent()) );
+            for (; EI != EE; ++EI)
+            {
+                FWProcessOutgoingEdge(item,*(EI.getCurrent()) );
             }
         }
     }
     /// CFL forward traverse solve
-    virtual void backwardTraverse(DPIm& it) {
+    virtual void backwardTraverse(DPIm& it)
+    {
         pushIntoWorklist(it);
 
-        while (!isWorklistEmpty()) {
+        while (!isWorklistEmpty())
+        {
             DPIm item = popFromWorklist();
             BWProcessCurNode(item);
 
             GNODE* v = getNode(getNodeIDFromItem(item));
             inv_child_iterator EI = InvGTraits::child_begin(v);
             inv_child_iterator EE = InvGTraits::child_end(v);
-            for (; EI != EE; ++EI) {
-            	BWProcessIncomingEdge(item,*(EI.getCurrent()) );
+            for (; EI != EE; ++EI)
+            {
+                BWProcessIncomingEdge(item,*(EI.getCurrent()) );
             }
         }
     }
     /// Process the DP item
     //@{
-    virtual void FWProcessCurNode(const DPIm& item) {
+    virtual void FWProcessCurNode(const DPIm& item)
+    {
     }
-    virtual void BWProcessCurNode(const DPIm& item) {
+    virtual void BWProcessCurNode(const DPIm& item)
+    {
     }
     //@}
     /// Propagation for the solving, to be implemented in the child class
     //@{
-    virtual void FWProcessOutgoingEdge(const DPIm& item, GEDGE* edge) {
+    virtual void FWProcessOutgoingEdge(const DPIm& item, GEDGE* edge)
+    {
         DPIm newItem(item);
         newItem.setCurNodeID(edge->getDstID());
         pushIntoWorklist(newItem);
     }
-    virtual void BWProcessIncomingEdge(const DPIm& item, GEDGE* edge) {
+    virtual void BWProcessIncomingEdge(const DPIm& item, GEDGE* edge)
+    {
         DPIm newItem(item);
         newItem.setCurNodeID(edge->getSrcID());
         pushIntoWorklist(newItem);
@@ -134,16 +150,20 @@ protected:
     //@}
     /// Worklist operations
     //@{
-    inline DPIm popFromWorklist() {
+    inline DPIm popFromWorklist()
+    {
         return worklist.pop();
     }
-    inline bool pushIntoWorklist(DPIm& item) {
+    inline bool pushIntoWorklist(DPIm& item)
+    {
         return worklist.push(item);
     }
-    inline bool isWorklistEmpty() {
+    inline bool isWorklistEmpty()
+    {
         return worklist.empty();
     }
-    inline bool isInWorklist(DPIm& item) {
+    inline bool isInWorklist(DPIm& item)
+    {
         return worklist.find(item);
     }
     //@}

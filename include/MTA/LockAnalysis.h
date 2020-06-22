@@ -21,11 +21,13 @@
 /*!
  * Lock analysis
  */
-class LockAnalysis {
+class LockAnalysis
+{
 
 public:
     /// semilattice  Empty==>TDUnlocked==>TDLocked
-    enum ValDomain {
+    enum ValDomain
+    {
         Empty,  // initial(dummy) state
         TDLocked,  // stmt is locked
         TDUnlocked,  //  stmt is unlocked
@@ -58,7 +60,8 @@ public:
     typedef std::pair<const Function*,const Function*> FuncPair;
     typedef std::map<FuncPair, bool> FuncPairToBool;
 
-    LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0) {
+    LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
+    {
     }
 
     /// context-sensitive forward traversal from each lock site. Generate following results
@@ -78,37 +81,45 @@ public:
     /// Intraprocedural locks
     //@{
     /// Return true if the lock is an intra-procedural lock
-    inline bool isIntraLock(const Instruction* lock) const {
+    inline bool isIntraLock(const Instruction* lock) const
+    {
         assert(locksites.find(lock)!=locksites.end() && "not a lock site?");
         return ciLocktoSpan.find(lock)!=ciLocktoSpan.end();
     }
 
     /// Add intra-procedural lock
-    inline void addIntraLock(const Instruction* lockSite, const InstSet& stmts) {
-        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it) {
+    inline void addIntraLock(const Instruction* lockSite, const InstSet& stmts)
+    {
+        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
+        {
             instCILocksMap[*it].insert(lockSite);
             ciLocktoSpan[lockSite].insert(*it);
         }
     }
 
     /// Add intra-procedural lock
-    inline void addCondIntraLock(const Instruction* lockSite, const InstSet& stmts) {
-        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it) {
+    inline void addCondIntraLock(const Instruction* lockSite, const InstSet& stmts)
+    {
+        for(InstSet::const_iterator it = stmts.begin(), eit = stmts.end(); it!=eit; ++it)
+        {
             instTocondCILocksMap[*it].insert(lockSite);
         }
     }
 
     /// Return true if a statement is inside an intra-procedural lock
-    inline bool isInsideIntraLock(const Instruction* stmt) const {
+    inline bool isInsideIntraLock(const Instruction* stmt) const
+    {
         return instCILocksMap.find(stmt)!=instCILocksMap.end() || isInsideCondIntraLock(stmt);
     }
 
     /// Return true if a statement is inside a partial lock/unlock pair (conditional lock with unconditional unlock)
-    inline bool isInsideCondIntraLock(const Instruction* stmt) const {
+    inline bool isInsideCondIntraLock(const Instruction* stmt) const
+    {
         return instTocondCILocksMap.find(stmt)!=instTocondCILocksMap.end();
     }
 
-    inline const InstSet& getIntraLockSet(const Instruction* stmt) const {
+    inline const InstSet& getIntraLockSet(const Instruction* stmt) const
+    {
         InstToInstSetMap::const_iterator it = instCILocksMap.find(stmt);
         assert(it!=instCILocksMap.end() && "intralock not found!");
         return it->second;
@@ -118,22 +129,27 @@ public:
     /// Context-sensitive locks
     //@{
     /// Add inter-procedural context-sensitive lock
-    inline void addCxtLock(const CallStrCxt& cxt,const Instruction* inst) {
+    inline void addCxtLock(const CallStrCxt& cxt,const Instruction* inst)
+    {
         CxtLock cxtlock(cxt,inst);
         cxtLockset.insert(cxtlock);
         DBOUT(DMTA, SVFUtil::outs() << "LockAnalysis Process new lock "; cxtlock.dump());
     }
 
     /// Get context-sensitive lock
-    inline bool hasCxtLock(const CxtLock& cxtLock) const {
+    inline bool hasCxtLock(const CxtLock& cxtLock) const
+    {
         return cxtLockset.find(cxtLock)!=cxtLockset.end();
     }
 
     /// Return true if the intersection of two locksets is not empty
-    inline bool intersects(const CxtLockSet& lockset1,const CxtLockSet& lockset2) const {
-        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it) {
+    inline bool intersects(const CxtLockSet& lockset1,const CxtLockSet& lockset2) const
+    {
+        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it)
+        {
             const CxtLock& lock = *it;
-            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit) {
+            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit)
+            {
                 if(lock==*lit)
                     return true;
             }
@@ -141,10 +157,13 @@ public:
         return false;
     }
     /// Return true if two locksets has at least one alias lock
-    inline bool alias(const CxtLockSet& lockset1,const CxtLockSet& lockset2) {
-        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it) {
+    inline bool alias(const CxtLockSet& lockset1,const CxtLockSet& lockset2)
+    {
+        for(CxtLockSet::const_iterator it = lockset1.begin(), eit = lockset1.end(); it!=eit; ++it)
+        {
             const CxtLock& lock = *it;
-            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit) {
+            for(CxtLockSet::const_iterator lit = lockset2.begin(), elit = lockset2.end(); lit!=elit; ++lit)
+            {
                 if(isAliasedLocks(lock,*lit))
                     return true;
             }
@@ -154,45 +173,54 @@ public:
     //@}
 
     /// Return true if it is a candidate function
-    inline bool isLockCandidateFun(const Function* fun) const {
+    inline bool isLockCandidateFun(const Function* fun) const
+    {
         return lockcandidateFuncSet.find(fun)!=lockcandidateFuncSet.end();
     }
 
     /// Context-sensitive statement and lock spans
     //@{
     /// Get LockSet and LockSpan
-    inline bool hasCxtStmtfromInst(const Instruction* inst) const {
+    inline bool hasCxtStmtfromInst(const Instruction* inst) const
+    {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         return (it != instToCxtStmtSet.end());
     }
-    inline const CxtStmtSet& getCxtStmtfromInst(const Instruction* inst) const {
+    inline const CxtStmtSet& getCxtStmtfromInst(const Instruction* inst) const
+    {
         InstToCxtStmtSet::const_iterator it = instToCxtStmtSet.find(inst);
         assert(it != instToCxtStmtSet.end());
         return it->second;
     }
-    inline bool hasCxtLockfromCxtStmt(const CxtStmt& cts) const {
+    inline bool hasCxtLockfromCxtStmt(const CxtStmt& cts) const
+    {
         CxtStmtToCxtLockSet::const_iterator it = cxtStmtToCxtLockSet.find(cts);
         return (it != cxtStmtToCxtLockSet.end());
     }
-    inline const CxtLockSet& getCxtLockfromCxtStmt(const CxtStmt& cts) const {
+    inline const CxtLockSet& getCxtLockfromCxtStmt(const CxtStmt& cts) const
+    {
         CxtStmtToCxtLockSet::const_iterator it = cxtStmtToCxtLockSet.find(cts);
         assert(it != cxtStmtToCxtLockSet.end());
         return it->second;
     }
-    inline CxtLockSet& getCxtLockfromCxtStmt(const CxtStmt& cts) {
+    inline CxtLockSet& getCxtLockfromCxtStmt(const CxtStmt& cts)
+    {
         CxtStmtToCxtLockSet::iterator it = cxtStmtToCxtLockSet.find(cts);
         assert(it != cxtStmtToCxtLockSet.end());
         return it->second;
     }
     /// Add context-sensitive statement
-    inline bool addCxtStmtToSpan(const CxtStmt& cts, const CxtLock& cl) {
+    inline bool addCxtStmtToSpan(const CxtStmt& cts, const CxtLock& cl)
+    {
         cxtLocktoSpan[cl].insert(cts);
         return cxtStmtToCxtLockSet[cts].insert(cl).second;
     }
     /// Add context-sensitive statement
-    inline bool removeCxtStmtToSpan(CxtStmt& cts, const CxtLock& cl) {
+    inline bool removeCxtStmtToSpan(CxtStmt& cts, const CxtLock& cl)
+    {
         bool find = cxtStmtToCxtLockSet[cts].find(cl)!=cxtStmtToCxtLockSet[cts].end();
-        if(find) {
+        if(find)
+        {
             cxtStmtToCxtLockSet[cts].erase(cl);
             cxtLocktoSpan[cl].erase(cts);
         }
@@ -200,13 +228,16 @@ public:
     }
 
     /// Touch this context statement
-    inline void touchCxtStmt(CxtStmt& cts) {
+    inline void touchCxtStmt(CxtStmt& cts)
+    {
         cxtStmtToCxtLockSet[cts];
     }
-    inline bool hasSpanfromCxtLock(const CxtLock& cl) {
+    inline bool hasSpanfromCxtLock(const CxtLock& cl)
+    {
         return cxtLocktoSpan.find(cl) != cxtLocktoSpan.end();
     }
-    inline LockSpan& getSpanfromCxtLock(const CxtLock& cl) {
+    inline LockSpan& getSpanfromCxtLock(const CxtLock& cl)
+    {
         assert(cxtLocktoSpan.find(cl) != cxtLocktoSpan.end());
         return cxtLocktoSpan[cl];
     }
@@ -215,24 +246,30 @@ public:
 
 
     /// Check if one instruction's context stmt is in a lock span
-    inline bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan) const {
+    inline bool hasOneCxtInLockSpan(const Instruction *I, LockSpan lspan) const
+    {
         if(!hasCxtStmtfromInst(I))
             return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
-        for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++) {
-            if(lspan.find(*cts) != lspan.end()) {
+        for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
+        {
+            if(lspan.find(*cts) != lspan.end())
+            {
                 return true;
             }
         }
         return false;
     }
 
-    inline bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan) const {
+    inline bool hasAllCxtInLockSpan(const Instruction *I, LockSpan lspan) const
+    {
         if(!hasCxtStmtfromInst(I))
             return false;
         const LockSpan ctsset = getCxtStmtfromInst(I);
-        for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++) {
-            if (lspan.find(*cts) == lspan.end()) {
+        for (LockSpan::const_iterator cts = ctsset.begin(), ects = ctsset.end(); cts != ects; cts++)
+        {
+            if (lspan.find(*cts) == lspan.end())
+            {
                 return false;
             }
         }
@@ -253,7 +290,8 @@ public:
     bool isInSameCSSpan(const CxtStmt& cxtStmt1, const CxtStmt& cxtStmt2) const;
     bool isInSameCISpan(const Instruction *i1, const Instruction *i2) const;
 
-    inline u32_t getNumOfCxtLocks() {
+    inline u32_t getNumOfCxtLocks()
+    {
         return cxtLockset.size();
     }
     /// Print locks and spans
@@ -276,10 +314,12 @@ private:
     void handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, CallSite call);
 
     /// Return true it a lock matches an unlock
-    bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2) {
+    bool isAliasedLocks(const CxtLock& cl1, const CxtLock& cl2)
+    {
         return isAliasedLocks(cl1.getStmt(), cl2.getStmt());
     }
-    bool isAliasedLocks(const Instruction* i1, const Instruction* i2) {
+    bool isAliasedLocks(const Instruction* i1, const Instruction* i2)
+    {
         /// todo: must alias
         return tct->getPTA()->alias(getLockVal(i1), getLockVal(i2));
     }
@@ -287,26 +327,33 @@ private:
     /// Mark thread flags for cxtStmt
     //@{
     /// Transfer function for marking context-sensitive statement
-    void markCxtStmtFlag(const CxtStmt& tgr, const CxtStmt& src) {
+    void markCxtStmtFlag(const CxtStmt& tgr, const CxtStmt& src)
+    {
         const CxtLockSet& srclockset = getCxtLockfromCxtStmt(src);
-        if(hasCxtLockfromCxtStmt(tgr)== false) {
-            for(CxtLockSet::const_iterator it = srclockset.begin(), eit = srclockset.end(); it!=eit; ++it) {
+        if(hasCxtLockfromCxtStmt(tgr)== false)
+        {
+            for(CxtLockSet::const_iterator it = srclockset.begin(), eit = srclockset.end(); it!=eit; ++it)
+            {
                 addCxtStmtToSpan(tgr,*it);
             }
             pushToCTSWorkList(tgr);
         }
-        else {
+        else
+        {
             if(intersect(getCxtLockfromCxtStmt(tgr),srclockset))
                 pushToCTSWorkList(tgr);
         }
     }
-    bool intersect(CxtLockSet& tgrlockset, const CxtLockSet& srclockset) {
+    bool intersect(CxtLockSet& tgrlockset, const CxtLockSet& srclockset)
+    {
         CxtLockSet toBeDeleted;
-        for(CxtLockSet::const_iterator it = tgrlockset.begin(), eit = tgrlockset.end(); it!=eit; ++it) {
+        for(CxtLockSet::const_iterator it = tgrlockset.begin(), eit = tgrlockset.end(); it!=eit; ++it)
+        {
             if(srclockset.find(*it)==srclockset.end())
                 toBeDeleted.insert(*it);
         }
-        for(CxtLockSet::const_iterator it = toBeDeleted.begin(), eit = toBeDeleted.end(); it!=eit; ++it) {
+        for(CxtLockSet::const_iterator it = toBeDeleted.begin(), eit = toBeDeleted.end(); it!=eit; ++it)
+        {
             tgrlockset.erase(*it);
         }
         if(!toBeDeleted.empty())
@@ -315,35 +362,42 @@ private:
     }
 
     /// Clear flags
-    inline void clearFlagMap() {
+    inline void clearFlagMap()
+    {
         cxtStmtList.clear();
     }
     //@}
 
     /// WorkList helper functions
     //@{
-    inline bool pushToCTPWorkList(const CxtLockProc& clp) {
-        if (isVisitedCTPs(clp) == false) {
+    inline bool pushToCTPWorkList(const CxtLockProc& clp)
+    {
+        if (isVisitedCTPs(clp) == false)
+        {
             visitedCTPs.insert(clp);
             return clpList.push(clp);
         }
         return false;
     }
-    inline CxtLockProc popFromCTPWorkList() {
+    inline CxtLockProc popFromCTPWorkList()
+    {
         CxtLockProc clp = clpList.pop();
         return clp;
     }
-    inline bool isVisitedCTPs(const CxtLockProc& clp) const {
+    inline bool isVisitedCTPs(const CxtLockProc& clp) const
+    {
         return visitedCTPs.find(clp) != visitedCTPs.end();
     }
     //@}
 
     /// Worklist operations
     //@{
-    inline bool pushToCTSWorkList(const CxtStmt& cs) {
+    inline bool pushToCTSWorkList(const CxtStmt& cs)
+    {
         return cxtStmtList.push(cs);
     }
-    inline CxtStmt popFromCTSWorkList() {
+    inline CxtStmt popFromCTSWorkList()
+    {
         CxtStmt clp = cxtStmtList.pop();
         return clp;
     }
@@ -357,23 +411,28 @@ private:
     void validateResults();
 
     /// Whether it is a lock site
-    inline bool isTDFork(const Instruction* call) {
+    inline bool isTDFork(const Instruction* call)
+    {
         return getTCG()->getThreadAPI()->isTDFork(call);
     }
     /// Whether it is a lock site
-    inline bool isTDAcquire(const Instruction* call) {
+    inline bool isTDAcquire(const Instruction* call)
+    {
         return getTCG()->getThreadAPI()->isTDAcquire(call);
     }
     /// Whether it is a unlock site
-    inline bool isTDRelease(const Instruction* call) {
+    inline bool isTDRelease(const Instruction* call)
+    {
         return getTCG()->getThreadAPI()->isTDRelease(call);
     }
     /// Get lock value
-    inline const Value* getLockVal(const Instruction* call) {
+    inline const Value* getLockVal(const Instruction* call)
+    {
         return getTCG()->getThreadAPI()->getLockVal(call);
     }
     /// ThreadCallGraph
-    inline ThreadCallGraph* getTCG() const {
+    inline ThreadCallGraph* getTCG() const
+    {
         return tct->getThreadCallGraph();
     }
 

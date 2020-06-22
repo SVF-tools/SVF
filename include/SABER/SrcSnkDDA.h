@@ -41,7 +41,8 @@ typedef CFLSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
 /*!
  * General source-sink analysis, which serves as a base analysis to be extended for various clients
  */
-class SrcSnkDDA : public CFLSrcSnkSolver {
+class SrcSnkDDA : public CFLSrcSnkSolver
+{
 
 public:
     typedef ProgSlice::SVFGNodeSet SVFGNodeSet;
@@ -70,11 +71,13 @@ protected:
 public:
 
     /// Constructor
-    SrcSnkDDA() : _curSlice(NULL), svfg(NULL), ptaCallGraph(NULL) {
+    SrcSnkDDA() : _curSlice(NULL), svfg(NULL), ptaCallGraph(NULL)
+    {
         pathCondAllocator = new PathCondAllocator();
     }
     /// Destructor
-    virtual ~SrcSnkDDA() {
+    virtual ~SrcSnkDDA()
+    {
         if (svfg != NULL)
             delete svfg;
         svfg = NULL;
@@ -92,7 +95,8 @@ public:
     virtual void analyze(SVFModule* module);
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* module) {
+    virtual void initialize(SVFModule* module)
+    {
         AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
         svfg =  memSSA.buildPTROnlySVFG(ander);
         setGraph(memSSA.getSVFG());
@@ -106,50 +110,61 @@ public:
     }
 
     /// Finalize analysis
-    virtual void finalize() {
+    virtual void finalize()
+    {
         dumpSlices();
     }
 
     /// Get PAG
-    PAG* getPAG() const {
+    PAG* getPAG() const
+    {
         return PAG::getPAG();
     }
 
     /// Get SVFG
-    inline const SVFG* getSVFG() const {
+    inline const SVFG* getSVFG() const
+    {
         return graph();
     }
 
     /// Get Callgraph
-    inline PTACallGraph* getCallgraph() const {
+    inline PTACallGraph* getCallgraph() const
+    {
         return ptaCallGraph;
     }
 
     /// Whether this svfg node may access global variable
-    inline bool isGlobalSVFGNode(const SVFGNode* node) const {
+    inline bool isGlobalSVFGNode(const SVFGNode* node) const
+    {
         return memSSA.isGlobalSVFGNode(node);
     }
     /// Slice operations
     //@{
     void setCurSlice(const SVFGNode* src);
 
-    inline ProgSlice* getCurSlice() const {
+    inline ProgSlice* getCurSlice() const
+    {
         return _curSlice;
     }
-    inline void addSinkToCurSlice(const SVFGNode* node) {
+    inline void addSinkToCurSlice(const SVFGNode* node)
+    {
         _curSlice->addToSinks(node);
         addToCurForwardSlice(node);
     }
-    inline bool isInCurForwardSlice(const SVFGNode* node) {
+    inline bool isInCurForwardSlice(const SVFGNode* node)
+    {
         return _curSlice->inForwardSlice(node);
     }
-    inline bool isInCurBackwardSlice(const SVFGNode* node) {
+    inline bool isInCurBackwardSlice(const SVFGNode* node)
+    {
         return _curSlice->inBackwardSlice(node);
     }
-    inline void addToCurForwardSlice(const SVFGNode* node) {
+    inline void addToCurForwardSlice(const SVFGNode* node)
+    {
         _curSlice->addToForwardSlice(node);
     }
-    inline void addToCurBackwardSlice(const SVFGNode* node) {
+    inline void addToCurBackwardSlice(const SVFGNode* node)
+    {
         _curSlice->addToBackwardSlice(node);
     }
     //@}
@@ -172,42 +187,53 @@ public:
 
     /// Get sources/sinks
     //@{
-    inline const SVFGNodeSet& getSources() const {
+    inline const SVFGNodeSet& getSources() const
+    {
         return sources;
     }
-    inline SVFGNodeSetIter sourcesBegin() const {
+    inline SVFGNodeSetIter sourcesBegin() const
+    {
         return sources.begin();
     }
-    inline SVFGNodeSetIter sourcesEnd() const {
+    inline SVFGNodeSetIter sourcesEnd() const
+    {
         return sources.end();
     }
-    inline void addToSources(const SVFGNode* node) {
+    inline void addToSources(const SVFGNode* node)
+    {
         sources.insert(node);
     }
-    inline const SVFGNodeSet& getSinks() const {
+    inline const SVFGNodeSet& getSinks() const
+    {
         return sinks;
     }
-    inline SVFGNodeSetIter sinksBegin() const {
+    inline SVFGNodeSetIter sinksBegin() const
+    {
         return sinks.begin();
     }
-    inline SVFGNodeSetIter sinksEnd() const {
+    inline SVFGNodeSetIter sinksEnd() const
+    {
         return sinks.end();
     }
-    inline void addToSinks(const SVFGNode* node) {
+    inline void addToSinks(const SVFGNode* node)
+    {
         sinks.insert(node);
     }
     //@}
 
     /// Get path condition allocator
-    PathCondAllocator* getPathAllocator() const {
+    PathCondAllocator* getPathAllocator() const
+    {
         return pathCondAllocator;
     }
 
 protected:
     /// Forward traverse
-    virtual inline void FWProcessCurNode(const DPIm& item) {
+    virtual inline void FWProcessCurNode(const DPIm& item)
+    {
         const SVFGNode* node = getNode(item.getCurNodeID());
-        if(isSink(node)) {
+        if(isSink(node))
+        {
             addSinkToCurSlice(node);
             _curSlice->setPartialReachable();
         }
@@ -215,9 +241,11 @@ protected:
             addToCurForwardSlice(node);
     }
     /// Backward traverse
-    virtual inline void BWProcessCurNode(const DPIm& item) {
+    virtual inline void BWProcessCurNode(const DPIm& item)
+    {
         const SVFGNode* node = getNode(item.getCurNodeID());
-        if(isInCurForwardSlice(node)) {
+        if(isInCurForwardSlice(node))
+        {
             addToCurBackwardSlice(node);
         }
     }
@@ -227,34 +255,41 @@ protected:
     virtual void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge);
     /// Whether has been visited or not, in order to avoid recursion on SVFG
     //@{
-    inline bool forwardVisited(const SVFGNode* node, const DPIm& item) {
+    inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
+    {
         SVFGNodeToDPItemsMap::iterator it = nodeToDPItemsMap.find(node);
         if(it!=nodeToDPItemsMap.end())
             return it->second.find(item)!=it->second.end();
         else
             return false;
     }
-    inline void addForwardVisited(const SVFGNode* node, const DPIm& item) {
+    inline void addForwardVisited(const SVFGNode* node, const DPIm& item)
+    {
         nodeToDPItemsMap[node].insert(item);
     }
-    inline bool backwardVisited(const SVFGNode* node) {
+    inline bool backwardVisited(const SVFGNode* node)
+    {
         return visitedSet.find(node)!=visitedSet.end();
     }
-    inline void addBackwardVisited(const SVFGNode* node) {
+    inline void addBackwardVisited(const SVFGNode* node)
+    {
         visitedSet.insert(node);
     }
-    inline void clearVisitedMap() {
+    inline void clearVisitedMap()
+    {
         nodeToDPItemsMap.clear();
         visitedSet.clear();
     }
     //@}
 
     /// Whether it is all path reachable from a source
-    virtual bool isAllPathReachable() {
+    virtual bool isAllPathReachable()
+    {
         return _curSlice->isAllReachable();
     }
     /// Whether it is some path reachable from a source
-    virtual bool isSomePathReachable() {
+    virtual bool isSomePathReachable()
+    {
         return _curSlice->isPartialReachable();
     }
     /// Dump SVFG with annotated slice informaiton

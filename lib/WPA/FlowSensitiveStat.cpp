@@ -47,7 +47,8 @@ void FlowSensitiveStat::clearStat()
     _MaxAddrTakenVarPts = 0;
     _TotalPtsSize = 0;
 
-    for (int i=IN; i<=OUT; i++) {
+    for (int i=IN; i<=OUT; i++)
+    {
         /// SVFG nodes
         _NumOfSVFGNodesHaveInOut[i] = 0;
         _NumOfFormalInSVFGNodesHaveInOut[i] = 0;
@@ -97,13 +98,16 @@ void FlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     std::set<SymID> nodeSet;
-    for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++) {
+    for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
+    {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjPN>(pagNode)) {
+        if(SVFUtil::isa<ObjPN>(pagNode))
+        {
             const MemObj * memObj = pag->getBaseObj(nodeId);
             SymID baseId = memObj->getSymId();
-            if (nodeSet.insert(baseId).second) {
+            if (nodeSet.insert(baseId).second)
+            {
                 if (memObj->isFieldInsensitive())
                     fiObjNumber++;
                 else
@@ -117,7 +121,8 @@ void FlowSensitiveStat::performStat()
     unsigned numOfNode = 0;
     SVFG::iterator svfgNodeIt = fspta->svfg->begin();
     SVFG::iterator svfgNodeEit = fspta->svfg->end();
-    for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt) {
+    for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt)
+    {
         numOfNode++;
         SVFGNode* svfgNode = svfgNodeIt->second;
         if (SVFUtil::isa<CopySVFGNode>(svfgNode))
@@ -254,33 +259,41 @@ void FlowSensitiveStat::statNullPtr()
 {
     _NumOfNullPtr = 0;
     for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
         PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
         PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
-        if (inComingStore.empty()==false || outGoingLoad.empty()==false) {
+        if (inComingStore.empty()==false || outGoingLoad.empty()==false)
+        {
             ///TODO: change the condition here to fetch the points-to set
             PointsTo& pts = fspta->getPts(pagNodeId);
-            if(fspta->containBlackHoleNode(pts)) {
+            if(fspta->containBlackHoleNode(pts))
+            {
                 _NumOfConstantPtr++;
             }
-            if(fspta->containConstantNode(pts)) {
+            if(fspta->containConstantNode(pts))
+            {
                 _NumOfBlackholePtr++;
             }
-            if(pts.empty()) {
+            if(pts.empty())
+            {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode)) {
+                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode))
+                {
                     // if a pointer is in dead function, we do not care
-                    if(isPtrInDeadFunction(pagNode->getValue()) == false) {
+                    if(isPtrInDeadFunction(pagNode->getValue()) == false)
+                    {
                         _NumOfNullPtr++;
                         rawstr << "##Null Pointer : (NodeID " << pagNode->getId()
                                << ") PtrName:" << pagNode->getValue()->getName();
                         writeWrnMsg(rawstr.str());
                     }
                 }
-                else {
+                else
+                {
                     _NumOfNullPtr++;
                     rawstr << "##Null Pointer : (NodeID " << pagNode->getId();
                     writeWrnMsg(rawstr.str());
@@ -304,7 +317,8 @@ void FlowSensitiveStat::statPtsSize()
     u32_t totalValidTopLvlPointers = 0;
     u32_t topTopLvlPtsSize = 0;
     for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter) {
+            iter != eiter; ++iter)
+    {
         NodeID node = iter->first;
         if (fspta->getPAG()->isValidTopLevelPtr(iter->second) == false)
             continue;
@@ -335,7 +349,8 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     u32_t inOutPtsSize = 0;
     DFInOutMap::const_iterator it = data.begin();
     DFInOutMap::const_iterator eit = data.end();
-    for (; it != eit; ++it) {
+    for (; it != eit; ++it)
+    {
         const SVFGNode* node = fspta->svfg->getSVFGNode(it->first);
 
         // Count number of SVFG nodes have IN/OUT set.
@@ -362,7 +377,8 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
         const PtsMap& cptsMap = it->second;
         PtsMap::const_iterator ptsIt = cptsMap.begin();
         PtsMap::const_iterator ptsEit = cptsMap.end();
-        for (; ptsIt != ptsEit; ++ptsIt) {
+        for (; ptsIt != ptsEit; ++ptsIt)
+        {
             if (ptsIt->second.empty()) continue;
 
             u32_t ptsNum = ptsIt->second.count();	/// points-to target number
@@ -409,9 +425,11 @@ void FlowSensitiveStat::statAddrVarPtsSize()
 {
     SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = fspta->svfg->begin();
     SVFG::SVFGNodeIDToNodeMapTy::const_iterator eit = fspta->svfg->end();
-    for (; it != eit; ++it) {
+    for (; it != eit; ++it)
+    {
         const SVFGNode* node = it->second;
-        if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node)) {
+        if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+        {
             calculateAddrVarPts(store->getPAGDstNodeID(), store);
         }
     }
@@ -426,7 +444,8 @@ void FlowSensitiveStat::calculateAddrVarPts(NodeID pointer, const SVFGNode* svfg
     _NumOfAddrTakeVar += pts.count();
     PointsTo::iterator ptsIt = pts.begin();
     PointsTo::iterator ptsEit = pts.end();
-    for (; ptsIt != ptsEit; ++ptsIt) {
+    for (; ptsIt != ptsEit; ++ptsIt)
+    {
         const NodeID ptd = *ptsIt;
 
         const PointsTo& cpts = fspta->getDFOutPtsSet(svfg_node, ptd);

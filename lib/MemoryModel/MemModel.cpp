@@ -44,28 +44,33 @@ u32_t StInfo::maxFieldLimit = 0;
 /*!
  * Analyse types of all flattened fields of this object
  */
-void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val) {
+void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val)
+{
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
     assert(SVFUtil::isa<PointerType>(refty) && "this value should be a pointer type!");
     Type* elemTy = refty->getElementType();
     bool isPtrObj = false;
     // Find the inter nested array element
-    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy)) {
+    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))
+    {
         elemTy = AT->getElementType();
         if(elemTy->isPointerTy())
             isPtrObj = true;
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
-                && SVFUtil::isa<ConstantArray>(SVFUtil::cast<GlobalVariable>(val)->getInitializer())) {
+                && SVFUtil::isa<ConstantArray>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
+        {
             setFlag(CONST_ARRAY_OBJ);
         }
         else
             setFlag(VAR_ARRAY_OBJ);
     }
-    if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy)) {
+    if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
+    {
         const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ST);
         for(std::vector<FieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
-                it!=eit; ++it) {
+                it!=eit; ++it)
+        {
             if((*it).getFlattenElemTy()->isPointerTy())
                 isPtrObj = true;
         }
@@ -74,7 +79,9 @@ void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val) {
             setFlag(CONST_STRUCT_OBJ);
         else
             setFlag(VAR_STRUCT_OBJ);
-    } else if (elemTy->isPointerTy()) {
+    }
+    else if (elemTy->isPointerTy())
+    {
         isPtrObj = true;
     }
 
@@ -85,7 +92,8 @@ void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val) {
 /*!
  * Analyse types of heap and static objects
  */
-void ObjTypeInfo::analyzeHeapStaticObjType(const Value* val) {
+void ObjTypeInfo::analyzeHeapStaticObjType(const Value* val)
+{
     // TODO: Heap and static objects are considered as pointers right now.
     //       Refine this function to get more details about heap and static objects.
     setFlag(HASPTR_OBJ);
@@ -94,11 +102,13 @@ void ObjTypeInfo::analyzeHeapStaticObjType(const Value* val) {
 /*!
  * Return size of this Object
  */
-u32_t ObjTypeInfo::getObjSize(const Value* val) {
+u32_t ObjTypeInfo::getObjSize(const Value* val)
+{
 
     Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();
     u32_t numOfFields = 1;
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety)) {
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    {
         numOfFields = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety).size();
     }
     return numOfFields;
@@ -107,40 +117,47 @@ u32_t ObjTypeInfo::getObjSize(const Value* val) {
 /*!
  * Initialize the type info of an object
  */
-void ObjTypeInfo::init(const Value* val) {
+void ObjTypeInfo::init(const Value* val)
+{
 
     Size_t objSize = 1;
     // Global variable
-    if (SVFUtil::isa<Function>(val)) {
+    if (SVFUtil::isa<Function>(val))
+    {
         setFlag(FUNCTION_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
     }
-    else if(SVFUtil::isa<AllocaInst>(val)) {
+    else if(SVFUtil::isa<AllocaInst>(val))
+    {
         setFlag(STACK_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
     }
-    else if(SVFUtil::isa<GlobalVariable>(val)) {
+    else if(SVFUtil::isa<GlobalVariable>(val))
+    {
         setFlag(GLOBVAR_OBJ);
         if(SymbolTableInfo::Symbolnfo()->isConstantObjSym(val))
             setFlag(CONST_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
     }
-    else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val))) {
+    else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
+    {
         setFlag(HEAP_OBJ);
         analyzeHeapStaticObjType(val);
         // Heap object, label its field as infinite here
         objSize = -1;
     }
-    else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val))) {
+    else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val)))
+    {
         setFlag(STATIC_OBJ);
         analyzeHeapStaticObjType(val);
         // static object allocated before main, label its field as infinite here
         objSize = -1;
     }
-    else if(ArgInProgEntryFunction(val)) {
+    else if(ArgInProgEntryFunction(val))
+    {
         setFlag(STATIC_OBJ);
         analyzeHeapStaticObjType(val);
         // user input data, label its field as infinite here
@@ -164,18 +181,22 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         return false;
 
     const Type* ety = getType();
-    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety)) {
+    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
+    {
         ety = AT->getElementType();
     }
 
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety)) {
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    {
         bool hasIntersection = false;
         const vector<FieldInfo> &infovec = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety);
         vector<FieldInfo>::const_iterator it = infovec.begin();
         vector<FieldInfo>::const_iterator eit = infovec.end();
-        for (; it != eit; ++it) {
+        for (; it != eit; ++it)
+        {
             const FieldInfo& fieldLS = *it;
-            if (ls.intersects(LocationSet(fieldLS))) {
+            if (ls.intersects(LocationSet(fieldLS)))
+            {
                 hasIntersection = true;
                 if (fieldLS.getFlattenElemTy()->isPointerTy())
                     return false;
@@ -184,8 +205,10 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         assert(hasIntersection && "cannot find field of specified offset");
         return true;
     }
-    else {
-        if (isStaticObj() || isHeap()) {
+    else
+    {
+        if (isStaticObj() || isHeap())
+        {
             // TODO: Objects which cannot find proper field for a certain offset including
             //       arguments in main(), static objects allocated before main and heap
             //       objects. Right now they're considered to have infinite fields and we
@@ -193,7 +216,8 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
             //       Try to model static and heap objects more accurately in the future.
             return false;
         }
-        else {
+        else
+        {
             // TODO: Using new memory model (locMM) may create objects with spurious offset
             //       as we simply return new offset by mod operation without checking its
             //       correctness in LocSymTableInfo::getModulusOffset(). So the following
@@ -208,13 +232,15 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 /*!
  * Set mem object to be field sensitive (up to maximum field limit)
  */
-void MemObj::setFieldSensitive() {
+void MemObj::setFieldSensitive()
+{
     typeInfo->setMaxFieldOffsetLimit(StInfo::getMaxFieldLimit());
 }
 /*
  * Initial the memory object here
  */
-void MemObj::init(const Type* type) {
+void MemObj::init(const Type* type)
+{
     typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
     typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
     typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
@@ -224,7 +250,8 @@ void MemObj::init(const Type* type) {
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL) {
+    refVal(val), GSymID(id), typeInfo(NULL)
+{
     init(val);
 }
 
@@ -232,35 +259,40 @@ MemObj::MemObj(const Value *val, SymID id) :
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id, const Type* type) :
-    refVal(NULL), GSymID(id), typeInfo(NULL){
+    refVal(NULL), GSymID(id), typeInfo(NULL)
+{
     init(type);
 }
 
 /*!
  * Whether it is a black hole object
  */
-bool MemObj::isBlackHoleObj() const {
+bool MemObj::isBlackHoleObj() const
+{
     return SymbolTableInfo::isBlkObj(GSymID);
 }
 
 
 /// Get obj type info
-const Type* MemObj::getType() const {
-	if (isHeap() == false){
-	    if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
-	        return type->getElementType();
-	    else
-	        return typeInfo->getType();
-	}
-	else if (refVal && SVFUtil::isa<Instruction>(refVal))
-		return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(refVal));
-	else
-		return typeInfo->getType();
+const Type* MemObj::getType() const
+{
+    if (isHeap() == false)
+    {
+        if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
+            return type->getElementType();
+        else
+            return typeInfo->getType();
+    }
+    else if (refVal && SVFUtil::isa<Instruction>(refVal))
+        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(refVal));
+    else
+        return typeInfo->getType();
 }
 /*
  * Destroy the fields of the memory object
  */
-void MemObj::destroy() {
+void MemObj::destroy()
+{
     delete typeInfo;
     typeInfo = NULL;
 }
@@ -269,25 +301,30 @@ void MemObj::destroy() {
 /*!
  * Compute gep offset
  */
-bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
+bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
+{
 
     assert(V);
     int baseIndex = -1;
     int index = 0;
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
-            gi != ge; ++gi, ++index) {
+            gi != ge; ++gi, ++index)
+    {
         if(SVFUtil::isa<ConstantInt>(gi.getOperand()) == false)
             baseIndex = index;
     }
 
     index = 0;
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
-            gi != ge; ++gi, ++index) {
+            gi != ge; ++gi, ++index)
+    {
 
-        if (index <= baseIndex) {
+        if (index <= baseIndex)
+        {
             /// variant offset
             // Handling pointer types
-            if (const PointerType* pty = SVFUtil::dyn_cast<PointerType>(*gi)) {
+            if (const PointerType* pty = SVFUtil::dyn_cast<PointerType>(*gi))
+            {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
 
@@ -300,7 +337,8 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
                 ls.addElemNumStridePair(std::make_pair(num, sz));
             }
             // Calculate the size of the array element
-            else if(const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(*gi)) {
+            else if(const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(*gi))
+            {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 Size_t num = at->getNumElements();
@@ -310,7 +348,8 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
                 assert(false && "what other types?");
         }
         // constant offset
-        else {
+        else
+        {
             assert(SVFUtil::isa<ConstantInt>(gi.getOperand()) && "expecting a constant");
 
             ConstantInt *op = SVFUtil::cast<ConstantInt>(gi.getOperand());
@@ -321,22 +360,26 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
             // Handling pointer types
             // These GEP instructions are simply making address computations from the base pointer address
             // e.g. idx1 = (char*) &MyVar + 4,  at this case gep only one offset index (idx)
-            if (const PointerType* pty = SVFUtil::dyn_cast<PointerType>(*gi)) {
+            if (const PointerType* pty = SVFUtil::dyn_cast<PointerType>(*gi))
+            {
                 const Type* et = pty->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Calculate the size of the array element
-            else if(const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(*gi)) {
+            else if(const ArrayType* at = SVFUtil::dyn_cast<ArrayType>(*gi))
+            {
                 const Type* et = at->getElementType();
                 Size_t sz = getTypeSizeInBytes(et);
                 ls.setByteOffset(ls.getByteOffset() + idx * sz);
             }
             // Handling struct here
-            else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi)) {
+            else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi))
+            {
                 assert(op && "non-const struct index in GEP");
                 const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getFattenFieldOffsetVec(ST);
-                if ((unsigned)idx >= so.size()) {
+                if ((unsigned)idx >= so.size())
+                {
                     outs() << "!! Struct index out of bounds" << idx << "\n";
                     assert(0);
                 }
@@ -353,8 +396,9 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls) {
 /*!
  * Collect array information
  */
-void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
-	/*
+void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty)
+{
+    /*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
@@ -395,8 +439,9 @@ void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty) {
 /*
  * Recursively collect the memory layout information for a struct type
  */
-void LocSymTableInfo::collectStructInfo(const StructType *ty) {
-	/*
+void LocSymTableInfo::collectStructInfo(const StructType *ty)
+{
+    /*
     StInfo *stinfo = new StInfo();
     typeToFieldInfo[ty] = stinfo;
 
@@ -429,7 +474,7 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
         }
     }
 
-//	verifyStructSize(stinfo,stTySL->getSizeInBytes());
+    //	verifyStructSize(stinfo,stTySL->getSizeInBytes());
 
     //Record the size of the complete struct and update max_struct.
     if (stTySL->getSizeInBytes() > maxStSize) {
@@ -444,15 +489,18 @@ void LocSymTableInfo::collectStructInfo(const StructType *ty) {
  * Given LocationSet from a Gep Instruction, return a new LocationSet which matches
  * the field information of this ObjTypeInfo by considering memory layout
  */
-LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls) {
+LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls)
+{
     const Type* ety = obj->getType();
 
-    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety)) {
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    {
         /// Find an appropriate field for this LocationSet
         const std::vector<FieldInfo>& infovec = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety);
         std::vector<FieldInfo>::const_iterator it = infovec.begin();
         std::vector<FieldInfo>::const_iterator eit = infovec.end();
-        for (; it != eit; ++it) {
+        for (; it != eit; ++it)
+        {
             const FieldInfo& fieldLS = *it;
             LocationSet rhsLS(fieldLS);
             LocationSet::LSRelation result = LocationSet::checkRelation(ls, rhsLS);
@@ -460,11 +508,13 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
                     result == LocationSet::Superset ||
                     result == LocationSet::Subset)
                 return ls;
-            else if (result == LocationSet::Overlap) {
+            else if (result == LocationSet::Overlap)
+            {
                 // TODO:
                 return ls;
             }
-            else if (result == LocationSet::NonOverlap) {
+            else if (result == LocationSet::NonOverlap)
+            {
                 continue;
             }
 
@@ -472,15 +522,18 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
             return ls;
         }
     }
-    else {
-        if (obj->isStaticObj() || obj->isHeap()) {
+    else
+    {
+        if (obj->isStaticObj() || obj->isHeap())
+        {
             // TODO: Objects which cannot find proper field for a certain offset including
             //       arguments in main(), static objects allocated before main and heap
             //       objects. Right now they're considered to have infinite fields. So we
             //       just return the location set without modifying it.
             return ls;
         }
-        else {
+        else
+        {
             // TODO: Using new memory model (locMM) may create objects with spurious offset
             //       as we simply return new offset by mod operation without checking its
             //       correctness in LocSymTableInfo::getModulusOffset(). So the following
@@ -491,12 +544,14 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     }
 
     /// This location set represent one object
-    if (ls.isConstantOffset()) {
+    if (ls.isConstantOffset())
+    {
         /// if the offset is negative, it's possible that we're looking for an obj node out of range
         /// of current struct. Make the offset positive so we can still get a node within current
         /// struct to represent this obj.
         Size_t offset = ls.getOffset();
-        if(offset < 0) {
+        if(offset < 0)
+        {
             writeWrnMsg("try to create a gep node with negative offset.");
             offset = abs(offset);
         }
@@ -507,7 +562,8 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
             offset = 0;
     }
     /// This location set represents multiple objects
-    else {
+    else
+    {
 
     }
 
@@ -517,7 +573,8 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 /*!
  * Verify struct size
  */
-void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize) {
+void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize)
+{
 
     u32_t lastOff = stinfo->getFlattenFieldInfoVec().back().getFlattenByteOffset();
     u32_t strideSize = 0;
@@ -535,7 +592,8 @@ void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize) {
 /*!
  * Get the size of this object
  */
-u32_t LocObjTypeInfo::getObjSize(const Value* val) {
+u32_t LocObjTypeInfo::getObjSize(const Value* val)
+{
 
     Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();
     return LocSymTableInfo::Symbolnfo()->getTypeSizeInBytes(ety);

@@ -38,7 +38,8 @@
 /**
  * PathCondAllocator allocates conditions for each basic block of a certain CFG.
  */
-class PathCondAllocator {
+class PathCondAllocator
+{
 
 public:
     static u32_t totalCondNum;
@@ -55,30 +56,37 @@ public:
     typedef std::map<u32_t,Condition*> IndexToConditionMap;
 
     /// Constructor
-    PathCondAllocator() {
+    PathCondAllocator()
+    {
         getBddCondManager();
     }
     /// Destructor
-    virtual ~PathCondAllocator() {
+    virtual ~PathCondAllocator()
+    {
         destroy();
     }
-    static inline Condition* trueCond() {
+    static inline Condition* trueCond()
+    {
         return getBddCondManager()->getTrueCond();
     }
 
-    static inline Condition* falseCond() {
+    static inline Condition* falseCond()
+    {
         return getBddCondManager()->getFalseCond();
     }
 
     /// Statistics
     //@{
-    static inline u32_t getMemUsage() {
+    static inline u32_t getMemUsage()
+    {
         return getBddCondManager()->getBDDMemUsage();
     }
-    static inline u32_t getCondNum() {
+    static inline u32_t getCondNum()
+    {
         return getBddCondManager()->getCondNumber();
     }
-    static inline u32_t getMaxLiveCondNumber() {
+    static inline u32_t getMaxLiveCondNumber()
+    {
         return getBddCondManager()->getMaxLiveCondNumber();
     }
     //@}
@@ -87,63 +95,77 @@ public:
     void allocate(const SVFModule* module);
 
     /// Get llvm conditional expression
-    inline const Instruction* getCondInst(const Condition* cond) const {
+    inline const Instruction* getCondInst(const Condition* cond) const
+    {
         CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
         assert(it!=condToInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
 
     /// Get dominators
-    inline DominatorTree* getDT(const Function* fun) {
+    inline DominatorTree* getDT(const Function* fun)
+    {
         return cfInfoBuilder.getDT(fun);
     }
     /// Get Postdominators
-    inline PostDominatorTree* getPostDT(const Function* fun) {
+    inline PostDominatorTree* getPostDT(const Function* fun)
+    {
         return cfInfoBuilder.getPostDT(fun);
     }
     /// Get LoopInfo
-    PTALoopInfo* getLoopInfo(const Function* f) {
+    PTALoopInfo* getLoopInfo(const Function* f)
+    {
         return cfInfoBuilder.getLoopInfo(f);
     }
 
     /// Condition operations
     //@{
-    inline Condition* condAnd(Condition* lhs, Condition* rhs) {
+    inline Condition* condAnd(Condition* lhs, Condition* rhs)
+    {
         return bddCondMgr->AND(lhs,rhs);
     }
-    inline Condition* condOr(Condition* lhs, Condition* rhs) {
+    inline Condition* condOr(Condition* lhs, Condition* rhs)
+    {
         return bddCondMgr->OR(lhs,rhs);
     }
-    inline Condition* condNeg(Condition* cond) {
+    inline Condition* condNeg(Condition* cond)
+    {
         return bddCondMgr->NEG(cond);
     }
-    inline Condition* getTrueCond() const {
+    inline Condition* getTrueCond() const
+    {
         return bddCondMgr->getTrueCond();
     }
-    inline Condition* getFalseCond() const {
+    inline Condition* getFalseCond() const
+    {
         return bddCondMgr->getFalseCond();
     }
     /// Given an index, get its condition
-    inline Condition* getCond(u32_t i) const {
-    	IndexToConditionMap::const_iterator it = indexToDDNodeMap.find(i);
+    inline Condition* getCond(u32_t i) const
+    {
+        IndexToConditionMap::const_iterator it = indexToDDNodeMap.find(i);
         assert(it!=indexToDDNodeMap.end() && "condition not found!");
         return it->second;
     }
     /// Iterator every element of the bdd
-    inline NodeBS exactCondElem(Condition* cond) {
+    inline NodeBS exactCondElem(Condition* cond)
+    {
         NodeBS elems;
         bddCondMgr->BddSupport(cond,elems);
         return elems;
     }
     /// Decrease reference counting for the bdd
-    inline void markForRelease(Condition* cond) {
+    inline void markForRelease(Condition* cond)
+    {
         bddCondMgr->markForRelease(cond);
     }
     /// Print debug information for this condition
-    inline void printDbg(Condition* cond) {
+    inline void printDbg(Condition* cond)
+    {
         bddCondMgr->printDbg(cond);
     }
-    inline std::string dumpCond(Condition* cond) const {
+    inline std::string dumpCond(Condition* cond) const
+    {
         return bddCondMgr->dumpStr(cond);
     }
     //@}
@@ -158,15 +180,18 @@ public:
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
     virtual Condition* getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
 
-    inline void clearCFCond() {
+    inline void clearCFCond()
+    {
         bbToCondMap.clear();
     }
     /// Set current value for branch condition evaluation
-    inline void setCurEvalVal(const Value* val) {
+    inline void setCurEvalVal(const Value* val)
+    {
         curEvalVal = val;
     }
     /// Get current value for branch condition evaluation
-    inline const Value* getCurEvalVal() const {
+    inline const Value* getCurEvalVal() const
+    {
         return curEvalVal;
     }
     //@}
@@ -186,7 +211,8 @@ private:
     /// Get branch condition
     Condition* getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ) {
+    inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
+    {
         if(const Value* val = getCurEvalVal())
             return evaluateBranchCond(bb, succ, val);
         else
@@ -225,7 +251,8 @@ private:
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const BasicBlock* bb, Condition* cond) {
+    inline bool setCFCond(const BasicBlock* bb, Condition* cond)
+    {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
         if(it!=bbToCondMap.end() && it->second == cond)
             return false;
@@ -233,9 +260,11 @@ private:
         bbToCondMap[bb] = cond;
         return true;
     }
-    inline Condition* getCFCond(const BasicBlock* bb) const {
+    inline Condition* getCFCond(const BasicBlock* bb) const
+    {
         BBToCondMap::const_iterator it = bbToCondMap.find(bb);
-        if(it==bbToCondMap.end()) {
+        if(it==bbToCondMap.end())
+        {
             return getFalseCond();
         }
         return it->second;
@@ -243,14 +272,16 @@ private:
     //@}
 
     /// Create new BDD condition
-    inline Condition* createNewCond(u32_t i) {
+    inline Condition* createNewCond(u32_t i)
+    {
         assert(indexToDDNodeMap.find(i)==indexToDDNodeMap.end() && "This should be fresh index to create new BDD");
         Condition* d = bddCondMgr->Cudd_bdd(i);
         indexToDDNodeMap[i] = d;
         return d;
     }
     /// Allocate a new condition
-    inline Condition* newCond(const Instruction* inst) {
+    inline Condition* newCond(const Instruction* inst)
+    {
         Condition* cond = createNewCond(totalCondNum++);
         assert(condToInstMap.find(cond)==condToInstMap.end() && "this should be a fresh condition");
         condToInstMap[cond] = inst;
@@ -258,7 +289,8 @@ private:
     }
 
     /// Used internally, not supposed to be exposed to other classes
-    static BddCondManager* getBddCondManager() {
+    static BddCondManager* getBddCondManager()
+    {
         if(bddCondMgr==NULL)
             bddCondMgr = new BddCondManager();
         return bddCondMgr;

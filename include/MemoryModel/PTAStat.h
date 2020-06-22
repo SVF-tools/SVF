@@ -42,7 +42,8 @@ class PointerAnalysis;
 /*!
  * Pointer Analysis Statistics
  */
-class PTAStat {
+class PTAStat
+{
 public:
     static const char* TotalAnalysisTime; ///< Total analysis time
     static const char* SCCDetectionTime; ///< Total SCC detection time
@@ -120,13 +121,16 @@ public:
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}
 
-    virtual inline void startClk() {
+    virtual inline void startClk()
+    {
         startTime = CLOCK_IN_MS();
     }
-    virtual inline void endClk() {
+    virtual inline void endClk()
+    {
         endTime = CLOCK_IN_MS();
     }
-    static inline double getClk() {
+    static inline double getClk()
+    {
         return CLOCK_IN_MS();
     }
 

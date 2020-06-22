@@ -59,7 +59,8 @@ const char* MemSSAStat::NumOfBBHasMSSAPhi = "BBHasMSSAPhi";	///< Number of basic
 /*!
  * Constructor
  */
-MemSSAStat::MemSSAStat(MemSSA* memSSA) : PTAStat(NULL) {
+MemSSAStat::MemSSAStat(MemSSA* memSSA) : PTAStat(NULL)
+{
     mssa = memSSA;
     startClk();
 }
@@ -67,7 +68,8 @@ MemSSAStat::MemSSAStat(MemSSA* memSSA) : PTAStat(NULL) {
 /*!
  * Start stating
  */
-void MemSSAStat::performStat() {
+void MemSSAStat::performStat()
+{
 
     endClk();
 
@@ -79,7 +81,8 @@ void MemSSAStat::performStat() {
     MRGenerator::MRSet & mrSet = mrGenerator->getMRSet();
     MRGenerator::MRSet::const_iterator it = mrSet.begin();
     MRGenerator::MRSet::const_iterator eit = mrSet.end();
-    for (; it != eit; it++) {
+    for (; it != eit; it++)
+    {
         const MemRegion* region = *it;
         u32_t regionSize = region->getRegionSize();
         if (regionSize > maxRegionSize)
@@ -119,7 +122,8 @@ void MemSSAStat::performStat() {
 /*!
  * Print statistics
  */
-void MemSSAStat::printStat() {
+void MemSSAStat::printStat()
+{
 
     std::cout << "\n****Memory SSA Statistics****\n";
     PTAStat::printStat();
@@ -160,10 +164,12 @@ void SVFGStat::clear()
     totalDirCallEdge = totalDirRetEdge = 0;
 }
 
-NodeID SVFGStat::getSCCRep(SVFGSCC* scc, NodeID id) const {
+NodeID SVFGStat::getSCCRep(SVFGSCC* scc, NodeID id) const
+{
     return scc->repNode(id);
 }
-NodeID SVFGStat::nodeInCycle(SVFGSCC* scc, NodeID id) const {
+NodeID SVFGStat::nodeInCycle(SVFGSCC* scc, NodeID id) const
+{
     return scc->isInCycle(id);
 }
 
@@ -239,7 +245,8 @@ void SVFGStat::processGraph()
 
     SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
     SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
-    for (; it != eit; ++it) {
+    for (; it != eit; ++it)
+    {
         numOfNodes++;
         if (SVFUtil::isa<FormalINSVFGNode>(it->second))
             numOfFormalIn++;
@@ -276,7 +283,8 @@ void SVFGStat::processGraph()
         calculateNodeDegrees(node, nodeHasIndInEdge, nodeHasIndOutEdge);
     }
 
-    if (numOfNodes > 0) {
+    if (numOfNodes > 0)
+    {
         avgInDegree = totalInEdge / numOfNodes;
         avgOutDegree = totalOutEdge / numOfNodes;
     }
@@ -301,8 +309,10 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     Size_t indInEdges = 0;
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
-    for (; edgeIt != edgeEit; ++edgeIt) {
-        if (IndirectSVFGEdge* edge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt)) {
+    for (; edgeIt != edgeEit; ++edgeIt)
+    {
+        if (IndirectSVFGEdge* edge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt))
+        {
             indInEdges++;
             nodeHasIndInEdge.insert(node->getId());
             // get edge's weight
@@ -338,8 +348,10 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     Size_t indOutEdges = 0;
     edgeIt = outEdges.begin();
     edgeEit = outEdges.end();
-    for (; edgeIt != edgeEit; ++edgeIt) {
-        if ((*edgeIt)->isIndirectVFGEdge()) {
+    for (; edgeIt != edgeEit; ++edgeIt)
+    {
+        if ((*edgeIt)->isIndirectVFGEdge())
+        {
             indOutEdges++;
             nodeHasIndOutEdge.insert(node->getId());
         }
@@ -350,7 +362,8 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalIndOutEdge += indOutEdges;
 }
 
-void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges) {
+void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
+{
 
     generalNumMap.clear();
     PTNumStatMap.clear();
@@ -380,9 +393,11 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges) {
     std::set<NodeID> sccRepNodeSet;
     SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
     SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
-    for (; it != eit; ++it) {
+    for (; it != eit; ++it)
+    {
         totalNode++;
-        if(svfgSCC->isInCycle(it->first)) {
+        if(svfgSCC->isInCycle(it->first))
+        {
             nodeInCycle++;
             sccRepNodeSet.insert(svfgSCC->repNode(it->first));
             const NodeBS& subNodes = svfgSCC->subNodes(it->first);
@@ -392,44 +407,54 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges) {
 
         SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
         SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = it->second->InEdgeEnd();
-        for (; edgeIt != edgeEit; ++edgeIt) {
+        for (; edgeIt != edgeEit; ++edgeIt)
+        {
 
             const SVFGEdge *edge = *edgeIt;
             totalEdge++;
             bool eCycle = false;
-            if(getSCCRep(svfgSCC,edge->getSrcID()) == getSCCRep(svfgSCC,edge->getDstID())) {
+            if(getSCCRep(svfgSCC,edge->getSrcID()) == getSCCRep(svfgSCC,edge->getDstID()))
+            {
                 edgeInCycle++;
                 eCycle = true;
             }
 
-            if (edge->isDirectVFGEdge()) {
+            if (edge->isDirectVFGEdge())
+            {
                 totalDirectEdge++;
                 if(eCycle)
                     directEdgeInCycle++;
 
             }
-            if (edge->isIndirectVFGEdge()) {
+            if (edge->isIndirectVFGEdge())
+            {
                 totalIndirectEdge++;
                 if(eCycle)
                     indirectEdgeInCycle++;
             }
-            if (edge->isCallVFGEdge()) {
+            if (edge->isCallVFGEdge())
+            {
                 totalCallEdge++;
-                if(eCycle) {
+                if(eCycle)
+                {
                     callEdgeInCycle++;
                 }
 
-                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end()) {
+                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end())
+                {
                     insensitiveCallEdge++;
                 }
             }
-            if (edge->isRetVFGEdge()) {
+            if (edge->isRetVFGEdge())
+            {
                 totalRetEdge++;
-                if(eCycle) {
+                if(eCycle)
+                {
                     retEdgeInCycle++;
                 }
 
-                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end()) {
+                if(insensitiveCalRetEdges.find(edge)!=insensitiveCalRetEdges.end())
+                {
                     insensitiveRetEdge++;
                 }
             }

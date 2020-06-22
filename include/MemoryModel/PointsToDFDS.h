@@ -39,7 +39,8 @@
  * For top-level variables, their points-to sets are maintained in a flow-insensitive manner via getPts(var).
  */
 template<class Key, class Data>
-class DFPTData : public PTData<Key,Data> {
+class DFPTData : public PTData<Key,Data>
+{
 public:
     typedef NodeID LocID;
     typedef typename PTData<Key,Data>::PtsMap PtsMap;
@@ -52,55 +53,67 @@ public:
     DFPtsMap dfInPtsMap;	///< Data-flow IN set
     DFPtsMap dfOutPtsMap;	///< Data-flow OUT set
     /// Constructor
-    DFPTData(PTDataTy ty = (PTData<Key,Data>::DFPTD)): PTData<Key,Data>(ty) {
+    DFPTData(PTDataTy ty = (PTData<Key,Data>::DFPTD)): PTData<Key,Data>(ty)
+    {
     }
     /// Destructor
-    virtual ~DFPTData() {
+    virtual ~DFPTData()
+    {
     }
 
     /// Determine whether the DF IN/OUT sets have ptsMap
     //@{
-    inline bool hasDFInSet(LocID loc) const {
+    inline bool hasDFInSet(LocID loc) const
+    {
         return (dfInPtsMap.find(loc) != dfInPtsMap.end());
     }
-    inline bool hasDFOutSet(LocID loc) const {
+    inline bool hasDFOutSet(LocID loc) const
+    {
         return (dfOutPtsMap.find(loc) != dfOutPtsMap.end());
     }
-    inline bool hasDFInSet(LocID loc,const Key& var) const {
+    inline bool hasDFInSet(LocID loc,const Key& var) const
+    {
         DFPtsMapconstIter it = dfInPtsMap.find(loc);
         if ( it == dfInPtsMap.end())
             return false;
         const PtsMap& ptsMap = it->second;
         return (ptsMap.find(var) != ptsMap.end());
     }
-    inline bool hasDFOutSet(LocID loc,const Key& var) const {
+    inline bool hasDFOutSet(LocID loc,const Key& var) const
+    {
         DFPtsMapconstIter it = dfOutPtsMap.find(loc);
         if ( it == dfOutPtsMap.end())
             return false;
         const PtsMap& ptsMap = it->second;
         return (ptsMap.find(var) != ptsMap.end());
     }
-    inline const PtsMap& getDFInPtsMap(LocID loc)  {
+    inline const PtsMap& getDFInPtsMap(LocID loc)
+    {
         return dfInPtsMap[loc];
     }
-    inline const PtsMap& getDFOutPtsMap(LocID loc)  {
+    inline const PtsMap& getDFOutPtsMap(LocID loc)
+    {
         return dfOutPtsMap[loc];
     }
-    inline const DFPtsMap& getDFIn()  {
+    inline const DFPtsMap& getDFIn()
+    {
         return dfInPtsMap;
     }
-    inline const DFPtsMap& getDFOut()  {
+    inline const DFPtsMap& getDFOut()
+    {
         return dfOutPtsMap;
     }
     //@}
 
     /// Get points-to from data-flow IN/OUT set
     ///@{
-    inline Data& getDFInPtsSet(LocID loc, const Key& var) {
+    inline Data& getDFInPtsSet(LocID loc, const Key& var)
+    {
         PtsMap& inSet = dfInPtsMap[loc];
         return inSet[var];
     }
-    inline Data& getDFOutPtsSet(LocID loc, const Key& var) {
+    inline Data& getDFOutPtsSet(LocID loc, const Key& var)
+    {
         PtsMap& outSet = dfOutPtsMap[loc];
         return outSet[var];
     }
@@ -111,35 +124,42 @@ public:
     /// union(ptsDst,ptsSrc) represents union ptsSrc to ptsDst
     //@{
     /// union (IN[dstLoc:dstVar], IN[srcLoc:srcVar])
-    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return this->unionPts(getDFInPtsSet(dstLoc,dstVar), getDFInPtsSet(srcLoc,srcVar));
     }
     /// union (IN[dstLoc:dstVar], OUT[srcLoc:srcVar])
-    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return this->unionPts(getDFInPtsSet(dstLoc,dstVar), getDFOutPtsSet(srcLoc,srcVar));
     }
     /// union (OUT[dstLoc:dstVar], IN[srcLoc:srcVar])
-    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return this->unionPts(getDFOutPtsSet(dstLoc,dstVar), getDFInPtsSet(srcLoc,srcVar));
     }
     /// union (IN[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
     /// no flag check.
-    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return this->updateDFInFromOut(srcLoc,srcVar,dstLoc,dstVar);
     }
     /// union (IN[dstLoc::dstVar], IN[srcLoc:srcVar]. It differs from the above method in that there's
     /// no flag check.
-    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return this->updateDFInFromIn(srcLoc,srcVar,dstLoc,dstVar);
     }
     /// for each variable var in IN at loc, do updateDFOutFromIn(loc,var,loc,var)
     virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates)
     {
         bool changed = false;
-        if (this->hasDFInSet(loc)) {
+        if (this->hasDFInSet(loc))
+        {
             /// Only variables has new pts from IN set need to be updated.
             const PtsMap & ptsMap = getDFInPtsMap(loc);
-            for (typename PtsMap::const_iterator ptsIt = ptsMap.begin(), ptsEit = ptsMap.end(); ptsIt != ptsEit; ++ptsIt) {
+            for (typename PtsMap::const_iterator ptsIt = ptsMap.begin(), ptsEit = ptsMap.end(); ptsIt != ptsEit; ++ptsIt)
+            {
                 const Key var = ptsIt->first;
                 /// Enable strong updates if it is required to do so
                 if (strongUpdates && var == singleton)
@@ -151,22 +171,27 @@ public:
         return changed;
     }
     /// Update points-to of top-level pointers with IN[srcLoc:srcVar]
-    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) {
+    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar)
+    {
         return PTData<Key,Data>::unionPts(dstVar, this->getDFInPtsSet(srcLoc,srcVar));
     }
     /// Update address-taken variables OUT[dstLoc:dstVar] with points-to of top-level pointers
-    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         return (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar)));
     }
-    virtual inline void clearAllDFOutUpdatedVar(LocID loc) {
+    virtual inline void clearAllDFOutUpdatedVar(LocID loc)
+    {
     }
     //@}
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const DFPTData<Key,Data> *) {
+    static inline bool classof(const DFPTData<Key,Data> *)
+    {
         return true;
     }
-    static inline bool classof(const PTData<Key,Data>* ptd) {
+    static inline bool classof(const PTData<Key,Data>* ptd)
+    {
         return ptd->getPTDTY() == PTData<Key,Data>::DFPTD;
     }
     //@}
@@ -174,33 +199,39 @@ public:
     /// Override the methods defined in PTData.
     /// Union/add points-to without adding reverse points-to, used internally
     //@{
-    inline bool addPts(const Key &dstKey, const Key& srcKey) {
+    inline bool addPts(const Key &dstKey, const Key& srcKey)
+    {
         return addPts(this->getPts(dstKey),srcKey);
     }
-    inline bool unionPts(const Key& dstKey, const Key& srcKey) {
+    inline bool unionPts(const Key& dstKey, const Key& srcKey)
+    {
         return unionPts(this->getPts(dstKey),this->getPts(srcKey));
     }
-    inline bool unionPts(const Key& dstKey, const Data& srcData) {
+    inline bool unionPts(const Key& dstKey, const Data& srcData)
+    {
         return unionPts(this->getPts(dstKey),srcData);
     }
     //@}
 
 protected:
     /// Union two points-to sets
-    inline bool unionPts(Data& dstData, const Data& srcData) {
+    inline bool unionPts(Data& dstData, const Data& srcData)
+    {
         return dstData |= srcData;
     }
 
 public:
     /// Dump the DF IN/OUT set information for debugging purpose
     //@{
-    virtual inline void dumpPTData() {
+    virtual inline void dumpPTData()
+    {
         /// dump points-to of top-level pointers
         PTData<Key,Data>::dumpPts(this->ptsMap);
         /// dump points-to of address-taken variables
         std::error_code ErrInfo;
         ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
-        if (!ErrInfo) {
+        if (!ErrInfo)
+        {
             raw_fd_ostream & osm = F.os();
             NodeBS locs;
             for(DFPtsMapconstIter it = dfInPtsMap.begin(), eit = dfInPtsMap.end(); it!=eit; ++it)
@@ -209,22 +240,26 @@ public:
             for(DFPtsMapconstIter it = dfOutPtsMap.begin(), eit = dfOutPtsMap.end(); it!=eit; ++it)
                 locs.set(it->first);
 
-            for (NodeBS::iterator it = locs.begin(), eit = locs.end(); it != eit; it++) {
+            for (NodeBS::iterator it = locs.begin(), eit = locs.end(); it != eit; it++)
+            {
                 LocID loc = *it;
-                if (this->hasDFInSet(loc)) {
+                if (this->hasDFInSet(loc))
+                {
                     osm << "Loc:" << loc << " IN:{";
                     this->dumpPts(this->getDFInPtsMap(loc), osm);
                     osm << "}\n";
                 }
 
-                if (this->hasDFOutSet(loc)) {
+                if (this->hasDFOutSet(loc))
+                {
                     osm << "Loc:" << loc << " OUT:{";
                     this->dumpPts(this->getDFOutPtsMap(loc), osm);
                     osm << "}\n";
                 }
             }
             F.os().close();
-            if (!F.os().has_error()) {
+            if (!F.os().has_error())
+            {
                 SVFUtil::outs() << "\n";
                 F.keep();
                 return;
@@ -234,8 +269,10 @@ public:
         F.os().clear_error();
     }
 
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const {
-        for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++) {
+    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    {
+        for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
+        {
             const Key& var = nodeIt->first;
             const Data & pts = nodeIt->second;
             if (pts.empty())
@@ -253,7 +290,8 @@ public:
  * Incremental data-flow points-to data version
  */
 template<class Key, class Data>
-class IncDFPTData : public DFPTData<Key,Data> {
+class IncDFPTData : public DFPTData<Key,Data>
+{
 public:
     typedef typename DFPTData<Key,Data>::LocID LocID;
     typedef std::map<LocID, Data> UpdatedVarMap;	///< for propagating only newly added variable in IN/OUT set
@@ -267,10 +305,12 @@ private:
 
 public:
     /// Constructor
-    IncDFPTData(PTDataTy ty = (PTData<Key,Data>::IncDFPTD)): DFPTData<Key,Data>(ty) {
+    IncDFPTData(PTDataTy ty = (PTData<Key,Data>::IncDFPTD)): DFPTData<Key,Data>(ty)
+    {
     }
     /// Destructor
-    virtual ~IncDFPTData() {
+    virtual ~IncDFPTData()
+    {
     }
 
     /// Update points-to for IN/OUT set
@@ -278,28 +318,35 @@ public:
     /// union(ptsDst,ptsSrc) represents union ptsSrc to ptsDst
     //@{
     /// union (IN[dstLoc:dstVar], IN[srcLoc:srcVar])
-    inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         if(varHasNewDFInPts(srcLoc, srcVar) &&
-                this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar))) {
+                this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar)))
+        {
             setVarDFInSetUpdated(dstLoc,dstVar);
             return true;
         }
         return false;
     }
     /// union (IN[dstLoc:dstVar], OUT[srcLoc:srcVar])
-    inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
+    inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
         if(varHasNewDFOutPts(srcLoc, srcVar) &&
-                this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar))) {
+                this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar)))
+        {
             setVarDFInSetUpdated(dstLoc,dstVar);
             return true;
         }
         return false;
     }
     /// union (OUT[dstLoc:dstVar], IN[srcLoc:srcVar])
-    inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if(varHasNewDFInPts(srcLoc,srcVar)) {
+    inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
+        if(varHasNewDFInPts(srcLoc,srcVar))
+        {
             removeVarFromDFInUpdatedSet(srcLoc,srcVar);
-            if (this->unionPts(this->getDFOutPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar))) {
+            if (this->unionPts(this->getDFOutPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar)))
+            {
                 setVarDFOutSetUpdated(dstLoc,dstVar);
                 return true;
             }
@@ -309,8 +356,10 @@ public:
 
     /// union (IN[dstLoc::dstVar], OUT[srcLoc:srcVar]. It differs from the above method in that there's
     /// no flag check.
-    inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar))) {
+    inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
+        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar)))
+        {
             setVarDFInSetUpdated(dstLoc,dstVar);
             return true;
         }
@@ -318,8 +367,10 @@ public:
     }
     /// union (IN[dstLoc::dstVar], IN[srcLoc:srcVar]. It differs from the above method in that there's
     /// no flag check.
-    inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar))) {
+    inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
+        if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar)))
+        {
             setVarDFInSetUpdated(dstLoc,dstVar);
             return true;
         }
@@ -329,10 +380,12 @@ public:
     inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates)
     {
         bool changed = false;
-        if (this->hasDFInSet(loc)) {
+        if (this->hasDFInSet(loc))
+        {
             /// Only variables has new pts from IN set need to be updated.
             Data pts = getDFInUpdatedVar(loc);
-            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt) {
+            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
+            {
                 const Key var = *ptsIt;
                 /// Enable strong updates if it is required to do so
                 if (strongUpdates && var == singleton)
@@ -344,16 +397,20 @@ public:
         return changed;
     }
     /// Update points-to of top-level pointers with IN[srcLoc:srcVar]
-    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) {
-        if(varHasNewDFInPts(srcLoc,srcVar)) {
+    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar)
+    {
+        if(varHasNewDFInPts(srcLoc,srcVar))
+        {
             removeVarFromDFInUpdatedSet(srcLoc,srcVar);
             return PTData<Key,Data>::unionPts(dstVar, this->getDFInPtsSet(srcLoc,srcVar));
         }
         return false;
     }
     /// Update address-taken variables OUT[dstLoc:dstVar] with points-to of top-level pointers
-    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) {
-        if (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar))) {
+    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    {
+        if (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar)))
+        {
             setVarDFOutSetUpdated(dstLoc, dstVar);
             return true;
         }
@@ -363,22 +420,28 @@ public:
 
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IncDFPTData<Key,Data> *) {
+    static inline bool classof(const IncDFPTData<Key,Data> *)
+    {
         return true;
     }
-    static inline bool classof(const DFPTData<Key,Data> * ptd) {
+    static inline bool classof(const DFPTData<Key,Data> * ptd)
+    {
         return ptd->getPTDTY() == PTData<Key,Data>::IncDFPTD;
     }
-    static inline bool classof(const PTData<Key,Data>* ptd) {
+    static inline bool classof(const PTData<Key,Data>* ptd)
+    {
         return ptd->getPTDTY() == PTData<Key,Data>::IncDFPTD ||
                ptd->getPTDTY() == PTData<Key,Data>::DFPTD;
     }
     //@}
 
-    inline void clearAllDFOutUpdatedVar(LocID loc) {
-        if (this->hasDFOutSet(loc)) {
+    inline void clearAllDFOutUpdatedVar(LocID loc)
+    {
+        if (this->hasDFOutSet(loc))
+        {
             Data pts = getDFOutUpdatedVar(loc);
-            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt) {
+            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
+            {
                 const Key var = *ptsIt;
                 removeVarFromDFOutUpdatedSet(loc, var);
             }
@@ -388,24 +451,28 @@ private:
     /// Handle address-taken variables whose IN pts changed
     //@{
     /// Add var into loc's IN updated set. Called when var's pts in loc's IN set changed
-    inline void setVarDFInSetUpdated(LocID loc,const Key& var) {
+    inline void setVarDFInSetUpdated(LocID loc,const Key& var)
+    {
         inUpdatedVarMap[loc].set(var);
     }
     /// Remove var from loc's IN updated set
-    inline void removeVarFromDFInUpdatedSet(LocID loc,const Key& var) {
+    inline void removeVarFromDFInUpdatedSet(LocID loc,const Key& var)
+    {
         UpdatedVarMapIter it = inUpdatedVarMap.find(loc);
         if (it != inUpdatedVarMap.end())
             it->second.reset(var);
     }
     /// Return TRUE if var has new pts in loc's IN set
-    inline bool varHasNewDFInPts(LocID loc,const Key& var) {
+    inline bool varHasNewDFInPts(LocID loc,const Key& var)
+    {
         UpdatedVarMapIter it = inUpdatedVarMap.find(loc);
         if (it != inUpdatedVarMap.end())
             return it->second.test(var);
         return false;
     }
     /// Get all var which have new pts informationin loc's IN set
-    inline const Data& getDFInUpdatedVar(LocID loc) {
+    inline const Data& getDFInUpdatedVar(LocID loc)
+    {
         return inUpdatedVarMap[loc];
     }
     //@}
@@ -413,24 +480,28 @@ private:
     /// Handle address-taken variables whose OUT pts changed
     //@{
     /// Add var into loc's OUT updated set. Called when var's pts in loc's OUT set changed
-    inline void setVarDFOutSetUpdated(LocID loc,const Key& var) {
+    inline void setVarDFOutSetUpdated(LocID loc,const Key& var)
+    {
         outUpdatedVarMap[loc].set(var);
     }
     /// Remove var from loc's OUT updated set
-    inline void removeVarFromDFOutUpdatedSet(LocID loc,const Key& var) {
+    inline void removeVarFromDFOutUpdatedSet(LocID loc,const Key& var)
+    {
         UpdatedVarMapIter it = outUpdatedVarMap.find(loc);
         if (it != outUpdatedVarMap.end())
             it->second.reset(var);
     }
     /// Return TRUE if var has new pts in loc's OUT set
-    inline bool varHasNewDFOutPts(LocID loc,const Key& var) {
+    inline bool varHasNewDFOutPts(LocID loc,const Key& var)
+    {
         UpdatedVarMapIter it = outUpdatedVarMap.find(loc);
         if (it != outUpdatedVarMap.end())
             return it->second.test(var);
         return false;
     }
     /// Get all var which have new pts informationin loc's OUT set
-    inline const Data& getDFOutUpdatedVar(LocID loc) {
+    inline const Data& getDFOutUpdatedVar(LocID loc)
+    {
         return outUpdatedVarMap[loc];
     }
     //@}

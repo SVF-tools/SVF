@@ -37,7 +37,8 @@
  * Generic graph solver for whole program pointer analysis
  */
 template<class GraphType>
-class WPASolver {
+class WPASolver
+{
 
 public:
     ///Define the GTraits and node iterator for printing
@@ -57,22 +58,26 @@ protected:
     {
     }
     /// Destructor
-    virtual ~WPASolver() {
+    virtual ~WPASolver()
+    {
         delete scc;
         scc = NULL;
     }
 
     /// Get SCC detector
-    inline SCC* getSCCDetector() const {
+    inline SCC* getSCCDetector() const
+    {
         return scc;
     }
 
     /// Get/Set graph methods
     //@{
-    const inline GraphType graph() {
+    const inline GraphType graph()
+    {
         return _graph;
     }
-    inline void setGraph(GraphType g) {
+    inline void setGraph(GraphType g)
+    {
         _graph = g;
         if(!scc)
             scc = new SCC(_graph);
@@ -80,44 +85,53 @@ protected:
     //@}
 
     /// SCC detection
-    virtual inline NodeStack& SCCDetect() {
+    virtual inline NodeStack& SCCDetect()
+    {
         getSCCDetector()->find();
         return getSCCDetector()->topoNodeStack();
     }
-    virtual inline NodeStack& SCCDetect(NodeSet& candidates) {
+    virtual inline NodeStack& SCCDetect(NodeSet& candidates)
+    {
         getSCCDetector()->find(candidates);
         return getSCCDetector()->topoNodeStack();
     }
 
     /// Constraint Solving
-    virtual inline void solve() {
-		initWorklist();
-		do {
-			numOfIteration++;
-			if (0 == numOfIteration % iterationForPrintStat)
-				printStat();
+    virtual inline void solve()
+    {
+        initWorklist();
+        do
+        {
+            numOfIteration++;
+            if (0 == numOfIteration % iterationForPrintStat)
+                printStat();
 
-			reanalyze = false;
+            reanalyze = false;
 
-			solveWorklist();
+            solveWorklist();
 
-			if (updateCallGraph())
-				reanalyze = true;
+            if (updateCallGraph())
+                reanalyze = true;
 
-		} while (reanalyze);
+        }
+        while (reanalyze);
     }
 
-    virtual inline void initWorklist() {
+    virtual inline void initWorklist()
+    {
         NodeStack& nodeStack = SCCDetect();
-        while (!nodeStack.empty()) {
+        while (!nodeStack.empty())
+        {
             NodeID nodeId = nodeStack.top();
             nodeStack.pop();
             pushIntoWorklist(nodeId);
         }
     }
 
-    virtual inline void solveWorklist() {
-        while (!isWorklistEmpty()) {
+    virtual inline void solveWorklist()
+    {
+        while (!isWorklistEmpty())
+        {
             NodeID nodeId = popFromWorklist();
             collapsePWCNode(nodeId);
             // Keep solving until workList is empty.
@@ -131,44 +145,55 @@ protected:
     /// Process each node on the graph, to be implemented in the child class
     virtual inline void processNode(NodeID node) {}
     /// update callgraph for all indirect callsites
-    virtual bool updateCallGraph() { return false; }
+    virtual bool updateCallGraph()
+    {
+        return false;
+    }
     /// collapse positive weight cycles of a graph
     virtual void collapsePWCNode(NodeID nodeId) {}
     virtual void collapseFields() {};
     /// dump statistics
     virtual void printStat() {}
     /// Propagation for the solving, to be implemented in the child class
-    virtual void propagate(GNODE* v) {
+    virtual void propagate(GNODE* v)
+    {
         child_iterator EI = GTraits::direct_child_begin(*v);
         child_iterator EE = GTraits::direct_child_end(*v);
-        for (; EI != EE; ++EI) {
+        for (; EI != EE; ++EI)
+        {
             if (propFromSrcToDst(*(EI.getCurrent())))
                 pushIntoWorklist(Node_Index(*EI));
         }
     }
     /// Propagate information from source to destination node, to be implemented in the child class
-    virtual bool propFromSrcToDst(GEDGE* edge) {
+    virtual bool propFromSrcToDst(GEDGE* edge)
+    {
         return false;
     }
     //@}
 
-    virtual NodeID sccRepNode(NodeID id) const {
+    virtual NodeID sccRepNode(NodeID id) const
+    {
         return getSCCDetector()->repNode(id);
     }
 
     /// Worklist operations
     //@{
-    inline NodeID popFromWorklist() {
+    inline NodeID popFromWorklist()
+    {
         return sccRepNode(worklist.pop());
     }
 
-    virtual inline void pushIntoWorklist(NodeID id) {
+    virtual inline void pushIntoWorklist(NodeID id)
+    {
         worklist.push(sccRepNode(id));
     }
-    inline bool isWorklistEmpty() {
+    inline bool isWorklistEmpty()
+    {
         return worklist.empty();
     }
-    inline bool isInWorklist(NodeID id) {
+    inline bool isInWorklist(NodeID id)
+    {
         return worklist.find(id);
     }
     //@}
@@ -180,12 +205,14 @@ protected:
 
 
     /// Get node on the graph
-    inline GNODE* Node(NodeID id) {
+    inline GNODE* Node(NodeID id)
+    {
         return GTraits::getNode(_graph, id);
     }
 
     /// Get node ID
-    inline NodeID Node_Index(GNODE node) {
+    inline NodeID Node_Index(GNODE node)
+    {
         return GTraits::getNodeID(node);
     }
 

@@ -19,7 +19,8 @@ typedef CxtStmtDPItem<SVFGNode> CxtLocDPItem;
 /*!
  * Context-, Flow- Sensitive Demand-driven Analysis
  */
-class ContextDDA : public CondPTAImpl<ContextCond>, public DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem> {
+class ContextDDA : public CondPTAImpl<ContextCond>, public DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>
+{
 
 public:
     /// Constructor
@@ -32,7 +33,8 @@ public:
     virtual void initialize(SVFModule* module);
 
     /// Finalize analysis
-    virtual inline void finalize() {
+    virtual inline void finalize()
+    {
         CondPTAImpl<ContextCond>::finalize();
     }
 
@@ -49,11 +51,13 @@ public:
     void handleOutOfBudgetDpm(const CxtLocDPItem& dpm);
 
     /// Override parent method
-    CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm) {
+    CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm)
+    {
         const PointsTo& pts =  getAndersenAnalysis()->getPts(dpm.getCurNodeID());
         CxtPtSet tmpCPts;
         ContextCond cxt;
-        for (PointsTo::iterator piter = pts.begin(); piter != pts.end(); ++piter) {
+        for (PointsTo::iterator piter = pts.begin(); piter != pts.end(); ++piter)
+        {
             CxtVar var(cxt,*piter);
             tmpCPts.set(var);
         }
@@ -61,7 +65,8 @@ public:
     }
 
     /// Override parent method
-    virtual inline NodeID getPtrNodeID(const CxtVar& var) const {
+    virtual inline NodeID getPtrNodeID(const CxtVar& var) const
+    {
         return var.get_id();
     }
     /// Handle condition for context or path analysis (backward analysis)
@@ -83,16 +88,19 @@ public:
 
 
     /// Pop recursive callsites
-    inline virtual void popRecursiveCallSites(CxtLocDPItem& dpm) {
+    inline virtual void popRecursiveCallSites(CxtLocDPItem& dpm)
+    {
         ContextCond& cxtCond = dpm.getCond();
         cxtCond.setNonConcreteCxt();
         CallStrCxt& cxt = cxtCond.getContexts();
-        while(!cxt.empty() && isEdgeInRecursion(cxt.back())) {
+        while(!cxt.empty() && isEdgeInRecursion(cxt.back()))
+        {
             cxt.pop_back();
         }
     }
     /// Whether call/return inside recursion
-    inline virtual bool isEdgeInRecursion(CallSiteID csId) {
+    inline virtual bool isEdgeInRecursion(CallSiteID csId)
+    {
         const SVFFunction* caller = getPTACallGraph()->getCallerOfCallSite(csId);
         const SVFFunction* callee = getPTACallGraph()->getCalleeOfCallSite(csId);
         return inSameCallGraphSCC(caller, callee);
@@ -103,10 +111,12 @@ public:
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
-        for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++) {
+        for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++)
+        {
             const CallBlockNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
-            for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++) {
+            for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+            {
                 const SVFFunction*  func = *func_iter;
                 getSVFG()->connectCallerAndCallee(newcs, func, svfgEdges);
             }
@@ -115,7 +125,8 @@ public:
     //@}
 
     /// Return TRUE if this edge is inside a SVFG SCC, i.e., src node and dst node are in the same SCC on the SVFG.
-    inline bool edgeInCallGraphSCC(const SVFGEdge* edge) {
+    inline bool edgeInCallGraphSCC(const SVFGEdge* edge)
+    {
         const SVFFunction* srcfun = edge->getSrcNode()->getFun();
         const SVFFunction* dstfun = edge->getDstNode()->getFun();
 
@@ -131,7 +142,8 @@ public:
     CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts);
 
     /// Handle Address SVFGNode to add proper conditional points-to
-    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) {
+    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr)
+    {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
         if (isFieldInsensitive(srcID))
@@ -144,7 +156,8 @@ public:
     }
 
     /// Propagate along indirect value-flow if two objects of load and store are same
-    virtual inline bool propagateViaObj(const CxtVar& storeObj, const CxtVar& loadObj) {
+    virtual inline bool propagateViaObj(const CxtVar& storeObj, const CxtVar& loadObj)
+    {
         return isSameVar(storeObj,loadObj);
     }
 
@@ -154,19 +167,23 @@ public:
     inline bool isCondCompatible(const ContextCond& cxt1, const ContextCond& cxt2, bool singleton) const;
 
     /// Whether this edge is treated context-insensitively
-    bool isInsensitiveCallRet(const SVFGEdge* edge) {
+    bool isInsensitiveCallRet(const SVFGEdge* edge)
+    {
         return insensitveEdges.find(edge) != insensitveEdges.end();
     }
     /// Return insensitive edge set
-    inline ConstSVFGEdgeSet& getInsensitiveEdgeSet() {
+    inline ConstSVFGEdgeSet& getInsensitiveEdgeSet()
+    {
         return insensitveEdges;
     }
     /// dump context call strings
-    virtual inline void dumpContexts(const ContextCond& cxts) {
+    virtual inline void dumpContexts(const ContextCond& cxts)
+    {
         SVFUtil::outs() << cxts.toString() << "\n";
     }
 
-    virtual const std::string PTAName() const {
+    virtual const std::string PTAName() const
+    {
         return "Context Sensitive DDA";
     }
 

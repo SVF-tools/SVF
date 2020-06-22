@@ -18,17 +18,20 @@
  * Validate the result of context-sensitive analysis, including context-sensitive
  * thread detection and thread interleaving.
  */
-class MTAResultValidator {
+class MTAResultValidator
+{
 
 public:
     typedef int INTERLEV_FLAG;
     MTAResultValidator(MHP* mh) :
-        mhp(mh) {
+        mhp(mh)
+    {
         tcg = mhp->getThreadCallGraph();
         tdAPI = tcg->getThreadAPI();
     }
     // Destructor
-    ~MTAResultValidator() {
+    ~MTAResultValidator()
+    {
     }
 
     // Analysis
@@ -153,30 +156,36 @@ private:
  * one or more of the four properties, by inheriting the RCResultValidator class.
  * The corresponding virtual function of the desired property should be overridden.
  */
-class RaceResultValidator {
+class RaceResultValidator
+{
 public:
     typedef int RC_FLAG;
 
     /*!
      * Data structure for recording access pairs for the validation.
      */
-    class AccessPair {
+    class AccessPair
+    {
     public:
         /// Constructor
         AccessPair(const Instruction *I1, const Instruction *I2,
                    const RC_FLAG flags) :
-            I1(I1), I2(I2), flags(flags) {
+            I1(I1), I2(I2), flags(flags)
+        {
         }
 
         /// Class member access
         //@{
-        inline bool isFlaged(const RC_FLAG flag) const {
+        inline bool isFlaged(const RC_FLAG flag) const
+        {
             return flags & flag;
         }
-        inline const Instruction *getInstruction1() const {
+        inline const Instruction *getInstruction1() const
+        {
             return I1;
         }
-        inline const Instruction *getInstruction2() const {
+        inline const Instruction *getInstruction2() const
+        {
             return I2;
         }
         //@}
@@ -188,28 +197,33 @@ public:
     };
 
     /// Destructor
-    virtual ~RaceResultValidator() {
+    virtual ~RaceResultValidator()
+    {
         release();
     }
 
     /// Initialization
-    void init(SVFModule* M) {
+    void init(SVFModule* M)
+    {
         this->M = M;
         selectedValidationScenarios = RC_MHP | RC_ALIASES | RC_PROTECTED | RC_RACE;
         collectValidationTargets();
     }
 
     /// Analysis
-    void analyze() {
+    void analyze()
+    {
         validateAll();
     }
 
     /// Release resource
-    void release() {
+    void release()
+    {
     }
 
     /// Check if the input program has validation target
-    inline bool hasValidationTarget() const {
+    inline bool hasValidationTarget() const
+    {
         return !accessPairs.empty();
     }
 
@@ -218,22 +232,26 @@ protected:
     /// Override one or more to implement your own analysis.
     //@{
     virtual bool mayAccessAliases(const Instruction *I1,
-                                  const Instruction *I2) {
+                                  const Instruction *I2)
+    {
         selectedValidationScenarios &= ~RC_ALIASES;
         return true;
     }
     virtual bool mayHappenInParallel(const Instruction *I1,
-                                     const Instruction *I2) {
+                                     const Instruction *I2)
+    {
         selectedValidationScenarios &= ~RC_MHP;
         return true;
     }
     virtual bool protectedByCommonLocks(const Instruction *I1,
-                                        const Instruction *I2) {
+                                        const Instruction *I2)
+    {
         selectedValidationScenarios &= ~RC_PROTECTED;
         return true;
     }
     virtual bool mayHaveDataRace(const Instruction *I1,
-                                 const Instruction *I2) {
+                                 const Instruction *I2)
+    {
         selectedValidationScenarios &= ~RC_RACE;
         return true;
     }
@@ -244,14 +262,16 @@ protected:
      * The targets should be memory access Instructions in pairs.
      * The collected targets are stored in the member variable "accessPairs".
      */
-    void collectValidationTargets() {
+    void collectValidationTargets()
+    {
         // Collect call sites of all RC_ACCESS function calls.
         std::vector<const CallInst*> csInsts;
         const Function *F = M.getFunction(RC_ACCESS);
         if (!F)     return;
 
         for (Value::const_use_iterator it = F->use_begin(), ie =
-                    F->use_end(); it != ie; ++it) {
+                    F->use_end(); it != ie; ++it)
+        {
             const Use *u = &*it;
             const Value *user = u->getUser();
             const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(user);
@@ -264,7 +284,8 @@ protected:
         std::sort(csInsts.begin(), csInsts.end(), compare);
 
         // Generate access pairs.
-        for (int i = 0, e = csInsts.size(); i != e;) {
+        for (int i = 0, e = csInsts.size(); i != e;)
+        {
             const CallInst *CI1 = csInsts[i++];
             const CallInst *CI2 = csInsts[i++];
             const ConstantInt *C = SVFUtil::dyn_cast<ConstantInt>(CI1->getOperand(1));
@@ -278,11 +299,13 @@ protected:
     }
 
     /// Perform validation for all targets.
-    void validateAll() {
+    void validateAll()
+    {
         SVFUtil::outs() << SVFUtil::pasMsg(" --- Analysis Result Validation ---\n");
 
         // Iterate every memory access pair to perform the validation.
-        for (int i = 0, e = accessPairs.size(); i != e; ++i) {
+        for (int i = 0, e = accessPairs.size(); i != e; ++i)
+        {
             const AccessPair &ap = accessPairs[i];
             const Instruction *I1 = ap.getInstruction1();
             const Instruction *I2 = ap.getInstruction2();
@@ -293,26 +316,30 @@ protected:
             bool racy = mayHaveDataRace(I1, I2);
 
             SVFUtil::outs() << "For the memory access pair at ("
-                         << SVFUtil::getSourceLoc(I1) << ", "
-                         << SVFUtil::getSourceLoc(I2) << ")\n";
-            if (selectedValidationScenarios & RC_ALIASES) {
+                            << SVFUtil::getSourceLoc(I1) << ", "
+                            << SVFUtil::getSourceLoc(I2) << ")\n";
+            if (selectedValidationScenarios & RC_ALIASES)
+            {
                 SVFUtil::outs() << "\t"
-                             << getOutput("ALIASES", alias, ap.isFlaged(RC_ALIASES))
-                             << "\n";
+                                << getOutput("ALIASES", alias, ap.isFlaged(RC_ALIASES))
+                                << "\n";
             }
-            if (selectedValidationScenarios & RC_MHP) {
+            if (selectedValidationScenarios & RC_MHP)
+            {
                 SVFUtil::outs() << "\t"
-                             << getOutput("MHP", mhp, ap.isFlaged(RC_MHP)) << "\n";
+                                << getOutput("MHP", mhp, ap.isFlaged(RC_MHP)) << "\n";
             }
-            if (selectedValidationScenarios & RC_PROTECTED) {
+            if (selectedValidationScenarios & RC_PROTECTED)
+            {
                 SVFUtil::outs() << "\t"
-                             << getOutput("PROTECT", protect,
-                                          ap.isFlaged(RC_PROTECTED)) << "\n";
+                                << getOutput("PROTECT", protect,
+                                             ap.isFlaged(RC_PROTECTED)) << "\n";
             }
-            if (selectedValidationScenarios & RC_RACE) {
+            if (selectedValidationScenarios & RC_RACE)
+            {
                 SVFUtil::outs() << "\t"
-                             << getOutput("RACE", racy, ap.isFlaged(RC_RACE))
-                             << "\n";
+                                << getOutput("RACE", racy, ap.isFlaged(RC_RACE))
+                                << "\n";
             }
         }
 
@@ -321,7 +348,8 @@ protected:
 
     /// Get the validation result string of a single validation scenario.
     inline std::string getOutput(const char *scenario,
-                                 bool analysisRes, bool expectedRes) {
+                                 bool analysisRes, bool expectedRes)
+    {
         std::string ret(scenario);
         ret += "\t";
         if (expectedRes)
@@ -344,7 +372,8 @@ private:
      * Comparison function to sort the validation targets in ascending order of
      * the validation id (i.e., the 1st argument of RC_ACCESS function call).
      */
-    static bool compare(const CallInst *CI1, const CallInst *CI2) {
+    static bool compare(const CallInst *CI1, const CallInst *CI2)
+    {
         const Value *V1 = CI1->getOperand(0);
         const Value *V2 = CI2->getOperand(0);
         const ConstantInt *C1 = SVFUtil::dyn_cast<ConstantInt>(V1);
@@ -359,12 +388,15 @@ private:
      * Return NULL if none exists.
      */
     const Instruction *getPreviousMemoryAccessInst(
-        const Instruction *I) {
+        const Instruction *I)
+    {
         I = I->getPrevNode();
-        while (I) {
+        while (I)
+        {
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
-            if (const Function *callee = SVFUtil::getCallee(I)) {
+            if (const Function *callee = SVFUtil::getCallee(I))
+            {
                 if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)
                         || callee->getName().find("llvm.memset") != StringRef::npos)
                     return I;

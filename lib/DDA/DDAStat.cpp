@@ -14,14 +14,17 @@
 
 using namespace SVFUtil;
 
-DDAStat::DDAStat(FlowDDA* pta) : PTAStat(pta), flowDDA(pta), contextDDA(NULL) {
+DDAStat::DDAStat(FlowDDA* pta) : PTAStat(pta), flowDDA(pta), contextDDA(NULL)
+{
     initDefault();
 }
-DDAStat::DDAStat(ContextDDA* pta) : PTAStat(pta), flowDDA(NULL), contextDDA(pta) {
+DDAStat::DDAStat(ContextDDA* pta) : PTAStat(pta), flowDDA(NULL), contextDDA(pta)
+{
     initDefault();
 }
 
-void DDAStat::initDefault() {
+void DDAStat::initDefault()
+{
     _TotalNumOfQuery = 0;
     _TotalNumOfOutOfBudgetQuery = 0;
     _TotalNumOfDPM = 0;
@@ -59,7 +62,8 @@ void DDAStat::initDefault() {
     _vmsizeUsageBefore = _vmsizeUsageAfter = 0;
 }
 
-SVFG* DDAStat::getSVFG() const {
+SVFG* DDAStat::getSVFG() const
+{
     if(flowDDA)
         return flowDDA->getSVFG();
     else
@@ -67,23 +71,27 @@ SVFG* DDAStat::getSVFG() const {
 
 }
 
-PointerAnalysis* DDAStat::getPTA() const {
+PointerAnalysis* DDAStat::getPTA() const
+{
     if(flowDDA)
         return flowDDA;
     else
         return contextDDA;
 }
 
-void DDAStat::performStatPerQuery(NodeID ptr) {
+void DDAStat::performStatPerQuery(NodeID ptr)
+{
 
     u32_t NumOfDPM = 0;
     u32_t NumOfLoc = 0;
     u32_t maxNumOfDPMPerLoc = 0;
     u32_t cptsSize = 0;
     PointsTo pts;
-    if(flowDDA) {
+    if(flowDDA)
+    {
         for(FlowDDA::LocToDPMVecMap::const_iterator it =  flowDDA->getLocToDPMVecMap().begin(),
-                eit = flowDDA->getLocToDPMVecMap().end(); it!=eit; ++it) {
+                eit = flowDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        {
             NumOfLoc++;
             u32_t num = it->second.size();
             NumOfDPM += num;
@@ -93,9 +101,11 @@ void DDAStat::performStatPerQuery(NodeID ptr) {
         cptsSize = flowDDA->getPts(ptr).count();
         pts = flowDDA->getPts(ptr);
     }
-    else if(contextDDA) {
+    else if(contextDDA)
+    {
         for(ContextDDA::LocToDPMVecMap::const_iterator it =  contextDDA->getLocToDPMVecMap().begin(),
-                eit = contextDDA->getLocToDPMVecMap().end(); it!=eit; ++it) {
+                eit = contextDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        {
             NumOfLoc++;
             u32_t num = it->second.size();
             NumOfDPM += num;
@@ -125,10 +135,12 @@ void DDAStat::performStatPerQuery(NodeID ptr) {
     if(cptsSize == 0)
         _NumOfNullPtr++;
 
-    if(getPTA()->containBlackHoleNode(pts)) {
+    if(getPTA()->containBlackHoleNode(pts))
+    {
         _NumOfConstantPtr++;
     }
-    if(getPTA()->containConstantNode(pts)) {
+    if(getPTA()->containConstantNode(pts))
+    {
         _NumOfBlackholePtr++;
     }
 
@@ -180,7 +192,8 @@ void DDAStat::getNumOfOOBQuery()
         _TotalNumOfOutOfBudgetQuery = contextDDA->outOfBudgetDpms.size();
 }
 
-void DDAStat::performStat() {
+void DDAStat::performStat()
+{
 
     generalNumMap.clear();
     PTNumStatMap.clear();
@@ -190,10 +203,13 @@ void DDAStat::performStat() {
 
     getNumOfOOBQuery();
 
-    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++) {
+    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    {
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjPN>(pagNode)) {
-            if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first)) {
+        if(SVFUtil::isa<ObjPN>(pagNode))
+        {
+            if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
+            {
                 localVarInRecursion.set(nodeIt->first);
             }
         }
@@ -231,17 +247,21 @@ void DDAStat::performStat() {
     printStat();
 }
 
-void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts) {
+void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
+{
 
-    if (timeStatMap.empty() == false && NumPerQueryStatMap.empty() == false) {
+    if (timeStatMap.empty() == false && NumPerQueryStatMap.empty() == false)
+    {
         std::cout.flags(std::ios::left);
         unsigned field_width = 20;
         std::cout << "---------------------Stat Per Query--------------------------------\n";
-        for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it) {
+        for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
+        {
             // format out put with width 20 space
             std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
-        for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it) {
+        for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it)
+        {
             // format out put with width 20 space
             std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
@@ -250,13 +270,16 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts) {
 }
 
 
-void DDAStat::printStat() {
+void DDAStat::printStat()
+{
 
-    if(flowDDA) {
+    if(flowDDA)
+    {
         FlowDDA::ConstSVFGEdgeSet edgeSet;
         flowDDA->getSVFG()->getStat()->performSCCStat(edgeSet);
     }
-    else if(contextDDA) {
+    else if(contextDDA)
+    {
         contextDDA->getSVFG()->getStat()->performSCCStat(contextDDA->getInsensitiveEdgeSet());
     }
 

@@ -54,44 +54,47 @@ double Andersen::timeOfUpdateCallGraph = 0;
 
 
 static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
-                                  llvm::cl::desc("Write Andersen's analysis results to a file"));
+                                        llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
-                                 llvm::cl::desc("Read Andersen's analysis results from a file"));
+                                       llvm::cl::desc("Read Andersen's analysis results from a file"));
 static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
-                                    llvm::cl::desc("Disable diff pts propagation"));
+                                   llvm::cl::desc("Disable diff pts propagation"));
 static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
-                                        llvm::cl::desc("Enable PWC in graph solving"));
+                                    llvm::cl::desc("Enable PWC in graph solving"));
 
 
 /*!
  * Andersen analysis
  */
-void Andersen::analyze(SVFModule* svfModule) {
+void Andersen::analyze(SVFModule* svfModule)
+{
     /// Initialization for the Solver
     initialize(svfModule);
-    
+
     bool readResultsFromFile = false;
     if(!ReadAnder.empty())
         readResultsFromFile = this->readFromFile(ReadAnder);
 
-	if(!readResultsFromFile) {
-		// Start solving constraints
-		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-		solve();
-		DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+    if(!readResultsFromFile)
+    {
+        // Start solving constraints
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+        solve();
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-		// Finalize the analysis
-		finalize();
-	}
+        // Finalize the analysis
+        finalize();
+    }
 
-	if (!WriteAnder.empty())
-		this->writeToFile(WriteAnder);
+    if (!WriteAnder.empty())
+        this->writeToFile(WriteAnder);
 }
 
 /*!
  * Initilize analysis
  */
-void Andersen::initialize(SVFModule* svfModule) {
+void Andersen::initialize(SVFModule* svfModule)
+{
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
@@ -110,7 +113,8 @@ void Andersen::initialize(SVFModule* svfModule) {
 /*!
  * Start constraint solving
  */
-void Andersen::processNode(NodeID nodeId) {
+void Andersen::processNode(NodeID nodeId)
+{
     // sub nodes do not need to be processed
     if (sccRepNode(nodeId) != nodeId)
         return;
@@ -130,14 +134,17 @@ void Andersen::processNode(NodeID nodeId) {
 /*!
  * Process copy and gep edges
  */
-void Andersen::handleCopyGep(ConstraintNode* node) {
+void Andersen::handleCopyGep(ConstraintNode* node)
+{
     NodeID nodeId = node->getId();
     computeDiffPts(nodeId);
 
-    if (!getDiffPts(nodeId).empty()) {
+    if (!getDiffPts(nodeId).empty())
+    {
         for (ConstraintEdge* edge : node->getCopyOutEdges())
             processCopy(nodeId, edge);
-        for (ConstraintEdge* edge : node->getGepOutEdges()) {
+        for (ConstraintEdge* edge : node->getGepOutEdges())
+        {
             if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 processGep(nodeId, gepEdge);
         }
@@ -147,21 +154,25 @@ void Andersen::handleCopyGep(ConstraintNode* node) {
 /*!
  * Process load and store edges
  */
-void Andersen::handleLoadStore(ConstraintNode *node) {
+void Andersen::handleLoadStore(ConstraintNode *node)
+{
     NodeID nodeId = node->getId();
     for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
-            getPts(nodeId).end(); piter != epiter; ++piter) {
+                getPts(nodeId).end(); piter != epiter; ++piter)
+    {
         NodeID ptd = *piter;
         // handle load
         for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
-                     eit = node->outgoingLoadsEnd(); it != eit; ++it) {
+                eit = node->outgoingLoadsEnd(); it != eit; ++it)
+        {
             if (processLoad(ptd, *it))
                 pushIntoWorklist(ptd);
         }
 
         // handle store
         for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
-                     eit = node->incomingStoresEnd(); it != eit; ++it) {
+                eit = node->incomingStoresEnd(); it != eit; ++it)
+        {
             if (processStore(ptd, *it))
                 pushIntoWorklist((*it)->getSrcID());
         }
@@ -173,7 +184,8 @@ void Andersen::handleLoadStore(ConstraintNode *node) {
  */
 void Andersen::processAllAddr()
 {
-    for (ConstraintGraph::const_iterator nodeIt = consCG->begin(), nodeEit = consCG->end(); nodeIt != nodeEit; nodeIt++) {
+    for (ConstraintGraph::const_iterator nodeIt = consCG->begin(), nodeEit = consCG->end(); nodeIt != nodeEit; nodeIt++)
+    {
         ConstraintNode * cgNode = nodeIt->second;
         for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
                 it != eit; ++it)
@@ -184,7 +196,8 @@ void Andersen::processAllAddr()
 /*!
  * Process address edges
  */
-void Andersen::processAddr(const AddrCGEdge* addr) {
+void Andersen::processAddr(const AddrCGEdge* addr)
+{
     numOfProcessedAddr++;
 
     NodeID dst = addr->getDstID();
@@ -198,7 +211,8 @@ void Andersen::processAddr(const AddrCGEdge* addr) {
  *	src --load--> dst,
  *	node \in pts(src) ==>  node--copy-->dst
  */
-bool Andersen::processLoad(NodeID node, const ConstraintEdge* load) {
+bool Andersen::processLoad(NodeID node, const ConstraintEdge* load)
+{
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropiate way.
@@ -217,7 +231,8 @@ bool Andersen::processLoad(NodeID node, const ConstraintEdge* load) {
  *	src --store--> dst,
  *	node \in pts(dst) ==>  src--copy-->node
  */
-bool Andersen::processStore(NodeID node, const ConstraintEdge* store) {
+bool Andersen::processStore(NodeID node, const ConstraintEdge* store)
+{
     /// TODO: New copy edges are also added for black hole obj node to
     ///       make gcc in spec 2000 pass the flow-sensitive analysis.
     ///       Try to handle black hole obj in an appropiate way
@@ -236,7 +251,8 @@ bool Andersen::processStore(NodeID node, const ConstraintEdge* store) {
  *	src --copy--> dst,
  *	union pts(dst) with pts(src)
  */
-bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
+bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge)
+{
     numOfProcessedCopy++;
 
     assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
@@ -255,7 +271,8 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge) {
  *	for each srcPtdNode \in pts(src) ==> add fieldSrcPtdNode into tmpDstPts
  *		union pts(dst) with tmpDstPts
  */
-bool Andersen::processGep(NodeID node, const GepCGEdge* edge) {
+bool Andersen::processGep(NodeID node, const GepCGEdge* edge)
+{
     PointsTo& srcPts = getDiffPts(edge->getSrcID());
     return processGepPts(srcPts, edge);
 }
@@ -268,18 +285,24 @@ bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
     numOfProcessedGep++;
 
     PointsTo tmpDstPts;
-    for (PointsTo::iterator piter = pts.begin(), epiter = pts.end(); piter != epiter; ++piter) {
+    for (PointsTo::iterator piter = pts.begin(), epiter = pts.end(); piter != epiter; ++piter)
+    {
         /// get the object
         NodeID ptd = *piter;
         /// handle blackhole and constant
-        if (consCG->isBlkObjOrConstantObj(ptd)) {
+        if (consCG->isBlkObjOrConstantObj(ptd))
+        {
             tmpDstPts.set(*piter);
-        } else {
+        }
+        else
+        {
             /// handle variant gep edge
             /// If a pointer connected by a variant gep edge,
             /// then set this memory object to be field insensitive
-            if (SVFUtil::isa<VariantGepCGEdge>(edge)) {
-                if (consCG->isFieldInsensitiveObj(ptd) == false) {
+            if (SVFUtil::isa<VariantGepCGEdge>(edge))
+            {
+                if (consCG->isFieldInsensitiveObj(ptd) == false)
+                {
                     consCG->setObjFieldInsensitive(ptd);
                     consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(ptd));
                 }
@@ -290,21 +313,24 @@ bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             /// Otherwise process invariant (normal) gep
             // TODO: after the node is set to field insensitive, handling invaraint gep edge may lose precision
             // because offset here are ignored, and it always return the base obj
-            else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)) {
+            else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
+            {
                 if (!matchType(edge->getSrcID(), ptd, normalGepEdge))
                     continue;
                 NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
                 addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
             }
-            else {
+            else
+            {
                 assert(false && "new gep edge?");
             }
         }
     }
 
     NodeID dstId = edge->getDstID();
-    if (unionPts(dstId, tmpDstPts)) {
+    if (unionPts(dstId, tmpDstPts))
+    {
         pushIntoWorklist(dstId);
         return true;
     }
@@ -314,7 +340,8 @@ bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 /**
  * Detect and collapse PWC nodes produced by processing gep edges, under the constraint of field limit.
  */
-inline void Andersen::collapsePWCNode(NodeID nodeId) {
+inline void Andersen::collapsePWCNode(NodeID nodeId)
+{
     // If a node is a PWC node, collapse all its points-to tarsget.
     // collapseNodePts() may change the points-to set of the nodes which have been processed
     // before, in this case, we may need to re-do the analysis.
@@ -322,8 +349,10 @@ inline void Andersen::collapsePWCNode(NodeID nodeId) {
         reanalyze = true;
 }
 
-inline void Andersen::collapseFields() {
-    while (consCG->hasNodesToBeCollapsed()) {
+inline void Andersen::collapseFields()
+{
+    while (consCG->hasNodesToBeCollapsed())
+    {
         NodeID node = consCG->getNextCollapseNode();
         // collapseField() may change the points-to set of the nodes which have been processed
         // before, in this case, we may need to re-do the analysis.
@@ -339,7 +368,8 @@ void Andersen::mergeSccCycle()
 {
     NodeStack revTopoOrder;
     NodeStack & topoOrder = getSCCDetector()->topoNodeStack();
-    while (!topoOrder.empty()) {
+    while (!topoOrder.empty())
+    {
         NodeID repNodeId = topoOrder.top();
         topoOrder.pop();
         revTopoOrder.push(repNodeId);
@@ -349,7 +379,8 @@ void Andersen::mergeSccCycle()
     }
 
     // restore the topological order for later solving.
-    while (!revTopoOrder.empty()) {
+    while (!revTopoOrder.empty())
+    {
         NodeID nodeId = revTopoOrder.top();
         revTopoOrder.pop();
         topoOrder.push(nodeId);
@@ -363,9 +394,11 @@ void Andersen::mergeSccCycle()
  */
 void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes)
 {
-    for (NodeBS::iterator nodeIt = subNodes.begin(); nodeIt != subNodes.end(); nodeIt++) {
+    for (NodeBS::iterator nodeIt = subNodes.begin(); nodeIt != subNodes.end(); nodeIt++)
+    {
         NodeID subNodeId = *nodeIt;
-        if (subNodeId != repNodeId) {
+        if (subNodeId != repNodeId)
+        {
             mergeNodeToRep(subNodeId, repNodeId);
         }
     }
@@ -380,7 +413,8 @@ bool Andersen::collapseNodePts(NodeID nodeId)
     PointsTo& nodePts = getPts(nodeId);
     /// Points to set may be changed during collapse, so use a clone instead.
     PointsTo ptsClone = nodePts;
-    for (PointsTo::iterator ptsIt = ptsClone.begin(), ptsEit = ptsClone.end(); ptsIt != ptsEit; ptsIt++) {
+    for (PointsTo::iterator ptsIt = ptsClone.begin(), ptsEit = ptsClone.end(); ptsIt != ptsEit; ptsIt++)
+    {
         if (consCG->isFieldInsensitiveObj(*ptsIt))
             continue;
 
@@ -413,13 +447,16 @@ bool Andersen::collapseField(NodeID nodeId)
     NodeID baseId = consCG->getFIObjNode(nodeId);
     NodeID baseRepNodeId = consCG->sccRepNode(baseId);
     NodeBS & allFields = consCG->getAllFieldsObjNode(baseId);
-    for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit; fieldIt++) {
+    for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit; fieldIt++)
+    {
         NodeID fieldId = *fieldIt;
-        if (fieldId != baseId) {
+        if (fieldId != baseId)
+        {
             // use the reverse pts of this field node to find all pointers point to it
             PointsTo & revPts = getRevPts(fieldId);
             for (PointsTo::iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
-                    ptdIt != ptdEit; ptdIt++) {
+                    ptdIt != ptdEit; ptdIt++)
+            {
                 // change the points-to target from field to base node
                 PointsTo & pts = getPts(*ptdIt);
                 pts.reset(fieldId);
@@ -448,7 +485,8 @@ bool Andersen::collapseField(NodeID nodeId)
 /*!
  * SCC detection on constraint graph
  */
-NodeStack& Andersen::SCCDetect() {
+NodeStack& Andersen::SCCDetect()
+{
     numOfSCCDetection++;
 
     double sccStart = stat->getClk();
@@ -471,20 +509,24 @@ NodeStack& Andersen::SCCDetect() {
 /*!
  * Update call graph for the input indirect callsites
  */
-bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
+bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
+{
 
     double cgUpdateStart = stat->getClk();
 
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it ) {
-        CallSite cs = it->first->getCallSite();
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit) {
+    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+    {
+        CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
+        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        {
             connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
         }
     }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it) {
+    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
+    {
         pushIntoWorklist(it->first);
     }
 
@@ -494,16 +536,19 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites) {
     return (!newEdges.empty());
 }
 
-void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
+void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
+{
     assert(SVFUtil::getCallee(cs) == NULL && "not an indirect callsite?");
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
-    if(it != callsite2DummyValPN.end()){
+    if(it != callsite2DummyValPN.end())
+    {
         srcret = sccRepNode(it->second);
     }
-    else{
+    else
+    {
         NodeID valNode = pag->addDummyValNode();
         NodeID objNode = pag->addDummyObjNode(cs.getType());
         addPts(valNode,objNode);
@@ -521,7 +566,8 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes) {
 /*!
  * Connect formal and actual parameters for indirect callsites
  */
-void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet &cpySrcNodes) {
+void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet &cpySrcNodes)
+{
     assert(F);
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
@@ -529,26 +575,32 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
     CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
 
-    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode)){
+    if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
+    {
         heapAllocatorViaIndCall(cs,cpySrcNodes);
     }
 
-    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode)) {
+    if (pag->funHasRet(F) && pag->callsiteHasRet(retBlockNode))
+    {
         const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
         const PAGNode* fun_return = pag->getFunRet(F);
-        if (cs_return->isPointer() && fun_return->isPointer()) {
+        if (cs_return->isPointer() && fun_return->isPointer())
+        {
             NodeID dstrec = sccRepNode(cs_return->getId());
             NodeID srcret = sccRepNode(fun_return->getId());
-            if(addCopyEdge(srcret, dstrec)) {
+            if(addCopyEdge(srcret, dstrec))
+            {
                 cpySrcNodes.insert(std::make_pair(srcret,dstrec));
             }
         }
-        else {
+        else
+        {
             DBOUT(DAndersen, outs() << "not a pointer ignored\n");
         }
     }
 
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F)) {
+    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(F))
+    {
 
         // connect actual and formal param
         const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
@@ -557,40 +609,49 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
         DBOUT(DPAGBuild, outs() << "      args:");
         PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         PAG::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
-        for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt) {
+        for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
+        {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
-            if (csArgIt  == csArgEit) {
+            if (csArgIt  == csArgEit)
+            {
                 DBOUT(DAndersen, outs() << " !! not enough args\n");
                 break;
             }
             const PAGNode *cs_arg = *csArgIt ;
             const PAGNode *fun_arg = *funArgIt;
 
-            if (cs_arg->isPointer() && fun_arg->isPointer()) {
+            if (cs_arg->isPointer() && fun_arg->isPointer())
+            {
                 DBOUT(DAndersen, outs() << "process actual parm  " << *(cs_arg->getValue()) << " \n");
                 NodeID srcAA = sccRepNode(cs_arg->getId());
                 NodeID dstFA = sccRepNode(fun_arg->getId());
-                if(addCopyEdge(srcAA, dstFA)) {
+                if(addCopyEdge(srcAA, dstFA))
+                {
                     cpySrcNodes.insert(std::make_pair(srcAA,dstFA));
                 }
             }
         }
 
         //Any remaining actual args must be varargs.
-        if (F->isVarArg()) {
+        if (F->isVarArg())
+        {
             NodeID vaF = sccRepNode(pag->getVarargNode(F));
             DBOUT(DPAGBuild, outs() << "\n      varargs:");
-            for (; csArgIt != csArgEit; ++csArgIt) {
+            for (; csArgIt != csArgEit; ++csArgIt)
+            {
                 const PAGNode *cs_arg = *csArgIt;
-                if (cs_arg->isPointer()) {
+                if (cs_arg->isPointer())
+                {
                     NodeID vnAA = sccRepNode(cs_arg->getId());
-                    if (addCopyEdge(vnAA,vaF)) {
+                    if (addCopyEdge(vnAA,vaF))
+                    {
                         cpySrcNodes.insert(std::make_pair(vnAA,vaF));
                     }
                 }
             }
         }
-        if(csArgIt != csArgEit) {
+        if(csArgIt != csArgEit)
+        {
             writeWrnMsg("too many args to non-vararg func.");
             writeWrnMsg("(" + getSourceLoc(cs.getInstruction()) + ")");
         }
@@ -600,7 +661,8 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
 /*!
  * merge nodeId to newRepId. Return true if the newRepId is a PWC node
  */
-bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
+bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
+{
 
     if(nodeId==newRepId)
         return false;
@@ -623,7 +685,8 @@ bool Andersen::mergeSrcToTgt(NodeID nodeId, NodeID newRepId){
 /*
  * Merge a node to its rep node based on SCC detection
  */
-void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
+void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId)
+{
 
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
     bool gepInsideScc = mergeSrcToTgt(nodeId,newRepId);
@@ -638,14 +701,16 @@ void Andersen::mergeNodeToRep(NodeID nodeId,NodeID newRepId) {
 /*
  * Updates subnodes of its rep, and rep node of its subs
  */
-void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
+void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
+{
     consCG->setRep(nodeId,newRepId);
     NodeBS repSubs;
     repSubs.set(nodeId);
     /// update nodeToRepMap, for each subs of current node updates its rep to newRepId
     //  update nodeToSubsMap, union its subs with its rep Subs
     NodeBS& nodeSubs = consCG->sccSubNodes(nodeId);
-    for(NodeBS::iterator sit = nodeSubs.begin(), esit = nodeSubs.end(); sit!=esit; ++sit) {
+    for(NodeBS::iterator sit = nodeSubs.begin(), esit = nodeSubs.end(); sit!=esit; ++sit)
+    {
         NodeID subId = *sit;
         consCG->setRep(subId,newRepId);
     }
@@ -657,22 +722,29 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId) {
 /*!
  * Print pag nodes' pts by an ascending order
  */
-void Andersen::dumpTopLevelPtsTo() {
+void Andersen::dumpTopLevelPtsTo()
+{
     for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
-         nIter != this->getAllValidPtrs().end(); ++nIter) {
+            nIter != this->getAllValidPtrs().end(); ++nIter)
+    {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
-        if (getPAG()->isValidTopLevelPtr(node)) {
+        if (getPAG()->isValidTopLevelPtr(node))
+        {
             PointsTo& pts = this->getPts(node->getId());
             outs() << "\nNodeID " << node->getId() << " ";
 
-            if (pts.empty()) {
+            if (pts.empty())
+            {
                 outs() << "\t\tPointsTo: {empty}\n\n";
-            } else {
+            }
+            else
+            {
                 outs() << "\t\tPointsTo: { ";
 
                 multiset<Size_t> line;
                 for (PointsTo::iterator it = pts.begin(), eit = pts.end();
-                     it != eit; ++it) {
+                        it != eit; ++it)
+                {
                     line.insert(*it);
                 }
                 for (multiset<Size_t>::const_iterator it = line.begin(); it != line.end(); ++it)
@@ -681,5 +753,7 @@ void Andersen::dumpTopLevelPtsTo() {
             }
         }
     }
+
+    outs().flush();
 }
 

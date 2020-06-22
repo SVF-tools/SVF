@@ -36,7 +36,8 @@
 /*!
  * Memory region VFGNode (for address-taken objects)
  */
-class MRSVFGNode : public VFGNode {
+class MRSVFGNode : public VFGNode
+{
 protected:
     PointsTo cpts;
 
@@ -45,15 +46,18 @@ protected:
 
 public:
     /// Return points-to of the MR
-    inline const PointsTo& getPointsTo() const {
+    inline const PointsTo& getPointsTo() const
+    {
         return cpts;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const MRSVFGNode *) {
+    static inline bool classof(const MRSVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == FPIN ||
                node->getNodeKind() == FPOUT ||
                node->getNodeKind() == APIN ||
@@ -62,7 +66,8 @@ public:
                node->getNodeKind() == MIntraPhi ||
                node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == FPIN ||
                node->getNodeKind() == FPOUT ||
                node->getNodeKind() == APIN ||
@@ -77,33 +82,40 @@ public:
 /*
  * SVFG Node stands for entry chi node (address-taken variables)
  */
-class FormalINSVFGNode : public MRSVFGNode {
+class FormalINSVFGNode : public MRSVFGNode
+{
 private:
     const MemSSA::ENTRYCHI* chi;
 
 public:
     /// Constructor
-    FormalINSVFGNode(NodeID id, const MemSSA::ENTRYCHI* entry): MRSVFGNode(id, FPIN), chi(entry) {
+    FormalINSVFGNode(NodeID id, const MemSSA::ENTRYCHI* entry): MRSVFGNode(id, FPIN), chi(entry)
+    {
         cpts = entry->getMR()->getPointsTo();
         bb = &entry->getFunction()->getLLVMFun()->getEntryBlock();
     }
     /// EntryCHI
-    inline const MemSSA::ENTRYCHI* getEntryChi() const {
+    inline const MemSSA::ENTRYCHI* getEntryChi() const
+    {
         return chi;
     }
     /// Return function
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FormalINSVFGNode *) {
+    static inline bool classof(const FormalINSVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == FPIN;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == FPIN;
     }
     //@}
@@ -113,7 +125,8 @@ public:
 /*
  * SVFG Node stands for return mu node (address-taken variables)
  */
-class FormalOUTSVFGNode : public MRSVFGNode {
+class FormalOUTSVFGNode : public MRSVFGNode
+{
 private:
     const MemSSA::RETMU* mu;
 
@@ -122,22 +135,27 @@ public:
     FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit);
 
     /// RetMU
-    inline const MemSSA::RETMU* getRetMU() const {
+    inline const MemSSA::RETMU* getRetMU() const
+    {
         return mu;
     }
     /// Function
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FormalOUTSVFGNode *) {
+    static inline bool classof(const FormalOUTSVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == FPOUT;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == FPOUT;
     }
     //@}
@@ -147,35 +165,42 @@ public:
 /*
  * SVFG Node stands for callsite mu node (address-taken variables)
  */
-class ActualINSVFGNode : public MRSVFGNode {
+class ActualINSVFGNode : public MRSVFGNode
+{
 private:
     const MemSSA::CALLMU* mu;
     const CallBlockNode* cs;
 public:
     /// Constructor
     ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, const CallBlockNode* c):
-        MRSVFGNode(id, APIN), mu(m), cs(c) {
+        MRSVFGNode(id, APIN), mu(m), cs(c)
+    {
         cpts = m->getMR()->getPointsTo();
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return cs;
     }
     /// CallMU
-    inline const MemSSA::CALLMU* getCallMU() const {
+    inline const MemSSA::CALLMU* getCallMU() const
+    {
         return mu;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ActualINSVFGNode *) {
+    static inline bool classof(const ActualINSVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == APIN;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == APIN;
     }
     //@}
@@ -185,7 +210,8 @@ public:
 /*
  * SVFG Node stands for callsite chi node (address-taken variables)
  */
-class ActualOUTSVFGNode : public MRSVFGNode {
+class ActualOUTSVFGNode : public MRSVFGNode
+{
 private:
     const MemSSA::CALLCHI* chi;
     const CallBlockNode* cs;
@@ -193,28 +219,34 @@ private:
 public:
     /// Constructor
     ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, const CallBlockNode* cal):
-        MRSVFGNode(id, APOUT), chi(c), cs(cal) {
+        MRSVFGNode(id, APOUT), chi(c), cs(cal)
+    {
         cpts = c->getMR()->getPointsTo();
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         return cs;
     }
     /// CallCHI
-    inline const MemSSA::CALLCHI* getCallCHI() const {
+    inline const MemSSA::CALLCHI* getCallCHI() const
+    {
         return chi;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ActualOUTSVFGNode *) {
+    static inline bool classof(const ActualOUTSVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == APOUT;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == APOUT;
     }
     //@}
@@ -224,7 +256,8 @@ public:
 /*
  * SVFG Node stands for a memory ssa phi node or formalIn or ActualOut
  */
-class MSSAPHISVFGNode : public MRSVFGNode {
+class MSSAPHISVFGNode : public MRSVFGNode
+{
 public:
     typedef DenseMap<u32_t,const MRVer*> OPVers;
 
@@ -234,7 +267,8 @@ protected:
 
 public:
     /// Constructor
-    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def) {
+    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def)
+    {
         cpts = def->getMR()->getPointsTo();
         if(const MemSSA::PHI* phi = SVFUtil::dyn_cast<const MemSSA::PHI>(def))
             bb = phi->getBasicBlock();
@@ -247,40 +281,50 @@ public:
     }
     /// MSSA phi operands
     //@{
-    inline const MRVer* getOpVer(u32_t pos) const {
+    inline const MRVer* getOpVer(u32_t pos) const
+    {
         OPVers::const_iterator it = opVers.find(pos);
         assert(it!=opVers.end() && "version is NULL, did not rename?");
         return it->second;
     }
-    inline void setOpVer(u32_t pos, const MRVer* node) {
+    inline void setOpVer(u32_t pos, const MRVer* node)
+    {
         opVers[pos] = node;
     }
-    inline const MemSSA::MDEF* getRes() const {
+    inline const MemSSA::MDEF* getRes() const
+    {
         return res;
     }
-    inline u32_t getOpVerNum() const {
+    inline u32_t getOpVerNum() const
+    {
         return opVers.size();
     }
-    inline OPVers::const_iterator opVerBegin() const {
+    inline OPVers::const_iterator opVerBegin() const
+    {
         return opVers.begin();
     }
-    inline OPVers::const_iterator opVerEnd() const {
+    inline OPVers::const_iterator opVerEnd() const
+    {
         return opVers.end();
     }
     //@}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const MSSAPHISVFGNode *) {
+    static inline bool classof(const MSSAPHISVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const MRSVFGNode *node) {
+    static inline bool classof(const MRSVFGNode *node)
+    {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
     //@}
@@ -289,28 +333,35 @@ public:
 /*
  * Intra MSSA PHI
  */
-class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode {
+class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
+{
 
 public:
     /// Constructor
-    IntraMSSAPHISVFGNode(NodeID id, const MemSSA::PHI* phi): MSSAPHISVFGNode(id, phi, MIntraPhi) {
+    IntraMSSAPHISVFGNode(NodeID id, const MemSSA::PHI* phi): MSSAPHISVFGNode(id, phi, MIntraPhi)
+    {
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IntraMSSAPHISVFGNode *) {
+    static inline bool classof(const IntraMSSAPHISVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const MSSAPHISVFGNode * node) {
+    static inline bool classof(const MSSAPHISVFGNode * node)
+    {
         return node->getNodeKind() == MIntraPhi;
     }
-    static inline bool classof(const MRSVFGNode *node) {
+    static inline bool classof(const MRSVFGNode *node)
+    {
         return node->getNodeKind() == MIntraPhi;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == MIntraPhi;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == MIntraPhi;
     }
     //@}
@@ -320,7 +371,8 @@ public:
 /*
  * Inter MSSA PHI (formalIN/ActualOUT)
  */
-class InterMSSAPHISVFGNode : public MSSAPHISVFGNode {
+class InterMSSAPHISVFGNode : public MSSAPHISVFGNode
+{
 
 public:
     /// Constructor interPHI for formal parameter
@@ -328,39 +380,48 @@ public:
     /// Constructor interPHI for actual return
     InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getCallCHI(), MInterPhi), fun(NULL),callInst(ao->getCallSite()) {}
 
-    inline bool isFormalINPHI() const {
+    inline bool isFormalINPHI() const
+    {
         return (fun!=NULL) && (callInst == NULL);
     }
 
-    inline bool isActualOUTPHI() const {
+    inline bool isActualOUTPHI() const
+    {
         return (fun==NULL) && (callInst != NULL);
     }
 
-    inline const SVFFunction* getFun() const {
+    inline const SVFFunction* getFun() const
+    {
         assert(isFormalINPHI() && "expect a formal parameter phi");
         return fun;
     }
 
-    inline const CallBlockNode* getCallSite() const {
+    inline const CallBlockNode* getCallSite() const
+    {
         assert(isActualOUTPHI() && "expect a actual return phi");
         return callInst;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const InterMSSAPHISVFGNode *) {
+    static inline bool classof(const InterMSSAPHISVFGNode *)
+    {
         return true;
     }
-    static inline bool classof(const MSSAPHISVFGNode * node) {
+    static inline bool classof(const MSSAPHISVFGNode * node)
+    {
         return node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const MRSVFGNode *node) {
+    static inline bool classof(const MRSVFGNode *node)
+    {
         return node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const VFGNode *node) {
+    static inline bool classof(const VFGNode *node)
+    {
         return node->getNodeKind() == MInterPhi;
     }
-    static inline bool classof(const GenericVFGNodeTy *node) {
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
         return node->getNodeKind() == MInterPhi;
     }
     //@}

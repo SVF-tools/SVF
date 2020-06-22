@@ -42,29 +42,35 @@ class ConstraintNode;
  * including add/remove/re-target, but all the operations do not affect original PAG Edges
  */
 typedef GenericEdge<ConstraintNode> GenericConsEdgeTy;
-class ConstraintEdge : public GenericConsEdgeTy {
+class ConstraintEdge : public GenericConsEdgeTy
+{
 
 public:
     /// five kinds of constraint graph edges
     /// Gep edge is used for field sensitivity
-    enum ConstraintEdgeK {
+    enum ConstraintEdgeK
+    {
         Addr, Copy, Store, Load, NormalGep, VariantGep
     };
 private:
     EdgeID edgeId;
 public:
     /// Constructor
-    ConstraintEdge(ConstraintNode* s, ConstraintNode* d, ConstraintEdgeK k, EdgeID id = 0) : GenericConsEdgeTy(s,d,k),edgeId(id) {
+    ConstraintEdge(ConstraintNode* s, ConstraintNode* d, ConstraintEdgeK k, EdgeID id = 0) : GenericConsEdgeTy(s,d,k),edgeId(id)
+    {
     }
     /// Destructor
-    ~ConstraintEdge() {
+    ~ConstraintEdge()
+    {
     }
     /// Return edge ID
-    inline EdgeID getEdgeID() const {
+    inline EdgeID getEdgeID() const
+    {
         return edgeId;
     }
     /// ClassOf
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == Addr ||
                edge->getEdgeKind() == Copy ||
                edge->getEdgeKind() == Store ||
@@ -81,7 +87,8 @@ public:
 /*!
  * Copy edge
  */
-class AddrCGEdge: public ConstraintEdge {
+class AddrCGEdge: public ConstraintEdge
+{
 private:
     AddrCGEdge();                      ///< place holder
     AddrCGEdge(const AddrCGEdge &);  ///< place holder
@@ -89,13 +96,16 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const AddrCGEdge *) {
+    static inline bool classof(const AddrCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == Addr;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == Addr;
     }
     //@}
@@ -108,7 +118,8 @@ public:
 /*!
  * Copy edge
  */
-class CopyCGEdge: public ConstraintEdge {
+class CopyCGEdge: public ConstraintEdge
+{
 private:
     CopyCGEdge();                      ///< place holder
     CopyCGEdge(const CopyCGEdge &);  ///< place holder
@@ -116,19 +127,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CopyCGEdge *) {
+    static inline bool classof(const CopyCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == Copy;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == Copy;
     }
     //@}
 
     /// constructor
-    CopyCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Copy,id) {
+    CopyCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Copy,id)
+    {
     }
 };
 
@@ -136,7 +151,8 @@ public:
 /*!
  * Store edge
  */
-class StoreCGEdge: public ConstraintEdge {
+class StoreCGEdge: public ConstraintEdge
+{
 private:
     StoreCGEdge();                      ///< place holder
     StoreCGEdge(const StoreCGEdge &);  ///< place holder
@@ -145,19 +161,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const StoreCGEdge *) {
+    static inline bool classof(const StoreCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == Store;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == Store;
     }
     //@}
 
     /// constructor
-    StoreCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Store,id) {
+    StoreCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Store,id)
+    {
     }
 };
 
@@ -165,7 +185,8 @@ public:
 /*!
  * Load edge
  */
-class LoadCGEdge: public ConstraintEdge {
+class LoadCGEdge: public ConstraintEdge
+{
 private:
     LoadCGEdge();                      ///< place holder
     LoadCGEdge(const LoadCGEdge &);  ///< place holder
@@ -174,19 +195,23 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const LoadCGEdge *) {
+    static inline bool classof(const LoadCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == Load;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == Load;
     }
     //@}
 
     /// Constructor
-    LoadCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Load,id) {
+    LoadCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id) : ConstraintEdge(s,d,Load,id)
+    {
     }
 };
 
@@ -194,7 +219,8 @@ public:
 /*!
  * Gep edge
  */
-class GepCGEdge: public ConstraintEdge {
+class GepCGEdge: public ConstraintEdge
+{
 private:
     GepCGEdge();                      ///< place holder
     GepCGEdge(const GepCGEdge &);  ///< place holder
@@ -204,21 +230,25 @@ protected:
 
     /// Constructor
     GepCGEdge(ConstraintNode* s, ConstraintNode* d, ConstraintEdgeK k, EdgeID id)
-        : ConstraintEdge(s,d,k,id) {
+        : ConstraintEdge(s,d,k,id)
+    {
 
     }
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepCGEdge *) {
+    static inline bool classof(const GepCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == NormalGep ||
                edge->getEdgeKind() == VariantGep;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == NormalGep ||
                edge->getEdgeKind() == VariantGep;
     }
@@ -229,7 +259,8 @@ public:
 /*!
  * Gep edge with fixed offset size
  */
-class NormalGepCGEdge : public GepCGEdge {
+class NormalGepCGEdge : public GepCGEdge
+{
 private:
     NormalGepCGEdge();                      ///< place holder
     NormalGepCGEdge(const NormalGepCGEdge &);  ///< place holder
@@ -240,16 +271,20 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const NormalGepCGEdge *) {
+    static inline bool classof(const NormalGepCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const GepCGEdge *edge) {
+    static inline bool classof(const GepCGEdge *edge)
+    {
         return edge->getEdgeKind() == NormalGep;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == NormalGep;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == NormalGep;
     }
     //@}
@@ -260,12 +295,14 @@ public:
     {}
 
     /// Get location set of the gep edge
-    inline const LocationSet& getLocationSet() const {
+    inline const LocationSet& getLocationSet() const
+    {
         return ls;
     }
 
     /// Get location set of the gep edge
-    inline const u32_t getOffset() const {
+    inline const u32_t getOffset() const
+    {
         return ls.getOffset();
     }
 };
@@ -273,7 +310,8 @@ public:
 /*!
  * Gep edge with variant offset size
  */
-class VariantGepCGEdge : public GepCGEdge {
+class VariantGepCGEdge : public GepCGEdge
+{
 private:
     VariantGepCGEdge();                      ///< place holder
     VariantGepCGEdge(const VariantGepCGEdge &);  ///< place holder
@@ -282,16 +320,20 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const VariantGepCGEdge *) {
+    static inline bool classof(const VariantGepCGEdge *)
+    {
         return true;
     }
-    static inline bool classof(const GepCGEdge *edge) {
+    static inline bool classof(const GepCGEdge *edge)
+    {
         return edge->getEdgeKind() == VariantGep;
     }
-    static inline bool classof(const ConstraintEdge *edge) {
+    static inline bool classof(const ConstraintEdge *edge)
+    {
         return edge->getEdgeKind() == VariantGep;
     }
-    static inline bool classof(const GenericConsEdgeTy *edge) {
+    static inline bool classof(const GenericConsEdgeTy *edge)
+    {
         return edge->getEdgeKind() == VariantGep;
     }
     //@}

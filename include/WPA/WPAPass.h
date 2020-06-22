@@ -48,21 +48,24 @@ class SVFG;
  */
 // excised ", public llvm::AliasAnalysis" as that has a very light interface
 // and I want to see what breaks.
-class WPAPass {
+class WPAPass
+{
     typedef std::vector<PointerAnalysis*> PTAVector;
 
 public:
     /// Pass ID
     static char ID;
 
-    enum AliasCheckRule {
+    enum AliasCheckRule
+    {
         Conservative,	///< return MayAlias if any pta says alias
         Veto,			///< return NoAlias if any pta says no alias
         Precise			///< return alias result by the most precise pta
     };
 
     /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
-    WPAPass()  {
+    WPAPass()
+    {
 
     }
 
@@ -70,19 +73,22 @@ public:
     ~WPAPass();
 
     /// LLVM analysis usage
-    virtual inline void getAnalysisUsage(AnalysisUsage &au) const {
+    virtual inline void getAnalysisUsage(AnalysisUsage &au) const
+    {
         // declare your dependencies here.
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
     }
 
     /// Get adjusted analysis for alias analysis
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id) {
+    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id)
+    {
         return this;
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasResult alias(const MemoryLocation  &LocA, const MemoryLocation  &LocB) {
+    virtual inline AliasResult alias(const MemoryLocation  &LocA, const MemoryLocation  &LocB)
+    {
         return alias(LocA.Ptr, LocB.Ptr);
     }
 
@@ -96,7 +102,8 @@ public:
     virtual ModRefInfo getModRefInfo(const CallInst* callInst);
 
     /// Interface of mod-ref analysis to determine whether a CallSite instruction can mod or ref a specific memory location, given Location infos
-    virtual inline ModRefInfo getModRefInfo(const CallInst* callInst, const MemoryLocation& Loc) {
+    virtual inline ModRefInfo getModRefInfo(const CallInst* callInst, const MemoryLocation& Loc)
+    {
         return getModRefInfo(callInst, Loc.Ptr);
     }
 
@@ -110,7 +117,8 @@ public:
     void runOnModule(SVFModule* svfModule);
 
     /// PTA name
-    virtual inline StringRef getPassName() const {
+    virtual inline StringRef getPassName() const
+    {
         return "WPAPass";
     }
 

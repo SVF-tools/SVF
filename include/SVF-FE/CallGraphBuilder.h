@@ -36,28 +36,32 @@
 
 class ICFG;
 
-class CallGraphBuilder {
+class CallGraphBuilder
+{
 
 protected:
-	PTACallGraph* callgraph;
-	ICFG* icfg;
+    PTACallGraph* callgraph;
+    ICFG* icfg;
 public:
-	CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i){
-	}
+    CallGraphBuilder(PTACallGraph* cg, ICFG* i): callgraph(cg),icfg(i)
+    {
+    }
 
-	/// Build normal callgraph
-	PTACallGraph* buildCallGraph(SVFModule* svfModule);
+    /// Build normal callgraph
+    PTACallGraph* buildCallGraph(SVFModule* svfModule);
 
 };
 
-class ThreadCallGraphBuilder : public CallGraphBuilder {
+class ThreadCallGraphBuilder : public CallGraphBuilder
+{
 
 public:
-	ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i) {
-	}
+    ThreadCallGraphBuilder(ThreadCallGraph* cg, ICFG* i): CallGraphBuilder(cg,i)
+    {
+    }
 
-	/// Build thread-aware callgraph
-	PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
+    /// Build thread-aware callgraph
+    PTACallGraph* buildThreadCallGraph(SVFModule* svfModule);
 
 };
 

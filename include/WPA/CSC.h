@@ -44,7 +44,8 @@ typedef SCCDetection<ConstraintGraph *> CGSCC;
 /*!
  * class CSC: cycle stride calculation
  */
-class CSC {
+class CSC
+{
 public:
     typedef DenseMap<NodeID, NodeID> IdToIdMap;
     typedef FILOWorkList<NodeID> WorkStack;
@@ -63,17 +64,19 @@ private:
 
 public:
     CSC(ConstraintGraph* g, CGSCC* c)
-            : _consG(g), _scc(c), _I(0) {}
+        : _consG(g), _scc(c), _I(0) {}
 
     void find(NodeStack& candidates);
     void visit(NodeID nodeId, Size_t _w);
     void clear();
 
-    bool isVisited(NodeID nId) {
+    bool isVisited(NodeID nId)
+    {
         return _visited.find(nId) != _visited.end();
     }
 
-    void setVisited(NodeID nId) {
+    void setVisited(NodeID nId)
+    {
         _visited.insert(nId);
     }
 //    inline iterator begin() { return pwcReps.begin(); }

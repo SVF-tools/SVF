@@ -15,7 +15,8 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "Util/BasicTypes.h"
 
-class TypeBasedHeapCloning {
+class TypeBasedHeapCloning
+{
 public:
     /// Returns raw ctir metadata of a Value. Returns null if it doesn't exist.
     static const MDNode *getRawCTirMetadata(const Value *);

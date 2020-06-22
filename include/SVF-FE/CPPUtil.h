@@ -37,9 +37,11 @@ class CHGraph;
  * Util class to assist pointer analysis for cpp programs
  */
 
-namespace cppUtil {
+namespace cppUtil
+{
 
-struct DemangledName {
+struct DemangledName
+{
     std::string className;
     std::string funcName;
 };
@@ -97,20 +99,21 @@ bool isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* thisPtr2)
 
 /// Constants pertaining to CTir, for C and C++.
 /// TODO: move helper functions here too?
-namespace ctir {
-    /// On loads, stores, GEPs representing dereferences, and calls
-    /// representing virtual calls.
-    /// (The static type.)
-    const std::string derefMDName  = "ctir";
-    /// On the (global) virtual table itself.
-    /// (The class it corresponds to.)
-    const std::string vtMDName     = "ctir.vt";
-    /// On the bitcast of `this` to i8*.
-    /// (The class the constructor it corresponds to.)
-    const std::string vtInitMDName = "ctir.vt.init";
+namespace ctir
+{
+/// On loads, stores, GEPs representing dereferences, and calls
+/// representing virtual calls.
+/// (The static type.)
+const std::string derefMDName  = "ctir";
+/// On the (global) virtual table itself.
+/// (The class it corresponds to.)
+const std::string vtMDName     = "ctir.vt";
+/// On the bitcast of `this` to i8*.
+/// (The class the constructor it corresponds to.)
+const std::string vtInitMDName = "ctir.vt.init";
 
-    /// Value we expect a ctir-annotated module to have.
-    const uint32_t moduleFlagValue = 1;
+/// Value we expect a ctir-annotated module to have.
+const uint32_t moduleFlagValue = 1;
 }
 
 }

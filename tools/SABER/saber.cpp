@@ -37,18 +37,19 @@ static llvm::cl::opt<std::string> InputFilename(cl::Positional,
         llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
 
 static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
-                                 llvm::cl::desc("Memory Leak Detection"));
+                                       llvm::cl::desc("Memory Leak Detection"));
 
 static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
-                                 llvm::cl::desc("File Open/Close Detection"));
+                                       llvm::cl::desc("File Open/Close Detection"));
 
 static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
-                                  llvm::cl::desc("Double Free Detection"));
+                                        llvm::cl::desc("Double Free Detection"));
 
 static llvm::cl::opt<bool> UAFCHECKER("uaf", llvm::cl::init(false),
-                                llvm::cl::desc("Use-After-Free Detection"));
+                                      llvm::cl::desc("Use-After-Free Detection"));
 
-int main(int argc, char ** argv) {
+int main(int argc, char ** argv)
+{
 
     int arg_num = 0;
     char **arg_value = new char*[argc];
@@ -68,7 +69,7 @@ int main(int argc, char ** argv) {
     else if(DFREECHECKER)
         saber = new DoubleFreeChecker();
     else
-	saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
+        saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
 
     saber->runOnModule(svfModule);
 

@@ -18,7 +18,8 @@ class PointerAnalysis;
 /*!
  * Statistics of demand-driven analysis
  */
-class DDAStat : public PTAStat {
+class DDAStat : public PTAStat
+{
 
 public:
     DDAStat(FlowDDA* pta);
@@ -48,12 +49,14 @@ public:
 
     void getNumOfOOBQuery();
 
-    inline void setMemUsageBefore(u32_t vmrss, u32_t vmsize) {
+    inline void setMemUsageBefore(u32_t vmrss, u32_t vmsize)
+    {
         _vmrssUsageBefore = vmrss;
         _vmsizeUsageBefore = vmsize;
     }
 
-    inline void setMemUsageAfter(u32_t vmrss, u32_t vmsize) {
+    inline void setMemUsageAfter(u32_t vmrss, u32_t vmsize)
+    {
         _vmrssUsageAfter = vmrss;
         _vmsizeUsageAfter = vmsize;
     }
@@ -98,7 +101,8 @@ public:
 
     PointerAnalysis* getPTA() const;
 
-    inline NodeBS& getStrongUpdateStores() {
+    inline NodeBS& getStrongUpdateStores()
+    {
         return _StrongUpdateStores;
     }
 };
