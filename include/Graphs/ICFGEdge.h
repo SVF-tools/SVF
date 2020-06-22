@@ -129,15 +129,15 @@ class CallCFGEdge : public ICFGEdge
 {
 
 private:
-    CallSite cs;
+	const Instruction*  cs;
 public:
     /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, CallSite c):
+    CallCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
         ICFGEdge(s,d,CallCF),cs(c)
     {
     }
     /// Return callsite ID
-    inline CallSite getCallSite() const
+    inline const Instruction*  getCallSite() const
     {
         return cs;
     }
@@ -165,15 +165,15 @@ class RetCFGEdge : public ICFGEdge
 {
 
 private:
-    CallSite cs;
+	const Instruction*  cs;
 public:
     /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, CallSite c):
+    RetCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
         ICFGEdge(s,d,RetCF),cs(c)
     {
     }
     /// Return callsite ID
-    inline CallSite getCallSite() const
+    inline const Instruction*  getCallSite() const
     {
         return cs;
     }

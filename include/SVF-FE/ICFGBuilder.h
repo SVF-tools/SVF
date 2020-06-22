@@ -78,7 +78,7 @@ private:
     }
 
     /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(CallSite cs, const SVFFunction*  callee);
+    void addICFGInterEdges(const Instruction*  cs, const SVFFunction*  callee);
 
     /// Add a function entry node
     inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const SVFFunction*  fun)
@@ -99,7 +99,7 @@ private:
             return b;
     }
     /// Add a call node
-    inline CallBlockNode* getOrAddCallICFGNode(CallSite cs)
+    inline CallBlockNode* getOrAddCallICFGNode(const Instruction*  cs)
     {
         CallBlockNode* b = icfg->getCallICFGNode(cs);
         if (b == NULL)
@@ -109,7 +109,7 @@ private:
         return b;
     }
     /// Add a return node
-    inline RetBlockNode* getOrAddRetICFGNode(CallSite cs)
+    inline RetBlockNode* getOrAddRetICFGNode(const Instruction*  cs)
     {
         RetBlockNode* b = icfg->getRetICFGNode(cs);
         if (b == NULL)

@@ -81,11 +81,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         }
         else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite().getInstruction());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite());
         }
         else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
         {
-            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite().getInstruction());
+            ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite());
         }
         else
             assert(false && "what else kinds of nodes do we have??");

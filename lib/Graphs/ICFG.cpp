@@ -86,9 +86,9 @@ CallBlockNode* ICFG::getCallBlockNode(const Instruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallBlockNode* node = getCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+    CallBlockNode* node = getCallICFGNode(inst);
     if(node==NULL)
-        node = addCallICFGNode(SVFUtil::getLLVMCallSite(inst));
+        node = addCallICFGNode(inst);
     assert (node!=NULL && "no CallBlockNode for this instruction?");
     return node;
 }
@@ -97,9 +97,9 @@ RetBlockNode* ICFG::getRetBlockNode(const Instruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetBlockNode* node = getRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+    RetBlockNode* node = getRetICFGNode(inst);
     if(node==NULL)
-        node = addRetICFGNode(SVFUtil::getLLVMCallSite(inst));
+        node = addRetICFGNode(inst);
     assert (node!=NULL && "no RetBlockNode for this instruction?");
     return node;
 }
@@ -207,7 +207,7 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 /*!
  * Add interprocedural call edges between two nodes
  */
-ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs)
+ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction*  cs)
 {
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF))
     {
@@ -224,7 +224,7 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs)
 /*!
  * Add interprocedural return edges between two nodes
  */
-ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs)
+ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction*  cs)
 {
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF))
     {
@@ -319,13 +319,13 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
         {
             rawstr << "Call("
-                   << getSourceLoc(call->getCallSite().getInstruction())
+                   << getSourceLoc(call->getCallSite())
                    << ")\n";
         }
         else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
         {
             rawstr << "Ret("
-                   << getSourceLoc(ret->getCallSite().getInstruction())
+                   << getSourceLoc(ret->getCallSite())
                    << ")\n";
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
@@ -408,9 +408,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         std::string str;
         raw_string_ostream rawstr(str);
         if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
-            rawstr << dirCall->getCallSite().getInstruction();
+            rawstr << dirCall->getCallSite();
         else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
-            rawstr << dirRet->getCallSite().getInstruction();
+            rawstr << dirRet->getCallSite();
 
         return rawstr.str();
     }

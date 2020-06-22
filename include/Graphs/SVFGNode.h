@@ -176,7 +176,7 @@ public:
         MRSVFGNode(id, APIN), mu(m), cs(c)
     {
         cpts = m->getMR()->getPointsTo();
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
@@ -222,7 +222,7 @@ public:
         MRSVFGNode(id, APOUT), chi(c), cs(cal)
     {
         cpts = c->getMR()->getPointsTo();
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const

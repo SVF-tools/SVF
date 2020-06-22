@@ -470,7 +470,7 @@ protected:
     inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs)
     {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
-        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction()));
+        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite()));
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
         /// do not set def here, this node is not a variable definition
     }
@@ -504,7 +504,7 @@ protected:
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
     {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
-        addVFGNode(sNode, pag->getICFG()->getRetBlockNode(cs->getCallSite().getInstruction()));
+        addVFGNode(sNode, pag->getICFG()->getRetBlockNode(cs->getCallSite()));
         setDef(ret,sNode);
         PAGNodeToActualRetMap[ret] = sNode;
     }

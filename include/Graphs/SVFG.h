@@ -386,14 +386,14 @@ protected:
     inline void addActualINSVFGNode(const MemSSA::CALLMU* mu)
     {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(totalVFGNode++,mu, mu->getCallSite());
-        addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(mu->getCallSite()->getCallSite().getInstruction()));
+        addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(mu->getCallSite()->getCallSite()));
         callSiteToActualINMap[mu->getCallSite()].set(sNode->getId());
     }
     /// Add memory callsite chi SVFG node
     inline void addActualOUTSVFGNode(const MemSSA::CALLCHI* chi)
     {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalVFGNode++,chi,chi->getCallSite());
-        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(chi->getCallSite()->getCallSite().getInstruction()));
+        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(chi->getCallSite()->getCallSite()));
         setDef(chi->getResVer(),sNode);
         callSiteToActualOUTMap[chi->getCallSite()].set(sNode->getId());
     }

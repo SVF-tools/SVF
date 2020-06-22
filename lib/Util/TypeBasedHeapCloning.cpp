@@ -562,7 +562,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule *svfMod)
         const PAG::CallSiteSet &callSites = ppag->getCallSiteSet();
         for (const CallBlockNode *cbn : callSites)
         {
-            const CallSite &cs = cbn->getCallSite();
+            const CallSite &cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
             const Function *fn = cs.getCalledFunction();
             if (fn == nullptr || !isAliasTestFunction(fn->getName()))
             {

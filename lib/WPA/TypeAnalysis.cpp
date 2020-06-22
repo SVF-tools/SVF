@@ -79,7 +79,7 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
         const CallBlockNode* cbn = iter->first;
-        CallSite cs = cbn->getCallSite();
+        CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
         if (isVirtualCallSite(cs))
         {
             virtualCallSites.insert(cs);

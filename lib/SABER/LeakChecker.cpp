@@ -49,7 +49,7 @@ void LeakChecker::initSrcs()
         const RetBlockNode* cs = it->first;
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction p = malloc is in a dead function, then program won't allocate this memory
-        if(isPtrInDeadFunction(cs->getCallSite().getInstruction()))
+        if(isPtrInDeadFunction(cs->getCallSite()))
             continue;
 
         PTACallGraph::FunctionSet callees;
@@ -65,8 +65,7 @@ void LeakChecker::initSrcs()
                 while (!worklist.empty())
                 {
                     const CallBlockNode* cs = worklist.pop();
-                    const RetBlockNode* retBlockNode = icfg->getRetBlockNode(
-                                                           cs->getCallSite().getInstruction());
+                    const RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite());
                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                     if (visited.test(node->getId()) == 0)
@@ -88,8 +87,7 @@ void LeakChecker::initSrcs()
                     else
                     {
                         // exclude sources in dead functions
-                        if (isPtrInDeadFunction(
-                                    cs->getCallSite().getInstruction()) == false)
+                        if (isPtrInDeadFunction(cs->getCallSite()) == false)
                         {
                             addToSources(node);
                             addSrcToCSID(node, cs);
@@ -136,14 +134,14 @@ void LeakChecker::reportNeverFree(const SVFGNode* src)
 {
     const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
-                    << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                    << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void LeakChecker::reportPartialLeak(const SVFGNode* src)
 {
     const CallBlockNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
-                    << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                    << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void LeakChecker::reportBug(ProgSlice* slice)
@@ -223,13 +221,13 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
 
     if (success)
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-               << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-                        << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }
@@ -271,14 +269,14 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
 
     if (expectedFailure)
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-               << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << *getSrcCSID(source)->getCallSite().getInstruction() << "> at ("
-                        << getSourceLoc(cs->getCallSite().getInstruction()) << ")\n";
+                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }

@@ -238,7 +238,7 @@ public:
     /// Return basic block
     inline const BasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite().getInstruction()->getParent();
+        return callsite->getCallSite()->getParent();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -529,7 +529,7 @@ public:
     /// Return basic block
     inline const BasicBlock* getBasicBlock() const
     {
-        return callsite->getCallSite().getInstruction()->getParent();
+        return callsite->getCallSite()->getParent();
     }
 
     /// Return callsite

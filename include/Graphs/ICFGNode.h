@@ -326,16 +326,16 @@ class CallBlockNode : public InterBlockNode
 public:
     typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
 private:
-    CallSite cs;
+    const Instruction* cs;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, CallSite c) : InterBlockNode(id, FunCallBlock), cs(c)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c)
     {
-        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
+        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
     }
 
     /// Return callsite
-    inline CallSite getCallSite() const
+    inline const Instruction* getCallSite() const
     {
         return cs;
     }
@@ -343,13 +343,13 @@ public:
     /// Return callsite
     inline const SVFFunction* getCaller() const
     {
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
+        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
     }
 
     /// Return Basic Block
     inline const BasicBlock* getParent() const
     {
-        return cs.getInstruction()->getParent();
+        return cs->getParent();
     }
 
     /// Return true if this is an indirect call
@@ -402,18 +402,18 @@ class RetBlockNode : public InterBlockNode
 {
 
 private:
-    CallSite cs;
+    const Instruction* cs;
     const PAGNode *actualRet;
     const CallBlockNode* callBlockNode;
 public:
-    RetBlockNode(NodeID id, CallSite c, CallBlockNode* cb) :
+    RetBlockNode(NodeID id, const Instruction* c, CallBlockNode* cb) :
         InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb)
     {
-        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
+        fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
     }
 
     /// Return callsite
-    inline CallSite getCallSite() const
+    inline const Instruction* getCallSite() const
     {
         return cs;
     }

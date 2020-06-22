@@ -104,7 +104,7 @@ public:
     }
     inline bool isMemAlloc(const CallBlockNode* cs) const
     {
-        return isMemAlloc(cs->getCallSite().getInstruction());
+        return isMemAlloc(cs->getCallSite());
     }
     //@}
 
@@ -120,7 +120,7 @@ public:
     }
     inline bool isMemDealloc(const CallBlockNode* cs) const
     {
-        return isMemDealloc(cs->getCallSite().getInstruction());
+        return isMemDealloc(cs->getCallSite());
     }
     //@}
 
@@ -136,7 +136,7 @@ public:
     }
     inline bool isFOpen(const CallBlockNode* cs) const
     {
-        return isFOpen(cs->getCallSite().getInstruction());
+        return isFOpen(cs->getCallSite());
     }
     //@}
 
@@ -152,7 +152,7 @@ public:
     }
     inline bool isFClose(const CallBlockNode* cs) const
     {
-        return isFClose(cs->getCallSite().getInstruction());
+        return isFClose(cs->getCallSite());
     }
     //@}
 

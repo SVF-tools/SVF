@@ -50,8 +50,8 @@ public:
 
     typedef std::map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
     typedef std::map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<CallSite, CallBlockNode *> CSToCallNodeMapTy;
-    typedef std::map<CallSite, RetBlockNode *> CSToRetNodeMapTy;
+    typedef std::map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
+    typedef std::map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
     typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
@@ -116,8 +116,8 @@ public:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
-    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs);
-    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs);
+    ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
+    ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
     //@}
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
@@ -212,14 +212,14 @@ public:
     }
 
     /// Get/Add a call node
-    inline CallBlockNode* getCallICFGNode(CallSite cs)
+    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
     {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
         if (it == CSToCallNodeMap.end())
             return NULL;
         return it->second;
     }
-    inline CallBlockNode* addCallICFGNode(CallSite cs)
+    inline CallBlockNode* addCallICFGNode(const Instruction* cs)
     {
         CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
         addICFGNode(sNode);
@@ -228,16 +228,16 @@ public:
     }
 
     /// Get/Add a return node
-    inline RetBlockNode* getRetICFGNode(CallSite cs)
+    inline RetBlockNode* getRetICFGNode(const Instruction* cs)
     {
         CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
         if (it == CSToRetNodeMap.end())
             return NULL;
         return it->second;
     }
-    inline RetBlockNode* addRetICFGNode(CallSite cs)
+    inline RetBlockNode* addRetICFGNode(const Instruction* cs)
     {
-        CallBlockNode* callBlockNode = getCallBlockNode(cs.getInstruction());
+        CallBlockNode* callBlockNode = getCallBlockNode(cs);
         RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs, callBlockNode);
         addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;

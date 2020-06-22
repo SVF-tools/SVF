@@ -688,7 +688,7 @@ public:
     ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
         ArgumentVFGNode(id, n, AParm), cs(c)
     {
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
 
     /// Return callsite
@@ -808,7 +808,7 @@ public:
     ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
         ArgumentVFGNode(id, n, ARet), cs(c)
     {
-        bb = cs->getCallSite().getInstruction()->getParent();
+        bb = cs->getCallSite()->getParent();
     }
     /// Return callsite
     inline const CallBlockNode* getCallSite() const

@@ -268,7 +268,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
                 it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it)
         {
             CallPE *callEdge = static_cast<CallPE *>(*it);
-            const Instruction *inst = callEdge->getCallInst()->getCallSite().getInstruction();
+            const Instruction *inst = callEdge->getCallInst()->getCallSite();
             :: Function* currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
 

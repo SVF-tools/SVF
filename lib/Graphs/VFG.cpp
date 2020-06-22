@@ -436,7 +436,7 @@ void VFG::connectDirectVFGEdges()
             {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getDstNode());
                 const CallBlockNode* retBlockNode = (*it)->getCallSite();
-                CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite().getInstruction());
+                CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
@@ -580,7 +580,7 @@ void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const SVFFu
     PAG * pag = PAG::getPAG();
     ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetBlockNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
+    RetBlockNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite());
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
     {
@@ -742,12 +742,12 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite()) << "]";
         }
         else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node))
         {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite()) << "]";
         }
         else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         {
@@ -823,7 +823,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         else if(ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite()) << "]";
         }
         else if(SVFUtil::isa<NullPtrVFGNode>(node))
         {
@@ -832,7 +832,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         else if (ActualRetVFGNode* ar = SVFUtil::dyn_cast<ActualRetVFGNode>(node))
         {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite()) << "]";
         }
         else if (FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         {

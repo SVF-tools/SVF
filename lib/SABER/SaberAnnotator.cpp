@@ -57,7 +57,7 @@ void SaberAnnotator::annotateSinks()
     {
         if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it))
         {
-            const Instruction* sinkinst = ap->getCallSite()->getCallSite().getInstruction();
+            const Instruction* sinkinst = ap->getCallSite()->getCallSite();
             assert(SVFUtil::isa<CallInst>(sinkinst) && "not a call instruction?");
             const CallInst* sink = SVFUtil::cast<CallInst>(sinkinst);
             std::string str;

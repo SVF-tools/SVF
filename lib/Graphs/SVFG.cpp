@@ -413,7 +413,7 @@ void SVFG::dump(const std::string& file, bool simple)
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite().getInstruction());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite());
 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
@@ -655,12 +655,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
         {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite()) << "]";
         }
         else if (ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
         {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite()) << "]";
         }
         else if (FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
         {
@@ -680,12 +680,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(ActualINSVFGNode* ai = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
             rawstr << "CSMU\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite().getInstruction())  << "]";
+            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite())  << "]";
         }
         else if(ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             rawstr << "CSCHI\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite().getInstruction())  << "]";
+            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite())  << "]";
         }
         else if(MSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
@@ -806,19 +806,19 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << "CSMU(" << ai->getCallMU()->getMR()->getMRID() << "V_" << ai->getCallMU()->getVer()->getSSAVersion() << ")\n";
             rawstr << ai->getCallMU()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ai->getCallSite()->getCallSite()) << "]";
         }
         else if(ActualOUTSVFGNode* ao = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             rawstr <<  ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getResVer()->getSSAVersion() <<
                    " = CSCHI(MR_" << ao->getCallCHI()->getMR()->getMRID() << "V_" << ao->getCallCHI()->getOpVer()->getSSAVersion() << ")\n";
             rawstr << ao->getCallCHI()->getMR()->dumpStr() << "\n";
-            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite().getInstruction()) << "]" ;
+            rawstr << "CS[" << getSourceLoc(ao->getCallSite()->getCallSite()) << "]" ;
         }
         else if(ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
         {
             rawstr << "APARM(" << ap->getParam()->getId() << ")\n" ;
-            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ap->getCallSite()->getCallSite()) << "]";
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node))
         {
@@ -827,7 +827,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if (ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
         {
             rawstr << "ARet(" << ar->getRev()->getId() << ")\n";
-            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite().getInstruction()) << "]";
+            rawstr << "CS[" << getSourceLoc(ar->getCallSite()->getCallSite()) << "]";
         }
         else if (FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
         {

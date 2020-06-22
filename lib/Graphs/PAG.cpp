@@ -912,12 +912,12 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {
-            const Instruction* callInst= calledge->getCallSite()->getCallSite().getInstruction();
+            const Instruction* callInst= calledge->getCallSite()->getCallSite();
             return SVFUtil::getSourceLoc(callInst);
         }
         else if(const RetPE* retedge = SVFUtil::dyn_cast<RetPE>(edge))
         {
-            const Instruction* callInst= retedge->getCallSite()->getCallSite().getInstruction();
+            const Instruction* callInst= retedge->getCallSite()->getCallSite();
             return SVFUtil::getSourceLoc(callInst);
         }
         return "";

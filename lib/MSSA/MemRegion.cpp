@@ -458,8 +458,8 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
     PAG* pag = pta->getPAG();
-    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite().getInstruction());
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite().getInstruction());
+    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
+    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite());
 
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))
@@ -582,7 +582,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlock
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs->getCallSite()))
     {
-        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite());
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
                 ebit = pagEdgeList.end(); bit != ebit; ++bit)
         {
@@ -648,7 +648,7 @@ PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
-        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite());
         PointsTo mods;
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
@@ -672,7 +672,7 @@ PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
-        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite().getInstruction());
+        PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite());
         PointsTo refs;
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)

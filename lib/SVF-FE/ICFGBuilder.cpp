@@ -103,8 +103,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
                 if (isNonInstricCallSite(inst))
                 {
-                    RetBlockNode* retICFGNode = getOrAddRetICFGNode(
-                                                    getLLVMCallSite(inst));
+                    RetBlockNode* retICFGNode = getOrAddRetICFGNode(inst);
                     icfg->addIntraEdge(srcNode, retICFGNode);
                     srcNode = retICFGNode;
                 }
@@ -146,20 +145,21 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
  */
 InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 {
-    CallSite cs = getLLVMCallSite(inst);
-    CallBlockNode* callICFGNode = getOrAddCallICFGNode(cs);
-    RetBlockNode* retICFGNode = getOrAddRetICFGNode(cs);
+    assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
+    assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
+    CallBlockNode* callICFGNode = getOrAddCallICFGNode(inst);
+    RetBlockNode* retICFGNode = getOrAddRetICFGNode(inst);
     if (const SVFFunction*  callee = getCallee(inst))
-        addICFGInterEdges(cs, callee);                       //creating interprocedural edges
+        addICFGInterEdges(inst, callee);                       //creating interprocedural edges
     return callICFGNode;
 }
 
 /*!
  * Create edges between ICFG nodes across functions
  */
-void ICFGBuilder::addICFGInterEdges(CallSite cs, const SVFFunction*  callee)
+void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction*  callee)
 {
-    const SVFFunction*  caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs.getCaller());
+    const SVFFunction*  caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
 
     CallBlockNode* CallBlockNode = getOrAddCallICFGNode(cs);
     FunEntryBlockNode* calleeEntryNode = getOrAddFunEntryICFGNode(callee);
