@@ -71,6 +71,9 @@ static llvm::cl::opt<unsigned> statBudget("statlimit",  llvm::cl::init(20),
 static llvm::cl::opt<bool> PAGDotGraph("dump-pag", llvm::cl::init(false),
                                        llvm::cl::desc("Dump dot graph of PAG"));
 
+static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
+                                    llvm::cl::desc("Dump dot graph of ICFG"));
+
 static llvm::cl::opt<bool> PAGPrint("print-pag", llvm::cl::init(false),
                                     llvm::cl::desc("Print PAG to command line"));
 
@@ -188,9 +191,13 @@ void PointerAnalysis::initialize(SVFModule* svfModule)
             //typeSystem = new TypeSystem(pag);
         }
 
-        // dump the PAG graph
+        // dump PAG
         if (dumpGraph())
             PAG::getPAG()->dump("pag_initial");
+
+        // dump ICFG
+        if (DumpICFG)
+        	pag->getICFG()->dump("icfg_initial");
 
         // print to command line of the PAG graph
         if (PAGPrint)
@@ -275,9 +282,13 @@ void PointerAnalysis::finalize()
     dumpStat();
 
     PAG* pag = PAG::getPAG();
-    // dump the PAG graph
+    // dump PAG
     if (dumpGraph())
         pag->dump("pag_final");
+
+    // dump ICFG
+    if (DumpICFG)
+    	pag->getICFG()->dump("icfg_final");
 
     if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 

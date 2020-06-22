@@ -35,9 +35,6 @@
 using namespace SVFUtil;
 
 
-static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
-                                    llvm::cl::desc("Dump dot graph of ICFG"));
-
 static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
                                         llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
 
@@ -247,8 +244,7 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, CallSite cs)
  */
 void ICFG::dump(const std::string& file, bool simple)
 {
-    if(DumpICFG)
-        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+    GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 
@@ -376,6 +372,10 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         else if(SVFUtil::isa<RetBlockNode>(node))
         {
             rawstr <<  "color=blue";
+        }
+        else if(SVFUtil::isa<GlobalBlockNode>(node))
+        {
+            rawstr <<  "color=purple";
         }
         else
             assert(false && "no such kind of node!!");
