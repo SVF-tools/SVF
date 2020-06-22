@@ -37,7 +37,8 @@ AndersenHLCD *AndersenHLCD::hlcdAndersen = nullptr;
 /*!
  * Collapse nodes and fields based on the result of both offline and online SCC detection
  */
-void AndersenHLCD::mergeSCC(NodeID nodeId) {
+void AndersenHLCD::mergeSCC(NodeID nodeId)
+{
     AndersenHCD::mergeSCC(nodeId);
     AndersenLCD::mergeSCC();
 }

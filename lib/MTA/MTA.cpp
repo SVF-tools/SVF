@@ -29,26 +29,30 @@ MTA::FunToSEMap MTA::func2ScevMap;
 MTA::FunToLoopInfoMap MTA::func2LoopInfoMap;
 
 MTA::MTA() :
-    ModulePass(ID), tcg(NULL), tct(NULL) {
+    ModulePass(ID), tcg(NULL), tct(NULL)
+{
     stat = new MTAStat();
 }
 
-MTA::~MTA() {
+MTA::~MTA()
+{
     if (tcg)
         delete tcg;
     //if (tct)
     //    delete tct;
 }
 
-bool MTA::runOnModule(Module& module) {
-	SVFModule* m(module);
+bool MTA::runOnModule(Module& module)
+{
+    SVFModule* m(module);
     return runOnModule(m);
 }
 
 /*!
  * Perform data race detection
  */
-bool MTA::runOnModule(SVFModule* module) {
+bool MTA::runOnModule(SVFModule* module)
+{
 
 
     modulePass = this;
@@ -105,13 +109,15 @@ bool MTA::runOnModule(SVFModule* module) {
 /*!
  * Compute lock sets
  */
-LockAnalysis* MTA::computeLocksets(TCT* tct) {
+LockAnalysis* MTA::computeLocksets(TCT* tct)
+{
     LockAnalysis* lsa = new LockAnalysis(tct);
     lsa->analyze();
     return lsa;
 }
 
-MHP* MTA::computeMHP(SVFModule* module) {
+MHP* MTA::computeMHP(SVFModule* module)
+{
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
@@ -126,7 +132,8 @@ MHP* MTA::computeMHP(SVFModule* module) {
     DOTIMESTAT(double tctEnd = stat->getClk());
     DOTIMESTAT(stat->TCTTime += (tctEnd - tctStart) / TIMEINTERVAL);
 
-    if (pta->printStat()) {
+    if (pta->printStat())
+    {
         stat->performThreadCallGraphStat(tcg);
         stat->performTCTStat(tct);
     }
@@ -154,7 +161,8 @@ MHP* MTA::computeMHP(SVFModule* module) {
 // * when two memory access may-happen in parallel and are not protected by the same lock
 // * (excluding global constraints because they are initialized before running the main function)
 // */
-void MTA::detect(SVFModule* module) {
+void MTA::detect(SVFModule* module)
+{
 
     DBOUT(DGENERAL, outs() << pasMsg("Starting Race Detection\n"));
 
@@ -163,22 +171,29 @@ void MTA::detect(SVFModule* module) {
 
     std::set<const Instruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F) {
+    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
+    {
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II) {
+        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
+        {
             const Instruction *inst = &*II;
-            if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst)) {
+            if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
+            {
                 loads.insert(load);
-            } else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst)) {
+            }
+            else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
+            {
                 stores.insert(store);
             }
         }
     }
 
-    for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit) {
+    for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
+    {
         const LoadInst* load = *lit;
         bool loadneedcheck = false;
-        for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit) {
+        for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
+        {
             const StoreInst* store = *sit;
 
             loadneedcheck = true;

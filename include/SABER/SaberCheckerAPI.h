@@ -38,10 +38,12 @@
  * memory leak detection e.g., alloc free
  * incorrect file operation detection, e.g., fopen, fclose
  */
-class SaberCheckerAPI {
+class SaberCheckerAPI
+{
 
 public:
-    enum CHECKER_TYPE {
+    enum CHECKER_TYPE
+    {
         CK_DUMMY = 0,		/// dummy type
         CK_ALLOC,		/// memory allocation
         CK_FREE,      /// memory deallocation
@@ -56,7 +58,8 @@ private:
     TDAPIMap tdAPIMap;
 
     /// Constructor
-    SaberCheckerAPI () {
+    SaberCheckerAPI ()
+    {
         init();
     }
 
@@ -67,8 +70,10 @@ private:
     static SaberCheckerAPI* ckAPI;
 
     /// Get the function type of a function
-    inline CHECKER_TYPE getType(const SVFFunction* F) const {
-        if(F) {
+    inline CHECKER_TYPE getType(const SVFFunction* F) const
+    {
+        if(F)
+        {
             TDAPIMap::const_iterator it= tdAPIMap.find(F->getName().str());
             if(it != tdAPIMap.end())
                 return it->second;
@@ -78,8 +83,10 @@ private:
 
 public:
     /// Return a static reference
-    static SaberCheckerAPI* getCheckerAPI() {
-        if(ckAPI == NULL) {
+    static SaberCheckerAPI* getCheckerAPI()
+    {
+        if(ckAPI == NULL)
+        {
             ckAPI = new SaberCheckerAPI();
         }
         return ckAPI;
@@ -87,53 +94,65 @@ public:
 
     /// Return true if this call is a memory allocation
     //@{
-    inline bool isMemAlloc(const SVFFunction* fun) const {
+    inline bool isMemAlloc(const SVFFunction* fun) const
+    {
         return getType(fun) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const Instruction *inst) const {
+    inline bool isMemAlloc(const Instruction *inst) const
+    {
         return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const CallBlockNode* cs) const {
-        return isMemAlloc(cs->getCallSite().getInstruction());
+    inline bool isMemAlloc(const CallBlockNode* cs) const
+    {
+        return isMemAlloc(cs->getCallSite());
     }
     //@}
 
     /// Return true if this call is a memory deallocation
     //@{
-    inline bool isMemDealloc(const SVFFunction* fun) const {
+    inline bool isMemDealloc(const SVFFunction* fun) const
+    {
         return getType(fun) == CK_FREE;
     }
-    inline bool isMemDealloc(const Instruction *inst) const {
+    inline bool isMemDealloc(const Instruction *inst) const
+    {
         return getType(SVFUtil::getCallee(inst)) == CK_FREE;
     }
-    inline bool isMemDealloc(const CallBlockNode* cs) const {
-        return isMemDealloc(cs->getCallSite().getInstruction());
+    inline bool isMemDealloc(const CallBlockNode* cs) const
+    {
+        return isMemDealloc(cs->getCallSite());
     }
     //@}
 
     /// Return true if this call is a file open
     //@{
-    inline bool isFOpen(const SVFFunction* fun) const {
+    inline bool isFOpen(const SVFFunction* fun) const
+    {
         return getType(fun) == CK_FOPEN;
     }
-    inline bool isFOpen(const Instruction *inst) const {
+    inline bool isFOpen(const Instruction *inst) const
+    {
         return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
     }
-    inline bool isFOpen(const CallBlockNode* cs) const {
-        return isFOpen(cs->getCallSite().getInstruction());
+    inline bool isFOpen(const CallBlockNode* cs) const
+    {
+        return isFOpen(cs->getCallSite());
     }
     //@}
 
     /// Return true if this call is a file close
     //@{
-    inline bool isFClose(const SVFFunction* fun) const {
+    inline bool isFClose(const SVFFunction* fun) const
+    {
         return getType(fun) == CK_FCLOSE;
     }
-    inline bool isFClose(const Instruction *inst) const {
+    inline bool isFClose(const Instruction *inst) const
+    {
         return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
     }
-    inline bool isFClose(const CallBlockNode* cs) const {
-        return isFClose(cs->getCallSite().getInstruction());
+    inline bool isFClose(const CallBlockNode* cs) const
+    {
+        return isFClose(cs->getCallSite());
     }
     //@}
 

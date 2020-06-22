@@ -18,29 +18,35 @@ static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm:
 /*!
  * Statistics for thread call graph
  */
-void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg) {
+void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
+{
     u32_t numOfForkEdge = 0;
     u32_t numOfJoinEdge = 0;
     u32_t numOfIndForksite = 0;
     u32_t numOfIndForkEdge = 0;
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it) {
+    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
+    {
         bool indirectfork = false;
         const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
-        if(spawnee==NULL) {
+        if(spawnee==NULL)
+        {
             numOfIndForksite++;
             indirectfork = true;
         }
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = tcg->getForkEdgeBegin(*it), ecgIt =
-                    tcg->getForkEdgeEnd(*it); cgIt != ecgIt; ++cgIt) {
+                    tcg->getForkEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
+        {
             numOfForkEdge++;
             if(indirectfork)
                 numOfIndForkEdge++;
         }
     }
 
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it) {
+    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
+    {
         for (ThreadCallGraph::JoinEdgeSet::const_iterator cgIt = tcg->getJoinEdgeBegin(*it), ecgIt =
-                    tcg->getJoinEdgeEnd(*it); cgIt != ecgIt; ++cgIt) {
+                    tcg->getJoinEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
+        {
             numOfJoinEdge++;
         }
     }
@@ -60,7 +66,8 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg) {
 }
 
 
-void MTAStat::performTCTStat(TCT* tct) {
+void MTAStat::performTCTStat(TCT* tct)
+{
 
     PTNumStatMap.clear();
     timeStatMap.clear();
@@ -79,24 +86,30 @@ void MTAStat::performTCTStat(TCT* tct) {
  * write vs read
  * write vs write
  */
-void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
+void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
+{
 
-    if(AllPairMHP) {
+    if(AllPairMHP)
+    {
         InstSet instSet1;
         InstSet instSet2;
         SVFModule* mod = mhp->getThreadCallGraph()->getModule();
-        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F) {
+        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+        {
             const Function* fun = (*F);
             if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
                 continue;
-            for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II) {
+            for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II)
+            {
                 const Instruction *inst = &*II;
-                if(SVFUtil::isa<LoadInst>(inst)) {
+                if(SVFUtil::isa<LoadInst>(inst))
+                {
                     instSet1.insert(inst);
                 }
-                else if(SVFUtil::isa<StoreInst>(inst)) {
+                else if(SVFUtil::isa<StoreInst>(inst))
+                {
                     instSet1.insert(inst);
                     instSet2.insert(inst);
                 }
@@ -104,8 +117,10 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
         }
 
 
-        for(InstSet::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1) {
-            for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2) {
+        for(InstSet::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1)
+        {
+            for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
+            {
                 mhp->mayHappenInParallel(*it1,*it2);
             }
         }
@@ -134,7 +149,8 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa) {
     PTAStat::printStat();
 }
 
-void MTAStat::performAnnotationStat(MTAAnnotator* anno) {
+void MTAStat::performAnnotationStat(MTAAnnotator* anno)
+{
 
     PTNumStatMap.clear();
     timeStatMap.clear();

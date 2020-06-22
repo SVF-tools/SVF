@@ -48,10 +48,13 @@
  * Elements in the list are unique as they're recorded by std::set.
  */
 template<class Data>
-class List {
-    class ListNode {
+class List
+{
+    class ListNode
+    {
     public:
-        ListNode(Data d) {
+        ListNode(Data d)
+        {
             data = d;
             next = NULL;
         }
@@ -66,23 +69,28 @@ class List {
     typedef ListNode Node;
 
 public:
-    List() {
+    List()
+    {
         head = NULL;
         tail = NULL;
     }
 
     ~List() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return (head == NULL);
     }
 
-    inline bool find(Data data) const {
+    inline bool find(Data data) const
+    {
         return (nodeSet.find(data) == nodeSet.end() ? false : true);
     }
 
-    void push(Data data) {
-        if (nodeSet.find(data) == nodeSet.end()) {
+    void push(Data data)
+    {
+        if (nodeSet.find(data) == nodeSet.end())
+        {
             Node* new_node = new Node(data);
             if (head == NULL)
                 head = new_node;// the list is empty
@@ -92,7 +100,8 @@ public:
         }
     }
 
-    Data pop() {
+    Data pop()
+    {
         assert(head != NULL && "list is empty");
         /// get node from list head
         Node* head_node = head;
@@ -120,7 +129,8 @@ private:
  * Elements in the list are unique as they're recorded by std::set.
  */
 template<class Data>
-class FIFOWorkList {
+class FIFOWorkList
+{
     typedef std::set<Data> DataSet;
     typedef std::deque<Data> DataDeque;
 public:
@@ -128,19 +138,23 @@ public:
 
     ~FIFOWorkList() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return data_list.empty();
     }
 
-    inline bool find(Data data) const {
+    inline bool find(Data data) const
+    {
         return (data_set.find(data) == data_set.end() ? false : true);
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(Data data) {
-        if (data_set.find(data) == data_set.end()) {
+    inline bool push(Data data)
+    {
+        if (data_set.find(data) == data_set.end())
+        {
             data_list.push_back(data);
             data_set.insert(data);
             return true;
@@ -152,7 +166,8 @@ public:
     /**
      * Pop a data from the END of work list.
      */
-    inline Data pop() {
+    inline Data pop()
+    {
         assert(!empty() && "work list is empty");
         Data data = data_list.front();
         data_list.pop_front();
@@ -163,7 +178,8 @@ public:
     /*!
      * Clear all the data
      */
-    inline void clear() {
+    inline void clear()
+    {
         data_list.clear();
         data_set.clear();
     }
@@ -179,7 +195,8 @@ private:
  * Elements in the list are unique as they're recorded by std::set.
  */
 template<class Data>
-class FILOWorkList {
+class FILOWorkList
+{
     typedef std::set<Data> DataSet;
     typedef std::vector<Data> DataVector;
 public:
@@ -187,19 +204,23 @@ public:
 
     ~FILOWorkList() {}
 
-    inline bool empty() const {
+    inline bool empty() const
+    {
         return data_list.empty();
     }
 
-    inline bool find(Data data) const {
+    inline bool find(Data data) const
+    {
         return (data_set.find(data) == data_set.end() ? false : true);
     }
 
     /**
      * Push a data into the work list.
      */
-    inline bool push(Data data) {
-        if (data_set.find(data) == data_set.end()) {
+    inline bool push(Data data)
+    {
+        if (data_set.find(data) == data_set.end())
+        {
             data_list.push_back(data);
             data_set.insert(data);
             return true;
@@ -211,7 +232,8 @@ public:
     /**
      * Pop a data from the END of work list.
      */
-    inline Data pop() {
+    inline Data pop()
+    {
         assert(!empty() && "work list is empty");
         Data data = data_list.back();
         data_list.pop_back();
@@ -222,7 +244,8 @@ public:
     /*!
      * Clear all the data
      */
-    inline void clear() {
+    inline void clear()
+    {
         data_list.clear();
         data_set.clear();
     }

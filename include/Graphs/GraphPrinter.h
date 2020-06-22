@@ -35,15 +35,18 @@
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/FileSystem.h>		// for file open flag
 
-namespace llvm {
+namespace llvm
+{
 
 /*
  * Dump and print the graph for debugging
  */
-class GraphPrinter {
+class GraphPrinter
+{
 
 public:
-    GraphPrinter() {
+    GraphPrinter()
+    {
     }
 
     /*!
@@ -51,18 +54,21 @@ public:
      */
     template<class GraphType>
     static void WriteGraphToFile(llvm::raw_ostream &O,
-                                 const std::string &GraphName, const GraphType &GT, bool simple = false) {
+                                 const std::string &GraphName, const GraphType &GT, bool simple = false)
+    {
         // Filename of the output dot file
         std::string Filename = GraphName + ".dot";
         O << "Writing '" << Filename << "'...";
         std::error_code ErrInfo;
         llvm::ToolOutputFile F(Filename.c_str(), ErrInfo, llvm::sys::fs::F_None);
 
-        if (!ErrInfo) {
+        if (!ErrInfo)
+        {
             // dump the ValueFlowGraph here
             WriteGraph(F.os(), GT, simple);
             F.os().close();
-            if (!F.os().has_error()) {
+            if (!F.os().has_error())
+            {
                 O << "\n";
                 F.keep();
                 return;
@@ -77,7 +83,8 @@ public:
      */
     template<class GraphType>
     static void PrintGraph(llvm::raw_ostream &O, const std::string &GraphName,
-                           const GraphType &GT) {
+                           const GraphType &GT)
+    {
         ///Define the GTraits and node iterator for printing
         typedef llvm::GraphTraits<GraphType> GTraits;
 
@@ -89,12 +96,14 @@ public:
         // Print each node name and its edges
         node_iterator I = GTraits::nodes_begin(GT);
         node_iterator E = GTraits::nodes_end(GT);
-        for (; I != E; ++I) {
+        for (; I != E; ++I)
+        {
             NodeRef *Node = *I;
             O << "node :" << Node << "'\n";
             child_iterator EI = GTraits::child_begin(Node);
             child_iterator EE = GTraits::child_end(Node);
-            for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i) {
+            for (unsigned i = 0; EI != EE && i != 64; ++EI, ++i)
+            {
                 O << "child :" << *EI << "'\n";
             }
         }

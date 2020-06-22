@@ -36,7 +36,8 @@
 /*!
  * Symbol table of the memory model for analysis
  */
-class SymbolTableInfo {
+class SymbolTableInfo
+{
 
 public:
     /// various maps defined
@@ -92,7 +93,8 @@ private:
 protected:
     /// Constructor
     SymbolTableInfo() :
-        modelConstants(false), maxStruct(NULL), maxStSize(0) {
+        modelConstants(false), maxStruct(NULL), maxStSize(0)
+    {
     }
 
 public:
@@ -105,39 +107,46 @@ public:
     //@{
     static SymbolTableInfo* Symbolnfo();
 
-    static void releaseSymbolnfo() {
+    static void releaseSymbolnfo()
+    {
         delete symlnfo;
         symlnfo = NULL;
     }
-    virtual ~SymbolTableInfo() {
+    virtual ~SymbolTableInfo()
+    {
         destroy();
     }
     //@}
 
     /// Set / Get modelConstants
     //@{
-    void setModelConstants(bool _modelConstants) {
+    void setModelConstants(bool _modelConstants)
+    {
         modelConstants = _modelConstants;
     }
-    bool getModelConstants() const {
+    bool getModelConstants() const
+    {
         return modelConstants;
     }
     //@}
 
     /// Get callsite set
     //@{
-    inline const CallSiteSet& getCallSiteSet() const {
+    inline const CallSiteSet& getCallSiteSet() const
+    {
         return callSiteSet;
     }
     //@}
 
     /// Module
-    inline SVFModule* getModule() {
+    inline SVFModule* getModule()
+    {
         return mod;
     }
 
     /// Get target machine data layout
-    inline static DataLayout* getDataLayout(Module* mod) {
+    inline static DataLayout* getDataLayout(Module* mod)
+    {
         if(dl==NULL)
             return dl = new DataLayout(mod);
         return dl;
@@ -173,53 +182,66 @@ public:
 
     bool isConstantObjSym(const Value *val);
 
-    static inline bool isBlkPtr(NodeID id) {
+    static inline bool isBlkPtr(NodeID id)
+    {
         return (id == BlkPtr);
     }
-    static inline bool isNullPtr(NodeID id) {
+    static inline bool isNullPtr(NodeID id)
+    {
         return (id == NullPtr);
     }
-    static inline bool isBlkObj(NodeID id) {
+    static inline bool isBlkObj(NodeID id)
+    {
         return (id == BlackHole);
     }
-    static inline bool isConstantObj(NodeID id) {
+    static inline bool isConstantObj(NodeID id)
+    {
         return (id == ConstantObj);
     }
-    static inline bool isBlkObjOrConstantObj(NodeID id) {
+    static inline bool isBlkObjOrConstantObj(NodeID id)
+    {
         return (isBlkObj(id) || isConstantObj(id));
     }
 
-    inline void createBlkOrConstantObj(SymID symId) {
+    inline void createBlkOrConstantObj(SymID symId)
+    {
         assert(isBlkObjOrConstantObj(symId));
         assert(objMap.find(symId)==objMap.end());
         objMap[symId] = new MemObj(symId);;
     }
 
-    inline MemObj* getBlkObj() const {
+    inline MemObj* getBlkObj() const
+    {
         return getObj(blackholeSymID());
     }
-    inline MemObj* getConstantObj() const {
+    inline MemObj* getConstantObj() const
+    {
         return getObj(constantSymID());
     }
 
-    inline SymID blkPtrSymID() const {
+    inline SymID blkPtrSymID() const
+    {
         return BlkPtr;
     }
 
-    inline SymID nullPtrSymID() const {
+    inline SymID nullPtrSymID() const
+    {
         return NullPtr;
     }
 
-    inline SymID constantSymID() const {
+    inline SymID constantSymID() const
+    {
         return ConstantObj;
     }
 
-    inline SymID blackholeSymID() const {
+    inline SymID blackholeSymID() const
+    {
         return BlackHole;
     }
 
     /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
-    inline const MemObj* createDummyObj(SymID symId, const Type* type) {
+    inline const MemObj* createDummyObj(SymID symId, const Type* type)
+    {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
         MemObj* memObj = new MemObj(symId, type);
         objMap[symId] = memObj;
@@ -236,20 +258,23 @@ public:
 
     /// Get different kinds of syms
     //@{
-    SymID getValSym(const Value *val) {
+    SymID getValSym(const Value *val)
+    {
 
         if(isNullPtrSym(val))
             return nullPtrSymID();
         else if(isBlackholeSym(val))
             return blkPtrSymID();
-        else {
+        else
+        {
             ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
             assert(iter!=valSymMap.end() &&"value sym not found");
             return iter->second;
         }
     }
 
-    inline bool hasValSym(const Value* val) {
+    inline bool hasValSym(const Value* val)
+    {
         if (isNullPtrSym(val) || isBlackholeSym(val))
             return true;
         else
@@ -257,33 +282,39 @@ public:
     }
 
     /// find the unique defined global across multiple modules
-    inline const Value* getGlobalRep(const Value* val) const{
-        if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val)) {
+    inline const Value* getGlobalRep(const Value* val) const
+    {
+        if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+        {
             if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
                 val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
         }
         return val;
     }
 
-    inline SymID getObjSym(const Value *val) const {
+    inline SymID getObjSym(const Value *val) const
+    {
         ValueToIDMapTy::const_iterator iter = objSymMap.find(getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
     }
 
-    inline MemObj* getObj(SymID id) const {
+    inline MemObj* getObj(SymID id) const
+    {
         IDToMemMapTy::const_iterator iter = objMap.find(id);
         assert(iter!=objMap.end() && "obj not found");
         return iter->second;
     }
 
-    inline SymID getRetSym(const Function *val) const {
+    inline SymID getRetSym(const Function *val) const
+    {
         FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
-    inline SymID getVarargSym(const Function *val) const {
+    inline SymID getVarargSym(const Function *val) const
+    {
         FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
         assert(iter!=varargSymMap.end() && "vararg sym not found");
         return iter->second;
@@ -292,33 +323,40 @@ public:
 
     /// Statistics
     //@{
-    inline Size_t getTotalSymNum() const {
+    inline Size_t getTotalSymNum() const
+    {
         return totalSymNum;
     }
-    inline u32_t getMaxStructSize() const {
+    inline u32_t getMaxStructSize() const
+    {
         return maxStSize;
     }
     //@}
 
     /// Get different kinds of syms maps
     //@{
-    inline ValueToIDMapTy& valSyms() {
+    inline ValueToIDMapTy& valSyms()
+    {
         return valSymMap;
     }
 
-    inline ValueToIDMapTy& objSyms() {
+    inline ValueToIDMapTy& objSyms()
+    {
         return objSymMap;
     }
 
-    inline IDToMemMapTy& idToObjMap() {
+    inline IDToMemMapTy& idToObjMap()
+    {
         return objMap;
     }
 
-    inline FunToIDMapTy& retSyms() {
+    inline FunToIDMapTy& retSyms()
+    {
         return returnSymMap;
     }
 
-    inline FunToIDMapTy& varargSyms() {
+    inline FunToIDMapTy& varargSyms()
+    {
         return varargSymMap;
     }
 
@@ -327,38 +365,46 @@ public:
     /// Get struct info
     //@{
     ///Get an iterator for StructInfo, designed as internal methods
-    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T) {
+    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T)
+    {
         assert(T);
         TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
         if (it != typeToFieldInfo.end())
             return it;
-        else {
+        else
+        {
             collectTypeInfo(T);
             return typeToFieldInfo.find(T);
         }
     }
 
     ///Get a reference to StructInfo.
-    inline StInfo* getStructInfo(const Type *T) {
+    inline StInfo* getStructInfo(const Type *T)
+    {
         return getStructInfoIter(T)->second;
     }
 
     ///Get a reference to the components of struct_info.
-    const inline std::vector<u32_t>& getFattenFieldIdxVec(const Type *T) {
+    const inline std::vector<u32_t>& getFattenFieldIdxVec(const Type *T)
+    {
         return getStructInfoIter(T)->second->getFieldIdxVec();
     }
-    const inline std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T) {
+    const inline std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T)
+    {
         return getStructInfoIter(T)->second->getFieldOffsetVec();
     }
-    const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T) {
+    const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T)
+    {
         return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
     }
-	const inline Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx) {
-		return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
-	}
-	const inline Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset) {
-		return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
-	}
+    const inline Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx)
+    {
+        return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
+    }
+    const inline Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset)
+    {
+        return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
+    }
     //@}
 
     /// Compute gep offset
@@ -404,14 +450,17 @@ protected:
  * (declared with one type but accessed as another)
  * Abstract memory objects are created according to the static allocated size.
  */
-class LocSymTableInfo : public SymbolTableInfo {
+class LocSymTableInfo : public SymbolTableInfo
+{
 
 public:
     /// Constructor
-    LocSymTableInfo() {
+    LocSymTableInfo()
+    {
     }
     /// Destructor
-    virtual ~LocSymTableInfo() {
+    virtual ~LocSymTableInfo()
+    {
     }
     /// Compute gep offset
     virtual bool computeGepOffset(const User *V, LocationSet& ls);
@@ -429,15 +478,18 @@ protected:
 };
 
 
-class LocObjTypeInfo : public ObjTypeInfo {
+class LocObjTypeInfo : public ObjTypeInfo
+{
 
 public:
     /// Constructor
-    LocObjTypeInfo(const Value* val, Type* t, Size_t max) : ObjTypeInfo(val,t,max) {
+    LocObjTypeInfo(const Value* val, Type* t, Size_t max) : ObjTypeInfo(val,t,max)
+    {
 
     }
     /// Destructor
-    virtual ~LocObjTypeInfo() {
+    virtual ~LocObjTypeInfo()
+    {
 
     }
     /// Get the size of this object

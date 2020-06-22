@@ -14,14 +14,16 @@ using namespace std;
 
 ExtAPI* ExtAPI::extAPI = NULL;
 
-struct ei_pair {
+struct ei_pair
+{
     const char *n;
     ExtAPI::extf_t t;
 };
 
 //Each (name, type) pair will be inserted into the map.
 //All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]= {
+static const ei_pair ei_pairs[]=
+{
     //The current llvm-gcc puts in the \01.
     {"\01creat64", ExtAPI::EFT_NOOP},
     {"\01fseeko64", ExtAPI::EFT_NOOP},
@@ -698,7 +700,7 @@ static const ei_pair ei_pairs[]= {
     //  assume that no valid pointer values are created.
     {"memset", ExtAPI::EFT_L_A0},
     //This may return a new ptr if the region was moved.
-    {"mremap", ExtAPI::EFT_L_A0}, 
+    {"mremap", ExtAPI::EFT_L_A0},
     {"strchr", ExtAPI::EFT_L_A0},
     {"strerror_r", ExtAPI::EFT_L_A0},
     {"strpbrk", ExtAPI::EFT_L_A0},
@@ -835,15 +837,19 @@ static const ei_pair ei_pairs[]= {
  */
 
 
-void ExtAPI::init() {
+void ExtAPI::init()
+{
     set<extf_t> t_seen;
     extf_t prev_t= EFT_NOOP;
     t_seen.insert(EFT_NOOP);
-    for(const ei_pair *p= ei_pairs; p->n; ++p) {
-        if(p->t != prev_t) {
+    for(const ei_pair *p= ei_pairs; p->n; ++p)
+    {
+        if(p->t != prev_t)
+        {
             //This will detect if you move an entry to another block
             //  but forget to change the type.
-            if(t_seen.count(p->t)) {
+            if(t_seen.count(p->t))
+            {
                 fputs(p->n, stderr);
                 putc('\n', stderr);
                 assert(!"ei_pairs not grouped by type");
@@ -851,7 +857,8 @@ void ExtAPI::init() {
             t_seen.insert(p->t);
             prev_t= p->t;
         }
-        if(info.count(p->n)) {
+        if(info.count(p->n))
+        {
             fputs(p->n, stderr);
             putc('\n', stderr);
             assert(!"duplicate name in ei_pairs");

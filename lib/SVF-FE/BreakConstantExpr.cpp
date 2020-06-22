@@ -84,12 +84,18 @@ static llvm::RegisterPass<MergeFunctionRets> MP ("merge-rets",
 //  ~NULL - A pointer to the value casted into a ConstantExpr is returned.
 //
 static ConstantExpr *
-hasConstantGEP (Value * V) {
-    if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V)) {
-        if (CE->getOpcode() == Instruction::GetElementPtr) {
+hasConstantGEP (Value * V)
+{
+    if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
+    {
+        if (CE->getOpcode() == Instruction::GetElementPtr)
+        {
             return CE;
-        } else {
-            for (unsigned index = 0; index < CE->getNumOperands(); ++index) {
+        }
+        else
+        {
+            for (unsigned index = 0; index < CE->getNumOperands(); ++index)
+            {
                 if (hasConstantGEP (CE->getOperand(index)))
                     return CE;
             }
@@ -113,12 +119,14 @@ hasConstantGEP (Value * V) {
 //  A pointer to the new GEP instruction is returned.
 //
 static Instruction *
-convertGEP (ConstantExpr * CE, Instruction * InsertPt) {
+convertGEP (ConstantExpr * CE, Instruction * InsertPt)
+{
     //
     // Create iterators to the indices of the constant expression.
     //
     std::vector<Value *> Indices;
-    for (unsigned index = 1; index < CE->getNumOperands(); ++index) {
+    for (unsigned index = 1; index < CE->getNumOperands(); ++index)
+    {
         Indices.push_back (CE->getOperand (index));
     }
     llvm::ArrayRef<Value *> arrayIdices(Indices);
@@ -146,13 +154,16 @@ convertGEP (ConstantExpr * CE, Instruction * InsertPt) {
 //  expression operands.
 //
 static Instruction *
-convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
+convertExpression (ConstantExpr * CE, Instruction * InsertPt)
+{
     //
     // Convert this constant expression into a regular instruction.
     //
     Instruction * NewInst = 0;
-    switch (CE->getOpcode()) {
-    case Instruction::GetElementPtr: {
+    switch (CE->getOpcode())
+    {
+    case Instruction::GetElementPtr:
+    {
         NewInst = convertGEP (CE, InsertPt);
         break;
     }
@@ -174,13 +185,14 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
     case Instruction::AShr:
     case Instruction::And:
     case Instruction::Or:
-    case Instruction::Xor: {
+    case Instruction::Xor:
+    {
         Instruction::BinaryOps Op = (Instruction::BinaryOps)(CE->getOpcode());
         NewInst = llvm::BinaryOperator::Create (Op,
-                                          CE->getOperand(0),
-                                          CE->getOperand(1),
-                                          CE->getName(),
-                                          InsertPt);
+                                                CE->getOperand(0),
+                                                CE->getOperand(1),
+                                                CE->getName(),
+                                                InsertPt);
         break;
     }
 
@@ -195,7 +207,8 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
     case Instruction::FPExt:
     case Instruction::PtrToInt:
     case Instruction::IntToPtr:
-    case Instruction::BitCast: {
+    case Instruction::BitCast:
+    {
         Instruction::CastOps Op = (Instruction::CastOps)(CE->getOpcode());
         NewInst = CastInst::Create (Op,
                                     CE->getOperand(0),
@@ -206,7 +219,8 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
     }
 
     case Instruction:: FCmp:
-    case Instruction:: ICmp: {
+    case Instruction:: ICmp:
+    {
         Instruction::OtherOps Op = (Instruction::OtherOps)(CE->getOpcode());
         NewInst = CmpInst::Create (Op,
                                    static_cast<CmpInst::Predicate>(CE->getPredicate()),
@@ -253,9 +267,11 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt) {
 //  false - The function was not modified.
 //
 bool
-BreakConstantGEPs::runOnModule (Module & module) {
+BreakConstantGEPs::runOnModule (Module & module)
+{
     bool modified = false;
-    for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F) {
+    for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F)
+    {
         // Worklist of values to check for constant GEP expressions
         std::vector<Instruction *> Worklist;
 
@@ -263,15 +279,19 @@ BreakConstantGEPs::runOnModule (Module & module) {
         // Initialize the worklist by finding all instructions that have one or more
         // operands containing a constant GEP expression.
         //
-        for (Function::iterator BB = (*F).begin(); BB != (*F).end(); ++BB) {
-            for (BasicBlock::iterator i = BB->begin(); i != BB->end(); ++i) {
+        for (Function::iterator BB = (*F).begin(); BB != (*F).end(); ++BB)
+        {
+            for (BasicBlock::iterator i = BB->begin(); i != BB->end(); ++i)
+            {
                 //
                 // Scan through the operands of this instruction.  If it is a constant
                 // expression GEP, insert an instruction GEP before the instruction.
                 //
                 Instruction * I = &(*i);
-                for (unsigned index = 0; index < I->getNumOperands(); ++index) {
-                    if (hasConstantGEP (I->getOperand(index))) {
+                for (unsigned index = 0; index < I->getNumOperands(); ++index)
+                {
+                    if (hasConstantGEP (I->getOperand(index)))
+                    {
                         Worklist.push_back (I);
                     }
                 }
@@ -288,7 +308,8 @@ BreakConstantGEPs::runOnModule (Module & module) {
         // operands into instructions if necessary, and determine if the newly
         // added instructions need to be processed as well.
         //
-        while (Worklist.size()) {
+        while (Worklist.size())
+        {
             Instruction * I = Worklist.back();
             Worklist.pop_back();
 
@@ -298,8 +319,10 @@ BreakConstantGEPs::runOnModule (Module & module) {
             // instructions because the new instruction must be added to the
             // appropriate predecessor block.
             //
-            if (PHINode * PHI = SVFUtil::dyn_cast<PHINode>(I)) {
-                for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index) {
+            if (PHINode * PHI = SVFUtil::dyn_cast<PHINode>(I))
+            {
+                for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index)
+                {
                     //
                     // For PHI Nodes, if an operand is a constant expression with a GEP, we
                     // want to insert the new instructions in the predecessor basic block.
@@ -309,23 +332,29 @@ BreakConstantGEPs::runOnModule (Module & module) {
                     // the same value is listed for the incoming block.
                     //
                     Instruction * InsertPt = PHI->getIncomingBlock(index)->getTerminator();
-                    if (ConstantExpr * CE = hasConstantGEP (PHI->getIncomingValue(index))) {
+                    if (ConstantExpr * CE = hasConstantGEP (PHI->getIncomingValue(index)))
+                    {
                         Instruction * NewInst = convertExpression (CE, InsertPt);
-                        for (unsigned i2 = index; i2 < PHI->getNumIncomingValues(); ++i2) {
+                        for (unsigned i2 = index; i2 < PHI->getNumIncomingValues(); ++i2)
+                        {
                             if ((PHI->getIncomingBlock (i2)) == PHI->getIncomingBlock (index))
                                 PHI->setIncomingValue (i2, NewInst);
                         }
                         Worklist.push_back (NewInst);
                     }
                 }
-            } else {
-                for (unsigned index = 0; index < I->getNumOperands(); ++index) {
+            }
+            else
+            {
+                for (unsigned index = 0; index < I->getNumOperands(); ++index)
+                {
                     //
                     // For other instructions, we want to insert instructions replacing
                     // constant expressions immediently before the instruction using the
                     // constant expression.
                     //
-                    if (ConstantExpr * CE = hasConstantGEP (I->getOperand(index))) {
+                    if (ConstantExpr * CE = hasConstantGEP (I->getOperand(index)))
+                    {
                         Instruction * NewInst = convertExpression (CE, I);
                         I->replaceUsesOfWith (CE, NewInst);
                         Worklist.push_back (NewInst);

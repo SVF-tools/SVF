@@ -41,7 +41,8 @@
 /*!
  * Distinct memory region generator.
  */
-class DistinctMRG : public MRGenerator {
+class DistinctMRG : public MRGenerator
+{
 public:
     DistinctMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
@@ -66,7 +67,8 @@ private:
 /*!
  * Create memory regions which don't have intersections with each other in the same function scope.
  */
-class IntraDisjointMRG : public MRGenerator {
+class IntraDisjointMRG : public MRGenerator
+{
 public:
     typedef std::map<PointsTo, PointsToList> PtsToSubPtsMap;
     typedef std::map<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
@@ -89,7 +91,8 @@ protected:
      * @param mrs Memory region set contains all possible target memory regions.
      */
     virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const SVFFunction* fun) {
+                                      const SVFFunction* fun)
+    {
         const PointsToList& inters = getIntersList(fun);
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }
@@ -106,15 +109,18 @@ protected:
     void computeIntersections(const PointsTo& cpts, PointsToList& inters);
 
 private:
-    inline PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func) {
+    inline PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func)
+    {
         return funcToPtsMap[func];
     }
 
-    inline PointsToList& getIntersList(const SVFFunction* func) {
+    inline PointsToList& getIntersList(const SVFFunction* func)
+    {
         return funcToInterMap[func];
     }
 
-    inline const PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func) const {
+    inline const PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func) const
+    {
         FunToPtsMap::const_iterator it = funcToPtsMap.find(func);
         assert(it != funcToPtsMap.end() && "can not find pts map for specified function");
         return it->second;
@@ -127,7 +133,8 @@ private:
 /*!
  * Create memory regions which don't have intersections with each other in the whole program scope.
  */
-class InterDisjointMRG : public IntraDisjointMRG {
+class InterDisjointMRG : public IntraDisjointMRG
+{
 public:
     InterDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : IntraDisjointMRG(p, ptrOnly)
     {}
@@ -145,7 +152,8 @@ protected:
      * @param mrs Memory region set contains all possible target memory regions.
      */
     virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const SVFFunction* fun) {
+                                      const SVFFunction* fun)
+    {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }
 

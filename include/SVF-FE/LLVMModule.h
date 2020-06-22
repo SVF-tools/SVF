@@ -34,7 +34,8 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFModule.h"
 
-class LLVMModuleSet {
+class LLVMModuleSet
+{
 public:
 
     typedef std::vector<const SVFFunction*> FunctionSetType;
@@ -60,13 +61,15 @@ private:
     LLVMModuleSet(): svfModule(NULL), moduleNum(0), cxts(NULL), modules(NULL) {}
 
 public:
-    static inline LLVMModuleSet *getLLVMModuleSet() {
+    static inline LLVMModuleSet *getLLVMModuleSet()
+    {
         if (llvmModuleSet == NULL)
             llvmModuleSet = new LLVMModuleSet();
         return llvmModuleSet;
     }
 
-    static void releaseLLVMModuleSet() {
+    static void releaseLLVMModuleSet()
+    {
         if (llvmModuleSet)
             delete llvmModuleSet;
         llvmModuleSet = NULL;
@@ -77,16 +80,19 @@ public:
 
     void build(const std::vector<std::string> &moduleNameVec);
 
-    u32_t getModuleNum() const {
+    u32_t getModuleNum() const
+    {
         return moduleNum;
     }
 
-    Module *getModule(u32_t idx) const {
+    Module *getModule(u32_t idx) const
+    {
         assert(idx < moduleNum && "Out of range.");
         return modules[idx].get();
     }
 
-    Module &getModuleRef(u32_t idx) const {
+    Module &getModuleRef(u32_t idx) const
+    {
         assert(idx < moduleNum && "Out of range.");
         return *(modules[idx].get());
     }
@@ -94,26 +100,31 @@ public:
     // Dump modules to files
     void dumpModulesToFile(const std::string suffix);
 
-    const SVFFunction *getSVFFunction(const Function *fun) const {
-    	return svfModule->getSVFFunction(fun);
+    const SVFFunction *getSVFFunction(const Function *fun) const
+    {
+        return svfModule->getSVFFunction(fun);
     }
 
     /// Fun decl --> def
-    bool hasDefinition(const Function *fun) const {
-    	return hasDefinition(svfModule->getSVFFunction(fun));
+    bool hasDefinition(const Function *fun) const
+    {
+        return hasDefinition(svfModule->getSVFFunction(fun));
     }
 
-    bool hasDefinition(const SVFFunction *fun) const {
+    bool hasDefinition(const SVFFunction *fun) const
+    {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
-    const SVFFunction *getDefinition(const Function *fun) const {
-    	return getDefinition(svfModule->getSVFFunction(fun));
+    const SVFFunction *getDefinition(const Function *fun) const
+    {
+        return getDefinition(svfModule->getSVFFunction(fun));
     }
 
-    const SVFFunction *getDefinition(const SVFFunction *fun) const {
+    const SVFFunction *getDefinition(const SVFFunction *fun) const
+    {
         assert(fun->isDeclaration() && "not a function declaration?");
         FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
         assert(it != FunDeclToDefMap.end() && "has no definition?");
@@ -121,21 +132,25 @@ public:
     }
 
     /// Fun def --> decl
-    bool hasDeclaration(const Function *fun) const {
+    bool hasDeclaration(const Function *fun) const
+    {
         return hasDeclaration(svfModule->getSVFFunction(fun));
     }
 
-    bool hasDeclaration(const SVFFunction *fun) const {
+    bool hasDeclaration(const SVFFunction *fun) const
+    {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         return it != FunDefToDeclsMap.end();
     }
 
-    const FunctionSetType& getDeclaration(const Function *fun) const {
+    const FunctionSetType& getDeclaration(const Function *fun) const
+    {
         return getDeclaration(svfModule->getSVFFunction(fun));
     }
 
-    const FunctionSetType& getDeclaration(const SVFFunction *fun) const {
+    const FunctionSetType& getDeclaration(const SVFFunction *fun) const
+    {
         assert(!fun->isDeclaration() && "not a function definition?");
         FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
         assert(it != FunDefToDeclsMap.end() && "has no declaration?");
@@ -143,44 +158,53 @@ public:
     }
 
     /// Global to rep
-    bool hasGlobalRep(const GlobalVariable *val) const {
+    bool hasGlobalRep(const GlobalVariable *val) const
+    {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         return it != GlobalDefToRepMap.end();
     }
 
-    GlobalVariable *getGlobalRep(const GlobalVariable *val) const {
+    GlobalVariable *getGlobalRep(const GlobalVariable *val) const
+    {
         GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
         assert(it != GlobalDefToRepMap.end() && "has no rep?");
         return it->second;
     }
 
 
-    Module *getMainLLVMModule() const {
+    Module *getMainLLVMModule() const
+    {
         return getModule(0);
     }
 
-    LLVMContext& getContext() const {
+    LLVMContext& getContext() const
+    {
         assert(!empty() && "empty LLVM module!!");
         return getMainLLVMModule()->getContext();
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         return getModuleNum() == 0;
     }
 
     /// Returns true if all LLVM modules are compiled with ctir.
-    bool allCTir(void) const {
+    bool allCTir(void) const
+    {
         // Iterate over all modules. If a single module does not have the correct ctir module flag,
         // short-circuit and return false.
-        for (u32_t i = 0; i < getModuleNum(); ++i) {
+        for (u32_t i = 0; i < getModuleNum(); ++i)
+        {
             llvm::Metadata *ctirModuleFlag = llvmModuleSet->getModule(i)->getModuleFlag(cppUtil::ctir::derefMDName);
-            if (ctirModuleFlag == nullptr) {
+            if (ctirModuleFlag == nullptr)
+            {
                 return false;
             }
 
             llvm::ConstantAsMetadata *flagConstMetadata = SVFUtil::dyn_cast<llvm::ConstantAsMetadata>(ctirModuleFlag);
             ConstantInt *flagConstInt = SVFUtil::dyn_cast<ConstantInt>(flagConstMetadata->getValue());
-            if (flagConstInt->getZExtValue() != cppUtil::ctir::moduleFlagValue) {
+            if (flagConstInt->getZExtValue() != cppUtil::ctir::moduleFlagValue)
+            {
                 return false;
             }
         }

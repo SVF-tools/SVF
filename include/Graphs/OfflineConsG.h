@@ -38,7 +38,8 @@
  * In OCG, a 'ref' node is used to represent the point-to set of a constraint node.
  * 'Nor' means a constraint node of its corresponding ref node.
  */
-class OfflineConsG: public ConstraintGraph{
+class OfflineConsG: public ConstraintGraph
+{
 
 public:
     typedef SCCDetection<OfflineConsG*> OSCC;
@@ -52,35 +53,42 @@ protected:
 
 public:
     OfflineConsG(PAG *p) : ConstraintGraph(p),
-                           nodeToRefMap({}), norToRepMap({}) {
+        nodeToRefMap( {}), norToRepMap({})
+    {
         buildOfflineCG();
     }
 
     // Determine whether a node has a OCG rep node
-    inline bool hasOCGRep(NodeID node) const {
+    inline bool hasOCGRep(NodeID node) const
+    {
         return hasNorRep(node);
     }
     // Get a node's OCG rep node
-    inline NodeID getOCGRep(NodeID node) const {
+    inline NodeID getOCGRep(NodeID node) const
+    {
         return getNorRep(node);
     }
     // Get the OCG node to rep map (this map is const and should not be modified)
-    inline const NodeToRepMap& getOCGRepMap () const {
+    inline const NodeToRepMap& getOCGRepMap () const
+    {
         return norToRepMap;
     }
 
     // Determine whether a node is a ref node
-    inline bool isaRef(NodeID node) const {
+    inline bool isaRef(NodeID node) const
+    {
         NodeSet::const_iterator it = refNodes.find(node);
         return it != refNodes.end();
     };
     // Determine whether a node has ref nodes
-    inline bool hasRef(NodeID node) const {
+    inline bool hasRef(NodeID node) const
+    {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         return it != nodeToRefMap.end();
     };
     // Use a constraint node to track its corresponding ref node
-    inline NodeID getRef(NodeID node) const {
+    inline NodeID getRef(NodeID node) const
+    {
         NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
         assert(it != nodeToRefMap.end() && "No such ref node in ref to node map!");
         return it->second;
@@ -96,16 +104,19 @@ public:
     void dump(std::string name);
 
 protected:
-    inline bool hasNorRep(NodeID nor) const {
+    inline bool hasNorRep(NodeID nor) const
+    {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         return it != norToRepMap.end();
     };
 
-    inline void setNorRep(NodeID nor, NodeID rep) {
+    inline void setNorRep(NodeID nor, NodeID rep)
+    {
         norToRepMap.insert(std::pair<NodeID, NodeID>(nor, rep));
     };
 
-    inline NodeID getNorRep(NodeID nor) const {
+    inline NodeID getNorRep(NodeID nor) const
+    {
         NodeToRepMap::const_iterator it = norToRepMap.find(nor);
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;
@@ -120,14 +131,16 @@ protected:
 
 
 
-namespace llvm {
+namespace llvm
+{
 /* !
  * GraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
 
-template<> struct GraphTraits<OfflineConsG*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* > {
-typedef ConstraintNode *NodeRef;
+template<> struct GraphTraits<OfflineConsG*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* >
+{
+    typedef ConstraintNode *NodeRef;
 };
 
 }

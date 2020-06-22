@@ -16,12 +16,13 @@ extern llvm::cl::list<std::string> DumpPAGFunctions;
 
 /// Represents the PAG of a function loaded externally (i.e. from file).
 /// It's purpose is to be attached to the main PAG (almost) seamlessly.
-class ExternalPAG {
+class ExternalPAG
+{
 private:
     /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
     static std::map<const SVFFunction*, std::map<int, PAGNode *>>
-        functionToExternalPAGEntries;
+            functionToExternalPAGEntries;
     static std::map<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
 
     /// Name of the function this external PAG represents.
@@ -51,7 +52,7 @@ private:
     /// For passing that passed to -extpags option, splitting fname@path into
     /// a pair.
     static std::vector<std::pair<std::string, std::string>>
-        parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs);
+            parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs);
 
     /// Reads nodes and edges from file.
     ///
@@ -73,7 +74,7 @@ private:
 
 public:
     ExternalPAG(std::string functionName) : functionName(functionName),
-                                            hasReturn(false), returnNode(-1) {}
+        hasReturn(false), returnNode(-1) {}
 
     ~ExternalPAG() {}
 
@@ -92,24 +93,44 @@ public:
     /// Dump individual PAGs of specified functions. Currently to outs().
     static void dumpFunctions(std::vector<std::string> functions);
 
-    std::string getFunctionName() const { return functionName; }
+    std::string getFunctionName() const
+    {
+        return functionName;
+    }
 
-    std::set<NodeID> &getValueNodes() { return valueNodes; }
-    std::set<NodeID> &getObjectNodes() { return objectNodes; }
-    std::set<std::tuple<NodeID, NodeID, std::string, int>> &getEdges() {
+    std::set<NodeID> &getValueNodes()
+    {
+        return valueNodes;
+    }
+    std::set<NodeID> &getObjectNodes()
+    {
+        return objectNodes;
+    }
+    std::set<std::tuple<NodeID, NodeID, std::string, int>> &getEdges()
+    {
         return edges;
     }
 
-    std::map<int, NodeID> &getArgNodes() { return argNodes; }
+    std::map<int, NodeID> &getArgNodes()
+    {
+        return argNodes;
+    }
 
-    NodeID getReturnNode() const { return returnNode; }
-    void setReturnNode(NodeID returnNode) {
+    NodeID getReturnNode() const
+    {
+        return returnNode;
+    }
+    void setReturnNode(NodeID returnNode)
+    {
         this->returnNode = returnNode;
         hasReturn = true;
     }
 
     /// Does this function have a return node?
-    bool hasReturnNode() const { return hasReturn; }
+    bool hasReturnNode() const
+    {
+        return hasReturn;
+    }
 
     /// Adds (creates new equivalents) all the nodes and edges of this extpag to
     /// the main PAG. function is used as a key for future lookups.

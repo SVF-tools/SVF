@@ -35,7 +35,8 @@
 #include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
 
-class ProgSlice {
+class ProgSlice
+{
 
 public:
     typedef std::set<const SVFGNode*> SVFGNodeSet;
@@ -49,81 +50,104 @@ public:
     /// Constructor
     ProgSlice(const SVFGNode* src, PathCondAllocator* pa, const SVFG* graph):
         root(src), partialReachable(false), fullReachable(false), reachGlob(false),
-        pathAllocator(pa), _curSVFGNode(NULL), finalCond(pa->getFalseCond()), svfg(graph) {
+        pathAllocator(pa), _curSVFGNode(NULL), finalCond(pa->getFalseCond()), svfg(graph)
+    {
     }
 
     /// Destructor
-    virtual ~ProgSlice() {
+    virtual ~ProgSlice()
+    {
         destroy();
     }
 
-    inline u32_t getForwardSliceSize() const {
+    inline u32_t getForwardSliceSize() const
+    {
         return forwardslice.size();
     }
-    inline u32_t getBackwardSliceSize() const {
+    inline u32_t getBackwardSliceSize() const
+    {
         return backwardslice.size();
     }
     /// Forward and backward slice operations
     //@{
-    inline void addToForwardSlice(const SVFGNode* node) {
+    inline void addToForwardSlice(const SVFGNode* node)
+    {
         forwardslice.insert(node);
     }
-    inline void addToBackwardSlice(const SVFGNode* node) {
+    inline void addToBackwardSlice(const SVFGNode* node)
+    {
         backwardslice.insert(node);
     }
-    inline bool inForwardSlice(const SVFGNode* node) {
+    inline bool inForwardSlice(const SVFGNode* node)
+    {
         return forwardslice.find(node)!=forwardslice.end();
     }
-    inline bool inBackwardSlice(const SVFGNode* node) {
+    inline bool inBackwardSlice(const SVFGNode* node)
+    {
         return backwardslice.find(node)!=backwardslice.end();
     }
-    inline SVFGNodeSetIter forwardSliceBegin() const {
+    inline SVFGNodeSetIter forwardSliceBegin() const
+    {
         return forwardslice.begin();
     }
-    inline SVFGNodeSetIter forwardSliceEnd() const {
+    inline SVFGNodeSetIter forwardSliceEnd() const
+    {
         return forwardslice.end();
     }
-    inline SVFGNodeSetIter backwardSliceBegin() const {
+    inline SVFGNodeSetIter backwardSliceBegin() const
+    {
         return backwardslice.begin();
     }
-    inline SVFGNodeSetIter backwardSliceEnd() const {
+    inline SVFGNodeSetIter backwardSliceEnd() const
+    {
         return backwardslice.end();
     }
     //@}
 
     /// root and sink operations
     //@{
-    inline const SVFGNode* getSource() const {
+    inline const SVFGNode* getSource() const
+    {
         return root;
     }
-    inline void addToSinks(const SVFGNode* node) {
+    inline void addToSinks(const SVFGNode* node)
+    {
         sinks.insert(node);
     }
-    inline const SVFGNodeSet& getSinks() const {
+    inline const SVFGNodeSet& getSinks() const
+    {
         return sinks;
     }
-    inline SVFGNodeSetIter sinksBegin() const {
+    inline SVFGNodeSetIter sinksBegin() const
+    {
         return sinks.begin();
     }
-    inline SVFGNodeSetIter sinksEnd() const {
+    inline SVFGNodeSetIter sinksEnd() const
+    {
         return sinks.end();
     }
-    inline void setPartialReachable() {
+    inline void setPartialReachable()
+    {
         partialReachable = true;
     }
-    inline void setAllReachable() {
+    inline void setAllReachable()
+    {
         fullReachable = true;
     }
-    inline bool setReachGlobal() {
+    inline bool setReachGlobal()
+    {
         return reachGlob = true;
     }
-    inline bool isPartialReachable() const {
+    inline bool isPartialReachable() const
+    {
         return partialReachable || reachGlob;
     }
-    inline bool isAllReachable() const {
+    inline bool isAllReachable() const
+    {
         return fullReachable || reachGlob;
     }
-    inline bool isReachGlobal() const {
+    inline bool isReachGlobal() const
+    {
         return reachGlob;
     }
     //@}
@@ -144,22 +168,28 @@ public:
 
     /// Condition operations
     //@{
-    inline Condition* condAnd(Condition* lhs, Condition* rhs) {
+    inline Condition* condAnd(Condition* lhs, Condition* rhs)
+    {
         return pathAllocator->condAnd(lhs,rhs);
     }
-    inline Condition* condOr(Condition* lhs, Condition* rhs) {
+    inline Condition* condOr(Condition* lhs, Condition* rhs)
+    {
         return pathAllocator->condOr(lhs,rhs);
     }
-    inline Condition* condNeg(Condition* cond) {
+    inline Condition* condNeg(Condition* cond)
+    {
         return pathAllocator->condNeg(cond);
     }
-    inline Condition* getTrueCond() const {
+    inline Condition* getTrueCond() const
+    {
         return pathAllocator->getTrueCond();
     }
-    inline Condition* getFalseCond() const {
+    inline Condition* getFalseCond() const
+    {
         return pathAllocator->getFalseCond();
     }
-    inline std::string dumpCond(Condition* cond) const {
+    inline std::string dumpCond(Condition* cond) const
+    {
         return pathAllocator->dumpCond(cond);
     }
     /// Evaluate final condition
@@ -170,28 +200,33 @@ public:
     void annotatePaths();
 
 private:
-    inline const SVFG* getSVFG() const {
+    inline const SVFG* getSVFG() const
+    {
         return svfg;
     }
 
     /// Release memory
     void destroy();
     /// Clear Control flow conditions before each VF computation
-    inline void clearCFCond() {
+    inline void clearCFCond()
+    {
         /// TODO: how to clean bdd memory
         pathAllocator->clearCFCond();
     }
 
     /// Get/set VF (value-flow) and CF (control-flow) conditions
     //@{
-    inline Condition* getVFCond(const SVFGNode* node) const {
+    inline Condition* getVFCond(const SVFGNode* node) const
+    {
         SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.find(node);
-        if(it==svfgNodeToCondMap.end()) {
+        if(it==svfgNodeToCondMap.end())
+        {
             return getFalseCond();
         }
         return it->second;
     }
-    inline bool setVFCond(const SVFGNode* node, Condition* cond) {
+    inline bool setVFCond(const SVFGNode* node, Condition* cond)
+    {
         SVFGNodeToCondMap::iterator it = svfgNodeToCondMap.find(node);
         if(it!=svfgNodeToCondMap.end() && it->second == cond)
             return false;
@@ -203,13 +238,16 @@ private:
 
     /// Compute guards for value-flows
     //@{
-    inline Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst) {
+    inline Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst)
+    {
         return pathAllocator->ComputeIntraVFGGuard(src,dst);
     }
-    inline Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB) {
+    inline Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB)
+    {
         return pathAllocator->ComputeInterCallVFGGuard(src,dst,callBB);
     }
-    inline Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB) {
+    inline Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB)
+    {
         return pathAllocator->ComputeInterRetVFGGuard(src,dst,retBB);
     }
     //@}
@@ -217,9 +255,11 @@ private:
     /// Return the basic block where a SVFGNode resides in
     /// a SVFGNode may not in a basic block if it is not a program statement
     /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
-    inline const BasicBlock* getSVFGNodeBB(const SVFGNode* node) const {
+    inline const BasicBlock* getSVFGNodeBB(const SVFGNode* node) const
+    {
         const BasicBlock* bb = node->getBB();
-        if(SVFUtil::isa<NullPtrSVFGNode>(node) == false) {
+        if(SVFUtil::isa<NullPtrSVFGNode>(node) == false)
+        {
             assert(bb && "this SVFG node should be in a basic block");
             return bb;
         }
@@ -228,16 +268,19 @@ private:
 
     /// Get/set current SVFG node
     //@{
-    inline const SVFGNode* getCurSVFGNode() const {
+    inline const SVFGNode* getCurSVFGNode() const
+    {
         return _curSVFGNode;
     }
-    inline void setCurSVFGNode(const SVFGNode* node) {
+    inline void setCurSVFGNode(const SVFGNode* node)
+    {
         _curSVFGNode = node;
         pathAllocator->setCurEvalVal(getLLVMValue(_curSVFGNode));
     }
     //@}
     /// Set final condition after all path reachability analysis
-    inline void setFinalCond(Condition* cond) {
+    inline void setFinalCond(Condition* cond)
+    {
         finalCond = cond;
     }
 

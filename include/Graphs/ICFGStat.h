@@ -33,7 +33,8 @@
 #include "Graphs/ICFG.h"
 #include <iomanip>
 
-class ICFGStat : public PTAStat {
+class ICFGStat : public PTAStat
+{
 
 private:
     ICFG *icfg;
@@ -52,7 +53,8 @@ private:
 public:
     typedef std::set<const ICFGNode *> ICFGNodeSet;
 
-    ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg) {
+    ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg)
+    {
         numOfNodes = 0;
         numOfCallNodes = 0;
         numOfRetNodes = 0;
@@ -67,7 +69,8 @@ public:
 
     }
 
-    void performStat() {
+    void performStat()
+    {
 
         countStat();
 
@@ -86,7 +89,8 @@ public:
         printStat("ICFG Stat");
     }
 
-    void performStatforIFDS() {
+    void performStatforIFDS()
+    {
 
         countStat();
         PTNumStatMap["ICFGNode(N)"] = numOfNodes;
@@ -95,10 +99,12 @@ public:
         printStat("IFDS Stat");
     }
 
-    void countStat(){
+    void countStat()
+    {
         ICFG::ICFGNodeIDToNodeMapTy::iterator it = icfg->begin();
         ICFG::ICFGNodeIDToNodeMapTy::iterator eit = icfg->end();
-        for (; it != eit; ++it) {
+        for (; it != eit; ++it)
+        {
             numOfNodes++;
 
             ICFGNode *node = it->second;
@@ -116,10 +122,11 @@ public:
 
 
             ICFGEdge::ICFGEdgeSetTy::iterator edgeIt =
-                    it->second->OutEdgeBegin();
+                it->second->OutEdgeBegin();
             ICFGEdge::ICFGEdgeSetTy::iterator edgeEit =
-                    it->second->OutEdgeEnd();
-            for (; edgeIt != edgeEit; ++edgeIt) {
+                it->second->OutEdgeEnd();
+            for (; edgeIt != edgeEit; ++edgeIt)
+            {
                 const ICFGEdge *edge = *edgeIt;
                 numOfEdges++;
                 if (edge->isCallCFGEdge())
@@ -132,16 +139,19 @@ public:
         }
     }
 
-    void printStat(string statname) {
+    void printStat(string statname)
+    {
 
         std::cout << "\n************ " << statname << " ***************\n";
         std::cout.flags(std::ios::left);
         unsigned field_width = 20;
-        for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it) {
+        for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
+        {
             // format out put with width 20 space
             std::cout << std::setw(field_width) << it->first << it->second << "\n";
         }
         PTNumStatMap.clear();
+        std::cout.flush();
     }
 };
 

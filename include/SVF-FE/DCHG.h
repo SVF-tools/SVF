@@ -24,27 +24,32 @@
 class SVFModule;
 class DCHNode;
 
-class DCHEdge : public GenericEdge<DCHNode> {
+class DCHEdge : public GenericEdge<DCHNode>
+{
 public:
-    enum {
+    enum
+    {
         INHERITANCE,  // inheritance relation
         INSTANCE,     // template-instance relation
         FIRST_FIELD,  // src -ff-> dst => dst is first field of src
         STD_DEF       // Edges defined by the standard like (int -std-> char)
-                      // We also make the char --> void edge a STD_DEF edge.
+        // We also make the char --> void edge a STD_DEF edge.
     };
 
     typedef GenericNode<DCHNode, DCHEdge>::GEdgeSetTy DCHEdgeSetTy;
 
     DCHEdge(DCHNode *src, DCHNode *dst, GEdgeFlag k = 0)
-        : GenericEdge<DCHNode>(src, dst, k), offset(0) {
+        : GenericEdge<DCHNode>(src, dst, k), offset(0)
+    {
     }
 
-    unsigned int getOffset(void) const {
+    unsigned int getOffset(void) const
+    {
         return offset;
     }
 
-    void setOffset(unsigned int offset) {
+    void setOffset(unsigned int offset)
+    {
         this->offset = offset;
     }
 
@@ -52,9 +57,11 @@ private:
     unsigned int offset;
 };
 
-class DCHNode : public GenericNode<DCHNode, DCHEdge> {
+class DCHNode : public GenericNode<DCHNode, DCHEdge>
+{
 public:
-    typedef enum {
+    typedef enum
+    {
         PURE_ABSTRACT = 0x1,     // pure virtual abstract class
         MULTI_INHERITANCE = 0x2, // multi inheritance class
         TEMPLATE = 0x04,         // template class
@@ -64,89 +71,114 @@ public:
     typedef std::vector<const Function*> FuncVector;
 
     DCHNode(const DIType *diType, NodeID i = 0, GNodeK k = 0)
-        : GenericNode<DCHNode, DCHEdge>(i, k), vtable(NULL), flags(0) {
+        : GenericNode<DCHNode, DCHEdge>(i, k), vtable(NULL), flags(0)
+    {
         this->diType = diType;
-        if (diType == NULL) {
+        if (diType == NULL)
+        {
             typeName = "null-void";
-        } else if (diType->getRawName() != NULL) {
+        }
+        else if (diType->getRawName() != NULL)
+        {
             typeName = diType->getName();
-        } else {
+        }
+        else
+        {
             typeName = "unnamed!";
         }
     }
 
     ~DCHNode() { }
 
-    const DIType *getType(void) const {
+    const DIType *getType(void) const
+    {
         return diType;
     }
 
-    std::string getName() const {
+    std::string getName() const
+    {
         return typeName;
     }
 
     /// Flags
     //@{
-    inline void setFlag(CLASSATTR mask) {
+    inline void setFlag(CLASSATTR mask)
+    {
         flags |= mask;
     }
-    inline bool hasFlag(CLASSATTR mask) const {
+    inline bool hasFlag(CLASSATTR mask) const
+    {
         return (flags & mask) == mask;
     }
     //@}
 
     /// Attribute
     //@{
-    inline void setPureAbstract() {
+    inline void setPureAbstract()
+    {
         setFlag(PURE_ABSTRACT);
     }
-    inline void setMultiInheritance() {
+    inline void setMultiInheritance()
+    {
         setFlag(MULTI_INHERITANCE);
     }
-    inline void setTemplate() {
+    inline void setTemplate()
+    {
         setFlag(TEMPLATE);
     }
-    inline void setScalar() {
+    inline void setScalar()
+    {
         setFlag(SCALAR);
     }
-    inline bool isPureAbstract() const {
+    inline bool isPureAbstract() const
+    {
         return hasFlag(PURE_ABSTRACT);
     }
-    inline bool isMultiInheritance() const {
+    inline bool isMultiInheritance() const
+    {
         return hasFlag(MULTI_INHERITANCE);
     }
-    inline bool isTemplate() const {
+    inline bool isTemplate() const
+    {
         return hasFlag(TEMPLATE);
     }
-    inline bool isScalar() const {
+    inline bool isScalar() const
+    {
         return hasFlag(SCALAR);
     }
     //@}
 
-    void addTypedef(const DIDerivedType *diTypedef) {
+    void addTypedef(const DIDerivedType *diTypedef)
+    {
         typedefs.insert(diTypedef);
     }
 
-    const DenseSet<const DIDerivedType *> &getTypedefs(void) const {
+    const DenseSet<const DIDerivedType *> &getTypedefs(void) const
+    {
         return typedefs;
     }
 
-    void setVTable(const GlobalValue *vtbl) {
+    void setVTable(const GlobalValue *vtbl)
+    {
         vtable = vtbl;
     }
 
-    const GlobalValue *getVTable() const {
+    const GlobalValue *getVTable() const
+    {
         return vtable;
     }
 
     /// Returns the vector of virtual function vectors.
-    const std::vector<std::vector<const Function *>> &getVfnVectors(void) const {
+    const std::vector<std::vector<const Function *>> &getVfnVectors(void) const
+    {
         return vfnVectors;
     }
 
     /// Return the nth virtual function vector in the vtable.
-    std::vector<const Function *> &getVfnVector(unsigned n) {
-        if (vfnVectors.size() < n + 1) {
+    std::vector<const Function *> &getVfnVector(unsigned n)
+    {
+        if (vfnVectors.size() < n + 1)
+        {
             vfnVectors.resize(n + 1);
         }
 
@@ -170,7 +202,8 @@ private:
 };
 
 /// Dwarf based CHG.
-class DCHGraph : public CommonCHGraph, public GenericGraph<DCHNode, DCHEdge> {
+class DCHGraph : public CommonCHGraph, public GenericGraph<DCHNode, DCHEdge>
+{
 public:
     /// Returns the DIType beneath the qualifiers. Does not strip away "DW_TAG_members".
     static const DIType *stripQualifiers(const DIType *);
@@ -195,7 +228,8 @@ public:
 
 public:
     DCHGraph(const SVFModule *svfMod)
-        : svfModule(svfMod), numTypes(0) { // vfID(0), buildingCHGTime(0) {
+        : svfModule(svfMod), numTypes(0)   // vfID(0), buildingCHGTime(0) {
+    {
         this->kind = DI;
     }
 
@@ -205,21 +239,25 @@ public:
     /// whether to extend the CHG with first field edges.
     virtual void buildCHG(bool extend);
 
-    void dump(const std::string& filename) {
+    void dump(const std::string& filename)
+    {
         GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
     }
 
     void print(void);
 
-    virtual const bool csHasVFnsBasedonCHA(CallSite cs) override {
+    virtual const bool csHasVFnsBasedonCHA(CallSite cs) override
+    {
         return csHasVtblsBasedonCHA(cs);
     }
 
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
 
-    virtual const bool csHasVtblsBasedonCHA(CallSite cs) override {
+    virtual const bool csHasVtblsBasedonCHA(CallSite cs) override
+    {
         const DIType *type = getCanonicalType(getCSStaticType(cs));
-        if (!hasNode(type)) {
+        if (!hasNode(type))
+        {
             return false;
         }
 
@@ -236,7 +274,8 @@ public:
     /// Returns true if f is a field of b (fields from getFieldTypes).
     virtual bool isFieldOf(const DIType *f, const DIType *b);
 
-    static inline bool classof(const CommonCHGraph *chg) {
+    static inline bool classof(const CommonCHGraph *chg)
+    {
         return chg->getKind() == DI;
     }
 
@@ -246,27 +285,32 @@ public:
     const DIType *getCanonicalType(const DIType *t);
 
     /// Returns the type of field number idx (flattened) in base.
-    const DIType *getFieldType(const DIType *base, unsigned idx) {
+    const DIType *getFieldType(const DIType *base, unsigned idx)
+    {
         base = getCanonicalType(base);
-        if (base == nullptr) {
+        if (base == nullptr)
+        {
             // Conservative; the base object is untyped, sadly.
             return nullptr;
         }
 
         // For TBHC this is conservative because the union type is lower in the DCHG
         // than its fields. TODO: make more precise.
-        if (base->getTag() == dwarf::DW_TAG_union_type) {
+        if (base->getTag() == dwarf::DW_TAG_union_type)
+        {
             return base;
         }
 
-        if (base->getTag() == dwarf::DW_TAG_array_type) {
+        if (base->getTag() == dwarf::DW_TAG_array_type)
+        {
             const DICompositeType *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
             assert(cbase && "DCHG: bad DIComposite case");
             return cbase->getBaseType();
         }
 
         if (!(base->getTag() == dwarf::DW_TAG_class_type
-              || base->getTag() == dwarf::DW_TAG_structure_type)) {
+                || base->getTag() == dwarf::DW_TAG_structure_type))
+        {
             return nullptr;
         }
 
@@ -278,21 +322,24 @@ public:
     }
 
     /// Returns a vector of the types of all fields in base.
-    const std::vector<const DIType *> &getFieldTypes(const DIType *base) {
+    const std::vector<const DIType *> &getFieldTypes(const DIType *base)
+    {
         base = getCanonicalType(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
         return fieldTypes[base];
     }
 
     // Returns the number of fields in base (length of getFieldTypes).
-    unsigned getNumFields(const DIType *base) {
+    unsigned getNumFields(const DIType *base)
+    {
         base = getCanonicalType(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
         return fieldTypes[base].size();
     }
 
     /// Returns all the aggregates contained (transitively) in base.
-    const DenseSet<const DIType *> &getAggs(const DIType *base) {
+    const DenseSet<const DIType *> &getAggs(const DIType *base)
+    {
         base = getCanonicalType(base);
         assert(containingAggs.find(base) != containingAggs.end() && "DCHG: aggregates not gathered for base!");
         return containingAggs[base];
@@ -355,7 +402,8 @@ private:
     DCHNode *getOrCreateNode(const DIType *type);
 
     /// Retrieves the metadata associated with a *virtual* callsite.
-    const DIType *getCSStaticType(CallSite cs) const {
+    const DIType *getCSStaticType(CallSite cs) const
+    {
         MDNode *md = cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
         DIType *diType = SVFUtil::dyn_cast<DIType>(md);
@@ -364,15 +412,18 @@ private:
     }
 
     /// Checks if a node exists for type.
-    bool hasNode(const DIType *type) {
+    bool hasNode(const DIType *type)
+    {
         type = getCanonicalType(type);
         return diTypeToNodeMap.find(type) != diTypeToNodeMap.end();
     }
 
     /// Returns the node for type (NULL if it doesn't exist).
-    DCHNode *getNode(const DIType *type) {
+    DCHNode *getNode(const DIType *type)
+    {
         type = getCanonicalType(type);
-        if (hasNode(type)) {
+        if (hasNode(type))
+        {
             return diTypeToNodeMap.lookup(type);
         }
 
@@ -390,20 +441,24 @@ private:
 };
 
 
-namespace llvm {
+namespace llvm
+{
 /* !
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<DCHNode*> : public GraphTraits<GenericNode<DCHNode,DCHEdge>*  > {
+template<> struct GraphTraits<DCHNode*> : public GraphTraits<GenericNode<DCHNode,DCHEdge>*  >
+{
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<DCHNode*> > : public GraphTraits<Inverse<GenericNode<DCHNode,DCHEdge>* > > {
+struct GraphTraits<Inverse<DCHNode*> > : public GraphTraits<Inverse<GenericNode<DCHNode,DCHEdge>* > >
+{
 };
 
-template<> struct GraphTraits<DCHGraph*> : public GraphTraits<GenericGraph<DCHNode,DCHEdge>* > {
+template<> struct GraphTraits<DCHGraph*> : public GraphTraits<GenericGraph<DCHNode,DCHEdge>* >
+{
     typedef DCHNode *NodeRef;
 };
 

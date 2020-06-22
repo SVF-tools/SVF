@@ -38,7 +38,8 @@
  * PAG node
  */
 typedef GenericNode<PAGNode,PAGEdge> GenericPAGNodeTy;
-class PAGNode : public GenericPAGNodeTy {
+class PAGNode : public GenericPAGNodeTy
+{
 
 public:
     /// Nine kinds of PAG nodes
@@ -51,7 +52,8 @@ public:
     /// FIObjNode: for field insensitive analysis
     /// DummyValNode and DummyObjNode: for non-llvm-value node
     /// Clone*Node: objects created by TBHC.
-    enum PNODEK {
+    enum PNODEK
+    {
         ValNode,
         ObjNode,
         RetNode,
@@ -78,12 +80,14 @@ public:
     /// Constructor
     PAGNode(const Value* val, NodeID i, PNODEK k);
     /// Destructor
-    virtual ~PAGNode() {
+    virtual ~PAGNode()
+    {
     }
 
     ///  Get/has methods of the components
     //@{
-    inline const Value* getValue() const {
+    inline const Value* getValue() const
+    {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
         assert((this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj) && "blackhole and constant obj do not have value");
         assert(value && "value is null!!");
@@ -91,43 +95,51 @@ public:
     }
 
     /// Return type of the value
-    inline virtual const Type* getType() const{
+    inline virtual const Type* getType() const
+    {
         if (value)
             return value->getType();
         return NULL;
     }
 
-    inline bool hasValue() const {
+    inline bool hasValue() const
+    {
         return (this->getNodeKind() != DummyValNode &&
                 this->getNodeKind() != DummyObjNode &&
-				(this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj)) ;
+                (this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj)) ;
     }
     /// Whether it is a pointer
-    virtual inline bool isPointer() const {
+    virtual inline bool isPointer() const
+    {
         return isTopLevelPtr() || isAddressTakenPtr();
     }
     /// Whether it is a top-level pointer
-    inline bool isTopLevelPtr() const {
+    inline bool isTopLevelPtr() const
+    {
         return isTLPointer;
     }
     /// Whether it is an address-taken pointer
-    inline bool isAddressTakenPtr() const {
+    inline bool isAddressTakenPtr() const
+    {
         return isATPointer;
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
-	inline bool isConstantData() const {
-		if (hasValue())
-			return SVFUtil::isa<ConstantData>(value) || SVFUtil::isa<ConstantAggregate>(value);
-		else
-			return false;
-	}
+    inline bool isConstantData() const
+    {
+        if (hasValue())
+            return SVFUtil::isa<ConstantData>(value) || SVFUtil::isa<ConstantAggregate>(value);
+        else
+            return false;
+    }
 
     /// Get name of the LLVM value
     virtual const std::string getValueName() const = 0;
 
     /// Return the function that this PAGNode resides in. Return NULL if it is a global or constantexpr node
-    virtual inline const Function* getFunction() const {
-        if(value){
+    virtual inline const Function* getFunction() const
+    {
+        if(value)
+        {
             if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
                 return inst->getParent()->getParent();
             else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
@@ -139,17 +151,20 @@ public:
     }
 
     /// Get incoming PAG edges
-    inline PAGEdge::PAGEdgeSetTy& getIncomingEdges(PAGEdge::PEDGEK kind) {
+    inline PAGEdge::PAGEdgeSetTy& getIncomingEdges(PAGEdge::PEDGEK kind)
+    {
         return InEdgeKindToSetMap[kind];
     }
 
     /// Get outgoing PAG edges
-    inline PAGEdge::PAGEdgeSetTy& getOutgoingEdges(PAGEdge::PEDGEK kind) {
+    inline PAGEdge::PAGEdgeSetTy& getOutgoingEdges(PAGEdge::PEDGEK kind)
+    {
         return OutEdgeKindToSetMap[kind];
     }
 
     /// Has incoming PAG edges
-    inline bool hasIncomingEdges(PAGEdge::PEDGEK kind) const {
+    inline bool hasIncomingEdges(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         if (it != InEdgeKindToSetMap.end())
             return (!it->second.empty());
@@ -158,30 +173,35 @@ public:
     }
 
     /// Has incoming VariantGepEdges
-    inline bool hasIncomingVariantGepEdge() const {
+    inline bool hasIncomingVariantGepEdge() const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(PAGEdge::VariantGep);
-        if (it != InEdgeKindToSetMap.end()) {
+        if (it != InEdgeKindToSetMap.end())
+        {
             return (!it->second.empty());
         }
         return false;
     }
 
     /// Get incoming PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesBegin(PAGEdge::PEDGEK kind) const {
+    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesBegin(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
     /// Get incoming PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesEnd(PAGEdge::PEDGEK kind) const {
+    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesEnd(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
 
     /// Has outgoing PAG edges
-    inline bool hasOutgoingEdges(PAGEdge::PEDGEK kind) const {
+    inline bool hasOutgoingEdges(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
@@ -190,14 +210,16 @@ public:
     }
 
     /// Get outgoing PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(PAGEdge::PEDGEK kind) const {
+    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
     /// Get outgoing PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(PAGEdge::PEDGEK kind) const {
+    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(PAGEdge::PEDGEK kind) const
+    {
         PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
@@ -206,13 +228,15 @@ public:
 
     ///  add methods of the components
     //@{
-    inline void addInEdge(PAGEdge* inEdge) {
+    inline void addInEdge(PAGEdge* inEdge)
+    {
         GNodeK kind = inEdge->getEdgeKind();
         InEdgeKindToSetMap[kind].insert(inEdge);
         addIncomingEdge(inEdge);
     }
 
-    inline void addOutEdge(PAGEdge* outEdge) {
+    inline void addOutEdge(PAGEdge* outEdge)
+    {
         GNodeK kind = outEdge->getEdgeKind();
         OutEdgeKindToSetMap[kind].insert(outEdge);
         addOutgoingEdge(outEdge);
@@ -220,29 +244,40 @@ public:
     //@}
     /// Overloading operator << for dumping PAGNode value
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const PAGNode &node) {
+    friend raw_ostream& operator<< (raw_ostream &o, const PAGNode &node)
+    {
         o << "NodeID: " << node.getId() << "\t, Node Kind: ";
         if (node.getNodeKind() == ValNode ||
                 node.getNodeKind() == GepValNode ||
-                node.getNodeKind() == DummyValNode) {
+                node.getNodeKind() == DummyValNode)
+        {
             o << "ValPN\n";
-        } else if (node.getNodeKind() == ObjNode ||
-                   node.getNodeKind() == GepObjNode ||
-                   node.getNodeKind() == FIObjNode ||
-                   node.getNodeKind() == DummyObjNode) {
+        }
+        else if (node.getNodeKind() == ObjNode ||
+                 node.getNodeKind() == GepObjNode ||
+                 node.getNodeKind() == FIObjNode ||
+                 node.getNodeKind() == DummyObjNode)
+        {
             o << "ObjPN\n";
-        } else if (node.getNodeKind() == RetNode) {
+        }
+        else if (node.getNodeKind() == RetNode)
+        {
             o << "RetPN\n";
-        } else {
+        }
+        else
+        {
             o << "otherPN\n";
         }
-        if (node.hasValue()) {
+        if (node.hasValue())
+        {
             const Value *val = node.getValue();
             if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
                 o << "Value: function " << fun->getName().str();
             else
                 o << "Value: " << *val;
-        } else {
+        }
+        else
+        {
             o << "Empty Value";
         }
         return o;
@@ -255,20 +290,24 @@ public:
 /*
  * Value(Pointer) node
  */
-class ValPN: public PAGNode {
+class ValPN: public PAGNode
+{
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ValPN *) {
+    static inline bool classof(const ValPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::ValNode ||
                node->getNodeKind() == PAGNode::GepValNode ||
                node->getNodeKind() == PAGNode::DummyValNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::ValNode ||
                node->getNodeKind() == PAGNode::GepValNode ||
                node->getNodeKind() == PAGNode::DummyValNode;
@@ -277,10 +316,12 @@ public:
 
     /// Constructor
     ValPN(const Value* val, NodeID i, PNODEK ty = ValNode) :
-        PAGNode(val, i, ty) {
+        PAGNode(val, i, ty)
+    {
     }
     /// Return name of a LLVM value
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         if (value && value->hasName())
             return value->getName();
         return "";
@@ -291,21 +332,25 @@ public:
 /*
  * Memory Object node
  */
-class ObjPN: public PAGNode {
+class ObjPN: public PAGNode
+{
 
 protected:
     const MemObj* mem;	///< memory object
     /// Constructor
     ObjPN(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        PAGNode(val, i, ty), mem(m) {
+        PAGNode(val, i, ty), mem(m)
+    {
     }
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ObjPN *) {
+    static inline bool classof(const ObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::ObjNode ||
                node->getNodeKind() == PAGNode::GepObjNode ||
                node->getNodeKind() == PAGNode::FIObjNode ||
@@ -314,7 +359,8 @@ public:
                node->getNodeKind() == PAGNode::CloneFIObjNode ||
                node->getNodeKind() == PAGNode::CloneDummyObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::ObjNode ||
                node->getNodeKind() == PAGNode::GepObjNode ||
                node->getNodeKind() == PAGNode::FIObjNode ||
@@ -326,19 +372,22 @@ public:
     //@}
 
     /// Return memory object
-    const MemObj* getMemObj() const {
+    const MemObj* getMemObj() const
+    {
         return mem;
     }
 
     /// Return name of a LLVM value
-    virtual const std::string getValueName() const {
+    virtual const std::string getValueName() const
+    {
         if (value && value->hasName())
             return value->getName();
         return "";
     }
     /// Return type of the value
-    inline virtual const llvm::Type* getType() const{
-       return mem->getType();
+    inline virtual const llvm::Type* getType() const
+    {
+        return mem->getType();
     }
 };
 
@@ -348,7 +397,8 @@ public:
  * e.g. memcpy, temp gep value node needs to be created
  * Each Gep Value node is connected to base value node via gep edge
  */
-class GepValPN: public ValPN {
+class GepValPN: public ValPN
+{
 
 private:
     LocationSet ls;	// LocationSet
@@ -358,42 +408,51 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepValPN *) {
+    static inline bool classof(const GepValPN *)
+    {
         return true;
     }
-    static inline bool classof(const ValPN * node) {
+    static inline bool classof(const ValPN * node)
+    {
         return node->getNodeKind() == PAGNode::GepValNode;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::GepValNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::GepValNode;
     }
     //@}
 
     /// Constructor
     GepValPN(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
-        ValPN(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx) {
+        ValPN(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx)
+    {
     }
 
     /// offset of the base value node
-    inline u32_t getOffset() const {
+    inline u32_t getOffset() const
+    {
         return ls.getOffset();
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::utostr(getOffset());
         return "offset_" + llvm::utostr(getOffset());
     }
 
-	inline const Type* getType() const {
-		return gepValType;
-	}
+    inline const Type* getType() const
+    {
+        return gepValType;
+    }
 
-    u32_t getFieldIdx() const {
+    u32_t getFieldIdx() const
+    {
         return fieldIdx;
     }
 };
@@ -403,7 +462,8 @@ public:
  * Gep Obj node, this is dynamic generated for field sensitive analysis
  * Each gep obj node is one field of a MemObj (base)
  */
-class GepObjPN: public ObjPN {
+class GepObjPN: public ObjPN
+{
 private:
     LocationSet ls;
     NodeID base = 0;
@@ -411,18 +471,22 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepObjPN *) {
+    static inline bool classof(const GepObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const ObjPN * node) {
+    static inline bool classof(const ObjPN * node)
+    {
         return node->getNodeKind() == PAGNode::GepObjNode
                || node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::GepObjNode
                || node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::GepObjNode
                || node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
@@ -430,31 +494,37 @@ public:
 
     /// Constructor
     GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
-        ObjPN(mem->getRefVal(), i, mem, ty), ls(l) {
+        ObjPN(mem->getRefVal(), i, mem, ty), ls(l)
+    {
     }
 
     /// offset of the mem object
-    inline const LocationSet& getLocationSet() const {
+    inline const LocationSet& getLocationSet() const
+    {
         return ls;
     }
 
     /// Set the base object from which this GEP node came from.
-    inline void setBaseNode(NodeID base) {
+    inline void setBaseNode(NodeID base)
+    {
         this->base = base;
     }
 
     /// Return the base object from which this GEP node came from.
-    inline NodeID getBaseNode(void) const {
+    inline NodeID getBaseNode(void) const
+    {
         return base;
     }
 
     /// Return the type of this gep object
-	inline virtual const llvm::Type* getType() const {
-		return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
-	}
+    inline virtual const llvm::Type* getType() const
+    {
+        return SymbolTableInfo::Symbolnfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+    }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
         return "offset_" + llvm::itostr(ls.getOffset());
@@ -465,23 +535,28 @@ public:
  * Field-insensitive Gep Obj node, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
  */
-class FIObjPN: public ObjPN {
+class FIObjPN: public ObjPN
+{
 public:
 
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FIObjPN *) {
+    static inline bool classof(const FIObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const ObjPN * node) {
+    static inline bool classof(const ObjPN * node)
+    {
         return node->getNodeKind() == PAGNode::FIObjNode
                || node->getNodeKind() == PAGNode::CloneFIObjNode;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::FIObjNode
                || node->getNodeKind() == PAGNode::CloneFIObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::FIObjNode
                || node->getNodeKind() == PAGNode::CloneFIObjNode;
     }
@@ -489,11 +564,13 @@ public:
 
     /// Constructor
     FIObjPN(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) :
-        ObjPN(val, i, mem, ty) {
+        ObjPN(val, i, mem, ty)
+    {
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         if (value && value->hasName())
             return value->getName().str() + "_field_insensitive";
         return "field_insensitive";
@@ -503,29 +580,35 @@ public:
 /*
  * Unique Return node of a procedure
  */
-class RetPN: public PAGNode {
+class RetPN: public PAGNode
+{
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const RetPN *) {
+    static inline bool classof(const RetPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::RetNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::RetNode;
     }
     //@}
 
     /// Constructor
     RetPN(const SVFFunction* val, NodeID i) :
-        PAGNode(val->getLLVMFun(), i, RetNode) {
+        PAGNode(val->getLLVMFun(), i, RetNode)
+    {
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() const {
+    const std::string getValueName() const
+    {
         return value->getName().str() + "_ret";
     }
 };
@@ -534,29 +617,35 @@ public:
 /*
  * Unique vararg node of a procedure
  */
-class VarArgPN: public PAGNode {
+class VarArgPN: public PAGNode
+{
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const VarArgPN *) {
+    static inline bool classof(const VarArgPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::VarargNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::VarargNode;
     }
     //@}
 
     /// Constructor
     VarArgPN(const SVFFunction* val, NodeID i) :
-        PAGNode(val->getLLVMFun(), i, VarargNode) {
+        PAGNode(val->getLLVMFun(), i, VarargNode)
+    {
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return value->getName().str() + "_vararg";
     }
 };
@@ -567,29 +656,35 @@ public:
 /*
  * Dummy node
  */
-class DummyValPN: public ValPN {
+class DummyValPN: public ValPN
+{
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const DummyValPN *) {
+    static inline bool classof(const DummyValPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::DummyValNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::DummyValNode;
     }
     //@}
 
     /// Constructor
-    DummyValPN(NodeID i) : ValPN(NULL, i, DummyValNode) {
+    DummyValPN(NodeID i) : ValPN(NULL, i, DummyValNode)
+    {
     }
 
 
     /// Return name of this node
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return "dummyVal";
     }
 };
@@ -598,19 +693,23 @@ public:
 /*
  * Dummy node
  */
-class DummyObjPN: public ObjPN {
+class DummyObjPN: public ObjPN
+{
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const DummyObjPN *) {
+    static inline bool classof(const DummyObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::DummyObjNode
                || node->getNodeKind() == PAGNode::CloneDummyObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::DummyObjNode
                || node->getNodeKind() == PAGNode::CloneDummyObjNode;
     }
@@ -618,11 +717,13 @@ public:
 
     /// Constructor
     DummyObjPN(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode)
-        : ObjPN(NULL, i, m, ty) {
+        : ObjPN(NULL, i, m, ty)
+    {
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return "dummyObj";
     }
 };
@@ -630,27 +731,33 @@ public:
 /*
  * Clone object node for dummy objects.
  */
-class CloneDummyObjPN: public DummyObjPN {
+class CloneDummyObjPN: public DummyObjPN
+{
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneDummyObjPN *) {
+    static inline bool classof(const CloneDummyObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::CloneDummyObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::CloneDummyObjNode;
     }
     //@}
 
     /// Constructor
     CloneDummyObjPN(NodeID i, const MemObj* m, PNODEK ty = CloneDummyObjNode)
-        : DummyObjPN(i, m, ty) {
+        : DummyObjPN(i, m, ty)
+    {
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return "clone of " + ObjPN::getValueName();
     }
 };
@@ -658,27 +765,33 @@ public:
 /*
  * Clone object for GEP objects.
  */
-class CloneGepObjPN : public GepObjPN {
+class CloneGepObjPN : public GepObjPN
+{
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneGepObjPN *) {
+    static inline bool classof(const CloneGepObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::CloneGepObjNode;
     }
     //@}
 
     /// Constructor
     CloneGepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = CloneGepObjNode) :
-        GepObjPN(mem, i, l, ty) {
+        GepObjPN(mem, i, l, ty)
+    {
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return "clone (gep) of " + GepObjPN::getValueName();
     }
 };
@@ -686,27 +799,33 @@ public:
 /*
  * Clone object for FI objects.
  */
-class CloneFIObjPN : public FIObjPN {
+class CloneFIObjPN : public FIObjPN
+{
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneFIObjPN *) {
+    static inline bool classof(const CloneFIObjPN *)
+    {
         return true;
     }
-    static inline bool classof(const PAGNode *node) {
+    static inline bool classof(const PAGNode *node)
+    {
         return node->getNodeKind() == PAGNode::CloneFIObjNode;
     }
-    static inline bool classof(const GenericPAGNodeTy *node) {
+    static inline bool classof(const GenericPAGNodeTy *node)
+    {
         return node->getNodeKind() == PAGNode::CloneFIObjNode;
     }
     //@}
 
     /// Constructor
     CloneFIObjPN(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = CloneFIObjNode) :
-        FIObjPN(val, i, mem, ty) {
+        FIObjPN(val, i, mem, ty)
+    {
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const {
+    inline const std::string getValueName() const
+    {
         return "clone (FI) of " + FIObjPN::getValueName();
     }
 };

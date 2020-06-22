@@ -106,12 +106,14 @@ typedef llvm::StringMap<u32_t> StringMap;
 #define TIMEINTERVAL 1000
 #define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
-class SVFValue {
+class SVFValue
+{
 
 public:
     typedef s32_t GNodeK;
 
-    enum SVFValKind {
+    enum SVFValKind
+    {
         SVFVal,
         SVFFunc,
         SVFGlob,
@@ -120,56 +122,65 @@ public:
     };
 
 private:
-	const std::string value;
+    const std::string value;
     GNodeK kind;	///< Type of this SVFValue
 public:
     /// Constructor
-    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k) {
+    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
+    {
     }
 
     /// Get the type of this SVFValue
-    inline GNodeK getKind() const {
+    inline GNodeK getKind() const
+    {
         return kind;
     }
 
     /// Add the hash function for std::set (we also can overload operator< to implement this)
     //  and duplicated elements in the set are not inserted (binary tree comparison)
     //@{
-	bool operator()(const SVFValue* lhs, const SVFValue* rhs) const {
-		return lhs->value < rhs->value;
-	}
+    bool operator()(const SVFValue* lhs, const SVFValue* rhs) const
+    {
+        return lhs->value < rhs->value;
+    }
 
-    inline bool operator==(SVFValue* rhs) const {
+    inline bool operator==(SVFValue* rhs) const
+    {
         return value == rhs->value;
     }
 
-    inline bool operator!=(SVFValue* rhs) const {
+    inline bool operator!=(SVFValue* rhs) const
+    {
         return value != rhs->value;
     }
     //@}
 
-    const llvm::StringRef getName() const {
-    	return value;
+    const llvm::StringRef getName() const
+    {
+        return value;
     }
 
-    const std::string& getValue() const {
-    	return value;
+    const std::string& getValue() const
+    {
+        return value;
     }
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node) {
+    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node)
+    {
         o << node.getName();
         return o;
     }
     //@}
 
-    static inline bool classof(const SVFValue *node) {
+    static inline bool classof(const SVFValue *node)
+    {
         return node->getKind() == SVFValue::SVFVal ||
                node->getKind() == SVFValue::SVFFunc ||
                node->getKind() == SVFValue::SVFGlob ||
                node->getKind() == SVFValue::SVFBB ||
-			   node->getKind() == SVFValue::SVFInst;
+               node->getKind() == SVFValue::SVFInst;
     }
 };
 
