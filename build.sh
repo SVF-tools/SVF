@@ -1,9 +1,9 @@
 #!/bin/bash
 # type './build.sh'  for release build
 # type './build.sh debug'  for debug build
-# set the CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh CTIR=1 `.
-# if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if CTIR is set).
-# if the Z3_DIR variable is not set, Z3 will be downloaded (only if Z3 is set).
+# set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
+# if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
+# if the Z3_DIR variable is not set, Z3 will be downloaded (only if variable SVF_Z3 is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 
 #########
@@ -87,7 +87,7 @@ fi
 ########
 # Download Z3 if need be.
 #######
-if [ -n "$Z3" -a ! -d "$Z3_DIR" ]
+if [ -n "$SVF_Z3" -a ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
@@ -105,7 +105,7 @@ fi
 # This is required to compile fstbhc tests in Test-Suite.
 # We will only download if $CTIR is set (and if $CTIR_DIR doesn't exist).
 #######
-if [ -n "$CTIR" -a ! -d "$CTIR_DIR" ]
+if [ -n "$SVF_CTIR" -a ! -d "$CTIR_DIR" ]
 then
     if [ ! -d "$CTIRHome" ]
     then
