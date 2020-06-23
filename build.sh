@@ -1,7 +1,7 @@
 #!/bin/bash
 # type './build.sh'  for release build
 # type './build.sh debug'  for debug build
-# set the CTIR environment variable to build and run FSTBHC tests, e.g., `CTIR=1 ./build.sh`.
+# set the CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh CTIR=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if CTIR is set).
 # if the Z3_DIR variable is not set, Z3 will be downloaded (only if Z3 is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
