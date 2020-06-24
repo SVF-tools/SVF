@@ -275,17 +275,14 @@ bool FlowSensitive::propAlongDirectEdge(const DirectSVFGEdge* edge)
  */
 bool FlowSensitive::propagateFromAPToFP(const ActualParmSVFGNode* ap, const SVFGNode* dst)
 {
-    if (const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(dst))
-    {
-        NodeID pagDst = fp->getParam()->getId();
-        const PointsTo & srcCPts = getPts(ap->getParam()->getId());
-        return unionPts(pagDst, srcCPts);
-    }
-    else
-    {
-        assert(false && "expecting a formal param node");
-        return false;
-    }
+    const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(dst);
+    assert(fp && "expecting a formal param node");
+
+    NodeID pagDst = fp->getParam()->getId();
+    const PointsTo &srcCPts = getPts(ap->getParam()->getId());
+    bool changed = unionPts(pagDst, srcCPts);
+
+    return changed;
 }
 
 /*!
@@ -294,17 +291,14 @@ bool FlowSensitive::propagateFromAPToFP(const ActualParmSVFGNode* ap, const SVFG
  */
 bool FlowSensitive::propagateFromFRToAR(const FormalRetSVFGNode* fr, const SVFGNode* dst)
 {
-    if (const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(dst))
-    {
-        NodeID pagDst = ar->getRev()->getId();
-        const PointsTo & srcCPts = getPts(fr->getRet()->getId());
-        return unionPts(pagDst, srcCPts);
-    }
-    else
-    {
-        assert(false && "expecting a actual return node");
-        return false;
-    }
+    const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(dst);
+    assert(ar && "expecting an actual return node");
+
+    NodeID pagDst = ar->getRev()->getId();
+    const PointsTo & srcCPts = getPts(fr->getRet()->getId());
+    bool changed = unionPts(pagDst, srcCPts);
+
+    return changed;
 }
 
 /*!
