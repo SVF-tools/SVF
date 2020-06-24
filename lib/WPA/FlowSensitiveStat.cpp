@@ -142,10 +142,12 @@ void FlowSensitiveStat::performStat()
     timeStatMap["IndirectPropaTime"] = fspta->indirectPropaTime;
     timeStatMap["Strong/WeakUpdTime"] = fspta->updateTime;
     timeStatMap["AddrTime"] = fspta->addrTime;
-    timeStatMap["CopyGepTime"] = fspta->copyGepTime;
+    timeStatMap["CopyTime"] = fspta->copyTime;
+    timeStatMap["GepTime"] = fspta->gepTime;
     timeStatMap["LoadTime"] = fspta->loadTime;
     timeStatMap["StoreTime"] = fspta->storeTime;
     timeStatMap["UpdateCGTime"] = fspta->updateCallGraphTime;
+    timeStatMap["PhiTime"] = fspta->phiTime;
 
     PTNumStatMap[TotalNumOfPointers] = pag->getValueNodeNum() + pag->getFieldValNodeNum();
     PTNumStatMap[TotalNumOfObjects] = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();

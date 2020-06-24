@@ -55,7 +55,7 @@ public:
     {
         svfg = NULL;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
-        addrTime = copyGepTime = loadTime = storeTime = 0;
+        addrTime = copyTime = gepTime = loadTime = storeTime = phiTime = 0;
         updateCallGraphTime = directPropaTime = indirectPropaTime = 0;
         numOfProcessedAddr = numOfProcessedCopy = numOfProcessedGep = 0;
         numOfProcessedLoad = numOfProcessedStore = 0;
@@ -292,14 +292,18 @@ protected:
     double indirectPropaTime; ///< time of points-to propagation of top-level pointers
     double updateTime;	///< time of strong/weak updates.
     double addrTime;	///< time of handling address edges
-    double copyGepTime;	///< time of handling copy and gep edges
+    double copyTime;	///< time of handling copy edges
+    double gepTime;	///< time of handling gep edges
     double loadTime;	///< time of load edges
     double storeTime;	///< time of store edges
+    double phiTime;	///< time of phi nodes.
     double updateCallGraphTime; ///< time of updating call graph
 
     NodeBS svfgHasSU;
     //@}
 
+    AndersenWaveDiff* ander;
+    void svfgStat();
 };
 
 #endif /* FLOWSENSITIVEANALYSIS_H_ */
