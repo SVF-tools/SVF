@@ -391,7 +391,7 @@ bool FlowSensitive::processCopy(const CopySVFGNode* copy)
     double start = stat->getClk();
     bool changed = unionPts(copy->getPAGDstNodeID(), copy->getPAGSrcNodeID());
     double end = stat->getClk();
-    copyGepTime += (end - start) / TIMEINTERVAL;
+    copyTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
@@ -400,6 +400,7 @@ bool FlowSensitive::processCopy(const CopySVFGNode* copy)
  */
 bool FlowSensitive::processPhi(const PHISVFGNode* phi)
 {
+    double start = stat->getClk();
     bool changed = false;
     NodeID pagDst = phi->getRes()->getId();
     for (PHISVFGNode::OPVers::const_iterator it = phi->opVerBegin(), eit = phi->opVerEnd();	it != eit; ++it)
@@ -409,6 +410,9 @@ bool FlowSensitive::processPhi(const PHISVFGNode* phi)
         if (unionPts(pagDst, srcPts))
             changed = true;
     }
+
+    double end = stat->getClk();
+    phiTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
@@ -448,7 +452,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
         changed = true;
 
     double end = stat->getClk();
-    copyGepTime += (end - start) / TIMEINTERVAL;
+    gepTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 

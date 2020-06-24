@@ -358,7 +358,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
     }
 
     double end = stat->getClk();
-    copyGepTime += (end - start) / TIMEINTERVAL;
+    gepTime += (end - start) / TIMEINTERVAL;
 
     changed = unionPts(gep->getPAGDstNodeID(), tmpDstPts) || changed;
     return changed;
