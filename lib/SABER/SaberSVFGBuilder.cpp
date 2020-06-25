@@ -53,7 +53,6 @@ void SaberSVFGBuilder::buildSVFG()
 
     if(pta->printStat())
         svfg->performStat();
-    svfg->dump("Saber_SVFG",true);
 }
 
 

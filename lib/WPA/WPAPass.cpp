@@ -166,7 +166,6 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
         /// support mod-ref queries only for -ander
         if (PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
             _svfg = svfg;
-        svfg->dump("ander_svfg");
     }
 
     if (printAliases)

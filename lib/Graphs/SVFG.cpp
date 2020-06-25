@@ -36,10 +36,6 @@
 
 using namespace SVFUtil;
 
-
-static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
-                                   llvm::cl::desc("Dump dot graph of SVFG"));
-
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
 {
     cpts = exit->getMR()->getPointsTo();
@@ -403,8 +399,7 @@ SVFGEdge* SVFG::addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const Ac
  */
 void SVFG::dump(const std::string& file, bool simple)
 {
-    if(DumpVFG)
-        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+    GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 /**
