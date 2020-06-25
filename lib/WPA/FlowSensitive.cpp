@@ -276,17 +276,14 @@ bool FlowSensitive::propAlongDirectEdge(const DirectSVFGEdge* edge)
  */
 bool FlowSensitive::propagateFromAPToFP(const ActualParmSVFGNode* ap, const SVFGNode* dst)
 {
-    if (const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(dst))
-    {
-        NodeID pagDst = fp->getParam()->getId();
-        const PointsTo & srcCPts = getPts(ap->getParam()->getId());
-        return unionPts(pagDst, srcCPts);
-    }
-    else
-    {
-        assert(false && "expecting a formal param node");
-        return false;
-    }
+    const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(dst);
+    assert(fp && "expecting a formal param node");
+
+    NodeID pagDst = fp->getParam()->getId();
+    const PointsTo &srcCPts = getPts(ap->getParam()->getId());
+    bool changed = unionPts(pagDst, srcCPts);
+
+    return changed;
 }
 
 /*!
@@ -295,17 +292,14 @@ bool FlowSensitive::propagateFromAPToFP(const ActualParmSVFGNode* ap, const SVFG
  */
 bool FlowSensitive::propagateFromFRToAR(const FormalRetSVFGNode* fr, const SVFGNode* dst)
 {
-    if (const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(dst))
-    {
-        NodeID pagDst = ar->getRev()->getId();
-        const PointsTo & srcCPts = getPts(fr->getRet()->getId());
-        return unionPts(pagDst, srcCPts);
-    }
-    else
-    {
-        assert(false && "expecting a actual return node");
-        return false;
-    }
+    const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(dst);
+    assert(ar && "expecting an actual return node");
+
+    NodeID pagDst = ar->getRev()->getId();
+    const PointsTo & srcCPts = getPts(fr->getRet()->getId());
+    bool changed = unionPts(pagDst, srcCPts);
+
+    return changed;
 }
 
 /*!
@@ -392,7 +386,7 @@ bool FlowSensitive::processCopy(const CopySVFGNode* copy)
     double start = stat->getClk();
     bool changed = unionPts(copy->getPAGDstNodeID(), copy->getPAGSrcNodeID());
     double end = stat->getClk();
-    copyGepTime += (end - start) / TIMEINTERVAL;
+    copyTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
@@ -401,6 +395,7 @@ bool FlowSensitive::processCopy(const CopySVFGNode* copy)
  */
 bool FlowSensitive::processPhi(const PHISVFGNode* phi)
 {
+    double start = stat->getClk();
     bool changed = false;
     NodeID pagDst = phi->getRes()->getId();
     for (PHISVFGNode::OPVers::const_iterator it = phi->opVerBegin(), eit = phi->opVerEnd();	it != eit; ++it)
@@ -410,6 +405,9 @@ bool FlowSensitive::processPhi(const PHISVFGNode* phi)
         if (unionPts(pagDst, srcPts))
             changed = true;
     }
+
+    double end = stat->getClk();
+    phiTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
@@ -449,7 +447,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
         changed = true;
 
     double end = stat->getClk();
-    copyGepTime += (end - start) / TIMEINTERVAL;
+    gepTime += (end - start) / TIMEINTERVAL;
     return changed;
 }
 
