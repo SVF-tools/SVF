@@ -74,6 +74,9 @@ static llvm::cl::opt<bool> PAGDotGraph("dump-pag", llvm::cl::init(false),
 static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
                                     llvm::cl::desc("Dump dot graph of ICFG"));
 
+static llvm::cl::opt<bool> CallGraphDotGraph("dump-callgraph", llvm::cl::init(false),
+        llvm::cl::desc("Dump dot graph of Call Graph"));
+
 static llvm::cl::opt<bool> PAGPrint("print-pag", llvm::cl::init(false),
                                     llvm::cl::desc("Print PAG to command line"));
 
@@ -219,6 +222,10 @@ void PointerAnalysis::initialize(SVFModule* svfModule)
     }
     callGraphSCCDetection();
     svfMod = svfModule;
+
+    // dump callgraph
+	if (CallGraphDotGraph)
+		getPTACallGraph()->dump("callgraph_initial");
 }
 
 
@@ -311,7 +318,8 @@ void PointerAnalysis::finalize()
 
     getPTACallGraph()->verifyCallGraph();
 
-    getPTACallGraph()->dump("callgraph_final");
+	if (CallGraphDotGraph)
+		getPTACallGraph()->dump("callgraph_final");
 
     // FSTBHC has its own TBHC-specific test validation.
     if(!pag->isBuiltFromFile() && alias_validation

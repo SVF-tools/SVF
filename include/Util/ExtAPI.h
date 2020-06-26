@@ -67,6 +67,7 @@ public:
         EFT_A2R_A1,       //stores arg1 into *arg2
         EFT_A4R_A1,       //stores arg1 into *arg4
         EFT_L_A0__A2R_A0, //stores arg0 into *arg2 and returns it
+        EFT_L_A0__A1_A0,  //store arg1 into arg0's base and returns arg0
         EFT_A0R_NEW,      //stores a pointer to an allocated object in *arg0
         EFT_A1R_NEW,      //as above, into *arg1, etc.
         EFT_A2R_NEW,

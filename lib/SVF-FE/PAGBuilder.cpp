@@ -982,6 +982,19 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     addStoreEdge(vnS,vnD);
                 break;
             }
+			case ExtAPI::EFT_L_A0__A1_A0:
+			{
+				/// this case is for strcpy(dst,src); to maintain its semantics
+				/// we will store src to the base of dst instead of dst.
+				/// dst = load base
+				/// store src base
+				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
+					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
+					if (SVFUtil::isa<PointerType>(inst->getType()))
+						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
+				}
+				break;
+			}
             case ExtAPI::EFT_L_A0__A2R_A0:
             {
                 if(SVFUtil::isa<PointerType>(inst->getType()))

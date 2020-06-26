@@ -729,13 +729,6 @@ static const ei_pair ei_pairs[]=
     {"llvm.memmove", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memccpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memcpy", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"__strcpy_chk", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"__strcat_chk", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"stpcpy", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"strcat", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"strcpy", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"strncat", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"strncpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memmove", ExtAPI::EFT_L_A0__A0R_A1R},
     {"bcopy", ExtAPI::EFT_A1R_A0R},
     {"iconv", ExtAPI::EFT_A3R_A1R_NS},
@@ -746,6 +739,14 @@ static const ei_pair ei_pairs[]=
     {"strtoll", ExtAPI::EFT_A1R_A0},
     {"strtoul", ExtAPI::EFT_A1R_A0},
     {"readdir_r", ExtAPI::EFT_A2R_A1},
+
+    {"__strcpy_chk", ExtAPI::EFT_L_A0__A1_A0},
+    {"__strcat_chk", ExtAPI::EFT_L_A0__A1_A0},
+    {"stpcpy", ExtAPI::EFT_L_A0__A1_A0},
+    {"strcat", ExtAPI::EFT_L_A0__A1_A0},
+    {"strcpy", ExtAPI::EFT_L_A0__A1_A0},
+    {"strncat", ExtAPI::EFT_L_A0__A1_A0},
+    {"strncpy", ExtAPI::EFT_L_A0__A1_A0},
 
     //These also set arg1->pw_name etc. to new strings.
     {"getpwnam_r", ExtAPI::EFT_A4R_A1},
