@@ -548,8 +548,7 @@ VFGEdge* VFG::getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdg
  */
 void VFG::dump(const std::string& file, bool simple)
 {
-    if(DumpVFG)
-        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+    GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 
