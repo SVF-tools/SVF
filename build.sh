@@ -154,6 +154,27 @@ fi
 make -j4
 
 ########
+# commit and push lib to svf-npm
+########
+cd $SVFHOME
+git clone https://github.com/SVF-tools/SVF-npm.git
+if [[ $sysOS == "Darwin" ]]
+then
+    cp -rf ./include ./SVF-npm/mac
+    cp ./Release-build/lib/libSvf.a ./SVF-npm/mac/Release-build/lib
+    cp ./Release-build/lib/CUDD/libCudd.a ./SVF-npm/mac/Release-build/lib/CUDD
+elif [[ $sysOS == "Linux" ]]
+then
+    cp -rf ./include ./SVF-npm/ubuntu/
+    cp ./Release-build/lib/libSvf.a ./SVF-npm/ubuntu/Release-build/lib
+    cp ./Release-build/lib/CUDD/libCudd.a ./SVF-npm/ubuntu/Release-build/lib/CUDD
+fi
+
+cd SVF-npm
+git add .
+git commit -m'update svflib'
+
+########
 # Set up environment variables of SVF
 ########
 cd ../
