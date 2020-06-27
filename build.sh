@@ -153,6 +153,8 @@ else
 fi
 make -j4
 
+. ./gen_lib.sh
+
 ########
 # Set up environment variables of SVF
 ########

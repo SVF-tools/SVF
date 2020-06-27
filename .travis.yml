@@ -17,7 +17,6 @@ before_script:
 
 script:
   - . ./build.sh
-  - . ./gen_lib.sh
   - pwd
   - cd $TRAVIS_BUILD_DIR/SVF-npm
   - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
