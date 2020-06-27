@@ -34,10 +34,6 @@
 
 using namespace SVFUtil;
 
-
-static llvm::cl::opt<bool> CallGraphDotGraph("dump-callgraph", llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of Call Graph"));
-
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
 PTACallGraph::IdToCallSiteMap PTACallGraph::idToCSMap;
 CallSiteID PTACallGraph::totalCallSiteNum = 1;
@@ -298,9 +294,7 @@ bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const S
  */
 void PTACallGraph::dump(const std::string& filename)
 {
-    if(CallGraphDotGraph)
-        GraphPrinter::WriteGraphToFile(outs(), filename, this);
-
+      GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 

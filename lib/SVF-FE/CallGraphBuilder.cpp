@@ -62,8 +62,6 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
         }
     }
 
-    callgraph->dump("callgraph_initial");
-
     return callgraph;
 }
 

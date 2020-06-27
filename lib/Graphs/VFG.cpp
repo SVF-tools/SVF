@@ -75,7 +75,7 @@ PHIVFGNode::PHIVFGNode(NodeID id, const PAGNode* r,VFGNodeK k): VFGNode(id, k), 
  * 2) connect VFG edges
  *    between two statements (PAGEdges)
  */
-VFG::VFG(PTACallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()), kind(k)
+VFG::VFG(PTACallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(PAG::getPAG()), kind(k), dumpVFG(false)
 {
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate VFG Top Level Node\n"));
@@ -548,8 +548,7 @@ VFGEdge* VFG::getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdg
  */
 void VFG::dump(const std::string& file, bool simple)
 {
-    if(DumpVFG)
-        GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+    GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
 

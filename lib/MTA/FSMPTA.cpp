@@ -38,7 +38,6 @@ void MTASVFGBuilder::buildSVFG()
     }
     if (mssa->getPTA()->printStat())
         svfg->performStat();
-    svfg->dump("mta_SVFG", false);
 }
 
 /*!
