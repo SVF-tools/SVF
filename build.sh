@@ -178,6 +178,7 @@ then
   ctest --v
 fi
 
+. ./gen_lib.sh
 #########
 # Optionally, you can also specify a CXX_COMPILER and your $LLVM_HOME for your build
 # cmake -DCMAKE_CXX_COMPILER=$LLVM_DIR/bin/clang++ -DLLVM_DIR=$LLVM_DIR
