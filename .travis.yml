@@ -17,5 +17,21 @@ before_script:
 
 script:
   - . ./build.sh
+
+after_script:
+  - git clone https://github.com/SVF-tools/SVF-npm.git
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; 
+  - then 
+  - cp -rf ./include ./SVF-npm/mac
+  - cp ./Release-build/lib/libSvf.a ./SVF-npm/mac/Release-build/lib
+  - cp ./Release-build/lib/CUDD/libCudd.a ./SVF-npm/mac/Release-build/lib/CUDD; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; 
+  - then
+  - cp -rf ./include ./SVF-npm/ubuntu/
+  - cp ./Release-build/lib/libSvf.a ./SVF-npm/ubuntu/Release-build/lib
+  - cp ./Release-build/lib/CUDD/libCudd.a ./SVF-npm/ubuntu/Release-build/lib/CUDD; fi
+  - cd SVF-npm
+  - git add .
+  - git commit -m'update svflib'
   - cd $TRAVIS_BUILD_DIR/SVF-npm
   - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
