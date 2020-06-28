@@ -13,7 +13,7 @@ env:
 
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++ nodejs; fi
 
 script:
   - . ./build.sh
@@ -27,5 +27,6 @@ after_script:
   - cd SVF-npm
   - git add .
   - git commit -m'update svflib'
+  - npm version patch
   - cd $TRAVIS_BUILD_DIR/SVF-npm
   - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
