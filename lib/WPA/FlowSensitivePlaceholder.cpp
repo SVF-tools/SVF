@@ -127,7 +127,7 @@ void FlowSensitivePlaceholder::setVersions(const SVFGNode *s)
                 const PointsTo &ept = ie->getPointsTo();
                 for (NodeID o : ept)
                 {
-                    // [PROP-UNWRITTEN]/[PROP-CONSUMED].
+                    // [PROP-CONSUMED].
                     yieldl[o] = consumel[o];
                 }
             }
