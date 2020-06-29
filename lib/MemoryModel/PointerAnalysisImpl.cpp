@@ -39,6 +39,10 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check) :
         else
             ptD = new DFPTDataTy();
     }
+    else if (type == FSPH_WPA)
+    {
+        // fsph-TODO.
+    }
     else
         assert(false && "no points-to data available");
 

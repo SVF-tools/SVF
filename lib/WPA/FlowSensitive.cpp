@@ -47,7 +47,7 @@ void FlowSensitive::initialize(SVFModule* svfModule)
 {
     PointerAnalysis::initialize(svfModule);
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+    ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
