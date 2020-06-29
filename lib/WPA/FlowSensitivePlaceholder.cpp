@@ -11,10 +11,19 @@
 #include "WPA/FlowSensitivePlaceholder.h"
 #include <iostream>
 
+static unsigned wouldbev = 0;
 void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
 {
     FlowSensitive::initialize(svfModule);
     distributeVersions();
+
+    unsigned v = 0;
+    for (DenseMap<NodeID, Version>::value_type nv : versions) {
+        v += nv.second;
+    }
+
+    printf("versions: %u, would be AT sets: %u\n", v, wouldbev);
+
     exit(0);
 }
 
@@ -67,6 +76,8 @@ void FlowSensitivePlaceholder::setVersions(const SVFGNode *s)
         }
     }
 
+    wouldbev += allIncomingObjects.count();
+
     for (NodeID o : multiplyIncomingObjects)
     {
         // [UNION].
@@ -116,6 +127,7 @@ void FlowSensitivePlaceholder::setVersions(const SVFGNode *s)
         {
             // [WRITE].
             yieldl[o] = newVersion(o);
+            wouldbev++;
         }
     }
     else
