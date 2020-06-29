@@ -70,7 +70,7 @@ private:
     /// Returns a new version for o.
     Version newVersion(NodeID o);
     /// Whether l has a consume/yield version for o. fsph-TODO: const.
-    bool hasVersion(NodeID l, NodeID o, enum VersionType v);
+    bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
 
     /// SVFG node (label) x object -> version to consume.
     DenseMap<NodeID, DenseMap<NodeID, Version>> consume;

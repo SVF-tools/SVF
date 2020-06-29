@@ -156,9 +156,10 @@ Version FlowSensitivePlaceholder::newVersion(NodeID o)
     return versions[o];
 }
 
-bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v)
+bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v) const
 {
     // Choose which map we are checking.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> &m = v == CONSUME ? consume : yield;
-    return m[l].find(o) != m[l].end();
+    const DenseMap<NodeID, DenseMap<NodeID, Version>> &m = v == CONSUME ? consume : yield;
+    const DenseMap<NodeID, Version> &ml = m.lookup(l);
+    return ml.find(o) != ml.end();
 }
