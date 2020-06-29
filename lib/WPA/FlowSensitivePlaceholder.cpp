@@ -163,3 +163,15 @@ bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v
     const DenseMap<NodeID, Version> &ml = m.lookup(l);
     return ml.find(o) != ml.end();
 }
+
+bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
+{
+    // fsph-TODO!
+    return false;
+}
+
+bool FlowSensitivePlaceholder::processStore(const StoreSVFGNode* store)
+{
+    // fsph-TODO!
+    return false;
+}

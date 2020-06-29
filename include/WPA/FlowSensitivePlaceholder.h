@@ -62,6 +62,10 @@ public:
     }
     //@}
 
+protected:
+    virtual bool processLoad(const LoadSVFGNode* load) override;
+    virtual bool processStore(const StoreSVFGNode* store) override;
+
 private:
     /// Distribute yielded/consumed versions at each SVFG node.
     void distributeVersions(void);
