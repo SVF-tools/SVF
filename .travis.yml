@@ -20,7 +20,7 @@ script:
   - git stash --all
   - echo $(pwd)
   - cd $TRAVIS_BUILD_DIR
-  - npm_version=`npm v svf-tools-tester version`
+  - npm_version=`npm v svf-tools version`
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git add .; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git commit -m'update version'; fi
