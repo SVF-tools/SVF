@@ -26,6 +26,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git commit -m'update version'; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then npm version patch; fi
   - . ./build.sh
+  - cd ..
 
 after_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
@@ -39,7 +40,6 @@ after_script:
   - npm version patch
   - cd $TRAVIS_BUILD_DIR/SVF-npm
   - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
-  - cd ..
 
 deploy:
   provider: npm
