@@ -43,11 +43,11 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(SVFModule* svfModule)
+void FlowSensitive::initialize()
 {
-    PointerAnalysis::initialize(svfModule);
+    PointerAnalysis::initialize();
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
@@ -59,10 +59,10 @@ void FlowSensitive::initialize(SVFModule* svfModule)
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(SVFModule* svfModule)
+void FlowSensitive::analyze()
 {
     /// Initialization for the Solver
-    initialize(svfModule);
+    initialize();
 
     double start = stat->getClk();
     /// Start solving constraints

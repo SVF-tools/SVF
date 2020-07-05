@@ -31,6 +31,7 @@
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
+#include "SVF-FE/SymbolTableInfo.h"
 
 using namespace std;
 
@@ -98,6 +99,13 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
         svfModule = new SVFModule();
 
     build(moduleNameVec);
+
+	if (!SVFModule::pagReadFromTXT()) {
+		/// building symbol table
+		DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+		SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
+		symInfo->buildMemModel(svfModule);
+	}
 
     return svfModule;
 }

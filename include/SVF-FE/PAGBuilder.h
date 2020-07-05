@@ -50,7 +50,7 @@ private:
 
 public:
     /// Constructor
-    PAGBuilder(): pag(PAG::getPAG()), curBB(NULL),curVal(NULL)
+    PAGBuilder(): pag(PAG::getPAG()), svfMod(NULL), curBB(NULL),curVal(NULL)
     {
     }
     /// Destructor

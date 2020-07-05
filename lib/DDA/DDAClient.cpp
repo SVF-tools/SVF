@@ -102,7 +102,7 @@ NodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 void FunptrDDAClient::performStat(PointerAnalysis* pta)
 {
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pta->getModule());
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pta->getPAG());
     u32_t totalCallsites = 0;
     u32_t morePreciseCallsites = 0;
     u32_t zeroTargetCallsites = 0;

@@ -77,8 +77,8 @@ public:
     //@}
 
     /// Constructor
-    Andersen(PTATY type = Andersen_WPA, bool alias_check = true)
-        :  BVDataPTAImpl(type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
+    Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
+        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -92,10 +92,10 @@ public:
     }
 
     /// Andersen analysis
-    void analyze(SVFModule* svfModule);
+    void analyze();
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* svfModule);
+    virtual void initialize();
     //}
 
     /// Finalize analysis
@@ -374,15 +374,15 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(type, alias_check) {}
+    AndersenWaveDiff(PAG* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiff* createAndersenWaveDiff(SVFModule* svfModule)
+    static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
     {
         if(diffWave==NULL)
         {
-            diffWave = new AndersenWaveDiff(AndersenWaveDiff_WPA, false);
-            diffWave->analyze(svfModule);
+            diffWave = new AndersenWaveDiff(_pag, AndersenWaveDiff_WPA, false);
+            diffWave->analyze();
             return diffWave;
         }
         return diffWave;
@@ -459,18 +459,18 @@ private:
     //@}
 
 public:
-    AndersenWaveDiffWithType(PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(type)
+    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(pag,type)
     {
         assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(SVFModule* svfModule)
+    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(PAG* p)
     {
         if(diffWaveWithType==NULL)
         {
-            diffWaveWithType = new AndersenWaveDiffWithType();
-            diffWaveWithType->analyze(svfModule);
+            diffWaveWithType = new AndersenWaveDiffWithType(p);
+            diffWaveWithType->analyze();
             return diffWaveWithType;
         }
         return diffWaveWithType;
@@ -513,18 +513,18 @@ private:
     NodeSet lcdCandidates;
 
 public:
-    AndersenLCD(PTATY type = AndersenLCD_WPA) :
-        Andersen(type), lcdCandidates( {}), metEdges({})
+    AndersenLCD(PAG* _pag, PTATY type = AndersenLCD_WPA) :
+        Andersen(_pag, type), lcdCandidates( {}), metEdges({})
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenLCD(SVFModule* svfModule)
+    static AndersenLCD* createAndersenLCD(PAG* _pag)
     {
         if (lcdAndersen == nullptr)
         {
-            lcdAndersen = new AndersenLCD();
-            lcdAndersen->analyze(svfModule);
+            lcdAndersen = new AndersenLCD(_pag);
+            lcdAndersen->analyze();
             return lcdAndersen;
         }
         return lcdAndersen;
@@ -595,18 +595,18 @@ private:
     OfflineConsG* oCG;
 
 public:
-    AndersenHCD(PTATY type = AndersenHCD_WPA) :
-        Andersen(type), oCG(NULL)
+    AndersenHCD(PAG* _pag, PTATY type = AndersenHCD_WPA) :
+        Andersen(_pag, type), oCG(NULL)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHCD *createAndersenHCD(SVFModule* svfModule)
+    static AndersenHCD *createAndersenHCD(PAG* _pag)
     {
         if (hcdAndersen == nullptr)
         {
-            hcdAndersen = new AndersenHCD();
-            hcdAndersen->analyze(svfModule);
+            hcdAndersen = new AndersenHCD(_pag);
+            hcdAndersen->analyze();
             return hcdAndersen;
         }
         return hcdAndersen;
@@ -620,7 +620,7 @@ public:
     }
 
 protected:
-    virtual void initialize(SVFModule* svfModule);
+    virtual void initialize();
 
     // Get offline rep node from offline constraint graph
     //@{
@@ -666,18 +666,18 @@ private:
     static AndersenHLCD* hlcdAndersen;
 
 public:
-    AndersenHLCD(PTATY type = AndersenHLCD_WPA) :
-        AndersenHCD(type)
+    AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
+        AndersenHCD(_pag, type), AndersenLCD(_pag, type), Andersen(_pag, type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHLCD *createAndersenHLCD(SVFModule* svfModule)
+    static AndersenHLCD *createAndersenHLCD(PAG* _pag)
     {
         if (hlcdAndersen == nullptr)
         {
-            hlcdAndersen = new AndersenHLCD();
-            hlcdAndersen->analyze(svfModule);
+            hlcdAndersen = new AndersenHLCD(_pag);
+            hlcdAndersen->analyze();
             return hlcdAndersen;
         }
         return hlcdAndersen;
@@ -691,9 +691,9 @@ public:
     }
 
 protected:
-    void initialize(SVFModule* svfModule)
+    void initialize()
     {
-        AndersenHCD::initialize(svfModule);
+        AndersenHCD::initialize();
     }
     void solveWorklist()
     {

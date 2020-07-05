@@ -17,7 +17,7 @@
 static llvm::cl::opt<bool> TBHCStoreReuse("tbhc-store-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse in at stores in FSTBHC"));
 static llvm::cl::opt<bool> TBHCAllReuse("tbhc-all-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse everywhere in FSTBHC"));
 
-FlowSensitiveTBHC::FlowSensitiveTBHC(PTATY type) : FlowSensitive(type), TypeBasedHeapCloning(this)
+FlowSensitiveTBHC::FlowSensitiveTBHC(PAG* _pag, PTATY type) : FlowSensitive(_pag, type), TypeBasedHeapCloning(this)
 {
     // Using `this` as the argument for TypeBasedHeapCloning is okay. As PointerAnalysis, it's
     // already constructed. TypeBasedHeapCloning also doesn't use pta in the constructor so it
@@ -26,15 +26,15 @@ FlowSensitiveTBHC::FlowSensitiveTBHC(PTATY type) : FlowSensitive(type), TypeBase
     storeReuse = allReuse || TBHCStoreReuse;
 }
 
-void FlowSensitiveTBHC::analyze(SVFModule *svfModule)
+void FlowSensitiveTBHC::analyze()
 {
-    FlowSensitive::analyze(svfModule);
+    FlowSensitive::analyze();
 }
 
-void FlowSensitiveTBHC::initialize(SVFModule *svfModule)
+void FlowSensitiveTBHC::initialize()
 {
-    PointerAnalysis::initialize(svfModule);
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+    PointerAnalysis::initialize();
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     svfg = memSSA.buildFullSVFG(ander);
     setGraph(svfg);
     stat = new FlowSensitiveStat(this);
