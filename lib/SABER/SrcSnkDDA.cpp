@@ -30,6 +30,7 @@
 
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
+#include "SVF-FE/PAGBuilder.h"
 
 using namespace SVFUtil;
 
@@ -39,10 +40,28 @@ static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),
 static llvm::cl::opt<unsigned> cxtLimit("cxtlimit",  llvm::cl::init(3),
                                         llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
-void SrcSnkDDA::analyze()
+/// Initialize analysis
+void SrcSnkDDA::initialize(SVFModule* module)
+{
+	PAGBuilder builder;
+	PAG* pag = builder.build(module);
+
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
+    svfg =  memSSA.buildPTROnlySVFG(ander);
+    setGraph(memSSA.getSVFG());
+    ptaCallGraph = ander->getPTACallGraph();
+    //AndersenWaveDiff::releaseAndersenWaveDiff();
+    /// allocate control-flow graph branch conditions
+    getPathAllocator()->allocate(getPAG()->getModule());
+
+    initSrcs();
+    initSnks();
+}
+
+void SrcSnkDDA::analyze(SVFModule* module)
 {
 
-    initialize();
+    initialize(module);
 
     ContextCond::setMaxCxtLen(cxtLimit);
 

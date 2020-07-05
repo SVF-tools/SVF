@@ -92,22 +92,10 @@ public:
     }
 
     /// Start analysis here
-    virtual void analyze();
+    virtual void analyze(SVFModule* module);
 
     /// Initialize analysis
-    virtual void initialize()
-    {
-        AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
-        svfg =  memSSA.buildPTROnlySVFG(ander);
-        setGraph(memSSA.getSVFG());
-        ptaCallGraph = ander->getPTACallGraph();
-        //AndersenWaveDiff::releaseAndersenWaveDiff();
-        /// allocate control-flow graph branch conditions
-        getPathAllocator()->allocate(getPAG()->getModule());
-
-        initSrcs();
-        initSnks();
-    }
+    virtual void initialize(SVFModule* module);
 
     /// Finalize analysis
     virtual void finalize()
