@@ -39,7 +39,7 @@ public:
     typedef std::vector<Function*> LLVMFunctionSetType;
     typedef std::vector<GlobalVariable*> GlobalSetType;
     typedef std::vector<GlobalAlias*> AliasSetType;
-    typedef std::map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    typedef DenseMap<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
 
     /// Iterators type def
     typedef FunctionSetType::iterator iterator;

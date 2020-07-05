@@ -51,7 +51,7 @@ private:
     int numOfIntraEdges;
 
 public:
-    typedef std::set<const ICFGNode *> ICFGNodeSet;
+    typedef DenseSet<const ICFGNode *> ICFGNodeSet;
 
     ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg)
     {

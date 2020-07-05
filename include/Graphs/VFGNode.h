@@ -57,8 +57,8 @@ public:
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
     typedef VFGEdge::VFGEdgeSetTy::const_iterator const_iterator;
-    typedef std::set<const CallPE*> CallPESet;
-    typedef std::set<const RetPE*> RetPESet;
+    typedef DenseSet<const CallPE*> CallPESet;
+    typedef DenseSet<const RetPE*> RetPESet;
 
 public:
     /// Constructor
@@ -306,7 +306,7 @@ public:
 class CmpVFGNode: public VFGNode
 {
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -377,7 +377,7 @@ public:
 class BinaryOPVFGNode: public VFGNode
 {
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -485,7 +485,7 @@ class PHIVFGNode : public VFGNode
 {
 
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;

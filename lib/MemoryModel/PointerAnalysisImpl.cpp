@@ -237,7 +237,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
  */
 void BVDataPTAImpl::dumpAllPts()
 {
-    std::set<NodeID> pagNodes;
+    DenseSet<NodeID> pagNodes;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);

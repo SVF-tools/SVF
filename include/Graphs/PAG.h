@@ -44,31 +44,31 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 {
 
 public:
-    typedef std::set<const CallBlockNode*> CallSiteSet;
-    typedef std::map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
-    typedef std::map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
+    typedef DenseSet<const CallBlockNode*> CallSiteSet;
+    typedef DenseMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef DenseMap<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
-    typedef std::set<const PAGEdge*> PAGEdgeSet;
+    typedef DenseSet<const PAGEdge*> PAGEdgeSet;
     typedef std::list<const PAGEdge*> PAGEdgeList;
     typedef std::list<const PAGNode*> PAGNodeList;
     typedef std::list<const CopyPE*> CopyPEList;
     typedef std::list<const BinaryOPPE*> BinaryOPList;
     typedef std::list<const CmpPE*> CmpPEList;
-    typedef std::map<const PAGNode*,CopyPEList> PHINodeMap;
-    typedef std::map<const PAGNode*,BinaryOPList> BinaryNodeMap;
-    typedef std::map<const PAGNode*,CmpPEList> CmpNodeMap;
+    typedef DenseMap<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef DenseMap<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef DenseMap<const PAGNode*,CmpPEList> CmpNodeMap;
     typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
-    typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
-    typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
+    typedef DenseMap<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
+    typedef DenseMap<const RetBlockNode*,const PAGNode*> CSToRetMap;
     typedef DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
     typedef DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
-    typedef std::map<NodeID, NodeID> NodeToNodeMap;
+    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef DenseMap<NodeOffset,NodeID,DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
     typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef std::map<NodePair,NodeID> NodePairSetMap;
+    typedef DenseMap<NodePair,NodeID> NodePairSetMap;
 
 private:
     SymbolTableInfo* symInfo;

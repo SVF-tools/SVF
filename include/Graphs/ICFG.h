@@ -48,11 +48,11 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef std::map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
-    typedef std::map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
-    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    typedef DenseMap<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef DenseMap<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef DenseMap<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
+    typedef DenseMap<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
+    typedef DenseMap<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
 
