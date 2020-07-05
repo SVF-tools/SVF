@@ -51,7 +51,7 @@ public:
     typedef BVDataPTAImpl::IncDFPTDataTy::PtsMap PtsMap;
 
     /// Constructor
-    FlowSensitive(PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(type)
+    FlowSensitive(PAG* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
     {
         svfg = NULL;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
@@ -74,12 +74,12 @@ public:
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FlowSensitive* createFSWPA(SVFModule* svfModule)
+    static FlowSensitive* createFSWPA(PAG* _pag)
     {
         if (fspta == NULL)
         {
-            fspta = new FlowSensitive();
-            fspta->analyze(svfModule);
+            fspta = new FlowSensitive(_pag);
+            fspta->analyze();
         }
         return fspta;
     }
@@ -99,10 +99,10 @@ public:
     }
 
     /// Flow sensitive analysis
-    virtual void analyze(SVFModule* svfModule);
+    virtual void analyze();
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* svfModule);
+    virtual void initialize();
 
     /// Finalize analysis
     virtual void finalize();
@@ -302,7 +302,6 @@ protected:
     NodeBS svfgHasSU;
     //@}
 
-    AndersenWaveDiff* ander;
     void svfgStat();
 };
 

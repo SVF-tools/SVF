@@ -28,12 +28,12 @@ public:
     static const MDNode *getRawCTirMetadata(const SVFGNode *);
 
     /// Constructor
-    FlowSensitiveTBHC(PTATY type = FSTBHC_WPA);
+    FlowSensitiveTBHC(PAG* _pag, PTATY type = FSTBHC_WPA);
 
     /// Flow sensitive analysis with FSTBHC.
-    virtual void analyze(SVFModule *svfModule) override;
+    virtual void analyze() override;
     /// Initialize analysis.
-    virtual void initialize(SVFModule *svfModule) override;
+    virtual void initialize() override;
     /// Finalize analysis.
     virtual void finalize() override;
 

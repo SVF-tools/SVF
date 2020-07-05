@@ -42,9 +42,9 @@ using namespace std;
 llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Generate ICFG graph"));
 
 /// Initialize analysis
-void TypeAnalysis::initialize(SVFModule* svfModule)
+void TypeAnalysis::initialize()
 {
-    Andersen::initialize(svfModule);
+    Andersen::initialize();
     if (genICFG)
     {
         icfg = PAG::getPAG()->getICFG();
@@ -66,9 +66,9 @@ void TypeAnalysis::finalize()
         dumpCHAStats();
 }
 
-void TypeAnalysis::analyze(SVFModule* svfModule)
+void TypeAnalysis::analyze()
 {
-    initialize(svfModule);
+    initialize();
     CallEdgeMap newEdges;
     callGraphSolveBasedOnCHA(getIndirectCallsites(), newEdges);
     finalize();
