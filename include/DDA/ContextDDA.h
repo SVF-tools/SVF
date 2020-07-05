@@ -24,13 +24,13 @@ class ContextDDA : public CondPTAImpl<ContextCond>, public DDAVFSolver<CxtVar,Cx
 
 public:
     /// Constructor
-    ContextDDA(SVFModule* mod, DDAClient* client);
+    ContextDDA(PAG* _pag, DDAClient* client);
 
     /// Destructor
     virtual ~ContextDDA();
 
     /// Initialization of the analysis
-    virtual void initialize(SVFModule* module);
+    virtual void initialize();
 
     /// Finalize analysis
     virtual inline void finalize()
@@ -39,7 +39,7 @@ public:
     }
 
     /// dummy analyze method
-    virtual void analyze(SVFModule* mod) {}
+    virtual void analyze() {}
 
     /// Compute points-to set for an unconditional pointer
     void computeDDAPts(NodeID id);

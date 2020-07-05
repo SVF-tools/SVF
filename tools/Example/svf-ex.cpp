@@ -29,6 +29,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/SVFG.h"
 #include "WPA/Andersen.h"
+#include "SVF-FE/PAGBuilder.h"
 
 using namespace llvm;
 using namespace std;
@@ -151,16 +152,18 @@ int main(int argc, char ** argv)
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
 
-    Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+	/// Build Program Assignment Graph (PAG)
+	PAGBuilder builder;
+	PAG* pag = builder.build(svfModule);
+
+    /// Create Andersen's pointer analysis
+    Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
     /// Query aliases
     /// aliasQuery(ander,value1,value2);
 
     /// Print points-to information
     /// printPts(ander, value1);
-
-    /// Program Assignment Graph (PAG)
-    PAG* pag = ander->getPAG();
 
     /// Call Graph
     PTACallGraph* callgraph = ander->getPTACallGraph();

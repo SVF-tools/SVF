@@ -37,8 +37,8 @@ class TypeAnalysis:  public Andersen
 
 public:
     /// Constructor
-    TypeAnalysis(PTATY type = TypeCPP_WPA)
-        :  Andersen(type)
+    TypeAnalysis(PAG* pag, PTATY type = TypeCPP_WPA)
+        :  Andersen(pag)
     {
     }
 
@@ -48,10 +48,10 @@ public:
     }
 
     /// Type analysis
-    void analyze(SVFModule* svfModule);
+    void analyze();
 
     /// Initialize analysis
-    void initialize(SVFModule* svfModule);
+    void initialize();
 
     /// Finalize analysis
     virtual inline void finalize();

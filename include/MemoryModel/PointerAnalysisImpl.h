@@ -45,7 +45,7 @@ public:
     typedef IncDFPTData<NodeID,PointsTo> IncDFPTDataTy;	/// Points-to data structure type
 
     /// Constructor
-    BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check = true);
+    BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
     virtual ~BVDataPTAImpl()
@@ -182,7 +182,7 @@ public:
     typedef std::map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
-    CondPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type), normalized(false)
+    CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
     {
         if (type == PathS_DDA || type == Cxt_DDA)
             ptD = new PTDataTy();

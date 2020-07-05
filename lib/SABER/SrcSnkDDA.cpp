@@ -39,10 +39,10 @@ static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),
 static llvm::cl::opt<unsigned> cxtLimit("cxtlimit",  llvm::cl::init(3),
                                         llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
-void SrcSnkDDA::analyze(SVFModule* module)
+void SrcSnkDDA::analyze()
 {
 
-    initialize(module);
+    initialize();
 
     ContextCond::setMaxCxtLen(cxtLimit);
 

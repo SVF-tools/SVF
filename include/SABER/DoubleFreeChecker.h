@@ -54,7 +54,7 @@ public:
     virtual bool runOnModule(SVFModule* module)
     {
         /// start analysis
-        analyze(module);
+        analyze();
         return false;
     }
 

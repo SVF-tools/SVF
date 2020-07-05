@@ -66,10 +66,10 @@ static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
 /*!
  * Andersen analysis
  */
-void Andersen::analyze(SVFModule* svfModule)
+void Andersen::analyze()
 {
     /// Initialization for the Solver
-    initialize(svfModule);
+    initialize();
 
     bool readResultsFromFile = false;
     if(!ReadAnder.empty())
@@ -93,13 +93,13 @@ void Andersen::analyze(SVFModule* svfModule)
 /*!
  * Initilize analysis
  */
-void Andersen::initialize(SVFModule* svfModule)
+void Andersen::initialize()
 {
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
     /// Build PAG
-    PointerAnalysis::initialize(svfModule);
+    PointerAnalysis::initialize();
     /// Build Constraint Graph
     consCG = new ConstraintGraph(pag);
     setGraph(consCG);
