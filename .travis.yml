@@ -1,5 +1,6 @@
 language: generic
-
+node_js:
+  - "12.13"
 matrix:
     include:
       - os: linux
@@ -13,7 +14,34 @@ env:
 
 before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++ nodejs; fi
 
 script:
+  - git stash --all
+  - echo $(pwd)
+  - cd $TRAVIS_BUILD_DIR
+  - npm_version=`npm v svf-tools version`
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git add .; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git commit -m'update version'; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then npm version patch; fi
   - . ./build.sh
+  - cd ..
+
+after_script:
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
+  - git clone https://github.com/SVF-tools/SVF-npm.git
+  - cp -rf ./include ./SVF-npm/SVF-$TRAVIS_OS_NAME
+  - cp ./Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
+  - cp ./Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
+  - cd SVF-npm
+  - git add .
+  - git commit -m'update svflib'
+  - npm version patch
+  - cd $TRAVIS_BUILD_DIR/SVF-npm
+  - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
+
+deploy:
+  provider: npm
+  email: ${npm_email}
+  api_key: ${npm_token} 

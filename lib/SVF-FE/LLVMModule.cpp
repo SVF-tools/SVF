@@ -433,7 +433,13 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
 
         std::error_code EC;
         raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
+
+#if (LLVM_VERSION_MAJOR >= 7)
         WriteBitcodeToFile(*mod, OS);
+#else
+        WriteBitcodeToFile(mod, OS);
+#endif
+
         OS.flush();
     }
 }
