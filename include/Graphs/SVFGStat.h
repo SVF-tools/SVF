@@ -89,8 +89,8 @@ private:
 class SVFGStat : public PTAStat
 {
 public:
-    typedef std::set<const SVFGNode*> SVFGNodeSet;
-    typedef std::set<const SVFGEdge*> SVFGEdgeSet;
+    typedef DenseSet<const SVFGNode*> SVFGNodeSet;
+    typedef DenseSet<const SVFGEdge*> SVFGEdgeSet;
     typedef SCCDetection<SVFG*> SVFGSCC;
 
     SVFGStat(SVFG* g);

@@ -111,8 +111,8 @@ public:
         NodeBS _subNodes; /// nodes in the scc represented by this node
     };
 
-    typedef std::map<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
-    typedef std::map<NodeID,NodeID > NodeToNodeMap;
+    typedef DenseMap<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
+    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
 
     SCCDetection(const GraphType &GT)
         : _graph(GT),

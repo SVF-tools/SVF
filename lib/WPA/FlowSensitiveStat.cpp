@@ -97,7 +97,7 @@ void FlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    std::set<SymID> nodeSet;
+    DenseSet<SymID> nodeSet;
     for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;

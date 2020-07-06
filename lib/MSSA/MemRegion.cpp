@@ -233,10 +233,9 @@ void MRGenerator::collectModRefForCall()
 
     DBOUT(DGENERAL, outs() << pasMsg("\t\tAdd PointsTo to Callsites \n"));
 
-    for(std::set<CallSite>::const_iterator it =  SymbolTableInfo::Symbolnfo()->getCallSiteSet().begin(),
-            eit = SymbolTableInfo::Symbolnfo()->getCallSiteSet().end(); it!=eit; ++it)
+    for (CallSite cs : SymbolTableInfo::Symbolnfo()->getCallSiteSet())
     {
-        const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode((*it).getInstruction());
+        const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs.getInstruction());
         if(hasRefSideEffectOfCallSite(callBlockNode))
         {
             NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);

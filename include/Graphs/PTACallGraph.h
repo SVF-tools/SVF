@@ -197,10 +197,10 @@ public:
     typedef DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
     typedef DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
-    typedef std::map<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef std::map<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef	std::set<const SVFFunction*> FunctionSet;
-    typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef DenseMap<CallSitePair, CallSiteID> CallSiteToIdMap;
+    typedef DenseMap<CallSiteID, CallSitePair> IdToCallSiteMap;
+    typedef DenseSet<const SVFFunction*> FunctionSet;
+    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 

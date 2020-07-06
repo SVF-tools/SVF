@@ -70,8 +70,8 @@ public:
     //@{
     typedef DenseMap<const LoadPE*, MUSet> LoadToMUSetMap;
     typedef DenseMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef std::map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef std::map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
+    typedef DenseMap<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
+    typedef DenseMap<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
     typedef DenseMap<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
