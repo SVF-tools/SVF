@@ -132,6 +132,15 @@ public:
         return node->getNodeKind() == GlobalBlock;
     }
     //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const GlobalBlockNode &node)
+    {
+        o << "GlobalBlockNode ICFGNode ID:" << node.getId();
+        return o;
+    }
+    //@}
 };
 
 /*!
@@ -153,6 +162,15 @@ public:
         return inst;
     }
 
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const IntraBlockNode &node)
+    {
+        o << "IntraBlockNode ICFGNode ID:" << node.getId();
+        o << " instruction: " << node.getInst() << " (fun: " << node.getFun()->getName() << ")";
+        return o;
+    }
+    //@}
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -261,6 +279,16 @@ public:
         return node->getNodeKind() == FunEntryBlock;
     }
     //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const FunEntryBlockNode &node)
+    {
+        o << "FunEntryBlockNode ICFGNode ID:" << node.getId();
+        o << " (fun: " << node.getFun()->getName() << ")";
+        return o;
+    }
+    //@}
 };
 
 /*!
@@ -313,6 +341,16 @@ public:
     static inline bool classof(const GenericICFGNodeTy *node)
     {
         return node->getNodeKind() == FunExitBlock;
+    }
+    //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const FunExitBlockNode &node)
+    {
+        o << "FunExitBlockNode ICFGNode ID:" << node.getId();
+        o << " (fun: " << node.getFun()->getName() << ")";
+        return o;
     }
     //@}
 };
@@ -392,6 +430,16 @@ public:
         return node->getNodeKind() == FunCallBlock;
     }
     //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const CallBlockNode &node)
+    {
+        o << "CallBlockNode ICFGNode ID:" << node.getId();
+        o << " instruction: " << *node.getCallSite() << " (fun: " << node.getFun()->getName() << ")";
+        return o;
+    }
+    //@}
 };
 
 
@@ -454,6 +502,16 @@ public:
     static inline bool classof(const GenericICFGNodeTy *node)
     {
         return node->getNodeKind() == FunRetBlock;
+    }
+    //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream &operator<<(raw_ostream &o, const RetBlockNode &node)
+    {
+        o << "RetBlockNode ICFGNode ID:" << node.getId();
+        o << " instruction: " << *node.getCallSite() << " (fun: " << node.getFun()->getName() << ")";
+        return o;
     }
     //@}
 };
