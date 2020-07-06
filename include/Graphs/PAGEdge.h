@@ -372,7 +372,7 @@ public:
     }
     //@}
     
-    /// Getter & setter for store size. A (-1) size is an unknown store size
+    /// Getter & setter for load size. A (-1) size is an unknown load size
     //@{
     void setLoadSize(const int size) {
         loadSize = size;
