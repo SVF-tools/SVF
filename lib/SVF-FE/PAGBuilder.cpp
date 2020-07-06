@@ -372,7 +372,8 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             // add gep edge of C1 itself is a constant expression
             processCE(C);
             setCurrentLocation(C, NULL);
-            addStoreEdge(src, field);
+            //int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(C->getType());
+            addStoreEdge(src, field /*, storeSize */ );
         }
         else
         {
@@ -1025,7 +1026,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 				/// dst = load base
 				/// store src base
 				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
-					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
+					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()) /*, storeSize */);
 					if (SVFUtil::isa<PointerType>(inst->getType()))
 						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
 				}
