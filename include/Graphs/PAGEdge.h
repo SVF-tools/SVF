@@ -304,6 +304,8 @@ private:
     StorePE();                      ///< place holder
     StorePE(const StorePE &);  ///< place holder
     void operator=(const StorePE &); ///< place holder
+    
+    int storeSize = -1; ///< -1 is an unknown store size
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -322,6 +324,17 @@ public:
     }
     //@}
 
+    /// Getter & setter for store size. A (-1) size is an unknown store size
+    //@{
+    void setStoreSize(int size){
+        this->storeSize = size;
+    }
+
+    int getStoreSize(){
+        return this->storeSize;
+    }
+    //@}
+    
     /// constructor
     StorePE(PAGNode* s, PAGNode* d, const IntraBlockNode* st) :
         PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st))
@@ -340,6 +353,8 @@ private:
     LoadPE(const LoadPE &);  ///< place holder
     void operator=(const LoadPE &); ///< place holder
 
+    int loadSize = -1;
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -356,7 +371,18 @@ public:
         return edge->getEdgeKind() == PAGEdge::Load;
     }
     //@}
+    
+    /// Getter & setter for store size. A (-1) size is an unknown store size
+    //@{
+    void setLoadSize(int size){
+        this->loadSize = size;
+    }
 
+    int getLoadSize(){
+        return this->loadSize;
+    }
+    //@}
+    
     /// constructor
     LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load)
     {
