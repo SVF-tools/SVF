@@ -144,9 +144,9 @@ class PTACFInfoBuilder
 {
 
 public:
-    typedef std::map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
-    typedef std::map<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
-    typedef std::map<const Function*, PTALoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
+    typedef DenseMap<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
+    typedef DenseMap<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
+    typedef DenseMap<const Function*, PTALoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
 
     /// Constructor
     PTACFInfoBuilder()

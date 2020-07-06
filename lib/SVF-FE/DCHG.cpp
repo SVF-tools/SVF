@@ -1134,7 +1134,7 @@ void DCHGraph::print(void)
     SVFUtil::outs() << thickLine;
     unsigned numStructs = 0;
     unsigned largestStruct = 0;
-    std::set<NodeID> nodes;
+    DenseSet<NodeID> nodes;
     for (DCHGraph::const_iterator it = begin(); it != end(); ++it)
     {
         nodes.insert(it->first);

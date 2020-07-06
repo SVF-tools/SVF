@@ -50,13 +50,13 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
     TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
     if (it == typeMismatchedObjToEdges.end())
         return;
-    std::set<const GepCGEdge*> &edges = it->second;
-    std::set<const GepCGEdge*> processed;
+    DenseSet<const GepCGEdge*> &edges = it->second;
+    DenseSet<const GepCGEdge*> processed;
 
     PTAType ptaTy(type);
     NodeBS &nodesOfType = typeSystem->getVarsForType(ptaTy);
 
-    for (std::set<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit)
+    for (DenseSet<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit)
     {
         if (const NormalGepCGEdge *normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*nit))
         {
@@ -69,7 +69,7 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
         }
     }
 
-    for (std::set<const GepCGEdge*>::iterator nit = processed.begin(), neit = processed.end(); nit != neit; ++nit)
+    for (DenseSet<const GepCGEdge*>::iterator nit = processed.begin(), neit = processed.end(); nit != neit; ++nit)
         edges.erase(*nit);
 }
 

@@ -53,7 +53,7 @@ public:
     typedef DenseMap<SymID,SYMTYPE> IDToSymTyMapTy;
     /// struct type to struct info map
     typedef DenseMap<const Type*, StInfo*> TypeToFieldInfoMap;
-    typedef std::set<CallSite> CallSiteSet;
+    typedef DenseSet<CallSite> CallSiteSet;
     typedef DenseMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
     typedef DenseMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
 

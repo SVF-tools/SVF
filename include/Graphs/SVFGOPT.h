@@ -52,8 +52,8 @@
  */
 class SVFGOPT : public SVFG
 {
-    typedef std::set<SVFGNode*> SVFGNodeSet;
-    typedef std::map<NodeID, NodeID> NodeIDToNodeIDMap;
+    typedef DenseSet<SVFGNode*> SVFGNodeSet;
+    typedef DenseMap<NodeID, NodeID> NodeIDToNodeIDMap;
     typedef FIFOWorkList<const MSSAPHISVFGNode*> WorkList;
 
 public:

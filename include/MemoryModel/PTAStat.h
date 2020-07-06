@@ -114,9 +114,9 @@ public:
 
     static const char* NumOfNullPointer;	///< Number of pointers points-to null
 
-    typedef std::map<const char*,u32_t> NUMStatMap;
+    typedef DenseMap<const char*,u32_t> NUMStatMap;
 
-    typedef std::map<const char*,double> TIMEStatMap;
+    typedef DenseMap<const char*,double> TIMEStatMap;
 
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}

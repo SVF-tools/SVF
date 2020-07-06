@@ -60,8 +60,8 @@ public:
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
     typedef ICFGEdge::ICFGEdgeSetTy::const_iterator const_iterator;
-    typedef std::set<const CallPE *> CallPESet;
-    typedef std::set<const RetPE *> RetPESet;
+    typedef DenseSet<const CallPE *> CallPESet;
+    typedef DenseSet<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
 
 public:
