@@ -379,7 +379,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         {
             setCurrentLocation(C, NULL);
             //int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(C->getType());
-			addStoreEdge(src, field /*, storeSize */ );
+            addStoreEdge(src, field /*, storeSize */ );
             /// src should not point to anything yet
             if (C->getType()->isPtrOrPtrVectorTy() && src != pag->getNullPtr())
                 addCopyEdge(pag->getNullPtr(), src);
