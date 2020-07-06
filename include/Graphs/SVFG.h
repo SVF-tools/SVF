@@ -63,6 +63,7 @@ class SVFG : public VFG
 {
     friend class SVFGBuilder;
     friend class SaberSVFGBuilder;
+    friend class TaintSVFGBuilder;
     friend class DDASVFGBuilder;
     friend class MTASVFGBuilder;
     friend class RcSvfgBuilder;
@@ -134,6 +135,12 @@ public:
     inline MemSSA* getMSSA() const
     {
         return mssa;
+    }
+
+    /// Get Pointer Analysis
+    inline PointerAnalysis* getPTA() const
+    {
+        return pta;
     }
 
     /// Get a SVFG node

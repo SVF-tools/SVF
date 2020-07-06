@@ -49,11 +49,11 @@ public:
     typedef std::map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::set<const PAGEdge*> PAGEdgeSet;
-    typedef std::list<const PAGEdge*> PAGEdgeList;
-    typedef std::list<const PAGNode*> PAGNodeList;
-    typedef std::list<const CopyPE*> CopyPEList;
-    typedef std::list<const BinaryOPPE*> BinaryOPList;
-    typedef std::list<const CmpPE*> CmpPEList;
+    typedef std::vector<const PAGEdge*> PAGEdgeList;
+    typedef std::vector<const PAGNode*> PAGNodeList;
+    typedef std::vector<const CopyPE*> CopyPEList;
+    typedef std::vector<const BinaryOPPE*> BinaryOPList;
+    typedef std::vector<const CmpPE*> CmpPEList;
     typedef std::map<const PAGNode*,CopyPEList> PHINodeMap;
     typedef std::map<const PAGNode*,BinaryOPList> BinaryNodeMap;
     typedef std::map<const PAGNode*,CmpPEList> CmpNodeMap;

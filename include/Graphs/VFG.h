@@ -125,15 +125,21 @@ public:
 	}
 
 	/// Whether to dump VFG;
-	inline bool getDumpVFG()
+	inline bool getDumpVFG() const
 	{
 		return dumpVFG;
 	}
 
     /// Return PAG
-    inline PAG* getPAG()
+    inline PAG* getPAG() const
     {
-        return PAG::getPAG();
+        return pag;
+    }
+
+    /// Return CallGraph
+    inline PTACallGraph* getCallGraph() const
+    {
+        return callgraph;
     }
 
     /// Get a VFG node
