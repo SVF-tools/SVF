@@ -326,12 +326,12 @@ public:
 
     /// Getter & setter for store size. A (-1) size is an unknown store size
     //@{
-    void setStoreSize(int size){
-        this->storeSize = size;
+    void setStoreSize(const int size){
+        storeSize = size;
     }
 
-    int getStoreSize(){
-        return this->storeSize;
+    int getStoreSize() const {
+        return storeSize;
     }
     //@}
     
@@ -374,12 +374,12 @@ public:
     
     /// Getter & setter for store size. A (-1) size is an unknown store size
     //@{
-    void setLoadSize(int size){
-        this->loadSize = size;
+    void setLoadSize(const int size) {
+        loadSize = size;
     }
 
-    int getLoadSize(){
-        return this->loadSize;
+    int getLoadSize() const {
+        return loadSize;
     }
     //@}
     
