@@ -291,14 +291,15 @@ public:
         return edge;
     }
     /// Add Load edge
-    inline LoadPE* addLoadEdge(NodeID src, NodeID dst)
+    inline LoadPE* addLoadEdge(NodeID src, NodeID dst, int size = -1)
     {
         LoadPE *edge = pag->addLoadPE(src, dst);
+        edge->setLoadSize(size);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Store edge
-    inline StorePE* addStoreEdge(NodeID src, NodeID dst)
+    inline StorePE* addStoreEdge(NodeID src, NodeID dst, int size = -1)
     {
         IntraBlockNode* node;
         if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
@@ -306,6 +307,7 @@ public:
         else
             node = NULL;
         StorePE *edge = pag->addStorePE(src, dst, node);
+        edge->setStoreSize(size);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
