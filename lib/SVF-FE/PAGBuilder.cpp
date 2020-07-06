@@ -1028,7 +1028,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
 					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()) /*, storeSize */);
 					if (SVFUtil::isa<PointerType>(inst->getType()))
-						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
+						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst) /*, loadSize */);
 				}
 //				else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(0))) {
 //					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(cs.getArgument(0)));
