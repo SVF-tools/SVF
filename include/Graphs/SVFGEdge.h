@@ -93,6 +93,8 @@ public:
                edge->getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -123,6 +125,8 @@ public:
         return edge->getEdgeKind() == IntraIndirectVF;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -160,6 +164,8 @@ public:
         return edge->getEdgeKind() == CallIndVF ;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -197,6 +203,8 @@ public:
         return edge->getEdgeKind() == RetIndVF;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -229,6 +237,8 @@ public:
         return edge->getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 

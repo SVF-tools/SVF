@@ -44,6 +44,243 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 PAG* PAG::pag = NULL;
 
 
+std::string PAGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "PAGNode ID: " << getId();
+    return rawstr.str();
+}
+
+std::string ValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ValPN ID: " << getId();
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+std::string ObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ObjPN ID: " << getId();
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+std::string GepValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepValPN ID: " << getId() << "with offset_" + llvm::utostr(getOffset());
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+
+std::string GepObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepObjPN ID: " << getId() << "with offset_" + llvm::itostr(ls.getOffset());
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+std::string FIObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FIObjPN ID: " << getId() << " (base object)";
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+std::string RetPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<Function>(value)->getName();
+    return rawstr.str();
+}
+
+std::string VarArgPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<Function>(value)->getName();
+    return rawstr.str();
+}
+
+std::string DummyValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "DummyValPN ID: " << getId();
+    return rawstr.str();
+}
+
+std::string DummyObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "DummyObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+std::string CloneDummyObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneDummyObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+std::string CloneGepObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneGepObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+std::string CloneFIObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneFIObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+std::string PAGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "PAGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
+std::string AddrPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "AddrPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string CopyPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CopyPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string CmpPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CmpPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string BinaryOPPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "BinaryOPPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string LoadPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "LoadPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string StorePE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "StorePE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string GepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string NormalGepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VariantGepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string VariantGepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VariantGepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string CallPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string RetPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string TDForkPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "TDForkPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+std::string TDJoinPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "TDJoinPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+
 PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0)
 {
     symInfo = SymbolTableInfo::Symbolnfo();

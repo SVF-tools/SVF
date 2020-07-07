@@ -77,6 +77,8 @@ public:
                node->getNodeKind() == MInterPhi;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*
@@ -119,6 +121,8 @@ public:
         return node->getNodeKind() == FPIN;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -159,6 +163,8 @@ public:
         return node->getNodeKind() == FPOUT;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -204,6 +210,8 @@ public:
         return node->getNodeKind() == APIN;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -250,6 +258,8 @@ public:
         return node->getNodeKind() == APOUT;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -328,6 +338,8 @@ public:
         return (node->getNodeKind() == MPhi || node->getNodeKind() == MIntraPhi || node->getNodeKind() == MInterPhi);
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*
@@ -365,6 +377,8 @@ public:
         return node->getNodeKind() == MIntraPhi;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -425,6 +439,9 @@ public:
         return node->getNodeKind() == MInterPhi;
     }
     //@}
+
+    virtual std::string toString() const;
+
 private:
     const SVFFunction* fun;
     const CallBlockNode* callInst;

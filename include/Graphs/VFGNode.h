@@ -97,10 +97,13 @@ public:
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
     {
-        o << "VFGNode ID:" << node.getId();
+        o << node.toString();
         return o;
     }
     //@}
+
+    virtual std::string toString() const;
+
 protected:
     const BasicBlock* bb;
     const ICFGNode* icfgNode;
@@ -185,6 +188,8 @@ public:
         return pagEdge->getInst();
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -222,6 +227,8 @@ public:
         return node->getNodeKind() == Load;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -259,6 +266,8 @@ public:
         return node->getNodeKind() == Store;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -296,6 +305,8 @@ public:
         return node->getNodeKind() == Copy;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -368,6 +379,7 @@ public:
         return opVers.end();
     }
     //@}
+    virtual std::string toString() const;
 };
 
 
@@ -439,6 +451,8 @@ public:
         return opVers.end();
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -476,6 +490,8 @@ public:
         return node->getNodeKind() == Gep;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*
@@ -545,6 +561,8 @@ public:
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -596,6 +614,8 @@ public:
         return node->getNodeKind() == TIntraPhi;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -631,6 +651,8 @@ public:
         return node->getNodeKind() == Addr;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -674,6 +696,7 @@ public:
     }
     //@}
 
+    virtual std::string toString() const;
 };
 
 /*
@@ -722,6 +745,8 @@ public:
         return node->getNodeKind() == AParm;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -789,6 +814,8 @@ public:
         return node->getNodeKind() == FParm;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -844,6 +871,8 @@ public:
         return node->getNodeKind() == ARet;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -906,6 +935,8 @@ public:
         return node->getNodeKind() == FRet;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 /*
@@ -962,6 +993,8 @@ public:
     }
     //@}
 
+    virtual std::string toString() const;
+
 private:
     const SVFFunction* fun;
     const CallBlockNode* callInst;
@@ -1007,6 +1040,8 @@ public:
         return node->getNodeKind() == NPtr;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 

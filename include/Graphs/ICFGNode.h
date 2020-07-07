@@ -81,7 +81,7 @@ public:
     //@{
     friend raw_ostream &operator<<(raw_ostream &o, const ICFGNode &node)
     {
-        o << "ICFGNode ID:" << node.getId();
+        o << node.toString();
         return o;
     }
     //@}
@@ -98,6 +98,14 @@ public:
         return VFGNodes;
     }
     ///@}
+
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "ICFGNode ID: " << getId();
+        return rawstr.str();
+    }
+
 protected:
     const SVFFunction* fun;
     VFGNodeList VFGNodes; //< a set of VFGNodes
@@ -133,14 +141,12 @@ public:
     }
     //@}
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const GlobalBlockNode &node)
-    {
-        o << "GlobalBlockNode ICFGNode ID:" << node.getId();
-        return o;
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "GlobalBlockNode ID: " << getId();
+        return rawstr.str();
     }
-    //@}
 };
 
 /*!
@@ -162,16 +168,6 @@ public:
         return inst;
     }
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const IntraBlockNode &node)
-    {
-        o << "IntraBlockNode ICFGNode ID:" << node.getId();
-        o << " instruction: " << node.getInst() << " (fun: " << node.getFun()->getName() << ")";
-        return o;
-    }
-    //@}
-
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const IntraBlockNode *)
@@ -189,6 +185,14 @@ public:
         return node->getNodeKind() == IntraBlock;
     }
     //@}
+
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "IntraBlockNode ID: " << getId();
+        rawstr << " " << *getInst() << " (fun: " << getFun()->getName() << ")";
+        return rawstr.str();
+    }
 };
 
 class InterBlockNode : public ICFGNode
@@ -280,15 +284,13 @@ public:
     }
     //@}
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const FunEntryBlockNode &node)
-    {
-        o << "FunEntryBlockNode ICFGNode ID:" << node.getId();
-        o << " (fun: " << node.getFun()->getName() << ")";
-        return o;
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "FunEntryBlockNode ID: " << getId();
+        rawstr << " (fun: " << getFun()->getName() << ")";
+        return rawstr.str();
     }
-    //@}
 };
 
 /*!
@@ -344,15 +346,13 @@ public:
     }
     //@}
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const FunExitBlockNode &node)
-    {
-        o << "FunExitBlockNode ICFGNode ID:" << node.getId();
-        o << " (fun: " << node.getFun()->getName() << ")";
-        return o;
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "FunExitBlockNode ID: " << getId();
+        rawstr << " (fun: " << getFun()->getName() << ")";
+        return rawstr.str();
     }
-    //@}
 };
 
 /*!
@@ -431,15 +431,13 @@ public:
     }
     //@}
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const CallBlockNode &node)
-    {
-        o << "CallBlockNode ICFGNode ID:" << node.getId();
-        o << " instruction: " << *node.getCallSite() << " (fun: " << node.getFun()->getName() << ")";
-        return o;
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "CallBlockNode ID: " << getId();
+        rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+        return rawstr.str();
     }
-    //@}
 };
 
 
@@ -505,15 +503,13 @@ public:
     }
     //@}
 
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend raw_ostream &operator<<(raw_ostream &o, const RetBlockNode &node)
-    {
-        o << "RetBlockNode ICFGNode ID:" << node.getId();
-        o << " instruction: " << *node.getCallSite() << " (fun: " << node.getFun()->getName() << ")";
-        return o;
+    inline virtual std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "RetBlockNode ID: " << getId();
+        rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+        return rawstr.str();
     }
-    //@}
 };
 
 

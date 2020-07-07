@@ -150,6 +150,18 @@ public:
         return (label << EdgeKindMaskBits) | k;
     }
 
+    virtual std::string toString() const;
+
+    //@}
+    /// Overloading operator << for dumping PAGNode value
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const PAGEdge &edge)
+    {
+        o << edge.toString();
+        return o;
+    }
+    //@}
+
     typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
     typedef DenseMap<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
@@ -193,6 +205,8 @@ public:
     AddrPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Addr)
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -226,6 +240,8 @@ public:
     CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy)
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -259,6 +275,8 @@ public:
     CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp)
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -292,6 +310,8 @@ public:
     BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp)
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -327,6 +347,8 @@ public:
         PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st))
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -361,6 +383,8 @@ public:
     LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load)
     {
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -399,6 +423,8 @@ protected:
     {
 
     }
+
+    virtual std::string toString() const;
 };
 
 
@@ -448,6 +474,8 @@ public:
     {
         return ls;
     }
+
+    virtual std::string toString() const;
 };
 
 /*!
@@ -483,6 +511,9 @@ public:
 
     /// constructor
     VariantGepPE(PAGNode* s, PAGNode* d) : GepPE(s,d,PAGEdge::VariantGep) {}
+
+    virtual std::string toString() const;
+
 };
 
 
@@ -531,6 +562,8 @@ public:
         return inst;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -579,6 +612,8 @@ public:
         return inst;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -627,6 +662,8 @@ public:
         return inst;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 
 
@@ -676,5 +713,7 @@ public:
         return inst;
     }
     //@}
+
+    virtual std::string toString() const;
 };
 #endif /* PAGEDGE_H_ */
