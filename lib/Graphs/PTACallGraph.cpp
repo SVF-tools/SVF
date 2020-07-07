@@ -54,7 +54,7 @@ void PTACallGraphEdge::addInDirectCallSite(const CallBlockNode* call)
 }
 //@}
 
-std::string PTACallGraphEdge::toString() const {
+const std::string PTACallGraphEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
@@ -67,7 +67,7 @@ std::string PTACallGraphEdge::toString() const {
     return rawstr.str();
 }
 
-std::string PTACallGraphNode::toString() const {
+const std::string PTACallGraphNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallGraphNode ID: " << getId() << " (fun: " << fun->getName() << ")";

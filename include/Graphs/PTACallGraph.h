@@ -158,7 +158,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
     typedef GenericNode<PTACallGraphNode,PTACallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
 
@@ -205,7 +205,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!

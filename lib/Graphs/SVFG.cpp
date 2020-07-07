@@ -36,56 +36,56 @@
 
 using namespace SVFUtil;
 
-std::string MRSVFGNode::toString() const {
+const std::string MRSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "MRSVFGNode ID: " << getId();
     return rawstr.str();
 }
 
-std::string FormalINSVFGNode::toString() const {
+const std::string FormalINSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalINSVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string FormalOUTSVFGNode::toString() const {
+const std::string FormalOUTSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalOUTSVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string ActualINSVFGNode::toString() const {
+const std::string ActualINSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string ActualOUTSVFGNode::toString() const {
+const std::string ActualOUTSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string MSSAPHISVFGNode::toString() const {
+const std::string MSSAPHISVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "MSSAPHISVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string IntraMSSAPHISVFGNode::toString() const {
+const std::string IntraMSSAPHISVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraMSSAPHISVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
     return rawstr.str();
 }
 
-std::string InterMSSAPHISVFGNode::toString() const {
+const std::string InterMSSAPHISVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     if(isFormalINPHI())
@@ -95,21 +95,21 @@ std::string InterMSSAPHISVFGNode::toString() const {
     return rawstr.str();
 }
 
-std::string IndirectSVFGEdge::toString() const {
+const std::string IndirectSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IndirectSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
 
-std::string IntraIndSVFGEdge::toString() const {
+const std::string IntraIndSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
     return rawstr.str();
 }
 
-std::string CallIndSVFGEdge::toString() const {
+const std::string CallIndSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
@@ -117,7 +117,7 @@ std::string CallIndSVFGEdge::toString() const {
     return rawstr.str();
 }
 
-std::string RetIndSVFGEdge::toString() const {
+const std::string RetIndSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
@@ -126,7 +126,7 @@ std::string RetIndSVFGEdge::toString() const {
 }
 
 
-std::string ThreadMHPIndSVFGEdge::toString() const {
+const std::string ThreadMHPIndSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ThreadMHPIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";

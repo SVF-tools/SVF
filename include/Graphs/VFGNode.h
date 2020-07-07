@@ -102,7 +102,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
 protected:
     const BasicBlock* bb;
@@ -189,7 +189,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -228,7 +228,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -267,7 +267,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -306,7 +306,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -379,7 +379,7 @@ public:
         return opVers.end();
     }
     //@}
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -452,7 +452,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -491,7 +491,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -562,7 +562,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -615,7 +615,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -652,7 +652,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -696,7 +696,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -746,7 +746,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -815,7 +815,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -872,7 +872,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -936,7 +936,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -993,7 +993,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
 private:
     const SVFFunction* fun;
@@ -1041,7 +1041,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 

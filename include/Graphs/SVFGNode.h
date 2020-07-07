@@ -78,7 +78,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -122,7 +122,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -164,7 +164,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -211,7 +211,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -259,7 +259,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -339,7 +339,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -378,7 +378,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -440,7 +440,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
 private:
     const SVFFunction* fun;

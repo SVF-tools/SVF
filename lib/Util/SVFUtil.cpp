@@ -210,7 +210,7 @@ void SVFUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-                outs() << "setrlimit returned result = " << result << "\n";
+            	writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
 }

@@ -242,7 +242,7 @@ public:
         addOutgoingEdge(outEdge);
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
     //@}
     /// Overloading operator << for dumping PAGNode value
@@ -297,7 +297,7 @@ public:
         return "";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -362,7 +362,7 @@ public:
         return mem->getType();
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -430,7 +430,7 @@ public:
         return fieldIdx;
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -506,7 +506,7 @@ public:
         return "offset_" + llvm::itostr(ls.getOffset());
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -554,7 +554,7 @@ public:
         return " (base object)";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -592,7 +592,7 @@ public:
         return value->getName().str() + "_ret";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -631,7 +631,7 @@ public:
         return value->getName().str() + "_vararg";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -672,7 +672,7 @@ public:
         return "dummyVal";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -713,7 +713,7 @@ public:
         return "dummyObj";
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -749,7 +749,7 @@ public:
         return "clone of " + ObjPN::getValueName();
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -785,7 +785,7 @@ public:
         return "clone (gep) of " + GepObjPN::getValueName();
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*
@@ -821,7 +821,7 @@ public:
         return "clone (FI) of " + FIObjPN::getValueName();
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 #endif /* PAGNODE_H_ */

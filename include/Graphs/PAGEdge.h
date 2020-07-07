@@ -150,7 +150,7 @@ public:
         return (label << EdgeKindMaskBits) | k;
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
     //@}
     /// Overloading operator << for dumping PAGNode value
@@ -206,7 +206,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -241,7 +241,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -276,7 +276,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -311,7 +311,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -348,7 +348,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -384,7 +384,7 @@ public:
     {
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -424,7 +424,7 @@ protected:
 
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -475,7 +475,7 @@ public:
         return ls;
     }
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -512,7 +512,7 @@ public:
     /// constructor
     VariantGepPE(PAGNode* s, PAGNode* d) : GepPE(s,d,PAGEdge::VariantGep) {}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 
 };
 
@@ -563,7 +563,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -613,7 +613,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -663,7 +663,7 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 
 
@@ -714,6 +714,6 @@ public:
     }
     //@}
 
-    virtual std::string toString() const;
+    virtual const std::string toString() const;
 };
 #endif /* PAGEDGE_H_ */
