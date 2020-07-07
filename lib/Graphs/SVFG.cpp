@@ -783,7 +783,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(MSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
             rawstr << "MSSAPHI\n";
-//            rawstr << getSourceLoc(&mphi->getBB()->back());
+            rawstr << getSourceLoc(&mphi->getICFGNode()->getBB()->back());
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node))
         {
@@ -792,12 +792,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             rawstr << "BinOp\n";
-            rawstr << getSourceLoc(&bop->getBB()->back());
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
         }
         else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << "Cmp\n";
-            rawstr << getSourceLoc(&cmp->getBB()->back());
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(cmp->getICFGNode())->getInst());
         }
         else
             assert(false && "what else kinds of nodes do we have??");

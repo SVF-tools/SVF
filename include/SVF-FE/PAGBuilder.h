@@ -59,7 +59,7 @@ public:
     }
 
     /// Start building PAG here
-    PAG* build(SVFModule* svfModule);
+    virtual PAG* build(SVFModule* svfModule);
 
     /// Return PAG
     PAG* getPAG() const

@@ -53,6 +53,7 @@ public:
     };
 
     typedef DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
+    typedef DenseSet<VFGNode*> VFGNodeSet;
     typedef DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
     typedef DenseMap<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
     typedef DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
@@ -62,6 +63,7 @@ public:
     typedef DenseMap<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
     typedef DenseMap<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
     typedef DenseMap<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
+    typedef DenseMap<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
 
     typedef FormalParmVFGNode::CallPESet CallPESet;
     typedef FormalRetVFGNode::RetPESet RetPESet;
@@ -86,6 +88,7 @@ protected:
     PAGNodeToBinaryOPVFGNodeMapTy PAGNodeToBinaryOPVFGNodeMap;	///< map a PAGNode to its BinaryOPVFGNode
     PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
+    FunToVFGNodesMapTy funToVFGNodesMap; ///< map a function to its VFGNodes;
 
     GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
@@ -267,6 +270,29 @@ public:
         return false;
     }
 
+	/// Return all the VFGNodes of a function
+	///@{
+	inline VFGNodeSet& getVFGNodes(const SVFFunction *fun) {
+		return funToVFGNodesMap[fun];
+	}
+	inline bool hasVFGNodes(const SVFFunction *fun) const {
+		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+	}
+	inline bool VFGNodes(const SVFFunction *fun) const {
+		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+	}
+	inline VFGNodeSet::const_iterator getVFGNodeBegin(const SVFFunction *fun) const {
+		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+		return it->second.begin();
+	}
+	inline VFGNodeSet::const_iterator getVFGNodeEnd(const SVFFunction *fun) const {
+		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+		return it->second.end();
+	}
+	///@}
+
 protected:
     /// Remove a SVFG edge
     inline void removeVFGEdge(VFGEdge* edge)
@@ -423,17 +449,19 @@ protected:
         addGNode(vfgNode->getId(), vfgNode);
         vfgNode->setICFGNode(icfgNode);
         icfgNode->addVFGNode(vfgNode);
+
+        if(const SVFFunction* fun = icfgNode->getFun())
+        	funToVFGNodesMap[fun].insert(vfgNode);
+        else
+        	globalVFGNodes.insert(vfgNode);
     }
+
     /// Add a VFG node for program statement
     inline void addStmtVFGNode(StmtVFGNode* node, const PAGEdge* pagEdge)
     {
         assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
         PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
         addVFGNode(node, pagEdge->getICFGNode());
-
-        const PAGEdgeSet& globalPAGEdges = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGEdges.find(pagEdge) != globalPAGEdges.end())
-            globalVFGNodes.insert(node);
     }
     /// Add a Dummy VFG node for null pointer definition
     /// To be noted for black hole pointer it has already has address edge connected
@@ -477,10 +505,6 @@ protected:
     {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
         addStmtVFGNode(sNode, store);
-
-        const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGStores.find(store) != globalPAGStores.end())
-            globalVFGNodes.insert(sNode);
     }
 
     /// Add an actual parameter VFG node

@@ -87,10 +87,14 @@ public:
     /// Get the function of this SVFGNode
     virtual const SVFFunction* getFun() const
     {
+    	const SVFFunction* fun = NULL;
         if(bb)
-            return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
-        else
-            return NULL;
+        	fun =  LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
+
+        //assert((fun == icfgNode->getFun()) && "not the same function??");
+
+        return fun;
+
     }
 
     /// Overloading operator << for dumping ICFG node ID

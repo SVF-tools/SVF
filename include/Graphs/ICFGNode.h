@@ -66,7 +66,7 @@ public:
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL)
+    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL), bb(NULL)
     {
 
     }
@@ -76,6 +76,13 @@ public:
     {
         return fun;
     }
+
+    /// Return the function of this ICFGNode
+    virtual const BasicBlock* getBB() const
+    {
+        return bb;
+    }
+
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
@@ -108,6 +115,7 @@ public:
 
 protected:
     const SVFFunction* fun;
+    const BasicBlock* bb;
     VFGNodeList VFGNodes; //< a set of VFGNodes
 
 };
@@ -121,6 +129,7 @@ class GlobalBlockNode : public ICFGNode
 public:
     GlobalBlockNode(NodeID id) : ICFGNode(id, GlobalBlock)
     {
+    	bb = NULL;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -161,6 +170,7 @@ public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getFunction());
+        bb = inst->getParent();
     }
 
     inline const Instruction *getInst() const
@@ -370,6 +380,7 @@ public:
     CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        bb = cs->getParent();
     }
 
     /// Return callsite
@@ -456,6 +467,7 @@ public:
         InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        bb = cs->getParent();
     }
 
     /// Return callsite
