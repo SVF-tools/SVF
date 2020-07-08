@@ -30,6 +30,12 @@ public:
         YIELD,
     };
 
+    /// An SVFG node split into two: the combine side and the yield side.
+    struct SplitNode {
+        NodeID id;
+        VersionType type;
+    };
+
     /// Constructor
     FlowSensitivePlaceholder(PTATY type = FSPH_WPA) : FlowSensitive(type)
     {
@@ -67,10 +73,11 @@ protected:
     virtual bool processStore(const StoreSVFGNode* store) override;
 
 private:
-    /// Distribute yielded/consumed versions at each SVFG node.
-    void distributeVersions(void);
-    /// Set yielded/consumed versions at a single node.
-    void setVersions(const SVFGNode *s);
+    /// Precolour the split SVFG.
+    void precolour(void);
+    /// Colour the precoloured split SVFG.
+    void colour(void);
+
     /// Returns a new version for o.
     Version newVersion(NodeID o);
     /// Whether l has a consume/yield version for o. fsph-TODO: const.
@@ -82,6 +89,9 @@ private:
     DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
     /// Object -> version (counter).
     DenseMap<NodeID, Version> versions;
+
+    /// Worklist for performing meld colouring.
+    FIFOWorkList<SplitNode> vWorklist;
 };
 
 #endif /* FSPH_H_ */
