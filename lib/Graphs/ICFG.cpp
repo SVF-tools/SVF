@@ -53,6 +53,66 @@ FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlock
 
 }
 
+
+const std::string ICFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ICFGNode ID: " << getId();
+    return rawstr.str();
+}
+
+
+const std::string GlobalBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GlobalBlockNode ID: " << getId();
+    return rawstr.str();
+}
+
+
+const std::string IntraBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraBlockNode ID: " << getId();
+    rawstr << " " << *getInst() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+
+const std::string FunEntryBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FunEntryBlockNode ID: " << getId();
+    rawstr << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string FunExitBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FunExitBlockNode ID: " << getId();
+    rawstr << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+
+const std::string CallBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallBlockNode ID: " << getId();
+    rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string RetBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetBlockNode ID: " << getId();
+    rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+
 /*!
  * Constructor
  *  * Build ICFG

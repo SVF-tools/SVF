@@ -35,6 +35,7 @@
 #include "Graphs/ICFGEdge.h"
 
 class ICFGNode;
+class RetBlockNode;
 class CallPE;
 class RetPE;
 class PAGEdge;
@@ -106,12 +107,7 @@ public:
     }
     ///@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "ICFGNode ID: " << getId();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 
 protected:
     const SVFFunction* fun;
@@ -150,12 +146,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "GlobalBlockNode ID: " << getId();
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -196,13 +187,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "IntraBlockNode ID: " << getId();
-        rawstr << " " << *getInst() << " (fun: " << getFun()->getName() << ")";
-        return rawstr.str();
-    }
+    const std::string toString() const;
 };
 
 class InterBlockNode : public ICFGNode
@@ -294,13 +279,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "FunEntryBlockNode ID: " << getId();
-        rawstr << " (fun: " << getFun()->getName() << ")";
-        return rawstr.str();
-    }
+    const virtual std::string toString() const;
 };
 
 /*!
@@ -356,13 +335,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "FunExitBlockNode ID: " << getId();
-        rawstr << " (fun: " << getFun()->getName() << ")";
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -375,9 +348,10 @@ public:
     typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
 private:
     const Instruction* cs;
+    const RetBlockNode* ret;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(NULL)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();
@@ -387,6 +361,19 @@ public:
     inline const Instruction* getCallSite() const
     {
         return cs;
+    }
+
+    /// Return callsite
+    inline const RetBlockNode* getRetBlockNode() const
+    {
+    	assert(ret && "RetBlockNode not set?");
+        return ret;
+    }
+
+    /// Return callsite
+    inline void setRetBlockNode(const RetBlockNode* r)
+    {
+        ret = r;
     }
 
     /// Return callsite
@@ -442,13 +429,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "CallBlockNode ID: " << getId();
-        rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 
@@ -515,13 +496,7 @@ public:
     }
     //@}
 
-    inline virtual std::string toString() const {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "RetBlockNode ID: " << getId();
-        rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
-        return rawstr.str();
-    }
+    virtual const std::string toString() const;
 };
 
 

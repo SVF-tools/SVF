@@ -239,6 +239,7 @@ public:
     {
         CallBlockNode* callBlockNode = getCallBlockNode(cs);
         RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs, callBlockNode);
+        callBlockNode->setRetBlockNode(sNode);
         addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;
         return sNode;
