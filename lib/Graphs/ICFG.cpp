@@ -74,7 +74,7 @@ const std::string IntraBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraBlockNode ID: " << getId();
-    rawstr << " " << *getInst() << " (fun: " << getFun()->getName() << ")";
+    rawstr << " " << *getInst() << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -83,7 +83,7 @@ const std::string FunEntryBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunEntryBlockNode ID: " << getId();
-    rawstr << " (fun: " << getFun()->getName() << ")";
+    rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -91,7 +91,7 @@ const std::string FunExitBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunExitBlockNode ID: " << getId();
-    rawstr << " (fun: " << getFun()->getName() << ")";
+    rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -100,7 +100,7 @@ const std::string CallBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -108,10 +108,39 @@ const std::string RetBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " (fun: " << getFun()->getName() << ")";
+    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
+const std::string ICFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ICFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string IntraCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string CallCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallCFGEdge CallSite: " << *cs << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string RetCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetCFGEdge CallSite: " << *cs << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
 
 /*!
  * Constructor

@@ -81,11 +81,11 @@ const std::string CmpVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CmpVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge:" << res->getId() << " = cmp(";
+    rawstr << "PAGEdge: [" << res->getId() << " = cmp(";
     for(CmpVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
-    rawstr << ")\n";
+    rawstr << ")]\n";
     if(res->hasValue()){
         rawstr << " " << *res->getValue();
         rawstr << SVFUtil::getSourceLoc(res->getValue());
@@ -97,11 +97,11 @@ const std::string BinaryOPVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "BinaryOPVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge: " << res->getId() << " = Binary(";
+    rawstr << "PAGEdge: [" << res->getId() << " = Binary(";
     for(BinaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
-    rawstr << ")\n";
+    rawstr << ")]\t";
     if(res->hasValue()){
         rawstr << " " << *res->getValue() << " ";
         rawstr << SVFUtil::getSourceLoc(res->getValue());
@@ -122,11 +122,11 @@ const std::string PHIVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "PHIVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge: " << res->getId() << " = PHI(";
+    rawstr << "PAGEdge: [" << res->getId() << " = PHI(";
     for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
-    rawstr << ")\n";
+    rawstr << ")]\t";
     if(res->hasValue()){
         rawstr << " " << *res->getValue();
         rawstr << SVFUtil::getSourceLoc(res->getValue());
@@ -139,11 +139,11 @@ const std::string IntraPHIVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraPHIVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge: " << res->getId() << " = PHI(";
+    rawstr << "PAGEdge: [" << res->getId() << " = PHI(";
     for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
-    rawstr << ")\n";
+    rawstr << ")]\t";
     if(res->hasValue()){
         rawstr << " " << *res->getValue();
         rawstr << SVFUtil::getSourceLoc(res->getValue());
@@ -227,37 +227,37 @@ const std::string NullPtrVFGNode::toString() const {
 const std::string VFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "VFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string DirectSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "DirectVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "DirectVFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string IntraDirSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "IntraDirSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "IntraDirSVFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string CallDirSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallDirSVFGEdge CallSite ID: " << getCallSiteId() << " ";
-    rawstr << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "CallDirSVFGEdge CallSite ID: " << getCallSiteId() << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string RetDirSVFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetDirSVFGEdge CallSite ID: " << getCallSiteId() << " ";
-    rawstr << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "RetDirSVFGEdge CallSite ID: " << getCallSiteId() << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 

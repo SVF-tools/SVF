@@ -240,10 +240,12 @@ std::string SVFUtil::getSourceLocOfFunction(const Function *F)
  */
 std::string SVFUtil::getSourceLoc(const Value* val)
 {
-    if(val==NULL)  return "empty val";
+    if(val==NULL)  return "{ empty val }";
 
     std::string str;
     raw_string_ostream rawstr(str);
+    rawstr << "{ ";
+
     if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (SVFUtil::isa<AllocaInst>(inst))
@@ -310,5 +312,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     {
         rawstr << "Can only get source location for instruction, argument, global var or function.";
     }
+    rawstr << " }";
+
     return rawstr.str();
 }

@@ -159,14 +159,14 @@ const std::string CloneFIObjPN::toString() const {
 const std::string PAGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PAGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "PAGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string AddrPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "AddrPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "AddrPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -175,7 +175,7 @@ const std::string AddrPE::toString() const{
 const std::string CopyPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CopyPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "CopyPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -184,7 +184,7 @@ const std::string CopyPE::toString() const{
 const std::string CmpPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CmpPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "CmpPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -193,7 +193,7 @@ const std::string CmpPE::toString() const{
 const std::string BinaryOPPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "BinaryOPPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "BinaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -202,7 +202,7 @@ const std::string BinaryOPPE::toString() const{
 const std::string LoadPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "LoadPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "LoadPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -211,7 +211,7 @@ const std::string LoadPE::toString() const{
 const std::string StorePE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "StorePE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "StorePE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -220,7 +220,7 @@ const std::string StorePE::toString() const{
 const std::string GepPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "GepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -229,7 +229,7 @@ const std::string GepPE::toString() const{
 const std::string NormalGepPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -238,7 +238,7 @@ const std::string NormalGepPE::toString() const{
 const std::string VariantGepPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -247,7 +247,7 @@ const std::string VariantGepPE::toString() const{
 const std::string CallPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "CallPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -256,7 +256,7 @@ const std::string CallPE::toString() const{
 const std::string RetPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "RetPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -265,7 +265,7 @@ const std::string RetPE::toString() const{
 const std::string TDForkPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDForkPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "TDForkPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();
@@ -274,7 +274,7 @@ const std::string TDForkPE::toString() const{
 const std::string TDJoinPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDJoinPE: " << getDstID() << "<--" << getSrcID() << "\n";
+    rawstr << "TDJoinPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if(getValue())
         rawstr << *getValue() << getSourceLoc(getValue());
     return rawstr.str();

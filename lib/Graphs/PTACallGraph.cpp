@@ -62,15 +62,14 @@ const std::string PTACallGraphEdge::toString() const {
         rawstr << "direct call";
     else
         rawstr << "indirect call";
-    rawstr << " srcNode ID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
-    rawstr << " dstNode ID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+    rawstr << "[" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string PTACallGraphNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallGraphNode ID: " << getId() << " (fun: " << fun->getName() << ")";
+    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
     return rawstr.str();
 }
 
