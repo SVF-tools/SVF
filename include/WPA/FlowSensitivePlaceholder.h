@@ -31,7 +31,7 @@ public:
     };
 
     /// Constructor
-    FlowSensitivePlaceholder(PTATY type = FSPH_WPA) : FlowSensitive()
+    FlowSensitivePlaceholder(PTATY type = FSPH_WPA) : FlowSensitive(type)
     {
     }
 
