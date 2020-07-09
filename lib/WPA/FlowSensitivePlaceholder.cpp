@@ -11,38 +11,102 @@
 #include "WPA/FlowSensitivePlaceholder.h"
 #include <iostream>
 
-static unsigned wouldbev = 0;
 void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
 {
     FlowSensitive::initialize(svfModule);
+
+    double start = stat->getClk();
     precolour();
+    double end = stat->getClk();
+    double prec = (end - start) / TIMEINTERVAL;
+
+    start = stat->getClk();
     colour();
+    end = stat->getClk();
+    double col = (end - start) / TIMEINTERVAL;
 
-    unsigned v = 0;
-    for (DenseMap<NodeID, Version>::value_type nv : versions) {
-        v += nv.second;
-    }
-
-    printf("versions: %u, would be AT sets: %u\n", v, wouldbev);
+    printf("precolour: %fs, colour: %fs\n", prec, col);
 
     exit(0);
 }
 
 void FlowSensitivePlaceholder::precolour(void)
 {
+    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        NodeID l = it->first;
+        const SVFGNode *sn = it->second;
 
+        if (const StoreSVFGNode *stn = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+        {
+            NodeID p = stn->getPAGDstNodeID();
+            for (NodeID o : ander->getPts(p))
+            {
+                yield[l][o] = newVersion(o);
+            }
+
+            vWorklist.push(l);
+        }
+        else if (delta(l))
+        {
+            for (const SVFGEdge *e : sn->getOutEdges())
+            {
+                const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+                if (!ie) continue;
+                for (NodeID o : ie->getPointsTo())
+                {
+                    yield[l][o] = newVersion(o);
+                }
+
+                vWorklist.push(l);
+            }
+        }
+    }
 }
 
-void FlowSensitivePlaceholder::colour(void)
-{
+void FlowSensitivePlaceholder::colour(void) {
+    unsigned loops = 0;
+    while (!vWorklist.empty()) {
+        NodeID l = vWorklist.pop();
+        const SVFGNode *sl = svfg->getSVFGNode(l);
 
+        for (const SVFGEdge *e : sl->getOutEdges()) {
+            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            if (!ie) continue;
+            for (NodeID o : ie->getPointsTo()) {
+                NodeID lp = ie->getDstNode()->getId();
+                if (meld(consume[lp][o], yield[l][o])) {
+                    const SVFGNode *slp = svfg->getSVFGNode(lp);
+                    // No need to do anything for delta/store because their yield is set and static.
+                    if (!SVFUtil::isa<StoreSVFGNode>(slp) && !delta(lp)) {
+                        yield[lp][o] = consume[lp][o];
+                        vWorklist.push(lp);
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool FlowSensitivePlaceholder::meld(Version &v1, Version &v2)
+{
+    // Meld operator is union of bit vectors.
+    return v1 |= v2;
+}
+
+bool FlowSensitivePlaceholder::delta(NodeID l) const
+{
+    const SVFGNode *s = svfg->getSVFGNode(l);
+    // fsph-TODO: double check.
+    return SVFUtil::isa<FormalINSVFGNode>(s) || SVFUtil::isa<ActualOUTSVFGNode>(s);
 }
 
 /// Returns a new version for o.
 Version FlowSensitivePlaceholder::newVersion(NodeID o)
 {
-    ++versions[o];
-    return versions[o];
+    Version nv;
+    nv.set(++versions[o]);
+    return nv;
 }
 
 bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v) const

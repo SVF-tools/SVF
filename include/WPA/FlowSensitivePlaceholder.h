@@ -17,8 +17,6 @@
 class AndersenWaveDiff;
 class SVFModule;
 
-typedef unsigned Version;
-
 /*!
  * Flow sensitive whole program pointer analysis
  */
@@ -28,12 +26,6 @@ public:
     enum VersionType {
         CONSUME,
         YIELD,
-    };
-
-    /// An SVFG node split into two: the combine side and the yield side.
-    struct SplitNode {
-        NodeID id;
-        VersionType type;
     };
 
     /// Constructor
@@ -77,6 +69,11 @@ private:
     void precolour(void);
     /// Colour the precoloured split SVFG.
     void colour(void);
+    /// Melds v2 into v1 (in place), returns whether a change occurred.
+    bool meld(Version &v1, Version &v2);
+
+    /// Returns whether l is a delta node.
+    bool delta(NodeID l) const;
 
     /// Returns a new version for o.
     Version newVersion(NodeID o);
@@ -87,11 +84,11 @@ private:
     DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
     /// SVFG node (label) x object -> version to yield.
     DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
-    /// Object -> version (counter).
-    DenseMap<NodeID, Version> versions;
+    /// Object -> version counter.
+    DenseMap<NodeID, unsigned> versions;
 
-    /// Worklist for performing meld colouring.
-    FIFOWorkList<SplitNode> vWorklist;
+    /// Worklist for performing meld colouring, takes SVFG node l.
+    FIFOWorkList<NodeID> vWorklist;
 };
 
 #endif /* FSPH_H_ */

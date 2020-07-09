@@ -57,6 +57,7 @@ typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
 
 typedef llvm::SparseBitVector<> NodeBS;
+typedef llvm::SparseBitVector<> Version;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
