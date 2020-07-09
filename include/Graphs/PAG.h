@@ -421,7 +421,7 @@ public:
     {
         bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
         funPtrToCallSitesMap[funPtr].insert(cs);
-        assert(added && "fail to add the indirect callsite?");
+        assert(added && "adding the same indirect callsite twice?");
     }
     inline NodeID getFunPtr(const CallBlockNode* cs) const
     {
