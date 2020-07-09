@@ -70,7 +70,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const PAGEdge*)
     {
         return true;
     }

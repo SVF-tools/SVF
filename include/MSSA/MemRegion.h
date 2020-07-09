@@ -317,14 +317,14 @@ protected:
     }
 
     /// Get memory regions for a load statement according to cpts.
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction*)
     {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
 
     /// Get memory regions for call site ref according to cpts.
-    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction*)
     {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);

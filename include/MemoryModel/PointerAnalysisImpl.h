@@ -89,7 +89,7 @@ public:
 protected:
 
     /// Update callgraph. This should be implemented by its subclass.
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap& callsites)
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
     {
         assert(false && "Virtual function not implemented!");
         return false;
