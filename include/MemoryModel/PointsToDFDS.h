@@ -515,7 +515,7 @@ class VDFPTData : public PTData<Key,Data>
 public:
     typedef NodeID LocID;
     /// v -> points-to.
-    typedef std::map<Version, PointsTo> VPtsMap;
+    typedef DenseMap<Version, PointsTo> VPtsMap;
     typedef typename PTData<Key, Data>::PTDataTY PTDataTy;
 
     /// Constructor

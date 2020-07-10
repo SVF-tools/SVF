@@ -140,7 +140,7 @@ void FlowSensitivePlaceholder::determineReliance(void)
                 Version &yp = yield[lp][o];
                 if (yp != y)
                 {
-                    versionReliance[o][&y].insert(&yp);
+                    versionReliance[o][y].insert(yp);
                 }
             }
         }
@@ -151,7 +151,7 @@ void FlowSensitivePlaceholder::determineReliance(void)
             {
                 NodeID o = ov.first;
                 Version &v = ov.second;
-                stmtReliance[{o, &v}].insert(l);
+                stmtReliance[{o, v}].insert(l);
             }
         }
     }

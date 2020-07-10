@@ -91,11 +91,9 @@ private:
     /// Object -> version counter.
     DenseMap<NodeID, unsigned> versions;
     /// o -> (version -> versions which rely on it).
-    /// Use pointers to avoid defining hash function/tombstone key/... for Version.
-    DenseMap<NodeID, DenseMap<Version *, DenseSet<Version *>>> versionReliance;
+    DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
-    /// Use pointer to avoid defining hash function/tombstone key/... for Version.
-    DenseMap<std::pair<NodeID, Version *>, DenseSet<NodeID>> stmtReliance;
+    DenseMap<std::pair<NodeID, Version>, DenseSet<NodeID>> stmtReliance;
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;

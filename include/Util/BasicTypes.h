@@ -35,6 +35,7 @@
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SmallVector.h>		// for small vector
+#include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/CallSite.h>
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
@@ -217,6 +218,31 @@ using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
 template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
 using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
+// Provide DenseMapInfo for SparseBitVector.
+// Empty key is empty SparseBitVector, tombstone key is SparseBitVector with 0 set.
+// TODO: for versioning this is fine, for other uses, is that so?
+template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
+{
+    static inline llvm::SparseBitVector<> getEmptyKey() { return llvm::SparseBitVector<>(); }
+
+    static inline llvm::SparseBitVector<> getTombstoneKey()
+    {
+        llvm::SparseBitVector<> sbv;
+        sbv.set(0);
+        return sbv;
+    }
+
+    static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
+    {
+        unsigned hash = 0;
+        for (unsigned u : sbv) hash += u * 37U;
+        return hash;
+    }
+
+    static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
+        return LHS == RHS;
+    }
+};
 
 class SVFFunction : public SVFValue
 {
