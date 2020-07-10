@@ -159,8 +159,42 @@ void FlowSensitivePlaceholder::determineReliance(void)
 
 bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 {
-    // fsph-TODO!
-    return false;
+    double start = stat->getClk();
+
+    bool changed = false;
+
+    NodeID l = load->getId();
+    NodeID p = load->getPAGDstNodeID();
+    NodeID q = load->getPAGSrcNodeID();
+
+    const PointsTo& qpt = getPts(q);
+    for (NodeID o : qpt)
+    {
+        if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
+
+        if (vPtD->unionTLFromAT(l, p, o))
+        {
+            changed = true;
+        }
+
+        if (isFIObjNode(o))
+        {
+            /// If o is a field-insensitive node, we should also get all field nodes'
+            /// points-to sets and pass them to p.
+            const NodeBS& fields = getAllFieldsObjNode(o);
+            for (NodeID of : fields)
+            {
+                if (vPtD->unionTLFromAT(l, p, of))
+                {
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    double end = stat->getClk();
+    loadTime += (end - start) / TIMEINTERVAL;
+    return changed;
 }
 
 bool FlowSensitivePlaceholder::processStore(const StoreSVFGNode* store)
