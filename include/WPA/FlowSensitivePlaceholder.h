@@ -80,12 +80,22 @@ private:
     /// Whether l has a consume/yield version for o. fsph-TODO: const.
     bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
 
+    /// Determine which versions rely on which versions, and which statements
+    /// rely on which versions.
+    void determineReliance(void);
+
     /// SVFG node (label) x object -> version to consume.
     DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
     /// SVFG node (label) x object -> version to yield.
     DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
     /// Object -> version counter.
     DenseMap<NodeID, unsigned> versions;
+    /// o -> (version -> versions which rely on it).
+    /// Use pointers to avoid defining hash function/tombstone key/... for Version.
+    DenseMap<NodeID, DenseMap<Version *, DenseSet<Version *>>> versionReliance;
+    /// o x version -> statement nodes which rely on that o/version.
+    /// Use pointer to avoid defining hash function/tombstone key/... for Version.
+    DenseMap<std::pair<NodeID, Version *>, DenseSet<NodeID>> stmtReliance;
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;

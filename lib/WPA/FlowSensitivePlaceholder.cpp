@@ -123,6 +123,40 @@ bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v
     return ml.find(o) != ml.end();
 }
 
+void FlowSensitivePlaceholder::determineReliance(void)
+{
+    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        NodeID l = it->first;
+        const SVFGNode *sn = it->second;
+        for (const SVFGEdge *e : sn->getOutEdges())
+        {
+            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            if (!ie) continue;
+            for (NodeID o : ie->getPointsTo())
+            {
+                NodeID lp = ie->getDstNode()->getId();
+                Version &y = yield[l][o];
+                Version &yp = yield[lp][o];
+                if (yp != y)
+                {
+                    versionReliance[o][&y].insert(&yp);
+                }
+            }
+        }
+
+        if (SVFUtil::isa<LoadSVFGNode>(sn))
+        {
+            for (DenseMap<NodeID, Version>::value_type &ov : consume[l])
+            {
+                NodeID o = ov.first;
+                Version &v = ov.second;
+                stmtReliance[{o, &v}].insert(l);
+            }
+        }
+    }
+}
+
 bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 {
     // fsph-TODO!
