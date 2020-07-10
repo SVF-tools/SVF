@@ -89,6 +89,9 @@ private:
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;
+
+    /// Points-to DS for working with versions.
+    BVDataPTAImpl::VDFPTDataTy *vPtD;
 };
 
 #endif /* FSPH_H_ */

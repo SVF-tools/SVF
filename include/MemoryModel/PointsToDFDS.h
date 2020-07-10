@@ -507,4 +507,87 @@ private:
     //@}
 };
 
+/// Versioned DF points-to. For each location, a particular "version" is accessed for
+/// address-taken objects. 
+template<class Key, class Data>
+class VDFPTData : public PTData<Key,Data>
+{
+public:
+    typedef NodeID LocID;
+    /// v -> points-to.
+    typedef std::map<Version, PointsTo> VPtsMap;
+    typedef typename PTData<Key, Data>::PTDataTY PTDataTy;
+
+    /// Constructor
+    VDFPTData(PTDataTy ty = PTData<Key, Data>::VDFPTD) : PTData<Key, Data>(ty)
+    {
+    }
+
+    /// Sets the mapping to consume versions. Necessary.
+    void setConsume(DenseMap<NodeID, DenseMap<NodeID, Version>> &consume)
+    {
+        this->consume = consume;
+    }
+
+    /// Sets the mapping to yield versions. Necessary.
+    void setYield(DenseMap<NodeID, DenseMap<NodeID, Version>> &yield)
+    {
+        this->yield = yield;
+    }
+
+    /// Propagate points-to of o from version yield_src(o) to consume_dst(o) (union y into c).
+    bool propagateAT(LocID srcLoc, LocID dstLoc, NodeID o)
+    {
+        Version y = yield[srcLoc][o];
+        Version c = consume[dstLoc][o];
+        // Propagating same version? No need.
+        if (y == c) return false;
+
+        PointsTo &ypt = atPointsTos[o][y];
+        PointsTo &cpt = atPointsTos[o][c];
+
+        return ypt |= cpt;
+    }
+
+    /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
+    bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
+    {
+        Version c = consume[loc][o];
+        PointsTo &opt = atPointsTos[loc][c];
+        PointsTo &ppt = this->getPts(p);
+
+        return ppt |= opt;
+    }
+
+    /// pt(o) = pt(o) U pt(p), where pt(o) is the yielded version at loc.
+    bool unionATFromTL(LocID loc, NodeID p, NodeID o)
+    {
+        Version y = yield[loc][o];
+        PointsTo &opt = atPointsTos[loc][y];
+        PointsTo &ppt = this->getPts(p);
+
+        return opt |= ppt;
+    }
+
+    //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
+    static inline bool classof(const VDFPTData<Key,Data> *)
+    {
+        return true;
+    }
+    static inline bool classof(const PTData<Key,Data>* ptd)
+    {
+        return ptd->getPTDTY() == PTData<Key,Data>::VDFPTD;
+    }
+    //@}
+
+private:
+    /// Points-to sets of address-taken objects.
+    DenseMap<NodeID, VPtsMap> atPointsTos;
+
+    /// SVFG node (label) x object -> version to consume.
+    DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
+    /// SVFG node (label) x object -> version to yield.
+    DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
+};
+
 #endif /* POINTSTODSDF_H_ */

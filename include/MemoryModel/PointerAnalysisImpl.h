@@ -43,6 +43,7 @@ public:
     typedef DiffPTData<NodeID,PointsTo,EdgeID> DiffPTDataTy;	/// Points-to data structure type
     typedef DFPTData<NodeID,PointsTo> DFPTDataTy;	/// Points-to data structure type
     typedef IncDFPTData<NodeID,PointsTo> IncDFPTDataTy;	/// Points-to data structure type
+    typedef VDFPTData<NodeID, PointsTo> VDFPTDataTy;
 
     /// Constructor
     BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check = true);
@@ -107,6 +108,10 @@ protected:
     inline IncDFPTDataTy* getDFPTDataTy() const
     {
         return SVFUtil::cast<IncDFPTDataTy>(ptD);
+    }
+    inline VDFPTDataTy* getVDFPTDataTy() const
+    {
+        return SVFUtil::dyn_cast<VDFPTDataTy>(ptD);
     }
 
     /// Union/add points-to. Add the reverse points-to for node collapse purpose

@@ -15,6 +15,9 @@ void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
 {
     FlowSensitive::initialize(svfModule);
 
+    vPtD = getVDFPTDataTy();
+    assert(vPtD && "FSPH::initialize: Expected VDFPTData");
+
     double start = stat->getClk();
     precolour();
     double end = stat->getClk();
@@ -26,6 +29,9 @@ void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
     double col = (end - start) / TIMEINTERVAL;
 
     printf("precolour: %fs, colour: %fs\n", prec, col);
+
+    vPtD->setConsume(consume);
+    vPtD->setYield(yield);
 
     exit(0);
 }

@@ -66,6 +66,7 @@ public:
     enum PTDataTY
     {
         DFPTD,
+        VDFPTD,
         IncDFPTD,
         DiffPTD,
         Default
