@@ -68,6 +68,8 @@ void FlowSensitivePlaceholder::precolour(void)
                 for (NodeID o : ie->getPointsTo())
                 {
                     consume[l][o] = newVersion(o);
+                    // It's yield will be the same; deltas are mutually exclusive with stores.
+                    yield[l][o] = consume[l][o];
                 }
 
                 vWorklist.push(l);
@@ -82,6 +84,7 @@ void FlowSensitivePlaceholder::colour(void) {
         NodeID l = vWorklist.pop();
         const SVFGNode *sl = svfg->getSVFGNode(l);
 
+        // Propagate l's y to lp's c for all l --o--> lp.
         for (const SVFGEdge *e : sl->getOutEdges()) {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
@@ -89,8 +92,8 @@ void FlowSensitivePlaceholder::colour(void) {
                 NodeID lp = ie->getDstNode()->getId();
                 if (meld(consume[lp][o], yield[l][o])) {
                     const SVFGNode *slp = svfg->getSVFGNode(lp);
-                    // No need to do anything for delta/store because their yield is set and static.
-                    if (!SVFUtil::isa<StoreSVFGNode>(slp) && !delta(lp)) {
+                    // No need to do anything for store because their yield is set and static.
+                    if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
                         yield[lp][o] = consume[lp][o];
                         vWorklist.push(lp);
                     }
