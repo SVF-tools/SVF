@@ -561,6 +561,8 @@ public:
     /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
+        if (consume[loc].find(o) == consume[loc].find(o)) return false;
+
         Version c = consume[loc][o];
         PointsTo &opt = atPointsTos[o][c];
         PointsTo &ppt = this->getPts(p);
