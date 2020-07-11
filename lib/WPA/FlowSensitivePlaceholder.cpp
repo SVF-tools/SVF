@@ -224,6 +224,56 @@ bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 
 bool FlowSensitivePlaceholder::processStore(const StoreSVFGNode* store)
 {
-    // fsph-TODO!
-    return false;
+    NodeID p = store->getPAGDstNodeID();
+    const PointsTo &ppt = getPts(p);
+
+    if (ppt.empty()) return false;
+
+    NodeID q = store->getPAGSrcNodeID();
+    const PointsTo &qpt = getPts(q);
+
+    NodeID l = store->getId();
+    double start = stat->getClk();
+    bool changed = false;
+    // The version for these objects would be y_l(o).
+    NodeBS changedObjects;
+
+    if (!qpt.empty())
+    {
+        for (NodeID o : ppt)
+        {
+            if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
+
+            if (vPtD->unionATFromTL(l, q, o))
+            {
+                changed = true;
+                changedObjects.set(o);
+            }
+        }
+    }
+
+    double end = stat->getClk();
+    storeTime += (end - start) / TIMEINTERVAL;
+
+    double updateStart = stat->getClk();
+
+    NodeID singleton = 0;
+    bool isSU = isStrongUpdate(store, singleton);
+    if (isSU) svfgHasSU.set(l);
+    else svfgHasSU.reset(l);
+
+    if (vPtD->propWithinLoc(l, isSU, singleton, changedObjects))
+    {
+        changed = true;
+        for (NodeID o : changedObjects)
+        {
+            // The yielded version changed because propWithinLoc went c -> y.
+            propagateVersion(o, yield[l][o]);
+        }
+    }
+
+    double updateEnd = stat->getClk();
+    updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
+
+    return changed;
 }
