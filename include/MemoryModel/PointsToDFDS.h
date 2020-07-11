@@ -553,7 +553,7 @@ public:
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
         Version c = consume[loc][o];
-        PointsTo &opt = atPointsTos[loc][c];
+        PointsTo &opt = atPointsTos[o][c];
         PointsTo &ppt = this->getPts(p);
 
         return ppt |= opt;
@@ -563,7 +563,7 @@ public:
     bool unionATFromTL(LocID loc, NodeID p, NodeID o)
     {
         Version y = yield[loc][o];
-        PointsTo &opt = atPointsTos[loc][y];
+        PointsTo &opt = atPointsTos[o][y];
         PointsTo &ppt = this->getPts(p);
 
         return opt |= ppt;
