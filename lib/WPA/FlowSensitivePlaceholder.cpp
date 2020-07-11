@@ -300,18 +300,16 @@ bool FlowSensitivePlaceholder::processStore(const StoreSVFGNode* store)
     if (isSU) svfgHasSU.set(l);
     else svfgHasSU.reset(l);
 
-    if (vPtD->propWithinLoc(l, isSU, singleton, changedObjects))
-    {
-        changed = true;
-        for (NodeID o : changedObjects)
-        {
-            // The yielded version changed because propWithinLoc went c -> y.
-            propagateVersion(o, yield[l][o]);
-        }
-    }
+    changed = vPtD->propWithinLoc(l, isSU, singleton, changedObjects) || changed;
 
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
+
+    // TODO: time.
+    for (NodeID o : changedObjects)
+    {
+        propagateVersion(o, yield[l][o]);
+    }
 
     return changed;
 }
