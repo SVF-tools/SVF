@@ -40,7 +40,7 @@ public:
     virtual void initialize(SVFModule* svfModule) override;
 
     /// Finalize analysis
-    // virtual void finalize() override;
+    virtual void finalize() override;
 
     /// Get PTA name
     virtual const std::string PTAName() const override

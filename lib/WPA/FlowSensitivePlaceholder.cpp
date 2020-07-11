@@ -32,7 +32,11 @@ void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
 
     vPtD->setConsume(consume);
     vPtD->setYield(yield);
+}
 
+void FlowSensitivePlaceholder::finalize()
+{
+    printf("DONE! TODO"); fflush(stdout);
     exit(0);
 }
 
