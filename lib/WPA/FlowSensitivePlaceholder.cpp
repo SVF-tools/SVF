@@ -151,7 +151,7 @@ void FlowSensitivePlaceholder::determineReliance(void)
             {
                 NodeID o = ov.first;
                 Version &v = ov.second;
-                stmtReliance[{o, v}].insert(l);
+                stmtReliance[o][v].insert(l);
             }
         }
     }

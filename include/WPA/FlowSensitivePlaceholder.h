@@ -93,7 +93,7 @@ private:
     /// o -> (version -> versions which rely on it).
     DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
-    DenseMap<std::pair<NodeID, Version>, DenseSet<NodeID>> stmtReliance;
+    DenseMap<NodeID, DenseMap<Version, DenseSet<NodeID>>> stmtReliance;
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;
