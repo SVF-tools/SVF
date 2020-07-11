@@ -63,6 +63,7 @@ public:
 protected:
     virtual bool processLoad(const LoadSVFGNode* load) override;
     virtual bool processStore(const StoreSVFGNode* store) override;
+    virtual void processNode(NodeID n) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }

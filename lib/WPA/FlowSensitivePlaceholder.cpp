@@ -172,6 +172,12 @@ void FlowSensitivePlaceholder::propagateVersion(NodeID o, Version v)
     }
 }
 
+void FlowSensitivePlaceholder::processNode(NodeID n)
+{
+    SVFGNode* sn = svfg->getSVFGNode(n);
+    if (processSVFGNode(sn)) propagate(&sn);
+}
+
 bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 {
     double start = stat->getClk();
