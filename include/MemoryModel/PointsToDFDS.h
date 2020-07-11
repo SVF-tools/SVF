@@ -549,6 +549,15 @@ public:
         return ypt |= cpt;
     }
 
+    /// Merges version from of o into version to of o, kind of like to(o) = to(o) U from(o).
+    bool updateATVersion(NodeID o, Version to, Version from)
+    {
+        PointsTo &topt = atPointsTos[o][to];
+        PointsTo &frompt = atPointsTos[o][from];
+
+        return topt |= frompt;
+    }
+
     /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
