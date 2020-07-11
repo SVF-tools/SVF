@@ -43,7 +43,7 @@ typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
 class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl
 {
     friend class FlowSensitiveStat;
-private:
+protected:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
 
 public:
