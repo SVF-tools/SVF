@@ -185,6 +185,37 @@ void FlowSensitivePlaceholder::processNode(NodeID n)
     if (processSVFGNode(sn)) propagate(&sn);
 }
 
+void FlowSensitivePlaceholder::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
+{
+    for (const SVFGEdge *e : newEdges)
+    {
+        const SVFGNode *src = e->getSrcNode();
+        const SVFGNode *dst = e->getDstNode();
+
+        if (SVFUtil::isa<PHISVFGNode>(dst))
+        {
+            pushIntoWorklist(dst->getId());
+        }
+        else if (SVFUtil::isa<FormalINSVFGNode>(dst) || SVFUtil::isa<ActualOUTSVFGNode>(dst))
+        {
+            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            assert(ie && "FSPH::updateConnectedNodes: given direct edge?");
+            bool changed = false;
+
+            const PointsTo &ept = ie->getPointsTo();
+            // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
+            for (NodeID o : ept)
+            {
+                Version &srcY = yield[src->getId()][o];
+                Version &dstC = consume[dst->getId()][o];
+                versionReliance[o][srcY].insert(dstC);
+            }
+
+            if (changed) pushIntoWorklist(dst->getId());
+        }
+    }
+}
+
 bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 {
     double start = stat->getClk();
