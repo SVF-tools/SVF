@@ -524,13 +524,13 @@ public:
     }
 
     /// Sets the mapping to consume versions. Necessary.
-    void setConsume(DenseMap<NodeID, DenseMap<NodeID, Version>> &consume)
+    void setConsume(DenseMap<NodeID, DenseMap<NodeID, Version>> *consume)
     {
         this->consume = consume;
     }
 
     /// Sets the mapping to yield versions. Necessary.
-    void setYield(DenseMap<NodeID, DenseMap<NodeID, Version>> &yield)
+    void setYield(DenseMap<NodeID, DenseMap<NodeID, Version>> *yield)
     {
         this->yield = yield;
     }
@@ -538,8 +538,8 @@ public:
     /// Propagate points-to of o from version yield_src(o) to consume_dst(o) (union y into c).
     bool propagateAT(LocID srcLoc, LocID dstLoc, NodeID o)
     {
-        Version y = yield[srcLoc][o];
-        Version c = consume[dstLoc][o];
+        Version y = (*yield)[srcLoc][o];
+        Version c = (*consume)[dstLoc][o];
         // Propagating same version? No need.
         if (y == c) return false;
 
@@ -561,9 +561,9 @@ public:
     /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
-        if (consume[loc].find(o) == consume[loc].find(o)) return false;
+        if ((*consume)[loc].find(o) == (*consume)[loc].find(o)) return false;
 
-        Version c = consume[loc][o];
+        Version c = (*consume)[loc][o];
         PointsTo &opt = atPointsTos[o][c];
         PointsTo &ppt = this->getPts(p);
 
@@ -573,7 +573,7 @@ public:
     /// pt(o) = pt(o) U pt(p), where pt(o) is the yielded version at loc.
     bool unionATFromTL(LocID loc, NodeID p, NodeID o)
     {
-        Version y = yield[loc][o];
+        Version y = (*yield)[loc][o];
         PointsTo &opt = atPointsTos[o][y];
         PointsTo &ppt = this->getPts(p);
 
@@ -587,7 +587,7 @@ public:
     bool propWithinLoc(LocID loc, bool su, NodeID singleton, NodeBS &changedObjects)
     {
         bool changed = false;
-        for (DenseMap<NodeID, Version>::value_type &oc : consume[loc])
+        for (DenseMap<NodeID, Version>::value_type &oc : (*consume)[loc])
         {
             NodeID o = oc.first;
             Version &c = oc.second;
@@ -595,7 +595,7 @@ public:
             // Strong-updated; don't propagate.
             if (su && o == singleton) continue;
 
-            Version &y = yield[loc][o];
+            Version &y = (*yield)[loc][o];
             if (updateATVersion(o, y, c))
             {
                 changed = true;
@@ -622,9 +622,9 @@ private:
     DenseMap<NodeID, VPtsMap> atPointsTos;
 
     /// SVFG node (label) x object -> version to consume.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
+    DenseMap<NodeID, DenseMap<NodeID, Version>> *consume;
     /// SVFG node (label) x object -> version to yield.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
+    DenseMap<NodeID, DenseMap<NodeID, Version>> *yield;
 };
 
 #endif /* POINTSTODSDF_H_ */

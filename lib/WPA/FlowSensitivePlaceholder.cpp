@@ -30,8 +30,8 @@ void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
 
     printf("precolour: %fs, colour: %fs\n", prec, col);
 
-    vPtD->setConsume(consume);
-    vPtD->setYield(yield);
+    vPtD->setConsume(&consume);
+    vPtD->setYield(&yield);
 }
 
 void FlowSensitivePlaceholder::finalize()
