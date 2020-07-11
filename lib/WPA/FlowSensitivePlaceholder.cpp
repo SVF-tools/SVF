@@ -59,13 +59,15 @@ void FlowSensitivePlaceholder::precolour(void)
         }
         else if (delta(l))
         {
+            // If l may change at runtime (new incoming edges), it's unknown whether
+            // a new consume version is required, so we give it one in case.
             for (const SVFGEdge *e : sn->getOutEdges())
             {
                 const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
                 if (!ie) continue;
                 for (NodeID o : ie->getPointsTo())
                 {
-                    yield[l][o] = newVersion(o);
+                    consume[l][o] = newVersion(o);
                 }
 
                 vWorklist.push(l);
