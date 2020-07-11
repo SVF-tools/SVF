@@ -139,12 +139,13 @@ void FlowSensitivePlaceholder::determineReliance(void)
             if (!ie) continue;
             for (NodeID o : ie->getPointsTo())
             {
+                // Given l --o--> lp, c at lp relies on y at l.
                 NodeID lp = ie->getDstNode()->getId();
                 Version &y = yield[l][o];
-                Version &yp = yield[lp][o];
-                if (yp != y)
+                Version &cp = consume[lp][o];
+                if (cp != y)
                 {
-                    versionReliance[o][y].insert(yp);
+                    versionReliance[o][y].insert(cp);
                 }
             }
         }
