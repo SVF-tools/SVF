@@ -174,11 +174,12 @@ void FlowSensitivePlaceholder::propagateVersion(NodeID o, Version v)
         if (vPtD->updateATVersion(o, r, v))
         {
             propagateVersion(o, r);
-            for (NodeID s : stmtReliance[o][r])
-            {
-                pushIntoWorklist(s);
-            }
         }
+    }
+
+    for (NodeID s : stmtReliance[o][v])
+    {
+        pushIntoWorklist(s);
     }
 }
 
