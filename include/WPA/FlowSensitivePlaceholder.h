@@ -64,6 +64,9 @@ protected:
     virtual bool processLoad(const LoadSVFGNode* load) override;
     virtual bool processStore(const StoreSVFGNode* store) override;
 
+    /// Override to do nothing. Instead, we will use propagateVersion when necessary.
+    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
+
 private:
     /// Precolour the split SVFG.
     void precolour(void);
@@ -83,6 +86,11 @@ private:
     /// Determine which versions rely on which versions, and which statements
     /// rely on which versions.
     void determineReliance(void);
+
+    /// Propagates version v of o to any version of o which relies on v.
+    /// Recursively applies to reliant versions till no new changes are made.
+    /// Adds any statements which rely on any changes made to the worklist.
+    void propagateVersion(NodeID o, Version v);
 
     /// SVFG node (label) x object -> version to consume.
     DenseMap<NodeID, DenseMap<NodeID, Version>> consume;

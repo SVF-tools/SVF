@@ -157,6 +157,21 @@ void FlowSensitivePlaceholder::determineReliance(void)
     }
 }
 
+void FlowSensitivePlaceholder::propagateVersion(NodeID o, Version v)
+{
+    for (Version r : versionReliance[o][v])
+    {
+        if (vPtD->updateATVersion(o, r, v))
+        {
+            propagateVersion(o, r);
+            for (NodeID s : stmtReliance[o][r])
+            {
+                pushIntoWorklist(s);
+            }
+        }
+    }
+}
+
 bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
 {
     double start = stat->getClk();
