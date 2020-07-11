@@ -578,6 +578,32 @@ public:
         return opt |= ppt;
     }
 
+    /// Propagates all consume versions at loc to their corresponding yield versions,
+    /// EXCEPT su => singleton is not propagated.
+    /// When the yield version of o at loc is changed, it is added to changedObjects.
+    /// Returns true if any points-to set changed.
+    bool propWithinLoc(LocID loc, bool su, NodeID singleton, NodeBS &changedObjects)
+    {
+        bool changed = false;
+        for (DenseMap<NodeID, Version>::value_type &oc : consume[loc])
+        {
+            NodeID o = oc.first;
+            Version &c = oc.second;
+
+            // Strong-updated; don't propagate.
+            if (su && o == singleton) continue;
+
+            Version &y = yield[loc][o];
+            if (updateATVersion(o, y, c))
+            {
+                changed = true;
+                changedObjects.set(o);
+            }
+        }
+
+        return changed;
+    }
+
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
     static inline bool classof(const VDFPTData<Key,Data> *)
     {
