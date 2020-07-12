@@ -135,6 +135,19 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
+void SVFUtil::dumpVersion(Version &v)
+{
+    outs() << "[ ";
+    bool first = true;
+    for (unsigned e : v)
+    {
+        if (!first) outs() << ", ";
+        outs() << e;
+    }
+
+    outs() << " ]";
+}
+
 /*!
  * Print memory usage
  */
