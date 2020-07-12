@@ -157,7 +157,7 @@ void FlowSensitivePlaceholder::determineReliance(void)
             }
         }
 
-        if (SVFUtil::isa<LoadSVFGNode>(sn))
+        if (SVFUtil::isa<LoadSVFGNode>(sn) || SVFUtil::isa<StoreSVFGNode>(sn))
         {
             for (DenseMap<NodeID, Version>::value_type &ov : consume[l])
             {
