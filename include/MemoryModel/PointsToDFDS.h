@@ -617,6 +617,73 @@ public:
     }
     //@}
 
+    /// Dump points-to sets of each object per version (for debugging).
+    virtual inline void dumpPTData()
+    {
+        // Dump points-to of top-level pointers
+        //PTData<Key,Data>::dumpPts(this->ptsMap);
+
+        // Dump points-to of address-taken variables
+        // Gather objects in an ordered data structure.
+        NodeBS objects;
+        for (DenseMap<NodeID, VPtsMap>::value_type ovpt : atPointsTos)
+        {
+            objects.set(ovpt.first);
+        }
+
+        for (NodeID o : objects)
+        {
+            if (atPointsTos.find(o) == atPointsTos.end()) continue;
+
+            SVFUtil::outs() << o << " => \n";
+            VPtsMap &vpm = atPointsTos[o];
+            for (VPtsMap::value_type &vpt : vpm)
+            {
+                Version &v = vpt.first;
+                PointsTo &pt = vpt.second;
+                SVFUtil::outs() << "  ";
+                SVFUtil::dumpVersion(v);
+                SVFUtil::outs() << " : {";
+                SVFUtil::dumpSet(pt);
+                SVFUtil::outs() << "}\n";
+            }
+        }
+
+        // We also want to know, which versions correspond to which locations.
+        // TODO: pull repetition into function.
+        for (DenseMap<NodeID, DenseMap<NodeID, Version>>::value_type &lov : *consume)
+        {
+            LocID &l = lov.first;
+            if (lov.second.empty()) continue;
+
+            SVFUtil::outs() << l << " consumes =>\n";
+            for (DenseMap<NodeID, Version>::value_type &ov : lov.second)
+            {
+                NodeID &o = ov.first;
+                Version &v = ov.second;
+                SVFUtil::outs() << "  " << o << " version ";
+                SVFUtil::dumpVersion(v);
+                SVFUtil::outs() << "\n";
+            }
+        }
+
+        for (DenseMap<NodeID, DenseMap<NodeID, Version>>::value_type &lov : *yield)
+        {
+            LocID &l = lov.first;
+            if (lov.second.empty()) continue;
+
+            SVFUtil::outs() << l << " yields =>\n";
+            for (DenseMap<NodeID, Version>::value_type &ov : lov.second)
+            {
+                NodeID &o = ov.first;
+                Version &v = ov.second;
+                SVFUtil::outs() << "  " << o << " version ";
+                SVFUtil::dumpVersion(v);
+                SVFUtil::outs() << "\n";
+            }
+        }
+    }
+
 private:
     /// Points-to sets of address-taken objects.
     DenseMap<NodeID, VPtsMap> atPointsTos;
