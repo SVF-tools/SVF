@@ -141,8 +141,13 @@ void SVFUtil::dumpVersion(Version &v)
     bool first = true;
     for (unsigned e : v)
     {
-        if (!first) outs() << ", ";
+        if (!first)
+        {
+            outs() << ", ";
+        }
+
         outs() << e;
+        first = false;
     }
 
     outs() << " ]";
