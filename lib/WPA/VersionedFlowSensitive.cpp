@@ -1,22 +1,22 @@
-//===- FlowSensitivePlaceholder.cpp -- Sparse flow-sensitive pointer analysis------------//
+//===- VersionedFlowSensitive.cpp -- Sparse flow-sensitive pointer analysis------------//
 
 /*
- * FlowSensitivePlaceholder.cpp
+ * VersionedFlowSensitive.cpp
  *
  *  Created on: Jun 26, 2020
  *      Author: Mohamad Barbar
  */
 
 #include "WPA/Andersen.h"
-#include "WPA/FlowSensitivePlaceholder.h"
+#include "WPA/VersionedFlowSensitive.h"
 #include <iostream>
 
-void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
+void VersionedFlowSensitive::initialize(SVFModule* svfModule)
 {
     FlowSensitive::initialize(svfModule);
 
     vPtD = getVDFPTDataTy();
-    assert(vPtD && "FSPH::initialize: Expected VDFPTData");
+    assert(vPtD && "VFS::initialize: Expected VDFPTData");
 
     double start = stat->getClk();
     precolour();
@@ -36,13 +36,13 @@ void FlowSensitivePlaceholder::initialize(SVFModule* svfModule)
     vPtD->setYield(&yield);
 }
 
-void FlowSensitivePlaceholder::finalize()
+void VersionedFlowSensitive::finalize()
 {
     printf("DONE! TODO"); fflush(stdout);
     exit(0);
 }
 
-void FlowSensitivePlaceholder::precolour(void)
+void VersionedFlowSensitive::precolour(void)
 {
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -80,7 +80,7 @@ void FlowSensitivePlaceholder::precolour(void)
     }
 }
 
-void FlowSensitivePlaceholder::colour(void) {
+void VersionedFlowSensitive::colour(void) {
     unsigned loops = 0;
     while (!vWorklist.empty()) {
         NodeID l = vWorklist.pop();
@@ -105,28 +105,28 @@ void FlowSensitivePlaceholder::colour(void) {
     }
 }
 
-bool FlowSensitivePlaceholder::meld(Version &v1, Version &v2)
+bool VersionedFlowSensitive::meld(Version &v1, Version &v2)
 {
     // Meld operator is union of bit vectors.
     return v1 |= v2;
 }
 
-bool FlowSensitivePlaceholder::delta(NodeID l) const
+bool VersionedFlowSensitive::delta(NodeID l) const
 {
     const SVFGNode *s = svfg->getSVFGNode(l);
-    // fsph-TODO: double check.
+    // vfs-TODO: double check.
     return SVFUtil::isa<FormalINSVFGNode>(s) || SVFUtil::isa<ActualOUTSVFGNode>(s);
 }
 
 /// Returns a new version for o.
-Version FlowSensitivePlaceholder::newVersion(NodeID o)
+Version VersionedFlowSensitive::newVersion(NodeID o)
 {
     Version nv;
     nv.set(++versions[o]);
     return nv;
 }
 
-bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v) const
+bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) const
 {
     // Choose which map we are checking.
     const DenseMap<NodeID, DenseMap<NodeID, Version>> &m = v == CONSUME ? consume : yield;
@@ -134,7 +134,7 @@ bool FlowSensitivePlaceholder::hasVersion(NodeID l, NodeID o, enum VersionType v
     return ml.find(o) != ml.end();
 }
 
-void FlowSensitivePlaceholder::determineReliance(void)
+void VersionedFlowSensitive::determineReliance(void)
 {
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -169,7 +169,7 @@ void FlowSensitivePlaceholder::determineReliance(void)
     }
 }
 
-void FlowSensitivePlaceholder::propagateVersion(NodeID o, Version v)
+void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     for (Version r : versionReliance[o][v])
     {
@@ -185,13 +185,13 @@ void FlowSensitivePlaceholder::propagateVersion(NodeID o, Version v)
     }
 }
 
-void FlowSensitivePlaceholder::processNode(NodeID n)
+void VersionedFlowSensitive::processNode(NodeID n)
 {
     SVFGNode* sn = svfg->getSVFGNode(n);
     if (processSVFGNode(sn)) propagate(&sn);
 }
 
-void FlowSensitivePlaceholder::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
+void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
 {
     for (const SVFGEdge *e : newEdges)
     {
@@ -205,7 +205,7 @@ void FlowSensitivePlaceholder::updateConnectedNodes(const SVFGEdgeSetTy& newEdge
         else if (SVFUtil::isa<FormalINSVFGNode>(dst) || SVFUtil::isa<ActualOUTSVFGNode>(dst))
         {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-            assert(ie && "FSPH::updateConnectedNodes: given direct edge?");
+            assert(ie && "VFS::updateConnectedNodes: given direct edge?");
             bool changed = false;
 
             const PointsTo &ept = ie->getPointsTo();
@@ -222,7 +222,7 @@ void FlowSensitivePlaceholder::updateConnectedNodes(const SVFGEdgeSetTy& newEdge
     }
 }
 
-bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
+bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
 {
     double start = stat->getClk();
 
@@ -262,7 +262,7 @@ bool FlowSensitivePlaceholder::processLoad(const LoadSVFGNode* load)
     return changed;
 }
 
-bool FlowSensitivePlaceholder::processStore(const StoreSVFGNode* store)
+bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 {
     NodeID p = store->getPAGDstNodeID();
     const PointsTo &ppt = getPts(p);

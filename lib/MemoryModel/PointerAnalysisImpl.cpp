@@ -39,7 +39,7 @@ BVDataPTAImpl::BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check) :
         else
             ptD = new DFPTDataTy();
     }
-    else if (type == FSPH_WPA)
+    else if (type == VFS_WPA)
     {
         ptD = new VDFPTDataTy();
     }
