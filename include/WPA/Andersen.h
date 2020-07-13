@@ -667,7 +667,7 @@ private:
 
 public:
     AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
-        AndersenHCD(_pag, type), AndersenLCD(_pag, type), Andersen(_pag, type)
+        Andersen(_pag, type), AndersenHCD(_pag, type), AndersenLCD(_pag, type)
     {
     }
 
