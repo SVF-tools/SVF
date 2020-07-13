@@ -266,7 +266,7 @@ private:
     }
 
     /// Rename operands (RHS) of phis
-    inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector& memRegs)
+    inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
         for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
@@ -279,11 +279,11 @@ private:
     //@}
     /// Get/set methods for dominace frontier/tree
     //@{
-    DominanceFrontier* getDF(const SVFFunction& fn)
+    DominanceFrontier* getDF(const SVFFunction&)
     {
         return df;
     }
-    DominatorTree* getDT(const SVFFunction& fn)
+    DominatorTree* getDT(const SVFFunction&)
     {
         return dt;
     }

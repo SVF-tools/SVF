@@ -146,9 +146,9 @@ public:
 
     virtual void printStat(string str = "");
 
-    virtual void performStatPerQuery(NodeID ptr) {}
+    virtual void performStatPerQuery(NodeID) {}
 
-    virtual void printStatPerQuery(NodeID ptr, const PointsTo& pts) {}
+    virtual void printStatPerQuery(NodeID, const PointsTo&) {}
 
     virtual void callgraphStat();
 private:

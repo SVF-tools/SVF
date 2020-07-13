@@ -78,7 +78,7 @@ public:
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
+        :  BVDataPTAImpl(_pag, type, alias_check), pwcOpt(false), diffOpt(true), consCG(NULL)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -185,7 +185,7 @@ public:
             setSCCEdgeFlag(ConstraintNode::Copy);
     }
 
-    const bool mergePWC() const
+    bool mergePWC() const
     {
         return pwcOpt;
     }
@@ -195,7 +195,7 @@ public:
         diffOpt = flag;
     }
 
-    const bool enableDiff() const
+    bool enableDiff() const
     {
         return diffOpt;
     }
@@ -350,12 +350,12 @@ protected:
     }
 
     /// match types for Gep Edges
-    virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge)
+    virtual bool matchType(NodeID, NodeID, const NormalGepCGEdge*)
     {
         return true;
     }
     /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge)
+    virtual void addTypeForGepObjNode(NodeID, const NormalGepCGEdge*)
     {
         return;
     }
@@ -406,7 +406,7 @@ protected:
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
     /// process "bitcast" CopyCGEdge
-    virtual void processCast(const ConstraintEdge *edge)
+    virtual void processCast(const ConstraintEdge*)
     {
         return;
     }
@@ -514,7 +514,7 @@ private:
 
 public:
     AndersenLCD(PAG* _pag, PTATY type = AndersenLCD_WPA) :
-        Andersen(_pag, type), lcdCandidates( {}), metEdges({})
+        Andersen(_pag, type), metEdges({}), lcdCandidates( {})
     {
     }
 

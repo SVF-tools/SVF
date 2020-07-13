@@ -137,7 +137,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const PTACallGraphEdge *edge)
+    static inline bool classof(const PTACallGraphEdge*)
     {
         return true;
     }

@@ -13,6 +13,13 @@
 * <b>SVF now supports analysis for C++ programs.</b>
 <br />
 
+## Documentation
+
+If you want to build the documentation yourself go into doc and invoke doxygen:
+```
+cd doc && doxygen doxygen.config
+```
+
 #### We are looking for self-motivated PhD students and we welcome industry collaboration/sponsorship to improve SVF (Please contact yulei.sui@uts.edu.au if you are interested)
 
 

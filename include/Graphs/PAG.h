@@ -727,22 +727,22 @@ public:
     //@}
 
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i)
+    inline NodeID addValNode(const Value*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i)
+    inline NodeID addObjNode(const Value*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    inline NodeID addRetNode(const SVFFunction*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    inline NodeID addVarargNode(const SVFFunction*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }

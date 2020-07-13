@@ -156,7 +156,7 @@ private:
 public:
 
     /// Constructors
-    ObjTypeInfo(const Value* val, const Type* t, u32_t max) :
+    ObjTypeInfo(const Value*, const Type* t, u32_t max) :
         type(t), flags(0), maxOffsetLimit(max)
     {
     }
