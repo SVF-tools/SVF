@@ -57,8 +57,8 @@ public:
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
     typedef VFGEdge::VFGEdgeSetTy::const_iterator const_iterator;
-    typedef std::set<const CallPE*> CallPESet;
-    typedef std::set<const RetPE*> RetPESet;
+    typedef DenseSet<const CallPE*> CallPESet;
+    typedef DenseSet<const RetPE*> RetPESet;
 
 public:
     /// Constructor
@@ -87,20 +87,27 @@ public:
     /// Get the function of this SVFGNode
     virtual const SVFFunction* getFun() const
     {
+    	const SVFFunction* fun = NULL;
         if(bb)
-            return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
-        else
-            return NULL;
+        	fun =  LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
+
+        //assert((fun == icfgNode->getFun()) && "not the same function??");
+
+        return fun;
+
     }
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
     {
-        o << "VFGNode ID:" << node.getId();
+        o << node.toString();
         return o;
     }
     //@}
+
+    virtual const std::string toString() const;
+
 protected:
     const BasicBlock* bb;
     const ICFGNode* icfgNode;
@@ -185,6 +192,8 @@ public:
         return pagEdge->getInst();
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -222,6 +231,8 @@ public:
         return node->getNodeKind() == Load;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -259,6 +270,8 @@ public:
         return node->getNodeKind() == Store;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -296,6 +309,8 @@ public:
         return node->getNodeKind() == Copy;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -306,7 +321,7 @@ public:
 class CmpVFGNode: public VFGNode
 {
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -368,6 +383,7 @@ public:
         return opVers.end();
     }
     //@}
+    virtual const std::string toString() const;
 };
 
 
@@ -377,7 +393,7 @@ public:
 class BinaryOPVFGNode: public VFGNode
 {
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -439,6 +455,8 @@ public:
         return opVers.end();
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -476,6 +494,8 @@ public:
         return node->getNodeKind() == Gep;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -485,7 +505,7 @@ class PHIVFGNode : public VFGNode
 {
 
 public:
-    typedef std::map<u32_t,const PAGNode*> OPVers;
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -545,6 +565,8 @@ public:
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -579,7 +601,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const IntraPHIVFGNode *node)
+    static inline bool classof(const IntraPHIVFGNode*)
     {
         return true;
     }
@@ -596,6 +618,8 @@ public:
         return node->getNodeKind() == TIntraPhi;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -631,6 +655,8 @@ public:
         return node->getNodeKind() == Addr;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -674,6 +700,7 @@ public:
     }
     //@}
 
+    virtual const std::string toString() const;
 };
 
 /*
@@ -722,6 +749,8 @@ public:
         return node->getNodeKind() == AParm;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -789,6 +818,8 @@ public:
         return node->getNodeKind() == FParm;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -844,6 +875,8 @@ public:
         return node->getNodeKind() == ARet;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -889,7 +922,7 @@ public:
     }
     ///Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FormalRetVFGNode *)
+    static inline bool classof(const FormalRetVFGNode )
     {
         return true;
     }
@@ -906,6 +939,8 @@ public:
         return node->getNodeKind() == FRet;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -944,7 +979,7 @@ public:
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const InterPHIVFGNode *node)
+    static inline bool classof(const InterPHIVFGNode*)
     {
         return true;
     }
@@ -961,6 +996,8 @@ public:
         return node->getNodeKind() == TInterPhi;
     }
     //@}
+
+    virtual const std::string toString() const;
 
 private:
     const SVFFunction* fun;
@@ -1007,6 +1044,8 @@ public:
         return node->getNodeKind() == NPtr;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 

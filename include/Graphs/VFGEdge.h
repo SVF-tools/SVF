@@ -118,6 +118,17 @@ public:
     {
         return (cs << EdgeKindMaskBits) | k;
     }
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const VFGEdge &edge)
+    {
+        o << edge.toString();
+        return o;
+    }
+    //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -151,6 +162,8 @@ public:
                edge->getEdgeKind() == RetDirVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -184,6 +197,8 @@ public:
         return edge->getEdgeKind() == IntraDirectVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -226,6 +241,8 @@ public:
         return edge->getEdgeKind() == CallDirVF ;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -266,6 +283,8 @@ public:
         return edge->getEdgeKind() == RetDirVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 

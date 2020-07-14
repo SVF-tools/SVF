@@ -46,7 +46,7 @@ public:
     typedef VDFPTData<NodeID, PointsTo> VDFPTDataTy;
 
     /// Constructor
-    BVDataPTAImpl(PointerAnalysis::PTATY type, bool alias_check = true);
+    BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
     virtual ~BVDataPTAImpl()
@@ -90,7 +90,7 @@ public:
 protected:
 
     /// Update callgraph. This should be implemented by its subclass.
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap& callsites)
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
     {
         assert(false && "Virtual function not implemented!");
         return false;
@@ -183,11 +183,11 @@ public:
     typedef CondVar<Cond> CVar;
     typedef CondStdSet<CVar>  CPtSet;
     typedef PTData<CVar,CPtSet> PTDataTy;	         /// Points-to data structure type
-    typedef std::map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef std::map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
+    typedef DenseMap<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
+    typedef DenseMap<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
-    CondPTAImpl(PointerAnalysis::PTATY type) : PointerAnalysis(type), normalized(false)
+    CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
     {
         if (type == PathS_DDA || type == Cxt_DDA)
             ptD = new PTDataTy();

@@ -31,7 +31,7 @@ public:
     typedef std::map<DPIm,CVar> DPMToCVarMap;
     typedef std::map<DPIm,DPIm> DPMToDPMMap;
     typedef DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef std::set<const SVFGEdge* > ConstSVFGEdgeSet;
+    typedef DenseSet<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
     typedef std::map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
@@ -277,9 +277,9 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(SVFModule* module)
+    virtual inline void buildSVFG(PAG* pag)
     {
-        _ander = AndersenWaveDiff::createAndersenWaveDiff(module);
+        _ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
         _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
         _pag = _svfg->getPAG();
     }

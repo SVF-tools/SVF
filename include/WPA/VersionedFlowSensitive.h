@@ -29,13 +29,13 @@ public:
     };
 
     /// Constructor
-    VersionedFlowSensitive(PTATY type = VFS_WPA) : FlowSensitive(type) { }
+    VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA) : FlowSensitive(_pag, type) { }
 
     /// Flow sensitive analysis
     // virtual void analyze(SVFModule* svfModule) override;
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* svfModule) override;
+    virtual void initialize() override;
 
     /// Finalize analysis
     virtual void finalize() override;

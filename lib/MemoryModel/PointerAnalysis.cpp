@@ -27,7 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/PAGBuilder.h"
 #include "SVF-FE/CallGraphBuilder.h"
 #include "SVF-FE/CHG.h"
 #include "SVF-FE/DCHG.h"
@@ -114,10 +113,11 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
 /*!
  * Constructor
  */
-PointerAnalysis::PointerAnalysis(PTATY ty, bool alias_check) :
+PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
     ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL), svfMod(NULL)
 {
-    OnTheFlyIterBudgetForStat = statBudget;
+    pag = p;
+	OnTheFlyIterBudgetForStat = statBudget;
     print_stat = PStat;
     ptaImplTy = BaseImpl;
     alias_validation = (alias_check && EnableAliasCheck);
@@ -152,76 +152,50 @@ void PointerAnalysis::destroy()
 /*!
  * Initialization of pointer analysis
  */
-void PointerAnalysis::initialize(SVFModule* svfModule)
+void PointerAnalysis::initialize()
 {
+	assert(pag && "PAG has not been built!");
+	if (chgraph == NULL) {
+		if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
+			DCHGraph *dchg = new DCHGraph(pag->getModule());
+			// TODO: we might want to have an option for extending.
+			dchg->buildCHG(true);
+			chgraph = dchg;
+		} else {
+			CHGraph *chg = new CHGraph(pag->getModule());
+			chg->buildCHG();
+			chgraph = chg;
+		}
+	}
 
-    /// whether we have already built PAG
-    if(pag == NULL)
-    {
+    svfMod = pag->getModule();
 
-        DBOUT(DGENERAL, outs() << pasMsg("Building PAG ...\n"));
-        // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
-        if (SVFModule::pagReadFromTXT())
-        {
-            PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
-            pag = fileBuilder.build();
+    // dump PAG
+    if (dumpGraph())
+        pag->dump("pag_initial");
 
-        }
-        else
-        {
-            DBOUT(DGENERAL, outs() << pasMsg("Building Symbol table ...\n"));
-            SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
-            symTable->buildMemModel(svfModule);
+    // dump ICFG
+    if (DumpICFG)
+    	pag->getICFG()->dump("icfg_initial");
 
-            PAGBuilder builder;
-            pag = builder.build(svfModule);
-
-
-            if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
-            {
-                DCHGraph *dchg = new DCHGraph(svfModule);
-                // TODO: we might want to have an option for extending.
-                dchg->buildCHG(true);
-                chgraph = dchg;
-            }
-            else
-            {
-                CHGraph *chg = new CHGraph(svfModule);
-                chg->buildCHG();
-                chgraph = chg;
-            }
-
-            //typeSystem = new TypeSystem(pag);
-        }
-
-        // dump PAG
-        if (dumpGraph())
-            PAG::getPAG()->dump("pag_initial");
-
-        // dump ICFG
-        if (DumpICFG)
-        	pag->getICFG()->dump("icfg_initial");
-
-        // print to command line of the PAG graph
-        if (PAGPrint)
-            pag->print();
-    }
+    // print to command line of the PAG graph
+    if (PAGPrint)
+        pag->print();
 
     /// initialise pta call graph for every pointer analysis instance
     if(EnableThreadCallGraph)
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
-        ptaCallGraph = bd.buildThreadCallGraph(svfModule);
+        ptaCallGraph = bd.buildThreadCallGraph(pag->getModule());
     }
     else
     {
         PTACallGraph* cg = new PTACallGraph();
         CallGraphBuilder bd(cg,pag->getICFG());
-        ptaCallGraph = bd.buildCallGraph(svfModule);
+        ptaCallGraph = bd.buildCallGraph(pag->getModule());
     }
     callGraphSCCDetection();
-    svfMod = svfModule;
 
     // dump callgraph
 	if (CallGraphDotGraph)
@@ -568,7 +542,7 @@ void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &ta
 
     if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
     {
-        std::set<const GlobalValue*> vtbls;
+        DenseSet<const GlobalValue*> vtbls;
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {

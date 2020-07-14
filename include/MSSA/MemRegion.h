@@ -137,7 +137,7 @@ public:
     //@}
     ///Define mem region set
     typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef std::map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
+    typedef DenseMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
     typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
     typedef std::map<const SVFFunction*, PointsToList > FunToPointsToMap;
     typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
@@ -156,7 +156,7 @@ public:
     //@{
     typedef DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
     typedef DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef std::map<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
+    typedef DenseMap<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
@@ -164,7 +164,7 @@ public:
     /// Map a function to its indirect refs/mods of memory objects
     typedef DenseMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef std::map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    typedef DenseMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
     typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
@@ -317,14 +317,14 @@ protected:
     }
 
     /// Get memory regions for a load statement according to cpts.
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction*)
     {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);
     }
 
     /// Get memory regions for call site ref according to cpts.
-    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+    virtual inline void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction*)
     {
         const MemRegion* mr = getMR(cpts);
         aliasMRs.insert(mr);

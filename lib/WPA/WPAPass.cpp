@@ -42,6 +42,7 @@
 #include "WPA/FlowSensitiveTBHC.h"
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
+#include "SVF-FE/PAGBuilder.h"
 
 char WPAPass::ID = 0;
 
@@ -117,44 +118,47 @@ void WPAPass::runOnModule(SVFModule* svfModule)
  */
 void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
+	/// Build PAG
+	PAGBuilder builder;
+	PAG* pag = builder.build(svfModule);
     /// Initialize pointer analysis.
     switch (kind)
     {
     case PointerAnalysis::Andersen_WPA:
-        _pta = new Andersen();
+        _pta = new Andersen(pag);
         break;
     case PointerAnalysis::AndersenLCD_WPA:
-        _pta = new AndersenLCD();
+        _pta = new AndersenLCD(pag);
         break;
     case PointerAnalysis::AndersenHCD_WPA:
-        _pta = new AndersenHCD();
+        _pta = new AndersenHCD(pag);
         break;
     case PointerAnalysis::AndersenHLCD_WPA:
-        _pta = new AndersenHLCD();
+        _pta = new AndersenHLCD(pag);
         break;
     case PointerAnalysis::AndersenSCD_WPA:
-        _pta = new AndersenSCD();
+        _pta = new AndersenSCD(pag);
         break;
     case PointerAnalysis::AndersenSFR_WPA:
-        _pta = new AndersenSFR();
+        _pta = new AndersenSFR(pag);
         break;
     case PointerAnalysis::AndersenWaveDiff_WPA:
-        _pta = new AndersenWaveDiff();
+        _pta = new AndersenWaveDiff(pag);
         break;
     case PointerAnalysis::AndersenWaveDiffWithType_WPA:
-        _pta = new AndersenWaveDiffWithType();
+        _pta = new AndersenWaveDiffWithType(pag);
         break;
     case PointerAnalysis::FSSPARSE_WPA:
-        _pta = new FlowSensitive();
+        _pta = new FlowSensitive(pag);
         break;
     case PointerAnalysis::FSTBHC_WPA:
-        _pta = new FlowSensitiveTBHC();
+        _pta = new FlowSensitiveTBHC(pag);
         break;
     case PointerAnalysis::VFS_WPA:
-        _pta = new VersionedFlowSensitive();
+        _pta = new VersionedFlowSensitive(pag);
         break;
     case PointerAnalysis::TypeCPP_WPA:
-        _pta = new TypeAnalysis();
+        _pta = new TypeAnalysis(pag);
         break;
     default:
         assert(false && "This pointer analysis has not been implemented yet.\n");
@@ -162,7 +166,7 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     }
 
     ptaVector.push_back(_pta);
-    _pta->analyze(svfModule);
+    _pta->analyze();
     if (anderSVFG)
     {
         SVFGBuilder memSSA(true);

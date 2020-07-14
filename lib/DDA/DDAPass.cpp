@@ -10,6 +10,8 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "DDA/DDAClient.h"
+#include "SVF-FE/PAGBuilder.h"
+
 #include <sstream>
 #include <limits.h>
 
@@ -119,6 +121,9 @@ void DDAPass::selectClient(SVFModule* module)
 void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
+	PAGBuilder builder;
+	PAG* pag = builder.build(module);
+
     VFPathCond::setMaxPathLen(maxPathLen);
     ContextCond::setMaxCxtLen(maxContextLen);
 
@@ -127,12 +132,12 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
     {
     case PointerAnalysis::Cxt_DDA:
     {
-        _pta = new ContextDDA(module, _client);
+        _pta = new ContextDDA(pag, _client);
         break;
     }
     case PointerAnalysis::FlowS_DDA:
     {
-        _pta = new FlowDDA(module, _client);
+        _pta = new FlowDDA(pag, _client);
         break;
     }
     default:
@@ -147,7 +152,7 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
     else
     {
         ///initialize
-        _pta->initialize(module);
+        _pta->initialize();
         ///compute points-to
         _client->answerQueries(_pta);
         ///finalize
@@ -188,14 +193,11 @@ bool DDAPass::edgeInSVFGSCC(const SVFGSCC* svfgSCC,const SVFGEdge* edge)
  */
 bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 {
-    const BasicBlock* srcBB = edge->getSrcNode()->getBB();
-    const BasicBlock* dstBB = edge->getDstNode()->getBB();
+	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
-    if(srcBB && dstBB)
+    if(srcFun && dstFun)
     {
-        const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
-        const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
-
         return pta->inSameCallGraphSCC(srcFun,dstFun);
     }
 
@@ -248,14 +250,11 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
                 if(this->edgeInSVFGSCC(svfgSCC,edge))
                 {
 
-                    const BasicBlock* srcBB = edge->getSrcNode()->getBB();
-                    const BasicBlock* dstBB = edge->getDstNode()->getBB();
+                	const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                	const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
-                    if(srcBB && dstBB)
+                    if(srcFun && dstFun)
                     {
-                        const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
-                        const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
-
                         NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcFun)->getId();
                         NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstFun)->getId();
                         insensitvefunPairs.insert(std::make_pair(src,dst));
@@ -278,14 +277,11 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
             if(edge->isCallVFGEdge() || edge->isRetVFGEdge())
             {
-                const BasicBlock* srcBB = edge->getSrcNode()->getBB();
-                const BasicBlock* dstBB = edge->getDstNode()->getBB();
+                const SVFFunction* srcFun = edge->getSrcNode()->getICFGNode()->getFun();
+                const SVFFunction* dstFun = edge->getDstNode()->getICFGNode()->getFun();
 
-                if(srcBB && dstBB)
+                if(srcFun && dstFun)
                 {
-                    const SVFFunction* srcFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(srcBB->getParent());
-                    const SVFFunction* dstFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(dstBB->getParent());
-
                     NodeID src = pta->getPTACallGraph()->getCallGraphNode(srcFun)->getId();
                     NodeID dst = pta->getPTACallGraph()->getCallGraphNode(dstFun)->getId();
                     if(insensitvefunPairs.find(std::make_pair(src,dst))!=insensitvefunPairs.end())

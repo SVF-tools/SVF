@@ -49,18 +49,18 @@ protected:
     NodeToNodeMap pwcReps;
 
 public:
-    AndersenSCD(PTATY type = AndersenSCD_WPA) :
-        Andersen(type)
+    AndersenSCD(PAG* _pag, PTATY type = AndersenSCD_WPA) :
+        Andersen(_pag,type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(SVFModule* svfModule)
+    static AndersenSCD *createAndersenSCD(PAG* _pag)
     {
         if (scdAndersen == nullptr)
         {
-            new AndersenSCD();
-            scdAndersen->analyze(svfModule);
+            new AndersenSCD(_pag);
+            scdAndersen->analyze();
             return scdAndersen;
         }
         return scdAndersen;
@@ -111,18 +111,18 @@ private:
     FieldReps fieldReps;
 
 public:
-    AndersenSFR(PTATY type = AndersenSFR_WPA) :
-        AndersenSCD(type), csc(NULL)
+    AndersenSFR(PAG* _pag, PTATY type = AndersenSFR_WPA) :
+        AndersenSCD(_pag, type), csc(NULL)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(SVFModule* svfModule)
+    static AndersenSFR *createAndersenSFR(PAG* _pag)
     {
         if (sfrAndersen == nullptr)
         {
-            new AndersenSFR();
-            sfrAndersen->analyze(svfModule);
+            new AndersenSFR(_pag);
+            sfrAndersen->analyze();
             return sfrAndersen;
         }
         return sfrAndersen;
@@ -144,7 +144,7 @@ public:
     }
 
 protected:
-    void initialize(SVFModule* svfModule);
+    void initialize();
     void PWCDetect();
     void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
     bool processGepPts(PointsTo& pts, const GepCGEdge* edge);

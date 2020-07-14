@@ -11,9 +11,9 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include <iostream>
 
-void VersionedFlowSensitive::initialize(SVFModule* svfModule)
+void VersionedFlowSensitive::initialize()
 {
-    FlowSensitive::initialize(svfModule);
+    FlowSensitive::initialize();
 
     vPtD = getVDFPTDataTy();
     assert(vPtD && "VFS::initialize: Expected VDFPTData");

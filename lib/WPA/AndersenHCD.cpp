@@ -40,9 +40,9 @@ AndersenHCD *AndersenHCD::hcdAndersen = nullptr;
  * AndersenHCD initilizer,
  * including initilization of PAG, constraint graph and offline constraint graph
  */
-void AndersenHCD::initialize(SVFModule* svfModule)
+void AndersenHCD::initialize()
 {
-    Andersen::initialize(svfModule);
+    Andersen::initialize();
     // Build offline constraint graph and solve its constraints
     oCG = new OfflineConsG(pag);
     OSCC* oscc = new OSCC(oCG);

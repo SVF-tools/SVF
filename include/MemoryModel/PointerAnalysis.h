@@ -96,13 +96,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef DenseSet<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef	std::set<const SVFFunction*> FunctionSet;
-    typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef DenseSet<const SVFFunction*> FunctionSet;
+    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const SVFFunction*> VFunSet;
+    typedef DenseSet<const GlobalValue*> VTableSet;
+    typedef DenseSet<const SVFFunction*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -173,7 +173,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(PTATY ty = Default_PTA, bool alias_check = true);
+    PointerAnalysis(PAG* pag, PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const
@@ -192,10 +192,6 @@ public:
     inline PAG* getPAG() const
     {
         return pag;
-    }
-    static inline void setPAG(PAG* g)
-    {
-        pag = g;
     }
     //@}
 
@@ -219,16 +215,16 @@ public:
     virtual ~PointerAnalysis();
 
     /// Initialization of a pointer analysis, including building symbol table and PAG etc.
-    virtual void initialize(SVFModule* svfModule);
+    virtual void initialize();
 
     /// Finalization of a pointer analysis, including checking alias correctness
     virtual void finalize();
 
     /// Start Analysis here (main part of pointer analysis). It needs to be implemented in child class
-    virtual void analyze(SVFModule* svfModule) = 0;
+    virtual void analyze() = 0;
 
     /// Compute points-to results on-demand, overridden by derived classes
-    virtual void computeDDAPts(NodeID id) {}
+    virtual void computeDDAPts(NodeID) {}
 
     /// Interface exposed to users of our pointer analysis, given Location infos
     virtual AliasResult alias(const MemoryLocation &LocA,

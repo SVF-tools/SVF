@@ -248,8 +248,8 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
-    llvm::APInt byteOffset(64,0,true);
     DataLayout * dataLayout = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+    llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
         Size_t bo = byteOffset.getSExtValue();

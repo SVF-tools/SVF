@@ -68,6 +68,11 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         PAGNode* pagNode = it->second;
         if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
             continue;
+
+        if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
+            if(SVFUtil::isa<DummyObjPN>(pag->getPAGNode(gepobj->getBaseNode())))
+                continue;
+        }
         if(const Value* val = pagNode->getValue())
         {
             if(SVFUtil::isa<GlobalVariable>(val))

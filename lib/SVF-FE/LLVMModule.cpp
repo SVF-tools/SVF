@@ -31,6 +31,7 @@
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
+#include "SVF-FE/SymbolTableInfo.h"
 
 using namespace std;
 
@@ -98,6 +99,13 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
         svfModule = new SVFModule();
 
     build(moduleNameVec);
+
+	if (!SVFModule::pagReadFromTXT()) {
+		/// building symbol table
+		DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+		SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
+		symInfo->buildMemModel(svfModule);
+	}
 
     return svfModule;
 }
@@ -249,10 +257,10 @@ void LLVMModuleSet::addSVFMain()
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    std::set<Function*> funDecls, funDefs;
+    DenseSet<Function*> funDecls, funDefs;
     std::set<string> declNames, defNames, intersectNames;
     typedef std::map<string, Function*> NameToFunDefMapTy;
-    typedef std::map<string, std::set<Function*>> NameToFunDeclsMapTy;
+    typedef std::map<string, DenseSet<Function*>> NameToFunDeclsMapTy;
 
     for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it)
@@ -292,7 +300,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (std::set<Function*>::iterator it = funDefs.begin(),
+    for (DenseSet<Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
         Function *fdef = *it;
@@ -304,7 +312,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (std::set<Function*>::iterator it = funDecls.begin(),
+    for (DenseSet<Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
         Function *fdecl = *it;
@@ -314,19 +322,19 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
         {
-            std::set<Function*> decls;
+            DenseSet<Function*> decls;
             decls.insert(fdecl);
             nameToFunDeclsMap[funName] = decls;
         }
         else
         {
-            std::set<Function*> &decls = mit->second;
+            DenseSet<Function*> &decls = mit->second;
             decls.insert(fdecl);
         }
     }
 
     /// Fun decl --> def
-    for (std::set<Function*>::iterator it = funDecls.begin(),
+    for (DenseSet<Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
         const Function *fdecl = *it;
@@ -340,7 +348,7 @@ void LLVMModuleSet::buildFunToFunMap()
     }
 
     /// Fun def --> decls
-    for (std::set<Function*>::iterator it = funDefs.begin(),
+    for (DenseSet<Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
         const Function *fdef = *it;
@@ -351,7 +359,7 @@ void LLVMModuleSet::buildFunToFunMap()
         if (mit == nameToFunDeclsMap.end())
             continue;
         std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
-        for (std::set<Function*>::iterator sit = mit->second.begin(),
+        for (DenseSet<Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit)
         {
             decls.push_back(svfModule->getSVFFunction(*sit));
@@ -361,7 +369,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
 void LLVMModuleSet::buildGlobalDefToRepMap()
 {
-    typedef std::map<string, std::set<GlobalVariable*>> NameToGlobalsMapTy;
+    typedef std::map<string, DenseSet<GlobalVariable*>> NameToGlobalsMapTy;
     NameToGlobalsMapTy nameToGlobalsMap;
     for (SVFModule::global_iterator it = svfModule->global_begin(),
             eit = svfModule->global_end(); it != eit; ++it)
@@ -373,13 +381,13 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
         if (mit == nameToGlobalsMap.end())
         {
-            std::set<GlobalVariable*> globals;
+            DenseSet<GlobalVariable*> globals;
             globals.insert(global);
             nameToGlobalsMap[name] = globals;
         }
         else
         {
-            std::set<GlobalVariable*> &globals = mit->second;
+            DenseSet<GlobalVariable*> &globals = mit->second;
             globals.insert(global);
         }
     }
@@ -387,9 +395,9 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
     for (NameToGlobalsMapTy::iterator it = nameToGlobalsMap.begin(),
             eit = nameToGlobalsMap.end(); it != eit; ++it)
     {
-        std::set<GlobalVariable*> &globals = it->second;
+        DenseSet<GlobalVariable*> &globals = it->second;
         GlobalVariable *rep = *(globals.begin());
-        std::set<GlobalVariable*>::iterator repit = globals.begin();
+        DenseSet<GlobalVariable*>::iterator repit = globals.begin();
         while (repit != globals.end())
         {
             GlobalVariable *cur = *repit;
@@ -400,7 +408,7 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             }
             repit++;
         }
-        for (std::set<GlobalVariable*>::iterator sit = globals.begin(),
+        for (DenseSet<GlobalVariable*>::iterator sit = globals.begin(),
                 seit = globals.end(); sit != seit; ++sit)
         {
             GlobalVariable *cur = *sit;
@@ -425,7 +433,13 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
 
         std::error_code EC;
         raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
+
+#if (LLVM_VERSION_MAJOR >= 7)
         WriteBitcodeToFile(*mod, OS);
+#else
+        WriteBitcodeToFile(mod, OS);
+#endif
+
         OS.flush();
     }
 }

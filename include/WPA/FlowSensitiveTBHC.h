@@ -28,12 +28,12 @@ public:
     static const MDNode *getRawCTirMetadata(const SVFGNode *);
 
     /// Constructor
-    FlowSensitiveTBHC(PTATY type = FSTBHC_WPA);
+    FlowSensitiveTBHC(PAG* _pag, PTATY type = FSTBHC_WPA);
 
     /// Flow sensitive analysis with FSTBHC.
-    virtual void analyze(SVFModule *svfModule) override;
+    virtual void analyze() override;
     /// Initialize analysis.
-    virtual void initialize(SVFModule *svfModule) override;
+    virtual void initialize() override;
     /// Finalize analysis.
     virtual void finalize() override;
 
@@ -86,7 +86,7 @@ public:
 protected:
     virtual void backPropagate(NodeID clone) override;
 
-    virtual void countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
+    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
 
 private:
     /// Determines whether each GEP is for a load or not. Builds gepIsLoad map.

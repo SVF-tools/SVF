@@ -43,11 +43,11 @@ FlowSensitive* FlowSensitive::fspta = NULL;
 /*!
  * Initialize analysis
  */
-void FlowSensitive::initialize(SVFModule* svfModule)
+void FlowSensitive::initialize()
 {
-    PointerAnalysis::initialize(svfModule);
+    PointerAnalysis::initialize();
 
-    ander = AndersenWaveDiff::createAndersenWaveDiff(svfModule);
+    ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
@@ -59,10 +59,10 @@ void FlowSensitive::initialize(SVFModule* svfModule)
 /*!
  * Start analysis
  */
-void FlowSensitive::analyze(SVFModule* svfModule)
+void FlowSensitive::analyze()
 {
     /// Initialization for the Solver
-    initialize(svfModule);
+    initialize();
 
     double start = stat->getClk();
     /// Start solving constraints
@@ -700,7 +700,7 @@ void FlowSensitive::printCTirAliasStats(void)
     assert(dchg && "eval-ctir-aliases needs DCHG.");
 
     // < SVFG node ID (loc), PAG node of interest (top-level pointer) >.
-    std::set<std::pair<NodeID, NodeID>> cmpLocs;
+    DenseSet<std::pair<NodeID, NodeID>> cmpLocs;
     for (SVFG::iterator npair = svfg->begin(); npair != svfg->end(); ++npair)
     {
         NodeID loc = npair->first;
@@ -759,7 +759,7 @@ void FlowSensitive::printCTirAliasStats(void)
                  << "  " << "NO  % : " << 100 * ((double)noAliases/(double)(total)) << "\n";
 }
 
-void FlowSensitive::countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
+void FlowSensitive::countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
 {
     for (std::pair<NodeID, NodeID> locPA : cmp)
     {

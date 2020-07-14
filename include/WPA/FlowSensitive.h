@@ -51,7 +51,7 @@ public:
     typedef BVDataPTAImpl::IncDFPTDataTy::PtsMap PtsMap;
 
     /// Constructor
-    FlowSensitive(PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(type)
+    FlowSensitive(PAG* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
     {
         svfg = NULL;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
@@ -74,12 +74,12 @@ public:
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
-    static FlowSensitive* createFSWPA(SVFModule* svfModule)
+    static FlowSensitive* createFSWPA(PAG* _pag)
     {
         if (fspta == NULL)
         {
-            fspta = new FlowSensitive();
-            fspta->analyze(svfModule);
+            fspta = new FlowSensitive(_pag);
+            fspta->analyze();
         }
         return fspta;
     }
@@ -93,16 +93,16 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module)
+    virtual bool runOnModule(SVFModule*)
     {
         return false;
     }
 
     /// Flow sensitive analysis
-    virtual void analyze(SVFModule* svfModule);
+    virtual void analyze();
 
     /// Initialize analysis
-    virtual void initialize(SVFModule* svfModule);
+    virtual void initialize();
 
     /// Finalize analysis
     virtual void finalize();
@@ -238,7 +238,7 @@ protected:
     virtual void printCTirAliasStats(void);
 
     /// Fills may/noAliases for the location/pointer pairs in cmp.
-    virtual void countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
+    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
 
     SVFG* svfg;
     ///Get points-to set for a node from data flow IN/OUT set at a statement.
@@ -267,6 +267,7 @@ protected:
 
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;
+    AndersenWaveDiff *ander;
 
     /// Statistics.
     //@{
@@ -302,7 +303,6 @@ protected:
     NodeBS svfgHasSU;
     //@}
 
-    AndersenWaveDiff* ander;
     void svfgStat();
 };
 

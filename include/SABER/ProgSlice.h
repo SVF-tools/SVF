@@ -257,11 +257,11 @@ private:
     /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
     inline const BasicBlock* getSVFGNodeBB(const SVFGNode* node) const
     {
-        const BasicBlock* bb = node->getBB();
+        const ICFGNode* icfgNode = node->getICFGNode();
         if(SVFUtil::isa<NullPtrSVFGNode>(node) == false)
         {
-            assert(bb && "this SVFG node should be in a basic block");
-            return bb;
+            assert(!SVFUtil::isa<GlobalBlockNode>(icfgNode) && "this SVFG node should be in a basic block");
+            return icfgNode->getBB();
         }
         return NULL;
     }

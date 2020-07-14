@@ -34,6 +34,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "Graphs/ExternalPAG.h"
 #include "Util/BasicTypes.h"
+#include "MemoryModel/PAGBuilderFromFile.h"
 
 using namespace std;
 using namespace SVFUtil;
@@ -44,7 +45,16 @@ using namespace SVFUtil;
  */
 PAG* PAGBuilder::build(SVFModule* svfModule)
 {
+
+    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+    if (SVFModule::pagReadFromTXT())
+    {
+        PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
+        return fileBuilder.build();
+    }
+
     svfMod = svfModule;
+
     /// initial external library information
     /// initial PAG nodes
     initalNode();
@@ -993,6 +1003,11 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 					if (SVFUtil::isa<PointerType>(inst->getType()))
 						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
 				}
+//				else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(0))) {
+//					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(cs.getArgument(0)));
+//					if (SVFUtil::isa<PointerType>(inst->getType()))
+//						addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
+//				}
 				break;
 			}
             case ExtAPI::EFT_L_A0__A2R_A0:

@@ -137,7 +137,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const PTACallGraphEdge *edge)
+    static inline bool classof(const PTACallGraphEdge*)
     {
         return true;
     }
@@ -148,6 +148,17 @@ public:
                edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
     //@}
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const PTACallGraphEdge &edge)
+    {
+        o << edge.toString();
+        return o;
+    }
+    //@}
+
+    virtual const std::string toString() const;
 
     typedef GenericNode<PTACallGraphNode,PTACallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
 
@@ -183,6 +194,18 @@ public:
 
     /// Return TRUE if this function can be reached from main.
     bool isReachableFromProgEntry() const;
+
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const PTACallGraphNode &node)
+    {
+        o << node.toString();
+        return o;
+    }
+    //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -197,10 +220,10 @@ public:
     typedef DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
     typedef DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
-    typedef std::map<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef std::map<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef	std::set<const SVFFunction*> FunctionSet;
-    typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef DenseMap<CallSitePair, CallSiteID> CallSiteToIdMap;
+    typedef DenseMap<CallSiteID, CallSitePair> IdToCallSiteMap;
+    typedef DenseSet<const SVFFunction*> FunctionSet;
+    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 
