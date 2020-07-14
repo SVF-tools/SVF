@@ -38,5 +38,3 @@ Build=$PTAOBJTY'-build'
 export PATH=$LLVM_DIR/bin:$PATH
 export PTABIN=$SVFHOME/$Build/bin
 export PATH=$PTABIN:$PATH
-
-
