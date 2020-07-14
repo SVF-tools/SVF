@@ -36,6 +36,9 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
         llvm::cl::desc("Hanle blackhole edge"));
 
+static llvm::cl::opt<bool> FirstFieldEqBase("ff-eq-base", llvm::cl::init(true),
+        llvm::cl::desc("Treat base objects as their first fields"));
+
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
 u64_t PAGEdge::storeEdgeLabelCounter = 0;
@@ -552,9 +555,6 @@ NodeID PAG::addGepValNode(const Value* gepVal, const LocationSet& ls, NodeID i, 
  */
 NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls)
 {
-    // Base and first field are the same memory location.
-    if (ls.getOffset() == 0) return id;
-
     PAGNode* node = pag->getPAGNode(id);
     if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
         return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
@@ -580,7 +580,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     NodeID base = getObjectNode(obj);
 
     // Base and first field are the same memory location.
-    if (ls.getOffset() == 0) return base;
+    if (FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
