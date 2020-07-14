@@ -72,7 +72,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
         {
             NodeID nodeId = *it;
             PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
-            if (SVFUtil::isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId))
+            if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
                 clone.reset(nodeId);
