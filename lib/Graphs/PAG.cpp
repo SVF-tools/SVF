@@ -36,6 +36,9 @@ using namespace SVFUtil;
 static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
         llvm::cl::desc("Hanle blackhole edge"));
 
+static llvm::cl::opt<bool> FirstFieldEqBase("ff-eq-base", llvm::cl::init(true),
+        llvm::cl::desc("Treat base objects as their first fields"));
+
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
 u64_t PAGEdge::storeEdgeLabelCounter = 0;
@@ -575,6 +578,9 @@ NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls)
 NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
 {
     NodeID base = getObjectNode(obj);
+
+    // Base and first field are the same memory location.
+    if (FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
