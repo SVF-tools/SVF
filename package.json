@@ -7,8 +7,8 @@
     "postinstall": "./build.sh"
   },
   "bin": {
-    "wpa": "./Release-build/bin/wpa",
-    "dvf": "./Release-build/bin/dvf"
+    "wpa": "./bind/wpa.js",
+    "dvf": "./bind/drf.js"
   },
   "repository": {
     "type": "git",
