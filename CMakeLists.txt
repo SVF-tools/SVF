@@ -14,7 +14,7 @@ if(NOT COMMAND add_llvm_library)
 	if(CMAKE_BUILD_TYPE MATCHES "Debug")
 		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -g -O0 -fno-rtti -Wno-deprecated")
 	else()
-		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -g -O3 -fno-rtti -Wno-deprecated")
+		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -O3 -fno-rtti -Wno-deprecated")
 	endif()
 	set(CMAKE_C_FLAGS "-fPIC")
 
