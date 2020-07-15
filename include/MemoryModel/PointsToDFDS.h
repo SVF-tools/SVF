@@ -641,9 +641,7 @@ public:
             {
                 Version &v = vpt.first;
                 PointsTo &pt = vpt.second;
-                SVFUtil::outs() << "  ";
-                SVFUtil::dumpVersion(v);
-                SVFUtil::outs() << " : {";
+                SVFUtil::outs() << "  " << v << " : {";
                 SVFUtil::dumpSet(pt);
                 SVFUtil::outs() << "}\n";
             }
@@ -661,9 +659,7 @@ public:
             {
                 NodeID &o = ov.first;
                 Version &v = ov.second;
-                SVFUtil::outs() << "  " << o << " version ";
-                SVFUtil::dumpVersion(v);
-                SVFUtil::outs() << "\n";
+                SVFUtil::outs() << "  " << o << " version " << v << "\n";
             }
         }
 
@@ -677,9 +673,7 @@ public:
             {
                 NodeID &o = ov.first;
                 Version &v = ov.second;
-                SVFUtil::outs() << "  " << o << " version ";
-                SVFUtil::dumpVersion(v);
-                SVFUtil::outs() << "\n";
+                SVFUtil::outs() << "  " << o << " version " << v << "\n";
             }
         }
     }

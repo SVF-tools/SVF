@@ -135,7 +135,7 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
-void SVFUtil::dumpVersion(Version &v)
+void SVFUtil::dumpMeldVersion(MeldVersion &v)
 {
     outs() << "[ ";
     bool first = true;

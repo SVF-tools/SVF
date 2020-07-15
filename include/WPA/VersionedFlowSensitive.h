@@ -73,13 +73,17 @@ private:
     /// Colour the precoloured split SVFG.
     void colour(void);
     /// Melds v2 into v1 (in place), returns whether a change occurred.
-    bool meld(Version &v1, Version &v2);
+    bool meld(MeldVersion &mv1, MeldVersion &mv2);
+
+    /// Moves meldConsume/Yield to consume/yield.
+    void mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &from,
+                         DenseMap<NodeID, DenseMap<NodeID, Version>> &to);
 
     /// Returns whether l is a delta node.
     bool delta(NodeID l) const;
 
-    /// Returns a new version for o.
-    Version newVersion(NodeID o);
+    /// Returns a new MeldVersion for o.
+    MeldVersion newMeldVersion(NodeID o);
     /// Whether l has a consume/yield version for o.
     bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
 
@@ -93,11 +97,19 @@ private:
     void propagateVersion(NodeID o, Version v);
 
     /// SVFG node (label) x object -> version to consume.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
+    /// Used during colouring.
+    DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> meldConsume;
     /// SVFG node (label) x object -> version to yield.
+    /// Used during colouring.
+    DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> meldYield;
+    /// Object -> MeldVersion counter.
+    DenseMap<NodeID, unsigned> meldVersions;
+
+    /// Actual consume map.
+    DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
+    /// Actual yield map.
     DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
-    /// Object -> version counter.
-    DenseMap<NodeID, unsigned> versions;
+
     /// o -> (version -> versions which rely on it).
     DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> versionReliance;
     /// o x version -> statement nodes which rely on that o/version.

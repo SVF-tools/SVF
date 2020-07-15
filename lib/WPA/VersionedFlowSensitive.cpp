@@ -28,7 +28,14 @@ void VersionedFlowSensitive::initialize()
     end = stat->getClk();
     double col = (end - start) / TIMEINTERVAL;
 
-    printf("precolour: %fs, colour: %fs\n", prec, col);
+    start = stat->getClk();
+    mapMeldVersions(meldConsume, consume);
+    mapMeldVersions(meldYield, yield);
+    end = stat->getClk();
+    double map = (end - start) / TIMEINTERVAL;
+
+    printf("precolour: %fs, colour: %fs, map: %fs\n", prec, col, map);
+    //exit(0);
 
     determineReliance();
 
@@ -54,7 +61,7 @@ void VersionedFlowSensitive::precolour(void)
             NodeID p = stn->getPAGDstNodeID();
             for (NodeID o : ander->getPts(p))
             {
-                yield[l][o] = newVersion(o);
+                meldYield[l][o] = newMeldVersion(o);
             }
 
             vWorklist.push(l);
@@ -69,9 +76,9 @@ void VersionedFlowSensitive::precolour(void)
                 if (!ie) continue;
                 for (NodeID o : ie->getPointsTo())
                 {
-                    consume[l][o] = newVersion(o);
+                    meldConsume[l][o] = newMeldVersion(o);
                     // It's yield will be the same; deltas are mutually exclusive with stores.
-                    yield[l][o] = consume[l][o];
+                    meldYield[l][o] = meldConsume[l][o];
                 }
 
                 vWorklist.push(l);
@@ -92,11 +99,11 @@ void VersionedFlowSensitive::colour(void) {
             if (!ie) continue;
             for (NodeID o : ie->getPointsTo()) {
                 NodeID lp = ie->getDstNode()->getId();
-                if (meld(consume[lp][o], yield[l][o])) {
+                if (meld(meldConsume[lp][o], meldYield[l][o])) {
                     const SVFGNode *slp = svfg->getSVFGNode(lp);
                     // No need to do anything for store because their yield is set and static.
                     if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
-                        yield[lp][o] = consume[lp][o];
+                        meldYield[lp][o] = meldConsume[lp][o];
                         vWorklist.push(lp);
                     }
                 }
@@ -105,10 +112,38 @@ void VersionedFlowSensitive::colour(void) {
     }
 }
 
-bool VersionedFlowSensitive::meld(Version &v1, Version &v2)
+bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
 {
     // Meld operator is union of bit vectors.
-    return v1 |= v2;
+    return mv1 |= mv2;
+}
+
+
+void VersionedFlowSensitive::mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &from,
+                                             DenseMap<NodeID, DenseMap<NodeID, Version>> &to)
+{
+    // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
+    // mvv keeps track, and curVersion is used to generate new Versions.
+    static DenseMap<MeldVersion, Version> mvv;
+    static Version curVersion = 0;
+
+    for (DenseMap<NodeID, DenseMap<NodeID, MeldVersion>>::value_type &lomv : from)
+    {
+        NodeID l = lomv.first;
+        DenseMap<NodeID, Version> &tol = to[l];
+        for (DenseMap<NodeID, MeldVersion>::value_type &omv : lomv.second)
+        {
+            NodeID o = omv.first;
+            MeldVersion &mv = omv.second;
+
+            DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
+            tol[o] = v;
+        }
+    }
+
+    // Don't need the from anymore.
+    from.clear();
 }
 
 bool VersionedFlowSensitive::delta(NodeID l) const
@@ -119,10 +154,10 @@ bool VersionedFlowSensitive::delta(NodeID l) const
 }
 
 /// Returns a new version for o.
-Version VersionedFlowSensitive::newVersion(NodeID o)
+MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
-    Version nv;
-    nv.set(++versions[o]);
+    MeldVersion nv;
+    nv.set(++meldVersions[o]);
     return nv;
 }
 

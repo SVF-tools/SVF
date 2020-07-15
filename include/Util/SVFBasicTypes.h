@@ -55,9 +55,10 @@ typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
+typedef unsigned Version;
 
 typedef llvm::SparseBitVector<> NodeBS;
-typedef llvm::SparseBitVector<> Version;
+typedef llvm::SparseBitVector<> MeldVersion;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
