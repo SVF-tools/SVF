@@ -197,10 +197,12 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
     {
         const SVFGNode *src = e->getSrcNode();
         const SVFGNode *dst = e->getDstNode();
+        NodeID srcId = src->getId();
+        NodeID dstId = dst->getId();
 
         if (SVFUtil::isa<PHISVFGNode>(dst))
         {
-            pushIntoWorklist(dst->getId());
+            pushIntoWorklist(dstId);
         }
         else if (SVFUtil::isa<FormalINSVFGNode>(dst) || SVFUtil::isa<ActualOUTSVFGNode>(dst))
         {
@@ -212,9 +214,13 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
             // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
             for (NodeID o : ept)
             {
-                Version &srcY = yield[src->getId()][o];
-                Version &dstC = consume[dst->getId()][o];
+                // Nothing to propagate.
+                if (yield[srcId].find(o) == yield[srcId].end()) continue;
+
+                Version &srcY = yield[srcId][o];
+                Version &dstC = consume[dstId][o];
                 versionReliance[o][srcY].insert(dstC);
+                propagateVersion(o, srcY);
             }
 
             if (changed) pushIntoWorklist(dst->getId());
