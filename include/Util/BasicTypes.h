@@ -234,9 +234,7 @@ template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
 
     static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
     {
-        unsigned hash = 0;
-        for (unsigned u : sbv) hash += u * 37U;
-        return hash;
+        return (sbv.count() + sbv.find_first() + sbv.find_last()) * 37U;
     }
 
     static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
