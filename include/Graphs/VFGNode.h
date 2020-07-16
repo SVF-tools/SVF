@@ -62,14 +62,9 @@ public:
 
 public:
     /// Constructor
-    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), bb(NULL), icfgNode(NULL)
+    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), icfgNode(NULL)
     {
 
-    }
-    /// We should know the program location (basic block level) of each ICFG node
-    virtual const BasicBlock* getBB() const
-    {
-        return bb;
     }
 
     /// Return corresponding ICFG node
@@ -87,13 +82,8 @@ public:
     /// Get the function of this SVFGNode
     virtual const SVFFunction* getFun() const
     {
-    	const SVFFunction* fun = NULL;
-        if(bb)
-        	fun =  LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
 
-        //assert((fun == icfgNode->getFun()) && "not the same function??");
-
-        return fun;
+        return icfgNode->getFun();
 
     }
 
@@ -109,7 +99,6 @@ public:
     virtual const std::string toString() const;
 
 protected:
-    const BasicBlock* bb;
     const ICFGNode* icfgNode;
 };
 
@@ -126,7 +115,6 @@ public:
     /// Constructor
     StmtVFGNode(NodeID id, const PAGEdge* e, VFGNodeK k): VFGNode(id,k), pagEdge(e)
     {
-        bb = e->getBB();
     }
 
     /// Whether this node is used for pointer analysis. Both src and dst PAGNodes are of ptr type.
@@ -337,7 +325,6 @@ public:
     {
         const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
         assert(cmp && "not a binary operator?");
-        bb = cmp->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -409,7 +396,6 @@ public:
     {
         const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
         assert(binary && "not a binary operator?");
-        bb = binary->getParent();
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -715,7 +701,6 @@ public:
     ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
         ArgumentVFGNode(id, n, AParm), cs(c)
     {
-        bb = cs->getCallSite()->getParent();
     }
 
     /// Return callsite
@@ -768,7 +753,6 @@ public:
     FormalParmVFGNode(NodeID id, const PAGNode* n, const SVFFunction* f):
         ArgumentVFGNode(id, n, FParm),  fun(f)
     {
-        bb = &fun->getLLVMFun()->getEntryBlock();
     }
 
     /// Return parameter
@@ -839,7 +823,6 @@ public:
     ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
         ArgumentVFGNode(id, n, ARet), cs(c)
     {
-        bb = cs->getCallSite()->getParent();
     }
     /// Return callsite
     inline const CallBlockNode* getCallSite() const

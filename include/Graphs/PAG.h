@@ -68,6 +68,7 @@ public:
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef DenseMap<NodeOffset,NodeID,DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
     typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
+    typedef std::map<const Value*, NodeLocationSetMap> GepValPNMap;
     typedef DenseMap<NodePair,NodeID> NodePairSetMap;
 
 private:
@@ -78,7 +79,7 @@ private:
     PAGEdge::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < PAG edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
     Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges
     Inst2PAGEdgesMap inst2PTAPAGEdgesMap;	///< Map a instruction to its PointerAnalysis related PAGEdges
-    NodeLocationSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
+    GepValPNMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
@@ -402,13 +403,19 @@ public:
     }
     //@}
 
-    inline NodeID getGepValNode(NodeID base, const LocationSet& ls) const
+    inline NodeID getGepValNode(const Value* gep, NodeID base, const LocationSet& ls) const
     {
-        NodeLocationSetMap::const_iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
-        if(iter==GepValNodeMap.end())
+        GepValPNMap::const_iterator iter = GepValNodeMap.find(gep);
+        if(iter==GepValNodeMap.end()){
             return -1;
-        else
-            return iter->second;
+        }
+        else{
+            NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
+            if(lit==iter->second.end())
+                return -1;
+            else
+                return lit->second;
+        }
     }
 
     /// Add/get indirect callsites

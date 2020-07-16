@@ -94,17 +94,11 @@ public:
     FormalINSVFGNode(NodeID id, const MemSSA::ENTRYCHI* entry): MRSVFGNode(id, FPIN), chi(entry)
     {
         cpts = entry->getMR()->getPointsTo();
-        bb = &entry->getFunction()->getLLVMFun()->getEntryBlock();
     }
     /// EntryCHI
     inline const MemSSA::ENTRYCHI* getEntryChi() const
     {
         return chi;
-    }
-    /// Return function
-    inline const SVFFunction* getFun() const
-    {
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -143,11 +137,6 @@ public:
     {
         return mu;
     }
-    /// Function
-    inline const SVFFunction* getFun() const
-    {
-        return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(bb->getParent());
-    }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const FormalOUTSVFGNode *)
@@ -182,7 +171,6 @@ public:
         MRSVFGNode(id, APIN), mu(m), cs(c)
     {
         cpts = m->getMR()->getPointsTo();
-        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
@@ -230,7 +218,6 @@ public:
         MRSVFGNode(id, APOUT), chi(c), cs(cal)
     {
         cpts = c->getMR()->getPointsTo();
-        bb = cs->getCallSite()->getParent();
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
@@ -280,14 +267,6 @@ public:
     MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def)
     {
         cpts = def->getMR()->getPointsTo();
-        if(const MemSSA::PHI* phi = SVFUtil::dyn_cast<const MemSSA::PHI>(def))
-            bb = phi->getBasicBlock();
-        else if(const MemSSA::ENTRYCHI* enChi = SVFUtil::dyn_cast<const MemSSA::ENTRYCHI>(def))
-            bb = &enChi->getFunction()->getLLVMFun()->getEntryBlock();
-        else if(const MemSSA::CALLCHI* calChi = SVFUtil::dyn_cast<const MemSSA::CALLCHI>(def))
-            bb = calChi->getBasicBlock();
-        else
-            assert("what else def for MSSAPHI node?");
     }
     /// MSSA phi operands
     //@{
