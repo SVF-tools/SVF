@@ -385,6 +385,11 @@ inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
 /// Return true if this value refers to a object
 bool isObject (const Value * ref);
 
+/// Return true if the value refers to constant data, e.g., i32 0
+inline bool isConstantData(const Value* val)
+{
+    return SVFUtil::isa<ConstantData>(val) || SVFUtil::isa<ConstantAggregate>(val);
+}
 
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction
