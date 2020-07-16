@@ -1285,7 +1285,7 @@ void PAGBuilder::sanityCheck()
 NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
 {
     NodeID base = pag->getBaseValNode(getValueNode(val));
-    NodeID gepval = pag->getGepValNode(val, base, ls);
+    NodeID gepval = pag->getGepValNode(curVal, base, ls);
     if (gepval==-1)
     {
         /*
@@ -1305,7 +1305,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, NULL);
-        NodeID gepNode= pag->addGepValNode(val,ls,pag->getPAGNodeNum(),type,fieldidx);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls,pag->getPAGNodeNum(),type,fieldidx);
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

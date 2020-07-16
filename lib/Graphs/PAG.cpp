@@ -538,14 +538,15 @@ VariantGepPE* PAG::addVariantGepPE(NodeID src, NodeID dst)
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
+ * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
  */
-NodeID PAG::addGepValNode(const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
+NodeID PAG::addGepValNode(const Value* curInst,const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
 {
     NodeID base = getBaseValNode(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap[gepVal].count(std::make_pair(base, ls))
+    assert(0==GepValNodeMap[curInst].count(std::make_pair(base, ls))
            && "this node should not be created before");
-    GepValNodeMap[gepVal][std::make_pair(base, ls)] = i;
+    GepValNodeMap[curInst][std::make_pair(base, ls)] = i;
     GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
     return addValNode(gepVal, node, i);
 }

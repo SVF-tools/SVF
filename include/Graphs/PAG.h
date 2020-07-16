@@ -403,9 +403,10 @@ public:
     }
     //@}
 
-    inline NodeID getGepValNode(const Value* gep, NodeID base, const LocationSet& ls) const
+    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
+    inline NodeID getGepValNode(const Value* curInst, NodeID base, const LocationSet& ls) const
     {
-        GepValPNMap::const_iterator iter = GepValNodeMap.find(gep);
+        GepValPNMap::const_iterator iter = GepValNodeMap.find(curInst);
         if(iter==GepValNodeMap.end()){
             return -1;
         }
@@ -689,7 +690,7 @@ public:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValNode
-    NodeID addGepValNode(const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
+    NodeID addGepValNode(const Value* curInst,const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
     /// Add a field obj node, this method can only invoked by getGepObjNode
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode

@@ -82,9 +82,7 @@ public:
     /// Get the function of this SVFGNode
     virtual const SVFFunction* getFun() const
     {
-
         return icfgNode->getFun();
-
     }
 
     /// Overloading operator << for dumping ICFG node ID
