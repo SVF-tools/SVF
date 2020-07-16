@@ -24,7 +24,7 @@ if(NOT COMMAND add_llvm_library)
         include(AddLLVM)
 
         add_definitions(${LLVM_DEFINITIONS})
-        include_directories(${LLVM_INCLUDE_DIRS})
+        include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 
     else()
         message(FATAL_ERROR "\
