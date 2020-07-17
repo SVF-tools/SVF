@@ -164,9 +164,9 @@ ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
     ICFGNode* node;
     if(SVFUtil::isNonInstricCallSite(inst))
         node = getCallBlockNode(inst);
-    else if(SVFUtil::isInstrinsicDbgInst(inst))
+    else if(SVFUtil::isIntrinsicInst(inst))
         node = getIntraBlockNode(inst);
-//			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
+//			assert (false && "associating an intrinsic instruction with an ICFGNode!");
     else
         node = getIntraBlockNode(inst);
 

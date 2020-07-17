@@ -214,7 +214,7 @@ void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruc
     if (!curInst->isTerminator())
     {
         const Instruction* nextInst = curInst->getNextNode();
-        if (isInstrinsicDbgInst(nextInst))
+        if (isIntrinsicInst(nextInst))
             getNextInsts(nextInst, instList);
         else
             instList.push_back(nextInst);
@@ -226,7 +226,7 @@ void SVFUtil::getNextInsts(const Instruction* curInst, std::vector<const Instruc
         for (succ_const_iterator it = succ_begin(BB), ie = succ_end(BB); it != ie; ++it)
         {
             const Instruction* nextInst = &((*it)->front());
-            if (isInstrinsicDbgInst(nextInst))
+            if (isIntrinsicInst(nextInst))
                 getNextInsts(nextInst, instList);
             else
                 instList.push_back(nextInst);
@@ -241,7 +241,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
     if (curInst != &(curInst->getParent()->front()))
     {
         const Instruction* prevInst = curInst->getPrevNode();
-        if (isInstrinsicDbgInst(prevInst))
+        if (isIntrinsicInst(prevInst))
             getPrevInsts(prevInst, instList);
         else
             instList.push_back(prevInst);
@@ -253,7 +253,7 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
         for (const_pred_iterator it = pred_begin(BB), ie = pred_end(BB); it != ie; ++it)
         {
             const Instruction* prevInst = &((*it)->back());
-            if (isInstrinsicDbgInst(prevInst))
+            if (isIntrinsicInst(prevInst))
                 getPrevInsts(prevInst, instList);
             else
                 instList.push_back(prevInst);

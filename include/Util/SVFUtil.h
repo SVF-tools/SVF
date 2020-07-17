@@ -114,17 +114,10 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
 }
 
 
-/// Return true if this function is llvm dbg intrinsic function/instruction
-//@{
-inline bool isIntrinsicDbgFun(const Function* fun)
+/// Return true if it is an intrinsic instruction
+inline bool isIntrinsicInst(const Instruction* inst)
 {
-    return fun->getName().startswith("llvm.dbg.declare") ||
-           fun->getName().startswith("llvm.dbg.value");
-}
-/// Return true if it is an intric debug instruction
-inline bool isInstrinsicDbgInst(const Instruction* inst)
-{
-    return SVFUtil::isa<llvm::DbgInfoIntrinsic>(inst);
+    return SVFUtil::isa<llvm::IntrinsicInst>(inst);
 }
 //@}
 
@@ -136,7 +129,7 @@ inline bool isCallSite(const Instruction* inst)
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const Instruction* inst)
 {
-    if(isInstrinsicDbgInst(inst))
+    if(isIntrinsicInst(inst))
         return false;
     return isCallSite(inst);
 }
