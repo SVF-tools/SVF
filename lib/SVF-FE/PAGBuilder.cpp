@@ -641,8 +641,8 @@ void PAGBuilder::visitSelectInst(SelectInst &inst)
 void PAGBuilder::visitCallSite(CallSite cs)
 {
 
-    // skip llvm debug info intrinsic
-    if(isInstrinsicDbgInst(cs.getInstruction()))
+    // skip llvm intrinsics
+    if(isIntrinsicInst(cs.getInstruction()))
         return;
 
     DBOUT(DPAGBuild,
