@@ -34,10 +34,13 @@ void VersionedFlowSensitive::initialize()
     end = stat->getClk();
     double map = (end - start) / TIMEINTERVAL;
 
-    printf("precolour: %fs, colour: %fs, map: %fs\n", prec, col, map);
-    //exit(0);
 
+    start = stat->getClk();
     determineReliance();
+    end = stat->getClk();
+    double rel = (end - start) / TIMEINTERVAL;
+
+    printf("precolour: %fs, colour: %fs, map: %fs, rel: %fs\n", prec, col, map, rel);
 
     vPtD->setConsume(&consume);
     vPtD->setYield(&yield);
