@@ -356,3 +356,34 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 
     return changed;
 }
+
+void VersionedFlowSensitive::dumpReliances(void) const
+{
+    SVFUtil::outs() << "# Reliances\n";
+    for (DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>>::value_type ovrv : versionReliance)
+    {
+        NodeID o = ovrv.first;
+        SVFUtil::outs() << "  Object " << o << "\n";
+        for (DenseMap<Version, DenseSet<Version>>::value_type vrv : ovrv.second)
+        {
+            Version v = vrv.first;
+            SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
+
+            bool first = true;
+            for (Version rv : vrv.second)
+            {
+                if (!first)
+                {
+                    SVFUtil::outs() << ", ";
+                }
+
+                SVFUtil::outs() << rv;
+                first = false;
+            }
+
+            SVFUtil::outs() << "\n";
+        }
+    }
+
+    // TODO: stmt reliances.
+}

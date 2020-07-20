@@ -96,6 +96,9 @@ private:
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
 
+    /// Dumps versionReliance and stmtReliance.
+    void dumpReliances(void) const;
+
     /// SVFG node (label) x object -> version to consume.
     /// Used during colouring.
     DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> meldConsume;
