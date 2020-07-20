@@ -132,7 +132,7 @@ void VersionedFlowSensitive::mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, M
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
     static DenseMap<MeldVersion, Version> mvv;
-    static Version curVersion = 0;
+    static Version curVersion = 1;
 
     for (DenseMap<NodeID, DenseMap<NodeID, MeldVersion>>::value_type &lomv : from)
     {
