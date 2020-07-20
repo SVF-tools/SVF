@@ -100,9 +100,13 @@ void VersionedFlowSensitive::colour(void) {
         for (const SVFGEdge *e : sl->getOutEdges()) {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
+
+            DenseMap<NodeID, MeldVersion> &myl = meldYield[l];
             for (NodeID o : ie->getPointsTo()) {
+                if (myl.find(o) == myl.end()) continue;
+
                 NodeID lp = ie->getDstNode()->getId();
-                if (meld(meldConsume[lp][o], meldYield[l][o])) {
+                if (meld(meldConsume[lp][o], myl[o])) {
                     const SVFGNode *slp = svfg->getSVFGNode(lp);
                     // No need to do anything for store because their yield is set and static.
                     if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
