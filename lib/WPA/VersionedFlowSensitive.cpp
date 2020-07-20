@@ -176,6 +176,14 @@ bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) 
     return ml.find(o) != ml.end();
 }
 
+bool VersionedFlowSensitive::hasMeldVersion(NodeID l, NodeID o, enum VersionType v) const
+{
+    // Choose which map we are checking.
+    const DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &m = v == CONSUME ? meldConsume : meldYield;
+    const DenseMap<NodeID, MeldVersion> &ml = m.lookup(l);
+    return ml.find(o) != ml.end();
+}
+
 void VersionedFlowSensitive::determineReliance(void)
 {
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)

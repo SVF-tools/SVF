@@ -86,6 +86,8 @@ private:
     MeldVersion newMeldVersion(NodeID o);
     /// Whether l has a consume/yield version for o.
     bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
+    /// Whether l has a consume/yield MeldVersion for o.
+    bool hasMeldVersion(NodeID l, NodeID o, enum VersionType v) const;
 
     /// Determine which versions rely on which versions, and which statements
     /// rely on which versions.
