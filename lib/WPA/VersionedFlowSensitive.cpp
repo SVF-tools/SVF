@@ -155,9 +155,26 @@ void VersionedFlowSensitive::mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, M
 
 bool VersionedFlowSensitive::delta(NodeID l) const
 {
-    const SVFGNode *s = svfg->getSVFGNode(l);
     // vfs-TODO: double check.
-    return SVFUtil::isa<FormalINSVFGNode>(s) || SVFUtil::isa<ActualOUTSVFGNode>(s);
+    const SVFGNode *s = svfg->getSVFGNode(l);
+    // Cases:
+    //  * Function entry: can get new inc. ind. edges through ind. callsites.
+    //  * Callsite returns: can get new inc. ind. edges if the callsite is indirect.
+    //  * Otherwise: static.
+    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+    {
+        PTACallGraphEdge::CallInstSet callsites;
+        /// use pre-analysis call graph to approximate all potential callsites
+        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+
+        return !callsites.empty();
+    }
+    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+    {
+        return cbn->isIndirectCall();
+    }
+
+    return false;
 }
 
 /// Returns a new version for o.
