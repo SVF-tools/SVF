@@ -79,7 +79,7 @@ const std::string ObjPN::toString() const {
 const std::string GepValPN::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepValPN ID: " << getId() << "with offset_" + llvm::utostr(getOffset());
+    rawstr << "GepValPN ID: " << getId() << " with offset_" + llvm::utostr(getOffset());
     if(value){
         rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
@@ -91,7 +91,7 @@ const std::string GepValPN::toString() const {
 const std::string GepObjPN::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepObjPN ID: " << getId() << "with offset_" + llvm::itostr(ls.getOffset());
+    rawstr << "GepObjPN ID: " << getId() << " with offset_" + llvm::itostr(ls.getOffset());
     if(value){
         rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
@@ -538,14 +538,15 @@ VariantGepPE* PAG::addVariantGepPE(NodeID src, NodeID dst)
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
+ * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
  */
-NodeID PAG::addGepValNode(const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
+NodeID PAG::addGepValNode(const Value* curInst,const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
 {
     NodeID base = getBaseValNode(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap.count(std::make_pair(base, ls))
+    assert(0==GepValNodeMap[curInst].count(std::make_pair(base, ls))
            && "this node should not be created before");
-    GepValNodeMap[std::make_pair(base, ls)] = i;
+    GepValNodeMap[curInst][std::make_pair(base, ls)] = i;
     GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
     return addValNode(gepVal, node, i);
 }

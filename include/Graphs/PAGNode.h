@@ -33,6 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/LLVMUtil.h"
 
 /*
  * PAG node
@@ -127,7 +128,7 @@ public:
     inline bool isConstantData() const
     {
         if (hasValue())
-            return SVFUtil::isa<ConstantData>(value) || SVFUtil::isa<ConstantAggregate>(value);
+            return SVFUtil::isConstantData(value);
         else
             return false;
     }

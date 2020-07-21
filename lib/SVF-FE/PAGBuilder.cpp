@@ -1285,7 +1285,7 @@ void PAGBuilder::sanityCheck()
 NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
 {
     NodeID base = pag->getBaseValNode(getValueNode(val));
-    NodeID gepval = pag->getGepValNode(base, ls);
+    NodeID gepval = pag->getGepValNode(curVal, base, ls);
     if (gepval==-1)
     {
         /*
@@ -1305,7 +1305,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, NULL);
-        NodeID gepNode= pag->addGepValNode(val,ls,pag->getPAGNodeNum(),type,fieldidx);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls,pag->getPAGNodeNum(),type,fieldidx);
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
@@ -1339,6 +1339,15 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {
+        const Function* srcFun = edge->getSrcNode()->getFunction();
+        const Function* dstFun = edge->getDstNode()->getFunction();
+        if(srcFun!=NULL && !SVFUtil::isa<RetPE>(edge) && !SVFUtil::isa<Function>(edge->getSrcNode()->getValue())) {
+            assert(srcFun==curInst->getFunction() && "SrcNode of the PAGEdge not in the same function?");
+        }
+        if(dstFun!=NULL && !SVFUtil::isa<CallPE>(edge) && !SVFUtil::isa<Function>(edge->getDstNode()->getValue())) {
+            assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
+        }
+
         /// We assume every GepValPN and its GepPE are unique across whole program
         if (!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
             assert(curBB && "instruction does not have a basic block??");

@@ -137,7 +137,6 @@ const std::string ThreadMHPIndSVFGEdge::toString() const {
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
 {
     cpts = exit->getMR()->getPointsTo();
-    bb = SVFUtil::getFunExitBB(exit->getFunction()->getLLVMFun());
 }
 
 /*!
