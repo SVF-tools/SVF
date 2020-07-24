@@ -42,14 +42,19 @@ static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
 FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
 {
     fun = f;
-    bb = &(f->getLLVMFun()->getEntryBlock());
-
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = &(f->getLLVMFun()->getEntryBlock());
+    }
 }
 
 FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL)
 {
     fun = f;
-    bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+    }
 
 }
 
