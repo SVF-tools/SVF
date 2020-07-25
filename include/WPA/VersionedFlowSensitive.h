@@ -22,6 +22,7 @@ class SVFModule;
  */
 class VersionedFlowSensitive : public FlowSensitive
 {
+    friend class VersionedFlowSensitiveStat;
 public:
     enum VersionType {
         CONSUME,

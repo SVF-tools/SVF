@@ -33,6 +33,7 @@
 
 #include "MemoryModel/PTAStat.h"
 #include "WPA/FlowSensitive.h"
+#include "WPA/VersionedFlowSensitive.h"
 
 class Andersen;
 class PAG;
@@ -155,6 +156,52 @@ private:
 
     u32_t _MaxAddrTakenVarPts;	///< max points-to set size of addr-taken variables.
     u32_t _NumOfAddrTakeVar;	///< number of occurrences of addr-taken variables in load/store.
+};
+
+class VersionedFlowSensitiveStat : public PTAStat
+{
+public:
+    VersionedFlowSensitive *vfspta;
+
+    VersionedFlowSensitiveStat(VersionedFlowSensitive* pta): PTAStat(pta)
+    {
+        vfspta = pta;
+        clearStat();
+        startClk();
+    }
+
+    virtual ~VersionedFlowSensitiveStat() { }
+
+    virtual void performStat();
+
+private:
+    void clearStat();
+
+    /// Total number of versions across all objects.
+    u32_t _NumVersions;
+    /// Most versions for a single object.
+    u32_t _MaxVersions;
+    /// Number of versions with non-empty points-to sets (since versioning is over-approximate).
+    u32_t _NumNonEmptyVersions;
+
+    /// sizes of points-to set
+    u32_t _MaxPtsSize;	///< max points-to set size.
+    /// Max points-to set size in top-level pointers.
+    u32_t _MaxTopLvlPtsSize;
+    /// Max address-taken points-to set size.
+    u32_t _MaxVersionPtsSize;
+
+    /// Total of points-to set sizes for calculating averages.
+    u32_t _TotalPtsSize;
+
+    double _AvgPtsSize;	///< average points-to set size.
+    /// Average points-to set size for top-level pointers.
+    double _AvgTopLvlPtsSize;
+    /// Average points-to set size for address-taken objects.
+    double _AvgVersionPtsSize;
+
+    /// Number of occurrences of addr-taken variables in load/store.
+    u32_t _NumOfAddrTakeVar;
 };
 
 #endif /* FLOWSENSITIVESTAT_H_ */
