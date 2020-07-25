@@ -11,6 +11,13 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include <iostream>
 
+VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
+    : FlowSensitive(_pag, type)
+{
+    numPrecolouredNodes = numPrecolourVersions = 0;
+    relianceTime = precolouringTime = colouringTime = meldMappingTime = versionPropTime = 0.0;
+}
+
 void VersionedFlowSensitive::initialize()
 {
     FlowSensitive::initialize();
@@ -18,29 +25,13 @@ void VersionedFlowSensitive::initialize()
     vPtD = getVDFPTDataTy();
     assert(vPtD && "VFS::initialize: Expected VDFPTData");
 
-    double start = stat->getClk();
     precolour();
-    double end = stat->getClk();
-    double prec = (end - start) / TIMEINTERVAL;
-
-    start = stat->getClk();
     colour();
-    end = stat->getClk();
-    double col = (end - start) / TIMEINTERVAL;
 
-    start = stat->getClk();
     mapMeldVersions(meldConsume, consume);
     mapMeldVersions(meldYield, yield);
-    end = stat->getClk();
-    double map = (end - start) / TIMEINTERVAL;
 
-
-    start = stat->getClk();
     determineReliance();
-    end = stat->getClk();
-    double rel = (end - start) / TIMEINTERVAL;
-
-    printf("precolour: %fs, colour: %fs, map: %fs, rel: %fs\n", prec, col, map, rel);
 
     vPtD->setConsume(&consume);
     vPtD->setYield(&yield);
@@ -54,6 +45,7 @@ void VersionedFlowSensitive::finalize()
 
 void VersionedFlowSensitive::precolour(void)
 {
+    double start = stat->getClk();
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
         NodeID l = it->first;
@@ -68,6 +60,11 @@ void VersionedFlowSensitive::precolour(void)
             }
 
             vWorklist.push(l);
+
+            if (ander->getPts(p).count() != 0)
+            {
+                ++numPrecolouredNodes;
+            }
         }
         else if (delta(l))
         {
@@ -85,12 +82,22 @@ void VersionedFlowSensitive::precolour(void)
                 }
 
                 vWorklist.push(l);
+
+                if (ie->getPointsTo().count() != 0)
+                {
+                    ++numPrecolouredNodes;
+                }
             }
         }
     }
+
+    double end = stat->getClk();
+    precolouringTime = (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::colour(void) {
+    double start = stat->getClk();
+
     unsigned loops = 0;
     while (!vWorklist.empty()) {
         NodeID l = vWorklist.pop();
@@ -117,6 +124,9 @@ void VersionedFlowSensitive::colour(void) {
             }
         }
     }
+
+    double end = stat->getClk();
+    double colouringTime = (end - start) / TIMEINTERVAL;
 }
 
 bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
@@ -128,6 +138,8 @@ bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
 
 void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to)
 {
+    double start = stat->getClk();
+
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
     static DenseMap<MeldVersion, Version> mvv;
@@ -150,6 +162,9 @@ void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersion
 
     // Don't need the from anymore.
     from.clear();
+
+    double end = stat->getClk();
+    meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
 bool VersionedFlowSensitive::delta(NodeID l) const
@@ -179,6 +194,7 @@ bool VersionedFlowSensitive::delta(NodeID l) const
 /// Returns a new version for o.
 MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
+    ++numPrecolourVersions;
     MeldVersion nv;
     nv.set(++meldVersions[o]);
     return nv;
@@ -202,6 +218,8 @@ bool VersionedFlowSensitive::hasMeldVersion(NodeID l, NodeID o, enum VersionType
 
 void VersionedFlowSensitive::determineReliance(void)
 {
+    double start = stat->getClk();
+
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
         NodeID l = it->first;
@@ -233,10 +251,15 @@ void VersionedFlowSensitive::determineReliance(void)
             }
         }
     }
+
+    double end = stat->getClk();
+    relianceTime = (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
+    double start = stat->getClk();
+
     for (Version r : versionReliance[o][v])
     {
         if (vPtD->updateATVersion(o, r, v))
@@ -249,6 +272,9 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
     {
         pushIntoWorklist(s);
     }
+
+    double end = stat->getClk();
+    versionPropTime += (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::processNode(NodeID n)

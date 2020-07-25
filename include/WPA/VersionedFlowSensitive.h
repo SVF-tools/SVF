@@ -31,14 +31,13 @@ public:
     /// Maps locations to all versions it sees (through objects).
     typedef DenseMap<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
 
-
     enum VersionType {
         CONSUME,
         YIELD,
     };
 
     /// Constructor
-    VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA) : FlowSensitive(_pag, type) { }
+    VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA);
 
     /// Flow sensitive analysis
     // virtual void analyze(SVFModule* svfModule) override;
@@ -133,6 +132,18 @@ private:
 
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VDFPTDataTy *vPtD;
+
+    /// Additional statistics.
+    //@{
+    Size_t numPrecolouredNodes;  ///< Number of precoloured nodes.
+    Size_t numPrecolourVersions; ///< Number of versions created during precolouring.
+
+    double relianceTime;     ///< Time to determine version and statement reliance.
+    double precolouringTime; ///< Time to precolour SVFG.
+    double colouringTime;    ///< Time to colour SVFG.
+    double meldMappingTime;  ///< Time to map MeldVersions to Versions.
+    double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
+    //@}
 };
 
 #endif /* VFS_H_ */
