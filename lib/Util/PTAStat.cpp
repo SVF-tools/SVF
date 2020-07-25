@@ -223,7 +223,7 @@ void PTAStat::callgraphStat()
     unsigned totalEdge = 0;
     unsigned edgeInCycle = 0;
 
-    DenseSet<NodeID> sccRepNodeSet;
+    DenseNodeSet sccRepNodeSet;
     PTACallGraph::iterator it = graph->begin();
     PTACallGraph::iterator eit = graph->end();
     for (; it != eit; ++it)

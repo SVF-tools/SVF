@@ -30,10 +30,10 @@ private:
 
     /// Value nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    DenseSet<NodeID> valueNodes;
+    DenseNodeSet valueNodes;
     /// Object nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    DenseSet<NodeID> objectNodes;
+    DenseNodeSet objectNodes;
     /// Edges in this external PAG, represented by the parts of an Edge because
     /// we will rebuild these edges in the main PAG.
     std::set<std::tuple<NodeID, NodeID, std::string, int>>edges;
@@ -98,11 +98,11 @@ public:
         return functionName;
     }
 
-    DenseSet<NodeID> &getValueNodes()
+    DenseNodeSet &getValueNodes()
     {
         return valueNodes;
     }
-    DenseSet<NodeID> &getObjectNodes()
+    DenseNodeSet &getObjectNodes()
     {
         return objectNodes;
     }
