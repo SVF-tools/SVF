@@ -24,6 +24,14 @@ class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
 public:
+    typedef BVDataPTAImpl::VDFPTDataTy::ObjToVersionMap ObjToVersionMap;
+    typedef DenseMap<NodeID, MeldVersion> ObjToMeldVersionMap;
+
+    typedef BVDataPTAImpl::VDFPTDataTy::LocVersionMap LocVersionMap;
+    /// Maps locations to all versions it sees (through objects).
+    typedef DenseMap<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
+
+
     enum VersionType {
         CONSUME,
         YIELD,
@@ -77,8 +85,7 @@ private:
     bool meld(MeldVersion &mv1, MeldVersion &mv2);
 
     /// Moves meldConsume/Yield to consume/yield.
-    void mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &from,
-                         DenseMap<NodeID, DenseMap<NodeID, Version>> &to);
+    void mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to);
 
     /// Returns whether l is a delta node.
     bool delta(NodeID l) const;
@@ -104,22 +111,22 @@ private:
 
     /// SVFG node (label) x object -> version to consume.
     /// Used during colouring.
-    DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> meldConsume;
+    LocMeldVersionMap meldConsume;
     /// SVFG node (label) x object -> version to yield.
     /// Used during colouring.
-    DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> meldYield;
+    LocMeldVersionMap meldYield;
     /// Object -> MeldVersion counter.
     DenseMap<NodeID, unsigned> meldVersions;
 
     /// Actual consume map.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> consume;
+    LocVersionMap consume;
     /// Actual yield map.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> yield;
+    LocVersionMap yield;
 
     /// o -> (version -> versions which rely on it).
     DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
-    DenseMap<NodeID, DenseMap<Version, DenseSet<NodeID>>> stmtReliance;
+    DenseMap<NodeID, DenseMap<Version, DenseNodeSet>> stmtReliance;
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;

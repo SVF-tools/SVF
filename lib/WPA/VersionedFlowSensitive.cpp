@@ -101,7 +101,7 @@ void VersionedFlowSensitive::colour(void) {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
 
-            DenseMap<NodeID, MeldVersion> &myl = meldYield[l];
+            ObjToMeldVersionMap &myl = meldYield[l];
             for (NodeID o : ie->getPointsTo()) {
                 if (myl.find(o) == myl.end()) continue;
 
@@ -126,19 +126,18 @@ bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
 }
 
 
-void VersionedFlowSensitive::mapMeldVersions(DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &from,
-                                             DenseMap<NodeID, DenseMap<NodeID, Version>> &to)
+void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to)
 {
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
     static DenseMap<MeldVersion, Version> mvv;
     static Version curVersion = 1;
 
-    for (DenseMap<NodeID, DenseMap<NodeID, MeldVersion>>::value_type &lomv : from)
+    for (LocMeldVersionMap::value_type &lomv : from)
     {
         NodeID l = lomv.first;
-        DenseMap<NodeID, Version> &tol = to[l];
-        for (DenseMap<NodeID, MeldVersion>::value_type &omv : lomv.second)
+        ObjToVersionMap &tol = to[l];
+        for (ObjToMeldVersionMap::value_type &omv : lomv.second)
         {
             NodeID o = omv.first;
             MeldVersion &mv = omv.second;
@@ -188,16 +187,16 @@ MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) const
 {
     // Choose which map we are checking.
-    const DenseMap<NodeID, DenseMap<NodeID, Version>> &m = v == CONSUME ? consume : yield;
-    const DenseMap<NodeID, Version> &ml = m.lookup(l);
+    const LocVersionMap &m = v == CONSUME ? consume : yield;
+    const ObjToVersionMap &ml = m.lookup(l);
     return ml.find(o) != ml.end();
 }
 
 bool VersionedFlowSensitive::hasMeldVersion(NodeID l, NodeID o, enum VersionType v) const
 {
     // Choose which map we are checking.
-    const DenseMap<NodeID, DenseMap<NodeID, MeldVersion>> &m = v == CONSUME ? meldConsume : meldYield;
-    const DenseMap<NodeID, MeldVersion> &ml = m.lookup(l);
+    const LocMeldVersionMap &m = v == CONSUME ? meldConsume : meldYield;
+    const ObjToMeldVersionMap &ml = m.lookup(l);
     return ml.find(o) != ml.end();
 }
 
@@ -226,7 +225,7 @@ void VersionedFlowSensitive::determineReliance(void)
 
         if (SVFUtil::isa<LoadSVFGNode>(sn) || SVFUtil::isa<StoreSVFGNode>(sn))
         {
-            for (DenseMap<NodeID, Version>::value_type &ov : consume[l])
+            for (ObjToVersionMap::value_type &ov : consume[l])
             {
                 NodeID o = ov.first;
                 Version &v = ov.second;

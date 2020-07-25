@@ -518,19 +518,23 @@ public:
     typedef DenseMap<Version, PointsTo> VPtsMap;
     typedef typename PTData<Key, Data>::PTDataTY PTDataTy;
 
+    typedef DenseMap<NodeID, Version> ObjToVersionMap;
+    /// Maps locations to all versions it sees (through objects).
+    typedef DenseMap<NodeID, ObjToVersionMap> LocVersionMap;
+
     /// Constructor
     VDFPTData(PTDataTy ty = PTData<Key, Data>::VDFPTD) : PTData<Key, Data>(ty)
     {
     }
 
     /// Sets the mapping to consume versions. Necessary.
-    void setConsume(DenseMap<NodeID, DenseMap<NodeID, Version>> *consume)
+    void setConsume(LocVersionMap *consume)
     {
         this->consume = consume;
     }
 
     /// Sets the mapping to yield versions. Necessary.
-    void setYield(DenseMap<NodeID, DenseMap<NodeID, Version>> *yield)
+    void setYield(LocVersionMap *yield)
     {
         this->yield = yield;
     }
@@ -587,7 +591,7 @@ public:
     bool propWithinLoc(LocID loc, bool su, NodeID singleton, NodeBS &changedObjects)
     {
         bool changed = false;
-        for (DenseMap<NodeID, Version>::value_type &oc : (*consume)[loc])
+        for (ObjToVersionMap::value_type &oc : (*consume)[loc])
         {
             NodeID o = oc.first;
             Version &c = oc.second;
@@ -649,13 +653,13 @@ public:
 
         // We also want to know, which versions correspond to which locations.
         // TODO: pull repetition into function.
-        for (DenseMap<NodeID, DenseMap<NodeID, Version>>::value_type &lov : *consume)
+        for (LocVersionMap::value_type &lov : *consume)
         {
             LocID &l = lov.first;
             if (lov.second.empty()) continue;
 
             SVFUtil::outs() << l << " consumes =>\n";
-            for (DenseMap<NodeID, Version>::value_type &ov : lov.second)
+            for (ObjToVersionMap::value_type &ov : lov.second)
             {
                 NodeID &o = ov.first;
                 Version &v = ov.second;
@@ -663,13 +667,13 @@ public:
             }
         }
 
-        for (DenseMap<NodeID, DenseMap<NodeID, Version>>::value_type &lov : *yield)
+        for (LocVersionMap::value_type &lov : *yield)
         {
             LocID &l = lov.first;
             if (lov.second.empty()) continue;
 
             SVFUtil::outs() << l << " yields =>\n";
-            for (DenseMap<NodeID, Version>::value_type &ov : lov.second)
+            for (ObjToVersionMap::value_type &ov : lov.second)
             {
                 NodeID &o = ov.first;
                 Version &v = ov.second;
@@ -683,9 +687,9 @@ private:
     DenseMap<NodeID, VPtsMap> atPointsTos;
 
     /// SVFG node (label) x object -> version to consume.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> *consume;
+    LocVersionMap *consume;
     /// SVFG node (label) x object -> version to yield.
-    DenseMap<NodeID, DenseMap<NodeID, Version>> *yield;
+    LocVersionMap *yield;
 };
 
 #endif /* POINTSTODSDF_H_ */
