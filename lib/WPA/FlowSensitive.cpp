@@ -64,7 +64,7 @@ void FlowSensitive::analyze()
     /// Initialization for the Solver
     initialize();
 
-    double start = stat->getClk();
+    double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
@@ -84,7 +84,7 @@ void FlowSensitive::analyze()
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
 
     if (CTirAliasEval)
