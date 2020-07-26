@@ -27,7 +27,7 @@ public:
 
     virtual ~DDAClient() {}
 
-    virtual inline void initialise(SVFModule* module) {}
+    virtual inline void initialise(SVFModule*) {}
 
     /// Collect candidate pointers for query.
     virtual inline NodeSet& collectCandidateQueries(PAG* p)
@@ -49,7 +49,7 @@ public:
     }
 
     /// Call back used by DDAVFSolver.
-    virtual inline void handleStatement(const SVFGNode* stmt, NodeID var) {}
+    virtual inline void handleStatement(const SVFGNode*, NodeID) {}
     /// Set PAG graph.
     inline void setPAG(PAG* g)
     {
@@ -73,9 +73,9 @@ public:
     }
     virtual void answerQueries(PointerAnalysis* pta);
 
-    virtual inline void performStat(PointerAnalysis* pta) {}
+    virtual inline void performStat(PointerAnalysis*) {}
 
-    virtual inline void collectWPANum(SVFModule* mod) {}
+    virtual inline void collectWPANum(SVFModule*) {}
 protected:
     void addCandidate(NodeID id)
     {

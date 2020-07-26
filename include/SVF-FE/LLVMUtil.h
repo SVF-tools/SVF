@@ -42,7 +42,7 @@ namespace SVFUtil
 
 
 /// This function servers a allocation wrapper detector
-inline bool isAnAllocationWraper(const Instruction *inst)
+inline bool isAnAllocationWraper(const Instruction*)
 {
     return false;
 }
