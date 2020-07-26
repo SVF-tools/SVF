@@ -99,9 +99,9 @@ void MHP::analyze()
 
     DBOUT(DGENERAL, outs() << pasMsg("MHP interleaving analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP interleaving analysis\n"));
-    DOTIMESTAT(double interleavingStart = PTAStat::getClk());
+    DOTIMESTAT(double interleavingStart = PTAStat::getClk(true));
     analyzeInterleaving();
-    DOTIMESTAT(double interleavingEnd = PTAStat::getClk());
+    DOTIMESTAT(double interleavingEnd = PTAStat::getClk(true));
     DOTIMESTAT(interleavingTime += (interleavingEnd - interleavingStart) / TIMEINTERVAL);
 
 }
