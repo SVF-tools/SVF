@@ -177,15 +177,23 @@ public:
 private:
     void clearStat();
 
+    /// For all version-related statistics.
+    void versionStat(void);
+
+    /// For all PTS size related statistics not handled by versionStat.
+    void ptsSizeStat(void);
+
     /// Total number of versions across all objects.
     u32_t _NumVersions;
     /// Most versions for a single object.
     u32_t _MaxVersions;
     /// Number of versions with non-empty points-to sets (since versioning is over-approximate).
     u32_t _NumNonEmptyVersions;
+    /// Number of objects which have a single version.
+    u32_t _NumSingleVersion;
 
-    /// sizes of points-to set
-    u32_t _MaxPtsSize;	///< max points-to set size.
+    /// Largest PTS size.
+    u32_t _MaxPtsSize;
     /// Max points-to set size in top-level pointers.
     u32_t _MaxTopLvlPtsSize;
     /// Max address-taken points-to set size.
@@ -194,14 +202,12 @@ private:
     /// Total of points-to set sizes for calculating averages.
     u32_t _TotalPtsSize;
 
-    double _AvgPtsSize;	///< average points-to set size.
+    /// Average size across all points-to sets.
+    double _AvgPtsSize;
     /// Average points-to set size for top-level pointers.
     double _AvgTopLvlPtsSize;
     /// Average points-to set size for address-taken objects.
     double _AvgVersionPtsSize;
-
-    /// Number of occurrences of addr-taken variables in load/store.
-    u32_t _NumOfAddrTakeVar;
 };
 
 #endif /* FLOWSENSITIVESTAT_H_ */

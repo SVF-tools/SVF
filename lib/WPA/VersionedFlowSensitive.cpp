@@ -21,6 +21,9 @@ VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
 void VersionedFlowSensitive::initialize()
 {
     FlowSensitive::initialize();
+    // Overwrite the stat FlowSensitive::initialize gave us.
+    delete stat;
+    stat = new VersionedFlowSensitiveStat(this);
 
     vPtD = getVDFPTDataTy();
     assert(vPtD && "VFS::initialize: Expected VDFPTData");
