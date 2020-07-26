@@ -101,7 +101,6 @@ void VersionedFlowSensitive::precolour(void)
 void VersionedFlowSensitive::colour(void) {
     double start = stat->getClk();
 
-    unsigned loops = 0;
     while (!vWorklist.empty()) {
         NodeID l = vWorklist.pop();
         const SVFGNode *sl = svfg->getSVFGNode(l);
@@ -129,7 +128,7 @@ void VersionedFlowSensitive::colour(void) {
     }
 
     double end = stat->getClk();
-    double colouringTime = (end - start) / TIMEINTERVAL;
+    colouringTime = (end - start) / TIMEINTERVAL;
 }
 
 bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
