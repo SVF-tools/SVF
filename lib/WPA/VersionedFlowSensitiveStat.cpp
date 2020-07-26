@@ -89,6 +89,11 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["StoreTime"]          = vfspta->storeTime;
     timeStatMap["UpdateCGTime"]       = vfspta->updateCallGraphTime;
     timeStatMap["PhiTime"]            = vfspta->phiTime;
+    timeStatMap["ColouringTime"]      = vfspta->colouringTime;
+    timeStatMap["PrecolouringTime"]   = vfspta->precolouringTime;
+    timeStatMap["RelianceTime"]       = vfspta->relianceTime;
+    timeStatMap["VersionPropTime"]    = vfspta->versionPropTime;
+    timeStatMap["MeldMappingTime"]    = vfspta->meldMappingTime;
 
     PTNumStatMap[TotalNumOfPointers]  = pag->getValueNodeNum() + pag->getFieldValNodeNum();
     PTNumStatMap[TotalNumOfObjects]   = pag->getObjectNodeNum() + pag->getFieldObjNodeNum();
