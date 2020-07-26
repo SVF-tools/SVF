@@ -610,6 +610,12 @@ public:
         return changed;
     }
 
+    /// Return version v of o's points-to set.
+    const PointsTo &getATPts(NodeID o, Version v)
+    {
+        return atPointsTos[o][v];
+    }
+
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
     static inline bool classof(const VDFPTData<Key,Data> *)
     {
