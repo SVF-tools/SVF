@@ -37,7 +37,7 @@ void LockAnalysis::analyze()
     collectLockUnlocksites();
     buildCandidateFuncSetforLock();
 
-    DOTIMESTAT(double lockStart = PTAStat::getClk());
+    DOTIMESTAT(double lockStart = PTAStat::getClk(true));
 
     DBOUT(DGENERAL, outs() << "\tIntra-procedural LockAnalysis\n");
     DBOUT(DMTA, outs() << "\tIntra-procedural LockAnalysis\n");
@@ -51,7 +51,7 @@ void LockAnalysis::analyze()
     DBOUT(DMTA, outs() << "\tInter-procedural LockAnalysis\n");
     analyzeLockSpanCxtStmt();
 
-    DOTIMESTAT(double lockEnd = PTAStat::getClk());
+    DOTIMESTAT(double lockEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockTime += (lockEnd - lockStart) / TIMEINTERVAL);
 
     validateResults();

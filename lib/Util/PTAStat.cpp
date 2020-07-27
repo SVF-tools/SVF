@@ -33,6 +33,9 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PAG.h"
 
+static llvm::cl::opt<bool> MarkedClocksOnly("marked-clocks-only", llvm::cl::init(false),
+                                            llvm::cl::desc("Only measure times where explicitly marked"));
+
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
@@ -102,9 +105,16 @@ const char* PTAStat:: MaxNumOfNodesInSCC = "MaxNodesInSCC";	///< max Number of n
 
 const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers points-to null
 
+bool PTAStat::markedClocksOnly = false;
+
 PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 {
 
+}
+
+void PTAStat::setMarkedClocksOnly(void)
+{
+    markedClocksOnly = MarkedClocksOnly;
 }
 
 void PTAStat::performStat()

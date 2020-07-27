@@ -26,9 +26,9 @@ void FlowDDA::computeDDAPts(NodeID id)
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
 
     /// start DDA analysis
-    DOTIMESTAT(double start = DDAStat::getClk());
+    DOTIMESTAT(double start = DDAStat::getClk(true));
     const PointsTo& pts = findPT(dpm);
-    DOTIMESTAT(ddaStat->_AnaTimePerQuery = DDAStat::getClk() - start);
+    DOTIMESTAT(ddaStat->_AnaTimePerQuery = DDAStat::getClk(true) - start);
     DOTIMESTAT(ddaStat->_TotalTimeOfQueries += ddaStat->_AnaTimePerQuery);
 
     if(isOutOfBudgetQuery() == false)

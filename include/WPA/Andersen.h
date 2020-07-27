@@ -459,7 +459,7 @@ private:
     //@}
 
 public:
-    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(pag,type)
+    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
     {
         assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
     }
@@ -667,7 +667,7 @@ private:
 
 public:
     AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
-        AndersenHCD(_pag, type), AndersenLCD(_pag, type), Andersen(_pag, type)
+        Andersen(_pag, type), AndersenHCD(_pag, type), AndersenLCD(_pag, type)
     {
     }
 
