@@ -333,7 +333,7 @@ protected:
             NodeBS fldInsenObjs;
             for(NodeBS::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
             {
-                if(consCG->isFieldInsensitiveObj(*pit))
+                if(isFieldInsensitive(*pit))
                     fldInsenObjs.set(*pit);
             }
             for(NodeBS::iterator pit = fldInsenObjs.begin(), epit = fldInsenObjs.end(); pit!=epit; ++pit)

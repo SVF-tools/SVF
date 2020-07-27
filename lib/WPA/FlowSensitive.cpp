@@ -324,7 +324,7 @@ bool FlowSensitive::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
         if (propVarPtsFromSrcToDst(ptd, src, dst))
             changed = true;
 
-        if (isFIObjNode(ptd))
+        if (isFieldInsensitive(ptd))
         {
             /// If this is a field-insensitive obj, propagate all field node's pts
             const NodeBS& allFields = getAllFieldsObjNode(ptd);
@@ -476,7 +476,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
         if (unionPtsFromIn(load, ptd, dstVar))
             changed = true;
 
-        if (isFIObjNode(ptd))
+        if (isFieldInsensitive(ptd))
         {
             /// If the ptd is a field-insensitive node, we should also get all field nodes'
             /// points-to sets and pass them to pagDst.
@@ -656,7 +656,7 @@ void FlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& edges)
                 if (propVarPtsAfterCGUpdated(ptd, srcNode, dstNode))
                     changed = true;
 
-                if (isFIObjNode(ptd))
+                if (isFieldInsensitive(ptd))
                 {
                     /// If this is a field-insensitive obj, propagate all field node's pts
                     const NodeBS& allFields = getAllFieldsObjNode(ptd);
