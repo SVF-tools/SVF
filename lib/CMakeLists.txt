@@ -16,8 +16,9 @@ file (GLOB SOURCES
 add_llvm_library(Svf STATIC ${SOURCES})
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
-llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support )
-target_link_libraries(Cudd)
+llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
+target_link_libraries(Svf Cudd)
+target_link_libraries(Svf ${llvm_libs})
 
 
 if(DEFINED IN_SOURCE_BUILD)
