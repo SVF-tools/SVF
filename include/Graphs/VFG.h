@@ -357,10 +357,10 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID actualParam = getDef(cs_arg);
-        NodeID formalParam = getDef(fun_arg);
+        NodeID actualParam = getActualParmVFGNode(cs_arg, cbn)->getId();
+        NodeID formalParam = getFormalParmVFGNode(fun_arg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
