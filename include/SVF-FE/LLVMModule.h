@@ -46,8 +46,8 @@ public:
 private:
     static LLVMModuleSet *llvmModuleSet;
     SVFModule* svfModule;
+    std::unique_ptr<LLVMContext> cxts;
     u32_t moduleNum;
-    LLVMContext *cxts;
     std::unique_ptr<Module> *modules;
 
     /// Function declaration to function definition map
@@ -58,7 +58,7 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(NULL), moduleNum(0), cxts(NULL), modules(NULL) {}
+    LLVMModuleSet(): svfModule(nullptr), moduleNum(0), cxts(nullptr), modules(NULL) {}
 
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()

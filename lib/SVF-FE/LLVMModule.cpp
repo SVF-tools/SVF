@@ -64,7 +64,6 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
     moduleNum = 1;
-    cxts = &(mod.getContext());
     modules = new unique_ptr<Module>[moduleNum];
     modules[0] = std::unique_ptr<Module>(&mod);
 
@@ -136,7 +135,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     //    assert(t1 != t3);
     // ------------------------------------------------------------------
     //
-    cxts = new LLVMContext[1];
+    cxts = std::make_unique<LLVMContext>();
     modules = new unique_ptr<Module>[moduleNum];
 
     u32_t i = 0;
@@ -145,7 +144,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     {
         const string moduleName = *it;
         SMDiagnostic Err;
-        modules[i] = parseIRFile(moduleName, Err, cxts[0]);
+        modules[i] = parseIRFile(moduleName, Err, *cxts);
         if (!modules[i])
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
