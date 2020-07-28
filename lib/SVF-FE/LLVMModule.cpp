@@ -63,7 +63,6 @@ std::string SVFModule::pagReadFromTxt = "";
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
-    moduleNum = 1;
     modules.emplace_back(std::unique_ptr<Module>(&mod));
 
     initialize();
@@ -118,7 +117,6 @@ void LLVMModuleSet::build(const vector<string> &moduleNameVec)
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
-    moduleNum = moduleNameVec.size();
     //
     // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
     // We should use only one LLVMContext object for multiple modules in the same thread.
@@ -156,7 +154,7 @@ void LLVMModuleSet::initialize()
     if (SVFMain)
         addSVFMain();
 
-    for (u32_t i = 0; i < moduleNum; ++i)
+    for (u32_t i = 0; i < getModuleNum(); ++i)
     {
         Module *mod = modules[i].get();
 
@@ -191,7 +189,7 @@ void LLVMModuleSet::addSVFMain()
     std::vector<Function *> init_funcs;
     Function * orgMain = 0;
     u32_t k = 0;
-    for (u32_t i = 0; i < moduleNum; ++i)
+    for (u32_t i = 0; i < getModuleNum(); ++i)
     {
         Module *mod = modules[i].get();
         for (auto &func: *mod)
@@ -207,7 +205,7 @@ void LLVMModuleSet::addSVFMain()
             }
         }
     }
-    if(orgMain && moduleNum > 0 && init_funcs.size() > 0)
+    if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
     {
         Module & M = *(modules[k].get());
         // char **
@@ -417,7 +415,7 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
 // Dump modules to files
 void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
 {
-    for (u32_t i = 0; i < moduleNum; ++i)
+    for (u32_t i = 0; i < getModuleNum(); ++i)
     {
         Module *mod = getModule(i);
         std::string moduleName = mod->getName().str();

@@ -47,7 +47,6 @@ private:
     static LLVMModuleSet *llvmModuleSet;
     SVFModule* svfModule;
     std::unique_ptr<LLVMContext> cxts;
-    u32_t moduleNum;
     std::vector<std::unique_ptr<Module>> modules;
 
     /// Function declaration to function definition map
@@ -58,7 +57,7 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(nullptr), moduleNum(0), cxts(nullptr) {}
+    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr) {}
 
     void build(const std::vector<std::string> &moduleNameVec);
 
@@ -82,18 +81,18 @@ public:
 
     u32_t getModuleNum() const
     {
-        return moduleNum;
+        return modules.size();
     }
 
     Module *getModule(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
+        assert(idx < getModuleNum() && "Out of range.");
         return modules[idx].get();
     }
 
     Module &getModuleRef(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
+        assert(idx < getModuleNum() && "Out of range.");
         return *(modules[idx].get());
     }
 
