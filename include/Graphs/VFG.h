@@ -368,8 +368,8 @@ protected:
     /// Connect formal-ret and actual ret
     virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID formalRet = getDef(fun_return);
-        NodeID actualRet = getDef(cs_return);
+        NodeID formalRet = getFormalRetVFGNode(fun_return)->getId();
+        NodeID actualRet = getActualRetVFGNode(cs_return)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
