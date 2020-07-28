@@ -378,7 +378,7 @@ protected:
     inline void addFormalINSVFGNode(const MemSSA::ENTRYCHI* chi)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++,chi);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(chi->getFunction()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(chi->getFunction()));
         setDef(chi->getResVer(),sNode);
         funToFormalINMap[chi->getFunction()].set(sNode->getId());
     }
@@ -386,7 +386,7 @@ protected:
     inline void addFormalOUTSVFGNode(const MemSSA::RETMU* mu)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++,mu);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(mu->getFunction()));
+        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(mu->getFunction()));
         funToFormalOUTMap[mu->getFunction()].set(sNode->getId());
     }
     /// Add memory callsite mu SVFG node

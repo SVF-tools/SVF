@@ -521,7 +521,7 @@ protected:
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs)
     {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
-        addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
+        addVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fun));
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
                 it!=eit; ++it)
             sNode->addCallPE(*it);
@@ -535,7 +535,7 @@ protected:
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
         FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
-        addVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(fun));
+        addVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(fun));
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
                 it!=eit; ++it)
             sNode->addRetPE(*it);

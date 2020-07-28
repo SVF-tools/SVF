@@ -284,14 +284,14 @@ public:
     /// Add function arguments
     inline void addFunArgs(const SVFFunction* fun, const PAGNode* arg)
     {
-        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
+        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
     inline void addFunRet(const SVFFunction* fun, const PAGNode* ret)
     {
-        FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
+        FunExitBlockNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
