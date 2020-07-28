@@ -43,14 +43,19 @@ static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
 FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
 {
     fun = f;
-    bb = &(f->getLLVMFun()->getEntryBlock());
-
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = &(f->getLLVMFun()->getEntryBlock());
+    }
 }
 
 FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL)
 {
     fun = f;
-    bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+    }
 
 }
 
@@ -165,9 +170,9 @@ ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
     ICFGNode* node;
     if(SVFUtil::isNonInstricCallSite(inst))
         node = getCallBlockNode(inst);
-    else if(SVFUtil::isInstrinsicDbgInst(inst))
+    else if(SVFUtil::isIntrinsicInst(inst))
         node = getIntraBlockNode(inst);
-//			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
+//			assert (false && "associating an intrinsic instruction with an ICFGNode!");
     else
         node = getIntraBlockNode(inst);
 

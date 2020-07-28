@@ -60,7 +60,7 @@ void ICFGBuilder::processFunEntry(const SVFFunction*  fun, WorkList& worklist)
     FunEntryBlockNode* FunEntryBlockNode = icfg->getFunEntryBlockNode(fun);
     const Instruction* entryInst = &((fun->getLLVMFun()->getEntryBlock()).front());
     InstVec insts;
-    if (isInstrinsicDbgInst(entryInst))
+    if (isIntrinsicInst(entryInst))
         getNextInsts(entryInst, insts);
     else
         insts.push_back(entryInst);
@@ -124,7 +124,7 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
     FunExitBlockNode* FunExitBlockNode = icfg->getFunExitBlockNode(fun);
     const Instruction* exitInst = &(getFunExitBB(fun->getLLVMFun())->back());
     InstVec insts;
-    if (isInstrinsicDbgInst(exitInst))
+    if (isIntrinsicInst(exitInst))
         getPrevInsts(exitInst, insts);
     else
         insts.push_back(exitInst);
