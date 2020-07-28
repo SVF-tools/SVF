@@ -64,8 +64,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
     moduleNum = 1;
-    modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<Module>(&mod);
+    modules.emplace_back(std::unique_ptr<Module>(&mod));
 
     initialize();
     buildFunToFunMap();
@@ -136,7 +135,6 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     // ------------------------------------------------------------------
     //
     cxts = std::make_unique<LLVMContext>();
-    modules = new unique_ptr<Module>[moduleNum];
 
     u32_t i = 0;
     for (vector<string>::const_iterator it = moduleNameVec.begin(),
@@ -144,7 +142,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     {
         const string moduleName = *it;
         SMDiagnostic Err;
-        modules[i] = parseIRFile(moduleName, Err, *cxts);
+        modules.emplace_back(parseIRFile(moduleName, Err, *cxts));
         if (!modules[i])
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";

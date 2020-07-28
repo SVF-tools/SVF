@@ -48,7 +48,7 @@ private:
     SVFModule* svfModule;
     std::unique_ptr<LLVMContext> cxts;
     u32_t moduleNum;
-    std::unique_ptr<Module> *modules;
+    std::vector<std::unique_ptr<Module>> modules;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -58,7 +58,7 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(nullptr), moduleNum(0), cxts(nullptr), modules(NULL) {}
+    LLVMModuleSet(): svfModule(nullptr), moduleNum(0), cxts(nullptr) {}
 
     void build(const std::vector<std::string> &moduleNameVec);
 
