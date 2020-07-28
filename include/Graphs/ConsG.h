@@ -300,16 +300,6 @@ public:
     {
         return pag->getBaseObjNode(id);
     }
-    inline void setObjFieldInsensitive(NodeID id)
-    {
-        MemObj* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
-        mem->setFieldInsensitive();
-    }
-    inline bool isFieldInsensitiveObj(NodeID id) const
-    {
-        const MemObj* mem =  pag->getBaseObj(id);
-        return mem->isFieldInsensitive();
-    }
     inline bool isSingleFieldObj(NodeID id) const
     {
         const MemObj* mem = pag->getBaseObj(id);

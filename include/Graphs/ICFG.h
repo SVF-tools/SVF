@@ -34,6 +34,7 @@
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
 
+class PTACallGraph;
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
@@ -99,6 +100,9 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
+    /// update ICFG for indirect calls
+    void updateCallGraph(PTACallGraph* callgraph);
+
 public:
     /// Remove a SVFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
@@ -157,12 +161,17 @@ public:
 
     IntraBlockNode* getIntraBlockNode(const Instruction* inst);
 
+    FunEntryBlockNode* getFunEntryBlockNode(const SVFFunction*  fun);
+
+    FunExitBlockNode* getFunExitBlockNode(const SVFFunction*  fun);
+
     GlobalBlockNode* getGlobalBlockNode() const
     {
         return globalBlockNode;
     }
     //@}
 
+private:
     /// Get/Add IntraBlock ICFGNode
     inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst)
     {

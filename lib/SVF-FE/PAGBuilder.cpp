@@ -641,8 +641,8 @@ void PAGBuilder::visitSelectInst(SelectInst &inst)
 void PAGBuilder::visitCallSite(CallSite cs)
 {
 
-    // skip llvm debug info intrinsic
-    if(isInstrinsicDbgInst(cs.getInstruction()))
+    // skip llvm intrinsics
+    if(isIntrinsicInst(cs.getInstruction()))
         return;
 
     DBOUT(DPAGBuild,
@@ -1358,7 +1358,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
         const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
-        icfgNode = pag->getICFG()->getFunEntryICFGNode(fun);
+        icfgNode = pag->getICFG()->getFunEntryBlockNode(fun);
     }
     else if (SVFUtil::isa<ConstantExpr>(curVal))
     {

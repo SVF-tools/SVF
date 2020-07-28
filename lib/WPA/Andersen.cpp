@@ -301,9 +301,9 @@ bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             /// then set this memory object to be field insensitive
             if (SVFUtil::isa<VariantGepCGEdge>(edge))
             {
-                if (consCG->isFieldInsensitiveObj(ptd) == false)
+                if (isFieldInsensitive(ptd) == false)
                 {
-                    consCG->setObjFieldInsensitive(ptd);
+                    setObjFieldInsensitive(ptd);
                     consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(ptd));
                 }
                 // add the field-insensitive node into pts.
@@ -415,7 +415,7 @@ bool Andersen::collapseNodePts(NodeID nodeId)
     PointsTo ptsClone = nodePts;
     for (PointsTo::iterator ptsIt = ptsClone.begin(), ptsEit = ptsClone.end(); ptsIt != ptsEit; ptsIt++)
     {
-        if (consCG->isFieldInsensitiveObj(*ptsIt))
+        if (isFieldInsensitive(*ptsIt))
             continue;
 
         if (collapseField(*ptsIt))
@@ -441,7 +441,7 @@ bool Andersen::collapseField(NodeID nodeId)
     double start = stat->getClk();
 
     // set base node field-insensitive.
-    consCG->setObjFieldInsensitive(nodeId);
+    setObjFieldInsensitive(nodeId);
 
     // replace all occurrences of each field with the field-insensitive node
     NodeID baseId = consCG->getFIObjNode(nodeId);
