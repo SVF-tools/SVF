@@ -60,6 +60,8 @@ private:
     /// Constructor
     LLVMModuleSet(): svfModule(nullptr), moduleNum(0), cxts(nullptr), modules(NULL) {}
 
+    void build(const std::vector<std::string> &moduleNameVec);
+
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()
     {
@@ -77,8 +79,6 @@ public:
 
     SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
-
-    void build(const std::vector<std::string> &moduleNameVec);
 
     u32_t getModuleNum() const
     {
