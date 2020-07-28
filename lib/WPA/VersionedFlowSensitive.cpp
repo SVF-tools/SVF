@@ -42,8 +42,10 @@ void VersionedFlowSensitive::initialize()
 
 void VersionedFlowSensitive::finalize()
 {
-    printf("DONE! TODO"); fflush(stdout);
-    exit(0);
+    FlowSensitive::finalize();
+    //vPtD->dumpPTData();
+    printf("DONE! TODO\n"); fflush(stdout);
+    //exit(0);
 }
 
 void VersionedFlowSensitive::precolour(void)
