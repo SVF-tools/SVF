@@ -63,7 +63,7 @@ std::string SVFModule::pagReadFromTxt = "";
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
-    modules.emplace_back(std::unique_ptr<Module>(&mod));
+    modules.emplace_back(mod);
 
     initialize();
     buildFunToFunMap();
@@ -90,7 +90,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     else
         SVFModule::setPagFromTXT(Graphtxt.getValue());
 
-    if(moduleNameVec.empty()==false)
+    if(!moduleNameVec.empty())
         svfModule = new SVFModule(*moduleNameVec.begin());
     else
         svfModule = new SVFModule();
@@ -134,18 +134,17 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     //
     cxts = std::make_unique<LLVMContext>();
 
-    u32_t i = 0;
-    for (vector<string>::const_iterator it = moduleNameVec.begin(),
-            eit = moduleNameVec.end(); it != eit; ++it, ++i)
-    {
-        const string moduleName = *it;
+    for (const std::string& moduleName : moduleNameVec) {
         SMDiagnostic Err;
-        modules.emplace_back(parseIRFile(moduleName, Err, *cxts));
-        if (!modules[i])
+        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
+        if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
+            // Err.print("SVFModuleLoader", SVFUtil::errs);
             continue;
         }
+        modules.emplace_back(*mod);
+        owned_modules.emplace_back(std::move(mod));
     }
 }
 
@@ -156,7 +155,8 @@ void LLVMModuleSet::initialize()
 
     for (u32_t i = 0; i < getModuleNum(); ++i)
     {
-        Module *mod = modules[i].get();
+        Module& mod_ref = modules[i];
+        Module *mod = &mod_ref;
 
         /// Function
         for (Module::iterator it = mod->begin(), eit = mod->end();
@@ -191,7 +191,8 @@ void LLVMModuleSet::addSVFMain()
     u32_t k = 0;
     for (u32_t i = 0; i < getModuleNum(); ++i)
     {
-        Module *mod = modules[i].get();
+        Module& mod_ref = modules[i];
+        Module *mod = &mod_ref;
         for (auto &func: *mod)
         {
             if(func.getName().startswith(SVF_GLOBAL_SUB_I_XXX))
@@ -207,7 +208,7 @@ void LLVMModuleSet::addSVFMain()
     }
     if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
     {
-        Module & M = *(modules[k].get());
+        Module & M = modules[k];
         // char **
         Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
         Type * i32 = IntegerType::getInt32Ty(M.getContext());

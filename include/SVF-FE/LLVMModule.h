@@ -47,7 +47,8 @@ private:
     static LLVMModuleSet *llvmModuleSet;
     SVFModule* svfModule;
     std::unique_ptr<LLVMContext> cxts;
-    std::vector<std::unique_ptr<Module>> modules;
+    std::vector<std::unique_ptr<Module>> owned_modules;
+    std::vector<std::reference_wrapper<Module>> modules;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -92,7 +93,7 @@ public:
     Module &getModuleRef(u32_t idx) const
     {
         assert(idx < getModuleNum() && "Out of range.");
-        return *(modules[idx].get());
+        return modules[idx];
     }
 
     // Dump modules to files
