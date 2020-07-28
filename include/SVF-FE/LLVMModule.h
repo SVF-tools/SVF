@@ -60,7 +60,7 @@ private:
     /// Constructor
     LLVMModuleSet(): svfModule(nullptr), cxts(nullptr) {}
 
-    void build(const std::vector<std::string> &moduleNameVec);
+    void build();
 
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()

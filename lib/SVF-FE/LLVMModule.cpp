@@ -65,9 +65,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
     svfModule = new SVFModule(mod.getModuleIdentifier());
     modules.emplace_back(mod);
 
-    initialize();
-    buildFunToFunMap();
-    buildGlobalDefToRepMap();
+    build();
 
     return svfModule;
 }
@@ -95,24 +93,25 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     else
         svfModule = new SVFModule();
 
-    build(moduleNameVec);
-
-	if (!SVFModule::pagReadFromTXT()) {
-		/// building symbol table
-		DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-		SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
-		symInfo->buildMemModel(svfModule);
-	}
+    loadModules(moduleNameVec);
+    build();
 
     return svfModule;
 }
 
-void LLVMModuleSet::build(const vector<string> &moduleNameVec)
+void LLVMModuleSet::build()
 {
-    loadModules(moduleNameVec);
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+
+    if (!SVFModule::pagReadFromTXT()) {
+        /// building symbol table
+        DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+        SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
+        symInfo->buildMemModel(svfModule);
+    }
+
 }
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
