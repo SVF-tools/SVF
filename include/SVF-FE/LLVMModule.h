@@ -86,8 +86,7 @@ public:
 
     Module *getModule(u32_t idx) const
     {
-        assert(idx < getModuleNum() && "Out of range.");
-        return modules[idx].get();
+        return &getModuleRef(idx);
     }
 
     Module &getModuleRef(u32_t idx) const
