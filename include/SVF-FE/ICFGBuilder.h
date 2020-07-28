@@ -80,52 +80,21 @@ private:
     /// Create edges between ICFG nodes across functions
     void addICFGInterEdges(const Instruction*  cs, const SVFFunction*  callee);
 
-    /// Add a function entry node
-    inline FunEntryBlockNode* getOrAddFunEntryICFGNode(const SVFFunction*  fun)
-    {
-        FunEntryBlockNode* b = icfg->getFunEntryICFGNode(fun);
-        if (b == NULL)
-            return icfg->addFunEntryICFGNode(fun);
-        else
-            return b;
-    }
-    /// Add a function exit node
-    inline FunExitBlockNode* getOrAddFunExitICFGNode(const SVFFunction*  fun)
-    {
-        FunExitBlockNode* b = icfg->getFunExitICFGNode(fun);
-        if (b == NULL)
-            return icfg->addFunExitICFGNode(fun);
-        else
-            return b;
-    }
     /// Add a call node
     inline CallBlockNode* getOrAddCallICFGNode(const Instruction*  cs)
     {
-        CallBlockNode* b = icfg->getCallICFGNode(cs);
-        if (b == NULL)
-        {
-            return icfg->addCallICFGNode(cs);
-        }
-        return b;
+        return icfg->getCallBlockNode(cs);
     }
     /// Add a return node
     inline RetBlockNode* getOrAddRetICFGNode(const Instruction*  cs)
     {
-        RetBlockNode* b = icfg->getRetICFGNode(cs);
-        if (b == NULL)
-            return icfg->addRetICFGNode(cs);
-        else
-            return b;
+        return icfg->getRetBlockNode(cs);
     }
 
     /// Add and get IntraBlock ICFGNode
     IntraBlockNode* getOrAddIntraBlockICFGNode(const Instruction* inst)
     {
-        IntraBlockNode* b = icfg->getIntraBlockICFGNode(inst);
-        if (b == NULL)
-            return icfg->addIntraBlockICFGNode(inst);
-        else
-            return b;
+        return icfg->getIntraBlockNode(inst);
     }
 };
 

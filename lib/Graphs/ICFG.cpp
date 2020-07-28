@@ -31,6 +31,7 @@
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/PAG.h"
+#include "Graphs/PTACallGraph.h"
 
 using namespace SVFUtil;
 
@@ -205,6 +206,25 @@ IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst)
     return node;
 }
 
+/// Add a function entry node
+FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
+{
+    FunEntryBlockNode* b = getFunEntryICFGNode(fun);
+    if (b == NULL)
+        return addFunEntryICFGNode(fun);
+    else
+        return b;
+}
+/// Add a function exit node
+FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
+{
+    FunExitBlockNode* b = getFunExitICFGNode(fun);
+    if (b == NULL)
+        return addFunExitICFGNode(fun);
+    else
+        return b;
+}
+
 /*!
  * Whether we has an intra ICFG edge
  */
@@ -340,6 +360,35 @@ void ICFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
+/*!
+ * Update ICFG for indirect calls
+ */
+void ICFG::updateCallGraph(PTACallGraph* callgraph)
+{
+    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    for (; iter != eiter; iter++)
+    {
+        const CallBlockNode* callBlock = iter->first;
+        const Instruction* cs = callBlock->getCallSite();
+        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
+        const PTACallGraph::FunctionSet & functions = iter->second;
+        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        {
+            const SVFFunction*  callee = *func_iter;
+            CallBlockNode* CallBlockNode = getCallBlockNode(cs);
+            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+            addCallEdge(CallBlockNode, calleeEntryNode, cs);
+
+            if (!isExtCall(callee))
+            {
+                RetBlockNode* retBlockNode = getRetBlockNode(cs);
+                FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+                addRetEdge(calleeExitNode, retBlockNode, cs);
+            }
+        }
+    }
+}
 
 /*!
  * GraphTraits specialization

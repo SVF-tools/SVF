@@ -1358,7 +1358,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
         const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
-        icfgNode = pag->getICFG()->getFunEntryICFGNode(fun);
+        icfgNode = pag->getICFG()->getFunEntryBlockNode(fun);
     }
     else if (SVFUtil::isa<ConstantExpr>(curVal))
     {
