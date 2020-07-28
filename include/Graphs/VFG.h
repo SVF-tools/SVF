@@ -357,19 +357,19 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* csArg, const PAGNode* funArg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID actualParam = getActualParmVFGNode(cs_arg, cbn)->getId();
-        NodeID formalParam = getFormalParmVFGNode(fun_arg)->getId();
+        NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
+        NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectFRetAndARet(const PAGNode* funReturn, const PAGNode* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID formalRet = getFormalRetVFGNode(fun_return)->getId();
-        NodeID actualRet = getActualRetVFGNode(cs_return)->getId();
+        NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
+        NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
