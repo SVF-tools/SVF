@@ -346,7 +346,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             changed = true;
         }
 
-        if (isFIObjNode(o))
+        if (isFieldInsensitive(o))
         {
             /// If o is a field-insensitive node, we should also get all field nodes'
             /// points-to sets and pass them to p.
