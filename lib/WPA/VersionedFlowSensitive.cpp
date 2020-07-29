@@ -236,6 +236,7 @@ void VersionedFlowSensitive::determineReliance(void)
             if (!ie) continue;
             for (NodeID o : ie->getPointsTo())
             {
+                if (!hasVersion(l, o, YIELD)) continue;
                 // Given l --o--> lp, c at lp relies on y at l.
                 NodeID lp = ie->getDstNode()->getId();
                 Version &y = yield[l][o];
