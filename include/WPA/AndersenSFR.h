@@ -34,6 +34,8 @@
 #include "WPA/Andersen.h"
 #include "WPA/CSC.h"
 
+namespace SVF
+{
 
 /*!
  * Selective Cycle Detection Based Andersen Analysis
@@ -152,5 +154,6 @@ protected:
 
 };
 
+} // End namespace SVF
 
 #endif //PROJECT_ANDERSENSFR_H

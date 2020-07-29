@@ -34,6 +34,9 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFModule.h"
 
+namespace SVF
+{
+
 class LLVMModuleSet
 {
 public:
@@ -220,7 +223,6 @@ private:
     void buildGlobalDefToRepMap();
 };
 
-
-
+} // End namespace SVF
 
 #endif /* INCLUDE_SVF_FE_LLVMMODULE_H_ */

@@ -35,6 +35,9 @@
 #include "SVF-FE/SymbolTableInfo.h"
 #include "SVF-FE/LLVMUtil.h"
 
+namespace SVF
+{
+
 /*
  * PAG node
  */
@@ -824,5 +827,7 @@ public:
 
     virtual const std::string toString() const;
 };
+
+} // End namespace SVF
 
 #endif /* PAGNODE_H_ */

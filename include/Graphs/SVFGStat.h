@@ -40,6 +40,9 @@
 #include "MemoryModel/PTAStat.h"
 #include "Util/SCC.h"
 
+namespace SVF
+{
+
 class MemSSA;
 
 class MemSSAStat : public PTAStat
@@ -264,6 +267,6 @@ public:
     }
 };
 
-
+} // End namespace SVF
 
 #endif /* SVFGSTAT_H_ */

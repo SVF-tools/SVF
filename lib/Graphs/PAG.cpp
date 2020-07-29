@@ -31,6 +31,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
@@ -1167,4 +1168,4 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         return "";
     }
 };
-}
+} // End namespace llvm

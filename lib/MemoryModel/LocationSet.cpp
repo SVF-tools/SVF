@@ -32,6 +32,8 @@
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
 
+using namespace SVF;
+
 static llvm::cl::opt<bool> singleStride("stride-only", llvm::cl::init(false),
                                         llvm::cl::desc("Only use single stride in LocMemoryModel"));
 

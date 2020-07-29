@@ -21,6 +21,9 @@
 #include "Util/SVFUtil.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class DCHNode;
 
@@ -440,6 +443,7 @@ private:
     NodeID numTypes;
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -447,21 +451,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<DCHNode*> : public GraphTraits<GenericNode<DCHNode,DCHEdge>*  >
+template<> struct GraphTraits<SVF::DCHNode*> : public GraphTraits<SVF::GenericNode<SVF::DCHNode,SVF::DCHEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<DCHNode*> > : public GraphTraits<Inverse<GenericNode<DCHNode,DCHEdge>* > >
+struct GraphTraits<Inverse<SVF::DCHNode*> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::DCHNode,SVF::DCHEdge>* > >
 {
 };
 
-template<> struct GraphTraits<DCHGraph*> : public GraphTraits<GenericGraph<DCHNode,DCHEdge>* >
+template<> struct GraphTraits<SVF::DCHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::DCHNode,SVF::DCHEdge>* >
 {
-    typedef DCHNode *NodeRef;
+    typedef SVF::DCHNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif /* DCHG_H_ */

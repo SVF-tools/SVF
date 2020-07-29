@@ -33,6 +33,8 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PAG.h"
 
+using namespace SVF;
+
 static llvm::cl::opt<bool> MarkedClocksOnly("marked-clocks-only", llvm::cl::init(false),
                                             llvm::cl::desc("Only measure times where explicitly marked"));
 

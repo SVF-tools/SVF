@@ -11,6 +11,7 @@
 
 #include <string>
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> TCTDotGraph("dump-tct", llvm::cl::init(false), llvm::cl::desc("Dump dot graph of Call Graph"));
@@ -637,5 +638,5 @@ struct DOTGraphTraits<TCT*> : public DefaultDOTGraphTraits
         return "color=black";
     }
 };
-}
+} // End namespace llvm
 

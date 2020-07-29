@@ -36,6 +36,7 @@
 
 static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false), llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses"));
 
+using namespace SVF;
 using namespace SVFUtil;
 
 FlowSensitive* FlowSensitive::fspta = NULL;

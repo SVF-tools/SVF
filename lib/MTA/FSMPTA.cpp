@@ -9,6 +9,7 @@
 #include "MTA/MHP.h"
 #include "MTA/PCG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 FSMPTA* FSMPTA::mfspta = NULL;

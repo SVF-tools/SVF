@@ -11,6 +11,9 @@
 #ifndef COMMONCHG_H_
 #define COMMONCHG_H_
 
+namespace SVF
+{
+
 typedef DenseSet<const GlobalValue*> VTableSet;
 typedef DenseSet<const SVFFunction*> VFunSet;
 
@@ -38,6 +41,8 @@ public:
 protected:
     CHGKind kind;
 };
+
+} // End namespace SVF
 
 #endif /* COMMONCHG_H_ */
 

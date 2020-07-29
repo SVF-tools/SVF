@@ -12,6 +12,9 @@
 #include "Util/Annotator.h"
 #include "MTA/MHP.h"
 
+namespace SVF
+{
+
 /*!
  * MTA annotation
  */
@@ -107,5 +110,7 @@ public:
     static const u32_t ANNO_LOCAL= 0x01;
     //@}
 };
+
+} // End namespace SVF
 
 #endif /* MTAANNOTATOR_H_ */

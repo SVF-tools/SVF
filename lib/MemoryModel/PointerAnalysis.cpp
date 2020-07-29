@@ -46,6 +46,7 @@
 #include <fstream>
 #include <sstream>
 
+using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 

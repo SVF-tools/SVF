@@ -35,6 +35,9 @@
 #include "Graphs/ICFG.h"
 #include <set>
 
+namespace SVF
+{
+
 class PTACallGraphNode;
 class SVFModule;
 
@@ -436,6 +439,7 @@ public:
     void dump(const std::string& filename);
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -443,23 +447,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<PTACallGraphNode*> : public GraphTraits<GenericNode<PTACallGraphNode,PTACallGraphEdge>*  >
+template<> struct GraphTraits<SVF::PTACallGraphNode*> : public GraphTraits<SVF::GenericNode<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<PTACallGraphNode *> > : public GraphTraits<Inverse<GenericNode<PTACallGraphNode,PTACallGraphEdge>* > >
+struct GraphTraits<Inverse<SVF::PTACallGraphNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* > >
 {
 };
 
-template<> struct GraphTraits<PTACallGraph*> : public GraphTraits<GenericGraph<PTACallGraphNode,PTACallGraphEdge>* >
+template<> struct GraphTraits<SVF::PTACallGraph*> : public GraphTraits<SVF::GenericGraph<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* >
 {
-    typedef PTACallGraphNode *NodeRef;
+    typedef SVF::PTACallGraphNode *NodeRef;
 };
 
-
-}
-
+} // End namespace llvm
 
 #endif /* PTACALLGRAPH_H_ */

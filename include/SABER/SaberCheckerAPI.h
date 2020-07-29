@@ -33,6 +33,9 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFGNode.h"
 
+namespace SVF
+{
+
 /*
  * Saber Checker API class contains interfaces for various bug checking
  * memory leak detection e.g., alloc free
@@ -158,5 +161,6 @@ public:
 
 };
 
+} // End namespace SVF
 
 #endif /* SABERCHECKERAPI_H_ */

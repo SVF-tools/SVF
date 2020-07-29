@@ -36,6 +36,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 /*!
  * Field information of an aggregate object
  */
@@ -274,5 +277,6 @@ private:
     ElemNumStridePairVec numStridePair;	///< element number and stride pair
 };
 
+} // End namespace SVF
 
 #endif /* LOCATIONSET_H_ */

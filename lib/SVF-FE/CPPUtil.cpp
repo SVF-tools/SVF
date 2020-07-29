@@ -35,6 +35,7 @@
 #include <cxxabi.h>   // for demangling
 
 using namespace std;
+using namespace SVF;
 
 // label for global vtbl value before demangle
 const string vtblLabelBeforeDemangle = "_ZTV";

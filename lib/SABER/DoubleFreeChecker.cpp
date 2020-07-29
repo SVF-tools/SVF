@@ -29,6 +29,7 @@
 
 #include "SABER/DoubleFreeChecker.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 void DoubleFreeChecker::reportBug(ProgSlice* slice)

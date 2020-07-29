@@ -33,6 +33,9 @@
 #include "Graphs/VFGNode.h"
 #include "Graphs/SVFGEdge.h"
 
+namespace SVF
+{
+
 /*!
  * Memory region VFGNode (for address-taken objects)
  */
@@ -425,5 +428,7 @@ private:
     const SVFFunction* fun;
     const CallBlockNode* callInst;
 };
+
+} // End namespace SVF
 
 #endif /* INCLUDE_MSSA_SVFGNODE_H_ */

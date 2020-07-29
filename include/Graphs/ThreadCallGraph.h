@@ -33,6 +33,9 @@
 #include "Graphs/PTACallGraph.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class ThreadAPI;
 /*!
@@ -412,5 +415,6 @@ private:
     CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
 };
 
+} // End namespace SVF
 
 #endif /* RCG_H_ */

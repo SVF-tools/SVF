@@ -35,6 +35,9 @@
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class CHNode;
 
@@ -299,6 +302,7 @@ private:
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -306,21 +310,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<CHNode*> : public GraphTraits<GenericNode<CHNode,CHEdge>*  >
+template<> struct GraphTraits<SVF::CHNode*> : public GraphTraits<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<CHNode*> > : public GraphTraits<Inverse<GenericNode<CHNode,CHEdge>* > >
+struct GraphTraits<Inverse<SVF::CHNode*> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>* > >
 {
 };
 
-template<> struct GraphTraits<CHGraph*> : public GraphTraits<GenericGraph<CHNode,CHEdge>* >
+template<> struct GraphTraits<SVF::CHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
 {
-    typedef CHNode *NodeRef;
+    typedef SVF::CHNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif /* CHA_H_ */

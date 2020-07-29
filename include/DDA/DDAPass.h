@@ -14,6 +14,9 @@
 #include "DDA/DDAClient.h"
 #include "Util/SCC.h"
 
+namespace SVF
+{
+
 /*!
  * Demand-Driven Pointer Analysis.
  * This class performs various pointer analysis on the given module.
@@ -93,5 +96,6 @@ private:
 
 };
 
+} // End namespace SVF
 
 #endif /* WPA_H_ */

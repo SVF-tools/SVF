@@ -37,6 +37,7 @@
 #include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace std;
+using namespace SVF;
 using namespace SVFUtil;
 
 u32_t StInfo::maxFieldLimit = 0;

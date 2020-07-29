@@ -33,6 +33,9 @@
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/LLVMModule.h"
 
+namespace SVF
+{
+
 /*!
  * Symbol table of the memory model for analysis
  */
@@ -496,5 +499,7 @@ public:
     u32_t getObjSize(const Value* val);
 
 };
+
+} // End namespace SVF
 
 #endif /* INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_ */

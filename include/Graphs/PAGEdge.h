@@ -35,6 +35,9 @@
 #include "MemoryModel/LocationSet.h"
 #include "Graphs/ICFGNode.h"
 
+namespace SVF
+{
+
 class PAGNode;
 
 /*
@@ -694,4 +697,7 @@ public:
 
     virtual const std::string toString() const;
 };
+
+} // End namespace SVF
+
 #endif /* PAGEDGE_H_ */

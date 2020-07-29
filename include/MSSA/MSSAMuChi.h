@@ -32,6 +32,8 @@
 
 #include "MSSA/MemRegion.h"
 
+namespace SVF
+{
 
 class MSSADEF;
 
@@ -708,5 +710,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* MSSAMUCHI_H_ */

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <iomanip>	// for std::setw
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> SingleLoad("single-load", llvm::cl::init(true),

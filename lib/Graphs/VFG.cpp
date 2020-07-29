@@ -32,6 +32,7 @@
 #include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> DumpVFG("dump-VFG", llvm::cl::init(false),
@@ -1165,4 +1166,4 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

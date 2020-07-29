@@ -9,6 +9,7 @@
 #include "DDA/DDAClient.h"
 
 using namespace std;
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<unsigned long long> flowBudget("flowbg",  llvm::cl::init(10000),

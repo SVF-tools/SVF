@@ -34,6 +34,9 @@
 #include "Util/BasicTypes.h"
 #include <time.h>
 
+namespace SVF
+{
+
 /*
  * Util class to assist pointer analysis
  */
@@ -210,6 +213,8 @@ std::string  getSourceLoc(const Value *val);
 std::string  getSourceLocOfFunction(const Function *F);
 //@}
 
-}
+} // End namespace SVFUtil
+
+} // End namespace SVF
 
 #endif /* AnalysisUtil_H_ */

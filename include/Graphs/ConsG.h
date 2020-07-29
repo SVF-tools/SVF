@@ -33,6 +33,9 @@
 #include "Graphs/ConsGEdge.h"
 #include "Graphs/ConsGNode.h"
 
+namespace SVF
+{
+
 /*!
  * Constraint graph for Andersen's analysis
  * ConstraintNodes are same as PAGNodes
@@ -359,6 +362,7 @@ public:
     void print();
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -366,21 +370,21 @@ namespace llvm
  * GraphTraits specializations for the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<ConstraintNode*> : public GraphTraits<GenericNode<ConstraintNode,ConstraintEdge>*  >
+template<> struct GraphTraits<SVF::ConstraintNode*> : public GraphTraits<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<ConstraintNode *> > : public GraphTraits<Inverse<GenericNode<ConstraintNode,ConstraintEdge>* > >
+struct GraphTraits<Inverse<SVF::ConstraintNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::ConstraintNode,SVF::ConstraintEdge>* > >
 {
 };
 
-template<> struct GraphTraits<ConstraintGraph*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* >
+template<> struct GraphTraits<SVF::ConstraintGraph*> : public GraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
 {
-    typedef ConstraintNode *NodeRef;
+    typedef SVF::ConstraintNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif /* CONSG_H_ */

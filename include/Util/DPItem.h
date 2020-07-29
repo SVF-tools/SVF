@@ -35,6 +35,9 @@
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>    // std::sort
 
+namespace SVF
+{
+
 /*!
  * Dynamic programming item for CFL researchability search
  * This serves as a base class for CFL-reachability formulation by matching parentheses.
@@ -768,5 +771,6 @@ public:
 
 };
 
+} // End namespace SVF
 
 #endif /* DPITEM_H_ */

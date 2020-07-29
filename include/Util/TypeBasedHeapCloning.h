@@ -15,6 +15,9 @@
 #include "MemoryModel/PointerAnalysis.h"
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class TypeBasedHeapCloning
 {
 public:
@@ -179,3 +182,5 @@ private:
     unsigned numSGReuse = 0;
     unsigned numSGAgg   = 0;
 };
+
+} // End namespace SVF

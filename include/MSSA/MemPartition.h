@@ -38,6 +38,9 @@
 
 #include "MSSA/MemRegion.h"
 
+namespace SVF
+{
+
 /*!
  * Distinct memory region generator.
  */
@@ -160,5 +163,7 @@ protected:
 private:
     PointsToList inters;
 };
+
+} // End namespace SVF
 
 #endif /* DISNCTMRGENERATOR_H_ */

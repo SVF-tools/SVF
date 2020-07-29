@@ -29,6 +29,7 @@
 
 #include "SABER/FileChecker.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 

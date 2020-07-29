@@ -14,6 +14,9 @@
 #include "Util/SCC.h"
 #include <algorithm>
 
+namespace SVF
+{
+
 /*!
  * Value-Flow Based Demand-Driven Points-to Analysis
  */
@@ -760,5 +763,6 @@ protected:
     SVFGBuilder svfgBuilder;			///< SVFG Builder
 };
 
+} // End namespace SVF
 
 #endif /* VALUEFLOWDDA_H_ */

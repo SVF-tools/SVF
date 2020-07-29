@@ -32,6 +32,8 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
 
 /*!
  * Wrapper for SCEV collected from function pass ScalarEvolution
@@ -276,5 +278,7 @@ public:
         return Frontiers.find(B);
     }
 };
+
+} // End namespace SVF
 
 #endif /* DATAFLOWUTIL_H_ */

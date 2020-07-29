@@ -32,6 +32,7 @@
 #include "MSSA/MSSAMuChi.h"
 #include "SVF-FE/LLVMUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 Size_t MemRegion::totalMRNum = 0;

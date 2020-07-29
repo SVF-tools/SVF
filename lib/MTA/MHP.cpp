@@ -13,6 +13,7 @@
 #include "Util/SVFUtil.h"
 
 
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -56,6 +57,8 @@ static const SCEV *getSCEVMinusExpr(const SCEV *s1,const SCEV *s2, ScalarEvoluti
     return SE->getMinusSCEV(s1, s2);
 }
 
+namespace SVF
+{
 
 // Subclassing RCResultValidator to define the abstract methods.
 class MHPValidator : public RaceResultValidator
@@ -72,6 +75,7 @@ private:
     MHP *mhp;
 };
 
+} // End namespace SVF
 
 /*!
  * Constructor

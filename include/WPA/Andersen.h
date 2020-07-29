@@ -37,6 +37,9 @@
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
 
+namespace SVF
+{
+
 class PTAType;
 class SVFModule;
 /*!
@@ -710,5 +713,7 @@ protected:
     }
 
 };
+
+} // End namespace SVF
 
 #endif /* ANDERSENPASS_H_ */

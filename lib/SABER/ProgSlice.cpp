@@ -29,6 +29,8 @@
 
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberAnnotator.h"
+
+using namespace SVF;
 using namespace SVFUtil;
 
 /*!

@@ -40,6 +40,9 @@
 #include "Graphs/SVFG.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 /**
  * Optimised SVFG.
  * 1. FormalParam/ActualRet is converted into Phi. ActualParam/FormalRet becomes the
@@ -347,5 +350,6 @@ private:
     bool keepContextSelfCycle;
 };
 
+} // End namespace SVF
 
 #endif /* SVFGOPT_H_ */

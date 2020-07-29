@@ -35,6 +35,9 @@
 
 #include <vector>
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class MemSSAStat;
 /*
@@ -446,5 +449,7 @@ public:
     /// Print Memory SSA
     void dumpMSSA(raw_ostream & Out = SVFUtil::outs());
 };
+
+} // End namespace SVF
 
 #endif /* MEMORYSSAPASS_H_ */

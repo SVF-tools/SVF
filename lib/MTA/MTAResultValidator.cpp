@@ -10,7 +10,9 @@
 
 #include "MTA/MTAResultValidator.h"
 
+using namespace SVF;
 using namespace SVFUtil;
+
 static llvm::cl::opt<bool> PrintValidRes("print-MHP-validation", llvm::cl::init(false), llvm::cl::desc("Print MHP Validation Results"));
 
 void MTAResultValidator::analyze()

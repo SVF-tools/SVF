@@ -34,7 +34,7 @@
 #include "SVF-FE/SymbolTableInfo.h"
 
 using namespace std;
-
+using namespace SVF;
 
 /*
   svf.main() is used to model the real entry point of a C++ program,

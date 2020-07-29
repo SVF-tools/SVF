@@ -32,6 +32,8 @@
 
 #include "MemoryModel/PointsToDS.h"
 
+namespace SVF
+{
 
 /*!
  * Data-flow points-to data structure, points-to is maintained for each program point (statement)
@@ -506,5 +508,7 @@ private:
     }
     //@}
 };
+
+} // End namespace SVF
 
 #endif /* POINTSTODSDF_H_ */

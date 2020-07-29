@@ -35,6 +35,9 @@
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 /**
  * PathCondAllocator allocates conditions for each basic block of a certain CFG.
  */
@@ -311,5 +314,7 @@ protected:
     IndexToConditionMap indexToDDNodeMap;
 
 };
+
+} // End namespace SVF
 
 #endif /* PATHALLOCATOR_H_ */

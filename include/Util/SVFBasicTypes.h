@@ -44,6 +44,8 @@
 #include <stack>
 #include <deque>
 
+namespace SVF
+{
 
 typedef unsigned u32_t;
 typedef unsigned long long u64_t;
@@ -185,5 +187,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_SVFBASICTYPES_H_ */

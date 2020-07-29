@@ -33,7 +33,7 @@
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
 
-
+using namespace SVF;
 using namespace SVFUtil;
 
 const std::string MRSVFGNode::toString() const {
@@ -1092,4 +1092,4 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

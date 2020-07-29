@@ -34,6 +34,9 @@
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class VFGStat;
 class CallBlockNode;
@@ -602,6 +605,7 @@ protected:
     }
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -609,23 +613,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<VFGNode*> : public GraphTraits<GenericNode<VFGNode,VFGEdge>*  >
+template<> struct GraphTraits<SVF::VFGNode*> : public GraphTraits<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<VFGNode *> > : public GraphTraits<Inverse<GenericNode<VFGNode,VFGEdge>* > >
+struct GraphTraits<Inverse<SVF::VFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<VFG*> : public GraphTraits<GenericGraph<VFGNode,VFGEdge>* >
+template<> struct GraphTraits<SVF::VFG*> : public GraphTraits<SVF::GenericGraph<SVF::VFGNode,SVF::VFGEdge>* >
 {
-    typedef VFGNode *NodeRef;
+    typedef SVF::VFGNode *NodeRef;
 };
 
-
-}
-
+} // End namespace llvm
 
 #endif /* INCLUDE_UTIL_VFG_H_ */

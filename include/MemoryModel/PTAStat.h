@@ -37,6 +37,9 @@
 
 using namespace std;
 
+namespace SVF
+{
+
 class PointerAnalysis;
 
 /*!
@@ -174,5 +177,7 @@ private:
     PointerAnalysis* pta;
     std::string moduleName;
 };
+
+} // End namespace SVF
 
 #endif /* ANDERSENSTAT_H_ */

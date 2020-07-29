@@ -33,6 +33,9 @@
 #include "MSSA/MemSSA.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 /*!
  * SVFG edge representing indirect value-flows from a caller to its callee at a callsite
  */
@@ -241,6 +244,6 @@ public:
     virtual const std::string toString() const;
 };
 
-
+} // End namespace SVF
 
 #endif /* INCLUDE_MSSA_SVFGEDGE_H_ */

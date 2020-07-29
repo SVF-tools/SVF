@@ -10,6 +10,9 @@
 
 #include "MemoryModel/PTAStat.h"
 
+namespace SVF
+{
+
 class ThreadCallGraph;
 class TCT;
 class MHP;
@@ -43,5 +46,6 @@ public:
     double AnnotationTime;
 };
 
+} // End namespace SVF
 
 #endif /* MTASTAT_H_ */
