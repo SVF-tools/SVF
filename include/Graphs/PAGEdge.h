@@ -537,17 +537,19 @@ public:
     }
     static inline bool classof(const PAGEdge *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call;
+        return edge->getEdgeKind() == PAGEdge::Call
+        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call;
+        return edge->getEdgeKind() == PAGEdge::Call
+        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
     //@}
 
     /// constructor
-    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i)
+    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Call) :
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -587,17 +589,19 @@ public:
     }
     static inline bool classof(const PAGEdge *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::Ret
+			|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::Ret
+    		|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i)
+    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Ret) :
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -620,14 +624,13 @@ public:
 /*!
  * Thread Fork Edge
  */
-class TDForkPE: public PAGEdge
+class TDForkPE: public CallPE
 {
 private:
     TDForkPE();                      ///< place holder
     TDForkPE(const TDForkPE &);  ///< place holder
     void operator=(const TDForkPE &); ///< place holder
 
-    const CallBlockNode* inst;		///< llvm instruction at the fork site
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -647,21 +650,9 @@ public:
 
     /// constructor
     TDForkPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i)
+        CallPE(s,d,i,PAGEdge::ThreadFork)
     {
     }
-
-    /// Get method for the instruction at the fork site
-    //@{
-    inline const CallBlockNode* getCallInst() const
-    {
-        return inst;
-    }
-    inline const CallBlockNode* getCallSite() const
-    {
-        return inst;
-    }
-    //@}
 
     virtual const std::string toString() const;
 };
@@ -671,14 +662,13 @@ public:
 /*!
  * Thread Join Edge
  */
-class TDJoinPE: public PAGEdge
+class TDJoinPE: public RetPE
 {
 private:
     TDJoinPE();                      ///< place holder
     TDJoinPE(const TDJoinPE &);  ///< place holder
     void operator=(const TDJoinPE &); ///< place holder
 
-    const CallBlockNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -698,21 +688,9 @@ public:
 
     /// Constructor
     TDJoinPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i)
+        RetPE(s,d,i,PAGEdge::ThreadJoin)
     {
     }
-
-    /// Get method for the instruction at the join site
-    //@{
-    inline const CallBlockNode* getCallInst() const
-    {
-        return inst;
-    }
-    inline const CallBlockNode* getCallSite() const
-    {
-        return inst;
-    }
-    //@}
 
     virtual const std::string toString() const;
 };
