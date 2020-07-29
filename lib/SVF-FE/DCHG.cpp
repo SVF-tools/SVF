@@ -15,6 +15,8 @@
 
 #include "llvm/IR/DebugInfo.h"
 
+using namespace SVF;
+
 static llvm::cl::opt<bool> printDCHG("print-dchg", llvm::cl::init(false), llvm::cl::desc("print the DCHG if debug information is available"));
 
 void DCHGraph::handleDIBasicType(const DIBasicType *basicType)

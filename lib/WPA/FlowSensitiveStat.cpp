@@ -31,6 +31,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 /*!

@@ -32,6 +32,7 @@
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 

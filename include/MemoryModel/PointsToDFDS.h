@@ -32,6 +32,8 @@
 
 #include "MemoryModel/PointsToDS.h"
 
+namespace SVF
+{
 
 /*!
  * Data-flow points-to data structure, points-to is maintained for each program point (statement)
@@ -697,5 +699,6 @@ private:
     /// SVFG node (label) x object -> version to yield.
     LocVersionMap *yield;
 };
+} // End namespace SVF
 
 #endif /* POINTSTODSDF_H_ */

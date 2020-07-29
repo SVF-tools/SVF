@@ -11,6 +11,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/VersionedFlowSensitive.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 void VersionedFlowSensitiveStat::clearStat()

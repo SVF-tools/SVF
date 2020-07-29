@@ -36,6 +36,9 @@
 #include "Util/ThreadAPI.h"
 #include "llvm/Support/JSON.h"
 
+namespace SVF
+{
+
 namespace SVFUtil
 {
 
@@ -607,7 +610,9 @@ bool isIRFile(const std::string &filename);
 /// Parse argument for multi-module analysis
 void processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                       std::vector<std::string> &moduleNameVec);
-}
 
+} // End namespace SVFUtil
+
+} // End namespace SVF
 
 #endif /* INCLUDE_SVF_FE_LLVMUTIL_H_ */

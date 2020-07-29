@@ -32,6 +32,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class SVFModule
 {
 public:
@@ -195,5 +198,6 @@ public:
 
 };
 
+} // End namespace SVF
 
 #endif /* SVFMODULE_H_ */

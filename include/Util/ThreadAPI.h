@@ -32,6 +32,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class SVFModule;
 
 /*
@@ -323,5 +326,7 @@ public:
     void performAPIStat(SVFModule* m);
     void statInit(llvm::StringMap<u32_t>& tdAPIStatMap);
 };
+
+} // End namespace SVF
 
 #endif /* THREADAPI_H_ */

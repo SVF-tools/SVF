@@ -35,6 +35,9 @@
 #include "WPA/FlowSensitive.h"
 #include "WPA/VersionedFlowSensitive.h"
 
+namespace SVF
+{
+
 class Andersen;
 class PAG;
 class ConstraintGraph;
@@ -209,5 +212,6 @@ private:
     /// Average points-to set size for address-taken objects.
     double _AvgVersionPtsSize;
 };
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVESTAT_H_ */

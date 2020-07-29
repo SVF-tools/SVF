@@ -15,6 +15,7 @@
 #include <sstream>
 #include <limits.h>
 
+using namespace SVF;
 using namespace SVFUtil;
 
 char DDAPass::ID = 0;

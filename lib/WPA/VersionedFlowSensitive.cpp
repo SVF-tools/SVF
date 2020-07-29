@@ -11,6 +11,8 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include <iostream>
 
+using namespace SVF;
+
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {

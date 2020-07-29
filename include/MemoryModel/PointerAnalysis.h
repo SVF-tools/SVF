@@ -38,6 +38,9 @@
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
 
+namespace SVF
+{
+
 class CommonCHGraph;
 
 class TypeSystem;
@@ -449,4 +452,7 @@ public:
         return typeSystem;
     }
 };
+
+} // End namespace SVF
+
 #endif /* POINTERANALYSIS_H_ */

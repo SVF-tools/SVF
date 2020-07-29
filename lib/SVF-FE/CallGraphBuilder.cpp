@@ -32,6 +32,7 @@
 #include "SVF-FE/CallGraphBuilder.h"
 #include "Graphs/ICFG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)

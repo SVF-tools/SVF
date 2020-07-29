@@ -34,6 +34,9 @@
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class VFGStat;
 class CallBlockNode;
@@ -357,19 +360,19 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* csArg, const PAGNode* funArg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID actualParam = getDef(cs_arg);
-        NodeID formalParam = getDef(fun_arg);
+        NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
+        NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectFRetAndARet(const PAGNode* funReturn, const PAGNode* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID formalRet = getDef(fun_return);
-        NodeID actualRet = getDef(cs_return);
+        NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
+        NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
@@ -602,6 +605,7 @@ protected:
     }
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -609,23 +613,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<VFGNode*> : public GraphTraits<GenericNode<VFGNode,VFGEdge>*  >
+template<> struct GraphTraits<SVF::VFGNode*> : public GraphTraits<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<VFGNode *> > : public GraphTraits<Inverse<GenericNode<VFGNode,VFGEdge>* > >
+struct GraphTraits<Inverse<SVF::VFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<VFG*> : public GraphTraits<GenericGraph<VFGNode,VFGEdge>* >
+template<> struct GraphTraits<SVF::VFG*> : public GraphTraits<SVF::GenericGraph<SVF::VFGNode,SVF::VFGEdge>* >
 {
-    typedef VFGNode *NodeRef;
+    typedef SVF::VFGNode *NodeRef;
 };
 
-
-}
-
+} // End namespace llvm
 
 #endif /* INCLUDE_UTIL_VFG_H_ */

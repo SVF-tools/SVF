@@ -38,8 +38,12 @@
 #include <iomanip>		/// for setw
 
 using namespace std;
+using namespace SVF;
 
 ThreadAPI* ThreadAPI::tdAPI = NULL;
+
+namespace
+{
 
 /// string and type pair
 struct ei_pair
@@ -47,6 +51,8 @@ struct ei_pair
     const char *n;
     ThreadAPI::TD_TYPE t;
 };
+
+} // End anonymous namespace
 
 //Each (name, type) pair will be inserted into the map.
 //All entries of the same type must occur together (for error detection).

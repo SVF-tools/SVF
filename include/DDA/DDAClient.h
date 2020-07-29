@@ -16,6 +16,8 @@
 #include "Graphs/SVFG.h"
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
 
 /**
  * General DDAClient which queries all top level pointers by default.
@@ -138,5 +140,6 @@ private:
     PAGNodeSet gepSrcNodes;
 };
 
+} // End namespace SVF
 
 #endif /* DDACLIENT_H_ */

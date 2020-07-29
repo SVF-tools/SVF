@@ -33,6 +33,7 @@
 #include <sstream>	// for PAGBuilderFromFile
 
 using namespace std;
+using namespace SVF;
 using namespace SVFUtil;
 static u32_t gepNodeNumIndex = 100000;
 

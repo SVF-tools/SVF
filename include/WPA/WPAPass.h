@@ -39,6 +39,9 @@
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class SVFG;
 
@@ -131,5 +134,6 @@ private:
     SVFG* _svfg;  ///< svfg generated through -ander pointer analysis
 };
 
+} // End namespace SVF
 
 #endif /* WPA_H_ */

@@ -32,6 +32,9 @@
 
 #include "MemoryModel/PointerAnalysis.h"
 
+namespace SVF
+{
+
 /*!
  * Pointer analysis implementation which uses bit vector based points-to data structure
  */
@@ -507,5 +510,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_ */

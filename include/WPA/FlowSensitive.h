@@ -33,6 +33,10 @@
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
+
+namespace SVF
+{
+
 class AndersenWaveDiff;
 class SVFModule;
 
@@ -305,5 +309,7 @@ protected:
 
     void svfgStat();
 };
+
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVEANALYSIS_H_ */

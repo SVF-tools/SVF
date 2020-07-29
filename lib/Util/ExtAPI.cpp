@@ -11,14 +11,19 @@
 #include <stdio.h>
 
 using namespace std;
+using namespace SVF;
 
 ExtAPI* ExtAPI::extAPI = NULL;
+
+namespace {
 
 struct ei_pair
 {
     const char *n;
     ExtAPI::extf_t t;
 };
+
+} // End anonymous namespace
 
 //Each (name, type) pair will be inserted into the map.
 //All entries of the same type must occur together (for error detection).

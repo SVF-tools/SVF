@@ -31,6 +31,7 @@
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 /*!

@@ -12,6 +12,9 @@
 #include "DDA/DDAVFSolver.h"
 #include "Util/DPItem.h"
 
+namespace SVF
+{
+
 class FlowDDA;
 class DDAClient;
 typedef CxtStmtDPItem<SVFGNode> CxtLocDPItem;
@@ -194,5 +197,6 @@ private:
     PTACFInfoBuilder loopInfoBuilder; ///< LoopInfo
 };
 
+} // End namespace SVF
 
 #endif /* ContextDDA_H_ */

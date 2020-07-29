@@ -33,6 +33,9 @@
 #include "Graphs/ICFG.h"
 #include <iomanip>
 
+namespace SVF
+{
+
 class ICFGStat : public PTAStat
 {
 
@@ -155,6 +158,7 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_ICFGSTAT_H_ */
 

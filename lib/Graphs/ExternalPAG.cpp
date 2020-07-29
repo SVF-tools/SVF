@@ -16,6 +16,7 @@
 #include "Util/BasicTypes.h"
 #include "Graphs/ICFG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 llvm::cl::list<std::string> ExternalPAGArgs("extpags",
@@ -245,6 +246,7 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge)
 
     o << srcId << " " << edgeKind << " " << dstId << " " << offset << "\n";
 }
+
 
 /*!
  * Dump PAGs for the functions

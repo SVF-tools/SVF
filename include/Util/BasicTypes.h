@@ -61,6 +61,9 @@
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
 
+namespace SVF
+{
+
 class BddCond;
 
 
@@ -218,30 +221,6 @@ using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
 template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
 using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
-// Provide DenseMapInfo for SparseBitVector.
-// Empty key is empty SparseBitVector, tombstone key is SparseBitVector with 0 set.
-// TODO: for versioning this is fine, for other uses, is that so?
-template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
-{
-    static inline llvm::SparseBitVector<> getEmptyKey() { return llvm::SparseBitVector<>(); }
-
-    static inline llvm::SparseBitVector<> getTombstoneKey()
-    {
-        llvm::SparseBitVector<> sbv;
-        sbv.set(0);
-        return sbv;
-    }
-
-    static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
-    {
-        return (sbv.count() + sbv.find_first() + sbv.find_last()) * 37U;
-    }
-
-    static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
-        return LHS == RHS;
-    }
-};
-
 class SVFFunction : public SVFValue
 {
 private:
@@ -315,5 +294,33 @@ public:
     }
 
 };
+
+} // End namespace SVF
+
+// Provide DenseMapInfo for SparseBitVector.
+// Empty key is empty SparseBitVector, tombstone key is SparseBitVector with 0 set.
+// TODO: for versioning this is fine, for other uses, is that so?
+// TODO: clean up position.
+template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
+{
+    static inline llvm::SparseBitVector<> getEmptyKey() { return llvm::SparseBitVector<>(); }
+
+    static inline llvm::SparseBitVector<> getTombstoneKey()
+    {
+        llvm::SparseBitVector<> sbv;
+        sbv.set(0);
+        return sbv;
+    }
+
+    static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
+    {
+        return (sbv.count() + sbv.find_first() + sbv.find_last()) * 37U;
+    }
+
+    static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
+        return LHS == RHS;
+    }
+};
+
 
 #endif /* BASICTYPES_H_ */

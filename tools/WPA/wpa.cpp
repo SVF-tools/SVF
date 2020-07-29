@@ -31,6 +31,7 @@
 
 using namespace llvm;
 using namespace std;
+using namespace SVF;
 
 static llvm::cl::opt<std::string> InputFilename(cl::Positional,
         llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));

@@ -37,6 +37,7 @@
 #include "MemoryModel/PAGBuilderFromFile.h"
 
 using namespace std;
+using namespace SVF;
 using namespace SVFUtil;
 
 

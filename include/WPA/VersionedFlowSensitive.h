@@ -14,6 +14,10 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/WPAFSSolver.h"
+
+namespace SVF
+{
+
 class AndersenWaveDiff;
 class SVFModule;
 
@@ -145,5 +149,7 @@ private:
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
 };
+
+} // End namespace SVF
 
 #endif /* VFS_H_ */

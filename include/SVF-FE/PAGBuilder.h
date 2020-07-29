@@ -34,6 +34,8 @@
 #include "Util/ExtAPI.h"
 #include "SVF-FE/ICFGBuilder.h"
 
+namespace SVF
+{
 
 class SVFModule;
 /*!
@@ -361,5 +363,7 @@ public:
     //@}
 
 };
+
+} // End namespace SVF
 
 #endif /* PAGBUILDER_H_ */

@@ -9,6 +9,7 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<unsigned long long> cxtBudget("cxtbg",  llvm::cl::init(10000),

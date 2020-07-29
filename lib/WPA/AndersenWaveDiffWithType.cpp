@@ -1,6 +1,7 @@
 #include "WPA/Andersen.h"
 #include "MemoryModel/PTAType.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 AndersenWaveDiffWithType* AndersenWaveDiffWithType::diffWaveWithType = NULL;

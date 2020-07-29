@@ -32,6 +32,7 @@
 #include "SABER/DoubleFreeChecker.h"
 
 using namespace llvm;
+using namespace SVF;
 
 static llvm::cl::opt<std::string> InputFilename(cl::Positional,
         llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));

@@ -30,6 +30,8 @@
 #ifndef ICFGEdge_H_
 #define ICFGEdge_H_
 
+namespace SVF
+{
 
 class ICFGNode;
 
@@ -208,5 +210,6 @@ public:
     virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* ICFGEdge_H_ */

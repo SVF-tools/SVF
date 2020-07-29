@@ -34,6 +34,9 @@
 #include "Util/Conditions.h"
 #include "llvm/Support/raw_ostream.h"
 
+namespace SVF
+{
+
 /*!
  * Conditional Variable (c,v)
  * A context/path condition
@@ -827,4 +830,7 @@ public:
 private:
     CondPts _condPts;
 };
+
+} // End namespace SVF
+
 #endif /* CONDVAR_H_ */

@@ -15,6 +15,10 @@
 #include "MSSA/SVFGBuilder.h"
 #include "Util/TypeBasedHeapCloning.h"
 #include "WPA/FlowSensitive.h"
+
+namespace SVF
+{
+
 class SVFModule;
 
 /*!
@@ -108,5 +112,7 @@ private:
     /// Maps whether a (SVFG) GEP node is a load or not.
     NodeBS loadGeps;
 };
+
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVETYPEFILTER_H_ */

@@ -29,6 +29,7 @@
 
 #include "Graphs/OfflineConsG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
@@ -323,4 +324,4 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
         return "";
     }
 };
-}
+} // End namespace llvm

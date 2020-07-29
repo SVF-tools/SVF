@@ -36,6 +36,9 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 
+namespace SVF
+{
+
 /*!
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
@@ -818,24 +821,29 @@ public:
 
 };
 
+} // End namespace SVF
+
 namespace llvm
 {
+
 /* !
  * GraphTraits specializations of PAG to be used for the generic graph algorithms.
  * Provide graph traits for tranversing from a PAG node using standard graph traversals.
  */
-template<> struct GraphTraits<PAGNode*> : public GraphTraits<GenericNode<PAGNode,PAGEdge>*  >
+template<> struct GraphTraits<SVF::PAGNode*> : public GraphTraits<SVF::GenericNode<SVF::PAGNode,SVF::PAGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for PAG node, it is used for inverse traversal.
-template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<GenericNode<PAGNode,PAGEdge>* > >
+template<> struct GraphTraits<Inverse<SVF::PAGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::PAGNode,SVF::PAGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* >
+template<> struct GraphTraits<SVF::PAG*> : public GraphTraits<SVF::GenericGraph<SVF::PAGNode,SVF::PAGEdge>* >
 {
-    typedef PAGNode *NodeRef;
+    typedef SVF::PAGNode *NodeRef;
 };
-}
+
+} // End namespace llvm
+
 #endif /* PAG_H_ */

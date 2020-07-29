@@ -36,6 +36,9 @@
 #include <map>
 #include <set>
 
+namespace SVF
+{
+
 class ConstraintNode;
 /*!
  * Self-defined edge for constraint resolution
@@ -344,5 +347,6 @@ public:
     {}
 };
 
+} // End namespace SVF
 
 #endif /* CONSGEDGE_H_ */

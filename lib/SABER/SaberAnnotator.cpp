@@ -30,6 +30,8 @@
 #include "SABER/SaberAnnotator.h"
 #include "SABER/ProgSlice.h"
 
+using namespace SVF;
+
 /*!
  *
  */

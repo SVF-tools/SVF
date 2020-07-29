@@ -29,6 +29,7 @@
 
 #include "WPA/AndersenSFR.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 AndersenSCD* AndersenSCD::scdAndersen = NULL;

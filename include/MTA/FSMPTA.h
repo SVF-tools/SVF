@@ -13,6 +13,9 @@
 #include "MSSA/SVFGBuilder.h"
 #include "MTA/LockAnalysis.h"
 
+namespace SVF
+{
+
 class MHP;
 class LockAnalysis;
 
@@ -174,5 +177,7 @@ private:
     MHP* mhp;
     LockAnalysis* lockana;
 };
+
+} // End namespace SVF
 
 #endif /* FSPTANALYSIS_H_ */

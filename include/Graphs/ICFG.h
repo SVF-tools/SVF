@@ -34,7 +34,11 @@
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class PTACallGraph;
+
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
@@ -256,6 +260,7 @@ private:
 
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -263,22 +268,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<ICFGNode*> : public GraphTraits<GenericNode<ICFGNode,ICFGEdge>*  >
+template<> struct GraphTraits<SVF::ICFGNode*> : public GraphTraits<SVF::GenericNode<SVF::ICFGNode,SVF::ICFGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<ICFGNode *> > : public GraphTraits<Inverse<GenericNode<ICFGNode,ICFGEdge>* > >
+struct GraphTraits<Inverse<SVF::ICFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::ICFGNode,SVF::ICFGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<ICFG*> : public GraphTraits<GenericGraph<ICFGNode,ICFGEdge>* >
+template<> struct GraphTraits<SVF::ICFG*> : public GraphTraits<SVF::GenericGraph<SVF::ICFGNode,SVF::ICFGEdge>* >
 {
-    typedef ICFGNode *NodeRef;
+    typedef SVF::ICFGNode *NodeRef;
 };
 
-
-}
+} // End namespace llvm
 
 #endif /* INCLUDE_UTIL_ICFG_H_ */

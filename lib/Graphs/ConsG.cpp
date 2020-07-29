@@ -29,6 +29,7 @@
 
 #include "Graphs/ConsG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
@@ -726,4 +727,4 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         return "";
     }
 };
-}
+} // End namespace llvm

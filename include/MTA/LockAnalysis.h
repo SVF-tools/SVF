@@ -17,6 +17,8 @@
 #include <set>
 #include <vector>
 
+namespace SVF
+{
 
 /*!
  * Lock analysis
@@ -488,5 +490,7 @@ public:
     u32_t numOfLockedQueries;
     double lockQueriesTime;
 };
+
+} // End namespace SVF
 
 #endif /* INCLUDE_MTA_LockAnalysis_H_ */

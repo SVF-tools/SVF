@@ -42,6 +42,9 @@
 #include <deque>
 #include <set>
 
+namespace SVF
+{
+
 /**
  * Worklist with "first come first go" order.
  * New nodes pushed at back and popped from front.
@@ -255,6 +258,6 @@ private:
     DataVector data_list;	///< work list using std::vector.
 };
 
-
+} // End namespace SVF
 
 #endif /* WORKLIST_H_ */

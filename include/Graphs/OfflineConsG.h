@@ -33,6 +33,9 @@
 #include "Graphs/ConsG.h"
 #include "Util/SCC.h"
 
+namespace SVF
+{
+
 /*!
  * Offline constraint graph for Andersen's analysis.
  * In OCG, a 'ref' node is used to represent the point-to set of a constraint node.
@@ -129,7 +132,7 @@ protected:
     bool createRefNode(NodeID nodeId);
 };
 
-
+} // End namespace SVF
 
 namespace llvm
 {
@@ -138,11 +141,11 @@ namespace llvm
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
 
-template<> struct GraphTraits<OfflineConsG*> : public GraphTraits<GenericGraph<ConstraintNode,ConstraintEdge>* >
+template<> struct GraphTraits<SVF::OfflineConsG*> : public GraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
 {
-    typedef ConstraintNode *NodeRef;
+    typedef SVF::ConstraintNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif //OFFLINECONSG_H

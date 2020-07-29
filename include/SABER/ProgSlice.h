@@ -35,6 +35,9 @@
 #include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
 
+namespace SVF
+{
+
 class ProgSlice
 {
 
@@ -299,5 +302,6 @@ private:
     const SVFG* svfg;						///<  SVFG
 };
 
+} // End namespace SVF
 
 #endif /* PROGSLICE_H_ */

@@ -32,6 +32,9 @@
 
 #include "WPA/Andersen.h"
 
+namespace SVF
+{
+
 class TypeAnalysis:  public Andersen
 {
 
@@ -78,5 +81,6 @@ private:
     std::set<CallSite> virtualCallSites;
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_WPA_TYPEANALYSIS_H_ */

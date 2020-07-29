@@ -32,6 +32,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 /*!
  * Generic edge on the graph as base class
  */
@@ -434,6 +437,7 @@ public:
     u32_t nodeNum;		///< total num of edge
 };
 
+} // End namespace SVF
 
 /* !
  * GraphTraits specializations for generic graph algorithms.
@@ -445,7 +449,7 @@ namespace llvm
 /*!
  * GraphTraits for nodes
  */
-template<class NodeTy,class EdgeTy> struct GraphTraits<GenericNode<NodeTy,EdgeTy>*  >
+template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -453,7 +457,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<GenericNode<NodeTy,EdgeTy
     typedef std::pointer_to_unary_function<EdgeType*, NodeType*> DerefEdge;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
+    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
 
     static NodeType* getEntryNode(NodeType* pagN)
     {
@@ -487,7 +491,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<GenericNode<NodeTy,EdgeTy
  * Inverse GraphTraits for node which is used for inverse traversal.
  */
 template<class NodeTy,class EdgeTy>
-struct GraphTraits<Inverse<GenericNode<NodeTy,EdgeTy>* > >
+struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 {
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
@@ -495,7 +499,7 @@ struct GraphTraits<Inverse<GenericNode<NodeTy,EdgeTy>* > >
     typedef std::pointer_to_unary_function<EdgeType*, NodeType*> DerefEdge;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
+    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
 
     static inline NodeType* getEntryNode(Inverse<NodeType* > G)
     {
@@ -525,9 +529,9 @@ struct GraphTraits<Inverse<GenericNode<NodeTy,EdgeTy>* > >
 /*!
  * GraphTraints
  */
-template<class NodeTy,class EdgeTy> struct GraphTraits<GenericGraph<NodeTy,EdgeTy>* > : public GraphTraits<GenericNode<NodeTy,EdgeTy>*  >
+template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,EdgeTy>* > : public GraphTraits<SVF::GenericNode<NodeTy,EdgeTy>*  >
 {
-    typedef GenericGraph<NodeTy,EdgeTy> GenericGraphTy;
+    typedef SVF::GenericGraph<NodeTy,EdgeTy> GenericGraphTy;
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
@@ -535,7 +539,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<GenericGraph<NodeTy,EdgeT
     {
         return NULL; // return null here, maybe later we could create a dummy node
     }
-    typedef std::pair<NodeID, NodeType*> PairTy;
+    typedef std::pair<SVF::NodeID, NodeType*> PairTy;
     typedef std::pointer_to_unary_function<PairTy, NodeType*> DerefVal;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
@@ -564,12 +568,12 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<GenericGraph<NodeTy,EdgeT
     {
         return N->getId();
     }
-    static NodeType* getNode(GenericGraphTy *G, NodeID id)
+    static NodeType* getNode(GenericGraphTy *G, SVF::NodeID id)
     {
         return G->getGNode(id);
     }
 };
 
-}
+} // End namespace llvm
 
 #endif /* GENERICGRAPH_H_ */

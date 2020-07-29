@@ -33,7 +33,7 @@
 #include "Util/Conditions.h"
 #include <sys/resource.h>		/// increase stack size
 
-
+using namespace SVF;
 
 /// Color for output format
 #define KNRM  "\x1B[1;0m"

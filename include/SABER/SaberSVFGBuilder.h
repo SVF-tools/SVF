@@ -34,6 +34,9 @@
 #include "Util/BasicTypes.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class PAGNode;
 
 class SaberSVFGBuilder : public SVFGBuilder
@@ -84,5 +87,6 @@ private:
     SVFGNodeSet globSVFGNodes;
 };
 
+} // End namespace SVF
 
 #endif /* SABERSVFGBUILDER_H_ */

@@ -13,6 +13,8 @@
 #include "MTA/MTAAnnotator.h"
 #include "Graphs/ThreadCallGraph.h"
 
+using namespace SVF;
+
 static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm::cl::desc("All pair MHP computation"));
 
 /*!

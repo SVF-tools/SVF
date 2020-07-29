@@ -35,6 +35,7 @@
 #include "Graphs/ICFGStat.h"
 #include "Graphs/VFG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
