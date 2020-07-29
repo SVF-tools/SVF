@@ -35,6 +35,7 @@
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> ContextInsensitive("ci-svfg", llvm::cl::init(false),

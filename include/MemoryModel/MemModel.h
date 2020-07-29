@@ -33,6 +33,8 @@
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 
+namespace SVF
+{
 
 /// Symbol types
 enum SYMTYPE
@@ -420,7 +422,7 @@ public:
     void destroy();
 };
 
-
+} // End namespace SVF
 
 
 

@@ -34,6 +34,9 @@
 
 #include "MemoryModel/ConditionalPT.h"
 
+namespace SVF
+{
+
 /// Overloading operator << for dumping conditional variable
 //@{
 template<class Cond>
@@ -280,5 +283,7 @@ private:
 
     CahcePtsMap CacheMap;	///< points-to processed at load/store edge
 };
+
+} // End namespace SVF
 
 #endif /* POINTSTO_H_ */

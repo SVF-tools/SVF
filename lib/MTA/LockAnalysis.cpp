@@ -10,10 +10,13 @@
 #include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> PrintLockSpan("print-lock", llvm::cl::init(false), llvm::cl::desc("Print Thread Interleaving Results"));
 
+namespace SVF
+{
 
 // Subclassing RCResultValidator to define the abstract methods.
 class LockValidator : public RaceResultValidator
@@ -30,6 +33,7 @@ private:
     LockAnalysis *lsa;
 };
 
+} // End namespace SVF
 
 void LockAnalysis::analyze()
 {

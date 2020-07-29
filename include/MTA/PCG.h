@@ -17,6 +17,9 @@
 
 #include "MHP.h"
 
+namespace SVF
+{
+
 /*!
  * This class serves as a base may-happen in parallel analysis for multithreaded program
  * It distinguish thread spawner, spawnee, follower in procedure level by
@@ -195,5 +198,7 @@ public:
      */
     void printTDFuns();
 };
+
+} // End namespace SVF
 
 #endif /* PCG_H_ */

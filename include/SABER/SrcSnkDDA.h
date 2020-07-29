@@ -36,6 +36,9 @@
 #include "SABER/SaberSVFGBuilder.h"
 #include "WPA/Andersen.h"
 
+namespace SVF
+{
+
 typedef CFLSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
 
 /*!
@@ -289,5 +292,6 @@ protected:
 
 };
 
+} // End namespace SVF
 
 #endif /* SRCSNKDDA_H_ */

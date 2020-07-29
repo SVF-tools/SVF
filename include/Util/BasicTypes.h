@@ -60,6 +60,9 @@
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
 
+namespace SVF
+{
+
 class BddCond;
 
 
@@ -290,5 +293,7 @@ public:
     }
 
 };
+
+} // End namespace SVF
 
 #endif /* BASICTYPES_H_ */

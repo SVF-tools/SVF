@@ -33,6 +33,9 @@
 #include "Util/BasicTypes.h"
 #include "Util/Annotator.h"
 
+namespace SVF
+{
+
 class ProgSlice;
 /*!
  * Saber annotation
@@ -64,5 +67,6 @@ public:
     //@}
 };
 
+} // End namespace SVF
 
 #endif /* SABERANNOTATOR_H_ */

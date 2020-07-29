@@ -32,6 +32,9 @@
 
 #include "Graphs/GenericGraph.h"
 
+namespace SVF
+{
+
 class VFGNode;
 
 /*!
@@ -287,5 +290,6 @@ public:
     virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_VFGEDGE_H_ */

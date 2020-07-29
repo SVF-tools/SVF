@@ -32,6 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/PTACallGraph.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
@@ -398,4 +399,4 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

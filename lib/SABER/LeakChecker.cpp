@@ -30,6 +30,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "SABER/LeakChecker.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),

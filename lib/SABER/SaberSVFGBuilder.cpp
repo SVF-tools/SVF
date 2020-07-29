@@ -31,6 +31,7 @@
 #include "SABER/SaberCheckerAPI.h"
 #include "Graphs/SVFG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 void SaberSVFGBuilder::buildSVFG()

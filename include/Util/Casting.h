@@ -29,6 +29,9 @@
 #include <memory>
 #include <type_traits>
 
+namespace SVF
+{
+
 namespace SVFUtil
 {
 
@@ -354,7 +357,8 @@ LLVM_NODISCARD inline typename cast_retty<X, Y *>::ret_type dyn_cast(Y *Val)
     return llvm::isa<X>(Val) ? llvm::cast<X>(Val) : nullptr;
 }
 
+} // End namespace SVFUtil
 
-} // end namespace llvm
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_CASTING_H_ */

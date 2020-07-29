@@ -13,6 +13,8 @@
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
+using namespace SVF;
+
 /// Whether we allow reuse for TBHC.
 static llvm::cl::opt<bool> TBHCStoreReuse("tbhc-store-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse in at stores in FSTBHC"));
 static llvm::cl::opt<bool> TBHCAllReuse("tbhc-all-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse everywhere in FSTBHC"));

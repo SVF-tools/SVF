@@ -38,6 +38,8 @@
 #include <stack>
 #include <map>
 
+namespace SVF
+{
 
 typedef SCCDetection<ConstraintGraph *> CGSCC;
 
@@ -87,5 +89,7 @@ public:
 
 //    const NodeSet& getPWCReps() const { return  _pwcReps; }
 };
+
+} // End namespace SVF
 
 #endif //PROJECT_CSC_H

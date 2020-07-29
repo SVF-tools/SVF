@@ -34,6 +34,9 @@
 #include "MemoryModel/PTAStat.h"
 #include "WPA/FlowSensitive.h"
 
+namespace SVF
+{
+
 class Andersen;
 class PAG;
 class ConstraintGraph;
@@ -156,5 +159,7 @@ private:
     u32_t _MaxAddrTakenVarPts;	///< max points-to set size of addr-taken variables.
     u32_t _NumOfAddrTakeVar;	///< number of occurrences of addr-taken variables in load/store.
 };
+
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVESTAT_H_ */

@@ -14,6 +14,9 @@
 
 extern llvm::cl::list<std::string> DumpPAGFunctions;
 
+namespace SVF
+{
+
 /// Represents the PAG of a function loaded externally (i.e. from file).
 /// It's purpose is to be attached to the main PAG (almost) seamlessly.
 class ExternalPAG
@@ -138,5 +141,7 @@ public:
     bool addExternalPAG(const SVFFunction* function);
 
 };
+
+} // End namespace SVF
 
 #endif  /* EXTERNALPAG_H_ */

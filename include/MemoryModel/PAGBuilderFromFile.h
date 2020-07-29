@@ -32,6 +32,8 @@
 
 #include "Graphs/PAG.h"
 
+namespace SVF
+{
 
 /*!
  * Build PAG from a user specified file (for debugging purpose)
@@ -73,6 +75,6 @@ public:
                  std::string edge);
 };
 
-
+} // End namespace SVF
 
 #endif /* INCLUDE_MEMORYMODEL_PAGBUILDERFROMFILE_H_ */

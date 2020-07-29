@@ -32,6 +32,7 @@
 #include "SVF-FE/ICFGBuilder.h"
 #include "Graphs/PAG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 /*!

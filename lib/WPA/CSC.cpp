@@ -29,6 +29,7 @@
 
 #include "WPA/CSC.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 

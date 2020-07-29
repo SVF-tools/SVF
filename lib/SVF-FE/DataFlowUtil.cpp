@@ -30,6 +30,7 @@
 
 #include "SVF-FE/DataFlowUtil.h"
 
+using namespace SVF;
 
 char IteratedDominanceFrontier::ID = 0;
 //static RegisterPass<IteratedDominanceFrontier> IDF("IDF",

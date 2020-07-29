@@ -32,6 +32,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class CHGraph;
 /*
  * Util class to assist pointer analysis for cpp programs
@@ -116,6 +119,8 @@ const std::string vtInitMDName = "ctir.vt.init";
 const uint32_t moduleFlagValue = 1;
 }
 
-}
+} // End namespace cppUtil
+
+} // End namespace SVF
 
 #endif /* CPPUtil_H_ */

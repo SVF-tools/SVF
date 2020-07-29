@@ -33,6 +33,9 @@
 #include "Graphs/ICFG.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class ICFGBuilder
 {
 
@@ -98,5 +101,6 @@ private:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_ICFGBUILDER_H_ */

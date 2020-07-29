@@ -9,6 +9,8 @@
 #include "Graphs/ICFGEdge.h"
 #include "SVF-FE/LLVMUtil.h"
 
+namespace SVF
+{
 
 class GraphWriter;
 class ICFGPrinter : public ICFG
@@ -24,5 +26,7 @@ public:
 
     std::string getICFGKind(const int kind);
 };
+
+} // End namespace SVF
 
 #endif

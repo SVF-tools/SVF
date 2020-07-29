@@ -12,6 +12,9 @@
 #include <vector>
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class AndersenWaveDiff;
 class ThreadCallGraph;
@@ -91,5 +94,7 @@ private:
     static FunToSEMap func2ScevMap;
     static FunToLoopInfoMap func2LoopInfoMap;
 };
+
+} // End namespace SVF
 
 #endif /* MTA_H_ */

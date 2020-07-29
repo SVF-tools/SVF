@@ -9,6 +9,7 @@
 #include "MTA/LockAnalysis.h"
 #include <sstream>
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<u32_t> AnnoFlag("anno", llvm::cl::init(0), llvm::cl::desc("prune annotated instructions: 0001 Thread Local; 0002 Alias; 0004 MHP."));

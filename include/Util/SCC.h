@@ -45,6 +45,8 @@
 #include <stack>
 #include <map>
 
+namespace SVF
+{
 
 class GNodeSCCInfo;
 
@@ -346,5 +348,7 @@ public:
     }
 
 };
+
+} // End namespace SVF
 
 #endif /* SCC_H_ */

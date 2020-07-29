@@ -37,6 +37,9 @@
 
 #include <set>
 
+namespace SVF
+{
+
 typedef NodeID MRID;
 typedef NodeID MRVERID;
 typedef NodeID VERSION;
@@ -500,5 +503,7 @@ public:
     //@}
 
 };
+
+} // End namespace SVF
 
 #endif /* MEMORYREGION_H_ */

@@ -38,6 +38,9 @@
 #include <set>
 #include <string>
 
+namespace SVF
+{
+
 //------------------------------------------------------------------------------
 class ExtAPI
 {
@@ -223,5 +226,7 @@ public:
         return res;
     }
 };
+
+} // End namespace SVF
 
 #endif

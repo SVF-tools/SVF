@@ -34,6 +34,7 @@
 #include "Util/DPItem.h"
 #include <limits.h>
 
+using namespace SVF;
 using namespace SVFUtil;
 
 u64_t DPItem::maximumBudget = ULONG_MAX - 1;

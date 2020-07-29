@@ -12,6 +12,9 @@
 #include "Util/DPItem.h"
 #include "DDA/DDAVFSolver.h"
 
+namespace SVF
+{
+
 class DDAClient;
 typedef StmtDPItem<SVFGNode> LocDPItem;
 
@@ -135,5 +138,7 @@ private:
     DDAClient* _client;				///< DDA client
     PTACFInfoBuilder loopInfoBuilder; ///< LoopInfo
 };
+
+} // End namespace SVF
 
 #endif /* FlowDDA_H_ */

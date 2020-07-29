@@ -32,6 +32,9 @@
 
 #include "SABER/LeakChecker.h"
 
+namespace SVF
+{
+
 /*!
  * File open/close checker to check consistency of file operations
  */
@@ -74,5 +77,6 @@ public:
     void reportPartialClose(const SVFGNode* src);
 };
 
+} // End namespace SVF
 
 #endif /* FILECHECK_H_ */

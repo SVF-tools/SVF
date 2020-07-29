@@ -34,6 +34,9 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ICFGEdge.h"
 
+namespace SVF
+{
+
 class ICFGNode;
 class RetBlockNode;
 class CallPE;
@@ -499,5 +502,6 @@ public:
     virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* ICFGNode_H_ */

@@ -34,6 +34,9 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 class VFGNode;
 class ICFGNode;
 
@@ -1029,5 +1032,6 @@ public:
     virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_VFGNODE_H_ */

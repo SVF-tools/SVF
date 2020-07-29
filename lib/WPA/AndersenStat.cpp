@@ -31,6 +31,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 u32_t AndersenStat::_MaxPtsSize = 0;

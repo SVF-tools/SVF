@@ -43,6 +43,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
@@ -906,4 +907,4 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
         }
     }
 };
-}
+} // End namespace llvm

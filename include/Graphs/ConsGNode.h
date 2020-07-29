@@ -30,6 +30,9 @@
 #ifndef CONSGNODE_H_
 #define CONSGNODE_H_
 
+namespace SVF
+{
+
 /*!
  * Constraint node
  */
@@ -426,5 +429,7 @@ public:
 
 
 };
+
+} // End namespace SVF
 
 #endif /* CONSGNODE_H_ */

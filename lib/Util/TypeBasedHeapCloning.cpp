@@ -11,6 +11,8 @@
 #include "Util/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
+using namespace SVF;
+
 const DIType *TypeBasedHeapCloning::undefType = nullptr;
 
 const std::string TypeBasedHeapCloning::derefFnName = "deref";

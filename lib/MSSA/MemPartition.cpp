@@ -34,6 +34,8 @@
 
 #include "MSSA/MemPartition.h"
 
+using namespace SVF;
+
 /**
  * Create distinct memory regions.
  */

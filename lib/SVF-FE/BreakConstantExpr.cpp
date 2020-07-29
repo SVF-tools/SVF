@@ -56,6 +56,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <map>
 #include <utility>
 
+using namespace SVF;
+
 // Identifier variable for the pass
 char BreakConstantGEPs::ID = 0;
 char MergeFunctionRets::ID = 0;

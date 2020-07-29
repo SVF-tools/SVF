@@ -33,6 +33,7 @@
 #include "Graphs/PAG.h"
 #include "Graphs/PTACallGraph.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -562,4 +563,4 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

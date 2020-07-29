@@ -32,6 +32,9 @@
 
 #include "SABER/LeakChecker.h"
 
+namespace SVF
+{
+
 /*!
  * Double free checker to check deallocations of memory
  */
@@ -61,5 +64,7 @@ public:
     /// Report file/close bugs
     void reportBug(ProgSlice* slice);
 };
+
+} // End namespace SVF
 
 #endif /* DOUBLEFREECHECKER_H_ */

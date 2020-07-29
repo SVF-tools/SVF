@@ -33,6 +33,9 @@
 
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 /*
  * Generic graph solver for whole program pointer analysis
  */
@@ -230,5 +233,7 @@ public:
     /// num of iterations during constaint solving
     u32_t numOfIteration;
 };
+
+} // End namespace SVF
 
 #endif /* GRAPHSOLVER_H_ */

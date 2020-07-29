@@ -30,6 +30,8 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "llvm/Support/JSON.h"
 
+using namespace SVF;
+
 /*!
  * A value represents an object if it is
  * 1) function,

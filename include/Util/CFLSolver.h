@@ -33,6 +33,9 @@
 #include "Util/WorkList.h"
 #include "Util/DPItem.h"
 
+namespace SVF
+{
+
 /*
  * Generic CFL solver for demand-driven analysis based on different graphs (e.g. PAG, VFG, ThreadVFG)
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
@@ -177,5 +180,7 @@ private:
     WorkList worklist;
 
 };
+
+} // End namespace SVF
 
 #endif /* CFLSOLVER_H_ */

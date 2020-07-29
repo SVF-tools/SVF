@@ -15,6 +15,9 @@
 #include <set>
 #include <vector>
 
+namespace SVF
+{
+
 class TCTNode;
 class PTALoopInfoBuilder;
 
@@ -518,6 +521,7 @@ private:
     InstSet inRecurJoinSites;	///< Fork or Join sites in recursions
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -526,21 +530,21 @@ namespace llvm
  * graphs by the generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<TCTNode*> : public GraphTraits<GenericNode<TCTNode,TCTEdge>*  >
+template<> struct GraphTraits<SVF::TCTNode*> : public GraphTraits<SVF::GenericNode<SVF::TCTNode,SVF::TCTEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<TCTNode *> > : public GraphTraits<Inverse<GenericNode<TCTNode,TCTEdge>* > >
+struct GraphTraits<Inverse<SVF::TCTNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::TCTNode,SVF::TCTEdge>* > >
 {
 };
 
-template<> struct GraphTraits<TCT*> : public GraphTraits<GenericGraph<TCTNode,TCTEdge>* >
+template<> struct GraphTraits<SVF::TCT*> : public GraphTraits<SVF::GenericGraph<SVF::TCTNode,SVF::TCTEdge>* >
 {
-    typedef TCTNode *NodeRef;
+    typedef SVF::TCTNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif /* TCTNodeDetector_H_ */

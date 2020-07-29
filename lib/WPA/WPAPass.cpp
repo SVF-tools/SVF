@@ -43,6 +43,8 @@
 #include "WPA/TypeAnalysis.h"
 #include "SVF-FE/PAGBuilder.h"
 
+using namespace SVF;
+
 char WPAPass::ID = 0;
 
 //static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
