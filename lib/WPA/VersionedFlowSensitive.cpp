@@ -50,7 +50,7 @@ void VersionedFlowSensitive::finalize()
 
 void VersionedFlowSensitive::precolour(void)
 {
-    double start = stat->getClk();
+    double start = stat->getClk(true);
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
         NodeID l = it->first;
@@ -96,12 +96,12 @@ void VersionedFlowSensitive::precolour(void)
         }
     }
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     precolouringTime = (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::colour(void) {
-    double start = stat->getClk();
+    double start = stat->getClk(true);
 
     while (!vWorklist.empty()) {
         NodeID l = vWorklist.pop();
@@ -129,7 +129,7 @@ void VersionedFlowSensitive::colour(void) {
         }
     }
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     colouringTime = (end - start) / TIMEINTERVAL;
 }
 
@@ -142,7 +142,7 @@ bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
 
 void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to)
 {
-    double start = stat->getClk();
+    double start = stat->getClk(true);
 
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
@@ -167,7 +167,7 @@ void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersion
     // Don't need the from anymore.
     from.clear();
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
@@ -222,7 +222,7 @@ bool VersionedFlowSensitive::hasMeldVersion(NodeID l, NodeID o, enum VersionType
 
 void VersionedFlowSensitive::determineReliance(void)
 {
-    double start = stat->getClk();
+    double start = stat->getClk(true);
 
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -256,7 +256,7 @@ void VersionedFlowSensitive::determineReliance(void)
         }
     }
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     relianceTime = (end - start) / TIMEINTERVAL;
 }
 
