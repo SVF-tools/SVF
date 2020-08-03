@@ -59,13 +59,10 @@ public:
     virtual AliasResult alias(NodeID V1, NodeID V2);
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module);
+    virtual void runOnModule(SVFModule* module);
 
     /// We start from here
-    virtual bool runOnModule(Module& module)
-    {
-        return runOnModule(module);
-    }
+    virtual bool runOnModule(Module& module);
 
     /// Select a client
     virtual void selectClient(SVFModule* module);

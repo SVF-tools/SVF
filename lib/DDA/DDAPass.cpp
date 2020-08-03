@@ -65,7 +65,7 @@ DDAPass::~DDAPass()
 }
 
 
-bool DDAPass::runOnModule(SVFModule* module)
+void DDAPass::runOnModule(SVFModule* module)
 {
     /// initialization for llvm alias analyzer
     //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
@@ -78,7 +78,12 @@ bool DDAPass::runOnModule(SVFModule* module)
         if (DDASelected.isSet(i))
             runPointerAnalysis(module, i);
     }
+}
 
+bool DDAPass::runOnModule(Module& module)
+{
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(module);
+    runOnModule(svfModule);
     return false;
 }
 
