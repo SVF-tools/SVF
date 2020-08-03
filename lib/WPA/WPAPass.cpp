@@ -47,8 +47,8 @@ using namespace SVF;
 
 char WPAPass::ID = 0;
 
-//static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
-//        "Whole Program Pointer Analysis Pass");
+static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
+        "Whole Program Pointer Analysis Pass");
 
 /// register this into alias analysis group
 ///static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(WHOLEPROGRAMPA);
@@ -112,6 +112,15 @@ void WPAPass::runOnModule(SVFModule* svfModule)
     assert(!ptaVector.empty() && "No pointer analysis is specified.\n");
 }
 
+/*!
+ * We start from here
+ */
+bool WPAPass::runOnModule(Module& module)
+{
+    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(module);
+    runOnModule(svfModule);
+    return false;
+}
 
 /*!
  * Create pointer analysis according to a specified kind and then analyze the module.
