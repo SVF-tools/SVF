@@ -49,9 +49,9 @@ public:
 private:
     static LLVMModuleSet *llvmModuleSet;
     SVFModule* svfModule;
-    u32_t moduleNum;
-    LLVMContext *cxts;
-    std::unique_ptr<Module> *modules;
+    std::unique_ptr<LLVMContext> cxts;
+    std::vector<std::unique_ptr<Module>> owned_modules;
+    std::vector<std::reference_wrapper<Module>> modules;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -61,7 +61,9 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(NULL), moduleNum(0), cxts(NULL), modules(NULL) {}
+    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr) {}
+
+    void build();
 
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()
@@ -81,23 +83,20 @@ public:
     SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
 
-    void build(const std::vector<std::string> &moduleNameVec);
-
     u32_t getModuleNum() const
     {
-        return moduleNum;
+        return modules.size();
     }
 
     Module *getModule(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
-        return modules[idx].get();
+        return &getModuleRef(idx);
     }
 
     Module &getModuleRef(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
-        return *(modules[idx].get());
+        assert(idx < getModuleNum() && "Out of range.");
+        return modules[idx];
     }
 
     // Dump modules to files
