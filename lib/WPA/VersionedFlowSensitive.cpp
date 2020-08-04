@@ -114,14 +114,16 @@ void VersionedFlowSensitive::colour(void) {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
 
+            NodeID lp = ie->getDstNode()->getId();
+            // Delta nodes had c set already.
+            if (delta(lp)) continue;
+
             ObjToMeldVersionMap &myl = meldYield[l];
             for (NodeID o : ie->getPointsTo()) {
                 if (myl.find(o) == myl.end()) continue;
-
-                NodeID lp = ie->getDstNode()->getId();
                 if (meld(meldConsume[lp][o], myl[o])) {
                     const SVFGNode *slp = svfg->getSVFGNode(lp);
-                    // No need to do anything for store because their yield is set and static.
+                    // Store nodes had their y set already.
                     if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
                         meldYield[lp][o] = meldConsume[lp][o];
                         vWorklist.push(lp);
