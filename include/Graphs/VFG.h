@@ -331,7 +331,6 @@ public:
         return true;
     }
 
-protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode)
