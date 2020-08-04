@@ -251,6 +251,11 @@ public:
         return addVFGEdge(edge);
     }
 
+    /// Return total SVFG node number
+    inline const u32_t getSVFGNodeNum() const {
+        return nodeNum;
+    }
+
 protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
