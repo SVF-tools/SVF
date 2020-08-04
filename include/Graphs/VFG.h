@@ -331,6 +331,18 @@ public:
         return true;
     }
 
+    /// Add an actual parameter VFG node
+    /// To be noted that multiple actual parameters may have same value (PAGNode)
+    /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
+    inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs)
+    {
+        ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
+        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite()));
+        PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
+        /// do not set def here, this node is not a variable definition
+    }
+
+protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode)
@@ -509,16 +521,6 @@ public:
         addStmtVFGNode(sNode, store);
     }
 
-    /// Add an actual parameter VFG node
-    /// To be noted that multiple actual parameters may have same value (PAGNode)
-    /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
-    inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs)
-    {
-        ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
-        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite()));
-        PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
-        /// do not set def here, this node is not a variable definition
-    }
     /// Add a formal parameter VFG node
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs)
     {
