@@ -234,7 +234,6 @@ public:
     /// Whether a node is callsite return SVFGNode
     const CallBlockNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
-protected:
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge)
     {
@@ -246,6 +245,13 @@ protected:
         removeVFGNode(node);
     }
 
+    /// Add SVFG edge
+    inline bool addSVFGEdge(SVFGEdge* edge)
+    {
+        return addVFGEdge(edge);
+    }
+
+protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
@@ -319,11 +325,6 @@ protected:
     }
     //@}
 
-    /// Add SVFG edge
-    inline bool addSVFGEdge(SVFGEdge* edge)
-    {
-        return addVFGEdge(edge);
-    }
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
     //@{

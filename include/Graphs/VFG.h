@@ -295,8 +295,13 @@ public:
 		return it->second.end();
 	}
 	///@}
+    /// Add control-flow edges for top level pointers
+    //@{
+    VFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
+    VFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    VFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    //@}
 
-protected:
     /// Remove a SVFG edge
     inline void removeVFGEdge(VFGEdge* edge)
     {
@@ -317,12 +322,16 @@ protected:
     VFGEdge* hasThreadVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind);
     //@}
 
-    /// Add control-flow edges for top level pointers
-    //@{
-    VFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
-    VFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    VFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    //@}
+    /// Add VFG edge
+    inline bool addVFGEdge(VFGEdge* edge)
+    {
+        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
+        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+        assert(added1 && added2 && "edge not added??");
+        return true;
+    }
+
+protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode)
@@ -378,15 +387,6 @@ protected:
             edges.insert(edge);
     }
     //@}
-
-    /// Add VFG edge
-    inline bool addVFGEdge(VFGEdge* edge)
-    {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        return true;
-    }
 
     /// Given a PAGNode, set/get its def VFG node (definition of top level pointers)
     //@{
