@@ -73,7 +73,7 @@ public:
     }
 
     /// Destructor
-    ~WPAPass();
+    virtual ~WPAPass();
 
     /// LLVM analysis usage
     virtual inline void getAnalysisUsage(AnalysisUsage &au) const
@@ -84,7 +84,7 @@ public:
     }
 
     /// Get adjusted analysis for alias analysis
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id)
+    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
     {
         return this;
     }

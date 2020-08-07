@@ -272,7 +272,7 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge)
  *	for each srcPtdNode \in pts(src) ==> add fieldSrcPtdNode into tmpDstPts
  *		union pts(dst) with tmpDstPts
  */
-bool Andersen::processGep(NodeID node, const GepCGEdge* edge)
+bool Andersen::processGep(NodeID, const GepCGEdge* edge)
 {
     PointsTo& srcPts = getDiffPts(edge->getSrcID());
     return processGepPts(srcPts, edge);
