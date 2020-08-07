@@ -149,7 +149,6 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallBlockNode* callICFGNode = getOrAddCallICFGNode(inst);
-    RetBlockNode* retICFGNode = getOrAddRetICFGNode(inst);
     if (const SVFFunction*  callee = getCallee(inst))
         addICFGInterEdges(inst, callee);                       //creating interprocedural edges
     return callICFGNode;
@@ -158,10 +157,8 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 /*!
  * Create edges between ICFG nodes across functions
  */
-void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction*  callee)
+void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* callee)
 {
-    const SVFFunction*  caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
-
     CallBlockNode* CallBlockNode = getOrAddCallICFGNode(cs);
     FunEntryBlockNode* calleeEntryNode = icfg->getFunEntryBlockNode(callee);
     icfg->addCallEdge(CallBlockNode, calleeEntryNode, cs);

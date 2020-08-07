@@ -126,7 +126,7 @@ void CHGraph::buildCHGNodes(const GlobalValue *globalvalue)
         if (!getNode(className))
             createNode(className);
 
-        for (int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
+        for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
         {
             const ConstantArray *vtbl = SVFUtil::dyn_cast<ConstantArray>(vtblStruct->getOperand(ei));
             assert(vtbl && "Element of initializer not an array?");
@@ -205,9 +205,10 @@ void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite c
         if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
         const Value *csThisPtr = getVCallThisPtr(cs);
-        const Argument *consThisPtr = getConstructorThisPtr(caller);
-        bool samePtr = true; // isSameThisPtrInConstructor(consThisPtr,csThisPtr);
-        if (csThisPtr != NULL && samePtr)
+        //const Argument *consThisPtr = getConstructorThisPtr(caller);
+        //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
+        bool samePtrTrue = true;
+        if (csThisPtr != NULL && samePtrTrue)
         {
             struct DemangledName basename = demangle(callee->getName().str());
             if (!SVFUtil::isa<CallInst>(csThisPtr) && !SVFUtil::isa<InvokeInst>(csThisPtr) &&
@@ -431,7 +432,7 @@ void CHGraph::analyzeVTables(const Module &M)
 
             node->setVTable(globalvalue);
 
-            for (int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
+            for (unsigned int ei = 0; ei < vtblStruct->getNumOperands(); ++ei)
             {
                 const ConstantArray *vtbl =
                     SVFUtil::dyn_cast<ConstantArray>(vtblStruct->getOperand(ei));
@@ -871,17 +872,17 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
     }
 
     /// Return name of the graph
-    static std::string getGraphName(CHGraph *graph)
+    static std::string getGraphName(CHGraph*)
     {
         return "Class Hierarchy Graph";
     }
     /// Return function name;
-    static std::string getNodeLabel(CHNode *node, CHGraph *graph)
+    static std::string getNodeLabel(CHNode *node, CHGraph*)
     {
         return node->getName();
     }
 
-    static std::string getNodeAttributes(CHNode *node, CHGraph *CHGraph)
+    static std::string getNodeAttributes(CHNode *node, CHGraph*)
     {
         if (node->isPureAbstract())
         {
@@ -892,7 +893,7 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(CHNode *node, EdgeIter EI, CHGraph *CHGraph)
+    static std::string getEdgeAttributes(CHNode*, EdgeIter EI, CHGraph*)
     {
 
         CHEdge* edge = *(EI.getCurrent());
