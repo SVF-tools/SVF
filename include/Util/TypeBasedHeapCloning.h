@@ -24,6 +24,8 @@ public:
     /// Returns raw ctir metadata of a Value. Returns null if it doesn't exist.
     static const MDNode *getRawCTirMetadata(const Value *);
 
+    virtual ~TypeBasedHeapCloning() { };
+
 protected:
     /// The undefined type (•); void.
     static const DIType *undefType;
