@@ -147,7 +147,7 @@ PTACallGraphEdge* PTACallGraph::hasGraphEdge(PTACallGraphNode* src, PTACallGraph
 /*!
  * get CallGraph edge via nodes
  */
-PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId)
+PTACallGraphEdge* PTACallGraph::getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID)
 {
     for (PTACallGraphEdge::CallGraphEdgeSet::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
@@ -282,7 +282,6 @@ void PTACallGraph::verifyCallGraph()
  */
 bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const SVFFunction* dstFn) const
 {
-    PTACallGraphNode* srcNode = getCallGraphNode(srcFn);
     PTACallGraphNode* dstNode = getCallGraphNode(dstFn);
 
     std::stack<const PTACallGraphNode*> nodeStack;
@@ -336,17 +335,17 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
     }
 
     /// Return name of the graph
-    static std::string getGraphName(PTACallGraph *graph)
+    static std::string getGraphName(PTACallGraph*)
     {
         return "Call Graph";
     }
     /// Return function name;
-    static std::string getNodeLabel(PTACallGraphNode *node, PTACallGraph *graph)
+    static std::string getNodeLabel(PTACallGraphNode *node, PTACallGraph*)
     {
         return node->getFunction()->getName().str();
     }
 
-    static std::string getNodeAttributes(PTACallGraphNode *node, PTACallGraph *PTACallGraph)
+    static std::string getNodeAttributes(PTACallGraphNode *node, PTACallGraph*)
     {
         const SVFFunction* fun = node->getFunction();
         if (!SVFUtil::isExtCall(fun))
@@ -358,7 +357,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(PTACallGraphNode *node, EdgeIter EI, PTACallGraph *PTACallGraph)
+    static std::string getEdgeAttributes(PTACallGraphNode*, EdgeIter EI, PTACallGraph*)
     {
 
         //TODO: mark indirect call of Fork with different color
@@ -387,7 +386,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         PTACallGraphEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

@@ -565,8 +565,8 @@ void ConstraintGraph::print()
         }
         else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter))
         {
-            outs() << ngep->getSrcID() << " -- VarintGep --> "
-                   << ngep->getDstID() << "\n";
+            outs() << vgep->getSrcID() << " -- VarintGep --> "
+                   << vgep->getDstID() << "\n";
         }
         else
             assert(false && "wrong constraint edge kind!");
@@ -609,14 +609,14 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(ConstraintGraph *graph)
+    static std::string getGraphName(ConstraintGraph*)
     {
         return "ConstraintG";
     }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(NodeType *n, ConstraintGraph *graph)
+    static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
         bool briefDisplay = true;
@@ -649,7 +649,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *n, ConstraintGraph *graph)
+    static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
 
@@ -689,7 +689,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ConstraintGraph *pag)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, ConstraintGraph*)
     {
         ConstraintEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -722,7 +722,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter)
     {
         return "";
     }
