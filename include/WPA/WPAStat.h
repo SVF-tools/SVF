@@ -137,6 +137,7 @@ private:
 
     /// number of pag nodes which have points-to set in IN/OUT set.
     u32_t _NumOfVarHaveINOUTPts[2];
+    u32_t _NumOfVarHaveEmptyINOUTPts[2];
     u32_t _NumOfVarHaveINOUTPtsInFormalIn[2];
     u32_t _NumOfVarHaveINOUTPtsInFormalOut[2];
     u32_t _NumOfVarHaveINOUTPtsInActualIn[2];
@@ -190,8 +191,12 @@ private:
     u32_t _NumVersions;
     /// Most versions for a single object.
     u32_t _MaxVersions;
+    /// Number of version PTSs actually used (sum of next two fields).
+    u32_t _NumUsedVersions;
     /// Number of versions with non-empty points-to sets (since versioning is over-approximate).
     u32_t _NumNonEmptyVersions;
+    /// Number of versions with empty points-to sets (actually empty, not never-accessed).
+    u32_t _NumEmptyVersions;
     /// Number of objects which have a single version.
     u32_t _NumSingleVersion;
 

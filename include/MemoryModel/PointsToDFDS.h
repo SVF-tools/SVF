@@ -618,6 +618,12 @@ public:
         return atPointsTos[o][v];
     }
 
+    /// Returns whether a points-to set for version v of o exists.
+    bool hasATPts(NodeID o, Version v)
+    {
+        return atPointsTos[o].find(v) != atPointsTos[o].end();
+    }
+
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
     static inline bool classof(const VDFPTData<Key,Data> *)
     {

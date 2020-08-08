@@ -20,6 +20,8 @@ void VersionedFlowSensitiveStat::clearStat()
      _MaxVersions         = 0;
      _NumNonEmptyVersions = 0;
      _NumSingleVersion    = 0;
+     _NumUsedVersions     = 0;
+     _NumEmptyVersions    = 0;
      _MaxPtsSize          = 0;
      _MaxTopLvlPtsSize    = 0;
      _MaxVersionPtsSize   = 0;
@@ -107,6 +109,8 @@ void VersionedFlowSensitiveStat::performStat()
     PTNumStatMap["TotalVersions"]     = _NumVersions;
     PTNumStatMap["MaxVersionsForObj"] = _MaxVersions;
     PTNumStatMap["TotalNonEmptyVPts"] = _NumNonEmptyVersions;
+    PTNumStatMap["TotalEmptyVPts"]    = _NumEmptyVersions;
+    PTNumStatMap["TotalExistingVPts"] = _NumUsedVersions;
     PTNumStatMap["TotalSingleVObjs"]  = _NumSingleVersion;
 
     PTNumStatMap[NumOfCopys]  = numOfCopy;
@@ -178,17 +182,22 @@ void VersionedFlowSensitiveStat::versionStat(void)
 
         for (DenseSet<Version>::value_type &v : vs)
         {
+            // If the version was just over-approximate and never accessed, ignore.
+            if (!vfspta->vPtD->hasATPts(o, v)) continue;
+
             const PointsTo &ovPts = vfspta->vPtD->getATPts(o, v);
             if (!ovPts.empty()) ++_NumNonEmptyVersions;
+            else ++_NumEmptyVersions;
+
             _TotalPtsSize += ovPts.count();
             totalVersionPtsSize += ovPts.count();
             if (ovPts.count() > _MaxVersionPtsSize) _MaxVersionPtsSize = ovPts.count();
         }
     }
 
-    // TODO: this is not accounting for empty points-to sets that "matter". Need to record
-    //       which versions are just over-approximations, and which are actually accessed.
-    if (_NumNonEmptyVersions != 0) _AvgVersionPtsSize = (double)totalVersionPtsSize / (double)_NumNonEmptyVersions;
+    _NumUsedVersions = _NumNonEmptyVersions + _NumEmptyVersions;
+
+    if (_NumNonEmptyVersions != 0) _AvgVersionPtsSize = (double)totalVersionPtsSize / (double)_NumUsedVersions;
 
     _TotalPtsSize += totalVersionPtsSize;
 }
