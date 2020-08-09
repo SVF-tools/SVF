@@ -119,17 +119,18 @@ void VersionedFlowSensitive::colour(void) {
             // For stores, yield != consume, otherwise they are the same.
             ObjToMeldVersionMap &myl = SVFUtil::isa<StoreSVFGNode>(sl) ? meldYield[l]
                                                                        : meldConsume[l];
+
+            ObjToMeldVersionMap &mclp = meldConsume[lp];
+            bool yieldChanged = false;
             for (NodeID o : ie->getPointsTo()) {
                 if (myl.find(o) == myl.end()) continue;
-                if (meld(meldConsume[lp][o], myl[o])) {
-                    const SVFGNode *slp = svfg->getSVFGNode(lp);
-                    // Store nodes had their y set already.
-                    if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
-                        // Consume was updated, and yield == consume when not a store.
-                        vWorklist.push(lp);
-                    }
-                }
+                // Yield == consume for non-stores, so when consume is updated, so is yield.
+                // For stores, yield was already set, and it's static.
+                yieldChanged = meld(mclp[o], myl[o]) && !SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp))
+                               || yieldChanged;
             }
+
+            if (yieldChanged) vWorklist.push(lp);
         }
     }
 
