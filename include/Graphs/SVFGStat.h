@@ -194,6 +194,7 @@ private:
     int totalOutEdge;	///< Total number of outgoing SVFG edges
     int totalIndInEdge;	///< Total number of indirect SVFG edges
     int totalIndOutEdge;
+    int totalIndEdgeLabels; ///< Total number of l --o--> lp
 
     int totalIndCallEdge;
     int totalIndRetEdge;

@@ -161,6 +161,7 @@ void SVFGStat::clear()
 
     totalInEdge = totalOutEdge = 0;
     totalIndInEdge = totalIndOutEdge = 0;
+    totalIndEdgeLabels = 0;
 
     totalIndCallEdge = totalIndRetEdge = 0;
     totalDirCallEdge = totalDirRetEdge = 0;
@@ -221,6 +222,7 @@ void SVFGStat::performStat()
     PTNumStatMap["TotalEdge"] = totalInEdge;
     PTNumStatMap["DirectEdge"] = totalInEdge - totalIndInEdge;
     PTNumStatMap["IndirectEdge"] = totalIndInEdge;
+    PTNumStatMap["IndirectEdgeLabels"] = totalIndEdgeLabels;
 
     PTNumStatMap["IndCallEdge"] = totalIndCallEdge;
     PTNumStatMap["IndRetEdge"] = totalIndRetEdge;
@@ -321,6 +323,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             // TODO: try a new method to calculate weight.
             const PointsTo& cpts = edge->getPointsTo();
             avgWeight += cpts.count();
+            totalIndEdgeLabels += cpts.count();
         }
 
         if (SVFUtil::isa<CallDirSVFGEdge>(*edgeIt))
