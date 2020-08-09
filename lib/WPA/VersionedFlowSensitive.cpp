@@ -197,8 +197,11 @@ void VersionedFlowSensitive::mapMeldVersions(void)
     meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
-bool VersionedFlowSensitive::delta(NodeID l) const
+bool VersionedFlowSensitive::delta(NodeID l)
 {
+    DenseMap<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
+    if (isDelta != deltaCache.end()) return isDelta->second;
+
     // vfs-TODO: double check.
     const SVFGNode *s = svfg->getSVFGNode(l);
     // Cases:
@@ -211,10 +214,12 @@ bool VersionedFlowSensitive::delta(NodeID l) const
         /// use pre-analysis call graph to approximate all potential callsites
         ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
 
+        deltaCache[l] = !callsites.empty();
         return !callsites.empty();
     }
     else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
     {
+        deltaCache[l] = cbn->isIndirectCall();
         return cbn->isIndirectCall();
     }
 

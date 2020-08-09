@@ -91,7 +91,7 @@ private:
     void mapMeldVersions();
 
     /// Returns whether l is a delta node.
-    bool delta(NodeID l) const;
+    bool delta(NodeID l);
 
     /// Returns a new MeldVersion for o.
     MeldVersion newMeldVersion(NodeID o);
@@ -134,6 +134,9 @@ private:
 
     /// Worklist for performing meld colouring, takes SVFG node l.
     FIFOWorkList<NodeID> vWorklist;
+
+    /// Whether a node is a delta node or not.
+    DenseMap<NodeID, bool> deltaCache;
 
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VDFPTDataTy *vPtD;
