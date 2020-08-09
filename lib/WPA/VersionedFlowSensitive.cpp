@@ -116,6 +116,11 @@ void VersionedFlowSensitive::colour(void) {
             // Delta nodes had c set already.
             if (delta(lp)) continue;
 
+            bool lpIsStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp));
+            // Consume and yield are the same for non-stores, so ignore them.
+            // (In fact, with myl/mclp, not ignoring them can lead to problems as myl is ro, mclp is wr.)
+            if (l == lp && !lpIsStore) continue;
+
             // For stores, yield != consume, otherwise they are the same.
             ObjToMeldVersionMap &myl = SVFUtil::isa<StoreSVFGNode>(sl) ? meldYield[l]
                                                                        : meldConsume[l];
@@ -126,8 +131,7 @@ void VersionedFlowSensitive::colour(void) {
                 if (myl.find(o) == myl.end()) continue;
                 // Yield == consume for non-stores, so when consume is updated, so is yield.
                 // For stores, yield was already set, and it's static.
-                yieldChanged = meld(mclp[o], myl[o]) && !SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp))
-                               || yieldChanged;
+                yieldChanged = (meld(mclp[o], myl[o]) && !lpIsStore) || yieldChanged;
             }
 
             if (yieldChanged) vWorklist.push(lp);
