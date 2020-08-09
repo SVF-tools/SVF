@@ -549,8 +549,9 @@ public:
         // Propagating same version? No need.
         if (y == c) return false;
 
-        PointsTo &ypt = atPointsTos[o][y];
-        PointsTo &cpt = atPointsTos[o][c];
+        VPtsMap &oVPtsMap = atPointsTos[o];
+        PointsTo &ypt = oVPtsMap[y];
+        PointsTo &cpt = oVPtsMap[c];
 
         return ypt |= cpt;
     }
@@ -558,8 +559,9 @@ public:
     /// Merges version from of o into version to of o, kind of like to(o) = to(o) U from(o).
     bool updateATVersion(NodeID o, Version to, Version from)
     {
-        PointsTo &topt = atPointsTos[o][to];
-        PointsTo &frompt = atPointsTos[o][from];
+        VPtsMap &oVPtsMap = atPointsTos[o];
+        PointsTo &topt = oVPtsMap[to];
+        PointsTo &frompt = oVPtsMap[from];
 
         return topt |= frompt;
     }
@@ -567,9 +569,10 @@ public:
     /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
-        if ((*consume)[loc].find(o) == (*consume)[loc].end()) return false;
+        ObjToVersionMap &consumeLoc = (*consume)[loc];
+        if (consumeLoc.find(o) == consumeLoc.end()) return false;
 
-        Version c = (*consume)[loc][o];
+        Version c = consumeLoc[o];
         PointsTo &opt = atPointsTos[o][c];
         PointsTo &ppt = this->getPts(p);
 
@@ -593,15 +596,16 @@ public:
     bool propWithinLoc(LocID loc, bool su, NodeID singleton, NodeBS &changedObjects)
     {
         bool changed = false;
+        ObjToVersionMap &yieldLoc = (*yield)[loc];
         for (ObjToVersionMap::value_type &oc : (*consume)[loc])
         {
             NodeID o = oc.first;
-            Version &c = oc.second;
+            Version c = oc.second;
 
             // Strong-updated; don't propagate.
             if (su && o == singleton) continue;
 
-            Version &y = (*yield)[loc][o];
+            Version y = yieldLoc[o];
             if (updateATVersion(o, y, c))
             {
                 changed = true;
@@ -657,7 +661,7 @@ public:
             VPtsMap &vpm = atPointsTos[o];
             for (VPtsMap::value_type &vpt : vpm)
             {
-                Version &v = vpt.first;
+                Version v = vpt.first;
                 PointsTo &pt = vpt.second;
                 SVFUtil::outs() << "  " << v << " : {";
                 SVFUtil::dumpSet(pt);
@@ -676,7 +680,7 @@ public:
             for (ObjToVersionMap::value_type &ov : lov.second)
             {
                 NodeID &o = ov.first;
-                Version &v = ov.second;
+                Version v = ov.second;
                 SVFUtil::outs() << "  " << o << " version " << v << "\n";
             }
         }
@@ -690,7 +694,7 @@ public:
             for (ObjToVersionMap::value_type &ov : lov.second)
             {
                 NodeID &o = ov.first;
-                Version &v = ov.second;
+                Version v = ov.second;
                 SVFUtil::outs() << "  " << o << " version " << v << "\n";
             }
         }
