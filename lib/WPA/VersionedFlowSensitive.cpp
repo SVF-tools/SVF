@@ -118,13 +118,15 @@ void VersionedFlowSensitive::colour(void) {
 
             bool lpIsStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp));
             // Consume and yield are the same for non-stores, so ignore them.
-            // (In fact, with myl/mclp, not ignoring them can lead to problems as myl is ro, mclp is wr.)
             if (l == lp && !lpIsStore) continue;
+
+            // If lp does not exist in meldConsume, meldConsume[lp] below will create, and
+            // could/will invalidate myl.
+            meldConsume.try_emplace(lp);
 
             // For stores, yield != consume, otherwise they are the same.
             ObjToMeldVersionMap &myl = SVFUtil::isa<StoreSVFGNode>(sl) ? meldYield[l]
                                                                        : meldConsume[l];
-
             ObjToMeldVersionMap &mclp = meldConsume[lp];
             bool yieldChanged = false;
             for (NodeID o : ie->getPointsTo()) {
