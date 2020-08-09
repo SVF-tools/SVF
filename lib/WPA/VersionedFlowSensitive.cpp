@@ -33,8 +33,7 @@ void VersionedFlowSensitive::initialize()
     precolour();
     colour();
 
-    mapMeldVersions(meldConsume, consume);
-    mapMeldVersions(meldYield, yield);
+    mapMeldVersions();
 
     determineReliance();
 
@@ -84,10 +83,9 @@ void VersionedFlowSensitive::precolour(void)
                 for (NodeID o : ie->getPointsTo())
                 {
                     meldConsume[l][o] = newMeldVersion(o);
-                    // It's yield will be the same; deltas are mutually exclusive with stores.
-                    meldYield[l][o] = meldConsume[l][o];
                 }
 
+                // Push into worklist because its consume == its yield.
                 vWorklist.push(l);
 
                 if (ie->getPointsTo().count() != 0)
@@ -118,14 +116,16 @@ void VersionedFlowSensitive::colour(void) {
             // Delta nodes had c set already.
             if (delta(lp)) continue;
 
-            ObjToMeldVersionMap &myl = meldYield[l];
+            // For stores, yield != consume, otherwise they are the same.
+            ObjToMeldVersionMap &myl = SVFUtil::isa<StoreSVFGNode>(sl) ? meldYield[l]
+                                                                       : meldConsume[l];
             for (NodeID o : ie->getPointsTo()) {
                 if (myl.find(o) == myl.end()) continue;
                 if (meld(meldConsume[lp][o], myl[o])) {
                     const SVFGNode *slp = svfg->getSVFGNode(lp);
                     // Store nodes had their y set already.
                     if (!SVFUtil::isa<StoreSVFGNode>(slp)) {
-                        meldYield[lp][o] = meldConsume[lp][o];
+                        // Consume was updated, and yield == consume when not a store.
                         vWorklist.push(lp);
                     }
                 }
@@ -144,7 +144,7 @@ bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
 }
 
 
-void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to)
+void VersionedFlowSensitive::mapMeldVersions(void)
 {
     double start = stat->getClk(true);
 
@@ -153,10 +153,13 @@ void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersion
     static DenseMap<MeldVersion, Version> mvv;
     static Version curVersion = 1;
 
-    for (LocMeldVersionMap::value_type &lomv : from)
+    // meldConsume -> consume.
+    for (LocMeldVersionMap::value_type &lomv : meldConsume)
     {
         NodeID l = lomv.first;
-        ObjToVersionMap &tol = to[l];
+        bool isStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(l));
+        ObjToVersionMap &consumel = consume[l];
+        ObjToVersionMap &yieldl = yield[l];
         for (ObjToMeldVersionMap::value_type &omv : lomv.second)
         {
             NodeID o = omv.first;
@@ -164,12 +167,31 @@ void VersionedFlowSensitive::mapMeldVersions(LocMeldVersionMap &from, LocVersion
 
             DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
-            tol[o] = v;
+            consumel[o] = v;
+            // At non-stores, consume == yield.
+            if (!isStore) yieldl[o] = v;
         }
     }
 
-    // Don't need the from anymore.
-    from.clear();
+    // meldYield -> yield.
+    for (LocMeldVersionMap::value_type &lomv : meldYield)
+    {
+        NodeID l = lomv.first;
+        ObjToVersionMap &yieldl = yield[l];
+        for (ObjToMeldVersionMap::value_type &omv : lomv.second)
+        {
+            NodeID o = omv.first;
+            MeldVersion &mv = omv.second;
+
+            DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
+            yieldl[o] = v;
+        }
+    }
+
+    // No longer necessary.
+    meldConsume.clear();
+    meldYield.clear();
 
     double end = stat->getClk(true);
     meldMappingTime += (end - start) / TIMEINTERVAL;

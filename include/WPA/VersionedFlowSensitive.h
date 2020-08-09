@@ -88,7 +88,7 @@ private:
     bool meld(MeldVersion &mv1, MeldVersion &mv2);
 
     /// Moves meldConsume/Yield to consume/yield.
-    void mapMeldVersions(LocMeldVersionMap &from, LocVersionMap &to);
+    void mapMeldVersions();
 
     /// Returns whether l is a delta node.
     bool delta(NodeID l) const;
@@ -117,6 +117,7 @@ private:
     LocMeldVersionMap meldConsume;
     /// SVFG node (label) x object -> version to yield.
     /// Used during colouring.
+    /// For non-stores, yield == consume, so meldYield only has entries for stores.
     LocMeldVersionMap meldYield;
     /// Object -> MeldVersion counter.
     DenseMap<NodeID, unsigned> meldVersions;
