@@ -264,12 +264,14 @@ void VersionedFlowSensitive::determineReliance(void)
         {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
+
+            ObjToVersionMap &yieldl = yield[l];
             for (NodeID o : ie->getPointsTo())
             {
                 if (!hasVersion(l, o, YIELD)) continue;
                 // Given l --o--> lp, c at lp relies on y at l.
                 NodeID lp = ie->getDstNode()->getId();
-                Version &y = yield[l][o];
+                Version &y = yieldl[o];
                 Version &cp = consume[lp][o];
                 if (cp != y)
                 {
@@ -443,9 +445,13 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
 
     // TODO: time.
-    for (NodeID o : changedObjects)
+    if (!changedObjects.empty())
     {
-        propagateVersion(o, yield[l][o]);
+        ObjToVersionMap &yieldl = yield[l];
+        for (NodeID o : changedObjects)
+        {
+            propagateVersion(o, yieldl[o]);
+        }
     }
 
     return changed;
