@@ -145,6 +145,7 @@ private:
     u32_t _NumOfVarHaveINOUTPtsInLoad[2];
     u32_t _NumOfVarHaveINOUTPtsInStore[2];
     u32_t _NumOfVarHaveINOUTPtsInMSSAPhi[2];
+    u32_t _PotentialNumOfVarHaveINOUTPts[2];
 
     /// sizes of points-to set
     u32_t _MaxPtsSize;	///< max points-to set size.
