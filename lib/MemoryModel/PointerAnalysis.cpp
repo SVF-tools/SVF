@@ -358,11 +358,12 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT())
-    {
-        outs() << "##<" << node->getValue()->getName() << "> ";
-        outs() << "Source Loc: " << getSourceLoc(node->getValue());
-    }
+    else if (!SVFUtil::isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT()) {
+		if (node->hasValue()) {
+			outs() << "##<" << node->getValue()->getName() << "> ";
+			outs() << "Source Loc: " << getSourceLoc(node->getValue());
+		}
+	}
     outs() << "\nPtr " << node->getId() << " ";
 
     if (pts.empty())
@@ -392,14 +393,15 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             outs() << "DummyVal\n";
         else if (SVFUtil::isa<DummyObjPN>(node))
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
-        else
-        {
-            if(!SVFModule::pagReadFromTXT())
-            {
-                outs() << "<" << pagNode->getValue()->getName() << "> ";
-                outs() << "Source Loc: " << getSourceLoc(pagNode->getValue()) << "] \n";
-            }
-        }
+		else {
+			if (!SVFModule::pagReadFromTXT()) {
+				if (node->hasValue()) {
+					outs() << "<" << pagNode->getValue()->getName() << "> ";
+					outs() << "Source Loc: "
+							<< getSourceLoc(pagNode->getValue()) << "] \n";
+				}
+			}
+		}
     }
 }
 
