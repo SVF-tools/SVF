@@ -54,6 +54,10 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
         return fileBuilder.build();
     }
 
+    // If the PAG has been built before, then we return the unique PAG of the program
+    if(pag->getNodeNumAfterPAGBuild() > 1)
+    	return pag;
+
     svfMod = svfModule;
 
     /// initial external library information
