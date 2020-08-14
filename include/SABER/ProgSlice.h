@@ -35,6 +35,9 @@
 #include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
 
+namespace SVF
+{
+
 class ProgSlice
 {
 
@@ -257,11 +260,11 @@ private:
     /// (e.g. PAGEdge is an global assignment or NullPtrSVFGNode)
     inline const BasicBlock* getSVFGNodeBB(const SVFGNode* node) const
     {
-        const BasicBlock* bb = node->getBB();
+        const ICFGNode* icfgNode = node->getICFGNode();
         if(SVFUtil::isa<NullPtrSVFGNode>(node) == false)
         {
-            assert(bb && "this SVFG node should be in a basic block");
-            return bb;
+            assert(!SVFUtil::isa<GlobalBlockNode>(icfgNode) && "this SVFG node should be in a basic block");
+            return icfgNode->getBB();
         }
         return NULL;
     }
@@ -299,5 +302,6 @@ private:
     const SVFG* svfg;						///<  SVFG
 };
 
+} // End namespace SVF
 
 #endif /* PROGSLICE_H_ */

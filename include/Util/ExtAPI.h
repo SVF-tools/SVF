@@ -38,6 +38,9 @@
 #include <set>
 #include <string>
 
+namespace SVF
+{
+
 //------------------------------------------------------------------------------
 class ExtAPI
 {
@@ -90,7 +93,7 @@ private:
     //  (hash_map and map are much slower).
     llvm::StringMap<extf_t> info;
     //A cache of is_ext results for all SVFFunction*'s (hash_map is fastest).
-    std::map<const SVFFunction*, bool> isext_cache;
+    DenseMap<const SVFFunction*, bool> isext_cache;
 
     void init();                          //fill in the map (see ExtAPI.cpp)
 
@@ -204,7 +207,7 @@ public:
     {
         assert(F);
         //Check the cache first; everything below is slower.
-        std::map<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
+        DenseMap<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
         if(i_iec != isext_cache.end())
             return i_iec->second;
 
@@ -223,5 +226,7 @@ public:
         return res;
     }
 };
+
+} // End namespace SVF
 
 #endif

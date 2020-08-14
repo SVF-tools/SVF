@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 
+using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
@@ -53,7 +54,7 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     expandedPts = pts;;
     for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
     {
-        if(pag->getBaseObjNode(*pit)==*pit)
+        if (pag->getBaseObjNode(*pit) == *pit || isFieldInsensitive(*pit))
         {
             expandedPts |= pag->getAllFieldsObjNode(*pit);
         }
@@ -237,7 +238,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
  */
 void BVDataPTAImpl::dumpAllPts()
 {
-    std::set<NodeID> pagNodes;
+    DenseNodeSet pagNodes;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);

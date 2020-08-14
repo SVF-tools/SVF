@@ -36,6 +36,7 @@
 
 static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false), llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses"));
 
+using namespace SVF;
 using namespace SVFUtil;
 
 FlowSensitive* FlowSensitive::fspta = NULL;
@@ -64,7 +65,7 @@ void FlowSensitive::analyze()
     /// Initialization for the Solver
     initialize();
 
-    double start = stat->getClk();
+    double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
@@ -84,7 +85,7 @@ void FlowSensitive::analyze()
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-    double end = stat->getClk();
+    double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
 
     if (CTirAliasEval)
@@ -324,7 +325,7 @@ bool FlowSensitive::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
         if (propVarPtsFromSrcToDst(ptd, src, dst))
             changed = true;
 
-        if (isFIObjNode(ptd))
+        if (isFieldInsensitive(ptd))
         {
             /// If this is a field-insensitive obj, propagate all field node's pts
             const NodeBS& allFields = getAllFieldsObjNode(ptd);
@@ -476,7 +477,7 @@ bool FlowSensitive::processLoad(const LoadSVFGNode* load)
         if (unionPtsFromIn(load, ptd, dstVar))
             changed = true;
 
-        if (isFIObjNode(ptd))
+        if (isFieldInsensitive(ptd))
         {
             /// If the ptd is a field-insensitive node, we should also get all field nodes'
             /// points-to sets and pass them to pagDst.
@@ -656,7 +657,7 @@ void FlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& edges)
                 if (propVarPtsAfterCGUpdated(ptd, srcNode, dstNode))
                     changed = true;
 
-                if (isFIObjNode(ptd))
+                if (isFieldInsensitive(ptd))
                 {
                     /// If this is a field-insensitive obj, propagate all field node's pts
                     const NodeBS& allFields = getAllFieldsObjNode(ptd);
@@ -700,7 +701,7 @@ void FlowSensitive::printCTirAliasStats(void)
     assert(dchg && "eval-ctir-aliases needs DCHG.");
 
     // < SVFG node ID (loc), PAG node of interest (top-level pointer) >.
-    std::set<std::pair<NodeID, NodeID>> cmpLocs;
+    DenseSet<std::pair<NodeID, NodeID>> cmpLocs;
     for (SVFG::iterator npair = svfg->begin(); npair != svfg->end(); ++npair)
     {
         NodeID loc = npair->first;
@@ -759,7 +760,7 @@ void FlowSensitive::printCTirAliasStats(void)
                  << "  " << "NO  % : " << 100 * ((double)noAliases/(double)(total)) << "\n";
 }
 
-void FlowSensitive::countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
+void FlowSensitive::countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
 {
     for (std::pair<NodeID, NodeID> locPA : cmp)
     {

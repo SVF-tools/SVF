@@ -9,6 +9,7 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<unsigned long long> cxtBudget("cxtbg",  llvm::cl::init(10000),
@@ -60,9 +61,9 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
     CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node));
 
     // start DDA analysis
-    DOTIMESTAT(double start = DDAStat::getClk());
+    DOTIMESTAT(double start = DDAStat::getClk(true));
     const CxtPtSet& cpts = findPT(dpm);
-    DOTIMESTAT(ddaStat->_AnaTimePerQuery = DDAStat::getClk() - start);
+    DOTIMESTAT(ddaStat->_AnaTimePerQuery = DDAStat::getClk(true) - start);
     DOTIMESTAT(ddaStat->_TotalTimeOfQueries += ddaStat->_AnaTimePerQuery);
 
     if(isOutOfBudgetQuery() == false)

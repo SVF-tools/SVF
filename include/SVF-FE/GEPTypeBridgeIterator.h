@@ -151,6 +151,6 @@ inline generic_bridge_gep_type_iterator<const T*> bridge_gep_end( Type * /*Op0*/
     return generic_bridge_gep_type_iterator<const T*>::end(A.end());
 }
 
-}
+} // End namespace llvm
 
 #endif

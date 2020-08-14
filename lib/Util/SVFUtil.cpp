@@ -33,7 +33,7 @@
 #include "Util/Conditions.h"
 #include <sys/resource.h>		/// increase stack size
 
-
+using namespace SVF;
 
 /// Color for output format
 #define KNRM  "\x1B[1;0m"
@@ -210,7 +210,7 @@ void SVFUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-                outs() << "setrlimit returned result = " << result << "\n";
+            	writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
 }
@@ -240,10 +240,12 @@ std::string SVFUtil::getSourceLocOfFunction(const Function *F)
  */
 std::string SVFUtil::getSourceLoc(const Value* val)
 {
-    if(val==NULL)  return "empty val";
+    if(val==NULL)  return "{ empty val }";
 
     std::string str;
     raw_string_ostream rawstr(str);
+    rawstr << "{ ";
+
     if (const Instruction *inst = SVFUtil::dyn_cast<Instruction>(val))
     {
         if (SVFUtil::isa<AllocaInst>(inst))
@@ -310,5 +312,7 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     {
         rawstr << "Can only get source location for instruction, argument, global var or function.";
     }
+    rawstr << " }";
+
     return rawstr.str();
 }

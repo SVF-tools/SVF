@@ -33,6 +33,9 @@
 #include "SABER/SrcSnkDDA.h"
 #include "SABER/SaberCheckerAPI.h"
 
+namespace SVF
+{
+
 /*!
  * Static Memory Leak Detector
  */
@@ -125,5 +128,7 @@ protected:
 private:
     SVFGNodeToCSIDMap srcToCSIDMap;
 };
+
+} // End namespace SVF
 
 #endif /* LEAKCHECKER_H_ */

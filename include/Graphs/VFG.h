@@ -34,6 +34,9 @@
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class VFGStat;
 class CallBlockNode;
@@ -53,15 +56,17 @@ public:
     };
 
     typedef DenseMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
+    typedef DenseSet<VFGNode*> VFGNodeSet;
     typedef DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef std::map<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
+    typedef DenseMap<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
     typedef DenseMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
     typedef DenseMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
     typedef DenseMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
-    typedef std::map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
-    typedef std::map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
-    typedef std::map<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
-    typedef std::map<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
+    typedef DenseMap<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
+    typedef DenseMap<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
+    typedef DenseMap<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
+    typedef DenseMap<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
+    typedef DenseMap<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
 
     typedef FormalParmVFGNode::CallPESet CallPESet;
     typedef FormalRetVFGNode::RetPESet RetPESet;
@@ -71,8 +76,8 @@ public:
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef std::set<const VFGNode*> GlobalVFGNodeSet;
-    typedef std::set<const PAGNode*> PAGNodeSet;
+    typedef DenseSet<const VFGNode*> GlobalVFGNodeSet;
+    typedef DenseSet<const PAGNode*> PAGNodeSet;
 
 
 protected:
@@ -86,6 +91,7 @@ protected:
     PAGNodeToBinaryOPVFGNodeMapTy PAGNodeToBinaryOPVFGNodeMap;	///< map a PAGNode to its BinaryOPVFGNode
     PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
+    FunToVFGNodesMapTy funToVFGNodesMap; ///< map a function to its VFGNodes;
 
     GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
@@ -125,15 +131,21 @@ public:
 	}
 
 	/// Whether to dump VFG;
-	inline bool getDumpVFG()
+	inline bool getDumpVFG() const
 	{
 		return dumpVFG;
 	}
 
     /// Return PAG
-    inline PAG* getPAG()
+    inline PAG* getPAG() const
     {
-        return PAG::getPAG();
+        return pag;
+    }
+
+    /// Return CallGraph
+    inline PTACallGraph* getCallGraph() const
+    {
+        return callgraph;
     }
 
     /// Get a VFG node
@@ -261,7 +273,35 @@ public:
         return false;
     }
 
-protected:
+	/// Return all the VFGNodes of a function
+	///@{
+	inline VFGNodeSet& getVFGNodes(const SVFFunction *fun) {
+		return funToVFGNodesMap[fun];
+	}
+	inline bool hasVFGNodes(const SVFFunction *fun) const {
+		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+	}
+	inline bool VFGNodes(const SVFFunction *fun) const {
+		return funToVFGNodesMap.find(fun) != funToVFGNodesMap.end();
+	}
+	inline VFGNodeSet::const_iterator getVFGNodeBegin(const SVFFunction *fun) const {
+		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+		return it->second.begin();
+	}
+	inline VFGNodeSet::const_iterator getVFGNodeEnd(const SVFFunction *fun) const {
+		FunToVFGNodesMapTy::const_iterator it = funToVFGNodesMap.find(fun);
+		assert(it != funToVFGNodesMap.end() && "this function does not have any VFGNode");
+		return it->second.end();
+	}
+	///@}
+    /// Add control-flow edges for top level pointers
+    //@{
+    VFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
+    VFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    VFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
+    //@}
+
     /// Remove a SVFG edge
     inline void removeVFGEdge(VFGEdge* edge)
     {
@@ -282,12 +322,16 @@ protected:
     VFGEdge* hasThreadVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind);
     //@}
 
-    /// Add control-flow edges for top level pointers
-    //@{
-    VFGEdge* addIntraDirectVFEdge(NodeID srcId, NodeID dstId);
-    VFGEdge* addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    VFGEdge* addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId);
-    //@}
+    /// Add VFG edge
+    inline bool addVFGEdge(VFGEdge* edge)
+    {
+        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
+        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
+        assert(added1 && added2 && "edge not added??");
+        return true;
+    }
+
+protected:
 
     /// sanitize Intra edges, verify that both nodes belong to the same function.
     inline void checkIntraEdgeParents(const VFGNode *srcNode, const VFGNode *dstNode)
@@ -325,33 +369,24 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cs, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* csArg, const PAGNode* funArg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID actualParam = getDef(cs_arg);
-        NodeID formalParam = getDef(fun_arg);
+        NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
+        NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_return, const PAGNode* cs_return, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectFRetAndARet(const PAGNode* funReturn, const PAGNode* csReturn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
-        NodeID formalRet = getDef(fun_return);
-        NodeID actualRet = getDef(cs_return);
+        NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
+        NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
         if (edge != NULL)
             edges.insert(edge);
     }
     //@}
-
-    /// Add VFG edge
-    inline bool addVFGEdge(VFGEdge* edge)
-    {
-        bool added1 = edge->getDstNode()->addIncomingEdge(edge);
-        bool added2 = edge->getSrcNode()->addOutgoingEdge(edge);
-        assert(added1 && added2 && "edge not added??");
-        return true;
-    }
 
     /// Given a PAGNode, set/get its def VFG node (definition of top level pointers)
     //@{
@@ -417,17 +452,19 @@ protected:
         addGNode(vfgNode->getId(), vfgNode);
         vfgNode->setICFGNode(icfgNode);
         icfgNode->addVFGNode(vfgNode);
+
+        if(const SVFFunction* fun = icfgNode->getFun())
+        	funToVFGNodesMap[fun].insert(vfgNode);
+        else
+        	globalVFGNodes.insert(vfgNode);
     }
+
     /// Add a VFG node for program statement
     inline void addStmtVFGNode(StmtVFGNode* node, const PAGEdge* pagEdge)
     {
         assert(PAGEdgeToStmtVFGNodeMap.find(pagEdge)==PAGEdgeToStmtVFGNodeMap.end() && "should not insert twice!");
         PAGEdgeToStmtVFGNodeMap[pagEdge] = node;
         addVFGNode(node, pagEdge->getICFGNode());
-
-        const PAGEdgeSet& globalPAGEdges = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGEdges.find(pagEdge) != globalPAGEdges.end())
-            globalVFGNodes.insert(node);
     }
     /// Add a Dummy VFG node for null pointer definition
     /// To be noted for black hole pointer it has already has address edge connected
@@ -471,10 +508,6 @@ protected:
     {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
         addStmtVFGNode(sNode, store);
-
-        const PAGEdgeSet& globalPAGStores = getPAG()->getGlobalPAGEdgeSet();
-        if (globalPAGStores.find(store) != globalPAGStores.end())
-            globalVFGNodes.insert(sNode);
     }
 
     /// Add an actual parameter VFG node
@@ -491,7 +524,7 @@ protected:
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs)
     {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
-        addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
+        addVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fun));
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
                 it!=eit; ++it)
             sNode->addCallPE(*it);
@@ -505,7 +538,7 @@ protected:
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
         FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
-        addVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(fun));
+        addVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(fun));
         for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
                 it!=eit; ++it)
             sNode->addRetPE(*it);
@@ -572,6 +605,7 @@ protected:
     }
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -579,23 +613,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<VFGNode*> : public GraphTraits<GenericNode<VFGNode,VFGEdge>*  >
+template<> struct GraphTraits<SVF::VFGNode*> : public GraphTraits<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<VFGNode *> > : public GraphTraits<Inverse<GenericNode<VFGNode,VFGEdge>* > >
+struct GraphTraits<Inverse<SVF::VFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::VFGNode,SVF::VFGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<VFG*> : public GraphTraits<GenericGraph<VFGNode,VFGEdge>* >
+template<> struct GraphTraits<SVF::VFG*> : public GraphTraits<SVF::GenericGraph<SVF::VFGNode,SVF::VFGEdge>* >
 {
-    typedef VFGNode *NodeRef;
+    typedef SVF::VFGNode *NodeRef;
 };
 
-
-}
-
+} // End namespace llvm
 
 #endif /* INCLUDE_UTIL_VFG_H_ */

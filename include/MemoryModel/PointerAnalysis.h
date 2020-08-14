@@ -38,6 +38,9 @@
 #include "Util/PathCondAllocator.h"
 #include "MemoryModel/PointsToDFDS.h"
 
+namespace SVF
+{
+
 class CommonCHGraph;
 
 class TypeSystem;
@@ -95,13 +98,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef DenseSet<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef	std::set<const SVFFunction*> FunctionSet;
-    typedef std::map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef DenseSet<const SVFFunction*> FunctionSet;
+    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef std::set<const GlobalValue*> VTableSet;
-    typedef std::set<const SVFFunction*> VFunSet;
+    typedef DenseSet<const GlobalValue*> VTableSet;
+    typedef DenseSet<const SVFFunction*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -223,7 +226,7 @@ public:
     virtual void analyze() = 0;
 
     /// Compute points-to results on-demand, overridden by derived classes
-    virtual void computeDDAPts(NodeID id) {}
+    virtual void computeDDAPts(NodeID) {}
 
     /// Interface exposed to users of our pointer analysis, given Location infos
     virtual AliasResult alias(const MemoryLocation &LocA,
@@ -448,4 +451,7 @@ public:
         return typeSystem;
     }
 };
+
+} // End namespace SVF
+
 #endif /* POINTERANALYSIS_H_ */

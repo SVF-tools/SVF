@@ -40,6 +40,9 @@
 #include "Graphs/SVFG.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 /**
  * Optimised SVFG.
  * 1. FormalParam/ActualRet is converted into Phi. ActualParam/FormalRet becomes the
@@ -52,8 +55,8 @@
  */
 class SVFGOPT : public SVFG
 {
-    typedef std::set<SVFGNode*> SVFGNodeSet;
-    typedef std::map<NodeID, NodeID> NodeIDToNodeIDMap;
+    typedef DenseSet<SVFGNode*> SVFGNodeSet;
+    typedef DenseMap<NodeID, NodeID> NodeIDToNodeIDMap;
     typedef FIFOWorkList<const MSSAPHISVFGNode*> WorkList;
 
 public:
@@ -83,7 +86,7 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cs, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
@@ -234,7 +237,7 @@ private:
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp)
     {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fp->getFun()));
         resetDef(fp->getParam(),sNode);
         return sNode;
     }
@@ -347,5 +350,6 @@ private:
     bool keepContextSelfCycle;
 };
 
+} // End namespace SVF
 
 #endif /* SVFGOPT_H_ */

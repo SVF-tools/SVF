@@ -36,13 +36,16 @@
 #include "Util/ThreadAPI.h"
 #include "llvm/Support/JSON.h"
 
+namespace SVF
+{
+
 namespace SVFUtil
 {
 
 
 
 /// This function servers a allocation wrapper detector
-inline bool isAnAllocationWraper(const Instruction *inst)
+inline bool isAnAllocationWraper(const Instruction*)
 {
     return false;
 }
@@ -385,6 +388,11 @@ inline const Value* getTaskDataAtHareParForSite(const Instruction *inst)
 /// Return true if this value refers to a object
 bool isObject (const Value * ref);
 
+/// Return true if the value refers to constant data, e.g., i32 0
+inline bool isConstantData(const Value* val)
+{
+    return SVFUtil::isa<ConstantData>(val) || SVFUtil::isa<ConstantAggregate>(val);
+}
 
 /// Method for dead function, which does not have any possible caller
 /// function address is not taken and never be used in call or invoke instruction
@@ -602,7 +610,9 @@ bool isIRFile(const std::string &filename);
 /// Parse argument for multi-module analysis
 void processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                       std::vector<std::string> &moduleNameVec);
-}
 
+} // End namespace SVFUtil
+
+} // End namespace SVF
 
 #endif /* INCLUDE_SVF_FE_LLVMUTIL_H_ */

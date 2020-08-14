@@ -34,6 +34,9 @@
 #include <stdio.h>
 #include "CUDD/cuddInt.h"
 
+namespace SVF
+{
+
 /**
  * Using Cudd as conditions.
  */
@@ -124,5 +127,7 @@ private:
 
     DdManager *m_bdd_mgr;
 };
+
+} // End namespace SVF
 
 #endif /* BITVECTORCOND_H_ */

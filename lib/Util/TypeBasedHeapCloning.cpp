@@ -11,6 +11,8 @@
 #include "Util/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
+using namespace SVF;
+
 const DIType *TypeBasedHeapCloning::undefType = nullptr;
 
 const std::string TypeBasedHeapCloning::derefFnName = "deref";
@@ -223,8 +225,10 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
             newGep = ppag->getGepObjNode(base, newLS);
         }
 
-        GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(ppag->getPAGNode(newGep));
-        gep->setBaseNode(base);
+        if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(ppag->getPAGNode(newGep)))
+        {
+            gep->setBaseNode(base);
+        }
 
         addGepToObj(newGep, base, totalOffset);
         const DIType *newGepType;

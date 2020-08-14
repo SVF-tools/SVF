@@ -12,6 +12,7 @@
 
 #include <iomanip>
 
+using namespace SVF;
 using namespace SVFUtil;
 
 DDAStat::DDAStat(FlowDDA* pta) : PTAStat(pta), flowDDA(pta), contextDDA(NULL)

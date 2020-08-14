@@ -36,6 +36,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 /*!
  * Field information of an aggregate object
  */
@@ -104,7 +107,8 @@ public:
     {}
 
     /// Copy Constructor
-    LocationSet(const LocationSet& ls) : fldIdx(ls.fldIdx)
+    LocationSet(const LocationSet& ls)
+        : fldIdx(ls.fldIdx), byteOffset(ls.byteOffset)
     {
         const ElemNumStridePairVec& vec = ls.getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -114,7 +118,8 @@ public:
     }
 
     /// Initialization from FieldInfo
-    LocationSet(const FieldInfo& fi) : fldIdx(fi.getFlattenFldIdx())
+    LocationSet(const FieldInfo& fi)
+        : fldIdx(fi.getFlattenFldIdx()), byteOffset(fi.getFlattenByteOffset())
     {
         const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -274,5 +279,6 @@ private:
     ElemNumStridePairVec numStridePair;	///< element number and stride pair
 };
 
+} // End namespace SVF
 
 #endif /* LOCATIONSET_H_ */

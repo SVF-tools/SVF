@@ -32,6 +32,9 @@
 
 #include "MemoryModel/PointerAnalysis.h"
 
+namespace SVF
+{
+
 /*!
  * Pointer analysis implementation which uses bit vector based points-to data structure
  */
@@ -89,7 +92,7 @@ public:
 protected:
 
     /// Update callgraph. This should be implemented by its subclass.
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap& callsites)
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
     {
         assert(false && "Virtual function not implemented!");
         return false;
@@ -178,8 +181,8 @@ public:
     typedef CondVar<Cond> CVar;
     typedef CondStdSet<CVar>  CPtSet;
     typedef PTData<CVar,CPtSet> PTDataTy;	         /// Points-to data structure type
-    typedef std::map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef std::map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
+    typedef DenseMap<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
+    typedef DenseMap<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
     CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
@@ -502,5 +505,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_ */

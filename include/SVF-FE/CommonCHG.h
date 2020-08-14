@@ -11,8 +11,11 @@
 #ifndef COMMONCHG_H_
 #define COMMONCHG_H_
 
-typedef std::set<const GlobalValue*> VTableSet;
-typedef std::set<const SVFFunction*> VFunSet;
+namespace SVF
+{
+
+typedef DenseSet<const GlobalValue*> VTableSet;
+typedef DenseSet<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph
@@ -38,6 +41,8 @@ public:
 protected:
     CHGKind kind;
 };
+
+} // End namespace SVF
 
 #endif /* COMMONCHG_H_ */
 

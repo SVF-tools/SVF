@@ -44,6 +44,8 @@
 #include <stack>
 #include <deque>
 
+namespace SVF
+{
 
 typedef unsigned u32_t;
 typedef unsigned long long u64_t;
@@ -62,6 +64,7 @@ typedef PointsTo AliasSet;
 
 typedef std::pair<NodeID, NodeID> NodePair;
 typedef std::set<NodeID> NodeSet;
+typedef llvm::DenseSet<NodeID> DenseNodeSet;
 typedef llvm::DenseSet<NodePair,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairSet;
 typedef llvm::DenseMap<NodePair,NodeID,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairMap;
 typedef std::vector<NodeID> NodeVector;
@@ -184,5 +187,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_SVFBASICTYPES_H_ */

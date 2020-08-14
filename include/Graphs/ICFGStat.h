@@ -33,6 +33,9 @@
 #include "Graphs/ICFG.h"
 #include <iomanip>
 
+namespace SVF
+{
+
 class ICFGStat : public PTAStat
 {
 
@@ -51,7 +54,7 @@ private:
     int numOfIntraEdges;
 
 public:
-    typedef std::set<const ICFGNode *> ICFGNodeSet;
+    typedef DenseSet<const ICFGNode *> ICFGNodeSet;
 
     ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg)
     {
@@ -155,6 +158,7 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_ICFGSTAT_H_ */
 

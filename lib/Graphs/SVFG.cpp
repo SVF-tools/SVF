@@ -33,13 +33,110 @@
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
 
-
+using namespace SVF;
 using namespace SVFUtil;
+
+const std::string MRSVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "MRSVFGNode ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string FormalINSVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FormalINSVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string FormalOUTSVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FormalOUTSVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string ActualINSVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string ActualOUTSVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string MSSAPHISVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "MSSAPHISVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string IntraMSSAPHISVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraMSSAPHISVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string InterMSSAPHISVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(isFormalINPHI())
+        rawstr << "FormalINPHISVFGNode ID: " << getId() << " (fun: " << getFun()->getName() << ")";
+    else
+        rawstr << "ActualOUTPHISVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " (fun: " << getFun()->getName() << ")";
+    return rawstr.str();
+}
+
+const std::string IndirectSVFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IndirectSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
+const std::string IntraIndSVFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
+const std::string CallIndSVFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
+    rawstr << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
+const std::string RetIndSVFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetIndSVFGEdge CallSite ID: " << getCallSiteId() << " ";
+    rawstr << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
+
+const std::string ThreadMHPIndSVFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ThreadMHPIndSVFGEdge: " << getDstID() << "<--" << getSrcID() << "\n";
+    return rawstr.str();
+}
+
 
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
 {
     cpts = exit->getMR()->getPointsTo();
-    bb = SVFUtil::getFunExitBB(exit->getFunction()->getLLVMFun());
 }
 
 /*!
@@ -685,7 +782,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(MSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
             rawstr << "MSSAPHI\n";
-//            rawstr << getSourceLoc(&mphi->getBB()->back());
+            rawstr << getSourceLoc(&mphi->getICFGNode()->getBB()->back());
         }
         else if(SVFUtil::isa<NullPtrSVFGNode>(node))
         {
@@ -694,12 +791,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             rawstr << "BinOp\n";
-            rawstr << getSourceLoc(&bop->getBB()->back());
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
         }
         else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << "Cmp\n";
-            rawstr << getSourceLoc(&cmp->getBB()->back());
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(cmp->getICFGNode())->getInst());
         }
         else
             assert(false && "what else kinds of nodes do we have??");
@@ -995,4 +1092,4 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

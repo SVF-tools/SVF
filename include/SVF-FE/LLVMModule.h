@@ -34,21 +34,24 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFModule.h"
 
+namespace SVF
+{
+
 class LLVMModuleSet
 {
 public:
 
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::map<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
-    typedef std::map<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
-    typedef std::map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
+    typedef DenseMap<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
+    typedef DenseMap<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
+    typedef DenseMap<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
 private:
     static LLVMModuleSet *llvmModuleSet;
     SVFModule* svfModule;
-    u32_t moduleNum;
-    LLVMContext *cxts;
-    std::unique_ptr<Module> *modules;
+    std::unique_ptr<LLVMContext> cxts;
+    std::vector<std::unique_ptr<Module>> owned_modules;
+    std::vector<std::reference_wrapper<Module>> modules;
 
     /// Function declaration to function definition map
     FunDeclToDefMapTy FunDeclToDefMap;
@@ -58,7 +61,9 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(NULL), moduleNum(0), cxts(NULL), modules(NULL) {}
+    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr) {}
+
+    void build();
 
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()
@@ -78,23 +83,20 @@ public:
     SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
 
-    void build(const std::vector<std::string> &moduleNameVec);
-
     u32_t getModuleNum() const
     {
-        return moduleNum;
+        return modules.size();
     }
 
     Module *getModule(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
-        return modules[idx].get();
+        return &getModuleRef(idx);
     }
 
     Module &getModuleRef(u32_t idx) const
     {
-        assert(idx < moduleNum && "Out of range.");
-        return *(modules[idx].get());
+        assert(idx < getModuleNum() && "Out of range.");
+        return modules[idx];
     }
 
     // Dump modules to files
@@ -220,7 +222,6 @@ private:
     void buildGlobalDefToRepMap();
 };
 
-
-
+} // End namespace SVF
 
 #endif /* INCLUDE_SVF_FE_LLVMMODULE_H_ */

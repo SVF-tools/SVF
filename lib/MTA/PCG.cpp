@@ -8,6 +8,7 @@
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 //=====================================================//

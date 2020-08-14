@@ -10,10 +10,13 @@
 #include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> PrintLockSpan("print-lock", llvm::cl::init(false), llvm::cl::desc("Print Thread Interleaving Results"));
 
+namespace SVF
+{
 
 // Subclassing RCResultValidator to define the abstract methods.
 class LockValidator : public RaceResultValidator
@@ -30,6 +33,7 @@ private:
     LockAnalysis *lsa;
 };
 
+} // End namespace SVF
 
 void LockAnalysis::analyze()
 {
@@ -37,7 +41,7 @@ void LockAnalysis::analyze()
     collectLockUnlocksites();
     buildCandidateFuncSetforLock();
 
-    DOTIMESTAT(double lockStart = PTAStat::getClk());
+    DOTIMESTAT(double lockStart = PTAStat::getClk(true));
 
     DBOUT(DGENERAL, outs() << "\tIntra-procedural LockAnalysis\n");
     DBOUT(DMTA, outs() << "\tIntra-procedural LockAnalysis\n");
@@ -51,7 +55,7 @@ void LockAnalysis::analyze()
     DBOUT(DMTA, outs() << "\tInter-procedural LockAnalysis\n");
     analyzeLockSpanCxtStmt();
 
-    DOTIMESTAT(double lockEnd = PTAStat::getClk());
+    DOTIMESTAT(double lockEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockTime += (lockEnd - lockStart) / TIMEINTERVAL);
 
     validateResults();

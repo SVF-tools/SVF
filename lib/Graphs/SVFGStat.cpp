@@ -31,6 +31,8 @@
 #include "Graphs/SVFGStat.h"
 #include "Graphs/PTACallGraph.h"
 
+using namespace SVF;
+
 const char* MemSSAStat::TotalTimeOfConstructMemSSA = "TotalMSSATime";	///< Total time for constructing memory SSA
 const char* MemSSAStat::TimeOfGeneratingMemRegions  = "GenRegionTime";	///< Time for allocating regions
 const char* MemSSAStat::TimeOfCreateMUCHI  = "GenMUCHITime";	///< Time for generating mu/chi for load/store/calls
@@ -390,7 +392,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     SVFGSCC* svfgSCC = new SVFGSCC(graph);
     svfgSCC->find();
 
-    std::set<NodeID> sccRepNodeSet;
+    DenseNodeSet sccRepNodeSet;
     SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
     SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
     for (; it != eit; ++it)

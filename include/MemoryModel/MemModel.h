@@ -33,6 +33,8 @@
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 
+namespace SVF
+{
 
 /// Symbol types
 enum SYMTYPE
@@ -59,9 +61,9 @@ private:
     /// flattened field offsets of of a struct
     std::vector<u32_t> foffset;
     /// Types of all fields of a struct
-    std::map<u32_t, const llvm::Type*> fldIdx2TypeMap;
+    DenseMap<u32_t, const llvm::Type*> fldIdx2TypeMap;
     /// Types of all fields of a struct
-    std::map<u32_t, const llvm::Type*> offset2TypeMap;
+    DenseMap<u32_t, const llvm::Type*> offset2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FieldInfo> finfo;
 
@@ -156,7 +158,7 @@ private:
 public:
 
     /// Constructors
-    ObjTypeInfo(const Value* val, const Type* t, u32_t max) :
+    ObjTypeInfo(const Value*, const Type* t, u32_t max) :
         type(t), flags(0), maxOffsetLimit(max)
     {
     }
@@ -420,7 +422,7 @@ public:
     void destroy();
 };
 
-
+} // End namespace SVF
 
 
 

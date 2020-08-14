@@ -33,6 +33,9 @@
 
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 /*
  * Generic graph solver for whole program pointer analysis
  */
@@ -54,7 +57,7 @@ public:
 protected:
 
     /// Constructor
-    WPASolver(): _graph(NULL),scc(NULL), reanalyze(false), numOfIteration(0), iterationForPrintStat(1000)
+    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(NULL), scc(NULL), numOfIteration(0)
     {
     }
     /// Destructor
@@ -143,14 +146,14 @@ protected:
     /// Following methods are to be implemented in child class, in order to achieve a fully worked PTA
     //@{
     /// Process each node on the graph, to be implemented in the child class
-    virtual inline void processNode(NodeID node) {}
+    virtual inline void processNode(NodeID) {}
     /// update callgraph for all indirect callsites
     virtual bool updateCallGraph()
     {
         return false;
     }
     /// collapse positive weight cycles of a graph
-    virtual void collapsePWCNode(NodeID nodeId) {}
+    virtual void collapsePWCNode(NodeID) {}
     virtual void collapseFields() {};
     /// dump statistics
     virtual void printStat() {}
@@ -166,7 +169,7 @@ protected:
         }
     }
     /// Propagate information from source to destination node, to be implemented in the child class
-    virtual bool propFromSrcToDst(GEDGE* edge)
+    virtual bool propFromSrcToDst(GEDGE*)
     {
         return false;
     }
@@ -230,5 +233,7 @@ public:
     /// num of iterations during constaint solving
     u32_t numOfIteration;
 };
+
+} // End namespace SVF
 
 #endif /* GRAPHSOLVER_H_ */

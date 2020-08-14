@@ -30,6 +30,8 @@
 #ifndef ICFGEdge_H_
 #define ICFGEdge_H_
 
+namespace SVF
+{
 
 class ICFGNode;
 
@@ -89,6 +91,17 @@ public:
     {
         return (cs << EdgeKindMaskBits) | k;
     }
+
+    /// Overloading operator << for dumping ICFG node ID
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const ICFGEdge &edge)
+    {
+        o << edge.toString();
+        return o;
+    }
+    //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -118,6 +131,7 @@ public:
         return edge->getEdgeKind() == IntraCF;
     }
     //@}
+    virtual const std::string toString() const;
 };
 
 
@@ -156,6 +170,7 @@ public:
         return edge->getEdgeKind() == CallCF;
     }
     //@}
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -192,7 +207,9 @@ public:
         return edge->getEdgeKind() == RetCF;
     }
     //@}
+    virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* ICFGEdge_H_ */

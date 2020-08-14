@@ -34,6 +34,9 @@
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/ThreadCallGraph.h"
 
+namespace SVF
+{
+
 class ICFG;
 
 class CallGraphBuilder
@@ -65,7 +68,7 @@ public:
 
 };
 
-
+} // End namespace SVF
 
 
 #endif /* INCLUDE_UTIL_CALLGRAPHBUILDER_H_ */

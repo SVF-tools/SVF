@@ -32,6 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/PTACallGraph.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 PTACallGraph::CallSiteToIdMap PTACallGraph::csToIdMap;
@@ -53,6 +54,25 @@ void PTACallGraphEdge::addInDirectCallSite(const CallBlockNode* call)
     indirectCalls.insert(call);
 }
 //@}
+
+const std::string PTACallGraphEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallSite ID: " << getCallSiteID();
+    if(isDirectCallEdge())
+        rawstr << "direct call";
+    else
+        rawstr << "indirect call";
+    rawstr << "[" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string PTACallGraphNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
+    return rawstr.str();
+}
 
 bool PTACallGraphNode::isReachableFromProgEntry() const
 {
@@ -379,4 +399,4 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

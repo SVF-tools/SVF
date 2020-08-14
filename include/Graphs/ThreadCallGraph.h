@@ -33,6 +33,9 @@
 #include "Graphs/PTACallGraph.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class ThreadAPI;
 /*!
@@ -64,6 +67,16 @@ public:
     }
     //@}
 
+    virtual const std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "ThreadForkEdge ";
+        rawstr << "CallSite ID: " << getCallSiteID();
+        rawstr << " srcNode ID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
+        rawstr << " dstNode ID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        return rawstr.str();
+    }
+
     typedef GenericNode<PTACallGraphNode, ThreadForkEdge>::GEdgeSetTy ForkEdgeSet;
 };
 
@@ -91,6 +104,16 @@ public:
     static inline bool classof(const PTACallGraphEdge *edge)
     {
         return edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
+    }
+
+    virtual const std::string toString() const {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "ThreadJoinEdge ";
+        rawstr << "CallSite ID: " << getCallSiteID();
+        rawstr << " srcNode ID " << getSrcID() << " (fun: " << getSrcNode()->getFunction()->getName() << ")";
+        rawstr << " dstNode ID " << getDstID() << " (fun: " << getDstNode()->getFunction()->getName() << ")";
+        return rawstr.str();
     }
 
     typedef GenericNode<PTACallGraphNode, ThreadJoinEdge>::GEdgeSetTy JoinEdgeSet;
@@ -392,5 +415,6 @@ private:
     CallInstToParForEdgesMap callinstToHareParForEdgesMap; ///< Map a call instruction to its corresponding hare_parallel_for edges
 };
 
+} // End namespace SVF
 
 #endif /* RCG_H_ */

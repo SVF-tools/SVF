@@ -34,7 +34,11 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/ICFGEdge.h"
 
+namespace SVF
+{
+
 class ICFGNode;
+class RetBlockNode;
 class CallPE;
 class RetPE;
 class PAGEdge;
@@ -60,13 +64,13 @@ public:
 
     typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
     typedef ICFGEdge::ICFGEdgeSetTy::const_iterator const_iterator;
-    typedef std::set<const CallPE *> CallPESet;
-    typedef std::set<const RetPE *> RetPESet;
+    typedef DenseSet<const CallPE *> CallPESet;
+    typedef DenseSet<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL)
+    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL), bb(NULL)
     {
 
     }
@@ -77,11 +81,18 @@ public:
         return fun;
     }
 
+    /// Return the function of this ICFGNode
+    virtual const BasicBlock* getBB() const
+    {
+        return bb;
+    }
+
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend raw_ostream &operator<<(raw_ostream &o, const ICFGNode &node)
     {
-        o << "ICFGNode ID:" << node.getId();
+        o << node.toString();
         return o;
     }
     //@}
@@ -98,8 +109,12 @@ public:
         return VFGNodes;
     }
     ///@}
+
+    virtual const std::string toString() const;
+
 protected:
     const SVFFunction* fun;
+    const BasicBlock* bb;
     VFGNodeList VFGNodes; //< a set of VFGNodes
 
 };
@@ -113,6 +128,7 @@ class GlobalBlockNode : public ICFGNode
 public:
     GlobalBlockNode(NodeID id) : ICFGNode(id, GlobalBlock)
     {
+    	bb = NULL;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -132,6 +148,8 @@ public:
         return node->getNodeKind() == GlobalBlock;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -146,13 +164,13 @@ public:
     IntraBlockNode(NodeID id, const Instruction *i) : ICFGNode(id, IntraBlock), inst(i)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(inst->getFunction());
+        bb = inst->getParent();
     }
 
     inline const Instruction *getInst() const
     {
         return inst;
     }
-
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -171,6 +189,8 @@ public:
         return node->getNodeKind() == IntraBlock;
     }
     //@}
+
+    const std::string toString() const;
 };
 
 class InterBlockNode : public ICFGNode
@@ -261,6 +281,8 @@ public:
         return node->getNodeKind() == FunEntryBlock;
     }
     //@}
+
+    const virtual std::string toString() const;
 };
 
 /*!
@@ -315,6 +337,8 @@ public:
         return node->getNodeKind() == FunExitBlock;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -327,17 +351,32 @@ public:
     typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
 private:
     const Instruction* cs;
+    const RetBlockNode* ret;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(NULL)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        bb = cs->getParent();
     }
 
     /// Return callsite
     inline const Instruction* getCallSite() const
     {
         return cs;
+    }
+
+    /// Return callsite
+    inline const RetBlockNode* getRetBlockNode() const
+    {
+    	assert(ret && "RetBlockNode not set?");
+        return ret;
+    }
+
+    /// Return callsite
+    inline void setRetBlockNode(const RetBlockNode* r)
+    {
+        ret = r;
     }
 
     /// Return callsite
@@ -392,6 +431,8 @@ public:
         return node->getNodeKind() == FunCallBlock;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -410,6 +451,7 @@ public:
         InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
+        bb = cs->getParent();
     }
 
     /// Return callsite
@@ -456,7 +498,10 @@ public:
         return node->getNodeKind() == FunRetBlock;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
+} // End namespace SVF
 
 #endif /* ICFGNode_H_ */

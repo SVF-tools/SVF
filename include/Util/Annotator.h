@@ -11,6 +11,9 @@
 #include "Util/BasicTypes.h"
 #include <vector>
 
+namespace SVF
+{
+
 /*!
  * Program annotator to write meta data information on LLVM IR
  */
@@ -180,5 +183,7 @@ protected:
     const char* DR_CHECK;
     //@}
 };
+
+} // End namespace SVF
 
 #endif /* ANNOTATOR_H_ */

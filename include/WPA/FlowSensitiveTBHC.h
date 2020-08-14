@@ -15,6 +15,10 @@
 #include "MSSA/SVFGBuilder.h"
 #include "Util/TypeBasedHeapCloning.h"
 #include "WPA/FlowSensitive.h"
+
+namespace SVF
+{
+
 class SVFModule;
 
 /*!
@@ -86,7 +90,7 @@ public:
 protected:
     virtual void backPropagate(NodeID clone) override;
 
-    virtual void countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
+    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
 
 private:
     /// Determines whether each GEP is for a load or not. Builds gepIsLoad map.
@@ -108,5 +112,7 @@ private:
     /// Maps whether a (SVFG) GEP node is a load or not.
     NodeBS loadGeps;
 };
+
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVETYPEFILTER_H_ */

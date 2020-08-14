@@ -33,6 +33,10 @@
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/LLVMUtil.h"
+
+namespace SVF
+{
 
 /*
  * PAG node
@@ -90,7 +94,7 @@ public:
     {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
         assert((this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj) && "blackhole and constant obj do not have value");
-        assert(value && "value is null!!");
+        assert(value && "value is null (GepObjNode whose basenode is a DummyObj?)");
         return value;
     }
 
@@ -104,9 +108,7 @@ public:
 
     inline bool hasValue() const
     {
-        return (this->getNodeKind() != DummyValNode &&
-                this->getNodeKind() != DummyObjNode &&
-                (this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj)) ;
+        return value!=NULL;
     }
     /// Whether it is a pointer
     virtual inline bool isPointer() const
@@ -127,7 +129,7 @@ public:
     inline bool isConstantData() const
     {
         if (hasValue())
-            return SVFUtil::isa<ConstantData>(value) || SVFUtil::isa<ConstantAggregate>(value);
+            return SVFUtil::isConstantData(value);
         else
             return false;
     }
@@ -241,45 +243,15 @@ public:
         OutEdgeKindToSetMap[kind].insert(outEdge);
         addOutgoingEdge(outEdge);
     }
+
+    virtual const std::string toString() const;
+
     //@}
     /// Overloading operator << for dumping PAGNode value
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const PAGNode &node)
     {
-        o << "NodeID: " << node.getId() << "\t, Node Kind: ";
-        if (node.getNodeKind() == ValNode ||
-                node.getNodeKind() == GepValNode ||
-                node.getNodeKind() == DummyValNode)
-        {
-            o << "ValPN\n";
-        }
-        else if (node.getNodeKind() == ObjNode ||
-                 node.getNodeKind() == GepObjNode ||
-                 node.getNodeKind() == FIObjNode ||
-                 node.getNodeKind() == DummyObjNode)
-        {
-            o << "ObjPN\n";
-        }
-        else if (node.getNodeKind() == RetNode)
-        {
-            o << "RetPN\n";
-        }
-        else
-        {
-            o << "otherPN\n";
-        }
-        if (node.hasValue())
-        {
-            const Value *val = node.getValue();
-            if (const Function *fun = SVFUtil::dyn_cast<Function>(val))
-                o << "Value: function " << fun->getName().str();
-            else
-                o << "Value: " << *val;
-        }
-        else
-        {
-            o << "Empty Value";
-        }
+        o << node.toString();
         return o;
     }
     //@}
@@ -326,6 +298,8 @@ public:
             return value->getName();
         return "";
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -389,6 +363,8 @@ public:
     {
         return mem->getType();
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -455,6 +431,8 @@ public:
     {
         return fieldIdx;
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -529,6 +507,8 @@ public:
             return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
         return "offset_" + llvm::itostr(ls.getOffset());
     }
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -572,9 +552,11 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_field_insensitive";
-        return "field_insensitive";
+            return value->getName().str() + " (base object)";
+        return " (base object)";
     }
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -611,6 +593,8 @@ public:
     {
         return value->getName().str() + "_ret";
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -648,6 +632,8 @@ public:
     {
         return value->getName().str() + "_vararg";
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -687,6 +673,8 @@ public:
     {
         return "dummyVal";
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -726,6 +714,8 @@ public:
     {
         return "dummyObj";
     }
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -760,6 +750,8 @@ public:
     {
         return "clone of " + ObjPN::getValueName();
     }
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -794,6 +786,8 @@ public:
     {
         return "clone (gep) of " + GepObjPN::getValueName();
     }
+
+    virtual const std::string toString() const;
 };
 
 /*
@@ -828,6 +822,10 @@ public:
     {
         return "clone (FI) of " + FIObjPN::getValueName();
     }
+
+    virtual const std::string toString() const;
 };
+
+} // End namespace SVF
 
 #endif /* PAGNODE_H_ */

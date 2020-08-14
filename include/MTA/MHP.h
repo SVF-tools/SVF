@@ -12,6 +12,8 @@
 #include <set>
 #include <vector>
 
+namespace SVF
+{
 
 class ForkJoinAnalysis;
 class LockAnalysis;
@@ -528,4 +530,7 @@ private:
     PTACFInfoBuilder  ptaCFInfo; ///< PTA control flow info
     forkjoinToPTASCEVMap fkjnToPTASCEVMap; //< map a pointer at a fork/join site to its corresponing scev expression
 };
+
+} // End namespace SVF
+
 #endif /* MHP_H_ */

@@ -13,6 +13,7 @@
 #include "Util/SVFUtil.h"
 
 
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -56,6 +57,8 @@ static const SCEV *getSCEVMinusExpr(const SCEV *s1,const SCEV *s2, ScalarEvoluti
     return SE->getMinusSCEV(s1, s2);
 }
 
+namespace SVF
+{
 
 // Subclassing RCResultValidator to define the abstract methods.
 class MHPValidator : public RaceResultValidator
@@ -72,6 +75,7 @@ private:
     MHP *mhp;
 };
 
+} // End namespace SVF
 
 /*!
  * Constructor
@@ -99,9 +103,9 @@ void MHP::analyze()
 
     DBOUT(DGENERAL, outs() << pasMsg("MHP interleaving analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MHP interleaving analysis\n"));
-    DOTIMESTAT(double interleavingStart = PTAStat::getClk());
+    DOTIMESTAT(double interleavingStart = PTAStat::getClk(true));
     analyzeInterleaving();
-    DOTIMESTAT(double interleavingEnd = PTAStat::getClk());
+    DOTIMESTAT(double interleavingEnd = PTAStat::getClk(true));
     DOTIMESTAT(interleavingTime += (interleavingEnd - interleavingStart) / TIMEINTERVAL);
 
 }

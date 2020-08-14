@@ -31,6 +31,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 u32_t AndersenStat::_MaxPtsSize = 0;
@@ -60,7 +61,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
     _NumOfCycles = 0;
     _NumOfPWCCycles = 0;
     _NumOfNodesInCycles = 0;
-    std::set<NodeID> repNodes;
+    DenseNodeSet repNodes;
     repNodes.clear();
     for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
     {
@@ -72,7 +73,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
         {
             NodeID nodeId = *it;
             PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
-            if (SVFUtil::isa<ObjPN>(pagNode) && consCG->isFieldInsensitiveObj(nodeId))
+            if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
                 clone.reset(nodeId);

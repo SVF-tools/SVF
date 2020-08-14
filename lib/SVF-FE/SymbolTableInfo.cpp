@@ -38,6 +38,7 @@
 #include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace std;
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -248,8 +249,8 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
-    llvm::APInt byteOffset(64,0,true);
     DataLayout * dataLayout = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+    llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
         Size_t bo = byteOffset.getSExtValue();
@@ -654,9 +655,9 @@ void SymbolTableInfo::collectObj(const Value *val)
     ValueToIDMapTy::iterator iter = objSymMap.find(val);
     if (iter == objSymMap.end())
     {
-        // if the object pointed by the pointer is a constant object (e.g. string)
+        // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if(isConstantObjSym(val) && !getModelConstants())
+        if(isConstantData(val) || (isConstantObjSym(val) && !getModelConstants()))
         {
             objSymMap.insert(std::make_pair(val, constantSymID()));
         }
@@ -754,7 +755,7 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val)
             return v->isConstant();
         }
     }
-    return SVFUtil::isa<ConstantData>(val) || SVFUtil::isa<ConstantAggregate>(val);
+    return SVFUtil::isConstantData(val);
 }
 
 

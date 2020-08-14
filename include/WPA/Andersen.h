@@ -37,6 +37,9 @@
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
 
+namespace SVF
+{
+
 class PTAType;
 class SVFModule;
 /*!
@@ -50,7 +53,7 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef std::map<CallSite, NodeID> CallSite2DummyValPN;
+    typedef DenseMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Pass ID
     static char ID;
@@ -78,7 +81,7 @@ public:
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL), diffOpt(true), pwcOpt(false)
+        :  BVDataPTAImpl(_pag, type, alias_check), pwcOpt(false), diffOpt(true), consCG(NULL)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -185,7 +188,7 @@ public:
             setSCCEdgeFlag(ConstraintNode::Copy);
     }
 
-    const bool mergePWC() const
+    bool mergePWC() const
     {
         return pwcOpt;
     }
@@ -195,7 +198,7 @@ public:
         diffOpt = flag;
     }
 
-    const bool enableDiff() const
+    bool enableDiff() const
     {
         return diffOpt;
     }
@@ -333,7 +336,7 @@ protected:
             NodeBS fldInsenObjs;
             for(NodeBS::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
             {
-                if(consCG->isFieldInsensitiveObj(*pit))
+                if(isFieldInsensitive(*pit))
                     fldInsenObjs.set(*pit);
             }
             for(NodeBS::iterator pit = fldInsenObjs.begin(), epit = fldInsenObjs.end(); pit!=epit; ++pit)
@@ -350,12 +353,12 @@ protected:
     }
 
     /// match types for Gep Edges
-    virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge)
+    virtual bool matchType(NodeID, NodeID, const NormalGepCGEdge*)
     {
         return true;
     }
     /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge)
+    virtual void addTypeForGepObjNode(NodeID, const NormalGepCGEdge*)
     {
         return;
     }
@@ -406,7 +409,7 @@ protected:
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
 
     /// process "bitcast" CopyCGEdge
-    virtual void processCast(const ConstraintEdge *edge)
+    virtual void processCast(const ConstraintEdge*)
     {
         return;
     }
@@ -422,7 +425,7 @@ class AndersenWaveDiffWithType : public AndersenWaveDiff
 
 private:
 
-    typedef std::map<NodeID, std::set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
+    typedef DenseMap<NodeID, DenseSet<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
 
     TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
 
@@ -431,12 +434,12 @@ private:
         TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
         if (it != typeMismatchedObjToEdges.end())
         {
-            std::set<const GepCGEdge*> &edges = it->second;
+            DenseSet<const GepCGEdge*> &edges = it->second;
             edges.insert(gepEdge);
         }
         else
         {
-            std::set<const GepCGEdge*> edges;
+            DenseSet<const GepCGEdge*> edges;
             edges.insert(gepEdge);
             typeMismatchedObjToEdges[obj] = edges;
         }
@@ -459,7 +462,7 @@ private:
     //@}
 
 public:
-    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(pag,type)
+    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
     {
         assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
     }
@@ -514,7 +517,7 @@ private:
 
 public:
     AndersenLCD(PAG* _pag, PTATY type = AndersenLCD_WPA) :
-        Andersen(_pag, type), lcdCandidates( {}), metEdges({})
+        Andersen(_pag, type), metEdges({}), lcdCandidates( {})
     {
     }
 
@@ -667,7 +670,7 @@ private:
 
 public:
     AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
-        AndersenHCD(_pag, type), AndersenLCD(_pag, type), Andersen(_pag, type)
+        Andersen(_pag, type), AndersenHCD(_pag, type), AndersenLCD(_pag, type)
     {
     }
 
@@ -710,5 +713,7 @@ protected:
     }
 
 };
+
+} // End namespace SVF
 
 #endif /* ANDERSENPASS_H_ */

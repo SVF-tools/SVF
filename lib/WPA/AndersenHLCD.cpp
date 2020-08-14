@@ -29,6 +29,7 @@
 
 #include "WPA/Andersen.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 AndersenHLCD *AndersenHLCD::hlcdAndersen = nullptr;

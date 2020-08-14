@@ -14,6 +14,7 @@
 #include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::RegisterPass<MTA> RACEDETECOR("pmhp", "May-Happen-in-Parallel Analysis");

@@ -14,6 +14,9 @@
 #include "DDA/DDAClient.h"
 #include "Util/SCC.h"
 
+namespace SVF
+{
+
 /*!
  * Demand-Driven Pointer Analysis.
  * This class performs various pointer analysis on the given module.
@@ -25,7 +28,7 @@ public:
     /// Pass ID
     static char ID;
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef std::set<const SVFGEdge*> SVFGEdgeSet;
+    typedef DenseSet<const SVFGEdge*> SVFGEdgeSet;
     typedef std::vector<PointerAnalysis*> PTAVector;
 
     DDAPass() : ModulePass(ID), _pta(NULL), _client(NULL) {}
@@ -56,13 +59,10 @@ public:
     virtual AliasResult alias(NodeID V1, NodeID V2);
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module);
+    virtual void runOnModule(SVFModule* module);
 
     /// We start from here
-    virtual bool runOnModule(Module& module)
-    {
-        return runOnModule(module);
-    }
+    virtual bool runOnModule(Module& module);
 
     /// Select a client
     virtual void selectClient(SVFModule* module);
@@ -93,5 +93,6 @@ private:
 
 };
 
+} // End namespace SVF
 
 #endif /* WPA_H_ */

@@ -43,6 +43,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
@@ -718,9 +719,9 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
     size_t idx = getVCallIdx(cs);
     /// get the function name of the virtual callsite
     string funName = getFunNameOfVCallSite(cs);
-    for (VTableSet::iterator it = vtbls.begin(), eit = vtbls.end(); it != eit; ++it)
+    for (const GlobalValue *vt : vtbls)
     {
-        const CHNode *child = getNode(getClassNameFromVtblObj(*it));
+        const CHNode *child = getNode(getClassNameFromVtblObj(vt));
         if (child == NULL)
             continue;
         CHNode::FuncVector vfns;
@@ -906,4 +907,4 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
         }
     }
 };
-}
+} // End namespace llvm

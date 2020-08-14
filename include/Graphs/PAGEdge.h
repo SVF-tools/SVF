@@ -35,6 +35,9 @@
 #include "MemoryModel/LocationSet.h"
 #include "Graphs/ICFGNode.h"
 
+namespace SVF
+{
+
 class PAGNode;
 
 /*
@@ -70,7 +73,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const PAGEdge*)
     {
         return true;
     }
@@ -150,6 +153,18 @@ public:
         return (label << EdgeKindMaskBits) | k;
     }
 
+    virtual const std::string toString() const;
+
+    //@}
+    /// Overloading operator << for dumping PAGNode value
+    //@{
+    friend raw_ostream& operator<< (raw_ostream &o, const PAGEdge &edge)
+    {
+        o << edge.toString();
+        return o;
+    }
+    //@}
+
     typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
     typedef DenseMap<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
@@ -193,6 +208,8 @@ public:
     AddrPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Addr)
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -226,6 +243,8 @@ public:
     CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy)
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -259,6 +278,8 @@ public:
     CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp)
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -292,6 +313,8 @@ public:
     BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp)
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -327,6 +350,8 @@ public:
         PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st))
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -361,6 +386,8 @@ public:
     LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load)
     {
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -399,6 +426,8 @@ protected:
     {
 
     }
+
+    virtual const std::string toString() const;
 };
 
 
@@ -448,6 +477,8 @@ public:
     {
         return ls;
     }
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -483,6 +514,9 @@ public:
 
     /// constructor
     VariantGepPE(PAGNode* s, PAGNode* d) : GepPE(s,d,PAGEdge::VariantGep) {}
+
+    virtual const std::string toString() const;
+
 };
 
 
@@ -506,17 +540,19 @@ public:
     }
     static inline bool classof(const PAGEdge *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call;
+        return edge->getEdgeKind() == PAGEdge::Call
+        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call;
+        return edge->getEdgeKind() == PAGEdge::Call
+        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
     }
     //@}
 
     /// constructor
-    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Call,i)), inst(i)
+    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Call) :
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -531,6 +567,8 @@ public:
         return inst;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -554,17 +592,19 @@ public:
     }
     static inline bool classof(const PAGEdge *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::Ret
+			|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret;
+        return edge->getEdgeKind() == PAGEdge::Ret
+    		|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
     }
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::Ret,i)), inst(i)
+    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Ret) :
+        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -579,20 +619,21 @@ public:
         return inst;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
 /*!
  * Thread Fork Edge
  */
-class TDForkPE: public PAGEdge
+class TDForkPE: public CallPE
 {
 private:
     TDForkPE();                      ///< place holder
     TDForkPE(const TDForkPE &);  ///< place holder
     void operator=(const TDForkPE &); ///< place holder
 
-    const CallBlockNode* inst;		///< llvm instruction at the fork site
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -612,21 +653,11 @@ public:
 
     /// constructor
     TDForkPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadFork,i)), inst(i)
+        CallPE(s,d,i,PAGEdge::ThreadFork)
     {
     }
 
-    /// Get method for the instruction at the fork site
-    //@{
-    inline const CallBlockNode* getCallInst() const
-    {
-        return inst;
-    }
-    inline const CallBlockNode* getCallSite() const
-    {
-        return inst;
-    }
-    //@}
+    virtual const std::string toString() const;
 };
 
 
@@ -634,14 +665,13 @@ public:
 /*!
  * Thread Join Edge
  */
-class TDJoinPE: public PAGEdge
+class TDJoinPE: public RetPE
 {
 private:
     TDJoinPE();                      ///< place holder
     TDJoinPE(const TDJoinPE &);  ///< place holder
     void operator=(const TDJoinPE &); ///< place holder
 
-    const CallBlockNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -661,20 +691,13 @@ public:
 
     /// Constructor
     TDJoinPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(PAGEdge::ThreadJoin,i)), inst(i)
+        RetPE(s,d,i,PAGEdge::ThreadJoin)
     {
     }
 
-    /// Get method for the instruction at the join site
-    //@{
-    inline const CallBlockNode* getCallInst() const
-    {
-        return inst;
-    }
-    inline const CallBlockNode* getCallSite() const
-    {
-        return inst;
-    }
-    //@}
+    virtual const std::string toString() const;
 };
+
+} // End namespace SVF
+
 #endif /* PAGEDGE_H_ */

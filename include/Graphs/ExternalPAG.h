@@ -14,6 +14,9 @@
 
 extern llvm::cl::list<std::string> DumpPAGFunctions;
 
+namespace SVF
+{
+
 /// Represents the PAG of a function loaded externally (i.e. from file).
 /// It's purpose is to be attached to the main PAG (almost) seamlessly.
 class ExternalPAG
@@ -21,19 +24,19 @@ class ExternalPAG
 private:
     /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
-    static std::map<const SVFFunction*, std::map<int, PAGNode *>>
+    static DenseMap<const SVFFunction*, DenseMap<int, PAGNode *>>
             functionToExternalPAGEntries;
-    static std::map<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
+    static DenseMap<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
 
     /// Name of the function this external PAG represents.
     std::string functionName;
 
     /// Value nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    std::set<NodeID> valueNodes;
+    DenseNodeSet valueNodes;
     /// Object nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    std::set<NodeID> objectNodes;
+    DenseNodeSet objectNodes;
     /// Edges in this external PAG, represented by the parts of an Edge because
     /// we will rebuild these edges in the main PAG.
     std::set<std::tuple<NodeID, NodeID, std::string, int>>edges;
@@ -42,7 +45,7 @@ private:
 
     /// Nodes in the ExternalPAG which call edges should connect to.
     /// argNodes[0] is arg 0, argNodes[1] is arg 1, ...
-    std::map<int, NodeID> argNodes;
+    DenseMap<int, NodeID> argNodes;
     /// Node from which return edges connect.
     NodeID returnNode;
 
@@ -98,11 +101,11 @@ public:
         return functionName;
     }
 
-    std::set<NodeID> &getValueNodes()
+    DenseNodeSet &getValueNodes()
     {
         return valueNodes;
     }
-    std::set<NodeID> &getObjectNodes()
+    DenseNodeSet &getObjectNodes()
     {
         return objectNodes;
     }
@@ -111,7 +114,7 @@ public:
         return edges;
     }
 
-    std::map<int, NodeID> &getArgNodes()
+    DenseMap<int, NodeID> &getArgNodes()
     {
         return argNodes;
     }
@@ -138,5 +141,7 @@ public:
     bool addExternalPAG(const SVFFunction* function);
 
 };
+
+} // End namespace SVF
 
 #endif  /* EXTERNALPAG_H_ */

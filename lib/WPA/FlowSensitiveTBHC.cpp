@@ -13,6 +13,8 @@
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 
+using namespace SVF;
+
 /// Whether we allow reuse for TBHC.
 static llvm::cl::opt<bool> TBHCStoreReuse("tbhc-store-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse in at stores in FSTBHC"));
 static llvm::cl::opt<bool> TBHCAllReuse("tbhc-all-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse everywhere in FSTBHC"));
@@ -656,9 +658,9 @@ void FlowSensitiveTBHC::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     }
 }
 
-void FlowSensitiveTBHC::countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
+void FlowSensitiveTBHC::countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
 {
-    std::map<std::pair<NodeID, NodeID>, PointsTo> filteredPts;
+    DenseMap<std::pair<NodeID, NodeID>, PointsTo> filteredPts;
     for (std::pair<NodeID, NodeID> locP : cmp)
     {
         const PointsTo &filterSet = getFilterSet(locP.first);

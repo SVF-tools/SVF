@@ -33,6 +33,10 @@
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
+
+namespace SVF
+{
+
 class AndersenWaveDiff;
 class SVFModule;
 
@@ -93,7 +97,7 @@ public:
     }
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module)
+    virtual bool runOnModule(SVFModule*)
     {
         return false;
     }
@@ -238,7 +242,7 @@ protected:
     virtual void printCTirAliasStats(void);
 
     /// Fills may/noAliases for the location/pointer pairs in cmp.
-    virtual void countAliases(std::set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
+    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
 
     SVFG* svfg;
     ///Get points-to set for a node from data flow IN/OUT set at a statement.
@@ -304,5 +308,7 @@ protected:
 
     void svfgStat();
 };
+
+} // End namespace SVF
 
 #endif /* FLOWSENSITIVEANALYSIS_H_ */

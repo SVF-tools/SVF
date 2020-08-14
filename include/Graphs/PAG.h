@@ -36,6 +36,9 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 
+namespace SVF
+{
+
 /*!
  * Program Assignment Graph for pointer analysis
  * SymID and NodeID are equal here (same numbering).
@@ -44,31 +47,32 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 {
 
 public:
-    typedef std::set<const CallBlockNode*> CallSiteSet;
-    typedef std::map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
-    typedef std::map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
+    typedef DenseSet<const CallBlockNode*> CallSiteSet;
+    typedef DenseMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef DenseMap<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
-    typedef std::set<const PAGEdge*> PAGEdgeSet;
-    typedef std::list<const PAGEdge*> PAGEdgeList;
-    typedef std::list<const PAGNode*> PAGNodeList;
-    typedef std::list<const CopyPE*> CopyPEList;
-    typedef std::list<const BinaryOPPE*> BinaryOPList;
-    typedef std::list<const CmpPE*> CmpPEList;
-    typedef std::map<const PAGNode*,CopyPEList> PHINodeMap;
-    typedef std::map<const PAGNode*,BinaryOPList> BinaryNodeMap;
-    typedef std::map<const PAGNode*,CmpPEList> CmpNodeMap;
+    typedef DenseSet<const PAGEdge*> PAGEdgeSet;
+    typedef std::vector<const PAGEdge*> PAGEdgeList;
+    typedef std::vector<const PAGNode*> PAGNodeList;
+    typedef std::vector<const CopyPE*> CopyPEList;
+    typedef std::vector<const BinaryOPPE*> BinaryOPList;
+    typedef std::vector<const CmpPE*> CmpPEList;
+    typedef DenseMap<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef DenseMap<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef DenseMap<const PAGNode*,CmpPEList> CmpNodeMap;
     typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
-    typedef std::map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
-    typedef std::map<const RetBlockNode*,const PAGNode*> CSToRetMap;
+    typedef DenseMap<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
+    typedef DenseMap<const RetBlockNode*,const PAGNode*> CSToRetMap;
     typedef DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
     typedef DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
-    typedef std::map<NodeID, NodeID> NodeToNodeMap;
+    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef DenseMap<NodeOffset,NodeID,DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
     typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef std::map<NodePair,NodeID> NodePairSetMap;
+    typedef std::map<const Value*, NodeLocationSetMap> GepValPNMap;
+    typedef DenseMap<NodePair,NodeID> NodePairSetMap;
 
 private:
     SymbolTableInfo* symInfo;
@@ -78,7 +82,7 @@ private:
     PAGEdge::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < PAG edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
     Inst2PAGEdgesMap inst2PAGEdgesMap;	///< Map a instruction to its PAGEdges
     Inst2PAGEdgesMap inst2PTAPAGEdgesMap;	///< Map a instruction to its PointerAnalysis related PAGEdges
-    NodeLocationSetMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
+    GepValPNMap GepValNodeMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjNodeMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
@@ -283,14 +287,14 @@ public:
     /// Add function arguments
     inline void addFunArgs(const SVFFunction* fun, const PAGNode* arg)
     {
-        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryICFGNode(fun);
+        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
     inline void addFunRet(const SVFFunction* fun, const PAGNode* ret)
     {
-        FunExitBlockNode* funExitBlockNode = icfg->getFunExitICFGNode(fun);
+        FunExitBlockNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
@@ -402,13 +406,20 @@ public:
     }
     //@}
 
-    inline NodeID getGepValNode(NodeID base, const LocationSet& ls) const
+    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
+    inline NodeID getGepValNode(const Value* curInst, NodeID base, const LocationSet& ls) const
     {
-        NodeLocationSetMap::const_iterator iter = GepValNodeMap.find(std::make_pair(base, ls));
-        if(iter==GepValNodeMap.end())
+        GepValPNMap::const_iterator iter = GepValNodeMap.find(curInst);
+        if(iter==GepValNodeMap.end()){
             return -1;
-        else
-            return iter->second;
+        }
+        else{
+            NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
+            if(lit==iter->second.end())
+                return -1;
+            else
+                return lit->second;
+        }
     }
 
     /// Add/get indirect callsites
@@ -421,7 +432,7 @@ public:
     {
         bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
         funPtrToCallSitesMap[funPtr].insert(cs);
-        assert(added && "fail to add the indirect callsite?");
+        assert(added && "adding the same indirect callsite twice?");
     }
     inline NodeID getFunPtr(const CallBlockNode* cs) const
     {
@@ -682,7 +693,7 @@ public:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValNode
-    NodeID addGepValNode(const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
+    NodeID addGepValNode(const Value* curInst,const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
     /// Add a field obj node, this method can only invoked by getGepObjNode
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode
@@ -727,22 +738,22 @@ public:
     //@}
 
     /// Add a value (pointer) node
-    inline NodeID addValNode(const Value* val, PAGNode *node, NodeID i)
+    inline NodeID addValNode(const Value*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a memory obj node
-    inline NodeID addObjNode(const Value* val, PAGNode *node, NodeID i)
+    inline NodeID addObjNode(const Value*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
-    inline NodeID addRetNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    inline NodeID addRetNode(const SVFFunction*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
     /// Add a unique vararg node for a procedure
-    inline NodeID addVarargNode(const SVFFunction* val, PAGNode *node, NodeID i)
+    inline NodeID addVarargNode(const SVFFunction*, PAGNode *node, NodeID i)
     {
         return addNode(node,i);
     }
@@ -810,24 +821,29 @@ public:
 
 };
 
+} // End namespace SVF
+
 namespace llvm
 {
+
 /* !
  * GraphTraits specializations of PAG to be used for the generic graph algorithms.
  * Provide graph traits for tranversing from a PAG node using standard graph traversals.
  */
-template<> struct GraphTraits<PAGNode*> : public GraphTraits<GenericNode<PAGNode,PAGEdge>*  >
+template<> struct GraphTraits<SVF::PAGNode*> : public GraphTraits<SVF::GenericNode<SVF::PAGNode,SVF::PAGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for PAG node, it is used for inverse traversal.
-template<> struct GraphTraits<Inverse<PAGNode *> > : public GraphTraits<Inverse<GenericNode<PAGNode,PAGEdge>* > >
+template<> struct GraphTraits<Inverse<SVF::PAGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::PAGNode,SVF::PAGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<PAG*> : public GraphTraits<GenericGraph<PAGNode,PAGEdge>* >
+template<> struct GraphTraits<SVF::PAG*> : public GraphTraits<SVF::GenericGraph<SVF::PAGNode,SVF::PAGEdge>* >
 {
-    typedef PAGNode *NodeRef;
+    typedef SVF::PAGNode *NodeRef;
 };
-}
+
+} // End namespace llvm
+
 #endif /* PAG_H_ */

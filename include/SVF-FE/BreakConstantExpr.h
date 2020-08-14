@@ -17,6 +17,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 //
 // Pass: BreakConstantGEPs
 //
@@ -97,5 +100,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif

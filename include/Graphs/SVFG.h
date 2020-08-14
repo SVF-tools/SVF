@@ -33,6 +33,9 @@
 #include "Graphs/VFG.h"
 #include "Graphs/SVFGNode.h"
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class SVFGStat;
 
@@ -63,6 +66,7 @@ class SVFG : public VFG
 {
     friend class SVFGBuilder;
     friend class SaberSVFGBuilder;
+    friend class TaintSVFGBuilder;
     friend class DDASVFGBuilder;
     friend class MTASVFGBuilder;
     friend class RcSvfgBuilder;
@@ -75,8 +79,8 @@ public:
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef std::map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef std::map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef DenseMap<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef DenseMap<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
     typedef DenseMap<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
     typedef DenseMap<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
@@ -134,6 +138,12 @@ public:
     inline MemSSA* getMSSA() const
     {
         return mssa;
+    }
+
+    /// Get Pointer Analysis
+    inline PointerAnalysis* getPTA() const
+    {
+        return pta;
     }
 
     /// Get a SVFG node
@@ -224,7 +234,6 @@ public:
     /// Whether a node is callsite return SVFGNode
     const CallBlockNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
-protected:
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge)
     {
@@ -236,6 +245,18 @@ protected:
         removeVFGNode(node);
     }
 
+    /// Add SVFG edge
+    inline bool addSVFGEdge(SVFGEdge* edge)
+    {
+        return addVFGEdge(edge);
+    }
+
+    /// Return total SVFG node number
+    inline const u32_t getSVFGNodeNum() const {
+        return nodeNum;
+    }
+
+protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
@@ -270,7 +291,7 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode* cs, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
@@ -309,11 +330,6 @@ protected:
     }
     //@}
 
-    /// Add SVFG edge
-    inline bool addSVFGEdge(SVFGEdge* edge)
-    {
-        return addVFGEdge(edge);
-    }
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
     //@{
@@ -371,7 +387,7 @@ protected:
     inline void addFormalINSVFGNode(const MemSSA::ENTRYCHI* chi)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++,chi);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(chi->getFunction()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(chi->getFunction()));
         setDef(chi->getResVer(),sNode);
         funToFormalINMap[chi->getFunction()].set(sNode->getId());
     }
@@ -379,7 +395,7 @@ protected:
     inline void addFormalOUTSVFGNode(const MemSSA::RETMU* mu)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++,mu);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(mu->getFunction()));
+        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(mu->getFunction()));
         funToFormalOUTMap[mu->getFunction()].set(sNode->getId());
     }
     /// Add memory callsite mu SVFG node
@@ -428,24 +444,27 @@ protected:
     //@}
 };
 
+} // End namespace SVF
+
 namespace llvm
 {
 /* !
  * GraphTraits specializations for SVFG to be used for generic graph algorithms.
  * Provide graph traits for traversing from a SVFG node using standard graph traversals.
  */
-//template<> struct GraphTraits<SVFGNode*>: public GraphTraits<GenericNode<SVFGNode,SVFGEdge>*  > {
+//template<> struct GraphTraits<SVF::SVFGNode*>: public GraphTraits<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>*  > {
 //};
 //
 ///// Inverse GraphTraits specializations for Value flow node, it is used for inverse traversal.
 //template<>
-//struct GraphTraits<Inverse<SVFGNode *> > : public GraphTraits<Inverse<GenericNode<SVFGNode,SVFGEdge>* > > {
+//struct GraphTraits<Inverse<SVF::SVFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {
 //};
 
-template<> struct GraphTraits<SVFG*> : public GraphTraits<GenericGraph<SVFGNode,SVFGEdge>* >
+template<> struct GraphTraits<SVF::SVFG*> : public GraphTraits<SVF::GenericGraph<SVF::SVFGNode,SVF::SVFGEdge>* >
 {
-    typedef SVFGNode *NodeRef;
+    typedef SVF::SVFGNode *NodeRef;
 };
-}
+
+} // End namespace llvm
 
 #endif /* SVFG_H_ */

@@ -32,6 +32,7 @@
 #include "Graphs/SVFGStat.h"
 #include "SVF-FE/PAGBuilder.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),

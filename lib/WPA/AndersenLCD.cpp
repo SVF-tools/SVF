@@ -29,6 +29,7 @@
 
 #include "WPA/Andersen.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 AndersenLCD* AndersenLCD::lcdAndersen = nullptr;

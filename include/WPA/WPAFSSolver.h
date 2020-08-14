@@ -38,6 +38,9 @@
 
 #include "WPA/WPASolver.h"
 
+namespace SVF
+{
+
 /*!
  * Flow-sensitive Solver
  */
@@ -245,5 +248,7 @@ private:
 
     NodeBS candidates;	///< nodes which need to be analyzed in current iteration.
 };
+
+} // End namespace SVF
 
 #endif /* WPAFSSOLVER_H_ */

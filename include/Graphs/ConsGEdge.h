@@ -36,6 +36,9 @@
 #include <map>
 #include <set>
 
+namespace SVF
+{
+
 class ConstraintNode;
 /*!
  * Self-defined edge for constraint resolution
@@ -301,7 +304,7 @@ public:
     }
 
     /// Get location set of the gep edge
-    inline const u32_t getOffset() const
+    inline u32_t getOffset() const
     {
         return ls.getOffset();
     }
@@ -344,5 +347,6 @@ public:
     {}
 };
 
+} // End namespace SVF
 
 #endif /* CONSGEDGE_H_ */

@@ -32,6 +32,9 @@
 
 #include "Graphs/SVFGOPT.h"
 
+namespace SVF
+{
+
 /*!
  * Dominator frontier used in MSSA
  */
@@ -116,5 +119,7 @@ protected:
     /// SVFG with precomputed indirect call edges
     bool SVFGWithIndCall;
 };
+
+} // End namespace SVF
 
 #endif /* ANDERSENMEMSSA_H_ */

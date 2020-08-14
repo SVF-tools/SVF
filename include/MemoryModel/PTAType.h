@@ -34,6 +34,9 @@
 #include <map>
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 class PAGNode;
 class PAG;
 
@@ -359,5 +362,7 @@ private:
     std::set<PTAType> allPTATypes;
     TypeToVarsMapTy typeToVarsMap;
 };
+
+} // End namespace SVF
 
 #endif /* PTATYPE_H_ */

@@ -15,6 +15,8 @@
 
 #include "llvm/IR/DebugInfo.h"
 
+using namespace SVF;
+
 static llvm::cl::opt<bool> printDCHG("print-dchg", llvm::cl::init(false), llvm::cl::desc("print the DCHG if debug information is available"));
 
 void DCHGraph::handleDIBasicType(const DIBasicType *basicType)
@@ -1134,7 +1136,7 @@ void DCHGraph::print(void)
     SVFUtil::outs() << thickLine;
     unsigned numStructs = 0;
     unsigned largestStruct = 0;
-    std::set<NodeID> nodes;
+    DenseNodeSet nodes;
     for (DCHGraph::const_iterator it = begin(); it != end(); ++it)
     {
         nodes.insert(it->first);

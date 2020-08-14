@@ -31,10 +31,14 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
         llvm::cl::desc("Hanle blackhole edge"));
+
+static llvm::cl::opt<bool> FirstFieldEqBase("ff-eq-base", llvm::cl::init(true),
+        llvm::cl::desc("Treat base objects as their first fields"));
 
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
@@ -42,6 +46,243 @@ u64_t PAGEdge::storeEdgeLabelCounter = 0;
 PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = NULL;
+
+
+const std::string PAGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "PAGNode ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string ValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ValPN ID: " << getId();
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+const std::string ObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ObjPN ID: " << getId();
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+const std::string GepValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepValPN ID: " << getId() << " with offset_" + llvm::utostr(getOffset());
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+
+const std::string GepObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepObjPN ID: " << getId() << " with offset_" + llvm::itostr(ls.getOffset());
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+const std::string FIObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FIObjPN ID: " << getId() << " (base object)";
+    if(value){
+        rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+const std::string RetPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetPN ID: " << getId() << " unique return node for function " << SVFUtil::cast<Function>(value)->getName();
+    return rawstr.str();
+}
+
+const std::string VarArgPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VarArgPN ID: " << getId() << " Var arg node for function " << SVFUtil::cast<Function>(value)->getName();
+    return rawstr.str();
+}
+
+const std::string DummyValPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "DummyValPN ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string DummyObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "DummyObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string CloneDummyObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneDummyObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string CloneGepObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneGepObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string CloneFIObjPN::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CloneFIObjPN ID: " << getId();
+    return rawstr.str();
+}
+
+const std::string PAGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "PAGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string AddrPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "AddrPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string CopyPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CopyPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string CmpPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CmpPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string BinaryOPPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "BinaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string LoadPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "LoadPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string StorePE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "StorePE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string GepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string NormalGepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string VariantGepPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string CallPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string RetPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string TDForkPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "TDForkPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
+const std::string TDJoinPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "TDJoinPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
 
 
 PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0)
@@ -298,14 +539,15 @@ VariantGepPE* PAG::addVariantGepPE(NodeID src, NodeID dst)
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
+ * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
  */
-NodeID PAG::addGepValNode(const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
+NodeID PAG::addGepValNode(const Value* curInst,const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
 {
     NodeID base = getBaseValNode(getValueNode(gepVal));
     //assert(findPAGNode(i) == false && "this node should not be created before");
-    assert(0==GepValNodeMap.count(std::make_pair(base, ls))
+    assert(0==GepValNodeMap[curInst].count(std::make_pair(base, ls))
            && "this node should not be created before");
-    GepValNodeMap[std::make_pair(base, ls)] = i;
+    GepValNodeMap[curInst][std::make_pair(base, ls)] = i;
     GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
     return addValNode(gepVal, node, i);
 }
@@ -338,6 +580,9 @@ NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls)
 NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
 {
     NodeID base = getObjectNode(obj);
+
+    // Base and first field are the same memory location.
+    if (FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
@@ -923,4 +1168,4 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         return "";
     }
 };
-}
+} // End namespace llvm

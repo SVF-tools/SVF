@@ -60,6 +60,9 @@
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
 
+namespace SVF
+{
+
 class BddCond;
 
 
@@ -217,7 +220,6 @@ using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
 template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
 using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
-
 class SVFFunction : public SVFValue
 {
 private:
@@ -291,5 +293,7 @@ public:
     }
 
 };
+
+} // End namespace SVF
 
 #endif /* BASICTYPES_H_ */

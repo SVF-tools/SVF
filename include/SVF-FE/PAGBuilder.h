@@ -34,6 +34,8 @@
 #include "Util/ExtAPI.h"
 #include "SVF-FE/ICFGBuilder.h"
 
+namespace SVF
+{
 
 class SVFModule;
 /*!
@@ -59,7 +61,7 @@ public:
     }
 
     /// Start building PAG here
-    PAG* build(SVFModule* svfModule);
+    virtual PAG* build(SVFModule* svfModule);
 
     /// Return PAG
     PAG* getPAG() const
@@ -168,7 +170,7 @@ public:
     void visitCmpInst(CmpInst &I);
 
     /// TODO: do we need to care about these corner cases?
-    void visitVAArgInst(VAArgInst &I)
+    void visitVAArgInst(VAArgInst&)
     {
     }
     void visitExtractElementInst(ExtractElementInst &I);
@@ -187,10 +189,10 @@ public:
     }
 
     /// Instruction not that often
-    void visitResumeInst(ResumeInst &I)   /*returns void*/
+    void visitResumeInst(ResumeInst&)   /*returns void*/
     {
     }
-    void visitUnreachableInst(UnreachableInst &I)   /*returns void*/
+    void visitUnreachableInst(UnreachableInst&)   /*returns void*/
     {
     }
     void visitFenceInst(FenceInst &I)   /*returns void*/
@@ -207,7 +209,7 @@ public:
     }
 
     /// Provide base case for our instruction visit.
-    inline void visitInstruction(Instruction &I)
+    inline void visitInstruction(Instruction&)
     {
         // If a new instruction is added to LLVM that we don't handle.
         // TODO: ignore here:
@@ -361,5 +363,7 @@ public:
     //@}
 
 };
+
+} // End namespace SVF
 
 #endif /* PAGBUILDER_H_ */

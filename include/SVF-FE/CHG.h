@@ -35,6 +35,9 @@
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class SVFModule;
 class CHNode;
 
@@ -173,12 +176,12 @@ typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
 public:
-    typedef std::set<const CHNode*> CHNodeSetTy;
+    typedef DenseSet<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef std::map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef std::map<CallSite, VTableSet> CallSiteToVTableSetMap;
-    typedef std::map<CallSite, VFunSet> CallSiteToVFunSetMap;
+    typedef DenseMap<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef DenseMap<CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef DenseMap<CallSite, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum
     {
@@ -217,7 +220,7 @@ public:
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        std::map<const SVFFunction*, s32_t>::const_iterator it =
+        DenseMap<const SVFFunction*, s32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
@@ -226,7 +229,7 @@ public:
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const
     {
-        std::map<const SVFFunction*, s32_t>::const_iterator it, eit;
+        DenseMap<const SVFFunction*, s32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -294,11 +297,12 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallSiteToCHNodesMap csToClassesMap;
 
-    std::map<const SVFFunction*, s32_t> virtualFunctionToIDMap;
+    DenseMap<const SVFFunction*, s32_t> virtualFunctionToIDMap;
     CallSiteToVTableSetMap csToCHAVtblsMap;
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -306,21 +310,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<CHNode*> : public GraphTraits<GenericNode<CHNode,CHEdge>*  >
+template<> struct GraphTraits<SVF::CHNode*> : public GraphTraits<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<CHNode*> > : public GraphTraits<Inverse<GenericNode<CHNode,CHEdge>* > >
+struct GraphTraits<Inverse<SVF::CHNode*> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::CHNode,SVF::CHEdge>* > >
 {
 };
 
-template<> struct GraphTraits<CHGraph*> : public GraphTraits<GenericGraph<CHNode,CHEdge>* >
+template<> struct GraphTraits<SVF::CHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
 {
-    typedef CHNode *NodeRef;
+    typedef SVF::CHNode *NodeRef;
 };
 
-}
+} // End namespace llvm
 
 #endif /* CHA_H_ */

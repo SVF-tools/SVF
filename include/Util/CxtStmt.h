@@ -32,6 +32,9 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
+
 /*!
  * Context-sensitive thread statement <c,s>
  */
@@ -445,5 +448,7 @@ public:
 private:
     NodeID tid;
 };
+
+} // End namespace SVF
 
 #endif /* INCLUDE_UTIL_CXTSTMT_H_ */

@@ -34,6 +34,11 @@
 #include "Graphs/ICFGEdge.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
+class PTACallGraph;
+
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
@@ -48,11 +53,11 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef std::map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef std::map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef std::map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
-    typedef std::map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
-    typedef std::map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    typedef DenseMap<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef DenseMap<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef DenseMap<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
+    typedef DenseMap<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
+    typedef DenseMap<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
 
@@ -98,6 +103,9 @@ public:
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
+
+    /// update ICFG for indirect calls
+    void updateCallGraph(PTACallGraph* callgraph);
 
 public:
     /// Remove a SVFG edge
@@ -157,12 +165,17 @@ public:
 
     IntraBlockNode* getIntraBlockNode(const Instruction* inst);
 
+    FunEntryBlockNode* getFunEntryBlockNode(const SVFFunction*  fun);
+
+    FunExitBlockNode* getFunExitBlockNode(const SVFFunction*  fun);
+
     GlobalBlockNode* getGlobalBlockNode() const
     {
         return globalBlockNode;
     }
     //@}
 
+private:
     /// Get/Add IntraBlock ICFGNode
     inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst)
     {
@@ -239,6 +252,7 @@ public:
     {
         CallBlockNode* callBlockNode = getCallBlockNode(cs);
         RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs, callBlockNode);
+        callBlockNode->setRetBlockNode(sNode);
         addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;
         return sNode;
@@ -246,6 +260,7 @@ public:
 
 };
 
+} // End namespace SVF
 
 namespace llvm
 {
@@ -253,22 +268,21 @@ namespace llvm
  * GraphTraits specializations for generic graph algorithms.
  * Provide graph traits for traversing from a constraint node using standard graph traversals.
  */
-template<> struct GraphTraits<ICFGNode*> : public GraphTraits<GenericNode<ICFGNode,ICFGEdge>*  >
+template<> struct GraphTraits<SVF::ICFGNode*> : public GraphTraits<SVF::GenericNode<SVF::ICFGNode,SVF::ICFGEdge>*  >
 {
 };
 
 /// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
 template<>
-struct GraphTraits<Inverse<ICFGNode *> > : public GraphTraits<Inverse<GenericNode<ICFGNode,ICFGEdge>* > >
+struct GraphTraits<Inverse<SVF::ICFGNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::ICFGNode,SVF::ICFGEdge>* > >
 {
 };
 
-template<> struct GraphTraits<ICFG*> : public GraphTraits<GenericGraph<ICFGNode,ICFGEdge>* >
+template<> struct GraphTraits<SVF::ICFG*> : public GraphTraits<SVF::GenericGraph<SVF::ICFGNode,SVF::ICFGEdge>* >
 {
-    typedef ICFGNode *NodeRef;
+    typedef SVF::ICFGNode *NodeRef;
 };
 
-
-}
+} // End namespace llvm
 
 #endif /* INCLUDE_UTIL_ICFG_H_ */

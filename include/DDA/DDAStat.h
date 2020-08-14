@@ -10,6 +10,9 @@
 
 #include "MemoryModel/PTAStat.h"
 
+namespace SVF
+{
+
 class FlowDDA;
 class ContextDDA;
 class SVFG;
@@ -107,5 +110,6 @@ public:
     }
 };
 
+} // End namespace SVF
 
 #endif /* DDASTAT_H_ */

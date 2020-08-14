@@ -35,6 +35,9 @@
 
 #include <vector>
 
+namespace SVF
+{
+
 class PointerAnalysis;
 class MemSSAStat;
 /*
@@ -70,8 +73,8 @@ public:
     //@{
     typedef DenseMap<const LoadPE*, MUSet> LoadToMUSetMap;
     typedef DenseMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef std::map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef std::map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
+    typedef DenseMap<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
+    typedef DenseMap<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
     typedef DenseMap<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
@@ -266,7 +269,7 @@ private:
     }
 
     /// Rename operands (RHS) of phis
-    inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector& memRegs)
+    inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
         for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
@@ -279,11 +282,11 @@ private:
     //@}
     /// Get/set methods for dominace frontier/tree
     //@{
-    DominanceFrontier* getDF(const SVFFunction& fn)
+    DominanceFrontier* getDF(const SVFFunction&)
     {
         return df;
     }
-    DominatorTree* getDT(const SVFFunction& fn)
+    DominatorTree* getDT(const SVFFunction&)
     {
         return dt;
     }
@@ -446,5 +449,7 @@ public:
     /// Print Memory SSA
     void dumpMSSA(raw_ostream & Out = SVFUtil::outs());
 };
+
+} // End namespace SVF
 
 #endif /* MEMORYSSAPASS_H_ */

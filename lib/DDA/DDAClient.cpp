@@ -16,6 +16,7 @@
 #include <iostream>
 #include <iomanip>	// for std::setw
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> SingleLoad("single-load", llvm::cl::init(true),
@@ -140,8 +141,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         if(ddaPts.count() >= anderPts.count() || ddaPts.empty())
             continue;
 
-        std::set<const SVFFunction*> ander_vfns;
-        std::set<const SVFFunction*> dda_vfns;
+        DenseSet<const SVFFunction*> ander_vfns;
+        DenseSet<const SVFFunction*> dda_vfns;
         ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
         pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
 

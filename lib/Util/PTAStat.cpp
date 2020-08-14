@@ -33,6 +33,11 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PAG.h"
 
+using namespace SVF;
+
+static llvm::cl::opt<bool> MarkedClocksOnly("marked-clocks-only", llvm::cl::init(false),
+                                            llvm::cl::desc("Only measure times where explicitly marked"));
+
 const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
@@ -102,9 +107,16 @@ const char* PTAStat:: MaxNumOfNodesInSCC = "MaxNodesInSCC";	///< max Number of n
 
 const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers points-to null
 
+bool PTAStat::markedClocksOnly = false;
+
 PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 {
 
+}
+
+void PTAStat::setMarkedClocksOnly(void)
+{
+    markedClocksOnly = MarkedClocksOnly;
 }
 
 void PTAStat::performStat()
@@ -125,7 +137,7 @@ void PTAStat::performStat()
     u32_t numOfConstant = 0;
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    std::set<SymID> memObjSet;
+    DenseSet<SymID> memObjSet;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
@@ -223,7 +235,7 @@ void PTAStat::callgraphStat()
     unsigned totalEdge = 0;
     unsigned edgeInCycle = 0;
 
-    std::set<NodeID> sccRepNodeSet;
+    DenseNodeSet sccRepNodeSet;
     PTACallGraph::iterator it = graph->begin();
     PTACallGraph::iterator eit = graph->end();
     for (; it != eit; ++it)

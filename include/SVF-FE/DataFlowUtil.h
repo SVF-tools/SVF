@@ -32,6 +32,8 @@
 
 #include "Util/BasicTypes.h"
 
+namespace SVF
+{
 
 /*!
  * Wrapper for SCEV collected from function pass ScalarEvolution
@@ -144,9 +146,9 @@ class PTACFInfoBuilder
 {
 
 public:
-    typedef std::map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
-    typedef std::map<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
-    typedef std::map<const Function*, PTALoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
+    typedef DenseMap<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
+    typedef DenseMap<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
+    typedef DenseMap<const Function*, PTALoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
 
     /// Constructor
     PTACFInfoBuilder()
@@ -276,5 +278,7 @@ public:
         return Frontiers.find(B);
     }
 };
+
+} // End namespace SVF
 
 #endif /* DATAFLOWUTIL_H_ */

@@ -10,6 +10,7 @@
 #include "DDA/DDAPass.h"
 
 using namespace llvm;
+using namespace SVF;
 
 static cl::opt<std::string> InputFilename(cl::Positional,
         cl::desc("<input bitcode>"), cl::init("-"));

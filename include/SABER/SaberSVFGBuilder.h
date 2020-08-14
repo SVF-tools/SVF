@@ -34,6 +34,9 @@
 #include "Util/BasicTypes.h"
 #include "Util/WorkList.h"
 
+namespace SVF
+{
+
 class PAGNode;
 
 class SaberSVFGBuilder : public SVFGBuilder
@@ -54,6 +57,13 @@ public:
     {
         return globSVFGNodes.find(node)!=globSVFGNodes.end();
     }
+
+    /// Add ActualParmVFGNode
+    inline void addActualParmVFGNode(const PAGNode* pagNode, const CallBlockNode* cs)
+    {
+    	svfg->addActualParmVFGNode(pagNode, cs);
+    }
+
 protected:
     /// Re-write create SVFG method
     virtual void buildSVFG();
@@ -84,5 +94,6 @@ private:
     SVFGNodeSet globSVFGNodes;
 };
 
+} // End namespace SVF
 
 #endif /* SABERSVFGBUILDER_H_ */

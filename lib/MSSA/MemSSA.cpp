@@ -32,6 +32,7 @@
 #include "MSSA/MemSSA.h"
 #include "Graphs/SVFGStat.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -81,9 +82,9 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL)
     stat = new MemSSAStat(this);
 
     /// Generate whole program memory regions
-    double mrStart = stat->getClk();
+    double mrStart = stat->getClk(true);
     mrGen->generateMRs();
-    double mrEnd = stat->getClk();
+    double mrEnd = stat->getClk(true);
     timeOfGeneratingMemRegions += (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
@@ -112,21 +113,21 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
     setCurrentDFDT(f,t);
 
     /// Create mus/chis for loads/stores/calls for memory regions
-    double muchiStart = stat->getClk();
+    double muchiStart = stat->getClk(true);
     createMUCHI(fun);
-    double muchiEnd = stat->getClk();
+    double muchiEnd = stat->getClk(true);
     timeOfCreateMUCHI += (muchiEnd - muchiStart)/TIMEINTERVAL;
 
     /// Insert PHI for memory regions
-    double phiStart = stat->getClk();
+    double phiStart = stat->getClk(true);
     insertPHI(fun);
-    double phiEnd = stat->getClk();
+    double phiEnd = stat->getClk(true);
     timeOfInsertingPHI += (phiEnd - phiStart)/TIMEINTERVAL;
 
     /// SSA rename for memory regions
-    double renameStart = stat->getClk();
+    double renameStart = stat->getClk(true);
     SSARename(fun);
-    double renameEnd = stat->getClk();
+    double renameEnd = stat->getClk(true);
     timeOfSSARenaming += (renameEnd - renameStart)/TIMEINTERVAL;
 
 }

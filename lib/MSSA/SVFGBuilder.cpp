@@ -33,6 +33,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::cl::opt<bool> SVFGWithIndirectCall("svfgWithIndCall", llvm::cl::init(false),

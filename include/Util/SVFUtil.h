@@ -34,6 +34,9 @@
 #include "Util/BasicTypes.h"
 #include <time.h>
 
+namespace SVF
+{
+
 /*
  * Util class to assist pointer analysis
  */
@@ -114,17 +117,20 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
 }
 
 
-/// Return true if this function is llvm dbg intrinsic function/instruction
-//@{
-inline bool isIntrinsicDbgFun(const Function* fun)
+/// Return true if it is an intrinsic instruction
+inline bool isIntrinsicInst(const Instruction* inst)
 {
-    return fun->getName().startswith("llvm.dbg.declare") ||
-           fun->getName().startswith("llvm.dbg.value");
-}
-/// Return true if it is an intric debug instruction
-inline bool isInstrinsicDbgInst(const Instruction* inst)
-{
-    return SVFUtil::isa<llvm::DbgInfoIntrinsic>(inst);
+    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst)) {
+        const Function* func = call->getCalledFunction();
+        if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
+                     func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
+                     func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
+                     func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
+                     func->getIntrinsicID() == llvm::Intrinsic::dbg_value)) {
+            return true;
+        }
+    }
+    return false;
 }
 //@}
 
@@ -136,7 +142,7 @@ inline bool isCallSite(const Instruction* inst)
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const Instruction* inst)
 {
-    if(isInstrinsicDbgInst(inst))
+    if(isIntrinsicInst(inst))
         return false;
     return isCallSite(inst);
 }
@@ -207,6 +213,8 @@ std::string  getSourceLoc(const Value *val);
 std::string  getSourceLocOfFunction(const Function *F);
 //@}
 
-}
+} // End namespace SVFUtil
+
+} // End namespace SVF
 
 #endif /* AnalysisUtil_H_ */

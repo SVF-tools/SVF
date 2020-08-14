@@ -31,6 +31,7 @@
 #include "SABER/SaberCheckerAPI.h"
 #include "Graphs/SVFG.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 void SaberSVFGBuilder::buildSVFG()
@@ -68,6 +69,11 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         PAGNode* pagNode = it->second;
         if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
             continue;
+
+        if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
+            if(SVFUtil::isa<DummyObjPN>(pag->getPAGNode(gepobj->getBaseNode())))
+                continue;
+        }
         if(const Value* val = pagNode->getValue())
         {
             if(SVFUtil::isa<GlobalVariable>(val))
@@ -192,10 +198,9 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
             {
                 PAG::PAGNodeList& arglist = it->second;
                 const PAGNode* pagNode = arglist.front();
-                svfg->addActualParmVFGNode(pagNode, it->first);
+                addActualParmVFGNode(pagNode,it->first);
                 svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
             }
-
         }
     }
 }

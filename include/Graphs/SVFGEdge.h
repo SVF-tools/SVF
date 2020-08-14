@@ -33,6 +33,9 @@
 #include "MSSA/MemSSA.h"
 #include "Graphs/VFGEdge.h"
 
+namespace SVF
+{
+
 /*!
  * SVFG edge representing indirect value-flows from a caller to its callee at a callsite
  */
@@ -40,7 +43,7 @@ class IndirectSVFGEdge : public VFGEdge
 {
 
 public:
-    typedef std::set<const MRVer*> MRVerSet;
+    typedef DenseSet<const MRVer*> MRVerSet;
 private:
     MRVerSet mrs;
     PointsTo cpts;
@@ -93,6 +96,8 @@ public:
                edge->getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -123,6 +128,8 @@ public:
         return edge->getEdgeKind() == IntraIndirectVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -160,6 +167,8 @@ public:
         return edge->getEdgeKind() == CallIndVF ;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 /*!
@@ -197,6 +206,8 @@ public:
         return edge->getEdgeKind() == RetIndVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
 
@@ -229,8 +240,10 @@ public:
         return edge->getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
+
+    virtual const std::string toString() const;
 };
 
-
+} // End namespace SVF
 
 #endif /* INCLUDE_MSSA_SVFGEDGE_H_ */

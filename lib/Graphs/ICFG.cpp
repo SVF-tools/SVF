@@ -31,7 +31,9 @@
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/PAG.h"
+#include "Graphs/PTACallGraph.h"
 
+using namespace SVF;
 using namespace SVFUtil;
 
 
@@ -42,11 +44,109 @@ static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
 FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
 {
     fun = f;
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = &(f->getLLVMFun()->getEntryBlock());
+    }
 }
 
 FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL)
 {
     fun = f;
+    // if function is implemented
+    if (f->getLLVMFun()->begin() != f->getLLVMFun()->end()) {
+        bb = SVFUtil::getFunExitBB(f->getLLVMFun());
+    }
+
+}
+
+
+const std::string ICFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ICFGNode ID: " << getId();
+    return rawstr.str();
+}
+
+
+const std::string GlobalBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "GlobalBlockNode ID: " << getId();
+    return rawstr.str();
+}
+
+
+const std::string IntraBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraBlockNode ID: " << getId();
+    rawstr << " " << *getInst() << " {fun: " << getFun()->getName() << "}";
+    return rawstr.str();
+}
+
+
+const std::string FunEntryBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FunEntryBlockNode ID: " << getId();
+    rawstr << " {fun: " << getFun()->getName() << "}";
+    return rawstr.str();
+}
+
+const std::string FunExitBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "FunExitBlockNode ID: " << getId();
+    rawstr << " {fun: " << getFun()->getName() << "}";
+    return rawstr.str();
+}
+
+
+const std::string CallBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallBlockNode ID: " << getId();
+    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    return rawstr.str();
+}
+
+const std::string RetBlockNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetBlockNode ID: " << getId();
+    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    return rawstr.str();
+}
+
+const std::string ICFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ICFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string IntraCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string CallCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "CallCFGEdge CallSite: " << *cs << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
+}
+
+const std::string RetCFGEdge::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetCFGEdge CallSite: " << *cs << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    return rawstr.str();
 }
 
 /*!
@@ -71,9 +171,9 @@ ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
     ICFGNode* node;
     if(SVFUtil::isNonInstricCallSite(inst))
         node = getCallBlockNode(inst);
-    else if(SVFUtil::isInstrinsicDbgInst(inst))
+    else if(SVFUtil::isIntrinsicInst(inst))
         node = getIntraBlockNode(inst);
-//			assert (false && "associating an intrinsic debug instruction with an ICFGNode!");
+//			assert (false && "associating an intrinsic instruction with an ICFGNode!");
     else
         node = getIntraBlockNode(inst);
 
@@ -110,6 +210,25 @@ IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst)
     if(node==NULL)
         node = addIntraBlockICFGNode(inst);
     return node;
+}
+
+/// Add a function entry node
+FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
+{
+    FunEntryBlockNode* b = getFunEntryICFGNode(fun);
+    if (b == NULL)
+        return addFunEntryICFGNode(fun);
+    else
+        return b;
+}
+/// Add a function exit node
+FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
+{
+    FunExitBlockNode* b = getFunExitICFGNode(fun);
+    if (b == NULL)
+        return addFunExitICFGNode(fun);
+    else
+        return b;
 }
 
 /*!
@@ -247,6 +366,35 @@ void ICFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
+/*!
+ * Update ICFG for indirect calls
+ */
+void ICFG::updateCallGraph(PTACallGraph* callgraph)
+{
+    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    for (; iter != eiter; iter++)
+    {
+        const CallBlockNode* callBlock = iter->first;
+        const Instruction* cs = callBlock->getCallSite();
+        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
+        const PTACallGraph::FunctionSet & functions = iter->second;
+        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        {
+            const SVFFunction*  callee = *func_iter;
+            CallBlockNode* CallBlockNode = getCallBlockNode(cs);
+            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+            addCallEdge(CallBlockNode, calleeEntryNode, cs);
+
+            if (!isExtCall(callee))
+            {
+                RetBlockNode* retBlockNode = getRetBlockNode(cs);
+                FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+                addRetEdge(calleeExitNode, retBlockNode, cs);
+            }
+        }
+    }
+}
 
 /*!
  * GraphTraits specialization
@@ -415,4 +563,4 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 };
-}
+} // End namespace llvm

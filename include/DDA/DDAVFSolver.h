@@ -14,6 +14,9 @@
 #include "Util/SCC.h"
 #include <algorithm>
 
+namespace SVF
+{
+
 /*!
  * Value-Flow Based Demand-Driven Points-to Analysis
  */
@@ -31,7 +34,7 @@ public:
     typedef std::map<DPIm,CVar> DPMToCVarMap;
     typedef std::map<DPIm,DPIm> DPMToDPMMap;
     typedef DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef std::set<const SVFGEdge* > ConstSVFGEdgeSet;
+    typedef DenseSet<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
     typedef std::map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
@@ -409,7 +412,7 @@ protected:
         unionDDAPts(pts,findPT(dpm));
     }
     /// whether load and store are aliased
-    virtual bool isMustAlias(const DPIm& loadDpm, const DPIm& storeDPm)
+    virtual bool isMustAlias(const DPIm&, const DPIm&)
     {
         return false;
     }
@@ -492,12 +495,12 @@ protected:
     /// Get conservative points-to results when the query is out of budget
     virtual CPtSet getConservativeCPts(const DPIm& dpm) = 0;
     /// Handle condition for context or path analysis (backward analysis)
-    virtual inline bool handleBKCondition(DPIm& oldDpm, const SVFGEdge* edge)
+    virtual inline bool handleBKCondition(DPIm&, const SVFGEdge*)
     {
         return true;
     }
     /// Update call graph
-    virtual inline void updateCallGraphAndSVFG(const DPIm& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) {}
+    virtual inline void updateCallGraphAndSVFG(const DPIm&, const CallBlockNode*, SVFGEdgeSet&) {}
     //@}
 
     ///Visited flags to avoid cycles
@@ -605,7 +608,7 @@ protected:
     }
     /// Check heap and array object
     //@{
-    virtual inline bool isHeapCondMemObj(const CVar& var, const StoreSVFGNode* store)
+    virtual inline bool isHeapCondMemObj(const CVar& var, const StoreSVFGNode*)
     {
         const MemObj* mem = _pag->getObject(getPtrNodeID(var));
         assert(mem && "memory object is null??");
@@ -760,5 +763,6 @@ protected:
     SVFGBuilder svfgBuilder;			///< SVFG Builder
 };
 
+} // End namespace SVF
 
 #endif /* VALUEFLOWDDA_H_ */
