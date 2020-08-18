@@ -252,7 +252,7 @@ public:
     }
 
     /// Return total SVFG node number
-    inline const u32_t getSVFGNodeNum() const {
+    inline u32_t getSVFGNodeNum() const {
         return nodeNum;
     }
 

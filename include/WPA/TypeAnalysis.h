@@ -40,7 +40,7 @@ class TypeAnalysis:  public Andersen
 
 public:
     /// Constructor
-    TypeAnalysis(PAG* pag, PTATY type = TypeCPP_WPA)
+    TypeAnalysis(PAG* pag)
         :  Andersen(pag)
     {
     }

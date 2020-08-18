@@ -185,7 +185,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
  * get callsite id from call, return 0 if it is a spurious call edge
  * translate the callsite id from pre-computed callgraph on SVFG to the one on current callgraph
  */
-CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge)
+CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
 {
 
     CallSiteID svfg_csId = 0;
@@ -209,7 +209,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem& dpm, const SVFGEdge* edge)
  * get callsite id from return, return 0 if it is a spurious return edge
  * translate the callsite id from pre-computed callgraph on SVFG to the one on current callgraph
  */
-CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem& dpm, const SVFGEdge* edge)
+CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
 {
 
     CallSiteID svfg_csId = 0;
@@ -310,7 +310,7 @@ bool ContextDDA::handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge)
 /// we exclude concrete heap given the following conditions:
 /// (1) concrete calling context (not involved in recursion and not exceed the maximum context limit)
 /// (2) not inside loop
-bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store)
+bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
 {
     const MemObj* mem = _pag->getObject(getPtrNodeID(var));
     assert(mem && "memory object is null??");

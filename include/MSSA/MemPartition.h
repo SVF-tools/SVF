@@ -155,7 +155,7 @@ protected:
      * @param mrs Memory region set contains all possible target memory regions.
      */
     virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const SVFFunction* fun)
+                                      const SVFFunction*)
     {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }

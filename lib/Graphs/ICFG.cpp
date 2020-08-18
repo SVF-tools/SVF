@@ -412,7 +412,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(ICFG *graph)
+    static std::string getGraphName(ICFG*)
     {
         return "ICFG";
     }
@@ -423,7 +423,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return the label of an ICFG node
-    static std::string getSimpleNodeLabel(NodeType *node, ICFG *graph)
+    static std::string getSimpleNodeLabel(NodeType *node, ICFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -496,7 +496,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, ICFG *graph)
+    static std::string getNodeAttributes(NodeType *node, ICFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -534,7 +534,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ICFG *pag)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, ICFG*)
     {
         ICFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -548,7 +548,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         ICFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

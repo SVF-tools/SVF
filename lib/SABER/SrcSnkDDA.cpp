@@ -241,7 +241,7 @@ void SrcSnkDDA::FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge)
 /*!
  * Propagate information backward without matching context, as forward analysis already did it
  */
-void SrcSnkDDA::BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge)
+void SrcSnkDDA::BWProcessIncomingEdge(const DPIm&, SVFGEdge* edge)
 {
     DBOUT(DSaber,outs() << "backward propagate from (" << edge->getDstID() << " --> " << edge->getSrcID() << ")\n");
     const SVFGNode* srcNode = edge->getSrcNode();

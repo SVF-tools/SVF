@@ -57,7 +57,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const ThreadForkEdge *edge)
+    static inline bool classof(const ThreadForkEdge*)
     {
         return true;
     }
@@ -97,7 +97,7 @@ public:
     {
     }
 
-    static inline bool classof(const ThreadJoinEdge *edge)
+    static inline bool classof(const ThreadJoinEdge*)
     {
         return true;
     }
@@ -138,7 +138,7 @@ public:
 
     /// ClassOf
     //@{
-    static inline bool classof(const HareParForEdge *edge)
+    static inline bool classof(const HareParForEdge*)
     {
         return true;
     }
