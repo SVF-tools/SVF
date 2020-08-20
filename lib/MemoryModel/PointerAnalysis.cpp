@@ -115,7 +115,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
-    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL), svfMod(NULL)
+    svfMod(NULL),ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),icfg(NULL),typeSystem(NULL)
 {
     pag = p;
 	OnTheFlyIterBudgetForStat = statBudget;
@@ -472,7 +472,7 @@ void PointerAnalysis::printIndCSTargets()
 /*!
  * Resolve indirect calls
  */
-void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph)
+void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges, LLVMCallGraph*)
 {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");

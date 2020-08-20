@@ -21,15 +21,16 @@ typedef DenseSet<const SVFFunction*> VFunSet;
 class CommonCHGraph
 {
 public:
+    virtual ~CommonCHGraph() { };
     enum CHGKind
     {
         Standard,
         DI
     };
 
-    virtual const bool csHasVFnsBasedonCHA(CallSite cs) = 0;
+    virtual bool csHasVFnsBasedonCHA(CallSite cs) = 0;
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
-    virtual const bool csHasVtblsBasedonCHA(CallSite cs) = 0;
+    virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
     virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
 
