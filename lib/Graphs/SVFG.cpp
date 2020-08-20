@@ -154,7 +154,7 @@ void SVFG::destroy()
 {
     delete stat;
     stat = NULL;
-    mssa = NULL;
+    clearMSSA();
 }
 
 /*!
