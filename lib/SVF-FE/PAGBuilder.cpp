@@ -495,12 +495,8 @@ void PAGBuilder::visitPHINode(PHINode &inst)
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         assert((incomingInst==NULL) || (incomingInst->getFunction() == inst.getFunction()));
-        const IntraBlockNode* intraBlockNode = NULL;
-        if (incomingInst != NULL)
-            intraBlockNode = pag->getICFG()->getIntraBlockNode(incomingInst);
 
         NodeID src = getValueNode(val);
-        const BasicBlock* bb = inst.getIncomingBlock(i);
         const CopyPE* copy = addCopyEdge(src, dst);
         pag->addPhiNode(pag->getPAGNode(dst), copy);
     }
@@ -633,8 +629,6 @@ void PAGBuilder::visitSelectInst(SelectInst &inst)
     const CopyPE* cpy1 = addCopyEdge(src1, dst);
     const CopyPE* cpy2 = addCopyEdge(src2, dst);
 
-    const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
-
     /// Two operands have same incoming basic block, both are the current BB
     pag->addPhiNode(pag->getPAGNode(dst), cpy1);
     pag->addPhiNode(pag->getPAGNode(dst), cpy2);
@@ -711,7 +705,6 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst)
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
-        const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
         const CopyPE* copy = addCopyEdge(vnS, rnF);
         pag->addPhiNode(pag->getPAGNode(rnF), copy);
     }
@@ -1291,8 +1284,9 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
 {
     NodeID base = pag->getBaseValNode(getValueNode(val));
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
-    if (gepval==-1)
+    if (gepval==UINT_MAX)
     {
+		assert(UINT_MAX==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
          * 1. PAGBuilder::addComplexConsForExt to handle external calls

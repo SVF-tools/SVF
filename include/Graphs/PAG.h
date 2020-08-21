@@ -411,12 +411,12 @@ public:
     {
         GepValPNMap::const_iterator iter = GepValNodeMap.find(curInst);
         if(iter==GepValNodeMap.end()){
-            return -1;
+            return UINT_MAX;
         }
         else{
             NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
             if(lit==iter->second.end())
-                return -1;
+                return UINT_MAX;
             else
                 return lit->second;
         }
@@ -740,11 +740,13 @@ public:
     /// Add a value (pointer) node
     inline NodeID addValNode(const Value*, PAGNode *node, NodeID i)
     {
+		assert(i<UINT_MAX && "exceeding the maximum node limits");
         return addNode(node,i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const Value*, PAGNode *node, NodeID i)
     {
+		assert(i<UINT_MAX && "exceeding the maximum node limits");
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure

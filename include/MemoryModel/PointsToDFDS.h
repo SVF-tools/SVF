@@ -182,7 +182,7 @@ public:
     {
         return (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar)));
     }
-    virtual inline void clearAllDFOutUpdatedVar(LocID loc)
+    virtual inline void clearAllDFOutUpdatedVar(LocID)
     {
     }
     //@}

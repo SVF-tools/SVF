@@ -93,7 +93,7 @@ void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val)
 /*!
  * Analyse types of heap and static objects
  */
-void ObjTypeInfo::analyzeHeapStaticObjType(const Value* val)
+void ObjTypeInfo::analyzeHeapStaticObjType(const Value*)
 {
     // TODO: Heap and static objects are considered as pointers right now.
     //       Refine this function to get more details about heap and static objects.
@@ -397,7 +397,7 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
 /*!
  * Collect array information
  */
-void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty)
+void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType*)
 {
     /*
     StInfo *stinfo = new StInfo();
@@ -440,7 +440,7 @@ void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType *ty)
 /*
  * Recursively collect the memory layout information for a struct type
  */
-void LocSymTableInfo::collectStructInfo(const StructType *ty)
+void LocSymTableInfo::collectStructInfo(const StructType*)
 {
     /*
     StInfo *stinfo = new StInfo();

@@ -34,6 +34,9 @@ public:
     /// Constructor
     FlowSensitiveTBHC(PAG* _pag, PTATY type = FSTBHC_WPA);
 
+    /// Destructor
+    virtual ~FlowSensitiveTBHC() { };
+
     /// Flow sensitive analysis with FSTBHC.
     virtual void analyze() override;
     /// Initialize analysis.

@@ -895,7 +895,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(VFG *graph)
+    static std::string getGraphName(VFG*)
     {
         return "VFG";
     }
@@ -909,7 +909,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node without MemSSA information
-    static std::string getSimpleNodeLabel(NodeType *node, VFG *graph)
+    static std::string getSimpleNodeLabel(NodeType *node, VFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -971,7 +971,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node with MemSSA information
-    static std::string getCompleteNodeLabel(NodeType *node, VFG *graph)
+    static std::string getCompleteNodeLabel(NodeType *node, VFG*)
     {
 
         std::string str;
@@ -1051,7 +1051,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, VFG *graph)
+    static std::string getNodeAttributes(NodeType *node, VFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -1130,7 +1130,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, VFG *vfg)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, VFG*)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -1151,7 +1151,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

@@ -285,7 +285,7 @@ const std::string TDJoinPE::toString() const{
 }
 
 
-PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0)
+PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
 {
     symInfo = SymbolTableInfo::Symbolnfo();
     icfg = new ICFG();
@@ -1022,7 +1022,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(PAGNode *node, PAG *graph)
+    static std::string getNodeLabel(PAGNode *node, PAG*)
     {
         bool briefDisplay = true;
         bool nameDisplay = true;
@@ -1058,7 +1058,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     }
 
-    static std::string getNodeAttributes(PAGNode *node, PAG *pag)
+    static std::string getNodeAttributes(PAGNode *node, PAG*)
     {
         if (SVFUtil::isa<ValPN>(node))
         {
@@ -1096,7 +1096,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(PAGNode *node, EdgeIter EI, PAG *pag)
+    static std::string getEdgeAttributes(PAGNode*, EdgeIter EI, PAG*)
     {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -1151,7 +1151,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(PAGNode *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(PAGNode*, EdgeIter EI)
     {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

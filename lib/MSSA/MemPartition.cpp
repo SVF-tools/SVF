@@ -88,7 +88,7 @@ void DistinctMRG::createDistinctMR(const SVFFunction* func, const PointsTo& pts)
  * @param fun The function being analyzed.
  * @param mrs Memory region set contains all possible target memory regions.
  */
-void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const SVFFunction* fun)
+void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const SVFFunction*)
 {
     /// Get memory regions for each points-to element in cpts.
 

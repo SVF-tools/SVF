@@ -264,7 +264,6 @@ const NodeBS &DCHGraph::cha(const DIType *type, bool firstField)
 
 void DCHGraph::flatten(const DICompositeType *type)
 {
-    const DIType *oldType = type;
     type = SVFUtil::dyn_cast<DICompositeType>(getCanonicalType(type));
     assert(type && "DCHG::flatten: canon type of struct/class is not struct/class");
     if (fieldTypes.find(type) != fieldTypes.end())
@@ -468,12 +467,14 @@ void DCHGraph::buildCHG(bool extend)
     getOrCreateNode(nullptr);
     // Find any char type.
     const DIType *charType = nullptr;
-    // We want void at the top, char as a child, and everything is a child of char:
-    //     void
-    //      |
-    //     char
-    //    / | \
-    //   x  y  z
+    /*
+     * We want void at the top, char as a child, and everything is a child of char:
+     *     void
+     *      |
+     *     char
+     *    / | \
+     *   x  y  z
+     */
 
 
     for (const DIType *type : finder.types())
@@ -683,7 +684,7 @@ bool DCHGraph::isFieldOf(const DIType *f, const DIType *b)
 
     if (b->getTag() == dwarf::DW_TAG_array_type || b->getTag() == dwarf::DW_TAG_pointer_type)
     {
-        const DIType *baseType;
+        const DIType *baseType = nullptr;
         if (const DICompositeType *arrayType = SVFUtil::dyn_cast<DICompositeType>(b))
         {
             baseType = arrayType->getBaseType();
@@ -692,6 +693,7 @@ bool DCHGraph::isFieldOf(const DIType *f, const DIType *b)
         {
             baseType = ptrType->getBaseType();
         }
+        assert(baseType && "DCHG::isFieldOf: baseType is neither DIComposite nor DIDerived!");
 
         baseType = getCanonicalType(baseType);
         return f == baseType || (baseType != nullptr && isFieldOf(f, baseType));
