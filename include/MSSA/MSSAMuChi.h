@@ -49,12 +49,12 @@ private:
     /// ver ID 0 is reserved
     static Size_t totalVERNum;
     const MemRegion* mr;
-    VERSION version;
+    MRVERSION version;
     MRVERID vid;
     MSSADef* def;
 public:
     /// Constructor
-    MRVer(const MemRegion* m, VERSION v, MSSADef* d) :
+    MRVer(const MemRegion* m, MRVERSION v, MSSADef* d) :
         mr(m), version(v), vid(totalVERNum++),def(d)
     {
     }
@@ -66,7 +66,7 @@ public:
     }
 
     /// Return SSA version
-    inline VERSION getSSAVersion() const
+    inline MRVERSION getSSAVersion() const
     {
         return version;
     }
