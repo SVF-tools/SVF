@@ -151,7 +151,7 @@ else
 	cd ./'Release-build'
 	cmake -GNinja ../
 fi
-ninja
+ninja -v
 
 ########
 # Set up environment variables of SVF
