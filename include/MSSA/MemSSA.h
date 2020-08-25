@@ -91,7 +91,7 @@ public:
 
     /// For SSA renaming
     typedef DenseMap<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
-    typedef DenseMap<const MemRegion*, VERSION> MemRegToCounterMap;
+    typedef DenseMap<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;
