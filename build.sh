@@ -144,14 +144,14 @@ then
 	rm -rf ./'Debug-build'
 	mkdir ./'Debug-build'
 	cd ./'Debug-build'
-	cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
+	cmake -GNinja -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
 	rm -rf ./'Release-build'
 	mkdir ./'Release-build'
 	cd ./'Release-build'
-	cmake ../
+	cmake -GNinja ../
 fi
-make -j4
+ninja -v
 
 ########
 # Set up environment variables of SVF
