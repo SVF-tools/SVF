@@ -949,6 +949,13 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 break;
                 break;
             }
+            case ExtAPI::EFT_L_A0__A0R_A1:
+            {
+                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+                if(SVFUtil::isa<PointerType>(inst->getType()))
+                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
+                break;
+            }
             case ExtAPI::EFT_L_A0__A0R_A1R:
             {
                 addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
