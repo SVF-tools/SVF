@@ -60,6 +60,7 @@ public:
         EFT_L_A1,
         EFT_L_A2,
         EFT_L_A8,
+        EFT_L_A0__A0R_A1,   //stores arg1 into *arg0 and returns arg0
         EFT_L_A0__A0R_A1R,  //copies the data that arg1 points to into the location
         //  arg0 points to; note that several fields may be
         //  copied at once if both point to structs.
