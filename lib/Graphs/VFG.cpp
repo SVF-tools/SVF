@@ -110,6 +110,22 @@ const std::string BinaryOPVFGNode::toString() const {
     return rawstr.str();
 }
 
+const std::string UnaryOPVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "UnaryOPVFGNode ID: " << getId() << " ";
+    rawstr << "PAGEdge: [" << res->getId() << " = Unary(";
+    for(UnaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
+            it != eit; it++)
+        rawstr << it->second->getId() << ", ";
+    rawstr << ")]\t";
+    if(res->hasValue()){
+        rawstr << " " << *res->getValue() << " ";
+        rawstr << SVFUtil::getSourceLoc(res->getValue());
+    }
+    return rawstr.str();
+}
+
 const std::string GepVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -499,6 +515,13 @@ void VFG::addVFGNodes()
         if (isInterestedPAGNode(pit->first))
             addBinaryOPVFGNode(pit->first, pit->second);
     }
+    // initialize llvm unary nodes (unary operators)
+    PAG::UnaryNodeMap& unaryNodeMap = pag->getUnaryNodeMap();
+    for (PAG::UnaryNodeMap::iterator pit = unaryNodeMap.begin(), epit = unaryNodeMap.end(); pit != epit; ++pit)
+    {
+        if (isInterestedPAGNode(pit->first))
+            addUnaryOPVFGNode(pit->first, pit->second);
+    }
     // initialize llvm cmp nodes (comparision)
     PAG::CmpNodeMap& cmpNodeMap = pag->getCmpNodeMap();
     for (PAG::CmpNodeMap::iterator pit = cmpNodeMap.begin(), epit =cmpNodeMap.end(); pit != epit; ++pit)
@@ -605,6 +628,14 @@ void VFG::connectDirectVFGEdges()
         else if(BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd(); it != eit; it++)
+            {
+                if (it->second->isConstantData() == false)
+                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+            }
+        }
+        else if(UnaryOPVFGNode* unaryNode = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            for (UnaryOPVFGNode::OPVers::const_iterator it = unaryNode->opVerBegin(), eit = unaryNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstantData() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
@@ -1003,6 +1034,15 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
             rawstr << ")\n";
             rawstr << getSourceLoc(tphi->getRes()->getValue());
         }
+        else if(UnaryOPVFGNode* tphi = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << tphi->getRes()->getId() << " = Unary(";
+            for(UnaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
         else if(CmpVFGNode* tphi = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << tphi->getRes()->getId() << " = cmp(";
@@ -1094,6 +1134,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
             rawstr << "color=grey";
         }
         else if (SVFUtil::isa<BinaryOPVFGNode>(node))
+        {
+            rawstr << "color=grey";
+        }
+        else if (SVFUtil::isa<UnaryOPVFGNode>(node))
         {
             rawstr << "color=grey";
         }

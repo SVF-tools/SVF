@@ -237,6 +237,9 @@ std::string ICFGPrinter::getPAGEdgeKindValue(int kind)
     case (PAGEdge::BinaryOp):
         return "BinaryOp";
         break;
+    case (PAGEdge::UnaryOp):
+        return "UnaryOp";
+        break;
     }
     return "";
 }

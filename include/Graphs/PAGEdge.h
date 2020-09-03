@@ -48,12 +48,12 @@ class PAGEdge : public GenericPAGEdgeTy
 {
 
 public:
-    /// Ten kinds of PAG edges
+    /// Thirteen kinds of PAG edges
     /// Gep represents offset edge for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin, Cmp, BinaryOp
+        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin, Cmp, BinaryOp, UnaryOp
     };
 
 private:
@@ -90,7 +90,8 @@ public:
                edge->getEdgeKind() == PAGEdge::ThreadFork ||
                edge->getEdgeKind() == PAGEdge::ThreadJoin ||
                edge->getEdgeKind() == PAGEdge::Cmp ||
-               edge->getEdgeKind() == PAGEdge::BinaryOp;
+               edge->getEdgeKind() == PAGEdge::BinaryOp ||
+               edge->getEdgeKind() == PAGEdge::UnaryOp;
     }
     ///@}
 
@@ -311,6 +312,40 @@ public:
 
     /// constructor
     BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp)
+    {
+    }
+
+    virtual const std::string toString() const;
+};
+
+/*!
+ * Unary instruction edge
+ */
+class UnaryOPPE: public PAGEdge
+{
+private:
+    UnaryOPPE();                      ///< place holder
+    UnaryOPPE(const UnaryOPPE &);  ///< place holder
+    void operator=(const UnaryOPPE &); ///< place holder
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const UnaryOPPE *)
+    {
+        return true;
+    }
+    static inline bool classof(const PAGEdge *edge)
+    {
+        return edge->getEdgeKind() == PAGEdge::UnaryOp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == PAGEdge::UnaryOp;
+    }
+    //@}
+
+    /// constructor
+    UnaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::UnaryOp)
     {
     }
 

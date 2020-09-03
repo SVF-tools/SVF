@@ -149,6 +149,7 @@ typedef llvm::SwitchInst SwitchInst;
 typedef llvm::ExtractValueInst  ExtractValueInst;
 typedef llvm::InsertValueInst InsertValueInst;
 typedef llvm::BinaryOperator BinaryOperator;
+typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::PtrToIntInst PtrToIntInst;
 typedef llvm::VAArgInst VAArgInst;
 typedef llvm::ExtractElementInst ExtractElementInst;

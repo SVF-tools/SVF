@@ -203,6 +203,15 @@ const std::string BinaryOPPE::toString() const{
     return rawstr.str();
 }
 
+const std::string UnaryOPPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "UnaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
 const std::string LoadPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
@@ -359,6 +368,23 @@ BinaryOPPE* PAG::addBinaryOPPE(NodeID src, NodeID dst)
         BinaryOPPE* binaryOP = new BinaryOPPE(srcNode, dstNode);
         addEdge(srcNode,dstNode, binaryOP);
         return binaryOP;
+    }
+}
+
+/*!
+ * Add Unary edge
+ */
+UnaryOPPE* PAG::addUnaryOPPE(NodeID src, NodeID dst)
+{
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::UnaryOp))
+        return SVFUtil::cast<UnaryOPPE>(edge);
+    else
+    {
+        UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, unaryOP);
+        return unaryOP;
     }
 }
 
@@ -1125,6 +1151,10 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
             return "color=grey";
         }
         else if (SVFUtil::isa<BinaryOPPE>(edge))
+        {
+            return "color=grey";
+        }
+        else if (SVFUtil::isa<UnaryOPPE>(edge))
         {
             return "color=grey";
         }
