@@ -540,6 +540,11 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
                 for (u32_t i = 0; i < binary->getNumOperands(); i++)
                     collectSym(binary->getOperand(i));
             }
+            else if (const UnaryOperator *unary = SVFUtil::dyn_cast<UnaryOperator>(inst))
+            {
+                for (u32_t i = 0; i < unary->getNumOperands(); i++)
+                    collectSym(unary->getOperand(i));
+            }
             else if (const CmpInst *cmp = SVFUtil::dyn_cast<CmpInst>(inst))
             {
                 for (u32_t i = 0; i < cmp->getNumOperands(); i++)

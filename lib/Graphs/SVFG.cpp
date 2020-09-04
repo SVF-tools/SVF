@@ -793,6 +793,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
             rawstr << "BinOp\n";
             rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
         }
+        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << "UnOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(uop->getICFGNode())->getInst());
+        }
         else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << "Cmp\n";
@@ -841,6 +846,15 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << tphi->getRes()->getId() << " = Binary(";
             for(BinaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(UnaryOPVFGNode* tphi = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << tphi->getRes()->getId() << " = Unary(";
+            for(UnaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
                     it != eit; it++)
                 rawstr << it->second->getId() << ", ";
             rawstr << ")\n";

@@ -56,9 +56,11 @@ public:
     typedef std::vector<const PAGNode*> PAGNodeList;
     typedef std::vector<const CopyPE*> CopyPEList;
     typedef std::vector<const BinaryOPPE*> BinaryOPList;
+    typedef std::vector<const UnaryOPPE*> UnaryOPList;
     typedef std::vector<const CmpPE*> CmpPEList;
     typedef DenseMap<const PAGNode*,CopyPEList> PHINodeMap;
     typedef DenseMap<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef DenseMap<const PAGNode*,UnaryOPList> UnaryNodeMap;
     typedef DenseMap<const PAGNode*,CmpPEList> CmpNodeMap;
     typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef DenseMap<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
@@ -88,6 +90,7 @@ private:
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
     BinaryNodeMap binaryNodeMap;	///< A set of binary edges
+    UnaryNodeMap unaryNodeMap;	///< A set of unary edges
     CmpNodeMap cmpNodeMap;	///< A set of comparision edges
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
@@ -264,6 +267,21 @@ public:
     inline BinaryNodeMap& getBinaryNodeMap()
     {
         return binaryNodeMap;
+    }
+    /// Add unary node information
+    inline void addUnaryNode(const PAGNode* res, const UnaryOPPE* edge)
+    {
+        unaryNodeMap[res].push_back(edge);
+    }
+    /// Whether this PAGNode is an unary node
+    inline bool isUnaryNode(const PAGNode* node) const
+    {
+        return unaryNodeMap.find(node) != unaryNodeMap.end();
+    }
+    /// Get all unary edges
+    inline UnaryNodeMap& getUnaryNodeMap()
+    {
+        return unaryNodeMap;
     }
     /// Add phi node information
     inline void addCmpNode(const PAGNode* res, const CmpPE* edge)
@@ -779,6 +797,8 @@ public:
     CmpPE* addCmpPE(NodeID src, NodeID dst);
     /// Add Copy edge
     BinaryOPPE* addBinaryOPPE(NodeID src, NodeID dst);
+    /// Add Unary edge
+    UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst);
     /// Add Load edge
     LoadPE* addLoadPE(NodeID src, NodeID dst);
     /// Add Store edge
