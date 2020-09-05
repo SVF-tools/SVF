@@ -1036,6 +1036,10 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr <<  "color=black,style=double";
         }
+        else if (SVFUtil::isa<UnaryOPVFGNode>(node))
+        {
+            rawstr <<  "color=black,style=double";
+        }
         else
             assert(false && "no such kind of node!!");
 

@@ -976,7 +976,10 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_L_A0__A0R_A1:
             {
-                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+				// this is only for memset(void *str, int c, size_t n)
+				// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
+				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
                 if(SVFUtil::isa<PointerType>(inst->getType()))
                     addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
