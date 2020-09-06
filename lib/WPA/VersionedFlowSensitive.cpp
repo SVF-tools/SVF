@@ -305,11 +305,15 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
 
-    for (Version r : versionReliance[o][v])
+    DenseMap<Version, DenseSet<Version>>::iterator relyingVersions = versionReliance[o].find(v);
+    if (relyingVersions != versionReliance[o].end())
     {
-        if (vPtD->updateATVersion(o, r, v))
+        for (Version r : relyingVersions->second)
         {
-            propagateVersion(o, r);
+            if (vPtD->updateATVersion(o, r, v))
+            {
+                propagateVersion(o, r);
+            }
         }
     }
 

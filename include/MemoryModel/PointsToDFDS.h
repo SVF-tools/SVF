@@ -560,6 +560,8 @@ public:
     bool updateATVersion(NodeID o, Version to, Version from)
     {
         VPtsMap &oVPtsMap = atPointsTos[o];
+        // In case oVPtsMap[from] creates and messes up topt.
+        oVPtsMap.try_emplace(from);
         PointsTo &topt = oVPtsMap[to];
         PointsTo &frompt = oVPtsMap[from];
 
