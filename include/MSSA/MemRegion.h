@@ -42,7 +42,7 @@ namespace SVF
 
 typedef NodeID MRID;
 typedef NodeID MRVERID;
-typedef NodeID VERSION;
+typedef NodeID MRVERSION;
 
 /// Memory Region class
 class MemRegion

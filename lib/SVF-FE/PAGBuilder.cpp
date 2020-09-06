@@ -306,6 +306,16 @@ void PAGBuilder::processCE(const Value *val)
             addBlackHoleAddrEdge(dst);
             setCurrentLocation(cval, cbb);
         }
+        else if (isUnaryConstantExpr(ref))
+        {
+            // we don't handle unary constant expression like fneg(x) now
+            const Value* cval = getCurrentValue();
+            const BasicBlock* cbb = getCurrentBB();
+            setCurrentLocation(ref, NULL);
+            NodeID dst = pag->getValueNode(ref);
+            addBlackHoleAddrEdge(dst);
+            setCurrentLocation(cval, cbb);
+        }
         else if (SVFUtil::isa<ConstantAggregate>(ref))
         {
             // we don't handle constant agrgregate like constant vectors
@@ -596,6 +606,21 @@ void PAGBuilder::visitBinaryOperator(BinaryOperator &inst)
         NodeID src = getValueNode(opnd);
         const BinaryOPPE* binayPE = addBinaryOPEdge(src, dst);
         pag->addBinaryNode(pag->getPAGNode(dst),binayPE);
+    }
+}
+
+/*!
+ * Visit Unary Operator
+ */
+void PAGBuilder::visitUnaryOperator(UnaryOperator &inst)
+{
+    NodeID dst = getValueNode(&inst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++)
+    {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+        pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
     }
 }
 
@@ -947,6 +972,16 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 else
                     addBlackHoleAddrEdge(dstNode);
                 break;
+                break;
+            }
+            case ExtAPI::EFT_L_A0__A0R_A1:
+            {
+				// this is only for memset(void *str, int c, size_t n)
+				// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
+				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+                if(SVFUtil::isa<PointerType>(inst->getType()))
+                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
             }
             case ExtAPI::EFT_L_A0__A0R_A1R:

@@ -231,6 +231,9 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge)
     case PAGEdge::BinaryOp:
         edgeKind = "binary-op";
         break;
+    case PAGEdge::UnaryOp:
+        edgeKind = "unary-op";
+        break;
     case PAGEdge::ThreadFork:
         outs() << "dump-function-pags: found ThreadFork edge.\n";
         break;
@@ -463,6 +466,10 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
         else if (extEdgeType == "binary-op")
         {
             pag->addBinaryOPPE(srcId, dstId);
+        }
+        else if (extEdgeType == "unary-op")
+        {
+            pag->addUnaryOPPE(srcId, dstId);
         }
         else
         {

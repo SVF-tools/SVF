@@ -167,6 +167,7 @@ public:
     // void visitUnwindInst(UnwindInst &I) { /*returns void*/}
 
     void visitBinaryOperator(BinaryOperator &I);
+    void visitUnaryOperator(UnaryOperator &I);
     void visitCmpInst(CmpInst &I);
 
     /// TODO: do we need to care about these corner cases?
@@ -289,6 +290,13 @@ public:
     inline BinaryOPPE* addBinaryOPEdge(NodeID src, NodeID dst)
     {
         BinaryOPPE *edge = pag->addBinaryOPPE(src, dst);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
+    }
+    /// Add Unary edge
+    inline UnaryOPPE* addUnaryOPEdge(NodeID src, NodeID dst)
+    {
+        UnaryOPPE *edge = pag->addUnaryOPPE(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

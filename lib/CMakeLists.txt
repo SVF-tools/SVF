@@ -4,6 +4,12 @@ add_subdirectory(CUDD)
 # Otherwise it is impossible to load the dependencies in opt
 # NOTE: if the SVF should be linked into opt, we should probably use the individual sub projects here, rather than the combined project 
 
+if (LLVM_LINK_LLVM_DYLIB)
+    set(llvm_libs LLVM)
+else()
+    llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
+endif()
+
 file (GLOB SOURCES
         SVF-FE/*.cpp
         Graphs/*.cpp
@@ -13,12 +19,9 @@ file (GLOB SOURCES
         WPA/*.cpp
         SABER/*.cpp
         DDA/*.cpp)
-add_llvm_library(Svf STATIC ${SOURCES})
+add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd)
 
 link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
-llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
-target_link_libraries(Svf Cudd)
-target_link_libraries(Svf ${llvm_libs})
 
 
 if(DEFINED IN_SOURCE_BUILD)
