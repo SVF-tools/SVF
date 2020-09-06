@@ -34,6 +34,8 @@ public:
     typedef BVDataPTAImpl::VDFPTDataTy::LocVersionMap LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
     typedef DenseMap<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
+    /// (o -> (v -> versions with rely on o:v).
+    typedef DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> VersionRelianceMap;
 
     enum VersionType {
         CONSUME,
@@ -128,7 +130,7 @@ private:
     LocVersionMap yield;
 
     /// o -> (version -> versions which rely on it).
-    DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> versionReliance;
+    VersionRelianceMap versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
     DenseMap<NodeID, DenseMap<Version, DenseNodeSet>> stmtReliance;
 
