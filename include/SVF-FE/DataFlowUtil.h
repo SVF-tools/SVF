@@ -34,119 +34,6 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-namespace llvm{
-/*!
- * PTA control flow info builder
- * (1) Loop Info
- * (2) Dominator/PostDominator
- * (3) SCEV
- */
-class PTACFInfoBuilderPass : public ModulePass
-{
-
-public:
-    typedef DenseMap<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
-    typedef DenseMap<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
-    typedef DenseMap<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
-
-    static char ID;
-
-    /// Constructor
-    PTACFInfoBuilderPass() : ModulePass(ID)
-    {
-
-    }
-    /// Destructor
-    ~PTACFInfoBuilderPass()
-    {
-        for(FunToLoopInfoMap::iterator it = funToLoopInfoMap.begin(), eit = funToLoopInfoMap.end(); it!=eit; ++it)
-        {
-            if(it->second != nullptr)
-            {
-                delete it->second;
-            }
-        }
-        for(FunToDTMap::iterator it = funToDTMap.begin(), eit = funToDTMap.end(); it!=eit; ++it)
-        {
-            if(it->second != nullptr)
-            {
-                delete it->second;
-            }
-        }
-        for(FunToPostDTMap::iterator it = funToPDTMap.begin(), eit = funToPDTMap.end(); it!=eit; ++it)
-        {
-            if(it->second != nullptr)
-            {
-                delete it->second;
-            }
-        }
-    }
-
-    bool runOnModule(Module& M) override;
-
-    virtual void getAnalysisUsage(AnalysisUsage& AU) const override {
-        AU.addRequired<LoopInfoWrapperPass>();
-        AU.addRequired<PostDominatorTreeWrapperPass>();
-    }
-
-
-    /// Get loop info of a function
-    LoopInfo* getLoopInfo(const Function* f)
-    {
-        Function* fun = const_cast<Function*>(f);
-        FunToLoopInfoMap::iterator it = funToLoopInfoMap.find(fun);
-        if(it==funToLoopInfoMap.end())
-        {
-            LoopInfoWrapperPass* loopWrapper = new LoopInfoWrapperPass();
-            loopWrapper->runOnFunction(*fun);
-            LoopInfo* loopInfo = &loopWrapper->getLoopInfo();
-            funToLoopInfoMap[fun] = loopInfo;
-            return loopInfo;
-        }
-        else
-            return it->second;
-    }
-
-    /// Get post dominator tree of a function
-    PostDominatorTree* getPostDT(const Function* f)
-    {
-        Function* fun = const_cast<Function*>(f);
-        FunToPostDTMap::iterator it = funToPDTMap.find(fun);
-        if(it==funToPDTMap.end())
-        {
-            PostDominatorTreeWrapperPass* postDT = new PostDominatorTreeWrapperPass();
-            postDT->runOnFunction(*fun);
-            PostDominatorTree * PDT = &(postDT->getPostDomTree());
-            funToPDTMap[fun] = PDT;
-            return PDT;
-        }
-        else
-            return it->second;
-    }
-
-    /// Get dominator tree of a function
-    DominatorTree* getDT(const Function* f)
-    {
-        Function* fun = const_cast<Function*>(f);
-        FunToDTMap::iterator it = funToDTMap.find(fun);
-        if(it==funToDTMap.end())
-        {
-            DominatorTree* dt = new DominatorTree();
-            dt->recalculate(*fun);
-            funToDTMap[fun] = dt;
-            return dt;
-        }
-        else
-            return it->second;
-    }
-
-private:
-    FunToLoopInfoMap funToLoopInfoMap;      ///< map a function to its loop info
-    FunToDTMap funToDTMap;                  ///< map a function to its dominator tree
-    FunToPostDTMap funToPDTMap;             ///< map a function to its post dominator tree
-};
-}
-
 namespace SVF
 {
 
@@ -233,29 +120,28 @@ public:
 
 class PTACFInfoBuilder{
 public:
+    typedef DenseMap<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
+    typedef DenseMap<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
+    typedef DenseMap<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
+
     /// Constructor
      PTACFInfoBuilder();
 
+     ~PTACFInfoBuilder();
+
      /// Get loop info of a function
-     LoopInfo* getLoopInfo(const Function* f)
-     {
-         return pass.getLoopInfo(f);
-     }
+     LoopInfo* getLoopInfo(const Function* f);
 
      /// Get post dominator tree of a function
-     PostDominatorTree* getPostDT(const Function* f)
-     {
-         return pass.getPostDT(f);
-     }
+     PostDominatorTree* getPostDT(const Function* f);
 
      /// Get dominator tree of a function
-     DominatorTree* getDT(const Function* f)
-     {
-         return pass.getDT(f);
-     }
+     DominatorTree* getDT(const Function* f);
 
 private:
-     llvm::PTACFInfoBuilderPass pass;
+    FunToLoopInfoMap funToLoopInfoMap;      ///< map a function to its loop info
+    FunToDTMap funToDTMap;                  ///< map a function to its dominator tree
+    FunToPostDTMap funToPDTMap;             ///< map a function to its post dominator tree
 };
 
 

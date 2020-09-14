@@ -83,6 +83,11 @@ public:
     SVFModule* buildSVFModule(Module &mod);
     SVFModule* buildSVFModule(const std::vector<std::string> &moduleNameVec);
 
+	inline SVFModule* getSVFModule() {
+		assert(svfModule && "svfModule has not been built yet!");
+		return svfModule;
+	}
+
     u32_t getModuleNum() const
     {
         return modules.size();
