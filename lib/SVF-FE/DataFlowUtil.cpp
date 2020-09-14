@@ -29,12 +29,31 @@
  */
 
 #include "SVF-FE/DataFlowUtil.h"
+#include "SVF-FE/LLVMModule.h"
 
 using namespace SVF;
+using namespace llvm;
 
 char IteratedDominanceFrontier::ID = 0;
+char llvm::PTACFInfoBuilderPass::ID = 0;
 //static RegisterPass<IteratedDominanceFrontier> IDF("IDF",
 //		"IteratedDominanceFrontier Pass");
+
+PTACFInfoBuilder::PTACFInfoBuilder()
+{
+//    Module* mod = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
+//    llvm::legacy::PassManager PM;
+//    PM.add(new llvm::PTACFInfoBuilderPass());
+//    PM.run(*mod);
+}
+
+bool PTACFInfoBuilderPass::runOnModule(Module& M)  {
+    for (Module::iterator fit = M.begin(), efit = M.end(); fit != efit; ++fit) {
+        Function &fun = *fit;
+        funToLoopInfoMap[&fun] = &getAnalysis<LoopInfoWrapperPass>(fun).getLoopInfo();
+    }
+     return false;
+}
 
 void IteratedDominanceFrontier::calculate(BasicBlock * bb,
         const DominanceFrontier &DF)
