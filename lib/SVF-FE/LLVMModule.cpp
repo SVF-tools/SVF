@@ -139,7 +139,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
-            // Err.print("SVFModuleLoader", SVFUtil::errs);
+            Err.print("SVFModuleLoader", SVFUtil::errs());
             continue;
         }
         modules.emplace_back(*mod);
