@@ -169,7 +169,7 @@ void CHGraph::buildCHGEdges(const SVFFunction* fun)
         {
             for (BasicBlock::const_iterator I = B->begin(), E = B->end(); I != E; ++I)
             {
-                if (SVFUtil::isa<CallInst>(&(*I)) || SVFUtil::isa<InvokeInst>(&(*I)))
+                if (SVFUtil::isCallSite(&(*I)))
                 {
                     CallSite cs = SVFUtil::getLLVMCallSite(&(*I));
                     connectInheritEdgeViaCall(fun, cs);
@@ -211,7 +211,7 @@ void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite c
         if (csThisPtr != NULL && samePtrTrue)
         {
             struct DemangledName basename = demangle(callee->getName().str());
-            if (!SVFUtil::isa<CallInst>(csThisPtr) && !SVFUtil::isa<InvokeInst>(csThisPtr) &&
+            if (!SVFUtil::isCallSite(csThisPtr)  &&
                     basename.className.size() > 0)
             {
                 addEdge(dname.className, basename.className, CHEdge::INHERITANCE);

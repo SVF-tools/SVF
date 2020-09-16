@@ -805,11 +805,28 @@ void SymbolTableInfo::handleCE(const Value *val)
             handleCE(ce->getOperand(1));
             handleCE(ce->getOperand(2));
         }
-        // remember to handle the constant bit cast opnd after stripping casts off
-        else
-        {
-            collectVal(ref);
-        }
+        // if we meet a int2ptr, then it points-to black hole
+		else if (const ConstantExpr *int2Ptrce = isInt2PtrConstantExpr(ref)) {
+			collectVal(int2Ptrce);
+		} else if (const ConstantExpr *ptr2Intce = isPtr2IntConstantExpr(ref)) {
+			collectVal(ptr2Intce);
+			const Constant *opnd = ptr2Intce->getOperand(0);
+			handleCE(opnd);
+		} else if (isTruncConstantExpr(ref) || isCmpConstantExpr(ref)) {
+			collectVal(ref);
+		} else if (isBinaryConstantExpr(ref)) {
+			collectVal(ref);
+		} else if (isUnaryConstantExpr(ref)) {
+			// we don't handle unary constant expression like fneg(x) now
+			collectVal(ref);
+		} else if (SVFUtil::isa<ConstantAggregate>(ref)) {
+			// we don't handle constant agrgregate like constant vectors
+			collectVal(ref);
+		} else {
+			if (SVFUtil::isa<ConstantExpr>(val))
+				assert(false && "we don't handle all other constant expression for now!");
+			collectVal(ref);
+		}
     }
 }
 

@@ -133,6 +133,7 @@ typedef llvm::MDNode MDNode;
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::CallInst CallInst;
 typedef llvm::InvokeInst InvokeInst;
+typedef llvm::CallBrInst CallBrInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 typedef llvm::PHINode PHINode;
