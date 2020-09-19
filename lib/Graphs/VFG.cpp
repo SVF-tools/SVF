@@ -476,29 +476,8 @@ void VFG::addVFGNodes()
             }
         }
 
-        PAGNodeSet retPAGNodes;
-        if (uniqueFunRetNode->hasIncomingEdges(PAGEdge::Copy))
-        {
-            for (PAGEdge::PAGEdgeSetTy::const_iterator cit = uniqueFunRetNode->getIncomingEdgesBegin(PAGEdge::Copy),
-                    ecit = uniqueFunRetNode->getIncomingEdgesEnd(PAGEdge::Copy);
-                    cit != ecit; ++cit)
-            {
-                const CopyPE* copyPE = SVFUtil::cast<CopyPE>(*cit);
-                if (isInterestedPAGNode(copyPE->getSrcNode()))
-                    retPAGNodes.insert(copyPE->getSrcNode());
-            }
-        }
-
-        /// If the function does not have a return value (e.g., return 0), then we add the return PAGNode to be NullPtr PAGNode
-        if(retPAGNodes.empty())
-            addFormalRetVFGNode(pag->getPAGNode(pag->getNullPtr()), func, retPEs);
-
-        /// Otherwise, we add the unique function return node
-        else
-        {
-            if(isInterestedPAGNode(uniqueFunRetNode))
-                addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
-        }
+       if(isInterestedPAGNode(uniqueFunRetNode))
+           addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
