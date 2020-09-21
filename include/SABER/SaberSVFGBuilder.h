@@ -76,7 +76,7 @@ private:
 
     /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
     /// In order to path sensitive leak detection
-    virtual void AddExtActualParmSVFGNodes(PTACallGraph* callgraph);
+    void AddExtActualParmSVFGNodes(PTACallGraph* callgraph);
 
     /// Collect memory pointed global pointers,
     /// note that this collection is recursively performed, for example gp-->obj-->obj'

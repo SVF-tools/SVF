@@ -136,12 +136,8 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
                 initOffset = gepNode->getLocationSet().getOffset();
             else if (SVFUtil::isa<FIObjPN>(initPN) || SVFUtil::isa<DummyObjPN>(initPN))
                 initOffset = 0;
-            else {
-                double time = stat->getClk() - stat->startTime;
-                cout << "time=" << time << endl;
-                cout << "nodeType=" << initPN->getNodeKind() << endl;
+            else
                 assert(false && "Not an object node!!");
-            }
 
             std::set<Size_t> offsets;
             offsets.insert(offset);
