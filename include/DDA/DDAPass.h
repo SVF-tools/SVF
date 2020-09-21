@@ -41,7 +41,7 @@ public:
         au.setPreservesAll();
     }
 
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id)
+    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
     {
         return this;
     }

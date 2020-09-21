@@ -585,6 +585,16 @@ inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
     }
     return NULL;
 }
+
+inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
+{
+    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    {
+        if((constExpr->getOpcode() >= Instruction::UnaryOpsBegin) && (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
+            return constExpr;
+    }
+    return NULL;
+}
 //@}
 
 /// Get the next instructions following control flow

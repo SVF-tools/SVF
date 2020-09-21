@@ -65,6 +65,7 @@ public:
     typedef DenseMap<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
     typedef DenseMap<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
     typedef DenseMap<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
+    typedef DenseMap<const PAGNode*, UnaryOPVFGNode*> PAGNodeToUnaryOPVFGNodeMapTy;
     typedef DenseMap<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
     typedef DenseMap<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
 
@@ -89,6 +90,7 @@ protected:
     PAGNodeToFormalRetMapTy PAGNodeToFormalRetMap; ///< map a PAGNode to a formal return
     PAGNodeToPHIVFGNodeMapTy PAGNodeToIntraPHIVFGNodeMap;	///< map a PAGNode to its PHIVFGNode
     PAGNodeToBinaryOPVFGNodeMapTy PAGNodeToBinaryOPVFGNodeMap;	///< map a PAGNode to its BinaryOPVFGNode
+    PAGNodeToUnaryOPVFGNodeMapTy PAGNodeToUnaryOPVFGNodeMap;	///< map a PAGNode to its UnaryOPVFGNode
     PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
     FunToVFGNodesMapTy funToVFGNodesMap; ///< map a function to its VFGNodes;
@@ -216,6 +218,12 @@ public:
     {
         PAGNodeToBinaryOPVFGNodeMapTy::const_iterator it = PAGNodeToBinaryOPVFGNodeMap.find(pagNode);
         assert(it != PAGNodeToBinaryOPVFGNodeMap.end() && "BinaryOPVFGNode can not be found??");
+        return it->second;
+    }
+    inline UnaryOPVFGNode* getUnaryOPVFGNode(const PAGNode* pagNode) const
+    {
+        PAGNodeToUnaryOPVFGNodeMapTy::const_iterator it = PAGNodeToUnaryOPVFGNodeMap.find(pagNode);
+        assert(it != PAGNodeToUnaryOPVFGNodeMap.end() && "UnaryOPVFGNode can not be found??");
         return it->second;
     }
     inline CmpVFGNode* getCmpVFGNode(const PAGNode* pagNode) const
@@ -537,14 +545,16 @@ protected:
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
-        FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
-        addVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(fun));
-        for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
-                it!=eit; ++it)
-            sNode->addRetPE(*it);
+		FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
+		addVFGNode(sNode, pag->getICFG()->getFunExitBlockNode(fun));
+		for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
+			sNode->addRetPE(*it);
 
-        PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
-        /// there is no need to setDef here, since uniqueFunRet is treated as a phi node to receive values from multiple return instructions of fun
+		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
+		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
+		/// we will set this phi node's def later
+		if (!pag->isPhiNode(uniqueFunRet))
+			setDef(uniqueFunRet, sNode);
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
@@ -602,6 +612,23 @@ protected:
         addVFGNode(sNode,edge->getICFGNode());
         setDef(resNode,sNode);
         PAGNodeToBinaryOPVFGNodeMap[resNode] = sNode;
+    }
+    /// Add a UnaryOperator VFG node
+    inline void addUnaryOPVFGNode(const PAGNode* resNode, PAG::UnaryOPList& oplist)
+    {
+        UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
+        u32_t pos = 0;
+        const PAGEdge* edge = NULL;
+        for(PAG::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        {
+            edge = *it;
+            sNode->setOpVer(pos, (*it)->getSrcNode());
+        }
+
+        assert(edge && "edge not found?");
+        addVFGNode(sNode,edge->getICFGNode());
+        setDef(resNode,sNode);
+        PAGNodeToUnaryOPVFGNodeMap[resNode] = sNode;
     }
 };
 

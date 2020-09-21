@@ -271,7 +271,6 @@ static const ei_pair ei_pairs[]=
     {"keypad", ExtAPI::EFT_NOOP},
     {"lchown", ExtAPI::EFT_NOOP},
     {"link", ExtAPI::EFT_NOOP},
-    {"llvm.memset", ExtAPI::EFT_NOOP},
     {"llvm.dbg", ExtAPI::EFT_NOOP},
     {"llvm.stackrestore", ExtAPI::EFT_NOOP},
     {"llvm.va_copy", ExtAPI::EFT_NOOP},
@@ -701,9 +700,6 @@ static const ei_pair ei_pairs[]=
     {"fgets", ExtAPI::EFT_L_A0},
     {"jpeg_std_error", ExtAPI::EFT_L_A0},
     {"memchr", ExtAPI::EFT_L_A0},
-    //This will overwrite *arg0 with non-pointer data -
-    //  assume that no valid pointer values are created.
-    {"memset", ExtAPI::EFT_L_A0},
     //This may return a new ptr if the region was moved.
     {"mremap", ExtAPI::EFT_L_A0},
     {"strchr", ExtAPI::EFT_L_A0},
@@ -728,10 +724,16 @@ static const ei_pair ei_pairs[]=
     {"inet_ntop", ExtAPI::EFT_L_A2},
     {"XGetSubImage", ExtAPI::EFT_L_A8},
 
+    {"memset", ExtAPI::EFT_L_A0__A0R_A1},
+    {"llvm.memset", ExtAPI::EFT_L_A0__A0R_A1},
+    {"llvm.memset.p0i8.i32", ExtAPI::EFT_L_A0__A0R_A1},
+    {"llvm.memset.p0i8.i64", ExtAPI::EFT_L_A0__A0R_A1},
     {"llvm.memcpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"llvm.memcpy.p0i8.p0i8.i32", ExtAPI::EFT_L_A0__A0R_A1R},
     {"llvm.memcpy.p0i8.p0i8.i64", ExtAPI::EFT_L_A0__A0R_A1R},
     {"llvm.memmove", ExtAPI::EFT_L_A0__A0R_A1R},
+    {"llvm.memmove.p0i8.p0i8.i32", ExtAPI::EFT_L_A0__A0R_A1R},
+    {"llvm.memmove.p0i8.p0i8.i64", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memccpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memcpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memmove", ExtAPI::EFT_L_A0__A0R_A1R},

@@ -146,7 +146,7 @@ private:
 
     /// evaluate llvm metadata
     inline bool evalMDTag(const Instruction *inst, const Value *val, std::string str,
-                          std::vector<Value *> &values) const
+                          std::vector<Value *>&) const
     {
 
         assert(val && "value should not be null");

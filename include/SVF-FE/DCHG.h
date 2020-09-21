@@ -236,7 +236,7 @@ public:
         this->kind = DI;
     }
 
-    //~DCHGraph();
+    virtual ~DCHGraph() { };
 
     /// Builds the CHG from DWARF debug information. extend determines
     /// whether to extend the CHG with first field edges.
@@ -249,14 +249,14 @@ public:
 
     void print(void);
 
-    virtual const bool csHasVFnsBasedonCHA(CallSite cs) override
+    virtual bool csHasVFnsBasedonCHA(CallSite cs) override
     {
         return csHasVtblsBasedonCHA(cs);
     }
 
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
 
-    virtual const bool csHasVtblsBasedonCHA(CallSite cs) override
+    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
     {
         const DIType *type = getCanonicalType(getCSStaticType(cs));
         if (!hasNode(type))
@@ -317,7 +317,6 @@ public:
             return nullptr;
         }
 
-        const DICompositeType *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
         std::vector<const DIType *> &fields = fieldTypes[base];
         assert(fields.size() > idx && "DCHG: idx into struct larger than # fields!");

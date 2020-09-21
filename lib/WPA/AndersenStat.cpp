@@ -181,15 +181,10 @@ void AndersenStat::constraintGraphStat()
         addrtotalOut +=nAddrOut;
     }
     double storeavgIn = (double)storetotalIn/cgNodeNumber;
-    double storeavgOut = (double)storetotalOut/cgNodeNumber;
     double loadavgIn = (double)loadtotalIn/cgNodeNumber;
-    double loadavgOut = (double)loadtotalOut/cgNodeNumber;
     double copyavgIn = (double)copytotalIn/cgNodeNumber;
-    double copyavgOut = (double)copytotalOut/cgNodeNumber;
     double addravgIn = (double)addrtotalIn/cgNodeNumber;
-    double addravgOut = (double)addrtotalOut/cgNodeNumber;
     double avgIn = (double)(addrtotalIn + copytotalIn + loadtotalIn + storetotalIn)/cgNodeNumber;
-    double avgOut = (double)(copytotalOut + loadtotalOut + storetotalOut)/cgNodeNumber;
 
 
     PTNumStatMap["NumOfCGNode"] = totalNodeNumber;

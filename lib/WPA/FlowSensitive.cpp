@@ -203,7 +203,7 @@ bool FlowSensitive::processSVFGNode(SVFGNode* node)
     {
         changed = true;
     }
-    else if(SVFUtil::isa<CmpVFGNode>(node) || SVFUtil::isa<BinaryOPVFGNode>(node))
+    else if(SVFUtil::isa<CmpVFGNode>(node) || SVFUtil::isa<BinaryOPVFGNode>(node) || SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
     {
 
     }

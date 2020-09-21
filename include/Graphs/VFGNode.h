@@ -49,11 +49,11 @@ class VFGNode : public GenericVFGNodeTy
 {
 
 public:
-    /// 20 kinds of ICFG node
+    /// 24 kinds of ICFG node
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK
     {
-        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, TPhi, TIntraPhi, TInterPhi,
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
         FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
@@ -414,6 +414,77 @@ public:
     }
     //@}
     /// Operands at a BinaryNode
+    //@{
+    inline const PAGNode* getOpVer(u32_t pos) const
+    {
+        OPVers::const_iterator it = opVers.find(pos);
+        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        return it->second;
+    }
+    inline void setOpVer(u32_t pos, const PAGNode* node)
+    {
+        opVers[pos] = node;
+    }
+    inline const PAGNode* getRes() const
+    {
+        return res;
+    }
+    inline u32_t getOpVerNum() const
+    {
+        return opVers.size();
+    }
+    inline OPVers::const_iterator opVerBegin() const
+    {
+        return opVers.begin();
+    }
+    inline OPVers::const_iterator opVerEnd() const
+    {
+        return opVers.end();
+    }
+    //@}
+
+    virtual const std::string toString() const;
+};
+
+/*!
+ * VFGNode for unary operator instructions, e.g., a = -b;
+ */
+class UnaryOPVFGNode: public VFGNode
+{
+public:
+    typedef DenseMap<u32_t,const PAGNode*> OPVers;
+protected:
+    const PAGNode* res;
+    OPVers opVers;
+
+private:
+    UnaryOPVFGNode();                      ///< place holder
+    UnaryOPVFGNode(const UnaryOPVFGNode &);  ///< place holder
+    void operator=(const UnaryOPVFGNode &); ///< place holder
+
+public:
+    /// Constructor
+    UnaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,UnaryOp), res(r)
+    {
+        const UnaryOperator* unary = SVFUtil::dyn_cast<UnaryOperator>(r->getValue());
+        assert(unary && "not a unary operator?");
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const UnaryOPVFGNode *)
+    {
+        return true;
+    }
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == UnaryOp;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == UnaryOp;
+    }
+    //@}
+    /// Operands at a UnaryNode
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const
     {

@@ -137,7 +137,15 @@ inline bool isIntrinsicInst(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Instruction* inst)
 {
-    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst);
+    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst) || SVFUtil::isa<CallBrInst>(inst);
+}
+/// Whether an instruction is a call or invoke instruction
+inline bool isCallSite(const Value* val)
+{
+	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+		return SVFUtil::isCallSite(inst);
+	else
+		return false;
 }
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const Instruction* inst)
@@ -155,7 +163,7 @@ inline bool isReturn(const Instruction* inst)
 /// Return LLVM callsite given a instruction
 inline CallSite getLLVMCallSite(const Instruction* inst)
 {
-    assert(SVFUtil::isa<CallInst>(inst)|| SVFUtil::isa<InvokeInst>(inst));
+    assert(isCallSite(inst) && "not a callsite?");
     CallSite cs(const_cast<Instruction*>(inst));
     return cs;
 }
@@ -200,7 +208,7 @@ inline const SVFFunction* getCallee(const CallSite cs)
 
 inline const SVFFunction* getCallee(const Instruction *inst)
 {
-    if (!SVFUtil::isa<CallInst>(inst) && !SVFUtil::isa<InvokeInst>(inst))
+    if (!isCallSite(inst))
         return NULL;
     CallSite cs(const_cast<Instruction*>(inst));
     return getCallee(cs);

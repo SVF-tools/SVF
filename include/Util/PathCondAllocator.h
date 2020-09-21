@@ -116,7 +116,7 @@ public:
         return cfInfoBuilder.getPostDT(fun);
     }
     /// Get LoopInfo
-    PTALoopInfo* getLoopInfo(const Function* f)
+    inline LoopInfo* getLoopInfo(const Function* f)
     {
         return cfInfoBuilder.getLoopInfo(f);
     }

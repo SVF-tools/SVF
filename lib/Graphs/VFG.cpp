@@ -110,6 +110,22 @@ const std::string BinaryOPVFGNode::toString() const {
     return rawstr.str();
 }
 
+const std::string UnaryOPVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "UnaryOPVFGNode ID: " << getId() << " ";
+    rawstr << "PAGEdge: [" << res->getId() << " = Unary(";
+    for(UnaryOPVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
+            it != eit; it++)
+        rawstr << it->second->getId() << ", ";
+    rawstr << ")]\t";
+    if(res->hasValue()){
+        rawstr << " " << *res->getValue() << " ";
+        rawstr << SVFUtil::getSourceLoc(res->getValue());
+    }
+    return rawstr.str();
+}
+
 const std::string GepVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -460,29 +476,8 @@ void VFG::addVFGNodes()
             }
         }
 
-        PAGNodeSet retPAGNodes;
-        if (uniqueFunRetNode->hasIncomingEdges(PAGEdge::Copy))
-        {
-            for (PAGEdge::PAGEdgeSetTy::const_iterator cit = uniqueFunRetNode->getIncomingEdgesBegin(PAGEdge::Copy),
-                    ecit = uniqueFunRetNode->getIncomingEdgesEnd(PAGEdge::Copy);
-                    cit != ecit; ++cit)
-            {
-                const CopyPE* copyPE = SVFUtil::cast<CopyPE>(*cit);
-                if (isInterestedPAGNode(copyPE->getSrcNode()))
-                    retPAGNodes.insert(copyPE->getSrcNode());
-            }
-        }
-
-        /// If the function does not have a return value (e.g., return 0), then we add the return PAGNode to be NullPtr PAGNode
-        if(retPAGNodes.empty())
-            addFormalRetVFGNode(pag->getPAGNode(pag->getNullPtr()), func, retPEs);
-
-        /// Otherwise, we add the unique function return node
-        else
-        {
-            if(isInterestedPAGNode(uniqueFunRetNode))
-                addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
-        }
+       if(isInterestedPAGNode(uniqueFunRetNode))
+           addFormalRetVFGNode(uniqueFunRetNode, func, retPEs);
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
@@ -498,6 +493,13 @@ void VFG::addVFGNodes()
     {
         if (isInterestedPAGNode(pit->first))
             addBinaryOPVFGNode(pit->first, pit->second);
+    }
+    // initialize llvm unary nodes (unary operators)
+    PAG::UnaryNodeMap& unaryNodeMap = pag->getUnaryNodeMap();
+    for (PAG::UnaryNodeMap::iterator pit = unaryNodeMap.begin(), epit = unaryNodeMap.end(); pit != epit; ++pit)
+    {
+        if (isInterestedPAGNode(pit->first))
+            addUnaryOPVFGNode(pit->first, pit->second);
     }
     // initialize llvm cmp nodes (comparision)
     PAG::CmpNodeMap& cmpNodeMap = pag->getCmpNodeMap();
@@ -605,6 +607,14 @@ void VFG::connectDirectVFGEdges()
         else if(BinaryOPVFGNode* binaryNode = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
         {
             for (BinaryOPVFGNode::OPVers::const_iterator it = binaryNode->opVerBegin(), eit = binaryNode->opVerEnd(); it != eit; it++)
+            {
+                if (it->second->isConstantData() == false)
+                    addIntraDirectVFEdge(getDef(it->second), nodeId);
+            }
+        }
+        else if(UnaryOPVFGNode* unaryNode = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            for (UnaryOPVFGNode::OPVers::const_iterator it = unaryNode->opVerBegin(), eit = unaryNode->opVerEnd(); it != eit; it++)
             {
                 if (it->second->isConstantData() == false)
                     addIntraDirectVFEdge(getDef(it->second), nodeId);
@@ -895,7 +905,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(VFG *graph)
+    static std::string getGraphName(VFG*)
     {
         return "VFG";
     }
@@ -909,7 +919,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node without MemSSA information
-    static std::string getSimpleNodeLabel(NodeType *node, VFG *graph)
+    static std::string getSimpleNodeLabel(NodeType *node, VFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -971,7 +981,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node with MemSSA information
-    static std::string getCompleteNodeLabel(NodeType *node, VFG *graph)
+    static std::string getCompleteNodeLabel(NodeType *node, VFG*)
     {
 
         std::string str;
@@ -998,6 +1008,15 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << tphi->getRes()->getId() << " = Binary(";
             for(BinaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(UnaryOPVFGNode* tphi = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << tphi->getRes()->getId() << " = Unary(";
+            for(UnaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
                     it != eit; it++)
                 rawstr << it->second->getId() << ", ";
             rawstr << ")\n";
@@ -1051,7 +1070,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *node, VFG *graph)
+    static std::string getNodeAttributes(NodeType *node, VFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -1097,6 +1116,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << "color=grey";
         }
+        else if (SVFUtil::isa<UnaryOPVFGNode>(node))
+        {
+            rawstr << "color=grey";
+        }
         else if(SVFUtil::isa<PHIVFGNode>(node))
         {
             rawstr <<  "color=black";
@@ -1130,7 +1153,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, VFG *vfg)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, VFG*)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -1151,7 +1174,7 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         VFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

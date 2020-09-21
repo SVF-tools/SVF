@@ -203,6 +203,15 @@ const std::string BinaryOPPE::toString() const{
     return rawstr.str();
 }
 
+const std::string UnaryOPPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "UnaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(getValue())
+        rawstr << *getValue() << getSourceLoc(getValue());
+    return rawstr.str();
+}
+
 const std::string LoadPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
@@ -285,7 +294,7 @@ const std::string TDJoinPE::toString() const{
 }
 
 
-PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), totalPTAPAGEdge(0),nodeNumAfterPAGBuild(0)
+PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
 {
     symInfo = SymbolTableInfo::Symbolnfo();
     icfg = new ICFG();
@@ -359,6 +368,23 @@ BinaryOPPE* PAG::addBinaryOPPE(NodeID src, NodeID dst)
         BinaryOPPE* binaryOP = new BinaryOPPE(srcNode, dstNode);
         addEdge(srcNode,dstNode, binaryOP);
         return binaryOP;
+    }
+}
+
+/*!
+ * Add Unary edge
+ */
+UnaryOPPE* PAG::addUnaryOPPE(NodeID src, NodeID dst)
+{
+    PAGNode* srcNode = getPAGNode(src);
+    PAGNode* dstNode = getPAGNode(dst);
+    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::UnaryOp))
+        return SVFUtil::cast<UnaryOPPE>(edge);
+    else
+    {
+        UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode);
+        addEdge(srcNode,dstNode, unaryOP);
+        return unaryOP;
     }
 }
 
@@ -1022,7 +1048,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(PAGNode *node, PAG *graph)
+    static std::string getNodeLabel(PAGNode *node, PAG*)
     {
         bool briefDisplay = true;
         bool nameDisplay = true;
@@ -1058,7 +1084,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     }
 
-    static std::string getNodeAttributes(PAGNode *node, PAG *pag)
+    static std::string getNodeAttributes(PAGNode *node, PAG*)
     {
         if (SVFUtil::isa<ValPN>(node))
         {
@@ -1096,7 +1122,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(PAGNode *node, EdgeIter EI, PAG *pag)
+    static std::string getEdgeAttributes(PAGNode*, EdgeIter EI, PAG*)
     {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -1128,6 +1154,10 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         {
             return "color=grey";
         }
+        else if (SVFUtil::isa<UnaryOPPE>(edge))
+        {
+            return "color=grey";
+        }
         else if (SVFUtil::isa<TDForkPE>(edge))
         {
             return "color=Turquoise";
@@ -1151,7 +1181,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(PAGNode *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(PAGNode*, EdgeIter EI)
     {
         const PAGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
