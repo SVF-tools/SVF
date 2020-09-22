@@ -197,9 +197,13 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
                 PAG::PAGNodeList& arglist = it->second;
-                const PAGNode* pagNode = arglist.front();
-                addActualParmVFGNode(pagNode,it->first);
-                svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+                for(PAG::PAGNodeList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
+					const PAGNode *pagNode = *ait;
+					if (pagNode->isPointer()) {
+						addActualParmVFGNode(pagNode, it->first);
+						svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+					}
+                }
             }
         }
     }

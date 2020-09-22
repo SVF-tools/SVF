@@ -118,14 +118,19 @@ void LeakChecker::initSnks()
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
-            if (isSinkLikeFun(fun))
-            {
-                PAG::PAGNodeList& arglist = it->second;
-                assert(!arglist.empty() && "no actual parameter at deallocation site?");
-                /// we only pick the first parameter of all the actual parameters
-                const SVFGNode* snk = getSVFG()->getActualParmVFGNode(arglist.front(), it->first);
-                addToSinks(snk);
-            }
+			if (isSinkLikeFun(fun)) {
+				PAG::PAGNodeList &arglist = it->second;
+				assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
+				/// we only choose pointer parameters among all the actual parameters
+				for (PAG::PAGNodeList::const_iterator ait = arglist.begin(),
+						aeit = arglist.end(); ait != aeit; ++ait) {
+					const PAGNode *pagNode = *ait;
+					if (pagNode->isPointer()) {
+						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+						addToSinks(snk);
+					}
+				}
+			}
         }
     }
 }
