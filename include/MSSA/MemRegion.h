@@ -181,6 +181,17 @@ public:
     {
         return memRegSet;
     }
+
+    /// Get superset cpts set
+    inline const PointsTo& getRepPointsTo(const PointsTo& cpts) const
+    {
+        PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
+        assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
+        return it->second;
+    }
+    /// Get a memory region according to cpts
+    const MemRegion* getMR(const PointsTo& cpts) const;
+
 private:
 
     BVDataPTAImpl* pta;
@@ -233,16 +244,6 @@ private:
 
     /// Clean up memory
     void destroy();
-
-    /// Get superset cpts set
-    inline const PointsTo& getRepPointsTo(const PointsTo& cpts) const
-    {
-        PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
-        assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
-        return it->second;
-    }
-    /// Get a memory region according to cpts
-    const MemRegion* getMR(const PointsTo& cpts) const;
 
     //Get all objects might pass into callee from a callsite
     void collectCallSitePts(const CallBlockNode* cs);

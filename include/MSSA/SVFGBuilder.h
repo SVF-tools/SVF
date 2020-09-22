@@ -102,12 +102,12 @@ public:
         return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge))!=vfEdgesAtIndCallSite.end();
     }
 
+    /// Build Memory SSA
+    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
+
 protected:
     /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
     SVFG* build(BVDataPTAImpl* pta, VFG::VFGK kind);
-
-    /// Build Memory SSA
-    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
     /// Can be rewritten by subclasses
     virtual void buildSVFG();
     /// Release global SVFG
