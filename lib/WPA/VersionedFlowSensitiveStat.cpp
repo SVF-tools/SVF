@@ -92,8 +92,8 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["StoreTime"]          = vfspta->storeTime;
     timeStatMap["UpdateCGTime"]       = vfspta->updateCallGraphTime;
     timeStatMap["PhiTime"]            = vfspta->phiTime;
-    timeStatMap["ColouringTime"]      = vfspta->colouringTime;
-    timeStatMap["PrecolouringTime"]   = vfspta->precolouringTime;
+    timeStatMap["meldLabelingTime"]   = vfspta->meldLabelingTime;
+    timeStatMap["PrelabelingTime"]    = vfspta->prelabelingTime;
     timeStatMap["RelianceTime"]       = vfspta->relianceTime;
     timeStatMap["VersionPropTime"]    = vfspta->versionPropTime;
     timeStatMap["MeldMappingTime"]    = vfspta->meldMappingTime;

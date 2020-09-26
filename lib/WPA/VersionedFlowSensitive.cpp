@@ -16,8 +16,8 @@ using namespace SVF;
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
-    numPrecolouredNodes = numPrecolourVersions = 0;
-    relianceTime = precolouringTime = colouringTime = meldMappingTime = versionPropTime = 0.0;
+    numPrelabeledNodes = numPrelabelVersions = 0;
+    relianceTime = prelabelingTime = meldLabelingTime = meldMappingTime = versionPropTime = 0.0;
 }
 
 void VersionedFlowSensitive::initialize()
@@ -30,9 +30,8 @@ void VersionedFlowSensitive::initialize()
     vPtD = getVDFPTDataTy();
     assert(vPtD && "VFS::initialize: Expected VDFPTData");
 
-    precolour();
-    colour();
-
+    prelabel();
+    meldLabel();
     mapMeldVersions();
 
     determineReliance();
@@ -44,12 +43,11 @@ void VersionedFlowSensitive::initialize()
 void VersionedFlowSensitive::finalize()
 {
     FlowSensitive::finalize();
-    //vPtD->dumpPTData();
-    printf("DONE! TODO\n"); fflush(stdout);
-    //exit(0);
+    // vPtD->dumpPTData();
+    // dumpReliances();
 }
 
-void VersionedFlowSensitive::precolour(void)
+void VersionedFlowSensitive::prelabel(void)
 {
     double start = stat->getClk(true);
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
@@ -59,6 +57,8 @@ void VersionedFlowSensitive::precolour(void)
 
         if (const StoreSVFGNode *stn = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
+            // l: *p = q.
+            // If p points to o (Andersen's), l yields a new version for o.
             NodeID p = stn->getPAGDstNodeID();
             for (NodeID o : ander->getPts(p))
             {
@@ -69,13 +69,14 @@ void VersionedFlowSensitive::precolour(void)
 
             if (ander->getPts(p).count() != 0)
             {
-                ++numPrecolouredNodes;
+                ++numPrelabeledNodes;
             }
         }
         else if (delta(l))
         {
             // If l may change at runtime (new incoming edges), it's unknown whether
-            // a new consume version is required, so we give it one in case.
+            // a new consume version is required (we only consider what the node may yield),
+            // so we give it one just in case. This is sound but imprecise.
             for (const SVFGEdge *e : sn->getOutEdges())
             {
                 const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
@@ -90,17 +91,17 @@ void VersionedFlowSensitive::precolour(void)
 
                 if (ie->getPointsTo().count() != 0)
                 {
-                    ++numPrecolouredNodes;
+                    ++numPrelabeledNodes;
                 }
             }
         }
     }
 
     double end = stat->getClk(true);
-    precolouringTime = (end - start) / TIMEINTERVAL;
+    prelabelingTime = (end - start) / TIMEINTERVAL;
 }
 
-void VersionedFlowSensitive::colour(void) {
+void VersionedFlowSensitive::meldLabel(void) {
     double start = stat->getClk(true);
 
     while (!vWorklist.empty()) {
@@ -113,7 +114,7 @@ void VersionedFlowSensitive::colour(void) {
             if (!ie) continue;
 
             NodeID lp = ie->getDstNode()->getId();
-            // Delta nodes had c set already.
+            // Delta nodes had c set already and they are permanent.
             if (delta(lp)) continue;
 
             bool lpIsStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp));
@@ -141,7 +142,7 @@ void VersionedFlowSensitive::colour(void) {
     }
 
     double end = stat->getClk(true);
-    colouringTime = (end - start) / TIMEINTERVAL;
+    meldLabelingTime = (end - start) / TIMEINTERVAL;
 }
 
 bool VersionedFlowSensitive::meld(MeldVersion &mv1, MeldVersion &mv2)
@@ -173,6 +174,8 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             MeldVersion &mv = omv.second;
 
             DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            // If a mapping for foudnVersion exists, use it, otherwise create a new Version,
+            // keep track of it, and use that.
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
             consumel[o] = v;
             // At non-stores, consume == yield.
@@ -206,14 +209,16 @@ void VersionedFlowSensitive::mapMeldVersions(void)
 
 bool VersionedFlowSensitive::delta(NodeID l)
 {
+    // Whether a node is a delta node or not. Decent boon to performance.
+    static DenseMap<NodeID, bool> deltaCache;
+
     DenseMap<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
     if (isDelta != deltaCache.end()) return isDelta->second;
 
-    // vfs-TODO: double check.
     const SVFGNode *s = svfg->getSVFGNode(l);
     // Cases:
-    //  * Function entry: can get new inc. ind. edges through ind. callsites.
-    //  * Callsite returns: can get new inc. ind. edges if the callsite is indirect.
+    //  * Function entry: can get new incoming indirect edges through ind. callsites.
+    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
     //  * Otherwise: static.
     if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
     {
@@ -233,10 +238,9 @@ bool VersionedFlowSensitive::delta(NodeID l)
     return false;
 }
 
-/// Returns a new version for o.
 MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
-    ++numPrecolourVersions;
+    ++numPrelabelVersions;
     MeldVersion nv;
     nv.set(++meldVersions[o]);
     return nv;
@@ -250,18 +254,9 @@ bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) 
     return ml.find(o) != ml.end();
 }
 
-bool VersionedFlowSensitive::hasMeldVersion(NodeID l, NodeID o, enum VersionType v) const
-{
-    // Choose which map we are checking.
-    const LocMeldVersionMap &m = v == CONSUME ? meldConsume : meldYield;
-    const ObjToMeldVersionMap &ml = m.lookup(l);
-    return ml.find(o) != ml.end();
-}
-
 void VersionedFlowSensitive::determineReliance(void)
 {
     double start = stat->getClk(true);
-
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
         NodeID l = it->first;
@@ -275,7 +270,7 @@ void VersionedFlowSensitive::determineReliance(void)
             for (NodeID o : ie->getPointsTo())
             {
                 if (!hasVersion(l, o, YIELD)) continue;
-                // Given l --o--> lp, c at lp relies on y at l.
+                // Given l --o--> lp, c(o) at lp relies on y(o) at l.
                 NodeID lp = ie->getDstNode()->getId();
                 Version &y = yieldl[o];
                 Version &cp = consume[lp][o];
@@ -286,13 +281,14 @@ void VersionedFlowSensitive::determineReliance(void)
             }
         }
 
+        // When an object/version points-to set changes, these nodes need to know.
         if (SVFUtil::isa<LoadSVFGNode>(sn) || SVFUtil::isa<StoreSVFGNode>(sn))
         {
             for (ObjToVersionMap::value_type &ov : consume[l])
             {
                 NodeID o = ov.first;
                 Version &v = ov.second;
-                stmtReliance[o][v].insert(l);
+                stmtReliance[o][v].set(l);
             }
         }
     }
@@ -317,6 +313,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
         }
     }
 
+    // Notify nodes which rely on o/v that it changed.
     for (NodeID s : stmtReliance[o][v])
     {
         pushIntoWorklist(s);
@@ -336,16 +333,15 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
 {
     for (const SVFGEdge *e : newEdges)
     {
-        const SVFGNode *src = e->getSrcNode();
-        const SVFGNode *dst = e->getDstNode();
-        NodeID srcId = src->getId();
-        NodeID dstId = dst->getId();
+        SVFGNode *dstNode = e->getDstNode();
+        NodeID src = e->getSrcNode()->getId();
+        NodeID dst = dstNode->getId();
 
-        if (SVFUtil::isa<PHISVFGNode>(dst))
+        if (SVFUtil::isa<PHISVFGNode>(dstNode))
         {
-            pushIntoWorklist(dstId);
+            pushIntoWorklist(dst);
         }
-        else if (SVFUtil::isa<FormalINSVFGNode>(dst) || SVFUtil::isa<ActualOUTSVFGNode>(dst))
+        else if (SVFUtil::isa<FormalINSVFGNode>(dstNode) || SVFUtil::isa<ActualOUTSVFGNode>(dstNode))
         {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             assert(ie && "VFS::updateConnectedNodes: given direct edge?");
@@ -356,15 +352,15 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
             for (NodeID o : ept)
             {
                 // Nothing to propagate.
-                if (yield[srcId].find(o) == yield[srcId].end()) continue;
+                if (yield[src].find(o) == yield[src].end()) continue;
 
-                Version &srcY = yield[srcId][o];
-                Version &dstC = consume[dstId][o];
+                Version &srcY = yield[src][o];
+                Version &dstC = consume[dst][o];
                 versionReliance[o][srcY].insert(dstC);
                 propagateVersion(o, srcY);
             }
 
-            if (changed) pushIntoWorklist(dst->getId());
+            if (changed) pushIntoWorklist(dst);
         }
     }
 }
@@ -375,6 +371,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
 
     bool changed = false;
 
+    // l: p = *q
     NodeID l = load->getId();
     NodeID p = load->getPAGDstNodeID();
     NodeID q = load->getPAGSrcNodeID();
@@ -391,7 +388,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
 
         if (isFieldInsensitive(o))
         {
-            /// If o is a field-insensitive node, we should also get all field nodes'
+            /// If o is a field-insensitive object, we should also get all field nodes'
             /// points-to sets and pass them to p.
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
@@ -420,6 +417,8 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     const PointsTo &qpt = getPts(q);
 
     NodeID l = store->getId();
+    // l: *p = q
+
     double start = stat->getClk();
     bool changed = false;
     // The version for these objects would be y_l(o).
@@ -454,7 +453,8 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
 
-    // TODO: time.
+    // Changed objects need to be propagated. Time here should be inconsequential
+    // *except* for time taken for propagateVersion, which will time itself.
     if (!changedObjects.empty())
     {
         ObjToVersionMap &yieldl = yield[l];
@@ -469,12 +469,12 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 
 void VersionedFlowSensitive::dumpReliances(void) const
 {
-    SVFUtil::outs() << "# Reliances\n";
-    for (DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>>::value_type ovrv : versionReliance)
+    SVFUtil::outs() << "# Version reliances\n";
+    for (const DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>>::value_type ovrv : versionReliance)
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (DenseMap<Version, DenseSet<Version>>::value_type vrv : ovrv.second)
+        for (const DenseMap<Version, DenseSet<Version>>::value_type vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
@@ -495,5 +495,31 @@ void VersionedFlowSensitive::dumpReliances(void) const
         }
     }
 
-    // TODO: stmt reliances.
+    SVFUtil::outs() << "# Statement reliances\n";
+    for (const DenseMap<NodeID, DenseMap<Version, NodeBS>>::value_type &ovss : stmtReliance)
+    {
+        NodeID o = ovss.first;
+        SVFUtil::outs() << "  Object " << o << "\n";
+
+        for (const DenseMap<Version, NodeBS>::value_type &vss : ovss.second)
+        {
+            Version v = vss.first;
+            SVFUtil::outs() << "    Version " << v << " is a reliance for statements: ";
+
+            const NodeBS &ss = vss.second;
+            bool first = true;
+            for (NodeID s : ss)
+            {
+                if (!first)
+                {
+                    SVFUtil::outs() << ", ";
+                }
+
+                SVFUtil::outs() << s;
+                first = false;
+            }
+
+            SVFUtil::outs() << "\n";
+        }
+    }
 }

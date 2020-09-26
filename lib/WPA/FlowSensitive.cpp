@@ -88,8 +88,6 @@ void FlowSensitive::analyze()
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
 
-    printf("MAIN: %fs\n", solveTime);
-
     if (CTirAliasEval)
     {
         printCTirAliasStats();

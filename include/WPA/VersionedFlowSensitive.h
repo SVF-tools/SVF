@@ -22,7 +22,7 @@ class AndersenWaveDiff;
 class SVFModule;
 
 /*!
- * Flow sensitive whole program pointer analysis
+ * Versioned flow sensitive whole program pointer analysis
  */
 class VersionedFlowSensitive : public FlowSensitive
 {
@@ -44,9 +44,6 @@ public:
 
     /// Constructor
     VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA);
-
-    /// Flow sensitive analysis
-    // virtual void analyze(SVFModule* svfModule) override;
 
     /// Initialize analysis
     virtual void initialize() override;
@@ -82,10 +79,10 @@ protected:
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
 
 private:
-    /// Precolour the split SVFG.
-    void precolour(void);
-    /// Colour the precoloured split SVFG.
-    void colour(void);
+    /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.
+    void prelabel(void);
+    /// Meld label the prelabeled SVFG.
+    void meldLabel(void);
     /// Melds v2 into v1 (in place), returns whether a change occurred.
     bool meld(MeldVersion &mv1, MeldVersion &mv2);
 
@@ -95,18 +92,17 @@ private:
     /// Returns whether l is a delta node.
     bool delta(NodeID l);
 
-    /// Returns a new MeldVersion for o.
+    /// Returns a new MeldVersion for o during the prelabeling phase.
     MeldVersion newMeldVersion(NodeID o);
     /// Whether l has a consume/yield version for o.
     bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
-    /// Whether l has a consume/yield MeldVersion for o.
-    bool hasMeldVersion(NodeID l, NodeID o, enum VersionType v) const;
 
-    /// Determine which versions rely on which versions, and which statements
-    /// rely on which versions.
+    /// Determine which versions rely on which versions (e.g. c_l'(o) relies on y_l(o)
+    /// given l-o->l' and y_l(o) = a, c_l'(o) = b), and which statements rely on which
+    /// versions (e.g. node l relies on c_l(o)).
     void determineReliance(void);
 
-    /// Propagates version v of o to any version of o which relies on v.
+    /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
@@ -115,42 +111,45 @@ private:
     void dumpReliances(void) const;
 
     /// SVFG node (label) x object -> version to consume.
-    /// Used during colouring.
+    /// Used during meld labeling. We use MeldVersions and Versions for performance.
+    /// MeldVersions are currently SparseBitVectors which are necessary for the meld operator,
+    /// but when meld labeling is complete, we don't want to carry around SBVs and use them; integers
+    /// are better.
     LocMeldVersionMap meldConsume;
     /// SVFG node (label) x object -> version to yield.
-    /// Used during colouring.
+    /// Used during meld labeling.
     /// For non-stores, yield == consume, so meldYield only has entries for stores.
     LocMeldVersionMap meldYield;
-    /// Object -> MeldVersion counter.
+    /// Object -> MeldVersion counter. Used in the prelabeling phase to generate a
+    /// new MeldVersion.
     DenseMap<NodeID, unsigned> meldVersions;
 
-    /// Actual consume map.
+    /// Like meldConsume but with Versions, not MeldVersions.
+    /// Created after meld labeling from meldConsume and used during the analysis.
     LocVersionMap consume;
-    /// Actual yield map.
+    /// Actual yield map. Yield analogue to consume.
     LocVersionMap yield;
 
     /// o -> (version -> versions which rely on it).
     VersionRelianceMap versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
-    DenseMap<NodeID, DenseMap<Version, DenseNodeSet>> stmtReliance;
+    DenseMap<NodeID, DenseMap<Version, NodeBS>> stmtReliance;
 
-    /// Worklist for performing meld colouring, takes SVFG node l.
+    /// Worklist for performing meld labeling, takes SVFG node l.
+    /// Nodes are added when the version they yield is changed.
     FIFOWorkList<NodeID> vWorklist;
-
-    /// Whether a node is a delta node or not.
-    DenseMap<NodeID, bool> deltaCache;
 
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VDFPTDataTy *vPtD;
 
     /// Additional statistics.
     //@{
-    Size_t numPrecolouredNodes;  ///< Number of precoloured nodes.
-    Size_t numPrecolourVersions; ///< Number of versions created during precolouring.
+    Size_t numPrelabeledNodes;  ///< Number of prelabeled nodes.
+    Size_t numPrelabelVersions; ///< Number of versions created during prelabeling.
 
     double relianceTime;     ///< Time to determine version and statement reliance.
-    double precolouringTime; ///< Time to precolour SVFG.
-    double colouringTime;    ///< Time to colour SVFG.
+    double prelabelingTime;  ///< Time to prelabel SVFG.
+    double meldLabelingTime; ///< Time to meld label SVFG.
     double meldMappingTime;  ///< Time to map MeldVersions to Versions.
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}

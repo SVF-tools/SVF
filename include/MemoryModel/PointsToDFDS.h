@@ -510,7 +510,9 @@ private:
 };
 
 /// Versioned DF points-to. For each location, a particular "version" is accessed for
-/// address-taken objects. 
+/// address-taken objects.
+/// Expects a consume and a yield map to be explicitly given by the user mapping locations
+/// to the versions of objects which they consume and yield respectively. TODO: we can do better.
 template<class Key, class Data>
 class VDFPTData : public PTData<Key,Data>
 {
@@ -541,22 +543,8 @@ public:
         this->yield = yield;
     }
 
-    /// Propagate points-to of o from version yield_src(o) to consume_dst(o) (union y into c).
-    bool propagateAT(LocID srcLoc, LocID dstLoc, NodeID o)
-    {
-        Version y = (*yield)[srcLoc][o];
-        Version c = (*consume)[dstLoc][o];
-        // Propagating same version? No need.
-        if (y == c) return false;
-
-        VPtsMap &oVPtsMap = atPointsTos[o];
-        PointsTo &ypt = oVPtsMap[y];
-        PointsTo &cpt = oVPtsMap[c];
-
-        return ypt |= cpt;
-    }
-
-    /// Merges version from of o into version to of o, kind of like to(o) = to(o) U from(o).
+    /// Merges points-to set of version from of o into points-to set of version to of o,
+    /// pt(o:to) = pt(o:to) U pt(o:from).
     bool updateATVersion(NodeID o, Version to, Version from)
     {
         VPtsMap &oVPtsMap = atPointsTos[o];
@@ -568,7 +556,7 @@ public:
         return topt |= frompt;
     }
 
-    /// pt(p) = pt(p) U pt(o), where pt(o) is the consumed version at loc.
+    /// pt(p) = pt(p) U pt(o:c), where c is the consumed version of o at loc.
     bool unionTLFromAT(LocID loc, NodeID p, NodeID o)
     {
         ObjToVersionMap &consumeLoc = (*consume)[loc];
@@ -581,7 +569,7 @@ public:
         return ppt |= opt;
     }
 
-    /// pt(o) = pt(o) U pt(p), where pt(o) is the yielded version at loc.
+    /// pt(o:y) = pt(o:y) U pt(p), where y is the yielded version at loc.
     bool unionATFromTL(LocID loc, NodeID p, NodeID o)
     {
         Version y = (*yield)[loc][o];
@@ -592,9 +580,9 @@ public:
     }
 
     /// Propagates all consume versions at loc to their corresponding yield versions,
-    /// EXCEPT su => singleton is not propagated.
-    /// When the yield version of o at loc is changed, it is added to changedObjects.
-    /// Returns true if any points-to set changed.
+    /// EXCEPT that su => singleton is not propagated.
+    /// When the points-to set of the yield version of o at loc is changed, it
+    /// is added to changedObjects. Returns true if any points-to set changed.
     bool propWithinLoc(LocID loc, bool su, NodeID singleton, NodeBS &changedObjects)
     {
         bool changed = false;
@@ -645,9 +633,9 @@ public:
     virtual inline void dumpPTData()
     {
         // Dump points-to of top-level pointers
-        //PTData<Key,Data>::dumpPts(this->ptsMap);
+        PTData<Key,Data>::dumpPts(this->ptsMap);
 
-        // Dump points-to of address-taken variables
+        // Dump points-to sets of address-taken variables
         // Gather objects in an ordered data structure.
         NodeBS objects;
         for (DenseMap<NodeID, VPtsMap>::value_type ovpt : atPointsTos)
@@ -672,7 +660,7 @@ public:
         }
 
         // We also want to know, which versions correspond to which locations.
-        // TODO: pull repetition into function.
+        // TODO: pull repeated loop into function?
         for (LocVersionMap::value_type &lov : *consume)
         {
             LocID &l = lov.first;
