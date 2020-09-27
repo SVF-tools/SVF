@@ -303,6 +303,15 @@ public:
 // TODO: clean up position.
 template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
 {
+    // From: http://szudzik.com/ElegantPairing.pdf
+    // Pairing function we use for hashing. szudzik(szudzik(a, b), c) is faster than
+    // DenseMapInfo<std::pair<std::pair<unsigned, unsigned>, unsigned>>>::getHashValue.
+    // Might give us fewer collisions too, but this may be dependent on how large inputs are.
+    static unsigned szudzik(unsigned a, unsigned b)
+    {
+        return a > b ? b * b + a : a * a + a + b;
+    }
+
     static inline llvm::SparseBitVector<> getEmptyKey() { return llvm::SparseBitVector<>(); }
 
     static inline llvm::SparseBitVector<> getTombstoneKey()
@@ -314,8 +323,7 @@ template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
 
     static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
     {
-        return DenseMapInfo<std::pair<unsigned, std::pair<int, int>>>::getHashValue(
-                std::make_pair(sbv.count(), std::make_pair(sbv.find_first(), sbv.find_last())));
+        return szudzik(szudzik(sbv.count(), sbv.find_first()), sbv.find_last());
     }
 
     static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
