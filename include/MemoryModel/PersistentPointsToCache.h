@@ -28,6 +28,8 @@ public:
     typedef DenseMap<PointsToID, Data> IDToPTSMap;
     typedef DenseMap<Data, PointsToID> PTSToIDMap;
 
+    static const PointsToID emptyPointsToId = 0;
+
 public:
     PersistentPointsToCache(void) : idCounter(1) { }
 
@@ -119,7 +121,7 @@ private:
     {
         ++idCounter;
         // Make sure we don't overflow.
-        assert(idCounter != 0 && "PPTC::newPointsToId: PointsToIDs exhausted! Try a larger type.");
+        assert(idCounter != emptyPointsToId && "PPTC::newPointsToId: PointsToIDs exhausted! Try a larger type.");
         return idCounter;
     }
 
