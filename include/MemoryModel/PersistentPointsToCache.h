@@ -72,7 +72,11 @@ public:
         if (foundResult != unionCache.end()) return foundResult->second;
 
         // Otherwise, perform the union lazily and cache it.
+        PointsToID unionResult = newPointsToId();
+        unionCache[std::minmax(id1, id2)] = unionResult;
+        willUnion[unionResult] = std::minmax(id1, id2);
 
+        return unionResult;
     }
 
     // TODO: ref count API for garbage collection.
