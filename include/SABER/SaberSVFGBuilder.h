@@ -48,7 +48,7 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
     /// Constructor
-    SaberSVFGBuilder() {}
+    SaberSVFGBuilder(): SVFGBuilder(true) {}
 
     /// Destructor
     virtual ~SaberSVFGBuilder() {}
