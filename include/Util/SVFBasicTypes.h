@@ -63,6 +63,7 @@ typedef llvm::SparseBitVector<> NodeBS;
 typedef llvm::SparseBitVector<> MeldVersion;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
+typedef unsigned PointsToID;
 
 typedef std::pair<NodeID, NodeID> NodePair;
 typedef std::set<NodeID> NodeSet;
