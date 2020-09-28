@@ -134,6 +134,7 @@ bool AndersenLCD::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
         return false;
 
     /// union pts of node to rep
+    updatePropaPts(newRepId, nodeId);
     unionPts(newRepId,nodeId);
     pushIntoWorklist(newRepId);
 
