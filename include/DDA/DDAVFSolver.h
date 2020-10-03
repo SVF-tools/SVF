@@ -80,6 +80,12 @@ public:
     {
         return (pts |= targetPts);
     }
+    /// Union pts
+    virtual bool unionDDAPts(DPIm dpm, const CPtSet& targetPts)
+    {
+        CPtSet& pts = isTopLevelPtrStmt(dpm.getLoc()) ? dpmToTLCPtSetMap[dpm] : dpmToADCPtSetMap[dpm];
+        return pts |= targetPts;
+    }
     /// Add pts
     virtual void addDDAPts(CPtSet& pts, const CVar& var)
     {
@@ -522,18 +528,16 @@ protected:
 
     /// Points-to Caching for top-level pointers and address-taken objects
     //@{
-    virtual inline CPtSet& getCachedPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedPointsTo(const DPIm& dpm)
     {
         if (isTopLevelPtrStmt(dpm.getLoc()))
-            // We don't use getCachedTLPointsTo for constness purposes.
-            return dpmToTLCPtSetMap[dpm];
+            return getCachedTLPointsTo(dpm);
         else
             return getCachedADPointsTo(dpm);
     }
     virtual inline void updateCachedPointsTo(const DPIm& dpm, const CPtSet& pts)
     {
-        CPtSet& dpmPts = getCachedPointsTo(dpm);
-        if (unionDDAPts(dpmPts, pts))
+        if (unionDDAPts(dpm, pts))
         {
             DOSTAT(double start = DDAStat::getClk());
             reCompute(dpm);
@@ -544,7 +548,7 @@ protected:
     {
         return dpmToTLCPtSetMap[dpm];
     }
-    virtual inline CPtSet& getCachedADPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedADPointsTo(const DPIm& dpm)
     {
         return dpmToADCPtSetMap[dpm];
     }
