@@ -232,7 +232,7 @@ void AndersenStat::statNullPtr()
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
         {
             ///TODO: change the condition here to fetch the points-to set
-            PointsTo& pts = pta->getPts(pagNodeId);
+            const PointsTo& pts = pta->getPts(pagNodeId);
             if (pta->containBlackHoleNode(pts))
                 _NumOfBlackholePtr++;
 
@@ -293,7 +293,7 @@ void AndersenStat::performStat()
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;
-        PointsTo& pts = pta->getPts(node);
+        const PointsTo& pts = pta->getPts(node);
         u32_t size = pts.count();
         totalPointers++;
         totalPtsSize+=size;

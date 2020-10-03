@@ -63,8 +63,8 @@ void AndersenLCD::handleCopyGep(ConstraintNode* node)
     for (ConstraintEdge* edge : node->getCopyOutEdges())
     {
         NodeID dstNodeId = edge->getDstID();
-        PointsTo& srcPts = getPts(nodeId);
-        PointsTo& dstPts = getPts(dstNodeId);
+        const PointsTo& srcPts = getPts(nodeId);
+        const PointsTo& dstPts = getPts(dstNodeId);
         // In one edge, if the pts of src node equals to that of dst node, and the edge
         // is never met, push it into 'metEdges' and push the dst node into 'lcdCandidates'
         if (!srcPts.empty() && srcPts == dstPts && !isMetEdge(edge))

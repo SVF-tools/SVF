@@ -82,7 +82,7 @@ void AndersenHCD::mergeSCC(NodeID nodeId)
         NodeID oRep = getOfflineRep(nodeId);
         // get online rep node
         NodeID rep = consCG->sccRepNode(oRep);
-        PointsTo &pts = getPts(nodeId);
+        const PointsTo &pts = getPts(nodeId);
         for (PointsTo::iterator ptIt = pts.begin(), ptEit = pts.end(); ptIt != ptEit; ++ptIt)
         {
             NodeID tgt = *ptIt;

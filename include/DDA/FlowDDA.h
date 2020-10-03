@@ -129,7 +129,7 @@ private:
 
     /// Override parent class functions to get/add cached points-to directly via PAGNode ID
     //@{
-    inline PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
+    inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
     {
         return getPts(dpm.getCurNodeID());
     }

@@ -159,6 +159,11 @@ public:
     {
         elements.insert(var);
     }
+    /// Remove var from the set.
+    inline void reset(const Element& var)
+    {
+        elements.erase(var);
+    }
 
     /// Set size
     //@{

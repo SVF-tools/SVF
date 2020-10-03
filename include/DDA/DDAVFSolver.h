@@ -525,11 +525,12 @@ protected:
     virtual inline CPtSet& getCachedPointsTo(const DPIm& dpm)
     {
         if (isTopLevelPtrStmt(dpm.getLoc()))
-            return getCachedTLPointsTo(dpm);
+            // We don't use getCachedTLPointsTo for constness purposes.
+            return dpmToTLCPtSetMap[dpm];
         else
             return getCachedADPointsTo(dpm);
     }
-    virtual inline void updateCachedPointsTo(const DPIm& dpm, CPtSet& pts)
+    virtual inline void updateCachedPointsTo(const DPIm& dpm, const CPtSet& pts)
     {
         CPtSet& dpmPts = getCachedPointsTo(dpm);
         if (unionDDAPts(dpmPts, pts))
@@ -539,7 +540,7 @@ protected:
             DOSTAT(ddaStat->_AnaTimeCyclePerQuery += DDAStat::getClk() - start);
         }
     }
-    virtual inline CPtSet& getCachedTLPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedTLPointsTo(const DPIm& dpm)
     {
         return dpmToTLCPtSetMap[dpm];
     }

@@ -51,8 +51,9 @@ private:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
 
 public:
-    typedef BVDataPTAImpl::IncDFPTDataTy::DFPtsMap DFInOutMap;
-    typedef BVDataPTAImpl::IncDFPTDataTy::PtsMap PtsMap;
+    typedef BVDataPTAImpl::MutDFPTDataTy MutDFPTDataTy;
+    typedef BVDataPTAImpl::MutDFPTDataTy::DFPtsMap DFInOutMap;
+    typedef BVDataPTAImpl::MutDFPTDataTy::PtsMap PtsMap;
 
     /// Constructor
     FlowSensitive(PAG* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
@@ -257,17 +258,18 @@ protected:
     }
     //@}
 
-    ///Get IN/OUT data flow map;
-    //@{
+    /// Get IN/OUT data flow map.
+    /// May only be called when the backing is MUTABLE.
+    ///@{
     inline const DFInOutMap& getDFInputMap() const
     {
-        return getDFPTDataTy()->getDFIn();
+        return getMutDFPTDataTy()->getDFIn();
     }
     inline const DFInOutMap& getDFOutputMap() const
     {
-        return getDFPTDataTy()->getDFOut();
+        return getMutDFPTDataTy()->getDFOut();
     }
-    //@}
+    ///@}
 
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;

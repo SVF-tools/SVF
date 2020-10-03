@@ -87,7 +87,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         NodeID id = worklist.back();
         worklist.pop_back();
         globs.set(id);
-        PointsTo& pts = pta->getPts(id);
+        const PointsTo& pts = pta->getPts(id);
         for(PointsTo::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it)
         {
             globs |= CollectPtsChain(pta,*it,cachedPtsMap);
@@ -115,7 +115,7 @@ NodeBS& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPT
         while(!worklist.empty())
         {
             NodeID nodeId = worklist.pop();
-            PointsTo& tmp = pta->getPts(nodeId);
+            const PointsTo& tmp = pta->getPts(nodeId);
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             {
                 pts |= CollectPtsChain(pta,*it,cachedPtsMap);
