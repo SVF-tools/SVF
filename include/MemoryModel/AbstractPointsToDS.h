@@ -188,7 +188,7 @@ public:
     /// For each variable var in IN at loc, do updateDFOutFromIn(loc, var, loc, var).
     virtual bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) = 0;
 
-    virtual inline void clearAllDFOutUpdatedVar(LocID) = 0;
+    virtual void clearAllDFOutUpdatedVar(LocID) = 0;
 
     /// Update points-to set of top-level pointers with IN[srcLoc:srcVar].
     virtual bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) = 0;
