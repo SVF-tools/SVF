@@ -2,6 +2,20 @@
 /// PTData: basic points-to data structure derived by all others.
 /// DiffPTData: PTData which only propagates new changes, not entire points-to sets.
 /// DFPTData: flow-sensitive PTData as defined by Hardekopf and Lin (CGO '11).
+///
+/// Hierarchy (square brackets indicate abstract class):
+///
+///       +------------> [PTData] <----------------+
+///       |                 ^                      |
+///       |                 |                      |
+/// MutablePTData      [DiffPTData]            [DFPTData]
+///                         ^                      ^
+///                         |                      |
+///                 MutableDiffPTData        MutableDFPTData
+///                                                ^
+///                                                |
+///                                        IncMutableDFPTData
+
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
