@@ -120,21 +120,27 @@ public:
     }
     //@}
 
+    /// Override parent class functions to get/add cached points-to directly via PAGNode ID
+    //@{
+    inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
+    {
+        return getPts(dpm.getCurNodeID());
+    }
+    //@}
+
+    /// Union pts
+    virtual bool unionDDAPts(LocDPItem dpm, const PointsTo& targetPts) override
+    {
+        if (isTopLevelPtrStmt(dpm.getLoc())) return unionPts(dpm.getCurNodeID(), targetPts);
+        else return dpmToADCPtSetMap[dpm] |= targetPts;
+    }
+
     virtual const std::string PTAName() const
     {
         return "FlowSensitive DDA";
     }
 
 private:
-
-    /// Override parent class functions to get/add cached points-to directly via PAGNode ID
-    //@{
-    inline PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
-    {
-        return getPts(dpm.getCurNodeID());
-    }
-    //@}
-
     DDAClient* _client;				///< DDA client
     PTACFInfoBuilder loopInfoBuilder; ///< LoopInfo
 };

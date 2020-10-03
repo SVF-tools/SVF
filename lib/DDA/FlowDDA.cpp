@@ -50,7 +50,7 @@ void FlowDDA::computeDDAPts(NodeID id)
 void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
 {
     DBOUT(DGENERAL,outs() << "~~~Out of budget query, downgrade to andersen analysis \n");
-    PointsTo& anderPts = getAndersenAnalysis()->getPts(dpm.getCurNodeID());
+    const PointsTo& anderPts = getAndersenAnalysis()->getPts(dpm.getCurNodeID());
     updateCachedPointsTo(dpm,anderPts);
     unionPts(dpm.getCurNodeID(),anderPts);
     addOutOfBudgetDpm(dpm);

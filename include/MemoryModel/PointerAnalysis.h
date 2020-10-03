@@ -32,11 +32,11 @@
 
 #include "Graphs/PAG.h"
 #include "MemoryModel/ConditionalPT.h"
-#include "MemoryModel/PointsToDS.h"
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "MemoryModel/MutablePointsToDS.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
-#include "MemoryModel/PointsToDFDS.h"
 
 namespace SVF
 {
@@ -240,11 +240,11 @@ public:
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
 
     /// Get points-to targets of a pointer. It needs to be implemented in child class
-    virtual PointsTo& getPts(NodeID ptr) = 0;
+    virtual const PointsTo& getPts(NodeID ptr) = 0;
 
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
+    virtual const PointsTo& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts()
@@ -294,11 +294,11 @@ public:
 
     /// Determine whether a points-to contains a black hole or constant node
     //@{
-    inline bool containBlackHoleNode(PointsTo& pts)
+    inline bool containBlackHoleNode(const PointsTo& pts)
     {
         return pts.test(pag->getBlackHoleNode());
     }
-    inline bool containConstantNode(PointsTo& pts)
+    inline bool containConstantNode(const PointsTo& pts)
     {
         return pts.test(pag->getConstantNode());
     }

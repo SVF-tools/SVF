@@ -18,7 +18,7 @@ const DIType *TypeBasedHeapCloning::undefType = nullptr;
 const std::string TypeBasedHeapCloning::derefFnName = "deref";
 const std::string TypeBasedHeapCloning::mangledDerefFnName = "_Z5derefv";
 
-TypeBasedHeapCloning::TypeBasedHeapCloning(PointerAnalysis *pta)
+TypeBasedHeapCloning::TypeBasedHeapCloning(BVDataPTAImpl *pta)
 {
     this->pta = pta;
 }
@@ -273,7 +273,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
     assert(dchg && "TBHC: DCHG not set!");
     bool changed = false;
 
-    PointsTo &pPt = pta->getPts(p);
+    const PointsTo &pPt = pta->getPts(p);
     // The points-to set we will populate in the loop to fill pPt.
     PointsTo pNewPt;
 
@@ -400,8 +400,8 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
     if (pPt != pNewPt)
     {
         // Seems fast enough to perform in the naive way.
-        pPt.clear();
-        pPt |= pNewPt;
+        pta->clearFullPts(p);
+        pta->unionPts(p, pNewPt);
         changed = true;
     }
 
