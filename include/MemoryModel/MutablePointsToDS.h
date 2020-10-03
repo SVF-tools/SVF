@@ -379,32 +379,32 @@ public:
     }
     ///@}
 
-    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return this->unionPts(getDFInPtsSet(dstLoc,dstVar), getDFInPtsSet(srcLoc,srcVar));
     }
 
-    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return this->unionPts(getDFInPtsSet(dstLoc,dstVar), getDFOutPtsSet(srcLoc,srcVar));
     }
 
-    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return this->unionPts(getDFOutPtsSet(dstLoc,dstVar), getDFInPtsSet(srcLoc,srcVar));
     }
 
-    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return this->updateDFInFromOut(srcLoc,srcVar,dstLoc,dstVar);
     }
 
-    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return this->updateDFInFromIn(srcLoc,srcVar,dstLoc,dstVar);
     }
 
-    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates)
+    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
     {
         bool changed = false;
         if (this->hasDFInSet(loc))
@@ -424,17 +424,17 @@ public:
         return changed;
     }
 
-    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar)
+    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
     {
         return this->unionPts(dstVar, this->getDFInPtsSet(srcLoc,srcVar));
     }
 
-    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->getPts(srcVar)));
     }
 
-    virtual inline void clearAllDFOutUpdatedVar(LocID)
+    virtual inline void clearAllDFOutUpdatedVar(LocID) override
     {
     }
 
@@ -590,7 +590,7 @@ public:
 
     virtual ~IncMutableDFPTData() { }
 
-    inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if(varHasNewDFInPts(srcLoc, srcVar) &&
                 this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar)))
@@ -601,7 +601,7 @@ public:
         return false;
     }
 
-    inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if(varHasNewDFOutPts(srcLoc, srcVar) &&
                 this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar)))
@@ -612,7 +612,7 @@ public:
         return false;
     }
 
-    inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if(varHasNewDFInPts(srcLoc,srcVar))
         {
@@ -626,7 +626,7 @@ public:
         return false;
     }
 
-    inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFOutPtsSet(srcLoc,srcVar)))
         {
@@ -636,7 +636,7 @@ public:
         return false;
     }
 
-    inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if(this->unionPts(this->getDFInPtsSet(dstLoc,dstVar), this->getDFInPtsSet(srcLoc,srcVar)))
         {
@@ -646,7 +646,7 @@ public:
         return false;
     }
 
-    inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates)
+    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
     {
         bool changed = false;
         if (this->hasDFInSet(loc))
@@ -666,7 +666,7 @@ public:
         return changed;
     }
 
-    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar)
+    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
     {
         if(varHasNewDFInPts(srcLoc,srcVar))
         {
@@ -676,7 +676,7 @@ public:
         return false;
     }
 
-    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar)
+    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         if (this->unionPts(this->getDFOutPtsSet(dstLoc, dstVar), this->mutPTData.getPts(srcVar)))
         {
@@ -684,6 +684,19 @@ public:
             return true;
         }
         return false;
+    }
+
+    virtual inline void clearAllDFOutUpdatedVar(LocID loc) override
+    {
+        if (this->hasDFOutSet(loc))
+        {
+            Data pts = getDFOutUpdatedVar(loc);
+            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
+            {
+                const Key var = *ptsIt;
+                removeVarFromDFOutUpdatedSet(loc, var);
+            }
+        }
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -698,19 +711,6 @@ public:
         return ptd->getPTDTY() == BasePTData::IncMutDataFlow;
     }
     ///@}
-
-    inline void clearAllDFOutUpdatedVar(LocID loc)
-    {
-        if (this->hasDFOutSet(loc))
-        {
-            Data pts = getDFOutUpdatedVar(loc);
-            for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
-            {
-                const Key var = *ptsIt;
-                removeVarFromDFOutUpdatedSet(loc, var);
-            }
-        }
-    }
 private:
     /// Handle address-taken variables whose IN pts changed
     //@{
