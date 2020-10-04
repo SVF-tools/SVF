@@ -56,7 +56,7 @@ std::string printPts(PointerAnalysis* pta, Value* val)
     raw_string_ostream rawstr(str);
 
     NodeID pNodeId = pta->getPAG()->getValueNode(val);
-    NodeBS& pts = pta->getPts(pNodeId);
+    const NodeBS& pts = pta->getPts(pNodeId);
     for (NodeBS::iterator ii = pts.begin(), ie = pts.end();
             ii != ie; ii++)
     {

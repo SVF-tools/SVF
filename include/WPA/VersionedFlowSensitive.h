@@ -28,10 +28,10 @@ class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
 public:
-    typedef BVDataPTAImpl::VDFPTDataTy::ObjToVersionMap ObjToVersionMap;
+    typedef DenseMap<NodeID, Version> ObjToVersionMap;
     typedef DenseMap<NodeID, MeldVersion> ObjToMeldVersionMap;
 
-    typedef BVDataPTAImpl::VDFPTDataTy::LocVersionMap LocVersionMap;
+    typedef DenseMap<NodeID, ObjToVersionMap> LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
     typedef DenseMap<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
@@ -140,7 +140,7 @@ private:
     FIFOWorkList<NodeID> vWorklist;
 
     /// Points-to DS for working with versions.
-    BVDataPTAImpl::VDFPTDataTy *vPtD;
+    void *vPtD;
 
     /// Additional statistics.
     //@{

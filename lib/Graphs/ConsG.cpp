@@ -156,111 +156,111 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
 /*!
  * Add an address edge
  */
-bool ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
+AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
-        return false;
+        return NULL;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = AddrCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingAddrEdge(edge);
     dstNode->addIncomingAddrEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Copy edge
  */
-bool ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
+CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 {
 
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
             || srcNode == dstNode)
-        return false;
+        return NULL;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingCopyEdge(edge);
     dstNode->addIncomingCopyEdge(edge);
-    return added;
+    return edge;
 }
 
 
 /*!
  * Add Gep edge
  */
-bool ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
+NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
-        return false;
+        return NULL;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add variant gep edge
  */
-bool ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
+VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
-        return false;
+        return NULL;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Load edge
  */
-bool ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
+LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
-        return false;
+        return NULL;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = LoadCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingLoadEdge(edge);
     dstNode->addIncomingLoadEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Store edge
  */
-bool ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
+StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
-        return false;
+        return NULL;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = StoreCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingStoreEdge(edge);
     dstNode->addIncomingStoreEdge(edge);
-    return added;
+    return edge;
 }
 
 
@@ -565,8 +565,8 @@ void ConstraintGraph::print()
         }
         else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter))
         {
-            outs() << ngep->getSrcID() << " -- VarintGep --> "
-                   << ngep->getDstID() << "\n";
+            outs() << vgep->getSrcID() << " -- VarintGep --> "
+                   << vgep->getDstID() << "\n";
         }
         else
             assert(false && "wrong constraint edge kind!");
@@ -609,14 +609,14 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(ConstraintGraph *graph)
+    static std::string getGraphName(ConstraintGraph*)
     {
         return "ConstraintG";
     }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(NodeType *n, ConstraintGraph *graph)
+    static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
         bool briefDisplay = true;
@@ -649,7 +649,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         return rawstr.str();
     }
 
-    static std::string getNodeAttributes(NodeType *n, ConstraintGraph *graph)
+    static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
 
@@ -689,7 +689,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, ConstraintGraph *pag)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, ConstraintGraph*)
     {
         ConstraintEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -722,7 +722,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter)
     {
         return "";
     }

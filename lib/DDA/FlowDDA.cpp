@@ -50,13 +50,13 @@ void FlowDDA::computeDDAPts(NodeID id)
 void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
 {
     DBOUT(DGENERAL,outs() << "~~~Out of budget query, downgrade to andersen analysis \n");
-    PointsTo& anderPts = getAndersenAnalysis()->getPts(dpm.getCurNodeID());
+    const PointsTo& anderPts = getAndersenAnalysis()->getPts(dpm.getCurNodeID());
     updateCachedPointsTo(dpm,anderPts);
     unionPts(dpm.getCurNodeID(),anderPts);
     addOutOfBudgetDpm(dpm);
 }
 
-bool FlowDDA::testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId)
+bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
 {
 
     const CallBlockNode* cbn = getSVFG()->getCallSite(csId);
@@ -153,7 +153,7 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
 /// (2) not escaped to the scope outside the current function
 /// (3) not inside loop
 /// (4) not involved in recursion
-bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store)
+bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
 {
     const MemObj* mem = _pag->getObject(getPtrNodeID(var));
     assert(mem && "memory object is null??");

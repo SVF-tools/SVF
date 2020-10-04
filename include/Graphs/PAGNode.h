@@ -94,7 +94,7 @@ public:
     {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
         assert((this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj) && "blackhole and constant obj do not have value");
-        assert(value && "value is null!!");
+        assert(value && "value is null (GepObjNode whose basenode is a DummyObj?)");
         return value;
     }
 
@@ -108,9 +108,7 @@ public:
 
     inline bool hasValue() const
     {
-        return (this->getNodeKind() != DummyValNode &&
-                this->getNodeKind() != DummyObjNode &&
-                (this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj)) ;
+        return value!=NULL;
     }
     /// Whether it is a pointer
     virtual inline bool isPointer() const

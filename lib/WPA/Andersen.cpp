@@ -258,7 +258,7 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge)
 
     assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
-    PointsTo& srcPts = getDiffPts(node);
+    const PointsTo& srcPts = getDiffPts(node);
 
     bool changed = unionPts(dst, srcPts);
     if (changed)
@@ -272,16 +272,16 @@ bool Andersen::processCopy(NodeID node, const ConstraintEdge* edge)
  *	for each srcPtdNode \in pts(src) ==> add fieldSrcPtdNode into tmpDstPts
  *		union pts(dst) with tmpDstPts
  */
-bool Andersen::processGep(NodeID node, const GepCGEdge* edge)
+bool Andersen::processGep(NodeID, const GepCGEdge* edge)
 {
-    PointsTo& srcPts = getDiffPts(edge->getSrcID());
+    const PointsTo& srcPts = getDiffPts(edge->getSrcID());
     return processGepPts(srcPts, edge);
 }
 
 /*!
  * Compute points-to for gep edges
  */
-bool Andersen::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     numOfProcessedGep++;
 
@@ -411,7 +411,7 @@ void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes)
 bool Andersen::collapseNodePts(NodeID nodeId)
 {
     bool changed = false;
-    PointsTo& nodePts = getPts(nodeId);
+    const PointsTo& nodePts = getPts(nodeId);
     /// Points to set may be changed during collapse, so use a clone instead.
     PointsTo ptsClone = nodePts;
     for (PointsTo::iterator ptsIt = ptsClone.begin(), ptsEit = ptsClone.end(); ptsIt != ptsEit; ptsIt++)
@@ -454,14 +454,13 @@ bool Andersen::collapseField(NodeID nodeId)
         if (fieldId != baseId)
         {
             // use the reverse pts of this field node to find all pointers point to it
-            PointsTo & revPts = getRevPts(fieldId);
+            const PointsTo & revPts = getRevPts(fieldId);
             for (PointsTo::iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
                     ptdIt != ptdEit; ptdIt++)
             {
                 // change the points-to target from field to base node
-                PointsTo & pts = getPts(*ptdIt);
-                pts.reset(fieldId);
-                pts.set(baseId);
+                clearPts(*ptdIt, fieldId);
+                addPts(*ptdIt, baseId);
                 pushIntoWorklist(*ptdIt);
 
                 changed = true;
@@ -731,7 +730,7 @@ void Andersen::dumpTopLevelPtsTo()
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
-            PointsTo& pts = this->getPts(node->getId());
+            const PointsTo& pts = this->getPts(node->getId());
             outs() << "\nNodeID " << node->getId() << " ";
 
             if (pts.empty())

@@ -385,7 +385,7 @@ MRVer* MemSSA::newSSAName(const MemRegion* mr, MSSADEF* def)
     assert(0 != mr2VerStackMap.count(mr)
            && "did not find initial stack in map? ");
 
-    VERSION version = mr2CounterMap[mr];
+    MRVERSION version = mr2CounterMap[mr];
     mr2CounterMap[mr] = version + 1;
     MRVer* mrVer = new MRVer(mr, version, def);
     mr2VerStackMap[mr].push_back(mrVer);

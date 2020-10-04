@@ -192,7 +192,7 @@ bool AndersenWaveDiff::processCopy(NodeID node, const ConstraintEdge* edge)
     bool changed = false;
     assert((SVFUtil::isa<CopyCGEdge>(edge)) && "not copy/call/ret ??");
     NodeID dst = edge->getDstID();
-    PointsTo& srcDiffPts = getDiffPts(node);
+    const PointsTo& srcDiffPts = getDiffPts(node);
     processCast(edge);
     if(unionPts(dst,srcDiffPts))
     {

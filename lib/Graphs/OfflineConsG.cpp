@@ -191,14 +191,14 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(OfflineConsG *graph)
+    static std::string getGraphName(OfflineConsG*)
     {
         return "Offline Constraint Graph";
     }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(NodeType *n, OfflineConsG *graph)
+    static std::string getNodeLabel(NodeType *n, OfflineConsG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -240,7 +240,7 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
         }
     }
 
-    static std::string getNodeAttributes(NodeType *n, OfflineConsG *graph)
+    static std::string getNodeAttributes(NodeType *n, OfflineConsG*)
     {
         if (PAG::getPAG()->findPAGNode(n->getId()))
         {
@@ -286,7 +286,7 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, OfflineConsG *pag)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, OfflineConsG*)
     {
         ConstraintEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -319,7 +319,7 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter)
     {
         return "";
     }

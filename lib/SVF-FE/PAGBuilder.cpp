@@ -54,6 +54,10 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
         return fileBuilder.build();
     }
 
+    // If the PAG has been built before, then we return the unique PAG of the program
+    if(pag->getNodeNumAfterPAGBuild() > 1)
+    	return pag;
+
     svfMod = svfModule;
 
     /// initial external library information
@@ -302,6 +306,16 @@ void PAGBuilder::processCE(const Value *val)
             addBlackHoleAddrEdge(dst);
             setCurrentLocation(cval, cbb);
         }
+        else if (isUnaryConstantExpr(ref))
+        {
+            // we don't handle unary constant expression like fneg(x) now
+            const Value* cval = getCurrentValue();
+            const BasicBlock* cbb = getCurrentBB();
+            setCurrentLocation(ref, NULL);
+            NodeID dst = pag->getValueNode(ref);
+            addBlackHoleAddrEdge(dst);
+            setCurrentLocation(cval, cbb);
+        }
         else if (SVFUtil::isa<ConstantAggregate>(ref))
         {
             // we don't handle constant agrgregate like constant vectors
@@ -491,12 +505,8 @@ void PAGBuilder::visitPHINode(PHINode &inst)
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         assert((incomingInst==NULL) || (incomingInst->getFunction() == inst.getFunction()));
-        const IntraBlockNode* intraBlockNode = NULL;
-        if (incomingInst != NULL)
-            intraBlockNode = pag->getICFG()->getIntraBlockNode(incomingInst);
 
         NodeID src = getValueNode(val);
-        const BasicBlock* bb = inst.getIncomingBlock(i);
         const CopyPE* copy = addCopyEdge(src, dst);
         pag->addPhiNode(pag->getPAGNode(dst), copy);
     }
@@ -600,6 +610,21 @@ void PAGBuilder::visitBinaryOperator(BinaryOperator &inst)
 }
 
 /*!
+ * Visit Unary Operator
+ */
+void PAGBuilder::visitUnaryOperator(UnaryOperator &inst)
+{
+    NodeID dst = getValueNode(&inst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++)
+    {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+        pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+    }
+}
+
+/*!
  * Visit compare instruction
  */
 void PAGBuilder::visitCmpInst(CmpInst &inst)
@@ -628,8 +653,6 @@ void PAGBuilder::visitSelectInst(SelectInst &inst)
     NodeID src2 = getValueNode(inst.getFalseValue());
     const CopyPE* cpy1 = addCopyEdge(src1, dst);
     const CopyPE* cpy2 = addCopyEdge(src2, dst);
-
-    const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
 
     /// Two operands have same incoming basic block, both are the current BB
     pag->addPhiNode(pag->getPAGNode(dst), cpy1);
@@ -707,7 +730,6 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst)
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
-        const IntraBlockNode* block = pag->getICFG()->getIntraBlockNode(&inst);
         const CopyPE* copy = addCopyEdge(vnS, rnF);
         pag->addPhiNode(pag->getPAGNode(rnF), copy);
     }
@@ -950,6 +972,16 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 else
                     addBlackHoleAddrEdge(dstNode);
                 break;
+                break;
+            }
+            case ExtAPI::EFT_L_A0__A0R_A1:
+            {
+				// this is only for memset(void *str, int c, size_t n)
+				// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
+				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+                if(SVFUtil::isa<PointerType>(inst->getType()))
+                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
             }
             case ExtAPI::EFT_L_A0__A0R_A1R:
@@ -1287,8 +1319,9 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
 {
     NodeID base = pag->getBaseValNode(getValueNode(val));
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
-    if (gepval==-1)
+    if (gepval==UINT_MAX)
     {
+		assert(UINT_MAX==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
          * 1. PAGBuilder::addComplexConsForExt to handle external calls

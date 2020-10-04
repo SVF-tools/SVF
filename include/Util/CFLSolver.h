@@ -129,10 +129,10 @@ protected:
     }
     /// Process the DP item
     //@{
-    virtual void FWProcessCurNode(const DPIm& item)
+    virtual void FWProcessCurNode(const DPIm&)
     {
     }
-    virtual void BWProcessCurNode(const DPIm& item)
+    virtual void BWProcessCurNode(const DPIm&)
     {
     }
     //@}

@@ -51,10 +51,8 @@ std::vector<std::pair<std::string, std::string>>
     return parsedExternalPAGs;
 }
 
-void ExternalPAG::initialise(SVFModule* svfModule)
+void ExternalPAG::initialise(SVFModule*)
 {
-    PAG *pag = PAG::getPAG();
-
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
             = ExternalPAG::parseExternalPAGs(ExternalPAGArgs);
 
@@ -232,6 +230,9 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge)
         break;
     case PAGEdge::BinaryOp:
         edgeKind = "binary-op";
+        break;
+    case PAGEdge::UnaryOp:
+        edgeKind = "unary-op";
         break;
     case PAGEdge::ThreadFork:
         outs() << "dump-function-pags: found ThreadFork edge.\n";
@@ -465,6 +466,10 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
         else if (extEdgeType == "binary-op")
         {
             pag->addBinaryOPPE(srcId, dstId);
+        }
+        else if (extEdgeType == "unary-op")
+        {
+            pag->addUnaryOPPE(srcId, dstId);
         }
         else
         {

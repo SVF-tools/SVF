@@ -48,7 +48,7 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
     /// Constructor
-    SaberSVFGBuilder() {}
+    SaberSVFGBuilder(): SVFGBuilder(true) {}
 
     /// Destructor
     virtual ~SaberSVFGBuilder() {}
@@ -57,6 +57,13 @@ public:
     {
         return globSVFGNodes.find(node)!=globSVFGNodes.end();
     }
+
+    /// Add ActualParmVFGNode
+    inline void addActualParmVFGNode(const PAGNode* pagNode, const CallBlockNode* cs)
+    {
+    	svfg->addActualParmVFGNode(pagNode, cs);
+    }
+
 protected:
     /// Re-write create SVFG method
     virtual void buildSVFG();

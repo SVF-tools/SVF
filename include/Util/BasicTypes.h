@@ -134,6 +134,7 @@ typedef llvm::MDNode MDNode;
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::CallInst CallInst;
 typedef llvm::InvokeInst InvokeInst;
+typedef llvm::CallBrInst CallBrInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 typedef llvm::PHINode PHINode;
@@ -150,6 +151,7 @@ typedef llvm::SwitchInst SwitchInst;
 typedef llvm::ExtractValueInst  ExtractValueInst;
 typedef llvm::InsertValueInst InsertValueInst;
 typedef llvm::BinaryOperator BinaryOperator;
+typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::PtrToIntInst PtrToIntInst;
 typedef llvm::VAArgInst VAArgInst;
 typedef llvm::ExtractElementInst ExtractElementInst;
@@ -180,6 +182,7 @@ typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
 typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
+typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
 typedef llvm::inst_iterator inst_iterator;

@@ -27,7 +27,7 @@ void VersionedFlowSensitive::initialize()
     delete stat;
     stat = new VersionedFlowSensitiveStat(this);
 
-    vPtD = getVDFPTDataTy();
+    // vPtD = getVDFPTDataTy();
     assert(vPtD && "VFS::initialize: Expected VDFPTData");
 
     prelabel();
@@ -35,9 +35,6 @@ void VersionedFlowSensitive::initialize()
     mapMeldVersions();
 
     determineReliance();
-
-    vPtD->setConsume(&consume);
-    vPtD->setYield(&yield);
 }
 
 void VersionedFlowSensitive::finalize()
@@ -306,7 +303,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
     {
         for (Version r : relyingVersions->second)
         {
-            if (vPtD->updateATVersion(o, r, v))
+            //if (vPtD->updateATVersion(o, r, v))
             {
                 propagateVersion(o, r);
             }
@@ -381,7 +378,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-        if (vPtD->unionTLFromAT(l, p, o))
+        //if (vPtD->unionTLFromAT(l, p, o))
         {
             changed = true;
         }
@@ -393,7 +390,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
             {
-                if (vPtD->unionTLFromAT(l, p, of))
+                //if (vPtD->unionTLFromAT(l, p, of))
                 {
                     changed = true;
                 }
@@ -430,7 +427,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-            if (vPtD->unionATFromTL(l, q, o))
+            //if (vPtD->unionATFromTL(l, q, o))
             {
                 changed = true;
                 changedObjects.set(o);
@@ -448,7 +445,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     if (isSU) svfgHasSU.set(l);
     else svfgHasSU.reset(l);
 
-    changed = vPtD->propWithinLoc(l, isSU, singleton, changedObjects) || changed;
+    //changed = vPtD->propWithinLoc(l, isSU, singleton, changedObjects) || changed;
 
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;

@@ -18,7 +18,7 @@ const DIType *TypeBasedHeapCloning::undefType = nullptr;
 const std::string TypeBasedHeapCloning::derefFnName = "deref";
 const std::string TypeBasedHeapCloning::mangledDerefFnName = "_Z5derefv";
 
-TypeBasedHeapCloning::TypeBasedHeapCloning(PointerAnalysis *pta)
+TypeBasedHeapCloning::TypeBasedHeapCloning(BVDataPTAImpl *pta)
 {
     this->pta = pta;
 }
@@ -231,7 +231,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
         }
 
         addGepToObj(newGep, base, totalOffset);
-        const DIType *newGepType;
+        const DIType *newGepType = nullptr;
         if (baseType->getTag() == dwarf::DW_TAG_array_type || baseType->getTag() == dwarf::DW_TAG_pointer_type)
         {
             if (const DICompositeType *arrayType = SVFUtil::dyn_cast<DICompositeType>(baseType))
@@ -244,6 +244,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
                 // Pointer access.
                 newGepType = ptrType->getBaseType();
             }
+            assert(newGepType && "TBHC: newGepType is neither DIComposite nor DIDerived");
 
             // Get the canonical type because we got the type from the DIType infrastructure directly.
             newGepType = dchg->getCanonicalType(newGepType);
@@ -272,7 +273,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
     assert(dchg && "TBHC: DCHG not set!");
     bool changed = false;
 
-    PointsTo &pPt = pta->getPts(p);
+    const PointsTo &pPt = pta->getPts(p);
     // The points-to set we will populate in the loop to fill pPt.
     PointsTo pNewPt;
 
@@ -399,15 +400,15 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
     if (pPt != pNewPt)
     {
         // Seems fast enough to perform in the naive way.
-        pPt.clear();
-        pPt |= pNewPt;
+        pta->clearFullPts(p);
+        pta->unionPts(p, pNewPt);
         changed = true;
     }
 
     return changed;
 }
 
-NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool reuse)
+NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
 {
     NodeID clone;
     const PAGNode *obj = ppag->getPAGNode(o);
@@ -454,8 +455,9 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool reus
         {
             clone = addCloneFIObjNode(fiObj->getMemObj());
         }
-        else if (const DummyObjPN *dummyObj = SVFUtil::dyn_cast<DummyObjPN>(obj))
+        else
         {
+            const DummyObjPN *dummyObj = SVFUtil::dyn_cast<DummyObjPN>(obj);
             clone = addCloneDummyObjNode(dummyObj->getMemObj());
         }
         // We checked above that it's an FIObj or a DummyObj.
@@ -557,12 +559,11 @@ static bool isAliasTestFunction(std::string name)
               || name == PointerAnalysis::aliasTestFailNoAliasMangled;
 }
 
-void TypeBasedHeapCloning::validateTBHCTests(SVFModule *svfMod)
+void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
 {
     const LLVMModuleSet *llvmModuleSet = LLVMModuleSet::getLLVMModuleSet();
     for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
     {
-        Module *module = llvmModuleSet->getModule(i);
         const PAG::CallSiteSet &callSites = ppag->getCallSiteSet();
         for (const CallBlockNode *cbn : callSites)
         {

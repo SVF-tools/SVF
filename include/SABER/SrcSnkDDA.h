@@ -85,9 +85,14 @@ public:
             delete svfg;
         svfg = NULL;
 
-        if (ptaCallGraph != NULL)
-            delete ptaCallGraph;
-        ptaCallGraph = NULL;
+        if (_curSlice != NULL)
+            delete _curSlice;
+        _curSlice = NULL;
+
+        /// the following shared by multiple checkers, thus can not be released.
+        //if (ptaCallGraph != NULL)
+        //    delete ptaCallGraph;
+        //ptaCallGraph = NULL;
 
         //if(pathCondAllocator)
         //    delete pathCondAllocator;

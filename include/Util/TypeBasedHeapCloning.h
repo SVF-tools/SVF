@@ -12,7 +12,7 @@
 
 #include "SVF-FE/DCHG.h"
 #include "Graphs/PAG.h"
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/BasicTypes.h"
 
 namespace SVF
@@ -24,6 +24,8 @@ public:
     /// Returns raw ctir metadata of a Value. Returns null if it doesn't exist.
     static const MDNode *getRawCTirMetadata(const Value *);
 
+    virtual ~TypeBasedHeapCloning() { };
+
 protected:
     /// The undefined type (•); void.
     static const DIType *undefType;
@@ -34,7 +36,7 @@ protected:
     static const std::string mangledDerefFnName;
 
     /// Constructor. pta is the pointer analysis using this object (i.e. that which is extending).
-    TypeBasedHeapCloning(PointerAnalysis *pta);
+    TypeBasedHeapCloning(BVDataPTAImpl *pta);
 
     /// Required by user. Handles back-propagation of newly created clone after all
     /// metadata has been set. Used by cloneObject.
@@ -142,7 +144,7 @@ protected:
 
 private:
     /// PTA extending this class.
-    PointerAnalysis *pta;
+    BVDataPTAImpl *pta;
     /// PAG the PTA uses. Just a shortcut for getPAG().
     PAG *ppag = nullptr;
 
