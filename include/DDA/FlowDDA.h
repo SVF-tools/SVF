@@ -39,22 +39,22 @@ public:
     {
     }
     /// dummy analyze method
-    virtual void analyze() {}
+    virtual void analyze() override {}
 
     /// Compute points-to set for all top variable
-    void computeDDAPts(NodeID id);
+    void computeDDAPts(NodeID id) override;
 
     /// Handle out-of-budget dpm
     void handleOutOfBudgetDpm(const LocDPItem& dpm);
 
     /// Handle condition for flow analysis (backward analysis)
-    virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge);
+    virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) override;
 
     /// refine indirect call edge
     bool testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId);
 
     /// Initialization of the analysis
-    inline virtual void initialize()
+    inline virtual void initialize() override
     {
         BVDataPTAImpl::initialize();
         buildSVFG(pag);
@@ -64,7 +64,7 @@ public:
     }
 
     /// Finalize analysis
-    inline virtual void finalize()
+    inline virtual void finalize() override
     {
         BVDataPTAImpl::finalize();
     }
@@ -74,15 +74,15 @@ public:
     /// (2) not escaped to the scope outside the current function
     /// (3) not inside loop
     /// (4) not involved in recursion
-    bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store);
+    bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store) override;
 
     /// Override parent method
-    inline PointsTo getConservativeCPts(const LocDPItem& dpm)
+    inline PointsTo getConservativeCPts(const LocDPItem& dpm) override
     {
         return getAndersenAnalysis()->getPts(dpm.getCurNodeID());
     }
     /// Override parent method
-    virtual inline NodeID getPtrNodeID(const NodeID& var) const
+    virtual inline NodeID getPtrNodeID(const NodeID& var) const override
     {
         return var;
     }
@@ -135,7 +135,7 @@ public:
         else return dpmToADCPtSetMap[dpm] |= targetPts;
     }
 
-    virtual const std::string PTAName() const
+    virtual const std::string PTAName() const override
     {
         return "FlowSensitive DDA";
     }

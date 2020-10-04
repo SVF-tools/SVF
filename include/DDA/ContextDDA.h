@@ -145,7 +145,7 @@ public:
     CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts);
 
     /// Handle Address SVFGNode to add proper conditional points-to
-    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr)
+    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis

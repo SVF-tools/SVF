@@ -74,7 +74,7 @@ public:
         dumpPts(ptsMap);
     }
 
-    virtual void clearPts(const Key& var, const Datum& element)
+    virtual void clearPts(const Key& var, const Datum& element) override
     {
         ptsMap[var].reset(element);
     }
