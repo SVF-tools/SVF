@@ -74,10 +74,10 @@ public:
     /// (2) not escaped to the scope outside the current function
     /// (3) not inside loop
     /// (4) not involved in recursion
-    bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store) override;
+    virtual bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store) override;
 
     /// Override parent method
-    inline PointsTo getConservativeCPts(const LocDPItem& dpm) override
+    virtual inline PointsTo getConservativeCPts(const LocDPItem& dpm) override
     {
         return getAndersenAnalysis()->getPts(dpm.getCurNodeID());
     }
@@ -87,7 +87,7 @@ public:
         return var;
     }
     /// Handle Address SVFGNode to add proper points-to
-    inline void handleAddr(PointsTo& pts,const LocDPItem& dpm,const AddrSVFGNode* addr)
+    virtual inline void handleAddr(PointsTo& pts,const LocDPItem& dpm,const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis

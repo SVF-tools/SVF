@@ -48,13 +48,13 @@ public:
     virtual void computeDDAPts(NodeID id) override;
 
     /// Compute points-to set for a context-sensitive pointer
-    virtual const CxtPtSet& computeDDAPts(const CxtVar& cxtVar) override;
+    virtual const CxtPtSet& computeDDAPts(const CxtVar& cxtVar);
 
     /// Handle out-of-budget dpm
     void handleOutOfBudgetDpm(const CxtLocDPItem& dpm);
 
     /// Override parent method
-    CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm)
+    virtual CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm) override
     {
         const PointsTo& pts =  getAndersenAnalysis()->getPts(dpm.getCurNodeID());
         CxtPtSet tmpCPts;
@@ -78,7 +78,7 @@ public:
     /// we exclude concrete heap given the following conditions:
     /// (1) concrete calling context (not involved in recursion and not exceed the maximum context limit)
     /// (2) not inside loop
-    bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store);
+    virtual bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store) override;
 
     /// refine indirect call edge
     bool testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs);
@@ -142,10 +142,10 @@ public:
     }
 
     /// processGep node
-    CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts);
+    virtual CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts) override;
 
     /// Handle Address SVFGNode to add proper conditional points-to
-    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
+    virtual void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
