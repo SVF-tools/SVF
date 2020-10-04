@@ -99,7 +99,7 @@ public:
         DBOUT(DDDA, dpm.dump());
     }
     /// processGep node
-    PointsTo processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts);
+    virtual PointsTo processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts) override;
 
     /// Update call graph.
     //@{
@@ -122,7 +122,7 @@ public:
 
     /// Override parent class functions to get/add cached points-to directly via PAGNode ID
     //@{
-    inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
+    virtual inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm) override
     {
         return getPts(dpm.getCurNodeID());
     }
