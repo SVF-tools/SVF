@@ -39,22 +39,22 @@ public:
     {
     }
     /// dummy analyze method
-    virtual void analyze() {}
+    virtual void analyze() override {}
 
     /// Compute points-to set for all top variable
-    void computeDDAPts(NodeID id);
+    void computeDDAPts(NodeID id) override;
 
     /// Handle out-of-budget dpm
     void handleOutOfBudgetDpm(const LocDPItem& dpm);
 
     /// Handle condition for flow analysis (backward analysis)
-    virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge);
+    virtual bool handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge) override;
 
     /// refine indirect call edge
     bool testIndCallReachability(LocDPItem& dpm, const SVFFunction* callee, CallSiteID csId);
 
     /// Initialization of the analysis
-    inline virtual void initialize()
+    inline virtual void initialize() override
     {
         BVDataPTAImpl::initialize();
         buildSVFG(pag);
@@ -64,7 +64,7 @@ public:
     }
 
     /// Finalize analysis
-    inline virtual void finalize()
+    inline virtual void finalize() override
     {
         BVDataPTAImpl::finalize();
     }
@@ -74,20 +74,20 @@ public:
     /// (2) not escaped to the scope outside the current function
     /// (3) not inside loop
     /// (4) not involved in recursion
-    bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store);
+    virtual bool isHeapCondMemObj(const NodeID& var, const StoreSVFGNode* store) override;
 
     /// Override parent method
-    inline PointsTo getConservativeCPts(const LocDPItem& dpm)
+    virtual inline PointsTo getConservativeCPts(const LocDPItem& dpm) override
     {
         return getAndersenAnalysis()->getPts(dpm.getCurNodeID());
     }
     /// Override parent method
-    virtual inline NodeID getPtrNodeID(const NodeID& var) const
+    virtual inline NodeID getPtrNodeID(const NodeID& var) const override
     {
         return var;
     }
     /// Handle Address SVFGNode to add proper points-to
-    inline void handleAddr(PointsTo& pts,const LocDPItem& dpm,const AddrSVFGNode* addr)
+    virtual inline void handleAddr(PointsTo& pts,const LocDPItem& dpm,const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
@@ -99,11 +99,11 @@ public:
         DBOUT(DDDA, dpm.dump());
     }
     /// processGep node
-    PointsTo processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts);
+    virtual PointsTo processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts) override;
 
     /// Update call graph.
     //@{
-    void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges)
+    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) override
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
@@ -122,7 +122,7 @@ public:
 
     /// Override parent class functions to get/add cached points-to directly via PAGNode ID
     //@{
-    inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm)
+    virtual inline const PointsTo& getCachedTLPointsTo(const LocDPItem& dpm) override
     {
         return getPts(dpm.getCurNodeID());
     }
@@ -135,7 +135,7 @@ public:
         else return dpmToADCPtSetMap[dpm] |= targetPts;
     }
 
-    virtual const std::string PTAName() const
+    virtual const std::string PTAName() const override
     {
         return "FlowSensitive DDA";
     }
