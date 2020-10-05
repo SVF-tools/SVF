@@ -838,4 +838,31 @@ private:
 
 } // End namespace SVF
 
+namespace llvm {
+template <typename Cond> struct DenseMapInfo<SVF::CondVar<Cond>>
+{
+    static inline SVF::CondVar<Cond> getEmptyKey()
+    {
+        return SVF::CondVar<Cond>(Cond(), ~0);
+    }
+
+    static inline SVF::CondVar<Cond> getTombstoneKey()
+    {
+        return SVF::CondVar<Cond>(Cond(), ~1);
+    }
+
+    static unsigned getHashValue(const SVF::CondVar<Cond> &cv)
+    {
+        // TODO: evaluate hash, maybe generalise on Cond better.
+        return DenseMapInfo<SVF::NodeID>::getHashValue(cv.get_id())
+               + DenseMapInfo<unsigned>::getHashValue(cv.get_cond().getContexts().size())
+               + cv.get_cond().getContexts().empty() ? 0 : cv.get_cond().getContexts()[0];
+    }
+
+    static bool isEqual(const SVF::CondVar<Cond> &lhs, const SVF::CondVar<Cond> &rhs) {
+        return lhs == rhs;
+    }
+};
+}  // End namespace llvm
+
 #endif /* CONDVAR_H_ */

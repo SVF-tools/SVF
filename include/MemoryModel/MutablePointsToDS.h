@@ -19,7 +19,7 @@ public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
-    typedef std::map<const Key, Data> PtsMap;
+    typedef DenseMap<Key, Data> PtsMap;
     typedef typename PtsMap::iterator PtsMapIter;
     typedef typename PtsMap::const_iterator PtsMapConstIter;
     typedef typename Data::iterator iterator;
