@@ -415,7 +415,7 @@ protected:
             const typename MutPTDataTy::PtsMap& ptsMap = getPtsMap();
             for(typename MutPTDataTy::PtsMap::const_iterator it = ptsMap.begin(), eit=ptsMap.end(); it!=eit; ++it)
             {
-                for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit)
+                for(typename CPtSet::const_iterator cit = it->second->begin(), ecit=it->second->end(); cit!=ecit; ++cit)
                 {
                     ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
                     objToBVRevPtsMap[cit->get_id()].set((it->first).get_id());

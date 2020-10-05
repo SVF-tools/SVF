@@ -385,9 +385,9 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
         PtsMap::const_iterator ptsEit = cptsMap.end();
         for (; ptsIt != ptsEit; ++ptsIt)
         {
-            if (ptsIt->second.empty()) continue;
+            if (ptsIt->second->empty()) continue;
 
-            u32_t ptsNum = ptsIt->second.count();	/// points-to target number
+            u32_t ptsNum = ptsIt->second->count();	/// points-to target number
 
             // Only node with non-empty points-to set are counted.
             _NumOfVarHaveINOUTPts[inOrOut]++;
