@@ -183,9 +183,11 @@ void VersionedFlowSensitiveStat::versionStat(void)
         for (DenseSet<Version>::value_type &v : vs)
         {
             // If the version was just over-approximate and never accessed, ignore.
-            //if (!vfspta->vPtD->hasATPts(o, v)) continue;
+            // TODO: with vPtD changed there is no interface to check if the PTS
+            //       exists; an emptiness check is *not* an existence check.
+            if (vfspta->vPtD->getPts(vfspta->atKey(o, v)).empty()) continue;
 
-            const PointsTo ovPts; // = vfspta->vPtD->getATPts(o, v);
+            const PointsTo &ovPts = vfspta->vPtD->getPts(vfspta->atKey(o, v));
             if (!ovPts.empty()) ++_NumNonEmptyVersions;
             else ++_NumEmptyVersions;
 

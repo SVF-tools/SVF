@@ -13,6 +13,16 @@
 
 using namespace SVF;
 
+std::pair<NodeID, Version> VersionedFlowSensitive::atKey(NodeID var, Version version)
+{
+    return std::make_pair(version, var);
+}
+
+std::pair<NodeID, Version> VersionedFlowSensitive::tlKey(NodeID var)
+{
+    return std::make_pair(0, var);
+}
+
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
@@ -26,9 +36,6 @@ void VersionedFlowSensitive::initialize()
     // Overwrite the stat FlowSensitive::initialize gave us.
     delete stat;
     stat = new VersionedFlowSensitiveStat(this);
-
-    // vPtD = getVDFPTDataTy();
-    assert(vPtD && "VFS::initialize: Expected VDFPTData");
 
     prelabel();
     meldLabel();
@@ -303,7 +310,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
     {
         for (Version r : relyingVersions->second)
         {
-            //if (vPtD->updateATVersion(o, r, v))
+            if (vPtD->unionPts(atKey(o, r), atKey(o, v)))
             {
                 propagateVersion(o, r);
             }
@@ -378,7 +385,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-        //if (vPtD->unionTLFromAT(l, p, o))
+        if (vPtD->unionPts(tlKey(p), atKey(o, consume[l][o])))
         {
             changed = true;
         }
@@ -390,7 +397,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
             {
-                //if (vPtD->unionTLFromAT(l, p, of))
+                if (vPtD->unionPts(tlKey(p), atKey(of, consume[l][of])))
                 {
                     changed = true;
                 }
@@ -427,7 +434,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-            //if (vPtD->unionATFromTL(l, q, o))
+            if (vPtD->unionPts(atKey(o, yield[l][o]), tlKey(q)))
             {
                 changed = true;
                 changedObjects.set(o);
@@ -445,7 +452,25 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     if (isSU) svfgHasSU.set(l);
     else svfgHasSU.reset(l);
 
-    //changed = vPtD->propWithinLoc(l, isSU, singleton, changedObjects) || changed;
+    // For all objects, perform pts(o:y) = pts(o:y) U pts(o:c) at loc,
+    // except when a strong update is taking place.
+    ObjToVersionMap &yieldL = yield[l];
+    ObjToVersionMap &consumeL = consume[l];
+    for (ObjToVersionMap::value_type &oc : consumeL)
+    {
+        NodeID o = oc.first;
+        Version c = oc.second;
+
+        // Strong-updated; don't propagate.
+        if (isSU && o == singleton) continue;
+
+        Version y = yieldL[o];
+        if (vPtD->unionPts(atKey(o, y), atKey(o, c)))
+        {
+            changed = true;
+            changedObjects.set(o);
+        }
+    }
 
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;

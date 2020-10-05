@@ -65,6 +65,7 @@ typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
 typedef std::pair<NodeID, NodeID> NodePair;
+typedef std::pair<NodeID, Version> VarVersionPair;
 typedef std::set<NodeID> NodeSet;
 typedef llvm::DenseSet<NodeID> DenseNodeSet;
 typedef llvm::DenseSet<NodePair,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairSet;
