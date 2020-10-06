@@ -14,8 +14,8 @@
 namespace SVF
 {
 
-typedef DenseSet<const GlobalValue*> VTableSet;
-typedef DenseSet<const SVFFunction*> VFunSet;
+typedef SVFSet<const GlobalValue*> VTableSet;
+typedef SVFSet<const SVFFunction*> VFunSet;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph

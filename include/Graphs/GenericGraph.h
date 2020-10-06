@@ -331,7 +331,7 @@ public:
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
     /// NodeID to GenericNode map
-    typedef DenseMap<NodeID, NodeType*> IDToNodeMapTy;
+    typedef SVFMap<NodeID, NodeType*> IDToNodeMapTy;
 
     /// Node Iterators
     //@{

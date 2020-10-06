@@ -24,19 +24,19 @@ class ExternalPAG
 private:
     /// Maps function names to the entry nodes of the extpag which implements
     /// it. This is to connect arguments and callsites.
-    static DenseMap<const SVFFunction*, DenseMap<int, PAGNode *>>
+    static SVFMap<const SVFFunction*, SVFMap<int, PAGNode *>>
             functionToExternalPAGEntries;
-    static DenseMap<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
+    static SVFMap<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
 
     /// Name of the function this external PAG represents.
     std::string functionName;
 
     /// Value nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    DenseNodeSet valueNodes;
+    NodeSet valueNodes;
     /// Object nodes in this external PAG, represented by NodeIDs
     /// because we will rebuild these nodes in the main PAG.
-    DenseNodeSet objectNodes;
+    NodeSet objectNodes;
     /// Edges in this external PAG, represented by the parts of an Edge because
     /// we will rebuild these edges in the main PAG.
     std::set<std::tuple<NodeID, NodeID, std::string, int>>edges;
@@ -45,7 +45,7 @@ private:
 
     /// Nodes in the ExternalPAG which call edges should connect to.
     /// argNodes[0] is arg 0, argNodes[1] is arg 1, ...
-    DenseMap<int, NodeID> argNodes;
+    SVFMap<int, NodeID> argNodes;
     /// Node from which return edges connect.
     NodeID returnNode;
 
@@ -101,11 +101,11 @@ public:
         return functionName;
     }
 
-    DenseNodeSet &getValueNodes()
+    NodeSet &getValueNodes()
     {
         return valueNodes;
     }
-    DenseNodeSet &getObjectNodes()
+    NodeSet &getObjectNodes()
     {
         return objectNodes;
     }
@@ -114,7 +114,7 @@ public:
         return edges;
     }
 
-    DenseMap<int, NodeID> &getArgNodes()
+    SVFMap<int, NodeID> &getArgNodes()
     {
         return argNodes;
     }

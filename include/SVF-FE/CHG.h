@@ -176,12 +176,12 @@ typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
 public:
-    typedef DenseSet<const CHNode*> CHNodeSetTy;
+    typedef SVFSet<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef DenseMap<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef DenseMap<CallSite, VTableSet> CallSiteToVTableSetMap;
-    typedef DenseMap<CallSite, VFunSet> CallSiteToVFunSetMap;
+    typedef SVFMap<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef SVFMap<CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef SVFMap<CallSite, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum
     {
@@ -220,7 +220,7 @@ public:
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        DenseMap<const SVFFunction*, s32_t>::const_iterator it =
+        SVFMap<const SVFFunction*, s32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
@@ -229,7 +229,7 @@ public:
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const
     {
-        DenseMap<const SVFFunction*, s32_t>::const_iterator it, eit;
+        SVFMap<const SVFFunction*, s32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -297,7 +297,7 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallSiteToCHNodesMap csToClassesMap;
 
-    DenseMap<const SVFFunction*, s32_t> virtualFunctionToIDMap;
+    SVFMap<const SVFFunction*, s32_t> virtualFunctionToIDMap;
     CallSiteToVTableSetMap csToCHAVtblsMap;
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };

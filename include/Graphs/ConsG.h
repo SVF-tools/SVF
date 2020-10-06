@@ -45,10 +45,10 @@ class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
 {
 
 public:
-    typedef DenseMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
+    typedef SVFMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
     typedef ConstraintEdge::ConstraintEdgeSetTy::iterator ConstraintNodeIter;
-    typedef DenseMap<NodeID, NodeID> NodeToRepMap;
-    typedef DenseMap<NodeID, NodeBS> NodeToSubsMap;
+    typedef SVFMap<NodeID, NodeID> NodeToRepMap;
+    typedef SVFMap<NodeID, NodeBS> NodeToSubsMap;
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:

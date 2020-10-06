@@ -98,13 +98,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef DenseSet<const CallBlockNode*> CallSiteSet;
+    typedef SVFSet<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef DenseSet<const SVFFunction*> FunctionSet;
-    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef SVFSet<const SVFFunction*> FunctionSet;
+    typedef SVFMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef DenseSet<const GlobalValue*> VTableSet;
-    typedef DenseSet<const SVFFunction*> VFunSet;
+    typedef SVFSet<const GlobalValue*> VTableSet;
+    typedef SVFSet<const SVFFunction*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;

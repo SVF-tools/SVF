@@ -392,7 +392,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     SVFGSCC* svfgSCC = new SVFGSCC(graph);
     svfgSCC->find();
 
-    DenseNodeSet sccRepNodeSet;
+    NodeSet sccRepNodeSet;
     SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
     SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
     for (; it != eit; ++it)

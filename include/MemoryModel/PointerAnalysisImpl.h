@@ -222,8 +222,8 @@ public:
     typedef CondStdSet<CVar>  CPtSet;
     typedef PTData<CVar, CVar, CPtSet> PTDataTy;
     typedef MutablePTData<CVar, CVar, CPtSet> MutPTDataTy;
-    typedef DenseMap<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef DenseMap<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
+    typedef SVFMap<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
+    typedef SVFMap<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
     CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)

@@ -290,7 +290,7 @@ public:
     typedef typename BaseDFPTData::LocID LocID;
     typedef typename BaseMutPTData::PtsMap PtsMap;
     typedef typename BaseMutPTData::PtsMapConstIter PtsMapConstIter;
-    typedef DenseMap<LocID, PtsMap> DFPtsMap;	///< Data-flow point-to map
+    typedef SVFMap<LocID, PtsMap> DFPtsMap;	///< Data-flow point-to map
     typedef typename DFPtsMap::iterator DFPtsMapIter;
     typedef typename DFPtsMap::const_iterator DFPtsMapconstIter;
 
@@ -575,7 +575,7 @@ public:
     typedef typename BasePTData::PTDataTy PTDataTy;
 
     typedef typename BaseDFPTData::LocID LocID;
-    typedef DenseMap<LocID, Data> UpdatedVarMap;	///< for propagating only newly added variable in IN/OUT set
+    typedef SVFMap<LocID, Data> UpdatedVarMap;	///< for propagating only newly added variable in IN/OUT set
     typedef typename UpdatedVarMap::iterator UpdatedVarMapIter;
     typedef typename UpdatedVarMap::const_iterator UpdatedVarconstIter;
     typedef typename Data::iterator DataIter;

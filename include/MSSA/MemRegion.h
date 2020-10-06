@@ -140,34 +140,34 @@ public:
     //@}
     ///Define mem region set
     typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef DenseMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
+    typedef SVFMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
     typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
     typedef std::map<const SVFFunction*, PointsToList > FunToPointsToMap;
     typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
-    typedef DenseMap<const SVFFunction*, MRSet> FunToMRsMap;
+    typedef SVFMap<const SVFFunction*, MRSet> FunToMRsMap;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef DenseMap<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef DenseMap<const StorePE*, MRSet> StoresToMRsMap;
+    typedef SVFMap<const LoadPE*, MRSet> LoadsToMRsMap;
+    typedef SVFMap<const StorePE*, MRSet> StoresToMRsMap;
     typedef std::map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
-    typedef DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef DenseMap<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
+    typedef SVFMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
+    typedef SVFMap<const StorePE*, PointsTo> StoresToPointsToMap;
+    typedef SVFMap<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef DenseMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
+    typedef SVFMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef DenseMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    typedef SVFMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
     typedef std::map<NodeID, NodeBS> NodeToPTSSMap;

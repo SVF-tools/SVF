@@ -124,9 +124,9 @@ public:
     /// Does not affect CLOCK_IN_MS.
     static bool markedClocksOnly;
 
-    typedef DenseMap<const char*,u32_t> NUMStatMap;
+    typedef SVFMap<const char*,u32_t> NUMStatMap;
 
-    typedef DenseMap<const char*,double> TIMEStatMap;
+    typedef SVFMap<const char*,double> TIMEStatMap;
 
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}

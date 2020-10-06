@@ -220,13 +220,13 @@ class PTACallGraph : public GenericCallGraphTy
 
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
+    typedef SVFMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
+    typedef SVFMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
-    typedef DenseMap<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef DenseMap<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef DenseSet<const SVFFunction*> FunctionSet;
-    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef SVFMap<CallSitePair, CallSiteID> CallSiteToIdMap;
+    typedef SVFMap<CallSiteID, CallSitePair> IdToCallSiteMap;
+    typedef SVFSet<const SVFFunction*> FunctionSet;
+    typedef SVFMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 

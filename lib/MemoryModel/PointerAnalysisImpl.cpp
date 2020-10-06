@@ -240,7 +240,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
  */
 void BVDataPTAImpl::dumpAllPts()
 {
-    DenseNodeSet pagNodes;
+    NodeSet pagNodes;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);

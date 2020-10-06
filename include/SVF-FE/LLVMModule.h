@@ -42,9 +42,9 @@ class LLVMModuleSet
 public:
 
     typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef DenseMap<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
-    typedef DenseMap<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
-    typedef DenseMap<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
+    typedef SVFMap<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
+    typedef SVFMap<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
+    typedef SVFMap<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
 
 private:
     static LLVMModuleSet *llvmModuleSet;

@@ -316,7 +316,7 @@ public:
     }
     //@}
 
-    /// Copy constructor  DenseMap constructor overloading
+    /// Copy constructor
     CondPointsToSet(const CondPointsToSet<Cond>& cptsSet)
 
     {

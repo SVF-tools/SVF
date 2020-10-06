@@ -31,7 +31,6 @@
 #ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
-#include <llvm/ADT/DenseSet.h>		// for dense map, set
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/Support/raw_ostream.h>	// for output
 #include <llvm/Support/CommandLine.h>	// for command line options
@@ -40,7 +39,9 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <unordered_set>
 #include <map>
+#include <unordered_map>
 #include <stack>
 #include <deque>
 
@@ -62,11 +63,16 @@ typedef llvm::SparseBitVector<> NodeBS;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
+template <typename Key>
+using SVFSet = std::set<Key>;
+
+template <typename Key, typename Value>
+using SVFMap = std::map<Key, Value>;
+
 typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::set<NodeID> NodeSet;
-typedef llvm::DenseSet<NodeID> DenseNodeSet;
-typedef llvm::DenseSet<NodePair,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairSet;
-typedef llvm::DenseMap<NodePair,NodeID,llvm::DenseMapInfo<std::pair<NodeID,NodeID> > > NodePairMap;
+typedef SVFSet<NodeID> NodeSet;
+typedef SVFSet<NodePair> NodePairSet;
+typedef SVFMap<NodePair,NodeID> NodePairMap;
 typedef std::vector<NodeID> NodeVector;
 typedef std::vector<EdgeID> EdgeVector;
 typedef std::stack<NodeID> NodeStack;
@@ -187,6 +193,23 @@ public:
     }
 };
 
+
+
 } // End namespace SVF
+
+/// Specialise hash for pairs.
+template <typename T, typename U> struct std::hash<std::pair<T, U>> {
+    // Pairing function from: http://szudzik.com/ElegantPairing.pdf
+    static size_t szudzik(size_t a, size_t b)
+    {
+        return a > b ? b * b + a : a * a + a + b;
+    }
+
+    size_t operator()(const std::pair<T, U> &p) const {
+        std::hash<T> h1;
+        std::hash<U> h2;
+        return szudzik(h1(p.first), h2(p.second));
+    }
+};
 
 #endif /* INCLUDE_UTIL_SVFBASICTYPES_H_ */
