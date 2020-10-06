@@ -254,7 +254,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
     {
         const Loop *loop = loopInfo->getLoopFor(bb);
         SmallBBVector exitbbs;
-        std::set<BasicBlock*> filteredbbs;
+        SVFSet<BasicBlock*> filteredbbs;
         loop->getExitBlocks(exitbbs);
         /// exclude exit bb which calls program exit
         while(!exitbbs.empty())
@@ -267,7 +267,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
         PostDominatorTree* pdt = getPostDT(fun);
-        for(std::set<BasicBlock*>::iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
+        for(SVFSet<BasicBlock*>::iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
         {
             if(pdt->dominates(dst,*it) == false)
                 allPDT =false;

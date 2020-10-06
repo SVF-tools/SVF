@@ -49,12 +49,12 @@ class SrcSnkDDA : public CFLSrcSnkSolver
 
 public:
     typedef ProgSlice::SVFGNodeSet SVFGNodeSet;
-    typedef std::map<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
+    typedef SVFMap<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
     typedef SVFGNodeSet::iterator SVFGNodeSetIter;
     typedef CxtDPItem DPIm;
-    typedef std::set<DPIm> DPImSet;							///< dpitem set
-    typedef std::map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
-    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef SVFSet<DPIm> DPImSet;							///< dpitem set
+    typedef SVFMap<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
+    typedef SVFSet<const CallBlockNode*> CallSiteSet;
     typedef NodeBS SVFGNodeBS;
     typedef ProgSlice::VFWorkList WorkList;
 

@@ -80,7 +80,7 @@ void traverseOnICFG(ICFG* icfg, const Instruction* inst)
 {
     ICFGNode* iNode = icfg->getBlockICFGNode(inst);
     FIFOWorkList<const ICFGNode*> worklist;
-    std::set<const ICFGNode*> visited;
+    SVFSet<const ICFGNode*> visited;
     worklist.push(iNode);
 
     /// Traverse along VFG
@@ -111,7 +111,7 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
     PAGNode* pNode = pag->getPAGNode(pag->getValueNode(val));
     const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
     FIFOWorkList<const VFGNode*> worklist;
-    std::set<const VFGNode*> visited;
+    SVFSet<const VFGNode*> visited;
     worklist.push(vNode);
 
     /// Traverse along VFG
@@ -132,7 +132,7 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
     }
 
     /// Collect all LLVM Values
-    for(std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
+    for(SVFSet<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
     {
         const VFGNode* node = *it;
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)

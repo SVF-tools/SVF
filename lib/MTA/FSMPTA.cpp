@@ -140,7 +140,7 @@ void MTASVFGBuilder::performRemovingMHPEdges()
         assert (n1->hasOutgoingEdge() && "n1 doesn't have out edge");
         assert (n2->hasIncomingEdge() && "n2 doesn't have in edge");
 
-        std::set<SVFGEdge*> removededges;
+        SVFSet<SVFGEdge*> removededges;
         for (SVFGEdge::SVFGEdgeSetTy::iterator iter = n1->OutEdgeBegin(); iter != n1->OutEdgeEnd(); ++iter)
         {
             SVFGEdge* edge = *iter;

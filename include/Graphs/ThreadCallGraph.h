@@ -159,17 +159,17 @@ class ThreadCallGraph: public PTACallGraph
 {
 
 public:
-    typedef std::set<const CallBlockNode*> InstSet;
+    typedef SVFSet<const CallBlockNode*> InstSet;
     typedef InstSet CallSiteSet;
     typedef std::vector<const Instruction*> InstVector;
-    typedef std::map<const Instruction*, InstSet> CallToInstMap;
-    typedef std::set<CallSiteSet*> CtxSet;
+    typedef SVFMap<const Instruction*, InstSet> CallToInstMap;
+    typedef SVFSet<CallSiteSet*> CtxSet;
     typedef ThreadForkEdge::ForkEdgeSet ForkEdgeSet;
-    typedef std::map<const CallBlockNode*, ForkEdgeSet> CallInstToForkEdgesMap;
+    typedef SVFMap<const CallBlockNode*, ForkEdgeSet> CallInstToForkEdgesMap;
     typedef ThreadJoinEdge::JoinEdgeSet JoinEdgeSet;
-    typedef std::map<const CallBlockNode*, JoinEdgeSet> CallInstToJoinEdgesMap;
+    typedef SVFMap<const CallBlockNode*, JoinEdgeSet> CallInstToJoinEdgesMap;
     typedef HareParForEdge::ParForEdgeSet ParForEdgeSet;
-    typedef std::map<const CallBlockNode*, ParForEdgeSet> CallInstToParForEdgesMap;
+    typedef SVFMap<const CallBlockNode*, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
     ThreadCallGraph();

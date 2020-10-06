@@ -61,9 +61,9 @@ public:
     typedef MSSAPHI<Condition> PHI;
     typedef MSSADEF MDEF;
 
-    typedef std::set<MU*> MUSet;
-    typedef std::set<CHI*> CHISet;
-    typedef std::set<PHI*> PHISet;
+    typedef SVFSet<MU*> MUSet;
+    typedef SVFSet<CHI*> CHISet;
+    typedef SVFSet<PHI*> PHISet;
 
     ///Define mem region set
     typedef MRGenerator::MRSet MRSet;

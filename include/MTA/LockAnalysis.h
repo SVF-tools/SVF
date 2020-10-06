@@ -40,27 +40,27 @@ public:
 
     typedef NodeBS LockSet;
     typedef TCT::InstVec InstVec;
-    typedef std::set<const Instruction*> InstSet;
+    typedef SVFSet<const Instruction*> InstSet;
     typedef InstSet CISpan;
-    typedef std::map<const Instruction*, CISpan>CILockToSpan;
-    typedef std::set<const Function*> FunSet;
-    typedef std::map<const Instruction*, InstSet> InstToInstSetMap;
-    typedef std::map<const CxtStmt, ValDomain> CxtStmtToLockFlagMap;
+    typedef SVFMap<const Instruction*, CISpan>CILockToSpan;
+    typedef SVFSet<const Function*> FunSet;
+    typedef SVFMap<const Instruction*, InstSet> InstToInstSetMap;
+    typedef SVFMap<const CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef std::set<CxtStmt> LockSpan;
-    typedef std::set<CxtStmt> CxtStmtSet;
-    typedef std::set<CxtLock> CxtLockSet;
+    typedef SVFSet<CxtStmt> LockSpan;
+    typedef SVFSet<CxtStmt> CxtStmtSet;
+    typedef SVFSet<CxtLock> CxtLockSet;
 
-    typedef std::map<CxtLock, LockSpan> CxtLockToSpan;
-    typedef std::map<CxtLock, NodeBS> CxtLockToLockSet;
-    typedef std::map<const Instruction*, NodeBS> LockSiteToLockSet;
-    typedef std::map<const Instruction*, LockSpan> InstToCxtStmtSet;
-    typedef std::map<const CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
+    typedef SVFMap<CxtLock, LockSpan> CxtLockToSpan;
+    typedef SVFMap<CxtLock, NodeBS> CxtLockToLockSet;
+    typedef SVFMap<const Instruction*, NodeBS> LockSiteToLockSet;
+    typedef SVFMap<const Instruction*, LockSpan> InstToCxtStmtSet;
+    typedef SVFMap<const CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
     typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
     typedef set<CxtLockProc> CxtLockProcSet;
 
     typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef std::map<FuncPair, bool> FuncPairToBool;
+    typedef SVFMap<FuncPair, bool> FuncPairToBool;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
     {

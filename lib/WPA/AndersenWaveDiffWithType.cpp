@@ -129,7 +129,7 @@ void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes)
 {
 
     /// collect types in a cycle
-    std::set<PTAType> typesInSCC;
+    SVFSet<PTAType> typesInSCC;
     for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
     {
         if (typeSystem->hasTypeSet(*it))
@@ -146,7 +146,7 @@ void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes)
     /// merge types of nodes in a cycle
     for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
     {
-        for (std::set<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit)
+        for (SVFSet<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit)
         {
             const PTAType &ptaTy = *tyit;
             if (typeSystem->addTypeForVar(*it, ptaTy))

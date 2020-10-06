@@ -89,7 +89,7 @@ class TypeSet
 {
 public:
 
-    typedef std::set<PTAType> TypeSetTy;
+    typedef SVFSet<PTAType> TypeSetTy;
 
     typedef TypeSetTy::iterator iterator;
     typedef TypeSetTy::const_iterator const_iterator;
@@ -190,9 +190,9 @@ class TypeSystem
 {
 public:
 
-    typedef std::map<NodeID, TypeSet*> VarToTypeSetMapTy;
+    typedef SVFMap<NodeID, TypeSet*> VarToTypeSetMapTy;
 
-    typedef std::map<PTAType, NodeBS> TypeToVarsMapTy;
+    typedef SVFMap<PTAType, NodeBS> TypeToVarsMapTy;
 
     typedef typename VarToTypeSetMapTy::iterator iterator;
     typedef typename VarToTypeSetMapTy::const_iterator const_iterator;
@@ -359,7 +359,7 @@ private:
 
 private:
     VarToTypeSetMapTy VarToTypeSetMap;
-    std::set<PTAType> allPTATypes;
+    SVFSet<PTAType> allPTATypes;
     TypeToVarsMapTy typeToVarsMap;
 };
 

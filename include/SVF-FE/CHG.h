@@ -178,7 +178,7 @@ class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 public:
     typedef SVFSet<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
-    typedef std::map<std::string, CHNodeSetTy> NameToCHNodesMap;
+    typedef SVFMap<std::string, CHNodeSetTy> NameToCHNodesMap;
     typedef SVFMap<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
     typedef SVFMap<CallSite, VTableSet> CallSiteToVTableSetMap;
     typedef SVFMap<CallSite, VFunSet> CallSiteToVFunSetMap;
@@ -290,7 +290,7 @@ private:
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
-    std::map<const std::string, CHNode *> classNameToNodeMap;
+    SVFMap<const std::string, CHNode *> classNameToNodeMap;
     NameToCHNodesMap classNameToDescendantsMap;
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;

@@ -102,7 +102,7 @@ private:
 class FunptrDDAClient : public DDAClient
 {
 private:
-    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef SVFMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
     FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
@@ -122,7 +122,7 @@ class AliasDDAClient : public DDAClient
 {
 
 public:
-    typedef std::set<const PAGNode*> PAGNodeSet;
+    typedef SVFSet<const PAGNode*> PAGNodeSet;
 
     AliasDDAClient(SVFModule* module) : DDAClient(module) {}
     ~AliasDDAClient() {}
@@ -133,7 +133,7 @@ public:
     virtual void performStat(PointerAnalysis* pta);
 
 private:
-    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef SVFMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

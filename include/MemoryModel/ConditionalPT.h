@@ -130,11 +130,11 @@ private:
 template<class Element>
 class CondStdSet
 {
-    typedef typename std::set<Element> ElementSet;
+    typedef typename SVFSet<Element> ElementSet;
 
 public:
-    typedef typename std::set<Element>::iterator iterator;
-    typedef typename std::set<Element>::const_iterator const_iterator;
+    typedef typename SVFSet<Element>::iterator iterator;
+    typedef typename SVFSet<Element>::const_iterator const_iterator;
 
     CondStdSet() {}
     ~CondStdSet() {}
@@ -300,7 +300,7 @@ template<class Cond>
 class CondPointsToSet
 {
 public:
-    typedef typename std::map<Cond, PointsTo> CondPts;
+    typedef typename SVFMap<Cond, PointsTo> CondPts;
     typedef typename CondPts::iterator CondPtsIter;
     typedef typename CondPts::const_iterator CondPtsConstIter;
     typedef CondVar<Cond> SingleCondVar;

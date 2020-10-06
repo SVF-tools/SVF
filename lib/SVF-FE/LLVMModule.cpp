@@ -249,9 +249,9 @@ void LLVMModuleSet::addSVFMain()
 void LLVMModuleSet::buildFunToFunMap()
 {
     SVFSet<Function*> funDecls, funDefs;
-    std::set<string> declNames, defNames, intersectNames;
-    typedef std::map<string, Function*> NameToFunDefMapTy;
-    typedef std::map<string, SVFSet<Function*>> NameToFunDeclsMapTy;
+    SVFSet<string> declNames, defNames, intersectNames;
+    typedef SVFMap<string, Function*> NameToFunDefMapTy;
+    typedef SVFMap<string, SVFSet<Function*>> NameToFunDeclsMapTy;
 
     for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it)
@@ -269,7 +269,7 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
     // Find the intersectNames
-    std::set<string>::iterator declIter, defIter;
+    SVFSet<string>::iterator declIter, defIter;
     declIter = declNames.begin();
     defIter = defNames.begin();
     while (declIter != declNames.end() && defIter != defNames.end())
@@ -360,7 +360,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
 void LLVMModuleSet::buildGlobalDefToRepMap()
 {
-    typedef std::map<string, SVFSet<GlobalVariable*>> NameToGlobalsMapTy;
+    typedef SVFMap<string, SVFSet<GlobalVariable*>> NameToGlobalsMapTy;
     NameToGlobalsMapTy nameToGlobalsMap;
     for (SVFModule::global_iterator it = svfModule->global_begin(),
             eit = svfModule->global_end(); it != eit; ++it)

@@ -39,7 +39,7 @@ private:
     NodeSet objectNodes;
     /// Edges in this external PAG, represented by the parts of an Edge because
     /// we will rebuild these edges in the main PAG.
-    std::set<std::tuple<NodeID, NodeID, std::string, int>>edges;
+    SVFSet<std::tuple<NodeID, NodeID, std::string, int>>edges;
 
     // Special nodes.
 
@@ -109,7 +109,7 @@ public:
     {
         return objectNodes;
     }
-    std::set<std::tuple<NodeID, NodeID, std::string, int>> &getEdges()
+    SVFSet<std::tuple<NodeID, NodeID, std::string, int>> &getEdges()
     {
         return edges;
     }

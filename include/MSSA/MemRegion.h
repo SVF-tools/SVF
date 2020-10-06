@@ -139,11 +139,11 @@ public:
     //@{
     //@}
     ///Define mem region set
-    typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
+    typedef SVFSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
     typedef SVFMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
-    typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef std::map<const SVFFunction*, PointsToList > FunToPointsToMap;
-    typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
+    typedef SVFSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
+    typedef SVFMap<const SVFFunction*, PointsToList > FunToPointsToMap;
+    typedef SVFMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
     typedef SVFMap<const SVFFunction*, MRSet> FunToMRsMap;
@@ -152,7 +152,7 @@ public:
     //@{
     typedef SVFMap<const LoadPE*, MRSet> LoadsToMRsMap;
     typedef SVFMap<const StorePE*, MRSet> StoresToMRsMap;
-    typedef std::map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
+    typedef SVFMap<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
@@ -170,7 +170,7 @@ public:
     typedef SVFMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
-    typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
+    typedef SVFMap<NodeID, NodeBS> NodeToPTSSMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;

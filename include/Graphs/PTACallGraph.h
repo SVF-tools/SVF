@@ -52,7 +52,7 @@ class PTACallGraphEdge : public GenericCallGraphEdgeTy
 {
 
 public:
-    typedef std::set<const CallBlockNode*> CallInstSet;
+    typedef SVFSet<const CallBlockNode*> CallInstSet;
     enum CEDGEK
     {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge

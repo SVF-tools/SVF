@@ -71,7 +71,7 @@ bool TCT::isInRecursion(const Instruction* inst) const
 {
     const Function* f = inst->getParent()->getParent();
     FIFOWorkList<const Function*> worklist;
-    std::set<const Function*> visits;
+    SVFSet<const Function*> visits;
     worklist.push(f);
 
     while(!worklist.empty())
