@@ -61,9 +61,9 @@ public:
     typedef MSSAPHI<Condition> PHI;
     typedef MSSADEF MDEF;
 
-    typedef OrderedSet<MU*> MUSet;
-    typedef OrderedSet<CHI*> CHISet;
-    typedef OrderedSet<PHI*> PHISet;
+    typedef Set<MU*> MUSet;
+    typedef Set<CHI*> CHISet;
+    typedef Set<PHI*> PHISet;
 
     ///Define mem region set
     typedef MRGenerator::MRSet MRSet;
@@ -235,7 +235,7 @@ private:
     /// Rename mu set
     inline void RenameMuSet(const MUSet& muSet)
     {
-        for (MUSet::iterator mit = muSet.begin(), emit = muSet.end();
+        for (MUSet::const_iterator mit = muSet.begin(), emit = muSet.end();
                 mit != emit; ++mit)
         {
             MU* mu = (*mit);
@@ -246,7 +246,7 @@ private:
     /// Rename chi set
     inline void RenameChiSet(const CHISet& chiSet, MRVector& memRegs)
     {
-        for (CHISet::iterator cit = chiSet.begin(), ecit = chiSet.end();
+        for (CHISet::const_iterator cit = chiSet.begin(), ecit = chiSet.end();
                 cit != ecit; ++cit)
         {
             CHI* chi = (*cit);
@@ -259,7 +259,7 @@ private:
     /// Rename result (LHS) of phis
     inline void RenamePhiRes(const PHISet& phiSet, MRVector& memRegs)
     {
-        for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
         {
             PHI* phi = *iter;
@@ -271,7 +271,7 @@ private:
     /// Rename operands (RHS) of phis
     inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
-        for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
         {
             PHI* phi = *iter;
