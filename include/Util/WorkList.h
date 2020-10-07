@@ -36,6 +36,8 @@
 #ifndef WORKLIST_H_
 #define WORKLIST_H_
 
+#include "Util/BasicTypes.h"
+
 #include <assert.h>
 #include <cstdlib>
 #include <vector>

@@ -63,11 +63,12 @@ typedef llvm::SparseBitVector<> NodeBS;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
-template <typename Key>
-using SVFSet = std::set<Key>;
+template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
+using SVFSet = std::set<Key, Compare, Allocator>;
 
-template <typename Key, typename Value>
-using SVFMap = std::map<Key, Value>;
+template<typename Key, typename Value, typename Compare = std::less<Key>,
+         typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using SVFMap = std::map<Key, Value, Compare, Allocator>;
 
 typedef std::pair<NodeID, NodeID> NodePair;
 typedef SVFSet<NodeID> NodeSet;
