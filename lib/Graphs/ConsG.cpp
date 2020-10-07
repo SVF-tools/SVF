@@ -156,111 +156,111 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
 /*!
  * Add an address edge
  */
-bool ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
+AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
-        return false;
+        return NULL;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = AddrCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingAddrEdge(edge);
     dstNode->addIncomingAddrEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Copy edge
  */
-bool ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
+CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
 {
 
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
             || srcNode == dstNode)
-        return false;
+        return NULL;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingCopyEdge(edge);
     dstNode->addIncomingCopyEdge(edge);
-    return added;
+    return edge;
 }
 
 
 /*!
  * Add Gep edge
  */
-bool ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
+NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
-        return false;
+        return NULL;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add variant gep edge
  */
-bool ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
+VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
-        return false;
+        return NULL;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingGepEdge(edge);
     dstNode->addIncomingGepEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Load edge
  */
-bool ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
+LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
-        return false;
+        return NULL;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = LoadCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingLoadEdge(edge);
     dstNode->addIncomingLoadEdge(edge);
-    return added;
+    return edge;
 }
 
 /*!
  * Add Store edge
  */
-bool ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
+StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
 {
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
-        return false;
+        return NULL;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = StoreCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
     srcNode->addOutgoingStoreEdge(edge);
     dstNode->addIncomingStoreEdge(edge);
-    return added;
+    return edge;
 }
 
 

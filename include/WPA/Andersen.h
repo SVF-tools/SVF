@@ -155,7 +155,7 @@ public:
     //@}
 
     /// Operation of points-to set
-    virtual inline PointsTo& getPts(NodeID id)
+    virtual inline const PointsTo& getPts(NodeID id)
     {
         return getPTDataTy()->getPts(sccRepNode(id));
     }
@@ -220,7 +220,7 @@ protected:
             getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
         }
     }
-    virtual inline PointsTo& getDiffPts(NodeID id)
+    virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
         if (enableDiff())
@@ -268,7 +268,7 @@ protected:
     virtual void handleCopyGep(ConstraintNode* node);
     virtual void handleLoadStore(ConstraintNode* node);
     virtual void processAddr(const AddrCGEdge* addr);
-    virtual bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
+    virtual bool processGepPts(const PointsTo& pts, const GepCGEdge* edge);
     //@}
 
     /// Add copy edge on constraint graph
@@ -332,7 +332,7 @@ protected:
     {
         for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
         {
-            PointsTo& pts = getPts(it->first);
+            const PointsTo& pts = getPts(it->first);
             NodeBS fldInsenObjs;
             for(NodeBS::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
             {
@@ -493,7 +493,7 @@ protected:
     /// process "bitcast" CopyCGEdge
     virtual void processCast(const ConstraintEdge *edge);
     /// update type of objects when process "bitcast" CopyCGEdge
-    void updateObjType(const Type *type, PointsTo &objs);
+    void updateObjType(const Type *type, const PointsTo &objs);
     /// process mismatched gep edges
     void processTypeMismatchedGep(NodeID obj, const Type *type);
     /// match types for Gep Edges

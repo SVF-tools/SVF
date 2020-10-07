@@ -33,7 +33,7 @@ void AndersenWaveDiffWithType::processCast(const ConstraintEdge *edge)
 }
 
 /// update type of objects when process "bitcast" CopyCGEdge
-void AndersenWaveDiffWithType::updateObjType(const Type *type, PointsTo &objs)
+void AndersenWaveDiffWithType::updateObjType(const Type *type, const PointsTo &objs)
 {
     for (PointsTo::iterator it = objs.begin(), eit = objs.end(); it != eit; ++it)
     {

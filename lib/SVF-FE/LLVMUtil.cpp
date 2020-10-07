@@ -131,7 +131,7 @@ bool SVFUtil::isDeadFunction (const Function * fun)
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
-        if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+        if (SVFUtil::isCallSite(*i))
             return false;
     }
     if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
@@ -145,7 +145,7 @@ bool SVFUtil::isDeadFunction (const Function * fun)
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
             {
-                if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+                if (SVFUtil::isCallSite(*i))
                     return false;
             }
         }

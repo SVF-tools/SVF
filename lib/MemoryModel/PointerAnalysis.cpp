@@ -615,7 +615,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
         for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+            if (SVFUtil::isCallSite(*i))
             {
 
                 CallSite cs(*i);

@@ -476,7 +476,7 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
     while(!worklist.empty())
     {
         NodeID nodeId = worklist.pop();
-        PointsTo& tmp = pta->getPts(nodeId);
+        const PointsTo& tmp = pta->getPts(nodeId);
         for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             argsPts |= CollectPtsChain(*it);
     }
@@ -489,7 +489,7 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
         const PAGNode* node = pta->getPAG()->getCallSiteRet(retBlockNode);
         if(node->isPointer())
         {
-            PointsTo& tmp = pta->getPts(node->getId());
+            const PointsTo& tmp = pta->getPts(node->getId());
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
                 retPts |= CollectPtsChain(*it);
         }
@@ -519,7 +519,7 @@ NodeBS& MRGenerator::CollectPtsChain(NodeID id)
         while(!worklist.empty())
         {
             NodeID nodeId = worklist.pop();
-            PointsTo& tmp = pta->getPts(nodeId);
+            const PointsTo& tmp = pta->getPts(nodeId);
             for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             {
                 pts |= CollectPtsChain(*it);

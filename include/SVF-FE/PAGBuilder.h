@@ -153,6 +153,9 @@ public:
     {
         visitCallSite(&II);
     }
+    void visitCallBrInst(CallBrInst &I) {
+      return visitCallSite(&I);
+    }
     void visitCallSite(CallSite cs);
     void visitReturnInst(ReturnInst &I);
     void visitCastInst(CastInst &I);

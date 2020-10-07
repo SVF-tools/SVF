@@ -545,14 +545,16 @@ protected:
     /// Otherwise, we need to handle formalRet using <PAGNodeID,CallSiteID> pair to find FormalRetVFG node same as handling actual parameters
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
-        FormalRetVFGNode* sNode = new FormalRetVFGNode(totalVFGNode++,uniqueFunRet,fun);
-        addVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(fun));
-        for(RetPESet::const_iterator it = retPEs.begin(), eit=retPEs.end();
-                it!=eit; ++it)
-            sNode->addRetPE(*it);
+		FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
+		addVFGNode(sNode, pag->getICFG()->getFunExitBlockNode(fun));
+		for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
+			sNode->addRetPE(*it);
 
-        PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
-        /// there is no need to setDef here, since uniqueFunRet is treated as a phi node to receive values from multiple return instructions of fun
+		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
+		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
+		/// we will set this phi node's def later
+		if (!pag->isPhiNode(uniqueFunRet))
+			setDef(uniqueFunRet, sNode);
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
