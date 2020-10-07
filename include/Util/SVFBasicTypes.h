@@ -70,6 +70,13 @@ template<typename Key, typename Value, typename Compare = std::less<Key>,
          typename Allocator = std::allocator<std::pair<const Key, Value>>>
 using SVFMap = std::map<Key, Value, Compare, Allocator>;
 
+template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
+using OrderedSet = std::set<Key, Compare, Allocator>;
+
+template<typename Key, typename Value, typename Compare = std::less<Key>,
+         typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using OrderedMap = std::map<Key, Value, Compare, Allocator>;
+
 typedef std::pair<NodeID, NodeID> NodePair;
 typedef SVFSet<NodeID> NodeSet;
 typedef SVFSet<NodePair> NodePairSet;

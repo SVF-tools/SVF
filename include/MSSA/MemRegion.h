@@ -139,11 +139,11 @@ public:
     //@{
     //@}
     ///Define mem region set
-    typedef SVFSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
+    typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
     typedef SVFMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
-    typedef SVFSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
+    typedef OrderedSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
     typedef SVFMap<const SVFFunction*, PointsToList > FunToPointsToMap;
-    typedef SVFMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
+    typedef OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
     typedef SVFMap<const SVFFunction*, MRSet> FunToMRsMap;

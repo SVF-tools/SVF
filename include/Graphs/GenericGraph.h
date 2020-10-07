@@ -133,7 +133,7 @@ public:
     typedef EdgeTy EdgeType;
     /// Edge kind
     typedef s32_t GNodeK;
-    typedef SVFSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
+    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
     /// Edge iterator
     ///@{
     typedef typename GEdgeSetTy::iterator iterator;
