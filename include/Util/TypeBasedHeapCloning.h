@@ -149,21 +149,21 @@ private:
     PAG *ppag = nullptr;
 
     /// Object -> its type.
-    SVFMap<NodeID, const DIType *> objToType;
+    Map<NodeID, const DIType *> objToType;
     /// Object -> allocation site.
     /// The value NodeID depends on the pointer analysis (could be
     /// an SVFG node or PAG node for example).
-    SVFMap<NodeID, NodeID> objToAllocation;
+    Map<NodeID, NodeID> objToAllocation;
     /// (Original) object -> set of its clones.
-    SVFMap<NodeID, NodeBS> objToClones;
+    Map<NodeID, NodeBS> objToClones;
     /// (Clone) object -> original object (opposite of objToclones).
-    SVFMap<NodeID, NodeID> cloneToOriginalObj;
+    Map<NodeID, NodeID> cloneToOriginalObj;
     /// Maps nodes (a location like a PAG node or SVFG node) to their filter set.
-    SVFMap<NodeID, PointsTo> locToFilterSet;
+    Map<NodeID, PointsTo> locToFilterSet;
     /// Maps objects to the GEP nodes beneath them.
-    SVFMap<NodeID, NodeBS> objToGeps;
+    Map<NodeID, NodeBS> objToGeps;
     /// Maps memory objects to their GEP objects. (memobj -> (fieldidx -> geps))
-    SVFMap<const MemObj *, SVFMap<unsigned, NodeBS>> memObjToGeps;
+    Map<const MemObj *, Map<unsigned, NodeBS>> memObjToGeps;
 
     /// Test whether object is a GEP object. For convenience.
     bool isGep(const PAGNode *n) const;

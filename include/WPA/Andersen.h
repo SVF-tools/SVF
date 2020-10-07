@@ -53,7 +53,7 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef SVFMap<CallSite, NodeID> CallSite2DummyValPN;
+    typedef Map<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Pass ID
     static char ID;
@@ -425,7 +425,7 @@ class AndersenWaveDiffWithType : public AndersenWaveDiff
 
 private:
 
-    typedef SVFMap<NodeID, SVFSet<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
+    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
 
     TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
 
@@ -434,12 +434,12 @@ private:
         TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
         if (it != typeMismatchedObjToEdges.end())
         {
-            SVFSet<const GepCGEdge*> &edges = it->second;
+            Set<const GepCGEdge*> &edges = it->second;
             edges.insert(gepEdge);
         }
         else
         {
-            SVFSet<const GepCGEdge*> edges;
+            Set<const GepCGEdge*> edges;
             edges.insert(gepEdge);
             typeMismatchedObjToEdges[obj] = edges;
         }

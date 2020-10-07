@@ -191,7 +191,7 @@ void PCG::identifyFollowers()
     {
         const Instruction* inst = *sit;
         BBWorkList bb_worklist;
-        SVFSet<const BasicBlock*> visitedBBs;
+        Set<const BasicBlock*> visitedBBs;
         bb_worklist.push(inst->getParent());
         while (!bb_worklist.empty())
         {

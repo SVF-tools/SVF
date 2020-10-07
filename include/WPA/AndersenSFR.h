@@ -43,7 +43,7 @@ namespace SVF
 class AndersenSCD : public Andersen
 {
 public:
-    typedef SVFMap<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<NodeID, NodeID> NodeToNodeMap;
 
 protected:
     static AndersenSCD* scdAndersen;
@@ -101,9 +101,9 @@ protected:
 class AndersenSFR : public AndersenSCD
 {
 public:
-    typedef SVFMap<NodeID, NodeBS> NodeStrides;
-    typedef SVFMap<NodeID, NodeSet> FieldReps;
-    typedef SVFMap<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+    typedef Map<NodeID, NodeBS> NodeStrides;
+    typedef Map<NodeID, NodeSet> FieldReps;
+    typedef Map<NodeID, pair<NodeID, NodeSet>> SFRTrait;
 
 private:
     static AndersenSFR* sfrAndersen;

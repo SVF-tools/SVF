@@ -73,9 +73,9 @@ private:
 class IntraDisjointMRG : public MRGenerator
 {
 public:
-    typedef SVFMap<PointsTo, PointsToList> PtsToSubPtsMap;
-    typedef SVFMap<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
-    typedef SVFMap<const SVFFunction*, PointsToList> FunToInterMap;
+    typedef OrderedMap<PointsTo, PointsToList> PtsToSubPtsMap;
+    typedef Map<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
+    typedef Map<const SVFFunction*, PointsToList> FunToInterMap;
 
     IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}

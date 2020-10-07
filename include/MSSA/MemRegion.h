@@ -140,37 +140,37 @@ public:
     //@}
     ///Define mem region set
     typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef SVFMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
+    typedef Map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
     typedef OrderedSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef SVFMap<const SVFFunction*, PointsToList > FunToPointsToMap;
+    typedef Map<const SVFFunction*, PointsToList > FunToPointsToMap;
     typedef OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
-    typedef SVFMap<const SVFFunction*, MRSet> FunToMRsMap;
+    typedef Map<const SVFFunction*, MRSet> FunToMRsMap;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef SVFMap<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef SVFMap<const StorePE*, MRSet> StoresToMRsMap;
-    typedef SVFMap<const CallBlockNode*, MRSet> CallSiteToMRsMap;
+    typedef Map<const LoadPE*, MRSet> LoadsToMRsMap;
+    typedef Map<const StorePE*, MRSet> StoresToMRsMap;
+    typedef Map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef SVFMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
-    typedef SVFMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef SVFMap<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
+    typedef Map<const LoadPE*, PointsTo> LoadsToPointsToMap;
+    typedef Map<const StorePE*, PointsTo> StoresToPointsToMap;
+    typedef Map<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef SVFMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
+    typedef Map<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef SVFMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    typedef Map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
-    typedef SVFMap<NodeID, NodeBS> NodeToPTSSMap;
+    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;

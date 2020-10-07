@@ -545,7 +545,7 @@ void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &ta
 
     if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
     {
-        SVFSet<const GlobalValue*> vtbls;
+        Set<const GlobalValue*> vtbls;
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {

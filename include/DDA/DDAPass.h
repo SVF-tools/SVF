@@ -28,7 +28,7 @@ public:
     /// Pass ID
     static char ID;
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef SVFSet<const SVFGEdge*> SVFGEdgeSet;
+    typedef Set<const SVFGEdge*> SVFGEdgeSet;
     typedef std::vector<PointerAnalysis*> PTAVector;
 
     DDAPass() : ModulePass(ID), _pta(NULL), _client(NULL) {}

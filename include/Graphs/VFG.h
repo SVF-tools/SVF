@@ -55,19 +55,19 @@ public:
         ORIGSVFGK, PTRONLYSVFGK
     };
 
-    typedef SVFMap<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
-    typedef SVFSet<VFGNode*> VFGNodeSet;
-    typedef SVFMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef SVFMap<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
-    typedef SVFMap<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
-    typedef SVFMap<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
-    typedef SVFMap<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
-    typedef SVFMap<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
-    typedef SVFMap<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
-    typedef SVFMap<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
-    typedef SVFMap<const PAGNode*, UnaryOPVFGNode*> PAGNodeToUnaryOPVFGNodeMapTy;
-    typedef SVFMap<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
-    typedef SVFMap<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
+    typedef Map<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
+    typedef Set<VFGNode*> VFGNodeSet;
+    typedef Map<const PAGNode*, NodeID> PAGNodeToDefMapTy;
+    typedef Map<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
+    typedef Map<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
+    typedef Map<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
+    typedef Map<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
+    typedef Map<const PAGEdge*, StmtVFGNode*> PAGEdgeToStmtVFGNodeMapTy;
+    typedef Map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
+    typedef Map<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
+    typedef Map<const PAGNode*, UnaryOPVFGNode*> PAGNodeToUnaryOPVFGNodeMapTy;
+    typedef Map<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
+    typedef Map<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
 
     typedef FormalParmVFGNode::CallPESet CallPESet;
     typedef FormalRetVFGNode::RetPESet RetPESet;
@@ -77,8 +77,8 @@ public:
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
     typedef PAG::PAGEdgeSet PAGEdgeSet;
-    typedef SVFSet<const VFGNode*> GlobalVFGNodeSet;
-    typedef SVFSet<const PAGNode*> PAGNodeSet;
+    typedef Set<const VFGNode*> GlobalVFGNodeSet;
+    typedef Set<const PAGNode*> PAGNodeSet;
 
 
 protected:

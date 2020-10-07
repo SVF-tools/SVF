@@ -137,7 +137,7 @@ void PTAStat::performStat()
     u32_t numOfConstant = 0;
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    SVFSet<SymID> memObjSet;
+    Set<SymID> memObjSet;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;

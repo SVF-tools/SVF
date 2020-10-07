@@ -48,16 +48,16 @@ class ICFG : public GenericICFGTy
 
 public:
 
-    typedef SVFMap<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
+    typedef Map<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
     typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef SVFMap<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef SVFMap<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef SVFMap<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
-    typedef SVFMap<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
-    typedef SVFMap<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    typedef Map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
+    typedef Map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
+    typedef Map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
+    typedef Map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
 

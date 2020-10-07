@@ -63,12 +63,14 @@ typedef llvm::SparseBitVector<> NodeBS;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
 
-template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
-using SVFSet = std::set<Key, Compare, Allocator>;
+template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>,
+          typename Allocator = std::allocator<Key>> 
+using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
-template<typename Key, typename Value, typename Compare = std::less<Key>,
-         typename Allocator = std::allocator<std::pair<const Key, Value>>>
-using SVFMap = std::map<Key, Value, Compare, Allocator>;
+template<typename Key, typename Value, typename Hash = std::hash<Key>,
+    typename KeyEqual = std::equal_to<Key>,
+    typename Allocator = std::allocator<std::pair<const Key, Value>>>
+using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
 
 template<typename Key, typename Compare = std::less<Key>, typename Allocator = std::allocator<Key>>
 using OrderedSet = std::set<Key, Compare, Allocator>;
@@ -77,17 +79,21 @@ template<typename Key, typename Value, typename Compare = std::less<Key>,
          typename Allocator = std::allocator<std::pair<const Key, Value>>>
 using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
+template <typename T, unsigned N>
+using SmallVector = llvm::SmallVector<T, N>;
+
 typedef std::pair<NodeID, NodeID> NodePair;
-typedef SVFSet<NodeID> NodeSet;
-typedef SVFSet<NodePair> NodePairSet;
-typedef SVFMap<NodePair,NodeID> NodePairMap;
+typedef OrderedSet<NodeID> OrderedNodeSet;
+typedef Set<NodeID> NodeSet;
+typedef Set<NodePair> NodePairSet;
+typedef Map<NodePair,NodeID> NodePairMap;
 typedef std::vector<NodeID> NodeVector;
 typedef std::vector<EdgeID> EdgeVector;
 typedef std::stack<NodeID> NodeStack;
 typedef std::list<NodeID> NodeList;
 typedef std::deque<NodeID> NodeDeque;
-typedef llvm::SmallVector<u32_t,16> SmallVector16;
-typedef llvm::SmallVector<u32_t,8> SmallVector8;
+typedef SmallVector<u32_t,16> SmallVector16;
+typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
@@ -217,6 +223,27 @@ template <typename T, typename U> struct std::hash<std::pair<T, U>> {
         std::hash<T> h1;
         std::hash<U> h2;
         return szudzik(h1(p.first), h2(p.second));
+    }
+};
+
+/// Specialise hash for SmallVectors.
+template <typename T, unsigned N>
+struct std::hash<SVF::SmallVector<T, N>>
+{
+    size_t operator()(const SVF::SmallVector<T, N> &sv) const {
+        if (sv.empty()) return 0;
+        if (sv.size() == 1) return sv[0];
+
+        // Iterate and accumulate the hash.
+        size_t hash = 0;
+        std::hash<std::pair<T, size_t>> hts;
+        std::hash<T> ht;
+        for (const T &t : sv)
+        {
+            hash = hts(std::make_pair(ht(t), hash));
+        }
+
+        return hash;
     }
 };
 

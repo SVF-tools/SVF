@@ -51,13 +51,13 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
     TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
     if (it == typeMismatchedObjToEdges.end())
         return;
-    SVFSet<const GepCGEdge*> &edges = it->second;
-    SVFSet<const GepCGEdge*> processed;
+    Set<const GepCGEdge*> &edges = it->second;
+    Set<const GepCGEdge*> processed;
 
     PTAType ptaTy(type);
     NodeBS &nodesOfType = typeSystem->getVarsForType(ptaTy);
 
-    for (SVFSet<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit)
+    for (Set<const GepCGEdge*>::iterator nit = edges.begin(), neit = edges.end(); nit != neit; ++nit)
     {
         if (const NormalGepCGEdge *normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*nit))
         {
@@ -70,7 +70,7 @@ void AndersenWaveDiffWithType::processTypeMismatchedGep(NodeID obj, const Type *
         }
     }
 
-    for (SVFSet<const GepCGEdge*>::iterator nit = processed.begin(), neit = processed.end(); nit != neit; ++nit)
+    for (Set<const GepCGEdge*>::iterator nit = processed.begin(), neit = processed.end(); nit != neit; ++nit)
         edges.erase(*nit);
 }
 
@@ -129,7 +129,7 @@ void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes)
 {
 
     /// collect types in a cycle
-    SVFSet<PTAType> typesInSCC;
+    OrderedSet<PTAType> typesInSCC;
     for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
     {
         if (typeSystem->hasTypeSet(*it))
@@ -146,7 +146,7 @@ void AndersenWaveDiffWithType::mergeTypeOfNodes(const NodeBS &nodes)
     /// merge types of nodes in a cycle
     for (NodeBS::iterator it = nodes.begin(), eit = nodes.end(); it != eit; ++it)
     {
-        for (SVFSet<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit)
+        for (OrderedSet<PTAType>::iterator tyit = typesInSCC.begin(), tyeit = typesInSCC.end(); tyit != tyeit; ++tyit)
         {
             const PTAType &ptaTy = *tyit;
             if (typeSystem->addTypeForVar(*it, ptaTy))

@@ -254,7 +254,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
     {
         const Loop *loop = loopInfo->getLoopFor(bb);
         SmallBBVector exitbbs;
-        SVFSet<BasicBlock*> filteredbbs;
+        Set<BasicBlock*> filteredbbs;
         loop->getExitBlocks(exitbbs);
         /// exclude exit bb which calls program exit
         while(!exitbbs.empty())
@@ -267,7 +267,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
         PostDominatorTree* pdt = getPostDT(fun);
-        for(SVFSet<BasicBlock*>::iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
+        for(Set<BasicBlock*>::const_iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
         {
             if(pdt->dominates(dst,*it) == false)
                 allPDT =false;
@@ -382,7 +382,7 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
     if(it!=funToExitBBsMap.end())
     {
         PostDominatorTree* pdt = getPostDT(fun);
-        for(BasicBlockSet::iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++)
+        for(BasicBlockSet::const_iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++)
         {
             if(pdt->dominates(*bit,bb))
                 return true;
@@ -515,10 +515,10 @@ void PathCondAllocator::printPathCond()
 
     outs() << "print path condition\n";
 
-    for(BBCondMap::iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it)
+    for(BBCondMap::const_iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it)
     {
         const BasicBlock* bb = it->first;
-        for(CondPosMap::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        for(CondPosMap::const_iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
             u32_t i=0;
             for (const BasicBlock *succ: successors(bb))

@@ -113,8 +113,8 @@ public:
         NodeBS _subNodes; /// nodes in the scc represented by this node
     };
 
-    typedef SVFMap<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
-    typedef SVFMap<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
+    typedef Map<NodeID, NodeID> NodeToNodeMap;
 
     SCCDetection(const GraphType &GT)
         : _graph(GT),

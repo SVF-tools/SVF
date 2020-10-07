@@ -31,10 +31,10 @@ class MTA: public ModulePass
 {
 
 public:
-    typedef SVFSet<const LoadInst*> LoadSet;
-    typedef SVFSet<const StoreInst*> StoreSet;
-    typedef SVFMap<const Function*, ScalarEvolution*> FunToSEMap;
-    typedef SVFMap<const Function*, LoopInfo*> FunToLoopInfoMap;
+    typedef Set<const LoadInst*> LoadSet;
+    typedef Set<const StoreInst*> StoreSet;
+    typedef Map<const Function*, ScalarEvolution*> FunToSEMap;
+    typedef Map<const Function*, LoopInfo*> FunToLoopInfoMap;
 
     /// Pass ID
     static char ID;

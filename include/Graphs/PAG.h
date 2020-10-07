@@ -47,34 +47,34 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 {
 
 public:
-    typedef SVFSet<const CallBlockNode*> CallSiteSet;
-    typedef SVFMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
-    typedef SVFMap<NodeID,CallSiteSet> FunPtrToCallSitesMap;
-    typedef SVFMap<NodeID,NodeBS> MemObjToFieldsMap;
-    typedef SVFSet<const PAGEdge*> PAGEdgeSet;
+    typedef Set<const CallBlockNode*> CallSiteSet;
+    typedef Map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
+    typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
+    typedef Set<const PAGEdge*> PAGEdgeSet;
     typedef std::vector<const PAGEdge*> PAGEdgeList;
     typedef std::vector<const PAGNode*> PAGNodeList;
     typedef std::vector<const CopyPE*> CopyPEList;
     typedef std::vector<const BinaryOPPE*> BinaryOPList;
     typedef std::vector<const UnaryOPPE*> UnaryOPList;
     typedef std::vector<const CmpPE*> CmpPEList;
-    typedef SVFMap<const PAGNode*,CopyPEList> PHINodeMap;
-    typedef SVFMap<const PAGNode*,BinaryOPList> BinaryNodeMap;
-    typedef SVFMap<const PAGNode*,UnaryOPList> UnaryNodeMap;
-    typedef SVFMap<const PAGNode*,CmpPEList> CmpNodeMap;
-    typedef SVFMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
-    typedef SVFMap<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
-    typedef SVFMap<const RetBlockNode*,const PAGNode*> CSToRetMap;
-    typedef SVFMap<const SVFFunction*,const PAGNode*> FunToRetMap;
-    typedef SVFMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
-    typedef SVFMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
-    typedef SVFMap<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef Map<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef Map<const PAGNode*,UnaryOPList> UnaryNodeMap;
+    typedef Map<const PAGNode*,CmpPEList> CmpNodeMap;
+    typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
+    typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
+    typedef Map<const RetBlockNode*,const PAGNode*> CSToRetMap;
+    typedef Map<const SVFFunction*,const PAGNode*> FunToRetMap;
+    typedef Map<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
+    typedef Map<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
+    typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
-    typedef SVFMap<NodeOffset,NodeID> NodeOffsetMap;
-    typedef SVFMap<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef SVFMap<const Value*, NodeLocationSetMap> GepValPNMap;
-    typedef SVFMap<NodePair,NodeID> NodePairSetMap;
+    typedef Map<NodeOffset,NodeID> NodeOffsetMap;
+    typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
+    typedef Map<const Value*, NodeLocationSetMap> GepValPNMap;
+    typedef Map<NodePair,NodeID> NodePairSetMap;
 
 private:
     SymbolTableInfo* symInfo;

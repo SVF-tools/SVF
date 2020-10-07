@@ -170,7 +170,7 @@ void MTA::detect(SVFModule* module)
     LoadSet loads;
     StoreSet stores;
 
-    SVFSet<const Instruction*> needcheckinst;
+    Set<const Instruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
     for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
     {

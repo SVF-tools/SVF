@@ -50,7 +50,7 @@ namespace SVF
 /**
  * Worklist with "first come first go" order.
  * New nodes pushed at back and popped from front.
- * Elements in the list are unique as they're recorded by SVFSet.
+ * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
 class List
@@ -70,7 +70,7 @@ class List
         ListNode* next;
     };
 
-    typedef SVFSet<Data> DataSet;
+    typedef Set<Data> DataSet;
     typedef ListNode Node;
 
 public:
@@ -131,12 +131,12 @@ private:
 /**
  * Worklist with "first in first out" order.
  * New nodes will be pushed at back and popped from front.
- * Elements in the list are unique as they're recorded by SVFSet.
+ * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
 class FIFOWorkList
 {
-    typedef SVFSet<Data> DataSet;
+    typedef Set<Data> DataSet;
     typedef std::deque<Data> DataDeque;
 public:
     FIFOWorkList() {}
@@ -197,12 +197,12 @@ private:
 /**
  * Worlist with "first in last out" order.
  * New nodes will be pushed at back and popped from back.
- * Elements in the list are unique as they're recorded by SVFSet.
+ * Elements in the list are unique as they're recorded by Set.
  */
 template<class Data>
 class FILOWorkList
 {
-    typedef SVFSet<Data> DataSet;
+    typedef Set<Data> DataSet;
     typedef std::vector<Data> DataVector;
 public:
     FILOWorkList() {}

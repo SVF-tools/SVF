@@ -176,12 +176,12 @@ typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
 public:
-    typedef SVFSet<const CHNode*> CHNodeSetTy;
+    typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
-    typedef SVFMap<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef SVFMap<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef SVFMap<CallSite, VTableSet> CallSiteToVTableSetMap;
-    typedef SVFMap<CallSite, VFunSet> CallSiteToVFunSetMap;
+    typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
+    typedef Map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef Map<CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef Map<CallSite, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum
     {
@@ -220,7 +220,7 @@ public:
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        SVFMap<const SVFFunction*, s32_t>::const_iterator it =
+        Map<const SVFFunction*, s32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
@@ -229,7 +229,7 @@ public:
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const
     {
-        SVFMap<const SVFFunction*, s32_t>::const_iterator it, eit;
+        Map<const SVFFunction*, s32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -290,14 +290,14 @@ private:
     u32_t classNum;
     s32_t vfID;
     double buildingCHGTime;
-    SVFMap<const std::string, CHNode *> classNameToNodeMap;
+    Map<std::string, CHNode *> classNameToNodeMap;
     NameToCHNodesMap classNameToDescendantsMap;
     NameToCHNodesMap classNameToAncestorsMap;
     NameToCHNodesMap classNameToInstAndDescsMap;
     NameToCHNodesMap templateNameToInstancesMap;
     CallSiteToCHNodesMap csToClassesMap;
 
-    SVFMap<const SVFFunction*, s32_t> virtualFunctionToIDMap;
+    Map<const SVFFunction*, s32_t> virtualFunctionToIDMap;
     CallSiteToVTableSetMap csToCHAVtblsMap;
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };

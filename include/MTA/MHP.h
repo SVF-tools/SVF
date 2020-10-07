@@ -26,19 +26,19 @@ class MHP
 {
 
 public:
-    typedef SVFSet<const Function*> FunSet;
-    typedef SVFSet<const Instruction*> InstSet;
-    typedef SVFSet<const StmtSVFGNode*> SVFGNodeSet;
+    typedef Set<const Function*> FunSet;
+    typedef Set<const Instruction*> InstSet;
+    typedef Set<const StmtSVFGNode*> SVFGNodeSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
-    typedef SVFSet<CxtThreadStmt> CxtThreadStmtSet;
-    typedef SVFMap<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
-    typedef SVFMap<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    typedef Set<CxtThreadStmt> CxtThreadStmtSet;
+    typedef Map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
+    typedef Map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
 
-    typedef SVFSet<CxtStmt> LockSpan;
+    typedef Set<CxtStmt> LockSpan;
 
     typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef SVFMap<FuncPair, bool> FuncPairToBool;
+    typedef Map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
     MHP(TCT* t);
@@ -273,12 +273,12 @@ public:
     };
 
     typedef TCT::InstVec InstVec;
-    typedef SVFMap<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef SVFMap<const CxtStmt,NodeBS> CxtStmtToTIDMap;
-    typedef SVFSet<NodePair> ThreadPairSet;
-    typedef SVFMap<const CxtStmt, const Loop*> CxtStmtToLoopMap;
+    typedef Map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
+    typedef Map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
+    typedef Set<NodePair> ThreadPairSet;
+    typedef Map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef SVFMap<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
+    typedef Map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
     ForkJoinAnalysis(TCT* t) : tct(t)
     {
         collectSCEVInfo();

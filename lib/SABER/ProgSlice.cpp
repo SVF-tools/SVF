@@ -199,7 +199,7 @@ std::string ProgSlice::evalFinalCond() const
     std::string str;
     raw_string_ostream rawstr(str);
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    SVFSet<std::string> locations;
+    Set<std::string> locations;
     for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
     {
         Condition* atom = pathAllocator->getCond(*it);
@@ -207,7 +207,7 @@ std::string ProgSlice::evalFinalCond() const
         locations.insert(getSourceLoc(tinst));
     }
     /// print leak path after eliminating duplicated element
-    for(SVFSet<std::string>::iterator iter = locations.begin(), eiter = locations.end();
+    for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
             iter!=eiter; ++iter)
     {
         rawstr << "\t\t  --> (" << *iter << ") \n";

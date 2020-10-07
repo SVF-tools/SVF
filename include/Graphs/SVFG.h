@@ -73,16 +73,16 @@ class SVFG : public VFG
 
 public:
     typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
-    typedef SVFMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef SVFMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
+    typedef Map<const PAGNode*, NodeID> PAGNodeToDefMapTy;
+    typedef Map<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef NodeBS ActualINSVFGNodeSet;
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef SVFMap<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef SVFMap<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
-    typedef SVFMap<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
-    typedef SVFMap<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
+    typedef Map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef Map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef Map<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
+    typedef Map<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
     typedef MemSSA::CHISet CHISet;
     typedef MemSSA::PHISet PHISet;

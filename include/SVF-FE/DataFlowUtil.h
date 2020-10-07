@@ -120,9 +120,9 @@ public:
 
 class PTACFInfoBuilder{
 public:
-    typedef SVFMap<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
-    typedef SVFMap<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
-    typedef SVFMap<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
+    typedef Map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
+    typedef Map<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
+    typedef Map<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
 
     /// Constructor
      PTACFInfoBuilder();

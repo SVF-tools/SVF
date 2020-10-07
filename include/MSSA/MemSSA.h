@@ -61,9 +61,9 @@ public:
     typedef MSSAPHI<Condition> PHI;
     typedef MSSADEF MDEF;
 
-    typedef SVFSet<MU*> MUSet;
-    typedef SVFSet<CHI*> CHISet;
-    typedef SVFSet<PHI*> PHISet;
+    typedef OrderedSet<MU*> MUSet;
+    typedef OrderedSet<CHI*> CHISet;
+    typedef OrderedSet<PHI*> PHISet;
 
     ///Define mem region set
     typedef MRGenerator::MRSet MRSet;
@@ -71,27 +71,27 @@ public:
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef SVFMap<const LoadPE*, MUSet> LoadToMUSetMap;
-    typedef SVFMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef SVFMap<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef SVFMap<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
-    typedef SVFMap<const BasicBlock*, PHISet> BBToPhiSetMap;
+    typedef Map<const LoadPE*, MUSet> LoadToMUSetMap;
+    typedef Map<const StorePE*, CHISet> StoreToChiSetMap;
+    typedef Map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
+    typedef Map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
+    typedef Map<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef SVFMap<const SVFFunction*, CHISet> FunToEntryChiSetMap;
-    typedef SVFMap<const SVFFunction*, MUSet> FunToReturnMuSetMap;
+    typedef Map<const SVFFunction*, CHISet> FunToEntryChiSetMap;
+    typedef Map<const SVFFunction*, MUSet> FunToReturnMuSetMap;
 
     /// For phi insertion
     //@{
     typedef std::vector<const BasicBlock*> BBList;
-    typedef SVFMap<const BasicBlock*, MRSet> BBToMRSetMap;
-    typedef SVFMap<const MemRegion*, BBList> MemRegToBBsMap;
+    typedef Map<const BasicBlock*, MRSet> BBToMRSetMap;
+    typedef Map<const MemRegion*, BBList> MemRegToBBsMap;
     //@}
 
     /// For SSA renaming
-    typedef SVFMap<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
-    typedef SVFMap<const MemRegion*, MRVERSION> MemRegToCounterMap;
+    typedef Map<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
+    typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;

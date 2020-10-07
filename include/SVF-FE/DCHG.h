@@ -156,7 +156,7 @@ public:
         typedefs.insert(diTypedef);
     }
 
-    const SVFSet<const DIDerivedType *> &getTypedefs(void) const
+    const Set<const DIDerivedType *> &getTypedefs(void) const
     {
         return typedefs;
     }
@@ -192,7 +192,7 @@ private:
     /// Type of this node.
     const DIType *diType;
     /// Typedefs which map to this type.
-    SVFSet<const DIDerivedType *> typedefs;
+    Set<const DIDerivedType *> typedefs;
     const GlobalValue* vtable;
     std::string typeName;
     size_t flags;
@@ -340,7 +340,7 @@ public:
     }
 
     /// Returns all the aggregates contained (transitively) in base.
-    const SVFSet<const DIType *> &getAggs(const DIType *base)
+    const Set<const DIType *> &getAggs(const DIType *base)
     {
         base = getCanonicalType(base);
         assert(containingAggs.find(base) != containingAggs.end() && "DCHG: aggregates not gathered for base!");
@@ -355,25 +355,25 @@ protected:
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.
-    SVFMap<const DIType *, DCHNode *> diTypeToNodeMap;
+    Map<const DIType *, DCHNode *> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    SVFMap<const GlobalValue *, const DIType *> vtblToTypeMap;
+    Map<const GlobalValue *, const DIType *> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
-    SVFMap<const DIType *, NodeBS> chaMap;
+    Map<const DIType *, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.
-    SVFMap<const DIType *, NodeBS> chaFFMap;
+    Map<const DIType *, NodeBS> chaFFMap;
     /// Maps types to a set with their vtable and all their children's.
-    SVFMap<const DIType *, VTableSet> vtblCHAMap;
+    Map<const DIType *, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
-    SVFMap<CallSite, VFunSet> csCHAMap;
+    Map<CallSite, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
-    SVFMap<const DIType *, const DIType *> canonicalTypeMap;
+    Map<const DIType *, const DIType *> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).
-    SVFSet<const DIType *> canonicalTypes;
+    Set<const DIType *> canonicalTypes;
     /// Maps types to their flattened fields' types.
-    SVFMap<const DIType *, std::vector<const DIType *>> fieldTypes;
+    Map<const DIType *, std::vector<const DIType *>> fieldTypes;
     /// Maps aggregate types to all the aggregate types it transitively contains.
-    SVFMap<const DIType *, SVFSet<const DIType *>> containingAggs;
+    Map<const DIType *, Set<const DIType *>> containingAggs;
 
 private:
     /// Construction helper to process DIBasicTypes.
