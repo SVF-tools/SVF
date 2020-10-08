@@ -47,18 +47,18 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef Map<const Value *, SymID> ValueToIDMapTy;
+    typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef Map<SymID,MemObj*> IDToMemMapTy;
+    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
-    typedef Map<const Function *, SymID> FunToIDMapTy;
+    typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
     /// sym id to sym type map
-    typedef Map<SymID,SYMTYPE> IDToSymTyMapTy;
+    typedef OrderedMap<SymID,SYMTYPE> IDToSymTyMapTy;
     /// struct type to struct info map
-    typedef Map<const Type*, StInfo*> TypeToFieldInfoMap;
+    typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef Set<CallSite> CallSiteSet;
-    typedef Map<const Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef Map<CallSiteID,const Instruction*> IDToCallSiteMapTy;
+    typedef OrderedMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
+    typedef OrderedMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
 
     //@}
 

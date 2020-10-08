@@ -48,7 +48,7 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 
 public:
     typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef Map<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef OrderedMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
     typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
     typedef Set<const PAGEdge*> PAGEdgeSet;

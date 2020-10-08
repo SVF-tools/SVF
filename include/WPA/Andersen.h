@@ -53,7 +53,7 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef Map<CallSite, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Pass ID
     static char ID;

@@ -226,7 +226,7 @@ public:
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
     typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
     typedef Set<const SVFFunction*> FunctionSet;
-    typedef Map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 

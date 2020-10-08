@@ -101,7 +101,7 @@ public:
     typedef Set<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
-    typedef Map<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef Set<const GlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
