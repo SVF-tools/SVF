@@ -53,7 +53,7 @@ class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef DenseMap<CallSite, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Pass ID
     static char ID;
@@ -415,7 +415,7 @@ class AndersenWaveDiffWithType : public AndersenWaveDiff
 
 private:
 
-    typedef DenseMap<NodeID, DenseSet<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
+    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
 
     TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
 
@@ -424,12 +424,12 @@ private:
         TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
         if (it != typeMismatchedObjToEdges.end())
         {
-            DenseSet<const GepCGEdge*> &edges = it->second;
+            Set<const GepCGEdge*> &edges = it->second;
             edges.insert(gepEdge);
         }
         else
         {
-            DenseSet<const GepCGEdge*> edges;
+            Set<const GepCGEdge*> edges;
             edges.insert(gepEdge);
             typeMismatchedObjToEdges[obj] = edges;
         }
@@ -551,7 +551,7 @@ protected:
     //@{
     bool isMetEdge (ConstraintEdge* edge) const
     {
-        EdgeSet::iterator it = metEdges.find(edge->getEdgeID());
+        EdgeSet::const_iterator it = metEdges.find(edge->getEdgeID());
         return it != metEdges.end();
     };
     void addMetEdge(ConstraintEdge* edge)

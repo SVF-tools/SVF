@@ -61,9 +61,9 @@ private:
     /// flattened field offsets of of a struct
     std::vector<u32_t> foffset;
     /// Types of all fields of a struct
-    DenseMap<u32_t, const llvm::Type*> fldIdx2TypeMap;
+    Map<u32_t, const llvm::Type*> fldIdx2TypeMap;
     /// Types of all fields of a struct
-    DenseMap<u32_t, const llvm::Type*> offset2TypeMap;
+    Map<u32_t, const llvm::Type*> offset2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FieldInfo> finfo;
 

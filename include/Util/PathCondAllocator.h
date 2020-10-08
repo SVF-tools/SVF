@@ -48,15 +48,15 @@ public:
     static u32_t totalCondNum;
 
     typedef DdNode Condition;
-    typedef std::map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
-    typedef std::map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
-    typedef std::map<const Condition*, const Instruction* > CondToTermInstMap;	// map a condition to its branch instruction
-    typedef std::set<const BasicBlock*> BasicBlockSet;
-    typedef std::map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef std::map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
+    typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
+    typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
+    typedef Map<const Condition*, const Instruction* > CondToTermInstMap;	// map a condition to its branch instruction
+    typedef Set<const BasicBlock*> BasicBlockSet;
+    typedef Map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
+    typedef Map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
-    typedef std::map<u32_t,Condition*> IndexToConditionMap;
+    typedef Map<u32_t,Condition*> IndexToConditionMap;
 
     /// Constructor
     PathCondAllocator()

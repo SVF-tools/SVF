@@ -98,13 +98,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef DenseSet<const CallBlockNode*> CallSiteSet;
+    typedef Set<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef DenseSet<const SVFFunction*> FunctionSet;
-    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef Set<const SVFFunction*> FunctionSet;
+    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef DenseSet<const GlobalValue*> VTableSet;
-    typedef DenseSet<const SVFFunction*> VFunSet;
+    typedef Set<const GlobalValue*> VTableSet;
+    typedef Set<const SVFFunction*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -208,7 +208,7 @@ public:
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
-    inline NodeSet& getAllValidPtrs()
+    inline OrderedNodeSet& getAllValidPtrs()
     {
         return pag->getAllValidPtrs();
     }

@@ -42,7 +42,7 @@ class ICFGBuilder
 public:
 
     typedef std::vector<const Instruction*> InstVec;
-    typedef DenseSet<const Instruction*> BBSet;
+    typedef Set<const Instruction*> BBSet;
 
 private:
     ICFG* icfg;

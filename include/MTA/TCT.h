@@ -29,7 +29,7 @@ typedef GenericEdge<TCTNode> GenericTCTEdgeTy;
 class TCTEdge: public GenericTCTEdgeTy
 {
 public:
-    typedef std::set<const Instruction*> CallInstSet;
+    typedef Set<const Instruction*> CallInstSet;
     enum CEDGEK
     {
         ThreadCreateEdge
@@ -118,14 +118,14 @@ class TCT: public GenericThreadCreateTreeTy
 public:
     typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
     typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef std::set<const Function*> FunSet;
+    typedef Set<const Function*> FunSet;
     typedef std::vector<const Instruction*> InstVec;
-    typedef std::set<const Instruction*> InstSet;
-    typedef std::set<const PTACallGraphNode*> PTACGNodeSet;
-    typedef std::map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
-    typedef std::map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef std::map<const CxtThread,const Function*> CxtThreadToFun;
-    typedef std::map<const Instruction*, const Loop*> InstToLoopMap;
+    typedef Set<const Instruction*> InstSet;
+    typedef Set<const PTACallGraphNode*> PTACGNodeSet;
+    typedef Map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
+    typedef Map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
+    typedef Map<const CxtThread,const Function*> CxtThreadToFun;
+    typedef Map<const Instruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
     typedef set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;

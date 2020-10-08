@@ -139,7 +139,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             else
                 assert(false && "Not an object node!!");
 
-            std::set<Size_t> offsets;
+            Set<Size_t> offsets;
             offsets.insert(offset);
 
             // calculate offsets

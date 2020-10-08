@@ -43,7 +43,7 @@ class IndirectSVFGEdge : public VFGEdge
 {
 
 public:
-    typedef DenseSet<const MRVer*> MRVerSet;
+    typedef Set<const MRVer*> MRVerSet;
 private:
     MRVerSet mrs;
     PointsTo cpts;

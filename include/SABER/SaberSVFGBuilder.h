@@ -43,8 +43,8 @@ class SaberSVFGBuilder : public SVFGBuilder
 {
 
 public:
-    typedef std::set<const SVFGNode*> SVFGNodeSet;
-    typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
+    typedef Set<const SVFGNode*> SVFGNodeSet;
+    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
     typedef FIFOWorkList<NodeID> WorkList;
 
     /// Constructor

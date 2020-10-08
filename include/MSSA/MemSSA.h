@@ -61,9 +61,9 @@ public:
     typedef MSSAPHI<Condition> PHI;
     typedef MSSADEF MDEF;
 
-    typedef std::set<MU*> MUSet;
-    typedef std::set<CHI*> CHISet;
-    typedef std::set<PHI*> PHISet;
+    typedef Set<MU*> MUSet;
+    typedef Set<CHI*> CHISet;
+    typedef Set<PHI*> PHISet;
 
     ///Define mem region set
     typedef MRGenerator::MRSet MRSet;
@@ -71,27 +71,27 @@ public:
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef DenseMap<const LoadPE*, MUSet> LoadToMUSetMap;
-    typedef DenseMap<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef DenseMap<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef DenseMap<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
-    typedef DenseMap<const BasicBlock*, PHISet> BBToPhiSetMap;
+    typedef Map<const LoadPE*, MUSet> LoadToMUSetMap;
+    typedef Map<const StorePE*, CHISet> StoreToChiSetMap;
+    typedef Map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
+    typedef Map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
+    typedef Map<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef DenseMap<const SVFFunction*, CHISet> FunToEntryChiSetMap;
-    typedef DenseMap<const SVFFunction*, MUSet> FunToReturnMuSetMap;
+    typedef Map<const SVFFunction*, CHISet> FunToEntryChiSetMap;
+    typedef Map<const SVFFunction*, MUSet> FunToReturnMuSetMap;
 
     /// For phi insertion
     //@{
     typedef std::vector<const BasicBlock*> BBList;
-    typedef DenseMap<const BasicBlock*, MRSet> BBToMRSetMap;
-    typedef DenseMap<const MemRegion*, BBList> MemRegToBBsMap;
+    typedef Map<const BasicBlock*, MRSet> BBToMRSetMap;
+    typedef Map<const MemRegion*, BBList> MemRegToBBsMap;
     //@}
 
     /// For SSA renaming
-    typedef DenseMap<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
-    typedef DenseMap<const MemRegion*, MRVERSION> MemRegToCounterMap;
+    typedef Map<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
+    typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;
@@ -235,7 +235,7 @@ private:
     /// Rename mu set
     inline void RenameMuSet(const MUSet& muSet)
     {
-        for (MUSet::iterator mit = muSet.begin(), emit = muSet.end();
+        for (MUSet::const_iterator mit = muSet.begin(), emit = muSet.end();
                 mit != emit; ++mit)
         {
             MU* mu = (*mit);
@@ -246,7 +246,7 @@ private:
     /// Rename chi set
     inline void RenameChiSet(const CHISet& chiSet, MRVector& memRegs)
     {
-        for (CHISet::iterator cit = chiSet.begin(), ecit = chiSet.end();
+        for (CHISet::const_iterator cit = chiSet.begin(), ecit = chiSet.end();
                 cit != ecit; ++cit)
         {
             CHI* chi = (*cit);
@@ -259,7 +259,7 @@ private:
     /// Rename result (LHS) of phis
     inline void RenamePhiRes(const PHISet& phiSet, MRVector& memRegs)
     {
-        for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
         {
             PHI* phi = *iter;
@@ -271,7 +271,7 @@ private:
     /// Rename operands (RHS) of phis
     inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
-        for (PHISet::iterator iter = phiSet.begin(), eiter = phiSet.end();
+        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
                 iter != eiter; ++iter)
         {
             PHI* phi = *iter;

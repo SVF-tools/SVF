@@ -49,12 +49,12 @@ class SrcSnkDDA : public CFLSrcSnkSolver
 
 public:
     typedef ProgSlice::SVFGNodeSet SVFGNodeSet;
-    typedef std::map<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
-    typedef SVFGNodeSet::iterator SVFGNodeSetIter;
+    typedef Map<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
+    typedef SVFGNodeSet::const_iterator SVFGNodeSetIter;
     typedef CxtDPItem DPIm;
-    typedef std::set<DPIm> DPImSet;							///< dpitem set
-    typedef std::map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
-    typedef std::set<const CallBlockNode*> CallSiteSet;
+    typedef Set<DPIm> DPImSet;							///< dpitem set
+    typedef Map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
+    typedef Set<const CallBlockNode*> CallSiteSet;
     typedef NodeBS SVFGNodeBS;
     typedef ProgSlice::VFWorkList WorkList;
 
@@ -253,7 +253,7 @@ protected:
     //@{
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
     {
-        SVFGNodeToDPItemsMap::iterator it = nodeToDPItemsMap.find(node);
+        SVFGNodeToDPItemsMap::const_iterator it = nodeToDPItemsMap.find(node);
         if(it!=nodeToDPItemsMap.end())
             return it->second.find(item)!=it->second.end();
         else

@@ -208,21 +208,6 @@ typedef llvm::DINodeArray DINodeArray;
 typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
-/// LLVM containers
-template <typename T>
-using DenseMapInfo = llvm::DenseMapInfo<T>;
-
-template <typename KeyT, typename ValueT>
-using DenseMapPair = llvm::detail::DenseMapPair<KeyT, ValueT>;
-
-template <typename KeyT, typename ValueT,
-          typename KeyInfoT = DenseMapInfo<KeyT>,
-          typename BucketT = DenseMapPair<KeyT, ValueT>>
-using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
-
-template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
-using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
-
 class SVFFunction : public SVFValue
 {
 private:
@@ -298,5 +283,13 @@ public:
 };
 
 } // End namespace SVF
+
+/// Specialise hash for CallSites.
+template <> struct std::hash<SVF::CallSite> {
+    size_t operator()(const SVF::CallSite &cs) const {
+        std::hash<SVF::Instruction *> h;
+        return h(cs.getInstruction());
+    }
+};
 
 #endif /* BASICTYPES_H_ */
