@@ -328,7 +328,7 @@ void PointerAnalysis::validateTests()
 
 void PointerAnalysis::dumpAllTypes()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);

@@ -207,7 +207,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
  */
 void BVDataPTAImpl::dumpTopLevelPtsTo()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);

@@ -33,10 +33,10 @@ public:
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
     typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
     typedef OrderedMap<DPIm,DPIm> DPMToDPMMap;
-    typedef Map<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef Set<const SVFGEdge* > ConstSVFGEdgeSet;
+    typedef OrderedMap<NodeID, DPTItemSet> LocToDPMVecMap;
+    typedef OrderedSet<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
-    typedef Map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
+    typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
     DDAVFSolver(): outOfBudgetQuery(false),_pag(NULL),_svfg(NULL),_ander(NULL),_callGraph(NULL), _callGraphSCC(NULL), _svfgSCC(NULL), ddaStat(NULL)

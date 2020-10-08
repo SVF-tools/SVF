@@ -208,7 +208,7 @@ public:
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
-    inline NodeSet& getAllValidPtrs()
+    inline OrderedNodeSet& getAllValidPtrs()
     {
         return pag->getAllValidPtrs();
     }

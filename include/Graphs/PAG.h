@@ -102,7 +102,7 @@ private:
     bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
-    NodeSet candidatePointers;
+    OrderedNodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
     ICFG* icfg; // ICFG
     CallSiteSet callSiteSet; /// all the callsites of a program
@@ -123,7 +123,7 @@ public:
     }
 
     /// Return valid pointers
-    inline NodeSet& getAllValidPtrs()
+    inline OrderedNodeSet& getAllValidPtrs()
     {
         return candidatePointers;
     }
