@@ -35,13 +35,13 @@
 namespace SVF
 {
 
-class TypeAnalysis:  public Andersen
+class TypeAnalysis:  public AndersenBase
 {
 
 public:
     /// Constructor
     TypeAnalysis(PAG* pag)
-        :  Andersen(pag)
+        :  AndersenBase(pag, TypeCPP_WPA)
     {
     }
 

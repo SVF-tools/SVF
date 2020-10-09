@@ -70,6 +70,37 @@ static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
 
 
 /*!
+ * Initilize analysis
+ */
+void AndersenBase::initialize()
+{
+    /// Build PAG
+    PointerAnalysis::initialize();
+    /// Build Constraint Graph
+    consCG = new ConstraintGraph(pag);
+    setGraph(consCG);
+    /// Create statistic class
+    stat = new AndersenStat(this);
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_initial");
+}
+
+/*!
+ * Finalize analysis
+ */
+void AndersenBase::finalize()
+{
+    /// dump constraint graph if PAGDotGraph flag is enabled
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_final");
+
+	if (PrintCGGraph)
+		consCG->print();
+    PointerAnalysis::finalize();
+}
+
+
+/*!
  * Andersen analysis
  */
 void Andersen::analyze()
@@ -96,6 +127,7 @@ void Andersen::analyze()
         this->writeToFile(WriteAnder);
 }
 
+
 /*!
  * Initilize analysis
  */
@@ -104,15 +136,7 @@ void Andersen::initialize()
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
-    /// Build PAG
-    PointerAnalysis::initialize();
-    /// Build Constraint Graph
-    consCG = new ConstraintGraph(pag);
-    setGraph(consCG);
-    /// Create statistic class
-    stat = new AndersenStat(this);
-	if (ConsCGDotGraph)
-		consCG->dump("consCG_initial");
+    AndersenBase::initialize();
     /// Initialize worklist
     processAllAddr();
 }
@@ -122,17 +146,10 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
-    /// dump constraint graph if PAGDotGraph flag is enabled
-	if (ConsCGDotGraph)
-		consCG->dump("consCG_final");
-
-	if (PrintCGGraph)
-		consCG->print();
     /// sanitize field insensitive obj
     /// TODO: Fields has been collapsed during Andersen::collapseField().
     //	sanitizePts();
-
-    PointerAnalysis::finalize();
+	AndersenBase::finalize();
 }
 
 /*!

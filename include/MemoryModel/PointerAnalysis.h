@@ -58,6 +58,7 @@ public:
     enum PTATY
     {
         // Whole program analysis
+        Andersen_BASE,		///< Base Andersen PTA
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
