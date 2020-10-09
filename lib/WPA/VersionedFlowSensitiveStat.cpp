@@ -47,7 +47,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    DenseSet<SymID> nodeSet;
+    Set<SymID> nodeSet;
     for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
@@ -152,7 +152,7 @@ void VersionedFlowSensitiveStat::performStat()
 
 void VersionedFlowSensitiveStat::versionStat(void)
 {
-    DenseMap<NodeID, DenseSet<Version>> versions;
+    Map<NodeID, Set<Version>> versions;
     for (VersionedFlowSensitive::LocVersionMap::value_type &lov : vfspta->consume)
     {
         for (VersionedFlowSensitive::ObjToVersionMap::value_type &ov : lov.second)
@@ -170,17 +170,17 @@ void VersionedFlowSensitiveStat::versionStat(void)
     }
 
     u32_t totalVersionPtsSize = 0;
-    for (DenseMap<NodeID, DenseSet<Version>>::value_type &ovs : versions)
+    for (Map<NodeID, Set<Version>>::value_type &ovs : versions)
     {
         NodeID o = ovs.first;
-        DenseSet<Version> vs = ovs.second;
+        Set<Version> vs = ovs.second;
 
         u32_t numOVersions = vs.size();
         _NumVersions += numOVersions;
         if (numOVersions > _MaxVersions) _MaxVersions = numOVersions;
         if (numOVersions == 1) ++_NumSingleVersion;
 
-        for (DenseSet<Version>::value_type &v : vs)
+        for (const Set<Version>::value_type &v : vs)
         {
             // If the version was just over-approximate and never accessed, ignore.
             // TODO: with vPtD changed there is no interface to check if the PTS

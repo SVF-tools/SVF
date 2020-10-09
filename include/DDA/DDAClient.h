@@ -32,20 +32,20 @@ public:
     virtual inline void initialise(SVFModule*) {}
 
     /// Collect candidate pointers for query.
-    virtual inline NodeSet& collectCandidateQueries(PAG* p)
+    virtual inline OrderedNodeSet& collectCandidateQueries(PAG* p)
     {
         setPAG(p);
         if (solveAll)
             candidateQueries = pag->getAllValidPtrs();
         else
         {
-            for (NodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
+            for (OrderedNodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
                 addCandidate(*it);
         }
         return candidateQueries;
     }
     /// Get candidate queries
-    inline const NodeSet& getCandidateQueries() const
+    inline const OrderedNodeSet& getCandidateQueries() const
     {
         return candidateQueries;
     }
@@ -88,10 +88,10 @@ protected:
     PAG*   pag;					///< PAG graph used by current DDA analysis
     SVFModule* module;		///< LLVM module
     NodeID curPtr;				///< current pointer being queried
-    NodeSet candidateQueries;	///< store all candidate pointers to be queried
+    OrderedNodeSet candidateQueries;	///< store all candidate pointers to be queried
 
 private:
-    NodeSet userInput;           ///< User input queries
+    OrderedNodeSet userInput;           ///< User input queries
     bool solveAll;				///< TRUE if all top level pointers are being queried
 };
 
@@ -102,14 +102,14 @@ private:
 class FunptrDDAClient : public DDAClient
 {
 private:
-    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
     FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual NodeSet& collectCandidateQueries(PAG* p);
+    virtual OrderedNodeSet& collectCandidateQueries(PAG* p);
     virtual void performStat(PointerAnalysis* pta);
 };
 
@@ -122,18 +122,18 @@ class AliasDDAClient : public DDAClient
 {
 
 public:
-    typedef std::set<const PAGNode*> PAGNodeSet;
+    typedef OrderedSet<const PAGNode*> PAGNodeSet;
 
     AliasDDAClient(SVFModule* module) : DDAClient(module) {}
     ~AliasDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual NodeSet& collectCandidateQueries(PAG* pag);
+    virtual OrderedNodeSet& collectCandidateQueries(PAG* pag);
 
     virtual void performStat(PointerAnalysis* pta);
 
 private:
-    typedef std::map<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

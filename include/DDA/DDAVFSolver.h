@@ -29,14 +29,14 @@ public:
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef PTACallGraphEdge::CallInstSet CallInstSet;
     typedef PAG::CallSiteSet CallSiteSet;
-    typedef std::set<DPIm> DPTItemSet;
-    typedef std::map<DPIm, CPtSet> DPImToCPtSetMap;
-    typedef std::map<DPIm,CVar> DPMToCVarMap;
-    typedef std::map<DPIm,DPIm> DPMToDPMMap;
-    typedef DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef DenseSet<const SVFGEdge* > ConstSVFGEdgeSet;
+    typedef OrderedSet<DPIm> DPTItemSet;
+    typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
+    typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
+    typedef OrderedMap<DPIm,DPIm> DPMToDPMMap;
+    typedef OrderedMap<NodeID, DPTItemSet> LocToDPMVecMap;
+    typedef OrderedSet<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
-    typedef std::map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
+    typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
     DDAVFSolver(): outOfBudgetQuery(false),_pag(NULL),_svfg(NULL),_ander(NULL),_callGraph(NULL), _callGraphSCC(NULL), _svfgSCC(NULL), ddaStat(NULL)

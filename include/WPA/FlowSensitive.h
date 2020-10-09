@@ -243,7 +243,7 @@ protected:
     virtual void printCTirAliasStats(void);
 
     /// Fills may/noAliases for the location/pointer pairs in cmp.
-    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
+    virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases);
 
     SVFG* svfg;
     ///Get points-to set for a node from data flow IN/OUT set at a statement.

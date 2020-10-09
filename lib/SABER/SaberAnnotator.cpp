@@ -54,7 +54,7 @@ void SaberAnnotator::annotateSource()
  */
 void SaberAnnotator::annotateSinks()
 {
-    for(ProgSlice::SVFGNodeSet::iterator it = _curSlice->getSinks().begin(),
+    for(ProgSlice::SVFGNodeSet::const_iterator it = _curSlice->getSinks().begin(),
             eit = _curSlice->getSinks().end(); it!=eit; ++it)
     {
         if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it))

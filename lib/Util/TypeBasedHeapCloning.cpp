@@ -35,7 +35,7 @@ void TypeBasedHeapCloning::setPAG(PAG *pag)
 
 bool TypeBasedHeapCloning::isBlkObjOrConstantObj(NodeID o) const
 {
-    if (isClone(o)) o = cloneToOriginalObj.lookup(o);
+    if (isClone(o)) o = cloneToOriginalObj.at(o);
     return SVFUtil::isa<ObjPN>(ppag->getPAGNode(o)) && ppag->isBlkObjOrConstantObj(o);
 }
 
@@ -58,7 +58,7 @@ void TypeBasedHeapCloning::setType(NodeID o, const DIType *t)
 const DIType *TypeBasedHeapCloning::getType(NodeID o) const
 {
     assert(objToType.find(o) != objToType.end() && "TBHC: object has no type?");
-    return objToType.lookup(o);
+    return objToType.at(o);
 }
 
 void TypeBasedHeapCloning::setAllocationSite(NodeID o, NodeID site)
@@ -69,7 +69,7 @@ void TypeBasedHeapCloning::setAllocationSite(NodeID o, NodeID site)
 NodeID TypeBasedHeapCloning::getAllocationSite(NodeID o) const
 {
     assert(objToAllocation.find(o) != objToAllocation.end() && "TBHC: object has no allocation site?");
-    return objToAllocation.lookup(o);
+    return objToAllocation.at(o);
 }
 
 const NodeBS TypeBasedHeapCloning::getObjsWithClones(void)
@@ -104,7 +104,7 @@ NodeID TypeBasedHeapCloning::getOriginalObj(NodeID c) const
     {
         assert(cloneToOriginalObj.find(c) != cloneToOriginalObj.end()
                && "TBHC: original object not set for clone?");
-        return cloneToOriginalObj.lookup(c);
+        return cloneToOriginalObj.at(c);
     }
 
     return c;
@@ -302,8 +302,8 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
             }
         }
 
-        const DenseSet<const DIType *> &aggs = dchg->isAgg(tp)
-                                               ? dchg->getAggs(tp) : DenseSet<const DIType *>();
+        const Set<const DIType *> &aggs = dchg->isAgg(tp)
+                                             ? dchg->getAggs(tp) : Set<const DIType *>();
 
         NodeID prop;
         bool filter = false;

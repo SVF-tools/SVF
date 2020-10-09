@@ -78,7 +78,7 @@ public:
     //@}
 
 private:
-    std::set<CallSite> virtualCallSites;
+    Set<CallSite> virtualCallSites;
 };
 
 } // End namespace SVF

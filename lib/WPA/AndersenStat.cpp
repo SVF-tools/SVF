@@ -61,7 +61,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
     _NumOfCycles = 0;
     _NumOfPWCCycles = 0;
     _NumOfNodesInCycles = 0;
-    DenseNodeSet repNodes;
+    NodeSet repNodes;
     repNodes.clear();
     for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
     {

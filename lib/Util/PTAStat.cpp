@@ -137,7 +137,7 @@ void PTAStat::performStat()
     u32_t numOfConstant = 0;
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    DenseSet<SymID> memObjSet;
+    Set<SymID> memObjSet;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
@@ -235,7 +235,7 @@ void PTAStat::callgraphStat()
     unsigned totalEdge = 0;
     unsigned edgeInCycle = 0;
 
-    DenseNodeSet sccRepNodeSet;
+    NodeSet sccRepNodeSet;
     PTACallGraph::iterator it = graph->begin();
     PTACallGraph::iterator eit = graph->end();
     for (; it != eit; ++it)

@@ -22,7 +22,7 @@ class MTAAnnotator: public Annotator
 {
 
 public:
-    typedef std::set<const Instruction*> InstSet;
+    typedef Set<const Instruction*> InstSet;
     /// Constructor
     MTAAnnotator(): mhp(NULL),lsa(NULL)
     {

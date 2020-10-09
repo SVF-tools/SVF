@@ -106,8 +106,8 @@ void MRGenerator::collectGlobals()
         {
             if (obj->getMemObj()->isGlobalObj())
             {
-                allGlobals.set(nIter->getFirst());
-                allGlobals |= CollectPtsChain(nIter->getFirst());
+                allGlobals.set(nIter->first);
+                allGlobals |= CollectPtsChain(nIter->first);
             }
         }
     }

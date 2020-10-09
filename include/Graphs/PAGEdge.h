@@ -167,11 +167,11 @@ public:
     //@}
 
     typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
-    typedef DenseMap<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
+    typedef Map<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
 
 private:
-    typedef DenseMap<const ICFGNode*, u32_t> Inst2LabelMap;
+    typedef Map<const ICFGNode*, u32_t> Inst2LabelMap;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter

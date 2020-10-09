@@ -220,7 +220,7 @@ void DCHGraph::buildVTables(const Module &module)
 const NodeBS &DCHGraph::cha(const DIType *type, bool firstField)
 {
     type = getCanonicalType(type);
-    DenseMap<const DIType *, NodeBS> &cacheMap = firstField ? chaFFMap : chaMap;
+    Map<const DIType *, NodeBS> &cacheMap = firstField ? chaFFMap : chaMap;
 
     // Check if we've already computed.
     if (cacheMap.find(type) != cacheMap.end())
@@ -1138,7 +1138,7 @@ void DCHGraph::print(void)
     SVFUtil::outs() << thickLine;
     unsigned numStructs = 0;
     unsigned largestStruct = 0;
-    DenseNodeSet nodes;
+    NodeSet nodes;
     for (DCHGraph::const_iterator it = begin(); it != end(); ++it)
     {
         nodes.insert(it->first);
@@ -1230,7 +1230,7 @@ void DCHGraph::print(void)
 
         currIndent += singleIndent;
 
-        const DenseSet<const DIDerivedType *> &typedefs = node->getTypedefs();
+        const Set<const DIDerivedType *> &typedefs = node->getTypedefs();
         for (const DIDerivedType *tdef : typedefs)
         {
             std::string typedefName = "void";

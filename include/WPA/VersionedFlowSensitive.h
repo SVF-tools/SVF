@@ -28,14 +28,14 @@ class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
 public:
-    typedef DenseMap<NodeID, Version> ObjToVersionMap;
-    typedef DenseMap<NodeID, MeldVersion> ObjToMeldVersionMap;
+    typedef Map<NodeID, Version> ObjToVersionMap;
+    typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
 
-    typedef DenseMap<NodeID, ObjToVersionMap> LocVersionMap;
+    typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
-    typedef DenseMap<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
+    typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
-    typedef DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>> VersionRelianceMap;
+    typedef Map<NodeID, Map<Version, Set<Version>>> VersionRelianceMap;
 
     enum VersionType {
         CONSUME,
@@ -127,7 +127,7 @@ private:
     LocMeldVersionMap meldYield;
     /// Object -> MeldVersion counter. Used in the prelabeling phase to generate a
     /// new MeldVersion.
-    DenseMap<NodeID, unsigned> meldVersions;
+    Map<NodeID, unsigned> meldVersions;
 
     /// Like meldConsume but with Versions, not MeldVersions.
     /// Created after meld labeling from meldConsume and used during the analysis.
@@ -138,7 +138,7 @@ private:
     /// o -> (version -> versions which rely on it).
     VersionRelianceMap versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
-    DenseMap<NodeID, DenseMap<Version, NodeBS>> stmtReliance;
+    Map<NodeID, Map<Version, NodeBS>> stmtReliance;
 
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.

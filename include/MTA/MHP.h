@@ -26,19 +26,19 @@ class MHP
 {
 
 public:
-    typedef std::set<const Function*> FunSet;
-    typedef std::set<const Instruction*> InstSet;
-    typedef std::set<const StmtSVFGNode*> SVFGNodeSet;
+    typedef Set<const Function*> FunSet;
+    typedef Set<const Instruction*> InstSet;
+    typedef Set<const StmtSVFGNode*> SVFGNodeSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
-    typedef std::set<CxtThreadStmt> CxtThreadStmtSet;
-    typedef std::map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
-    typedef std::map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    typedef Set<CxtThreadStmt> CxtThreadStmtSet;
+    typedef Map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
+    typedef Map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
 
-    typedef std::set<CxtStmt> LockSpan;
+    typedef Set<CxtStmt> LockSpan;
 
     typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef std::map<FuncPair, bool> FuncPairToBool;
+    typedef Map<FuncPair, bool> FuncPairToBool;
 
     /// Constructor
     MHP(TCT* t);
@@ -273,12 +273,12 @@ public:
     };
 
     typedef TCT::InstVec InstVec;
-    typedef std::map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef std::map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
-    typedef std::set<NodePair> ThreadPairSet;
-    typedef std::map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
+    typedef Map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
+    typedef Map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
+    typedef Set<NodePair> ThreadPairSet;
+    typedef Map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef std::map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
+    typedef Map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
     ForkJoinAnalysis(TCT* t) : tct(t)
     {
         collectSCEVInfo();

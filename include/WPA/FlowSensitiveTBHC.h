@@ -93,7 +93,7 @@ public:
 protected:
     virtual void backPropagate(NodeID clone) override;
 
-    virtual void countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
+    virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
 
 private:
     /// Determines whether each GEP is for a load or not. Builds gepIsLoad map.
@@ -111,7 +111,7 @@ private:
     bool allReuse;
 
     /// Maps GEP objects to the SVFG nodes that retrieved them with getGepObjClones.
-    DenseMap<NodeID, NodeBS> gepToSVFGRetrievers;
+    Map<NodeID, NodeBS> gepToSVFGRetrievers;
     /// Maps whether a (SVFG) GEP node is a load or not.
     NodeBS loadGeps;
 };

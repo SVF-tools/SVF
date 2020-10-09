@@ -222,8 +222,8 @@ public:
     typedef CondStdSet<CVar>  CPtSet;
     typedef PTData<CVar, CVar, CPtSet> PTDataTy;
     typedef MutablePTData<CVar, CVar, CPtSet> MutPTDataTy;
-    typedef DenseMap<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef DenseMap<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
+    typedef Map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
+    typedef Map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
     CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
@@ -536,7 +536,7 @@ public:
     /// Dump points-to information of top-level pointers
     void dumpTopLevelPtsTo()
     {
-        for (NodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter)
+        for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter)
         {
             const PAGNode* node = this->getPAG()->getPAGNode(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node))

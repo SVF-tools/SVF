@@ -52,7 +52,7 @@ class PTACallGraphEdge : public GenericCallGraphEdgeTy
 {
 
 public:
-    typedef std::set<const CallBlockNode*> CallInstSet;
+    typedef Set<const CallBlockNode*> CallInstSet;
     enum CEDGEK
     {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
@@ -119,20 +119,20 @@ public:
 
     /// Iterators for direct and indirect callsites
     //@{
-    inline CallInstSet::iterator directCallsBegin() const
+    inline CallInstSet::const_iterator directCallsBegin() const
     {
         return directCalls.begin();
     }
-    inline CallInstSet::iterator directCallsEnd() const
+    inline CallInstSet::const_iterator directCallsEnd() const
     {
         return directCalls.end();
     }
 
-    inline CallInstSet::iterator indirectCallsBegin() const
+    inline CallInstSet::const_iterator indirectCallsBegin() const
     {
         return indirectCalls.begin();
     }
-    inline CallInstSet::iterator indirectCallsEnd() const
+    inline CallInstSet::const_iterator indirectCallsEnd() const
     {
         return indirectCalls.end();
     }
@@ -220,13 +220,13 @@ class PTACallGraph : public GenericCallGraphTy
 
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef DenseMap<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef DenseMap<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
+    typedef Map<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
+    typedef Map<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
     typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
-    typedef DenseMap<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef DenseMap<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef DenseSet<const SVFFunction*> FunctionSet;
-    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
+    typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
+    typedef Set<const SVFFunction*> FunctionSet;
+    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 

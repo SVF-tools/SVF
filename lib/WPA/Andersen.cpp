@@ -54,6 +54,11 @@ double Andersen::timeOfProcessLoadStore = 0;
 double Andersen::timeOfUpdateCallGraph = 0;
 
 
+static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
+        llvm::cl::desc("Dump dot graph of Constraint Graph"));
+static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
+                                        llvm::cl::desc("Print Constraint Graph to Terminal"));
+
 static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
                                         llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
@@ -106,9 +111,28 @@ void Andersen::initialize()
     setGraph(consCG);
     /// Create statistic class
     stat = new AndersenStat(this);
-    consCG->dump("consCG_initial");
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_initial");
     /// Initialize worklist
     processAllAddr();
+}
+
+/*!
+ * Finalize analysis
+ */
+void Andersen::finalize()
+{
+    /// dump constraint graph if PAGDotGraph flag is enabled
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_final");
+
+	if (PrintCGGraph)
+		consCG->print();
+    /// sanitize field insensitive obj
+    /// TODO: Fields has been collapsed during Andersen::collapseField().
+    //	sanitizePts();
+
+    PointerAnalysis::finalize();
 }
 
 /*!
@@ -724,7 +748,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
  */
 void Andersen::dumpTopLevelPtsTo()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
