@@ -18,8 +18,10 @@ class MutablePTData : public PTData<Key, Datum, Data>
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
 
     typedef Map<Key, Data> PtsMap;
+    typedef Map<Datum, KeySet> RevPtsMap;
     typedef typename PtsMap::iterator PtsMapIter;
     typedef typename PtsMap::const_iterator PtsMapConstIter;
     typedef typename Data::iterator iterator;
@@ -46,9 +48,9 @@ public:
         return ptsMap[var];
     }
 
-    virtual inline const Data& getRevPts(const Key& var) override
+    virtual inline const KeySet& getRevPts(const Key& datum) override
     {
-        return revPtsMap[var];
+        return revPtsMap[datum];
     }
 
     virtual inline bool addPts(const Key &dstKey, const Datum& element) override
@@ -126,11 +128,11 @@ private:
     {
         return d.test_and_set(e);
     }
-    inline void addSingleRevPts(Data &revData, const Datum& tgr)
+    inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        addPts(revData,tgr);
+        revData.insert(tgr);
     }
-    inline void addRevPts(const Data &ptsData, const Datum& tgr)
+    inline void addRevPts(const Data &ptsData, const Key& tgr)
     {
         for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
             addSingleRevPts(revPtsMap[*it], tgr);
@@ -139,7 +141,7 @@ private:
 
 protected:
     PtsMap ptsMap;
-    PtsMap revPtsMap;
+    RevPtsMap revPtsMap;
 };
 
 /// DiffPTData implemented with points-to sets which are updated continuously.
@@ -151,6 +153,7 @@ public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef DiffPTData<Key, Datum, Data, CacheKey> BaseDiffPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
 
     typedef typename MutablePTData<Key, Datum, Data>::PtsMap PtsMap;
     typedef typename MutablePTData<CacheKey, Datum, Data>::PtsMap CachePtsMap;
@@ -175,9 +178,9 @@ public:
         return mutPTData.getPts(var);
     }
 
-    virtual inline const Data& getRevPts(const Key& var) override
+    virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
-        return mutPTData.getRevPts(var);
+        return mutPTData.getRevPts(datum);
     }
 
     virtual inline bool addPts(const Key &dstKey, const Datum& element) override
@@ -286,6 +289,7 @@ public:
     typedef MutablePTData<Key, Datum, Data> BaseMutPTData;
     typedef DFPTData<Key, Datum, Data> BaseDFPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
 
     typedef typename BaseDFPTData::LocID LocID;
     typedef typename BaseMutPTData::PtsMap PtsMap;
@@ -314,9 +318,9 @@ public:
         return mutPTData.getPts(var);
     }
 
-    virtual inline const Data& getRevPts(const Key& var) override
+    virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
-        return mutPTData.getRevPts(var);
+        return mutPTData.getRevPts(datum);
     }
 
     virtual inline bool hasDFInSet(LocID loc) const override

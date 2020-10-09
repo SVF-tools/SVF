@@ -77,7 +77,7 @@ public:
     {
         return ptD->getPts(id);
     }
-    virtual inline const PointsTo& getRevPts(NodeID nodeId)
+    virtual inline const NodeSet& getRevPts(NodeID nodeId)
     {
         return ptD->getRevPts(nodeId);
     }
@@ -223,6 +223,7 @@ public:
     typedef PTData<CVar, CVar, CPtSet> PTDataTy;
     typedef MutablePTData<CVar, CVar, CPtSet> MutPTDataTy;
     typedef Map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
+    typedef Map<NodeID, NodeSet> PtrToNSMap;
     typedef Map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
@@ -284,7 +285,7 @@ public:
     {
         return ptD->getPts(id);
     }
-    virtual inline const CPtSet& getRevPts(CVar nodeId)
+    virtual inline const Set<CVar>& getRevPts(CVar nodeId)
     {
         return ptD->getRevPts(nodeId);
     }
@@ -418,7 +419,7 @@ protected:
                 for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit)
                 {
                     ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
-                    objToBVRevPtsMap[cit->get_id()].set((it->first).get_id());
+                    objToNSRevPtsMap[cit->get_id()].insert((it->first).get_id());
                     ptrToCPtsMap[(it->first).get_id()].set(*cit);
                 }
             }
@@ -435,7 +436,7 @@ protected:
     /// Normal points-to representation (without conditions)
     PtrToBVPtsMap ptrToBVPtsMap;
     /// Normal points-to representation (without conditions)
-    PtrToBVPtsMap objToBVRevPtsMap;
+    PtrToNSMap objToNSRevPtsMap;
     /// Conditional points-to representation (with conditions)
     PtrToCPtsMap ptrToCPtsMap;
 public:
@@ -465,10 +466,10 @@ public:
         return ptrToCPtsMap[ptr];
     }
     /// Given an object return all pointers points to this object
-    virtual inline PointsTo& getRevPts(NodeID obj)
+    virtual inline NodeSet& getRevPts(NodeID obj)
     {
         assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
-        return objToBVRevPtsMap[obj];
+        return objToNSRevPtsMap[obj];
     }
 
     /// Interface expose to users of our pointer analysis, given Location infos
