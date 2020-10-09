@@ -32,10 +32,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of Constraint Graph"));
-static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
-                                        llvm::cl::desc("Print Constraint Graph to Terminal"));
 
 ConstraintNode::SCCEdgeFlag ConstraintNode::sccEdgeFlag = ConstraintNode::Direct;
 
@@ -526,8 +522,7 @@ bool ConstraintGraph::moveOutEdgesToRepNode(ConstraintNode*node, ConstraintNode*
  */
 void ConstraintGraph::dump(std::string name)
 {
-    if(ConsCGDotGraph)
-        GraphPrinter::WriteGraphToFile(outs(), name, this);
+     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
 /*!
@@ -535,9 +530,6 @@ void ConstraintGraph::dump(std::string name)
  */
 void ConstraintGraph::print()
 {
-
-    if (!PrintCGGraph)
-        return;
 
     outs() << "-----------------ConstraintGraph--------------------------------------\n";
 
