@@ -58,6 +58,7 @@ public:
     enum PTATY
     {
         // Whole program analysis
+        Andersen_BASE,		///< Base Andersen PTA
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
@@ -245,7 +246,7 @@ public:
 
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual const PointsTo& getRevPts(NodeID nodeId) = 0;
+    virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts()

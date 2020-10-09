@@ -38,7 +38,7 @@
 namespace SVF
 {
 
-class Andersen;
+class AndersenBase;
 class PAG;
 class ConstraintGraph;
 class PAGNode;
@@ -50,7 +50,7 @@ class AndersenStat : public PTAStat
 {
 
 private:
-    Andersen* pta;
+    AndersenBase* pta;
 
 public:
     static const char* CollapseTime;
@@ -64,7 +64,7 @@ public:
     u32_t _NumOfConstantPtr;
     u32_t _NumOfBlackholePtr;
 
-    AndersenStat(Andersen* p);
+    AndersenStat(AndersenBase* p);
 
     virtual ~AndersenStat()
     {
