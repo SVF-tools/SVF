@@ -5,13 +5,13 @@
 ///
 /// Hierarchy (square brackets indicate abstract class):
 ///
-///       +------------> [PTData] <----------------+
-///       |                 ^                      |
-///       |                 |                      |
-/// MutablePTData      [DiffPTData]            [DFPTData]
-///                         ^                      ^
-///                         |                      |
-///                 MutableDiffPTData        MutableDFPTData
+///       +------------> [PTData] <----------------+---------------------+
+///       |                 ^                      |                     |
+///       |                 |                      |                     |
+/// MutablePTData      [DiffPTData]            [DFPTData]         [VersionedPTData]
+///                         ^                      ^                     ^
+///                         |                      |                     |
+///                 MutableDiffPTData        MutableDFPTData    MutableVersionedPTData
 ///                                                ^
 ///                                                |
 ///                                        IncMutableDFPTData
@@ -49,6 +49,7 @@ public:
         DataFlow,
         MutDataFlow,
         IncMutDataFlow,
+        Versioned,
     };
 
     PTData(PTDataTy ty = PTDataTy::Base) : ptdTy(ty) { }
@@ -212,6 +213,36 @@ public:
                || ptd->getPTDTY() == BasePTData::IncMutDataFlow;
     }
     ///@}
+};
+
+/// PTData with normal keys and versioned keys. Replicates the PTData interface for
+/// versioned keys too. Intended to be used for versioned flow-sensitive PTA.
+template <typename Key, typename Datum, typename Data, typename VersionedKey>
+class VersionedPTData : PTData<Key, Datum, Data>
+{
+public:
+    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
+
+    typedef Set<VersionedKey> VersionedKeySet;
+
+    VersionedPTData(PTDataTy ty = PTDataTy::Versioned) : BasePTData(ty) { }
+
+    virtual ~VersionedPTData() { }
+
+    virtual const Data& getPts(const VersionedKey& vk) = 0;
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) = 0;
+
+    virtual bool addPts(const VersionedKey& vk, const Datum& element) = 0;
+
+    virtual bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) = 0;
+    virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) = 0;
+    virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) = 0;
+    virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) = 0;
+
+    virtual void clearPts(const VersionedKey& vk, const Datum& element) = 0;
+    virtual void clearFullPts(const VersionedKey& vk) = 0;
 };
 
 } // End namespace SVF
