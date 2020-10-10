@@ -775,6 +775,96 @@ private:
     //@}
 };
 
+/// VersionedPTData implemented with mutable points-to set (Data).
+/// Implemented as a wrapper around two MutablePTDatas: one for Keys, one
+/// for VersionedKeys.
+template <typename Key, typename Datum, typename Data, typename VersionedKey>
+class MutableVersionedPTData : VersionedPTData<Key, Datum, Data, VersionedKey>
+{
+public:
+    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef VersionedPTData<Key, Datum, Data, VersionedKey> BaseVersionedPTData;
+    typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
+    typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
+
+    MutableVersionedPTData(PTDataTy ty = PTDataTy::MutVersioned) : BaseVersionedPTData(ty) { }
+
+    virtual ~MutableVersionedPTData() { }
+
+    virtual const Data& getPts(const Key& vk) override
+    {
+        return tlPTData.getPts(vk);
+    }
+    virtual const Data& getPts(const VersionedKey& vk) override
+    {
+        return atPTData.getPts(vk);
+    }
+
+    virtual const VersionedKeySet& getRevPts(const Datum& datum) override
+    {
+        return tlPTData.getRevPts(datum);
+    }
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) override
+    {
+        return atPTData.getRevPts(datum);
+    }
+
+    virtual bool addPts(const Key& k, const Datum& element) override
+    {
+        return tlPTData.addPts(k, element);
+    }
+    virtual bool addPts(const VersionedKey& vk, const Datum& element) override
+    {
+        return atPTData.addPts(vk, element);
+    }
+
+    virtual bool unionPts(const Key& dstVar, const Key& srcVar) override
+    {
+        return tlPTData.unionPts(dstVar, srcVar);
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) override
+    {
+        return atPTData.unionPts(dstVar, srcVar);
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) override
+    {
+        return atPTData.unionPts(dstVar, tlPTData.getPts(srcVar));
+    }
+    virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) override
+    {
+        return tlPTData.unionPts(dstVar, atPTData.getPts(srcVar));
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) override
+    {
+        return atPTData.unionPts(dstVar, srcData);
+    }
+
+    virtual void clearPts(const Key& k, const Datum& element) override
+    {
+        tlPTData.clearPts(k, element);
+    }
+    virtual void clearPts(const VersionedKey& vk, const Datum& element) override
+    {
+        atPTData.clearPts(vk, element);
+    }
+
+    virtual void clearFullPts(const Key& k) override
+    {
+        tlPTData.clearFullPts(k);
+    }
+    virtual void clearFullPts(const VersionedKey& vk) override
+    {
+        atPTData.clearFullPts(vk);
+    }
+
+private:
+    /// PTData for Keys (top-level pointers, generally).
+    MutablePTData<Key, Datum, Data> tlPTData;
+    /// PTData for VersionedKeys (address-taken objects, generally).
+    MutablePTData<VersionedKey, Datum, Data> atPTData;
+};
+
 } // End namespace SVF
 
 #endif  // MUTABLE_POINTSTO_H_

@@ -50,6 +50,7 @@ public:
         MutDataFlow,
         IncMutDataFlow,
         Versioned,
+        MutVersioned,
     };
 
     PTData(PTDataTy ty = PTDataTy::Base) : ptdTy(ty) { }
@@ -216,7 +217,8 @@ public:
 };
 
 /// PTData with normal keys and versioned keys. Replicates the PTData interface for
-/// versioned keys too. Intended to be used for versioned flow-sensitive PTA.
+/// versioned keys too. Intended to be used for versioned flow-sensitive PTA--hence the
+/// name--but can be used anywhere where there are two types of keys at play.
 template <typename Key, typename Datum, typename Data, typename VersionedKey>
 class VersionedPTData : PTData<Key, Datum, Data>
 {
