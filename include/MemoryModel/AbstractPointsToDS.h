@@ -245,6 +245,19 @@ public:
 
     virtual void clearPts(const VersionedKey& vk, const Datum& element) = 0;
     virtual void clearFullPts(const VersionedKey& vk) = 0;
+
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    ///@{
+    static inline bool classof(const VersionedPTData<Key, Datum, Data, VersionedKey> *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    {
+        return ptd->getPTDTY() == PTDataTy::Versioned || ptd->getPTDTY() == PTDataTy::MutVersioned;
+    }
+    ///@}
 };
 
 } // End namespace SVF

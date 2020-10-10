@@ -858,6 +858,19 @@ public:
         atPTData.clearFullPts(vk);
     }
 
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    ///@{
+    static inline bool classof(const MutableVersionedPTData<Key, Datum, Data, VersionedKey> *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    {
+        return ptd->getPTDTY() == PTDataTy::MutVersioned;
+    }
+    ///@}
+
 private:
     /// PTData for Keys (top-level pointers, generally).
     MutablePTData<Key, Datum, Data> tlPTData;
