@@ -220,7 +220,7 @@ public:
 /// versioned keys too. Intended to be used for versioned flow-sensitive PTA--hence the
 /// name--but can be used anywhere where there are two types of keys at play.
 template <typename Key, typename Datum, typename Data, typename VersionedKey>
-class VersionedPTData : PTData<Key, Datum, Data>
+class VersionedPTData : public PTData<Key, Datum, Data>
 {
 public:
     typedef PTData<Key, Datum, Data> BasePTData;

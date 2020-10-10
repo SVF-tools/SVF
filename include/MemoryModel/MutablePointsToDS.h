@@ -48,7 +48,7 @@ public:
         return ptsMap[var];
     }
 
-    virtual inline const KeySet& getRevPts(const Key& datum) override
+    virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
         return revPtsMap[datum];
     }
@@ -779,7 +779,7 @@ private:
 /// Implemented as a wrapper around two MutablePTDatas: one for Keys, one
 /// for VersionedKeys.
 template <typename Key, typename Datum, typename Data, typename VersionedKey>
-class MutableVersionedPTData : VersionedPTData<Key, Datum, Data, VersionedKey>
+class MutableVersionedPTData : public VersionedPTData<Key, Datum, Data, VersionedKey>
 {
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
@@ -792,6 +792,12 @@ public:
 
     virtual ~MutableVersionedPTData() { }
 
+    virtual inline void clear() override
+    {
+        tlPTData.clear();
+        atPTData.clear();
+    }
+
     virtual const Data& getPts(const Key& vk) override
     {
         return tlPTData.getPts(vk);
@@ -801,11 +807,11 @@ public:
         return atPTData.getPts(vk);
     }
 
-    virtual const VersionedKeySet& getRevPts(const Datum& datum) override
+    virtual const KeySet& getRevPts(const Datum& datum) override
     {
         return tlPTData.getRevPts(datum);
     }
-    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) override
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum)
     {
         return atPTData.getRevPts(datum);
     }
@@ -835,6 +841,10 @@ public:
     {
         return tlPTData.unionPts(dstVar, atPTData.getPts(srcVar));
     }
+    virtual bool unionPts(const Key& dstVar, const Data& srcData) override
+    {
+        return tlPTData.unionPts(dstVar, srcData);
+    }
     virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) override
     {
         return atPTData.unionPts(dstVar, srcData);
@@ -856,6 +866,14 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual inline void dumpPTData() override
+    {
+        SVFUtil::outs() << "== Top-level points-to information\n";
+        tlPTData.dumpPTData();
+        SVFUtil::outs() << "== Address-taken points-to information\n";
+        atPTData.dumpPTData();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
