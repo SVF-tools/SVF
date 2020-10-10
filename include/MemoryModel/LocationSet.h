@@ -107,7 +107,8 @@ public:
     {}
 
     /// Copy Constructor
-    LocationSet(const LocationSet& ls) : fldIdx(ls.fldIdx)
+    LocationSet(const LocationSet& ls)
+        : fldIdx(ls.fldIdx), byteOffset(ls.byteOffset)
     {
         const ElemNumStridePairVec& vec = ls.getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -117,7 +118,8 @@ public:
     }
 
     /// Initialization from FieldInfo
-    LocationSet(const FieldInfo& fi) : fldIdx(fi.getFlattenFldIdx())
+    LocationSet(const FieldInfo& fi)
+        : fldIdx(fi.getFlattenFldIdx()), byteOffset(fi.getFlattenByteOffset())
     {
         const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -177,6 +179,13 @@ public:
                 return false;
             }
         }
+    }
+
+    inline bool operator==(const LocationSet& rhs) const
+    {
+        return this->fldIdx == rhs.fldIdx
+               && this->byteOffset == rhs.byteOffset
+               && this->numStridePair == rhs.numStridePair;
     }
     //@}
 
@@ -278,5 +287,12 @@ private:
 };
 
 } // End namespace SVF
+
+template <> struct std::hash<SVF::LocationSet> {
+    size_t operator()(const SVF::LocationSet &ls) const {
+        std::hash<std::pair<SVF::Size_t, SVF::Size_t>> h;
+        return h(std::make_pair(ls.getOffset(), ls.getByteOffset()));
+    }
+};
 
 #endif /* LOCATIONSET_H_ */

@@ -101,7 +101,7 @@ void FlowSensitiveStat::performStat()
 
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
-    DenseSet<SymID> nodeSet;
+    Set<SymID> nodeSet;
     for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;
@@ -280,7 +280,7 @@ void FlowSensitiveStat::statNullPtr()
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
         {
             ///TODO: change the condition here to fetch the points-to set
-            PointsTo& pts = fspta->getPts(pagNodeId);
+            const PointsTo& pts = fspta->getPts(pagNodeId);
             if(fspta->containBlackHoleNode(pts))
             {
                 _NumOfConstantPtr++;
@@ -320,10 +320,13 @@ void FlowSensitiveStat::statNullPtr()
  */
 void FlowSensitiveStat::statPtsSize()
 {
-    // stat of IN set
-    statInOutPtsSize(fspta->getDFInputMap(), IN);
-    // stat of OUT set
-    statInOutPtsSize(fspta->getDFOutputMap(), OUT);
+    if (SVFUtil::isa<FlowSensitive::MutDFPTDataTy>(fspta->getPTDataTy()))
+    {
+        // stat of IN set
+        statInOutPtsSize(fspta->getDFInputMap(), IN);
+        // stat of OUT set
+        statInOutPtsSize(fspta->getDFOutputMap(), OUT);
+    }
 
     /// get points-to set size information for top-level pointers.
     u32_t totalValidTopLvlPointers = 0;

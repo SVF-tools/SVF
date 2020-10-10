@@ -59,7 +59,7 @@ bool SVFUtil::isObject(const Value * ref)
  */
 void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::vector<const BasicBlock*> &reachableBBs)
 {
-    std::set<const BasicBlock*> visited;
+    Set<const BasicBlock*> visited;
     std::vector<const BasicBlock*> bbVec;
     bbVec.push_back(&fun->getEntryBlock());
     while(!bbVec.empty())
@@ -90,7 +90,7 @@ bool SVFUtil::functionDoesNotRet (const Function * fun)
 {
 
     std::vector<const BasicBlock*> bbVec;
-    std::set<const BasicBlock*> visited;
+    Set<const BasicBlock*> visited;
     bbVec.push_back(&fun->getEntryBlock());
     while(!bbVec.empty())
     {
@@ -131,7 +131,7 @@ bool SVFUtil::isDeadFunction (const Function * fun)
         return false;
     for (Value::const_user_iterator i = fun->user_begin(), e = fun->user_end(); i != e; ++i)
     {
-        if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+        if (SVFUtil::isCallSite(*i))
             return false;
     }
     if (LLVMModuleSet::getLLVMModuleSet()->hasDeclaration(fun))
@@ -145,7 +145,7 @@ bool SVFUtil::isDeadFunction (const Function * fun)
                 return false;
             for (Value::const_user_iterator i = decl->user_begin(), e = decl->user_end(); i != e; ++i)
             {
-                if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+                if (SVFUtil::isCallSite(*i))
                     return false;
             }
         }

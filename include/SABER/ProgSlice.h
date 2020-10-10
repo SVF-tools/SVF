@@ -42,10 +42,10 @@ class ProgSlice
 {
 
 public:
-    typedef std::set<const SVFGNode*> SVFGNodeSet;
-    typedef SVFGNodeSet::iterator SVFGNodeSetIter;
+    typedef Set<const SVFGNode*> SVFGNodeSet;
+    typedef SVFGNodeSet::const_iterator SVFGNodeSetIter;
     typedef PathCondAllocator::Condition Condition;
-    typedef std::map<const SVFGNode*, Condition*> SVFGNodeToCondMap; 	///< map a SVFGNode to its condition during value-flow guard computation
+    typedef Map<const SVFGNode*, Condition*> SVFGNodeToCondMap; 	///< map a SVFGNode to its condition during value-flow guard computation
 
     typedef FIFOWorkList<const SVFGNode*> VFWorkList;		    ///< worklist for value-flow guard computation
     typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation

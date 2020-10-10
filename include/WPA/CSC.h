@@ -49,7 +49,7 @@ typedef SCCDetection<ConstraintGraph *> CGSCC;
 class CSC
 {
 public:
-    typedef DenseMap<NodeID, NodeID> IdToIdMap;
+    typedef Map<NodeID, NodeID> IdToIdMap;
     typedef FILOWorkList<NodeID> WorkStack;
     typedef typename IdToIdMap::iterator iterator;
 

@@ -221,7 +221,6 @@ bool FlowSensitiveTBHC::processAddr(const AddrSVFGNode* addr)
 
     NodeID srcID = addr->getPAGSrcNodeID();
     NodeID dstID = addr->getPAGDstNodeID();
-    PAGNode *srcNode = addr->getPAGSrcNode();
 
     double end = stat->getClk();
     addrTime += (end - start) / TIMEINTERVAL;
@@ -258,7 +257,7 @@ bool FlowSensitiveTBHC::processAddr(const AddrSVFGNode* addr)
     const NodeBS &clones = getClones(srcID);
     for (NodeID c : clones)
     {
-        changed = addPts(addr->getPAGDstNodeID(), c) || changed;
+        changed = addPts(dstID, c) || changed;
         // No need for typing these are all clones; they are all typed.
     }
 
@@ -658,9 +657,9 @@ void FlowSensitiveTBHC::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     }
 }
 
-void FlowSensitiveTBHC::countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
+void FlowSensitiveTBHC::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases)
 {
-    DenseMap<std::pair<NodeID, NodeID>, PointsTo> filteredPts;
+    Map<std::pair<NodeID, NodeID>, PointsTo> filteredPts;
     for (std::pair<NodeID, NodeID> locP : cmp)
     {
         const PointsTo &filterSet = getFilterSet(locP.first);
@@ -676,9 +675,6 @@ void FlowSensitiveTBHC::countAliases(DenseSet<std::pair<NodeID, NodeID>> cmp, un
 
     for (std::pair<NodeID, NodeID> locPA : cmp)
     {
-        NodeID locA = locPA.first;
-        NodeID a = locPA.second;
-
         const PointsTo &aPts = filteredPts[locPA];
         for (std::pair<NodeID, NodeID> locPB : cmp)
         {

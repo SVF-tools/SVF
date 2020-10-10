@@ -115,7 +115,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
-    ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),typeSystem(NULL), icfg(NULL), svfMod(NULL)
+    svfMod(NULL),ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),icfg(NULL),typeSystem(NULL)
 {
     pag = p;
 	OnTheFlyIterBudgetForStat = statBudget;
@@ -328,7 +328,7 @@ void PointerAnalysis::validateTests()
 
 void PointerAnalysis::dumpAllTypes()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
@@ -358,11 +358,12 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT())
-    {
-        outs() << "##<" << node->getValue()->getName() << "> ";
-        outs() << "Source Loc: " << getSourceLoc(node->getValue());
-    }
+    else if (!SVFUtil::isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT()) {
+		if (node->hasValue()) {
+			outs() << "##<" << node->getValue()->getName() << "> ";
+			outs() << "Source Loc: " << getSourceLoc(node->getValue());
+		}
+	}
     outs() << "\nPtr " << node->getId() << " ";
 
     if (pts.empty())
@@ -392,14 +393,15 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             outs() << "DummyVal\n";
         else if (SVFUtil::isa<DummyObjPN>(node))
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
-        else
-        {
-            if(!SVFModule::pagReadFromTXT())
-            {
-                outs() << "<" << pagNode->getValue()->getName() << "> ";
-                outs() << "Source Loc: " << getSourceLoc(pagNode->getValue()) << "] \n";
-            }
-        }
+		else {
+			if (!SVFModule::pagReadFromTXT()) {
+				if (node->hasValue()) {
+					outs() << "<" << pagNode->getValue()->getName() << "> ";
+					outs() << "Source Loc: "
+							<< getSourceLoc(pagNode->getValue()) << "] \n";
+				}
+			}
+		}
     }
 }
 
@@ -470,7 +472,7 @@ void PointerAnalysis::printIndCSTargets()
 /*!
  * Resolve indirect calls
  */
-void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph)
+void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges, LLVMCallGraph*)
 {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
@@ -543,7 +545,7 @@ void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &ta
 
     if (chgraph->csHasVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite())))
     {
-        DenseSet<const GlobalValue*> vtbls;
+        Set<const GlobalValue*> vtbls;
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
@@ -613,7 +615,7 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
 
         for (Value::user_iterator i = checkFun->getLLVMFun()->user_begin(), e =
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
-            if (SVFUtil::isa<CallInst>(*i) || SVFUtil::isa<InvokeInst>(*i))
+            if (SVFUtil::isCallSite(*i))
             {
 
                 CallSite cs(*i);

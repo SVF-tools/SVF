@@ -32,11 +32,11 @@
 
 #include "Graphs/PAG.h"
 #include "MemoryModel/ConditionalPT.h"
-#include "MemoryModel/PointsToDS.h"
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "MemoryModel/MutablePointsToDS.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
-#include "MemoryModel/PointsToDFDS.h"
 
 namespace SVF
 {
@@ -58,6 +58,7 @@ public:
     enum PTATY
     {
         // Whole program analysis
+        Andersen_BASE,		///< Base Andersen PTA
         Andersen_WPA,		///< Andersen PTA
         AndersenLCD_WPA,	///< Lazy cycle detection andersen-style WPA
         AndersenHCD_WPA,    ///< Hybird cycle detection andersen-style WPA
@@ -99,13 +100,13 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef DenseSet<const CallBlockNode*> CallSiteSet;
+    typedef Set<const CallBlockNode*> CallSiteSet;
     typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef DenseSet<const SVFFunction*> FunctionSet;
-    typedef DenseMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef Set<const SVFFunction*> FunctionSet;
+    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef DenseSet<const GlobalValue*> VTableSet;
-    typedef DenseSet<const SVFFunction*> VFunSet;
+    typedef Set<const GlobalValue*> VTableSet;
+    typedef Set<const SVFFunction*> VFunSet;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -209,7 +210,7 @@ public:
         return svfMod;
     }
     /// Get all Valid Pointers for resolution
-    inline NodeSet& getAllValidPtrs()
+    inline OrderedNodeSet& getAllValidPtrs()
     {
         return pag->getAllValidPtrs();
     }
@@ -241,11 +242,11 @@ public:
     virtual AliasResult alias(NodeID node1, NodeID node2) = 0;
 
     /// Get points-to targets of a pointer. It needs to be implemented in child class
-    virtual PointsTo& getPts(NodeID ptr) = 0;
+    virtual const PointsTo& getPts(NodeID ptr) = 0;
 
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual PointsTo& getRevPts(NodeID nodeId) = 0;
+    virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts()
@@ -295,11 +296,11 @@ public:
 
     /// Determine whether a points-to contains a black hole or constant node
     //@{
-    inline bool containBlackHoleNode(PointsTo& pts)
+    inline bool containBlackHoleNode(const PointsTo& pts)
     {
         return pts.test(pag->getBlackHoleNode());
     }
-    inline bool containConstantNode(PointsTo& pts)
+    inline bool containConstantNode(const PointsTo& pts)
     {
         return pts.test(pag->getConstantNode());
     }

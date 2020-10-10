@@ -45,7 +45,7 @@ llvm::cl::opt<bool> genICFG("genicfg", llvm::cl::init(true), llvm::cl::desc("Gen
 /// Initialize analysis
 void TypeAnalysis::initialize()
 {
-    Andersen::initialize();
+	AndersenBase::initialize();
     if (genICFG)
     {
         icfg = PAG::getPAG()->getICFG();
@@ -62,7 +62,7 @@ void TypeAnalysis::initialize()
 /// Finalize analysis
 void TypeAnalysis::finalize()
 {
-    Andersen::finalize();
+    AndersenBase::finalize();
     if (print_stat)
         dumpCHAStats();
 }

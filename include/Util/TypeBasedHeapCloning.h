@@ -12,7 +12,7 @@
 
 #include "SVF-FE/DCHG.h"
 #include "Graphs/PAG.h"
-#include "MemoryModel/PointerAnalysis.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/BasicTypes.h"
 
 namespace SVF
@@ -24,6 +24,8 @@ public:
     /// Returns raw ctir metadata of a Value. Returns null if it doesn't exist.
     static const MDNode *getRawCTirMetadata(const Value *);
 
+    virtual ~TypeBasedHeapCloning() { };
+
 protected:
     /// The undefined type (•); void.
     static const DIType *undefType;
@@ -34,7 +36,7 @@ protected:
     static const std::string mangledDerefFnName;
 
     /// Constructor. pta is the pointer analysis using this object (i.e. that which is extending).
-    TypeBasedHeapCloning(PointerAnalysis *pta);
+    TypeBasedHeapCloning(BVDataPTAImpl *pta);
 
     /// Required by user. Handles back-propagation of newly created clone after all
     /// metadata has been set. Used by cloneObject.
@@ -142,26 +144,26 @@ protected:
 
 private:
     /// PTA extending this class.
-    PointerAnalysis *pta;
+    BVDataPTAImpl *pta;
     /// PAG the PTA uses. Just a shortcut for getPAG().
     PAG *ppag = nullptr;
 
     /// Object -> its type.
-    DenseMap<NodeID, const DIType *> objToType;
+    Map<NodeID, const DIType *> objToType;
     /// Object -> allocation site.
     /// The value NodeID depends on the pointer analysis (could be
     /// an SVFG node or PAG node for example).
-    DenseMap<NodeID, NodeID> objToAllocation;
+    Map<NodeID, NodeID> objToAllocation;
     /// (Original) object -> set of its clones.
-    DenseMap<NodeID, NodeBS> objToClones;
+    Map<NodeID, NodeBS> objToClones;
     /// (Clone) object -> original object (opposite of objToclones).
-    DenseMap<NodeID, NodeID> cloneToOriginalObj;
+    Map<NodeID, NodeID> cloneToOriginalObj;
     /// Maps nodes (a location like a PAG node or SVFG node) to their filter set.
-    DenseMap<NodeID, PointsTo> locToFilterSet;
+    Map<NodeID, PointsTo> locToFilterSet;
     /// Maps objects to the GEP nodes beneath them.
-    DenseMap<NodeID, NodeBS> objToGeps;
+    Map<NodeID, NodeBS> objToGeps;
     /// Maps memory objects to their GEP objects. (memobj -> (fieldidx -> geps))
-    DenseMap<const MemObj *, DenseMap<unsigned, NodeBS>> memObjToGeps;
+    Map<const MemObj *, Map<unsigned, NodeBS>> memObjToGeps;
 
     /// Test whether object is a GEP object. For convenience.
     bool isGep(const PAGNode *n) const;

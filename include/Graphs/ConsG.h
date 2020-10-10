@@ -45,10 +45,10 @@ class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
 {
 
 public:
-    typedef DenseMap<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
+    typedef Map<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
     typedef ConstraintEdge::ConstraintEdgeSetTy::iterator ConstraintNodeIter;
-    typedef DenseMap<NodeID, NodeID> NodeToRepMap;
-    typedef DenseMap<NodeID, NodeBS> NodeToSubsMap;
+    typedef Map<NodeID, NodeID> NodeToRepMap;
+    typedef Map<NodeID, NodeBS> NodeToSubsMap;
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:
@@ -172,16 +172,16 @@ public:
     ///Add a PAG edge into Edge map
     //@{
     /// Add Address edge
-    bool addAddrCGEdge(NodeID src, NodeID dst);
+    AddrCGEdge* addAddrCGEdge(NodeID src, NodeID dst);
     /// Add Copy edge
-    bool addCopyCGEdge(NodeID src, NodeID dst);
+    CopyCGEdge* addCopyCGEdge(NodeID src, NodeID dst);
     /// Add Gep edge
-    bool addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
-    bool addVariantGepCGEdge(NodeID src, NodeID dst);
+    NormalGepCGEdge*  addNormalGepCGEdge(NodeID src, NodeID dst, const LocationSet& ls);
+    VariantGepCGEdge* addVariantGepCGEdge(NodeID src, NodeID dst);
     /// Add Load edge
-    bool addLoadCGEdge(NodeID src, NodeID dst);
+    LoadCGEdge* addLoadCGEdge(NodeID src, NodeID dst);
     /// Add Store edge
-    bool addStoreCGEdge(NodeID src, NodeID dst);
+    StoreCGEdge* addStoreCGEdge(NodeID src, NodeID dst);
     //@}
 
     ///Get PAG edge

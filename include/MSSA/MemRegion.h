@@ -42,7 +42,7 @@ namespace SVF
 
 typedef NodeID MRID;
 typedef NodeID MRVERID;
-typedef NodeID VERSION;
+typedef NodeID MRVERSION;
 
 /// Memory Region class
 class MemRegion
@@ -139,38 +139,38 @@ public:
     //@{
     //@}
     ///Define mem region set
-    typedef std::set<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef DenseMap<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
-    typedef std::set<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef std::map<const SVFFunction*, PointsToList > FunToPointsToMap;
-    typedef std::map<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
+    typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
+    typedef Map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
+    typedef OrderedSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
+    typedef Map<const SVFFunction*, PointsToList > FunToPointsToMap;
+    typedef OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
-    typedef DenseMap<const SVFFunction*, MRSet> FunToMRsMap;
+    typedef Map<const SVFFunction*, MRSet> FunToMRsMap;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef DenseMap<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef DenseMap<const StorePE*, MRSet> StoresToMRsMap;
-    typedef std::map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
+    typedef Map<const LoadPE*, MRSet> LoadsToMRsMap;
+    typedef Map<const StorePE*, MRSet> StoresToMRsMap;
+    typedef Map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef DenseMap<const LoadPE*, PointsTo> LoadsToPointsToMap;
-    typedef DenseMap<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef DenseMap<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
+    typedef Map<const LoadPE*, PointsTo> LoadsToPointsToMap;
+    typedef Map<const StorePE*, PointsTo> StoresToPointsToMap;
+    typedef Map<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef DenseMap<const SVFFunction*, NodeBS> FunToNodeBSMap;
+    typedef Map<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef DenseMap<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    typedef Map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
-    typedef std::map<NodeID, NodeBS> NodeToPTSSMap;
+    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
 
     /// PAG edge list
     typedef PAG::PAGEdgeList PAGEdgeList;
@@ -181,6 +181,17 @@ public:
     {
         return memRegSet;
     }
+
+    /// Get superset cpts set
+    inline const PointsTo& getRepPointsTo(const PointsTo& cpts) const
+    {
+        PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
+        assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
+        return it->second;
+    }
+    /// Get a memory region according to cpts
+    const MemRegion* getMR(const PointsTo& cpts) const;
+
 private:
 
     BVDataPTAImpl* pta;
@@ -233,16 +244,6 @@ private:
 
     /// Clean up memory
     void destroy();
-
-    /// Get superset cpts set
-    inline const PointsTo& getRepPointsTo(const PointsTo& cpts) const
-    {
-        PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
-        assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
-        return it->second;
-    }
-    /// Get a memory region according to cpts
-    const MemRegion* getMR(const PointsTo& cpts) const;
 
     //Get all objects might pass into callee from a callsite
     void collectCallSitePts(const CallBlockNode* cs);

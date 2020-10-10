@@ -198,6 +198,16 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
         break;
     }
 
+    case Instruction::FNeg:
+    {
+        Instruction::UnaryOps Op = (Instruction::UnaryOps)(CE->getOpcode());
+        NewInst = llvm::UnaryOperator::Create (Op,
+                                                CE->getOperand(0),
+                                                CE->getName(),
+                                                InsertPt);
+        break;
+    }
+
     case Instruction::Trunc:
     case Instruction::ZExt:
     case Instruction::SExt:

@@ -72,7 +72,7 @@ void AndersenHCD::solveWorklist()
 }
 
 /*!
- * Collapse nodes and fields based on the result of offline SCC detection
+ * Collapse a node to its ref, if the ref exists
  */
 void AndersenHCD::mergeSCC(NodeID nodeId)
 {
@@ -82,10 +82,15 @@ void AndersenHCD::mergeSCC(NodeID nodeId)
         NodeID oRep = getOfflineRep(nodeId);
         // get online rep node
         NodeID rep = consCG->sccRepNode(oRep);
-        PointsTo &pts = getPts(nodeId);
+        const PointsTo &pts = getPts(nodeId);
         for (PointsTo::iterator ptIt = pts.begin(), ptEit = pts.end(); ptIt != ptEit; ++ptIt)
         {
             NodeID tgt = *ptIt;
+            ConstraintNode* tgtNode = consCG->getConstraintNode(tgt);
+            if (!tgtNode->getDirectInEdges().empty())
+                continue;
+            if (tgtNode->getAddrOutEdges().size() > 1)
+                continue;
             assert(!oCG->isaRef(tgt) && "Point-to target should not be a ref node!");
             mergeNodeAndPts(tgt, rep);
         }

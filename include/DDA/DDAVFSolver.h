@@ -29,14 +29,14 @@ public:
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef PTACallGraphEdge::CallInstSet CallInstSet;
     typedef PAG::CallSiteSet CallSiteSet;
-    typedef std::set<DPIm> DPTItemSet;
-    typedef std::map<DPIm, CPtSet> DPImToCPtSetMap;
-    typedef std::map<DPIm,CVar> DPMToCVarMap;
-    typedef std::map<DPIm,DPIm> DPMToDPMMap;
-    typedef DenseMap<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef DenseSet<const SVFGEdge* > ConstSVFGEdgeSet;
+    typedef OrderedSet<DPIm> DPTItemSet;
+    typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
+    typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
+    typedef OrderedMap<DPIm,DPIm> DPMToDPMMap;
+    typedef OrderedMap<NodeID, DPTItemSet> LocToDPMVecMap;
+    typedef OrderedSet<const SVFGEdge* > ConstSVFGEdgeSet;
     typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
-    typedef std::map<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
+    typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
     DDAVFSolver(): outOfBudgetQuery(false),_pag(NULL),_svfg(NULL),_ander(NULL),_callGraph(NULL), _callGraphSCC(NULL), _svfgSCC(NULL), ddaStat(NULL)
@@ -79,6 +79,12 @@ public:
     virtual bool unionDDAPts(CPtSet& pts, const CPtSet& targetPts)
     {
         return (pts |= targetPts);
+    }
+    /// Union pts
+    virtual bool unionDDAPts(DPIm dpm, const CPtSet& targetPts)
+    {
+        CPtSet& pts = isTopLevelPtrStmt(dpm.getLoc()) ? dpmToTLCPtSetMap[dpm] : dpmToADCPtSetMap[dpm];
+        return pts |= targetPts;
     }
     /// Add pts
     virtual void addDDAPts(CPtSet& pts, const CVar& var)
@@ -522,28 +528,27 @@ protected:
 
     /// Points-to Caching for top-level pointers and address-taken objects
     //@{
-    virtual inline CPtSet& getCachedPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedPointsTo(const DPIm& dpm)
     {
         if (isTopLevelPtrStmt(dpm.getLoc()))
             return getCachedTLPointsTo(dpm);
         else
             return getCachedADPointsTo(dpm);
     }
-    virtual inline void updateCachedPointsTo(const DPIm& dpm, CPtSet& pts)
+    virtual inline void updateCachedPointsTo(const DPIm& dpm, const CPtSet& pts)
     {
-        CPtSet& dpmPts = getCachedPointsTo(dpm);
-        if (unionDDAPts(dpmPts, pts))
+        if (unionDDAPts(dpm, pts))
         {
             DOSTAT(double start = DDAStat::getClk());
             reCompute(dpm);
             DOSTAT(ddaStat->_AnaTimeCyclePerQuery += DDAStat::getClk() - start);
         }
     }
-    virtual inline CPtSet& getCachedTLPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedTLPointsTo(const DPIm& dpm)
     {
         return dpmToTLCPtSetMap[dpm];
     }
-    virtual inline CPtSet& getCachedADPointsTo(const DPIm& dpm)
+    virtual inline const CPtSet& getCachedADPointsTo(const DPIm& dpm)
     {
         return dpmToADCPtSetMap[dpm];
     }

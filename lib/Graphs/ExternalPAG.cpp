@@ -28,9 +28,9 @@ llvm::cl::list<std::string> DumpPAGFunctions("dump-function-pags",
         llvm::cl::CommaSeparated);
 
 
-DenseMap<const SVFFunction*, DenseMap<int, PAGNode *>>
+Map<const SVFFunction*, Map<int, PAGNode *>>
         ExternalPAG::functionToExternalPAGEntries;
-DenseMap<const SVFFunction*, PAGNode *> ExternalPAG::functionToExternalPAGReturns;
+Map<const SVFFunction*, PAGNode *> ExternalPAG::functionToExternalPAGReturns;
 
 std::vector<std::pair<std::string, std::string>>
         ExternalPAG::parseExternalPAGs(llvm::cl::list<std::string> &extpagsArgs)
@@ -51,10 +51,8 @@ std::vector<std::pair<std::string, std::string>>
     return parsedExternalPAGs;
 }
 
-void ExternalPAG::initialise(SVFModule* svfModule)
+void ExternalPAG::initialise(SVFModule*)
 {
-    PAG *pag = PAG::getPAG();
-
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
             = ExternalPAG::parseExternalPAGs(ExternalPAGArgs);
 
@@ -80,7 +78,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
     const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(function);
     if (!hasExternalPAG(svfFun)) return false;
 
-    DenseMap<int, PAGNode*> argNodes =
+    Map<int, PAGNode*> argNodes =
         functionToExternalPAGEntries[svfFun];
     PAGNode *retNode = functionToExternalPAGReturns[svfFun];
 
@@ -233,6 +231,9 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge)
     case PAGEdge::BinaryOp:
         edgeKind = "binary-op";
         break;
+    case PAGEdge::UnaryOp:
+        edgeKind = "unary-op";
+        break;
     case PAGEdge::ThreadFork:
         outs() << "dump-function-pags: found ThreadFork edge.\n";
         break;
@@ -256,9 +257,9 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
     PAG *pag = PAG::getPAG();
 
     // Naive: first map functions to entries in PAG, then dump them.
-    DenseMap<const SVFFunction*, std::vector<PAGNode *>> functionToPAGNodes;
+    Map<const SVFFunction*, std::vector<PAGNode *>> functionToPAGNodes;
 
-    DenseSet<PAGNode *> callDsts;
+    Set<PAGNode *> callDsts;
     for (PAG::iterator it = pag->begin(); it != pag->end(); ++it)
     {
         PAGNode *currNode = it->second;
@@ -302,8 +303,8 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
         std::string functionName = it->first->getName();
 
         // The final nodes and edges we will print.
-        DenseSet<PAGNode *> nodes;
-        DenseSet<PAGEdge *> edges;
+        Set<PAGNode *> nodes;
+        Set<PAGEdge *> edges;
         // The search stack.
         std::stack<PAGNode *> todoNodes;
         // The arguments to the function.
@@ -393,7 +394,7 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
     //        : to map function names to the return node.
 
     // To create the new edges.
-    DenseMap<NodeID, PAGNode *> extToNewNodes;
+    Map<NodeID, PAGNode *> extToNewNodes;
 
     // Add the value nodes.
     for (auto extNodeIt = this->getValueNodes().begin();
@@ -466,6 +467,10 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
         {
             pag->addBinaryOPPE(srcId, dstId);
         }
+        else if (extEdgeType == "unary-op")
+        {
+            pag->addUnaryOPPE(srcId, dstId);
+        }
         else
         {
             outs() << "Bad edge type found during extpag addition\n";
@@ -473,7 +478,7 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
     }
 
     // Record the arg nodes.
-    DenseMap<int, PAGNode *> argNodes;
+    Map<int, PAGNode *> argNodes;
     for (auto argNodeIt = this->getArgNodes().begin();
             argNodeIt != this->getArgNodes().end(); ++argNodeIt)
     {

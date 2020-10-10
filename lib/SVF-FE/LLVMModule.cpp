@@ -63,14 +63,9 @@ std::string SVFModule::pagReadFromTxt = "";
 SVFModule* LLVMModuleSet::buildSVFModule(Module &mod)
 {
     svfModule = new SVFModule(mod.getModuleIdentifier());
-    moduleNum = 1;
-    cxts = &(mod.getContext());
-    modules = new unique_ptr<Module>[moduleNum];
-    modules[0] = std::unique_ptr<Module>(&mod);
+    modules.emplace_back(mod);
 
-    initialize();
-    buildFunToFunMap();
-    buildGlobalDefToRepMap();
+    build();
 
     return svfModule;
 }
@@ -93,34 +88,34 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     else
         SVFModule::setPagFromTXT(Graphtxt.getValue());
 
-    if(moduleNameVec.empty()==false)
+    if(!moduleNameVec.empty())
         svfModule = new SVFModule(*moduleNameVec.begin());
     else
         svfModule = new SVFModule();
 
-    build(moduleNameVec);
-
-	if (!SVFModule::pagReadFromTXT()) {
-		/// building symbol table
-		DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-		SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
-		symInfo->buildMemModel(svfModule);
-	}
+    loadModules(moduleNameVec);
+    build();
 
     return svfModule;
 }
 
-void LLVMModuleSet::build(const vector<string> &moduleNameVec)
+void LLVMModuleSet::build()
 {
-    loadModules(moduleNameVec);
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+
+    if (!SVFModule::pagReadFromTXT()) {
+        /// building symbol table
+        DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
+        SymbolTableInfo *symInfo = SymbolTableInfo::Symbolnfo();
+        symInfo->buildMemModel(svfModule);
+    }
+
 }
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
-    moduleNum = moduleNameVec.size();
     //
     // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
     // We should use only one LLVMContext object for multiple modules in the same thread.
@@ -136,21 +131,19 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
     //    assert(t1 != t3);
     // ------------------------------------------------------------------
     //
-    cxts = new LLVMContext[1];
-    modules = new unique_ptr<Module>[moduleNum];
+    cxts = std::make_unique<LLVMContext>();
 
-    u32_t i = 0;
-    for (vector<string>::const_iterator it = moduleNameVec.begin(),
-            eit = moduleNameVec.end(); it != eit; ++it, ++i)
-    {
-        const string moduleName = *it;
+    for (const std::string& moduleName : moduleNameVec) {
         SMDiagnostic Err;
-        modules[i] = parseIRFile(moduleName, Err, cxts[0]);
-        if (!modules[i])
+        std::unique_ptr<Module> mod = parseIRFile(moduleName, Err, *cxts);
+        if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
+            Err.print("SVFModuleLoader", SVFUtil::errs());
             continue;
         }
+        modules.emplace_back(*mod);
+        owned_modules.emplace_back(std::move(mod));
     }
 }
 
@@ -159,12 +152,10 @@ void LLVMModuleSet::initialize()
     if (SVFMain)
         addSVFMain();
 
-    for (u32_t i = 0; i < moduleNum; ++i)
+    for (Module& mod : modules)
     {
-        Module *mod = modules[i].get();
-
         /// Function
-        for (Module::iterator it = mod->begin(), eit = mod->end();
+        for (Module::iterator it = mod.begin(), eit = mod.end();
                 it != eit; ++it)
         {
             Function *func = &*it;
@@ -172,16 +163,16 @@ void LLVMModuleSet::initialize()
         }
 
         /// GlobalVariable
-        for (Module::global_iterator it = mod->global_begin(),
-                eit = mod->global_end(); it != eit; ++it)
+        for (Module::global_iterator it = mod.global_begin(),
+                eit = mod.global_end(); it != eit; ++it)
         {
             GlobalVariable *global = &*it;
             svfModule->addGlobalSet(global);
         }
 
         /// GlobalAlias
-        for (Module::alias_iterator it = mod->alias_begin(),
-                eit = mod->alias_end(); it != eit; ++it)
+        for (Module::alias_iterator it = mod.alias_begin(),
+                eit = mod.alias_end(); it != eit; ++it)
         {
             GlobalAlias *alias = &*it;
             svfModule->addAliasSet(alias);
@@ -193,11 +184,10 @@ void LLVMModuleSet::addSVFMain()
 {
     std::vector<Function *> init_funcs;
     Function * orgMain = 0;
-    u32_t k = 0;
-    for (u32_t i = 0; i < moduleNum; ++i)
+    Module* mainMod = nullptr;
+    for (Module& mod : modules)
     {
-        Module *mod = modules[i].get();
-        for (auto &func: *mod)
+        for (auto &func: mod)
         {
             if(func.getName().startswith(SVF_GLOBAL_SUB_I_XXX))
                 init_funcs.push_back(&func);
@@ -206,13 +196,14 @@ void LLVMModuleSet::addSVFMain()
             if(func.getName().equals("main"))
             {
                 orgMain = &func;
-                k = i;
+                mainMod = &mod;
             }
         }
     }
-    if(orgMain && moduleNum > 0 && init_funcs.size() > 0)
+    if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
     {
-        Module & M = *(modules[k].get());
+        assert(mainMod && "Module with main function not found.");
+        Module & M = *mainMod;
         // char **
         Type * i8ptr2 = PointerType::getInt8PtrTy(M.getContext())->getPointerTo();
         Type * i32 = IntegerType::getInt32Ty(M.getContext());
@@ -257,10 +248,10 @@ void LLVMModuleSet::addSVFMain()
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    DenseSet<Function*> funDecls, funDefs;
-    std::set<string> declNames, defNames, intersectNames;
-    typedef std::map<string, Function*> NameToFunDefMapTy;
-    typedef std::map<string, DenseSet<Function*>> NameToFunDeclsMapTy;
+    Set<Function*> funDecls, funDefs;
+    Set<string> declNames, defNames, intersectNames;
+    typedef Map<string, Function*> NameToFunDefMapTy;
+    typedef Map<string, Set<Function*>> NameToFunDeclsMapTy;
 
     for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it)
@@ -278,7 +269,7 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
     // Find the intersectNames
-    std::set<string>::iterator declIter, defIter;
+    Set<string>::iterator declIter, defIter;
     declIter = declNames.begin();
     defIter = defNames.begin();
     while (declIter != declNames.end() && defIter != defNames.end())
@@ -300,7 +291,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (DenseSet<Function*>::iterator it = funDefs.begin(),
+    for (Set<Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
         Function *fdef = *it;
@@ -312,7 +303,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (DenseSet<Function*>::iterator it = funDecls.begin(),
+    for (Set<Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
         Function *fdecl = *it;
@@ -322,19 +313,19 @@ void LLVMModuleSet::buildFunToFunMap()
         NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
         {
-            DenseSet<Function*> decls;
+            Set<Function*> decls;
             decls.insert(fdecl);
             nameToFunDeclsMap[funName] = decls;
         }
         else
         {
-            DenseSet<Function*> &decls = mit->second;
+            Set<Function*> &decls = mit->second;
             decls.insert(fdecl);
         }
     }
 
     /// Fun decl --> def
-    for (DenseSet<Function*>::iterator it = funDecls.begin(),
+    for (Set<Function*>::iterator it = funDecls.begin(),
             eit = funDecls.end(); it != eit; ++it)
     {
         const Function *fdecl = *it;
@@ -348,7 +339,7 @@ void LLVMModuleSet::buildFunToFunMap()
     }
 
     /// Fun def --> decls
-    for (DenseSet<Function*>::iterator it = funDefs.begin(),
+    for (Set<Function*>::iterator it = funDefs.begin(),
             eit = funDefs.end(); it != eit; ++it)
     {
         const Function *fdef = *it;
@@ -359,7 +350,7 @@ void LLVMModuleSet::buildFunToFunMap()
         if (mit == nameToFunDeclsMap.end())
             continue;
         std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
-        for (DenseSet<Function*>::iterator sit = mit->second.begin(),
+        for (Set<Function*>::iterator sit = mit->second.begin(),
                 seit = mit->second.end(); sit != seit; ++sit)
         {
             decls.push_back(svfModule->getSVFFunction(*sit));
@@ -369,7 +360,7 @@ void LLVMModuleSet::buildFunToFunMap()
 
 void LLVMModuleSet::buildGlobalDefToRepMap()
 {
-    typedef std::map<string, DenseSet<GlobalVariable*>> NameToGlobalsMapTy;
+    typedef Map<string, Set<GlobalVariable*>> NameToGlobalsMapTy;
     NameToGlobalsMapTy nameToGlobalsMap;
     for (SVFModule::global_iterator it = svfModule->global_begin(),
             eit = svfModule->global_end(); it != eit; ++it)
@@ -381,13 +372,13 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
         if (mit == nameToGlobalsMap.end())
         {
-            DenseSet<GlobalVariable*> globals;
+            Set<GlobalVariable*> globals;
             globals.insert(global);
             nameToGlobalsMap[name] = globals;
         }
         else
         {
-            DenseSet<GlobalVariable*> &globals = mit->second;
+            Set<GlobalVariable*> &globals = mit->second;
             globals.insert(global);
         }
     }
@@ -395,9 +386,9 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
     for (NameToGlobalsMapTy::iterator it = nameToGlobalsMap.begin(),
             eit = nameToGlobalsMap.end(); it != eit; ++it)
     {
-        DenseSet<GlobalVariable*> &globals = it->second;
+        Set<GlobalVariable*> &globals = it->second;
         GlobalVariable *rep = *(globals.begin());
-        DenseSet<GlobalVariable*>::iterator repit = globals.begin();
+        Set<GlobalVariable*>::iterator repit = globals.begin();
         while (repit != globals.end())
         {
             GlobalVariable *cur = *repit;
@@ -408,7 +399,7 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             }
             repit++;
         }
-        for (DenseSet<GlobalVariable*>::iterator sit = globals.begin(),
+        for (Set<GlobalVariable*>::iterator sit = globals.begin(),
                 seit = globals.end(); sit != seit; ++sit)
         {
             GlobalVariable *cur = *sit;
@@ -420,10 +411,9 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
 // Dump modules to files
 void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
 {
-    for (u32_t i = 0; i < moduleNum; ++i)
+    for (Module& mod : modules)
     {
-        Module *mod = getModule(i);
-        std::string moduleName = mod->getName().str();
+        std::string moduleName = mod.getName().str();
         std::string OutputFilename;
         std::size_t pos = moduleName.rfind('.');
         if (pos != std::string::npos)
@@ -435,9 +425,9 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
         raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
 
 #if (LLVM_VERSION_MAJOR >= 7)
-        WriteBitcodeToFile(*mod, OS);
-#else
         WriteBitcodeToFile(mod, OS);
+#else
+        WriteBitcodeToFile(&mod, OS);
 #endif
 
         OS.flush();

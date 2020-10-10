@@ -154,7 +154,7 @@ void SVFG::destroy()
 {
     delete stat;
     stat = NULL;
-    mssa = NULL;
+    clearMSSA();
 }
 
 /*!
@@ -697,7 +697,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return name of the graph
-    static std::string getGraphName(SVFG *graph)
+    static std::string getGraphName(SVFG*)
     {
         return "SVFG";
     }
@@ -711,7 +711,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node without MemSSA information
-    static std::string getSimpleNodeLabel(NodeType *node, SVFG *graph)
+    static std::string getSimpleNodeLabel(NodeType *node, SVFG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -793,6 +793,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
             rawstr << "BinOp\n";
             rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
         }
+        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << "UnOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(uop->getICFGNode())->getInst());
+        }
         else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
         {
             rawstr << "Cmp\n";
@@ -805,7 +810,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     }
 
     /// Return label of a VFG node with MemSSA information
-    static std::string getCompleteNodeLabel(NodeType *node, SVFG *graph)
+    static std::string getCompleteNodeLabel(NodeType *node, SVFG*)
     {
 
         std::string str;
@@ -841,6 +846,15 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << tphi->getRes()->getId() << " = Binary(";
             for(BinaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
+                    it != eit; it++)
+                rawstr << it->second->getId() << ", ";
+            rawstr << ")\n";
+            rawstr << getSourceLoc(tphi->getRes()->getValue());
+        }
+        else if(UnaryOPVFGNode* tphi = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << tphi->getRes()->getId() << " = Unary(";
+            for(UnaryOPVFGNode::OPVers::const_iterator it = tphi->opVerBegin(), eit = tphi->opVerEnd();
                     it != eit; it++)
                 rawstr << it->second->getId() << ", ";
             rawstr << ")\n";
@@ -1022,6 +1036,10 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr <<  "color=black,style=double";
         }
+        else if (SVFUtil::isa<UnaryOPVFGNode>(node))
+        {
+            rawstr <<  "color=black,style=double";
+        }
         else
             assert(false && "no such kind of node!!");
 
@@ -1047,7 +1065,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(NodeType *node, EdgeIter EI, SVFG *pag)
+    static std::string getEdgeAttributes(NodeType*, EdgeIter EI, SVFG*)
     {
         SVFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
@@ -1073,7 +1091,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(NodeType *node, EdgeIter EI)
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
     {
         SVFGEdge* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");

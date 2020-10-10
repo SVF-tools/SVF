@@ -60,6 +60,7 @@ public:
         EFT_L_A1,
         EFT_L_A2,
         EFT_L_A8,
+        EFT_L_A0__A0R_A1,   //stores arg1 into *arg0 and returns arg0 (currently only for memset)
         EFT_L_A0__A0R_A1R,  //copies the data that arg1 points to into the location
         //  arg0 points to; note that several fields may be
         //  copied at once if both point to structs.
@@ -93,7 +94,7 @@ private:
     //  (hash_map and map are much slower).
     llvm::StringMap<extf_t> info;
     //A cache of is_ext results for all SVFFunction*'s (hash_map is fastest).
-    DenseMap<const SVFFunction*, bool> isext_cache;
+    Map<const SVFFunction*, bool> isext_cache;
 
     void init();                          //fill in the map (see ExtAPI.cpp)
 
@@ -207,7 +208,7 @@ public:
     {
         assert(F);
         //Check the cache first; everything below is slower.
-        DenseMap<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
+        Map<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
         if(i_iec != isext_cache.end())
             return i_iec->second;
 

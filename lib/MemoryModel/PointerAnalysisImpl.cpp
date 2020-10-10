@@ -31,18 +31,18 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
-        ptD = new DiffPTDataTy();
+        ptD = new MutDiffPTDataTy();
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
         if (INCDFPTData)
-            ptD = new IncDFPTDataTy();
+            ptD = new IncMutDFPTDataTy(false);
         else
-            ptD = new DFPTDataTy();
+            ptD = new MutDFPTDataTy(false);
     }
     else if (type == VFS_WPA)
     {
-        ptD = new VDFPTDataTy();
+        ptD = new MutVersionedPTDataTy(false);
     }
     else
         assert(false && "no points-to data available");
@@ -85,25 +85,28 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
     // Write analysis results to file
     PTDataTy *ptD = getPTDataTy();
-    auto &ptsMap = ptD->getPtsMap();
-    for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+    if (hasPtsMap())
     {
-        NodeID var = it->first;
-        const PointsTo &pts = getPts(var);
+        auto &ptsMap = getPtsMap();
+        for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+        {
+            NodeID var = it->first;
+            const PointsTo &pts = getPts(var);
 
-        F.os() << var << " -> { ";
-        if (pts.empty())
-        {
-            F.os() << " ";
-        }
-        else
-        {
-            for (auto it = pts.begin(), ie = pts.end(); it != ie; ++it)
+            F.os() << var << " -> { ";
+            if (pts.empty())
             {
-                F.os() << *it << " ";
+                F.os() << " ";
             }
+            else
+            {
+                for (auto it = pts.begin(), ie = pts.end(); it != ie; ++it)
+                {
+                    F.os() << *it << " ";
+                }
+            }
+            F.os() << "}\n";
         }
-        F.os() << "}\n";
     }
 
     // Write GepPAGNodes to file
@@ -161,7 +164,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
         // var
         NodeID var = atoi(line.substr(0, pos).c_str());
-        PointsTo &pts = ptD->getPts(var);
 
         // objs
         pos = pos + delimiter1.length();
@@ -174,7 +176,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
             while (ss.good())
             {
                 ss >> obj;
-                pts.set(obj);
+                ptD->addPts(var, obj);
             }
         }
     }
@@ -209,13 +211,13 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
  */
 void BVDataPTAImpl::dumpTopLevelPtsTo()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
-            PointsTo& pts = this->getPts(node->getId());
+            const PointsTo& pts = this->getPts(node->getId());
             outs() << "\nNodeID " << node->getId() << " ";
 
             if (pts.empty())
@@ -242,7 +244,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
  */
 void BVDataPTAImpl::dumpAllPts()
 {
-    DenseNodeSet pagNodes;
+    OrderedNodeSet pagNodes;
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);

@@ -13,11 +13,17 @@
 
 using namespace SVF;
 
+std::pair<NodeID, Version> VersionedFlowSensitive::atKey(NodeID var, Version version)
+{
+    return std::make_pair(version, var);
+}
+
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
     numPrelabeledNodes = numPrelabelVersions = 0;
     relianceTime = prelabelingTime = meldLabelingTime = meldMappingTime = versionPropTime = 0.0;
+    // We'll grab vPtD in initialize.
 }
 
 void VersionedFlowSensitive::initialize()
@@ -27,17 +33,13 @@ void VersionedFlowSensitive::initialize()
     delete stat;
     stat = new VersionedFlowSensitiveStat(this);
 
-    vPtD = getVDFPTDataTy();
-    assert(vPtD && "VFS::initialize: Expected VDFPTData");
+    vPtD = getVersionedPTDataTy();
 
     prelabel();
     meldLabel();
     mapMeldVersions();
 
     determineReliance();
-
-    vPtD->setConsume(&consume);
-    vPtD->setYield(&yield);
 }
 
 void VersionedFlowSensitive::finalize()
@@ -121,10 +123,6 @@ void VersionedFlowSensitive::meldLabel(void) {
             // Consume and yield are the same for non-stores, so ignore them.
             if (l == lp && !lpIsStore) continue;
 
-            // If lp does not exist in meldConsume, meldConsume[lp] below will create, and
-            // could/will invalidate myl.
-            meldConsume.try_emplace(lp);
-
             // For stores, yield != consume, otherwise they are the same.
             ObjToMeldVersionMap &myl = SVFUtil::isa<StoreSVFGNode>(sl) ? meldYield[l]
                                                                        : meldConsume[l];
@@ -158,7 +156,7 @@ void VersionedFlowSensitive::mapMeldVersions(void)
 
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
-    static DenseMap<MeldVersion, Version> mvv;
+    static Map<MeldVersion, Version> mvv;
     static Version curVersion = 1;
 
     // meldConsume -> consume.
@@ -173,7 +171,7 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             NodeID o = omv.first;
             MeldVersion &mv = omv.second;
 
-            DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            Map<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
             // If a mapping for foudnVersion exists, use it, otherwise create a new Version,
             // keep track of it, and use that.
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
@@ -193,7 +191,7 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             NodeID o = omv.first;
             MeldVersion &mv = omv.second;
 
-            DenseMap<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            Map<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
             yieldl[o] = v;
         }
@@ -210,9 +208,9 @@ void VersionedFlowSensitive::mapMeldVersions(void)
 bool VersionedFlowSensitive::delta(NodeID l)
 {
     // Whether a node is a delta node or not. Decent boon to performance.
-    static DenseMap<NodeID, bool> deltaCache;
+    static Map<NodeID, bool> deltaCache;
 
-    DenseMap<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
+    Map<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
     if (isDelta != deltaCache.end()) return isDelta->second;
 
     const SVFGNode *s = svfg->getSVFGNode(l);
@@ -250,8 +248,9 @@ bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) 
 {
     // Choose which map we are checking.
     const LocVersionMap &m = v == CONSUME ? consume : yield;
-    const ObjToVersionMap &ml = m.lookup(l);
-    return ml.find(o) != ml.end();
+    const LocVersionMap::const_iterator ml = m.find(l);
+    if (ml == m.end()) return false;
+    return ml->second.find(o) != ml->second.end();
 }
 
 void VersionedFlowSensitive::determineReliance(void)
@@ -301,12 +300,12 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
 
-    DenseMap<Version, DenseSet<Version>>::iterator relyingVersions = versionReliance[o].find(v);
+    Map<Version, Set<Version>>::iterator relyingVersions = versionReliance[o].find(v);
     if (relyingVersions != versionReliance[o].end())
     {
         for (Version r : relyingVersions->second)
         {
-            if (vPtD->updateATVersion(o, r, v))
+            if (vPtD->unionPts(atKey(o, r), atKey(o, v)))
             {
                 propagateVersion(o, r);
             }
@@ -381,7 +380,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-        if (vPtD->unionTLFromAT(l, p, o))
+        if (vPtD->unionPts(p, atKey(o, consume[l][o])))
         {
             changed = true;
         }
@@ -393,7 +392,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
             {
-                if (vPtD->unionTLFromAT(l, p, of))
+                if (vPtD->unionPts(p, atKey(of, consume[l][of])))
                 {
                     changed = true;
                 }
@@ -430,7 +429,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-            if (vPtD->unionATFromTL(l, q, o))
+            if (vPtD->unionPts(atKey(o, yield[l][o]), q))
             {
                 changed = true;
                 changedObjects.set(o);
@@ -448,7 +447,25 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     if (isSU) svfgHasSU.set(l);
     else svfgHasSU.reset(l);
 
-    changed = vPtD->propWithinLoc(l, isSU, singleton, changedObjects) || changed;
+    // For all objects, perform pts(o:y) = pts(o:y) U pts(o:c) at loc,
+    // except when a strong update is taking place.
+    ObjToVersionMap &yieldL = yield[l];
+    ObjToVersionMap &consumeL = consume[l];
+    for (ObjToVersionMap::value_type &oc : consumeL)
+    {
+        NodeID o = oc.first;
+        Version c = oc.second;
+
+        // Strong-updated; don't propagate.
+        if (isSU && o == singleton) continue;
+
+        Version y = yieldL[o];
+        if (vPtD->unionPts(atKey(o, y), atKey(o, c)))
+        {
+            changed = true;
+            changedObjects.set(o);
+        }
+    }
 
     double updateEnd = stat->getClk();
     updateTime += (updateEnd - updateStart) / TIMEINTERVAL;
@@ -470,11 +487,11 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 void VersionedFlowSensitive::dumpReliances(void) const
 {
     SVFUtil::outs() << "# Version reliances\n";
-    for (const DenseMap<NodeID, DenseMap<Version, DenseSet<Version>>>::value_type ovrv : versionReliance)
+    for (const Map<NodeID, Map<Version, Set<Version>>>::value_type ovrv : versionReliance)
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (const DenseMap<Version, DenseSet<Version>>::value_type vrv : ovrv.second)
+        for (const Map<Version, Set<Version>>::value_type vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
@@ -496,12 +513,12 @@ void VersionedFlowSensitive::dumpReliances(void) const
     }
 
     SVFUtil::outs() << "# Statement reliances\n";
-    for (const DenseMap<NodeID, DenseMap<Version, NodeBS>>::value_type &ovss : stmtReliance)
+    for (const Map<NodeID, Map<Version, NodeBS>>::value_type &ovss : stmtReliance)
     {
         NodeID o = ovss.first;
         SVFUtil::outs() << "  Object " << o << "\n";
 
-        for (const DenseMap<Version, NodeBS>::value_type &vss : ovss.second)
+        for (const Map<Version, NodeBS>::value_type &vss : ovss.second)
         {
             Version v = vss.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for statements: ";

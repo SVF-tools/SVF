@@ -55,8 +55,8 @@ namespace SVF
  */
 class SVFGOPT : public SVFG
 {
-    typedef DenseSet<SVFGNode*> SVFGNodeSet;
-    typedef DenseMap<NodeID, NodeID> NodeIDToNodeIDMap;
+    typedef Set<SVFGNode*> SVFGNodeSet;
+    typedef Map<NodeID, NodeID> NodeIDToNodeIDMap;
     typedef FIFOWorkList<const MSSAPHISVFGNode*> WorkList;
 
 public:

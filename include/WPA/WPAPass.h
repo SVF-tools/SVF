@@ -51,7 +51,7 @@ class SVFG;
  */
 // excised ", public llvm::AliasAnalysis" as that has a very light interface
 // and I want to see what breaks.
-class WPAPass
+class WPAPass : public ModulePass
 {
     typedef std::vector<PointerAnalysis*> PTAVector;
 
@@ -67,13 +67,13 @@ public:
     };
 
     /// Constructor needs TargetLibraryInfo to be passed to the AliasAnalysis
-    WPAPass()
+    WPAPass() : ModulePass(ID)
     {
 
     }
 
     /// Destructor
-    ~WPAPass();
+    virtual ~WPAPass();
 
     /// LLVM analysis usage
     virtual inline void getAnalysisUsage(AnalysisUsage &au) const
@@ -84,7 +84,7 @@ public:
     }
 
     /// Get adjusted analysis for alias analysis
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id)
+    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
     {
         return this;
     }
@@ -117,7 +117,10 @@ public:
     virtual ModRefInfo getModRefInfo(const CallInst* callInst1, const CallInst* callInst2);
 
     /// Run pointer analysis on SVFModule
-    void runOnModule(SVFModule* svfModule);
+    virtual void runOnModule(SVFModule* svfModule);
+
+    /// Run pointer analysis on LLVM module
+    virtual bool runOnModule(Module& module);
 
     /// PTA name
     virtual inline StringRef getPassName() const

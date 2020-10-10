@@ -134,6 +134,7 @@ typedef llvm::MDNode MDNode;
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::CallInst CallInst;
 typedef llvm::InvokeInst InvokeInst;
+typedef llvm::CallBrInst CallBrInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 typedef llvm::PHINode PHINode;
@@ -150,6 +151,7 @@ typedef llvm::SwitchInst SwitchInst;
 typedef llvm::ExtractValueInst  ExtractValueInst;
 typedef llvm::InsertValueInst InsertValueInst;
 typedef llvm::BinaryOperator BinaryOperator;
+typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::PtrToIntInst PtrToIntInst;
 typedef llvm::VAArgInst VAArgInst;
 typedef llvm::ExtractElementInst ExtractElementInst;
@@ -180,6 +182,7 @@ typedef llvm::PostDominatorTree PostDominatorTree;
 typedef llvm::DomTreeNode DomTreeNode;
 typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
 typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
+typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
 typedef llvm::inst_iterator inst_iterator;
@@ -205,21 +208,6 @@ typedef llvm::DINode DINode;
 typedef llvm::DINodeArray DINodeArray;
 typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
-
-/// LLVM containers
-template <typename T>
-using DenseMapInfo = llvm::DenseMapInfo<T>;
-
-template <typename KeyT, typename ValueT>
-using DenseMapPair = llvm::detail::DenseMapPair<KeyT, ValueT>;
-
-template <typename KeyT, typename ValueT,
-          typename KeyInfoT = DenseMapInfo<KeyT>,
-          typename BucketT = DenseMapPair<KeyT, ValueT>>
-using DenseMap = llvm::DenseMap<KeyT, ValueT, KeyInfoT, BucketT>;
-
-template <typename ValueT, typename ValueInfoT = DenseMapInfo<ValueT>>
-using DenseSet = llvm::DenseSet<ValueT, ValueInfoT>;
 
 class SVFFunction : public SVFValue
 {
@@ -295,41 +283,31 @@ public:
 
 };
 
+template <typename F, typename S>
+raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
+{
+    if (var.second == 0) o << var.first;
+    else o << var.first << ":" << var.second << "\n";
+    return o;
+}
+
 } // End namespace SVF
 
-// Provide DenseMapInfo for SparseBitVector.
-// Empty key is empty SparseBitVector, tombstone key is SparseBitVector with 0 set.
-// TODO: for versioning this is fine, for other uses, is that so?
-// TODO: clean up position.
-template <> struct llvm::DenseMapInfo<llvm::SparseBitVector<>>
-{
-    // From: http://szudzik.com/ElegantPairing.pdf
-    // Pairing function we use for hashing. szudzik(szudzik(a, b), c) is faster than
-    // DenseMapInfo<std::pair<std::pair<unsigned, unsigned>, unsigned>>>::getHashValue.
-    // Might give us fewer collisions too, but this may be dependent on how large inputs are.
-    static unsigned szudzik(unsigned a, unsigned b)
-    {
-        return a > b ? b * b + a : a * a + a + b;
-    }
-
-    static inline llvm::SparseBitVector<> getEmptyKey() { return llvm::SparseBitVector<>(); }
-
-    static inline llvm::SparseBitVector<> getTombstoneKey()
-    {
-        llvm::SparseBitVector<> sbv;
-        sbv.set(0);
-        return sbv;
-    }
-
-    static unsigned getHashValue(const llvm::SparseBitVector<> &sbv)
-    {
-        return szudzik(szudzik(sbv.count(), sbv.find_first()), sbv.find_last());
-    }
-
-    static bool isEqual(const llvm::SparseBitVector<> &LHS, const llvm::SparseBitVector<> &RHS) {
-        return LHS == RHS;
+/// Specialise hash for CallSites.
+template <> struct std::hash<SVF::CallSite> {
+    size_t operator()(const SVF::CallSite &cs) const {
+        std::hash<SVF::Instruction *> h;
+        return h(cs.getInstruction());
     }
 };
 
+/// Specialise hash for SparseBitVectors.
+template <> struct std::hash<llvm::SparseBitVector<>>
+{
+    size_t operator()(const llvm::SparseBitVector<> &sbv) const {
+        std::hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
+    }
+};
 
 #endif /* BASICTYPES_H_ */

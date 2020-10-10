@@ -73,16 +73,16 @@ class SVFG : public VFG
 
 public:
     typedef VFGNodeIDToNodeMapTy SVFGNodeIDToNodeMapTy;
-    typedef DenseMap<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef DenseMap<const MRVer*, NodeID> MSSAVarToDefMapTy;
+    typedef Map<const PAGNode*, NodeID> PAGNodeToDefMapTy;
+    typedef Map<const MRVer*, NodeID> MSSAVarToDefMapTy;
     typedef NodeBS ActualINSVFGNodeSet;
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef DenseMap<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef DenseMap<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
-    typedef DenseMap<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
-    typedef DenseMap<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
+    typedef Map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef Map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef Map<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
+    typedef Map<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
     typedef MemSSA::CHISet CHISet;
     typedef MemSSA::PHISet PHISet;
@@ -234,7 +234,6 @@ public:
     /// Whether a node is callsite return SVFGNode
     const CallBlockNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
-protected:
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge)
     {
@@ -246,6 +245,18 @@ protected:
         removeVFGNode(node);
     }
 
+    /// Add SVFG edge
+    inline bool addSVFGEdge(SVFGEdge* edge)
+    {
+        return addVFGEdge(edge);
+    }
+
+    /// Return total SVFG node number
+    inline u32_t getSVFGNodeNum() const {
+        return nodeNum;
+    }
+
+protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
     SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
@@ -319,11 +330,6 @@ protected:
     }
     //@}
 
-    /// Add SVFG edge
-    inline bool addSVFGEdge(SVFGEdge* edge)
-    {
-        return addVFGEdge(edge);
-    }
 
     /// Given a PAGNode, set/get its def SVFG node (definition of top level pointers)
     //@{

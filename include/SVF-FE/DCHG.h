@@ -156,7 +156,7 @@ public:
         typedefs.insert(diTypedef);
     }
 
-    const DenseSet<const DIDerivedType *> &getTypedefs(void) const
+    const Set<const DIDerivedType *> &getTypedefs(void) const
     {
         return typedefs;
     }
@@ -192,7 +192,7 @@ private:
     /// Type of this node.
     const DIType *diType;
     /// Typedefs which map to this type.
-    DenseSet<const DIDerivedType *> typedefs;
+    Set<const DIDerivedType *> typedefs;
     const GlobalValue* vtable;
     std::string typeName;
     size_t flags;
@@ -236,7 +236,7 @@ public:
         this->kind = DI;
     }
 
-    //~DCHGraph();
+    virtual ~DCHGraph() { };
 
     /// Builds the CHG from DWARF debug information. extend determines
     /// whether to extend the CHG with first field edges.
@@ -249,14 +249,14 @@ public:
 
     void print(void);
 
-    virtual const bool csHasVFnsBasedonCHA(CallSite cs) override
+    virtual bool csHasVFnsBasedonCHA(CallSite cs) override
     {
         return csHasVtblsBasedonCHA(cs);
     }
 
     virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
 
-    virtual const bool csHasVtblsBasedonCHA(CallSite cs) override
+    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
     {
         const DIType *type = getCanonicalType(getCSStaticType(cs));
         if (!hasNode(type))
@@ -317,7 +317,6 @@ public:
             return nullptr;
         }
 
-        const DICompositeType *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
         assert(fieldTypes.find(base) != fieldTypes.end() && "DCHG: base not flattened!");
         std::vector<const DIType *> &fields = fieldTypes[base];
         assert(fields.size() > idx && "DCHG: idx into struct larger than # fields!");
@@ -341,7 +340,7 @@ public:
     }
 
     /// Returns all the aggregates contained (transitively) in base.
-    const DenseSet<const DIType *> &getAggs(const DIType *base)
+    const Set<const DIType *> &getAggs(const DIType *base)
     {
         base = getCanonicalType(base);
         assert(containingAggs.find(base) != containingAggs.end() && "DCHG: aggregates not gathered for base!");
@@ -356,25 +355,25 @@ protected:
     /// Whether this CHG is an extended CHG (first-field). Set by buildCHG.
     bool extended = false;
     /// Maps DITypes to their nodes.
-    DenseMap<const DIType *, DCHNode *> diTypeToNodeMap;
+    Map<const DIType *, DCHNode *> diTypeToNodeMap;
     /// Maps VTables to the DIType associated with them.
-    DenseMap<const GlobalValue *, const DIType *> vtblToTypeMap;
+    Map<const GlobalValue *, const DIType *> vtblToTypeMap;
     /// Maps types to all children (i.e. CHA).
-    DenseMap<const DIType *, NodeBS> chaMap;
+    Map<const DIType *, NodeBS> chaMap;
     /// Maps types to all children but also considering first field.
-    DenseMap<const DIType *, NodeBS> chaFFMap;
+    Map<const DIType *, NodeBS> chaFFMap;
     /// Maps types to a set with their vtable and all their children's.
-    DenseMap<const DIType *, VTableSet> vtblCHAMap;
+    Map<const DIType *, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
-    DenseMap<CallSite, VFunSet> csCHAMap;
+    Map<CallSite, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
-    DenseMap<const DIType *, const DIType *> canonicalTypeMap;
+    Map<const DIType *, const DIType *> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).
-    DenseSet<const DIType *> canonicalTypes;
+    Set<const DIType *> canonicalTypes;
     /// Maps types to their flattened fields' types.
-    DenseMap<const DIType *, std::vector<const DIType *>> fieldTypes;
+    Map<const DIType *, std::vector<const DIType *>> fieldTypes;
     /// Maps aggregate types to all the aggregate types it transitively contains.
-    DenseMap<const DIType *, DenseSet<const DIType *>> containingAggs;
+    Map<const DIType *, Set<const DIType *>> containingAggs;
 
 private:
     /// Construction helper to process DIBasicTypes.
@@ -427,7 +426,7 @@ private:
         type = getCanonicalType(type);
         if (hasNode(type))
         {
-            return diTypeToNodeMap.lookup(type);
+            return diTypeToNodeMap.at(type);
         }
 
         return nullptr;

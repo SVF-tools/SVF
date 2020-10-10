@@ -28,7 +28,7 @@ public:
     /// Pass ID
     static char ID;
     typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef DenseSet<const SVFGEdge*> SVFGEdgeSet;
+    typedef OrderedSet<const SVFGEdge*> SVFGEdgeSet;
     typedef std::vector<PointerAnalysis*> PTAVector;
 
     DDAPass() : ModulePass(ID), _pta(NULL), _client(NULL) {}
@@ -41,7 +41,7 @@ public:
         au.setPreservesAll();
     }
 
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID id)
+    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
     {
         return this;
     }
@@ -59,13 +59,10 @@ public:
     virtual AliasResult alias(NodeID V1, NodeID V2);
 
     /// We start from here
-    virtual bool runOnModule(SVFModule* module);
+    virtual void runOnModule(SVFModule* module);
 
     /// We start from here
-    virtual bool runOnModule(Module& module)
-    {
-        return runOnModule(module);
-    }
+    virtual bool runOnModule(Module& module);
 
     /// Select a client
     virtual void selectClient(SVFModule* module);
