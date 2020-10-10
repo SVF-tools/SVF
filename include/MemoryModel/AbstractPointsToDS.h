@@ -53,7 +53,7 @@ public:
         MutVersioned,
     };
 
-    PTData(PTDataTy ty = PTDataTy::Base) : ptdTy(ty) { }
+    PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
 
     virtual ~PTData() { }
 
@@ -88,6 +88,8 @@ public:
     virtual void dumpPTData() = 0;
 
 protected:
+    /// Whether we maintain reverse points-to sets or not.
+    bool rev;
     PTDataTy ptdTy;
 };
 
@@ -101,7 +103,7 @@ public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
-    DiffPTData(PTDataTy ty = PTDataTy::Diff) : BasePTData(ty) { }
+    DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) { }
 
     virtual ~DiffPTData() { }
 
@@ -156,7 +158,7 @@ public:
     typedef NodeID LocID;
 
     /// Constructor
-    DFPTData(PTDataTy ty = BasePTData::DataFlow) : BasePTData(ty) { }
+    DFPTData(bool reversePT = true, PTDataTy ty = BasePTData::DataFlow) : BasePTData(reversePT, ty) { }
 
     virtual ~DFPTData() { }
 
@@ -229,7 +231,7 @@ public:
 
     typedef Set<VersionedKey> VersionedKeySet;
 
-    VersionedPTData(PTDataTy ty = PTDataTy::Versioned) : BasePTData(ty) { }
+    VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) { }
 
     virtual ~VersionedPTData() { }
 

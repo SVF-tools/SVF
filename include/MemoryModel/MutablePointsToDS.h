@@ -27,7 +27,7 @@ public:
     typedef typename Data::iterator iterator;
 
     /// Constructor
-    MutablePTData(PTDataTy ty = PTDataTy::MutBase) : BasePTData(ty) { }
+    MutablePTData(bool reversePT = true, PTDataTy ty = PTDataTy::MutBase) : BasePTData(reversePT, ty) { }
 
     virtual ~MutablePTData() { }
 
@@ -50,6 +50,7 @@ public:
 
     virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
+        assert(this->rev && "MutablePTData::getRevPts: constructed without reverse PT support!");
         return revPtsMap[datum];
     }
 
@@ -130,12 +131,15 @@ private:
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        revData.insert(tgr);
+        if (this->rev) revData.insert(tgr);
     }
     inline void addRevPts(const Data &ptsData, const Key& tgr)
     {
-        for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
-            addSingleRevPts(revPtsMap[*it], tgr);
+        if (this->rev)
+        {
+            for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
+                addSingleRevPts(revPtsMap[*it], tgr);
+        }
     }
     ///@}
 
@@ -159,7 +163,7 @@ public:
     typedef typename MutablePTData<CacheKey, Datum, Data>::PtsMap CachePtsMap;
 
     /// Constructor
-    MutableDiffPTData(PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(ty) { }
+    MutableDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(reversePT, ty), mutPTData(reversePT) { }
 
     virtual ~MutableDiffPTData() { }
 
@@ -180,6 +184,7 @@ public:
 
     virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
+        assert(this->rev && "MutableDiffPTData::getRevPts: constructed without reverse PT support!");
         return mutPTData.getRevPts(datum);
     }
 
@@ -299,7 +304,7 @@ public:
     typedef typename DFPtsMap::const_iterator DFPtsMapconstIter;
 
     /// Constructor
-    MutableDFPTData(PTDataTy ty = BaseDFPTData::MutDataFlow) : BaseDFPTData(ty) { }
+    MutableDFPTData(bool reversePT = true, PTDataTy ty = BaseDFPTData::MutDataFlow) : BaseDFPTData(reversePT, ty), mutPTData(reversePT) { }
 
     virtual ~MutableDFPTData() { }
 
@@ -320,6 +325,7 @@ public:
 
     virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
+        assert(this->rev && "MutableDFPTData::getRevPts: constructed without reverse PT support!");
         return mutPTData.getRevPts(datum);
     }
 
@@ -590,7 +596,7 @@ private:
 
 public:
     /// Constructor
-    IncMutableDFPTData(PTDataTy ty = BasePTData::IncMutDataFlow) : BaseMutDFPTData(ty) { }
+    IncMutableDFPTData(bool reversePT = true, PTDataTy ty = BasePTData::IncMutDataFlow) : BaseMutDFPTData(reversePT, ty) { }
 
     virtual ~IncMutableDFPTData() { }
 
@@ -788,7 +794,8 @@ public:
     typedef typename BasePTData::KeySet KeySet;
     typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
 
-    MutableVersionedPTData(PTDataTy ty = PTDataTy::MutVersioned) : BaseVersionedPTData(ty) { }
+    MutableVersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::MutVersioned)
+        : BaseVersionedPTData(reversePT, ty), tlPTData(reversePT), atPTData(reversePT) { }
 
     virtual ~MutableVersionedPTData() { }
 
@@ -809,10 +816,12 @@ public:
 
     virtual const KeySet& getRevPts(const Datum& datum) override
     {
+        assert(this->rev && "MutableVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(datum);
     }
     virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum)
     {
+        assert(this->rev && "MutableVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(datum);
     }
 
