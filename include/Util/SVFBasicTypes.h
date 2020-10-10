@@ -85,7 +85,7 @@ template <typename T, unsigned N>
 using SmallVector = llvm::SmallVector<T, N>;
 
 typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::pair<NodeID, Version> VarVersionPair;
+typedef std::pair<NodeID, Version> VersionedVar;
 typedef OrderedSet<NodeID> OrderedNodeSet;
 typedef Set<NodeID> NodeSet;
 typedef Set<NodePair> NodePairSet;

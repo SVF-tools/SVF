@@ -42,10 +42,8 @@ public:
         YIELD,
     };
 
-    /// Return key into ptD for address-taken var of a specific version.
-    static VarVersionPair atKey(NodeID, Version);
-    /// Return key into ptD for top-level var.
-    static VarVersionPair tlKey(NodeID);
+    /// Return key into vPtD for address-taken var of a specific version.
+    static VersionedVar atKey(NodeID, Version);
 
     /// Constructor
     VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA);
@@ -145,8 +143,7 @@ private:
     FIFOWorkList<NodeID> vWorklist;
 
     /// Points-to DS for working with versions.
-    /// TODO: not using standard PointerAnalysisImpl!
-    PTData<VarVersionPair, NodeID, PointsTo> *vPtD;
+    VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> *vPtD;
 
     /// Additional statistics.
     //@{

@@ -18,16 +18,12 @@ std::pair<NodeID, Version> VersionedFlowSensitive::atKey(NodeID var, Version ver
     return std::make_pair(version, var);
 }
 
-std::pair<NodeID, Version> VersionedFlowSensitive::tlKey(NodeID var)
-{
-    return std::make_pair(0, var);
-}
-
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
     numPrelabeledNodes = numPrelabelVersions = 0;
     relianceTime = prelabelingTime = meldLabelingTime = meldMappingTime = versionPropTime = 0.0;
+    // We'll grab vPtD in initialize.
 }
 
 void VersionedFlowSensitive::initialize()
@@ -36,6 +32,8 @@ void VersionedFlowSensitive::initialize()
     // Overwrite the stat FlowSensitive::initialize gave us.
     delete stat;
     stat = new VersionedFlowSensitiveStat(this);
+
+    vPtD = getVersionedPTDataTy();
 
     prelabel();
     meldLabel();
@@ -382,7 +380,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-        if (vPtD->unionPts(tlKey(p), atKey(o, consume[l][o])))
+        if (vPtD->unionPts(p, atKey(o, consume[l][o])))
         {
             changed = true;
         }
@@ -394,7 +392,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
             {
-                if (vPtD->unionPts(tlKey(p), atKey(of, consume[l][of])))
+                if (vPtD->unionPts(p, atKey(of, consume[l][of])))
                 {
                     changed = true;
                 }
@@ -431,7 +429,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-            if (vPtD->unionPts(atKey(o, yield[l][o]), tlKey(q)))
+            if (vPtD->unionPts(atKey(o, yield[l][o]), q))
             {
                 changed = true;
                 changedObjects.set(o);
