@@ -156,8 +156,8 @@ void VersionedFlowSensitive::mapMeldVersions(void)
 
     // We want to uniquely map MeldVersions (SparseBitVectors) to a Version (unsigned integer).
     // mvv keeps track, and curVersion is used to generate new Versions.
-    static Map<MeldVersion, Version> mvv;
-    static Version curVersion = 1;
+    Map<MeldVersion, Version> mvv;
+    Version curVersion = 1;
 
     // meldConsume -> consume.
     for (LocMeldVersionMap::value_type &lomv : meldConsume)
