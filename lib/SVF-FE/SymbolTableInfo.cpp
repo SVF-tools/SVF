@@ -113,7 +113,7 @@ SymbolTableInfo* SymbolTableInfo::Symbolnfo()
  */
 void SymbolTableInfo::collectTypeInfo(const Type* ty)
 {
-    assert(typeToFieldInfo.find_as(ty) == typeToFieldInfo.end() && "this type has been collected before");
+    assert(typeToFieldInfo.find(ty) == typeToFieldInfo.end() && "this type has been collected before");
 
     if (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(ty))
         collectArrayInfo(aty);

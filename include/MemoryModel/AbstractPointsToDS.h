@@ -37,6 +37,8 @@ template <typename Key, typename Datum, typename Data>
 class PTData
 {
 public:
+    typedef Set<Key> KeySet;
+
     /// Types of a points-to data structures.
     enum PTDataTy
     {
@@ -64,8 +66,8 @@ public:
 
     /// Get points-to set of var.
     virtual const Data& getPts(const Key& var) = 0;
-    /// Get reverse points-to set of var.
-    virtual const Data& getRevPts(const Key& var) = 0;
+    /// Get reverse points-to set of datum.
+    virtual const KeySet& getRevPts(const Datum& datum) = 0;
 
     /// Adds element to the points-to set associated with var.
     virtual bool addPts(const Key& var, const Datum& element) = 0;

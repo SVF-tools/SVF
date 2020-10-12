@@ -47,34 +47,34 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 {
 
 public:
-    typedef DenseSet<const CallBlockNode*> CallSiteSet;
-    typedef DenseMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
-    typedef DenseMap<NodeID,CallSiteSet> FunPtrToCallSitesMap;
-    typedef DenseMap<NodeID,NodeBS> MemObjToFieldsMap;
-    typedef DenseSet<const PAGEdge*> PAGEdgeSet;
+    typedef Set<const CallBlockNode*> CallSiteSet;
+    typedef OrderedMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
+    typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
+    typedef Set<const PAGEdge*> PAGEdgeSet;
     typedef std::vector<const PAGEdge*> PAGEdgeList;
     typedef std::vector<const PAGNode*> PAGNodeList;
     typedef std::vector<const CopyPE*> CopyPEList;
     typedef std::vector<const BinaryOPPE*> BinaryOPList;
     typedef std::vector<const UnaryOPPE*> UnaryOPList;
     typedef std::vector<const CmpPE*> CmpPEList;
-    typedef DenseMap<const PAGNode*,CopyPEList> PHINodeMap;
-    typedef DenseMap<const PAGNode*,BinaryOPList> BinaryNodeMap;
-    typedef DenseMap<const PAGNode*,UnaryOPList> UnaryNodeMap;
-    typedef DenseMap<const PAGNode*,CmpPEList> CmpNodeMap;
-    typedef DenseMap<const SVFFunction*,PAGNodeList> FunToArgsListMap;
-    typedef DenseMap<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
-    typedef DenseMap<const RetBlockNode*,const PAGNode*> CSToRetMap;
-    typedef DenseMap<const SVFFunction*,const PAGNode*> FunToRetMap;
-    typedef DenseMap<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
-    typedef DenseMap<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
-    typedef DenseMap<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<const PAGNode*,CopyPEList> PHINodeMap;
+    typedef Map<const PAGNode*,BinaryOPList> BinaryNodeMap;
+    typedef Map<const PAGNode*,UnaryOPList> UnaryNodeMap;
+    typedef Map<const PAGNode*,CmpPEList> CmpNodeMap;
+    typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
+    typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
+    typedef Map<const RetBlockNode*,const PAGNode*> CSToRetMap;
+    typedef Map<const SVFFunction*,const PAGNode*> FunToRetMap;
+    typedef Map<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
+    typedef Map<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
+    typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
-    typedef DenseMap<NodeOffset,NodeID,DenseMapInfo<std::pair<NodeID,Size_t> > > NodeOffsetMap;
-    typedef std::map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef std::map<const Value*, NodeLocationSetMap> GepValPNMap;
-    typedef DenseMap<NodePair,NodeID> NodePairSetMap;
+    typedef Map<NodeOffset,NodeID> NodeOffsetMap;
+    typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
+    typedef Map<const Value*, NodeLocationSetMap> GepValPNMap;
+    typedef Map<NodePair,NodeID> NodePairSetMap;
 
 private:
     SymbolTableInfo* symInfo;
@@ -102,7 +102,7 @@ private:
     bool fromFile; ///< Whether the PAG is built according to user specified data from a txt file
     /// Valid pointers for pointer analysis resolution connected by PAG edges (constraints)
     /// this set of candidate pointers can change during pointer resolution (e.g. adding new object nodes)
-    NodeSet candidatePointers;
+    OrderedNodeSet candidatePointers;
     NodeID nodeNumAfterPAGBuild; // initial node number after building PAG, excluding later added nodes, e.g., gepobj nodes
     ICFG* icfg; // ICFG
     CallSiteSet callSiteSet; /// all the callsites of a program
@@ -123,7 +123,7 @@ public:
     }
 
     /// Return valid pointers
-    inline NodeSet& getAllValidPtrs()
+    inline OrderedNodeSet& getAllValidPtrs()
     {
         return candidatePointers;
     }

@@ -133,7 +133,7 @@ public:
     typedef EdgeTy EdgeType;
     /// Edge kind
     typedef s32_t GNodeK;
-    typedef std::set<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
+    typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
     /// Edge iterator
     ///@{
     typedef typename GEdgeSetTy::iterator iterator;
@@ -331,7 +331,7 @@ public:
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
     /// NodeID to GenericNode map
-    typedef DenseMap<NodeID, NodeType*> IDToNodeMapTy;
+    typedef Map<NodeID, NodeType*> IDToNodeMapTy;
 
     /// Node Iterators
     //@{

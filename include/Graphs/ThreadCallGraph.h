@@ -159,17 +159,17 @@ class ThreadCallGraph: public PTACallGraph
 {
 
 public:
-    typedef std::set<const CallBlockNode*> InstSet;
+    typedef Set<const CallBlockNode*> InstSet;
     typedef InstSet CallSiteSet;
     typedef std::vector<const Instruction*> InstVector;
-    typedef std::map<const Instruction*, InstSet> CallToInstMap;
-    typedef std::set<CallSiteSet*> CtxSet;
+    typedef Map<const Instruction*, InstSet> CallToInstMap;
+    typedef Set<CallSiteSet*> CtxSet;
     typedef ThreadForkEdge::ForkEdgeSet ForkEdgeSet;
-    typedef std::map<const CallBlockNode*, ForkEdgeSet> CallInstToForkEdgesMap;
+    typedef Map<const CallBlockNode*, ForkEdgeSet> CallInstToForkEdgesMap;
     typedef ThreadJoinEdge::JoinEdgeSet JoinEdgeSet;
-    typedef std::map<const CallBlockNode*, JoinEdgeSet> CallInstToJoinEdgesMap;
+    typedef Map<const CallBlockNode*, JoinEdgeSet> CallInstToJoinEdgesMap;
     typedef HareParForEdge::ParForEdgeSet ParForEdgeSet;
-    typedef std::map<const CallBlockNode*, ParForEdgeSet> CallInstToParForEdgesMap;
+    typedef Map<const CallBlockNode*, ParForEdgeSet> CallInstToParForEdgesMap;
 
     /// Constructor
     ThreadCallGraph();
@@ -268,11 +268,11 @@ public:
 
     /// Fork sites iterators
     //@{
-    inline CallSiteSet::iterator forksitesBegin() const
+    inline CallSiteSet::const_iterator forksitesBegin() const
     {
         return forksites.begin();
     }
-    inline CallSiteSet::iterator forksitesEnd() const
+    inline CallSiteSet::const_iterator forksitesEnd() const
     {
         return forksites.end();
     }
@@ -280,11 +280,11 @@ public:
 
     /// Join sites iterators
     //@{
-    inline CallSiteSet::iterator joinsitesBegin() const
+    inline CallSiteSet::const_iterator joinsitesBegin() const
     {
         return joinsites.begin();
     }
-    inline CallSiteSet::iterator joinsitesEnd() const
+    inline CallSiteSet::const_iterator joinsitesEnd() const
     {
         return joinsites.end();
     }
@@ -292,11 +292,11 @@ public:
 
     /// hare_parallel_for sites iterators
     //@{
-    inline CallSiteSet::iterator parForSitesBegin() const
+    inline CallSiteSet::const_iterator parForSitesBegin() const
     {
         return parForSites.begin();
     }
-    inline CallSiteSet::iterator parForSitesEnd() const
+    inline CallSiteSet::const_iterator parForSitesEnd() const
     {
         return parForSites.end();
     }

@@ -60,8 +60,8 @@ public:
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
     typedef VFGEdge::VFGEdgeSetTy::const_iterator const_iterator;
-    typedef DenseSet<const CallPE*> CallPESet;
-    typedef DenseSet<const RetPE*> RetPESet;
+    typedef Set<const CallPE*> CallPESet;
+    typedef Set<const RetPE*> RetPESet;
 
 public:
     /// Constructor
@@ -310,7 +310,7 @@ public:
 class CmpVFGNode: public VFGNode
 {
 public:
-    typedef DenseMap<u32_t,const PAGNode*> OPVers;
+    typedef Map<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -381,7 +381,7 @@ public:
 class BinaryOPVFGNode: public VFGNode
 {
 public:
-    typedef DenseMap<u32_t,const PAGNode*> OPVers;
+    typedef Map<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -452,7 +452,7 @@ public:
 class UnaryOPVFGNode: public VFGNode
 {
 public:
-    typedef DenseMap<u32_t,const PAGNode*> OPVers;
+    typedef Map<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -563,7 +563,7 @@ class PHIVFGNode : public VFGNode
 {
 
 public:
-    typedef DenseMap<u32_t,const PAGNode*> OPVers;
+    typedef Map<u32_t,const PAGNode*> OPVers;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -635,7 +635,7 @@ class IntraPHIVFGNode : public PHIVFGNode
 {
 
 public:
-    typedef DenseMap<u32_t,const ICFGNode*> OPIncomingBBs;
+    typedef Map<u32_t,const ICFGNode*> OPIncomingBBs;
 
 private:
     OPIncomingBBs opIncomingBBs;

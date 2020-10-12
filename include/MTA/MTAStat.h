@@ -25,7 +25,7 @@ class MTAStat : public PTAStat
 {
 
 public:
-    typedef std::set<const Instruction*> InstSet;
+    typedef Set<const Instruction*> InstSet;
 
     /// Constructor
     MTAStat():PTAStat(NULL),TCTTime(0),MHPTime(0),FSMPTATime(0),AnnotationTime(0)

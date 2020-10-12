@@ -113,12 +113,12 @@ protected:
 
 private:
 
-    std::map<NodeID, const CallInst*> csnumToInstMap;
-    std::map<NodeID, CallStrCxt> vthdToCxt;
-    std::map<NodeID, NodeID> vthdTorthd;
-    std::map<NodeID, NodeID> rthdTovthd;
+    Map<NodeID, const CallInst*> csnumToInstMap;
+    Map<NodeID, CallStrCxt> vthdToCxt;
+    Map<NodeID, NodeID> vthdTorthd;
+    Map<NodeID, NodeID> rthdTovthd;
 
-    std::map<NodeID, std::set<NodeID>> rthdToChildren;
+    Map<NodeID, Set<NodeID>> rthdToChildren;
 
     MHP::InstToThreadStmtSetMap instToTSMap; // Map a instruction to CxtThreadStmtSet
     MHP::ThreadStmtToThreadInterleav threadStmtToInterLeaving; /// Map a statement to its thread interleavings

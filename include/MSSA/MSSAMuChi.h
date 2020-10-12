@@ -624,7 +624,7 @@ class MSSAPHI : public MSSADEF
 {
 
 public:
-    typedef DenseMap<u32_t,const MRVer*> OPVers;
+    typedef Map<u32_t,const MRVer*> OPVers;
 private:
     const BasicBlock* bb;
     OPVers opVers;

@@ -54,6 +54,11 @@ double Andersen::timeOfProcessLoadStore = 0;
 double Andersen::timeOfUpdateCallGraph = 0;
 
 
+static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
+        llvm::cl::desc("Dump dot graph of Constraint Graph"));
+static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
+                                        llvm::cl::desc("Print Constraint Graph to Terminal"));
+
 static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
                                         llvm::cl::desc("Write Andersen's analysis results to a file"));
 static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
@@ -62,6 +67,37 @@ static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
                                    llvm::cl::desc("Disable diff pts propagation"));
 static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
                                     llvm::cl::desc("Enable PWC in graph solving"));
+
+
+/*!
+ * Initilize analysis
+ */
+void AndersenBase::initialize()
+{
+    /// Build PAG
+    PointerAnalysis::initialize();
+    /// Build Constraint Graph
+    consCG = new ConstraintGraph(pag);
+    setGraph(consCG);
+    /// Create statistic class
+    stat = new AndersenStat(this);
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_initial");
+}
+
+/*!
+ * Finalize analysis
+ */
+void AndersenBase::finalize()
+{
+    /// dump constraint graph if PAGDotGraph flag is enabled
+	if (ConsCGDotGraph)
+		consCG->dump("consCG_final");
+
+	if (PrintCGGraph)
+		consCG->print();
+    PointerAnalysis::finalize();
+}
 
 
 /*!
@@ -91,6 +127,7 @@ void Andersen::analyze()
         this->writeToFile(WriteAnder);
 }
 
+
 /*!
  * Initilize analysis
  */
@@ -99,16 +136,20 @@ void Andersen::initialize()
     resetData();
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
-    /// Build PAG
-    PointerAnalysis::initialize();
-    /// Build Constraint Graph
-    consCG = new ConstraintGraph(pag);
-    setGraph(consCG);
-    /// Create statistic class
-    stat = new AndersenStat(this);
-    consCG->dump("consCG_initial");
+    AndersenBase::initialize();
     /// Initialize worklist
     processAllAddr();
+}
+
+/*!
+ * Finalize analysis
+ */
+void Andersen::finalize()
+{
+    /// sanitize field insensitive obj
+    /// TODO: Fields has been collapsed during Andersen::collapseField().
+    //	sanitizePts();
+	AndersenBase::finalize();
 }
 
 /*!
@@ -454,8 +495,8 @@ bool Andersen::collapseField(NodeID nodeId)
         if (fieldId != baseId)
         {
             // use the reverse pts of this field node to find all pointers point to it
-            const PointsTo & revPts = getRevPts(fieldId);
-            for (PointsTo::iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
+            const NodeSet &revPts = getRevPts(fieldId);
+            for (NodeSet::const_iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
                     ptdIt != ptdEit; ptdIt++)
             {
                 // change the points-to target from field to base node
@@ -724,7 +765,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
  */
 void Andersen::dumpTopLevelPtsTo()
 {
-    for (NodeSet::iterator nIter = this->getAllValidPtrs().begin();
+    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getPAGNode(*nIter);

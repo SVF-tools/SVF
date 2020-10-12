@@ -42,21 +42,89 @@ namespace SVF
 
 class PTAType;
 class SVFModule;
+
 /*!
- * Inclusion-based Pointer Analysis
+ * Abstract class of inclusion-based Pointer Analysis
  */
 typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
 
-class Andersen:  public WPAConstraintSolver, public BVDataPTAImpl
+class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
+{
+public:
+
+    /// Constructor
+	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL)
+    {
+        iterationForPrintStat = OnTheFlyIterBudgetForStat;
+    }
+
+    /// Destructor
+    virtual ~AndersenBase()
+    {
+        if (consCG != NULL)
+            delete consCG;
+        consCG = NULL;
+    }
+
+    /// Andersen analysis
+    virtual void analyze() = 0;
+
+    /// Initialize analysis
+    virtual void initialize();
+
+    /// Finalize analysis
+    virtual void finalize();
+
+
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const AndersenBase *)
+    {
+        return true;
+    }
+    static inline bool classof(const PointerAnalysis *pta)
+    {
+        return ( pta->getAnalysisTy() == Andersen_BASE
+				|| pta->getAnalysisTy() == Andersen_WPA
+                || pta->getAnalysisTy() == AndersenLCD_WPA
+                || pta->getAnalysisTy() == AndersenHCD_WPA
+                || pta->getAnalysisTy() == AndersenHLCD_WPA
+                || pta->getAnalysisTy() == AndersenWaveDiff_WPA
+                || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA
+                || pta->getAnalysisTy() == AndersenSCD_WPA
+                || pta->getAnalysisTy() == AndersenSFR_WPA
+				|| pta->getAnalysisTy() == TypeCPP_WPA);
+    }
+    //@}
+
+    /// Get constraint graph
+    ConstraintGraph* getConstraintGraph()
+    {
+        return consCG;
+    }
+
+    /// dump statistics
+    inline void printStat()
+    {
+        PointerAnalysis::dumpStat();
+    }
+
+protected:
+    /// Constraint Graph
+    ConstraintGraph* consCG;
+};
+
+/*!
+ * Inclusion-based Pointer Analysis
+ */
+class Andersen:  public AndersenBase
 {
 
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef DenseMap<CallSite, NodeID> CallSite2DummyValPN;
-
-    /// Pass ID
-    static char ID;
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Statistics
     //@{
@@ -81,38 +149,24 @@ public:
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), pwcOpt(false), diffOpt(true), consCG(NULL)
+        :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
     {
-        iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
     virtual ~Andersen()
     {
-        if (consCG != NULL)
-            delete consCG;
-        consCG = NULL;
+
     }
 
     /// Andersen analysis
-    void analyze();
+    virtual void analyze();
 
     /// Initialize analysis
     virtual void initialize();
-    //}
 
     /// Finalize analysis
-    virtual inline void finalize()
-    {
-        /// dump constraint graph if PAGDotGraph flag is enabled
-        consCG->dump("consCG_final");
-        consCG->print();
-        /// sanitize field insensitive obj
-        /// TODO: Fields has been collapsed during Andersen::collapseField().
-        //	sanitizePts();
-
-        PointerAnalysis::finalize();
-    }
+    virtual void finalize();
 
     /// Reset data
     inline void resetData()
@@ -132,7 +186,7 @@ public:
     static inline bool classof(const PointerAnalysis *pta)
     {
         return (pta->getAnalysisTy() == Andersen_WPA
-                || pta->getAnalysisTy() == AndersenLCD_WPA
+				|| pta->getAnalysisTy() == AndersenLCD_WPA
                 || pta->getAnalysisTy() == AndersenHCD_WPA
                 || pta->getAnalysisTy() == AndersenHLCD_WPA
                 || pta->getAnalysisTy() == AndersenWaveDiff_WPA
@@ -171,11 +225,6 @@ public:
         return getPTDataTy()->unionPts(id,ptd);
     }
 
-    /// Get constraint graph
-    ConstraintGraph* getConstraintGraph()
-    {
-        return consCG;
-    }
 
     void dumpTopLevelPtsTo();
 
@@ -294,11 +343,7 @@ protected:
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
 
-    /// dump statistics
-    inline void printStat()
-    {
-        PointerAnalysis::dumpStat();
-    }
+
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
@@ -324,8 +369,7 @@ protected:
     /// SCC detection
     virtual NodeStack& SCCDetect();
 
-    /// Constraint Graph
-    ConstraintGraph* consCG;
+
 
     /// Sanitize pts for field insensitive objects
     void sanitizePts()
@@ -425,7 +469,7 @@ class AndersenWaveDiffWithType : public AndersenWaveDiff
 
 private:
 
-    typedef DenseMap<NodeID, DenseSet<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
+    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
 
     TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
 
@@ -434,12 +478,12 @@ private:
         TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
         if (it != typeMismatchedObjToEdges.end())
         {
-            DenseSet<const GepCGEdge*> &edges = it->second;
+            Set<const GepCGEdge*> &edges = it->second;
             edges.insert(gepEdge);
         }
         else
         {
-            DenseSet<const GepCGEdge*> edges;
+            Set<const GepCGEdge*> edges;
             edges.insert(gepEdge);
             typeMismatchedObjToEdges[obj] = edges;
         }
@@ -561,7 +605,7 @@ protected:
     //@{
     bool isMetEdge (ConstraintEdge* edge) const
     {
-        EdgeSet::iterator it = metEdges.find(edge->getEdgeID());
+        EdgeSet::const_iterator it = metEdges.find(edge->getEdgeID());
         return it != metEdges.end();
     };
     void addMetEdge(ConstraintEdge* edge)

@@ -130,11 +130,11 @@ private:
 template<class Element>
 class CondStdSet
 {
-    typedef typename std::set<Element> ElementSet;
+    typedef OrderedSet<Element> ElementSet;
 
 public:
-    typedef typename std::set<Element>::iterator iterator;
-    typedef typename std::set<Element>::const_iterator const_iterator;
+    typedef typename OrderedSet<Element>::iterator iterator;
+    typedef typename OrderedSet<Element>::const_iterator const_iterator;
 
     CondStdSet() {}
     ~CondStdSet() {}
@@ -300,7 +300,7 @@ template<class Cond>
 class CondPointsToSet
 {
 public:
-    typedef typename std::map<Cond, PointsTo> CondPts;
+    typedef Map<Cond, PointsTo> CondPts;
     typedef typename CondPts::iterator CondPtsIter;
     typedef typename CondPts::const_iterator CondPtsConstIter;
     typedef CondVar<Cond> SingleCondVar;
@@ -316,7 +316,7 @@ public:
     }
     //@}
 
-    /// Copy constructor  DenseMap constructor overloading
+    /// Copy constructor
     CondPointsToSet(const CondPointsToSet<Cond>& cptsSet)
 
     {
@@ -837,5 +837,26 @@ private:
 };
 
 } // End namespace SVF
+
+/// Specialise hash for CondVar
+template <typename Cond>
+struct std::hash<const SVF::CondVar<Cond>>
+{
+    size_t operator()(const SVF::CondVar<Cond> &cv) const
+    {
+        std::hash<Cond> h;
+        return h(cv.get_cond());
+    }
+};
+
+template <typename Cond>
+struct std::hash<SVF::CondVar<Cond>>
+{
+    size_t operator()(const SVF::CondVar<Cond> &cv) const
+    {
+        std::hash<Cond> h;
+        return h(cv.get_cond());
+    }
+};
 
 #endif /* CONDVAR_H_ */

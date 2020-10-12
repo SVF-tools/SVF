@@ -706,8 +706,8 @@ void MHP::printInterleaving()
  */
 void ForkJoinAnalysis::collectSCEVInfo()
 {
-    typedef std::set<const Instruction*> CallInstSet;
-    typedef std::map<const Function*, CallInstSet > FunToFJSites;
+    typedef Set<const Instruction*> CallInstSet;
+    typedef Map<const Function*, CallInstSet > FunToFJSites;
     FunToFJSites funToFJSites;
 
     for(ThreadCallGraph::CallSiteSet::iterator it = tct->getThreadCallGraph()->forksitesBegin(),

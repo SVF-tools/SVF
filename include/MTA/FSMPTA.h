@@ -29,14 +29,14 @@ public:
     typedef PointerAnalysis::CallSiteSet CallSiteSet;
     typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
     typedef PointerAnalysis::FunctionSet FunctionSet;
-    typedef std::set<const SVFGNode*> SVFGNodeSet;
+    typedef Set<const SVFGNode*> SVFGNodeSet;
     typedef std::vector<const SVFGNode*> SVFGNodeVec;
     typedef NodeBS SVFGNodeIDSet;
-    typedef std::set<const Instruction*> InstSet;
+    typedef Set<const Instruction*> InstSet;
     typedef std::pair<NodeID,NodeID> NodeIDPair;
 
     typedef std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan> SVFGNodeLockSpanPair;
-    typedef std::map<SVFGNodeLockSpanPair, bool> PairToBoolMap;
+    typedef Map<SVFGNodeLockSpanPair, bool> PairToBoolMap;
     /// Constructor
     MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la)
     {
@@ -99,15 +99,15 @@ private:
     MHP* mhp;
     LockAnalysis* lockana;
 
-    std::set<NodeIDPair> recordedges;
-    std::map<NodeIDPair, PointsTo> edge2pts;
+    Set<NodeIDPair> recordedges;
+    Map<NodeIDPair, PointsTo> edge2pts;
 
 
-    std::map<const StmtSVFGNode*, SVFGNodeIDSet> prevset;
-    std::map<const StmtSVFGNode*, SVFGNodeIDSet> succset;
+    Map<const StmtSVFGNode*, SVFGNodeIDSet> prevset;
+    Map<const StmtSVFGNode*, SVFGNodeIDSet> succset;
 
-    std::map<const StmtSVFGNode*, bool> headmap;
-    std::map<const StmtSVFGNode*, bool> tailmap;
+    Map<const StmtSVFGNode*, bool> headmap;
+    Map<const StmtSVFGNode*, bool> tailmap;
 
     PairToBoolMap pairheadmap;
     PairToBoolMap pairtailmap;

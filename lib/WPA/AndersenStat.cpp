@@ -45,7 +45,7 @@ const char* AndersenStat::CollapseTime = "CollapseTime";
 /*!
  * Constructor
  */
-AndersenStat::AndersenStat(Andersen* p): PTAStat(p),pta(p)
+AndersenStat::AndersenStat(AndersenBase* p): PTAStat(p),pta(p)
 {
     _NumOfNullPtr = 0;
     _NumOfConstantPtr= 0;
@@ -61,13 +61,13 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
     _NumOfCycles = 0;
     _NumOfPWCCycles = 0;
     _NumOfNodesInCycles = 0;
-    DenseNodeSet repNodes;
+    NodeSet repNodes;
     repNodes.clear();
     for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
     {
         // sub nodes have been removed from the constraint graph, only rep nodes are left.
         NodeID repNode = consCG->sccRepNode(it->first);
-        NodeBS& subNodes = pta->sccSubNodes(repNode);
+        NodeBS& subNodes = consCG->sccSubNodes(repNode);
         NodeBS clone = subNodes;
         for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
         {

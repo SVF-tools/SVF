@@ -210,12 +210,12 @@ void PTACallGraph::getAllCallSitesInvokingCallee(const SVFFunction* callee, PTAC
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
-        for(PTACallGraphEdge::CallInstSet::iterator cit = (*it)->directCallsBegin(),
+        for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
                 ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
         {
             csSet.insert((*cit));
         }
-        for(PTACallGraphEdge::CallInstSet::iterator cit = (*it)->indirectCallsBegin(),
+        for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
                 ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             csSet.insert((*cit));
@@ -232,7 +232,7 @@ void PTACallGraph::getDirCallSitesInvokingCallee(const SVFFunction* callee, PTAC
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
-        for(PTACallGraphEdge::CallInstSet::iterator cit = (*it)->directCallsBegin(),
+        for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*it)->directCallsBegin(),
                 ecit = (*it)->directCallsEnd(); cit!=ecit; ++cit)
         {
             csSet.insert((*cit));
@@ -249,7 +249,7 @@ void PTACallGraph::getIndCallSitesInvokingCallee(const SVFFunction* callee, PTAC
     for(PTACallGraphNode::iterator it = callGraphNode->InEdgeBegin(), eit = callGraphNode->InEdgeEnd();
             it!=eit; ++it)
     {
-        for(PTACallGraphEdge::CallInstSet::iterator cit = (*it)->indirectCallsBegin(),
+        for(PTACallGraphEdge::CallInstSet::const_iterator cit = (*it)->indirectCallsBegin(),
                 ecit = (*it)->indirectCallsEnd(); cit!=ecit; ++cit)
         {
             csSet.insert((*cit));

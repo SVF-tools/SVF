@@ -314,13 +314,13 @@ bool MTAResultValidator::validateCxtThread()
         }
     }
 
-    std::set<int> visitedvthd;
+    Set<int> visitedvthd;
 
     for (NodeID i = 0; i < tct->getTCTNodeNum(); i++)
     {
         const CxtThread rthd = tct->getTCTNode(i)->getCxtThread();
         bool matched = false;
-        for (std::map<NodeID, CallStrCxt>::iterator j = vthdToCxt.begin(), ej = vthdToCxt.end(); j != ej; j++)
+        for (Map<NodeID, CallStrCxt>::iterator j = vthdToCxt.begin(), ej = vthdToCxt.end(); j != ej; j++)
         {
             NodeID vthdid = (*j).first;
             if (matchCxt(rthd.getContext(), vthdToCxt[vthdid]))
@@ -358,7 +358,7 @@ bool MTAResultValidator::validateCxtThread()
         if (PrintValidRes)
         {
             outs() << "\nValidate CxtThread: Some given CxtThreads cannot be found !!!\n";
-            for (std::map<NodeID, CallStrCxt>::iterator j = vthdToCxt.begin(), ej = vthdToCxt.end(); j != ej; j++)
+            for (Map<NodeID, CallStrCxt>::iterator j = vthdToCxt.begin(), ej = vthdToCxt.end(); j != ej; j++)
             {
                 NodeID vthdid = (*j).first;
                 if (visitedvthd.find(vthdid) == visitedvthd.end())
@@ -391,7 +391,7 @@ bool MTAResultValidator::validateTCT()
             }
         }
 
-        for (std::set<NodeID>::iterator j = rthdToChildren[i].begin(), ej = rthdToChildren[i].end(); j != ej; j++)
+        for (Set<NodeID>::iterator j = rthdToChildren[i].begin(), ej = rthdToChildren[i].end(); j != ej; j++)
         {
             NodeID gid = *j;
             if (!tct->hasGraphEdge(pnode, tct->getTCTNode(gid), TCTEdge::ThreadCreateEdge))
@@ -404,7 +404,7 @@ bool MTAResultValidator::validateTCT()
         {
             outs() << "Validate TCT: Wrong at TID " << rthdTovthd[i] << "\n";
             outs() << "Given children: \t";
-            for (std::set<NodeID>::iterator j = rthdToChildren[i].begin(), ej = rthdToChildren[i].end(); j != ej; j++)
+            for (Set<NodeID>::iterator j = rthdToChildren[i].begin(), ej = rthdToChildren[i].end(); j != ej; j++)
             {
                 NodeID gid = *j;
                 outs() << rthdTovthd[gid] << ", ";

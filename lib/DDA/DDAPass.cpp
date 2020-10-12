@@ -241,7 +241,7 @@ void DDAPass::collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg
 void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges)
 {
 
-    std::set<NodePair> insensitvefunPairs;
+    OrderedSet<NodePair> insensitvefunPairs;
 
     for (SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = svfg->begin(),eit = svfg->end(); it != eit; ++it)
     {
@@ -346,8 +346,8 @@ AliasResult DDAPass::alias(const Value* V1, const Value* V2)
  */
 void DDAPass::printQueryPTS()
 {
-    const NodeSet& candidates = _client->getCandidateQueries();
-    for (NodeSet::iterator it = candidates.begin(), eit = candidates.end(); it != eit; ++it)
+    const OrderedNodeSet& candidates = _client->getCandidateQueries();
+    for (OrderedNodeSet::const_iterator it = candidates.begin(), eit = candidates.end(); it != eit; ++it)
     {
         const PointsTo& pts = _pta->getPts(*it);
         _pta->dumpPts(*it,pts);

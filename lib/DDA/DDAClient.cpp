@@ -58,7 +58,7 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     collectCandidateQueries(pta->getPAG());
 
     u32_t count = 0;
-    for (NodeSet::iterator nIter = candidateQueries.begin();
+    for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
             nIter != candidateQueries.end(); ++nIter,++count)
     {
         PAGNode* node = pta->getPAG()->getPAGNode(*nIter);
@@ -78,7 +78,7 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
-NodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
+OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 {
     setPAG(p);
     for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
@@ -141,8 +141,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         if(ddaPts.count() >= anderPts.count() || ddaPts.empty())
             continue;
 
-        DenseSet<const SVFFunction*> ander_vfns;
-        DenseSet<const SVFFunction*> dda_vfns;
+        Set<const SVFFunction*> ander_vfns;
+        Set<const SVFFunction*> dda_vfns;
         ander->getVFnsFromPts(cbn,anderPts, ander_vfns);
         pta->getVFnsFromPts(cbn,ddaPts, dda_vfns);
 
@@ -176,7 +176,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
 
 /// Only collect function pointers as query candidates.
-NodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
+OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 {
     setPAG(pag);
     PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
