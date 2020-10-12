@@ -345,6 +345,12 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
                 Size_t num = at->getNumElements();
                 ls.addElemNumStridePair(std::make_pair(num, sz));
             }
+            else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+            {
+                // Handling struct here
+                Size_t sz = getTypeSizeInBytes(ST);
+                ls.addElemNumStridePair(std::make_pair(1, sz));
+            }
             else
                 assert(false && "what other types?");
         }
