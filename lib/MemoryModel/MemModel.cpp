@@ -395,98 +395,6 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
 }
 
 /*!
- * Collect array information
- */
-void LocSymTableInfo::collectArrayInfo(const llvm::ArrayType*)
-{
-    /*
-    StInfo *stinfo = new StInfo();
-    typeToFieldInfo[ty] = stinfo;
-
-    /// If this is an array type, calculate the outmost array
-    /// information and append them to the inner elements' type
-    /// information later.
-    u64_t out_num = ty->getNumElements();
-    const Type* elemTy = ty->getElementType();
-    u32_t out_stride = getTypeSizeInBytes(elemTy);
-
-    /// Array itself only has one field which is the inner most element
-    stinfo->addOffsetWithType(0, elemTy);
-
-    while (const ArrayType* aty = dyn_cast<ArrayType>(elemTy)) {
-        out_num *= aty->getNumElements();
-        elemTy = aty->getElementType();
-        out_stride = getTypeSizeInBytes(elemTy);
-    }
-
-    /// Array's flatten field infor is the same as its element's
-    /// flatten infor with an additional slot for array's element
-    /// number and stride pair.
-    StInfo* elemStInfo = getStructInfo(elemTy);
-    u32_t nfE = elemStInfo->getFlattenFieldInfoVec().size();
-    for (u32_t j = 0; j < nfE; j++) {
-        u32_t off = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenOffset();
-        const Type* fieldTy = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
-        FieldInfo::ElemNumStridePairVec pair = elemStInfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
-        /// append the additional number
-        pair.push_back(std::make_pair(out_num, out_stride));
-        FieldInfo field(off, fieldTy, pair);
-        stinfo->getFlattenFieldInfoVec().push_back(field);
-    }
-    */
-}
-
-
-/*
- * Recursively collect the memory layout information for a struct type
- */
-void LocSymTableInfo::collectStructInfo(const StructType*)
-{
-    /*
-    StInfo *stinfo = new StInfo();
-    typeToFieldInfo[ty] = stinfo;
-
-    const StructLayout *stTySL = getDataLayout(getModule().getMainLLVMModule())->getStructLayout( const_cast<StructType *>(ty) );
-
-    u32_t field_idx = 0;
-    for (StructType::element_iterator it = ty->element_begin(), ie =
-                ty->element_end(); it != ie; ++it, ++field_idx) {
-        const Type *et = *it;
-
-        // The offset is where this element will be placed in the struct.
-        // This offset is computed after alignment with the current struct
-        u64_t eOffsetInBytes = stTySL->getElementOffset(field_idx);
-
-        //The offset is where this element will be placed in the exp. struct.
-        /// FIXME: As the layout size is uint_64, here we assume
-        /// offset with uint_32 (Size_t) is large enough and will not cause overflow
-        stinfo->addOffsetWithType(static_cast<u32_t>(eOffsetInBytes), et);
-
-        StInfo* fieldStinfo = getStructInfo(et);
-        u32_t nfE = fieldStinfo->getFlattenFieldInfoVec().size();
-        //Copy ST's info, whose element 0 is the size of ST itself.
-        for (u32_t j = 0; j < nfE; j++) {
-            u32_t oft = eOffsetInBytes + fieldStinfo->getFlattenFieldInfoVec()[j].getFlattenOffset();
-            const Type* elemTy = fieldStinfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
-            FieldInfo::ElemNumStridePairVec pair = fieldStinfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
-            pair.push_back(std::make_pair(1, 0));
-            FieldInfo newField(oft, elemTy, pair);
-            stinfo->getFlattenFieldInfoVec().push_back(newField);
-        }
-    }
-
-    //	verifyStructSize(stinfo,stTySL->getSizeInBytes());
-
-    //Record the size of the complete struct and update max_struct.
-    if (stTySL->getSizeInBytes() > maxStSize) {
-        maxStruct = ty;
-        maxStSize = stTySL->getSizeInBytes();
-    }
-    */
-}
-
-
-/*!
  * Given LocationSet from a Gep Instruction, return a new LocationSet which matches
  * the field information of this ObjTypeInfo by considering memory layout
  */
@@ -588,6 +496,13 @@ void LocSymTableInfo::verifyStructSize(StInfo *stinfo, u32_t structSize)
     /// Please note this verify may not be complete as different machine has different alignment mechanism
     assert((structSize == lastOff + strideSize + lastSize) && "struct size not consistent");
 
+}
+
+/*!
+ * Get the LocationSet offset the SymbolTableInfo is interested in (field offset or byte offset)
+ */
+Size_t LocSymTableInfo::getLocationSetOffset(const LocationSet& ls) {
+    return ls.getByteOffset();
 }
 
 /*!

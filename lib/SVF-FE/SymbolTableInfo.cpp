@@ -414,6 +414,13 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     return LocationSet(offset);
 }
 
+/*!
+ * Get the LocationSet offset the SymbolTableInfo is interested in (field offset or byte offset)
+ */
+Size_t SymbolTableInfo::getLocationSetOffset(const LocationSet& ls) {
+    return ls.getOffset();
+}
+
 
 /*!
  * Invoke llvm passes to modify module

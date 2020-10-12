@@ -608,7 +608,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     NodeID base = getObjectNode(obj);
 
     // Base and first field are the same memory location.
-    if (FirstFieldEqBase && ls.getOffset() == 0) return base;
+    if (FirstFieldEqBase && SymbolTableInfo::Symbolnfo()->getLocationSetOffset(ls) == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
@@ -643,7 +643,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
                                             getNodeNumAfterPAGBuild() > StInfo::getMaxFieldLimit() ?
                                             getNodeNumAfterPAGBuild() : StInfo::getMaxFieldLimit()
                                         )));
-    NodeID gepId = (ls.getOffset() + 1) * gepMultiplier + base;
+    NodeID gepId = (SymbolTableInfo::Symbolnfo()->getLocationSetOffset(ls) + 1) * gepMultiplier + base;
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);

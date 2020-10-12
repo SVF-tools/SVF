@@ -420,6 +420,8 @@ public:
     void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
     virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
+    /// Get the LocationSet offset the SymbolTableInfo is interested in (field offset or byte offset)
+    virtual Size_t getLocationSetOffset(const LocationSet& ls);
 
     /// Debug method
     void printFlattenFields(const Type* type);
@@ -469,15 +471,11 @@ public:
     virtual bool computeGepOffset(const User *V, LocationSet& ls);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
     virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
+    /// Get the LocationSet offset the SymbolTableInfo is interested in (field offset or byte offset)
+    virtual Size_t getLocationSetOffset(const LocationSet& ls);
 
     /// Verify struct size construction
     void verifyStructSize(StInfo *stInfo, u32_t structSize);
-
-protected:
-    /// Collect the struct info
-    virtual void collectStructInfo(const StructType *T);
-    /// Collect the array info
-    virtual void collectArrayInfo(const ArrayType *T);
 };
 
 
