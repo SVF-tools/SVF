@@ -21,12 +21,12 @@ namespace SVF
 /// PointsToDS and PointsToDFDS. Hides points-to sets and union operations from users and hands
 /// out PointsToIDs.
 /// Points-to sets are interned, and union operations are lazy and hash-consed.
-template<typename Data>
+template <typename Data>
 class PersistentPointsToCache
 {
 public:
-    typedef DenseMap<PointsToID, Data> IDToPTSMap;
-    typedef DenseMap<Data, PointsToID> PTSToIDMap;
+    typedef Map<PointsToID, Data> IDToPTSMap;
+    typedef Map<Data, PointsToID> PTSToIDMap;
 
     static const PointsToID emptyPointsToId = 0;
 
@@ -38,7 +38,7 @@ public:
     PointsToID emplacePts(const Data &pts)
     {
         // Is it already in the cache?
-        typename PTSToIDMap::iterator foundId = ptsToId.find(pts);
+        typename PTSToIDMap::const_iterator foundId = ptsToId.find(pts);
         if (foundId != ptsToId.end()) return foundId->second;
 
         // Otherwise, insert it.
@@ -53,11 +53,11 @@ public:
     const Data &getActualPts(PointsToID id) const
     {
         // Check if the points-to set for ID has already been stored.
-        typename IDToPTSMap::iterator foundPts = idToPts.find(id);
+        typename IDToPTSMap::const_iterator foundPts = idToPts.find(id);
         if (foundPts != foundPts.end()) return foundPts;
 
         // Otherwise, may have lazily unioned, so let's actually union.
-        DenseMap<PointsToID, std::pair<PointsToID, PointsToID>>::iterator toUnion = willUnion.find(id);
+        Map<PointsToID, std::pair<PointsToID, PointsToID>>::const_iterator toUnion = willUnion.find(id);
         assert(toUnion != willUnion.end()
                && "PPTC::getActualPts: points-to set not stored, nor lazily unioned!");
         actuallyUnionPts(toUnion->first, toUnion->second);
@@ -70,7 +70,7 @@ public:
         std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(id1, id2);
 
         // Check if we have performed this union before.
-        DenseMap<std::pair<PointsToID, PointsToID>, PointsToID>::iterator foundResult = unionCache.find(desiredUnion);
+        Map<std::pair<PointsToID, PointsToID>, PointsToID>::const_iterator foundResult = unionCache.find(desiredUnion);
         if (foundResult != unionCache.end()) return foundResult->second;
 
         // Otherwise, perform the union lazily and cache it.
@@ -97,7 +97,7 @@ private:
 
         PointsToID unionId = 0;
         // Intern points-to set: check if actualUnion already exists.
-        typename PTSToIDMap::iterator foundId = ptsToId.find(actualUnion);
+        typename PTSToIDMap::const_iterator foundId = ptsToId.find(actualUnion);
         if (foundId != ptsToId)
         {
             unionId = *foundId;
@@ -134,10 +134,10 @@ private:
 
     // TODO: an unordered pair type may be better.
     /// Maps two IDs to their union. Keys must be sorted.
-    DenseMap<std::pair<PointsToID, PointsToID>, PointsToID> unionCache;
+    Map<std::pair<PointsToID, PointsToID>, PointsToID> unionCache;
     /// Maps a points-to set ID to a points-to set ID pair known to result in the
     /// key when unioned. For lazy unioning.
-    DenseMap<PointsToID, std::pair<PointsToID, PointsToID>> willUnion;
+    Map<PointsToID, std::pair<PointsToID, PointsToID>> willUnion;
 
     /// Used to generate new PointsToIDs. Any non-zero is valid.
     PointsToID idCounter;
