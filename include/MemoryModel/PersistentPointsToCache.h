@@ -49,22 +49,16 @@ public:
         return id;
     }
 
-    /// Returns the points-to set which id represents.
+    /// Returns the points-to set which id represents. id must be stored in the cache.
     const Data &getActualPts(PointsToID id) const
     {
         // Check if the points-to set for ID has already been stored.
         typename IDToPTSMap::const_iterator foundPts = idToPts.find(id);
-        if (foundPts != foundPts.end()) return foundPts;
-
-        // Otherwise, may have lazily unioned, so let's actually union.
-        Map<PointsToID, std::pair<PointsToID, PointsToID>>::const_iterator toUnion = willUnion.find(id);
-        assert(toUnion != willUnion.end()
-               && "PPTC::getActualPts: points-to set not stored, nor lazily unioned!");
-        actuallyUnionPts(toUnion->first, toUnion->second);
-        return idToPts.lookup(id);
+        assert(foundPts != idToPts.end() && "PPTC::getActualPts: points-to set not stored!");
+        return *foundPts;
     }
 
-    /// Lazily unions id1 and id2 and returns their union's ID.
+    /// Unions id1 and id2 and returns their union's ID.
     PointsToID unionPts(PointsToID id1, PointsToID id2)
     {
         std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(id1, id2);
@@ -73,22 +67,6 @@ public:
         Map<std::pair<PointsToID, PointsToID>, PointsToID>::const_iterator foundResult = unionCache.find(desiredUnion);
         if (foundResult != unionCache.end()) return foundResult->second;
 
-        // Otherwise, perform the union lazily and cache it.
-        PointsToID unionResult = newPointsToId();
-        unionCache[std::minmax(id1, id2)] = unionResult;
-        willUnion[unionResult] = std::minmax(id1, id2);
-
-        return unionResult;
-    }
-
-    // TODO: ref count API for garbage collection.
-
-private:
-    /// Eagerly unions id1 and id2 and returns their union's ID which can then
-    /// be found in idToPts. Does not check if the union has already been performed;
-    /// caller's should only call when they need the real union done.
-    PointsToID actuallyUnionPts(PointsToID id1, PointsToID id2)
-    {
         const Data &pts1 = getActualPts(id1);
         const Data &pts2 = getActualPts(id2);
 
@@ -98,10 +76,7 @@ private:
         PointsToID unionId = 0;
         // Intern points-to set: check if actualUnion already exists.
         typename PTSToIDMap::const_iterator foundId = ptsToId.find(actualUnion);
-        if (foundId != ptsToId)
-        {
-            unionId = *foundId;
-        }
+        if (foundId != ptsToId.end()) unionId = *foundId;
         else
         {
             unionId = newPointsToId();
@@ -111,12 +86,13 @@ private:
 
         // Cache the union, for hash-consing.
         unionCache[std::minmax(id1, id2)] = unionId;
-        // Updating willUnion is unnecessary since it will only be checked
-        // in the absence of an actual points-to set (i.e. when unioned lazily).
 
         return unionId;
     }
 
+    // TODO: ref count API for garbage collection.
+
+private:
     PointsToID newPointsToId(void)
     {
         ++idCounter;
@@ -135,9 +111,6 @@ private:
     // TODO: an unordered pair type may be better.
     /// Maps two IDs to their union. Keys must be sorted.
     Map<std::pair<PointsToID, PointsToID>, PointsToID> unionCache;
-    /// Maps a points-to set ID to a points-to set ID pair known to result in the
-    /// key when unioned. For lazy unioning.
-    Map<PointsToID, std::pair<PointsToID, PointsToID>> willUnion;
 
     /// Used to generate new PointsToIDs. Any non-zero is valid.
     PointsToID idCounter;
