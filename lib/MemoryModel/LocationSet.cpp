@@ -31,6 +31,7 @@
 
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
+#include "SVF-FE/SymbolTableInfo.h"
 
 using namespace SVF;
 
@@ -118,7 +119,7 @@ PointsTo LocationSet::computeAllLocations() const
 {
 
     PointsTo result;
-    result.set(getOffset());
+    result.set(SymbolTableInfo::Symbolnfo()->getLocationSetOffset(*this));
 
     if (isConstantOffset() == false)
     {
@@ -134,7 +135,7 @@ PointsTo LocationSet::computeAllLocations() const
         do
         {
             u32_t i = 0;
-            NodeID ofst = getOffset();
+            NodeID ofst = SymbolTableInfo::Symbolnfo()->getLocationSetOffset(*this);
             while (i < lhsVec.size())
             {
                 ofst += (lhsVec[i].second * indices[i]);
