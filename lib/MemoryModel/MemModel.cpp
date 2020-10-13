@@ -306,21 +306,13 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
 {
 
     assert(V);
-    int baseIndex = -1;
     int index = 0;
+
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi, ++index)
     {
+
         if(SVFUtil::isa<ConstantInt>(gi.getOperand()) == false)
-            baseIndex = index;
-    }
-
-    index = 0;
-    for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
-            gi != ge; ++gi, ++index)
-    {
-
-        if (index <= baseIndex)
         {
             /// variant offset
             // Handling pointer types
