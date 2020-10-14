@@ -44,8 +44,8 @@ class BVDataPTAImpl : public PointerAnalysis
 public:
     typedef PTData<NodeID, NodeID, PointsTo> PTDataTy;
     typedef MutablePTData<NodeID, NodeID, PointsTo> MutPTDataTy;
-    typedef DiffPTData<NodeID, NodeID, PointsTo, EdgeID> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeID, PointsTo, EdgeID> MutDiffPTDataTy;
+    typedef DiffPTData<NodeID, NodeID, PointsTo> DiffPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
     typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
     typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
