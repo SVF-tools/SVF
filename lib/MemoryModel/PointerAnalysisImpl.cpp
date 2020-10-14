@@ -41,7 +41,9 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
-        ptD = new MutDiffPTDataTy();
+        if (backingType == PTBackingType::Mutable) ptD = new MutDiffPTDataTy();
+        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDiffPTDataTy();
+        else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {

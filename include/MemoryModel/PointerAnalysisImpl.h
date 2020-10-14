@@ -52,6 +52,7 @@ public:
     typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
     typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
     typedef PersistentPTData<NodeID, NodeID, PointsTo> PersistentPTDataTy;
+    typedef PersistentDiffPTData<NodeID, NodeID, PointsTo> PersistentDiffPTDataTy;
 
     /// How the PTData used is implemented.
     enum PTBackingType

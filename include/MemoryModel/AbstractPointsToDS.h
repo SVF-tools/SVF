@@ -52,6 +52,7 @@ public:
         Versioned,
         MutVersioned,
         PersBase,
+        PersDiff,
     };
 
     PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
@@ -131,7 +132,9 @@ public:
     }
     static inline bool classof(const PTData<Key, Datum, Data>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::Diff || ptd->getPTDTY() == PTDataTy::MutDiff;
+        return ptd->getPTDTY() == PTDataTy::Diff
+               || ptd->getPTDTY() == PTDataTy::MutDiff
+               || ptd->getPTDTY() == PTDataTy::PersDiff;
     }
     ///@}
 };
