@@ -51,6 +51,7 @@ public:
         IncMutDataFlow,
         Versioned,
         MutVersioned,
+        PersBase,
     };
 
     PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }

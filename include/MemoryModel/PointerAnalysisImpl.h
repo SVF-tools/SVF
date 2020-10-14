@@ -51,6 +51,7 @@ public:
     typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
     typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
     typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
+    typedef PersistentPTData<NodeID, NodeID, PointsTo> PersistentPTDataTy;
 
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
