@@ -66,18 +66,6 @@ public:
     /// Option name corresponding to PTBackingType::Persistent.
     static const std::string PTBackingOptPersistent;
 
-    /// How the PTData used is implemented.
-    enum PTBackingType
-    {
-        Mutable,
-        Persistent,
-    };
-
-    /// Option name corresponding to PTBackingType::Mutable.
-    static const std::string PTBackingOptMutable;
-    /// Option name corresponding to PTBackingType::Persistent.
-    static const std::string PTBackingOptPersistent;
-
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
