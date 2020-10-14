@@ -17,9 +17,14 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
+const std::string BVDataPTAImpl::PTBackingOptMutable = "mutable";
+const std::string BVDataPTAImpl::PTBackingOptPersistent = "persistent";
+
 static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
                                        llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
+static llvm::cl::opt<std::string> PTBacking("pt-backing", llvm::cl::init(BVDataPTAImpl::PTBackingOptMutable),
+                                       llvm::cl::desc("Backing type for the points-to data structure"));
 
 /*!
  * Constructor
@@ -27,6 +32,11 @@ static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
 BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check)
 {
+    PTBackingType backingType;
+    if (PTBacking == PTBackingOptMutable) backingType = PTBackingType::Mutable;
+    else if (PTBacking == PTBackingOptPersistent) backingType = PTBackingType::Persistent;
+    else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unknown points-to backing type!");
+
     if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
