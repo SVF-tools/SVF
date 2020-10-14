@@ -67,6 +67,12 @@ public:
     {
         std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(id1, id2);
 
+        // Trivial cases.
+        // EMPTY_SET U x
+        if (desiredUnion.first == emptyPointsToId()) return id2;
+        // x U x
+        if (desiredUnion.first == desiredUnion.second) return id1;
+
         // Check if we have performed this union before.
         Map<std::pair<PointsToID, PointsToID>, PointsToID>::const_iterator foundResult = unionCache.find(desiredUnion);
         if (foundResult != unionCache.end()) return foundResult->second;
