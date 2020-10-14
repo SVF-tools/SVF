@@ -498,7 +498,7 @@ private:
         NodeID rep = sccRepNode(id);
         getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
     }
-    virtual inline PointsTo& getDiffPts(NodeID id)
+    virtual inline const PointsTo& getDiffPts(NodeID id)
     {
         NodeID rep = sccRepNode(id);
         return getDiffPTDataTy()->getDiffPts(rep);

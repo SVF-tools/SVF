@@ -104,7 +104,7 @@ public:
     virtual ~DiffPTData() { }
 
     /// Get diff points to.
-    virtual Data& getDiffPts(Key& var) = 0;
+    virtual const Data& getDiffPts(Key& var) = 0;
 
     /// Get propagated points to.
     virtual Data& getPropaPts(Key& var) = 0;

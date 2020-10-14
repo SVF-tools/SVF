@@ -211,9 +211,9 @@ public:
         mutPTData.dumpPTData();
     }
 
-    virtual inline Data &getDiffPts(Key &var) override
+    virtual inline const Data &getDiffPts(Key &var) override
     {
-        return diffPtsMap[var];
+        return getMutDiffPts(var);
     }
 
     virtual inline Data &getPropaPts(Key &var) override
@@ -224,7 +224,7 @@ public:
     virtual inline bool computeDiffPts(Key &var, const Data &all) override
     {
         /// Clear diff pts.
-        Data& diff = getDiffPts(var);
+        Data& diff = getMutDiffPts(var);
         diff.clear();
         /// Get all pts.
         Data& propa = getPropaPts(var);
@@ -257,6 +257,12 @@ public:
         return ptd->getPTDTY() == PTDataTy::MutDiff;
     }
     ///@}
+
+protected:
+    inline Data &getMutDiffPts(Key &var)
+    {
+        return diffPtsMap[var];
+    }
 
 private:
     /// Backing to implement the basic PTData methods. This allows us to avoid multiple-inheritance.
