@@ -84,6 +84,15 @@ public:
     PointsToID complementPts(PointsToID lhs, PointsToID rhs)
     {
         static const DataOp complementOp = [](const Data &lhs, const Data &rhs) { return lhs - rhs; };
+
+        // Trivial cases.
+        // x - x
+        if (lhs == rhs) return emptyPointsToId();
+        // x - EMPTY_SET
+        if (rhs == emptyPointsToId()) return lhs;
+        // EMPTY_SET - x
+        if (lhs == emptyPointsToId()) return emptyPointsToId();
+
         return opPts(lhs, rhs, complementOp, complementCache);
     }
 
@@ -91,6 +100,14 @@ public:
     PointsToID intersectPts(PointsToID lhs, PointsToID rhs)
     {
         static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs) { return lhs & rhs; };
+        std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
+
+        // Trivial cases.
+        // EMPTY_SET & x
+        if (operands.first == emptyPointsToId()) return emptyPointsToId();
+        // x & x
+        if (operands.first == operands.second) return operands.first;
+
         return opPts(lhs, rhs, intersectionOp, intersectionCache);
     }
 
