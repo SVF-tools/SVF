@@ -17,9 +17,14 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
+const std::string BVDataPTAImpl::PTBackingOptMutable = "mutable";
+const std::string BVDataPTAImpl::PTBackingOptPersistent = "persistent";
+
 static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
                                        llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
+static llvm::cl::opt<std::string> PTBacking("pt-backing", llvm::cl::init(BVDataPTAImpl::PTBackingOptMutable),
+                                       llvm::cl::desc("Backing type for the points-to data structure"));
 
 /*!
  * Constructor
