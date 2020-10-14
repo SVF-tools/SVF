@@ -92,7 +92,7 @@ protected:
 /// Abstract diff points-to data with cached information.
 /// This is an optimisation on top of the base points-to data structure.
 /// The points-to information is propagated incrementally only for the different parts.
-template <typename Key, typename Datum, typename Data, typename CacheKey>
+template <typename Key, typename Datum, typename Data>
 class DiffPTData : public PTData<Key, Datum, Data>
 {
 public:
@@ -121,15 +121,9 @@ public:
     /// Clear propagated points-to set of var.
     virtual void clearPropaPts(Key& var) = 0;
 
-    /// Get cached points-to
-    virtual Data& getCachePts(CacheKey& cache) = 0;
-
-    /// Add data to cached points-to set.
-    virtual void addCachePts(CacheKey& cache, Data& data) = 0;
-
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DiffPTData<Key, Datum, Data, CacheKey> *)
+    static inline bool classof(const DiffPTData<Key, Datum, Data> *)
     {
         return true;
     }

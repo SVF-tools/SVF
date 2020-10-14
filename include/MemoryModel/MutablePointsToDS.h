@@ -145,18 +145,16 @@ protected:
 };
 
 /// DiffPTData implemented with points-to sets which are updated continuously.
-/// CachePtsMap is an additional map which maintains cached points-to information.
-template <typename Key, typename Datum, typename Data, typename CacheKey>
-class MutableDiffPTData : public DiffPTData<Key, Datum, Data, CacheKey>
+template <typename Key, typename Datum, typename Data>
+class MutableDiffPTData : public DiffPTData<Key, Datum, Data>
 {
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
-    typedef DiffPTData<Key, Datum, Data, CacheKey> BaseDiffPTData;
+    typedef DiffPTData<Key, Datum, Data> BaseDiffPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
     typedef typename BasePTData::KeySet KeySet;
 
     typedef typename MutablePTData<Key, Datum, Data>::PtsMap PtsMap;
-    typedef typename MutablePTData<CacheKey, Datum, Data>::PtsMap CachePtsMap;
 
     /// Constructor
     MutableDiffPTData(PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(ty) { }
@@ -247,19 +245,9 @@ public:
         getPropaPts(var).clear();
     }
 
-    virtual inline Data& getCachePts(CacheKey &cache) override
-    {
-        return cacheMap[cache];
-    }
-
-    virtual inline void addCachePts(CacheKey &cache, Data &data) override
-    {
-        cacheMap[cache] |= data;
-    }
-
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableDiffPTData<Key, Datum, Data, CacheKey> *)
+    static inline bool classof(const MutableDiffPTData<Key, Datum, Data> *)
     {
         return true;
     }
@@ -277,8 +265,6 @@ private:
     PtsMap diffPtsMap;
     /// Points-to already propagated.
     PtsMap propaPtsMap;
-    /// Points-to processed at load/store edges.
-    CachePtsMap cacheMap;
 };
 
 template <typename Key, typename Datum, typename Data>
