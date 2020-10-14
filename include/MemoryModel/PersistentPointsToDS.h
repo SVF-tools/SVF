@@ -123,26 +123,6 @@ private:
         return changed;
     }
 
-    /*
-    inline bool addPts(Data &d, const Datum& e)
-    {
-        return d.test_and_set(e);
-    }
-    inline void addSingleRevPts(KeySet &revData, const Key& tgr)
-    {
-        if (this->rev) revData.insert(tgr);
-    }
-    inline void addRevPts(const Data &ptsData, const Key& tgr)
-    {
-        if (this->rev)
-        {
-            for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
-                addSingleRevPts(revPtsMap[*it], tgr);
-        }
-    }
-    */
-    ///@}
-
 protected:
     PersistentPointsToCache<Data> ptCache;
     KeyToIDMap ptsMap;
