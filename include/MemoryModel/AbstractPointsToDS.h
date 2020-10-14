@@ -106,9 +106,6 @@ public:
     /// Get diff points to.
     virtual const Data& getDiffPts(Key& var) = 0;
 
-    /// Get propagated points to.
-    virtual Data& getPropaPts(Key& var) = 0;
-
     /// Compute diff points to. Return TRUE if diff is not empty.
     /// 1. calculate diff: diff = all - propa.
     /// 2. update propagated pts: propa = all.

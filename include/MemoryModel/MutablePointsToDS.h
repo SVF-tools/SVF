@@ -216,11 +216,6 @@ public:
         return getMutDiffPts(var);
     }
 
-    virtual inline Data &getPropaPts(Key &var) override
-    {
-        return propaPtsMap[var];
-    }
-
     virtual inline bool computeDiffPts(Key &var, const Data &all) override
     {
         /// Clear diff pts.
@@ -262,6 +257,11 @@ protected:
     inline Data &getMutDiffPts(Key &var)
     {
         return diffPtsMap[var];
+    }
+
+    inline Data &getPropaPts(Key &var)
+    {
+        return propaPtsMap[var];
     }
 
 private:
