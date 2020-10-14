@@ -87,6 +87,13 @@ public:
         return opPts(lhs, rhs, complementOp, complementCache);
     }
 
+    /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
+    PointsToID intersectPts(PointsToID lhs, PointsToID rhs)
+    {
+        static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs) { return lhs & rhs; };
+        return opPts(lhs, rhs, intersectionOp, intersectionCache);
+    }
+
     // TODO: ref count API for garbage collection.
 
 private:
@@ -139,6 +146,8 @@ private:
     OpCache unionCache;
     /// Maps two IDs to their relative complement. Keys must be sorted.
     OpCache complementCache;
+    /// Maps two IDs to their intersection. Keys must be sorted.
+    OpCache intersectionCache;
 
     /// Used to generate new PointsToIDs. Any non-zero is valid.
     PointsToID idCounter;
