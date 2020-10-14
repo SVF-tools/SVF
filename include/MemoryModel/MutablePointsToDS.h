@@ -95,7 +95,7 @@ public:
 
     static inline bool classof(const PTData<Key, Datum, Data>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::MutBase || ptd->getPTDTY() == PTDataTy::MutDiff;
+        return ptd->getPTDTY() == PTDataTy::MutBase;
     }
     ///@}
 
