@@ -254,11 +254,13 @@ public:
     ///@}
 
 protected:
+    /// Get diff PTS that can be modified.
     inline Data &getMutDiffPts(Key &var)
     {
         return diffPtsMap[var];
     }
 
+    /// Get propagated points to.
     inline Data &getPropaPts(Key &var)
     {
         return propaPtsMap[var];
