@@ -77,7 +77,7 @@ public:
         // x U x
         if (desiredUnion.first == desiredUnion.second) return desiredUnion.first;
 
-        return opPts(lhs, rhs, unionOp, unionCache);
+        return opPts(lhs, rhs, unionOp, unionCache, true);
     }
 
     /// Relatively complements lhs and rhs (lhs \ rhs) and returns it's ID.
@@ -93,7 +93,7 @@ public:
         // EMPTY_SET - x
         if (lhs == emptyPointsToId()) return emptyPointsToId();
 
-        return opPts(lhs, rhs, complementOp, complementCache);
+        return opPts(lhs, rhs, complementOp, complementCache, false);
     }
 
     /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
@@ -108,7 +108,7 @@ public:
         // x & x
         if (operands.first == operands.second) return operands.first;
 
-        return opPts(lhs, rhs, intersectionOp, intersectionCache);
+        return opPts(lhs, rhs, intersectionOp, intersectionCache, true);
     }
 
     // TODO: ref count API for garbage collection.
@@ -122,9 +122,15 @@ private:
         return idCounter;
     }
 
-    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache)
+    /// Performs dataOp on lhs and rhs, checking the opCache first and updating it afterwards.
+    /// commutative indicates whether the operation in question is commutative or not.
+    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache, bool commutative)
     {
-        std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
+        std::pair<PointsToID, PointsToID> operands;
+        // If we're commutative, we want to always perform the same operation: x op y.
+        // Performing x op y sometimes and y op x other times is a waste of time.
+        if (commutative) operands = std::minmax(lhs, rhs);
+        else operands = std::make_pair(lhs, rhs);
 
         // Check if we have performed this operation
         OpCache::const_iterator foundResult = opCache.find(operands);
@@ -161,7 +167,7 @@ private:
 
     /// Maps two IDs to their union. Keys must be sorted.
     OpCache unionCache;
-    /// Maps two IDs to their relative complement. Keys must be sorted.
+    /// Maps two IDs to their relative complement.
     OpCache complementCache;
     /// Maps two IDs to their intersection. Keys must be sorted.
     OpCache intersectionCache;
