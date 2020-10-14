@@ -27,6 +27,9 @@ class PersistentPointsToCache
 public:
     typedef Map<PointsToID, Data> IDToPTSMap;
     typedef Map<Data, PointsToID> PTSToIDMap;
+    typedef std::function<Data(const Data &, const Data &)> DataOp;
+    // TODO: an unordered pair type may be better.
+    typedef Map<std::pair<PointsToID, PointsToID>, PointsToID> OpCache;
 
     static PointsToID emptyPointsToId(void) { return 0; };
 
@@ -62,74 +65,26 @@ public:
         return foundPts->second;
     }
 
-    /// Unions id1 and id2 and returns their union's ID.
-    PointsToID unionPts(PointsToID id1, PointsToID id2)
+    /// Unions lhs and rhs and returns their union's ID.
+    PointsToID unionPts(PointsToID lhs, PointsToID rhs)
     {
-        std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(id1, id2);
+        static const DataOp unionOp = [](const Data &lhs, const Data &rhs) { return lhs | rhs; };
+        std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(lhs, rhs);
 
         // Trivial cases.
         // EMPTY_SET U x
-        if (desiredUnion.first == emptyPointsToId()) return id2;
+        if (desiredUnion.first == emptyPointsToId()) return desiredUnion.second;
         // x U x
-        if (desiredUnion.first == desiredUnion.second) return id1;
+        if (desiredUnion.first == desiredUnion.second) return desiredUnion.first;
 
-        // Check if we have performed this union before.
-        Map<std::pair<PointsToID, PointsToID>, PointsToID>::const_iterator foundResult = unionCache.find(desiredUnion);
-        if (foundResult != unionCache.end()) return foundResult->second;
-
-        const Data &pts1 = getActualPts(id1);
-        const Data &pts2 = getActualPts(id2);
-
-        // TODO: may be faster to unravel | to sometimes avoid hashing a points-to set.
-        Data actualUnion = pts1 | pts2;
-
-        PointsToID unionId = 0;
-        // Intern points-to set: check if actualUnion already exists.
-        typename PTSToIDMap::const_iterator foundId = ptsToId.find(actualUnion);
-        if (foundId != ptsToId.end()) unionId = foundId->second;
-        else
-        {
-            unionId = newPointsToId();
-            idToPts[unionId] = actualUnion;
-            ptsToId[actualUnion] = unionId;
-        }
-
-        // Cache the union, for hash-consing.
-        unionCache[std::minmax(id1, id2)] = unionId;
-
-        return unionId;
+        return opPts(lhs, rhs, unionOp, unionCache);
     }
 
-    /// Relatively complements id1 and id2 (id1 \ id2) and returns it's ID.
-    // TODO: lots of repetition with unionPts: pull out to private "operator" method.
-    PointsToID complementPts(PointsToID id1, PointsToID id2)
+    /// Relatively complements lhs and rhs (lhs \ rhs) and returns it's ID.
+    PointsToID complementPts(PointsToID lhs, PointsToID rhs)
     {
-        std::pair<PointsToID, PointsToID> desiredComplement = std::minmax(id1, id2);
-
-        // Check if we have performed this complement before.
-        Map<std::pair<PointsToID, PointsToID>, PointsToID>::const_iterator foundResult = complementCache.find(desiredComplement);
-        if (foundResult != complementCache.end()) return foundResult->second;
-
-        const Data &pts1 = getActualPts(id1);
-        const Data &pts2 = getActualPts(id2);
-
-        Data actualComplement = pts1 - pts2;
-
-        PointsToID complementId = 0;
-        // Intern points-to set: check if actualComplement already exists.
-        typename PTSToIDMap::const_iterator foundId = ptsToId.find(actualComplement);
-        if (foundId != ptsToId.end()) complementId = foundId->second;
-        else
-        {
-            complementId = newPointsToId();
-            idToPts[complementId] = actualComplement;
-            ptsToId[actualComplement] = complementId;
-        }
-
-        // Cache the complement, for hash-consing.
-        complementCache[std::minmax(id1, id2)] = complementId;
-
-        return complementId;
+        static const DataOp complementOp = [](const Data &lhs, const Data &rhs) { return lhs - rhs; };
+        return opPts(lhs, rhs, complementOp, complementCache);
     }
 
     // TODO: ref count API for garbage collection.
@@ -143,6 +98,36 @@ private:
         return idCounter;
     }
 
+    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache)
+    {
+        std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
+
+        // Check if we have performed this operation
+        OpCache::const_iterator foundResult = opCache.find(operands);
+        if (foundResult != opCache.end()) return foundResult->second;
+
+        const Data &lhsPts = getActualPts(lhs);
+        const Data &rhsPts = getActualPts(rhs);
+
+        Data result = dataOp(lhsPts, rhsPts);
+
+        PointsToID resultId;
+        // Intern points-to set: check if actualResult already exists.
+        typename PTSToIDMap::const_iterator foundId = ptsToId.find(result);
+        if (foundId != ptsToId.end()) resultId = foundId->second;
+        else
+        {
+            resultId = newPointsToId();
+            idToPts[resultId] = result;
+            ptsToId[result] = resultId;
+        }
+
+        // Cache the complement, for hash-consing.
+        opCache[operands] = resultId;
+
+        return resultId;
+    }
+
 private:
     /// Maps points-to IDs to their corresponding points-to set.
     /// Reverse of idToPts.
@@ -150,12 +135,10 @@ private:
     /// Maps points-to sets to their corresponding ID.
     PTSToIDMap ptsToId;
 
-    // TODO: an unordered pair type may be better.
     /// Maps two IDs to their union. Keys must be sorted.
-    Map<std::pair<PointsToID, PointsToID>, PointsToID> unionCache;
-
+    OpCache unionCache;
     /// Maps two IDs to their relative complement. Keys must be sorted.
-    Map<std::pair<PointsToID, PointsToID>, PointsToID> complementCache;
+    OpCache complementCache;
 
     /// Used to generate new PointsToIDs. Any non-zero is valid.
     PointsToID idCounter;
