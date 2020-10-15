@@ -20,6 +20,8 @@ using namespace std;
 const std::string BVDataPTAImpl::PTBackingOptMutable = "mutable";
 const std::string BVDataPTAImpl::PTBackingOptPersistent = "persistent";
 
+PersistentPointsToCache<PointsTo> BVDataPTAImpl::ptCache = PersistentPointsToCache<PointsTo>(PointsTo());
+
 static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
                                        llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
@@ -42,7 +44,7 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
         if (backingType == PTBackingType::Mutable) ptD = new MutDiffPTDataTy();
-        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDiffPTDataTy();
+        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDiffPTDataTy(getPtCache());
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
@@ -52,7 +54,7 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
         else
         {
             if (backingType == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);
-        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDFPTDataTy(false);
+        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDFPTDataTy(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }

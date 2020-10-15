@@ -27,15 +27,10 @@ public:
     typedef Map<Datum, KeySet> RevPtsMap;
 
     /// Constructor
-    PersistentPTData(bool reversePT = true, PTDataTy ty = PTDataTy::PersBase)
-        : BasePTData(reversePT, ty), ptCache(Data()) { }
+    PersistentPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersBase)
+        : BasePTData(reversePT, ty), ptCache(cache) { }
 
     virtual ~PersistentPTData() { }
-
-    PersistentPointsToCache<Data> &getPtCache(void)
-    {
-        return ptCache;
-    }
 
     virtual inline void clear() override
     {
@@ -132,7 +127,7 @@ private:
     }
 
 protected:
-    PersistentPointsToCache<Data> ptCache;
+    PersistentPointsToCache<Data> &ptCache;
     KeyToIDMap ptsMap;
     RevPtsMap revPtsMap;
 };
@@ -152,8 +147,8 @@ public:
     typedef typename BasePersPTData::RevPtsMap RevPtsMap;
 
     /// Constructor
-    PersistentDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
-        : BaseDiffPTData(reversePT, ty), persPTData(reversePT) { }
+    PersistentDiffPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
+        : BaseDiffPTData(reversePT, ty), persPTData(cache, reversePT), ptCache(cache) { }
 
     virtual ~PersistentDiffPTData() { }
 
@@ -208,14 +203,11 @@ public:
     virtual inline const Data &getDiffPts(Key &var) override
     {
         PointsToID id = diffPtsMap[var];
-        return persPTData.getPtCache().getActualPts(id);
+        return ptCache.getActualPts(id);
     }
 
     virtual inline bool computeDiffPts(Key &var, const Data &all) override
     {
-        // Cache the cache.
-        PersistentPointsToCache<Data> &ptCache = persPTData.getPtCache();
-
         PointsToID propaId = propaPtsMap[var];
         PointsToID allId = ptCache.emplacePts(all);
         // Diff is made up of the entire points-to set minus what has been propagated.
@@ -234,12 +226,12 @@ public:
     {
         PointsToID dstId = propaPtsMap[dst];
         PointsToID srcId = propaPtsMap[src];
-        propaPtsMap[dst] = persPTData.getPtCache().intersectPts(dstId, srcId);
+        propaPtsMap[dst] = ptCache.intersectPts(dstId, srcId);
     }
 
     virtual inline void clearPropaPts(Key &var) override
     {
-        propaPtsMap[var] = persPTData.getPtCache().emptyPointsToId();
+        propaPtsMap[var] = ptCache.emptyPointsToId();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -256,6 +248,7 @@ public:
     ///@}
 
 private:
+    PersistentPointsToCache<Data> &ptCache;
     /// Backing to implement basic PTData methods. Allows us to avoid multiple inheritance.
     PersistentPTData<Key, Datum, Data> persPTData;
     /// Diff points-to to be propagated.
@@ -279,8 +272,8 @@ public:
     typedef typename BasePersPTData::KeyToIDMap KeyToIDMap;
     typedef Map<LocID, KeyToIDMap> DFKeyToIDMap;
 
-    PersistentDFPTData(bool reversePT = true, PTDataTy ty = PTDataTy::PersDataFlow)
-        : BaseDFPTData(reversePT, ty) { }
+    PersistentDFPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDataFlow)
+        : BaseDFPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
 
     virtual ~PersistentDFPTData() { }
 
@@ -359,13 +352,13 @@ public:
     virtual const Data& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfInPtsMap[loc][var];
-        return persPTData.getPtCache().getActualPts(id);
+        return ptCache.getActualPts(id);
     }
 
     virtual const Data& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PointsToID id = dfOutPtsMap[loc][var];
-        return persPTData.getPtCache().getActualPts(id);
+        return ptCache.getActualPts(id);
     }
 
     virtual bool updateDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
@@ -444,7 +437,7 @@ protected:
     inline bool unionPts(PointsToID &dst, PointsToID &src)
     {
         PointsToID oldDst = dst;
-        dst = persPTData.getPtCache().unionPts(dst, src);
+        dst = ptCache.unionPts(dst, src);
         return oldDst != dst;
     }
 
@@ -459,6 +452,8 @@ protected:
     }
 
 protected:
+    PersistentPointsToCache<Data> &ptCache;
+
     /// PTData for top-level pointers. We will also use its cache for address-taken pointers.
     PersistentPTData<Key, Datum, Data> persPTData;
 

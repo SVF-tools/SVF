@@ -67,6 +67,8 @@ public:
     /// Option name corresponding to PTBackingType::Persistent.
     static const std::string PTBackingOptPersistent;
 
+    static PersistentPointsToCache<PointsTo> ptCache;
+
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
@@ -74,6 +76,11 @@ public:
     virtual ~BVDataPTAImpl()
     {
         destroy();
+    }
+
+    static inline PersistentPointsToCache<PointsTo> &getPtCache(void)
+    {
+        return ptCache;
     }
 
     static inline bool classof(const PointerAnalysis *pta)
