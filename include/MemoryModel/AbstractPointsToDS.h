@@ -53,6 +53,7 @@ public:
         MutVersioned,
         PersBase,
         PersDiff,
+        PersDataFlow,
     };
 
     PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
@@ -208,7 +209,8 @@ public:
     {
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
-               || ptd->getPTDTY() == BasePTData::IncMutDataFlow;
+               || ptd->getPTDTY() == BasePTData::IncMutDataFlow
+               || ptd->getPTDTY() == BasePTData::PersDataFlow;
     }
     ///@}
 };
