@@ -77,7 +77,19 @@ public:
         // x U x
         if (operands.first == operands.second) return operands.first;
 
-        return opPts(lhs, rhs, unionOp, unionCache, true);
+        bool opPerformed;
+        PointsToID result = opPts(lhs, rhs, unionOp, unionCache, true, opPerformed);
+
+        if (opPerformed)
+        {
+            // if x U y = z, then x U z = z and y U z = z.
+            operands = std::minmax(lhs, result);
+            unionCache[operands] = result;
+            operands = std::minmax(rhs, result);
+            unionCache[operands] = result;
+        }
+
+        return result;
     }
 
     /// Relatively complements lhs and rhs (lhs \ rhs) and returns it's ID.
@@ -93,7 +105,8 @@ public:
         // EMPTY_SET - x
         if (lhs == emptyPointsToId()) return emptyPointsToId();
 
-        return opPts(lhs, rhs, complementOp, complementCache, false);
+        bool opPerformed;
+        return opPts(lhs, rhs, complementOp, complementCache, false, opPerformed);
     }
 
     /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
@@ -108,7 +121,8 @@ public:
         // x & x
         if (operands.first == operands.second) return operands.first;
 
-        return opPts(lhs, rhs, intersectionOp, intersectionCache, true);
+        bool opPerformed;
+        return opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
     }
 
     // TODO: ref count API for garbage collection.
@@ -124,7 +138,9 @@ private:
 
     /// Performs dataOp on lhs and rhs, checking the opCache first and updating it afterwards.
     /// commutative indicates whether the operation in question is commutative or not.
-    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache, bool commutative)
+    /// opPerformed is set to true if the operation was *not* cached and thus performed, false otherwise.
+    inline PointsToID opPts(PointsToID lhs, PointsToID rhs, const DataOp &dataOp, OpCache &opCache,
+                            bool commutative, bool &opPerformed)
     {
         std::pair<PointsToID, PointsToID> operands;
         // If we're commutative, we want to always perform the same operation: x op y.
@@ -135,6 +151,8 @@ private:
         // Check if we have performed this operation
         OpCache::const_iterator foundResult = opCache.find(operands);
         if (foundResult != opCache.end()) return foundResult->second;
+
+        opPerformed = true;
 
         const Data &lhsPts = getActualPts(lhs);
         const Data &rhsPts = getActualPts(rhs);
