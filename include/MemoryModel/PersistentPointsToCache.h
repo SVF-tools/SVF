@@ -69,13 +69,13 @@ public:
     PointsToID unionPts(PointsToID lhs, PointsToID rhs)
     {
         static const DataOp unionOp = [](const Data &lhs, const Data &rhs) { return lhs | rhs; };
-        std::pair<PointsToID, PointsToID> desiredUnion = std::minmax(lhs, rhs);
+        std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
 
         // Trivial cases.
         // EMPTY_SET U x
-        if (desiredUnion.first == emptyPointsToId()) return desiredUnion.second;
+        if (operands.first == emptyPointsToId()) return operands.second;
         // x U x
-        if (desiredUnion.first == desiredUnion.second) return desiredUnion.first;
+        if (operands.first == operands.second) return operands.first;
 
         return opPts(lhs, rhs, unionOp, unionCache, true);
     }
@@ -142,7 +142,7 @@ private:
         Data result = dataOp(lhsPts, rhsPts);
 
         PointsToID resultId;
-        // Intern points-to set: check if actualResult already exists.
+        // Intern points-to set: check if result already exists.
         typename PTSToIDMap::const_iterator foundId = ptsToId.find(result);
         if (foundId != ptsToId.end()) resultId = foundId->second;
         else
@@ -152,7 +152,7 @@ private:
             ptsToId[result] = resultId;
         }
 
-        // Cache the complement, for hash-consing.
+        // Cache the result, for hash-consing.
         opCache[operands] = resultId;
 
         return resultId;
