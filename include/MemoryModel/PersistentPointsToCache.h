@@ -12,6 +12,8 @@
 #ifndef PERSISTENT_POINTS_TO_H_
 #define PERSISTENT_POINTS_TO_H_
 
+#include <vector>
+
 #include "Util/SVFBasicTypes.h"
 
 namespace SVF
@@ -25,7 +27,6 @@ template <typename Data>
 class PersistentPointsToCache
 {
 public:
-    typedef Map<PointsToID, Data> IDToPTSMap;
     typedef Map<Data, PointsToID> PTSToIDMap;
     typedef std::function<Data(const Data &, const Data &)> DataOp;
     // TODO: an unordered pair type may be better.
@@ -36,7 +37,7 @@ public:
 public:
     PersistentPointsToCache(const Data &emptyData) : idCounter(1)
     {
-        idToPts[emptyPointsToId()] = emptyData;
+        idToPts.push_back(emptyData);
         ptsToId[emptyData] = emptyPointsToId();
     }
 
@@ -50,7 +51,7 @@ public:
 
         // Otherwise, insert it.
         PointsToID id = newPointsToId();
-        idToPts[id] = pts;
+        idToPts.push_back(pts);
         ptsToId[pts] = id;
 
         return id;
@@ -60,9 +61,8 @@ public:
     const Data &getActualPts(PointsToID id) const
     {
         // Check if the points-to set for ID has already been stored.
-        typename IDToPTSMap::const_iterator foundPts = idToPts.find(id);
-        assert(foundPts != idToPts.end() && "PPTC::getActualPts: points-to set not stored!");
-        return foundPts->second;
+        assert(idToPts.size() > id && "PPTC::getActualPts: points-to set not stored!");
+        return idToPts.at(id);
     }
 
     /// Unions lhs and rhs and returns their union's ID.
@@ -133,7 +133,7 @@ private:
         ++idCounter;
         // Make sure we don't overflow.
         assert(idCounter != emptyPointsToId() && "PPTC::newPointsToId: PointsToIDs exhausted! Try a larger type.");
-        return idCounter;
+        return idCounter++;
     }
 
     /// Performs dataOp on lhs and rhs, checking the opCache first and updating it afterwards.
@@ -166,7 +166,7 @@ private:
         else
         {
             resultId = newPointsToId();
-            idToPts[resultId] = result;
+            idToPts.push_back(result);
             ptsToId[result] = resultId;
         }
 
@@ -177,9 +177,11 @@ private:
     }
 
 private:
-    /// Maps points-to IDs to their corresponding points-to set.
+    /// Maps points-to IDs (indices) to their corresponding points-to set.
     /// Reverse of idToPts.
-    IDToPTSMap idToPts;
+    /// Elements are only added through push_back, so the number of elements
+    /// stored is the size of the vector.
+    std::vector<Data> idToPts;
     /// Maps points-to sets to their corresponding ID.
     PTSToIDMap ptsToId;
 
