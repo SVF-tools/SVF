@@ -130,7 +130,6 @@ public:
 private:
     PointsToID newPointsToId(void)
     {
-        ++idCounter;
         // Make sure we don't overflow.
         assert(idCounter != emptyPointsToId() && "PPTC::newPointsToId: PointsToIDs exhausted! Try a larger type.");
         return idCounter++;
