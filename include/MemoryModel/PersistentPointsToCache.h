@@ -77,7 +77,7 @@ public:
         // x U x
         if (operands.first == operands.second) return operands.first;
 
-        bool opPerformed;
+        bool opPerformed = false;
         PointsToID result = opPts(lhs, rhs, unionOp, unionCache, true, opPerformed);
 
         if (opPerformed)
@@ -105,7 +105,7 @@ public:
         // EMPTY_SET - x
         if (lhs == emptyPointsToId()) return emptyPointsToId();
 
-        bool opPerformed;
+        bool opPerformed = false;
         return opPts(lhs, rhs, complementOp, complementCache, false, opPerformed);
     }
 
@@ -121,7 +121,7 @@ public:
         // x & x
         if (operands.first == operands.second) return operands.first;
 
-        bool opPerformed;
+        bool opPerformed = false;
         return opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
     }
 
