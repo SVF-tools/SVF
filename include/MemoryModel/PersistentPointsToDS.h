@@ -46,6 +46,7 @@ public:
 
     virtual inline const KeySet& getRevPts(const Datum& datum) override
     {
+        assert(this->rev && "PersistentPTData::getRevPts: constructed without reverse PT support!");
         return revPtsMap[datum];
     }
 
@@ -117,10 +118,14 @@ private:
         if (changed)
         {
             ptsMap[dstKey] = newDstId;
+
             // Reverse points-to only needs to be handled when dst's
             // points-to set has changed (i.e., do it the first time only).
-            const Data &srcPts = ptCache.getActualPts(srcId);
-            for (const Datum &d : srcPts) revPtsMap[d].insert(dstKey);
+            if (this->rev)
+            {
+                const Data &srcPts = ptCache.getActualPts(srcId);
+                for (const Datum &d : srcPts) revPtsMap[d].insert(dstKey);
+            }
         }
 
         return changed;
