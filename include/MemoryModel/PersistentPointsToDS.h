@@ -468,5 +468,130 @@ protected:
     DFKeyToIDMap dfOutPtsMap;
 };
 
+/// VersionedPTData implemented with persistent points-to sets (Data).
+/// Implemented as a wrapper around two PersistentPTDatas: one for Keys, one
+/// for VersionedKeys.
+/// They are constructed with the same PersistentPointsToCache.
+template <typename Key, typename Datum, typename Data, typename VersionedKey>
+class PersistentVersionedPTData : public VersionedPTData<Key, Datum, Data, VersionedKey>
+{
+public:
+    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef VersionedPTData<Key, Datum, Data, VersionedKey> BaseVersionedPTData;
+    typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
+    typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
+
+    PersistentVersionedPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::MutVersioned)
+        : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT) { }
+
+    virtual ~PersistentVersionedPTData() { }
+
+    virtual inline void clear() override
+    {
+        tlPTData.clear();
+        atPTData.clear();
+    }
+
+    virtual const Data& getPts(const Key& vk) override
+    {
+        return tlPTData.getPts(vk);
+    }
+    virtual const Data& getPts(const VersionedKey& vk) override
+    {
+        return atPTData.getPts(vk);
+    }
+
+    virtual const KeySet& getRevPts(const Datum& datum) override
+    {
+        assert(this->rev && "PersistentVersionedPTData::getRevPts: constructed without reverse PT support!");
+        return tlPTData.getRevPts(datum);
+    }
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum)
+    {
+        assert(this->rev && "PersistentVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
+        return atPTData.getRevPts(datum);
+    }
+
+    virtual bool addPts(const Key& k, const Datum& element) override
+    {
+        return tlPTData.addPts(k, element);
+    }
+    virtual bool addPts(const VersionedKey& vk, const Datum& element) override
+    {
+        return atPTData.addPts(vk, element);
+    }
+
+    virtual bool unionPts(const Key& dstVar, const Key& srcVar) override
+    {
+        return tlPTData.unionPts(dstVar, srcVar);
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) override
+    {
+        return atPTData.unionPts(dstVar, srcVar);
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) override
+    {
+        return atPTData.unionPts(dstVar, tlPTData.getPts(srcVar));
+    }
+    virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) override
+    {
+        return tlPTData.unionPts(dstVar, atPTData.getPts(srcVar));
+    }
+    virtual bool unionPts(const Key& dstVar, const Data& srcData) override
+    {
+        return tlPTData.unionPts(dstVar, srcData);
+    }
+    virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) override
+    {
+        return atPTData.unionPts(dstVar, srcData);
+    }
+
+    virtual void clearPts(const Key& k, const Datum& element) override
+    {
+        tlPTData.clearPts(k, element);
+    }
+    virtual void clearPts(const VersionedKey& vk, const Datum& element) override
+    {
+        atPTData.clearPts(vk, element);
+    }
+
+    virtual void clearFullPts(const Key& k) override
+    {
+        tlPTData.clearFullPts(k);
+    }
+    virtual void clearFullPts(const VersionedKey& vk) override
+    {
+        atPTData.clearFullPts(vk);
+    }
+
+    virtual inline void dumpPTData() override
+    {
+        SVFUtil::outs() << "== Top-level points-to information\n";
+        tlPTData.dumpPTData();
+        SVFUtil::outs() << "== Address-taken points-to information\n";
+        atPTData.dumpPTData();
+    }
+
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    ///@{
+    static inline bool classof(const PersistentVersionedPTData<Key, Datum, Data, VersionedKey> *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    {
+        return ptd->getPTDTY() == PTDataTy::PersVersioned;
+    }
+    ///@}
+
+private:
+    /// PTData for Keys (top-level pointers, generally).
+    PersistentPTData<Key, Datum, Data> tlPTData;
+    /// PTData for VersionedKeys (address-taken objects, generally).
+    PersistentPTData<VersionedKey, Datum, Data> atPTData;
+};
+
 } // End namespace SVF
 #endif  // MUTABLE_POINTSTO_H_
