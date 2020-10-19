@@ -41,6 +41,24 @@ public:
         ptsToId[emptyData] = emptyPointsToId();
     }
 
+    /// Resets the cache removing everything except the emptyData it was initialised with.
+    void reset(void)
+    {
+        Data emptyData = idToPts[emptyPointsToId()];
+        idToPts.clear();
+        ptsToId.clear();
+
+        // Put the empty data back in.
+        ptsToId[emptyData] = emptyPointsToId();
+        idToPts[emptyPointsToId()] = emptyData;
+
+        unionCache.clear();
+        complementCache.clear();
+        intersectionCache.clear();
+
+        idCounter = 1;
+    }
+
     /// If pts is not in the PersistentPointsToCache, inserts it, assigns an ID, and returns
     /// that ID. If it is, then the ID is returned.
     PointsToID emplacePts(const Data &pts)
