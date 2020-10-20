@@ -368,7 +368,7 @@ public:
 
     virtual bool updateDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
-        return unionPts(getDFInPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
+        return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
     virtual bool updateAllDFInFromIn(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
@@ -378,7 +378,7 @@ public:
 
     virtual bool updateDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
     {
-        return unionPts(getDFInPtIdRef(dstLoc, dstVar), getDFOutPtIdRef(srcLoc, srcVar));
+        return unionPtsThroughIds(getDFInPtIdRef(dstLoc, dstVar), getDFOutPtIdRef(srcLoc, srcVar));
     }
 
     virtual bool updateAllDFInFromOut(LocID srcLoc, const Key &srcVar, LocID dstLoc, const Key &dstVar) override
@@ -388,7 +388,7 @@ public:
 
     virtual bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
-        return unionPts(getDFOutPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
+        return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), getDFInPtIdRef(srcLoc, srcVar));
     }
 
     virtual bool updateAllDFOutFromIn(LocID loc, const Key &singleton, bool strongUpdates) override
@@ -417,12 +417,12 @@ public:
     /// Update points-to set of top-level pointers with IN[srcLoc:srcVar].
     virtual bool updateTLVPts(LocID srcLoc, const Key &srcVar, const Key &dstVar) override
     {
-        return unionPts(persPTData.ptsMap[dstVar], getDFInPtIdRef(srcLoc, srcVar));
+        return unionPtsThroughIds(persPTData.ptsMap[dstVar], getDFInPtIdRef(srcLoc, srcVar));
     }
 
     virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
-        return unionPts(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
+        return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -434,12 +434,13 @@ public:
 
     static inline bool classof(const PTData<Key, Datum, Data>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::PersDataFlow;
+        return ptd->getPTDTY() == PTDataTy::PersDataFlow
+               || ptd->getPTDTY() == PTDataTy::IncPersDataFlow;
     }
     ///@}
 
 protected:
-    inline bool unionPts(PointsToID &dst, PointsToID &src)
+    inline bool unionPtsThroughIds(PointsToID &dst, PointsToID &src)
     {
         PointsToID oldDst = dst;
         dst = ptCache.unionPts(dst, src);
