@@ -12,12 +12,15 @@ namespace SVF
 
 template <typename Key, typename Datum, typename Data>
 class PersistentDFPTData;
+template <typename Key, typename Datum, typename Data>
+class IncPersistentDFPTData;
 
 /// PTData backed by a PersistentPointsToCache.
 template <typename Key, typename Datum, typename Data>
 class PersistentPTData : public PTData<Key, Datum, Data>
 {
     friend class PersistentDFPTData<Key, Datum, Data>;
+    friend class IncPersistentDFPTData<Key, Datum, Data>;
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
@@ -467,6 +470,222 @@ protected:
     DFKeyToIDMap dfInPtsMap;
     /// Address-taken points-to sets in OUT-sets.
     DFKeyToIDMap dfOutPtsMap;
+};
+
+/// Incremental version of the persistent data-flow points-to data structure.
+template <typename Key, typename Datum, typename Data>
+class IncPersistentDFPTData : public PersistentDFPTData<Key, Datum, Data>
+{
+public:
+    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PersistentPTData<Key, Datum, Data> BasePersPTData;
+    typedef DFPTData<Key, Datum, Data> BaseDFPTData;
+    typedef PersistentDFPTData<Key, Datum, Data> BasePersDFPTData;
+    typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
+
+    typedef typename BaseDFPTData::LocID LocID;
+    typedef Map<LocID, KeySet> UpdatedVarMap;
+
+public:
+    /// Constructor
+    IncPersistentDFPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = BasePTData::IncPersDataFlow)
+        : BasePersDFPTData(cache, reversePT, ty) { }
+
+    virtual ~IncPersistentDFPTData() { }
+
+    virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (varHasNewDFInPts(srcLoc, srcVar)
+            && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
+        {
+            setVarDFInSetUpdated(dstLoc, dstVar);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (varHasNewDFOutPts(srcLoc, srcVar)
+            && this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
+        {
+            setVarDFInSetUpdated(dstLoc, dstVar);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateDFOutFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (varHasNewDFInPts(srcLoc, srcVar))
+        {
+            removeVarFromDFInUpdatedSet(srcLoc, srcVar);
+            if (this->unionPtsThroughIds(this->getDFOutPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
+            {
+                setVarDFOutSetUpdated(dstLoc, dstVar);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateAllDFInFromOut(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFOutPtIdRef(srcLoc, srcVar)))
+        {
+            setVarDFInSetUpdated(dstLoc, dstVar);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateAllDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (this->unionPtsThroughIds(this->getDFInPtIdRef(dstLoc, dstVar), this->getDFInPtIdRef(srcLoc, srcVar)))
+        {
+            setVarDFInSetUpdated(dstLoc, dstVar);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateAllDFOutFromIn(LocID loc, const Key& singleton, bool strongUpdates) override
+    {
+        bool changed = false;
+        if (this->hasDFInSet(loc))
+        {
+            /// Only variables which have a new (IN) pts need to be updated.
+            const KeySet &vars = getDFInUpdatedVar(loc);
+            for (const Key &var : vars)
+            {
+                /// Enable strong updates if it is required to do so
+                if (strongUpdates && var == singleton) continue;
+                if (updateDFOutFromIn(loc, var, loc, var)) changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    virtual inline bool updateTLVPts(LocID srcLoc, const Key& srcVar, const Key& dstVar) override
+    {
+        if (varHasNewDFInPts(srcLoc, srcVar))
+        {
+            removeVarFromDFInUpdatedSet(srcLoc, srcVar);
+            return this->unionPtsThroughIds(this->persPTData.ptsMap[dstVar], this->getDFInPtIdRef(srcLoc, srcVar));
+        }
+
+        return false;
+    }
+
+    virtual inline bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
+    {
+        if (this->unionPtsThroughIds(this->getDFOutPtIdRef(dstLoc, dstVar), this->persPTData.ptsMap[srcVar]))
+        {
+            setVarDFOutSetUpdated(dstLoc, dstVar);
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual inline void clearAllDFOutUpdatedVar(LocID loc) override
+    {
+        if (this->hasDFOutSet(loc))
+        {
+            const KeySet &vars = getDFOutUpdatedVar(loc);
+            for (const Key &var : vars)
+            {
+                removeVarFromDFOutUpdatedSet(loc, var);
+            }
+        }
+    }
+
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    ///@{
+    static inline bool classof(const IncPersistentDFPTData<Key, Datum, Data> *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    {
+        return ptd->getPTDTY() == BasePTData::IncPersDataFlow;
+    }
+    ///@}
+
+private:
+
+    /// Handle address-taken variables whose IN pts changed
+    //@{
+    /// Add var into loc's IN updated set. Called when var's pts in loc's IN set is changed.
+    inline void setVarDFInSetUpdated(LocID loc, const Key& var)
+    {
+        inUpdatedVarMap[loc].insert(var);
+    }
+
+    /// Remove var from loc's IN updated set.
+    inline void removeVarFromDFInUpdatedSet(LocID loc, const Key& var)
+    {
+        typename UpdatedVarMap::iterator it = inUpdatedVarMap.find(loc);
+        if (it != inUpdatedVarMap.end()) it->second.erase(var);
+    }
+
+    /// Return TRUE if var has a new pts in loc's IN set
+    inline bool varHasNewDFInPts(LocID loc, const Key& var)
+    {
+        typename UpdatedVarMap::iterator it = inUpdatedVarMap.find(loc);
+        if (it != inUpdatedVarMap.end()) return it->second.find(var) != it->second.end();
+        return false;
+    }
+
+    /// Get all variables which have new pts informationin loc's IN set
+    inline const KeySet& getDFInUpdatedVar(LocID loc)
+    {
+        return inUpdatedVarMap[loc];
+    }
+    ///@}
+
+    /// Handle address-taken variables whose OUT pts changed
+    ///@{
+    /// Add var into loc's OUT updated set. Called when var's pts in loc's OUT set changed
+    inline void setVarDFOutSetUpdated(LocID loc, const Key& var)
+    {
+        outUpdatedVarMap[loc].insert(var);
+    }
+
+    /// Remove var from loc's OUT updated set.
+    inline void removeVarFromDFOutUpdatedSet(LocID loc, const Key& var)
+    {
+        typename UpdatedVarMap::iterator it = outUpdatedVarMap.find(loc);
+        if (it != outUpdatedVarMap.end()) it->second.erase(var);
+    }
+
+    /// Return TRUE if var has a new pts in loc's OUT set.
+    inline bool varHasNewDFOutPts(LocID loc, const Key& var)
+    {
+        typename UpdatedVarMap::iterator it = outUpdatedVarMap.find(loc);
+        if (it != outUpdatedVarMap.end()) return it->second.find(var) != it->second.end();
+        return false;
+    }
+
+    /// Get all variables which have new pts info in loc's OUT set
+    inline const KeySet& getDFOutUpdatedVar(LocID loc)
+    {
+        return outUpdatedVarMap[loc];
+    }
+    ///@}
+
+
+private:
+    UpdatedVarMap outUpdatedVarMap;
+    UpdatedVarMap inUpdatedVarMap;
 };
 
 /// VersionedPTData implemented with persistent points-to sets (Data).

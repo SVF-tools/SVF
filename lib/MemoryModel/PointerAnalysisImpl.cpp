@@ -50,7 +50,9 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
         if (INCDFPTData)
-            ptD = new IncMutDFPTDataTy(false);
+            if (backingType == PTBackingType::Mutable) ptD = new IncMutDFPTDataTy(false);
+            else if (backingType == PTBackingType::Persistent) ptD = new IncPersistentDFPTDataTy(getPtCache(), false);
+            else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         else
         {
             if (backingType == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);

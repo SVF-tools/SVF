@@ -54,6 +54,7 @@ public:
     typedef PersistentPTData<NodeID, NodeID, PointsTo> PersistentPTDataTy;
     typedef PersistentDiffPTData<NodeID, NodeID, PointsTo> PersistentDiffPTDataTy;
     typedef PersistentDFPTData<NodeID, NodeID, PointsTo> PersistentDFPTDataTy;
+    typedef IncPersistentDFPTData<NodeID, NodeID, PointsTo> IncPersistentDFPTDataTy;
     typedef PersistentVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> PersistentVersionedPTDataTy;
 
     /// How the PTData used is implemented.

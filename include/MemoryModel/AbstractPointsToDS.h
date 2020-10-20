@@ -54,6 +54,7 @@ public:
         PersBase,
         PersDiff,
         PersDataFlow,
+        IncPersDataFlow,
         PersVersioned,
     };
 
@@ -211,7 +212,8 @@ public:
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
                || ptd->getPTDTY() == BasePTData::IncMutDataFlow
-               || ptd->getPTDTY() == BasePTData::PersDataFlow;
+               || ptd->getPTDTY() == BasePTData::PersDataFlow
+               || ptd->getPTDTY() == BasePTData::IncPersDataFlow;
     }
     ///@}
 };
