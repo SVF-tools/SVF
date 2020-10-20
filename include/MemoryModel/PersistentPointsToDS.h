@@ -482,7 +482,7 @@ public:
     typedef typename BasePTData::KeySet KeySet;
     typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
 
-    PersistentVersionedPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::MutVersioned)
+    PersistentVersionedPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersVersioned)
         : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT) { }
 
     virtual ~PersistentVersionedPTData() { }
