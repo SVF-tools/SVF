@@ -14,7 +14,7 @@
 ///                 MutableDiffPTData        MutableDFPTData    MutableVersionedPTData
 ///                                                ^
 ///                                                |
-///                                        IncMutableDFPTData
+///                                        MutableIncDFPTData
 
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
@@ -48,13 +48,13 @@ public:
         MutDiff,
         DataFlow,
         MutDataFlow,
-        IncMutDataFlow,
+        MutIncDataFlow,
         Versioned,
         MutVersioned,
         PersBase,
         PersDiff,
         PersDataFlow,
-        IncPersDataFlow,
+        PersIncDataFlow,
         PersVersioned,
     };
 
@@ -211,9 +211,9 @@ public:
     {
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
-               || ptd->getPTDTY() == BasePTData::IncMutDataFlow
+               || ptd->getPTDTY() == BasePTData::MutIncDataFlow
                || ptd->getPTDTY() == BasePTData::PersDataFlow
-               || ptd->getPTDTY() == BasePTData::IncPersDataFlow;
+               || ptd->getPTDTY() == BasePTData::PersIncDataFlow;
     }
     ///@}
 };

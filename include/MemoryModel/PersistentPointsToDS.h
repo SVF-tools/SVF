@@ -13,14 +13,14 @@ namespace SVF
 template <typename Key, typename Datum, typename Data>
 class PersistentDFPTData;
 template <typename Key, typename Datum, typename Data>
-class IncPersistentDFPTData;
+class PersistentIncDFPTData;
 
 /// PTData backed by a PersistentPointsToCache.
 template <typename Key, typename Datum, typename Data>
 class PersistentPTData : public PTData<Key, Datum, Data>
 {
     friend class PersistentDFPTData<Key, Datum, Data>;
-    friend class IncPersistentDFPTData<Key, Datum, Data>;
+    friend class PersistentIncDFPTData<Key, Datum, Data>;
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
@@ -438,7 +438,7 @@ public:
     static inline bool classof(const PTData<Key, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::PersDataFlow
-               || ptd->getPTDTY() == PTDataTy::IncPersDataFlow;
+               || ptd->getPTDTY() == PTDataTy::PersIncDataFlow;
     }
     ///@}
 
@@ -474,7 +474,7 @@ protected:
 
 /// Incremental version of the persistent data-flow points-to data structure.
 template <typename Key, typename Datum, typename Data>
-class IncPersistentDFPTData : public PersistentDFPTData<Key, Datum, Data>
+class PersistentIncDFPTData : public PersistentDFPTData<Key, Datum, Data>
 {
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
@@ -489,10 +489,10 @@ public:
 
 public:
     /// Constructor
-    IncPersistentDFPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = BasePTData::IncPersDataFlow)
+    PersistentIncDFPTData(PersistentPointsToCache<Data> &cache, bool reversePT = true, PTDataTy ty = BasePTData::PersIncDataFlow)
         : BasePersDFPTData(cache, reversePT, ty) { }
 
-    virtual ~IncPersistentDFPTData() { }
+    virtual ~PersistentIncDFPTData() { }
 
     virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
@@ -609,14 +609,14 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const IncPersistentDFPTData<Key, Datum, Data> *)
+    static inline bool classof(const PersistentIncDFPTData<Key, Datum, Data> *)
     {
         return true;
     }
 
     static inline bool classof(const PTData<Key, Datum, Data>* ptd)
     {
-        return ptd->getPTDTY() == BasePTData::IncPersDataFlow;
+        return ptd->getPTDTY() == BasePTData::PersIncDataFlow;
     }
     ///@}
 

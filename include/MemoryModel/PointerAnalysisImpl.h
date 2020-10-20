@@ -48,14 +48,14 @@ public:
     typedef MutableDiffPTData<NodeID, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
     typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
-    typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
+    typedef MutableIncDFPTData<NodeID, NodeID, PointsTo> MutIncDFPTDataTy;
     typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
     typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
-    typedef PersistentPTData<NodeID, NodeID, PointsTo> PersistentPTDataTy;
-    typedef PersistentDiffPTData<NodeID, NodeID, PointsTo> PersistentDiffPTDataTy;
-    typedef PersistentDFPTData<NodeID, NodeID, PointsTo> PersistentDFPTDataTy;
-    typedef IncPersistentDFPTData<NodeID, NodeID, PointsTo> IncPersistentDFPTDataTy;
-    typedef PersistentVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> PersistentVersionedPTDataTy;
+    typedef PersistentPTData<NodeID, NodeID, PointsTo> PersPTDataTy;
+    typedef PersistentDiffPTData<NodeID, NodeID, PointsTo> PersDiffPTDataTy;
+    typedef PersistentDFPTData<NodeID, NodeID, PointsTo> PersDFPTDataTy;
+    typedef PersistentIncDFPTData<NodeID, NodeID, PointsTo> PersIncDFPTDataTy;
+    typedef PersistentVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> PersVersionedPTDataTy;
 
     /// How the PTData used is implemented.
     enum PTBackingType

@@ -44,26 +44,26 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
         if (backingType == PTBackingType::Mutable) ptD = new MutDiffPTDataTy();
-        else if (backingType == PTBackingType::Persistent) ptD = new PersistentDiffPTDataTy(getPtCache());
+        else if (backingType == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache());
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
         if (INCDFPTData)
-            if (backingType == PTBackingType::Mutable) ptD = new IncMutDFPTDataTy(false);
-            else if (backingType == PTBackingType::Persistent) ptD = new IncPersistentDFPTDataTy(getPtCache(), false);
+            if (backingType == PTBackingType::Mutable) ptD = new MutIncDFPTDataTy(false);
+            else if (backingType == PTBackingType::Persistent) ptD = new PersIncDFPTDataTy(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         else
         {
             if (backingType == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);
-            else if (backingType == PTBackingType::Persistent) ptD = new PersistentDFPTDataTy(getPtCache(), false);
+            else if (backingType == PTBackingType::Persistent) ptD = new PersDFPTDataTy(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }
     else if (type == VFS_WPA)
     {
         if (backingType == PTBackingType::Mutable) ptD = new MutVersionedPTDataTy(false);
-        else if (backingType == PTBackingType::Persistent) ptD = new PersistentVersionedPTDataTy(getPtCache(), false);
+        else if (backingType == PTBackingType::Persistent) ptD = new PersVersionedPTDataTy(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else
