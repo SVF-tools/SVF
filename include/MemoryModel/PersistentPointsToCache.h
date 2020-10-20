@@ -50,7 +50,7 @@ public:
 
         // Put the empty data back in.
         ptsToId[emptyData] = emptyPointsToId();
-        idToPts[emptyPointsToId()] = emptyData;
+        idToPts.push_back(emptyData);
 
         unionCache.clear();
         complementCache.clear();
