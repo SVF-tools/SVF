@@ -561,7 +561,7 @@ public:
         if (this->hasDFInSet(loc))
         {
             /// Only variables which have a new (IN) pts need to be updated.
-            const KeySet &vars = getDFInUpdatedVar(loc);
+            const KeySet vars = getDFInUpdatedVar(loc);
             for (const Key &var : vars)
             {
                 /// Enable strong updates if it is required to do so
@@ -599,7 +599,7 @@ public:
     {
         if (this->hasDFOutSet(loc))
         {
-            const KeySet &vars = getDFOutUpdatedVar(loc);
+            const KeySet vars = getDFOutUpdatedVar(loc);
             for (const Key &var : vars)
             {
                 removeVarFromDFOutUpdatedSet(loc, var);
