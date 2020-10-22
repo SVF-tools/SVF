@@ -37,19 +37,20 @@ public:
 public:
     PersistentPointsToCache(const Data &emptyData) : idCounter(1)
     {
-        idToPts.push_back(emptyData);
+        idToPts.push_back(new Data(emptyData));
         ptsToId[emptyData] = emptyPointsToId();
     }
 
     /// Resets the cache removing everything except the emptyData it was initialised with.
     void reset(void)
     {
-        Data emptyData = idToPts[emptyPointsToId()];
+        const Data *emptyData = idToPts[emptyPointsToId()];
+        for (const Data *d : idToPts) free(d);
         idToPts.clear();
         ptsToId.clear();
 
         // Put the empty data back in.
-        ptsToId[emptyData] = emptyPointsToId();
+        ptsToId[*emptyData] = emptyPointsToId();
         idToPts.push_back(emptyData);
 
         unionCache.clear();
@@ -69,7 +70,7 @@ public:
 
         // Otherwise, insert it.
         PointsToID id = newPointsToId();
-        idToPts.push_back(pts);
+        idToPts.push_back(new Data(pts));
         ptsToId[pts] = id;
 
         return id;
@@ -80,7 +81,7 @@ public:
     {
         // Check if the points-to set for ID has already been stored.
         assert(idToPts.size() > id && "PPTC::getActualPts: points-to set not stored!");
-        return idToPts.at(id);
+        return *idToPts.at(id);
     }
 
     /// Unions lhs and rhs and returns their union's ID.
@@ -183,7 +184,7 @@ private:
         else
         {
             resultId = newPointsToId();
-            idToPts.push_back(result);
+            idToPts.push_back(new Data(result));
             ptsToId[result] = resultId;
         }
 
@@ -198,7 +199,7 @@ private:
     /// Reverse of idToPts.
     /// Elements are only added through push_back, so the number of elements
     /// stored is the size of the vector.
-    std::vector<Data> idToPts;
+    std::vector<const Data *> idToPts;
     /// Maps points-to sets to their corresponding ID.
     PTSToIDMap ptsToId;
 
