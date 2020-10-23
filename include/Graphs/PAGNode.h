@@ -474,6 +474,7 @@ public:
     GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
         ObjPN(mem->getRefVal(), i, mem, ty), ls(l)
     {
+        base = mem->getSymId();
     }
 
     /// offset of the mem object
