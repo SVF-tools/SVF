@@ -13,8 +13,11 @@
 
 using namespace SVF;
 
+const Version VersionedFlowSensitive::invalidVersion = 0;
+
 std::pair<NodeID, Version> VersionedFlowSensitive::atKey(NodeID var, Version version)
 {
+    assert(version != invalidVersion && "VersionedFlowSensitive::atKey: trying to use an invalid version!");
     return std::make_pair(version, var);
 }
 
@@ -177,7 +180,9 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
             consumel[o] = v;
             // At non-stores, consume == yield.
-            if (!isStore) yieldl[o] = v;
+            if (!isStore) {
+                yieldl[o] = v;
+            }
         }
     }
 
@@ -268,10 +273,13 @@ void VersionedFlowSensitive::determineReliance(void)
             ObjToVersionMap &yieldl = yield[l];
             for (NodeID o : ie->getPointsTo())
             {
-                if (!hasVersion(l, o, YIELD)) continue;
                 // Given l --o--> lp, c(o) at lp relies on y(o) at l.
                 NodeID lp = ie->getDstNode()->getId();
+
+                if (!hasVersion(l, o, YIELD)) continue;
                 Version &y = yieldl[o];
+
+                if (!hasVersion(lp, o, CONSUME)) continue;
                 Version &cp = consume[lp][o];
                 if (cp != y)
                 {
@@ -350,11 +358,11 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
             // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
             for (NodeID o : ept)
             {
-                // Nothing to propagate.
-                if (yield[src].find(o) == yield[src].end()) continue;
-
+                if (!hasVersion(src, o, YIELD)) continue;
                 Version &srcY = yield[src][o];
+                if (!hasVersion(dst, o, CONSUME)) continue;
                 Version &dstC = consume[dst][o];
+
                 versionReliance[o][srcY].insert(dstC);
                 propagateVersion(o, srcY);
             }
@@ -380,7 +388,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
     {
         if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-        if (vPtD->unionPts(p, atKey(o, consume[l][o])))
+        if (hasVersion(l, o, CONSUME) && vPtD->unionPts(p, atKey(o, consume[l][o])))
         {
             changed = true;
         }
@@ -392,7 +400,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
             const NodeBS& fields = getAllFieldsObjNode(o);
             for (NodeID of : fields)
             {
-                if (vPtD->unionPts(p, atKey(of, consume[l][of])))
+                if (hasVersion(l, of, CONSUME) && vPtD->unionPts(p, atKey(of, consume[l][of])))
                 {
                     changed = true;
                 }
@@ -429,7 +437,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             if (pag->isConstantObj(o) || pag->isNonPointerObj(o)) continue;
 
-            if (vPtD->unionPts(atKey(o, yield[l][o]), q))
+            if (hasVersion(l, o, YIELD) && vPtD->unionPts(atKey(o, yield[l][o]), q))
             {
                 changed = true;
                 changedObjects.set(o);
@@ -459,6 +467,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         // Strong-updated; don't propagate.
         if (isSU && o == singleton) continue;
 
+        if (!hasVersion(l, o, YIELD)) continue;
         Version y = yieldL[o];
         if (vPtD->unionPts(atKey(o, y), atKey(o, c)))
         {
@@ -477,6 +486,8 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         ObjToVersionMap &yieldl = yield[l];
         for (NodeID o : changedObjects)
         {
+            // Definitely has a yielded version (came from prelabelling) as these are
+            // the changed objects which must've been pointed to in Andersen's too.
             propagateVersion(o, yieldl[o]);
         }
     }

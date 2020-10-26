@@ -42,6 +42,9 @@ public:
         YIELD,
     };
 
+    /// If this version appears, there has been an error.
+    static const Version invalidVersion;
+
     /// Return key into vPtD for address-taken var of a specific version.
     static VersionedVar atKey(NodeID, Version);
 
