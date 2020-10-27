@@ -304,7 +304,7 @@ void VersionedFlowSensitive::determineReliance(void)
     relianceTime = (end - start) / TIMEINTERVAL;
 }
 
-void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
+void VersionedFlowSensitive::propagateVersion(NodeID o, Version v, bool recurse)
 {
     double start = stat->getClk();
 
@@ -315,7 +315,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
         {
             if (vPtD->unionPts(atKey(o, r), atKey(o, v)))
             {
-                propagateVersion(o, r);
+                propagateVersion(o, r, true);
             }
         }
     }
@@ -327,7 +327,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
     }
 
     double end = stat->getClk();
-    versionPropTime += (end - start) / TIMEINTERVAL;
+    if (!recurse) versionPropTime += (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::processNode(NodeID n)

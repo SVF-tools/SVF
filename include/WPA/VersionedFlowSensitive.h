@@ -111,7 +111,8 @@ private:
     /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.
-    void propagateVersion(NodeID o, Version v);
+    /// recurse is used internally to keep recursive calls from messing up timing.
+    void propagateVersion(NodeID o, Version v, bool recurse=false);
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
