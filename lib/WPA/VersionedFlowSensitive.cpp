@@ -15,10 +15,10 @@ using namespace SVF;
 
 const Version VersionedFlowSensitive::invalidVersion = 0;
 
-std::pair<NodeID, Version> VersionedFlowSensitive::atKey(NodeID var, Version version)
+VersionedVar VersionedFlowSensitive::atKey(NodeID var, Version version)
 {
     assert(version != invalidVersion && "VersionedFlowSensitive::atKey: trying to use an invalid version!");
-    return std::make_pair(version, var);
+    return std::make_pair(var, version);
 }
 
 VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
