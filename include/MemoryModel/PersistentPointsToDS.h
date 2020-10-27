@@ -14,11 +14,15 @@ template <typename Key, typename Datum, typename Data>
 class PersistentDFPTData;
 template <typename Key, typename Datum, typename Data>
 class PersistentIncDFPTData;
+template <typename Key, typename Datum, typename Data, typename VersionedKey>
+class PersistentVersionedPTData;
 
 /// PTData backed by a PersistentPointsToCache.
 template <typename Key, typename Datum, typename Data>
 class PersistentPTData : public PTData<Key, Datum, Data>
 {
+    template <typename K, typename D, typename Ds, typename VK>
+    friend class PersistentVersionedPTData;
     friend class PersistentDFPTData<Key, Datum, Data>;
     friend class PersistentIncDFPTData<Key, Datum, Data>;
 public:
@@ -752,11 +756,11 @@ public:
     }
     virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) override
     {
-        return atPTData.unionPts(dstVar, tlPTData.getPts(srcVar));
+        return atPTData.unionPtsFromId(dstVar, tlPTData.ptsMap[srcVar]);
     }
     virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) override
     {
-        return tlPTData.unionPts(dstVar, atPTData.getPts(srcVar));
+        return tlPTData.unionPtsFromId(dstVar, atPTData.ptsMap[srcVar]);
     }
     virtual bool unionPts(const Key& dstVar, const Data& srcData) override
     {
