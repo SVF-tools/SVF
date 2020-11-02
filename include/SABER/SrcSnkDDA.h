@@ -136,7 +136,7 @@ public:
     }
     /// Slice operations
     //@{
-    void setCurSlice(const SVFGNode* src);
+    virtual void setCurSlice(const SVFGNode* src);
 
     inline ProgSlice* getCurSlice() const
     {
