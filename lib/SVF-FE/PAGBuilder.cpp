@@ -1413,6 +1413,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
 
     pag->addToInstPAGEdgeList(icfgNode,edge);
+    icfgNode->addPAGEdge(edge);
 }
 
 
