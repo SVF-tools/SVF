@@ -770,7 +770,7 @@ void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
  */
 void PAGBuilder::visitBranchInst(BranchInst &inst){
     NodeID dst = getValueNode(&inst);
-    Value* opnd = inst.getCondition();
+    Value* opnd = inst.isConditional() ? inst.getCondition() : inst.getOperand(0);
     NodeID src = getValueNode(opnd);
     const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
     pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);

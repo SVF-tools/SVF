@@ -559,6 +559,15 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
                 if(ret->getReturnValue())
                     collectSym(ret->getReturnValue());
             }
+            else if (const BranchInst *br = SVFUtil::dyn_cast<BranchInst>(inst))
+            {
+                Value* opnd = br->isConditional() ? br->getCondition() : br->getOperand(0);
+                collectSym(opnd);
+            }
+            else if (const SwitchInst *sw = SVFUtil::dyn_cast<SwitchInst>(inst))
+            {
+                collectSym(sw->getCondition());
+            }
             else if (isNonInstricCallSite(inst))
             {
 
