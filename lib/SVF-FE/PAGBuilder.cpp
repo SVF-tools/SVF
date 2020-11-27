@@ -765,6 +765,27 @@ void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
 }
 
 /*!
+ * Branch and switch instructions are treated as UnaryOP
+ * br %cmp label %if.then, label %if.else
+ */
+void PAGBuilder::visitBranchInst(BranchInst &inst){
+    NodeID dst = getValueNode(&inst);
+    Value* opnd = inst.getCondition();
+    NodeID src = getValueNode(opnd);
+    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+}
+
+void PAGBuilder::visitSwitchInst(SwitchInst &inst){
+    NodeID dst = getValueNode(&inst);
+    Value* opnd = inst.getCondition();
+    NodeID src = getValueNode(opnd);
+    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+}
+
+
+/*!
  * Add the constraints for a direct, non-external call.
  */
 void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)

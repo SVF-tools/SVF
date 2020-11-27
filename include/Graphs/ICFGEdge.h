@@ -112,6 +112,13 @@ class IntraCFGEdge : public ICFGEdge
 {
 
 public:
+    /// the first element is a boolean (for if/else) or numeric condition value (for switch)
+    /// the second element is the value when this condition should hold to execute this CFGEdge.
+    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
+    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
+
+    typedef std::pair<const Value*,NodeID> BranchCondition;
+
     /// Constructor
     IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF)
     {
@@ -131,7 +138,20 @@ public:
         return edge->getEdgeKind() == IntraCF;
     }
     //@}
+
+    BranchCondition& getBranchCondtion(){
+        return brCondition;
+    }
+
+    void setBranchCondtion(const Value* pNode, NodeID branchID){
+        brCondition = std::make_pair(pNode,branchID);
+    }
+
     virtual const std::string toString() const;
+
+private:
+    BranchCondition brCondition;
+
 };
 
 

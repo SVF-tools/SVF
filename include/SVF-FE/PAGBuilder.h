@@ -161,6 +161,8 @@ public:
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);
     void visitExtractValueInst(ExtractValueInst  &EVI);
+    void visitBranchInst(BranchInst &I);
+    void visitSwitchInst(SwitchInst &I);
     void visitInsertValueInst(InsertValueInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));
