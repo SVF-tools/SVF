@@ -980,6 +980,21 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << "NullPtr";
         }
+        else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        {
+            rawstr << "BinOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
+        }
+        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << "UnOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(uop->getICFGNode())->getInst());
+        }
+        else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        {
+            rawstr << "Cmp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(cmp->getICFGNode())->getInst());
+        }
         else
             assert(false && "what else kinds of nodes do we have??");
 
