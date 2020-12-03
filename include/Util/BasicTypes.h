@@ -101,6 +101,7 @@ typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
 typedef llvm::VectorType VectorType;
+typedef llvm::MetadataAsValue MetadataAsValue;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;

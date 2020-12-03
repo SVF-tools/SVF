@@ -126,10 +126,11 @@ public:
         return isATPointer;
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
+    /// or llvm's metadata, i.e., metadata !4087
     inline bool isConstantData() const
     {
         if (hasValue())
-            return SVFUtil::isConstantData(value);
+            return SVFUtil::isConstantData(value) || SVFUtil::isa<MetadataAsValue>(value);
         else
             return false;
     }
