@@ -174,7 +174,7 @@ protected:
         else if (MutDiffPTDataTy *md = SVFUtil::dyn_cast<MutDiffPTDataTy>(ptD)) return md->getPtsMap();
         else {
 			assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
-			return NULL;
+			return SVFUtil::dyn_cast<MutPTDataTy>(ptD)->getPtsMap();
         }
     }
 

@@ -304,7 +304,7 @@ public:
     }
 
     /// Get location set of the gep edge
-    inline u32_t getOffset() const
+    inline Size_t getOffset() const
     {
         return ls.getOffset();
     }
