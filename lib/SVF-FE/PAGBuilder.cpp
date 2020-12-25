@@ -1427,7 +1427,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
              SVFUtil::isa<Function>(curVal) ||
-             SVFUtil::isa<Constant>(curVal))
+             SVFUtil::isa<Constant>(curVal) ||
+			 SVFUtil::isa<MetadataAsValue>(curVal))
     {
         pag->addGlobalPAGEdge(edge);
     }

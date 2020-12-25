@@ -130,7 +130,7 @@ public:
     inline bool isConstantData() const
     {
         if (hasValue())
-            return SVFUtil::isConstantData(value) || SVFUtil::isa<MetadataAsValue>(value);
+            return SVFUtil::isConstantData(value);
         else
             return false;
     }
