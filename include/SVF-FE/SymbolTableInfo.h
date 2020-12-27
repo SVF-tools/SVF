@@ -104,6 +104,7 @@ public:
     /// Statistics
     //@{
     static SymID totalSymNum;
+    static SymID totalObjSymNum;
     //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
@@ -175,6 +176,15 @@ public:
     void collectRet(const Function *val);
 
     void collectVararg(const Function *val);
+
+    /// Increments the number of objects and returns an ID that
+    /// can be assign to an object, specifically.
+    /// Also increments the total number of values.
+    static SymID newObjSymID(void);
+
+    /// Increments the number of values and returns an ID that can
+    /// be assigned to a value.
+    static SymID newValSymID(void);
     //@}
 
     /// special value
