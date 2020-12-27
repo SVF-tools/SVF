@@ -722,7 +722,7 @@ public:
     //@{
     inline NodeID addDummyValNode()
     {
-        return addDummyValNode(nodeNum);
+        return addDummyValNode(SymbolTableInfo::newValSymID());
     }
     inline NodeID addDummyValNode(NodeID i)
     {
@@ -730,7 +730,7 @@ public:
     }
     inline NodeID addDummyObjNode(const Type* type = NULL)
     {
-        return addDummyObjNode(nodeNum, type);
+        return addDummyObjNode(SymbolTableInfo::newObjSymID(), type);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {
