@@ -288,8 +288,7 @@ public:
 template <typename F, typename S>
 raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
 {
-    if (var.second == 0) o << var.first;
-    else o << var.first << ":" << var.second << "\n";
+    o << "<" << var.first << ", " << var.second << ">";
     return o;
 }
 
