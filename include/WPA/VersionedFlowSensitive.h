@@ -1,4 +1,4 @@
-//===- VersionedFlowSensitive.h -- Flow-sensitive pointer analysis---------------------//
+//===- VersionedFlowSensitive.h -- Versioned flow-sensitive pointer analysis --------//
 
 /*
  * VersionedFlowSensitiveAnalysis.h

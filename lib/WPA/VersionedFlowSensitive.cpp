@@ -1,4 +1,4 @@
-//===- VersionedFlowSensitive.cpp -- Sparse flow-sensitive pointer analysis------------//
+//===- VersionedFlowSensitive.cpp -- Versioned flow-sensitive pointer analysis------------//
 
 /*
  * VersionedFlowSensitive.cpp
