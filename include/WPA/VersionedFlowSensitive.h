@@ -27,6 +27,10 @@ class SVFModule;
 class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
+
+private:
+    typedef llvm::SparseBitVector<> MeldVersion;
+
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
@@ -116,6 +120,9 @@ private:
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
+
+    /// Dumps a MeldVersion to stdout.
+    static void dumpMeldVersion(MeldVersion &v);
 
     /// SVFG node (label) x object -> version to consume.
     /// Used during meld labeling. We use MeldVersions and Versions for performance.

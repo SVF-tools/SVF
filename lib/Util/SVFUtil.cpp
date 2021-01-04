@@ -135,24 +135,6 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
-void SVFUtil::dumpMeldVersion(MeldVersion &v)
-{
-    outs() << "[ ";
-    bool first = true;
-    for (unsigned e : v)
-    {
-        if (!first)
-        {
-            outs() << ", ";
-        }
-
-        outs() << e;
-        first = false;
-    }
-
-    outs() << " ]";
-}
-
 /*!
  * Print memory usage
  */
