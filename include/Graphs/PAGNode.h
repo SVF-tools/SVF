@@ -126,6 +126,7 @@ public:
         return isATPointer;
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
+    /// or llvm's metadata, i.e., metadata !4087
     inline bool isConstantData() const
     {
         if (hasValue())
@@ -474,6 +475,7 @@ public:
     GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
         ObjPN(mem->getRefVal(), i, mem, ty), ls(l)
     {
+        base = mem->getSymId();
     }
 
     /// offset of the mem object

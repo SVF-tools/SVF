@@ -129,7 +129,11 @@ const std::string ICFGEdge::toString() const {
 const std::string IntraCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(brCondition.first == NULL)
+        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    else
+        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "] with condition (" << *brCondition.first << "==" << brCondition.second << ") \t";
+
     return rawstr.str();
 }
 
@@ -324,6 +328,26 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
         return (addICFGEdge(intraEdge) ? intraEdge : NULL);
     }
 }
+
+/*!
+ * Add conditional intraprocedural edges between two nodes
+ */
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, NodeID branchID){
+
+    checkIntraEdgeParents(srcNode, dstNode);
+    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
+    {
+        assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
+        return NULL;
+    }
+    else
+    {
+        IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
+        intraEdge->setBranchCondtion(condition,branchID);
+        return (addICFGEdge(intraEdge) ? intraEdge : NULL);
+    }
+}
+
 
 /*!
  * Add interprocedural call edges between two nodes

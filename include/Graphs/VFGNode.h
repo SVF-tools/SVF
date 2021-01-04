@@ -464,11 +464,13 @@ private:
 
 public:
     /// Constructor
-    UnaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,UnaryOp), res(r)
-    {
-        const UnaryOperator* unary = SVFUtil::dyn_cast<UnaryOperator>(r->getValue());
-        assert(unary && "not a unary operator?");
-    }
+	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
+		const Value *val = r->getValue();
+		bool unop = (SVFUtil::isa<UnaryOperator>(val)
+				|| SVFUtil::isa<BranchInst>(val)
+				|| SVFUtil::isa<SwitchInst>(val));
+		assert(unop && "not a unary operator or a BranchInst or a SwitchInst?");
+	}
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const UnaryOPVFGNode *)

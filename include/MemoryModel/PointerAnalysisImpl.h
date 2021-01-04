@@ -44,8 +44,8 @@ class BVDataPTAImpl : public PointerAnalysis
 public:
     typedef PTData<NodeID, NodeID, PointsTo> PTDataTy;
     typedef MutablePTData<NodeID, NodeID, PointsTo> MutPTDataTy;
-    typedef DiffPTData<NodeID, NodeID, PointsTo, EdgeID> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeID, PointsTo, EdgeID> MutDiffPTDataTy;
+    typedef DiffPTData<NodeID, NodeID, PointsTo> DiffPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
     typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
     typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
@@ -181,7 +181,10 @@ protected:
     {
         if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
         else if (MutDiffPTDataTy *md = SVFUtil::dyn_cast<MutDiffPTDataTy>(ptD)) return md->getPtsMap();
-        else assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        else {
+			assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+			return SVFUtil::dyn_cast<MutPTDataTy>(ptD)->getPtsMap();
+        }
     }
 
     /// On the fly call graph construction

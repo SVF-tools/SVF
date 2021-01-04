@@ -151,7 +151,7 @@ else
 	cd ./'Release-build'
 	cmake ../
 fi
-make -j $(nproc)
+make -j 4
 
 ########
 # Set up environment variables of SVF

@@ -202,7 +202,7 @@ public:
     /// Annotate program according to final condition
     void annotatePaths();
 
-private:
+protected:
     inline const SVFG* getSVFG() const
     {
         return svfg;

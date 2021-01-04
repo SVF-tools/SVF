@@ -854,6 +854,12 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
         return load->getPAGDstNode();
     else if(const PHIVFGNode* phi = SVFUtil::dyn_cast<PHIVFGNode>(node))
         return phi->getRes();
+    else if(const CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        return cmp->getRes();
+    else if(const BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        return bop->getRes();
+    else if(const UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        return uop->getRes();
     else if(const ActualParmVFGNode* ap = SVFUtil::dyn_cast<ActualParmVFGNode>(node))
         return ap->getParam();
     else if(const FormalParmVFGNode*fp = SVFUtil::dyn_cast<FormalParmVFGNode>(node))
@@ -973,6 +979,21 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         else if(SVFUtil::isa<NullPtrVFGNode>(node))
         {
             rawstr << "NullPtr";
+        }
+        else if(BinaryOPVFGNode* bop = SVFUtil::dyn_cast<BinaryOPVFGNode>(node))
+        {
+            rawstr << "BinOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(bop->getICFGNode())->getInst());
+        }
+        else if(UnaryOPVFGNode* uop = SVFUtil::dyn_cast<UnaryOPVFGNode>(node))
+        {
+            rawstr << "UnOp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(uop->getICFGNode())->getInst());
+        }
+        else if(CmpVFGNode* cmp = SVFUtil::dyn_cast<CmpVFGNode>(node))
+        {
+            rawstr << "Cmp\n";
+            rawstr << getSourceLoc(SVFUtil::cast<IntraBlockNode>(cmp->getICFGNode())->getInst());
         }
         else
             assert(false && "what else kinds of nodes do we have??");

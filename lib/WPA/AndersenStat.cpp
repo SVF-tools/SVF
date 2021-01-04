@@ -273,7 +273,7 @@ void AndersenStat::statNullPtr()
 void AndersenStat::performStat()
 {
 
-    assert(SVFUtil::isa<Andersen>(pta) && "not an andersen pta pass!! what else??");
+    assert(SVFUtil::isa<AndersenBase>(pta) && "not an andersen pta pass!! what else??");
     endClk();
 
     PAG* pag = pta->getPAG();

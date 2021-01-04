@@ -320,6 +320,17 @@ void PAGBuilder::processCE(const Value *val)
         {
             // we don't handle constant agrgregate like constant vectors
         }
+        else if (SVFUtil::isa<BlockAddress>(ref))
+        {
+			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			const Value *cval = getCurrentValue();
+			const BasicBlock *cbb = getCurrentBB();
+			setCurrentLocation(ref, NULL);
+			NodeID dst = pag->getValueNode(ref);
+			addAddrEdge(pag->getConstantNode(), dst);
+			setCurrentLocation(cval, cbb);
+        }
         else
         {
             if(SVFUtil::isa<ConstantExpr>(val))
@@ -387,6 +398,14 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             processCE(C);
             setCurrentLocation(C, NULL);
             addStoreEdge(src, field);
+        }
+        else if (SVFUtil::isa<BlockAddress>(C))
+        {
+			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			processCE(C);
+			setCurrentLocation(C, NULL);
+			addAddrEdge(pag->getConstantNode(), src);
         }
         else
         {
@@ -763,6 +782,30 @@ void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
     NodeID dst = getValueNode(&inst);
     addBlackHoleAddrEdge(dst);
 }
+
+/*!
+ * Branch and switch instructions are treated as UnaryOP
+ * br %cmp label %if.then, label %if.else
+ */
+void PAGBuilder::visitBranchInst(BranchInst &inst){
+    NodeID dst = getValueNode(&inst);
+    NodeID src;
+	if (inst.isConditional())
+		src = getValueNode(inst.getCondition());
+	else
+		src = pag->getNullPtr();
+	const UnaryOPPE *unaryPE = addUnaryOPEdge(src, dst);
+    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+}
+
+void PAGBuilder::visitSwitchInst(SwitchInst &inst){
+    NodeID dst = getValueNode(&inst);
+    Value* opnd = inst.getCondition();
+    NodeID src = getValueNode(opnd);
+    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+}
+
 
 /*!
  * Add the constraints for a direct, non-external call.
@@ -1403,7 +1446,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
              SVFUtil::isa<Function>(curVal) ||
-             SVFUtil::isa<Constant>(curVal))
+             SVFUtil::isa<Constant>(curVal) ||
+			 SVFUtil::isa<MetadataAsValue>(curVal))
     {
         pag->addGlobalPAGEdge(edge);
     }
@@ -1413,6 +1457,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
 
     pag->addToInstPAGEdgeList(icfgNode,edge);
+    icfgNode->addPAGEdge(edge);
 }
 
 
