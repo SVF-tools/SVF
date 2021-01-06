@@ -813,7 +813,7 @@ public:
         assert(this->rev && "MutableVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(datum);
     }
-    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum)
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) override
     {
         assert(this->rev && "MutableVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(datum);
