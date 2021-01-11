@@ -226,14 +226,15 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 
 /*
  * a virtual callsite follows the following instruction sequence pattern:
- * %vtable = load ...
+ * %vtable = load this
  * %vfn = getelementptr %vtable, idx
  * %x = load %vfn
- * call %x (...)
+ * call %x (this)
  */
 bool cppUtil::isVirtualCallSite(CallSite cs)
 {
-    if (cs.getCalledFunction() != NULL)
+	// the callsite must be an indirect one with at least one argument (this ptr)
+    if (cs.getCalledFunction() != NULL || cs.arg_empty())
         return false;
 
     // When compiled with ctir, we'd be using the DCHG which has its own
