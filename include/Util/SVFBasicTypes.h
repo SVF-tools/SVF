@@ -133,8 +133,8 @@ typedef llvm::StringMap<u32_t> StringMap;
 #define TIMEINTERVAL 1000
 #define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
-/// Size of native integer that we'll use for bit vectors.
-#define NATIVE_INT_SIZE sizeof(unsigned long long)
+/// Size of native integer that we'll use for bit vectors, in bits.
+#define NATIVE_INT_SIZE (sizeof(unsigned long long) * CHAR_BIT)
 
 class SVFValue
 {
