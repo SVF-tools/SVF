@@ -760,6 +760,17 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     consCG->resetSubs(nodeId);
 }
 
+void Andersen::compact(void)
+{
+
+}
+
+NodeID *Andersen::getCompactMapping(void) const
+{
+    assert(compactMapping && "Andersen::getCompactMapping: mapping not created?");
+    return compactMapping;
+}
+
 /*!
  * Print pag nodes' pts by an ascending order
  */

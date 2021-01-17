@@ -149,7 +149,8 @@ public:
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
-        :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
+        :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true),
+           compactMapping(nullptr)
     {
     }
 
@@ -251,6 +252,13 @@ public:
     {
         return diffOpt;
     }
+
+    /// Produces a mapping, a[n] where n is a node ID, mapping node IDs to node
+    /// representing a better allocation of nodes for bit vectors.
+    void compact(void);
+
+    /// Returns the mapping produced by compact().
+    NodeID *getCompactMapping(void) const;
 
 protected:
 
@@ -406,6 +414,10 @@ protected:
     {
         return;
     }
+
+    /// Maps node IDs (as allocated by the symbol table) to a better
+    /// allocation for bit vectors.
+    NodeID *compactMapping;
 };
 
 
