@@ -794,7 +794,7 @@ void Andersen::compact(void)
         // The best *theoretical* size, in bits, for this points-to set.
         // This is the distance that nodes in this points-to set will be
         // from each other under a theoretically perfect allocation.
-        unsigned distance = std::ceil(numObjects / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+        unsigned distance = std::ceil((double)numObjects / (double)NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
 
         for (NodeID o : pts)
         {
