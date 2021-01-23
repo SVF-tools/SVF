@@ -62,9 +62,21 @@ public:
 
     //@}
 
+    enum NodeAllocationStrategy
+    {
+        /// Allocate objects contiguously, separete from values, and vice versa.
+        DENSE,
+        /// Allocate values and objects as they come in with a single counter.
+        /// GEP objects are allocated as an offset from their base. The purpose
+        /// of this allocation strategy is human readability.
+        DEBUG,
+    };
+
 private:
     /// Data layout on a target machine
     static DataLayout *dl;
+
+    enum NodeAllocationStrategy allocStrat;
 
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
@@ -95,12 +107,15 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo() :
-        modelConstants(false), maxStruct(NULL), maxStSize(0)
-    {
-    }
+    SymbolTableInfo(void);
 
 public:
+    /// Option strings as written by the user.
+    ///@{
+    static const std::string userNodeAllocationStrategyDense;
+    static const std::string userNodeAllocationStrategyDebug;
+    ///@}
+
     /// Statistics
     //@{
     static SymID totalSymNum;

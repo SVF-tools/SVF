@@ -48,6 +48,9 @@ SymID SymbolTableInfo::totalSymNum = 0;
 SymID SymbolTableInfo::totalObjSymNum = 0;
 SymID SymbolTableInfo::totalValSymNum = 0;
 
+const std::string SymbolTableInfo::userNodeAllocationStrategyDense = "dense";
+const std::string SymbolTableInfo::userNodeAllocationStrategyDebug = "debug";
+
 static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
         llvm::cl::desc("Maximum field number for field sensitive analysis"));
 
@@ -57,7 +60,9 @@ static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
 static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
                                        llvm::cl::desc("Modeling individual constant objects"));
 
-
+static llvm::cl::opt<std::string> nodeAllocationStrategy(
+    "node-alloc-strat", llvm::cl::init(SymbolTableInfo::userNodeAllocationStrategyDense),
+    llvm::cl::desc("Method of allocating (LLVM) values to node IDs"));
 
 /*
  * Initial the memory object here
@@ -91,6 +96,23 @@ void MemObj::init(const Value *val)
         writeWrnMsg(val->getName());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
         assert(false && "Memory object must be held by a pointer-typed ref value.");
+    }
+}
+
+SymbolTableInfo::SymbolTableInfo(void)
+    : modelConstants(false), maxStruct(NULL), maxStSize(0)
+{
+    if (nodeAllocationStrategy == userNodeAllocationStrategyDense)
+    {
+        allocStrat = NodeAllocationStrategy::DENSE;
+    }
+    else if (nodeAllocationStrategy == userNodeAllocationStrategyDebug)
+    {
+        allocStrat = NodeAllocationStrategy::DEBUG;
+    }
+    else
+    {
+        assert(false && "Bad argument given to -node-alloc-strat; expected \"dense\" or \"debug\"");
     }
 }
 
