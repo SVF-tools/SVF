@@ -757,12 +757,46 @@ void SymbolTableInfo::collectVararg(const Function *val)
     }
 }
 
-SymID SymbolTableInfo::newObjSymID(void)
+SymID SymbolTableInfo::newObjSymID(std::tuple<bool, NodeID, u32_t> gepMeta)
 {
     ++totalObjSymNum;
     ++totalSymNum;
-    // We allocate objects from 0 to # of objects.
-    return totalObjSymNum;
+
+    if (allocStrat == NodeAllocationStrategy::DENSE)
+    {
+        // We allocate objects from 0 to # of objects.
+        return totalObjSymNum;
+    }
+    else if (allocStrat == NodeAllocationStrategy::DEBUG)
+    {
+        if (!std::get<0>(gepMeta))
+        {
+            // Non-GEPs just grab the next available ID.
+            // We may have "holes" because GEPs increment the total
+            // but allocate far away. This is not a problem because
+            // we don't care about the relative distances between nodes.
+            return totalSymNum;
+        }
+        else
+        {
+            NodeID base = std::get<1>(gepMeta);
+            u32_t offset = std::get<2>(gepMeta);
+            // For a gep id, base id is set at lower bits, and offset is set at higher bits
+            // e.g., 1100050 denotes base=50 and offset=10
+            // The offset is 10, not 11, because we add 1 to the offset to ensure that the
+            // high bits are never 0. For example, we do not want the gep id to be 50 when
+            // the base is 50 and the offset is 0.
+            NodeID gepMultiplier = pow(10, ceil(log10(
+                                                    totalSymNum > StInfo::getMaxFieldLimit() ?
+                                                    totalSymNum : StInfo::getMaxFieldLimit()
+                                                )));
+            return (offset + 1) * gepMultiplier + base;
+        }
+    }
+    else
+    {
+        assert(false && "SymbolTableInfo::newObjSymID: unimplemented node allocation strategy");
+    }
 }
 
 SymID SymbolTableInfo::newValSymID(void)

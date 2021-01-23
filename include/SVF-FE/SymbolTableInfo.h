@@ -196,7 +196,12 @@ public:
     /// Increments the number of objects and returns an ID that
     /// can be assign to an object, specifically.
     /// Also increments the total number of values.
-    static SymID newObjSymID(void);
+    /// The <indicator, base, offset> tuple is to allocate GEP node IDs
+    /// as an offset from the base object if desired (indicated by the 
+    /// first element).
+    /// Only makes a difference when the allocation strategy is DEBUG.
+    static SymID newObjSymID(
+        std::tuple<bool, NodeID, u32_t> gepMeta = std::make_tuple(false, 0, 0));
 
     /// Increments the number of values and returns an ID that can
     /// be assigned to a value.

@@ -634,19 +634,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    /* TODO: somehow make this work as an option...
-    //for a gep id, base id is set at lower bits, and offset is set at higher bits
-    //e.g. 1100050 denotes base=50 and offset=10
-    // The offset is 10, not 11, because we add 1 to the offset to ensure that the
-    // high bits are never 0. For example, we do not want the gep id to be 50 when
-    // the base is 50 and the offset is 0.
-    NodeID gepMultiplier = pow(10, ceil(log10(
-                                            getNodeNumAfterPAGBuild() > StInfo::getMaxFieldLimit() ?
-                                            getNodeNumAfterPAGBuild() : StInfo::getMaxFieldLimit()
-                                        )));
-    NodeID gepId = (ls.getOffset() + 1) * gepMultiplier + base;
-    */
-    NodeID gepId = SymbolTableInfo::newObjSymID();
+    NodeID gepId = SymbolTableInfo::newObjSymID(std::make_tuple(true, base, ls.getOffset()));
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
