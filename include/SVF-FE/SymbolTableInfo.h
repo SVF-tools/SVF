@@ -76,7 +76,7 @@ private:
     /// Data layout on a target machine
     static DataLayout *dl;
 
-    enum NodeAllocationStrategy allocStrat;
+    static enum NodeAllocationStrategy allocStrat;
 
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id

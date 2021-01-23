@@ -50,6 +50,8 @@ SymID SymbolTableInfo::totalValSymNum = 0;
 
 const std::string SymbolTableInfo::userNodeAllocationStrategyDense = "dense";
 const std::string SymbolTableInfo::userNodeAllocationStrategyDebug = "debug";
+enum SymbolTableInfo::NodeAllocationStrategy SymbolTableInfo::allocStrat =
+    SymbolTableInfo::NodeAllocationStrategy::DENSE;
 
 static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
         llvm::cl::desc("Maximum field number for field sensitive analysis"));
