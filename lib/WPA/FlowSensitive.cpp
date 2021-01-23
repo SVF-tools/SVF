@@ -48,7 +48,7 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
+    ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
     setGraph(svfg);
@@ -422,26 +422,37 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
 
     PointsTo tmpDstPts;
-    for (PointsTo::iterator piter = srcPts.begin(); piter != srcPts.end(); ++piter)
+    if (SVFUtil::isa<VariantGepPE>(edge->getPAGEdge()))
     {
-        NodeID ptd = *piter;
-        if (isBlkObjOrConstantObj(ptd))
-            tmpDstPts.set(ptd);
-        else
+        for (NodeID o : srcPts)
         {
-            if (SVFUtil::isa<VariantGepPE>(edge->getPAGEdge()))
+            if (isBlkObjOrConstantObj(o))
             {
-                setObjFieldInsensitive(ptd);
-                tmpDstPts.set(getFIObjNode(ptd));
+                tmpDstPts.set(o);
+                continue;
             }
-            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(edge->getPAGEdge()))
-            {
-                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
-                tmpDstPts.set(fieldSrcPtdNode);
-            }
-            else
-                assert(false && "new gep edge?");
+
+            setObjFieldInsensitive(o);
+            tmpDstPts.set(getFIObjNode(o));
         }
+    }
+    else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(edge->getPAGEdge()))
+    {
+        for (NodeID o : srcPts)
+        {
+            if (isBlkObjOrConstantObj(o))
+            {
+                tmpDstPts.set(o);
+                continue;
+            }
+
+            NodeID fieldSrcPtdNode = getGepObjNode(o, normalGep->getLocationSet());
+            tmpDstPts.set(fieldSrcPtdNode);
+        }
+    }
+    else
+    {
+        assert(false && "FlowSensitive::processGep: New type GEP edge type?");
     }
 
     if (unionPts(edge->getPAGDstNodeID(), tmpDstPts))

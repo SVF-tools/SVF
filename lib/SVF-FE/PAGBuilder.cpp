@@ -320,6 +320,17 @@ void PAGBuilder::processCE(const Value *val)
         {
             // we don't handle constant agrgregate like constant vectors
         }
+        else if (SVFUtil::isa<BlockAddress>(ref))
+        {
+			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			const Value *cval = getCurrentValue();
+			const BasicBlock *cbb = getCurrentBB();
+			setCurrentLocation(ref, NULL);
+			NodeID dst = pag->getValueNode(ref);
+			addAddrEdge(pag->getConstantNode(), dst);
+			setCurrentLocation(cval, cbb);
+        }
         else
         {
             if(SVFUtil::isa<ConstantExpr>(val))
@@ -387,6 +398,14 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             processCE(C);
             setCurrentLocation(C, NULL);
             addStoreEdge(src, field);
+        }
+        else if (SVFUtil::isa<BlockAddress>(C))
+        {
+			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			processCE(C);
+			setCurrentLocation(C, NULL);
+			addAddrEdge(pag->getConstantNode(), src);
         }
         else
         {

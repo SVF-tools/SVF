@@ -35,6 +35,7 @@
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
 #include <llvm/ADT/SmallVector.h>		// for small vector
+#include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/CallSite.h>
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
@@ -284,6 +285,13 @@ public:
 
 };
 
+template <typename F, typename S>
+raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
+{
+    o << "<" << var.first << ", " << var.second << ">";
+    return o;
+}
+
 } // End namespace SVF
 
 /// Specialise hash for CallSites.
@@ -291,6 +299,15 @@ template <> struct std::hash<SVF::CallSite> {
     size_t operator()(const SVF::CallSite &cs) const {
         std::hash<SVF::Instruction *> h;
         return h(cs.getInstruction());
+    }
+};
+
+/// Specialise hash for SparseBitVectors.
+template <> struct std::hash<llvm::SparseBitVector<>>
+{
+    size_t operator()(const llvm::SparseBitVector<> &sbv) const {
+        std::hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
 };
 

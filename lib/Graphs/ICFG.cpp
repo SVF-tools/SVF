@@ -37,10 +37,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
-                                        llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
-
-
 FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
 {
     fun = f;
@@ -90,6 +86,10 @@ const std::string FunEntryBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunEntryBlockNode ID: " << getId();
+    if (isExtCall(getFun()))
+        rawstr << "Entry(" << ")\n";
+    else
+        rawstr << "Entry(" << getSourceLoc(getFun()->getLLVMFun()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
@@ -98,6 +98,10 @@ const std::string FunExitBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunExitBlockNode ID: " << getId();
+    if (isExtCall(getFun()))
+        rawstr << "Exit(" << ")\n";
+    else
+        rawstr << "Exit(" << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
@@ -456,51 +460,30 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         rawstr << "NodeID: " << node->getId() << "\n";
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
-            rawstr << getSourceLoc(bNode->getInst()) << "\n";
+            rawstr << bNode->toString();
 
             PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
             for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
-                NodeID src = edge->getSrcID();
-                NodeID dst = edge->getDstID();
-                rawstr << dst << "<--" << src << "\n";
-                std::string srcValueName = edge->getSrcNode()->getValueName();
-                std::string dstValueName = edge->getDstNode()->getValueName();
-                rawstr << dstValueName << "<--" << srcValueName << "\n";
-
+                rawstr << edge->toString();
             }
-
-            if(DumpLLVMInst)
-                rawstr << *(bNode->getInst()) << "\n";
         }
         else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
         {
-            if (isExtCall(entry->getFun()))
-                rawstr << "Entry(" << ")\n";
-            else
-                rawstr << "Entry(" << getSourceLoc(entry->getFun()->getLLVMFun()) << ")\n";
-            rawstr << "Fun[" << entry->getFun()->getName() << "]";
+            rawstr << entry->toString();
         }
         else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
         {
-            if (isExtCall(exit->getFun()))
-                rawstr << "Exit(" << ")\n";
-            else
-                rawstr << "Exit(" << ")\n";
-            rawstr << "Fun[" << exit->getFun()->getName() << "]";
+            rawstr << exit->toString();
         }
         else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
         {
-            rawstr << "Call("
-                   << getSourceLoc(call->getCallSite())
-                   << ")\n";
+            rawstr << call->toString();
         }
         else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
         {
-            rawstr << "Ret("
-                   << getSourceLoc(ret->getCallSite())
-                   << ")\n";
+            rawstr << ret->toString();
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
@@ -508,12 +491,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
             for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
-                NodeID src = edge->getSrcID();
-                NodeID dst = edge->getDstID();
-                rawstr << dst << "<--" << src << "\n";
-                std::string srcValueName = edge->getSrcNode()->getValueName();
-                std::string dstValueName = edge->getDstNode()->getValueName();
-                rawstr << dstValueName << "<--" << srcValueName << "\n";
+                rawstr << edge->toString();
             }
         }
         else

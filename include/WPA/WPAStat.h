@@ -33,6 +33,7 @@
 
 #include "MemoryModel/PTAStat.h"
 #include "WPA/FlowSensitive.h"
+#include "WPA/VersionedFlowSensitive.h"
 
 namespace SVF
 {
@@ -136,6 +137,7 @@ private:
 
     /// number of pag nodes which have points-to set in IN/OUT set.
     u32_t _NumOfVarHaveINOUTPts[2];
+    u32_t _NumOfVarHaveEmptyINOUTPts[2];
     u32_t _NumOfVarHaveINOUTPtsInFormalIn[2];
     u32_t _NumOfVarHaveINOUTPtsInFormalOut[2];
     u32_t _NumOfVarHaveINOUTPtsInActualIn[2];
@@ -143,6 +145,7 @@ private:
     u32_t _NumOfVarHaveINOUTPtsInLoad[2];
     u32_t _NumOfVarHaveINOUTPtsInStore[2];
     u32_t _NumOfVarHaveINOUTPtsInMSSAPhi[2];
+    u32_t _PotentialNumOfVarHaveINOUTPts[2];
 
     /// sizes of points-to set
     u32_t _MaxPtsSize;	///< max points-to set size.
@@ -160,6 +163,61 @@ private:
     u32_t _NumOfAddrTakeVar;	///< number of occurrences of addr-taken variables in load/store.
 };
 
+class VersionedFlowSensitiveStat : public PTAStat
+{
+public:
+    VersionedFlowSensitive *vfspta;
+
+    VersionedFlowSensitiveStat(VersionedFlowSensitive* pta): PTAStat(pta)
+    {
+        vfspta = pta;
+        clearStat();
+        startClk();
+    }
+
+    virtual ~VersionedFlowSensitiveStat() { }
+
+    virtual void performStat();
+
+private:
+    void clearStat();
+
+    /// For all version-related statistics.
+    void versionStat(void);
+
+    /// For all PTS size related statistics not handled by versionStat.
+    void ptsSizeStat(void);
+
+    /// Total number of versions across all objects.
+    u32_t _NumVersions;
+    /// Most versions for a single object.
+    u32_t _MaxVersions;
+    /// Number of version PTSs actually used (sum of next two fields).
+    u32_t _NumUsedVersions;
+    /// Number of versions with non-empty points-to sets (since versioning is over-approximate).
+    u32_t _NumNonEmptyVersions;
+    /// Number of versions with empty points-to sets (actually empty, not never-accessed).
+    u32_t _NumEmptyVersions;
+    /// Number of objects which have a single version.
+    u32_t _NumSingleVersion;
+
+    /// Largest PTS size.
+    u32_t _MaxPtsSize;
+    /// Max points-to set size in top-level pointers.
+    u32_t _MaxTopLvlPtsSize;
+    /// Max address-taken points-to set size.
+    u32_t _MaxVersionPtsSize;
+
+    /// Total of points-to set sizes for calculating averages.
+    u32_t _TotalPtsSize;
+
+    /// Average size across all points-to sets.
+    double _AvgPtsSize;
+    /// Average points-to set size for top-level pointers.
+    double _AvgTopLvlPtsSize;
+    /// Average points-to set size for address-taken objects.
+    double _AvgVersionPtsSize;
+};
 } // End namespace SVF
 
 #endif /* FLOWSENSITIVESTAT_H_ */

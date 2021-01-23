@@ -49,6 +49,8 @@ public:
     typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
     typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
     typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
+    typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
+    typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
 
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
@@ -161,6 +163,13 @@ protected:
         MutDFPTDataTy* mdf = SVFUtil::dyn_cast<MutDFPTDataTy>(ptD);
         assert(mdf && "BVDataPTAImpl::getMutDFPTDataTy: not a MutDFPTDataTy!");
         return mdf;
+    }
+
+    inline VersionedPTDataTy* getVersionedPTDataTy() const
+    {
+        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD);
+        assert(v && "BVDataPTAImpl::getVersionedPTDataTy: not a VersionedPTDataTy!");
+        return v;
     }
 
     inline bool hasPtsMap(void) const

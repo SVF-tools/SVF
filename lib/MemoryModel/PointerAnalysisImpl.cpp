@@ -36,9 +36,13 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
         if (INCDFPTData)
-            ptD = new IncMutDFPTDataTy();
+            ptD = new IncMutDFPTDataTy(false);
         else
-            ptD = new MutDFPTDataTy();
+            ptD = new MutDFPTDataTy(false);
+    }
+    else if (type == VFS_WPA)
+    {
+        ptD = new MutVersionedPTDataTy(false);
     }
     else
         assert(false && "no points-to data available");

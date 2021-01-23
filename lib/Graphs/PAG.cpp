@@ -1049,27 +1049,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         if (node->getFunction())
             rawstr << "[" << node->getFunction()->getName() << "] ";
 
-        if (briefDisplay)
-        {
-            if (SVFUtil::isa<ValPN>(node))
-            {
-                if (nameDisplay)
-                    rawstr << node->getId() << ":" << node->getValueName();
-                else
-                    rawstr << node->getId();
-            }
-            else
-                rawstr << node->getId();
-        }
-        else
-        {
-            // print the whole value
-            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
-                rawstr << *node->getValue();
-            else
-                rawstr << "";
-
-        }
+        rawstr << node->toString();
 
         return rawstr.str();
 
