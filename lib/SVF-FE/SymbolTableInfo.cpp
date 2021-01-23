@@ -46,6 +46,7 @@ DataLayout* SymbolTableInfo::dl = NULL;
 SymbolTableInfo* SymbolTableInfo::symlnfo = NULL;
 SymID SymbolTableInfo::totalSymNum = 0;
 SymID SymbolTableInfo::totalObjSymNum = 0;
+SymID SymbolTableInfo::totalValSymNum = 0;
 
 static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
         llvm::cl::desc("Maximum field number for field sensitive analysis"));
@@ -471,8 +472,10 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
     assert(totalSymNum == NullPtr && "Something changed!");
     symTyMap.insert(std::make_pair(totalSymNum, NullPtr));
 
-    // Prevent objects from clashing with the special objects/pointers.
+    // Prevent clashing with the special objects/pointers.
+    // totalSymNum was already incremented.
     totalObjSymNum += 4;
+    totalValSymNum += 4;
 
     // Add symbols for all the globals .
     for (SVFModule::global_iterator I = svfModule->global_begin(), E =
@@ -740,11 +743,12 @@ SymID SymbolTableInfo::newObjSymID(void)
 
 SymID SymbolTableInfo::newValSymID(void)
 {
+    ++totalValSymNum;
     ++totalSymNum;
     // We allocate values from UINT_MAX to UINT_MAX - # of values.
     // TODO: UINT_MAX does not allow for an easily changeable type
     //       of SymID (though it is already in use elsewhere).
-    return UINT_MAX - totalSymNum;
+    return UINT_MAX - totalValSymNum;
 }
 
 /*!
