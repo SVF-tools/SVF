@@ -807,16 +807,16 @@ SymID SymbolTableInfo::newValSymID(void)
     ++totalValSymNum;
     ++totalSymNum;
 
-    if (allocStrat == NodeAllocationStrategy::DEBUG)
-    {
-        return totalSymNum;
-    }
-    else if (allocStrat == NodeAllocationStrategy::DENSE)
+    if (allocStrat == NodeAllocationStrategy::DENSE)
     {
         // We allocate values from UINT_MAX to UINT_MAX - # of values.
         // TODO: UINT_MAX does not allow for an easily changeable type
         //       of SymID (though it is already in use elsewhere).
         return UINT_MAX - totalValSymNum;
+    }
+    else if (allocStrat == NodeAllocationStrategy::DEBUG)
+    {
+        return totalSymNum;
     }
     else
     {
