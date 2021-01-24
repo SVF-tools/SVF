@@ -108,7 +108,7 @@ namespace SVF
     {
         if (userStrategy == userStrategyDebug) strategy = Strategy::DEBUG;
         else if (userStrategy == userStrategyDense) strategy = Strategy::DENSE;
-        else assert(false && "Unknown node allocation strategy specified; expected \"dense\" or \"debug\"");
+        else assert(false && "Unknown node allocation strategy specified; expected 'dense' or 'debug'");
     }
 
     void NodeIDAllocator::endSymbolAllocation(void)
