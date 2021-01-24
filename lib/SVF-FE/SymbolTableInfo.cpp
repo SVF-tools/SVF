@@ -47,6 +47,7 @@ SymbolTableInfo* SymbolTableInfo::symlnfo = NULL;
 SymID SymbolTableInfo::totalSymNum = 0;
 SymID SymbolTableInfo::totalObjSymNum = 0;
 SymID SymbolTableInfo::totalValSymNum = 0;
+SymID SymbolTableInfo::totalBaseSymNum = 0;
 
 const std::string SymbolTableInfo::userNodeAllocationStrategyDense = "dense";
 const std::string SymbolTableInfo::userNodeAllocationStrategyDebug = "debug";
@@ -621,6 +622,8 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
             //@}
         }
     }
+
+    totalBaseSymNum = totalSymNum;
 }
 
 /*!
@@ -787,8 +790,8 @@ SymID SymbolTableInfo::newObjSymID(std::tuple<bool, NodeID, u32_t> gepMeta)
             // high bits are never 0. For example, we do not want the gep id to be 50 when
             // the base is 50 and the offset is 0.
             NodeID gepMultiplier = pow(10, ceil(log10(
-                                                    totalSymNum > StInfo::getMaxFieldLimit() ?
-                                                    totalSymNum : StInfo::getMaxFieldLimit()
+                                                    totalBaseSymNum > StInfo::getMaxFieldLimit() ?
+                                                    totalBaseSymNum : StInfo::getMaxFieldLimit()
                                                 )));
             return (offset + 1) * gepMultiplier + base;
         }

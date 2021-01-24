@@ -121,6 +121,7 @@ public:
     static SymID totalSymNum;
     static SymID totalObjSymNum;
     static SymID totalValSymNum;
+    static SymID totalBaseSymNum;
     //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
