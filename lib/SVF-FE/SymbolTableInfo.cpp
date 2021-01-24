@@ -45,14 +45,6 @@ using namespace SVFUtil;
 DataLayout* SymbolTableInfo::dl = NULL;
 SymbolTableInfo* SymbolTableInfo::symlnfo = NULL;
 SymID SymbolTableInfo::totalSymNum = 0;
-SymID SymbolTableInfo::totalObjSymNum = 0;
-SymID SymbolTableInfo::totalValSymNum = 0;
-SymID SymbolTableInfo::totalBaseSymNum = 0;
-
-const std::string SymbolTableInfo::userNodeAllocationStrategyDense = "dense";
-const std::string SymbolTableInfo::userNodeAllocationStrategyDebug = "debug";
-enum SymbolTableInfo::NodeAllocationStrategy SymbolTableInfo::allocStrat =
-    SymbolTableInfo::NodeAllocationStrategy::DENSE;
 
 static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
         llvm::cl::desc("Maximum field number for field sensitive analysis"));
@@ -62,10 +54,6 @@ static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
 
 static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
                                        llvm::cl::desc("Modeling individual constant objects"));
-
-static llvm::cl::opt<std::string> nodeAllocationStrategy(
-    "node-alloc-strat", llvm::cl::init(SymbolTableInfo::userNodeAllocationStrategyDense),
-    llvm::cl::desc("Method of allocating (LLVM) values to node IDs"));
 
 /*
  * Initial the memory object here
@@ -104,20 +92,7 @@ void MemObj::init(const Value *val)
 
 SymbolTableInfo::SymbolTableInfo(void)
     : modelConstants(false), maxStruct(NULL), maxStSize(0)
-{
-    if (nodeAllocationStrategy == userNodeAllocationStrategyDense)
-    {
-        allocStrat = NodeAllocationStrategy::DENSE;
-    }
-    else if (nodeAllocationStrategy == userNodeAllocationStrategyDebug)
-    {
-        allocStrat = NodeAllocationStrategy::DEBUG;
-    }
-    else
-    {
-        assert(false && "Bad argument given to -node-alloc-strat; expected \"dense\" or \"debug\"");
-    }
-}
+{ }
 
 /*!
  * Get the symbol table instance
@@ -497,11 +472,6 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
     assert(totalSymNum == NullPtr && "Something changed!");
     symTyMap.insert(std::make_pair(totalSymNum, NullPtr));
 
-    // Prevent clashing with the special objects/pointers.
-    // totalSymNum was already incremented.
-    totalObjSymNum += 4;
-    totalValSymNum += 4;
-
     // Add symbols for all the globals .
     for (SVFModule::global_iterator I = svfModule->global_begin(), E =
                 svfModule->global_end(); I != E; ++I)
@@ -623,7 +593,7 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
         }
     }
 
-    totalBaseSymNum = totalSymNum;
+    NodeIDAllocator::endSymbolAllocation();
 }
 
 /*!
@@ -682,7 +652,7 @@ void SymbolTableInfo::collectVal(const Value *val)
     if (iter == valSymMap.end())
     {
         // create val sym and sym type
-        SymID id = newValSymID();
+        SymID id = NodeIDAllocator::allocateValueId();
         valSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, ValSym));
         DBOUT(DMemModel,
@@ -714,7 +684,7 @@ void SymbolTableInfo::collectObj(const Value *val)
         else
         {
             // create obj sym and sym type
-            SymID id = newObjSymID();
+            SymID id = NodeIDAllocator::allocateObjectId();
             objSymMap.insert(std::make_pair(val, id));
             symTyMap.insert(std::make_pair(id, ObjSym));
             DBOUT(DMemModel,
@@ -736,7 +706,7 @@ void SymbolTableInfo::collectRet(const Function *val)
     FunToIDMapTy::iterator iter = returnSymMap.find(val);
     if (iter == returnSymMap.end())
     {
-        SymID id = newValSymID();
+        SymID id = NodeIDAllocator::allocateValueId();
         returnSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, RetSym));
         DBOUT(DMemModel,
@@ -752,75 +722,11 @@ void SymbolTableInfo::collectVararg(const Function *val)
     FunToIDMapTy::iterator iter = varargSymMap.find(val);
     if (iter == varargSymMap.end())
     {
-        SymID id = newValSymID();
+        SymID id = NodeIDAllocator::allocateValueId();
         varargSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, VarargSym));
         DBOUT(DMemModel,
               outs() << "create a vararg sym " << id << "\n");
-    }
-}
-
-SymID SymbolTableInfo::newObjSymID(std::tuple<bool, NodeID, u32_t> gepMeta)
-{
-    ++totalObjSymNum;
-    ++totalSymNum;
-
-    if (allocStrat == NodeAllocationStrategy::DENSE)
-    {
-        // We allocate objects from 0 to # of objects.
-        return totalObjSymNum;
-    }
-    else if (allocStrat == NodeAllocationStrategy::DEBUG)
-    {
-        if (!std::get<0>(gepMeta))
-        {
-            // Non-GEPs just grab the next available ID.
-            // We may have "holes" because GEPs increment the total
-            // but allocate far away. This is not a problem because
-            // we don't care about the relative distances between nodes.
-            return totalSymNum;
-        }
-        else
-        {
-            NodeID base = std::get<1>(gepMeta);
-            u32_t offset = std::get<2>(gepMeta);
-            // For a gep id, base id is set at lower bits, and offset is set at higher bits
-            // e.g., 1100050 denotes base=50 and offset=10
-            // The offset is 10, not 11, because we add 1 to the offset to ensure that the
-            // high bits are never 0. For example, we do not want the gep id to be 50 when
-            // the base is 50 and the offset is 0.
-            NodeID gepMultiplier = pow(10, ceil(log10(
-                                                    totalBaseSymNum > StInfo::getMaxFieldLimit() ?
-                                                    totalBaseSymNum : StInfo::getMaxFieldLimit()
-                                                )));
-            return (offset + 1) * gepMultiplier + base;
-        }
-    }
-    else
-    {
-        assert(false && "SymbolTableInfo::newObjSymID: unimplemented node allocation strategy");
-    }
-}
-
-SymID SymbolTableInfo::newValSymID(void)
-{
-    ++totalValSymNum;
-    ++totalSymNum;
-
-    if (allocStrat == NodeAllocationStrategy::DENSE)
-    {
-        // We allocate values from UINT_MAX to UINT_MAX - # of values.
-        // TODO: UINT_MAX does not allow for an easily changeable type
-        //       of SymID (though it is already in use elsewhere).
-        return UINT_MAX - totalValSymNum;
-    }
-    else if (allocStrat == NodeAllocationStrategy::DEBUG)
-    {
-        return totalSymNum;
-    }
-    else
-    {
-        assert(false && "SymbolTableInfo::newValSymID: unimplemented node allocation strategy");
     }
 }
 

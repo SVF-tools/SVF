@@ -32,6 +32,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/LLVMModule.h"
+#include "Util/NodeIDAllocator.h"
 
 namespace SVF
 {
@@ -62,21 +63,9 @@ public:
 
     //@}
 
-    enum NodeAllocationStrategy
-    {
-        /// Allocate objects contiguously, separete from values, and vice versa.
-        DENSE,
-        /// Allocate values and objects as they come in with a single counter.
-        /// GEP objects are allocated as an offset from their base. The purpose
-        /// of this allocation strategy is human readability.
-        DEBUG,
-    };
-
 private:
     /// Data layout on a target machine
     static DataLayout *dl;
-
-    static enum NodeAllocationStrategy allocStrat;
 
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
@@ -110,18 +99,9 @@ protected:
     SymbolTableInfo(void);
 
 public:
-    /// Option strings as written by the user.
-    ///@{
-    static const std::string userNodeAllocationStrategyDense;
-    static const std::string userNodeAllocationStrategyDebug;
-    ///@}
-
     /// Statistics
     //@{
     static SymID totalSymNum;
-    static SymID totalObjSymNum;
-    static SymID totalValSymNum;
-    static SymID totalBaseSymNum;
     //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
@@ -193,20 +173,6 @@ public:
     void collectRet(const Function *val);
 
     void collectVararg(const Function *val);
-
-    /// Increments the number of objects and returns an ID that
-    /// can be assign to an object, specifically.
-    /// Also increments the total number of values.
-    /// The <indicator, base, offset> tuple is to allocate GEP node IDs
-    /// as an offset from the base object if desired (indicated by the 
-    /// first element).
-    /// Only makes a difference when the allocation strategy is DEBUG.
-    static SymID newObjSymID(
-        std::tuple<bool, NodeID, u32_t> gepMeta = std::make_tuple(false, 0, 0));
-
-    /// Increments the number of values and returns an ID that can
-    /// be assigned to a value.
-    static SymID newValSymID(void);
     //@}
 
     /// special value
