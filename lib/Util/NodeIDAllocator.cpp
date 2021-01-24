@@ -2,11 +2,6 @@
 
 #include "Util/NodeIDAllocator.h"
 
-static llvm::cl::opt<std::string> nodeAllocStrat(
-    "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::userStrategyDense),
-    llvm::cl::desc("Method of allocating (LLVM) values to node IDs [dense, debug]"));
-
-
 namespace SVF
 {
     NodeID NodeIDAllocator::numObjects = 3;
@@ -23,6 +18,10 @@ namespace SVF
     const NodeID NodeIDAllocator::constantObjectId = 1;
     const NodeID NodeIDAllocator::blackHolePointerId = 2;
     const NodeID NodeIDAllocator::nullPointerId = 3;
+
+    static llvm::cl::opt<std::string> nodeAllocStrat(
+        "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::userStrategyDense),
+        llvm::cl::desc("Method of allocating (LLVM) values to node IDs [dense, debug]"));
 
     NodeID NodeIDAllocator::allocateObjectId(void)
     {
