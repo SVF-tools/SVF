@@ -146,9 +146,15 @@ public:
 
     bool hasDeclaration(const SVFFunction *fun) const
     {
-        assert(!fun->isDeclaration() && "not a function definition?");
-        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
-        return it != FunDefToDeclsMap.end();
+    	if(fun->isDeclaration() && !hasDefinition(fun))
+    		return false;
+
+    	const SVFFunction* funDef = fun;
+        if(fun->isDeclaration() && hasDefinition(fun))
+        	funDef = getDefinition(fun);
+
+    	FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
+    	return it != FunDefToDeclsMap.end();
     }
 
     const FunctionSetType& getDeclaration(const Function *fun) const
@@ -158,9 +164,12 @@ public:
 
     const FunctionSetType& getDeclaration(const SVFFunction *fun) const
     {
-        assert(!fun->isDeclaration() && "not a function definition?");
-        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(fun);
-        assert(it != FunDefToDeclsMap.end() && "has no declaration?");
+    	const SVFFunction* funDef = fun;
+        if(fun->isDeclaration() && hasDefinition(fun))
+        	funDef = getDefinition(fun);
+
+        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
+        assert(it != FunDefToDeclsMap.end() && "does not have a function definition (body)?");
         return it->second;
     }
 

@@ -64,9 +64,6 @@ void dumpPointsToSet(unsigned node, NodeBS To) ;
 /// Dump alias set
 void dumpAliasSet(unsigned node, NodeBS To) ;
 
-/// Dump a Version.
-void dumpMeldVersion(MeldVersion &v);
-
 /// Returns successful message by converting a string into green string output
 std::string sucMsg(std::string msg);
 

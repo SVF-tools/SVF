@@ -1,4 +1,4 @@
-//===- VersionedFlowSensitive.cpp -- Sparse flow-sensitive pointer analysis------------//
+//===- VersionedFlowSensitive.cpp -- Versioned flow-sensitive pointer analysis------------//
 
 /*
  * VersionedFlowSensitive.cpp
@@ -241,7 +241,7 @@ bool VersionedFlowSensitive::delta(NodeID l)
     return false;
 }
 
-MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
+VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
     ++numPrelabelVersions;
     MeldVersion nv;
@@ -550,4 +550,22 @@ void VersionedFlowSensitive::dumpReliances(void) const
             SVFUtil::outs() << "\n";
         }
     }
+}
+
+void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)
+{
+    SVFUtil::outs() << "[ ";
+    bool first = true;
+    for (unsigned e : v)
+    {
+        if (!first)
+        {
+            SVFUtil::outs() << ", ";
+        }
+
+        SVFUtil::outs() << e;
+        first = false;
+    }
+
+    SVFUtil::outs() << " ]";
 }

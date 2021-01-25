@@ -1,4 +1,4 @@
-//===- VersionedFlowSensitive.h -- Flow-sensitive pointer analysis---------------------//
+//===- VersionedFlowSensitive.h -- Versioned flow-sensitive pointer analysis --------//
 
 /*
  * VersionedFlowSensitiveAnalysis.h
@@ -27,6 +27,10 @@ class SVFModule;
 class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
+
+private:
+    typedef llvm::SparseBitVector<> MeldVersion;
+
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
@@ -79,7 +83,7 @@ protected:
     virtual bool processLoad(const LoadSVFGNode* load) override;
     virtual bool processStore(const StoreSVFGNode* store) override;
     virtual void processNode(NodeID n) override;
-    virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges);
+    virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
@@ -116,6 +120,9 @@ private:
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
+
+    /// Dumps a MeldVersion to stdout.
+    static void dumpMeldVersion(MeldVersion &v);
 
     /// SVFG node (label) x object -> version to consume.
     /// Used during meld labeling. We use MeldVersions and Versions for performance.

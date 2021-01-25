@@ -342,7 +342,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
     /// Return function name;
     static std::string getNodeLabel(PTACallGraphNode *node, PTACallGraph*)
     {
-        return node->getFunction()->getName().str();
+        return node->toString();
     }
 
     static std::string getNodeAttributes(PTACallGraphNode *node, PTACallGraph*)

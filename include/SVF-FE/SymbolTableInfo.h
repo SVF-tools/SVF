@@ -32,6 +32,7 @@
 
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/LLVMModule.h"
+#include "Util/NodeIDAllocator.h"
 
 namespace SVF
 {
@@ -95,10 +96,7 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo() :
-        modelConstants(false), maxStruct(NULL), maxStSize(0)
-    {
-    }
+    SymbolTableInfo(void);
 
 public:
     /// Statistics

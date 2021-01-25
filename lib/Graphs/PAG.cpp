@@ -634,16 +634,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    //for a gep id, base id is set at lower bits, and offset is set at higher bits
-    //e.g. 1100050 denotes base=50 and offset=10
-    // The offset is 10, not 11, because we add 1 to the offset to ensure that the
-    // high bits are never 0. For example, we do not want the gep id to be 50 when
-    // the base is 50 and the offset is 0.
-    NodeID gepMultiplier = pow(10, ceil(log10(
-                                            getNodeNumAfterPAGBuild() > StInfo::getMaxFieldLimit() ?
-                                            getNodeNumAfterPAGBuild() : StInfo::getMaxFieldLimit()
-                                        )));
-    NodeID gepId = (ls.getOffset() + 1) * gepMultiplier + base;
+    NodeID gepId = NodeIDAllocator::allocateGepObjectId(base, ls.getOffset(), StInfo::getMaxFieldLimit());
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
@@ -1058,27 +1049,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         if (node->getFunction())
             rawstr << "[" << node->getFunction()->getName() << "] ";
 
-        if (briefDisplay)
-        {
-            if (SVFUtil::isa<ValPN>(node))
-            {
-                if (nameDisplay)
-                    rawstr << node->getId() << ":" << node->getValueName();
-                else
-                    rawstr << node->getId();
-            }
-            else
-                rawstr << node->getId();
-        }
-        else
-        {
-            // print the whole value
-            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
-                rawstr << *node->getValue();
-            else
-                rawstr << "";
-
-        }
+        rawstr << node->toString();
 
         return rawstr.str();
 

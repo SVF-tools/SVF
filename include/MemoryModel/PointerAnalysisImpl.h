@@ -205,7 +205,10 @@ protected:
     {
         if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
         else if (MutDiffPTDataTy *md = SVFUtil::dyn_cast<MutDiffPTDataTy>(ptD)) return md->getPtsMap();
-        else assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        else {
+			assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+			return SVFUtil::dyn_cast<MutPTDataTy>(ptD)->getPtsMap();
+        }
     }
 
     /// On the fly call graph construction

@@ -135,24 +135,6 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
-void SVFUtil::dumpMeldVersion(MeldVersion &v)
-{
-    outs() << "[ ";
-    bool first = true;
-    for (unsigned e : v)
-    {
-        if (!first)
-        {
-            outs() << ", ";
-        }
-
-        outs() << e;
-        first = false;
-    }
-
-    outs() << " ]";
-}
-
 /*!
  * Print memory usage
  */
@@ -282,9 +264,10 @@ std::string SVFUtil::getSourceLoc(const Value* val)
         {
             llvm::DILocation* Loc = SVFUtil::cast<llvm::DILocation>(N);                   // DILocation is in DebugInfo.h
             unsigned Line = Loc->getLine();
+            unsigned Column = Loc->getColumn();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
-            rawstr << "ln: " << Line << " fl: " << File;
+            rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
     }
     else if (const Argument* argument = SVFUtil::dyn_cast<Argument>(val))

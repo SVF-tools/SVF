@@ -327,47 +327,53 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
     numOfProcessedGep++;
 
     PointsTo tmpDstPts;
-    for (PointsTo::iterator piter = pts.begin(), epiter = pts.end(); piter != epiter; ++piter)
+    if (SVFUtil::isa<VariantGepCGEdge>(edge))
     {
-        /// get the object
-        NodeID ptd = *piter;
-        /// handle blackhole and constant
-        if (consCG->isBlkObjOrConstantObj(ptd))
+        // If a pointer is connected by a variant gep edge,
+        // then set this memory object to be field insensitive,
+        // unless the object is a black hole/constant.
+        for (NodeID o : pts)
         {
-            tmpDstPts.set(*piter);
+            if (consCG->isBlkObjOrConstantObj(o))
+            {
+                tmpDstPts.set(o);
+                continue;
+            }
+
+            if (!isFieldInsensitive(o))
+            {
+                setObjFieldInsensitive(o);
+                consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(o));
+            }
+
+            // Add the field-insensitive node into pts.
+            NodeID baseId = consCG->getFIObjNode(o);
+            tmpDstPts.set(baseId);
         }
-        else
+    }
+    else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
+    {
+        // TODO: after the node is set to field insensitive, handling invariant
+        // gep edge may lose precision because offsets here are ignored, and the
+        // base object is always returned.
+        for (NodeID o : pts)
         {
-            /// handle variant gep edge
-            /// If a pointer connected by a variant gep edge,
-            /// then set this memory object to be field insensitive
-            if (SVFUtil::isa<VariantGepCGEdge>(edge))
+            if (consCG->isBlkObjOrConstantObj(o))
             {
-                if (isFieldInsensitive(ptd) == false)
-                {
-                    setObjFieldInsensitive(ptd);
-                    consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(ptd));
-                }
-                // add the field-insensitive node into pts.
-                NodeID baseId = consCG->getFIObjNode(ptd);
-                tmpDstPts.set(baseId);
+                tmpDstPts.set(o);
+                continue;
             }
-            /// Otherwise process invariant (normal) gep
-            // TODO: after the node is set to field insensitive, handling invaraint gep edge may lose precision
-            // because offset here are ignored, and it always return the base obj
-            else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            {
-                if (!matchType(edge->getSrcID(), ptd, normalGepEdge))
-                    continue;
-                NodeID fieldSrcPtdNode = consCG->getGepObjNode(ptd,	normalGepEdge->getLocationSet());
-                tmpDstPts.set(fieldSrcPtdNode);
-                addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
-            }
-            else
-            {
-                assert(false && "new gep edge?");
-            }
+
+            if (!matchType(edge->getSrcID(), o, normalGepEdge)) continue;
+
+            NodeID fieldSrcPtdNode = consCG->getGepObjNode(o, normalGepEdge->getLocationSet());
+            tmpDstPts.set(fieldSrcPtdNode);
+            addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
         }
+    }
+    else
+    {
+        assert(false && "Andersen::processGepPts: New type GEP edge type?");
     }
 
     NodeID dstId = edge->getDstID();
@@ -376,6 +382,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
         pushIntoWorklist(dstId);
         return true;
     }
+
     return false;
 }
 
