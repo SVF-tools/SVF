@@ -59,7 +59,7 @@ namespace SVF
         if (strategy == Strategy::DENSE)
         {
             // Nothing different to the other case.
-            return numNodes;
+            return numObjects;
         }
         else if (strategy == Strategy::DEBUG)
         {
