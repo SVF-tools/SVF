@@ -43,3 +43,5 @@ Program             Directory
 -------             ---------
 CUDD-2.5.0          include/CUDD/
 	            lib/CUDD/
+fastcluster         include/FastCluster/
+	            lib/FastCluster/
