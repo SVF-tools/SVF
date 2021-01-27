@@ -500,19 +500,19 @@ const MDNode *TypeBasedHeapCloning::getRawCTirMetadata(const Value *v)
 
 NodeID TypeBasedHeapCloning::addCloneDummyObjNode(const MemObj *mem)
 {
-    NodeID id = ppag->getPAGNodeNum();
+    NodeID id = NodeIDAllocator::get()->allocateObjectId();
     return ppag->addObjNode(NULL, new CloneDummyObjPN(id, mem), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneGepObjNode(const MemObj *mem, const LocationSet &l)
 {
-    NodeID id = ppag->getPAGNodeNum();
+    NodeID id = NodeIDAllocator::get()->allocateObjectId();
     return ppag->addObjNode(mem->getRefVal(), new CloneGepObjPN(mem, id, l), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneFIObjNode(const MemObj *mem)
 {
-    NodeID id = ppag->getPAGNodeNum();
+    NodeID id = NodeIDAllocator::get()->allocateObjectId();
     return ppag->addObjNode(mem->getRefVal(), new CloneFIObjPN(mem->getRefVal(), id, mem), id);
 }
 

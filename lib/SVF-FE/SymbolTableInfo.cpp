@@ -30,6 +30,7 @@
 
 #include "SVF-FE/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
+#include "Util/NodeIDAllocator.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -54,8 +55,6 @@ static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
 
 static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
                                        llvm::cl::desc("Modeling individual constant objects"));
-
-
 
 /*
  * Initial the memory object here
@@ -590,6 +589,8 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
             //@}
         }
     }
+
+    NodeIDAllocator::get()->endSymbolAllocation();
 }
 
 /*!
@@ -648,10 +649,11 @@ void SymbolTableInfo::collectVal(const Value *val)
     if (iter == valSymMap.end())
     {
         // create val sym and sym type
-        valSymMap.insert(std::make_pair(val, ++totalSymNum));
-        symTyMap.insert(std::make_pair(totalSymNum, ValSym));
+        SymID id = NodeIDAllocator::get()->allocateValueId();
+        valSymMap.insert(std::make_pair(val, id));
+        symTyMap.insert(std::make_pair(id, ValSym));
         DBOUT(DMemModel,
-              outs() << "create a new value sym " << totalSymNum << "\n");
+              outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
         if (const GlobalVariable* globalVar = SVFUtil::dyn_cast<GlobalVariable>(val))
             handleGlobalCE(globalVar);
@@ -679,15 +681,16 @@ void SymbolTableInfo::collectObj(const Value *val)
         else
         {
             // create obj sym and sym type
-            objSymMap.insert(std::make_pair(val, ++totalSymNum));
-            symTyMap.insert(std::make_pair(totalSymNum, ObjSym));
+            SymID id = NodeIDAllocator::get()->allocateObjectId();
+            objSymMap.insert(std::make_pair(val, id));
+            symTyMap.insert(std::make_pair(id, ObjSym));
             DBOUT(DMemModel,
-                  outs() << "create a new obj sym " << totalSymNum << "\n");
+                  outs() << "create a new obj sym " << id << "\n");
 
             // create a memory object
-            MemObj* mem = new MemObj(val, totalSymNum);
-            assert(objMap.find(totalSymNum) == objMap.end());
-            objMap[totalSymNum] = mem;
+            MemObj* mem = new MemObj(val, id);
+            assert(objMap.find(id) == objMap.end());
+            objMap[id] = mem;
         }
     }
 }
@@ -700,10 +703,11 @@ void SymbolTableInfo::collectRet(const Function *val)
     FunToIDMapTy::iterator iter = returnSymMap.find(val);
     if (iter == returnSymMap.end())
     {
-        returnSymMap.insert(std::make_pair(val, ++totalSymNum));
-        symTyMap.insert(std::make_pair(totalSymNum, RetSym));
+        SymID id = NodeIDAllocator::get()->allocateValueId();
+        returnSymMap.insert(std::make_pair(val, id));
+        symTyMap.insert(std::make_pair(id, RetSym));
         DBOUT(DMemModel,
-              outs() << "create a return sym " << totalSymNum << "\n");
+              outs() << "create a return sym " << id << "\n");
     }
 }
 
@@ -715,10 +719,11 @@ void SymbolTableInfo::collectVararg(const Function *val)
     FunToIDMapTy::iterator iter = varargSymMap.find(val);
     if (iter == varargSymMap.end())
     {
-        varargSymMap.insert(std::make_pair(val, ++totalSymNum));
-        symTyMap.insert(std::make_pair(totalSymNum, VarargSym));
+        SymID id = NodeIDAllocator::get()->allocateValueId();
+        varargSymMap.insert(std::make_pair(val, id));
+        symTyMap.insert(std::make_pair(id, VarargSym));
         DBOUT(DMemModel,
-              outs() << "create a vararg sym " << totalSymNum << "\n");
+              outs() << "create a vararg sym " << id << "\n");
     }
 }
 

@@ -33,6 +33,7 @@
 
 #include "PAGEdge.h"
 #include "PAGNode.h"
+#include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 
@@ -722,7 +723,7 @@ public:
     //@{
     inline NodeID addDummyValNode()
     {
-        return addDummyValNode(nodeNum);
+        return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
     inline NodeID addDummyValNode(NodeID i)
     {
@@ -730,7 +731,7 @@ public:
     }
     inline NodeID addDummyObjNode(const Type* type = NULL)
     {
-        return addDummyObjNode(nodeNum, type);
+        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {

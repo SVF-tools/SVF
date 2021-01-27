@@ -95,7 +95,7 @@ private:
 
 protected:
     /// Constructor
-    SymbolTableInfo() :
+    SymbolTableInfo(void) :
         modelConstants(false), maxStruct(NULL), maxStSize(0)
     {
     }
