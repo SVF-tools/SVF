@@ -90,10 +90,6 @@ void MemObj::init(const Value *val)
     }
 }
 
-SymbolTableInfo::SymbolTableInfo(void)
-    : modelConstants(false), maxStruct(NULL), maxStSize(0)
-{ }
-
 /*!
  * Get the symbol table instance
  */
