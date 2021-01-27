@@ -4,13 +4,6 @@
 
 namespace SVF
 {
-    NodeID NodeIDAllocator::numObjects = 4;
-    NodeID NodeIDAllocator::numValues = 4;
-    NodeID NodeIDAllocator::numSymbols = 4;
-    NodeID NodeIDAllocator::numNodes = 4;
-
-    enum NodeIDAllocator::Strategy NodeIDAllocator::strategy = NodeIDAllocator::Strategy::NONE;
-
     const std::string NodeIDAllocator::userStrategyDense = "dense";
     const std::string NodeIDAllocator::userStrategyDebug = "debug";
 
@@ -19,14 +12,41 @@ namespace SVF
     const NodeID NodeIDAllocator::blackHolePointerId = 2;
     const NodeID NodeIDAllocator::nullPointerId = 3;
 
+    NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
+
     static llvm::cl::opt<std::string> nodeAllocStrat(
         "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::userStrategyDense),
         llvm::cl::desc("Method of allocating (LLVM) values to node IDs [dense, debug]"));
 
+    NodeIDAllocator *NodeIDAllocator::get(void)
+    {
+        if (allocator == nullptr)
+        {
+            allocator = new NodeIDAllocator();
+        }
+
+        return allocator;
+    }
+
+    void NodeIDAllocator::unset(void)
+    {
+        if (allocator != nullptr)
+        {
+            delete allocator;
+        }
+    }
+
+    // Initialise counts to 4 because that's how many special nodes we have.
+    NodeIDAllocator::NodeIDAllocator(void)
+        : numNodes(4), numObjects(4), numValues(4), numSymbols(4)
+    {
+        if (nodeAllocStrat == userStrategyDebug) strategy = Strategy::DEBUG;
+        else if (nodeAllocStrat == userStrategyDense) strategy = Strategy::DENSE;
+        else assert(false && "Unknown node allocation strategy specified; expected 'dense' or 'debug'");
+    }
+
     NodeID NodeIDAllocator::allocateObjectId(void)
     {
-        if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
-
         NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
@@ -55,8 +75,6 @@ namespace SVF
 
     NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit)
     {
-        if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
-
         NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
@@ -91,8 +109,6 @@ namespace SVF
 
     NodeID NodeIDAllocator::allocateValueId(void)
     {
-        if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
-
         NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
@@ -115,13 +131,6 @@ namespace SVF
 
         assert(id != 0 && "NodeIDAllocator::allocateValueId: ID not allocated");
         return id;
-    }
-
-    void NodeIDAllocator::setStrategy(std::string userStrategy)
-    {
-        if (userStrategy == userStrategyDebug) strategy = Strategy::DEBUG;
-        else if (userStrategy == userStrategyDense) strategy = Strategy::DENSE;
-        else assert(false && "Unknown node allocation strategy specified; expected 'dense' or 'debug'");
     }
 
     void NodeIDAllocator::endSymbolAllocation(void)

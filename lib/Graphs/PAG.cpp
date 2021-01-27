@@ -634,7 +634,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::allocateGepObjectId(base, ls.getOffset(), StInfo::getMaxFieldLimit());
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.getOffset(), StInfo::getMaxFieldLimit());
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);

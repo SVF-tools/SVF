@@ -30,6 +30,7 @@
 
 #include "SVF-FE/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
+#include "Util/NodeIDAllocator.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -589,7 +590,7 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
         }
     }
 
-    NodeIDAllocator::endSymbolAllocation();
+    NodeIDAllocator::get()->endSymbolAllocation();
 }
 
 /*!
@@ -648,7 +649,7 @@ void SymbolTableInfo::collectVal(const Value *val)
     if (iter == valSymMap.end())
     {
         // create val sym and sym type
-        SymID id = NodeIDAllocator::allocateValueId();
+        SymID id = NodeIDAllocator::get()->allocateValueId();
         valSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, ValSym));
         DBOUT(DMemModel,
@@ -680,7 +681,7 @@ void SymbolTableInfo::collectObj(const Value *val)
         else
         {
             // create obj sym and sym type
-            SymID id = NodeIDAllocator::allocateObjectId();
+            SymID id = NodeIDAllocator::get()->allocateObjectId();
             objSymMap.insert(std::make_pair(val, id));
             symTyMap.insert(std::make_pair(id, ObjSym));
             DBOUT(DMemModel,
@@ -702,7 +703,7 @@ void SymbolTableInfo::collectRet(const Function *val)
     FunToIDMapTy::iterator iter = returnSymMap.find(val);
     if (iter == returnSymMap.end())
     {
-        SymID id = NodeIDAllocator::allocateValueId();
+        SymID id = NodeIDAllocator::get()->allocateValueId();
         returnSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, RetSym));
         DBOUT(DMemModel,
@@ -718,7 +719,7 @@ void SymbolTableInfo::collectVararg(const Function *val)
     FunToIDMapTy::iterator iter = varargSymMap.find(val);
     if (iter == varargSymMap.end())
     {
-        SymID id = NodeIDAllocator::allocateValueId();
+        SymID id = NodeIDAllocator::get()->allocateValueId();
         varargSymMap.insert(std::make_pair(val, id));
         symTyMap.insert(std::make_pair(id, VarargSym));
         DBOUT(DMemModel,
