@@ -48,8 +48,14 @@ public:
     static const NodeID nullPointerId;
     ///@}
 
+    /// Return (singleton) allocator.
+    static NodeIDAllocator *get(void);
+
+    /// Deletes the (singleton) allocator.
+    static void unset(void);
+
     /// Allocate an object ID as determined by the strategy.
-    static NodeID allocateObjectId(void);
+    NodeID allocateObjectId(void);
 
     /// Allocate a GEP object ID as determined by the strategy.
     /// allocateObjectId is still fine for GEP objects, but
@@ -57,32 +63,36 @@ public:
     /// be allocated differently (more readable, for DEBUG).
     /// Regardless, numObjects is shared; there is no special
     /// numGepObjects.
-    static NodeID allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit);
+    NodeID allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit);
 
     /// Allocate a value ID as determined by the strategy.
-    static NodeID allocateValueId(void);
+    NodeID allocateValueId(void);
 
     /// Notify the allocator that all symbols have had IDs allocated.
-    static void endSymbolAllocation(void);
-
-    /// Set the strategy from the user-facing strategy names.
-    static void setStrategy(std::string userStrategy);
+    void endSymbolAllocation(void);
 
 private:
-    /// These are moreso counters than amounts; they start from 0.
+    /// Builds a node ID allocator with the strategy specified on the command line.
+    NodeIDAllocator(void);
+
+private:
+    /// These are moreso counters than amounts.
     ///@{
-    /// Number of memory objects allocated.
-    static NodeID numObjects;
-    /// Number of values allocated.
-    static NodeID numValues;
-    /// Number of explicit symbols allocated (e.g., llvm::Values).
-    static NodeID numSymbols;
+    /// Number of memory objects allocated, including specials.
+    NodeID numObjects;
+    /// Number of values allocated, including specials.
+    NodeID numValues;
+    /// Number of explicit symbols allocated (e.g., llvm::Values), including specials.
+    NodeID numSymbols;
     /// Total number of objects and values allocated.
-    static NodeID numNodes;
+    NodeID numNodes;
     ///@}
 
     /// Strategy to allocate with. Initially NONE.
-    static enum Strategy strategy;
+    enum Strategy strategy;
+
+    /// Single allocator.
+    static NodeIDAllocator *allocator;
 };
 
 };  // namespace SVF
