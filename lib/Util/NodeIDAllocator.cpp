@@ -4,9 +4,9 @@
 
 namespace SVF
 {
-    NodeID NodeIDAllocator::numObjects = 3;
-    NodeID NodeIDAllocator::numValues = 3;
-    NodeID NodeIDAllocator::numSymbols = 3;
+    NodeID NodeIDAllocator::numObjects = 4;
+    NodeID NodeIDAllocator::numValues = 4;
+    NodeID NodeIDAllocator::numSymbols = 4;
     NodeID NodeIDAllocator::numNodes = 4;
 
     enum NodeIDAllocator::Strategy NodeIDAllocator::strategy = NodeIDAllocator::Strategy::NONE;
@@ -27,13 +27,11 @@ namespace SVF
     {
         if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
 
-        ++numNodes;
-        ++numObjects;
-
+        NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
             // We allocate objects from 0(-ish, considering the special nodes) to # of objects.
-            return numObjects;
+            id = numObjects;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -41,25 +39,29 @@ namespace SVF
             // We may have "holes" because GEPs increment the total
             // but allocate far away. This is not a problem because
             // we don't care about the relative distances between nodes.
-            return numNodes;
+            id = numNodes;
         }
         else
         {
             assert(false && "NodeIDAllocator::allocateObjectId: unimplemented node allocation strategy.");
         }
+
+        ++numObjects;
+        ++numNodes;
+
+        assert(id != 0 && "NodeIDAllocator::allocateObjectId: ID not allocated");
+        return id;
     }
 
     NodeID NodeIDAllocator::allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit)
     {
         if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
 
-        ++numNodes;
-        ++numObjects;
-
+        NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
             // Nothing different to the other case.
-            return numObjects;
+            id =  numObjects;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -72,36 +74,47 @@ namespace SVF
                                                     numSymbols > maxFieldLimit ?
                                                     numSymbols : maxFieldLimit
                                                 )));
-            return (offset + 1) * gepMultiplier + base;
+            id = (offset + 1) * gepMultiplier + base;
+            assert(id > numNodes && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
         }
         else
         {
             assert(false && "NodeIDAllocator::allocateGepObjectId: unimplemented node allocation strategy");
         }
+
+        ++numObjects;
+        ++numNodes;
+
+        assert(id != 0 && "NodeIDAllocator::allocateGepObjectId: ID not allocated");
+        return id;
     }
 
     NodeID NodeIDAllocator::allocateValueId(void)
     {
         if (strategy == Strategy::NONE) setStrategy(nodeAllocStrat);
 
-        ++numValues;
-        ++numNodes;
-
+        NodeID id = 0;
         if (strategy == Strategy::DENSE)
         {
             // We allocate values from UINT_MAX to UINT_MAX - # of values.
             // TODO: UINT_MAX does not allow for an easily changeable type
             //       of NodeID (though it is already in use elsewhere).
-            return UINT_MAX - numValues;
+            id = UINT_MAX - numValues;
         }
         else if (strategy == Strategy::DEBUG)
         {
-            return numNodes;
+            id = numNodes;
         }
         else
         {
             assert(false && "NodeIDAllocator::allocateValueId: unimplemented node allocation strategy");
         }
+
+        ++numValues;
+        ++numNodes;
+
+        assert(id != 0 && "NodeIDAllocator::allocateValueId: ID not allocated");
+        return id;
     }
 
     void NodeIDAllocator::setStrategy(std::string userStrategy)

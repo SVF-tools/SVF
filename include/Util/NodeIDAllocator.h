@@ -69,13 +69,13 @@ public:
     static void setStrategy(std::string userStrategy);
 
 private:
-    /// These are moreso counters than amounts; they start from 0.
+    /// These are moreso counters than amounts.
     ///@{
-    /// Number of memory objects allocated.
+    /// Number of memory objects allocated, including specials.
     static NodeID numObjects;
-    /// Number of values allocated.
+    /// Number of values allocated, including specials.
     static NodeID numValues;
-    /// Number of explicit symbols allocated (e.g., llvm::Values).
+    /// Number of explicit symbols allocated (e.g., llvm::Values), including specials.
     static NodeID numSymbols;
     /// Total number of objects and values allocated.
     static NodeID numNodes;
