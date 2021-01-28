@@ -110,24 +110,24 @@ public:
         /// based on the points-to sets in ptd accessed through keys.
         /// TODO: maybe make generic on PTData.
         /// TODO: kind of sucks ptd can't be const here.
-        static std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys);
+        static inline std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys);
 
     private:
         /// Returns the minimum number of bits required to represent pts in a perfect world.
-        static unsigned requiredBits(const PointsTo &pts);
+        static inline unsigned requiredBits(const PointsTo &pts);
 
         /// Builds a DistOccMap from pointsToSets.
-        static DistOccMap getDistancesAndOccurences(const Set<PointsTo> pointsToSets);
+        static inline DistOccMap getDistancesAndOccurences(const Set<PointsTo> pointsToSets);
 
         /// Builds the upper triangle of the distance matrix, as an array of length
         /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
         /// Responsibility of caller to `delete`.
-        static double *getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects);
+        static inline double *getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects);
 
         /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
         /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
-        static void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
+        static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
     };
 };
 
