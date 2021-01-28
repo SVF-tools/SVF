@@ -1,6 +1,9 @@
 //===- NodeIDAllocator.cpp -- Allocates node IDs on request ------------------------//
 
+#include "FastCluster/fastcluster.h"
 #include "Util/NodeIDAllocator.h"
+#include "Util/BasicTypes.h"
+#include "Util/SVFBasicTypes.h"
 
 namespace SVF
 {
@@ -136,6 +139,143 @@ namespace SVF
     void NodeIDAllocator::endSymbolAllocation(void)
     {
         numSymbols = numNodes;
+    }
+
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys)
+    {
+        assert(ptd != nullptr && "Clusterer::cluster: given null ptd");
+
+        std::vector<NodeID> nodeMap;
+
+        // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
+        Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
+
+        Set<PointsTo> pointsToSets;
+        // Number of objects we're reallocating is the largest node (recall, we
+        // assume a dense allocation, which goes from 0--modulo specials--to some n).
+        // If we "allocate" for specials, it is not a problem except 2 potentially wasted
+        // allocations. This is trivial enough to make special handling not worth it.
+        unsigned numObjects = 0;
+        for (const NodeID key : keys)
+        {
+            const PointsTo &pts = ptd->getPts(key);
+            for (const NodeID o : pts) if (o >= numObjects) numObjects = o + 1;
+            pointsToSets.insert(pts);
+        }
+
+        DistOccMap distOcc = getDistancesAndOccurences(pointsToSets);
+
+        double *distMatrix = getDistanceMatrix(distOcc, numObjects);
+
+        int *dendogram = new int[2 * (numObjects - 1)];
+        double *height = new double[numObjects - 1];
+        // TODO: parameterise method.
+        hclust_fast(numObjects, distMatrix, HCLUST_METHOD_SINGLE, dendogram, height);
+
+        unsigned allocCounter = 0;
+        Set<int> visited;
+        traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
+
+        return nodeMap;
+    }
+
+    unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo &pts)
+    {
+        // Ceiling of number of bits amongst each native integer gives needed native ints.
+        return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
+    }
+
+    NodeIDAllocator::Clusterer::DistOccMap NodeIDAllocator::Clusterer::getDistancesAndOccurences(const Set<PointsTo> pointsToSets)
+    {
+        DistOccMap distOcc;
+        for (const PointsTo &pts : pointsToSets)
+        {
+            // Distance between each element of pts.
+            unsigned distance = requiredBits(pts);
+
+            // Use a vector so we can index into pts.
+            std::vector<NodeID> ptsVec;
+            for (const NodeID o : pts) ptsVec.push_back(o);
+            for (size_t i = 0; i < ptsVec.size(); ++i)
+            {
+                const NodeID oi = ptsVec[i];
+                for (size_t j = i + 1; j < ptsVec.size(); ++j)
+                {
+                    const NodeID oj = ptsVec[j];
+                    std::pair<unsigned, unsigned> &distOccPair = distOcc[std::make_pair(oi, oj)];
+                    // Three cases:
+                    //   We have some record of the same distance as the points-to set, in which
+                    //     case simply increment how often it occurs for this node pair.
+                    //   The distance in this points-to set is less than the recorded distance,
+                    //     so we record that distance instead.
+                    //   The distance in this points-to set is more, so we ignore it.
+                    if (distance == distOccPair.first)
+                    {
+                        distOccPair.second += 1;
+                    }
+                    else if (distance < distOccPair.first || distOccPair.first == 0)
+                    {
+                        distOccPair.first = distance;
+                        distOccPair.second = 1;
+                    }
+                }
+            }
+        }
+
+        return distOcc;
+    }
+
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects)
+    {
+        double *distMatrix = new double[(numObjects * (numObjects - 1)) / 2];
+
+        // Index into distMatrix.
+        unsigned m = 0;
+        for (size_t i = 0; i < numObjects; ++i) {
+            for (size_t j = i + 1; j < numObjects; ++j) {
+                // numObjects is the maximum distance.
+                unsigned distance = numObjects + 1;
+                DistOccMap::const_iterator distOccIt = distOcc.find(std::make_pair(i, j));
+                // Update from the max, if it is smaller (i.e., it exists).
+                if (distOccIt != distOcc.end()) distance = distOccIt->second.first;
+                // TODO: account for occ.
+                distMatrix[m] = distance;
+                ++m;
+            }
+        }
+
+        return distMatrix;
+    }
+
+    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index)
+    {
+        if (visited.find(index) == visited.end()) return;
+        visited.insert(index);
+
+        int left = dendogram[index - 1];
+        if (left < 0)
+        {
+            // Reached a leaf.
+            // -1 because the items start from 1 per fastcluster (TODO).
+            nodeMap[std::abs(left) - 1] = allocCounter;
+            ++allocCounter;
+        }
+        else
+        {
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left);
+        }
+
+        // Repeat for the right child.
+        int right = dendogram[(numObjects - 1) + index - 1];
+        if (right < 0)
+        {
+            nodeMap[std::abs(right) - 1] = allocCounter;
+            ++allocCounter;
+        }
+        else
+        {
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right);
+        }
     }
 
 };  // namespace SVF.

@@ -4,6 +4,7 @@
 #define NODEIDALLOCATOR_H_
 
 #include "Util/SVFBasicTypes.h"
+#include "MemoryModel/AbstractPointsToDS.h"
 
 namespace SVF
 {
@@ -93,6 +94,41 @@ private:
 
     /// Single allocator.
     static NodeIDAllocator *allocator;
+
+public:
+    /// Perform clustering given points-to sets with nodes allocated according to the
+    /// DENSE strategy.
+    class Clusterer
+    {
+    private:
+        /// Maps a pair of nodes to their (minimum) distance and the number of
+        /// times that distance occurs in a set of *unique* points-to sets.
+        typedef Map<NodePair, std::pair<unsigned, unsigned>> DistOccMap;
+
+    public:
+        /// Returns vector mapping previously allocated node IDs to a smarter allocation
+        /// based on the points-to sets in ptd accessed through keys.
+        /// TODO: maybe make generic on PTData.
+        /// TODO: kind of sucks ptd can't be const here.
+        static std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys);
+
+    private:
+        /// Returns the minimum number of bits required to represent pts in a perfect world.
+        static unsigned requiredBits(const PointsTo &pts);
+
+        /// Builds a DistOccMap from pointsToSets.
+        static DistOccMap getDistancesAndOccurences(const Set<PointsTo> pointsToSets);
+
+        /// Builds the upper triangle of the distance matrix, as an array of length
+        /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
+        /// Responsibility of caller to `delete`.
+        static double *getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects);
+
+        /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
+        /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
+        /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
+        static void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
+    };
 };
 
 };  // namespace SVF
