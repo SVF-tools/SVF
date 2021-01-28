@@ -19,6 +19,8 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
+#include "Util/SVFBasicTypes.h"
+
 namespace SVF
 {
 /// Basic points-to data structure
