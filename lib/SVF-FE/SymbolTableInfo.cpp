@@ -756,8 +756,12 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val)
     {
         if (cppUtil::isValVtbl(const_cast<GlobalVariable*>(v)))
             return false;
-        else if (!v->hasInitializer())
-            return true;
+        else if (!v->hasInitializer()){
+            if(v->isExternalLinkage(v->getLinkage()))
+                return false;
+            else
+                return true;
+        }
         else
         {
             StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
