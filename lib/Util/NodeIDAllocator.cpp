@@ -249,7 +249,7 @@ namespace SVF
 
     void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index)
     {
-        if (visited.find(index) == visited.end()) return;
+        if (visited.find(index) != visited.end()) return;
         visited.insert(index);
 
         int left = dendogram[index - 1];
