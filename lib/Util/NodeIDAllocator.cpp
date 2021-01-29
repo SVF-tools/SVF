@@ -4,6 +4,7 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/BasicTypes.h"
 #include "Util/SVFBasicTypes.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {
@@ -141,7 +142,7 @@ namespace SVF
         numSymbols = numNodes;
     }
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys, bool eval)
     {
         assert(ptd != nullptr && "Clusterer::cluster: given null ptd");
 
@@ -176,6 +177,8 @@ namespace SVF
         unsigned allocCounter = 0;
         Set<int> visited;
         traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
+
+        if (eval) evaluate(nodeMap, pointsToSets);
 
         return nodeMap;
     }
@@ -282,4 +285,66 @@ namespace SVF
         }
     }
 
+    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets)
+    {
+        unsigned totalTheoretical = 0;
+        unsigned totalOriginalSbv = 0;
+        unsigned totalOriginalBv = 0;
+        unsigned totalNewSbv = 0;
+        unsigned totalNewBv = 0;
+
+        for (const PointsTo &pts : pointsToSets)
+        {
+            if (pts.count() == 0) continue;
+
+            unsigned theoretical = requiredBits(pts) / NATIVE_INT_SIZE;
+
+            // Check number of words for original SBV.
+            Set<unsigned> words;
+            for (const NodeID o : pts) words.insert(o / NATIVE_INT_SIZE);
+            unsigned originalSbv = words.size();
+
+            // Check number of words for original BV.
+            const std::pair<PointsTo::iterator, PointsTo::iterator> minMax =
+                std::minmax_element(pts.begin(), pts.end());
+            words.clear();
+            for (NodeID b = *minMax.first; b != *minMax.second; ++b)
+            {
+                words.insert(b / NATIVE_INT_SIZE);
+            }
+            unsigned originalBv = words.size();
+
+            // Check number of words for new SBV.
+            words.clear();
+            for (const NodeID o : pts) words.insert(nodeMap[o] / NATIVE_INT_SIZE);
+            unsigned newSbv = words.size();
+
+            // Check number of words for new BV.
+            NodeID min = UINT_MAX, max = 0;
+            for (const NodeID o : pts)
+            {
+                const NodeID mappedO = nodeMap[o];
+                if (mappedO < min) min = mappedO;
+                if (mappedO > max) max = mappedO;
+            }
+
+            words.clear();
+            // No nodeMap[b] because min and max and from nodeMap.
+            for (NodeID b = min; b <= max; ++b) words.insert(b / NATIVE_INT_SIZE);
+            unsigned newBv = words.size();
+
+            totalTheoretical += theoretical;
+            totalOriginalSbv += originalSbv;
+            totalOriginalBv += originalBv;
+            totalNewSbv += newSbv;
+            totalNewBv += newBv;
+        }
+
+        SVFUtil::outs() << "Clusterer::evaluate:\n"
+                        << "  Total theoretical: " << totalTheoretical << "\n"
+                        << "  Total original SBV: " << totalOriginalSbv << "\n"
+                        << "  Total original BV: " << totalOriginalBv << "\n"
+                        << "  Total new SBV: " << totalNewSbv << "\n"
+                        << "  Total new BV: " << totalNewBv << "\n";
+    }
 };  // namespace SVF.

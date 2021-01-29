@@ -128,6 +128,10 @@ public:
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
         /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
         static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
+
+        /// Prints evaluation of the clustering for the points-to sets in pointsToSets under nodeMap.
+        /// TODO: what?
+        static inline void evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets);
     };
 };
 
