@@ -110,7 +110,7 @@ public:
         /// based on the points-to sets in ptd accessed through keys.
         /// TODO: maybe make generic on PTData.
         /// TODO: kind of sucks ptd can't be const here.
-        static inline std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys);
+        static std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys, bool eval=false);
 
     private:
         /// Returns the minimum number of bits required to represent pts in a perfect world.
