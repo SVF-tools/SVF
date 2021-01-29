@@ -181,7 +181,10 @@ namespace SVF
 
     unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo &pts)
     {
-        // Ceiling of number of bits amongst each native integer gives needed native ints.
+        if (pts.count() == 0) return 0;
+
+        // Ceiling of number of bits amongst each native integer gives needed native ints,
+        // so we then multiple again by the number of bits in each native int.
         return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
