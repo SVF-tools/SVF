@@ -145,8 +145,6 @@ namespace SVF
     {
         assert(ptd != nullptr && "Clusterer::cluster: given null ptd");
 
-        std::vector<NodeID> nodeMap;
-
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
 
@@ -162,6 +160,9 @@ namespace SVF
             for (const NodeID o : pts) if (o >= numObjects) numObjects = o + 1;
             pointsToSets.insert(pts);
         }
+
+        // Mapping we'll return.
+        std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
         DistOccMap distOcc = getDistancesAndOccurences(pointsToSets);
 
