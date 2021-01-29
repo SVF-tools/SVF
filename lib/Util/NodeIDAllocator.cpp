@@ -173,10 +173,14 @@ namespace SVF
         double *height = new double[numObjects - 1];
         // TODO: parameterise method.
         hclust_fast(numObjects, distMatrix, HCLUST_METHOD_SINGLE, dendogram, height);
+        delete distMatrix;
+        // We never use the height.
+        delete height;
 
         unsigned allocCounter = 0;
         Set<int> visited;
         traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
+        delete dendogram;
 
         if (eval) evaluate(nodeMap, pointsToSets);
 
