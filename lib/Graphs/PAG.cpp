@@ -105,7 +105,10 @@ const std::string FIObjPN::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FIObjPN ID: " << getId() << " (base object)";
     if(value){
-        rawstr << " " << *value << " ";
+        if(const SVF::Function* fun = SVFUtil::cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
     }
     return rawstr.str();
