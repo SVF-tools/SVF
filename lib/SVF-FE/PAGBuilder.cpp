@@ -85,13 +85,11 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
             /// to TRUE because of abort().
             if(fun.getLLVMFun()->doesNotReturn() == false && fun.getLLVMFun()->getReturnType()->isVoidTy() == false)
                 pag->addFunRet(&fun,pag->getPAGNode(pag->getReturnNode(&fun)));
-        }
-        for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
-                I != E; ++I)
-        {
+
             /// To be noted, we do not record arguments which are in declared function without body
-            if(!SVFUtil::isExtCall(&fun))
-            {
+            /// TODO: what about external functions with PAG imported by commandline?
+            for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
+                    I != E; ++I) {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
