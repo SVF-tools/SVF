@@ -313,7 +313,7 @@ namespace SVF
             const std::pair<PointsTo::iterator, PointsTo::iterator> minMax =
                 std::minmax_element(pts.begin(), pts.end());
             words.clear();
-            for (NodeID b = *minMax.first; b != *minMax.second; ++b)
+            for (NodeID b = *minMax.first; b <= *minMax.second; ++b)
             {
                 words.insert(b / NATIVE_INT_SIZE);
             }
