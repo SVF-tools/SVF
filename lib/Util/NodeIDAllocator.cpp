@@ -245,6 +245,11 @@ namespace SVF
         double *distMatrix = new double[condensedSize];
         for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects + 2;
 
+        // TODO: maybe use machine epsilon?
+        // For reducing distance due to extra occurrences.
+        // Can differentiate ~9999 occurrences.
+        double occurrenceEpsilon = 0.0001;
+
         for (const PointsTo &pts : pointsToSets)
         {
             // Distance between each element of pts.
@@ -262,6 +267,19 @@ namespace SVF
                     // TODO: handle occurrences.
                     double &existingDistance = distMatrix[condensedIndex(numObjects, oi, oj)];
                     if (distance < existingDistance) existingDistance = distance;
+                    else if (distance == std::ceil(existingDistance))
+                    {
+                        // We have something like distance == x, existingDistance == x - e, for some e < 1.
+                        // So, the new distance is an occurrence the existingDistance being tracked, it just
+                        // had some reductions because of multiple occurences.
+                        // If there is not room within this distance to reduce more (increase priority),
+                        // just ignore it. TODO: maybe warn?
+                        if (distance == existingDistance
+                            || existingDistance - occurrenceEpsilon > std::floor(existingDistance))
+                        {
+                            existingDistance -= occurrenceEpsilon;
+                        }
+                    }
                 }
             }
 
