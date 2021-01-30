@@ -241,11 +241,10 @@ namespace SVF
 
     double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Set<PointsTo> pointsToSets, const unsigned numObjects)
     {
-        // Count number of occurrences for each distance between two nodes first.
-        // At each condensedIndex(i, j), we have a pair of the distance between i and j, and the
-        // number of times that distance occurs in the points-to sets.
-        std::vector<std::pair<unsigned, unsigned>> distOcc((numObjects * (numObjects - 1)) / 2,
-                                                           std::make_pair(numObjects + 1, 0));
+        size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
+        double *distMatrix = new double[condensedSize];
+        for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects + 2 * NATIVE_INT_SIZE;
+
         for (const PointsTo &pts : pointsToSets)
         {
             // Distance between each element of pts.
@@ -260,33 +259,12 @@ namespace SVF
                 for (size_t j = i + 1; j < ptsVec.size(); ++j)
                 {
                     const NodeID oj = ptsVec[j];
-                    std::pair<unsigned, unsigned> &distOccPair = distOcc[condensedIndex(numObjects, oi, oj)];
-                    // Three cases:
-                    //   We have some record of the same distance as the points-to set, in which
-                    //     case simply increment how often it occurs for this node pair.
-                    //   The distance in this points-to set is less than the recorded distance,
-                    //     so we record that distance instead.
-                    //   The distance in this points-to set is more, so we ignore it.
-                    if (distance == distOccPair.first)
-                    {
-                        distOccPair.second += 1;
-                    }
-                    else if (distance < distOccPair.first)
-                    {
-                        distOccPair.first = distance;
-                        distOccPair.second = 1;
-                    }
+                    // TODO: handle occurrences.
+                    double &existingDistance = distMatrix[condensedIndex(numObjects, oi, oj)];
+                    if (distance < existingDistance) existingDistance = distance;
                 }
             }
-        }
 
-        // Move distOcc distances into distMatrix.
-        double *distMatrix = new double[(numObjects * (numObjects - 1)) / 2];
-        for (size_t i = 0; i < (numObjects * (numObjects - 1)) / 2; ++i) {
-            // numObjects is the maximum distance.
-            unsigned distance = distOcc[i].first;
-            // TODO: account for occ.
-            distMatrix[i] = distance;
         }
 
         return distMatrix;
