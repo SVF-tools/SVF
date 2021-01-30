@@ -243,12 +243,12 @@ namespace SVF
     {
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
-        for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects + 2 * NATIVE_INT_SIZE;
+        for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects + 2;
 
         for (const PointsTo &pts : pointsToSets)
         {
             // Distance between each element of pts.
-            unsigned distance = requiredBits(pts);
+            unsigned distance = requiredBits(pts) / NATIVE_INT_SIZE;
 
             // Use a vector so we can index into pts.
             std::vector<NodeID> ptsVec;
