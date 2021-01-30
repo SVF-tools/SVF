@@ -187,8 +187,7 @@ namespace SVF
         // Mapping we'll return.
         std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
-        DistOccMap distOcc = getDistancesAndOccurences(pointsToSets);
-        double *distMatrix = getDistanceMatrix(distOcc, numObjects);
+        double *distMatrix = getDistanceMatrix(pointsToSets, numObjects);
         double clkEnd = PTAStat::getClk(true);
         double time = (clkEnd - clkStart) / TIMEINTERVAL;
         totalTime += time;
@@ -225,6 +224,12 @@ namespace SVF
         return nodeMap;
     }
 
+    size_t NodeIDAllocator::Clusterer::condensedIndex(size_t n, size_t i, size_t j)
+    {
+        // From https://stackoverflow.com/a/14839010
+        return n*(n-1)/2 - (n-i)*(n-i-1)/2 + j - i - 1;
+    }
+
     unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo &pts)
     {
         if (pts.count() == 0) return 0;
@@ -234,9 +239,13 @@ namespace SVF
         return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
-    NodeIDAllocator::Clusterer::DistOccMap NodeIDAllocator::Clusterer::getDistancesAndOccurences(const Set<PointsTo> pointsToSets)
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Set<PointsTo> pointsToSets, const unsigned numObjects)
     {
-        DistOccMap distOcc;
+        // Count number of occurrences for each distance between two nodes first.
+        // At each condensedIndex(i, j), we have a pair of the distance between i and j, and the
+        // number of times that distance occurs in the points-to sets.
+        std::vector<std::pair<unsigned, unsigned>> distOcc((numObjects * (numObjects - 1)) / 2,
+                                                           std::make_pair(numObjects + 1, 0));
         for (const PointsTo &pts : pointsToSets)
         {
             // Distance between each element of pts.
@@ -251,7 +260,7 @@ namespace SVF
                 for (size_t j = i + 1; j < ptsVec.size(); ++j)
                 {
                     const NodeID oj = ptsVec[j];
-                    std::pair<unsigned, unsigned> &distOccPair = distOcc[std::make_pair(oi, oj)];
+                    std::pair<unsigned, unsigned> &distOccPair = distOcc[condensedIndex(numObjects, oi, oj)];
                     // Three cases:
                     //   We have some record of the same distance as the points-to set, in which
                     //     case simply increment how often it occurs for this node pair.
@@ -262,7 +271,7 @@ namespace SVF
                     {
                         distOccPair.second += 1;
                     }
-                    else if (distance < distOccPair.first || distOccPair.first == 0)
+                    else if (distance < distOccPair.first)
                     {
                         distOccPair.first = distance;
                         distOccPair.second = 1;
@@ -271,26 +280,13 @@ namespace SVF
             }
         }
 
-        return distOcc;
-    }
-
-    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects)
-    {
+        // Move distOcc distances into distMatrix.
         double *distMatrix = new double[(numObjects * (numObjects - 1)) / 2];
-
-        // Index into distMatrix.
-        unsigned m = 0;
-        for (size_t i = 0; i < numObjects; ++i) {
-            for (size_t j = i + 1; j < numObjects; ++j) {
-                // numObjects is the maximum distance.
-                unsigned distance = numObjects + 1;
-                DistOccMap::const_iterator distOccIt = distOcc.find(std::make_pair(i, j));
-                // Update from the max, if it is smaller (i.e., it exists).
-                if (distOccIt != distOcc.end()) distance = distOccIt->second.first;
-                // TODO: account for occ.
-                distMatrix[m] = distance;
-                ++m;
-            }
+        for (size_t i = 0; i < (numObjects * (numObjects - 1)) / 2; ++i) {
+            // numObjects is the maximum distance.
+            unsigned distance = distOcc[i].first;
+            // TODO: account for occ.
+            distMatrix[i] = distance;
         }
 
         return distMatrix;

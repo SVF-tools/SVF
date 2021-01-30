@@ -128,16 +128,17 @@ public:
         static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval=false);
 
     private:
+        /// Returns an index into a condensed matrix (upper triangle, excluding diagonals) corresponding
+        /// to an nxn matrix.
+        static inline size_t condensedIndex(size_t n, size_t i, size_t j);
+
         /// Returns the minimum number of bits required to represent pts in a perfect world.
         static inline unsigned requiredBits(const PointsTo &pts);
-
-        /// Builds a DistOccMap from pointsToSets.
-        static inline DistOccMap getDistancesAndOccurences(const Set<PointsTo> pointsToSets);
 
         /// Builds the upper triangle of the distance matrix, as an array of length
         /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
         /// Responsibility of caller to `delete`.
-        static inline double *getDistanceMatrix(const DistOccMap distOcc, const unsigned numObjects);
+        static inline double *getDistanceMatrix(const Set<PointsTo> pointsToSets, const unsigned numObjects);
 
         /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
