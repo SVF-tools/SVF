@@ -1,7 +1,11 @@
 //===- NodeIDAllocator.cpp -- Allocates node IDs on request ------------------------//
 
+#include <iomanip>
+#include <iostream>
+
 #include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/PTAStat.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/BasicTypes.h"
 #include "Util/SVFBasicTypes.h"
@@ -143,13 +147,28 @@ namespace SVF
         numSymbols = numNodes;
     }
 
+    const std::string NodeIDAllocator::Clusterer::NumObjects = "NumObjects";
+    const std::string NodeIDAllocator::Clusterer::DistanceMatrixTime = "DistanceMatrixTime";
+    const std::string NodeIDAllocator::Clusterer::FastClusterTime = "FastClusterTime";
+    const std::string NodeIDAllocator::Clusterer::DendogramTraversalTime = "DendogramTravTime";
+    const std::string NodeIDAllocator::Clusterer::TotalTime = "TotalTime";
+    const std::string NodeIDAllocator::Clusterer::TheoreticalNumWords = "TheoreticalWords";
+    const std::string NodeIDAllocator::Clusterer::OriginalBvNumWords = "OriginalBvWords";
+    const std::string NodeIDAllocator::Clusterer::OriginalSbvNumWords = "OriginalSbvWords";
+    const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
+    const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
+
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
 
+        Map<std::string, std::string> stats;
+        double totalTime = 0;
+
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
 
+        double clkStart = PTAStat::getClk(true);
         Set<PointsTo> pointsToSets;
         // Number of objects we're reallocating is the largest node (recall, we
         // assume a dense allocation, which goes from 0--modulo specials--to some n).
@@ -163,13 +182,19 @@ namespace SVF
             pointsToSets.insert(pts);
         }
 
+        stats[NumObjects] = std::to_string(numObjects);
+
         // Mapping we'll return.
         std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
         DistOccMap distOcc = getDistancesAndOccurences(pointsToSets);
-
         double *distMatrix = getDistanceMatrix(distOcc, numObjects);
+        double clkEnd = PTAStat::getClk(true);
+        double time = (clkEnd - clkStart) / TIMEINTERVAL;
+        totalTime += time;
+        stats[DistanceMatrixTime] = std::to_string(time);
 
+        clkStart = PTAStat::getClk(true);
         int *dendogram = new int[2 * (numObjects - 1)];
         double *height = new double[numObjects - 1];
         // TODO: parameterise method.
@@ -177,13 +202,25 @@ namespace SVF
         delete distMatrix;
         // We never use the height.
         delete height;
+        clkEnd = PTAStat::getClk(true);
+        time = (clkEnd - clkStart) / TIMEINTERVAL;
+        totalTime += time;
+        stats[FastClusterTime] = std::to_string(time);
 
+        clkStart = PTAStat::getClk(true);
         unsigned allocCounter = 0;
         Set<int> visited;
         traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
         delete dendogram;
+        clkEnd = PTAStat::getClk(true);
+        time = (clkEnd - clkStart) / TIMEINTERVAL;
+        totalTime += time;
+        stats[DendogramTraversalTime] = std::to_string(time);
 
-        if (eval) evaluate(nodeMap, pointsToSets);
+        stats[TotalTime] = std::to_string(totalTime);
+
+        if (eval) evaluate(nodeMap, pointsToSets, stats);
+        printStats(stats);
 
         return nodeMap;
     }
@@ -290,7 +327,7 @@ namespace SVF
         }
     }
 
-    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets)
+    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets, Map<std::string, std::string> &stats)
     {
         unsigned totalTheoretical = 0;
         unsigned totalOriginalSbv = 0;
@@ -345,11 +382,29 @@ namespace SVF
             totalNewBv += newBv;
         }
 
-        SVFUtil::outs() << "Clusterer::evaluate:\n"
-                        << "  Total theoretical: " << totalTheoretical << "\n"
-                        << "  Total original SBV: " << totalOriginalSbv << "\n"
-                        << "  Total original BV: " << totalOriginalBv << "\n"
-                        << "  Total new SBV: " << totalNewSbv << "\n"
-                        << "  Total new BV: " << totalNewBv << "\n";
+        stats[TheoreticalNumWords] = std::to_string(totalTheoretical);
+        stats[OriginalSbvNumWords] = std::to_string(totalOriginalSbv);
+        stats[OriginalBvNumWords] = std::to_string(totalOriginalBv);
+        stats[NewSbvNumWords] = std::to_string(totalNewSbv);
+        stats[NewBvNumWords] = std::to_string(totalNewBv);
     }
+
+    void NodeIDAllocator::Clusterer::printStats(Map<std::string, std::string> &stats)
+    {
+        std::cout.flags(std::ios::left);
+        SVFUtil::outs() << "****Clusterer Statistics****\n";
+        unsigned fieldWidth = 20;
+        // Explicit, rather than loop, so we control the order, for readability.
+        std::cout << std::setw(fieldWidth) << NumObjects             << " " << stats[NumObjects]             << "\n";
+        std::cout << std::setw(fieldWidth) << TheoreticalNumWords    << " " << stats[TheoreticalNumWords]    << "\n";
+        std::cout << std::setw(fieldWidth) << OriginalSbvNumWords    << " " << stats[OriginalSbvNumWords]    << "\n";
+        std::cout << std::setw(fieldWidth) << OriginalBvNumWords     << " " << stats[OriginalBvNumWords]     << "\n";
+        std::cout << std::setw(fieldWidth) << NewSbvNumWords         << " " << stats[NewSbvNumWords]         << "\n";
+        std::cout << std::setw(fieldWidth) << NewBvNumWords          << " " << stats[NewBvNumWords]          << "\n";
+        std::cout << std::setw(fieldWidth) << DistanceMatrixTime     << " " << stats[DistanceMatrixTime]     << "\n";
+        std::cout << std::setw(fieldWidth) << FastClusterTime        << " " << stats[FastClusterTime]        << "\n";
+        std::cout << std::setw(fieldWidth) << DendogramTraversalTime << " " << stats[DendogramTraversalTime] << "\n";
+        std::cout << std::setw(fieldWidth) << TotalTime              << " " << stats[TotalTime]              << "\n";
+    }
+
 };  // namespace SVF.
