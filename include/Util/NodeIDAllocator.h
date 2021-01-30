@@ -124,8 +124,10 @@ public:
     public:
         /// Returns vector mapping previously allocated node IDs to a smarter allocation
         /// based on the points-to sets in pta accessed through keys.
+        /// The second part of the keys pairs are the number of (potential) occurrences of that points-to set
+        /// or a subset, depending on the client's wish.
         /// TODO: kind of sucks pta can't be const here because getPts isn't.
-        static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval=false);
+        static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, bool eval=false);
 
     private:
         /// Returns an index into a condensed matrix (upper triangle, excluding diagonals) corresponding
@@ -138,7 +140,7 @@ public:
         /// Builds the upper triangle of the distance matrix, as an array of length
         /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
         /// Responsibility of caller to `delete`.
-        static inline double *getDistanceMatrix(const Set<PointsTo> pointsToSets, const unsigned numObjects);
+        static inline double *getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const unsigned numObjects);
 
         /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
@@ -146,7 +148,7 @@ public:
         static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
 
         /// Fills in *NumWords statistics in stats..
-        static inline void evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets, Map<std::string, std::string> &stats);
+        static inline void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats);
 
         /// Prints statistics to SVFUtil::outs().
         /// TODO: make stats const.

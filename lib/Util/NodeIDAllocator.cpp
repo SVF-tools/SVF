@@ -158,7 +158,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
     const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, bool eval)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
 
@@ -169,17 +169,18 @@ namespace SVF
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
 
         double clkStart = PTAStat::getClk(true);
-        Set<PointsTo> pointsToSets;
+        // Map points-to sets to occurrences.
+        Map<PointsTo, unsigned> pointsToSets;
         // Number of objects we're reallocating is the largest node (recall, we
         // assume a dense allocation, which goes from 0--modulo specials--to some n).
         // If we "allocate" for specials, it is not a problem except 2 potentially wasted
         // allocations. This is trivial enough to make special handling not worth it.
         unsigned numObjects = 0;
-        for (const NodeID key : keys)
+        for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
-            const PointsTo &pts = pta->getPts(key);
+            const PointsTo &pts = pta->getPts(keyOcc.first);
             for (const NodeID o : pts) if (o >= numObjects) numObjects = o + 1;
-            pointsToSets.insert(pts);
+            pointsToSets[pts] += keyOcc.second;;
         }
 
         stats[NumObjects] = std::to_string(numObjects);
@@ -239,7 +240,7 @@ namespace SVF
         return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
-    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Set<PointsTo> pointsToSets, const unsigned numObjects)
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const unsigned numObjects)
     {
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
@@ -250,8 +251,11 @@ namespace SVF
         // Can differentiate ~9999 occurrences.
         double occurrenceEpsilon = 0.0001;
 
-        for (const PointsTo &pts : pointsToSets)
+        for (const Map<PointsTo, unsigned>::value_type &ptsOcc : pointsToSets)
         {
+            const PointsTo &pts = ptsOcc.first;
+            const unsigned &occ = ptsOcc.second;
+
             // Distance between each element of pts.
             unsigned distance = requiredBits(pts) / NATIVE_INT_SIZE;
 
@@ -266,18 +270,25 @@ namespace SVF
                     const NodeID oj = ptsVec[j];
                     // TODO: handle occurrences.
                     double &existingDistance = distMatrix[condensedIndex(numObjects, oi, oj)];
+
                     if (distance < existingDistance) existingDistance = distance;
-                    else if (distance == std::ceil(existingDistance))
+
+                    if (distance == std::ceil(existingDistance))
                     {
-                        // We have something like distance == x, existingDistance == x - e, for some e < 1.
+                        // We have something like distance == x, existingDistance == x - e, for some e < 1
+                        // (potentially even set during this iteration).
                         // So, the new distance is an occurrence the existingDistance being tracked, it just
                         // had some reductions because of multiple occurences.
                         // If there is not room within this distance to reduce more (increase priority),
                         // just ignore it. TODO: maybe warn?
-                        if (distance == existingDistance
-                            || existingDistance - occurrenceEpsilon > std::floor(existingDistance))
+                        if (existingDistance - occ * occurrenceEpsilon > std::floor(existingDistance))
                         {
-                            existingDistance -= occurrenceEpsilon;
+                            existingDistance -= occ * occurrenceEpsilon;
+                        }
+                        else
+                        {
+                            // Reached minimum.
+                            existingDistance = std::floor(existingDistance) + occurrenceEpsilon;
                         }
                     }
                 }
@@ -319,7 +330,7 @@ namespace SVF
         }
     }
 
-    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Set<PointsTo> pointsToSets, Map<std::string, std::string> &stats)
+    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats)
     {
         unsigned totalTheoretical = 0;
         unsigned totalOriginalSbv = 0;
@@ -327,8 +338,9 @@ namespace SVF
         unsigned totalNewSbv = 0;
         unsigned totalNewBv = 0;
 
-        for (const PointsTo &pts : pointsToSets)
+        for (const Map<PointsTo, unsigned>::value_type &ptsOcc : pointsToSets)
         {
+            const PointsTo &pts = ptsOcc.first;
             if (pts.count() == 0) continue;
 
             unsigned theoretical = requiredBits(pts) / NATIVE_INT_SIZE;
