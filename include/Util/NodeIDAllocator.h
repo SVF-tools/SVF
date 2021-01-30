@@ -4,10 +4,12 @@
 #define NODEIDALLOCATOR_H_
 
 #include "Util/SVFBasicTypes.h"
-#include "MemoryModel/AbstractPointsToDS.h"
 
 namespace SVF
 {
+
+// Forward declare for the Clusterer.
+class BVDataPTAImpl;
 
 /// Allocates node IDs for objects and values, upon request, according to
 /// some strategy which can be user-defined.
@@ -107,10 +109,9 @@ public:
 
     public:
         /// Returns vector mapping previously allocated node IDs to a smarter allocation
-        /// based on the points-to sets in ptd accessed through keys.
-        /// TODO: maybe make generic on PTData.
-        /// TODO: kind of sucks ptd can't be const here.
-        static std::vector<NodeID> cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys, bool eval=false);
+        /// based on the points-to sets in pta accessed through keys.
+        /// TODO: kind of sucks pta can't be const here because getPts isn't.
+        static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval=false);
 
     private:
         /// Returns the minimum number of bits required to represent pts in a perfect world.

@@ -1,6 +1,7 @@
 //===- NodeIDAllocator.cpp -- Allocates node IDs on request ------------------------//
 
 #include "FastCluster/fastcluster.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/BasicTypes.h"
 #include "Util/SVFBasicTypes.h"
@@ -142,9 +143,9 @@ namespace SVF
         numSymbols = numNodes;
     }
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(PTData<NodeID, NodeID, PointsTo> *ptd, const std::vector<NodeID> keys, bool eval)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<NodeID> keys, bool eval)
     {
-        assert(ptd != nullptr && "Clusterer::cluster: given null ptd");
+        assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
 
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
@@ -157,7 +158,7 @@ namespace SVF
         unsigned numObjects = 0;
         for (const NodeID key : keys)
         {
-            const PointsTo &pts = ptd->getPts(key);
+            const PointsTo &pts = pta->getPts(key);
             for (const NodeID o : pts) if (o >= numObjects) numObjects = o + 1;
             pointsToSets.insert(pts);
         }
