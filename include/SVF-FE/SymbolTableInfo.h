@@ -76,7 +76,7 @@ private:
     CallSiteSet callSiteSet;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
-    static SymbolTableInfo* symlnfo;
+    static SymbolTableInfo* symInfo;
 
     /// Module
     SVFModule* mod;
@@ -108,12 +108,12 @@ public:
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
-    static SymbolTableInfo* Symbolnfo();
+    static SymbolTableInfo* SymbolInfo();
 
-    static void releaseSymbolnfo()
+    static void releaseSymbolInfo()
     {
-        delete symlnfo;
-        symlnfo = NULL;
+        delete symInfo;
+        symInfo = NULL;
     }
     virtual ~SymbolTableInfo()
     {
