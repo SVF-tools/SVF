@@ -340,9 +340,9 @@ void PointerAnalysis::dumpAllTypes()
         outs() << "\nNodeID " << node->getId() << "\n";
 
         Type* type = node->getValue()->getType();
-        SymbolTableInfo::Symbolnfo()->printFlattenFields(type);
+        SymbolTableInfo::SymbolInfo()->printFlattenFields(type);
         if (PointerType* ptType = SVFUtil::dyn_cast<PointerType>(type))
-            SymbolTableInfo::Symbolnfo()->printFlattenFields(ptType->getElementType());
+            SymbolTableInfo::SymbolInfo()->printFlattenFields(ptType->getElementType());
     }
 }
 

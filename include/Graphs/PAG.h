@@ -180,7 +180,7 @@ public:
     /// Get LLVM Module
     inline SVFModule* getModule()
     {
-        return SymbolTableInfo::Symbolnfo()->getModule();
+        return SymbolTableInfo::SymbolInfo()->getModule();
     }
     inline void addCallSite(const CallBlockNode* call)
     {
@@ -740,7 +740,7 @@ public:
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
-        return SymbolTableInfo::Symbolnfo()->createDummyObj(i,type);
+        return SymbolTableInfo::SymbolInfo()->createDummyObj(i,type);
     }
     inline NodeID addBlackholeObjNode()
     {
