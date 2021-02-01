@@ -796,8 +796,8 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap()
 {
 
     for (SymbolTableInfo::CallSiteSet::const_iterator it =
-                SymbolTableInfo::Symbolnfo()->getCallSiteSet().begin(), eit =
-                SymbolTableInfo::Symbolnfo()->getCallSiteSet().end(); it != eit; ++it)
+                SymbolTableInfo::SymbolInfo()->getCallSiteSet().begin(), eit =
+                SymbolTableInfo::SymbolInfo()->getCallSiteSet().end(); it != eit; ++it)
     {
         CallSite cs = *it;
         if (!cppUtil::isVirtualCallSite(cs))

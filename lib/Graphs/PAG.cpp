@@ -105,7 +105,10 @@ const std::string FIObjPN::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FIObjPN ID: " << getId() << " (base object)";
     if(value){
-        rawstr << " " << *value << " ";
+        if(const SVF::Function* fun = SVFUtil::cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
     }
     return rawstr.str();
@@ -296,7 +299,7 @@ const std::string TDJoinPE::toString() const{
 
 PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
 {
-    symInfo = SymbolTableInfo::Symbolnfo();
+    symInfo = SymbolTableInfo::SymbolInfo();
     icfg = new ICFG();
     ICFGBuilder builder(icfg);
     builder.build(getModule());
@@ -614,7 +617,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     if (obj->isFieldInsensitive())
         return getFIObjNode(obj);
 
-    LocationSet newLS = SymbolTableInfo::Symbolnfo()->getModulusOffset(obj,ls);
+    LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
     if (iter == GepObjNodeMap.end())
