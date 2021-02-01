@@ -1148,10 +1148,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         {
             return "color=black,style=dotted";
         }
-        else
-        {
-            assert(0 && "No such kind edge!!");
-        }
+
+        assert(false && "No such kind edge!!");
+        exit(1);
     }
 
     template<class EdgeIter>
