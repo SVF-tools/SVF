@@ -288,7 +288,8 @@ public:
     inline const typename MutPTDataTy::PtsMap& getPtsMap() const
     {
         if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
-        else assert(false && "CondPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        assert(false && "CondPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        exit(1);
     }
 
     /// Get points-to and reverse points-to
