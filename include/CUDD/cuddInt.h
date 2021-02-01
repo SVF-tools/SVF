@@ -112,6 +112,8 @@ extern "C" {
 /* The definitions of +/- infinity in terms of HUGE_VAL work on
 ** the DECstations and on many other combinations of OS/compiler.
 */
+#define HAVE_IEEE_754 1
+
 #ifdef HAVE_IEEE_754
 #  define DD_PLUS_INF_VAL	(HUGE_VAL)
 #else

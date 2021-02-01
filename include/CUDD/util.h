@@ -20,13 +20,13 @@ extern "C" {
 #endif
 
 #ifndef SIZEOF_VOID_P
-#define SIZEOF_VOID_P 4
+#define SIZEOF_VOID_P 8
 #endif
 #ifndef SIZEOF_INT
 #define SIZEOF_INT 4
 #endif
 #ifndef SIZEOF_LONG
-#define SIZEOF_LONG 4
+#define SIZEOF_LONG 8
 #endif
 
 #if SIZEOF_VOID_P == 8 && SIZEOF_INT == 4
