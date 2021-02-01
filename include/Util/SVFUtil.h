@@ -58,8 +58,6 @@ inline raw_ostream &errs()
 /// Dump sparse bitvector set
 void dumpSet(NodeBS To, raw_ostream & O = SVFUtil::outs());
 
-void dumpSet(PointsTo pt, raw_ostream &o = SVFUtil::outs());
-
 /// Dump points-to set
 void dumpPointsToSet(unsigned node, NodeBS To) ;
 

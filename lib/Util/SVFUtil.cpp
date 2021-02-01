@@ -135,14 +135,6 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
-void SVFUtil::dumpSet(PointsTo pt, raw_ostream &o)
-{
-    for (NodeID o : pt)
-    {
-        o << " " << o << " ";
-    }
-}
-
 /*!
  * Print memory usage
  */

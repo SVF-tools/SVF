@@ -381,13 +381,13 @@ protected:
     /// Add/Get methods for side-effect of functions and callsites
     //@{
     /// Add indirect uses an memory object in the function
-    void addRefSideEffectOfFunction(const SVFFunction* fun, const PointsTo& refs);
+    void addRefSideEffectOfFunction(const SVFFunction* fun, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    void addModSideEffectOfFunction(const SVFFunction* fun, const PointsTo& mods);
+    void addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods);
     /// Add indirect uses an memory object in the function
-    bool addRefSideEffectOfCallSite(const CallBlockNode* cs, const PointsTo& refs);
+    bool addRefSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    bool addModSideEffectOfCallSite(const CallBlockNode* cs, const PointsTo& mods);
+    bool addModSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& mods);
 
     /// Get indirect refs of a function
     inline const NodeBS& getRefSideEffectOfFunction(const SVFFunction* fun)
