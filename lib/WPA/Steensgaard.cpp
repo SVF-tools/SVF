@@ -55,7 +55,8 @@ void Steensgaard::solveWorklist(){
 
 /// merge node into equiv class and merge node's pts into ec's pts
 void Steensgaard::ecUnion(NodeID node, NodeID ec){
-    unionPts(ec, node);
+    if(unionPts(ec, node))
+        pushIntoWorklist(ec);
     setEC(node,ec);
 }
 
