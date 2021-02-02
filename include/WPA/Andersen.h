@@ -386,14 +386,19 @@ protected:
         {
             const PointsTo& pts = getPts(it->first);
             NodeBS fldInsenObjs;
-            for(NodeBS::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
+
+            for (NodeID o : pts)
             {
-                if(isFieldInsensitive(*pit))
-                    fldInsenObjs.set(*pit);
+                if(isFieldInsensitive(o))
+                    fldInsenObjs.set(o);
             }
-            for(NodeBS::iterator pit = fldInsenObjs.begin(), epit = fldInsenObjs.end(); pit!=epit; ++pit)
+
+            for (NodeID o : fldInsenObjs)
             {
-                unionPts(it->first,consCG->getAllFieldsObjNode(*pit));
+                PointsTo allFieldsPt;
+                const NodeBS &allFieldsNodeBs = consCG->getAllFieldsObjNode(o);
+                for (NodeID o : allFieldsNodeBs) allFieldsPt.set(o);
+                unionPts(it->first, allFieldsPt);
             }
         }
     }

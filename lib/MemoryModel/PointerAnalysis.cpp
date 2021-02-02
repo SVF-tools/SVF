@@ -381,7 +381,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 
     outs() << "";
 
-    for (NodeBS::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
+    for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
     {
         const PAGNode* node = pag->getPAGNode(*it);
         if(SVFUtil::isa<ObjPN>(node) == false)

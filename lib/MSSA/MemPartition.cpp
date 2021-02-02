@@ -41,7 +41,7 @@ using namespace SVF;
  */
 void DistinctMRG::partitionMRs()
 {
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it)
     {
         const SVFFunction* fun = it->first;
@@ -121,7 +121,7 @@ void DistinctMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, co
 
 void IntraDisjointMRG::partitionMRs()
 {
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(),
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(),
             eit = getFunToPointsToList().end(); it!=eit; ++it)
     {
         const SVFFunction* fun = it->first;
@@ -269,7 +269,7 @@ void IntraDisjointMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpt
 void InterDisjointMRG::partitionMRs()
 {
     /// Generate disjoint cpts.
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(),
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(),
             eit = getFunToPointsToList().end(); it!=eit; ++it)
     {
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
@@ -282,7 +282,7 @@ void InterDisjointMRG::partitionMRs()
     }
 
     /// Create memory regions.
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(),
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(),
             eit = getFunToPointsToList().end(); it!=eit; ++it)
     {
         const SVFFunction* fun = it->first;
