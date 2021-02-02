@@ -42,6 +42,7 @@
 #include "WPA/FlowSensitiveTBHC.h"
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
+#include "WPA/Steensgaard.h"
 #include "SVF-FE/PAGBuilder.h"
 
 using namespace SVF;
@@ -64,6 +65,7 @@ static llvm::cl::bits<PointerAnalysis::PTATY> PASelected(llvm::cl::desc("Select 
             clEnumValN(PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"),
             // Disabled till further work is done.
             // clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
@@ -159,6 +161,9 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     case PointerAnalysis::AndersenWaveDiffWithType_WPA:
         _pta = new AndersenWaveDiffWithType(pag);
         break;
+    case PointerAnalysis::Steensgaard_WPA:
+        _pta = new Steensgaard(pag);
+        break;
     case PointerAnalysis::FSSPARSE_WPA:
         _pta = new FlowSensitive(pag);
         break;
@@ -181,7 +186,7 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     if (anderSVFG)
     {
         SVFGBuilder memSSA(true);
-        assert(SVFUtil::isa<Andersen>(_pta) && "supports only andersen for pre-computed SVFG");
+        assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
         SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
         if (PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
