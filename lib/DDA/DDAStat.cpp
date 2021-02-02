@@ -9,6 +9,7 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "Graphs/SVFGStat.h"
+#include "Util/PointsTo.h"
 
 #include <iomanip>
 

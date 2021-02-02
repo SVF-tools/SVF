@@ -32,6 +32,7 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

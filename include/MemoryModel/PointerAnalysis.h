@@ -38,6 +38,7 @@
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

@@ -32,6 +32,7 @@
 
 #include "Graphs/VFG.h"
 #include "Graphs/SVFGNode.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

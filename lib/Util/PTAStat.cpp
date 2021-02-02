@@ -32,6 +32,7 @@
 #include "MemoryModel/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PAG.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 

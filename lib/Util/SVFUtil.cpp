@@ -31,6 +31,7 @@
 #include "SVF-FE/LLVMUtil.h"
 
 #include "Util/Conditions.h"
+#include "Util/PointsTo.h"
 #include <sys/resource.h>		/// increase stack size
 
 using namespace SVF;

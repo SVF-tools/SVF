@@ -33,6 +33,7 @@
 
 #include "WPA/Andersen.h"
 #include "WPA/CSC.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

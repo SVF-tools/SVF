@@ -33,6 +33,7 @@
  */
 
 #include "MSSA/MemPartition.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 

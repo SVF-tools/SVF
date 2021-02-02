@@ -32,6 +32,7 @@
 
 #include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
+#include "Util/PointsTo.h"
 #include <time.h>
 
 namespace SVF

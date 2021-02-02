@@ -35,6 +35,7 @@
 
 
 #include "Util/BasicTypes.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

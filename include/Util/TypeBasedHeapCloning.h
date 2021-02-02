@@ -14,6 +14,7 @@
 #include "Graphs/PAG.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/BasicTypes.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

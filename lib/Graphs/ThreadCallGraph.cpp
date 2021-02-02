@@ -30,6 +30,7 @@
 #include "Util/SVFModule.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/ThreadAPI.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

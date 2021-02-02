@@ -4,6 +4,8 @@
 #ifndef MUTABLE_POINTSTO_H_
 #define MUTABLE_POINTSTO_H_
 
+#include "Util/PointsTo.h"
+
 namespace SVF
 {
 

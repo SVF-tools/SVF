@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/PointsTo.h"
 #include "Util/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"

@@ -61,7 +61,9 @@ typedef unsigned ThreadID;
 typedef unsigned Version;
 
 typedef llvm::SparseBitVector<> NodeBS;
-typedef NodeBS PointsTo;
+typedef llvm::SparseBitVector<> SparseBitVector;
+//typedef NodeBS PointsTo;
+class PointsTo;
 typedef PointsTo AliasSet;
 typedef unsigned PointsToID;
 

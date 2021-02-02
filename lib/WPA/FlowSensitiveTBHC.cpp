@@ -12,6 +12,7 @@
 #include "WPA/FlowSensitiveTBHC.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 

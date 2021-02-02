@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Util/SVFBasicTypes.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

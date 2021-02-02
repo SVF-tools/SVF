@@ -36,6 +36,7 @@
 #include "Graphs/PAG.h"
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {
@@ -395,10 +396,8 @@ protected:
 
             for (NodeID o : fldInsenObjs)
             {
-                PointsTo allFieldsPt;
-                const NodeBS &allFieldsNodeBs = consCG->getAllFieldsObjNode(o);
-                for (NodeID o : allFieldsNodeBs) allFieldsPt.set(o);
-                unionPts(it->first, allFieldsPt);
+                const NodeBS &allFields = consCG->getAllFieldsObjNode(o);
+                for (NodeID f : allFields) addPts(it->first, f);
             }
         }
     }

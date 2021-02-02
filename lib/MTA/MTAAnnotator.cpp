@@ -7,6 +7,7 @@
 
 #include "MTA/MTAAnnotator.h"
 #include "MTA/LockAnalysis.h"
+#include "Util/PointsTo.h"
 #include <sstream>
 
 using namespace SVF;

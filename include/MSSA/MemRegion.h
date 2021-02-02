@@ -33,6 +33,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/WorkList.h"
+#include "Util/PointsTo.h"
 #include "Graphs/ICFG.h"
 
 #include <set>

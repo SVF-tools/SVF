@@ -7,6 +7,7 @@
 
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
+#include "Util/PointsTo.h"
 
 using namespace std;
 using namespace SVF;

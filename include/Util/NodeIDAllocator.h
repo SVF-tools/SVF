@@ -4,6 +4,7 @@
 #define NODEIDALLOCATOR_H_
 
 #include "Util/SVFBasicTypes.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

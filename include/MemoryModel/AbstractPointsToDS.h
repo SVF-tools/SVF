@@ -20,6 +20,7 @@
 #define ABSTRACT_POINTSTO_H_
 
 #include "Util/SVFBasicTypes.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

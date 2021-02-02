@@ -31,6 +31,7 @@
 #define INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 
 #include "MemoryModel/PointerAnalysis.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

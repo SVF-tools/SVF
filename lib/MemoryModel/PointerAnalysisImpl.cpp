@@ -9,6 +9,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
+#include "Util/PointsTo.h"
 #include <fstream>
 #include <sstream>
 

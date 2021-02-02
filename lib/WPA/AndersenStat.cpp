@@ -30,6 +30,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

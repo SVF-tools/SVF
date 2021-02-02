@@ -39,6 +39,7 @@
 
 #include "Graphs/SVFG.h"
 #include "Util/WorkList.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

@@ -6,6 +6,7 @@
 
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/PersistentPointsToCache.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

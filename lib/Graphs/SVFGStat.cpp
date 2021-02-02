@@ -30,6 +30,7 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
 #include "Graphs/PTACallGraph.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 

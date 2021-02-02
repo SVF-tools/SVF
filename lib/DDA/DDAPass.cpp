@@ -11,6 +11,7 @@
 #include "DDA/ContextDDA.h"
 #include "DDA/DDAClient.h"
 #include "SVF-FE/PAGBuilder.h"
+#include "Util/PointsTo.h"
 
 #include <sstream>
 #include <limits.h>

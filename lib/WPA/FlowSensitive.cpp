@@ -33,6 +33,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
+#include "Util/PointsTo.h"
 
 static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false), llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses"));
 

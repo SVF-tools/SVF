@@ -12,6 +12,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 #include "Util/SCC.h"
+#include "Util/PointsTo.h"
 #include <algorithm>
 
 namespace SVF

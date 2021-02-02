@@ -31,6 +31,7 @@
 
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
+#include "Util/PointsTo.h"
 
 using namespace SVF;
 

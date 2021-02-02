@@ -33,6 +33,7 @@
 #include "Util/SVFUtil.h"
 #include "Util/Conditions.h"
 #include "llvm/Support/raw_ostream.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

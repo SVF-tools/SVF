@@ -32,6 +32,7 @@
 
 #include "MSSA/MemSSA.h"
 #include "Graphs/VFGEdge.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {
