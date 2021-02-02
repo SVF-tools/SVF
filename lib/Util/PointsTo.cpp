@@ -128,7 +128,14 @@ bool PointsTo::operator|=(const PointsTo &rhs)
 bool PointsTo::operator|=(const NodeBS &rhs)
 {
     // TODO:
-    return sbv |= rhs;
+    bool changed = false;
+    for (NodeID n : rhs)
+    {
+        if (changed) set(n);
+        else changed = test_and_set(n);
+    }
+
+    return changed;
 }
 
 bool PointsTo::operator&=(const PointsTo &rhs)
