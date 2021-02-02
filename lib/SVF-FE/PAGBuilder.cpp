@@ -62,7 +62,7 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
 
     /// initial external library information
     /// initial PAG nodes
-    initalNode();
+    initialiseNodes();
     /// initial PAG edges:
     ///// handle globals
     visitGlobal(svfModule);
@@ -85,13 +85,11 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
             /// to TRUE because of abort().
             if(fun.getLLVMFun()->doesNotReturn() == false && fun.getLLVMFun()->getReturnType()->isVoidTy() == false)
                 pag->addFunRet(&fun,pag->getPAGNode(pag->getReturnNode(&fun)));
-        }
-        for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
-                I != E; ++I)
-        {
+
             /// To be noted, we do not record arguments which are in declared function without body
-            if(!SVFUtil::isExtCall(&fun))
-            {
+            /// TODO: what about external functions with PAG imported by commandline?
+            for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
+                    I != E; ++I) {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
                 NodeID argValNodeId = pag->getValueNode(&*I);
                 // if this is the function does not have caller (e.g. main)
@@ -130,11 +128,11 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
 /*
  * Initial all the nodes from symbol table
  */
-void PAGBuilder::initalNode()
+void PAGBuilder::initialiseNodes()
 {
-    DBOUT(DPAGBuild, outs() << "Inital PAG Node ...\n");
+    DBOUT(DPAGBuild, outs() << "Initialise PAG Nodes ...\n");
 
-    SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+    SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
 
     pag->addBlackholeObjNode();
     pag->addConstantObjNode();
@@ -209,7 +207,7 @@ void PAGBuilder::initalNode()
  */
 bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls)
 {
-    return SymbolTableInfo::Symbolnfo()->computeGepOffset(V,ls);
+    return SymbolTableInfo::SymbolInfo()->computeGepOffset(V,ls);
 }
 
 /*!
@@ -427,7 +425,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::Symbolnfo()->getFattenFieldIdxVec(sty);
+            SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = offsetvect[i];
@@ -878,7 +876,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
  */
 const Type *PAGBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<LocationSet> &fields)
 {
-    return SymbolTableInfo::Symbolnfo()->getBaseTypeAndFlattenedFields(V, fields);
+    return SymbolTableInfo::SymbolInfo()->getBaseTypeAndFlattenedFields(V, fields);
 }
 
 /*!
@@ -1193,7 +1191,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::CPP_EFT_A0R_A1:
             {
-                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
                     NodeID vnD = pag->getValueNode(cs.getArgument(0));
@@ -1204,7 +1202,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::CPP_EFT_A0R_A1R:
             {
-                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
                     NodeID vnD = getValueNode(cs.getArgument(0));
@@ -1218,7 +1216,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::CPP_EFT_A1R:
             {
-                SymbolTableInfo* symTable = SymbolTableInfo::Symbolnfo();
+                SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
                     NodeID vnS = getValueNode(cs.getArgument(1));
@@ -1374,7 +1372,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
          * 2. GlobalVariable
          */
         assert((SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
-        const std::vector<FieldInfo> &fieldinfo = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(baseType);
+        const std::vector<FieldInfo> &fieldinfo = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(baseType);
         const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program

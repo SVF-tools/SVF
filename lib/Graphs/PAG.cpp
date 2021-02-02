@@ -299,7 +299,7 @@ const std::string TDJoinPE::toString() const{
 
 PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
 {
-    symInfo = SymbolTableInfo::Symbolnfo();
+    symInfo = SymbolTableInfo::SymbolInfo();
     icfg = new ICFG();
     ICFGBuilder builder(icfg);
     builder.build(getModule());
@@ -617,7 +617,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     if (obj->isFieldInsensitive())
         return getFIObjNode(obj);
 
-    LocationSet newLS = SymbolTableInfo::Symbolnfo()->getModulusOffset(obj,ls);
+    LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
     if (iter == GepObjNodeMap.end())
@@ -1148,10 +1148,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         {
             return "color=black,style=dotted";
         }
-        else
-        {
-            assert(0 && "No such kind edge!!");
-        }
+
+        assert(false && "No such kind edge!!");
+        exit(1);
     }
 
     template<class EdgeIter>

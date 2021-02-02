@@ -251,7 +251,7 @@ PointsTo operator|(const PointsTo &lhs, const PointsTo &rhs)
     // TODO: optimise.
     PointsTo result = lhs;
     result |= rhs;
-    return lhs;
+    return result;
 }
 
 PointsTo operator&(const PointsTo &lhs, const PointsTo &rhs)
@@ -259,7 +259,7 @@ PointsTo operator&(const PointsTo &lhs, const PointsTo &rhs)
     // TODO: optimise.
     PointsTo result = lhs;
     result &= rhs;
-    return lhs;
+    return result;
 }
 
 PointsTo operator-(const PointsTo &lhs, const PointsTo &rhs)
@@ -267,7 +267,7 @@ PointsTo operator-(const PointsTo &lhs, const PointsTo &rhs)
     // TODO: optimise.
     PointsTo result = lhs;
     result -= rhs;
-    return lhs;
+    return result;
 }
 
 };  // namespace SVF

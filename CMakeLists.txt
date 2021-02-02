@@ -14,9 +14,9 @@ if(NOT COMMAND add_llvm_library)
         # In particular, we need C++11 and the -fno-rtti flag
         set(CMAKE_CXX_STANDARD 14)
 	if(CMAKE_BUILD_TYPE MATCHES "Debug")
-		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -g -O0 -fno-rtti -Wno-deprecated")
+		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -g -O0 -fno-rtti -Wno-deprecated -DHAVE_IEEE_754 -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8")
 	else()
-		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -O3 -fno-rtti -Wno-deprecated")
+		set(CMAKE_CXX_FLAGS "-fPIC -std=gnu++14 -O3 -fno-rtti -Wno-deprecated -DHAVE_IEEE_754 -DSIZEOF_VOID_P=8 -DSIZEOF_LONG=8")
 	endif()
 	set(CMAKE_C_FLAGS "-fPIC")
 

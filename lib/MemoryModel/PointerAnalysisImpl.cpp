@@ -42,7 +42,7 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
 
     if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
+            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == Steensgaard_WPA)
     {
         if (backingType == PTBackingType::Mutable) ptD = new MutDiffPTDataTy();
         else if (backingType == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache());

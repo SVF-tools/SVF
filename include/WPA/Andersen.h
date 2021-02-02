@@ -69,7 +69,7 @@ public:
     }
 
     /// Andersen analysis
-    virtual void analyze() = 0;
+    virtual void analyze();
 
     /// Initialize analysis
     virtual void initialize();
@@ -95,7 +95,8 @@ public:
                 || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA
                 || pta->getAnalysisTy() == AndersenSCD_WPA
                 || pta->getAnalysisTy() == AndersenSFR_WPA
-				|| pta->getAnalysisTy() == TypeCPP_WPA);
+				|| pta->getAnalysisTy() == TypeCPP_WPA
+				|| pta->getAnalysisTy() == Steensgaard_WPA);
     }
     //@}
 
@@ -110,6 +111,27 @@ public:
     {
         PointerAnalysis::dumpStat();
     }
+
+    /// Statistics
+    //@{
+    static Size_t numOfProcessedAddr;   /// Number of processed Addr edge
+    static Size_t numOfProcessedCopy;   /// Number of processed Copy edge
+    static Size_t numOfProcessedGep;    /// Number of processed Gep edge
+    static Size_t numOfProcessedLoad;   /// Number of processed Load edge
+    static Size_t numOfProcessedStore;  /// Number of processed Store edge
+    static Size_t numOfSfrs;
+    static Size_t numOfFieldExpand;
+
+    static Size_t numOfSCCDetection;
+    static double timeOfSCCDetection;
+    static double timeOfSCCMerges;
+    static double timeOfCollapse;
+    static Size_t AveragePointsToSetSize;
+    static Size_t MaxPointsToSetSize;
+    static double timeOfProcessCopyGep;
+    static double timeOfProcessLoadStore;
+    static double timeOfUpdateCallGraph;
+    //@}
 
 protected:
     /// Constraint Graph
@@ -127,27 +149,6 @@ public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
-    /// Statistics
-    //@{
-    static Size_t numOfProcessedAddr;	/// Number of processed Addr edge
-    static Size_t numOfProcessedCopy;	/// Number of processed Copy edge
-    static Size_t numOfProcessedGep;	/// Number of processed Gep edge
-    static Size_t numOfProcessedLoad;	/// Number of processed Load edge
-    static Size_t numOfProcessedStore;	/// Number of processed Store edge
-    static Size_t numOfSfrs;
-    static Size_t numOfFieldExpand;
-
-    static Size_t numOfSCCDetection;
-    static double timeOfSCCDetection;
-    static double timeOfSCCMerges;
-    static double timeOfCollapse;
-    static Size_t AveragePointsToSetSize;
-    static Size_t MaxPointsToSetSize;
-    static double timeOfProcessCopyGep;
-    static double timeOfProcessLoadStore;
-    static double timeOfUpdateCallGraph;
-    //@}
-
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true),
@@ -160,9 +161,6 @@ public:
     {
 
     }
-
-    /// Andersen analysis
-    virtual void analyze();
 
     /// Initialize analysis
     virtual void initialize();

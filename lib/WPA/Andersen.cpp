@@ -35,24 +35,24 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-Size_t Andersen::numOfProcessedAddr = 0;
-Size_t Andersen::numOfProcessedCopy = 0;
-Size_t Andersen::numOfProcessedGep = 0;
-Size_t Andersen::numOfProcessedLoad = 0;
-Size_t Andersen::numOfProcessedStore = 0;
-Size_t Andersen::numOfSfrs = 0;
-Size_t Andersen::numOfFieldExpand = 0;
+Size_t AndersenBase::numOfProcessedAddr = 0;
+Size_t AndersenBase::numOfProcessedCopy = 0;
+Size_t AndersenBase::numOfProcessedGep = 0;
+Size_t AndersenBase::numOfProcessedLoad = 0;
+Size_t AndersenBase::numOfProcessedStore = 0;
+Size_t AndersenBase::numOfSfrs = 0;
+Size_t AndersenBase::numOfFieldExpand = 0;
 
-Size_t Andersen::numOfSCCDetection = 0;
-double Andersen::timeOfSCCDetection = 0;
-double Andersen::timeOfSCCMerges = 0;
-double Andersen::timeOfCollapse = 0;
+Size_t AndersenBase::numOfSCCDetection = 0;
+double AndersenBase::timeOfSCCDetection = 0;
+double AndersenBase::timeOfSCCMerges = 0;
+double AndersenBase::timeOfCollapse = 0;
 
-Size_t Andersen::AveragePointsToSetSize = 0;
-Size_t Andersen::MaxPointsToSetSize = 0;
-double Andersen::timeOfProcessCopyGep = 0;
-double Andersen::timeOfProcessLoadStore = 0;
-double Andersen::timeOfUpdateCallGraph = 0;
+Size_t AndersenBase::AveragePointsToSetSize = 0;
+Size_t AndersenBase::MaxPointsToSetSize = 0;
+double AndersenBase::timeOfProcessCopyGep = 0;
+double AndersenBase::timeOfProcessLoadStore = 0;
+double AndersenBase::timeOfUpdateCallGraph = 0;
 
 
 static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
@@ -104,7 +104,7 @@ void AndersenBase::finalize()
 /*!
  * Andersen analysis
  */
-void Andersen::analyze()
+void AndersenBase::analyze()
 {
     /// Initialization for the Solver
     initialize();
