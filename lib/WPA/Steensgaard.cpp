@@ -10,11 +10,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<string> WriteSteens("write-steens",  llvm::cl::init(""),
-                                        llvm::cl::desc("Write Steensgaard's analysis results to a file"));
-static llvm::cl::opt<string> ReadSteens("read-steens",  llvm::cl::init(""),
-                                       llvm::cl::desc("Read Steensgaard's analysis results from a file"));
-
 /*!
  * Steensgaard analysis
  */
