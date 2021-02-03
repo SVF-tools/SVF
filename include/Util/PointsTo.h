@@ -34,9 +34,12 @@ public:
     typedef PointsToIterator const_iterator;
     typedef const_iterator iterator;
 
+    typedef std::shared_ptr<std::vector<NodeID>> MappingPtr;
+
 public:
     /// Construct empty points-to set.
-    PointsTo(void);
+    PointsTo(Type type=Type::SBV, MappingPtr nodeMapping=nullptr,
+             MappingPtr reverseNodeMapping=nullptr);
     /// Copy costructor.
     PointsTo(const PointsTo &pt);
     /// Move constructor.
@@ -109,15 +112,6 @@ public:
     const_iterator end(void) const { return PointsToIterator(this, true); }
 
 public:
-    /// Set mapping to be given to newly constructed points-to sets.
-    /// nullptr == no mapping.
-    static void setConstructMapping(std::shared_ptr<std::vector<NodeID>> nodeMapping);
-
-    /// Set the type of points-to set that should be constructed
-    /// when a constructor is called.
-    static void setConstructType(enum Type type);
-
-private:
     /// Returns nodeMapping[n], checking for nullptr and size.
     NodeID getInternalNode(NodeID n) const;
 
@@ -136,16 +130,9 @@ private:
     /// Type of this points-to set.
     enum Type type;
     /// External nodes -> internal nodes.
-    std::shared_ptr<std::vector<NodeID>> nodeMapping;
+    MappingPtr nodeMapping;
     /// Internal nodes -> external nodes.
-    std::shared_ptr<std::vector<NodeID>> reverseNodeMapping;
-
-    /// Node mapping for newly constructed points-to sets.
-    static std::shared_ptr<std::vector<NodeID>> constructNodeMapping;
-    /// Reverse of constructNodeMapping; for newly constructed points-to sets.
-    static std::shared_ptr<std::vector<NodeID>> constructReverseNodeMapping;
-    /// Type of points-to set to construct.
-    static enum Type constructType;
+    MappingPtr reverseNodeMapping;
 
 public:
     class PointsToIterator

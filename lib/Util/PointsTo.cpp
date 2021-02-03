@@ -15,13 +15,8 @@
 namespace SVF
 {
 
-std::shared_ptr<std::vector<NodeID>> PointsTo::constructNodeMapping = nullptr;
-std::shared_ptr<std::vector<NodeID>> PointsTo::constructReverseNodeMapping = nullptr;
-enum PointsTo::Type PointsTo::constructType = PointsTo::Type::SBV;
-
-PointsTo::PointsTo(void)
-    : type(constructType), nodeMapping(constructNodeMapping),
-      reverseNodeMapping(constructReverseNodeMapping) { }
+PointsTo::PointsTo(Type type, MappingPtr nodeMapping, MappingPtr reverseNodeMapping)
+    : type(type), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping) { }
 
 PointsTo::PointsTo(const PointsTo &pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
