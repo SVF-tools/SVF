@@ -102,6 +102,11 @@ public:
         defaultData = data;
     }
 
+    virtual inline Data getDefaultData(void) const
+    {
+        return defaultData;
+    }
+
 protected:
     /// Whether we maintain reverse points-to sets or not.
     bool rev;
