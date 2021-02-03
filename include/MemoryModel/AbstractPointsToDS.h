@@ -95,10 +95,19 @@ public:
     /// Dump stored keys and points-to sets.
     virtual void dumpPTData() = 0;
 
+    /// Set the empty points-to set to be copied when a new set is requested.
+    /// TODO: override for Persistent.
+    virtual void setDefaultData(const Data &data)
+    {
+        defaultData = data;
+    }
+
 protected:
     /// Whether we maintain reverse points-to sets or not.
     bool rev;
     PTDataTy ptdTy;
+    /// Data (points-to set) to freshly construct.
+    Data defaultData;
 };
 
 /// Abstract diff points-to data with cached information.

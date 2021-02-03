@@ -47,7 +47,7 @@ public:
 
     virtual inline const Data& getPts(const Key& var) override
     {
-        return ptsMap[var];
+        return getMutPts(var);
     }
 
     virtual inline const KeySet& getRevPts(const Datum& datum) override
@@ -59,19 +59,19 @@ public:
     virtual inline bool addPts(const Key &dstKey, const Datum& element) override
     {
         addSingleRevPts(revPtsMap[element], dstKey);
-        return addPts(ptsMap[dstKey], element);
+        return addPts(getMutPts(dstKey), element);
     }
 
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
-        addRevPts(ptsMap[srcKey], dstKey);
-        return unionPts(ptsMap[dstKey], getPts(srcKey));
+        addRevPts(getMutPts(srcKey), dstKey);
+        return unionPts(getMutPts(dstKey), getPts(srcKey));
     }
 
     virtual inline bool unionPts(const Key& dstKey, const Data& srcData) override
     {
         addRevPts(srcData,dstKey);
-        return unionPts(ptsMap[dstKey], srcData);
+        return unionPts(getMutPts(dstKey), srcData);
     }
 
     virtual inline void dumpPTData() override
@@ -81,12 +81,12 @@ public:
 
     virtual void clearPts(const Key& var, const Datum& element) override
     {
-        ptsMap[var].reset(element);
+        getMutPts(var).reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
-        ptsMap[var].clear();
+        getMutPts(var).clear();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -103,6 +103,13 @@ public:
     ///@}
 
 protected:
+    /// Returns a reference to a mutable Data, constructing it as
+    /// defaultData if it doesn't exist.
+    inline Data& getMutPts(const Key& var)
+    {
+        return ptsMap.insert({var, BasePTData::defaultData}).first->second;
+    }
+
     virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
@@ -264,13 +271,13 @@ protected:
     /// Get diff PTS that can be modified.
     inline Data &getMutDiffPts(Key &var)
     {
-        return diffPtsMap[var];
+        return diffPtsMap.insert({var, BasePTData::defaultData}).first->second;
     }
 
     /// Get propagated points to.
     inline Data &getPropaPts(Key &var)
     {
-        return propaPtsMap[var];
+        return propaPtsMap.insert({var, BasePTData::defaultData}).first->second;
     }
 
 private:
@@ -356,13 +363,13 @@ public:
     virtual inline Data& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& inSet = dfInPtsMap[loc];
-        return inSet[var];
+        return inSet.insert({var, BasePTData::defaultData}).first->second;
     }
 
     virtual inline Data& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& outSet = dfOutPtsMap[loc];
-        return outSet[var];
+        return outSet.insert({var, BasePTData::defaultData}).first->second;
     }
 
     /// Get internal flow-sensitive data structures.
@@ -449,15 +456,15 @@ public:
     ///@{
     virtual inline bool addPts(const Key &dstKey, const Key& srcKey) override
     {
-        return addPts(mutPTData.ptsMap[dstKey], srcKey);
+        return addPts(mutPTData.getMutPts(dstKey), srcKey);
     }
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
-        return unionPts(mutPTData.ptsMap[dstKey], getPts(srcKey));
+        return unionPts(mutPTData.getMutPts(dstKey), getPts(srcKey));
     }
     virtual inline bool unionPts(const Key& dstKey, const Data& srcData) override
     {
-        return unionPts(mutPTData.ptsMap[dstKey],srcData);
+        return unionPts(mutPTData.getMutPts(dstKey),srcData);
     }
     virtual void clearPts(const Key& var, const Datum& element) override
     {
