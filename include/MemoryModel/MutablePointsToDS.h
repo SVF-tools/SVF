@@ -374,13 +374,25 @@ public:
     virtual inline Data& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& inSet = dfInPtsMap[loc];
-        return inSet.insert({var, BasePTData::defaultData}).first->second;
+
+        size_t before = inSet.size();
+        Data &pts = inSet[var];
+        size_t after = inSet.size();
+
+        if (before != after) pts = BasePTData::defaultData;
+        return pts;
     }
 
     virtual inline Data& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& outSet = dfOutPtsMap[loc];
-        return outSet.insert({var, BasePTData::defaultData}).first->second;
+
+        size_t before = outSet.size();
+        Data &pts = outSet[var];
+        size_t after = outSet.size();
+
+        if (before != after) pts = BasePTData::defaultData;
+        return pts;
     }
 
     /// Get internal flow-sensitive data structures.
