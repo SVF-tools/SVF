@@ -272,7 +272,9 @@ namespace SVF
                     // TODO: handle occurrences.
                     double &existingDistance = distMatrix[condensedIndex(numObjects, oi, oj)];
 
-                    if (distance < existingDistance) existingDistance = distance;
+                    // Subtract extra occurrenceEpsilon to make upcoming logic simpler.
+                    // When existingDistance is never whole, it is always between two distances.
+                    if (distance < existingDistance) existingDistance = distance - occurrenceEpsilon;
 
                     if (distance == std::ceil(existingDistance))
                     {
