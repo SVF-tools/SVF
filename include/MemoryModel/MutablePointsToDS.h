@@ -105,9 +105,14 @@ public:
 protected:
     /// Returns a reference to a mutable Data, constructing it as
     /// defaultData if it doesn't exist.
-    inline Data& getMutPts(const Key& var)
+    inline Data &getMutPts(const Key& var)
     {
-        return ptsMap.insert({var, BasePTData::defaultData}).first->second;
+        size_t before = ptsMap.size();
+        Data &pts = ptsMap[var];
+        size_t after = ptsMap.size();
+
+        if (before != after) pts = BasePTData::defaultData;
+        return pts;
     }
 
     virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
