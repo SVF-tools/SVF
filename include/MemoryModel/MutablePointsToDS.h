@@ -254,6 +254,12 @@ public:
         getPropaPts(var).clear();
     }
 
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        mutPTData.setDefaultData(data);
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const MutableDiffPTData<Key, Datum, Data> *)
@@ -475,6 +481,12 @@ public:
         mutPTData.clearFullPts(var);
     }
     ///@}
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        mutPTData.setDefaultData(data);
+    }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
@@ -886,6 +898,13 @@ public:
         tlPTData.dumpPTData();
         SVFUtil::outs() << "== Address-taken points-to information\n";
         atPTData.dumpPTData();
+    }
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        tlPTData.setDefaultData(data);
+        atPTData.setDefaultData(data);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
