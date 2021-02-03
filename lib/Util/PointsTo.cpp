@@ -96,32 +96,32 @@ void PointsTo::reset(unsigned n)
 
 bool PointsTo::contains(const PointsTo &rhs) const
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv.contains(rhs.sbv);
 }
 
 bool PointsTo::intersects(const PointsTo &rhs) const
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv.intersects(rhs.sbv);
 }
 
 bool PointsTo::operator==(const PointsTo &rhs) const
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv == rhs.sbv;
 }
 
 bool PointsTo::operator!=(const PointsTo &rhs) const
 {
     // TODO: we're asserting twice... should be okay...
-    assert(metaSame());
+    assert(metaSame(rhs));
     return !(*this == rhs);
 }
 
 bool PointsTo::operator|=(const PointsTo &rhs)
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv |= rhs.sbv;
 }
 
@@ -140,25 +140,25 @@ bool PointsTo::operator|=(const NodeBS &rhs)
 
 bool PointsTo::operator&=(const PointsTo &rhs)
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv &= rhs.sbv;
 }
 
 bool PointsTo::operator-=(const PointsTo &rhs)
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv.intersectWithComplement(rhs.sbv);
 }
 
 bool PointsTo::intersectWithComplement(const PointsTo &rhs)
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     return sbv.intersectWithComplement(rhs.sbv);
 }
 
 void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
 {
-    assert(metaSame());
+    assert(metaSame(rhs));
     sbv.intersectWithComplement(lhs.sbv, rhs.sbv);
 }
 
@@ -172,36 +172,20 @@ size_t PointsTo::hash(void) const
 NodeID PointsTo::getInternalNode(NodeID n) const
 {
     if (nodeMapping == nullptr) return n;
-    assert(n < nodeMapping.size());
+    assert(n < nodeMapping->size());
     return nodeMapping->at(n);
 }
 
 NodeID PointsTo::getExternalNode(NodeID n) const
 {
     if (reverseNodeMapping == nullptr) return n;
-    assert(n < reverseNodeMapping.size());
+    assert(n < reverseNodeMapping->size());
     return reverseNodeMapping->at(n);
 }
 
 bool PointsTo::metaSame(const PointsTo &pt) const
 {
     return type == pt.type && nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
-}
-
-void PointsTo::setConstructMapping(std::shared_ptr<std::vector<NodeID>> nodeMapping)
-{
-    constructNodeMapping = nodeMapping;
-    constructReverseNodeMapping = std::make_shared<std::vector<NodeID>>(constructNodeMapping->size(), 0);
-
-    for (size_t i = 0; i < constructNodeMapping->size(); ++i)
-    {
-        constructReverseNodeMapping->at(constructNodeMapping->at(i)) = i;
-    }
-}
-
-void PointsTo::setConstructType(enum Type type)
-{
-    constructType = type;
 }
 
 PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
