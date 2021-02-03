@@ -422,7 +422,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     bool changed = false;
     const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
 
-    PointsTo tmpDstPts;
+    PointsTo tmpDstPts(getPTDataTy()->getDefaultData());
     if (SVFUtil::isa<VariantGepPE>(edge->getPAGEdge()))
     {
         for (NodeID o : srcPts)
