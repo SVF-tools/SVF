@@ -46,7 +46,7 @@ public:
     void reset(void)
     {
         const Data *emptyData = idToPts[emptyPointsToId()];
-        for (const Data *d : idToPts) free(d);
+        for (const Data *d : idToPts) delete d;
         idToPts.clear();
         ptsToId.clear();
 
