@@ -60,7 +60,7 @@ public:
 
     virtual inline bool addPts(const Key &dstKey, const Datum& element) override
     {
-        Data srcPts;
+        Data srcPts(BasePTData::defaultData);
         srcPts.set(element);
         PointsToID srcId = ptCache.emplacePts(srcPts);
         return unionPtsFromId(dstKey, srcId);
@@ -84,7 +84,7 @@ public:
 
     virtual void clearPts(const Key& var, const Datum& element) override
     {
-        Data toRemoveData;
+        Data toRemoveData(BasePTData::defaultData);
         toRemoveData.set(element);
         PointsToID toRemoveId = ptCache.emplacePts(toRemoveData);
         PointsToID varId = ptsMap[var];
@@ -99,6 +99,12 @@ public:
     virtual void clearFullPts(const Key& var) override
     {
         ptsMap[var] = PersistentPointsToCache<Data>::emptyPointsToId();
+    }
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        ptCache.setDefaultData(data);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -245,6 +251,13 @@ public:
     virtual inline void clearPropaPts(Key &var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
+    }
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        persPTData.setDefaultData(data);
+        ptCache.setDefaultData(data);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -432,6 +445,13 @@ public:
     virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
+    }
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        persPTData.setDefaultData(data);
+        ptCache.setDefaultData(data);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -797,6 +817,13 @@ public:
         tlPTData.dumpPTData();
         SVFUtil::outs() << "== Address-taken points-to information\n";
         atPTData.dumpPTData();
+    }
+
+    virtual void setDefaultData(const Data &data) override
+    {
+        BasePTData::setDefaultData(data);
+        tlPTData.setDefaultData(data);
+        atPTData.setDefaultData(data);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:

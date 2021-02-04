@@ -45,14 +45,13 @@ public:
     /// Resets the cache removing everything except the emptyData it was initialised with.
     void reset(void)
     {
-        const Data *emptyData = idToPts[emptyPointsToId()];
         for (const Data *d : idToPts) delete d;
         idToPts.clear();
         ptsToId.clear();
 
         // Put the empty data back in.
-        ptsToId[*emptyData] = emptyPointsToId();
-        idToPts.push_back(emptyData);
+        ptsToId[defaultData] = emptyPointsToId();
+        idToPts.push_back(new Data(defaultData));
 
         unionCache.clear();
         complementCache.clear();
@@ -147,6 +146,16 @@ public:
 
     // TODO: ref count API for garbage collection.
 
+    /// Set the Data to be built for new points-to sets.
+    void setDefaultData(const Data &data)
+    {
+        defaultData = data;
+        // Clear the cache since it uses a different default.
+        // TODO: only clear if it differs.
+        reset();
+        // reset puts the defaultData back in for the empty set.
+    }
+
 private:
     PointsToID newPointsToId(void)
     {
@@ -213,6 +222,9 @@ private:
 
     /// Used to generate new PointsToIDs. Any non-zero is valid.
     PointsToID idCounter;
+
+    /// Empty points-to set to construct.
+    Data defaultData;
 };
 
 } // End namespace SVF
