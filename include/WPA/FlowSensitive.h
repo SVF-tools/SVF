@@ -272,6 +272,10 @@ protected:
     }
     ///@}
 
+    /// Performs clustering based on ander.
+    /// Sets the default Data in the PTD.
+    virtual void cluster(void);
+
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;
     AndersenWaveDiff *ander;

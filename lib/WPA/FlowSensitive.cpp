@@ -55,6 +55,10 @@ void FlowSensitive::initialize()
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
+    /// VSFS wants to do its own clustering *after* versioning.
+    /// TODO: bad dependency.
+    if (!SVFUtil::isa<VersionedFlowSensitive>(this)) cluster();
+
     stat = new FlowSensitiveStat(this);
 }
 
@@ -705,6 +709,22 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
             return true;
     }
     return false;
+}
+
+void FlowSensitive::cluster(void)
+{
+    std::vector<std::pair<unsigned, unsigned>> keys;
+    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
+
+    PointsTo::MappingPtr nodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, true));
+    PointsTo::MappingPtr reverseNodeMapping =
+        std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
+
+    for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
+
+    PointsTo defaultPt(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
+    getPTDataTy()->setDefaultData(defaultPt);
 }
 
 void FlowSensitive::printCTirAliasStats(void)
