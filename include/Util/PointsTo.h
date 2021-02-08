@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Util/SVFBasicTypes.h"
+#include "Util/DynamicBitVector.h"
 
 namespace SVF
 {
@@ -28,6 +29,7 @@ public:
     enum Type
     {
         SBV,
+        DBV,
     };
 
     class PointsToIterator;
@@ -127,6 +129,9 @@ private:
     /// Sparse bit vector backing.
     SparseBitVector sbv;
 
+    /// Dynamic bit vector backing.
+    DynamicBitVector dbv;
+
     /// Type of this points-to set.
     enum Type type;
     /// External nodes -> internal nodes.
@@ -174,6 +179,7 @@ public:
         /// Iterator into the PointsTo.
         /// TODO:
         SparseBitVector::iterator sbvIt;
+        DynamicBitVector::iterator dbvIt;
     };
 };
 
