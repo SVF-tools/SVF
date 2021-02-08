@@ -650,10 +650,10 @@ public:
                         return true;
                     else if (lpts.count() == rpts.count())
                     {
-                        NodeBS::iterator bit = lpts.begin();
-                        NodeBS::iterator eit = lpts.end();
-                        NodeBS::iterator rbit = rpts.begin();
-                        NodeBS::iterator reit = rpts.end();
+                        PointsTo::iterator bit = lpts.begin();
+                        PointsTo::iterator eit = lpts.end();
+                        PointsTo::iterator rbit = rpts.begin();
+                        PointsTo::iterator reit = rpts.end();
                         for (; bit != eit && rbit != reit; bit++, rbit++)
                         {
                             if (*bit < *rbit)
@@ -726,7 +726,7 @@ public:
         {
             const PointsTo& pts = it->second;
             str += "pts{";
-            for (NodeBS::iterator ii = pts.begin(), ie = pts.end();
+            for (PointsTo::iterator ii = pts.begin(), ie = pts.end();
                     ii != ie; ii++)
             {
                 char int2str[16];
