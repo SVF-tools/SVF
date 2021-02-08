@@ -200,9 +200,9 @@ namespace SVF
         double *height = new double[numObjects - 1];
         // TODO: parameterise method.
         hclust_fast(numObjects, distMatrix, HCLUST_METHOD_SINGLE, dendogram, height);
-        delete distMatrix;
+        delete[] distMatrix;
         // We never use the height.
-        delete height;
+        delete[] height;
         clkEnd = PTAStat::getClk(true);
         time = (clkEnd - clkStart) / TIMEINTERVAL;
         totalTime += time;
@@ -212,7 +212,7 @@ namespace SVF
         unsigned allocCounter = 0;
         Set<int> visited;
         traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
-        delete dendogram;
+        delete[] dendogram;
         clkEnd = PTAStat::getClk(true);
         time = (clkEnd - clkStart) / TIMEINTERVAL;
         totalTime += time;
