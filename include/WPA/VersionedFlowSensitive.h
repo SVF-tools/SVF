@@ -79,6 +79,25 @@ public:
     }
     //@}
 
+    /// Create single instance of versioned flow-sensitive points-to analysis.
+    static VersionedFlowSensitive *createVFSWPA(PAG *_pag)
+    {
+        if (vfspta == nullptr)
+        {
+            vfspta = new VersionedFlowSensitive(_pag);
+            vfspta->analyze();
+        }
+
+        return vfspta;
+    }
+
+    /// Release flow-sensitive pointer analysis
+    static void releaseVFSWPA()
+    {
+        if (vfspta) delete vfspta;
+        vfspta = nullptr;
+    }
+
 protected:
     virtual bool processLoad(const LoadSVFGNode* load) override;
     virtual bool processStore(const StoreSVFGNode* store) override;
@@ -167,6 +186,8 @@ private:
     double meldMappingTime;  ///< Time to map MeldVersions to Versions.
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
+
+    static VersionedFlowSensitive *vfspta;
 };
 
 } // End namespace SVF
