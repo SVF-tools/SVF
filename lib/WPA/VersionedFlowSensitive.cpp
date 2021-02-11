@@ -14,6 +14,7 @@
 using namespace SVF;
 
 const Version VersionedFlowSensitive::invalidVersion = 0;
+VersionedFlowSensitive *VersionedFlowSensitive::vfspta = nullptr;
 
 VersionedVar VersionedFlowSensitive::atKey(NodeID var, Version version)
 {
