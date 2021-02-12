@@ -127,14 +127,20 @@ bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
     // We specifically don't want to equalise the offset and length, because
     // 1) it's const, and 2) imagine testing equality for { 0, 1 } and { 0, 500 }...
     // TODO: repetition.
-    const DynamicBitVector &earlierOffsetDBV = offset < rhs.offset ? *this : rhs;
-    const DynamicBitVector &laterOffsetDBV = offset > rhs.offset ? *this : rhs;
+    // If they're equal, guaranteed that earlier will be *this, and later will be rhs.
+    const DynamicBitVector &earlierOffsetDBV = offset <= rhs.offset ? *this : rhs;
+    const DynamicBitVector &laterOffsetDBV = offset >= rhs.offset ? rhs : *this;
 
+    // No need to worry about equality here; they're just numbers.
     unsigned smallerOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
     unsigned largerOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
+    // Now convert to indices: smaller at 0. We want to check what is between the
+    // smaller offset DBV and the larger one first.
+    largerOffset -= smallerOffset;
+    smallerOffset = 0;
 
-    unsigned e = smallerOffset;
-    for ( ; e != largerOffset; e += WordSize)
+    unsigned e = 0;
+    for ( ; e != largerOffset; ++e)
     {
         // If a bit is set where the other DBV doesn't even start,
         // they are obviously not equal.
