@@ -44,11 +44,13 @@ class BVDataPTAImpl : public PointerAnalysis
 public:
     typedef PTData<NodeID, NodeID, PointsTo> PTDataTy;
     typedef MutablePTData<NodeID, NodeID, PointsTo> MutPTDataTy;
-    typedef DiffPTData<NodeID, NodeID, PointsTo, EdgeID> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeID, PointsTo, EdgeID> MutDiffPTDataTy;
+    typedef DiffPTData<NodeID, NodeID, PointsTo> DiffPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
     typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
     typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
+    typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
+    typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
 
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
@@ -163,6 +165,13 @@ protected:
         return mdf;
     }
 
+    inline VersionedPTDataTy* getVersionedPTDataTy() const
+    {
+        VersionedPTDataTy* v = SVFUtil::dyn_cast<VersionedPTDataTy>(ptD);
+        assert(v && "BVDataPTAImpl::getVersionedPTDataTy: not a VersionedPTDataTy!");
+        return v;
+    }
+
     inline bool hasPtsMap(void) const
     {
         return SVFUtil::isa<MutPTDataTy>(ptD) || SVFUtil::isa<MutDiffPTDataTy>(ptD);
@@ -172,7 +181,10 @@ protected:
     {
         if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
         else if (MutDiffPTDataTy *md = SVFUtil::dyn_cast<MutDiffPTDataTy>(ptD)) return md->getPtsMap();
-        else assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        else {
+			assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+			return SVFUtil::dyn_cast<MutPTDataTy>(ptD)->getPtsMap();
+        }
     }
 
     /// On the fly call graph construction
@@ -276,7 +288,8 @@ public:
     inline const typename MutPTDataTy::PtsMap& getPtsMap() const
     {
         if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
-        else assert(false && "CondPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        assert(false && "CondPTAImpl::getPtsMap: not a PTData with a PtsMap!");
+        exit(1);
     }
 
     /// Get points-to and reverse points-to

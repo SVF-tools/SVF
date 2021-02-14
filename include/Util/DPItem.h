@@ -768,6 +768,26 @@ public:
         else
             return context < rhs.context;
     }
+    /// Overloading Operator=
+    inline CxtDPItem& operator= (const CxtDPItem& rhs)
+    {
+        if(*this!=rhs)
+        {
+            cur = rhs.cur;
+            context = rhs.context;
+        }
+        return *this;
+    }
+    /// Overloading Operator==
+    inline bool operator== (const CxtDPItem& rhs) const
+    {
+        return (cur == rhs.cur) && (context == rhs.context);
+    }
+    /// Overloading Operator!=
+    inline bool operator!= (const CxtDPItem& rhs) const
+    {
+        return !(*this == rhs);
+    }
 
 };
 

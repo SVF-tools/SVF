@@ -564,6 +564,7 @@ static const ei_pair ei_pairs[]=
     {"memalign", ExtAPI::EFT_ALLOC},
     {"valloc", ExtAPI::EFT_ALLOC},
     {"SRE_LockCreate", ExtAPI::EFT_ALLOC},
+    {"VOS_MemAlloc", ExtAPI::EFT_ALLOC},
 
     {"\01mmap64", ExtAPI::EFT_NOSTRUCT_ALLOC},
     //FIXME: this is like realloc but with arg1.

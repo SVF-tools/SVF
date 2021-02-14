@@ -29,16 +29,20 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
 {
     if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
+            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == Steensgaard_WPA)
     {
         ptD = new MutDiffPTDataTy();
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
         if (INCDFPTData)
-            ptD = new IncMutDFPTDataTy();
+            ptD = new IncMutDFPTDataTy(false);
         else
-            ptD = new MutDFPTDataTy();
+            ptD = new MutDFPTDataTy(false);
+    }
+    else if (type == VFS_WPA)
+    {
+        ptD = new MutVersionedPTDataTy(false);
     }
     else
         assert(false && "no points-to data available");

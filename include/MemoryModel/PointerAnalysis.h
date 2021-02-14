@@ -67,11 +67,13 @@ public:
         AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
+        Steensgaard_WPA,      ///< Steensgaard PTA
         CSCallString_WPA,	///< Call string based context sensitive WPA
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
         FSSPARSE_WPA,		///< Sparse flow sensitive WPA
         FSTBHC_WPA,		///< Sparse flow-sensitive type-based heap cloning WPA
+        VFS_WPA,		///< Versioned sparse flow-sensitive WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
         FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
         ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA

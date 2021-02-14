@@ -47,7 +47,7 @@ typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
 class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl
 {
     friend class FlowSensitiveStat;
-private:
+protected:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
 
 public:
@@ -273,6 +273,7 @@ protected:
 
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;
+    AndersenWaveDiff *ander;
 
     /// Statistics.
     //@{

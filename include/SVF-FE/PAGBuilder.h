@@ -71,7 +71,7 @@ public:
 
     /// Initialize nodes and edges
     //@{
-    void initalNode();
+    void initialiseNodes();
     void addEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind,
                  Size_t offset = 0, Instruction* cs = NULL);
     // @}
@@ -161,6 +161,8 @@ public:
     void visitCastInst(CastInst &I);
     void visitSelectInst(SelectInst &I);
     void visitExtractValueInst(ExtractValueInst  &EVI);
+    void visitBranchInst(BranchInst &I);
+    void visitSwitchInst(SwitchInst &I);
     void visitInsertValueInst(InsertValueInst &I)
     {
         addBlackHoleAddrEdge(getValueNode(&I));

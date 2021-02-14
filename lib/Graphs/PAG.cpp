@@ -105,7 +105,10 @@ const std::string FIObjPN::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FIObjPN ID: " << getId() << " (base object)";
     if(value){
-        rawstr << " " << *value << " ";
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
         rawstr << getSourceLoc(value);
     }
     return rawstr.str();
@@ -296,7 +299,7 @@ const std::string TDJoinPE::toString() const{
 
 PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0)
 {
-    symInfo = SymbolTableInfo::Symbolnfo();
+    symInfo = SymbolTableInfo::SymbolInfo();
     icfg = new ICFG();
     ICFGBuilder builder(icfg);
     builder.build(getModule());
@@ -614,7 +617,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     if (obj->isFieldInsensitive())
         return getFIObjNode(obj);
 
-    LocationSet newLS = SymbolTableInfo::Symbolnfo()->getModulusOffset(obj,ls);
+    LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
     if (iter == GepObjNodeMap.end())
@@ -634,16 +637,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjNodeMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    //for a gep id, base id is set at lower bits, and offset is set at higher bits
-    //e.g. 1100050 denotes base=50 and offset=10
-    // The offset is 10, not 11, because we add 1 to the offset to ensure that the
-    // high bits are never 0. For example, we do not want the gep id to be 50 when
-    // the base is 50 and the offset is 0.
-    NodeID gepMultiplier = pow(10, ceil(log10(
-                                            getNodeNumAfterPAGBuild() > StInfo::getMaxFieldLimit() ?
-                                            getNodeNumAfterPAGBuild() : StInfo::getMaxFieldLimit()
-                                        )));
-    NodeID gepId = (ls.getOffset() + 1) * gepMultiplier + base;
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.getOffset(), StInfo::getMaxFieldLimit());
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
@@ -1058,27 +1052,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         if (node->getFunction())
             rawstr << "[" << node->getFunction()->getName() << "] ";
 
-        if (briefDisplay)
-        {
-            if (SVFUtil::isa<ValPN>(node))
-            {
-                if (nameDisplay)
-                    rawstr << node->getId() << ":" << node->getValueName();
-                else
-                    rawstr << node->getId();
-            }
-            else
-                rawstr << node->getId();
-        }
-        else
-        {
-            // print the whole value
-            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
-                rawstr << *node->getValue();
-            else
-                rawstr << "";
-
-        }
+        rawstr << node->toString();
 
         return rawstr.str();
 
@@ -1174,10 +1148,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         {
             return "color=black,style=dotted";
         }
-        else
-        {
-            assert(0 && "No such kind edge!!");
-        }
+
+        assert(false && "No such kind edge!!");
+        exit(1);
     }
 
     template<class EdgeIter>

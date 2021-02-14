@@ -5,13 +5,13 @@
 ///
 /// Hierarchy (square brackets indicate abstract class):
 ///
-///       +------------> [PTData] <----------------+
-///       |                 ^                      |
-///       |                 |                      |
-/// MutablePTData      [DiffPTData]            [DFPTData]
-///                         ^                      ^
-///                         |                      |
-///                 MutableDiffPTData        MutableDFPTData
+///       +------------> [PTData] <----------------+---------------------+
+///       |                 ^                      |                     |
+///       |                 |                      |                     |
+/// MutablePTData      [DiffPTData]            [DFPTData]         [VersionedPTData]
+///                         ^                      ^                     ^
+///                         |                      |                     |
+///                 MutableDiffPTData        MutableDFPTData    MutableVersionedPTData
 ///                                                ^
 ///                                                |
 ///                                        IncMutableDFPTData
@@ -49,9 +49,11 @@ public:
         DataFlow,
         MutDataFlow,
         IncMutDataFlow,
+        Versioned,
+        MutVersioned,
     };
 
-    PTData(PTDataTy ty = PTDataTy::Base) : ptdTy(ty) { }
+    PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
 
     virtual ~PTData() { }
 
@@ -86,28 +88,27 @@ public:
     virtual void dumpPTData() = 0;
 
 protected:
+    /// Whether we maintain reverse points-to sets or not.
+    bool rev;
     PTDataTy ptdTy;
 };
 
 /// Abstract diff points-to data with cached information.
 /// This is an optimisation on top of the base points-to data structure.
 /// The points-to information is propagated incrementally only for the different parts.
-template <typename Key, typename Datum, typename Data, typename CacheKey>
+template <typename Key, typename Datum, typename Data>
 class DiffPTData : public PTData<Key, Datum, Data>
 {
 public:
     typedef PTData<Key, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
-    DiffPTData(PTDataTy ty = PTDataTy::Diff) : BasePTData(ty) { }
+    DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) { }
 
     virtual ~DiffPTData() { }
 
     /// Get diff points to.
-    virtual Data& getDiffPts(Key& var) = 0;
-
-    /// Get propagated points to.
-    virtual Data& getPropaPts(Key& var) = 0;
+    virtual const Data& getDiffPts(Key& var) = 0;
 
     /// Compute diff points to. Return TRUE if diff is not empty.
     /// 1. calculate diff: diff = all - propa.
@@ -121,15 +122,9 @@ public:
     /// Clear propagated points-to set of var.
     virtual void clearPropaPts(Key& var) = 0;
 
-    /// Get cached points-to
-    virtual Data& getCachePts(CacheKey& cache) = 0;
-
-    /// Add data to cached points-to set.
-    virtual void addCachePts(CacheKey& cache, Data& data) = 0;
-
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DiffPTData<Key, Datum, Data, CacheKey> *)
+    static inline bool classof(const DiffPTData<Key, Datum, Data> *)
     {
         return true;
     }
@@ -154,7 +149,7 @@ public:
     typedef NodeID LocID;
 
     /// Constructor
-    DFPTData(PTDataTy ty = BasePTData::DataFlow) : BasePTData(ty) { }
+    DFPTData(bool reversePT = true, PTDataTy ty = BasePTData::DataFlow) : BasePTData(reversePT, ty) { }
 
     virtual ~DFPTData() { }
 
@@ -210,6 +205,50 @@ public:
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
                || ptd->getPTDTY() == BasePTData::IncMutDataFlow;
+    }
+    ///@}
+};
+
+/// PTData with normal keys and versioned keys. Replicates the PTData interface for
+/// versioned keys too. Intended to be used for versioned flow-sensitive PTA--hence the
+/// name--but can be used anywhere where there are two types of keys at play.
+template <typename Key, typename Datum, typename Data, typename VersionedKey>
+class VersionedPTData : public PTData<Key, Datum, Data>
+{
+public:
+    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef typename BasePTData::PTDataTy PTDataTy;
+    typedef typename BasePTData::KeySet KeySet;
+
+    typedef Set<VersionedKey> VersionedKeySet;
+
+    VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) { }
+
+    virtual ~VersionedPTData() { }
+
+    virtual const Data& getPts(const VersionedKey& vk) = 0;
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) = 0;
+
+    virtual bool addPts(const VersionedKey& vk, const Datum& element) = 0;
+
+    virtual bool unionPts(const VersionedKey& dstVar, const VersionedKey& srcVar) = 0;
+    virtual bool unionPts(const VersionedKey& dstVar, const Key& srcVar) = 0;
+    virtual bool unionPts(const Key& dstVar, const VersionedKey& srcVar) = 0;
+    virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) = 0;
+
+    virtual void clearPts(const VersionedKey& vk, const Datum& element) = 0;
+    virtual void clearFullPts(const VersionedKey& vk) = 0;
+
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    ///@{
+    static inline bool classof(const VersionedPTData<Key, Datum, Data, VersionedKey> *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    {
+        return ptd->getPTDTY() == PTDataTy::Versioned || ptd->getPTDTY() == PTDataTy::MutVersioned;
     }
     ///@}
 };

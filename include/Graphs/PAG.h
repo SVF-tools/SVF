@@ -33,6 +33,7 @@
 
 #include "PAGEdge.h"
 #include "PAGNode.h"
+#include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 
@@ -179,7 +180,7 @@ public:
     /// Get LLVM Module
     inline SVFModule* getModule()
     {
-        return SymbolTableInfo::Symbolnfo()->getModule();
+        return SymbolTableInfo::SymbolInfo()->getModule();
     }
     inline void addCallSite(const CallBlockNode* call)
     {
@@ -722,7 +723,7 @@ public:
     //@{
     inline NodeID addDummyValNode()
     {
-        return addDummyValNode(nodeNum);
+        return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
     inline NodeID addDummyValNode(NodeID i)
     {
@@ -730,7 +731,7 @@ public:
     }
     inline NodeID addDummyObjNode(const Type* type = NULL)
     {
-        return addDummyObjNode(nodeNum, type);
+        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {
@@ -739,7 +740,7 @@ public:
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
-        return SymbolTableInfo::Symbolnfo()->createDummyObj(i,type);
+        return SymbolTableInfo::SymbolInfo()->createDummyObj(i,type);
     }
     inline NodeID addBlackholeObjNode()
     {
