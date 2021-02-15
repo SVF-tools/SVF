@@ -24,16 +24,16 @@ void Steensgaard::solveWorklist(){
         NodeID nodeId = popFromWorklist();
         ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
-        /// foreach ptd \in pts(p)
-        for(NodeID ptd : getPts(nodeId)){
+        /// foreach o \in pts(p)
+        for(NodeID o : getPts(nodeId)){
 
             /// *p = q : EC(o) == EC(q)
             for (ConstraintEdge* edge : node->getStoreInEdges()){
-                ecUnion(edge->getSrcID(),ptd);
+                ecUnion(edge->getSrcID(), o);
             }
             // r = *p : EC(r) == EC(o)
             for (ConstraintEdge* edge : node->getLoadOutEdges()){
-                ecUnion(ptd,edge->getDstID());
+                ecUnion(o, edge->getDstID());
             }
         }
 
@@ -47,6 +47,26 @@ void Steensgaard::solveWorklist(){
         }
     }
 }
+
+/// API for equivalence class operations
+/// Every constraint node maps to an unique equivalence class EC
+/// An equivalence class has a set of sub constraint nodes.
+NodeID Steensgaard::getECNode(NodeID id) const
+{
+	WorkList list;
+	list.push(id);
+	NodeID nodeID = id;
+    while(list.empty()) {
+    	nodeID = list.pop();
+        NodeToEquivClassMap::const_iterator it = nodeToECMap.find(nodeID);
+        if(it==nodeToECMap.end())
+            return id;
+        else
+        	list.push(it->second);
+	}
+    return nodeID;
+}
+
 
 /// merge node into equiv class and merge node's pts into ec's pts
 void Steensgaard::ecUnion(NodeID node, NodeID ec){
