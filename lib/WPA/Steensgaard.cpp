@@ -48,23 +48,16 @@ void Steensgaard::solveWorklist(){
     }
 }
 
-/// API for equivalence class operations
-/// Every constraint node maps to an unique equivalence class EC
-/// An equivalence class has a set of sub constraint nodes.
-NodeID Steensgaard::getECNode(NodeID id) const
+
+void Steensgaard::setEC(NodeID node, NodeID rep)
 {
-	WorkList list;
-	list.push(id);
-	NodeID nodeID = id;
-    while(list.empty()) {
-    	nodeID = list.pop();
-        NodeToEquivClassMap::const_iterator it = nodeToECMap.find(nodeID);
-        if(it==nodeToECMap.end())
-            return id;
-        else
-        	list.push(it->second);
-	}
-    return nodeID;
+    rep = getEC(rep);
+    Set<NodeID>& subNodes = getSubNodes(node);
+    for(NodeID sub : subNodes){
+        nodeToECMap[sub] = rep;
+        addSubNode(rep,sub);
+    }
+    subNodes.clear();
 }
 
 
