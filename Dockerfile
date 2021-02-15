@@ -8,7 +8,7 @@ ENV llvm_version=10.0.0
 
 # Define dependencies.
 ENV lib_deps="make g++ git zlib1g-dev libncurses5-dev libssl-dev libpcre2-dev zip vim"
-ENV build_deps="wget xz-utils cmake python"
+ENV build_deps="wget xz-utils cmake python git gdb"
 
 # Fetch dependencies.
 RUN apt-get update

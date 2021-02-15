@@ -93,14 +93,8 @@ public:
     /// API for equivalence class operations
     /// Every constraint node maps to an unique equivalence class EC
     /// An equivalence class has a set of sub constraint nodes.
-    inline NodeID getECNode(NodeID id) const
-    {
-        NodeToEquivClassMap::const_iterator it = nodeToECMap.find(id);
-        if(it==nodeToECMap.end())
-            return id;
-        else
-            return it->second;
-    }
+    NodeID getECNode(NodeID id) const;
+
     inline void setEC(NodeID node, NodeID rep)
     {
         nodeToECMap[node] = rep;

@@ -28,6 +28,8 @@
  *      Author: Yulei Sui
  */
 
+#include <memory>
+
 #include "SVF-FE/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
 #include "Util/NodeIDAllocator.h"
@@ -420,7 +422,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 void SymbolTableInfo::prePassSchedule(SVFModule* svfModule)
 {
     /// BreakConstantGEPs Pass
-    BreakConstantGEPs* p1 = new BreakConstantGEPs();
+    std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
     for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
     {
         Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
@@ -428,7 +430,8 @@ void SymbolTableInfo::prePassSchedule(SVFModule* svfModule)
     }
 
     /// MergeFunctionRets Pass
-    UnifyFunctionExitNodes* p2 = new UnifyFunctionExitNodes();
+    std::unique_ptr<UnifyFunctionExitNodes> p2 =
+        std::make_unique<UnifyFunctionExitNodes>();
     for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
     {
         Function *fun = *F;
