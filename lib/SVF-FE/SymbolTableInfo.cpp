@@ -47,7 +47,6 @@ using namespace SVFUtil;
 
 DataLayout* SymbolTableInfo::dl = NULL;
 SymbolTableInfo* SymbolTableInfo::symInfo = NULL;
-SymID SymbolTableInfo::totalSymNum = 0;
 
 static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
         llvm::cl::desc("Maximum field number for field sensitive analysis"));
