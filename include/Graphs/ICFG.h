@@ -76,7 +76,6 @@ public:
     /// Destructor
     virtual ~ICFG()
     {
-        destroy();
     }
 
     /// Get a ICFG node

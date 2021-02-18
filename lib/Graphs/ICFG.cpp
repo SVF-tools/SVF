@@ -87,9 +87,9 @@ const std::string FunEntryBlockNode::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FunEntryBlockNode ID: " << getId();
     if (isExtCall(getFun()))
-        rawstr << "Entry(" << ")\n";
+        rawstr << " Entry(" << ")\n";
     else
-        rawstr << "Entry(" << getSourceLoc(getFun()->getLLVMFun()) << ")\n";
+        rawstr << " Entry(" << getSourceLoc(getFun()->getLLVMFun()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
@@ -99,9 +99,9 @@ const std::string FunExitBlockNode::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FunExitBlockNode ID: " << getId();
     if (isExtCall(getFun()))
-        rawstr << "Exit(" << ")\n";
+        rawstr << " Exit(" << ")\n";
     else
-        rawstr << "Exit(" << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI()) << ")\n";
+        rawstr << " Exit(" << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }

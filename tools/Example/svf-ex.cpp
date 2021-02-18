@@ -185,6 +185,12 @@ int main(int argc, char ** argv)
     /// Collect all successor nodes on ICFG
     /// traverseOnICFG(icfg, value);
 
+    // clean up memory
+    delete vfg;
+    delete svfg;
+    AndersenWaveDiff::releaseAndersenWaveDiff();
+    PAG::releasePAG();
+
     return 0;
 }
 

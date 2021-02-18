@@ -105,7 +105,7 @@ const std::string FIObjPN::toString() const {
     raw_string_ostream rawstr(str);
     rawstr << "FIObjPN ID: " << getId() << " (base object)";
     if(value){
-        if(const SVF::Function* fun = SVFUtil::cast<Function>(value))
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
             rawstr << " " << fun->getName() << " ";
         else
             rawstr << " " << *value << " ";
@@ -813,7 +813,7 @@ void PAG::destroy()
             delete *edgeIt;
         }
     }
-    delete symInfo;
+    SymbolTableInfo::releaseSymbolInfo();
     symInfo = NULL;
 }
 
