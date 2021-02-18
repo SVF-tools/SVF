@@ -124,6 +124,10 @@ bool DynamicBitVector::intersects(const DynamicBitVector &rhs) const
 
 bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
 {
+    if (this == &rhs) return true;
+
+    // TODO: maybe a simple equal offset, equal size path?
+
     // We specifically don't want to equalise the offset and length, because
     // 1) it's const, and 2) imagine testing equality for { 0, 1 } and { 0, 500 }...
     // TODO: repetition.
@@ -132,32 +136,38 @@ bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
     const DynamicBitVector &laterOffsetDBV = offset >= rhs.offset ? rhs : *this;
 
     // No need to worry about equality here; they're just numbers.
-    unsigned smallerOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
-    unsigned largerOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
-    // Now convert to indices: smaller at 0. We want to check what is between the
-    // smaller offset DBV and the larger one first.
-    largerOffset -= smallerOffset;
-    smallerOffset = 0;
+    size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
+    size_t laterOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
+    // Now convert to indices. We want to check what is between the smaller offset DBV
+    // and the larger one first. From 0 to the difference is what the earlier offset
+    // DBV has, but the later offset does not.
+    laterOffset -= earlierOffset;
 
-    unsigned e = 0;
-    for ( ; e != largerOffset; ++e)
+    const Word *eWords = &earlierOffsetDBV.words[0];
+    const size_t eSize = earlierOffsetDBV.words.size();
+    const Word *lWords = &laterOffsetDBV.words[0];
+    const size_t lSize = laterOffsetDBV.words.size();
+
+    size_t e = 0;
+    #pragma omp simd
+    for ( ; e != laterOffset; ++e)
     {
         // If a bit is set where the other DBV doesn't even start,
         // they are obviously not equal.
-        if (earlierOffsetDBV.words[e]) return false;
+        if (eWords[e]) return false;
     }
 
-    unsigned l = 0;
-    for ( ; e != earlierOffsetDBV.words.size() && l != laterOffsetDBV.words.size(); ++e, ++l)
+    size_t l = 0;
+    for ( ; e != eSize && l != lSize; ++e, ++l)
     {
-        if (earlierOffsetDBV.words[e] != laterOffsetDBV.words[l]) return false;
+        if (eWords[e] != lWords[l]) return false;
     }
 
     // In case a disparity in the sizes caused one to terminate earlier than the other,
     // the one which terminated earlier (i.e., has more to iterate over) needs to have
     // no bits set in its extended tail.
-    for ( ; e != earlierOffsetDBV.words.size(); ++e) if (earlierOffsetDBV.words[e]) return false;
-    for ( ; l != laterOffsetDBV.words.size(); ++l) if (laterOffsetDBV.words[l]) return false;
+    for ( ; e != eSize; ++e) if (eWords[e]) return false;
+    for ( ; l != lSize; ++l) if (lWords[l]) return false;
 
     // We've come so far. It really has been a long ride. Congratulations; you're equal.
     return true;
