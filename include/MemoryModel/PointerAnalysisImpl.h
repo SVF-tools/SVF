@@ -131,6 +131,13 @@ public:
 
 protected:
 
+    /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
+    virtual void finalize()
+    {
+        normalizePointsTo();
+        PointerAnalysis::finalize();
+    }
+
     /// Update callgraph. This should be implemented by its subclass.
     virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
     {
@@ -189,6 +196,24 @@ protected:
 
     /// On the fly call graph construction
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
+
+    /// Normalize points-to information for field-sensitive analysis,
+    /// i.e., replace fieldObj with baseObj if it is field-insensitive
+    virtual void normalizePointsTo(){
+        for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter){
+            const PointsTo tmpPts = getPts(nIter->first);
+            for(NodeID obj : tmpPts){
+                NodeID baseObj = pag->getBaseObjNode(obj);
+                if(baseObj == obj)
+                    continue;
+                const MemObj* memObj = pag->getObject(obj);
+                if(memObj && memObj->isFieldInsensitive()){
+                    clearPts(nIter->first,obj);
+                    addPts(nIter->first,baseObj);
+                }
+            }
+        }
+    }
 
 private:
     /// Points-to data
@@ -347,7 +372,7 @@ protected:
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
     virtual void finalize()
     {
-        NormalizePointsTo();
+        normalizePointsTo();
         PointerAnalysis::finalize();
     }
     /// Union/add points-to, and add the reverse points-to for node collapse purpose
@@ -421,7 +446,7 @@ protected:
     //@}
 
     /// Normalize points-to information to BitVector/conditional representation
-    virtual void NormalizePointsTo()
+    virtual void normalizePointsTo()
     {
         normalized = true;
         if (hasPtsMap())

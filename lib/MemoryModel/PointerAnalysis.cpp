@@ -229,23 +229,6 @@ void PointerAnalysis::resetObjFieldSensitive()
 {
     for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
-        PointsTo& pts = getPts(nIter->first);
-        PointsTo tmpPts = pts;
-        for(NodeID obj : pts){
-            NodeID baseObj = pag->getBaseObjNode(obj);
-            if(baseObj == obj)
-                continue;
-            const MemObj* memObj = pag->getObject(obj);
-            if(memObj && memObj->isFieldInsensitive()){
-                tmpPts.reset(obj);
-                tmpPts.set(baseObj);
-            }
-        }
-        pts = tmpPts;
-    }
-
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
-    {
         if(ObjPN* node = SVFUtil::dyn_cast<ObjPN>(nIter->second))
             const_cast<MemObj*>(node->getMemObj())->setFieldSensitive();
     }
