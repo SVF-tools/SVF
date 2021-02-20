@@ -11,6 +11,13 @@ class Options
 {
 public:
     Options(void) = delete;
+
+    /// If set, only return the clock when getClk is called as getClk(true).
+    /// Retrieving the clock is slow but it should be fine for a few calls.
+    /// This is good for benchmarking when we don't need to know how long processLoad
+    /// takes, for example (many calls), but want to know things like total solve time.
+    /// Should be used only to affect getClk, not CLOCK_IN_MS.
+    static const llvm::cl::opt<bool> MarkedClocksOnly;
 };
 
 };  // namespace SVF
