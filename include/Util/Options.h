@@ -27,6 +27,12 @@ public:
 
     /// Maximum number of field derivations for an object.
     static const llvm::cl::opt<unsigned> MaxFieldLimit;
+
+    /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
+    static const llvm::cl::opt<bool> ClusterAnder;
+
+    /// Whether to cluster FS or VFS with the auxiliary Andersen's.
+    static const llvm::cl::opt<bool> ClusterFs;
 };
 
 };  // namespace SVF

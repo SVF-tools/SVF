@@ -49,6 +49,8 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
+    // TODO: support clustered aux. Andersen's.
+    assert(!Options::ClusterAnder && "FlowSensitive::initialize: cluster auxliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
@@ -57,7 +59,7 @@ void FlowSensitive::initialize()
 
     /// VSFS wants to do its own clustering *after* versioning.
     /// TODO: bad dependency.
-    if (!SVFUtil::isa<VersionedFlowSensitive>(this))
+    if (!SVFUtil::isa<VersionedFlowSensitive>(this) && Options::ClusterFs)
     {
         PointsTo defaultPt = cluster();
         getPTDataTy()->setDefaultData(defaultPt);

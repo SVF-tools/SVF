@@ -46,8 +46,11 @@ void VersionedFlowSensitive::initialize()
 
     determineReliance();
 
-    PointsTo defaultPt = cluster();
-    getPTDataTy()->setDefaultData(defaultPt);
+    if (Options::ClusterFs)
+    {
+        PointsTo defaultPt = cluster();
+        getPTDataTy()->setDefaultData(defaultPt);
+    }
 }
 
 void VersionedFlowSensitive::finalize()

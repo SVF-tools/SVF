@@ -30,4 +30,16 @@ namespace SVF
         llvm::cl::desc("Maximum number of fields for field sensitive analysis")
     );
 
+    const llvm::cl::opt<bool> Options::ClusterAnder(
+        "cluster-ander",
+        llvm::cl::init(false),
+        llvm::cl::desc("Stage Andersen's with Steensgard's and cluster based on that")
+    );
+
+    const llvm::cl::opt<bool> Options::ClusterFs(
+        "cluster-fs",
+        llvm::cl::init(false),
+        llvm::cl::desc("Cluster for FS/VFS with auxiliary Andersen's")
+    );
+
 };  // namespace SVF.
