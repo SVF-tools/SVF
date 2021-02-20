@@ -11,6 +11,7 @@
 #include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
 #include "Util/PointsTo.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
@@ -20,15 +21,6 @@ namespace SVF
     const NodeID NodeIDAllocator::nullPointerId = 3;
 
     NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
-
-    static llvm::cl::opt<NodeIDAllocator::Strategy> nodeAllocStrat(
-        "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::Strategy::DENSE),
-        llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
-        llvm::cl::values(
-            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
-            clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed"),
-            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")
-        ));
 
     NodeIDAllocator *NodeIDAllocator::get(void)
     {
@@ -50,7 +42,7 @@ namespace SVF
 
     // Initialise counts to 4 because that's how many special nodes we have.
     NodeIDAllocator::NodeIDAllocator(void)
-        : numNodes(4), numObjects(4), numValues(4), numSymbols(4), strategy(nodeAllocStrat)
+        : numNodes(4), numObjects(4), numValues(4), numSymbols(4), strategy(Options::NodeAllocStrat)
     { }
 
     NodeID NodeIDAllocator::allocateObjectId(void)
