@@ -1,7 +1,7 @@
-//===- DynamicBitVector.cpp -- Dynamically sized bit vector data structure ------------//
+//===- CoreBitVector.cpp -- Dynamically sized bit vector data structure ------------//
 
 /*
- * DynamicBitVector.h
+ * CoreBitVector.h
  *
  * Contiguous bit vector which resizes as required by common operations (implementation).
  *
@@ -12,68 +12,68 @@
 #include <limits.h>
 #include <llvm/Support/MathExtras.h>
 
-#include "Util/DynamicBitVector.h"
+#include "Util/CoreBitVector.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF
 {
 
-void dump(const DynamicBitVector &dbv) {
-    for (auto x : dbv) {
+void dump(const CoreBitVector &cbv) {
+    for (auto x : cbv) {
         SVFUtil::outs() << x << ",";
     }
         SVFUtil::outs() << "END\n";
 }
 
-const size_t DynamicBitVector::WordSize = sizeof(Word) * CHAR_BIT;
+const size_t CoreBitVector::WordSize = sizeof(Word) * CHAR_BIT;
 
-DynamicBitVector::DynamicBitVector(void)
-    : DynamicBitVector(0) { }
+CoreBitVector::CoreBitVector(void)
+    : CoreBitVector(0) { }
 
-DynamicBitVector::DynamicBitVector(size_t n)
+CoreBitVector::CoreBitVector(size_t n)
     : offset(0), words(n, 0) { }
 
-DynamicBitVector::DynamicBitVector(const DynamicBitVector &dbv)
-    : offset(dbv.offset), words(dbv.words) { }
+CoreBitVector::CoreBitVector(const CoreBitVector &cbv)
+    : offset(cbv.offset), words(cbv.words) { }
 
-DynamicBitVector::DynamicBitVector(const DynamicBitVector &&dbv)
-    : offset(dbv.offset), words(std::move(dbv.words)) { }
+CoreBitVector::CoreBitVector(const CoreBitVector &&cbv)
+    : offset(cbv.offset), words(std::move(cbv.words)) { }
 
-DynamicBitVector &DynamicBitVector::operator=(const DynamicBitVector &rhs)
+CoreBitVector &CoreBitVector::operator=(const CoreBitVector &rhs)
 {
     this->offset = rhs.offset;
     this->words = rhs.words;
     return *this;
 }
 
-DynamicBitVector &DynamicBitVector::operator=(const DynamicBitVector &&rhs)
+CoreBitVector &CoreBitVector::operator=(const CoreBitVector &&rhs)
 {
     this->offset = rhs.offset;
     this->words = std::move(rhs.words);
     return *this;
 }
 
-bool DynamicBitVector::empty(void) const
+bool CoreBitVector::empty(void) const
 {
     for (const Word &w : words) if (w) return false;
     return true;
 }
 
-unsigned DynamicBitVector::count(void) const
+unsigned CoreBitVector::count(void) const
 {
     unsigned n = 0;
     for (const Word &w : words) n += llvm::countPopulation(w);
     return n;
 }
 
-void DynamicBitVector::clear(void)
+void CoreBitVector::clear(void)
 {
     offset = 0;
     words.clear();
     words.shrink_to_fit();
 }
 
-bool DynamicBitVector::test(unsigned bit) const
+bool CoreBitVector::test(unsigned bit) const
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return false;
     const Word &containingWord = words[(bit - offset) / WordSize];
@@ -81,7 +81,7 @@ bool DynamicBitVector::test(unsigned bit) const
     return mask & containingWord;
 }
 
-bool DynamicBitVector::test_and_set(unsigned bit)
+bool CoreBitVector::test_and_set(unsigned bit)
 {
     // TODO: can be faster.
     if (test(bit)) return false;
@@ -89,7 +89,7 @@ bool DynamicBitVector::test_and_set(unsigned bit)
     return true;
 }
 
-void DynamicBitVector::set(unsigned bit)
+void CoreBitVector::set(unsigned bit)
 {
     extendTo(bit);
 
@@ -98,7 +98,7 @@ void DynamicBitVector::set(unsigned bit)
     containingWord |= mask;
 }
 
-void DynamicBitVector::reset(unsigned bit)
+void CoreBitVector::reset(unsigned bit)
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return;
     Word &containingWord = words[(bit - offset) / WordSize];
@@ -106,7 +106,7 @@ void DynamicBitVector::reset(unsigned bit)
     containingWord &= mask;
 }
 
-bool DynamicBitVector::contains(const DynamicBitVector &rhs) const
+bool CoreBitVector::contains(const CoreBitVector &rhs) const
 {
     // TODO.
     assert(false && "contains unimplemented");
@@ -114,7 +114,7 @@ bool DynamicBitVector::contains(const DynamicBitVector &rhs) const
     return false;
 }
 
-bool DynamicBitVector::intersects(const DynamicBitVector &rhs) const
+bool CoreBitVector::intersects(const CoreBitVector &rhs) const
 {
     // TODO.
     assert(false && "intersects unimplemented");
@@ -122,7 +122,7 @@ bool DynamicBitVector::intersects(const DynamicBitVector &rhs) const
     return false;
 }
 
-bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
+bool CoreBitVector::operator==(const CoreBitVector &rhs) const
 {
     if (this == &rhs) return true;
 
@@ -132,27 +132,27 @@ bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
     // 1) it's const, and 2) imagine testing equality for { 0, 1 } and { 0, 500 }...
     // TODO: repetition.
     // If they're equal, guaranteed that earlier will be *this, and later will be rhs.
-    const DynamicBitVector &earlierOffsetDBV = offset <= rhs.offset ? *this : rhs;
-    const DynamicBitVector &laterOffsetDBV = offset >= rhs.offset ? rhs : *this;
+    const CoreBitVector &earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
+    const CoreBitVector &laterOffsetCBV = offset >= rhs.offset ? rhs : *this;
 
     // No need to worry about equality here; they're just numbers.
     size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
     size_t laterOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
-    // Now convert to indices. We want to check what is between the smaller offset DBV
+    // Now convert to indices. We want to check what is between the smaller offset CBV
     // and the larger one first. From 0 to the difference is what the earlier offset
-    // DBV has, but the later offset does not.
+    // CBV has, but the later offset does not.
     laterOffset -= earlierOffset;
 
-    const Word *eWords = &earlierOffsetDBV.words[0];
-    const size_t eSize = earlierOffsetDBV.words.size();
-    const Word *lWords = &laterOffsetDBV.words[0];
-    const size_t lSize = laterOffsetDBV.words.size();
+    const Word *eWords = &earlierOffsetCBV.words[0];
+    const size_t eSize = earlierOffsetCBV.words.size();
+    const Word *lWords = &laterOffsetCBV.words[0];
+    const size_t lSize = laterOffsetCBV.words.size();
 
     size_t e = 0;
     #pragma omp simd
     for ( ; e != laterOffset; ++e)
     {
-        // If a bit is set where the other DBV doesn't even start,
+        // If a bit is set where the other CBV doesn't even start,
         // they are obviously not equal.
         if (eWords[e]) return false;
     }
@@ -173,12 +173,12 @@ bool DynamicBitVector::operator==(const DynamicBitVector &rhs) const
     return true;
 }
 
-bool DynamicBitVector::operator!=(const DynamicBitVector &rhs) const
+bool CoreBitVector::operator!=(const CoreBitVector &rhs) const
 {
     return !(*this == rhs);
 }
 
-bool DynamicBitVector::operator|=(const DynamicBitVector &rhs)
+bool CoreBitVector::operator|=(const CoreBitVector &rhs)
 {
     if (words.size() == 0)
     {
@@ -218,14 +218,14 @@ bool DynamicBitVector::operator|=(const DynamicBitVector &rhs)
     return changed;
 }
 
-bool DynamicBitVector::operator&=(const DynamicBitVector &rhs)
+bool CoreBitVector::operator&=(const CoreBitVector &rhs)
 {
     // The first bit this and rhs have in common is the greater of
-    // their offsets if the DBV with the smaller offset can hold
+    // their offsets if the CBV with the smaller offset can hold
     // the greater offset.
     unsigned greaterOffset = std::max(offset, rhs.offset);
 
-    // If there is no overlap, then clear this DBV.
+    // If there is no overlap, then clear this CBV.
     if (!canHold(greaterOffset) || !rhs.canHold(greaterOffset))
     {
         bool changed = false;
@@ -267,7 +267,7 @@ bool DynamicBitVector::operator&=(const DynamicBitVector &rhs)
     return changed;
 }
 
-bool DynamicBitVector::operator-=(const DynamicBitVector &rhs)
+bool CoreBitVector::operator-=(const CoreBitVector &rhs)
 {
     // Similar to |= in that we only iterate over rhs within this, but we
     // don't need to extend anything since nothing from rhs is being added.
@@ -290,19 +290,19 @@ bool DynamicBitVector::operator-=(const DynamicBitVector &rhs)
     return changed;
 }
 
-bool DynamicBitVector::intersectWithComplement(const DynamicBitVector &rhs)
+bool CoreBitVector::intersectWithComplement(const CoreBitVector &rhs)
 {
     return *this -= rhs;
 }
 
-void DynamicBitVector::intersectWithComplement(const DynamicBitVector &lhs, const DynamicBitVector &rhs)
+void CoreBitVector::intersectWithComplement(const CoreBitVector &lhs, const CoreBitVector &rhs)
 {
     // TODO: inefficient!
     *this = lhs;
     intersectWithComplement(rhs);
 }
 
-size_t DynamicBitVector::hash(void) const
+size_t CoreBitVector::hash(void) const
 {
     if (words.size() == 0) return 0;
     std::hash<std::pair<size_t, std::pair<Word, Word>>> h;
@@ -310,7 +310,7 @@ size_t DynamicBitVector::hash(void) const
     return h(std::make_pair(words.size(), std::make_pair(words[0], words[words.size() - 1])));
 }
 
-void DynamicBitVector::extendBackward(unsigned bit)
+void CoreBitVector::extendBackward(unsigned bit)
 {
     // New offset is the starting bit of the word which contains bit.
     unsigned newOffset = (bit / WordSize) * WordSize;
@@ -323,7 +323,7 @@ void DynamicBitVector::extendBackward(unsigned bit)
     offset = newOffset;
 }
 
-void DynamicBitVector::extendForward(unsigned bit)
+void CoreBitVector::extendForward(unsigned bit)
 {
     // TODO: maybe assertions?
     // Not our problem; extendBackward's problem, or there is nothing to do.
@@ -337,7 +337,7 @@ void DynamicBitVector::extendForward(unsigned bit)
     words.insert(words.end(), wordsToAdd, 0);
 }
 
-void DynamicBitVector::extendTo(unsigned bit)
+void CoreBitVector::extendTo(unsigned bit)
 {
     if (offset == 0 && words.size() == 0)
     {
@@ -348,7 +348,7 @@ void DynamicBitVector::extendTo(unsigned bit)
     else if (bit >= offset + words.size() * WordSize) extendForward(bit);
 }
 
-size_t DynamicBitVector::indexForBit(unsigned bit) const
+size_t CoreBitVector::indexForBit(unsigned bit) const
 {
     assert(canHold(bit));
     // Recall, offset (and the bits in that word) are represented by words[0],
@@ -356,12 +356,12 @@ size_t DynamicBitVector::indexForBit(unsigned bit) const
     return (bit - offset) / WordSize;
 }
 
-bool DynamicBitVector::canHold(unsigned bit) const
+bool CoreBitVector::canHold(unsigned bit) const
 {
     return bit >= offset && bit < offset + words.size() * WordSize;
 }
 
-unsigned DynamicBitVector::finalBit(void) const
+unsigned CoreBitVector::finalBit(void) const
 {
     return offset + words.size() * WordSize - 1;
 }
