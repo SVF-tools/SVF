@@ -3,6 +3,8 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
+#include "Util/NodeIDAllocator.h"
+
 namespace SVF
 {
 
@@ -18,6 +20,10 @@ public:
     /// takes, for example (many calls), but want to know things like total solve time.
     /// Should be used only to affect getClk, not CLOCK_IN_MS.
     static const llvm::cl::opt<bool> MarkedClocksOnly;
+
+    /// Allocation strategy to be used by the node ID allocator.
+    /// Currently dense, seq, or debug.
+    static const llvm::cl::opt<SVF::NodeIDAllocator::Strategy> NodeAllocStrat;
 };
 
 };  // namespace SVF
