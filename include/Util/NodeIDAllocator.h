@@ -31,12 +31,6 @@ public:
         DEBUG,
     };
 
-    /// Option strings as written by the user.
-    ///@{
-    static const std::string userStrategyDense;
-    static const std::string userStrategyDebug;
-    ///@}
-
     /// These nodes, and any nodes before them are assumed allocated
     /// as objects and values. For simplicity's sake, numObjects and
     /// numVals thus start at 4 (and the other counters are set
@@ -88,7 +82,7 @@ private:
     NodeID numNodes;
     ///@}
 
-    /// Strategy to allocate with. Initially NONE.
+    /// Strategy to allocate with.
     enum Strategy strategy;
 
     /// Single allocator.

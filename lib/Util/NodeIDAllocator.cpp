@@ -4,9 +4,6 @@
 
 namespace SVF
 {
-    const std::string NodeIDAllocator::userStrategyDense = "dense";
-    const std::string NodeIDAllocator::userStrategyDebug = "debug";
-
     const NodeID NodeIDAllocator::blackHoleObjectId = 0;
     const NodeID NodeIDAllocator::constantObjectId = 1;
     const NodeID NodeIDAllocator::blackHolePointerId = 2;
@@ -14,9 +11,13 @@ namespace SVF
 
     NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
 
-    static llvm::cl::opt<std::string> nodeAllocStrat(
-        "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::userStrategyDense),
-        llvm::cl::desc("Method of allocating (LLVM) values to node IDs [dense, debug]"));
+    static llvm::cl::opt<NodeIDAllocator::Strategy> nodeAllocStrat(
+        "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::Strategy::DENSE),
+        llvm::cl::desc("Method of allocating (LLVM) values to node IDs"),
+        llvm::cl::values(
+            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
+            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")
+        ));
 
     NodeIDAllocator *NodeIDAllocator::get(void)
     {
@@ -38,12 +39,8 @@ namespace SVF
 
     // Initialise counts to 4 because that's how many special nodes we have.
     NodeIDAllocator::NodeIDAllocator(void)
-        : numNodes(4), numObjects(4), numValues(4), numSymbols(4)
-    {
-        if (nodeAllocStrat == userStrategyDebug) strategy = Strategy::DEBUG;
-        else if (nodeAllocStrat == userStrategyDense) strategy = Strategy::DENSE;
-        else assert(false && "Unknown node allocation strategy specified; expected 'dense' or 'debug'");
-    }
+        : numNodes(4), numObjects(4), numValues(4), numSymbols(4), strategy(nodeAllocStrat)
+    { }
 
     NodeID NodeIDAllocator::allocateObjectId(void)
     {
