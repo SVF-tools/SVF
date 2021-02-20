@@ -23,4 +23,11 @@ namespace SVF
         )
     );
 
+
+    const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
+        "fieldlimit",
+        llvm::cl::init(512),
+        llvm::cl::desc("Maximum number of fields for field sensitive analysis")
+    );
+
 };  // namespace SVF.

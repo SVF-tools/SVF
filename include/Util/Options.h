@@ -24,6 +24,9 @@ public:
     /// Allocation strategy to be used by the node ID allocator.
     /// Currently dense, seq, or debug.
     static const llvm::cl::opt<SVF::NodeIDAllocator::Strategy> NodeAllocStrat;
+
+    /// Maximum number of field derivations for an object.
+    static const llvm::cl::opt<unsigned> MaxFieldLimit;
 };
 
 };  // namespace SVF
