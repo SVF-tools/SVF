@@ -140,7 +140,8 @@ void Andersen::initialize()
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
     AndersenBase::initialize();
-    cluster();
+    PointsTo defaultPt = cluster();
+    getPTDataTy()->setDefaultData(defaultPt);
     /// Initialize worklist
     processAllAddr();
 }
@@ -771,7 +772,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     consCG->resetSubs(nodeId);
 }
 
-void Andersen::cluster(void)
+PointsTo Andersen::cluster(void)
 {
     assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
@@ -787,8 +788,7 @@ void Andersen::cluster(void)
         std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
     for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
 
-    PointsTo defaultPt(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
-    getPTDataTy()->setDefaultData(defaultPt);
+    return PointsTo(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
 }
 
 /*!

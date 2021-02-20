@@ -46,7 +46,8 @@ void VersionedFlowSensitive::initialize()
 
     determineReliance();
 
-    cluster();
+    PointsTo defaultPt = cluster();
+    getPTDataTy()->setDefaultData(defaultPt);
 }
 
 void VersionedFlowSensitive::finalize()
@@ -499,7 +500,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     return changed;
 }
 
-void VersionedFlowSensitive::cluster(void)
+PointsTo VersionedFlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
@@ -517,8 +518,7 @@ void VersionedFlowSensitive::cluster(void)
         std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
     for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
 
-    PointsTo defaultPt(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
-    getPTDataTy()->setDefaultData(defaultPt);
+    return PointsTo(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
 }
 
 void VersionedFlowSensitive::dumpReliances(void) const

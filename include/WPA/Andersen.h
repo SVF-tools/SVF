@@ -410,8 +410,9 @@ protected:
     }
 
     /// Runs a Steensgaard analysis and performs clustering based on those
-    /// results, and sets the default points-to.
-    void cluster(void);
+    /// results.
+    /// Returns the default PointsTo that accounts for clustering.
+    virtual PointsTo cluster(void);
 };
 
 
