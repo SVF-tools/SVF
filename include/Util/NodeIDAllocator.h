@@ -18,12 +18,12 @@ public:
     /// Allocation strategy to use.
     enum Strategy
     {
-        /// Used to initialise from llvm::cl::opt.
-        NONE,
         /// Allocate objects contiguously, separate from values, and vice versa.
         /// If [****...*****] is the space of unsigned integers, we allocate as,
         /// [ssssooooooo...vvvvvvv] (o = object, v = value, s = special).
         DENSE,
+        /// Allocate objects objects and values sequentially, intermixed.
+        SEQ,
         /// Allocate values and objects as they come in with a single counter.
         /// GEP objects are allocated as an offset from their base (see implementation
         /// of allocateGepObjectId). The purpose of this allocation strategy

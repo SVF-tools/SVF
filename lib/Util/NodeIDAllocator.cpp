@@ -16,6 +16,7 @@ namespace SVF
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
             clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
+            clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed"),
             clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")
         ));
 
@@ -50,6 +51,11 @@ namespace SVF
             // We allocate objects from 0(-ish, considering the special nodes) to # of objects.
             id = numObjects;
         }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
+        }
         else if (strategy == Strategy::DEBUG)
         {
             // Non-GEPs just grab the next available ID.
@@ -77,6 +83,11 @@ namespace SVF
         {
             // Nothing different to the other case.
             id =  numObjects;
+        }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -113,6 +124,11 @@ namespace SVF
             // TODO: UINT_MAX does not allow for an easily changeable type
             //       of NodeID (though it is already in use elsewhere).
             id = UINT_MAX - numValues;
+        }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
         }
         else if (strategy == Strategy::DEBUG)
         {
