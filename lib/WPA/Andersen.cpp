@@ -98,7 +98,7 @@ void AndersenBase::finalize()
 
 	if (PrintCGGraph)
 		consCG->print();
-    PointerAnalysis::finalize();
+    BVDataPTAImpl::finalize();
 }
 
 
