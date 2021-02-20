@@ -6,21 +6,11 @@
 namespace SVF
 {
 
-/// Carries around command line options. To be used a singleton.
+/// Carries around command line options.
 class Options
 {
 public:
-    /// Return (singleton) Options instance with all options set.
-    static const Options *get(void);
-
-private:
-    /// Fills all fields from llvm::cl::opt.
-    Options(void);
-
-public:
-
-private:
-    static const Options *options;
+    Options(void) = delete;
 };
 
 };  // namespace SVF
