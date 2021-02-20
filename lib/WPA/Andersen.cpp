@@ -28,8 +28,9 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
-#include "WPA/Andersen.h"
 #include "Util/PointsTo.h"
+#include "Util/Options.h"
+#include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
 
 using namespace SVF;
@@ -772,6 +773,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
 
 void Andersen::cluster(void)
 {
+    assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
