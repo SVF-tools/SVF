@@ -96,7 +96,7 @@ void AndersenBase::finalize()
 
 	if (PrintCGGraph)
 		consCG->print();
-    PointerAnalysis::finalize();
+    BVDataPTAImpl::finalize();
 }
 
 
@@ -670,7 +670,7 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
 
             if (cs_arg->isPointer() && fun_arg->isPointer())
             {
-                DBOUT(DAndersen, outs() << "process actual parm  " << *(cs_arg->getValue()) << " \n");
+                DBOUT(DAndersen, outs() << "process actual parm  " << cs_arg->toString() << " \n");
                 NodeID srcAA = sccRepNode(cs_arg->getId());
                 NodeID dstFA = sccRepNode(fun_arg->getId());
                 if(addCopyEdge(srcAA, dstFA))

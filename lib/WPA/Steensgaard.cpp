@@ -10,6 +10,8 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+Steensgaard *Steensgaard::steens = nullptr;
+
 /*!
  * Steensgaard analysis
  */
