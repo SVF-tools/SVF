@@ -42,4 +42,14 @@ namespace SVF
         llvm::cl::desc("Cluster for FS/VFS with auxiliary Andersen's")
     );
 
+    const llvm::cl::opt<PointsTo::Type> Options::StagedPtType(
+        "staged-pt-type",
+        llvm::cl::init(PointsTo::Type::SBV),
+        llvm::cl::desc("points-to set data structure to use in the main phase of a staged analysis"),
+        llvm::cl::values(
+            clEnumValN(PointsTo::Type::SBV, "sbv", "sparse bit vector"),
+            clEnumValN(PointsTo::Type::CBV, "cbv", "core bit vector (dynamic bit vector without leading and trailing 0s)")
+        )
+    );
+
 };  // namespace SVF.

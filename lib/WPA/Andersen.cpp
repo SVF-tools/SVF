@@ -793,7 +793,7 @@ PointsTo Andersen::cluster(void)
         std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
     for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
 
-    return PointsTo(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
+    return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
 }
 
 /*!
