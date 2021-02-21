@@ -52,4 +52,17 @@ namespace SVF
         )
     );
 
+    const llvm::cl::opt<enum hclust_fast_methods> Options::ClusterMethod(
+        "cluster-method",
+        llvm::cl::init(HCLUST_METHOD_SINGLE),
+        llvm::cl::desc("hierarchical clustering method for objects"),
+        // TODO: maybe add descriptions.
+        llvm::cl::values(
+            clEnumValN(HCLUST_METHOD_SINGLE,     "single", "single linkage; minimum spanning tree algorithm"),
+            clEnumValN(HCLUST_METHOD_COMPLETE, "complete", "complete linkage; nearest-neighbour-chain algorithm"),
+            clEnumValN(HCLUST_METHOD_AVERAGE,   "average", "average linkage; nearest-neighbour-chain algorithm"),
+            clEnumValN(HCLUST_METHOD_MEDIAN,     "median", "median linkage; generic algorithm")
+        )
+    );
+
 };  // namespace SVF.

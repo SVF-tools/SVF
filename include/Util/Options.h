@@ -5,6 +5,7 @@
 
 #include "Util/NodeIDAllocator.h"
 #include "Util/PointsTo.h"
+#include "FastCluster/fastcluster.h"
 
 namespace SVF
 {
@@ -38,6 +39,12 @@ public:
     /// Type of points-to set to use for the main phase of a staged analysis (i.e., after
     /// clustering).
     static const llvm::cl::opt<PointsTo::Type> StagedPtType;
+
+    /// Clustering method for ClusterFs/ClusterAnder.
+    /// TODO: we can separate it into two options, and make Clusterer::cluster take in a method
+    ///       argument rather than plugging Options::ClusterMethod *inside* Clusterer::cluster
+    ///       directly, but it seems we will always want single anyway, and this is for testing.
+    static const llvm::cl::opt<enum hclust_fast_methods> ClusterMethod;
 };
 
 };  // namespace SVF

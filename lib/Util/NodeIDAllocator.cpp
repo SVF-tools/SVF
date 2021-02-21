@@ -204,7 +204,7 @@ namespace SVF
         int *dendogram = new int[2 * (numObjects - 1)];
         double *height = new double[numObjects - 1];
         // TODO: parameterise method.
-        hclust_fast(numObjects, distMatrix, HCLUST_METHOD_SINGLE, dendogram, height);
+        hclust_fast(numObjects, distMatrix, Options::ClusterMethod, dendogram, height);
         delete[] distMatrix;
         // We never use the height.
         delete[] height;
