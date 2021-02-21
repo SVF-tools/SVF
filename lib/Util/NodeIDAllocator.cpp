@@ -417,6 +417,8 @@ namespace SVF
         std::cout << std::setw(fieldWidth) << FastClusterTime        << " " << stats[FastClusterTime]        << "\n";
         std::cout << std::setw(fieldWidth) << DendogramTraversalTime << " " << stats[DendogramTraversalTime] << "\n";
         std::cout << std::setw(fieldWidth) << TotalTime              << " " << stats[TotalTime]              << "\n";
+
+        std::cout.flush();
     }
 
 };  // namespace SVF.
