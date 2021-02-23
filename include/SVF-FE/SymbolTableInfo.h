@@ -93,18 +93,17 @@ private:
     /// Whether to model constants
     bool modelConstants;
 
+    /// total number of symbols
+    SymID totalSymNum;
+
 protected:
     /// Constructor
     SymbolTableInfo(void) :
-        modelConstants(false), maxStruct(NULL), maxStSize(0)
+        modelConstants(false), maxStruct(NULL), maxStSize(0), mod(NULL), totalSymNum(0)
     {
     }
 
 public:
-    /// Statistics
-    //@{
-    static SymID totalSymNum;
-    //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{

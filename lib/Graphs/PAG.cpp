@@ -813,7 +813,7 @@ void PAG::destroy()
             delete *edgeIt;
         }
     }
-    delete symInfo;
+    SymbolTableInfo::releaseSymbolInfo();
     symInfo = NULL;
 }
 

@@ -11,22 +11,16 @@
 #include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
 #include "Util/PointsTo.h"
+#include "Util/Options.h"
 
 namespace SVF
 {
-    const std::string NodeIDAllocator::userStrategyDense = "dense";
-    const std::string NodeIDAllocator::userStrategyDebug = "debug";
-
     const NodeID NodeIDAllocator::blackHoleObjectId = 0;
     const NodeID NodeIDAllocator::constantObjectId = 1;
     const NodeID NodeIDAllocator::blackHolePointerId = 2;
     const NodeID NodeIDAllocator::nullPointerId = 3;
 
     NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
-
-    static llvm::cl::opt<std::string> nodeAllocStrat(
-        "node-alloc-strat", llvm::cl::init(SVF::NodeIDAllocator::userStrategyDense),
-        llvm::cl::desc("Method of allocating (LLVM) values to node IDs [dense, debug]"));
 
     NodeIDAllocator *NodeIDAllocator::get(void)
     {
@@ -48,12 +42,8 @@ namespace SVF
 
     // Initialise counts to 4 because that's how many special nodes we have.
     NodeIDAllocator::NodeIDAllocator(void)
-        : numNodes(4), numObjects(4), numValues(4), numSymbols(4)
-    {
-        if (nodeAllocStrat == userStrategyDebug) strategy = Strategy::DEBUG;
-        else if (nodeAllocStrat == userStrategyDense) strategy = Strategy::DENSE;
-        else assert(false && "Unknown node allocation strategy specified; expected 'dense' or 'debug'");
-    }
+        : numNodes(4), numObjects(4), numValues(4), numSymbols(4), strategy(Options::NodeAllocStrat)
+    { }
 
     NodeID NodeIDAllocator::allocateObjectId(void)
     {
@@ -62,6 +52,11 @@ namespace SVF
         {
             // We allocate objects from 0(-ish, considering the special nodes) to # of objects.
             id = numObjects;
+        }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -90,6 +85,11 @@ namespace SVF
         {
             // Nothing different to the other case.
             id =  numObjects;
+        }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -126,6 +126,11 @@ namespace SVF
             // TODO: UINT_MAX does not allow for an easily changeable type
             //       of NodeID (though it is already in use elsewhere).
             id = UINT_MAX - numValues;
+        }
+        else if (strategy == Strategy::SEQ)
+        {
+            // Everything is sequential and intermixed.
+            id = numNodes;
         }
         else if (strategy == Strategy::DEBUG)
         {
@@ -199,7 +204,7 @@ namespace SVF
         int *dendogram = new int[2 * (numObjects - 1)];
         double *height = new double[numObjects - 1];
         // TODO: parameterise method.
-        hclust_fast(numObjects, distMatrix, HCLUST_METHOD_SINGLE, dendogram, height);
+        hclust_fast(numObjects, distMatrix, Options::ClusterMethod, dendogram, height);
         delete[] distMatrix;
         // We never use the height.
         delete[] height;
@@ -412,6 +417,8 @@ namespace SVF
         std::cout << std::setw(fieldWidth) << FastClusterTime        << " " << stats[FastClusterTime]        << "\n";
         std::cout << std::setw(fieldWidth) << DendogramTraversalTime << " " << stats[DendogramTraversalTime] << "\n";
         std::cout << std::setw(fieldWidth) << TotalTime              << " " << stats[TotalTime]              << "\n";
+
+        std::cout.flush();
     }
 
 };  // namespace SVF.

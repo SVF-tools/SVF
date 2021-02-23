@@ -273,8 +273,8 @@ protected:
     ///@}
 
     /// Performs clustering based on ander.
-    /// Sets the default Data in the PTD.
-    virtual void cluster(void);
+    /// Returns the default PointsTo that accounts for clustering.
+    virtual PointsTo cluster(void);
 
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;

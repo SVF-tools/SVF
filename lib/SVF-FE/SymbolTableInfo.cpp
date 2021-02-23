@@ -33,6 +33,7 @@
 #include "SVF-FE/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
 #include "Util/NodeIDAllocator.h"
+#include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -47,10 +48,6 @@ using namespace SVFUtil;
 
 DataLayout* SymbolTableInfo::dl = NULL;
 SymbolTableInfo* SymbolTableInfo::symInfo = NULL;
-SymID SymbolTableInfo::totalSymNum = 0;
-
-static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
-        llvm::cl::desc("Maximum field number for field sensitive analysis"));
 
 static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
                                        llvm::cl::desc("Bytes/bits modeling of memory locations"));
@@ -79,9 +76,9 @@ void MemObj::init(const Value *val)
     {
         Type *objTy = refTy->getElementType();
         if(LocMemModel)
-            typeInfo = new LocObjTypeInfo(val, objTy, maxFieldNumLimit);
+            typeInfo = new LocObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         else
-            typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
+            typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         typeInfo->init(val);
     }
     else
@@ -452,7 +449,7 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
 
     mod = svfModule;
 
-    StInfo::setMaxFieldLimit(maxFieldNumLimit);
+    StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
 
     // Object #0 is black hole the object that may point to any object
     assert(totalSymNum == BlackHole && "Something changed!");

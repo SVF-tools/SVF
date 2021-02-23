@@ -49,6 +49,8 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
+    // TODO: support clustered aux. Andersen's.
+    assert(!Options::ClusterAnder && "FlowSensitive::initialize: cluster auxliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
@@ -57,7 +59,11 @@ void FlowSensitive::initialize()
 
     /// VSFS wants to do its own clustering *after* versioning.
     /// TODO: bad dependency.
-    if (!SVFUtil::isa<VersionedFlowSensitive>(this)) cluster();
+    if (!SVFUtil::isa<VersionedFlowSensitive>(this) && Options::ClusterFs)
+    {
+        PointsTo defaultPt = cluster();
+        getPTDataTy()->setDefaultData(defaultPt);
+    }
 
     stat = new FlowSensitiveStat(this);
 }
@@ -711,7 +717,7 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
     return false;
 }
 
-void FlowSensitive::cluster(void)
+PointsTo FlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
@@ -723,8 +729,7 @@ void FlowSensitive::cluster(void)
 
     for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
 
-    PointsTo defaultPt(PointsTo::Type::SBV, nodeMapping, reverseNodeMapping);
-    getPTDataTy()->setDefaultData(defaultPt);
+    return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
 }
 
 void FlowSensitive::printCTirAliasStats(void)

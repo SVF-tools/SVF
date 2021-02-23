@@ -28,8 +28,10 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
-#include "WPA/Andersen.h"
 #include "Util/PointsTo.h"
+#include "Util/Options.h"
+#include "WPA/Andersen.h"
+#include "WPA/Steensgaard.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -97,7 +99,7 @@ void AndersenBase::finalize()
 
 	if (PrintCGGraph)
 		consCG->print();
-    PointerAnalysis::finalize();
+    BVDataPTAImpl::finalize();
 }
 
 
@@ -138,6 +140,13 @@ void Andersen::initialize()
     setDiffOpt(PtsDiff);
     setPWCOpt(MergePWC);
     AndersenBase::initialize();
+
+    if (Options::ClusterAnder)
+    {
+        PointsTo defaultPt = cluster();
+        getPTDataTy()->setDefaultData(defaultPt);
+    }
+
     /// Initialize worklist
     processAllAddr();
 }
@@ -327,7 +336,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     numOfProcessedGep++;
 
-    PointsTo tmpDstPts;
+    PointsTo tmpDstPts(getPTDataTy()->getDefaultData());
     if (SVFUtil::isa<VariantGepCGEdge>(edge))
     {
         // If a pointer is connected by a variant gep edge,
@@ -671,7 +680,7 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
 
             if (cs_arg->isPointer() && fun_arg->isPointer())
             {
-                DBOUT(DAndersen, outs() << "process actual parm  " << *(cs_arg->getValue()) << " \n");
+                DBOUT(DAndersen, outs() << "process actual parm  " << cs_arg->toString() << " \n");
                 NodeID srcAA = sccRepNode(cs_arg->getId());
                 NodeID dstFA = sccRepNode(fun_arg->getId());
                 if(addCopyEdge(srcAA, dstFA))
@@ -768,58 +777,23 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     consCG->resetSubs(nodeId);
 }
 
-void Andersen::compact(void)
+PointsTo Andersen::cluster(void)
 {
-    // Every points-to set "shape" with 2 or more elements that appears.
-    // TODO: this is doubling up storage.
-    Set<PointsTo> pointsToSets;
-    // Every object of interest: that which appears in a points-to set
-    // in pointsToSets.
-    Set<NodeID> objects;
-
-    // Node N -> (Distance D -> all nodes within D of N).
-    // Graph representing how far nodes, in the best case, can be from each other.
-    // TODO: Maps can be arrays.
-    Map<NodeID, Map<unsigned, Set<NodeID>>> distGraph;
-
-    for (PAG::const_iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
+    Steensgaard *steens = Steensgaard::createSteensgaard(pag);
+    std::vector<std::pair<unsigned, unsigned>> keys;
+    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
-        const NodeID v = pit->first;
-        const PointsTo &pts = getPts(v);
-        const unsigned numObjects = pts.count();
-
-        // Don't care about size 0 or 1 points-to sets as they impose
-        // no constraint on node ID allocation.
-        if (numObjects < 2) continue;
-        // Check we've already processed this points-to set.
-        if (pointsToSets.find(pts) != pointsToSets.end()) continue;
-        pointsToSets.insert(pts);
-
-        // Use a vector to look at i, j pairs without repetition.
-        std::vector<NodeID> ptsVec(numObjects);
-        for (NodeID o : pts) ptsVec.push_back(o);
-
-        // The best *theoretical* size, in bits, for this points-to set.
-        // This is the distance that nodes in this points-to set will be
-        // from each other under a theoretically perfect allocation.
-        unsigned distance = std::ceil((double)numObjects / (double)NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
-
-        for (NodeID o : pts)
-        {
-            objects.insert(o);
-            Set<NodeID> &oNeighbours = distGraph[o][distance];
-            for (NodeID a : pts)
-            {
-                if (o != a) oNeighbours.insert(a);
-            }
-        }
+        keys.push_back(std::make_pair(pit->first, 1));
     }
-}
 
-NodeID *Andersen::getCompactMapping(void) const
-{
-    assert(compactMapping && "Andersen::getCompactMapping: mapping not created?");
-    return compactMapping;
+    PointsTo::MappingPtr nodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, true));
+    PointsTo::MappingPtr reverseNodeMapping =
+        std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
+    for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
+
+    return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
 }
 
 /*!
