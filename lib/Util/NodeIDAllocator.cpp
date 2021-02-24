@@ -164,7 +164,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
     const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, bool eval)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
 
@@ -225,8 +225,11 @@ namespace SVF
 
         stats[TotalTime] = std::to_string(totalTime);
 
-        if (eval) evaluate(nodeMap, pointsToSets, stats);
-        printStats(stats);
+        if (evalSubtitle != "")
+        {
+            evaluate(nodeMap, pointsToSets, stats);
+            printStats(evalSubtitle, stats);
+        }
 
         return nodeMap;
     }
@@ -401,22 +404,25 @@ namespace SVF
         stats[NewBvNumWords] = std::to_string(totalNewBv);
     }
 
-    void NodeIDAllocator::Clusterer::printStats(Map<std::string, std::string> &stats)
+    void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
     {
+        // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
+        const static std::array<std::string, 10> statKeys =
+            { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
+              NewSbvNumWords, NewBvNumWords, DistanceMatrixTime, FastClusterTime,
+              DendogramTraversalTime, TotalTime };
+
+        const unsigned fieldWidth = 20;
         std::cout.flags(std::ios::left);
-        SVFUtil::outs() << "****Clusterer Statistics****\n";
-        unsigned fieldWidth = 20;
-        // Explicit, rather than loop, so we control the order, for readability.
-        std::cout << std::setw(fieldWidth) << NumObjects             << " " << stats[NumObjects]             << "\n";
-        std::cout << std::setw(fieldWidth) << TheoreticalNumWords    << " " << stats[TheoreticalNumWords]    << "\n";
-        std::cout << std::setw(fieldWidth) << OriginalSbvNumWords    << " " << stats[OriginalSbvNumWords]    << "\n";
-        std::cout << std::setw(fieldWidth) << OriginalBvNumWords     << " " << stats[OriginalBvNumWords]     << "\n";
-        std::cout << std::setw(fieldWidth) << NewSbvNumWords         << " " << stats[NewSbvNumWords]         << "\n";
-        std::cout << std::setw(fieldWidth) << NewBvNumWords          << " " << stats[NewBvNumWords]          << "\n";
-        std::cout << std::setw(fieldWidth) << DistanceMatrixTime     << " " << stats[DistanceMatrixTime]     << "\n";
-        std::cout << std::setw(fieldWidth) << FastClusterTime        << " " << stats[FastClusterTime]        << "\n";
-        std::cout << std::setw(fieldWidth) << DendogramTraversalTime << " " << stats[DendogramTraversalTime] << "\n";
-        std::cout << std::setw(fieldWidth) << TotalTime              << " " << stats[TotalTime]              << "\n";
+        std::cout << "****Clusterer Statistics: " << subtitle << "****\n";
+        for (const std::string &statKey : statKeys)
+        {
+            Map<std::string, std::string>::const_iterator stat = stats.find(statKey);
+            if (stat != stats.end())
+            {
+                std::cout << std::setw(fieldWidth) << statKey << " " << stat->second << "\n";
+            }
+        }
 
         std::cout.flush();
     }

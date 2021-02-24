@@ -122,7 +122,7 @@ public:
         /// The second part of the keys pairs are the number of (potential) occurrences of that points-to set
         /// or a subset, depending on the client's wish.
         /// TODO: kind of sucks pta can't be const here because getPts isn't.
-        static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, bool eval=false);
+        static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle="");
 
     private:
         /// Returns an index into a condensed matrix (upper triangle, excluding diagonals) corresponding
@@ -147,7 +147,7 @@ public:
 
         /// Prints statistics to SVFUtil::outs().
         /// TODO: make stats const.
-        static inline void printStats(Map<std::string, std::string> &stats);
+        static inline void printStats(std::string title, Map<std::string, std::string> &stats);
     };
 };
 

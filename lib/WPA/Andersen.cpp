@@ -788,7 +788,7 @@ PointsTo Andersen::cluster(void)
     }
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, true));
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, "aux-steens"));
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
     for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
