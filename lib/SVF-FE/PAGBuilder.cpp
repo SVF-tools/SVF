@@ -388,14 +388,16 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
         {
             setCurrentLocation(C, NULL);
-            addStoreEdge(src, field);
+            //int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(C->getType());
+            addStoreEdge(src, field /*, storeSize */ );
         }
         else if (SVFUtil::isa<ConstantExpr>(C))
         {
             // add gep edge of C1 itself is a constant expression
             processCE(C);
             setCurrentLocation(C, NULL);
-            addStoreEdge(src, field);
+            //int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(C->getType());
+            addStoreEdge(src, field /*, storeSize */ );
         }
         else if (SVFUtil::isa<BlockAddress>(C))
         {
@@ -408,7 +410,8 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         else
         {
             setCurrentLocation(C, NULL);
-            addStoreEdge(src, field);
+            //int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(C->getType());
+            addStoreEdge(src, field /*, storeSize */ );
             /// src should not point to anything yet
             if (C->getType()->isPtrOrPtrVectorTy() && src != pag->getNullPtr())
                 addCopyEdge(pag->getNullPtr(), src);
@@ -540,7 +543,9 @@ void PAGBuilder::visitLoadInst(LoadInst &inst)
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
-    addLoadEdge(src, dst);
+    int loadSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(inst.getPointerOperand()->getType());
+
+	addLoadEdge(src, dst, loadSize);
 }
 
 /*!
@@ -557,7 +562,8 @@ void PAGBuilder::visitStoreInst(StoreInst &inst)
 
     NodeID src = getValueNode(inst.getValueOperand());
 
-    addStoreEdge(src, dst);
+    int storeSize = SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(inst.getValueOperand()->getType());
+	addStoreEdge(src, dst, storeSize);
 
 }
 
@@ -896,7 +902,11 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
     std::vector<LocationSet> srcFields;
     std::vector<LocationSet> dstFields;
     const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields);
+    const std::vector<FieldInfo> &sfieldinfo = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(stype);
+
     const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields);
+    const std::vector<FieldInfo> &dfieldinfo = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(dtype);
+
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
@@ -908,14 +918,31 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
 
     assert(fields.size() >= sz && "the number of flattened fields is smaller than size");
 
+    /// Use stride pair vector to calculate the size of the element. 
+    /// If it is an array, it will multiply element type size by number of
+    //  elements, otherwise it  will just multiply by one
+    auto calcFldSize = [](const FieldInfo::ElemNumStridePairVec &strideVec, u32_t size){
+        for(auto pair: strideVec)
+            size*= pair.first;
+        return size;
+    };
+    
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
         NodeID dField = getGepValNode(D,fields[index],dtype,index);
+        const Type *dtype = dfieldinfo[index].getFlattenElemTy();
+        int storeSize =  calcFldSize(dfieldinfo[index].getElemNumStridePairVect(), 
+                SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(dtype));
+
         NodeID sField = getGepValNode(S,fields[index],stype,index);
+        const Type *stype = sfieldinfo[index].getFlattenElemTy();
+        int loadSize =  calcFldSize(sfieldinfo[index].getElemNumStridePairVect(), 
+                SymbolTableInfo::Symbolnfo()->getTypeSizeInBytes(stype));
+
         NodeID dummy = pag->addDummyValNode();
-        addLoadEdge(sField,dummy);
-        addStoreEdge(dummy,dField);
+        addLoadEdge(sField,dummy, loadSize);
+        addStoreEdge(dummy,dField, storeSize);
     }
 }
 
@@ -949,7 +976,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
-                    addStoreEdge(dummy, vnArg);
+                    addStoreEdge(dummy, vnArg /*, storeSize */ );
                 }
             }
             else
@@ -1047,7 +1074,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 NodeID vnD= getValueNode(cs.getArgument(1));
                 NodeID vnS= getValueNode(cs.getArgument(0));
                 if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
+                    addStoreEdge(vnS,vnD /*, storeSize */ );
                 break;
             }
             case ExtAPI::EFT_A2R_A1:
@@ -1055,7 +1082,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 NodeID vnD= getValueNode(cs.getArgument(2));
                 NodeID vnS= getValueNode(cs.getArgument(1));
                 if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
+                    addStoreEdge(vnS,vnD /*, storeSize */ );
                 break;
             }
             case ExtAPI::EFT_A4R_A1:
@@ -1063,7 +1090,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 NodeID vnD= getValueNode(cs.getArgument(4));
                 NodeID vnS= getValueNode(cs.getArgument(1));
                 if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
+                    addStoreEdge(vnS,vnD /*, storeSize */ );
                 break;
             }
 			case ExtAPI::EFT_L_A0__A1_A0:
@@ -1073,9 +1100,9 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 				/// dst = load base
 				/// store src base
 				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
-					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
+					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()) /*, storeSize */);
 					if (SVFUtil::isa<PointerType>(inst->getType()))
-						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
+						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst) /*, loadSize */);
 				}
 //				else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(0))) {
 //					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(cs.getArgument(0)));
@@ -1104,7 +1131,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 NodeID vnD= getValueNode(cs.getArgument(2));
                 NodeID vnS= getValueNode(cs.getArgument(0));
                 if(vnD && vnS)
-                    addStoreEdge(vnS,vnD);
+                    addStoreEdge(vnS,vnD /*, storeSize */ );
                 break;
             }
             case ExtAPI::EFT_A0R_NEW:
@@ -1153,7 +1180,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     NodeID vnD = getGepValNode(vArg3, fields[i], type, i);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
-                        addStoreEdge(vnS,vnD);
+                        addStoreEdge(vnS,vnD /*, storeSize */ );
                 }
                 break;
             }
@@ -1176,7 +1203,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 {
                     NodeID vnS = getGepValNode(vArg, fields[i], type, i);
                     if(vnD && vnS)
-                        addStoreEdge(vnS,vnD);
+                        addStoreEdge(vnS,vnD /*, storeSize */ );
                 }
                 break;
             }
@@ -1186,7 +1213,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 Value *vDst = cs.getArgument(1);
                 NodeID src = pag->getValueNode(vSrc);
                 NodeID dst = pag->getValueNode(vDst);
-                addStoreEdge(src, dst);
+                addStoreEdge(src, dst /*, storeSize */ );
                 break;
             }
             case ExtAPI::CPP_EFT_A0R_A1:
@@ -1196,7 +1223,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 {
                     NodeID vnD = pag->getValueNode(cs.getArgument(0));
                     NodeID vnS = pag->getValueNode(cs.getArgument(1));
-                    addStoreEdge(vnS, vnD);
+                    addStoreEdge(vnS, vnD /*, storeSize */ );
                 }
                 break;
             }
@@ -1209,8 +1236,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     NodeID vnS = getValueNode(cs.getArgument(1));
                     assert(vnD && vnS && "dst or src not exist?");
                     NodeID dummy = pag->addDummyValNode();
-                    addLoadEdge(vnS,dummy);
-                    addStoreEdge(dummy,vnD);
+                    addLoadEdge(vnS,dummy /*, loadSize */ );
+                    addStoreEdge(dummy,vnD /*, storeSize */ );
                 }
                 break;
             }
@@ -1222,7 +1249,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     NodeID vnS = getValueNode(cs.getArgument(1));
                     assert(vnS && "src not exist?");
                     NodeID dummy = pag->addDummyValNode();
-                    addLoadEdge(vnS,dummy);
+                    addLoadEdge(vnS,dummy /*, loadSize */ );
                 }
                 break;
             }
