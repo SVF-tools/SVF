@@ -89,6 +89,18 @@ public:
         getMutPts(var).clear();
     }
 
+    virtual inline Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<Data, unsigned> allPts;
+        for (typename PtsMap::value_type ppt : ptsMap)
+        {
+            const Data &pt = ppt.second;
+            ++allPts[pt];
+        }
+
+        return allPts;
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const MutablePTData<Key, Datum, Data> *)
@@ -263,6 +275,11 @@ public:
     {
         BasePTData::setDefaultData(data);
         mutPTData.setDefaultData(data);
+    }
+
+    virtual inline Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        return mutPTData.getAllPts(liveOnly);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -503,6 +520,28 @@ public:
     {
         BasePTData::setDefaultData(data);
         mutPTData.setDefaultData(data);
+    }
+
+    virtual inline Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<Data, unsigned> allPts = mutPTData.getAllPts(liveOnly);
+        for (typename DFPtsMap::value_type lptsmap : dfInPtsMap)
+        {
+            for (typename PtsMap::value_type vpt : lptsmap.second)
+            {
+                ++allPts[vpt.second];
+            }
+        }
+
+        for (typename DFPtsMap::value_type lptm : dfOutPtsMap)
+        {
+            for (typename PtsMap::value_type vpt : lptm.second)
+            {
+                ++allPts[vpt.second];
+            }
+        }
+
+        return allPts;
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -907,6 +946,13 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual inline Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<Data, unsigned> allPts = tlPTData.getAllPts(liveOnly);
+        SVFUtil::mergePtsOccMaps<Data>(allPts, atPTData.getAllPts(liveOnly));
+        return allPts;
     }
 
     virtual inline void dumpPTData() override
