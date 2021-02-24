@@ -181,7 +181,7 @@ namespace SVF
         // assume a dense allocation, which goes from 0--modulo specials--to some n).
         // If we "allocate" for specials, it is not a problem except 2 potentially wasted
         // allocations. This is trivial enough to make special handling not worth it.
-        unsigned numObjects = 0;
+        size_t numObjects = 0;
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
@@ -246,7 +246,7 @@ namespace SVF
         return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
-    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const unsigned numObjects)
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const size_t numObjects)
     {
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
@@ -307,7 +307,7 @@ namespace SVF
         return distMatrix;
     }
 
-    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index)
+    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index)
     {
         if (visited.find(index) != visited.end()) return;
         visited.insert(index);
