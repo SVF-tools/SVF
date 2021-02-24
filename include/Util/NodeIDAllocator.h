@@ -135,12 +135,12 @@ public:
         /// Builds the upper triangle of the distance matrix, as an array of length
         /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
         /// Responsibility of caller to `delete`.
-        static inline double *getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const unsigned numObjects);
+        static inline double *getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const size_t numObjects);
 
         /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
         /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
-        static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const unsigned numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
+        static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
 
         /// Fills in *NumWords statistics in stats..
         static inline void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats);
