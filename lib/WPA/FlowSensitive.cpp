@@ -78,8 +78,8 @@ void FlowSensitive::analyze()
 
         callGraphSCC->find();
 
-        solve();
-
+        initWorklist();
+        solveWorklist();
     }
     while (updateCallGraph(getIndirectCallsites()));
 

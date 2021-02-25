@@ -116,7 +116,24 @@ void AndersenBase::analyze()
     {
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-        solve();
+
+        initWorklist();
+        do
+        {
+            numOfIteration++;
+            if (0 == numOfIteration % iterationForPrintStat)
+                printStat();
+
+            reanalyze = false;
+
+            solveWorklist();
+
+            if (updateCallGraph(getIndirectCallsites()))
+                reanalyze = true;
+
+        }
+        while (reanalyze);
+
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
         // Finalize the analysis

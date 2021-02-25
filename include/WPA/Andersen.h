@@ -332,16 +332,8 @@ protected:
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
-    /// Update call graph for all the indirect callsites
-    virtual inline bool updateCallGraph()
-    {
-        return updateCallGraph(getIndirectCallsites());
-    }
-
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
-
-
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
