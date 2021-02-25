@@ -76,6 +76,11 @@ public:
     /// Finalize analysis
     virtual void finalize();
 
+    /// Implement it in child class to update call graph
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
+    {
+        return false;
+    }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
