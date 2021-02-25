@@ -187,7 +187,7 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     {
         SVFGBuilder memSSA(true);
         assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
-        SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
+        SVFG *svfg = memSSA.buildFullSVFGWithoutOPT((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
         if (PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
             _svfg = svfg;
