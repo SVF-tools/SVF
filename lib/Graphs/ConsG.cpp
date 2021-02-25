@@ -44,7 +44,8 @@ void ConstraintGraph::buildCG()
     // initialize nodes
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
-        addConstraintNode(new ConstraintNode(it->first),it->first);
+		if (it->second->isIsolatedNode() == false)
+			addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
     // initialize edges
@@ -604,6 +605,11 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     static std::string getGraphName(ConstraintGraph*)
     {
         return "ConstraintG";
+    }
+
+    static bool isNodeHidden(NodeType *n) {
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        return node->isIsolatedNode();
     }
 
     /// Return label of a VFG node with two display mode

@@ -135,6 +135,9 @@ public:
             return false;
     }
 
+    /// Whether this is an isoloated node on the PAG graph
+    bool isIsolatedNode() const;
+
     /// Get name of the LLVM value
     virtual const std::string getValueName() const = 0;
 

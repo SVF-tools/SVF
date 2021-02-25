@@ -178,7 +178,7 @@ inline const SVFFunction* getFunction(StringRef name)
     {
         Module *mod = llvmModuleset->getModule(i);
         fun = mod->getFunction(name);
-        if(fun && !fun->isDeclaration())
+        if(fun)
         {
             return llvmModuleset->getSVFFunction(fun);
         }

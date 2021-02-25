@@ -1001,6 +1001,16 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
     }
 }
 
+bool PAGNode::isIsolatedNode() const{
+	if(getInEdges().empty() && getOutEdges().empty())
+		return true;
+	else if(isConstantData())
+		return true;
+	else
+		return false;
+}
+
+
 /*!
  * Dump this PAG
  */
@@ -1040,12 +1050,16 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
         return graph->getGraphName();
     }
 
+    /// isNodeHidden - If the function returns true, the given node is not
+    /// displayed in the graph
+	static bool isNodeHidden(PAGNode *node) {
+		return node->isIsolatedNode();
+	}
+
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(PAGNode *node, PAG*)
     {
-        bool briefDisplay = true;
-        bool nameDisplay = true;
         std::string str;
         raw_string_ostream rawstr(str);
         // print function info
