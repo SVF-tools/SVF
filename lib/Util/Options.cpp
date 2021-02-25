@@ -14,7 +14,7 @@ namespace SVF
 
     const llvm::cl::opt<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
         "node-alloc-strat",
-        llvm::cl::init(NodeIDAllocator::Strategy::DENSE),
+        llvm::cl::init(NodeIDAllocator::Strategy::DEBUG),
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
             clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately (default)"),
