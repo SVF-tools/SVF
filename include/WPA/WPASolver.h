@@ -99,27 +99,6 @@ protected:
         return getSCCDetector()->topoNodeStack();
     }
 
-    /// Constraint Solving
-    virtual inline void solve()
-    {
-        initWorklist();
-        do
-        {
-            numOfIteration++;
-            if (0 == numOfIteration % iterationForPrintStat)
-                printStat();
-
-            reanalyze = false;
-
-            solveWorklist();
-
-            if (updateCallGraph())
-                reanalyze = true;
-
-        }
-        while (reanalyze);
-    }
-
     virtual inline void initWorklist()
     {
         NodeStack& nodeStack = SCCDetect();
@@ -147,16 +126,10 @@ protected:
     //@{
     /// Process each node on the graph, to be implemented in the child class
     virtual inline void processNode(NodeID) {}
-    /// update callgraph for all indirect callsites
-    virtual bool updateCallGraph()
-    {
-        return false;
-    }
     /// collapse positive weight cycles of a graph
     virtual void collapsePWCNode(NodeID) {}
     virtual void collapseFields() {};
     /// dump statistics
-    virtual void printStat() {}
     /// Propagation for the solving, to be implemented in the child class
     virtual void propagate(GNODE* v)
     {
