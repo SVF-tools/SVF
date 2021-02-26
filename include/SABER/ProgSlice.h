@@ -263,7 +263,6 @@ protected:
         const ICFGNode* icfgNode = node->getICFGNode();
         if(SVFUtil::isa<NullPtrSVFGNode>(node) == false)
         {
-            assert(!SVFUtil::isa<GlobalBlockNode>(icfgNode) && "this SVFG node should be in a basic block");
             return icfgNode->getBB();
         }
         return NULL;
