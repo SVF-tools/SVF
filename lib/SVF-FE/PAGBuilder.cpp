@@ -819,7 +819,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
     //Does it actually return a ptr?
-    if (F->getLLVMFun()->getReturnType()->isVoidTy() == false)
+    if (!cs.getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(F);
         CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
