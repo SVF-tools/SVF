@@ -56,7 +56,7 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
@@ -469,10 +469,10 @@ void MemSSA::destroy()
     }
 
     delete mrGen;
-    mrGen = NULL;
+    mrGen = nullptr;
     delete stat;
-    stat = NULL;
-    pta = NULL;
+    stat = nullptr;
+    pta = nullptr;
 }
 
 /*!

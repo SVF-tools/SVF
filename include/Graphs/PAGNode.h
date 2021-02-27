@@ -103,12 +103,12 @@ public:
     {
         if (value)
             return value->getType();
-        return NULL;
+        return nullptr;
     }
 
     inline bool hasValue() const
     {
-        return value!=NULL;
+        return value!=nullptr;
     }
     /// Whether it is a pointer
     virtual inline bool isPointer() const
@@ -141,7 +141,7 @@ public:
     /// Get name of the LLVM value
     virtual const std::string getValueName() const = 0;
 
-    /// Return the function that this PAGNode resides in. Return NULL if it is a global or constantexpr node
+    /// Return the function that this PAGNode resides in. Return nullptr if it is a global or constantexpr node
     virtual inline const Function* getFunction() const
     {
         if(value)
@@ -153,7 +153,7 @@ public:
             else if (const Function* fun = SVFUtil::dyn_cast<Function>(value))
                 return fun;
         }
-        return NULL;
+        return nullptr;
     }
 
     /// Get incoming PAG edges
@@ -668,7 +668,7 @@ public:
     //@}
 
     /// Constructor
-    DummyValPN(NodeID i) : ValPN(NULL, i, DummyValNode)
+    DummyValPN(NodeID i) : ValPN(nullptr, i, DummyValNode)
     {
     }
 
@@ -710,7 +710,7 @@ public:
 
     /// Constructor
     DummyObjPN(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode)
-        : ObjPN(NULL, i, m, ty)
+        : ObjPN(nullptr, i, m, ty)
     {
     }
 

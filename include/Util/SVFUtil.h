@@ -179,7 +179,7 @@ inline CallSite getLLVMCallSite(const Instruction* inst)
 /// Get the corresponding Function based on its name
 inline const SVFFunction* getFunction(StringRef name)
 {
-    Function* fun = NULL;
+    Function* fun = nullptr;
     LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
 
     for (u32_t i = 0; i < llvmModuleset->getModuleNum(); ++i)
@@ -191,13 +191,13 @@ inline const SVFFunction* getFunction(StringRef name)
             return llvmModuleset->getSVFFunction(fun);
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 /// Get the definition of a function across multiple modules
 inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 {
-    if(fun == NULL) return NULL;
+    if(fun == nullptr) return nullptr;
     LLVMModuleSet* llvmModuleset = LLVMModuleSet::getLLVMModuleSet();
     const SVFFunction* svfFun = llvmModuleset->getSVFFunction(fun);
     if (fun->isDeclaration() && llvmModuleset->hasDefinition(fun))
@@ -217,7 +217,7 @@ inline const SVFFunction* getCallee(const CallSite cs)
 inline const SVFFunction* getCallee(const Instruction *inst)
 {
     if (!isCallSite(inst))
-        return NULL;
+        return nullptr;
     CallSite cs(const_cast<Instruction*>(inst));
     return getCallee(cs);
 }

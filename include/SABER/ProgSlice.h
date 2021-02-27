@@ -53,7 +53,7 @@ public:
     /// Constructor
     ProgSlice(const SVFGNode* src, PathCondAllocator* pa, const SVFG* graph):
         root(src), partialReachable(false), fullReachable(false), reachGlob(false),
-        pathAllocator(pa), _curSVFGNode(NULL), finalCond(pa->getFalseCond()), svfg(graph)
+        pathAllocator(pa), _curSVFGNode(nullptr), finalCond(pa->getFalseCond()), svfg(graph)
     {
     }
 
@@ -265,7 +265,7 @@ protected:
         {
             return icfgNode->getBB();
         }
-        return NULL;
+        return nullptr;
     }
 
     /// Get/set current SVFG node

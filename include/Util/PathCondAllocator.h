@@ -294,7 +294,7 @@ private:
     /// Used internally, not supposed to be exposed to other classes
     static BddCondManager* getBddCondManager()
     {
-        if(bddCondMgr==NULL)
+        if(bddCondMgr==nullptr)
             bddCondMgr = new BddCondManager();
         return bddCondMgr;
     }

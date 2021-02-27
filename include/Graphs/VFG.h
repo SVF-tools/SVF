@@ -382,7 +382,7 @@ protected:
         NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
         NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
@@ -391,7 +391,7 @@ protected:
         NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
         NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     //@}
@@ -569,7 +569,7 @@ protected:
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -585,7 +585,7 @@ protected:
     {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -601,7 +601,7 @@ protected:
     {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -618,7 +618,7 @@ protected:
     {
         UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;

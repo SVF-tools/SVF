@@ -71,7 +71,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
     for (CallSiteSet::const_iterator it = forksitesBegin(), eit = forksitesEnd(); it != eit; ++it)
     {
         const Value* forkedval = tdAPI->getForkedFun((*it)->getCallSite());
-        if(SVFUtil::dyn_cast<Function>(forkedval)==NULL)
+        if(SVFUtil::dyn_cast<Function>(forkedval)==nullptr)
         {
             PAG* pag = pta->getPAG();
             const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));
@@ -95,7 +95,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
     for (CallSiteSet::const_iterator it = parForSitesBegin(), eit = parForSitesEnd(); it != eit; ++it)
     {
         const Value* forkedval = tdAPI->getTaskFuncAtHareParForSite((*it)->getCallSite());
-        if(SVFUtil::dyn_cast<Function>(forkedval)==NULL)
+        if(SVFUtil::dyn_cast<Function>(forkedval)==nullptr)
         {
             PAG* pag = pta->getPAG();
             const PointsTo& targets = pta->getPts(pag->getValueNode(forkedval));

@@ -30,7 +30,7 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     {
         bool indirectfork = false;
         const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
-        if(spawnee==NULL)
+        if(spawnee==nullptr)
         {
             numOfIndForksite++;
             indirectfork = true;

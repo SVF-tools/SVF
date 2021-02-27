@@ -45,7 +45,7 @@ u64_t PAGEdge::callEdgeLabelCounter = 0;
 u64_t PAGEdge::storeEdgeLabelCounter = 0;
 PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
-PAG* PAG::pag = NULL;
+PAG* PAG::pag = nullptr;
 
 
 const std::string PAGNode::toString() const {
@@ -668,7 +668,7 @@ PAGEdge* PAG::hasNonlabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind
     {
         return *it;
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -682,7 +682,7 @@ PAGEdge* PAG::hasLabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, c
     {
         return *it;
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -814,7 +814,7 @@ void PAG::destroy()
         }
     }
     SymbolTableInfo::releaseSymbolInfo();
-    symInfo = NULL;
+    symInfo = nullptr;
 }
 
 /*!
@@ -936,7 +936,7 @@ bool PAG::isValidTopLevelPtr(const PAGNode* node)
  * PAGEdge constructor
  */
 PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
-    GenericPAGEdgeTy(s,d,k),value(NULL),basicBlock(NULL),icfgNode(NULL)
+    GenericPAGEdgeTy(s,d,k),value(nullptr),basicBlock(nullptr),icfgNode(nullptr)
 {
     edgeId = PAG::getPAG()->getTotalEdgeNum();
     PAG::getPAG()->incEdgeNum();
@@ -964,7 +964,7 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
     case ValNode:
     case GepValNode:
     {
-        assert(val != NULL && "value is NULL for ValPN or GepValNode");
+        assert(val != nullptr && "value is nullptr for ValPN or GepValNode");
         isTLPointer = val->getType()->isPointerTy();
         isATPointer = false;
         break;
@@ -972,7 +972,7 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
 
     case RetNode:
     {
-        assert(val != NULL && "value is NULL for RetNode");
+        assert(val != nullptr && "value is nullptr for RetNode");
         isTLPointer = SVFUtil::cast<Function>(val)->getReturnType()->isPointerTy();
         isATPointer = false;
         break;

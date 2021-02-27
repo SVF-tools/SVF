@@ -213,7 +213,7 @@ void SVFGOPT::retargetEdgesOfAInFOut(SVFGNode* node)
 {
     assert(node->getInEdges().size() == 1 && "actual-in/formal-out can only have one incoming edge as its def size");
 
-    SVFGNode* def = NULL;
+    SVFGNode* def = nullptr;
     PointsTo inPointsTo;
 
     SVFGNode::const_iterator it = node->InEdgeBegin();

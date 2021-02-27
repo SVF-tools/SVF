@@ -193,7 +193,7 @@ void CHGraph::buildInternalMaps()
 
 void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite cs)
 {
-    if (getCallee(cs) == NULL)
+    if (getCallee(cs) == nullptr)
         return;
 
     const Function* callee = getCallee(cs)->getLLVMFun();
@@ -208,7 +208,7 @@ void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite c
         //const Argument *consThisPtr = getConstructorThisPtr(caller);
         //bool samePtr = isSameThisPtrInConstructor(consThisPtr, csThisPtr);
         bool samePtrTrue = true;
-        if (csThisPtr != NULL && samePtrTrue)
+        if (csThisPtr != nullptr && samePtrTrue)
         {
             struct DemangledName basename = demangle(callee->getName().str());
             if (!SVFUtil::isCallSite(csThisPtr)  &&
@@ -287,7 +287,7 @@ CHNode *CHGraph::getNode(const string name) const
 {
     auto chNode = classNameToNodeMap.find(name);
     if (chNode != classNameToNodeMap.end()) return chNode->second;
-    else return NULL;
+    else return nullptr;
 }
 
 
@@ -481,7 +481,7 @@ void CHGraph::analyzeVTables(const Module &M)
                         }
                         const ConstantExpr *ce =
                             SVFUtil::dyn_cast<ConstantExpr>(vtbl->getOperand(i));
-                        assert(ce != NULL && "item in vtable not constantexp or null");
+                        assert(ce != nullptr && "item in vtable not constantexp or null");
                         u32_t opcode = ce->getOpcode();
                         assert(opcode == Instruction::IntToPtr ||
                                opcode == Instruction::BitCast);
@@ -723,7 +723,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
     for (const GlobalValue *vt : vtbls)
     {
         const CHNode *child = getNode(getClassNameFromVtblObj(vt));
-        if (child == NULL)
+        if (child == nullptr)
             continue;
         CHNode::FuncVector vfns;
         child->getVirtualFunctions(idx, vfns);
@@ -808,7 +808,7 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap()
         {
             const CHNode *child = *it;
             const GlobalValue *vtbl = child->getVTable();
-            if (vtbl != NULL)
+            if (vtbl != nullptr)
             {
                 vtbls.insert(vtbl);
             }

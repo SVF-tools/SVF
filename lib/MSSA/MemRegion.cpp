@@ -54,9 +54,9 @@ void MRGenerator::destroy()
     }
 
     delete callGraphSCC;
-    callGraphSCC = NULL;
-    callGraph = NULL;
-    pta = NULL;
+    callGraphSCC = nullptr;
+    callGraph = nullptr;
+    pta = nullptr;
 }
 
 /*!

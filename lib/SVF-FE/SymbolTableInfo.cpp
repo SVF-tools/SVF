@@ -46,8 +46,8 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-DataLayout* SymbolTableInfo::dl = NULL;
-SymbolTableInfo* SymbolTableInfo::symInfo = NULL;
+DataLayout* SymbolTableInfo::dl = nullptr;
+SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
                                        llvm::cl::desc("Bytes/bits modeling of memory locations"));
@@ -60,7 +60,7 @@ static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
  */
 void MemObj::init(const Value *val)
 {
-    const PointerType *refTy = NULL;
+    const PointerType *refTy = nullptr;
 
     const Instruction *I = SVFUtil::dyn_cast<Instruction>(val);
 
@@ -95,7 +95,7 @@ void MemObj::init(const Value *val)
  */
 SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 {
-    if (symInfo == NULL)
+    if (symInfo == nullptr)
     {
         if(LocMemModel)
             symInfo = new LocSymTableInfo();

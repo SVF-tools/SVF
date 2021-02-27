@@ -101,7 +101,7 @@ public:
     /// Return a static reference
     static ThreadAPI* getThreadAPI()
     {
-        if(tdAPI == NULL)
+        if(tdAPI == nullptr)
         {
             tdAPI = new ThreadAPI();
         }
@@ -235,7 +235,7 @@ public:
         else if(SVFUtil::isa<Argument>(join))
             return join;
         assert(false && "the value of the first argument at join is not a load instruction?");
-        return NULL;
+        return nullptr;
     }
     inline const Value* getJoinedThread(CallSite cs) const
     {
