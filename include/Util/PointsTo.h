@@ -113,6 +113,8 @@ public:
     const_iterator begin(void) const { return PointsToIterator(this); }
     const_iterator end(void) const { return PointsToIterator(this, true); }
 
+    MappingPtr getNodeMapping(void) const;
+
 public:
     /// Returns nodeMapping[n], checking for nullptr and size.
     NodeID getInternalNode(NodeID n) const;

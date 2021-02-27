@@ -156,6 +156,16 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
+    // TODO: check -stat too.
+    if (Options::ClusterAnder)
+    {
+        Map<std::string, std::string> stats;
+        const PTDataTy *ptd = getPTDataTy();
+        // TODO: should we use liveOnly?
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats);
+        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+    }
+
     /// sanitize field insensitive obj
     /// TODO: Fields has been collapsed during Andersen::collapseField().
     //	sanitizePts();

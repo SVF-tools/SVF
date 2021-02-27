@@ -124,6 +124,13 @@ public:
         /// TODO: kind of sucks pta can't be const here because getPts isn't.
         static std::vector<NodeID> cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle="");
 
+        /// Fills in *NumWords statistics in stats..
+        static void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats);
+
+        /// Prints statistics to SVFUtil::outs().
+        /// TODO: make stats const.
+        static void printStats(std::string title, Map<std::string, std::string> &stats);
+
     private:
         /// Returns an index into a condensed matrix (upper triangle, excluding diagonals) corresponding
         /// to an nxn matrix.
@@ -141,13 +148,6 @@ public:
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
         /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
         static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index);
-
-        /// Fills in *NumWords statistics in stats..
-        static inline void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats);
-
-        /// Prints statistics to SVFUtil::outs().
-        /// TODO: make stats const.
-        static inline void printStats(std::string title, Map<std::string, std::string> &stats);
     };
 };
 

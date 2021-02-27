@@ -131,6 +131,16 @@ void FlowSensitive::finalize()
         }
     }
 
+    // TODO: check -stat too.
+    if (Options::ClusterFs)
+    {
+        Map<std::string, std::string> stats;
+        const PTDataTy *ptd = getPTDataTy();
+        // TODO: should we use liveOnly?
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats);
+        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+    }
+
     PointerAnalysis::finalize();
 }
 
