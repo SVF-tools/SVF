@@ -1002,10 +1002,12 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
 }
 
 bool PAGNode::isIsolatedNode() const{
-	if(getInEdges().empty() && getOutEdges().empty())
+	if (getInEdges().empty() && getOutEdges().empty())
 		return true;
-	else if(isConstantData())
+	else if (isConstantData())
 		return true;
+	else if (value && SVFUtil::isa<Function>(value))
+		return SVFUtil::isIntrinsicFun(SVFUtil::cast<Function>(value));
 	else
 		return false;
 }

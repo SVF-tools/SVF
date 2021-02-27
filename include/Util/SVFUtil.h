@@ -117,16 +117,24 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
 }
 
 
+inline bool isIntrinsicFun(const Function* func)
+{
+    if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value)) {
+            return true;
+    }
+    return false;
+}
+
 /// Return true if it is an intrinsic instruction
 inline bool isIntrinsicInst(const Instruction* inst)
 {
     if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst)) {
         const Function* func = call->getCalledFunction();
-        if (func && (func->getIntrinsicID() == llvm::Intrinsic::donothing ||
-                     func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
-                     func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
-                     func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
-                     func->getIntrinsicID() == llvm::Intrinsic::dbg_value)) {
+        if (isIntrinsicFun(func)) {
             return true;
         }
     }
