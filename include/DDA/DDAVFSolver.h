@@ -39,30 +39,30 @@ public:
     typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
-    DDAVFSolver(): outOfBudgetQuery(false),_pag(NULL),_svfg(NULL),_ander(NULL),_callGraph(NULL), _callGraphSCC(NULL), _svfgSCC(NULL), ddaStat(NULL)
+    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr),_callGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
     {
     }
     /// Destructor
     virtual ~DDAVFSolver()
     {
-        if(_ander != NULL)
+        if(_ander != nullptr)
         {
             // AndersenWaveDiff::releaseAndersenWaveDiff();
-            _ander = NULL;
+            _ander = nullptr;
         }
 
-        if (_svfg != NULL)
+        if (_svfg != nullptr)
         {
             // DDASVFGBuilder::releaseDDASVFG();
-            _svfg = NULL;
+            _svfg = nullptr;
         }
 
-        if (_svfgSCC != NULL)
+        if (_svfgSCC != nullptr)
             delete _svfgSCC;
-        _svfgSCC = NULL;
+        _svfgSCC = nullptr;
 
-        _callGraph = NULL;
-        _callGraphSCC = NULL;
+        _callGraph = nullptr;
+        _callGraphSCC = nullptr;
     }
     /// Return candidate pointers for DDA
     inline NodeBS& getCandidateQueries()
@@ -580,7 +580,7 @@ protected:
     /// SVFG SCC detection
     inline void SVFGSCCDetection()
     {
-        if(_svfgSCC==NULL)
+        if(_svfgSCC==nullptr)
         {
             _svfgSCC = new SVFGSCC(getSVFG());
         }

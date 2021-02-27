@@ -57,14 +57,14 @@ public:
 protected:
 
     /// Constructor
-    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(NULL), scc(NULL), numOfIteration(0)
+    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), scc(nullptr), numOfIteration(0)
     {
     }
     /// Destructor
     virtual ~WPASolver()
     {
         delete scc;
-        scc = NULL;
+        scc = nullptr;
     }
 
     /// Get SCC detector

@@ -82,7 +82,7 @@ public:
     typedef std::vector<const SVFFunction*> FuncVector;
 
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
-        GenericCHNodeTy(i, k), vtable(NULL), className(name), flags(0)
+        GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
     ~CHNode()
@@ -236,7 +236,7 @@ public:
             if (it->second == id)
                 return it->first;
         }
-        return NULL;
+        return nullptr;
     }
 
     inline void addInstances(const std::string templateName, CHNode* node)

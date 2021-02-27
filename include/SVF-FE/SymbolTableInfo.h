@@ -99,7 +99,7 @@ private:
 protected:
     /// Constructor
     SymbolTableInfo(void) :
-        modelConstants(false), maxStruct(NULL), maxStSize(0), mod(NULL), totalSymNum(0)
+        modelConstants(false), maxStruct(nullptr), maxStSize(0), mod(nullptr), totalSymNum(0)
     {
     }
 
@@ -112,7 +112,7 @@ public:
     static void releaseSymbolInfo()
     {
         delete symInfo;
-        symInfo = NULL;
+        symInfo = nullptr;
     }
     virtual ~SymbolTableInfo()
     {
@@ -149,7 +149,7 @@ public:
     /// Get target machine data layout
     inline static DataLayout* getDataLayout(Module* mod)
     {
-        if(dl==NULL)
+        if(dl==nullptr)
             return dl = new DataLayout(mod);
         return dl;
     }

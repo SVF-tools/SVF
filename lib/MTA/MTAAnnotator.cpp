@@ -84,7 +84,7 @@ const Value* MTAAnnotator::getStoreOperand(const Instruction* inst)
     }
 
     assert(false);
-    return NULL;
+    return nullptr;
 }
 const Value* MTAAnnotator::getLoadOperand(const Instruction* inst)
 {
@@ -98,7 +98,7 @@ const Value* MTAAnnotator::getLoadOperand(const Instruction* inst)
     }
 
     assert(false);
-    return NULL;
+    return nullptr;
 }
 
 void MTAAnnotator::initialize(MHP* m, LockAnalysis* la)

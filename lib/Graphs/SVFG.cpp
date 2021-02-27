@@ -176,7 +176,7 @@ SVFG::SVFG(MemSSA* _mssa, VFGK k): VFG(_mssa->getPTA()->getPTACallGraph(),k),mss
 void SVFG::destroy()
 {
     delete stat;
-    stat = NULL;
+    stat = nullptr;
     clearMSSA();
 }
 
@@ -412,13 +412,13 @@ SVFGEdge* SVFG::addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsT
     if(SVFGEdge* edge = hasIntraVFGEdge(srcNode,dstNode,SVFGEdge::IntraIndirectVF))
     {
         assert(SVFUtil::isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
-        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
+        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : nullptr);
     }
     else
     {
         IntraIndSVFGEdge* indirectEdge = new IntraIndSVFGEdge(srcNode,dstNode);
         indirectEdge->addPointsTo(cpts);
-        return (addSVFGEdge(indirectEdge) ? indirectEdge : NULL);
+        return (addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
     }
 }
 
@@ -433,13 +433,13 @@ SVFGEdge* SVFG::addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const Poi
     if(SVFGEdge* edge = hasThreadVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF))
     {
         assert(SVFUtil::isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
-        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
+        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(cpts) ? edge : nullptr);
     }
     else
     {
         ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode,dstNode);
         indirectEdge->addPointsTo(cpts);
-        return (addSVFGEdge(indirectEdge) ? indirectEdge : NULL);
+        return (addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
     }
 }
 
@@ -453,13 +453,13 @@ SVFGEdge* SVFG::addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo
     if(SVFGEdge* edge = hasInterVFGEdge(srcNode,dstNode,SVFGEdge::CallIndVF,csId))
     {
         assert(SVFUtil::isa<CallIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
-        return (SVFUtil::cast<CallIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
+        return (SVFUtil::cast<CallIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : nullptr);
     }
     else
     {
         CallIndSVFGEdge* callEdge = new CallIndSVFGEdge(srcNode,dstNode,csId);
         callEdge->addPointsTo(cpts);
-        return (addSVFGEdge(callEdge) ? callEdge : NULL);
+        return (addSVFGEdge(callEdge) ? callEdge : nullptr);
     }
 }
 
@@ -473,13 +473,13 @@ SVFGEdge* SVFG::addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo&
     if(SVFGEdge* edge = hasInterVFGEdge(srcNode,dstNode,SVFGEdge::RetIndVF,csId))
     {
         assert(SVFUtil::isa<RetIndSVFGEdge>(edge) && "this should be a indirect value flow edge!");
-        return (SVFUtil::cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : NULL);
+        return (SVFUtil::cast<RetIndSVFGEdge>(edge)->addPointsTo(cpts) ? edge : nullptr);
     }
     else
     {
         RetIndSVFGEdge* retEdge = new RetIndSVFGEdge(srcNode,dstNode,csId);
         retEdge->addPointsTo(cpts);
-        return (addSVFGEdge(retEdge) ? retEdge : NULL);
+        return (addSVFGEdge(retEdge) ? retEdge : nullptr);
     }
 }
 
@@ -495,7 +495,7 @@ SVFGEdge* SVFG::addInterIndirectVFCallEdge(const ActualINSVFGNode* src, const Fo
         cpts1 &= cpts2;
         return addCallIndirectVFEdge(src->getId(),dst->getId(),cpts1,csId);
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -511,7 +511,7 @@ SVFGEdge* SVFG::addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const Ac
         cpts1 &= cpts2;
         return addRetIndirectVFEdge(src->getId(),dst->getId(),cpts1,csId);
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -667,7 +667,7 @@ const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
         if(mphi->isFormalINPHI())
             return phi->getFun();
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -693,7 +693,7 @@ const CallBlockNode* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const
         if(mphi->isActualOUTPHI())
             return mphi->getCallSite();
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!

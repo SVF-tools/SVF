@@ -219,7 +219,7 @@ private:
     Function* fun;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(NULL)
+        isDecl(false), isIntri(false), fun(nullptr)
     {
     }
 

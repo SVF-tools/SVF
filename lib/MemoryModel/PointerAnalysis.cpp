@@ -95,8 +95,8 @@ static llvm::cl::opt<bool> EnableThreadCallGraph("enable-tcg", llvm::cl::init(tr
 static llvm::cl::opt<bool> connectVCallOnCHA("vcall-cha", llvm::cl::init(false),
         llvm::cl::desc("connect virtual calls using cha"));
 
-CommonCHGraph* PointerAnalysis::chgraph = NULL;
-PAG* PointerAnalysis::pag = NULL;
+CommonCHGraph* PointerAnalysis::chgraph = nullptr;
+PAG* PointerAnalysis::pag = nullptr;
 
 const std::string PointerAnalysis::aliasTestMayAlias            = "MAYALIAS";
 const std::string PointerAnalysis::aliasTestMayAliasMangled     = "_Z8MAYALIASPvS_";
@@ -115,7 +115,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
-    svfMod(NULL),ptaTy(ty),stat(NULL),ptaCallGraph(NULL),callGraphSCC(NULL),icfg(NULL),typeSystem(NULL)
+    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
 {
     pag = p;
 	OnTheFlyIterBudgetForStat = statBudget;
@@ -138,16 +138,16 @@ PointerAnalysis::~PointerAnalysis()
 void PointerAnalysis::destroy()
 {
     delete ptaCallGraph;
-    ptaCallGraph = NULL;
+    ptaCallGraph = nullptr;
 
     delete callGraphSCC;
-    callGraphSCC = NULL;
+    callGraphSCC = nullptr;
 
     delete stat;
-    stat = NULL;
+    stat = nullptr;
 
     delete typeSystem;
-    typeSystem = NULL;
+    typeSystem = nullptr;
 }
 
 /*!
@@ -156,7 +156,7 @@ void PointerAnalysis::destroy()
 void PointerAnalysis::initialize()
 {
 	assert(pag && "PAG has not been built!");
-	if (chgraph == NULL) {
+	if (chgraph == nullptr) {
 		if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
 			DCHGraph *dchg = new DCHGraph(pag->getModule());
 			// TODO: we might want to have an option for extending.

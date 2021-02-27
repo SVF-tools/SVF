@@ -158,7 +158,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string name)
 
     s32_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-    if (realname == NULL)
+    if (realname == nullptr)
     {
         dname.className = "";
         dname.funcName = "";
@@ -234,7 +234,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 bool cppUtil::isVirtualCallSite(CallSite cs)
 {
 	// the callsite must be an indirect one with at least one argument (this ptr)
-    if (cs.getCalledFunction() != NULL || cs.arg_empty())
+    if (cs.getCalledFunction() != nullptr || cs.arg_empty())
         return false;
 
     // When compiled with ctir, we'd be using the DCHG which has its own
@@ -331,10 +331,10 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
 const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 {
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
-    assert(loadInst != NULL);
+    assert(loadInst != nullptr);
     const Value *vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
-    assert(gepInst != NULL);
+    assert(gepInst != nullptr);
     const Value *vtbl = gepInst->getPointerOperand();
     return vtbl;
 }
@@ -342,14 +342,14 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 u64_t cppUtil::getVCallIdx(CallSite cs)
 {
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
-    assert(vfuncloadinst != NULL);
+    assert(vfuncloadinst != nullptr);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
-    if (idx == NULL)
+    if (idx == nullptr)
     {
         SVFUtil::errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
@@ -389,7 +389,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     string vtblName = value->getName().str();
     s32_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
-    if (realname != NULL)
+    if (realname != nullptr)
     {
         string realnameStr = string(realname);
         if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),

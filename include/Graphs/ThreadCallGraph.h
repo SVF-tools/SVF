@@ -364,7 +364,7 @@ public:
     /// map call instruction to its CallGraphEdge map
     inline void addThreadForkEdgeSetMap(const CallBlockNode* cs, ThreadForkEdge* edge)
     {
-        if(edge!=NULL)
+        if(edge!=nullptr)
         {
             callinstToThreadForkEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
@@ -374,7 +374,7 @@ public:
     /// map call instruction to its CallGraphEdge map
     inline void addThreadJoinEdgeSetMap(const CallBlockNode* cs, ThreadJoinEdge* edge)
     {
-        if(edge!=NULL)
+        if(edge!=nullptr)
         {
             callinstToThreadJoinEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
@@ -384,7 +384,7 @@ public:
     /// map call instruction to its CallGraphEdge map
     inline void addHareParForEdgeSetMap(const CallBlockNode* cs, HareParForEdge* edge)
     {
-        if(edge!=NULL)
+        if(edge!=nullptr)
         {
             callinstToHareParForEdgesMap[cs].insert(edge);
             callinstToCallGraphEdgesMap[cs].insert(edge);
@@ -402,7 +402,7 @@ public:
             if(jit!=it->second.end())
                 return *jit;
         }
-        return NULL;
+        return nullptr;
     }
 
 private:

@@ -34,7 +34,7 @@ public:
     /// Create an singleton instance
     static Steensgaard* createSteensgaard(PAG* _pag)
     {
-        if(steens==NULL)
+        if(steens==nullptr)
         {
             steens = new Steensgaard(_pag);
             steens->analyze();
@@ -46,7 +46,7 @@ public:
     {
         if (steens)
             delete steens;
-        steens = NULL;
+        steens = nullptr;
     }
 
     virtual void solveWorklist();

@@ -60,7 +60,7 @@ static llvm::cl::bits<PointerAnalysis::PTATY> DDASelected(llvm::cl::desc("Select
 DDAPass::~DDAPass()
 {
     // _pta->dumpStat();
-    if (_client != NULL)
+    if (_client != nullptr)
         delete _client;
 }
 

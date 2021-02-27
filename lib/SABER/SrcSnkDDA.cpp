@@ -258,10 +258,10 @@ void SrcSnkDDA::BWProcessIncomingEdge(const DPIm&, SVFGEdge* edge)
 /// Set current slice
 void SrcSnkDDA::setCurSlice(const SVFGNode* src)
 {
-    if(_curSlice!=NULL)
+    if(_curSlice!=nullptr)
     {
         delete _curSlice;
-        _curSlice = NULL;
+        _curSlice = nullptr;
         clearVisitedMap();
     }
 

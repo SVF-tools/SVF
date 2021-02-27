@@ -61,7 +61,7 @@ class List
         ListNode(Data d)
         {
             data = d;
-            next = NULL;
+            next = nullptr;
         }
 
         ~ListNode() {}
@@ -76,15 +76,15 @@ class List
 public:
     List()
     {
-        head = NULL;
-        tail = NULL;
+        head = nullptr;
+        tail = nullptr;
     }
 
     ~List() {}
 
     inline bool empty() const
     {
-        return (head == NULL);
+        return (head == nullptr);
     }
 
     inline bool find(Data data) const
@@ -97,7 +97,7 @@ public:
         if (nodeSet.find(data) == nodeSet.end())
         {
             Node* new_node = new Node(data);
-            if (head == NULL)
+            if (head == nullptr)
                 head = new_node;// the list is empty
             else
                 tail->next = new_node;
@@ -107,14 +107,14 @@ public:
 
     Data pop()
     {
-        assert(head != NULL && "list is empty");
+        assert(head != nullptr && "list is empty");
         /// get node from list head
         Node* head_node = head;
 
         /// change list head to the next node
         head = head->next;
-        if (head == NULL)
-            tail = NULL;	/// the last node is popped.
+        if (head == nullptr)
+            tail = nullptr;	/// the last node is popped.
 
         Data data = head_node->data;
         nodeSet.erase(data);

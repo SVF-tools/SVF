@@ -251,7 +251,7 @@ void MemObj::init(const Type* type)
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL)
+    refVal(val), GSymID(id), typeInfo(nullptr)
 {
     init(val);
 }
@@ -260,7 +260,7 @@ MemObj::MemObj(const Value *val, SymID id) :
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id, const Type* type) :
-    refVal(NULL), GSymID(id), typeInfo(NULL)
+    refVal(nullptr), GSymID(id), typeInfo(nullptr)
 {
     init(type);
 }
@@ -295,7 +295,7 @@ const Type* MemObj::getType() const
 void MemObj::destroy()
 {
     delete typeInfo;
-    typeInfo = NULL;
+    typeInfo = nullptr;
 }
 
 

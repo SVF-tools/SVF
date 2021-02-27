@@ -49,7 +49,7 @@ static llvm::cl::opt<bool> DumpVFG("dump-svfg", llvm::cl::init(false),
                                    llvm::cl::desc("Dump dot graph of SVFG"));
 
 
-SVFG* SVFGBuilder::globalSvfg = NULL;
+SVFG* SVFGBuilder::globalSvfg = nullptr;
 
 
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
@@ -95,7 +95,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(SingleVFG)
     {
-        if(globalSvfg==NULL)
+        if(globalSvfg==nullptr)
         {
             /// Note that we use callgraph from andersen analysis here
             if(OPTSVFG)

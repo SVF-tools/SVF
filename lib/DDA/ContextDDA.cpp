@@ -31,7 +31,7 @@ ContextDDA::~ContextDDA()
 {
     if(flowDDA)
         delete flowDDA;
-    flowDDA = NULL;
+    flowDDA = nullptr;
 }
 
 /*!

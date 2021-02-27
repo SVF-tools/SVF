@@ -103,7 +103,7 @@ protected:
 public:
     /// Constructor/Destructor for MU
     //@{
-    MSSAMU(MUTYPE t, const MemRegion* m, Cond c) : type(t), mr(m), ver(NULL), cond(c)
+    MSSAMU(MUTYPE t, const MemRegion* m, Cond c) : type(t), mr(m), ver(nullptr), cond(c)
     {
     }
     virtual ~MSSAMU()
@@ -130,7 +130,7 @@ public:
     /// Get Ver
     inline MRVer* getVer() const
     {
-        assert(ver!=NULL && "version is NULL, did not rename?");
+        assert(ver!=nullptr && "version is nullptr, did not rename?");
         return ver;
     }
     /// Return condition
@@ -337,7 +337,7 @@ protected:
 public:
     /// Constructor/Destructer for MSSADEF
     //@{
-    MSSADEF(DEFTYPE t, const MemRegion* m): type(t), mr(m), resVer(NULL)
+    MSSADEF(DEFTYPE t, const MemRegion* m): type(t), mr(m), resVer(nullptr)
     {
 
     }
@@ -366,7 +366,7 @@ public:
     /// Set operand vers
     inline MRVer* getResVer() const
     {
-        assert(resVer!=NULL && "version is NULL, did not rename?");
+        assert(resVer!=nullptr && "version is nullptr, did not rename?");
         return resVer;
     }
 
@@ -397,7 +397,7 @@ public:
     typedef typename MSSADEF::DEFTYPE CHITYPE;
     /// Constructor/Destructer for MSSACHI
     //@{
-    MSSACHI(CHITYPE t, const MemRegion* m, Cond c): MSSADEF(t,m), opVer(NULL), cond(c)
+    MSSACHI(CHITYPE t, const MemRegion* m, Cond c): MSSADEF(t,m), opVer(nullptr), cond(c)
     {
 
     }
@@ -414,7 +414,7 @@ public:
     /// Get operand ver
     inline MRVer* getOpVer() const
     {
-        assert(opVer!=NULL && "version is NULL, did not rename?");
+        assert(opVer!=nullptr && "version is nullptr, did not rename?");
         return opVer;
     }
 
@@ -652,7 +652,7 @@ public:
     inline const MRVer* getOpVer(u32_t pos) const
     {
         OPVers::const_iterator it = opVers.find(pos);
-        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
 

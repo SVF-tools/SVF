@@ -60,7 +60,7 @@ bool ProgSlice::AllPathReachableSolve()
             const SVFGNode* succ = edge->getDstNode();
             if(inBackwardSlice(succ))
             {
-                Condition* vfCond = NULL;
+                Condition* vfCond = nullptr;
                 const BasicBlock* nodeBB = getSVFGNodeBB(node);
                 const BasicBlock* succBB = getSVFGNodeBB(succ);
                 /// clean up the control flow conditions for next round guard computation
@@ -182,7 +182,7 @@ const Value* ProgSlice::getLLVMValue(const SVFGNode* node) const
         return fr->getRet()->getValue();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /*!

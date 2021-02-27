@@ -1102,7 +1102,7 @@ bool ForkJoinAnalysis::sameLoopTripCount(const Instruction* forkSite, const Inst
     const Loop *forkSiteLoop = tct->getLoop(forkSite);
     const Loop *joinSiteLoop = tct->getLoop(joinSite);
 
-    if(forkSiteLoop == NULL || joinSiteLoop == NULL)
+    if(forkSiteLoop == nullptr || joinSiteLoop == nullptr)
         return false;
 
     const SCEV* forkLoopCountScev = forkSE->getMaxBackedgeTakenCount(forkSiteLoop);

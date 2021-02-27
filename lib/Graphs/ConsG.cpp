@@ -157,7 +157,7 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
-        return NULL;
+        return nullptr;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = AddrCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
@@ -176,7 +176,7 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
             || srcNode == dstNode)
-        return NULL;
+        return nullptr;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -195,7 +195,7 @@ NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, co
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
-        return NULL;
+        return nullptr;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -213,7 +213,7 @@ VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
-        return NULL;
+        return nullptr;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -231,7 +231,7 @@ LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
-        return NULL;
+        return nullptr;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = LoadCGEdgeSet.insert(edge).second;
@@ -249,7 +249,7 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
-        return NULL;
+        return nullptr;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = StoreCGEdgeSet.insert(edge).second;

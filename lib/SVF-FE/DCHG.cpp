@@ -42,7 +42,7 @@ void DCHGraph::handleDICompositeType(const DICompositeType *compositeType)
             if (!fields.empty())
             {
                 // We want the first non-static, non-function member; it may not exist.
-                DIDerivedType *firstMember = NULL;
+                DIDerivedType *firstMember = nullptr;
                 for (DINode *n : fields)
                 {
                     if (DIDerivedType *fm = SVFUtil::dyn_cast<DIDerivedType>(n))
@@ -55,7 +55,7 @@ void DCHGraph::handleDICompositeType(const DICompositeType *compositeType)
                     }
                 }
 
-                if (firstMember != NULL)
+                if (firstMember != nullptr)
                 {
                     // firstMember is a DW_TAG_member, we want the base type beneath it.
                     addEdge(compositeType, firstMember->getBaseType(), DCHEdge::FIRST_FIELD);
@@ -142,8 +142,8 @@ void DCHGraph::handleTypedef(const DIType *typedefType)
     // Need to gather them in a set first because we don't know the base type till
     // we get to the bottom of the (potentially many) typedefs.
     std::vector<const DIDerivedType *> typedefs;
-    // Check for NULL because you can typedef void.
-    while (typedefType != NULL && typedefType->getTag() == dwarf::DW_TAG_typedef)
+    // Check for nullptr because you can typedef void.
+    while (typedefType != nullptr && typedefType->getTag() == dwarf::DW_TAG_typedef)
     {
         const DIDerivedType *typedefDerivedType = SVFUtil::dyn_cast<DIDerivedType>(typedefType);
         // The typedef itself.
@@ -405,7 +405,7 @@ DCHNode *DCHGraph::getOrCreateNode(const DIType *type)
     type = getCanonicalType(type);
 
     // Check, does the node for type exist?
-    if (diTypeToNodeMap[type] != NULL)
+    if (diTypeToNodeMap[type] != nullptr)
     {
         return diTypeToNodeMap[type];
     }
@@ -424,7 +424,7 @@ DCHEdge *DCHGraph::addEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKin
     DCHNode *dst = getOrCreateNode(t2);
 
     DCHEdge *edge = hasEdge(t1, t2, et);
-    if (edge == NULL)
+    if (edge == nullptr)
     {
         // Create a new edge.
         edge = new DCHEdge(src, dst, et);
@@ -451,7 +451,7 @@ DCHEdge *DCHGraph::hasEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKin
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void DCHGraph::buildCHG(bool extend)
@@ -1234,7 +1234,7 @@ void DCHGraph::print(void)
         for (const DIDerivedType *tdef : typedefs)
         {
             std::string typedefName = "void";
-            if (tdef != NULL)
+            if (tdef != nullptr)
             {
                 typedefName = tdef->getName();
             }

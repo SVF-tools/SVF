@@ -71,7 +71,7 @@ public:
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL), bb(NULL)
+    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(nullptr), bb(nullptr)
     {
 
     }
@@ -143,7 +143,7 @@ class GlobalBlockNode : public ICFGNode
 public:
     GlobalBlockNode(NodeID id) : ICFGNode(id, GlobalBlock)
     {
-    	bb = NULL;
+    	bb = nullptr;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -369,7 +369,7 @@ private:
     const RetBlockNode* ret;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(NULL)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();
@@ -409,7 +409,7 @@ public:
     /// Return true if this is an indirect call
     inline bool isIndirectCall() const
     {
-        return NULL == SVFUtil::getCallee(cs);
+        return nullptr == SVFUtil::getCallee(cs);
     }
 
     /// Return the set of actual parameters
@@ -463,7 +463,7 @@ private:
     const CallBlockNode* callBlockNode;
 public:
     RetBlockNode(NodeID id, const Instruction* c, CallBlockNode* cb) :
-        InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb)
+        InterBlockNode(id, FunRetBlock), cs(c), actualRet(nullptr), callBlockNode(cb)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();

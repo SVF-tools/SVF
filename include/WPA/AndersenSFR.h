@@ -72,7 +72,7 @@ public:
     {
         if (scdAndersen)
             delete scdAndersen;
-        scdAndersen = NULL;
+        scdAndersen = nullptr;
     }
 
 protected:
@@ -114,7 +114,7 @@ private:
 
 public:
     AndersenSFR(PAG* _pag, PTATY type = AndersenSFR_WPA) :
-        AndersenSCD(_pag, type), csc(NULL)
+        AndersenSCD(_pag, type), csc(nullptr)
     {
     }
 
@@ -138,10 +138,10 @@ public:
 
     ~AndersenSFR()
     {
-        if (csc != NULL)
+        if (csc != nullptr)
         {
             delete(csc);
-            csc = NULL;
+            csc = nullptr;
         }
     }
 

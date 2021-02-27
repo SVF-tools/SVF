@@ -90,7 +90,7 @@ protected:
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
-        if (edge != NULL)
+        if (edge != nullptr)
         {
             PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, cs_arg);
@@ -102,7 +102,7 @@ protected:
     {
         NodeID phiId = getDef(cs_ret);
         SVFGEdge* edge = addRetEdge(getDef(fun_ret), phiId, csId);
-        if (edge != NULL)
+        if (edge != nullptr)
         {
             PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, fun_ret);
@@ -118,7 +118,7 @@ protected:
         {
             NodeID aiDef = getActualINDef(actualIn->getId());
             SVFGEdge* edge = addCallIndirectSVFGEdge(aiDef,formalIn->getId(),csId,intersection);
-            if (edge != NULL)
+            if (edge != nullptr)
                 edges.insert(edge);
         }
     }
@@ -131,7 +131,7 @@ protected:
         {
             NodeID foDef = getFormalOUTDef(formalOut->getId());
             SVFGEdge* edge = addRetIndirectSVFGEdge(foDef,actualOut->getId(),csId,intersection);
-            if (edge != NULL)
+            if (edge != nullptr)
                 edges.insert(edge);
         }
     }
