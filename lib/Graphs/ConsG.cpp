@@ -44,8 +44,7 @@ void ConstraintGraph::buildCG()
     // initialize nodes
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
-		if (it->second->isIsolatedNode() == false)
-			addConstraintNode(new ConstraintNode(it->first), it->first);
+		addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
     // initialize edges
