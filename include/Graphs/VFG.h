@@ -553,8 +553,12 @@ protected:
 		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
 		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
 		/// we will set this phi node's def later
-		if (!pag->isPhiNode(uniqueFunRet))
+		/// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
+		if (!pag->isPhiNode(uniqueFunRet)){
+			std::string warn = fun->getName();
+			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
 			setDef(uniqueFunRet, sNode);
+		}
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)

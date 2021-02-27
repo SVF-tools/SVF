@@ -529,8 +529,12 @@ VFGEdge* VFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId)
     }
     else
     {
-        IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
-        return (addVFGEdge(directEdge) ? directEdge : nullptr);
+    	if(srcNode!=dstNode){
+    		IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
+    		return (addVFGEdge(directEdge) ? directEdge : nullptr);
+    	}
+    	else
+    		return nullptr;
     }
 }
 
