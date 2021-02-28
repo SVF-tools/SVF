@@ -37,6 +37,12 @@ if(NOT COMMAND add_llvm_library)
         add_definitions(${LLVM_DEFINITIONS})
         include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 
+        if (LLVM_LINK_LLVM_DYLIB)
+            set(llvm_libs LLVM)
+        else()
+            llvm_map_components_to_libnames(llvm_libs bitwriter core ipo irreader instcombine instrumentation target linker analysis scalaropts support transformutils)
+        endif()
+
     else()
         message(FATAL_ERROR "\
 WARNING: The LLVM_DIR var was not set (required for an out-of-source build)!\n\
