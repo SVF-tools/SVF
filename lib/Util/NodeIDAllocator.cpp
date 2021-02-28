@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <queue>
 
 #include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
@@ -169,7 +170,10 @@ namespace SVF
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
 
         Map<std::string, std::string> stats;
-        double totalTime = 0;
+        double totalTime = 0.0;
+        double fastClusterTime = 0.0;
+        double distanceMatrixTime = 0.0;
+        double dendogramTraversalTime = 0.0;
 
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
@@ -177,6 +181,9 @@ namespace SVF
         double clkStart = PTAStat::getClk(true);
         // Map points-to sets to occurrences.
         Map<PointsTo, unsigned> pointsToSets;
+        // Nodes to some of the objects they share a set with.
+        // TODO: describe why "some", use vector not Map.
+        Map<NodeID, Set<NodeID>> graph;
         // Number of objects we're reallocating is the largest node (recall, we
         // assume a dense allocation, which goes from 0--modulo specials--to some n).
         // If we "allocate" for specials, it is not a problem except 2 potentially wasted
@@ -185,45 +192,116 @@ namespace SVF
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
-            for (const NodeID o : pts) if (o >= numObjects) numObjects = o + 1;
+            NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
+            for (const NodeID o : pts)
+            {
+                if (o >= numObjects) numObjects = o + 1;
+                if (o != firstO)
+                {
+                    graph[firstO].insert(o);
+                    graph[o].insert(firstO);
+                }
+            }
+
             pointsToSets[pts] += keyOcc.second;;
         }
 
         stats[NumObjects] = std::to_string(numObjects);
 
+        size_t numLabels = 0;
+        const std::vector<NodeID> objectLabels = labelObjects(graph, numObjects, numLabels);
+        std::vector<Set<NodeID>> labelObjects(numLabels);
+        for (NodeID o = 0; o < numObjects; ++o) labelObjects[objectLabels[o]].insert(o);
+
+        size_t numMappings = 0;
+
+        // Label to object mappings which map 0 to n to all the objects part of that
+        // label, thus requiring a smaller distance matrix.
+        std::vector<std::vector<NodeID>> partitionMappings(numLabels);
+        std::vector<Map<NodeID, unsigned>> partitionReverseMappings(numLabels);
+        for (unsigned l = 0; l < numLabels; ++l)
+        {
+            size_t curr = 0;
+            for (NodeID o : labelObjects[l])
+            {
+                partitionMappings[l].push_back(o);
+                partitionReverseMappings[l][o] = curr++;
+            }
+
+            // Number of native words needed for this partition if we were
+            // to start assigning from 0. curr is the number of objects.
+            assert(curr != 0);
+            numMappings += ((curr - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
+        }
+
+        // Points-to sets which are relevant to a label.
+        // Pair is for occurences.
+        std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> labelPointsTos(numLabels);
+        for (const Map<PointsTo, unsigned>::value_type &pto : pointsToSets)
+        {
+            const PointsTo &pt = pto.first;
+            const unsigned occ = pto.second;
+            if (pt.empty()) continue;
+            // Guaranteed that begin() != end() because of the continue above.
+            const NodeID o = *(pt.begin());
+            unsigned label = objectLabels[o];
+            // By definition, all other objects in the points-to set will have the same label.
+            labelPointsTos[label].push_back(std::make_pair(&pt, occ));
+        }
+
         // Mapping we'll return.
         std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
-        double *distMatrix = getDistanceMatrix(pointsToSets, numObjects);
-        double clkEnd = PTAStat::getClk(true);
-        double time = (clkEnd - clkStart) / TIMEINTERVAL;
-        totalTime += time;
-        stats[DistanceMatrixTime] = std::to_string(time);
-
-        clkStart = PTAStat::getClk(true);
-        int *dendogram = new int[2 * (numObjects - 1)];
-        double *height = new double[numObjects - 1];
-        // TODO: parameterise method.
-        hclust_fast(numObjects, distMatrix, Options::ClusterMethod, dendogram, height);
-        delete[] distMatrix;
-        // We never use the height.
-        delete[] height;
-        clkEnd = PTAStat::getClk(true);
-        time = (clkEnd - clkStart) / TIMEINTERVAL;
-        totalTime += time;
-        stats[FastClusterTime] = std::to_string(time);
-
-        clkStart = PTAStat::getClk(true);
         unsigned allocCounter = 0;
-        Set<int> visited;
-        traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, numObjects - 1);
-        delete[] dendogram;
-        clkEnd = PTAStat::getClk(true);
-        time = (clkEnd - clkStart) / TIMEINTERVAL;
-        totalTime += time;
-        stats[DendogramTraversalTime] = std::to_string(time);
+        for (unsigned l = 0; l < numLabels; ++l)
+        {
+            const size_t lNumObjects = labelObjects[l].size();
+            // Round up to next Word: ceiling of div. and multiply.
+            allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
 
-        stats[TotalTime] = std::to_string(totalTime);
+            // If in a group we have less than 64 items, we can just allocate them
+            // however.
+            if (lNumObjects < NATIVE_INT_SIZE)
+            {
+                for (NodeID o : labelObjects[l])
+                {
+                    nodeMap[o] = allocCounter++;
+                }
+
+                continue;
+            }
+
+            double *distMatrix = getDistanceMatrix(labelPointsTos[l], lNumObjects, partitionReverseMappings[l]);
+            double clkEnd = PTAStat::getClk(true);
+            double time = (clkEnd - clkStart) / TIMEINTERVAL;
+            distanceMatrixTime += time;
+
+            clkStart = PTAStat::getClk(true);
+            int *dendogram = new int[2 * (lNumObjects - 1)];
+            double *height = new double[lNumObjects - 1];
+            // TODO: parameterise method.
+            hclust_fast(lNumObjects, distMatrix, Options::ClusterMethod, dendogram, height);
+            delete[] distMatrix;
+            // We never use the height.
+            delete[] height;
+            clkEnd = PTAStat::getClk(true);
+            time = (clkEnd - clkStart) / TIMEINTERVAL;
+            fastClusterTime += time;
+
+            clkStart = PTAStat::getClk(true);
+            Set<int> visited;
+            traverseDendogram(nodeMap, dendogram, lNumObjects, allocCounter, visited, lNumObjects - 1, partitionMappings[l]);
+            delete[] dendogram;
+            clkEnd = PTAStat::getClk(true);
+            time = (clkEnd - clkStart) / TIMEINTERVAL;
+            dendogramTraversalTime += time;
+
+        }
+
+        stats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
+        stats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
+        stats[FastClusterTime] = std::to_string(fastClusterTime);
+        stats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime);
 
         if (evalSubtitle != "")
         {
@@ -232,6 +310,20 @@ namespace SVF
         }
 
         return nodeMap;
+    }
+
+    std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std::vector<NodeID> &nodeMapping)
+    {
+        // nodeMapping.size() may not be big enough because we leave some gaps, but it's a start.
+        std::vector<NodeID> reverseNodeMapping(nodeMapping.size(), UINT_MAX);
+        for (size_t i = 0; i < nodeMapping.size(); ++i)
+        {
+            const NodeID mapsTo = nodeMapping.at(i);
+            if (mapsTo >= reverseNodeMapping.size()) reverseNodeMapping.resize(mapsTo + 1, UINT_MAX);
+            reverseNodeMapping.at(mapsTo) = i;
+        }
+
+        return reverseNodeMapping;
     }
 
     size_t NodeIDAllocator::Clusterer::condensedIndex(size_t n, size_t i, size_t j)
@@ -249,7 +341,7 @@ namespace SVF
         return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
-    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const Map<PointsTo, unsigned> pointsToSets, const size_t numObjects)
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pair<const PointsTo *, unsigned>> pointsToSets, const size_t numObjects, const Map<NodeID, unsigned> &nodeMap)
     {
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
@@ -260,25 +352,29 @@ namespace SVF
         // Can differentiate ~9999 occurrences.
         double occurrenceEpsilon = 0.0001;
 
-        for (const Map<PointsTo, unsigned>::value_type &ptsOcc : pointsToSets)
+        for (const std::pair<const PointsTo *, unsigned> &ptsOcc : pointsToSets)
         {
-            const PointsTo &pts = ptsOcc.first;
-            const unsigned &occ = ptsOcc.second;
+            const PointsTo *pts = ptsOcc.first;
+            assert(pts != nullptr);
+            const unsigned occ = ptsOcc.second;
 
             // Distance between each element of pts.
-            unsigned distance = requiredBits(pts) / NATIVE_INT_SIZE;
+            unsigned distance = requiredBits(*pts) / NATIVE_INT_SIZE;
 
             // Use a vector so we can index into pts.
             std::vector<NodeID> ptsVec;
-            for (const NodeID o : pts) ptsVec.push_back(o);
+            for (const NodeID o : *pts) ptsVec.push_back(o);
             for (size_t i = 0; i < ptsVec.size(); ++i)
             {
                 const NodeID oi = ptsVec[i];
+                const Map<NodeID, unsigned>::const_iterator moi = nodeMap.find(oi);
+                assert(moi != nodeMap.end());
                 for (size_t j = i + 1; j < ptsVec.size(); ++j)
                 {
                     const NodeID oj = ptsVec[j];
-                    // TODO: handle occurrences.
-                    double &existingDistance = distMatrix[condensedIndex(numObjects, oi, oj)];
+                    const Map<NodeID, unsigned>::const_iterator moj = nodeMap.find(oj);
+                    assert(moj != nodeMap.end());
+                    double &existingDistance = distMatrix[condensedIndex(numObjects, moi->second, moj->second)];
 
                     // Subtract extra occurrenceEpsilon to make upcoming logic simpler.
                     // When existingDistance is never whole, it is always between two distances.
@@ -310,7 +406,7 @@ namespace SVF
         return distMatrix;
     }
 
-    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index)
+    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &partitionNodeMap)
     {
         if (visited.find(index) != visited.end()) return;
         visited.insert(index);
@@ -320,25 +416,65 @@ namespace SVF
         {
             // Reached a leaf.
             // -1 because the items start from 1 per fastcluster (TODO).
-            nodeMap[std::abs(left) - 1] = allocCounter;
+            nodeMap[partitionNodeMap[std::abs(left) - 1]] = allocCounter;
             ++allocCounter;
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left);
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left, partitionNodeMap);
         }
 
         // Repeat for the right child.
         int right = dendogram[(numObjects - 1) + index - 1];
         if (right < 0)
         {
-            nodeMap[std::abs(right) - 1] = allocCounter;
+            nodeMap[partitionNodeMap[std::abs(right) - 1]] = allocCounter;
             ++allocCounter;
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right);
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right, partitionNodeMap);
         }
+    }
+
+    std::vector<NodeID> NodeIDAllocator::Clusterer::labelObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
+    {
+        unsigned label = UINT_MAX;
+        std::vector<NodeID> labels(numObjects, UINT_MAX);
+        Set<NodeID> labelled;
+        for (const Map<NodeID, Set<NodeID>>::value_type &oos : graph)
+        {
+            const NodeID o = oos.first;
+            if (labels[o] != UINT_MAX) continue;
+            std::queue<NodeID> bfsQueue;
+            bfsQueue.push(o);
+            ++label;
+            while (!bfsQueue.empty())
+            {
+                const NodeID o = bfsQueue.front();
+                bfsQueue.pop();
+                if (labels[o] != UINT_MAX)
+                {
+                    assert(labels[o] == label);
+                    continue;
+                }
+
+                labels[o] = label;
+                Map<NodeID, Set<NodeID>>::const_iterator neighboursIt = graph.find(o);
+                assert(neighboursIt != graph.end());
+                for (const NodeID neighbour : neighboursIt->second) bfsQueue.push(neighbour);
+            }
+        }
+
+        // The remaining objects have no relation with others: they get their own label.
+        for (size_t o = 0; o < numObjects; ++o)
+        {
+            if (labels[o] == UINT_MAX) labels[o] = ++label;
+        }
+
+        numLabels = label + 1;
+
+        return labels;
     }
 
     void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats)
