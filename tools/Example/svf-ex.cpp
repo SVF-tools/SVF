@@ -114,6 +114,7 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
     Set<const VFGNode*> visited;
     worklist.push(vNode);
 
+
     /// Traverse along VFG
     while (!worklist.empty())
     {
@@ -138,6 +139,12 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
         /// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
         /// Value* val = pNode->getValue();
+    }
+
+
+    // LLVM graph traversal functions
+    for (const VFGNode* node : llvm::inverse_depth_first(vNode)) {
+        llvm::errs() << "Node: " << *node;
     }
 }
 
