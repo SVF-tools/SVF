@@ -155,6 +155,7 @@ namespace SVF
     }
 
     const std::string NodeIDAllocator::Clusterer::NumObjects = "NumObjects";
+    const std::string NodeIDAllocator::Clusterer::PartitionTime = "PartitionTime";
     const std::string NodeIDAllocator::Clusterer::DistanceMatrixTime = "DistanceMatrixTime";
     const std::string NodeIDAllocator::Clusterer::FastClusterTime = "FastClusterTime";
     const std::string NodeIDAllocator::Clusterer::DendogramTraversalTime = "DendogramTravTime";
@@ -164,6 +165,9 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::OriginalSbvNumWords = "OriginalSbvWords";
     const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
     const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
+    const std::string NodeIDAllocator::Clusterer::NumPartitions = "NumPartitions";
+    const std::string NodeIDAllocator::Clusterer::NumGtIntPartitions = "NumGtIntPartitions";
+    const std::string NodeIDAllocator::Clusterer::LargestPartition = "LargestPartition";
 
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle)
     {
@@ -174,6 +178,7 @@ namespace SVF
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
         double dendogramTraversalTime = 0.0;
+        double partitionTime = 0.0;
 
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
@@ -208,35 +213,44 @@ namespace SVF
 
         stats[NumObjects] = std::to_string(numObjects);
 
-        size_t numLabels = 0;
-        const std::vector<NodeID> objectLabels = labelObjects(graph, numObjects, numLabels);
-        std::vector<Set<NodeID>> labelObjects(numLabels);
-        for (NodeID o = 0; o < numObjects; ++o) labelObjects[objectLabels[o]].insert(o);
+        size_t numPartitions = 0;
+        const std::vector<unsigned> objectsPartition = partitionObjects(graph, numObjects, numPartitions);
+        std::vector<Set<NodeID>> partitionsObjects(numPartitions);
+        for (NodeID o = 0; o < numObjects; ++o) partitionsObjects[objectsPartition[o]].insert(o);
 
+        // Size of the return node mapping. It is potentially larger than the number of
+        // objects because we align each partition to NATIVE_INT_SIZE.
         size_t numMappings = 0;
 
-        // Label to object mappings which map 0 to n to all the objects part of that
-        // label, thus requiring a smaller distance matrix.
-        std::vector<std::vector<NodeID>> partitionMappings(numLabels);
-        std::vector<Map<NodeID, unsigned>> partitionReverseMappings(numLabels);
-        for (unsigned l = 0; l < numLabels; ++l)
+        // Maps a partition (label) to a mapping which maps 0 to n to all objects
+        // in that partition.
+        std::vector<std::vector<NodeID>> partitionMappings(numPartitions);
+        // The reverse: partition to mapping of objects to a 0 to n from above.
+        std::vector<Map<NodeID, unsigned>> partitionReverseMappings(numPartitions);
+        // We can thus use 0 to n for each partition to create smaller distance matrices.
+        for (unsigned part = 0; part < numPartitions; ++part)
         {
             size_t curr = 0;
-            for (NodeID o : labelObjects[l])
+            for (NodeID o : partitionsObjects[part])
             {
-                partitionMappings[l].push_back(o);
-                partitionReverseMappings[l][o] = curr++;
+                // push_back here is just like p...[part][curr] = o.
+                partitionMappings[part].push_back(o);
+                partitionReverseMappings[part][o] = curr++;
             }
 
-            // Number of native words needed for this partition if we were
-            // to start assigning from 0. curr is the number of objects.
+            // curr is the number of objects. A partition with no objects makes no sense.
             assert(curr != 0);
-            numMappings += ((curr - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
+
+            // Number of bits needed for this partition if we were
+            // to start assigning from 0 rounded up to the fewest needed
+            // native ints. This is added to the number of mappings since
+            // we align each partition to a native int.
+            numMappings += requiredBits(partitionsObjects[part].size());
         }
 
-        // Points-to sets which are relevant to a label.
-        // Pair is for occurences.
-        std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> labelPointsTos(numLabels);
+        // Points-to sets which are relevant to a partition, i.e., those whose elements
+        // belong to that partition. Pair is for occurences.
+        std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> partitionsPointsTos(numPartitions);
         for (const Map<PointsTo, unsigned>::value_type &pto : pointsToSets)
         {
             const PointsTo &pt = pto.first;
@@ -244,64 +258,71 @@ namespace SVF
             if (pt.empty()) continue;
             // Guaranteed that begin() != end() because of the continue above.
             const NodeID o = *(pt.begin());
-            unsigned label = objectLabels[o];
-            // By definition, all other objects in the points-to set will have the same label.
-            labelPointsTos[label].push_back(std::make_pair(&pt, occ));
+            unsigned part = objectsPartition[o];
+            // In our "graph", objects in the same points-to set have an edge between them,
+            // so they are all in the same connected component/partition.
+            partitionsPointsTos[part].push_back(std::make_pair(&pt, occ));
         }
+
+        double clkEnd = PTAStat::getClk(true);
+        partitionTime = (clkEnd - clkStart) / TIMEINTERVAL;
 
         // Mapping we'll return.
         std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
+        unsigned numGtIntPartitions = 0;
+        unsigned largestPartition = 0;
+        // Current new node ID; the result of a node ID mapping.
         unsigned allocCounter = 0;
-        for (unsigned l = 0; l < numLabels; ++l)
+        for (unsigned part = 0; part < numPartitions; ++part)
         {
-            const size_t lNumObjects = labelObjects[l].size();
-            // Round up to next Word: ceiling of div. and multiply.
+            const size_t partNumObjects = partitionsObjects[part].size();
+            // Round up to next Word: ceiling of current allocation to get how
+            // many words and multiply to get the number of bits.
             allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
 
-            // If in a group we have less than 64 items, we can just allocate them
-            // however.
-            if (lNumObjects < NATIVE_INT_SIZE)
-            {
-                for (NodeID o : labelObjects[l])
-                {
-                    nodeMap[o] = allocCounter++;
-                }
+            if (partNumObjects > largestPartition) largestPartition = partNumObjects;
 
+            // For partitions with fewer than 64 objects, we can just allocate them
+            // however as they will be in the one int regardless..
+            if (partNumObjects < NATIVE_INT_SIZE)
+            {
+                for (NodeID o : partitionsObjects[part]) nodeMap[o] = allocCounter++;
                 continue;
             }
 
-            double *distMatrix = getDistanceMatrix(labelPointsTos[l], lNumObjects, partitionReverseMappings[l]);
-            double clkEnd = PTAStat::getClk(true);
-            double time = (clkEnd - clkStart) / TIMEINTERVAL;
-            distanceMatrixTime += time;
+            ++numGtIntPartitions;
 
             clkStart = PTAStat::getClk(true);
-            int *dendogram = new int[2 * (lNumObjects - 1)];
-            double *height = new double[lNumObjects - 1];
-            // TODO: parameterise method.
-            hclust_fast(lNumObjects, distMatrix, Options::ClusterMethod, dendogram, height);
+            double *distMatrix = getDistanceMatrix(partitionsPointsTos[part], partNumObjects, partitionReverseMappings[part]);
+            clkEnd = PTAStat::getClk(true);
+            distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
+
+            clkStart = PTAStat::getClk(true);
+            int *dendogram = new int[2 * (partNumObjects - 1)];
+            double *height = new double[partNumObjects - 1];
+            hclust_fast(partNumObjects, distMatrix, Options::ClusterMethod, dendogram, height);
             delete[] distMatrix;
-            // We never use the height.
             delete[] height;
             clkEnd = PTAStat::getClk(true);
-            time = (clkEnd - clkStart) / TIMEINTERVAL;
-            fastClusterTime += time;
+            fastClusterTime += (clkEnd - clkStart) / TIMEINTERVAL;
 
             clkStart = PTAStat::getClk(true);
             Set<int> visited;
-            traverseDendogram(nodeMap, dendogram, lNumObjects, allocCounter, visited, lNumObjects - 1, partitionMappings[l]);
+            traverseDendogram(nodeMap, dendogram, partNumObjects, allocCounter, visited, partNumObjects - 1, partitionMappings[part]);
             delete[] dendogram;
             clkEnd = PTAStat::getClk(true);
-            time = (clkEnd - clkStart) / TIMEINTERVAL;
-            dendogramTraversalTime += time;
-
+            dendogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
         }
 
+        stats[NumPartitions] = std::to_string(numPartitions);
+        stats[NumGtIntPartitions] = std::to_string(numGtIntPartitions);
+        stats[LargestPartition] = std::to_string(largestPartition);
         stats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
         stats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
         stats[FastClusterTime] = std::to_string(fastClusterTime);
-        stats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime);
+        stats[PartitionTime] = std::to_string(partitionTime);
+        stats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + partitionTime);
 
         if (evalSubtitle != "")
         {
@@ -334,11 +355,15 @@ namespace SVF
 
     unsigned NodeIDAllocator::Clusterer::requiredBits(const PointsTo &pts)
     {
-        if (pts.count() == 0) return 0;
+        return requiredBits(pts.count());
+    }
 
+    unsigned NodeIDAllocator::Clusterer::requiredBits(const size_t n)
+    {
+        if (n == 0) return 0;
         // Ceiling of number of bits amongst each native integer gives needed native ints,
-        // so we then multiple again by the number of bits in each native int.
-        return ((pts.count() - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
+        // so we then multiply again by the number of bits in each native int.
+        return ((n - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
     double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pair<const PointsTo *, unsigned>> pointsToSets, const size_t numObjects, const Map<NodeID, unsigned> &nodeMap)
@@ -437,7 +462,7 @@ namespace SVF
         }
     }
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::labelObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::partitionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
     {
         unsigned label = UINT_MAX;
         std::vector<NodeID> labels(numObjects, UINT_MAX);
@@ -543,10 +568,11 @@ namespace SVF
     void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
     {
         // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
-        const static std::array<std::string, 10> statKeys =
+        const static std::array<std::string, 14> statKeys =
             { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
-              NewSbvNumWords, NewBvNumWords, DistanceMatrixTime, FastClusterTime,
-              DendogramTraversalTime, TotalTime };
+              NewSbvNumWords, NewBvNumWords, NumPartitions, NumGtIntPartitions,
+              LargestPartition, PartitionTime, DistanceMatrixTime,
+              FastClusterTime, DendogramTraversalTime, TotalTime };
 
         const unsigned fieldWidth = 20;
         std::cout.flags(std::ios::left);

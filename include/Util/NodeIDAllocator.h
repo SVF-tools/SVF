@@ -105,6 +105,7 @@ public:
         /// Statistics strings.
         ///@{
         static const std::string NumObjects;
+        static const std::string PartitionTime;
         static const std::string DistanceMatrixTime;
         static const std::string FastClusterTime;
         static const std::string DendogramTraversalTime;
@@ -114,6 +115,9 @@ public:
         static const std::string OriginalSbvNumWords;
         static const std::string NewBvNumWords;
         static const std::string NewSbvNumWords;
+        static const std::string NumPartitions;
+        static const std::string NumGtIntPartitions;
+        static const std::string LargestPartition;
         ///@}
 
     public:
@@ -142,6 +146,9 @@ public:
         /// Returns the minimum number of bits required to represent pts in a perfect world.
         static inline unsigned requiredBits(const PointsTo &pts);
 
+        /// Returns the minimum number of bits required to represent n items in a perfect world.
+        static inline unsigned requiredBits(const size_t n);
+
         /// Builds the upper triangle of the distance matrix, as an array of length
         /// (numObjects * (numObjects - 1)) / 2, as required by fastcluster.
         /// Responsibility of caller to `delete`.
@@ -156,7 +163,7 @@ public:
         /// in the same points-to set, they have the same label. The "appear in the same
         /// points-to set" is encoded by graph which is an adjacency list ensuring that
         /// x in pt(p) and y in pt(p) -> x is reachable from y. 
-        static inline std::vector<NodeID> labelObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels);
+        static inline std::vector<unsigned> partitionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels);
     };
 };
 
