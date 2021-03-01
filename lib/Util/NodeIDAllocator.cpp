@@ -197,18 +197,26 @@ namespace SVF
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
-            NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
-            for (const NodeID o : pts)
+            const size_t oldSize = pointsToSets.size();
+            pointsToSets[pts] += keyOcc.second;;
+
+            // Edges in this graph have no weight or uniqueness, so we only need to
+            // do this for each points-to set once.
+            if (oldSize != pointsToSets.size())
             {
-                if (o >= numObjects) numObjects = o + 1;
-                if (o != firstO)
+                NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
+                Set<NodeID> &firstOsNeighbours = graph[firstO];
+                for (const NodeID o : pts)
                 {
-                    graph[firstO].insert(o);
-                    graph[o].insert(firstO);
+                    if (o >= numObjects) numObjects = o + 1;
+                    if (o != firstO)
+                    {
+                        firstOsNeighbours.insert(o);
+                        graph[o].insert(firstO);
+                    }
                 }
             }
 
-            pointsToSets[pts] += keyOcc.second;;
         }
 
         stats[NumObjects] = std::to_string(numObjects);
