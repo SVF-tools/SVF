@@ -144,6 +144,17 @@ public:
         return opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
     }
 
+    /// Returns all points-to sets stored by this cache as keys to a map.
+    /// Values are all 1. We use the map to be more compatible with getAllPts
+    /// in the various PTDatas. Performance is a non-issue (for now) since this
+    /// is just used for evaluation's sake.
+    Map<Data, unsigned> getAllPts(void)
+    {
+        Map<Data, unsigned> allPts;
+        for (const Data *d : idToPts) allPts[*d] = 1;
+        return allPts;
+    }
+
     // TODO: ref count API for garbage collection.
 
     /// Set the Data to be built for new points-to sets.

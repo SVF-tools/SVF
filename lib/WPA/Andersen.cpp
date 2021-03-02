@@ -156,6 +156,16 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
+    // TODO: check -stat too.
+    if (Options::ClusterAnder)
+    {
+        Map<std::string, std::string> stats;
+        const PTDataTy *ptd = getPTDataTy();
+        // TODO: should we use liveOnly?
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats);
+        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+    }
+
     /// sanitize field insensitive obj
     /// TODO: Fields has been collapsed during Andersen::collapseField().
     //	sanitizePts();
@@ -788,10 +798,9 @@ PointsTo Andersen::cluster(void)
     }
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, true));
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, "aux-steens"));
     PointsTo::MappingPtr reverseNodeMapping =
-        std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
-    for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
     return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
 }

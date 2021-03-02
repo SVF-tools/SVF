@@ -860,4 +860,16 @@ struct std::hash<SVF::CondVar<Cond>>
     }
 };
 
+template <typename Element>
+struct std::hash<SVF::CondStdSet<Element>>
+{
+    size_t operator()(const SVF::CondStdSet<Element> &css) const
+    {
+        // TODO: this is not a very good hash, but we probably won't be
+        //       using it for now. Needed for other templates to compile...
+        std::hash<std::pair<Element, unsigned>> h;
+        return h(std::make_pair(*css.begin(), css.size()));
+    }
+};
+
 #endif /* CONDVAR_H_ */

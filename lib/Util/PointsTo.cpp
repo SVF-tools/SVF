@@ -202,6 +202,11 @@ size_t PointsTo::hash(void) const
     assert(false && "PointsTo::hash: unknown type");
 }
 
+PointsTo::MappingPtr PointsTo::getNodeMapping(void) const
+{
+    return nodeMapping;
+}
+
 NodeID PointsTo::getInternalNode(NodeID n) const
 {
     if (nodeMapping == nullptr) return n;

@@ -107,6 +107,24 @@ public:
         ptCache.setDefaultData(data);
     }
 
+    virtual Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<Data, unsigned> allPts;
+        if (liveOnly)
+        {
+            for (const typename KeyToIDMap::value_type &ki : ptsMap)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+        else
+        {
+            allPts = ptCache.getAllPts();
+        }
+
+        return allPts;
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const PersistentPTData<Key, Datum, Data> *)
@@ -258,6 +276,11 @@ public:
         BasePTData::setDefaultData(data);
         persPTData.setDefaultData(data);
         ptCache.setDefaultData(data);
+    }
+
+    virtual Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        return persPTData.getAllPts(liveOnly);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -452,6 +475,39 @@ public:
         BasePTData::setDefaultData(data);
         persPTData.setDefaultData(data);
         ptCache.setDefaultData(data);
+    }
+
+    virtual Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<Data, unsigned> allPts = persPTData.getAllPts(liveOnly);
+        for (const typename DFKeyToIDMap::value_type &lki : dfInPtsMap)
+        {
+            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+
+        for (const typename DFKeyToIDMap::value_type &lki : dfOutPtsMap)
+        {
+            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+
+        if (!liveOnly)
+        {
+            // Subtract 1 from each counted points-to set because the live points-to
+            // sets have already been inserted and accounted for how often they occur.
+            // They will each occur one more time in the cache.
+            // In essence, we want the ptCache.getAllPts() to just add the unused, non-GC'd
+            // points-to sets to allPts.
+            for (typename Map<Data, unsigned>::value_type pto : allPts) pto.second -= 1;
+            SVFUtil::mergePtsOccMaps<Data>(allPts, ptCache.getAllPts());
+        }
+
+        return allPts;
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -809,6 +865,28 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual Map<Data, unsigned> getAllPts(bool liveOnly) const override
+    {
+        // Explicitly pass in true because if we call it with false,
+        // we will double up on the cache, since it is shared with atPTData.
+        // if liveOnly == false, we will handle it in the if below.
+        Map<Data, unsigned> allPts = tlPTData.getAllPts(true);
+        SVFUtil::mergePtsOccMaps<Data>(allPts, atPTData.getAllPts(true));
+
+        if (!liveOnly)
+        {
+            // Subtract 1 from each counted points-to set because the live points-to
+            // sets have already been inserted and accounted for how often they occur.
+            // They will each occur one more time in the cache.
+            // In essence, we want the ptCache.getAllPts() to just add the unused, non-GC'd
+            // points-to sets to allPts.
+            for (typename Map<Data, unsigned>::value_type &pto : allPts) pto.second -= 1;
+            SVFUtil::mergePtsOccMaps<Data>(allPts, tlPTData.ptCache.getAllPts());
+        }
+
+        return allPts;
     }
 
     virtual inline void dumpPTData() override

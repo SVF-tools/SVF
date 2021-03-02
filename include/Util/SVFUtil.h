@@ -223,6 +223,16 @@ std::string  getSourceLoc(const Value *val);
 std::string  getSourceLocOfFunction(const Function *F);
 //@}
 
+/// Given a map mapping points-to sets to a count, adds from into to.
+template <typename Data>
+void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
+{
+    for (const typename Map<Data, unsigned>::value_type &ptocc : from)
+    {
+        to[ptocc.first] += ptocc.second;
+    }
+}
+
 } // End namespace SVFUtil
 
 } // End namespace SVF

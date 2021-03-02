@@ -95,6 +95,12 @@ public:
     /// Dump stored keys and points-to sets.
     virtual void dumpPTData() = 0;
 
+    /// Returns a mapping of points-to sets to the number of times
+    /// they are stored. liveOnly indicates whether to include only
+    /// points-to sets which correspond to a variable (matters when
+    /// dealing with non-GC persistent PT).
+    virtual Map<Data, unsigned> getAllPts(bool liveOnly) const = 0;
+
     /// Set the empty points-to set to be copied when a new set is requested.
     /// TODO: override for Persistent.
     virtual void setDefaultData(const Data &data)

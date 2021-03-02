@@ -131,6 +131,16 @@ void FlowSensitive::finalize()
         }
     }
 
+    // TODO: check -stat too.
+    if (Options::ClusterFs)
+    {
+        Map<std::string, std::string> stats;
+        const PTDataTy *ptd = getPTDataTy();
+        // TODO: should we use liveOnly?
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats);
+        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+    }
+
     PointerAnalysis::finalize();
 }
 
@@ -723,11 +733,9 @@ PointsTo FlowSensitive::cluster(void)
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, true));
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, "aux-ander"));
     PointsTo::MappingPtr reverseNodeMapping =
-        std::make_shared<std::vector<NodeID>>(nodeMapping->size(), 0);
-
-    for (size_t i = 0; i < nodeMapping->size(); ++i) reverseNodeMapping->at(nodeMapping->at(i)) = i;
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
     return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
 }
