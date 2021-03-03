@@ -64,4 +64,11 @@ namespace SVF
         )
     );
 
+    const llvm::cl::opt<bool> Options::PartitionedClustering(
+        // Use cluster to "gather" the options closer together, even if it sounds a little worse.
+        "cluster-partitioned",
+        llvm::cl::init(true),
+        llvm::cl::desc("cluster partitions separately")
+    );
+
 };  // namespace SVF.

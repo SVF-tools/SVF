@@ -222,7 +222,18 @@ namespace SVF
         stats[NumObjects] = std::to_string(numObjects);
 
         size_t numPartitions = 0;
-        const std::vector<unsigned> objectsPartition = partitionObjects(graph, numObjects, numPartitions);
+        std::vector<unsigned> objectsPartition;
+        if (Options::PartitionedClustering)
+        {
+            objectsPartition = partitionObjects(graph, numObjects, numPartitions);
+        }
+        else
+        {
+            // Just a single big partition (0).
+            objectsPartition.insert(objectsPartition.end(), numObjects, 0);
+            numPartitions = 1;
+        }
+
         // Set needs to be ordered because getDistanceMatrix, in its n^2 iteration, expects
         // sets to be ordered (we are building a condensed matrix, not a full matrix, so it
         // matters). In getDistanceMatrix, doing partitionReverseMapping for oi and oj, where

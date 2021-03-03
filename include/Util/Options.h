@@ -45,6 +45,9 @@ public:
     ///       argument rather than plugging Options::ClusterMethod *inside* Clusterer::cluster
     ///       directly, but it seems we will always want single anyway, and this is for testing.
     static const llvm::cl::opt<enum hclust_fast_methods> ClusterMethod;
+
+    /// Cluster partitions separately.
+    static const llvm::cl::opt<bool> PartitionedClustering;
 };
 
 };  // namespace SVF
