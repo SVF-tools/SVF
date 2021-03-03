@@ -162,7 +162,8 @@ void Andersen::finalize()
         Map<std::string, std::string> stats;
         const PTDataTy *ptd = getPTDataTy();
         // TODO: should we use liveOnly?
-        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats);
+        // TODO: parameterise final arg.
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats, true);
         NodeIDAllocator::Clusterer::printStats("post-main", stats);
     }
 

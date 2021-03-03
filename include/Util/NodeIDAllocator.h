@@ -132,7 +132,7 @@ public:
         static std::vector<NodeID> getReverseNodeMapping(const std::vector<NodeID> &nodeMapping);
 
         /// Fills in *NumWords statistics in stats..
-        static void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats);
+        static void evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats, bool accountForOcc);
 
         /// Prints statistics to SVFUtil::outs().
         /// TODO: make stats const.

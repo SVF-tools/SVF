@@ -340,7 +340,8 @@ namespace SVF
 
         if (evalSubtitle != "")
         {
-            evaluate(nodeMap, pointsToSets, stats);
+            // TODO: parameterise final arg.
+            evaluate(nodeMap, pointsToSets, stats, true);
             printStats(evalSubtitle, stats);
         }
 
@@ -516,25 +517,28 @@ namespace SVF
         return labels;
     }
 
-    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats)
+    void NodeIDAllocator::Clusterer::evaluate(const std::vector<NodeID> &nodeMap, const Map<PointsTo, unsigned> pointsToSets, Map<std::string, std::string> &stats, bool accountForOcc)
     {
-        unsigned totalTheoretical = 0;
-        unsigned totalOriginalSbv = 0;
-        unsigned totalOriginalBv = 0;
-        unsigned totalNewSbv = 0;
-        unsigned totalNewBv = 0;
+        u64_t totalTheoretical = 0;
+        u64_t totalOriginalSbv = 0;
+        u64_t totalOriginalBv = 0;
+        u64_t totalNewSbv = 0;
+        u64_t totalNewBv = 0;
 
         for (const Map<PointsTo, unsigned>::value_type &ptsOcc : pointsToSets)
         {
             const PointsTo &pts = ptsOcc.first;
+            const unsigned occ = ptsOcc.second;
             if (pts.count() == 0) continue;
 
             unsigned theoretical = requiredBits(pts) / NATIVE_INT_SIZE;
+            if (accountForOcc) theoretical *= occ;
 
             // Check number of words for original SBV.
             Set<unsigned> words;
             for (const NodeID o : pts) words.insert(o / NATIVE_INT_SIZE);
             unsigned originalSbv = words.size();
+            if (accountForOcc) originalSbv *= occ;
 
             // Check number of words for original BV.
             const std::pair<PointsTo::iterator, PointsTo::iterator> minMax =
@@ -545,11 +549,13 @@ namespace SVF
                 words.insert(b / NATIVE_INT_SIZE);
             }
             unsigned originalBv = words.size();
+            if (accountForOcc) originalBv *= occ;
 
             // Check number of words for new SBV.
             words.clear();
             for (const NodeID o : pts) words.insert(nodeMap[o] / NATIVE_INT_SIZE);
             unsigned newSbv = words.size();
+            if (accountForOcc) newSbv *= occ;
 
             // Check number of words for new BV.
             NodeID min = UINT_MAX, max = 0;
@@ -564,6 +570,7 @@ namespace SVF
             // No nodeMap[b] because min and max and from nodeMap.
             for (NodeID b = min; b <= max; ++b) words.insert(b / NATIVE_INT_SIZE);
             unsigned newBv = words.size();
+            if (accountForOcc) newBv *= occ;
 
             totalTheoretical += theoretical;
             totalOriginalSbv += originalSbv;
