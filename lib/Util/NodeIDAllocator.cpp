@@ -197,25 +197,38 @@ namespace SVF
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
-            NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
-            for (const NodeID o : pts)
+            const size_t oldSize = pointsToSets.size();
+            pointsToSets[pts] += keyOcc.second;;
+
+            // Edges in this graph have no weight or uniqueness, so we only need to
+            // do this for each points-to set once.
+            if (oldSize != pointsToSets.size())
             {
-                if (o >= numObjects) numObjects = o + 1;
-                if (o != firstO)
+                NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
+                Set<NodeID> &firstOsNeighbours = graph[firstO];
+                for (const NodeID o : pts)
                 {
-                    graph[firstO].insert(o);
-                    graph[o].insert(firstO);
+                    if (o >= numObjects) numObjects = o + 1;
+                    if (o != firstO)
+                    {
+                        firstOsNeighbours.insert(o);
+                        graph[o].insert(firstO);
+                    }
                 }
             }
 
-            pointsToSets[pts] += keyOcc.second;;
         }
 
         stats[NumObjects] = std::to_string(numObjects);
 
         size_t numPartitions = 0;
         const std::vector<unsigned> objectsPartition = partitionObjects(graph, numObjects, numPartitions);
-        std::vector<Set<NodeID>> partitionsObjects(numPartitions);
+        // Set needs to be ordered because getDistanceMatrix, in its n^2 iteration, expects
+        // sets to be ordered (we are building a condensed matrix, not a full matrix, so it
+        // matters). In getDistanceMatrix, doing partitionReverseMapping for oi and oj, where
+        // oi < oj, and getting a result moi > moj gives incorrect results.
+        // In the condensed matrix, [b][a] where b >= a, is incorrect.
+        std::vector<OrderedSet<NodeID>> partitionsObjects(numPartitions);
         for (NodeID o = 0; o < numObjects; ++o) partitionsObjects[objectsPartition[o]].insert(o);
 
         // Size of the return node mapping. It is potentially larger than the number of
@@ -231,6 +244,7 @@ namespace SVF
         for (unsigned part = 0; part < numPartitions; ++part)
         {
             size_t curr = 0;
+            // With the OrderedSet above, o1 < o2 => map[o1] < map[o2].
             for (NodeID o : partitionsObjects[part])
             {
                 // push_back here is just like p...[part][curr] = o.
