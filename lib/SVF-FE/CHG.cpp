@@ -383,6 +383,18 @@ const CHGraph::CHNodeSetTy& CHGraph::getInstancesAndDescendants(const string cla
     }
 }
 
+
+void CHGraph::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f) {
+    const auto *lf = f->getLLVMFun();
+    if (isCPPThunkFunction(lf)) {
+        const auto *tf = getThunkTarget(lf);
+        v.push_back(svfMod->getSVFFunction(tf));
+    } else {
+        v.push_back(f);
+    }
+}
+
+
 /*
  * do the following things:
  * 1. initialize virtualFunctions for each class
@@ -508,7 +520,7 @@ void CHGraph::analyzeVTables(const Module &M)
                             if (const Function* f = SVFUtil::dyn_cast<Function>(bitcastValue))
                             {
                                 const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
-                                virtualFunctions.push_back(func);
+                                addFuncToFuncVector(virtualFunctions, func);
                                 if (func->getName().str().compare(pureVirtualFunName) == 0)
                                 {
                                     pure_abstract &= true;
@@ -534,7 +546,7 @@ void CHGraph::analyzeVTables(const Module &M)
                                                 SVFUtil::dyn_cast<Function>(aliasValue))
                                     {
                                         const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasFunc);
-                                        virtualFunctions.push_back(func);
+                                        addFuncToFuncVector(virtualFunctions, func);
                                     }
                                     else if (const ConstantExpr *aliasconst =
                                                  SVFUtil::dyn_cast<ConstantExpr>(aliasValue))
@@ -547,7 +559,7 @@ void CHGraph::analyzeVTables(const Module &M)
                                         assert(aliasbitcastfunc &&
                                                "aliased bitcast in vtable not a function");
                                         const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(aliasbitcastfunc);
-                                        virtualFunctions.push_back(func);
+                                        addFuncToFuncVector(virtualFunctions, func);
                                     }
                                     else
                                     {

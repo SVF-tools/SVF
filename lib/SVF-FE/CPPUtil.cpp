@@ -285,6 +285,31 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     return false;
 }
 
+bool cppUtil::isCPPThunkFunction(const Function *F) {
+    cppUtil::DemangledName dname = cppUtil::demangle(F->getName());
+    return dname.isThunkFunc;
+}
+
+const Function *cppUtil::getThunkTarget(const Function *F) {
+    const Function *ret = nullptr;
+
+    for (auto &bb:*F) {
+        for (auto &inst: bb) {
+            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
+                || llvm::isa<CallBrInst>(inst)) {
+                llvm::ImmutableCallSite cs(&inst);
+                assert(cs.getCalledFunction() &&
+                       "Indirect call detected in thunk func");
+                assert(ret == nullptr && "multiple callsites in thunk func");
+
+                ret = cs.getCalledFunction();
+            }
+        }
+    }
+
+    return ret;
+}
+
 const Value *cppUtil::getVCallThisPtr(CallSite cs)
 {
     if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
