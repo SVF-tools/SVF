@@ -82,7 +82,7 @@ static bool isOperOverload(const string name)
     }
 }
 
-static string getBeforeParenthesis(const string name)
+static string getBeforeParenthesis(const string &name)
 {
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
@@ -100,7 +100,7 @@ static string getBeforeParenthesis(const string name)
     return name.substr(0, pos);
 }
 
-string cppUtil::getBeforeBrackets(const string name)
+string cppUtil::getBeforeBrackets(const string &name)
 {
     if (name[name.size() - 1] != '>')
     {
@@ -152,7 +152,7 @@ bool cppUtil::isValVtbl(const Value *val)
  * functionName: f<...::...>
  */
 
-struct cppUtil::DemangledName cppUtil::demangle(const string name)
+struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 {
     struct cppUtil::DemangledName dname;
 
