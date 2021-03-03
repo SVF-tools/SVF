@@ -449,6 +449,23 @@ public:
 namespace llvm
 {
 
+template<class EdgeTy, class NodeTy>
+struct edge_unary_function
+{
+    NodeTy operator()(EdgeTy edge) const {
+      return edge->getDstNode();
+    }
+};
+
+template<class PairTy, class NodeTy>
+struct pair_unary_function
+{
+    NodeTy operator()(PairTy pair) const {
+      return pair.second;
+    }
+};
+
+
 /*!
  * GraphTraits for nodes
  */
@@ -457,7 +474,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
-    typedef std::pointer_to_unary_function<EdgeType*, NodeType*> DerefEdge;
+    typedef edge_unary_function<EdgeType*, NodeType*> DerefEdge;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
     typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
@@ -469,23 +486,19 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeBegin(), DerefEdge(edgeDereference));
+        return map_iterator(N->OutEdgeBegin(), DerefEdge());
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeEnd(), DerefEdge(edgeDereference));
+        return map_iterator(N->OutEdgeEnd(), DerefEdge());
     }
     static inline ChildIteratorType direct_child_begin(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeBegin(), DerefEdge(edgeDereference));
+        return map_iterator(N->directOutEdgeBegin(), DerefEdge());
     }
     static inline ChildIteratorType direct_child_end(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeEnd(), DerefEdge(edgeDereference));
-    }
-    static NodeType* edgeDereference(EdgeType* edge)
-    {
-        return edge->getDstNode();
+        return map_iterator(N->directOutEdgeEnd(), DerefEdge());
     }
 
 };
@@ -499,7 +512,7 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
-    typedef std::pointer_to_unary_function<EdgeType*, NodeType*> DerefEdge;
+    typedef edge_unary_function<EdgeType*, NodeType*> DerefEdge;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
     typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
@@ -511,16 +524,11 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->InEdgeBegin(), DerefEdge(edgeDereference));
+        return map_iterator(N->InEdgeBegin(), DerefEdge());
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->InEdgeEnd(), DerefEdge(edgeDereference));
-    }
-
-    static inline NodeType* edgeDereference(EdgeType* edge)
-    {
-        return edge->getSrcNode();
+        return map_iterator(N->InEdgeEnd(), DerefEdge());
     }
 
     static inline unsigned getNodeID(const NodeType* N)
@@ -543,23 +551,18 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,
         return nullptr; // return null here, maybe later we could create a dummy node
     }
     typedef std::pair<SVF::NodeID, NodeType*> PairTy;
-    typedef std::pointer_to_unary_function<PairTy, NodeType*> DerefVal;
+    typedef pair_unary_function<PairTy, NodeType*> DerefVal;
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
     typedef mapped_iterator<typename GenericGraphTy::iterator, DerefVal> nodes_iterator;
 
     static nodes_iterator nodes_begin(GenericGraphTy *G)
     {
-        return map_iterator(G->begin(), DerefVal(Valdereference));
+        return map_iterator(G->begin(), DerefVal());
     }
     static nodes_iterator nodes_end(GenericGraphTy *G)
     {
-        return map_iterator(G->end(), DerefVal(Valdereference));
-    }
-
-    static NodeType* Valdereference(PairTy P)
-    {
-        return P.second;
+        return map_iterator(G->end(), DerefVal());
     }
 
     static unsigned graphSize(GenericGraphTy* G)
