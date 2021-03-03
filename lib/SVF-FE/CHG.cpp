@@ -721,6 +721,20 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs)
     }
 }
 
+static bool checkArgTypes(CallSite cs, const Function *fn) {
+
+    // here we skip the first argument (i.e., this pointer)
+    for (unsigned i = 1; i < cs.arg_size(); i++) {
+        auto cs_arg = cs.getArgOperand(i);
+        auto fn_arg = fn->getArg(i);
+        if (cs_arg->getType() != fn_arg->getType()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /*
  * Get virtual functions for callsite "cs" based on vtbls (calculated
  * based on pointsto set)
@@ -746,6 +760,12 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
             if (cs.arg_size() == callee->arg_size() ||
                     (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
             {
+
+                // if argument types do not match
+                // skip this one
+                if (!checkArgTypes(cs, callee->getLLVMFun()))
+                    continue;
+
                 DemangledName dname = demangle(callee->getName().str());
                 string calleeName = dname.funcName;
 
