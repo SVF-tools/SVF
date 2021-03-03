@@ -25,12 +25,12 @@ static llvm::cl::opt<bool> FSAnno("tsan-fs", llvm::cl::init(false), llvm::cl::de
 
 
 char MTA::ID = 0;
-ModulePass* MTA::modulePass = NULL;
+ModulePass* MTA::modulePass = nullptr;
 MTA::FunToSEMap MTA::func2ScevMap;
 MTA::FunToLoopInfoMap MTA::func2LoopInfoMap;
 
 MTA::MTA() :
-    ModulePass(ID), tcg(NULL), tct(NULL)
+    ModulePass(ID), tcg(nullptr), tct(nullptr)
 {
     stat = new MTAStat();
 }

@@ -74,29 +74,29 @@ protected:
 public:
 
     /// Constructor
-    SrcSnkDDA() : _curSlice(NULL), svfg(NULL), ptaCallGraph(NULL)
+    SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
         pathCondAllocator = new PathCondAllocator();
     }
     /// Destructor
     virtual ~SrcSnkDDA()
     {
-        if (svfg != NULL)
+        if (svfg != nullptr)
             delete svfg;
-        svfg = NULL;
+        svfg = nullptr;
 
-        if (_curSlice != NULL)
+        if (_curSlice != nullptr)
             delete _curSlice;
-        _curSlice = NULL;
+        _curSlice = nullptr;
 
         /// the following shared by multiple checkers, thus can not be released.
-        //if (ptaCallGraph != NULL)
+        //if (ptaCallGraph != nullptr)
         //    delete ptaCallGraph;
-        //ptaCallGraph = NULL;
+        //ptaCallGraph = nullptr;
 
         //if(pathCondAllocator)
         //    delete pathCondAllocator;
-        //pathCondAllocator = NULL;
+        //pathCondAllocator = nullptr;
     }
 
     /// Start analysis here

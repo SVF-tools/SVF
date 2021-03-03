@@ -112,7 +112,7 @@ public:
     /// Singleton design here to make sure we only have one instance during whole analysis
     static ExtAPI* getExtAPI()
     {
-        if (extAPI == NULL)
+        if (extAPI == nullptr)
         {
             extAPI = new ExtAPI();
         }

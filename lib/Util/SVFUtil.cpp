@@ -175,21 +175,21 @@ bool SVFUtil::getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb)
     bool found_vmrss = false;
     bool found_vmsize = false;
 
-    while (line != NULL && (found_vmrss == false || found_vmsize == false))
+    while (line != nullptr && (found_vmrss == false || found_vmsize == false))
     {
-        if (strstr(line, "VmRSS:") != NULL)
+        if (strstr(line, "VmRSS:") != nullptr)
         {
             sscanf(line, "%*s %u", vmrss_kb);
             found_vmrss = true;
         }
 
-        if (strstr(line, "VmSize:") != NULL)
+        if (strstr(line, "VmSize:") != nullptr)
         {
             sscanf(line, "%*s %u", vmsize_kb);
             found_vmsize = true;
         }
 
-        line = strtok(NULL, delims);
+        line = strtok(nullptr, delims);
     }
 
     return (found_vmrss && found_vmsize);
@@ -240,7 +240,7 @@ std::string SVFUtil::getSourceLocOfFunction(const Function *F)
  */
 std::string SVFUtil::getSourceLoc(const Value* val)
 {
-    if(val==NULL)  return "{ empty val }";
+    if(val==nullptr)  return "{ empty val }";
 
     std::string str;
     raw_string_ostream rawstr(str);

@@ -116,7 +116,24 @@ void AndersenBase::analyze()
     {
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-        solve();
+
+        initWorklist();
+        do
+        {
+            numOfIteration++;
+            if (0 == numOfIteration % iterationForPrintStat)
+                printStat();
+
+            reanalyze = false;
+
+            solveWorklist();
+
+            if (updateCallGraph(getIndirectCallsites()))
+                reanalyze = true;
+
+        }
+        while (reanalyze);
+
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
         // Finalize the analysis
@@ -586,7 +603,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 
 void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
 {
-    assert(SVFUtil::getCallee(cs) == NULL && "not an indirect callsite?");
+    assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;

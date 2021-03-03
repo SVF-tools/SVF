@@ -111,7 +111,7 @@ const Instruction* MTAResultValidator::getPreviousMemoryAccessInst(const Instruc
             return I;
         I = I->getPrevNode();
     }
-    return NULL;
+    return nullptr;
 }
 
 inline std::string MTAResultValidator::getOutput(const char *scenario, bool analysisRes)

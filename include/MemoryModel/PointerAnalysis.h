@@ -395,7 +395,7 @@ public:
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
+    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = nullptr);
     /// Match arguments for callsite at caller and callee
     bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
 
@@ -404,7 +404,7 @@ public:
     /// CallGraph SCC detection
     inline void callGraphSCCDetection()
     {
-        if(callGraphSCC==NULL)
+        if(callGraphSCC==nullptr)
             callGraphSCC = new CallGraphSCC(ptaCallGraph);
 
         callGraphSCC->find();

@@ -70,7 +70,7 @@ public:
     inline void destroy()
     {
         delete ptD;
-        ptD = NULL;
+        ptD = nullptr;
     }
 
     /// Get points-to and reverse points-to
@@ -289,7 +289,7 @@ public:
     inline void destroy()
     {
         delete ptD;
-        ptD = NULL;
+        ptD = nullptr;
     }
 
     /// Get points-to data

@@ -50,7 +50,7 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
     else
     {
         DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==NULL)
+        if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             ///drop the rhs condition
@@ -78,7 +78,7 @@ DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
     else
     {
         DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==NULL)
+        if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             /// drop the two conditions here

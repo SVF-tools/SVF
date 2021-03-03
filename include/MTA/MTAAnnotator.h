@@ -24,7 +24,7 @@ class MTAAnnotator: public Annotator
 public:
     typedef Set<const Instruction*> InstSet;
     /// Constructor
-    MTAAnnotator(): mhp(NULL),lsa(NULL)
+    MTAAnnotator(): mhp(nullptr),lsa(nullptr)
     {
         numOfAllSt = 0;
         numOfAllLd = 0;

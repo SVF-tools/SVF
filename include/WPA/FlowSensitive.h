@@ -58,7 +58,7 @@ public:
     /// Constructor
     FlowSensitive(PAG* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
     {
-        svfg = NULL;
+        svfg = nullptr;
         solveTime = sccTime = processTime = propagationTime = updateTime = 0;
         addrTime = copyTime = gepTime = loadTime = storeTime = phiTime = 0;
         updateCallGraphTime = directPropaTime = indirectPropaTime = 0;
@@ -73,15 +73,15 @@ public:
     /// Destructor
     virtual ~FlowSensitive()
     {
-        if (svfg != NULL)
+        if (svfg != nullptr)
             delete svfg;
-        svfg = NULL;
+        svfg = nullptr;
     }
 
     /// Create signle instance of flow-sensitive pointer analysis
     static FlowSensitive* createFSWPA(PAG* _pag)
     {
-        if (fspta == NULL)
+        if (fspta == nullptr)
         {
             fspta = new FlowSensitive(_pag);
             fspta->analyze();
@@ -94,7 +94,7 @@ public:
     {
         if (fspta)
             delete fspta;
-        fspta = NULL;
+        fspta = nullptr;
     }
 
     /// We start from here

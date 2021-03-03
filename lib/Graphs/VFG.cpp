@@ -317,7 +317,7 @@ VFG::VFG(PTACallGraph* cg, VFGK k): totalVFGNode(0), callgraph(cg), pag(PAG::get
  */
 void VFG::destroy()
 {
-    pag = NULL;
+    pag = nullptr;
 }
 
 
@@ -525,12 +525,16 @@ VFGEdge* VFG::addIntraDirectVFEdge(NodeID srcId, NodeID dstId)
     if(VFGEdge* edge = hasIntraVFGEdge(srcNode,dstNode, VFGEdge::IntraDirectVF))
     {
         assert(edge->isDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
-        IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
-        return (addVFGEdge(directEdge) ? directEdge : NULL);
+    	if(srcNode!=dstNode){
+    		IntraDirSVFGEdge* directEdge = new IntraDirSVFGEdge(srcNode,dstNode);
+    		return (addVFGEdge(directEdge) ? directEdge : nullptr);
+    	}
+    	else
+    		return nullptr;
     }
 }
 
@@ -544,12 +548,12 @@ VFGEdge* VFG::addCallEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
     if(VFGEdge* edge = hasInterVFGEdge(srcNode,dstNode, VFGEdge::CallDirVF,csId))
     {
         assert(edge->isCallDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
         CallDirSVFGEdge* callEdge = new CallDirSVFGEdge(srcNode,dstNode,csId);
-        return (addVFGEdge(callEdge) ? callEdge : NULL);
+        return (addVFGEdge(callEdge) ? callEdge : nullptr);
     }
 }
 
@@ -563,12 +567,12 @@ VFGEdge* VFG::addRetEdge(NodeID srcId, NodeID dstId, CallSiteID csId)
     if(VFGEdge* edge = hasInterVFGEdge(srcNode,dstNode, VFGEdge::RetDirVF,csId))
     {
         assert(edge->isRetDirectVFGEdge() && "this should be a direct value flow edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
         RetDirSVFGEdge* retEdge = new RetDirSVFGEdge(srcNode,dstNode,csId);
-        return (addVFGEdge(retEdge) ? retEdge : NULL);
+        return (addVFGEdge(retEdge) ? retEdge : nullptr);
     }
 }
 
@@ -702,7 +706,7 @@ VFGEdge* VFG::hasIntraVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 
@@ -720,7 +724,7 @@ VFGEdge* VFG::hasThreadVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kin
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 /*!
@@ -737,7 +741,7 @@ VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 
@@ -747,7 +751,7 @@ VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
 VFGEdge* VFG::getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind)
 {
 
-    VFGEdge * edge = NULL;
+    VFGEdge * edge = nullptr;
     Size_t counter = 0;
     for (VFGEdge::VFGEdgeSetTy::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
@@ -876,7 +880,7 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
         return nullVFG->getPAGNode();
     else
         assert(false && "unexpected node kind!");
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -893,7 +897,7 @@ const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const
         if(phi->isFormalParmPHI())
             return phi->getFun();
     }
-    return NULL;
+    return nullptr;
 }
 
 

@@ -382,7 +382,7 @@ protected:
         NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
         NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
@@ -391,7 +391,7 @@ protected:
         NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
         NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     //@}
@@ -553,8 +553,12 @@ protected:
 		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
 		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
 		/// we will set this phi node's def later
-		if (!pag->isPhiNode(uniqueFunRet))
+		/// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
+		if (!pag->isPhiNode(uniqueFunRet)){
+			std::string warn = fun->getName();
+			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
 			setDef(uniqueFunRet, sNode);
+		}
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
@@ -569,7 +573,7 @@ protected:
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -585,7 +589,7 @@ protected:
     {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -601,7 +605,7 @@ protected:
     {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -618,7 +622,7 @@ protected:
     {
         UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;

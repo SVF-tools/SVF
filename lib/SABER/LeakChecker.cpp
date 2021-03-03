@@ -177,7 +177,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
     const SVFGNode* source = slice->getSource();
     const CallBlockNode* cs = getSrcCSID(source);
     const SVFFunction* fun = getCallee(cs->getCallSite());
-    if(fun==NULL)
+    if(fun==nullptr)
         return;
 
     validateSuccessTests(source,fun);

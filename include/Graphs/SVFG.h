@@ -131,7 +131,7 @@ public:
     inline void clearMSSA()
     {
         delete mssa;
-        mssa = NULL;
+        mssa = nullptr;
     }
 
     /// Get SVFG memory SSA
@@ -277,14 +277,14 @@ protected:
     virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGEdge* edge = addInterIndirectVFCallEdge(actualIn, formalIn,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     /// Connect formal-out and actual-out
     virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGEdge* edge = addInterIndirectVFRetEdge(formalOut, actualOut,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     //@}
@@ -296,7 +296,7 @@ protected:
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
         SVFGEdge* edge = hasInterVFGEdge(actualParam, formalParam, SVFGEdge::CallDirVF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from aparam to fparam");
+        assert(edge != nullptr && "Can not find inter value flow edge from aparam to fparam");
         edges.insert(edge);
     }
 
@@ -305,7 +305,7 @@ protected:
         SVFGNode* formalRet = getSVFGNode(getDef(fun_ret));
         SVFGNode* actualRet = getSVFGNode(getDef(cs_ret));
         SVFGEdge* edge = hasInterVFGEdge(formalRet, actualRet, SVFGEdge::RetDirVF, csId);
-        assert(edge != NULL && "Can not find inter value flow edge from fret to aret");
+        assert(edge != nullptr && "Can not find inter value flow edge from fret to aret");
         edges.insert(edge);
     }
 

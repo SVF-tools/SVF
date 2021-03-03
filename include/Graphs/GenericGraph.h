@@ -305,7 +305,7 @@ public:
         if (it != InEdges.end())
             return *it;
         else
-            return NULL;
+            return nullptr;
     }
     inline EdgeType* hasOutgoingEdge(EdgeType* edge) const
     {
@@ -313,7 +313,7 @@ public:
         if (it != OutEdges.end())
             return *it;
         else
-            return NULL;
+            return nullptr;
     }
     //@}
 };
@@ -540,7 +540,7 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,
 
     static NodeType* getEntryNode(GenericGraphTy* pag)
     {
-        return NULL; // return null here, maybe later we could create a dummy node
+        return nullptr; // return null here, maybe later we could create a dummy node
     }
     typedef std::pair<SVF::NodeID, NodeType*> PairTy;
     typedef std::pointer_to_unary_function<PairTy, NodeType*> DerefVal;

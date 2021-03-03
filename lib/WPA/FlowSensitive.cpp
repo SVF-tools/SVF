@@ -39,7 +39,7 @@ static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false
 using namespace SVF;
 using namespace SVFUtil;
 
-FlowSensitive* FlowSensitive::fspta = NULL;
+FlowSensitive* FlowSensitive::fspta = nullptr;
 
 /*!
  * Initialize analysis
@@ -78,8 +78,8 @@ void FlowSensitive::analyze()
 
         callGraphSCC->find();
 
-        solve();
-
+        initWorklist();
+        solveWorklist();
     }
     while (updateCallGraph(getIndirectCallsites()));
 

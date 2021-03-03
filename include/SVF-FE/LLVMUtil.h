@@ -59,6 +59,7 @@ inline const Function* getLLVMFunction(const Value* val)
 
 
 /// Return true if the call is an external call (external library in function summary table)
+/// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
 inline bool isExtCall(const SVFFunction* fun)
 {
@@ -226,7 +227,7 @@ inline ExtAPI::extf_t extCallTy(const SVFFunction* fun)
 //@{
 inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
 {
-    const PointerType *refType = NULL;
+    const PointerType *refType = nullptr;
     // Case 1: heap object held by *argument, we should get its element type.
     if (isHeapAllocExtCallViaArg(cs))
     {
@@ -433,7 +434,7 @@ inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
         if (isProgEntryFunction(fun))
             return (fun);
     }
-    return NULL;
+    return nullptr;
 }
 
 /// Return true if this is an argument of a program entry function (e.g. main)
@@ -503,7 +504,7 @@ Value *stripAllCasts(Value *val) ;
 /// Get the type of the heap allocation
 const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
 
-/// Return corresponding constant expression, otherwise return NULL
+/// Return corresponding constant expression, otherwise return nullptr
 //@{
 inline const ConstantExpr *isGepConstantExpr(const Value *val)
 {
@@ -512,7 +513,7 @@ inline const ConstantExpr *isGepConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::GetElementPtr)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
@@ -522,7 +523,7 @@ inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::IntToPtr)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
@@ -532,7 +533,7 @@ inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::PtrToInt)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isCastConstantExpr(const Value *val)
@@ -542,7 +543,7 @@ inline const ConstantExpr *isCastConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::BitCast)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isSelectConstantExpr(const Value *val)
@@ -552,7 +553,7 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::Select)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isTruncConstantExpr(const Value *val)
@@ -566,7 +567,7 @@ inline const ConstantExpr *isTruncConstantExpr(const Value *val)
                 constExpr->getOpcode() == Instruction::FPExt)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isCmpConstantExpr(const Value *val)
@@ -576,7 +577,7 @@ inline const ConstantExpr *isCmpConstantExpr(const Value *val)
         if(constExpr->getOpcode() == Instruction::ICmp || constExpr->getOpcode() == Instruction::FCmp)
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
@@ -586,7 +587,7 @@ inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
         if((constExpr->getOpcode() >= Instruction::BinaryOpsBegin) && (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 
 inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
@@ -596,7 +597,7 @@ inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
         if((constExpr->getOpcode() >= Instruction::UnaryOpsBegin) && (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
             return constExpr;
     }
-    return NULL;
+    return nullptr;
 }
 //@}
 

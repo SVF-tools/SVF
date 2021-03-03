@@ -12,7 +12,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-FSMPTA* FSMPTA::mfspta = NULL;
+FSMPTA* FSMPTA::mfspta = nullptr;
 u32_t MTASVFGBuilder::numOfNewSVFGEdges = 0;
 u32_t MTASVFGBuilder::numOfRemovedSVFGEdges = 0;
 u32_t MTASVFGBuilder::numOfRemovedPTS = 0;
@@ -114,14 +114,14 @@ SVFGEdge*  MTASVFGBuilder::addTDEdges(NodeID srcId, NodeID dstId, PointsTo& pts)
     if(SVFGEdge* edge = svfg->hasThreadVFGEdge(srcNode,dstNode,SVFGEdge::TheadMHPIndirectVF))
     {
         assert(SVFUtil::isa<IndirectSVFGEdge>(edge) && "this should be a indirect value flow edge!");
-        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(pts) ? edge : NULL);
+        return (SVFUtil::cast<IndirectSVFGEdge>(edge)->addPointsTo(pts) ? edge : nullptr);
     }
     else
     {
         MTASVFGBuilder::numOfNewSVFGEdges++;
         ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode,dstNode);
         indirectEdge->addPointsTo(pts);
-        return (svfg->addSVFGEdge(indirectEdge) ? indirectEdge : NULL);
+        return (svfg->addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
     }
 }
 

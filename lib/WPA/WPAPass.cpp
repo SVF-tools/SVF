@@ -187,7 +187,7 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     {
         SVFGBuilder memSSA(true);
         assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
-        SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
+        SVFG *svfg = memSSA.buildFullSVFGWithoutOPT((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
         if (PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
             _svfg = svfg;
@@ -214,9 +214,9 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
             AliasResult result = pta->alias(node1->getId(), node2->getId());
             SVFUtil::outs()	<< (result == AliasResult::NoAlias ? "NoAlias" : "MayAlias")
                             << " var" << node1->getId() << "[" << node1->getValueName()
-                            << "@" << (fun1==NULL?"":fun1->getName()) << "] --"
+                            << "@" << (fun1==nullptr?"":fun1->getName()) << "] --"
                             << " var" << node2->getId() << "[" << node2->getValueName()
-                            << "@" << (fun2==NULL?"":fun2->getName()) << "]\n";
+                            << "@" << (fun2==nullptr?"":fun2->getName()) << "]\n";
         }
     }
 }

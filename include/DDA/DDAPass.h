@@ -31,7 +31,7 @@ public:
     typedef OrderedSet<const SVFGEdge*> SVFGEdgeSet;
     typedef std::vector<PointerAnalysis*> PTAVector;
 
-    DDAPass() : ModulePass(ID), _pta(NULL), _client(NULL) {}
+    DDAPass() : ModulePass(ID), _pta(nullptr), _client(nullptr) {}
     ~DDAPass();
 
     virtual inline void getAnalysisUsage(AnalysisUsage &au) const
