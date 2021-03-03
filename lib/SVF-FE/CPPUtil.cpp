@@ -47,7 +47,8 @@ const string vtblLabelAfterDemangle = "vtable for ";
 const string vfunPreLabel = "_Z";
 
 // label for multi inheritance virtual function
-const string mInheritanceVFunLabel = "non-virtual thunk to ";
+const string NVThunkFunLabel = "non-virtual thunk to ";
+const string VThunkFuncLabel = "virtual thunk to ";
 
 const string clsName = "class.";
 const string structName = "struct.";
@@ -82,7 +83,7 @@ static bool isOperOverload(const string name)
     }
 }
 
-static string getBeforeParenthesis(const string name)
+static string getBeforeParenthesis(const string &name)
 {
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
@@ -100,7 +101,7 @@ static string getBeforeParenthesis(const string name)
     return name.substr(0, pos);
 }
 
-string cppUtil::getBeforeBrackets(const string name)
+string cppUtil::getBeforeBrackets(const string &name)
 {
     if (name[name.size() - 1] != '>')
     {
@@ -131,6 +132,27 @@ bool cppUtil::isValVtbl(const Value *val)
         return false;
 }
 
+static void handleThunkFunction(cppUtil::DemangledName &dname) {
+    // when handling multi-inheritance,
+    // the compiler may generate thunk functions
+    // to perform `this` pointer adjustment
+    // they are indicated with `virtual thunk to `
+    // and `nun-virtual thunk to`.
+    // if the classname starts with part of a
+    // demangled name starts with
+    // these prefixes, we need to remove the prefix
+    // to get the real class anme
+    static vector<string> thunkPrefixes = {VThunkFuncLabel, NVThunkFunLabel};
+    for (unsigned i = 0; i < thunkPrefixes.size(); i++) {
+        auto prefix = thunkPrefixes[i];
+        if (dname.className.size() > prefix.size() &&
+            dname.className.compare(0, prefix.size(), prefix) == 0)
+        {
+            dname.className = dname.className.substr(prefix.size());
+        }
+    }
+}
+
 /*
  * input: _ZN****
  * after abi::__cxa_demangle:
@@ -152,7 +174,7 @@ bool cppUtil::isValVtbl(const Value *val)
  * functionName: f<...::...>
  */
 
-struct cppUtil::DemangledName cppUtil::demangle(const string name)
+struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 {
     struct cppUtil::DemangledName dname;
 
@@ -189,13 +211,8 @@ struct cppUtil::DemangledName cppUtil::demangle(const string name)
             }
         }
     }
-    /// multiple inheritance
-    if (dname.className.size() > mInheritanceVFunLabel.size() &&
-            dname.className.compare(0, mInheritanceVFunLabel.size(),
-                                    mInheritanceVFunLabel) == 0)
-    {
-        dname.className = dname.className.substr(mInheritanceVFunLabel.size());
-    }
+
+    handleThunkFunction(dname);
 
     return dname;
 }

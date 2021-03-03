@@ -49,9 +49,9 @@ struct DemangledName
     std::string funcName;
 };
 
-struct DemangledName demangle(const std::string name);
+struct DemangledName demangle(const std::string &name);
 
-std::string getBeforeBrackets(const std::string name);
+std::string getBeforeBrackets(const std::string &name);
 bool isValVtbl(const Value *val);
 bool isLoadVtblInst(const LoadInst *loadInst);
 bool isVirtualCallSite(CallSite cs);
