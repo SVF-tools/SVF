@@ -92,7 +92,7 @@ public:
         typedef typename GTraits::nodes_iterator node_iterator;
         typedef typename GTraits::ChildIteratorType child_iterator;
 
-        O << "Printing VFG Graph" << "'...\n";
+        O << "Printing Graph '" << GraphName <<  "'...\n";
         // Print each node name and its edges
         node_iterator I = GTraits::nodes_begin(GT);
         node_iterator E = GTraits::nodes_end(GT);
