@@ -17,13 +17,23 @@ if(NOT COMMAND add_llvm_library)
         # add -std=gnu++14
         set(CMAKE_CXX_EXTENSIONS ON)
 
-        set(COMMON_FLAGS "-fPIC -Werror")
+        set(COMMON_FLAGS "-fPIC -Werror -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable")
+
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            # SVF/lib/Util/TypeBasedHeapCloning.cpp:441:14: error: variable 'clone' is used
+            # uninitialized whenever 'if' condition is false
+            set(COMMON_FLAGS "${COMMON_FLAGS} -Wno-sometimes-uninitialized")
+        elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            set(COMMON_FLAGS "${COMMON_FLAGS} -Wno-maybe-uninitialized -Wno-sign-compare -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-implicit-fallthrough")
+        endif()
+
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -fno-rtti -Wno-overloaded-virtual -Wno-c++17-extensions")
 
         if(CMAKE_BUILD_TYPE MATCHES "Debug")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O0 -fno-rtti")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O0")
         else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O3")
         endif()
 
