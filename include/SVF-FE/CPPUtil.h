@@ -47,6 +47,7 @@ struct DemangledName
 {
     std::string className;
     std::string funcName;
+    bool isThunkFunc;
 };
 
 struct DemangledName demangle(const std::string &name);
