@@ -499,11 +499,11 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 void VersionedFlowSensitive::dumpReliances(void) const
 {
     SVFUtil::outs() << "# Version reliances\n";
-    for (const Map<NodeID, Map<Version, Set<Version>>>::value_type ovrv : versionReliance)
+    for (const Map<NodeID, Map<Version, Set<Version>>>::value_type &ovrv : versionReliance)
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (const Map<Version, Set<Version>>::value_type vrv : ovrv.second)
+        for (const Map<Version, Set<Version>>::value_type &vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
