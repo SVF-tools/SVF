@@ -47,6 +47,7 @@ struct DemangledName
 {
     std::string className;
     std::string funcName;
+    bool isThunkFunc;
 };
 
 struct DemangledName demangle(const std::string &name);
@@ -57,6 +58,8 @@ bool isLoadVtblInst(const LoadInst *loadInst);
 bool isVirtualCallSite(CallSite cs);
 bool isConstructor(const Function *F);
 bool isDestructor(const Function *F);
+bool isCPPThunkFunction(const Function *F);
+const Function *getThunkTarget(const Function *F);
 
 /*
  * VtableA = {&A::foo}

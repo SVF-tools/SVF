@@ -168,7 +168,7 @@ private:
      *
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
-    std::vector<std::vector<const SVFFunction*>> virtualFunctionVectors;
+    std::vector<FuncVector> virtualFunctionVectors;
 };
 
 /// class hierarchy graph
@@ -284,6 +284,9 @@ public:
     {
         return chg->getKind() == Standard;
     }
+
+protected:
+    void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 
 private:
     SVFModule* svfMod;

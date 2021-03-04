@@ -141,7 +141,8 @@ static void handleThunkFunction(cppUtil::DemangledName &dname) {
     // if the classname starts with part of a
     // demangled name starts with
     // these prefixes, we need to remove the prefix
-    // to get the real class anme
+    // to get the real class name
+
     static vector<string> thunkPrefixes = {VThunkFuncLabel, NVThunkFunLabel};
     for (unsigned i = 0; i < thunkPrefixes.size(); i++) {
         auto prefix = thunkPrefixes[i];
@@ -149,6 +150,9 @@ static void handleThunkFunction(cppUtil::DemangledName &dname) {
             dname.className.compare(0, prefix.size(), prefix) == 0)
         {
             dname.className = dname.className.substr(prefix.size());
+            dname.isThunkFunc = true;
+            return;
+
         }
     }
 }
@@ -177,6 +181,7 @@ static void handleThunkFunction(cppUtil::DemangledName &dname) {
 struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 {
     struct cppUtil::DemangledName dname;
+    dname.isThunkFunc = false;
 
     s32_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
@@ -278,6 +283,31 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
         }
     }
     return false;
+}
+
+bool cppUtil::isCPPThunkFunction(const Function *F) {
+    cppUtil::DemangledName dname = cppUtil::demangle(F->getName());
+    return dname.isThunkFunc;
+}
+
+const Function *cppUtil::getThunkTarget(const Function *F) {
+    const Function *ret = nullptr;
+
+    for (auto &bb:*F) {
+        for (auto &inst: bb) {
+            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
+                || llvm::isa<CallBrInst>(inst)) {
+                llvm::ImmutableCallSite cs(&inst);
+                assert(cs.getCalledFunction() &&
+                       "Indirect call detected in thunk func");
+                assert(ret == nullptr && "multiple callsites in thunk func");
+
+                ret = cs.getCalledFunction();
+            }
+        }
+    }
+
+    return ret;
 }
 
 const Value *cppUtil::getVCallThisPtr(CallSite cs)
