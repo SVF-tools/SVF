@@ -158,12 +158,6 @@ public:
         return hasVFGNode(id);
     }
 
-    /// Get a SVFG edge according to src and dst
-    inline SVFGEdge* getSVFGEdge(const SVFGNode* src, const SVFGNode* dst, SVFGEdge::VFGEdgeK kind)
-    {
-        return getVFGEdge(src, dst, kind);
-    }
-
     /// Get all inter value flow edges of a indirect call site
     void getInterVFEdgesForIndirectCallSite(const CallBlockNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges);
 

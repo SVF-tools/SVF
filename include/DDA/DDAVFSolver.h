@@ -367,7 +367,7 @@ protected:
         const SVFGNode* loadSrc = getDefSVFGNode(load->getPAGSrcNode());
         DBOUT(DDDA, SVFUtil::outs() << "!##start new computation from loadSrc svfgNode " <<
               load->getId() << " --> " << loadSrc->getId() << "\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(loadSrc,load,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(loadSrc,load,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,load->getPAGSrcNodeID(),oldDpm,edge);
 
@@ -378,7 +378,7 @@ protected:
         const SVFGNode* storeDst = getDefSVFGNode(store->getPAGDstNode());
         DBOUT(DDDA, SVFUtil::outs() << "!##start new computation from storeDst svfgNode " <<
               store->getId() << " --> " << storeDst->getId() << "\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(storeDst,store,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(storeDst,store,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,store->getPAGDstNodeID(),oldDpm,edge);
     }
@@ -388,7 +388,7 @@ protected:
         const SVFGNode* storeSrc = getDefSVFGNode(store->getPAGSrcNode());
         DBOUT(DDDA, SVFUtil::outs() << "++backtrace to storeSrc from svfgNode " << getLoadDpm(oldDpm).getLoc()->getId() << " to "<<
               store->getId() << " to " << storeSrc->getId() <<"\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(storeSrc,store,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(storeSrc,store,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,store->getPAGSrcNodeID(),oldDpm,edge);
     }
