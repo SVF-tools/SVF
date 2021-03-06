@@ -44,7 +44,7 @@ class MRVer
 {
 
 public:
-    typedef MSSADEF MSSADef;
+    using MSSADef = MSSADEF;
 private:
     /// ver ID 0 is reserved
     static Size_t totalVERNum;

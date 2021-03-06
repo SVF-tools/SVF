@@ -39,23 +39,23 @@ namespace SVF
 class PointerAnalysis;
 class SVFGStat;
 
-typedef VFGEdge SVFGEdge;
-typedef VFGNode SVFGNode;
-typedef ActualParmVFGNode ActualParmSVFGNode;
-typedef ActualRetVFGNode ActualRetSVFGNode;
-typedef FormalParmVFGNode FormalParmSVFGNode;
-typedef FormalRetVFGNode FormalRetSVFGNode;
+using SVFGEdge = VFGEdge;
+using SVFGNode = VFGNode;
+using ActualParmSVFGNode = ActualParmVFGNode;
+using ActualRetSVFGNode = ActualRetVFGNode;
+using FormalParmSVFGNode = FormalParmVFGNode;
+using FormalRetSVFGNode = FormalRetVFGNode;
 
-typedef NullPtrVFGNode NullPtrSVFGNode;
-typedef StmtVFGNode StmtSVFGNode;
-typedef AddrVFGNode AddrSVFGNode;
-typedef CopyVFGNode CopySVFGNode;
-typedef StoreVFGNode StoreSVFGNode;
-typedef LoadVFGNode LoadSVFGNode;
-typedef GepVFGNode GepSVFGNode;
-typedef PHIVFGNode PHISVFGNode;
-typedef IntraPHIVFGNode IntraPHISVFGNode;
-typedef InterPHIVFGNode InterPHISVFGNode;
+using NullPtrSVFGNode = NullPtrVFGNode;
+using StmtSVFGNode = StmtVFGNode;
+using AddrSVFGNode = AddrVFGNode;
+using CopySVFGNode = CopyVFGNode;
+using StoreSVFGNode = StoreVFGNode;
+using LoadSVFGNode = LoadVFGNode;
+using GepSVFGNode = GepVFGNode;
+using PHISVFGNode = PHIVFGNode;
+using IntraPHISVFGNode = IntraPHIVFGNode;
+using InterPHISVFGNode = InterPHIVFGNode;
 
 
 /*!

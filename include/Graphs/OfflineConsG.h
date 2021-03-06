@@ -45,9 +45,9 @@ class OfflineConsG: public ConstraintGraph
 {
 
 public:
-    typedef SCCDetection<OfflineConsG*> OSCC;
-    typedef Set<LoadCGEdge*> LoadEdges;
-    typedef Set<StoreCGEdge*> StoreEdges;
+    using OSCC = SCCDetection<OfflineConsG *>;
+    using LoadEdges = Set<LoadCGEdge *>;
+    using StoreEdges = Set<StoreCGEdge *>;
 
 protected:
     NodeSet refNodes;
@@ -80,19 +80,19 @@ public:
     // Determine whether a node is a ref node
     inline bool isaRef(NodeID node) const
     {
-        NodeSet::const_iterator it = refNodes.find(node);
+        auto it = refNodes.find(node);
         return it != refNodes.end();
     };
     // Determine whether a node has ref nodes
     inline bool hasRef(NodeID node) const
     {
-        NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
+        auto it = nodeToRefMap.find(node);
         return it != nodeToRefMap.end();
     };
     // Use a constraint node to track its corresponding ref node
     inline NodeID getRef(NodeID node) const
     {
-        NodeToRepMap::const_iterator it = nodeToRefMap.find(node);
+        auto it = nodeToRefMap.find(node);
         assert(it != nodeToRefMap.end() && "No such ref node in ref to node map!");
         return it->second;
     }
@@ -109,7 +109,7 @@ public:
 protected:
     inline bool hasNorRep(NodeID nor) const
     {
-        NodeToRepMap::const_iterator it = norToRepMap.find(nor);
+        auto it = norToRepMap.find(nor);
         return it != norToRepMap.end();
     };
 
@@ -120,7 +120,7 @@ protected:
 
     inline NodeID getNorRep(NodeID nor) const
     {
-        NodeToRepMap::const_iterator it = norToRepMap.find(nor);
+        auto it = norToRepMap.find(nor);
         assert(it != norToRepMap.end() && "No such rep node in nor to rep map!");
         return it->second;
     };
@@ -143,7 +143,7 @@ namespace llvm
 
 template<> struct GraphTraits<SVF::OfflineConsG*> : public GraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
 {
-    typedef SVF::ConstraintNode *NodeRef;
+    using NodeRef = SVF::ConstraintNode *;
 };
 
 } // End namespace llvm

@@ -329,7 +329,7 @@ public:
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "[:";
-        for(unsigned int it : context)
+        for(const auto &it : context)
         {
             rawstr << it << " ";
         }

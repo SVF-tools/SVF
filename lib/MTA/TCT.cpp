@@ -596,8 +596,8 @@ template<>
 struct DOTGraphTraits<TCT*> : public DefaultDOTGraphTraits
 {
 
-    typedef TCTNode NodeType;
-    typedef NodeType::iterator ChildIteratorType;
+    using NodeType = TCTNode;
+    using ChildIteratorType = NodeType::iterator;
     DOTGraphTraits(bool isSimple = false) :
         DefaultDOTGraphTraits(isSimple)
     {

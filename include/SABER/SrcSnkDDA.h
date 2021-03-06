@@ -39,7 +39,7 @@
 namespace SVF
 {
 
-typedef CFLSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
+using CFLSrcSnkSolver = CFLSolver<SVFG *, CxtDPItem>;
 
 /*!
  * General source-sink analysis, which serves as a base analysis to be extended for various clients

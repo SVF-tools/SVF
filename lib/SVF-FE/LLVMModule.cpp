@@ -250,10 +250,10 @@ void LLVMModuleSet::buildFunToFunMap()
 {
     Set<Function*> funDecls, funDefs;
     Set<string> declNames, defNames, intersectNames;
-    typedef Map<string, Function*> NameToFunDefMapTy;
-    typedef Map<string, Set<Function*>> NameToFunDeclsMapTy;
+    using NameToFunDefMapTy = Map<string, Function *>;
+    using NameToFunDeclsMapTy = Map<string, Set<Function *> >;
 
-    for (SVFModule::LLVMFunctionSetType::iterator it = svfModule->llvmFunBegin(),
+    for (auto it = svfModule->llvmFunBegin(),
             eit = svfModule->llvmFunEnd(); it != eit; ++it)
     {
         Function *fun = *it;
@@ -291,11 +291,9 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to def map
     NameToFunDefMapTy nameToFunDefMap;
-    for (Set<Function*>::iterator it = funDefs.begin(),
-            eit = funDefs.end(); it != eit; ++it)
+    for (auto *fdef : funDefs)
     {
-        Function *fdef = *it;
-        string funName = fdef->getName().str();
+         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
         nameToFunDefMap[funName] = fdef;
@@ -303,14 +301,12 @@ void LLVMModuleSet::buildFunToFunMap()
 
     ///// name to decls map
     NameToFunDeclsMapTy nameToFunDeclsMap;
-    for (Set<Function*>::iterator it = funDecls.begin(),
-            eit = funDecls.end(); it != eit; ++it)
+    for (auto *fdecl : funDecls)
     {
-        Function *fdecl = *it;
-        string funName = fdecl->getName().str();
+         string funName = fdecl->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
-        NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
+        auto mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
         {
             Set<Function*> decls;
@@ -325,51 +321,46 @@ void LLVMModuleSet::buildFunToFunMap()
     }
 
     /// Fun decl --> def
-    for (Set<Function*>::iterator it = funDecls.begin(),
-            eit = funDecls.end(); it != eit; ++it)
+    for (auto *fdecl : funDecls)
     {
-        const Function *fdecl = *it;
-        string funName = fdecl->getName().str();
+         string funName = fdecl->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
-        NameToFunDefMapTy::iterator mit = nameToFunDefMap.find(funName);
+        auto mit = nameToFunDefMap.find(funName);
         if (mit == nameToFunDefMap.end())
             continue;
         FunDeclToDefMap[svfModule->getSVFFunction(fdecl)] = svfModule->getSVFFunction(mit->second);
     }
 
     /// Fun def --> decls
-    for (Set<Function*>::iterator it = funDefs.begin(),
-            eit = funDefs.end(); it != eit; ++it)
+    for (auto *fdef : funDefs)
     {
-        const Function *fdef = *it;
-        string funName = fdef->getName().str();
+         string funName = fdef->getName().str();
         if (intersectNames.find(funName) == intersectNames.end())
             continue;
-        NameToFunDeclsMapTy::iterator mit = nameToFunDeclsMap.find(funName);
+        auto mit = nameToFunDeclsMap.find(funName);
         if (mit == nameToFunDeclsMap.end())
             continue;
         std::vector<const SVFFunction*>& decls = FunDefToDeclsMap[svfModule->getSVFFunction(fdef)];
-        for (Set<Function*>::iterator sit = mit->second.begin(),
-                seit = mit->second.end(); sit != seit; ++sit)
+        for (auto *sit : mit->second)
         {
-            decls.push_back(svfModule->getSVFFunction(*sit));
+            decls.push_back(svfModule->getSVFFunction(sit));
         }
     }
 }
 
 void LLVMModuleSet::buildGlobalDefToRepMap()
 {
-    typedef Map<string, Set<GlobalVariable*>> NameToGlobalsMapTy;
+    using NameToGlobalsMapTy = Map<string, Set<GlobalVariable *> >;
     NameToGlobalsMapTy nameToGlobalsMap;
-    for (SVFModule::global_iterator it = svfModule->global_begin(),
+    for (auto it = svfModule->global_begin(),
             eit = svfModule->global_end(); it != eit; ++it)
     {
         GlobalVariable *global = *it;
         if (global->hasPrivateLinkage())
             continue;
         string name = global->getName().str();
-        NameToGlobalsMapTy::iterator mit = nameToGlobalsMap.find(name);
+        auto mit = nameToGlobalsMap.find(name);
         if (mit == nameToGlobalsMap.end())
         {
             Set<GlobalVariable*> globals;
@@ -383,12 +374,11 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
         }
     }
 
-    for (NameToGlobalsMapTy::iterator it = nameToGlobalsMap.begin(),
-            eit = nameToGlobalsMap.end(); it != eit; ++it)
+    for (auto & it : nameToGlobalsMap)
     {
-        Set<GlobalVariable*> &globals = it->second;
+        Set<GlobalVariable*> &globals = it.second;
         GlobalVariable *rep = *(globals.begin());
-        Set<GlobalVariable*>::iterator repit = globals.begin();
+        auto repit = globals.begin();
         while (repit != globals.end())
         {
             GlobalVariable *cur = *repit;
@@ -399,11 +389,9 @@ void LLVMModuleSet::buildGlobalDefToRepMap()
             }
             repit++;
         }
-        for (Set<GlobalVariable*>::iterator sit = globals.begin(),
-                seit = globals.end(); sit != seit; ++sit)
+        for (auto *cur : globals)
         {
-            GlobalVariable *cur = *sit;
-            GlobalDefToRepMap[cur] = rep;
+             GlobalDefToRepMap[cur] = rep;
         }
     }
 }

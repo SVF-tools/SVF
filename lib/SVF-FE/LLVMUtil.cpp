@@ -69,10 +69,9 @@ void SVFUtil::getFunReachableBBs (const Function * fun, DominatorTree* dt, std::
         reachableBBs.push_back(bb);
         if(DomTreeNode *dtNode = dt->getNode(const_cast<BasicBlock*>(bb)))
         {
-            for (DomTreeNode::iterator DI = dtNode->begin(), DE = dtNode->end();
-                    DI != DE; ++DI)
+            for (auto & DI : *dtNode)
             {
-                const BasicBlock* succbb = (*DI)->getBlock();
+                const BasicBlock* succbb = DI->getBlock();
                 if(visited.find(succbb)==visited.end())
                     visited.insert(succbb);
                 else
@@ -158,12 +157,12 @@ bool SVFUtil::isDeadFunction (const Function * fun)
  */
 bool SVFUtil::isPtrInDeadFunction (const Value * value)
 {
-    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(value))
+    if(const auto* inst = SVFUtil::dyn_cast<Instruction>(value))
     {
         if(isDeadFunction(inst->getParent()->getParent()))
             return true;
     }
-    else if(const Argument* arg = SVFUtil::dyn_cast<Argument>(value))
+    else if(const auto* arg = SVFUtil::dyn_cast<Argument>(value))
     {
         if(isDeadFunction(arg->getParent()))
             return true;
@@ -178,7 +177,7 @@ const Value * SVFUtil::stripConstantCasts(const Value *val)
 {
     if (SVFUtil::isa<GlobalValue>(val) || isInt2PtrConstantExpr(val))
         return val;
-    else if (const ConstantExpr *CE = SVFUtil::dyn_cast<ConstantExpr>(val))
+    else if (const auto *CE = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if (Instruction::isCast(CE->getOpcode()))
             return stripConstantCasts(CE->getOperand(0));
@@ -193,11 +192,11 @@ Value * SVFUtil::stripAllCasts(Value *val)
 {
     while (true)
     {
-        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
+        if (auto *ci = SVFUtil::dyn_cast<CastInst>(val))
         {
             val = ci->getOperand(0);
         }
-        else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
+        else if (auto *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
         {
             if(ce->isCast())
                 val = ce->getOperand(0);
@@ -356,9 +355,9 @@ bool SVFUtil::isIRFile(const std::string &filename)
     if (FileOrErr.getError())
         return false;
     llvm::MemoryBufferRef Buffer = FileOrErr.get()->getMemBufferRef();
-    const unsigned char *bufferStart =
+    const auto *bufferStart =
         (const unsigned char *)Buffer.getBufferStart();
-    const unsigned char *bufferEnd =
+    const auto *bufferEnd =
         (const unsigned char *)Buffer.getBufferEnd();
     return llvm::isBitcode(bufferStart, bufferEnd) ? true :
            Buffer.getBuffer().startswith("; ModuleID =");

@@ -46,7 +46,7 @@ class SVFModule;
 /*!
  * Abstract class of inclusion-based Pointer Analysis
  */
-typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
+using WPAConstraintSolver = WPASolver<ConstraintGraph*>;
 
 class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 {
@@ -150,8 +150,8 @@ class Andersen:  public AndersenBase
 
 
 public:
-    typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
+    using CGSCC = SCCDetection<ConstraintGraph*>;
+    using CallSite2DummyValPN = OrderedMap<CallSite, NodeID>;
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
@@ -464,7 +464,7 @@ class AndersenWaveDiffWithType : public AndersenWaveDiff
 
 private:
 
-    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
+    using TypeMismatchedObjToEdgeTy = Map<NodeID, Set<const GepCGEdge*>>;
 
     TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
 
@@ -629,7 +629,7 @@ class AndersenHCD : virtual public Andersen
 {
 
 public:
-    typedef SCCDetection<OfflineConsG*> OSCC;
+    using OSCC = SCCDetection<OfflineConsG*>;
 
 private:
     static AndersenHCD* hcdAndersen;

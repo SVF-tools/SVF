@@ -30,19 +30,23 @@
 #ifndef CONSGNODE_H_
 #define CONSGNODE_H_
 
+#include "Graphs/ConsGEdge.h"
 namespace SVF
 {
 
 /*!
  * Constraint node
  */
-typedef GenericNode<ConstraintNode,ConstraintEdge> GenericConsNodeTy;
+
+class ConstraintNode;
+
+using GenericConsNodeTy = GenericNode<ConstraintNode, ConstraintEdge>;
 class ConstraintNode : public GenericConsNodeTy
 {
 
 public:
-    typedef ConstraintEdge::ConstraintEdgeSetTy::iterator iterator;
-    typedef ConstraintEdge::ConstraintEdgeSetTy::const_iterator const_iterator;
+    using iterator = ConstraintEdge::ConstraintEdgeSetTy::iterator;
+    using const_iterator = ConstraintEdge::ConstraintEdgeSetTy::const_iterator;
     bool _isPWCNode;
 
     enum SCCEdgeFlag
@@ -165,7 +169,7 @@ public:
 
     ///  Iterators
     //@{
-    inline iterator directOutEdgeBegin()
+    inline iterator directOutEdgeBegin() override
     {
         if (sccEdgeFlag == Copy)
             return copyOutEdges.begin();
@@ -173,7 +177,7 @@ public:
             return directOutEdges.begin();
     }
 
-    inline iterator directOutEdgeEnd()
+    inline iterator directOutEdgeEnd() override
     {
         if (sccEdgeFlag == Copy)
             return copyOutEdges.end();
@@ -181,7 +185,7 @@ public:
             return directOutEdges.end();
     }
 
-    inline iterator directInEdgeBegin()
+    inline iterator directInEdgeBegin() override
     {
         if (sccEdgeFlag == Copy)
             return copyInEdges.begin();
@@ -189,7 +193,7 @@ public:
             return directInEdges.begin();
     }
 
-    inline iterator directInEdgeEnd()
+    inline iterator directInEdgeEnd() override
     {
         if (sccEdgeFlag == Copy)
             return copyInEdges.end();
@@ -197,7 +201,7 @@ public:
             return directInEdges.end();
     }
 
-    inline const_iterator directOutEdgeBegin() const
+    inline const_iterator directOutEdgeBegin() const override
     {
         if (sccEdgeFlag == Copy)
             return copyOutEdges.begin();
@@ -205,7 +209,7 @@ public:
             return directOutEdges.begin();
     }
 
-    inline const_iterator directOutEdgeEnd() const
+    inline const_iterator directOutEdgeEnd() const override
     {
         if (sccEdgeFlag == Copy)
             return copyOutEdges.end();
@@ -213,7 +217,7 @@ public:
             return directOutEdges.end();
     }
 
-    inline const_iterator directInEdgeBegin() const
+    inline const_iterator directInEdgeBegin() const override
     {
         if (sccEdgeFlag == Copy)
             return copyInEdges.begin();
@@ -221,7 +225,7 @@ public:
             return directInEdges.begin();
     }
 
-    inline const_iterator directInEdgeEnd() const
+    inline const_iterator directInEdgeEnd() const override
     {
         if (sccEdgeFlag == Copy)
             return copyInEdges.end();

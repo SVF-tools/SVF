@@ -67,7 +67,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const {
+    const std::string toString() const override {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "ThreadForkEdge ";
@@ -77,7 +77,7 @@ public:
         return rawstr.str();
     }
 
-    typedef GenericNode<PTACallGraphNode, ThreadForkEdge>::GEdgeSetTy ForkEdgeSet;
+    using ForkEdgeSet = GenericNode<PTACallGraphNode, ThreadForkEdge>::GEdgeSetTy;
 };
 
 /*!
@@ -106,7 +106,7 @@ public:
         return edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
 
-    virtual const std::string toString() const {
+    const std::string toString() const override {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "ThreadJoinEdge ";
@@ -116,7 +116,7 @@ public:
         return rawstr.str();
     }
 
-    typedef GenericNode<PTACallGraphNode, ThreadJoinEdge>::GEdgeSetTy JoinEdgeSet;
+    using JoinEdgeSet = GenericNode<PTACallGraphNode, ThreadJoinEdge>::GEdgeSetTy;
 };
 
 /*!

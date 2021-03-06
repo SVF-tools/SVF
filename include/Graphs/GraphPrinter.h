@@ -86,11 +86,11 @@ public:
                            const GraphType &GT)
     {
         ///Define the GTraits and node iterator for printing
-        typedef llvm::GraphTraits<GraphType> GTraits;
+        using GTraits = llvm::GraphTraits<GraphType>;
 
-        typedef typename GTraits::NodeRef NodeRef;
-        typedef typename GTraits::nodes_iterator node_iterator;
-        typedef typename GTraits::ChildIteratorType child_iterator;
+        using NodeRef = typename GTraits::NodeRef;
+        using node_iterator = typename GTraits::nodes_iterator;
+        using child_iterator = typename GTraits::ChildIteratorType ;
 
         O << "Printing Graph '" << GraphName <<  "'...\n";
         // Print each node name and its edges

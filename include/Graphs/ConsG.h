@@ -45,11 +45,11 @@ class ConstraintGraph :  public GenericGraph<ConstraintNode,ConstraintEdge>
 {
 
 public:
-    typedef Map<NodeID, ConstraintNode *> ConstraintNodeIDToNodeMapTy;
-    typedef ConstraintEdge::ConstraintEdgeSetTy::iterator ConstraintNodeIter;
-    typedef Map<NodeID, NodeID> NodeToRepMap;
-    typedef Map<NodeID, NodeBS> NodeToSubsMap;
-    typedef FIFOWorkList<NodeID> WorkList;
+    using ConstraintNodeIDToNodeMapTy = Map<NodeID, ConstraintNode *>;
+    using ConstraintNodeIter = ConstraintEdge::ConstraintEdgeSetTy::iterator;
+    using NodeToRepMap = Map<NodeID, NodeID>;
+    using NodeToSubsMap = Map<NodeID, NodeBS>;
+    using WorkList = FIFOWorkList<NodeID>;
 
 protected:
     PAG*pag;
@@ -230,7 +230,7 @@ public:
     //@{
     inline NodeID sccRepNode(NodeID id) const
     {
-        NodeToRepMap::const_iterator it = nodeToRepMap.find(id);
+        auto it = nodeToRepMap.find(id);
         if(it==nodeToRepMap.end())
             return id;
         else
@@ -384,7 +384,7 @@ struct GraphTraits<Inverse<SVF::ConstraintNode *> > : public GraphTraits<Inverse
 
 template<> struct GraphTraits<SVF::ConstraintGraph*> : public GraphTraits<SVF::GenericGraph<SVF::ConstraintNode,SVF::ConstraintEdge>* >
 {
-    typedef SVF::ConstraintNode *NodeRef;
+    using NodeRef = SVF::ConstraintNode *;
 };
 
 } // End namespace llvm

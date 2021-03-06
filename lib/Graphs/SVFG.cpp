@@ -89,8 +89,8 @@ const std::string MSSAPHISVFGNode::toString() const {
     rawstr << "MSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << "MR_" << getRes()->getMR()->getMRID()
            << "V_" << getRes()->getResVer()->getSSAVersion() << " = PHI(";
-    for (MemSSA::PHI::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
-            it != eit; it++)
+    for (auto it = opVerBegin(), eit = opVerEnd();
+         it != eit; it++)
         rawstr << "MR_" << it->second->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
     rawstr << ")\n";
 

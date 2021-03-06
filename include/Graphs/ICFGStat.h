@@ -54,7 +54,7 @@ private:
     int numOfIntraEdges;
 
 public:
-    typedef Set<const ICFGNode *> ICFGNodeSet;
+    using ICFGNodeSet = Set<const ICFGNode *>;
 
     ICFGStat(ICFG *cfg) : PTAStat(nullptr), icfg(cfg)
     {

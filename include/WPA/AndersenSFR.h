@@ -101,9 +101,9 @@ protected:
 class AndersenSFR : public AndersenSCD
 {
 public:
-    typedef Map<NodeID, NodeBS> NodeStrides;
-    typedef Map<NodeID, NodeSet> FieldReps;
-    typedef Map<NodeID, pair<NodeID, NodeSet>> SFRTrait;
+    using NodeStrides = Map<NodeID, NodeBS>;
+    using FieldReps = Map<NodeID, NodeSet>;
+    using SFRTrait = Map<NodeID, pair<NodeID, NodeSet> >;
 
 private:
     static AndersenSFR* sfrAndersen;

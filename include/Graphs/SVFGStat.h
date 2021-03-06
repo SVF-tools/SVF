@@ -92,9 +92,9 @@ private:
 class SVFGStat : public PTAStat
 {
 public:
-    typedef Set<const SVFGNode*> SVFGNodeSet;
-    typedef OrderedSet<const SVFGEdge*> SVFGEdgeSet;
-    typedef SCCDetection<SVFG*> SVFGSCC;
+    using SVFGNodeSet = Set<const SVFGNode *>;
+    using SVFGEdgeSet = OrderedSet<const SVFGEdge *>;
+    using SVFGSCC = SCCDetection<SVFG *>;
 
     SVFGStat(SVFG* g);
 

@@ -897,7 +897,7 @@ template<>
 struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
 {
 
-    typedef CHNode NodeType;
+    using NodeType = CHNode;
     DOTGraphTraits(bool isSimple = false) :
         DefaultDOTGraphTraits(isSimple)
     {

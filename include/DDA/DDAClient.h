@@ -39,7 +39,7 @@ public:
             candidateQueries = pag->getAllValidPtrs();
         else
         {
-            for (unsigned int it : userInput)
+            for (const auto &it: userInput)
                 addCandidate(it);
         }
         return candidateQueries;

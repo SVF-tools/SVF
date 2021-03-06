@@ -59,9 +59,9 @@ public:
         const PointsTo& pts =  getAndersenAnalysis()->getPts(dpm.getCurNodeID());
         CxtPtSet tmpCPts;
         ContextCond cxt;
-        for (unsigned int pt : pts)
+        for (const auto& piter: pts)
         {
-            CxtVar var(cxt,pt);
+            CxtVar var(cxt, piter);
             tmpCPts.set(var);
         }
         return tmpCPts;
