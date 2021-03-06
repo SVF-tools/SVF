@@ -19,6 +19,7 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
+#include "Util/SVFBasicTypes.h"
 namespace SVF
 {
 /// Basic points-to data structure
@@ -37,7 +38,7 @@ template <typename Key, typename Datum, typename Data>
 class PTData
 {
 public:
-    typedef Set<Key> KeySet;
+    using KeySet = Set<Key>;
 
     /// Types of a points-to data structures.
     enum PTDataTy
@@ -100,8 +101,8 @@ template <typename Key, typename Datum, typename Data>
 class DiffPTData : public PTData<Key, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef typename BasePTData::PTDataTy PTDataTy;
+    using BasePTData = PTData<Key, Datum, Data>;
+    using PTDataTy = typename BasePTData::PTDataTy;
 
     DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) { }
 
@@ -143,10 +144,10 @@ template <typename Key, typename Datum, typename Data>
 class DFPTData : public PTData<Key, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef typename BasePTData::PTDataTy PTDataTy;
+    using BasePTData = PTData<Key, Datum, Data>;
+    using PTDataTy = typename BasePTData::PTDataTy;
 
-    typedef NodeID LocID;
+    using LocID = NodeID;
 
     /// Constructor
     DFPTData(bool reversePT = true, PTDataTy ty = BasePTData::DataFlow) : BasePTData(reversePT, ty) { }
@@ -216,11 +217,11 @@ template <typename Key, typename Datum, typename Data, typename VersionedKey>
 class VersionedPTData : public PTData<Key, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
+    using BasePTData = PTData<Key, Datum, Data>;
+    using PTDataTy = typename BasePTData::PTDataTy;
+    using KeySet = typename BasePTData::KeySet;
 
-    typedef Set<VersionedKey> VersionedKeySet;
+    using VersionedKeySet = Set<VersionedKey>;
 
     VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) { }
 

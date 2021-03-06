@@ -29,17 +29,17 @@ class VersionedFlowSensitive : public FlowSensitive
     friend class VersionedFlowSensitiveStat;
 
 private:
-    typedef llvm::SparseBitVector<> MeldVersion;
+    using MeldVersion = llvm::SparseBitVector<>;
 
 public:
-    typedef Map<NodeID, Version> ObjToVersionMap;
-    typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
+    using ObjToVersionMap = Map<NodeID, Version>;
+    using ObjToMeldVersionMap = Map<NodeID, MeldVersion>;
 
-    typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
+    using LocVersionMap = Map<NodeID, ObjToVersionMap>;
     /// Maps locations to all versions it sees (through objects).
-    typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
+    using LocMeldVersionMap = Map<NodeID, ObjToMeldVersionMap>;
     /// (o -> (v -> versions with rely on o:v).
-    typedef Map<NodeID, Map<Version, Set<Version>>> VersionRelianceMap;
+    using VersionRelianceMap = Map<NodeID, Map<Version, Set<Version> > >;
 
     enum VersionType {
         CONSUME,
@@ -56,13 +56,13 @@ public:
     VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA);
 
     /// Initialize analysis
-    virtual void initialize() override;
+     void initialize() override;
 
     /// Finalize analysis
-    virtual void finalize() override;
+     void finalize() override;
 
     /// Get PTA name
-    virtual const std::string PTAName() const override
+    const std::string PTAName() const override
     {
         return "VersionedFlowSensitive";
     }
@@ -99,13 +99,13 @@ public:
     }
 
 protected:
-    virtual bool processLoad(const LoadSVFGNode* load) override;
-    virtual bool processStore(const StoreSVFGNode* store) override;
-    virtual void processNode(NodeID n) override;
-    virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
+    bool processLoad(const LoadSVFGNode* load) override;
+    bool processStore(const StoreSVFGNode* store) override;
+    void processNode(NodeID n) override;
+    void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
-    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
+    bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
 
 private:
     /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.

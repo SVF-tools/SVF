@@ -15,15 +15,15 @@ namespace SVF
 /*!
  * Equivalence-based Pointer Analysis
  */
-typedef WPASolver<ConstraintGraph*> WPAConstraintSolver;
+using WPAConstraintSolver = WPASolver<ConstraintGraph *>;
 
 class Steensgaard:  public AndersenBase
 {
 
 public:
 
-    typedef Map<NodeID, NodeID> NodeToEquivClassMap;
-    typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
+    using NodeToEquivClassMap = Map<NodeID, NodeID>;
+    using NodeToSubsMap = Map<NodeID, Set<NodeID> >;
 
     /// Constructor
     Steensgaard(PAG* _pag)
@@ -49,7 +49,7 @@ public:
         steens = nullptr;
     }
 
-    virtual void solveWorklist();
+    void solveWorklist() override;
 
     void processAllAddr();
 
@@ -72,18 +72,18 @@ public:
     //@}
 
     /// Operation of points-to set
-    virtual inline const PointsTo& getPts(NodeID id)
+    inline const PointsTo& getPts(NodeID id) override
     {
         return getPTDataTy()->getPts(getEC(id));
     }
     /// pts(id) = pts(id) U target
-    virtual inline bool unionPts(NodeID id, const PointsTo& target)
+    inline bool unionPts(NodeID id, const PointsTo& target) override
     {
         id = getEC(id);
         return getPTDataTy()->unionPts(id, target);
     }
     /// pts(id) = pts(id) U pts(ptd)
-    virtual inline bool unionPts(NodeID id, NodeID ptd)
+    inline bool unionPts(NodeID id, NodeID ptd) override
     {
         id = getEC(id);
         ptd = getEC(ptd);
@@ -95,7 +95,7 @@ public:
     /// An equivalence class has a set of sub constraint nodes.
     inline NodeID getEC(NodeID id) const
     {
-        NodeToEquivClassMap::const_iterator it = nodeToECMap.find(id);
+        auto it = nodeToECMap.find(id);
         if(it==nodeToECMap.end())
             return id;
         else
@@ -120,7 +120,7 @@ private:
     NodeToSubsMap nodeToSubsMap;
 };
 
-} /// end of the namespace
+} // namespace SVF
 
 
 #endif /* INCLUDE_WPA_STEENSGAARD_H_ */

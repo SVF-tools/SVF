@@ -49,52 +49,52 @@ class MemSSA
 public:
 
     /// define condition here changes needed if we add new type
-    typedef MemRegion::Condition Condition;
-    typedef MSSAMU<Condition> MU;
-    typedef RetMU<Condition> RETMU;
-    typedef LoadMU<Condition> LOADMU;
-    typedef CallMU<Condition> CALLMU;
-    typedef MSSACHI<Condition> CHI;
-    typedef EntryCHI<Condition> ENTRYCHI;
-    typedef StoreCHI<Condition> STORECHI;
-    typedef CallCHI<Condition> CALLCHI;
-    typedef MSSAPHI<Condition> PHI;
-    typedef MSSADEF MDEF;
+    using Condition = MemRegion::Condition;
+    using MU = MSSAMU<Condition>;
+    using RETMU = RetMU<Condition>;
+    using LOADMU = LoadMU<Condition>;
+    using CALLMU = CallMU<Condition>;
+    using CHI = MSSACHI<Condition>;
+    using ENTRYCHI = EntryCHI<Condition>;
+    using STORECHI = StoreCHI<Condition>;
+    using CALLCHI = CallCHI<Condition>;
+    using PHI = MSSAPHI<Condition>;
+    using MDEF = MSSADEF;
 
-    typedef Set<MU*> MUSet;
-    typedef Set<CHI*> CHISet;
-    typedef Set<PHI*> PHISet;
+    using MUSet = Set<MU *>;
+    using CHISet = Set<CHI *>;
+    using PHISet = Set<PHI *>;
 
     ///Define mem region set
-    typedef MRGenerator::MRSet MRSet;
-    typedef std::vector<const MemRegion*> MRVector;
+    using MRSet = MRGenerator::MRSet;
+    using MRVector = std::vector<const MemRegion *>;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef Map<const LoadPE*, MUSet> LoadToMUSetMap;
-    typedef Map<const StorePE*, CHISet> StoreToChiSetMap;
-    typedef Map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef Map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
-    typedef Map<const BasicBlock*, PHISet> BBToPhiSetMap;
+    using LoadToMUSetMap = Map<const LoadPE *, MUSet>;
+    using StoreToChiSetMap = Map<const StorePE *, CHISet>;
+    using CallSiteToMUSetMap = Map<const CallBlockNode *, MUSet>;
+    using CallSiteToCHISetMap = Map<const CallBlockNode *, CHISet>;
+    using BBToPhiSetMap = Map<const BasicBlock *, PHISet>;
     //@}
 
     /// Map from fun to its entry chi set and return mu set
-    typedef Map<const SVFFunction*, CHISet> FunToEntryChiSetMap;
-    typedef Map<const SVFFunction*, MUSet> FunToReturnMuSetMap;
+    using FunToEntryChiSetMap = Map<const SVFFunction *, CHISet>;
+    using FunToReturnMuSetMap = Map<const SVFFunction *, MUSet>;
 
     /// For phi insertion
     //@{
-    typedef std::vector<const BasicBlock*> BBList;
-    typedef Map<const BasicBlock*, MRSet> BBToMRSetMap;
-    typedef Map<const MemRegion*, BBList> MemRegToBBsMap;
+    using BBList = std::vector<const BasicBlock *>;
+    using BBToMRSetMap = Map<const BasicBlock *, MRSet>;
+    using MemRegToBBsMap = Map<const MemRegion *, BBList>;
     //@}
 
     /// For SSA renaming
-    typedef Map<const MemRegion*, std::vector<MRVer*> > MemRegToVerStackMap;
-    typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
+    using MemRegToVerStackMap = Map<const MemRegion *, std::vector<MRVer *> >;
+    using MemRegToCounterMap = Map<const MemRegion *, MRVERSION>;
 
     /// PAG edge list
-    typedef PAG::PAGEdgeList PAGEdgeList;
+    using PAGEdgeList = PAG::PAGEdgeList;
 
     /// Statistics
     //@{
@@ -175,51 +175,51 @@ private:
     //@{
     inline void AddLoadMU(const BasicBlock* bb, const LoadPE* load, const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddLoadMU(bb,load,*iter);
+        for (const auto *iter : mrSet)
+            AddLoadMU(bb,load,iter);
     }
     inline void AddStoreCHI(const BasicBlock* bb, const StorePE* store, const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddStoreCHI(bb,store,*iter);
+        for (const auto *iter : mrSet)
+            AddStoreCHI(bb,store,iter);
     }
     inline void AddCallSiteMU(const CallBlockNode* cs,  const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddCallSiteMU(cs,*iter);
+        for (const auto *iter : mrSet)
+            AddCallSiteMU(cs,iter);
     }
     inline void AddCallSiteCHI(const CallBlockNode* cs,  const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddCallSiteCHI(cs,*iter);
+        for (const auto *iter : mrSet)
+            AddCallSiteCHI(cs,iter);
     }
     inline void AddMSSAPHI(const BasicBlock* bb, const MRSet& mrSet)
     {
-        for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
-            AddMSSAPHI(bb,*iter);
+        for (const auto *iter : mrSet)
+            AddMSSAPHI(bb,iter);
     }
     inline void AddLoadMU(const BasicBlock* bb, const LoadPE* load, const MemRegion* mr)
     {
-        LOADMU* mu = new LOADMU(bb,load, mr);
+        auto* mu = new LOADMU(bb,load, mr);
         load2MuSetMap[load].insert(mu);
         collectRegUses(mr);
     }
     inline void AddStoreCHI(const BasicBlock* bb, const StorePE* store, const MemRegion* mr)
     {
-        STORECHI* chi = new STORECHI(bb,store, mr);
+        auto* chi = new STORECHI(bb,store, mr);
         store2ChiSetMap[store].insert(chi);
         collectRegUses(mr);
         collectRegDefs(bb,mr);
     }
     inline void AddCallSiteMU(const CallBlockNode* cs, const MemRegion* mr)
     {
-        CALLMU* mu = new CALLMU(cs, mr);
+        auto* mu = new CALLMU(cs, mr);
         callsiteToMuSetMap[cs].insert(mu);
         collectRegUses(mr);
     }
     inline void AddCallSiteCHI(const CallBlockNode* cs, const MemRegion* mr)
     {
-        CALLCHI* chi = new CALLCHI(cs, mr);
+        auto* chi = new CALLCHI(cs, mr);
         callsiteToChiSetMap[cs].insert(chi);
         collectRegUses(mr);
         collectRegDefs(chi->getBasicBlock(),mr);
@@ -235,21 +235,17 @@ private:
     /// Rename mu set
     inline void RenameMuSet(const MUSet& muSet)
     {
-        for (MUSet::const_iterator mit = muSet.begin(), emit = muSet.end();
-                mit != emit; ++mit)
+        for (auto *mu : muSet)
         {
-            MU* mu = (*mit);
-            mu->setVer(getTopStackVer(mu->getMR()));
+             mu->setVer(getTopStackVer(mu->getMR()));
         }
     }
 
     /// Rename chi set
     inline void RenameChiSet(const CHISet& chiSet, MRVector& memRegs)
     {
-        for (CHISet::const_iterator cit = chiSet.begin(), ecit = chiSet.end();
-                cit != ecit; ++cit)
+        for (auto *chi : chiSet)
         {
-            CHI* chi = (*cit);
             chi->setOpVer(getTopStackVer(chi->getMR()));
             chi->setResVer(newSSAName(chi->getMR(),chi));
             memRegs.push_back(chi->getMR());
@@ -259,10 +255,8 @@ private:
     /// Rename result (LHS) of phis
     inline void RenamePhiRes(const PHISet& phiSet, MRVector& memRegs)
     {
-        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
-                iter != eiter; ++iter)
+        for (auto *phi : phiSet)
         {
-            PHI* phi = *iter;
             phi->setResVer(newSSAName(phi->getMR(),phi));
             memRegs.push_back(phi->getMR());
         }
@@ -271,11 +265,9 @@ private:
     /// Rename operands (RHS) of phis
     inline void RenamePhiOps(const PHISet& phiSet, u32_t pos, MRVector&)
     {
-        for (PHISet::const_iterator iter = phiSet.begin(), eiter = phiSet.end();
-                iter != eiter; ++iter)
+        for (auto *phi : phiSet)
         {
-            PHI* phi = *iter;
-            phi->setOpVer(getTopStackVer(phi->getMR()), pos);
+             phi->setOpVer(getTopStackVer(phi->getMR()), pos);
         }
     }
 
@@ -338,8 +330,7 @@ public:
     }
     inline bool hasCHI(const PAGEdge* inst) const
     {
-        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(
-                                       inst))
+        if (const auto* store = SVFUtil::dyn_cast<StorePE>(inst))
         {
             assert(0 != store2ChiSetMap.count(store)
                    && "not associated with mem region!");

@@ -43,7 +43,7 @@ class PAGNode;
 /*
  * PAG edge between nodes
  */
-typedef GenericEdge<PAGNode> GenericPAGEdgeTy;
+using GenericPAGEdgeTy = GenericEdge<PAGNode>;
 class PAGEdge : public GenericPAGEdgeTy
 {
 
@@ -138,7 +138,7 @@ public:
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.
     static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const ICFGNode* cs)
     {
-        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(cs);
+        auto iter = inst2LabelMap.find(cs);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : callEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
@@ -148,7 +148,7 @@ public:
     /// Two store instructions may share the same StorePAGEdge
     static inline GEdgeFlag makeEdgeFlagWithStoreInst(GEdgeKind k, const ICFGNode* store)
     {
-        Inst2LabelMap::const_iterator iter = inst2LabelMap.find(store);
+        auto iter = inst2LabelMap.find(store);
         u64_t label = (iter != inst2LabelMap.end()) ?
                       iter->second : storeEdgeLabelCounter++;
         return (label << EdgeKindMaskBits) | k;
@@ -166,12 +166,12 @@ public:
     }
     //@}
 
-    typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
-    typedef Map<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
-    typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
+    using PAGEdgeSetTy = GenericNode<PAGNode, PAGEdge>::GEdgeSetTy;
+    using PAGEdgeToSetMapTy = Map<EdgeID, PAGEdgeSetTy>;
+    using PAGKindToEdgeSetMapTy = PAGEdgeToSetMapTy;
 
 private:
-    typedef Map<const ICFGNode*, u32_t> Inst2LabelMap;
+    using Inst2LabelMap = Map<const ICFGNode *, u32_t>;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter

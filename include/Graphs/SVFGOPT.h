@@ -55,9 +55,9 @@ namespace SVF
  */
 class SVFGOPT : public SVFG
 {
-    typedef Set<SVFGNode*> SVFGNodeSet;
-    typedef Map<NodeID, NodeID> NodeIDToNodeIDMap;
-    typedef FIFOWorkList<const MSSAPHISVFGNode*> WorkList;
+    using SVFGNodeSet = Set<SVFGNode *>;
+    using NodeIDToNodeIDMap = Map<NodeID, NodeID>;
+    using WorkList = FIFOWorkList<const MSSAPHISVFGNode *>;
 
 public:
     /// Constructor
@@ -82,23 +82,23 @@ public:
     }
 
 protected:
-    virtual void buildSVFG();
+    void buildSVFG() override;
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);
         if (edge != nullptr)
         {
-            PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
+            auto* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
             addInterPHIOperands(phi, cs_arg);
             edges.insert(edge);
         }
     }
     /// Connect formal-ret and actual ret
-    virtual inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         NodeID phiId = getDef(cs_ret);
         SVFGEdge* edge = addRetEdge(getDef(fun_ret), phiId, csId);
@@ -110,7 +110,7 @@ protected:
         }
     }
     /// Connect actual-in and formal-in
-    virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         PointsTo intersection = actualIn->getPointsTo();
         intersection &= formalIn->getPointsTo();
@@ -123,7 +123,7 @@ protected:
         }
     }
     /// Connect formal-out and actual-out
-    virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges)
+    inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges) override
     {
         PointsTo intersection = formalOut->getPointsTo();
         intersection &= actualOut->getPointsTo();
@@ -141,13 +141,13 @@ protected:
     //@{
     inline NodeID getActualINDef(NodeID ai) const
     {
-        NodeIDToNodeIDMap::const_iterator it = actualInToDefMap.find(ai);
+        auto it = actualInToDefMap.find(ai);
         assert(it != actualInToDefMap.end() && "can not find actual-in's def");
         return it->second;
     }
     inline NodeID getFormalOUTDef(NodeID fo) const
     {
-        NodeIDToNodeIDMap::const_iterator it = formalOutToDefMap.find(fo);
+        auto it = formalOutToDefMap.find(fo);
         assert(it != formalOutToDefMap.end() && "can not find formal-out's def");
         return it->second;
     }
@@ -194,7 +194,7 @@ private:
     /// Initial work list with MSSAPHI nodes which may be removed.
     inline void initialWorkList()
     {
-        for (SVFG::const_iterator it = begin(), eit = end(); it != eit; ++it)
+        for (auto it = begin(), eit = end(); it != eit; ++it)
             addIntoWorklist(it->second);
     }
 
@@ -203,7 +203,7 @@ private:
     /// 2. it doesn't have incoming and outgoing call/ret at the same time.
     inline bool addIntoWorklist(const SVFGNode* node)
     {
-        if (const MSSAPHISVFGNode* phi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
+        if (const auto* phi = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
             if (isConnectingTwoCallSites(phi) == false && isDefOfAInFOut(phi) == false)
                 return worklist.push(phi);
@@ -236,7 +236,7 @@ private:
     /// Add inter PHI SVFG node for formal parameter
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp)
     {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
+        auto* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
         addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fp->getFun()));
         resetDef(fp->getParam(),sNode);
         return sNode;
@@ -244,7 +244,7 @@ private:
     /// Add inter PHI SVFG node for actual return
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar)
     {
-        InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
+        auto* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
         addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(ar->getCallSite()->getCallSite()));
         resetDef(ar->getRev(),sNode);
         return sNode;
@@ -252,7 +252,7 @@ private:
 
     inline void resetDef(const PAGNode* pagNode, const SVFGNode* node)
     {
-        PAGNodeToDefMapTy::iterator it = PAGNodeToDefMap.find(pagNode);
+        auto it = PAGNodeToDefMap.find(pagNode);
         assert(it != PAGNodeToDefMap.end() && "a PAG node doesn't have definition before");
         PAGNodeToDefMap[pagNode] = node->getId();
     }
@@ -261,14 +261,14 @@ private:
     ///@{
     inline void setActualINDef(NodeID ai, NodeID def)
     {
-        NodeIDToNodeIDMap::const_iterator it = actualInToDefMap.find(ai);
+        auto it = actualInToDefMap.find(ai);
         assert(it == actualInToDefMap.end() && "can not set actual-in's def twice");
         actualInToDefMap[ai] = def;
         defNodes.set(def);
     }
     inline void setFormalOUTDef(NodeID fo, NodeID def)
     {
-        NodeIDToNodeIDMap::const_iterator it = formalOutToDefMap.find(fo);
+        auto it = formalOutToDefMap.find(fo);
         assert(it == formalOutToDefMap.end() && "can not set formal-out's def twice");
         formalOutToDefMap[fo] = def;
         defNodes.set(def);

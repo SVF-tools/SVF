@@ -25,21 +25,24 @@ class DDAVFSolver
 {
     friend class DDAStat;
 public:
-    typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef PTACallGraphEdge::CallInstSet CallInstSet;
-    typedef PAG::CallSiteSet CallSiteSet;
-    typedef OrderedSet<DPIm> DPTItemSet;
-    typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
-    typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
-    typedef OrderedMap<DPIm,DPIm> DPMToDPMMap;
-    typedef OrderedMap<NodeID, DPTItemSet> LocToDPMVecMap;
-    typedef OrderedSet<const SVFGEdge* > ConstSVFGEdgeSet;
-    typedef SVFGEdge::SVFGEdgeSetTy SVFGEdgeSet;
-    typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
+    using SVFGSCC = SCCDetection<SVFG *>;
+    using CallGraphSCC = SCCDetection<PTACallGraph *>;
+    using CallInstSet = PTACallGraphEdge::CallInstSet;
+    using CallSiteSet = PAG::CallSiteSet;
+    using DPTItemSet = OrderedSet<DPIm>;
+    using DPImToCPtSetMap = OrderedMap<DPIm, CPtSet>;
+    using DPMToCVarMap = OrderedMap<DPIm, CVar>;
+    using DPMToDPMMap = OrderedMap<DPIm, DPIm>;
+    using LocToDPMVecMap = OrderedMap<NodeID, DPTItemSet>;
+    using ConstSVFGEdgeSet = OrderedSet<const SVFGEdge *>;
+    using SVFGEdgeSet = SVFGEdge::SVFGEdgeSetTy;
+    using StoreToPMSetMap = OrderedMap<const SVFGNode *, DPTItemSet>;
 
     ///Constructor
-    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr),_callGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
+        DDAVFSolver(): outOfBudgetQuery(false), _pag(nullptr),
+                       _svfg(nullptr), _ander(nullptr),
+                       _callGraph(nullptr), _callGraphSCC(nullptr),
+                       _svfgSCC(nullptr), ddaStat(nullptr)
     {
     }
     /// Destructor
@@ -231,8 +234,8 @@ protected:
         if(_pag->isFunPtr(dpm.getCurNodeID()))
         {
             const CallSiteSet& csSet = _pag->getIndCallSites(dpm.getCurNodeID());
-            for(CallSiteSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
-                updateCallGraphAndSVFG(dpm, (*it),newIndirectEdges);
+            for(const auto *it : csSet)
+                updateCallGraphAndSVFG(dpm, it,newIndirectEdges);
         }
         /// callgraph scc detection for local variable in recursion
         if(!newIndirectEdges.empty())
@@ -247,10 +250,9 @@ protected:
     /// Traverse along out edges to find all nodes which may be affected by locDPM.
     void reComputeForEdges(const DPIm& dpm, const SVFGEdgeSet& edgeSet, bool indirectCall = false)
     {
-        for (SVFGNode::const_iterator it = edgeSet.begin(), eit = edgeSet.end(); it != eit; ++it)
+        for (auto *edge : edgeSet)
         {
-            const SVFGEdge* edge = *it;
-            const SVFGNode* dst = edge->getDstNode();
+             const SVFGNode* dst = edge->getDstNode();
             typename LocToDPMVecMap::const_iterator locIt = getLocToDPMVecMap().find(dst->getId());
             /// Only collect nodes we have traversed
             if (locIt == getLocToDPMVecMap().end())
@@ -327,12 +329,12 @@ protected:
         NodeID obj = oldDpm.getCurNodeID();
         if (_pag->isConstantObj(obj) || _pag->isNonPointerObj(obj))
             return;
-        const SVFGEdgeSet edgeSet(node->getInEdges());
-        for (SVFGNode::const_iterator it = edgeSet.begin(), eit = edgeSet.end(); it != eit; ++it)
+        const SVFGEdgeSet& edgeSet(node->getInEdges());
+        for (auto *it : edgeSet)
         {
-            if(const IndirectSVFGEdge* indirEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
+            if(const IndirectSVFGEdge* indirEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(it))
             {
-                PointsTo& guard = const_cast<PointsTo&>(indirEdge->getPointsTo());
+                auto& guard = const_cast<PointsTo&>(indirEdge->getPointsTo());
                 if(guard.test(obj))
                 {
                     DBOUT(DDDA, SVFUtil::outs() << "\t\t==backtrace indirectVF svfgNode " <<
@@ -347,9 +349,9 @@ protected:
     {
         const SVFGNode* node = oldDpm.getLoc();
         const SVFGEdgeSet edgeSet(node->getInEdges());
-        for (SVFGNode::const_iterator it = edgeSet.begin(), eit = edgeSet.end(); it != eit; ++it)
+        for (auto *it : edgeSet)
         {
-            if(const DirectSVFGEdge* dirEdge = SVFUtil::dyn_cast<DirectSVFGEdge>(*it))
+            if(const DirectSVFGEdge* dirEdge = SVFUtil::dyn_cast<DirectSVFGEdge>(it))
             {
                 DBOUT(DDDA, SVFUtil::outs() << "\t\t==backtrace directVF svfgNode " <<
                       dirEdge->getDstID() << " --> " << dirEdge->getSrcID() << "\n");
@@ -447,7 +449,7 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack())
         {
-            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
+            if(const auto* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
             {
                 const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId());
@@ -481,9 +483,9 @@ protected:
             CallInstSet csSet;
             /// use pre-analysis call graph to approximate all potential callsites
             _ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fun,csSet);
-            for(CallInstSet::const_iterator it = csSet.begin(), eit = csSet.end(); it!=eit; ++it)
+            for(const auto *it : csSet)
             {
-                NodeID funPtr = _pag->getFunPtr(*it);
+                NodeID funPtr = _pag->getFunPtr(it);
                 DPIm funPtrDpm(dpm);
                 funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
@@ -748,14 +750,14 @@ protected:
         }
     }
 
-    bool outOfBudgetQuery;			///< Whether the current query is out of step limits
-    PAG* _pag;						///< PAG
-    SVFG* _svfg;					///< SVFG
-    AndersenWaveDiff* _ander;		///< Andersen's analysis
+    bool outOfBudgetQuery{};			///< Whether the current query is out of step limits
+    PAG* _pag{};						///< PAG
+    SVFG* _svfg{};					///< SVFG
+    AndersenWaveDiff* _ander{};		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;
-    PTACallGraph* _callGraph;		///< CallGraph
-    CallGraphSCC* _callGraphSCC;	///< SCC for CallGraph
-    SVFGSCC* _svfgSCC;				///< SCC for SVFG
+    PTACallGraph* _callGraph{};		///< CallGraph
+    CallGraphSCC* _callGraphSCC{};	///< SCC for CallGraph
+    SVFGSCC* _svfgSCC{};				///< SCC for SVFG
     DPTItemSet backwardVisited;		///< visited map during backward traversing
     DPImToCPtSetMap dpmToTLCPtSetMap;	///< points-to caching map for top-level vars
     DPImToCPtSetMap dpmToADCPtSetMap;	///< points-to caching map for address-taken vars
@@ -764,7 +766,7 @@ protected:
     DPMToCVarMap loadToPTCVarMap;	///< map a load dpm to its cvar pointed by its pointer operand
     DPTItemSet outOfBudgetDpms;		///< out of budget dpm set
     StoreToPMSetMap storeToDPMs;	///< map store to set of DPM which have been stong updated there
-    DDAStat* ddaStat;				///< DDA stat
+    DDAStat* ddaStat{};				///< DDA stat
     SVFGBuilder svfgBuilder;			///< SVFG Builder
 };
 

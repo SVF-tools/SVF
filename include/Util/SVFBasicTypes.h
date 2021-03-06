@@ -48,21 +48,21 @@
 namespace SVF
 {
 
-typedef unsigned u32_t;
-typedef unsigned long long u64_t;
-typedef signed s32_t;
-typedef signed long Size_t;
+using u32_t = unsigned int;
+using u64_t = unsigned long long;
+using s32_t = int;
+using Size_t = long;
 
-typedef u32_t NodeID;
-typedef u32_t EdgeID;
-typedef unsigned SymID;
-typedef unsigned CallSiteID;
-typedef unsigned ThreadID;
-typedef unsigned Version;
+using NodeID = u32_t;
+using EdgeID = u32_t;
+using SymID = unsigned int;
+using CallSiteID = unsigned int;
+using ThreadID = unsigned int;
+using Version = unsigned int;
 
-typedef llvm::SparseBitVector<> NodeBS;
-typedef NodeBS PointsTo;
-typedef PointsTo AliasSet;
+using NodeBS = llvm::SparseBitVector<>;
+using PointsTo = NodeBS;
+using AliasSet = PointsTo;
 
 template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<Key>> 
@@ -83,22 +83,22 @@ using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 template <typename T, unsigned N>
 using SmallVector = llvm::SmallVector<T, N>;
 
-typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::pair<NodeID, Version> VersionedVar;
-typedef OrderedSet<NodeID> OrderedNodeSet;
-typedef Set<NodeID> NodeSet;
-typedef Set<NodePair> NodePairSet;
-typedef Map<NodePair,NodeID> NodePairMap;
-typedef std::vector<NodeID> NodeVector;
-typedef std::vector<EdgeID> EdgeVector;
-typedef std::stack<NodeID> NodeStack;
-typedef std::list<NodeID> NodeList;
-typedef std::deque<NodeID> NodeDeque;
-typedef SmallVector<u32_t,16> SmallVector16;
-typedef SmallVector<u32_t,8> SmallVector8;
-typedef NodeSet EdgeSet;
-typedef SmallVector16 CallStrCxt;
-typedef llvm::StringMap<u32_t> StringMap;
+using NodePair = std::pair<NodeID, NodeID>;
+using VersionedVar = std::pair<NodeID, Version>;
+using OrderedNodeSet = OrderedSet<NodeID>;
+using NodeSet = Set<NodeID>;
+using NodePairSet = Set<NodePair>;
+using NodePairMap = Map<NodePair, NodeID>;
+using NodeVector = std::vector<NodeID>;
+using EdgeVector = std::vector<EdgeID>;
+using NodeStack = std::stack<NodeID>;
+using NodeList = std::list<NodeID>;
+using NodeDeque = std::deque<NodeID>;
+using SmallVector16 = SmallVector<u32_t, 16>;
+using SmallVector8 = SmallVector<u32_t, 8>;
+using EdgeSet = NodeSet;
+using CallStrCxt = SmallVector16;
+using StringMap = llvm::StringMap<u32_t>;
 
 /// LLVM debug macros, define type of your DEBUG model of each pass
 #define DBOUT(TYPE, X) 	DEBUG_WITH_TYPE(TYPE, X)
@@ -135,7 +135,7 @@ class SVFValue
 {
 
 public:
-    typedef s32_t GNodeK;
+    using GNodeK = s32_t;
 
     enum SVFValKind
     {

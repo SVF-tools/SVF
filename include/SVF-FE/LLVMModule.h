@@ -41,10 +41,10 @@ class LLVMModuleSet
 {
 public:
 
-    typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef Map<const SVFFunction*, const SVFFunction*> FunDeclToDefMapTy;
-    typedef Map<const SVFFunction*, FunctionSetType> FunDefToDeclsMapTy;
-    typedef Map<const GlobalVariable*, GlobalVariable*> GlobalDefToRepMapTy;
+    using FunctionSetType = std::vector<const SVFFunction *>;
+    using FunDeclToDefMapTy = Map<const SVFFunction *, const SVFFunction *>;
+    using FunDefToDeclsMapTy = Map<const SVFFunction *, FunctionSetType>;
+    using GlobalDefToRepMapTy = Map<const GlobalVariable *, GlobalVariable *>;
 
 private:
     static LLVMModuleSet *llvmModuleSet;
@@ -121,7 +121,7 @@ public:
     bool hasDefinition(const SVFFunction *fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
-        FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
+        auto it = FunDeclToDefMap.find(fun);
         return it != FunDeclToDefMap.end();
     }
 
@@ -133,7 +133,7 @@ public:
     const SVFFunction *getDefinition(const SVFFunction *fun) const
     {
         assert(fun->isDeclaration() && "not a function declaration?");
-        FunDeclToDefMapTy::const_iterator it = FunDeclToDefMap.find(fun);
+        auto it = FunDeclToDefMap.find(fun);
         assert(it != FunDeclToDefMap.end() && "has no definition?");
         return it->second;
     }
@@ -153,7 +153,7 @@ public:
         if(fun->isDeclaration() && hasDefinition(fun))
         	funDef = getDefinition(fun);
 
-    	FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
+    	auto it = FunDefToDeclsMap.find(funDef);
     	return it != FunDefToDeclsMap.end();
     }
 
@@ -168,7 +168,7 @@ public:
         if(fun->isDeclaration() && hasDefinition(fun))
         	funDef = getDefinition(fun);
 
-        FunDefToDeclsMapTy::const_iterator it = FunDefToDeclsMap.find(funDef);
+        auto it = FunDefToDeclsMap.find(funDef);
         assert(it != FunDefToDeclsMap.end() && "does not have a function definition (body)?");
         return it->second;
     }
@@ -176,13 +176,13 @@ public:
     /// Global to rep
     bool hasGlobalRep(const GlobalVariable *val) const
     {
-        GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
+        auto it = GlobalDefToRepMap.find(val);
         return it != GlobalDefToRepMap.end();
     }
 
     GlobalVariable *getGlobalRep(const GlobalVariable *val) const
     {
-        GlobalDefToRepMapTy::const_iterator it = GlobalDefToRepMap.find(val);
+        auto it = GlobalDefToRepMap.find(val);
         assert(it != GlobalDefToRepMap.end() && "has no rep?");
         return it->second;
     }
@@ -217,8 +217,8 @@ public:
                 return false;
             }
 
-            llvm::ConstantAsMetadata *flagConstMetadata = SVFUtil::dyn_cast<llvm::ConstantAsMetadata>(ctirModuleFlag);
-            ConstantInt *flagConstInt = SVFUtil::dyn_cast<ConstantInt>(flagConstMetadata->getValue());
+            auto *flagConstMetadata = SVFUtil::dyn_cast<llvm::ConstantAsMetadata>(ctirModuleFlag);
+            auto *flagConstInt = SVFUtil::dyn_cast<ConstantInt>(flagConstMetadata->getValue());
             if (flagConstInt->getZExtValue() != cppUtil::ctir::moduleFlagValue)
             {
                 return false;

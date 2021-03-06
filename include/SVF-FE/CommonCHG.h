@@ -16,8 +16,8 @@
 namespace SVF
 {
 
-typedef Set<const GlobalValue*> VTableSet;
-typedef Set<const SVFFunction*> VFunSet;
+using VTableSet = Set<const GlobalValue *>;
+using VFunSet = Set<const SVFFunction *>;
 
 /// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
 class CommonCHGraph
@@ -36,7 +36,7 @@ public:
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
     virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
 
-    CHGKind getKind(void) const
+    CHGKind getKind() const
     {
         return kind;
     }

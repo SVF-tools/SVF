@@ -47,12 +47,12 @@ class SVFModule;
  * Multiple calls from function A to B are merged into one call edge
  * Each call edge has a set of direct callsites and a set of indirect callsites
  */
-typedef GenericEdge<PTACallGraphNode> GenericCallGraphEdgeTy;
+using GenericCallGraphEdgeTy = GenericEdge<PTACallGraphNode>;
 class PTACallGraphEdge : public GenericCallGraphEdgeTy
 {
 
 public:
-    typedef Set<const CallBlockNode*> CallInstSet;
+    using CallInstSet = Set<const CallBlockNode *>;
     enum CEDGEK
     {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
@@ -163,21 +163,21 @@ public:
 
     virtual const std::string toString() const;
 
-    typedef GenericNode<PTACallGraphNode,PTACallGraphEdge>::GEdgeSetTy CallGraphEdgeSet;
+    using CallGraphEdgeSet = GenericNode<PTACallGraphNode, PTACallGraphEdge>::GEdgeSetTy;
 
 };
 
 /*
  * Call Graph node representing a function
  */
-typedef GenericNode<PTACallGraphNode,PTACallGraphEdge> GenericCallGraphNodeTy;
+using GenericCallGraphNodeTy = GenericNode<PTACallGraphNode, PTACallGraphEdge>;
 class PTACallGraphNode : public GenericCallGraphNodeTy
 {
 
 public:
-    typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef PTACallGraphEdge::CallGraphEdgeSet::iterator iterator;
-    typedef PTACallGraphEdge::CallGraphEdgeSet::const_iterator const_iterator;
+    using CallGraphEdgeSet = PTACallGraphEdge::CallGraphEdgeSet;
+    using iterator = PTACallGraphEdge::CallGraphEdgeSet::iterator;
+    using const_iterator = PTACallGraphEdge::CallGraphEdgeSet::const_iterator;
 
 private:
     const SVFFunction* fun;
@@ -214,21 +214,21 @@ public:
 /*!
  * Pointer Analysis Call Graph used internally for various pointer analysis
  */
-typedef GenericGraph<PTACallGraphNode,PTACallGraphEdge> GenericCallGraphTy;
+using GenericCallGraphTy = GenericGraph<PTACallGraphNode, PTACallGraphEdge>;
 class PTACallGraph : public GenericCallGraphTy
 {
 
 public:
-    typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
-    typedef Map<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef Map<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
-    typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
-    typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
-    typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
-    typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
-    typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
-    typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
+    using CallGraphEdgeSet = PTACallGraphEdge::CallGraphEdgeSet;
+    using FunToCallGraphNodeMap = Map<const SVFFunction *, PTACallGraphNode *>;
+    using CallInstToCallGraphEdgesMap = Map<const CallBlockNode *, CallGraphEdgeSet>;
+    using CallSitePair = std::pair<const CallBlockNode *, const SVFFunction *>;
+    using CallSiteToIdMap = Map<CallSitePair, CallSiteID>;
+    using IdToCallSiteMap = Map<CallSiteID, CallSitePair>;
+    using FunctionSet = Set<const SVFFunction *>;
+    using CallEdgeMap = OrderedMap<const CallBlockNode *, FunctionSet>;
+    using CallGraphEdgeIter = CallGraphEdgeSet::iterator;
+    using CallGraphEdgeConstIter = CallGraphEdgeSet::const_iterator;
 
     enum CGEK
     {
@@ -287,7 +287,7 @@ public:
     }
     inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const
     {
-        CallEdgeMap::const_iterator it = indirectCallMap.find(cs);
+        auto it = indirectCallMap.find(cs);
         assert(it!=indirectCallMap.end() && "not an indirect callsite!");
         return it->second;
     }
@@ -318,7 +318,7 @@ public:
     }
     inline PTACallGraphNode* getCallGraphNode(const SVFFunction* fun) const
     {
-        FunToCallGraphNodeMap::const_iterator it = funToCallGraphNodeMap.find(fun);
+        auto it = funToCallGraphNodeMap.find(fun);
         assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
         return it->second;
     }
@@ -329,7 +329,7 @@ public:
     inline CallSiteID addCallSite(const CallBlockNode* cs, const SVFFunction* callee)
     {
         std::pair<const CallBlockNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        auto it = csToIdMap.find(newCS);
         //assert(it == csToIdMap.end() && "cannot add a callsite twice");
         if(it == csToIdMap.end())
         {
@@ -343,19 +343,19 @@ public:
     inline CallSiteID getCallSiteID(const CallBlockNode* cs, const SVFFunction* callee) const
     {
         CallSitePair newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        auto it = csToIdMap.find(newCS);
         assert(it != csToIdMap.end() && "callsite id not found! This maybe a partially resolved callgraph, please check the indCallEdge limit");
         return it->second;
     }
     inline bool hasCallSiteID(const CallBlockNode* cs, const SVFFunction* callee) const
     {
         CallSitePair newCS(std::make_pair(cs, callee));
-        CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
+        auto it = csToIdMap.find(newCS);
         return it != csToIdMap.end();
     }
     inline const CallSitePair& getCallSitePair(CallSiteID id) const
     {
-        IdToCallSiteMap::const_iterator it = idToCSMap.find(id);
+        auto it = idToCSMap.find(id);
         assert(it != idToCSMap.end() && "cannot find call site for this CallSiteID");
         return (it->second);
     }
@@ -382,7 +382,7 @@ public:
     {
         if(hasCallGraphEdge(cs))
         {
-            for (CallGraphEdgeSet::const_iterator it = getCallEdgeBegin(cs), eit =
+            for (auto it = getCallEdgeBegin(cs), eit =
                         getCallEdgeEnd(cs); it != eit; ++it)
             {
                 callees.insert((*it)->getDstNode()->getFunction());
@@ -399,14 +399,14 @@ public:
     }
     inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallBlockNode* inst) const
     {
-        CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
+        auto it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");
         return it->second.begin();
     }
     inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(const CallBlockNode* inst) const
     {
-        CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
+        auto it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");
         return it->second.end();
@@ -459,7 +459,7 @@ struct GraphTraits<Inverse<SVF::PTACallGraphNode *> > : public GraphTraits<Inver
 
 template<> struct GraphTraits<SVF::PTACallGraph*> : public GraphTraits<SVF::GenericGraph<SVF::PTACallGraphNode,SVF::PTACallGraphEdge>* >
 {
-    typedef SVF::PTACallGraphNode *NodeRef;
+    using NodeRef = SVF::PTACallGraphNode *;
 };
 
 } // End namespace llvm

@@ -22,7 +22,7 @@ class MTAResultValidator
 {
 
 public:
-    typedef int INTERLEV_FLAG;
+    using INTERLEV_FLAG = int;
     MTAResultValidator(MHP* mh) :
         mhp(mh)
     {
@@ -159,7 +159,7 @@ private:
 class RaceResultValidator
 {
 public:
-    typedef int RC_FLAG;
+    using RC_FLAG = int ;
 
     /*!
      * Data structure for recording access pairs for the validation.

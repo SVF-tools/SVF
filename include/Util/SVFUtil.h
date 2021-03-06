@@ -104,8 +104,10 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
         return (lpts.count() < rpts.count());
     else
     {
-        PointsTo::iterator bit = lpts.begin(), eit = lpts.end();
-        PointsTo::iterator rbit = rpts.begin(), reit = rpts.end();
+        PointsTo::iterator bit = lpts.begin();
+        PointsTo::iterator eit = lpts.end();
+        PointsTo::iterator rbit = rpts.begin();
+        PointsTo::iterator reit = rpts.end();
         for (; bit != eit && rbit != reit; bit++, rbit++)
         {
             if (*bit != *rbit)
@@ -132,7 +134,7 @@ inline bool isIntrinsicFun(const Function* func)
 /// Return true if it is an intrinsic instruction
 inline bool isIntrinsicInst(const Instruction* inst)
 {
-    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst)) {
+    if (const auto* call = llvm::dyn_cast<llvm::CallBase>(inst)) {
         const Function* func = call->getCalledFunction();
         if (isIntrinsicFun(func)) {
             return true;
@@ -150,7 +152,7 @@ inline bool isCallSite(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
 {
-	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+	if(const auto* inst = SVFUtil::dyn_cast<Instruction>(val))
 		return SVFUtil::isCallSite(inst);
 	else
 		return false;

@@ -208,7 +208,7 @@ public:
     {
         assert(F);
         //Check the cache first; everything below is slower.
-        Map<const SVFFunction*, bool>::iterator i_iec= isext_cache.find(F);
+        auto i_iec= isext_cache.find(F);
         if(i_iec != isext_cache.end())
             return i_iec->second;
 

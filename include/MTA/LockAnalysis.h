@@ -35,32 +35,32 @@ public:
         TDUnlocked,  //  stmt is unlocked
     };
 
-    typedef CxtStmt CxtLock;
-    typedef CxtProc CxtLockProc;
+    using CxtLock = CxtStmt;
+    using CxtLockProc = CxtProc;
 
-    typedef NodeBS LockSet;
-    typedef TCT::InstVec InstVec;
-    typedef Set<const Instruction*> InstSet;
-    typedef InstSet CISpan;
-    typedef Map<const Instruction*, CISpan>CILockToSpan;
-    typedef Set<const Function*> FunSet;
-    typedef Map<const Instruction*, InstSet> InstToInstSetMap;
-    typedef Map<const CxtStmt, ValDomain> CxtStmtToLockFlagMap;
-    typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef Set<CxtStmt> LockSpan;
-    typedef Set<CxtStmt> CxtStmtSet;
-    typedef Set<CxtLock> CxtLockSet;
+    using LockSet = NodeBS;
+    using InstVec = TCT::InstVec;
+    using InstSet = Set<const Instruction*>;
+    using CISpan = InstSet;
+    using CILockToSpan = Map<const Instruction*, CISpan>;
+    using FunSet = Set<const Function*>;
+    using InstToInstSetMap = Map<const Instruction*, InstSet>;
+    using CxtStmtToLockFlagMap = Map<const CxtStmt, ValDomain>;
+    using CxtStmtWorkList = FIFOWorkList<CxtStmt>;
+    using LockSpan = Set<CxtStmt>;
+    using CxtStmtSet = Set<CxtStmt>;
+    using CxtLockSet = Set<CxtLock>;
 
-    typedef Map<CxtLock, LockSpan> CxtLockToSpan;
-    typedef Map<CxtLock, NodeBS> CxtLockToLockSet;
-    typedef Map<const Instruction*, NodeBS> LockSiteToLockSet;
-    typedef Map<const Instruction*, LockSpan> InstToCxtStmtSet;
-    typedef Map<const CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
-    typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
-    typedef set<CxtLockProc> CxtLockProcSet;
+    using CxtLockToSpan = Map<CxtLock, LockSpan>;
+    using CxtLockToLockSet = Map<CxtLock, NodeBS>;
+    using LockSiteToLockSet = Map<const Instruction*, NodeBS>;
+    using InstToCxtStmtSet = Map<const Instruction*, LockSpan>;
+    using CxtStmtToCxtLockSet = Map<const CxtStmt, CxtLockSet>;
+    using CxtLockProcVec = FIFOWorkList<CxtLockProc>;
+    using CxtLockProcSet = set<CxtLockProc>;
 
-    typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef Map<FuncPair, bool> FuncPairToBool;
+    using FuncPair = std::pair<const Function*,const Function*>;
+    using FuncPairToBool = Map<FuncPair, bool>;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
     {

@@ -37,12 +37,12 @@ private:
 public:
     static char ID;
     BreakConstantGEPs() : ModulePass(ID) {}
-    StringRef getPassName() const
+    StringRef getPassName() const override
     {
         return "Remove Constant GEP Expressions";
     }
-    virtual bool runOnModule (Module & M);
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const
+    bool runOnModule (Module & M) override;
+    void getAnalysisUsage(AnalysisUsage &AU) const override
     {
         // This pass does not modify the control-flow graph of the function
         AU.setPreservesCFG();
@@ -66,11 +66,11 @@ private:
 public:
     static char ID;
     MergeFunctionRets() : ModulePass(ID) {}
-    StringRef getPassName() const
+    StringRef getPassName() const override
     {
         return "unify function exit into one dummy exit basic block";
     }
-    virtual bool runOnModule (Module & M)
+     bool runOnModule (Module & M) override
     {
         UnifyFunctionExit(M);
         return true;
@@ -92,7 +92,7 @@ public:
         assert(!fn.isDeclaration() && "external function does not have DF");
         return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
     }
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const
+    void getAnalysisUsage(AnalysisUsage &AU) const override
     {
         // This pass does not modify the control-flow graph of the function
         AU.addRequired<UnifyFunctionExitNodes>();

@@ -41,7 +41,7 @@
 namespace SVF
 {
 
-typedef SCCDetection<ConstraintGraph *> CGSCC;
+using CGSCC = SCCDetection<ConstraintGraph *>;
 
 /*!
  * class CSC: cycle stride calculation
@@ -49,9 +49,9 @@ typedef SCCDetection<ConstraintGraph *> CGSCC;
 class CSC
 {
 public:
-    typedef Map<NodeID, NodeID> IdToIdMap;
-    typedef FILOWorkList<NodeID> WorkStack;
-    typedef typename IdToIdMap::iterator iterator;
+    using IdToIdMap = Map<NodeID, NodeID>;
+    using WorkStack = FILOWorkList<NodeID>;
+    using iterator = typename IdToIdMap::iterator;
 
 private:
     ConstraintGraph* _consG;

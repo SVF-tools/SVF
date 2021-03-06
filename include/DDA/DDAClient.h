@@ -39,8 +39,8 @@ public:
             candidateQueries = pag->getAllValidPtrs();
         else
         {
-            for (OrderedNodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
-                addCandidate(*it);
+            for (unsigned int it : userInput)
+                addCandidate(it);
         }
         return candidateQueries;
     }
@@ -102,15 +102,15 @@ private:
 class FunptrDDAClient : public DDAClient
 {
 private:
-    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    using VTablePtrToCallSiteMap = OrderedMap<NodeID, const CallBlockNode *>;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
     FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
     ~FunptrDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(PAG* p);
-    virtual void performStat(PointerAnalysis* pta);
+    OrderedNodeSet& collectCandidateQueries(PAG* p) override;
+    void performStat(PointerAnalysis* pta) override;
 };
 
 
@@ -122,18 +122,18 @@ class AliasDDAClient : public DDAClient
 {
 
 public:
-    typedef OrderedSet<const PAGNode*> PAGNodeSet;
+    using PAGNodeSet = OrderedSet<const PAGNode *>;
 
     AliasDDAClient(SVFModule* module) : DDAClient(module) {}
     ~AliasDDAClient() {}
 
     /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(PAG* pag);
+    OrderedNodeSet& collectCandidateQueries(PAG* pag) override;
 
-    virtual void performStat(PointerAnalysis* pta);
+    void performStat(PointerAnalysis* pta) override;
 
 private:
-    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    using VTablePtrToCallSiteMap = OrderedMap<NodeID, const CallBlockNode *>;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

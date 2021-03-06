@@ -194,7 +194,7 @@ public:
 class ContextCond
 {
 public:
-    typedef CallStrCxt::const_iterator const_iterator;
+    using const_iterator = CallStrCxt::const_iterator;
     /// Constructor
     ContextCond():concreteCxt(true)
     {
@@ -329,9 +329,9 @@ public:
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "[:";
-        for(CallStrCxt::const_iterator it = context.begin(), eit = context.end(); it!=eit; ++it)
+        for(unsigned int it : context)
         {
-            rawstr << *it << " ";
+            rawstr << it << " ";
         }
         rawstr << " ]";
         return rawstr.str();
@@ -348,8 +348,8 @@ public:
 /*!
  * Context-, flow- sensitive DPItem
  */
-typedef CondVar<ContextCond> CxtVar;
-typedef CondStdSet<CxtVar> CxtPtSet;
+using CxtVar = CondVar<ContextCond>;
+using CxtPtSet = CondStdSet<CxtVar>;
 
 template<class LocCond>
 class CxtStmtDPItem : public StmtDPItem<LocCond>
@@ -441,8 +441,8 @@ class VFPathCond : public ContextCond
 {
 
 public:
-    typedef PathCondAllocator::Condition PathCond;
-    typedef std::vector<std::pair<NodeID,NodeID> > EdgeSet;
+    using PathCond = PathCondAllocator::Condition;
+    using EdgeSet = std::vector<std::pair<NodeID, NodeID> >;
 
 public:
     /// Constructor
@@ -504,9 +504,9 @@ public:
     /// Whether Node dst has incoming edge
     inline bool hasIncomingEdge(NodeID node) const
     {
-        for(EdgeSet::const_iterator it = edges.begin(), eit =edges.end(); it!=eit; ++it)
+        for(const auto & edge : edges)
         {
-            if(it->second == node)
+            if(edge.second == node)
                 return true;
         }
         return false;
@@ -514,9 +514,9 @@ public:
     /// Whether Node dst has outgoing edge
     inline bool hasOutgoingEdge(NodeID node) const
     {
-        for(EdgeSet::const_iterator it = edges.begin(), eit =edges.end(); it!=eit; ++it)
+        for(const auto & edge : edges)
         {
-            if(it->first == node)
+            if(edge.first == node)
                 return true;
         }
         return false;
@@ -585,9 +585,9 @@ public:
     {
         std::string str;
         raw_string_ostream rawstr(str);
-        for(EdgeSet::const_iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
+        for(const auto & edge : edges)
         {
-            rawstr << "(" << it->first << "," << it->second << ")";
+            rawstr << "(" << edge.first << "," << edge.second << ")";
         }
         return rawstr.str();
     }
@@ -597,9 +597,9 @@ public:
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "[:";
-        for(CallStrCxt::const_iterator it = context.begin(), eit = context.end(); it!=eit; ++it)
+        for(unsigned int it : context)
         {
-            rawstr << *it << " ";
+            rawstr << it << " ";
         }
         rawstr << " | ";
         rawstr << "" << path << "] " << vfEdgesTrace() ;
@@ -619,8 +619,8 @@ public:
 /*!
  * Path-sensitive DPItem
  */
-typedef CondVar<VFPathCond> VFPathVar;
-typedef CondStdSet<VFPathVar> VFPathPtSet;
+using VFPathVar = CondVar<VFPathCond>;
+using VFPathPtSet = CondStdSet<VFPathVar>;
 
 template<class LocCond>
 class PathStmtDPItem : public StmtDPItem<LocCond>
@@ -628,7 +628,7 @@ class PathStmtDPItem : public StmtDPItem<LocCond>
 private:
     VFPathCond vfpath;
 public:
-    typedef VFPathCond::PathCond PathCond;
+    using PathCond = VFPathCond::PathCond;
 
     /// Constructor
     PathStmtDPItem(const VFPathVar& var, const LocCond* locCond) :
@@ -718,7 +718,7 @@ public:
 /*!
  * Context DPItem
  */
-typedef CondVar<ContextCond> CxtVar;
+using CxtVar = CondVar<ContextCond>;
 class CxtDPItem : public DPItem
 {
 private:

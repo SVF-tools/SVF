@@ -68,147 +68,149 @@ class BddCond;
 
 
 /// LLVM Basic classes
-typedef llvm::SMDiagnostic SMDiagnostic;
-typedef llvm::LLVMContext LLVMContext;
-typedef llvm::Type Type;
-typedef llvm::Function Function;
-typedef llvm::BasicBlock BasicBlock;
-typedef llvm::Value Value;
-typedef llvm::Instruction Instruction;
-typedef llvm::CallSite CallSite;
-typedef llvm::GlobalObject GlobalObject;
-typedef llvm::GlobalValue GlobalValue;
-typedef llvm::GlobalVariable GlobalVariable;
-typedef llvm::Module Module;
-typedef llvm::CallGraph LLVMCallGraph;
-typedef llvm::User User;
-typedef llvm::Use Use;
-typedef llvm::Loop Loop;
-typedef llvm::LoopInfo LoopInfo;
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
-typedef llvm::ModulePass ModulePass;
-typedef llvm::AnalysisUsage AnalysisUsage;
+using SMDiagnostic = llvm::SMDiagnostic;
+using LLVMContext = llvm::LLVMContext;
+using Type = llvm::Type;
+using Function = llvm::Function;
+using BasicBlock = llvm::BasicBlock;
+using Value = llvm::Value;
+using Instruction = llvm::Instruction;
+using CallSite = llvm::CallSite;
+using GlobalObject = llvm::GlobalObject;
+using GlobalValue = llvm::GlobalValue;
+using GlobalVariable = llvm::GlobalVariable;
+using Module = llvm::Module;
+using LLVMCallGraph = llvm::CallGraph;
+using User = llvm::User;
+using Use = llvm::Use;
+using Loop = llvm::Loop;
+using LoopInfo = llvm::LoopInfo;
+using UnifyFunctionExitNodes = llvm::UnifyFunctionExitNodes;
+using ModulePass = llvm::ModulePass;
+using AnalysisUsage = llvm::AnalysisUsage;
 
 /// LLVM outputs
-typedef llvm::raw_ostream raw_ostream;
-typedef llvm::raw_string_ostream raw_string_ostream;
-typedef llvm::raw_fd_ostream raw_fd_ostream;
-typedef llvm::StringRef StringRef;
-typedef llvm::ToolOutputFile ToolOutputFile;
+using raw_ostream = llvm::raw_ostream;
+using raw_string_ostream = llvm::raw_string_ostream;
+using raw_fd_ostream = llvm::raw_fd_ostream;
+using StringRef = llvm::StringRef;
+using ToolOutputFile = llvm::ToolOutputFile;
 
 /// LLVM types
-typedef llvm::StructType StructType;
-typedef llvm::ArrayType ArrayType;
-typedef llvm::PointerType PointerType;
-typedef llvm::FunctionType FunctionType;
-typedef llvm::VectorType VectorType;
-typedef llvm::MetadataAsValue MetadataAsValue;
-typedef llvm::BlockAddress BlockAddress;
+using StructType = llvm::StructType;
+using ArrayType = llvm::ArrayType;
+using PointerType = llvm::PointerType;
+using FunctionType = llvm::FunctionType;
+using VectorType = llvm::VectorType;
+using MetadataAsValue = llvm::MetadataAsValue;
+using BlockAddress = llvm::BlockAddress;
 
 /// LLVM data layout
-typedef llvm::DataLayout DataLayout;
-typedef llvm::StructLayout StructLayout;
-typedef llvm::SmallVector<BasicBlock*, 8> SmallBBVector;
-typedef llvm::ConstantStruct ConstantStruct;
-typedef llvm::MemoryLocation MemoryLocation;
+using DataLayout = llvm::DataLayout;
+using StructLayout = llvm::StructLayout;
+using SmallBBVector = llvm::SmallVector<BasicBlock *, 8>;
+using ConstantStruct = llvm::ConstantStruct;
+using MemoryLocation = llvm::MemoryLocation;
 
 /// LLVM Aliases and constants
-typedef llvm::Argument Argument;
-typedef llvm::Constant Constant;
-typedef llvm::ConstantData ConstantData;
-typedef llvm::ConstantExpr ConstantExpr;
-typedef llvm::ConstantAggregate ConstantAggregate;
-typedef llvm::ConstantPointerNull ConstantPointerNull;
-typedef llvm::ConstantArray ConstantArray;
-typedef llvm::GlobalAlias GlobalAlias;
-typedef llvm::AliasResult AliasResult;
-typedef llvm::ModRefInfo ModRefInfo;
-typedef llvm::AnalysisID AnalysisID;
-typedef llvm::ConstantDataArray ConstantDataArray;
+using Argument = llvm::Argument;
+using Constant = llvm::Constant;
+using ConstantData = llvm::ConstantData;
+using ConstantExpr = llvm::ConstantExpr;
+using ConstantAggregate = llvm::ConstantAggregate;
+using ConstantPointerNull = llvm::ConstantPointerNull;
+using ConstantArray = llvm::ConstantArray;
+using GlobalAlias = llvm::GlobalAlias;
+using AliasResult = llvm::AliasResult;
+using ModRefInfo = llvm::ModRefInfo;
+using AnalysisID = llvm::AnalysisID;
+using ConstantDataArray = llvm::ConstantDataArray;
 
 /// LLVM metadata
-typedef llvm::NamedMDNode NamedMDNode;
-typedef llvm::MDString MDString;
-typedef llvm::MDNode MDNode;
+using NamedMDNode = llvm::NamedMDNode;
+using MDString = llvm::MDString;
+using MDNode = llvm::MDNode;
 
 
 /// LLVM Instructions
-typedef llvm::AllocaInst AllocaInst;
-typedef llvm::CallInst CallInst;
-typedef llvm::InvokeInst InvokeInst;
-typedef llvm::CallBrInst CallBrInst;
-typedef llvm::StoreInst StoreInst;
-typedef llvm::LoadInst LoadInst;
-typedef llvm::PHINode PHINode;
-typedef llvm::GetElementPtrInst GetElementPtrInst;
-typedef llvm::CastInst CastInst;
-typedef llvm::BitCastInst BitCastInst;
-typedef llvm::ReturnInst ReturnInst;
-typedef llvm::ConstantInt ConstantInt;
-typedef llvm::SelectInst SelectInst;
-typedef llvm::IntToPtrInst IntToPtrInst;
-typedef llvm::CmpInst CmpInst;
-typedef llvm::BranchInst BranchInst;
-typedef llvm::SwitchInst SwitchInst;
-typedef llvm::ExtractValueInst  ExtractValueInst;
-typedef llvm::InsertValueInst InsertValueInst;
-typedef llvm::BinaryOperator BinaryOperator;
-typedef llvm::UnaryOperator UnaryOperator;
-typedef llvm::PtrToIntInst PtrToIntInst;
-typedef llvm::VAArgInst VAArgInst;
-typedef llvm::ExtractElementInst ExtractElementInst;
-typedef llvm::InsertElementInst InsertElementInst;
-typedef llvm::ShuffleVectorInst ShuffleVectorInst;
-typedef llvm::LandingPadInst LandingPadInst;
-typedef llvm::ResumeInst ResumeInst;
-typedef llvm::UnreachableInst UnreachableInst;
-typedef llvm::FenceInst FenceInst;
-typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
-typedef llvm::AtomicRMWInst AtomicRMWInst;
-typedef llvm::UndefValue UndefValue;
+using AllocaInst = llvm::AllocaInst;
+using CallInst = llvm::CallInst;
+using InvokeInst = llvm::InvokeInst;
+using CallBrInst = llvm::CallBrInst;
+using StoreInst = llvm::StoreInst;
+using LoadInst = llvm::LoadInst;
+using PHINode = llvm::PHINode;
+using GetElementPtrInst = llvm::GetElementPtrInst;
+using CastInst = llvm::CastInst;
+using BitCastInst = llvm::BitCastInst;
+using ReturnInst = llvm::ReturnInst;
+using ConstantInt = llvm::ConstantInt;
+using SelectInst = llvm::SelectInst;
+using IntToPtrInst = llvm::IntToPtrInst;
+using CmpInst = llvm::CmpInst;
+using BranchInst = llvm::BranchInst;
+using SwitchInst = llvm::SwitchInst;
+using ExtractValueInst = llvm::ExtractValueInst;
+using InsertValueInst = llvm::InsertValueInst;
+using BinaryOperator = llvm::BinaryOperator;
+using UnaryOperator = llvm::UnaryOperator;
+using PtrToIntInst = llvm::PtrToIntInst;
+using VAArgInst = llvm::VAArgInst;
+using ExtractElementInst = llvm::ExtractElementInst;
+using InsertElementInst = llvm::InsertElementInst;
+using ShuffleVectorInst = llvm::ShuffleVectorInst;
+using LandingPadInst = llvm::LandingPadInst;
+using ResumeInst = llvm::ResumeInst;
+using UnreachableInst = llvm::UnreachableInst;
+using FenceInst = llvm::FenceInst;
+using AtomicCmpXchgInst = llvm::AtomicCmpXchgInst;
+using AtomicRMWInst = llvm::AtomicRMWInst;
+using UndefValue = llvm::UndefValue;
+
 #if (LLVM_VERSION_MAJOR >= 9)
-typedef llvm::FunctionCallee FunctionCallee;
+using FunctionCallee = llvm::FunctionCallee;
 #endif
 
 /// LLVM scalar evolution
-typedef llvm::ScalarEvolutionWrapperPass ScalarEvolutionWrapperPass;
-typedef llvm::ScalarEvolution ScalarEvolution;
-typedef llvm::SCEVAddRecExpr SCEVAddRecExpr;
-typedef llvm::SCEVConstant SCEVConstant;
-typedef llvm::SCEV SCEV;
+using ScalarEvolutionWrapperPass = llvm::ScalarEvolutionWrapperPass;
+using ScalarEvolution = llvm::ScalarEvolution;
+using SCEVAddRecExpr = llvm::SCEVAddRecExpr;
+using SCEVConstant = llvm::SCEVConstant;
+using SCEV = llvm::SCEV;
 
 /// LLVM Dominators
-typedef llvm::DominanceFrontier DominanceFrontier;
-typedef llvm::DominatorTree DominatorTree;
-typedef llvm::PostDominatorTree PostDominatorTree;
-typedef llvm::DomTreeNode DomTreeNode;
-typedef llvm::DominanceFrontierBase<BasicBlock, false> DominanceFrontierBase;
-typedef llvm::PostDominatorTreeWrapperPass PostDominatorTreeWrapperPass;
-typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
+using DominanceFrontier = llvm::DominanceFrontier;
+using DominatorTree = llvm::DominatorTree;
+using PostDominatorTree = llvm::PostDominatorTree;
+using DomTreeNode = llvm::DomTreeNode;
+using DominanceFrontierBase = llvm::DominanceFrontierBase<BasicBlock, false>;
+using PostDominatorTreeWrapperPass = llvm::PostDominatorTreeWrapperPass;
+using LoopInfoWrapperPass = llvm::LoopInfoWrapperPass;
 
 /// LLVM Iterators
-typedef llvm::inst_iterator inst_iterator;
-typedef llvm::succ_const_iterator succ_const_iterator;
-typedef llvm::const_inst_iterator const_inst_iterator;
-typedef llvm::const_pred_iterator const_pred_iterator;
-typedef llvm::gep_type_iterator gep_type_iterator;
-typedef llvm::bridge_gep_iterator bridge_gep_iterator;
-typedef llvm::GraphPrinter GraphPrinter;
-typedef llvm::IRBuilder<> IRBuilder;
-typedef llvm::IntegerType IntegerType;
+using inst_iterator = llvm::inst_iterator;
+using succ_const_iterator = llvm::succ_const_iterator;
+using const_inst_iterator = llvm::const_inst_iterator;
+using const_pred_iterator = llvm::const_pred_iterator;
+using gep_type_iterator = llvm::gep_type_iterator;
+using bridge_gep_iterator = llvm::bridge_gep_iterator;
+using GraphPrinter = llvm::GraphPrinter;
+using IRBuilder = llvm::IRBuilder<>;
+using IntegerType = llvm::IntegerType;
 
 /// LLVM debug information
-typedef llvm::DebugInfoFinder DebugInfoFinder;
-typedef llvm::DIType DIType;
-typedef llvm::DIBasicType DIBasicType;
-typedef llvm::DICompositeType DICompositeType;
-typedef llvm::DIDerivedType DIDerivedType;
-typedef llvm::DISubroutineType DISubroutineType;
-typedef llvm::DISubprogram DISubprogram;
-typedef llvm::DISubrange DISubrange;
-typedef llvm::DINode DINode;
-typedef llvm::DINodeArray DINodeArray;
-typedef llvm::DITypeRefArray DITypeRefArray;
+using DebugInfoFinder = llvm::DebugInfoFinder;
+using DIType = llvm::DIType;
+using DIBasicType = llvm::DIBasicType;
+using DICompositeType = llvm::DICompositeType;
+using DIDerivedType = llvm::DIDerivedType;
+using DISubroutineType = llvm::DISubroutineType;
+using DISubprogram = llvm::DISubprogram;
+using DISubrange = llvm::DISubrange;
+using DINode = llvm::DINode;
+using DINodeArray = llvm::DINodeArray;
+using DITypeRefArray = llvm::DITypeRefArray;
+
 namespace dwarf = llvm::dwarf;
 
 class SVFFunction : public SVFValue

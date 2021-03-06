@@ -40,16 +40,16 @@
 namespace SVF
 {
 
-typedef NodeID MRID;
-typedef NodeID MRVERID;
-typedef NodeID MRVERSION;
+using MRID = NodeID;
+using MRVERID = NodeID;
+using MRVERSION = NodeID;
 
 /// Memory Region class
 class MemRegion
 {
 
 public:
-    typedef DdNode* Condition;
+    using Condition = DdNode *;
 private:
     /// region ID 0 is reserved
     static Size_t totalMRNum;
@@ -87,11 +87,10 @@ public:
     {
         std::string str;
         str += "pts{";
-        for (PointsTo::iterator ii = cptsSet.begin(), ie = cptsSet.end();
-                ii != ie; ii++)
+        for (unsigned int ii : cptsSet)
         {
             char int2str[16];
-            sprintf(int2str, "%d", *ii);
+            sprintf(int2str, "%d", ii);
             str += int2str;
             str += " ";
         }
@@ -133,49 +132,49 @@ class MRGenerator
 {
 
 public:
-    typedef FIFOWorkList<NodeID> WorkList;
+    using WorkList = FIFOWorkList<NodeID>;
 
     /// Get typedef from Pointer Analysis
     //@{
     //@}
     ///Define mem region set
-    typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
-    typedef Map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
-    typedef OrderedSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef Map<const SVFFunction*, PointsToList > FunToPointsToMap;
-    typedef OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
+    using MRSet = OrderedSet<const MemRegion *, MemRegion::equalMemRegion>;
+    using PAGEdgeToFunMap = Map<const PAGEdge *, const SVFFunction *>;
+    using PointsToList = OrderedSet<PointsTo, MemRegion::equalPointsTo>;
+    using FunToPointsToMap = Map<const SVFFunction *, PointsToList>;
+    using PtsToRepPtsSetMap = OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo>;
 
     /// Map a function to its region set
-    typedef Map<const SVFFunction*, MRSet> FunToMRsMap;
+    using FunToMRsMap = Map<const SVFFunction *, MRSet>;
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef Map<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef Map<const StorePE*, MRSet> StoresToMRsMap;
-    typedef Map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
+    using LoadsToMRsMap = Map<const LoadPE *, MRSet>;
+    using StoresToMRsMap = Map<const StorePE *, MRSet>;
+    using CallSiteToMRsMap = Map<const CallBlockNode *, MRSet>;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef Map<const LoadPE*, PointsTo> LoadsToPointsToMap;
-    typedef Map<const StorePE*, PointsTo> StoresToPointsToMap;
-    typedef Map<const CallBlockNode*, PointsTo> CallSiteToPointsToMap;
+    using LoadsToPointsToMap = Map<const LoadPE *, PointsTo>;
+    using StoresToPointsToMap = Map<const StorePE *, PointsTo>;
+    using CallSiteToPointsToMap = Map<const CallBlockNode *, PointsTo>;
     //@}
 
     /// Maps Mod-Ref analysis
     //@{
     /// Map a function to its indirect refs/mods of memory objects
-    typedef Map<const SVFFunction*, NodeBS> FunToNodeBSMap;
+    using FunToNodeBSMap = Map<const SVFFunction *, NodeBS>;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef Map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    using CallSiteToNodeBSMap = Map<const CallBlockNode *, NodeBS>;
     //@}
 
-    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
+    using NodeToPTSSMap = Map<NodeID, NodeBS>;
 
     /// PAG edge list
-    typedef PAG::PAGEdgeList PAGEdgeList;
+    using PAGEdgeList = PAG::PAGEdgeList;
     /// Call Graph SCC
-    typedef SCCDetection<PTACallGraph*> SCC;
+    using SCC = SCCDetection<PTACallGraph *>;
 
     MRSet& getMRSet()
     {
@@ -185,7 +184,7 @@ public:
     /// Get superset cpts set
     inline const PointsTo& getRepPointsTo(const PointsTo& cpts) const
     {
-        PtsToRepPtsSetMap::const_iterator it = cptsToRepCPtsMap.find(cpts);
+        auto it = cptsToRepCPtsMap.find(cpts);
         assert(it!=cptsToRepCPtsMap.end() && "can not find superset of cpts??");
         return it->second;
     }
@@ -313,10 +312,10 @@ protected:
     /// Get all aliased mem regions from function fun according to cpts
     virtual inline void getAliasMemRegions(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
     {
-        for(MRSet::const_iterator it = funToMRsMap[fun].begin(), eit = funToMRsMap[fun].end(); it!=eit; ++it)
+        for(const auto *it : funToMRsMap[fun])
         {
-            if(isAliasedMR(cpts,*it))
-                aliasMRs.insert(*it);
+            if(isAliasedMR(cpts,it))
+                aliasMRs.insert(it);
         }
     }
 
@@ -439,7 +438,7 @@ public:
     /// Get the function which PAG Edge located
     const SVFFunction* getFunction(const PAGEdge* pagEdge) const
     {
-        PAGEdgeToFunMap::const_iterator it = pagEdgeToFunMap.find(pagEdge);
+        auto it = pagEdgeToFunMap.find(pagEdge);
         assert(it!=pagEdgeToFunMap.end() && "can not find its function, it is a global PAG edge");
         return it->second;
     }

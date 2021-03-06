@@ -43,17 +43,17 @@ class SVFModule;
 /*!
  * Flow sensitive whole program pointer analysis
  */
-typedef WPAFSSolver<SVFG*> WPASVFGFSSolver;
+using WPASVFGFSSolver = WPAFSSolver<SVFG *>;
 class FlowSensitive : public WPASVFGFSSolver, public BVDataPTAImpl
 {
     friend class FlowSensitiveStat;
 protected:
-    typedef SVFG::SVFGEdgeSetTy SVFGEdgeSetTy;
+    using SVFGEdgeSetTy = SVFG::SVFGEdgeSetTy;
 
 public:
-    typedef BVDataPTAImpl::MutDFPTDataTy MutDFPTDataTy;
-    typedef BVDataPTAImpl::MutDFPTDataTy::DFPtsMap DFInOutMap;
-    typedef BVDataPTAImpl::MutDFPTDataTy::PtsMap PtsMap;
+    using MutDFPTDataTy = BVDataPTAImpl::MutDFPTDataTy;
+    using DFInOutMap = BVDataPTAImpl::MutDFPTDataTy::DFPtsMap;
+    using PtsMap = BVDataPTAImpl::MutDFPTDataTy::PtsMap;
 
     /// Constructor
     FlowSensitive(PAG* _pag, PTATY type = FSSPARSE_WPA) : WPASVFGFSSolver(), BVDataPTAImpl(_pag, type)
@@ -104,16 +104,16 @@ public:
     }
 
     /// Flow sensitive analysis
-    virtual void analyze();
+    void analyze() override;
 
     /// Initialize analysis
-    virtual void initialize();
+    void initialize() override;
 
     /// Finalize analysis
-    virtual void finalize();
+    void finalize() override;
 
     /// Get PTA name
-    virtual const std::string PTAName() const
+    const std::string PTAName() const override
     {
         return "FlowSensitive";
     }
@@ -138,12 +138,12 @@ public:
 
 protected:
     /// SCC detection
-    virtual NodeStack& SCCDetect();
+    NodeStack& SCCDetect() override;
 
     /// Propagation
     //@{
     /// Propagate points-to information from an edge's src node to its dst node.
-    virtual bool propFromSrcToDst(SVFGEdge* edge);
+    bool propFromSrcToDst(SVFGEdge* edge) override;
     /// Propagate points-to information along a DIRECT SVFG edge.
     virtual bool propAlongDirectEdge(const DirectSVFGEdge* edge);
     /// Propagate points-to information along an INDIRECT SVFG edge.
@@ -215,7 +215,7 @@ protected:
 
     /// Handle various constraints
     //@{
-    virtual void processNode(NodeID nodeId);
+    void processNode(NodeID nodeId) override;
     bool processSVFGNode(SVFGNode* node);
     virtual bool processAddr(const AddrSVFGNode* addr);
     virtual bool processCopy(const CopySVFGNode* copy);
@@ -228,7 +228,7 @@ protected:
     /// Update call graph
     //@{
     /// Update call graph.
-    bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+    bool updateCallGraph(const CallSiteToFunPtrMap& callsites) override;
     /// Connect nodes in SVFG.
     void connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdgeSetTy& edges);
     /// Update nodes connected during updating call graph.

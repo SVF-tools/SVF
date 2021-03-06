@@ -26,17 +26,17 @@ class MTASVFGBuilder : public SVFGBuilder
 {
 
 public:
-    typedef PointerAnalysis::CallSiteSet CallSiteSet;
-    typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
-    typedef PointerAnalysis::FunctionSet FunctionSet;
-    typedef Set<const SVFGNode*> SVFGNodeSet;
-    typedef std::vector<const SVFGNode*> SVFGNodeVec;
-    typedef NodeBS SVFGNodeIDSet;
-    typedef Set<const Instruction*> InstSet;
-    typedef std::pair<NodeID,NodeID> NodeIDPair;
+    using CallSiteSet = PointerAnalysis::CallSiteSet;
+    using CallEdgeMap = PointerAnalysis::CallEdgeMap;
+    using FunctionSet = PointerAnalysis::FunctionSet;
+    using SVFGNodeSet = Set<const SVFGNode*>;
+    using SVFGNodeVec = std::vector<const SVFGNode*>;
+    using SVFGNodeIDSet = NodeBS;
+    using InstSet Set<const Instruction*>;
+    using NodeIDPair = std::pair<NodeID,NodeID>;
 
-    typedef std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan> SVFGNodeLockSpanPair;
-    typedef Map<SVFGNodeLockSpanPair, bool> PairToBoolMap;
+    using SVFGNodeLockSpanPair = std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan>;
+    using PairToBoolMap = Map<SVFGNodeLockSpanPair, bool>;
     /// Constructor
     MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la)
     {

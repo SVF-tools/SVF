@@ -30,6 +30,8 @@
 #ifndef SVFMODULE_H_
 #define SVFMODULE_H_
 
+#include <utility>
+
 #include "Util/BasicTypes.h"
 
 namespace SVF
@@ -38,21 +40,21 @@ namespace SVF
 class SVFModule
 {
 public:
-    typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<Function*> LLVMFunctionSetType;
-    typedef std::vector<GlobalVariable*> GlobalSetType;
-    typedef std::vector<GlobalAlias*> AliasSetType;
-    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+    using FunctionSetType = std::vector<const SVFFunction *>;
+    using LLVMFunctionSetType = std::vector<Function *>;
+    using GlobalSetType = std::vector<GlobalVariable *>;
+    using AliasSetType = std::vector<GlobalAlias *>;
+    using LLVMFun2SVFFunMap = Map<const Function *, const SVFFunction *>;
 
     /// Iterators type def
-    typedef FunctionSetType::iterator iterator;
-    typedef FunctionSetType::const_iterator const_iterator;
-    typedef LLVMFunctionSetType::iterator llvm_iterator;
-    typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
-    typedef GlobalSetType::iterator global_iterator;
-    typedef GlobalSetType::const_iterator const_global_iterator;
-    typedef AliasSetType::iterator alias_iterator;
-    typedef AliasSetType::const_iterator const_alias_iterator;
+    using iterator = FunctionSetType::iterator;
+    using const_iterator = FunctionSetType::const_iterator;
+    using llvm_iterator = LLVMFunctionSetType::iterator;
+    using llvm_const_iterator = LLVMFunctionSetType::const_iterator;
+    using global_iterator = GlobalSetType::iterator;
+    using const_global_iterator = GlobalSetType::const_iterator;
+    using alias_iterator = AliasSetType::iterator;
+    using const_alias_iterator = AliasSetType::const_iterator;
 
 private:
     static std::string pagReadFromTxt;
@@ -64,7 +66,7 @@ private:
     LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
 public:
     /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
+    SVFModule(std::string moduleName = "") : moduleIdentifier(std::move(moduleName))
     {
     }
 
@@ -90,7 +92,7 @@ public:
     ///@{
     inline void addFunctionSet(Function* fun)
     {
-        SVFFunction* svfFunc = new SVFFunction(fun);
+        auto* svfFunc = new SVFFunction(fun);
         FunctionSet.push_back(svfFunc);
         LLVMFunctionSet.push_back(fun);
         LLVMFunc2SVFFunc[fun] = svfFunc;
@@ -107,7 +109,7 @@ public:
 
     inline const SVFFunction* getSVFFunction(const Function* fun) const
     {
-        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+        auto it = LLVMFunc2SVFFunc.find(fun);
         assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
         return it->second;
     }

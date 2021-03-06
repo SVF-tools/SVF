@@ -42,13 +42,13 @@ class ProgSlice
 {
 
 public:
-    typedef Set<const SVFGNode*> SVFGNodeSet;
-    typedef SVFGNodeSet::const_iterator SVFGNodeSetIter;
-    typedef PathCondAllocator::Condition Condition;
-    typedef Map<const SVFGNode*, Condition*> SVFGNodeToCondMap; 	///< map a SVFGNode to its condition during value-flow guard computation
+    using SVFGNodeSet = Set<const SVFGNode *>;
+    using SVFGNodeSetIter = SVFGNodeSet::const_iterator;
+    using Condition = PathCondAllocator::Condition;
+    using SVFGNodeToCondMap = Map<const SVFGNode *, Condition *>; 	///< map a SVFGNode to its condition during value-flow guard computation
 
-    typedef FIFOWorkList<const SVFGNode*> VFWorkList;		    ///< worklist for value-flow guard computation
-    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    using VFWorkList = FIFOWorkList<const SVFGNode *>;		    ///< worklist for value-flow guard computation
+    using CFWorkList = FIFOWorkList<const BasicBlock *>;	///< worklist for control-flow guard computation
 
     /// Constructor
     ProgSlice(const SVFGNode* src, PathCondAllocator* pa, const SVFG* graph):
@@ -221,7 +221,7 @@ protected:
     //@{
     inline Condition* getVFCond(const SVFGNode* node) const
     {
-        SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.find(node);
+        auto it = svfgNodeToCondMap.find(node);
         if(it==svfgNodeToCondMap.end())
         {
             return getFalseCond();
@@ -230,7 +230,7 @@ protected:
     }
     inline bool setVFCond(const SVFGNode* node, Condition* cond)
     {
-        SVFGNodeToCondMap::iterator it = svfgNodeToCondMap.find(node);
+        auto it = svfgNodeToCondMap.find(node);
         if(it!=svfgNodeToCondMap.end() && it->second == cond)
             return false;
 

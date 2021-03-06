@@ -41,14 +41,14 @@ class ICFGBuilder
 
 public:
 
-    typedef std::vector<const Instruction*> InstVec;
-    typedef Set<const Instruction*> BBSet;
+    using InstVec = std::vector<const Instruction *>;
+    using BBSet = Set<const Instruction *>;
 
 private:
     ICFG* icfg;
 
 public:
-    typedef FIFOWorkList<const Instruction*> WorkList;
+    using WorkList = FIFOWorkList<const Instruction *>;
 
     ICFGBuilder(ICFG* i): icfg(i)
     {

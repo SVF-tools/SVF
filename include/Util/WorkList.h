@@ -70,8 +70,8 @@ class List
         ListNode* next;
     };
 
-    typedef Set<Data> DataSet;
-    typedef ListNode Node;
+    using DataSet = Set<Data>;
+    using Node = ListNode;
 
 public:
     List()
@@ -136,8 +136,8 @@ private:
 template<class Data>
 class FIFOWorkList
 {
-    typedef Set<Data> DataSet;
-    typedef std::deque<Data> DataDeque;
+    using DataSet = Set<Data>;
+    using DataDeque = std::deque<Data>;
 public:
     FIFOWorkList() {}
 
@@ -202,8 +202,8 @@ private:
 template<class Data>
 class FILOWorkList
 {
-    typedef Set<Data> DataSet;
-    typedef std::vector<Data> DataVector;
+    using DataSet = Set<Data>;
+    using DataVector = std::vector<Data>;
 public:
     FILOWorkList() {}
 

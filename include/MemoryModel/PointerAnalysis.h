@@ -100,14 +100,14 @@ public:
 
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
-    typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
-    typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
-    typedef SCCDetection<PTACallGraph*> CallGraphSCC;
-    typedef Set<const GlobalValue*> VTableSet;
-    typedef Set<const SVFFunction*> VFunSet;
+    using AliasAnalysis = llvm::AliasAnalysis;
+    using CallSiteSet = Set<const CallBlockNode *>;
+    using CallSiteToFunPtrMap = PAG::CallSiteToFunPtrMap;
+    using FunctionSet = Set<const SVFFunction *>;
+    using CallEdgeMap = OrderedMap<const CallBlockNode *, FunctionSet>;
+    using CallGraphSCC = SCCDetection<PTACallGraph *>;
+    using VTableSet = Set<const GlobalValue *>;
+    using VFunSet = Set<const SVFFunction *>;
     //@}
 
     static const std::string aliasTestMayAlias;
@@ -356,7 +356,7 @@ public:
     }
     inline void setObjFieldInsensitive(NodeID id)
     {
-        MemObj* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
+        auto* mem =  const_cast<MemObj*>(pag->getBaseObj(id));
         mem->setFieldInsensitive();
     }
     inline bool isFieldInsensitive(NodeID id) const
@@ -380,7 +380,7 @@ public:
 
     /// Get callees from an indirect callsite
     //@{
-    inline CallEdgeMap& getIndCallMap()
+    inline CallEdgeMap& getIndCallMap() const
     {
         return getPTACallGraph()->getIndCallMap();
     }

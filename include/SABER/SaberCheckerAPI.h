@@ -54,7 +54,7 @@ public:
         CK_FCLOSE		/// File close
     };
 
-    typedef llvm::StringMap<CHECKER_TYPE> TDAPIMap;
+    using TDAPIMap = llvm::StringMap<CHECKER_TYPE>;
 
 private:
     /// API map, from a string to threadAPI type

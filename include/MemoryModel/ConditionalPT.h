@@ -130,11 +130,11 @@ private:
 template<class Element>
 class CondStdSet
 {
-    typedef OrderedSet<Element> ElementSet;
+    using ElementSet = OrderedSet<Element>;
 
 public:
-    typedef typename OrderedSet<Element>::iterator iterator;
-    typedef typename OrderedSet<Element>::const_iterator const_iterator;
+    using iterator = typename OrderedSet<Element>::iterator;
+    using const_iterator = typename OrderedSet<Element>::const_iterator;
 
     CondStdSet() {}
     ~CondStdSet() {}
@@ -300,10 +300,10 @@ template<class Cond>
 class CondPointsToSet
 {
 public:
-    typedef Map<Cond, PointsTo> CondPts;
-    typedef typename CondPts::iterator CondPtsIter;
-    typedef typename CondPts::const_iterator CondPtsConstIter;
-    typedef CondVar<Cond> SingleCondVar;
+    using CondPts = Map<Cond, PointsTo>;
+    using CondPtsIter = typename CondPts::iterator;
+    using CondPtsConstIter = typename CondPts::const_iterator;
+    using SingleCondVar = CondVar<Cond>;
 
     /// Constructor
     //@{
@@ -412,8 +412,10 @@ public:
         // Always remember give the typename when define a template variable
         if (pointsTo().size() != rhs.pointsTo().size())
             return false;
-        CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
-        CondPtsConstIter rit = rhs.cptsBegin(), erit = rhs.cptsEnd();
+        CondPtsConstIter lit = cptsBegin();
+        CondPtsConstIter elit = cptsEnd();
+        CondPtsConstIter rit = rhs.cptsBegin();
+        CondPtsConstIter erit = rhs.cptsEnd();
         for (; lit != elit && rit != erit; ++lit, ++rit)
         {
             const Cond& lc = lit->first;
@@ -433,7 +435,8 @@ public:
             return false;
         else
         {
-            CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
+            CondPtsConstIter lit = cptsBegin();
+            CondPtsConstIter elit = cptsEnd();
             for (; lit != elit; ++lit)
             {
                 const Cond& lc = lit->first;
@@ -457,7 +460,8 @@ public:
             return false;
         else
         {
-            CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
+            CondPtsConstIter lit = cptsBegin();
+            CondPtsConstIter elit = cptsEnd();
             for (; lit != elit; ++lit)
             {
                 const Cond& lc = lit->first;
@@ -483,7 +487,8 @@ public:
         if (pointsTo().empty() && rhs->pointsTo().empty())
             return false;
 
-        CondPtsConstIter it = rhs->cptsBegin(), eit = rhs->cptsEnd();
+        CondPtsConstIter it = rhs->cptsBegin();
+        CondPtsConstIter eit = rhs->cptsEnd();
         for (; it != eit; ++it)
         {
             const Cond& cond = it->first;
@@ -513,7 +518,8 @@ public:
         }
         else
         {
-            CondPtsConstIter it1 = cpts1.cptsBegin(), eit1 = cpts1.cptsEnd();
+            CondPtsConstIter it1 = cpts1.cptsBegin();
+            CondPtsConstIter eit1 = cpts1.cptsEnd();
             for (; it1 != eit1; ++it1)
             {
                 const Cond& cond = it1->first;
@@ -542,7 +548,8 @@ public:
         }
         else
         {
-            CondPtsIter it = cptsBegin(), eit = cptsEnd();
+            CondPtsIter it = cptsBegin();
+            CondPtsIter eit = cptsEnd();
             for (; it != eit; ++it)
             {
                 const Cond& cond = it->first;
@@ -633,8 +640,10 @@ public:
             return true;
         else if (pointsTo().size() == rhs.pointsTo().size())
         {
-            CondPtsConstIter lit = cptsBegin(), elit = cptsEnd();
-            CondPtsConstIter rit = rhs.cptsBegin(), erit = rhs.cptsEnd();
+            CondPtsConstIter lit = cptsBegin();
+            CondPtsConstIter elit = cptsEnd();
+            CondPtsConstIter rit = rhs.cptsBegin();
+            CondPtsConstIter erit = rhs.cptsEnd();
             for (; lit != elit && rit != erit; ++lit, ++rit)
             {
                 const Cond& lc = lit->first;
@@ -787,14 +796,14 @@ private:
             else
                 _ptIter++;
         }
-        SingleCondVar operator *(void)
+        SingleCondVar operator *()
         {
             SingleCondVar temp_var(cond(), *_ptIter);
             return temp_var;
         }
         //@}
 
-        Cond cond(void)
+        Cond cond()
         {
             return _curIter->first;
         }
@@ -808,7 +817,7 @@ private:
     };
 
 public:
-    typedef CondPtsSetIterator iterator;
+    using iterator = CondPtsSetIterator;
     /// iterators
     //@{
     inline iterator begin()

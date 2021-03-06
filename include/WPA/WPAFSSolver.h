@@ -78,9 +78,9 @@ protected:
             NodeID nodeId = topoStack.top();
             topoStack.pop();
             const NodeBS& subNodes = this->getSCCDetector()->subNodes(nodeId);
-            for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
+            for (unsigned int subNode : subNodes)
             {
-                revTopoStack.push(*it);
+                revTopoStack.push(subNode);
             }
         }
 
@@ -107,9 +107,9 @@ template<class GraphType>
 class WPASCCSolver : public WPAFSSolver<GraphType>
 {
 public:
-    typedef typename WPASolver<GraphType>::GTraits GTraits;
-    typedef typename WPASolver<GraphType>::GNODE GNODE;
-    typedef typename WPASolver<GraphType>::child_iterator child_iterator;
+    using GTraits = typename WPASolver<GraphType>::GTraits;
+    using GNODE = typename WPASolver<GraphType>::GNODE;
+    using child_iterator = typename WPASolver<GraphType>::child_iterator;
 
     WPASCCSolver() : WPAFSSolver<GraphType>() {}
 

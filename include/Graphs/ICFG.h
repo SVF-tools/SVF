@@ -42,22 +42,22 @@ class PTACallGraph;
 /*!
  * Interprocedural Control-Flow Graph (ICFG)
  */
-typedef GenericGraph<ICFGNode,ICFGEdge> GenericICFGTy;
+using GenericICFGTy = GenericGraph<ICFGNode, ICFGEdge>;
 class ICFG : public GenericICFGTy
 {
 
 public:
 
-    typedef Map<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
-    typedef ICFGEdge::ICFGEdgeSetTy ICFGEdgeSetTy;
-    typedef ICFGNodeIDToNodeMapTy::iterator iterator;
-    typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
+    using ICFGNodeIDToNodeMapTy = Map<NodeID, ICFGNode *>;
+    using ICFGEdgeSetTy = ICFGEdge::ICFGEdgeSetTy;
+    using iterator = ICFGNodeIDToNodeMapTy::iterator;
+    using const_iterator = ICFGNodeIDToNodeMapTy::const_iterator;
 
-    typedef Map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef Map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef Map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
-    typedef Map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
-    typedef Map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    using FunToFunEntryNodeMapTy = Map<const SVFFunction *, FunEntryBlockNode *>;
+    using FunToFunExitNodeMapTy = Map<const SVFFunction *, FunExitBlockNode *>;
+    using CSToCallNodeMapTy = Map<const Instruction *, CallBlockNode *>;
+    using CSToRetNodeMapTy = Map<const Instruction *, RetBlockNode *>;
+    using InstToBlockNodeMapTy = Map<const Instruction *, IntraBlockNode *>;
 
     NodeID totalICFGNode;
 
@@ -280,7 +280,7 @@ struct GraphTraits<Inverse<SVF::ICFGNode *> > : public GraphTraits<Inverse<SVF::
 
 template<> struct GraphTraits<SVF::ICFG*> : public GraphTraits<SVF::GenericGraph<SVF::ICFGNode,SVF::ICFGEdge>* >
 {
-    typedef SVF::ICFGNode *NodeRef;
+    using NodeRef = SVF::ICFGNode *;
 };
 
 } // End namespace llvm

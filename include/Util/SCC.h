@@ -41,7 +41,7 @@
 #define SCC_H_
 
 #include "Util/BasicTypes.h"	// for NodeBS
-#include <limits.h>
+#include <climits>
 #include <stack>
 #include <map>
 
@@ -56,14 +56,14 @@ class SCCDetection
 
 private:
     ///Define the GTraits and node iterator for printing
-    typedef llvm::GraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeRef          GNODE;
-    typedef typename GTraits::nodes_iterator node_iterator;
-    typedef typename GTraits::ChildIteratorType child_iterator;
-    typedef unsigned NodeID ;
+    using GTraits = llvm::GraphTraits<GraphType>;
+    using GNODE = typename GTraits::NodeRef;
+    using node_iterator = typename GTraits::nodes_iterator;
+    using child_iterator = typename GTraits::ChildIteratorType;
+    using NodeID = unsigned int ;
 
 public:
-    typedef std::stack<NodeID> GNodeStack;
+    using GNodeStack = std::stack<NodeID>;
 
     class GNodeSCCInfo
     {
@@ -113,8 +113,8 @@ public:
         NodeBS _subNodes; /// nodes in the scc represented by this node
     };
 
-    typedef Map<NodeID,GNodeSCCInfo > GNODESCCInfoMap;
-    typedef Map<NodeID, NodeID> NodeToNodeMap;
+    using GNODESCCInfoMap = Map<NodeID, GNodeSCCInfo>;
+    using NodeToNodeMap = Map<NodeID, NodeID>;
 
     SCCDetection(const GraphType &GT)
         : _graph(GT),
@@ -191,11 +191,11 @@ private:
 
     GNODESCCInfoMap  _NodeSCCAuxInfo;
 
-    const GraphType &           _graph;
-    NodeID                   _I;
-    NodeToNodeMap            _D;
-    GNodeStack             _SS;
-    GNodeStack             _T;
+    const GraphType & _graph;
+    NodeID _I;
+    NodeToNodeMap _D;
+    GNodeStack _SS;
+    GNodeStack _T;
     NodeBS repNodes;
 
     inline bool visited(NodeID n)
@@ -305,7 +305,7 @@ private:
     }
 public:
 
-    void find(void)
+    void find()
     {
         // Visit each unvisited root node.   A root node is defined
         // to be a node that has no incoming copy/skew edges

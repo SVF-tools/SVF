@@ -48,15 +48,15 @@ class SrcSnkDDA : public CFLSrcSnkSolver
 {
 
 public:
-    typedef ProgSlice::SVFGNodeSet SVFGNodeSet;
-    typedef Map<const SVFGNode*,ProgSlice*> SVFGNodeToSliceMap;
-    typedef SVFGNodeSet::const_iterator SVFGNodeSetIter;
-    typedef CxtDPItem DPIm;
-    typedef Set<DPIm> DPImSet;							///< dpitem set
-    typedef Map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
-    typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef NodeBS SVFGNodeBS;
-    typedef ProgSlice::VFWorkList WorkList;
+    using SVFGNodeSet = ProgSlice::SVFGNodeSet;
+    using SVFGNodeToSliceMap = Map<const SVFGNode *, ProgSlice *>;
+    using SVFGNodeSetIter = SVFGNodeSet::const_iterator;
+    using DPIm = CxtDPItem;
+    using DPImSet = Set<DPIm>;							///< dpitem set
+    using SVFGNodeToDPItemsMap = Map<const SVFGNode *, DPImSet>; 	///< map a SVFGNode to its visited dpitems
+    using CallSiteSet = Set<const CallBlockNode *>;
+    using SVFGNodeBS = NodeBS;
+    using WorkList = ProgSlice::VFWorkList;
 
 private:
     ProgSlice* _curSlice;		/// current program slice
@@ -225,7 +225,7 @@ public:
 
 protected:
     /// Forward traverse
-    virtual inline void FWProcessCurNode(const DPIm& item)
+    inline void FWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isSink(node))
@@ -237,7 +237,7 @@ protected:
             addToCurForwardSlice(node);
     }
     /// Backward traverse
-    virtual inline void BWProcessCurNode(const DPIm& item)
+    inline void BWProcessCurNode(const DPIm& item) override
     {
         const SVFGNode* node = getNode(item.getCurNodeID());
         if(isInCurForwardSlice(node))
@@ -246,14 +246,14 @@ protected:
         }
     }
     /// Propagate information forward by matching context
-    virtual void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge);
+    void FWProcessOutgoingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Propagate information backward without matching context, as forward analysis already did it
-    virtual void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge);
+    void BWProcessIncomingEdge(const DPIm& item, SVFGEdge* edge) override;
     /// Whether has been visited or not, in order to avoid recursion on SVFG
     //@{
     inline bool forwardVisited(const SVFGNode* node, const DPIm& item)
     {
-        SVFGNodeToDPItemsMap::const_iterator it = nodeToDPItemsMap.find(node);
+        auto it = nodeToDPItemsMap.find(node);
         if(it!=nodeToDPItemsMap.end())
             return it->second.find(item)!=it->second.end();
         else

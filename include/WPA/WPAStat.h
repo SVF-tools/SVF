@@ -86,8 +86,8 @@ public:
 class FlowSensitiveStat : public PTAStat
 {
 public:
-    typedef FlowSensitive::DFInOutMap DFInOutMap;
-    typedef FlowSensitive::PtsMap PtsMap;
+    using DFInOutMap = FlowSensitive::DFInOutMap;
+    using PtsMap = FlowSensitive::PtsMap;
 
     FlowSensitive * fspta;
 
@@ -100,7 +100,7 @@ public:
 
     virtual ~FlowSensitiveStat() {}
 
-    virtual void performStat();
+    void performStat() override;
 
 private:
     enum ENUM_INOUT
@@ -177,16 +177,16 @@ public:
 
     virtual ~VersionedFlowSensitiveStat() { }
 
-    virtual void performStat();
+    void performStat() override;
 
 private:
     void clearStat();
 
     /// For all version-related statistics.
-    void versionStat(void);
+    void versionStat();
 
     /// For all PTS size related statistics not handled by versionStat.
-    void ptsSizeStat(void);
+    void ptsSizeStat();
 
     /// Total number of versions across all objects.
     u32_t _NumVersions;

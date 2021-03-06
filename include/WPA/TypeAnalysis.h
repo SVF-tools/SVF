@@ -51,13 +51,13 @@ public:
     }
 
     /// Type analysis
-    void analyze();
+    void analyze() override;
 
     /// Initialize analysis
-    void initialize();
+    void initialize() override;
 
     /// Finalize analysis
-    virtual inline void finalize();
+    inline void finalize() override;
 
     /// Resolve callgraph based on CHA
     void callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);

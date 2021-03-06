@@ -43,13 +43,13 @@ public:
     ///@}
 
     /// Return (singleton) allocator.
-    static NodeIDAllocator *get(void);
+    static NodeIDAllocator *get();
 
     /// Deletes the (singleton) allocator.
-    static void unset(void);
+    static void unset();
 
     /// Allocate an object ID as determined by the strategy.
-    NodeID allocateObjectId(void);
+    NodeID allocateObjectId();
 
     /// Allocate a GEP object ID as determined by the strategy.
     /// allocateObjectId is still fine for GEP objects, but
@@ -60,14 +60,14 @@ public:
     NodeID allocateGepObjectId(NodeID base, u32_t offset, u32_t maxFieldLimit);
 
     /// Allocate a value ID as determined by the strategy.
-    NodeID allocateValueId(void);
+    NodeID allocateValueId();
 
     /// Notify the allocator that all symbols have had IDs allocated.
-    void endSymbolAllocation(void);
+    void endSymbolAllocation();
 
 private:
     /// Builds a node ID allocator with the strategy specified on the command line.
-    NodeIDAllocator(void);
+    NodeIDAllocator();
 
 private:
     /// These are moreso counters than amounts.

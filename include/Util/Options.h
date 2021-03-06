@@ -12,7 +12,7 @@ namespace SVF
 class Options
 {
 public:
-    Options(void) = delete;
+    Options() = delete;
 
     /// If set, only return the clock when getClk is called as getClk(true).
     /// Retrieving the clock is slow but it should be fine for a few calls.

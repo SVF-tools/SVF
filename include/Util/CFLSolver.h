@@ -46,18 +46,18 @@ class CFLSolver
 
 public:
     ///Define the GTraits and node iterator
-    typedef llvm::GraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeType          GNODE;
-    typedef typename GTraits::EdgeType          GEDGE;
-    typedef typename GTraits::nodes_iterator node_iterator;
-    typedef typename GTraits::ChildIteratorType child_iterator;
+    using GTraits = llvm::GraphTraits<GraphType>;
+    using GNODE = typename GTraits::NodeType;
+    using GEDGE = typename GTraits::EdgeType;
+    using node_iterator = typename GTraits::nodes_iterator;
+    using child_iterator = typename GTraits::ChildIteratorType;
 
     /// Define inverse GTraits and note iterator
-    typedef llvm::GraphTraits<llvm::Inverse<GNODE *> > InvGTraits;
-    typedef typename InvGTraits::ChildIteratorType inv_child_iterator;
+    using InvGTraits = llvm::GraphTraits<llvm::Inverse<GNODE *> >;
+    using inv_child_iterator = typename InvGTraits::ChildIteratorType;
 
     /// Define worklist
-    typedef FIFOWorkList<DPIm> WorkList;
+    using WorkList = FIFOWorkList<DPIm>;
 
 protected:
 
@@ -129,10 +129,10 @@ protected:
     }
     /// Process the DP item
     //@{
-    virtual void FWProcessCurNode(const DPIm&)
+    virtual void FWProcessCurNode(const DPIm& /*unused*/)
     {
     }
-    virtual void BWProcessCurNode(const DPIm&)
+    virtual void BWProcessCurNode(const DPIm& /*unused*/)
     {
     }
     //@}

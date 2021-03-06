@@ -32,6 +32,7 @@
 
 #include <set>
 #include <map>
+#include "Graphs/PAG.h"
 #include "Util/BasicTypes.h"
 
 namespace SVF
@@ -89,10 +90,10 @@ class TypeSet
 {
 public:
 
-    typedef OrderedSet<PTAType> TypeSetTy;
+    using TypeSetTy = OrderedSet<PTAType>;
 
-    typedef TypeSetTy::iterator iterator;
-    typedef TypeSetTy::const_iterator const_iterator;
+    using iterator = TypeSetTy::iterator;
+    using const_iterator = TypeSetTy::const_iterator;
 
     // Iterators
     //@{
@@ -141,19 +142,22 @@ public:
     {
         if (size() == 1)
         {
-            const_iterator first = begin();
+            auto first = begin();
             return typeset->containType(*first);
         }
         else if (typeset->size() == 1)
         {
-            const_iterator first = typeset->begin();
+            auto first = typeset->begin();
             return containType(*first);
         }
         else
         {
-            const_iterator first1 = typeset->begin(), first2 = begin(),
-                           last1 = typeset->end(), last2 = end();
-            const_iterator largest1 = last1, largest2 = last2;
+            auto first1 = typeset->begin();
+            auto first2 = begin();
+            auto last1 = typeset->end();
+            auto last2 = end();
+            auto largest1 = last1;
+            auto largest2 = last2;
             largest1--;
             largest2--;
             if (*largest1 < *first2 || *largest2 < *first1)
@@ -175,10 +179,9 @@ public:
     /// Dump all types in the typeset
     inline void dumpTypes() const
     {
-        for (const_iterator it = begin(), eit = end(); it != eit; ++it)
+        for (auto type : *this)
         {
-            const PTAType &type = *it;
-            type.dump();
+             type.dump();
         }
     }
 
@@ -190,12 +193,12 @@ class TypeSystem
 {
 public:
 
-    typedef Map<NodeID, TypeSet*> VarToTypeSetMapTy;
+    using VarToTypeSetMapTy = Map<NodeID, TypeSet *>;
 
-    typedef OrderedMap<PTAType, NodeBS> TypeToVarsMapTy;
+    using TypeToVarsMapTy = OrderedMap<PTAType, NodeBS>;
 
-    typedef typename VarToTypeSetMapTy::iterator iterator;
-    typedef typename VarToTypeSetMapTy::const_iterator const_iterator;
+    using iterator = typename VarToTypeSetMapTy::iterator;
+    using const_iterator = typename VarToTypeSetMapTy::const_iterator;
 
     /// Iterators
     //@{
@@ -226,14 +229,14 @@ public:
     /// Has typeset or not
     inline bool hasTypeSet(NodeID var) const
     {
-        const_iterator it = VarToTypeSetMap.find(var);
+        auto it = VarToTypeSetMap.find(var);
         return it != VarToTypeSetMap.end();
     }
 
     /// Get a var's typeset
     inline const TypeSet *getTypeSet(NodeID var) const
     {
-        const_iterator it = VarToTypeSetMap.find(var);
+        auto it = VarToTypeSetMap.find(var);
         assert(it != VarToTypeSetMap.end() && "Can not find typeset for var");
         return it->second;
     }
@@ -242,7 +245,7 @@ public:
     /// Return true if the ptatype is new for this var
     inline bool addTypeForVar(NodeID var, const PTAType &type)
     {
-        iterator it = VarToTypeSetMap.find(var);
+        auto it = VarToTypeSetMap.find(var);
         if (it != VarToTypeSetMap.end())
         {
             TypeSet *typeSet = it->second;
@@ -250,7 +253,7 @@ public:
         }
         else
         {
-            TypeSet *typeSet = new TypeSet;
+            auto *typeSet = new TypeSet;
             typeSet->addType(type);
             VarToTypeSetMap[var] = typeSet;
             return true;
@@ -267,7 +270,7 @@ public:
 
     void addVarForType(NodeID var, const PTAType &type)
     {
-        TypeToVarsMapTy::iterator it = typeToVarsMap.find(type);
+        auto it = typeToVarsMap.find(type);
         if (it == typeToVarsMap.end())
         {
             NodeBS nodes;
@@ -289,13 +292,13 @@ public:
 
     inline bool hasVarsForType(const PTAType &type) const
     {
-        TypeToVarsMapTy::const_iterator it = typeToVarsMap.find(type);
+        auto it = typeToVarsMap.find(type);
         return it != typeToVarsMap.end();
     }
 
     inline NodeBS &getVarsForType(const PTAType &type)
     {
-        TypeToVarsMapTy::iterator it = typeToVarsMap.find(type);
+        auto it = typeToVarsMap.find(type);
         assert(it != typeToVarsMap.end() && "Can not find vars for type");
         return it->second;
     }
@@ -305,12 +308,11 @@ public:
     /// Print each var's id and all its types
     void printTypeSystem() const
     {
-        for (const_iterator it = VarToTypeSetMap.begin(),
-                eit = VarToTypeSetMap.end(); it != eit; ++it)
+        for (auto it : VarToTypeSetMap)
         {
-            SVFUtil::errs() << "Var: " << it->first << '\n';
+            SVFUtil::errs() << "Var: " << it.first << '\n';
             SVFUtil::errs() << "types:\n";
-            const TypeSet *typeSet = it->second;
+            const TypeSet *typeSet = it.second;
             typeSet->dumpTypes();
             SVFUtil::errs() << '\n';
         }
@@ -340,7 +342,7 @@ private:
 
             const Type *nodeType = valType;
 
-            if (const GepValPN *gepvalnode = SVFUtil::dyn_cast<GepValPN>(pagNode))
+            if (const auto *gepvalnode = SVFUtil::dyn_cast<GepValPN>(pagNode))
             {
                 nodeType = gepvalnode->getType();
             }

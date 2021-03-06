@@ -145,7 +145,7 @@ public:
 private:
 
     /// evaluate llvm metadata
-    inline bool evalMDTag(const Instruction *inst, const Value *val, std::string str,
+    inline bool evalMDTag(const Instruction *inst, const Value *val, const std::string& str,
                           std::vector<Value *>&) const
     {
 

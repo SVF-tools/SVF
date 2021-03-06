@@ -44,7 +44,7 @@ class ConstraintNode;
  * Self-defined edge for constraint resolution
  * including add/remove/re-target, but all the operations do not affect original PAG Edges
  */
-typedef GenericEdge<ConstraintNode> GenericConsEdgeTy;
+using GenericConsEdgeTy = GenericEdge<ConstraintNode>;
 class ConstraintEdge : public GenericConsEdgeTy
 {
 
@@ -82,7 +82,7 @@ public:
                edge->getEdgeKind() == VariantGep;
     }
     /// Constraint edge type
-    typedef GenericNode<ConstraintNode,ConstraintEdge>::GEdgeSetTy ConstraintEdgeSetTy;
+    using ConstraintEdgeSetTy = GenericNode<ConstraintNode, ConstraintEdge>::GEdgeSetTy;
 
 };
 

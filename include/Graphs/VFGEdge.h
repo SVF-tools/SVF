@@ -40,7 +40,7 @@ class VFGNode;
 /*!
  * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
  */
-typedef GenericEdge<VFGNode> GenericVFGEdgeTy;
+using GenericVFGEdgeTy = GenericEdge<VFGNode>;
 class VFGEdge : public GenericVFGEdgeTy
 {
 
@@ -59,7 +59,7 @@ public:
         TheadMHPIndirectVF
     };
 
-    typedef VFGEdgeK SVFGEdgeK;
+    using SVFGEdgeK = VFGEdgeK;
 
 public:
     /// Constructor
@@ -114,8 +114,8 @@ public:
         return getEdgeKind() == TheadMHPIndirectVF;
     }
     //@}
-    typedef GenericNode<VFGNode,VFGEdge>::GEdgeSetTy VFGEdgeSetTy;
-    typedef VFGEdgeSetTy SVFGEdgeSetTy;
+    using VFGEdgeSetTy = GenericNode<VFGNode, VFGEdge>::GEdgeSetTy;
+    using SVFGEdgeSetTy = VFGEdgeSetTy;
     /// Compute the unique edgeFlag value from edge kind and CallSiteID.
     static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs)
     {
@@ -166,7 +166,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -201,7 +201,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -245,7 +245,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -287,7 +287,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 } // End namespace SVF

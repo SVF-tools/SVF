@@ -27,21 +27,21 @@ class DDAPass: public ModulePass
 public:
     /// Pass ID
     static char ID;
-    typedef SCCDetection<SVFG*> SVFGSCC;
-    typedef OrderedSet<const SVFGEdge*> SVFGEdgeSet;
-    typedef std::vector<PointerAnalysis*> PTAVector;
+    using SVFGSCC = SCCDetection<SVFG *>;
+    using SVFGEdgeSet = OrderedSet<const SVFGEdge *>;
+    using PTAVector = std::vector<PointerAnalysis *>;
 
     DDAPass() : ModulePass(ID), _pta(nullptr), _client(nullptr) {}
     ~DDAPass();
 
-    virtual inline void getAnalysisUsage(AnalysisUsage &au) const
+    inline void getAnalysisUsage(AnalysisUsage &au) const override
     {
         // declare your dependencies here.
         /// do not intend to change the IR in this pass,
         au.setPreservesAll();
     }
 
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
+    inline void* getAdjustedAnalysisPointer(AnalysisID) override
     {
         return this;
     }
@@ -62,13 +62,13 @@ public:
     virtual void runOnModule(SVFModule* module);
 
     /// We start from here
-    virtual bool runOnModule(Module& module);
+    bool runOnModule(Module& module) override;
 
     /// Select a client
     virtual void selectClient(SVFModule* module);
 
     /// Pass name
-    virtual inline StringRef getPassName() const
+    inline StringRef getPassName() const override
     {
         return "DDAPass";
     }
@@ -88,8 +88,8 @@ private:
     void collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg,SVFGEdgeSet& insensitveEdges);
     void collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges);
 
-    PointerAnalysis* _pta;	///<  pointer analysis to be executed.
-    DDAClient* _client;		///<  DDA client used
+    PointerAnalysis* _pta{};	///<  pointer analysis to be executed.
+    DDAClient* _client{};		///<  DDA client used
 
 };
 

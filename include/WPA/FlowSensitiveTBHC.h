@@ -38,14 +38,14 @@ public:
     virtual ~FlowSensitiveTBHC() { };
 
     /// Flow sensitive analysis with FSTBHC.
-    virtual void analyze() override;
+    void analyze() override;
     /// Initialize analysis.
-    virtual void initialize() override;
+    void initialize() override;
     /// Finalize analysis.
-    virtual void finalize() override;
+    void finalize() override;
 
     /// Get PTA name
-    virtual const std::string PTAName() const override
+    const std::string PTAName() const override
     {
         return "FSTBHC";
     }
@@ -62,28 +62,28 @@ public:
         return pta->getAnalysisTy() == FSTBHC_WPA;
     }
 
-    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override;
-    virtual bool propAlongDirectEdge(const DirectSVFGEdge* edge) override;
+    bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override;
+    bool propAlongDirectEdge(const DirectSVFGEdge* edge) override;
 
-    virtual bool processAddr(const AddrSVFGNode* addr) override;
-    virtual bool processGep(const GepSVFGNode* gep) override;
-    virtual bool processLoad(const LoadSVFGNode* load) override;
-    virtual bool processStore(const StoreSVFGNode* store) override;
-    virtual bool processPhi(const PHISVFGNode* phi) override;
-    virtual bool processCopy(const CopySVFGNode* copy) override;
+    bool processAddr(const AddrSVFGNode* addr) override;
+    bool processGep(const GepSVFGNode* gep) override;
+    bool processLoad(const LoadSVFGNode* load) override;
+    bool processStore(const StoreSVFGNode* store) override;
+    bool processPhi(const PHISVFGNode* phi) override;
+    bool processCopy(const CopySVFGNode* copy) override;
 
-    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id) override;
+    inline const NodeBS& getAllFieldsObjNode(NodeID id) override;
 
-    virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
-    virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
+    inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
+    inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
 
-    virtual inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) override;
-    virtual inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) override;
+    inline bool unionPtsFromIn(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) override;
+    inline bool unionPtsFromTop(const SVFGNode* stmt, NodeID srcVar, NodeID dstVar) override;
 
-    virtual inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
-    virtual inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
+    inline bool propDFOutToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
+    inline bool propDFInToIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
 
-    virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) override;
+    void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts) override;
 
     /// Extracts the value from SVFGNode (if it exists), and calls
     /// getTypeFromCTirMetadata(const Value *).
@@ -91,9 +91,9 @@ public:
     const DIType *getTypeFromCTirMetadata(const SVFGNode *);
 
 protected:
-    virtual void backPropagate(NodeID clone) override;
+    void backPropagate(NodeID clone) override;
 
-    virtual void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
+    void countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *mayAliases, unsigned *noAliases) override;
 
 private:
     /// Determines whether each GEP is for a load or not. Builds gepIsLoad map.

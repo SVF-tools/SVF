@@ -192,7 +192,7 @@ public:
     }
 
     /// Get max field offset limit
-    inline u32_t getMaxFieldOffsetLimit()
+    inline u32_t getMaxFieldOffsetLimit() const
     {
         return maxOffsetLimit;
     }
@@ -209,7 +209,7 @@ public:
     {
         flags |= mask;
     }
-    inline bool hasFlag(MEMTYPE mask)
+    inline bool hasFlag(MEMTYPE mask) const
     {
         return (flags & mask) == mask;
     }
@@ -217,23 +217,23 @@ public:
 
     /// Object attributes
     //@{
-    inline bool isFunction()
+    inline bool isFunction() const
     {
         return hasFlag(FUNCTION_OBJ);
     }
-    inline bool isGlobalObj()
+    inline bool isGlobalObj() const
     {
         return hasFlag(GLOBVAR_OBJ);
     }
-    inline bool isStaticObj()
+    inline bool isStaticObj() const
     {
         return hasFlag(STATIC_OBJ);
     }
-    inline bool isStack()
+    inline bool isStack() const
     {
         return hasFlag(STACK_OBJ);
     }
-    inline bool isHeap()
+    inline bool isHeap() const
     {
         return hasFlag(HEAP_OBJ);
     }
@@ -242,35 +242,35 @@ public:
     /// Object attributes (noted that an object can be a nested compound types)
     /// e.g. both isStruct and isArray can return true
     //@{
-    inline bool isVarStruct()
+    inline bool isVarStruct() const
     {
         return hasFlag(VAR_STRUCT_OBJ);
     }
-    inline bool isConstStruct()
+    inline bool isConstStruct() const
     {
         return hasFlag(CONST_STRUCT_OBJ);
     }
-    inline bool isStruct()
+    inline bool isStruct() const
     {
         return hasFlag(VAR_STRUCT_OBJ) || hasFlag(CONST_STRUCT_OBJ);
     }
-    inline bool isVarArray()
+    inline bool isVarArray() const
     {
         return hasFlag(VAR_ARRAY_OBJ);
     }
-    inline bool isConstArray()
+    inline bool isConstArray() const
     {
         return  hasFlag(CONST_ARRAY_OBJ);
     }
-    inline bool isArray()
+    inline bool isArray() const
     {
         return hasFlag(VAR_ARRAY_OBJ) || hasFlag(CONST_ARRAY_OBJ);
     }
-    inline bool isConstant()
+    inline bool isConstant() const
     {
         return hasFlag(CONST_OBJ);
     }
-    inline bool hasPtrObj()
+    inline bool hasPtrObj() const
     {
         return hasFlag(HASPTR_OBJ);
     }

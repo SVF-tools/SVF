@@ -31,7 +31,7 @@
 #define BITVECTORCOND_H_
 
 #include "Util/BasicTypes.h"
-#include <stdio.h>
+#include <cstdio>
 #include "CUDD/cuddInt.h"
 
 namespace SVF

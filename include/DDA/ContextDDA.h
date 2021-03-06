@@ -17,7 +17,7 @@ namespace SVF
 
 class FlowDDA;
 class DDAClient;
-typedef CxtStmtDPItem<SVFGNode> CxtLocDPItem;
+using CxtLocDPItem = CxtStmtDPItem<SVFGNode>;
 
 /*!
  * Context-, Flow- Sensitive Demand-driven Analysis
@@ -33,19 +33,19 @@ public:
     virtual ~ContextDDA();
 
     /// Initialization of the analysis
-    virtual void initialize() override;
+    void initialize() override;
 
     /// Finalize analysis
-    virtual inline void finalize() override
+    inline void finalize() override
     {
         CondPTAImpl<ContextCond>::finalize();
     }
 
     /// dummy analyze method
-    virtual void analyze() override {}
+    void analyze() override {}
 
     /// Compute points-to set for an unconditional pointer
-    virtual void computeDDAPts(NodeID id) override;
+    void computeDDAPts(NodeID id) override;
 
     /// Compute points-to set for a context-sensitive pointer
     virtual const CxtPtSet& computeDDAPts(const CxtVar& cxtVar);
@@ -54,31 +54,31 @@ public:
     void handleOutOfBudgetDpm(const CxtLocDPItem& dpm);
 
     /// Override parent method
-    virtual CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm) override
+    CxtPtSet getConservativeCPts(const CxtLocDPItem& dpm) override
     {
         const PointsTo& pts =  getAndersenAnalysis()->getPts(dpm.getCurNodeID());
         CxtPtSet tmpCPts;
         ContextCond cxt;
-        for (PointsTo::iterator piter = pts.begin(); piter != pts.end(); ++piter)
+        for (unsigned int pt : pts)
         {
-            CxtVar var(cxt,*piter);
+            CxtVar var(cxt,pt);
             tmpCPts.set(var);
         }
         return tmpCPts;
     }
 
     /// Override parent method
-    virtual inline NodeID getPtrNodeID(const CxtVar& var) const override
+    inline NodeID getPtrNodeID(const CxtVar& var) const override
     {
         return var.get_id();
     }
     /// Handle condition for context or path analysis (backward analysis)
-    virtual bool handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge) override;
+    bool handleBKCondition(CxtLocDPItem& dpm, const SVFGEdge* edge) override;
 
     /// we exclude concrete heap given the following conditions:
     /// (1) concrete calling context (not involved in recursion and not exceed the maximum context limit)
     /// (2) not inside loop
-    virtual bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store) override;
+    bool isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode* store) override;
 
     /// refine indirect call edge
     bool testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs);
@@ -110,17 +110,16 @@ public:
     }
     /// Update call graph.
     //@{
-    virtual void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) override
+    void updateCallGraphAndSVFG(const CxtLocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) override
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getBVPointsTo(getCachedPointsTo(dpm)), newEdges);
-        for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++)
+        for (const auto & newEdge : newEdges)
         {
-            const CallBlockNode* newcs = iter->first;
-            const FunctionSet & functions = iter->second;
-            for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+            const CallBlockNode* newcs = newEdge.first;
+            const FunctionSet & functions = newEdge.second;
+            for (const auto *func : functions)
             {
-                const SVFFunction*  func = *func_iter;
                 getSVFG()->connectCallerAndCallee(newcs, func, svfgEdges);
             }
         }
@@ -142,10 +141,10 @@ public:
     }
 
     /// processGep node
-    virtual CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts) override;
+    CxtPtSet processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPts) override;
 
     /// Handle Address SVFGNode to add proper conditional points-to
-    virtual void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
+    void handleAddr(CxtPtSet& pts,const CxtLocDPItem& dpm,const AddrSVFGNode* addr) override
     {
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
@@ -159,7 +158,7 @@ public:
     }
 
     /// Propagate along indirect value-flow if two objects of load and store are same
-    virtual inline bool propagateViaObj(const CxtVar& storeObj, const CxtVar& loadObj) override
+    inline bool propagateViaObj(const CxtVar& storeObj, const CxtVar& loadObj) override
     {
         return isSameVar(storeObj,loadObj);
     }
@@ -167,7 +166,7 @@ public:
     /// Whether two call string contexts are compatible which may represent the same memory object
     /// compare with call strings from last few callsite ids (most recent ids to objects):
     /// compatible : (e.g., 123 == 123, 123 == 23). not compatible (e.g., 123 != 423)
-    virtual inline bool isCondCompatible(const ContextCond& cxt1, const ContextCond& cxt2, bool singleton) const override;
+    inline bool isCondCompatible(const ContextCond& cxt1, const ContextCond& cxt2, bool singleton) const override;
 
     /// Whether this edge is treated context-insensitively
     bool isInsensitiveCallRet(const SVFGEdge* edge)
@@ -185,7 +184,7 @@ public:
         SVFUtil::outs() << cxts.toString() << "\n";
     }
 
-    virtual const std::string PTAName() const override
+    const std::string PTAName() const override
     {
         return "Context Sensitive DDA";
     }

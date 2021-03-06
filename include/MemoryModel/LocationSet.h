@@ -45,7 +45,7 @@ namespace SVF
 class FieldInfo
 {
 public:
-    typedef std::vector<NodePair > ElemNumStridePairVec;
+    using ElemNumStridePairVec = std::vector<NodePair>;
 
 private:
     u32_t fldIdx;
@@ -100,7 +100,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef FieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
+    using ElemNumStridePairVec = FieldInfo::ElemNumStridePairVec;
 
     /// Constructor
     LocationSet(Size_t o = 0) : fldIdx(o), byteOffset(o)
@@ -111,8 +111,8 @@ public:
         : fldIdx(ls.fldIdx), byteOffset(ls.byteOffset)
     {
         const ElemNumStridePairVec& vec = ls.getNumStridePair();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
+        auto it = vec.begin();
+        auto eit = vec.end();
         for (; it != eit; ++it)
             addElemNumStridePair(*it);
     }
@@ -122,8 +122,8 @@ public:
         : fldIdx(fi.getFlattenFldIdx()), byteOffset(fi.getFlattenByteOffset())
     {
         const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
+        auto it = vec.begin();
+        auto eit = vec.end();
         for (; it != eit; ++it)
             addElemNumStridePair(*it);
     }
@@ -138,8 +138,8 @@ public:
         LocationSet ls(rhs);
         ls.fldIdx += getOffset();
         ls.byteOffset += getByteOffset();
-        ElemNumStridePairVec::const_iterator it = getNumStridePair().begin();
-        ElemNumStridePairVec::const_iterator eit = getNumStridePair().end();
+        auto it = getNumStridePair().begin();
+        auto eit = getNumStridePair().end();
         for (; it != eit; ++it)
             ls.addElemNumStridePair(*it);
 
@@ -166,8 +166,8 @@ public:
                 return (pairVec.size() < rhsPairVec.size());
             else
             {
-                ElemNumStridePairVec::const_iterator it = pairVec.begin();
-                ElemNumStridePairVec::const_iterator rhsIt = rhsPairVec.begin();
+                auto it = pairVec.begin();
+                auto rhsIt = rhsPairVec.begin();
                 for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
                 {
                     if ((*it).first != (*rhsIt).first)
@@ -218,7 +218,7 @@ public:
     /// Return TRUE if this is a constant location set.
     inline bool isConstantOffset() const
     {
-        return (numStridePair.size() == 0);
+        return numStridePair.empty();
     }
 
     /// Return TRUE if we share any location in common with RHS
@@ -259,8 +259,8 @@ public:
         rawstr << "\tOffset: " << getByteOffset()
                << ",\tNum-Stride: {";
         const ElemNumStridePairVec& vec = getNumStridePair();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
+        auto it = vec.begin();
+        auto eit = vec.end();
         for (; it != eit; ++it)
         {
             rawstr << " (" << it->first << "," << it->second << ")";

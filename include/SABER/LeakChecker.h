@@ -43,10 +43,10 @@ class LeakChecker : public SrcSnkDDA
 {
 
 public:
-    typedef Map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
-    typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
-    typedef ProgSlice::VFWorkList WorkList;
-    typedef NodeBS SVFGNodeBS;
+    using SVFGNodeToCSIDMap = Map<const SVFGNode *, const CallBlockNode *>;
+    using CSWorkList = FIFOWorkList<const CallBlockNode *>;
+    using WorkList = ProgSlice::VFWorkList;
+    using SVFGNodeBS = NodeBS;
     enum LEAK_TYPE
     {
         NEVER_FREE_LEAK,
@@ -75,25 +75,25 @@ public:
     /// Initialize sources and sinks
     //@{
     /// Initialize sources and sinks
-    virtual void initSrcs();
-    virtual void initSnks();
+    void initSrcs() override;
+    void initSnks() override;
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const SVFFunction* fun)
+    inline bool isSourceLikeFun(const SVFFunction* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const SVFFunction* fun)
+    inline bool isSinkLikeFun(const SVFFunction* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
     }
     /// A SVFG node is source if it is an actualRet at malloc site
-    inline bool isSource(const SVFGNode* node)
+    inline bool isSource(const SVFGNode* node) override
     {
         return getSources().find(node)!=getSources().end();
     }
     /// A SVFG node is source if it is an actual parameter at dealloca site
-    inline bool isSink(const SVFGNode* node)
+    inline bool isSink(const SVFGNode* node) override
     {
         return getSinks().find(node)!=getSinks().end();
     }
@@ -102,7 +102,7 @@ public:
 protected:
     /// Report leaks
     //@{
-    virtual void reportBug(ProgSlice* slice);
+    void reportBug(ProgSlice* slice) override;
     void reportNeverFree(const SVFGNode* src);
     void reportPartialLeak(const SVFGNode* src);
     //@}
@@ -120,7 +120,7 @@ protected:
     }
     inline const CallBlockNode* getSrcCSID(const SVFGNode* src)
     {
-        SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
+        auto it =srcToCSIDMap.find(src);
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");
         return it->second;
     }

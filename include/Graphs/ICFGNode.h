@@ -49,7 +49,7 @@ class VFGNode;
  * Interprocedural control-flow graph node, representing different kinds of program statements
  * including top-level pointers (ValPN) and address-taken objects (ObjPN)
  */
-typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
+using GenericICFGNodeTy = GenericNode<ICFGNode, ICFGEdge>;
 
 class ICFGNode : public GenericICFGNodeTy
 {
@@ -62,12 +62,12 @@ public:
         IntraBlock, FunEntryBlock, FunExitBlock, FunCallBlock, FunRetBlock, GlobalBlock
     };
 
-    typedef ICFGEdge::ICFGEdgeSetTy::iterator iterator;
-    typedef ICFGEdge::ICFGEdgeSetTy::const_iterator const_iterator;
-    typedef Set<const CallPE *> CallPESet;
-    typedef Set<const RetPE *> RetPESet;
-    typedef std::list<const VFGNode*> VFGNodeList;
-    typedef std::list<const PAGEdge*> PAGEdgeList;
+    using iterator = ICFGEdge::ICFGEdgeSetTy::iterator;
+    using const_iterator = ICFGEdge::ICFGEdgeSetTy::const_iterator;
+    using CallPESet = Set<const CallPE *>;
+    using RetPESet = Set<const RetPE *>;
+    using VFGNodeList = std::list<const VFGNode *>;
+    using PAGEdgeList = std::list<const PAGEdge *>;
 
 public:
     /// Constructor
@@ -250,7 +250,7 @@ class FunEntryBlockNode : public InterBlockNode
 {
 
 public:
-    typedef std::vector<const PAGNode *> FormalParmNodeVec;
+    using FormalParmNodeVec = std::vector<const PAGNode *>;
 private:
     FormalParmNodeVec FPNodes;
 public:
@@ -363,7 +363,7 @@ class CallBlockNode : public InterBlockNode
 {
 
 public:
-    typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
+    using ActualParmVFGNodeVec = std::vector<const PAGNode *>;
 private:
     const Instruction* cs;
     const RetBlockNode* ret;

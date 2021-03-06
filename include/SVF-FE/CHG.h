@@ -41,7 +41,7 @@ namespace SVF
 class SVFModule;
 class CHNode;
 
-typedef GenericEdge<CHNode> GenericCHEdgeTy;
+using GenericCHEdgeTy = GenericEdge<CHNode>;
 class CHEdge: public GenericCHEdgeTy
 {
 public:
@@ -51,7 +51,7 @@ public:
         INSTANTCE = 0x2 // template-instance relation
     } CHEDGETYPE;
 
-    typedef GenericNode<CHNode,CHEdge>::GEdgeSetTy CHEdgeSetTy;
+    using CHEdgeSetTy = GenericNode<CHNode, CHEdge>::GEdgeSetTy;
 
     CHEdge(CHNode *s, CHNode *d, CHEDGETYPE et, GEdgeFlag k = 0):
         GenericCHEdgeTy(s,d,k)
@@ -68,7 +68,7 @@ private:
     CHEDGETYPE edgeType;
 };
 
-typedef GenericNode<CHNode,CHEdge> GenericCHNodeTy;
+using GenericCHNodeTy = GenericNode<CHNode, CHEdge>;
 class CHNode: public GenericCHNodeTy
 {
 public:
@@ -79,7 +79,7 @@ public:
         TEMPLATE = 0x04 // template class
     } CLASSATTR;
 
-    typedef std::vector<const SVFFunction*> FuncVector;
+    using FuncVector = std::vector<const SVFFunction *>;
 
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
         GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
@@ -172,16 +172,16 @@ private:
 };
 
 /// class hierarchy graph
-typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
+using GenericCHGraphTy = GenericGraph<CHNode, CHEdge>;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
 public:
-    typedef Set<const CHNode*> CHNodeSetTy;
-    typedef FIFOWorkList<const CHNode*> WorkList;
-    typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef Map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef Map<CallSite, VTableSet> CallSiteToVTableSetMap;
-    typedef Map<CallSite, VFunSet> CallSiteToVFunSetMap;
+    using CHNodeSetTy = Set<const CHNode *>;
+    using WorkList = FIFOWorkList<const CHNode *>;
+    using NameToCHNodesMap = Map<std::string, CHNodeSetTy>;
+    using CallSiteToCHNodesMap = Map<CallSite, CHNodeSetTy>;
+    using CallSiteToVTableSetMap = Map<CallSite, VTableSet>;
+    using CallSiteToVFunSetMap = Map<CallSite, VFunSet>;
 
     typedef enum
     {
@@ -220,8 +220,7 @@ public:
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        Map<const SVFFunction*, s32_t>::const_iterator it =
-            virtualFunctionToIDMap.find(vfn);
+        auto it = virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
         else
@@ -229,7 +228,8 @@ public:
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const
     {
-        Map<const SVFFunction*, s32_t>::const_iterator it, eit;
+        Map<const SVFFunction*, s32_t>::const_iterator it;
+        Map<const SVFFunction*, s32_t>::const_iterator eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -241,8 +241,7 @@ public:
 
     inline void addInstances(const std::string templateName, CHNode* node)
     {
-        NameToCHNodesMap::iterator it = templateNameToInstancesMap.find(
-                                            templateName);
+        auto it = templateNameToInstancesMap.find(templateName);
         if (it != templateNameToInstancesMap.end())
             it->second.insert(node);
         else
@@ -259,23 +258,23 @@ public:
 
     inline bool csHasVtblsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+        auto it = csToCHAVtblsMap.find(cs);
         return it != csToCHAVtblsMap.end();
     }
     inline bool csHasVFnsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+        auto it = csToCHAVFnsMap.find(cs);
         return it != csToCHAVFnsMap.end();
     }
     inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
+        auto it = csToCHAVtblsMap.find(cs);
         assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
         return it->second;
     }
     inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
+        auto it = csToCHAVFnsMap.find(cs);
         assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
         return it->second;
     }
@@ -325,7 +324,7 @@ struct GraphTraits<Inverse<SVF::CHNode*> > : public GraphTraits<Inverse<SVF::Gen
 
 template<> struct GraphTraits<SVF::CHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CHNode,SVF::CHEdge>* >
 {
-    typedef SVF::CHNode *NodeRef;
+    using NodeRef = SVF::CHNode *;
 };
 
 } // End namespace llvm

@@ -42,13 +42,13 @@ public:
 
     NodeBS _StrongUpdateStores;
 
-    void performStatPerQuery(NodeID ptr);
+    void performStatPerQuery(NodeID ptr) override;
 
-    void performStat();
+    void performStat() override;
 
     void printStat();
 
-    void printStatPerQuery(NodeID ptr, const PointsTo& pts);
+    void printStatPerQuery(NodeID ptr, const PointsTo& pts) override;
 
     void getNumOfOOBQuery();
 

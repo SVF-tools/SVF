@@ -25,11 +25,11 @@ class PTALoopInfoBuilder;
 /*
  * Thread creation edge represents a spawning relation between two context sensitive threads
  */
-typedef GenericEdge<TCTNode> GenericTCTEdgeTy;
+using GenericTCTEdgeTy = GenericEdge<TCTNode>;
 class TCTEdge: public GenericTCTEdgeTy
 {
 public:
-    typedef Set<const Instruction*> CallInstSet;
+    using CallInstSet = Set<const Instruction*> ;
     enum CEDGEK
     {
         ThreadCreateEdge
@@ -54,14 +54,14 @@ public:
         return edge->getEdgeKind() == TCTEdge::ThreadCreateEdge;
     }
     ///@}
-    typedef GenericNode<TCTNode, TCTEdge>::GEdgeSetTy ThreadCreateEdgeSet;
+    using ThreadCreateEdgeSet = GenericNode<TCTNode, TCTEdge>::GEdgeSetTy;
 
 };
 
 /*
  * Each node represents a context-sensitive thread
  */
-typedef GenericNode<TCTNode, TCTEdge> GenericTCTNodeTy;
+using GenericTCTNodeTy = GenericNode<TCTNode, TCTEdge>;
 class TCTNode: public GenericTCTNodeTy
 {
 
@@ -111,24 +111,24 @@ private:
 /*!
  * Pointer Analysis Call Graph used internally for various pointer analysis
  */
-typedef GenericGraph<TCTNode, TCTEdge> GenericThreadCreateTreeTy;
+using GenericThreadCreateTreeTy = GenericGraph<TCTNode, TCTEdge>;
 class TCT: public GenericThreadCreateTreeTy
 {
 
 public:
-    typedef TCTEdge::ThreadCreateEdgeSet ThreadCreateEdgeSet;
-    typedef ThreadCreateEdgeSet::iterator TCTNodeIter;
-    typedef Set<const Function*> FunSet;
-    typedef std::vector<const Instruction*> InstVec;
-    typedef Set<const Instruction*> InstSet;
-    typedef Set<const PTACallGraphNode*> PTACGNodeSet;
-    typedef Map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
-    typedef Map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef Map<const CxtThread,const Function*> CxtThreadToFun;
-    typedef Map<const Instruction*, const Loop*> InstToLoopMap;
-    typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
-    typedef set<CxtThreadProc> CxtThreadProcSet;
-    typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
+    using ThreadCreateEdgeSet = TCTEdge::ThreadCreateEdgeSet;
+    using TCTNodeIter = ThreadCreateEdgeSet::iterator;
+    using FunSet = Set<const Function*>;
+    using InstVec = std::vector<const Instruction*>;
+    using InstSet = Set<const Instruction*>;
+    using PTACGNodeSet = Set<const PTACallGraphNode*>;
+    using CxtThreadToNodeMap = Map<const CxtThread,TCTNode*>;
+    using CxtThreadToForkCxt = Map<const CxtThread,CallStrCxt>;
+    using CxtThreadToFun = Map<const CxtThread,const Function*>;
+    using InstToLoopMap = Map<const Instruction*, const Loop*>;
+    using CxtThreadProcVec = FIFOWorkList<CxtThreadProc>;
+    using CxtThreadProcSet = set<CxtThreadProc>;
+    using ThreadCallGraphSCC = SCCDetection<PTACallGraph*>;
 
     /// Constructor
     TCT(PointerAnalysis* p) :pta(p),TCTNodeNum(0),TCTEdgeNum(0),MaxCxtSize(0)
@@ -542,7 +542,7 @@ struct GraphTraits<Inverse<SVF::TCTNode *> > : public GraphTraits<Inverse<SVF::G
 
 template<> struct GraphTraits<SVF::TCT*> : public GraphTraits<SVF::GenericGraph<SVF::TCTNode,SVF::TCTEdge>* >
 {
-    typedef SVF::TCTNode *NodeRef;
+    using NodeRef = SVF::TCTNode *;
 };
 
 } // End namespace llvm

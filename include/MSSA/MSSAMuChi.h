@@ -394,7 +394,7 @@ private:
     MRVer* opVer;
     Cond cond;
 public:
-    typedef typename MSSADEF::DEFTYPE CHITYPE;
+    using CHITYPE = typename MSSADEF::DEFTYPE;
     /// Constructor/Destructer for MSSACHI
     //@{
     MSSACHI(CHITYPE t, const MemRegion* m, Cond c): MSSADEF(t,m), opVer(nullptr), cond(c)
@@ -624,7 +624,7 @@ class MSSAPHI : public MSSADEF
 {
 
 public:
-    typedef Map<u32_t,const MRVer*> OPVers;
+    using OPVers = Map<u32_t, const MRVer *>;
 private:
     const BasicBlock* bb;
     OPVers opVers;
@@ -651,7 +651,7 @@ public:
     /// Get operand ver
     inline const MRVer* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -703,8 +703,8 @@ public:
     {
         SVFUtil::outs() << this->getMR()->getMRID() << "V_" << this->getResVer()->getSSAVersion() <<
                         " = PHI(";
-        for(OPVers::iterator it = opVers.begin(), eit = opVers.end(); it!=eit; ++it)
-            SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
+        for(auto & opVer : opVers)
+            SVFUtil::outs() << "MR_" << this->getMR()->getMRID() << "V_" << opVer.second->getSSAVersion() << ", ";
 
         SVFUtil::outs() << ")\n";
     }

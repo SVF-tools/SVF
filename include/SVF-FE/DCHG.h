@@ -39,7 +39,7 @@ public:
         // We also make the char --> void edge a STD_DEF edge.
     };
 
-    typedef GenericNode<DCHNode, DCHEdge>::GEdgeSetTy DCHEdgeSetTy;
+    using DCHEdgeSetTy = GenericNode<DCHNode, DCHEdge>::GEdgeSetTy;
 
     DCHEdge(DCHNode *src, DCHNode *dst, GEdgeFlag k = 0)
         : GenericEdge<DCHNode>(src, dst, k), offset(0)
@@ -71,7 +71,7 @@ public:
         SCALAR = 0x08            // non-class scalar type
     } CLASSATTR;
 
-    typedef std::vector<const Function*> FuncVector;
+    using FuncVector = std::vector<const Function *>;
 
     DCHNode(const DIType *diType, NodeID i = 0, GNodeK k = 0)
         : GenericNode<DCHNode, DCHEdge>(i, k), vtable(nullptr), flags(0)
@@ -249,14 +249,14 @@ public:
 
     void print(void);
 
-    virtual bool csHasVFnsBasedonCHA(CallSite cs) override
+    bool csHasVFnsBasedonCHA(CallSite cs) override
     {
         return csHasVtblsBasedonCHA(cs);
     }
 
-    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
+    const VFunSet &getCSVFsBasedonCHA(CallSite cs) override;
 
-    virtual bool csHasVtblsBasedonCHA(CallSite cs) override
+    bool csHasVtblsBasedonCHA(CallSite cs) override
     {
         const DIType *type = getCanonicalType(getCSStaticType(cs));
         if (!hasNode(type))
@@ -267,8 +267,8 @@ public:
         return getNode(type)->getVTable() != nullptr;
     }
 
-    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
-    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
+    const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
+    void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
 
     /// Returns true if a is a transitive base of b. firstField determines
     /// whether to consider first-field edges.
@@ -306,7 +306,7 @@ public:
 
         if (base->getTag() == dwarf::DW_TAG_array_type)
         {
-            const DICompositeType *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
+            const auto *cbase = SVFUtil::dyn_cast<DICompositeType>(base);
             assert(cbase && "DCHG: bad DIComposite case");
             return cbase->getBaseType();
         }
@@ -408,7 +408,7 @@ private:
     {
         MDNode *md = cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName);
         assert(md != nullptr && "Missing type metadata at virtual callsite");
-        DIType *diType = SVFUtil::dyn_cast<DIType>(md);
+        auto *diType = SVFUtil::dyn_cast<DIType>(md);
         assert(diType != nullptr && "Incorrect metadata type at virtual callsite");
         return diType;
     }
@@ -462,7 +462,7 @@ struct GraphTraits<Inverse<SVF::DCHNode*> > : public GraphTraits<Inverse<SVF::Ge
 
 template<> struct GraphTraits<SVF::DCHGraph*> : public GraphTraits<SVF::GenericGraph<SVF::DCHNode,SVF::DCHEdge>* >
 {
-    typedef SVF::DCHNode *NodeRef;
+    using NodeRef = SVF::DCHNode *;
 };
 
 } // End namespace llvm

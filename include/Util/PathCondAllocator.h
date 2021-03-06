@@ -47,16 +47,16 @@ class PathCondAllocator
 public:
     static u32_t totalCondNum;
 
-    typedef DdNode Condition;
-    typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
-    typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
-    typedef Map<const Condition*, const Instruction* > CondToTermInstMap;	// map a condition to its branch instruction
-    typedef Set<const BasicBlock*> BasicBlockSet;
-    typedef Map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef Map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
-    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    using Condition = DdNode;
+    using CondPosMap = Map<u32_t, Condition *>;		///< map a branch to its Condition
+    using BBCondMap = Map<const BasicBlock *, CondPosMap>;	// map bb to a Condition
+    using CondToTermInstMap = Map<const Condition *, const Instruction *>;	// map a condition to its branch instruction
+    using BasicBlockSet = Set<const BasicBlock *>;
+    using FunToExitBBsMap = Map<const Function *, BasicBlockSet>;  ///< map a function to all its basic blocks calling program exit
+    using BBToCondMap = Map<const BasicBlock *, Condition *>;	///< map a basic block to its condition during control-flow guard computation
+    using CFWorkList = FIFOWorkList<const BasicBlock *>;	///< worklist for control-flow guard computation
 
-    typedef Map<u32_t,Condition*> IndexToConditionMap;
+    using IndexToConditionMap = Map<u32_t, Condition *>;
 
     /// Constructor
     PathCondAllocator()
@@ -100,7 +100,7 @@ public:
     /// Get llvm conditional expression
     inline const Instruction* getCondInst(const Condition* cond) const
     {
-        CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
+        auto it = condToInstMap.find(cond);
         assert(it!=condToInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
@@ -146,7 +146,7 @@ public:
     /// Given an index, get its condition
     inline Condition* getCond(u32_t i) const
     {
-        IndexToConditionMap::const_iterator it = indexToDDNodeMap.find(i);
+        auto it = indexToDDNodeMap.find(i);
         assert(it!=indexToDDNodeMap.end() && "condition not found!");
         return it->second;
     }
@@ -256,7 +256,7 @@ private:
     //@{
     inline bool setCFCond(const BasicBlock* bb, Condition* cond)
     {
-        BBToCondMap::iterator it = bbToCondMap.find(bb);
+        auto it = bbToCondMap.find(bb);
         if(it!=bbToCondMap.end() && it->second == cond)
             return false;
 
@@ -265,7 +265,7 @@ private:
     }
     inline Condition* getCFCond(const BasicBlock* bb) const
     {
-        BBToCondMap::const_iterator it = bbToCondMap.find(bb);
+        auto it = bbToCondMap.find(bb);
         if(it==bbToCondMap.end())
         {
             return getFalseCond();

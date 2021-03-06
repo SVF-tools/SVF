@@ -43,7 +43,7 @@ namespace SVF
 class AndersenSCD : public Andersen
 {
 public:
-    typedef Map<NodeID, NodeID> NodeToNodeMap;
+    using NodeToNodeMap = Map<NodeID, NodeID>;
 
 protected:
     static AndersenSCD* scdAndersen;
@@ -81,15 +81,15 @@ protected:
         sccCandidates.insert(sccRepNode(nodeId));
     }
 
-    virtual NodeStack& SCCDetect();
+    NodeStack& SCCDetect() override;
     virtual void PWCDetect();
-    virtual void solveWorklist();
-    virtual void handleLoadStore(ConstraintNode* node);
-    virtual void processAddr(const AddrCGEdge* addr);
-    virtual bool addCopyEdge(NodeID src, NodeID dst);
-    virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
+    void solveWorklist() override;
+    void handleLoadStore(ConstraintNode* node) override;
+    void processAddr(const AddrCGEdge* addr) override;
+    bool addCopyEdge(NodeID src, NodeID dst) override;
+    bool updateCallGraph(const CallSiteToFunPtrMap& callsites) override;
     virtual void processPWC(ConstraintNode* rep);
-    virtual void handleCopyGep(ConstraintNode* node);
+    void handleCopyGep(ConstraintNode* node) override;
 
 };
 

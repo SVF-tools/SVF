@@ -67,7 +67,7 @@ public:
         HARE_PAR_FOR
     };
 
-    typedef llvm::StringMap<TD_TYPE> TDAPIMap;
+    using TDAPIMap = llvm::StringMap<TD_TYPE>;
 
 private:
     /// API map, from a string to threadAPI type

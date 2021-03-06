@@ -44,7 +44,7 @@ class ICFGNode;
  * Interprocedural control-flow graph node, representing different kinds of program statements
  * including top-level pointers (ValPN) and address-taken objects (ObjPN)
  */
-typedef GenericNode<VFGNode,VFGEdge> GenericVFGNodeTy;
+using GenericVFGNodeTy = GenericNode<VFGNode, VFGEdge>;
 class VFGNode : public GenericVFGNodeTy
 {
 
@@ -58,10 +58,10 @@ public:
         FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
     };
 
-    typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
-    typedef VFGEdge::VFGEdgeSetTy::const_iterator const_iterator;
-    typedef Set<const CallPE*> CallPESet;
-    typedef Set<const RetPE*> RetPESet;
+    using iterator = VFGEdge::VFGEdgeSetTy::iterator;
+    using const_iterator = VFGEdge::VFGEdgeSetTy::const_iterator;
+    using CallPESet = Set<const CallPE *>;
+    using RetPESet = Set<const RetPE *>;
 
 public:
     /// Constructor
@@ -182,7 +182,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -221,7 +221,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -260,7 +260,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -299,7 +299,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -310,7 +310,7 @@ public:
 class CmpVFGNode: public VFGNode
 {
 public:
-    typedef Map<u32_t,const PAGNode*> OPVers;
+    using OPVers = Map<u32_t, const PAGNode *>;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -324,7 +324,7 @@ public:
     /// Constructor
     CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
     {
-        const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
+        const auto* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
         assert(cmp && "not a binary operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -346,7 +346,7 @@ public:
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -371,7 +371,7 @@ public:
         return opVers.end();
     }
     //@}
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -381,7 +381,7 @@ public:
 class BinaryOPVFGNode: public VFGNode
 {
 public:
-    typedef Map<u32_t,const PAGNode*> OPVers;
+    using OPVers = Map<u32_t, const PAGNode *>;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -395,7 +395,7 @@ public:
     /// Constructor
     BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r)
     {
-        const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
+        const auto* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
         assert(binary && "not a binary operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -417,7 +417,7 @@ public:
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -443,7 +443,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -452,7 +452,7 @@ public:
 class UnaryOPVFGNode: public VFGNode
 {
 public:
-    typedef Map<u32_t,const PAGNode*> OPVers;
+    using OPVers = Map<u32_t, const PAGNode *>;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -490,7 +490,7 @@ public:
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -516,7 +516,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -555,7 +555,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -565,7 +565,7 @@ class PHIVFGNode : public VFGNode
 {
 
 public:
-    typedef Map<u32_t,const PAGNode*> OPVers;
+    using OPVers = Map<u32_t, const PAGNode *>;
 protected:
     const PAGNode* res;
     OPVers opVers;
@@ -584,7 +584,7 @@ public:
     //@{
     inline const PAGNode* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -626,7 +626,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -637,7 +637,7 @@ class IntraPHIVFGNode : public PHIVFGNode
 {
 
 public:
-    typedef Map<u32_t,const ICFGNode*> OPIncomingBBs;
+    using OPIncomingBBs = Map<u32_t, const ICFGNode *>;
 
 private:
     OPIncomingBBs opIncomingBBs;
@@ -649,7 +649,7 @@ public:
 
     inline const ICFGNode* getOpIncomingBB(u32_t pos) const
     {
-        OPIncomingBBs::const_iterator it = opIncomingBBs.find(pos);
+        auto it = opIncomingBBs.find(pos);
         assert(it!=opIncomingBBs.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -679,7 +679,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -716,7 +716,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -760,7 +760,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -809,7 +809,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -836,7 +836,7 @@ public:
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -877,7 +877,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -933,7 +933,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -959,7 +959,7 @@ public:
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -997,7 +997,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -1022,7 +1022,7 @@ public:
         return (fun!=nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
@@ -1054,7 +1054,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
 private:
     const SVFFunction* fun;
@@ -1102,7 +1102,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 } // End namespace SVF

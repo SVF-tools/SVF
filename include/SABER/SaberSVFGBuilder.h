@@ -43,9 +43,9 @@ class SaberSVFGBuilder : public SVFGBuilder
 {
 
 public:
-    typedef Set<const SVFGNode*> SVFGNodeSet;
-    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
-    typedef FIFOWorkList<NodeID> WorkList;
+    using SVFGNodeSet = Set<const SVFGNode *>;
+    using NodeToPTSSMap = Map<NodeID, NodeBS>;
+    using WorkList = FIFOWorkList<NodeID>;
 
     /// Constructor
     SaberSVFGBuilder(): SVFGBuilder(true) {}
@@ -66,7 +66,7 @@ public:
 
 protected:
     /// Re-write create SVFG method
-    virtual void buildSVFG();
+    void buildSVFG() override;
 
 private:
     /// Remove direct value-flow edge to a dereference point for Saber source-sink memory error detection

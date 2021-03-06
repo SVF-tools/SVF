@@ -53,7 +53,7 @@ class SVFG;
 // and I want to see what breaks.
 class WPAPass : public ModulePass
 {
-    typedef std::vector<PointerAnalysis*> PTAVector;
+    using PTAVector = std::vector<PointerAnalysis *>;
 
 public:
     /// Pass ID
@@ -76,7 +76,7 @@ public:
     virtual ~WPAPass();
 
     /// LLVM analysis usage
-    virtual inline void getAnalysisUsage(AnalysisUsage &au) const
+    inline void getAnalysisUsage(AnalysisUsage &au) const override
     {
         // declare your dependencies here.
         /// do not intend to change the IR in this pass,
@@ -84,7 +84,7 @@ public:
     }
 
     /// Get adjusted analysis for alias analysis
-    virtual inline void* getAdjustedAnalysisPointer(AnalysisID)
+    inline void* getAdjustedAnalysisPointer(AnalysisID) override
     {
         return this;
     }
@@ -120,10 +120,10 @@ public:
     virtual void runOnModule(SVFModule* svfModule);
 
     /// Run pointer analysis on LLVM module
-    virtual bool runOnModule(Module& module);
+    bool runOnModule(Module& module) override;
 
     /// PTA name
-    virtual inline StringRef getPassName() const
+    inline StringRef getPassName() const override
     {
         return "WPAPass";
     }

@@ -120,9 +120,9 @@ public:
 
 class PTACFInfoBuilder{
 public:
-    typedef Map<const Function*, DominatorTree*> FunToDTMap;  ///< map a function to its dominator tree
-    typedef Map<const Function*, PostDominatorTree*> FunToPostDTMap;  ///< map a function to its post dominator tree
-    typedef Map<const Function*, LoopInfo*> FunToLoopInfoMap;  ///< map a function to its loop info
+    using FunToDTMap = Map<const Function *, DominatorTree *>;  ///< map a function to its dominator tree
+    using FunToPostDTMap = Map<const Function *, PostDominatorTree *>;  ///< map a function to its post dominator tree
+    using FunToLoopInfoMap = Map<const Function *, LoopInfo *>;  ///< map a function to its loop info
 
     /// Constructor
      PTACFInfoBuilder();

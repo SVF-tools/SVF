@@ -26,19 +26,19 @@ class MHP
 {
 
 public:
-    typedef Set<const Function*> FunSet;
-    typedef Set<const Instruction*> InstSet;
-    typedef Set<const StmtSVFGNode*> SVFGNodeSet;
-    typedef TCT::InstVec InstVec;
-    typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
-    typedef Set<CxtThreadStmt> CxtThreadStmtSet;
-    typedef Map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
-    typedef Map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
+    using FunSet = Set<const Function*>;
+    using InstSet = Set<const Instruction*>;
+    using SVFGNodeSet = Set<const StmtSVFGNode*>;
+    using InstVec = TCT::InstVec;
+    using CxtThreadStmtWorkList = FIFOWorkList<CxtThreadStmt>;
+    using CxtThreadStmtSet = Set<CxtThreadStmt>;
+    using ThreadStmtToThreadInterleav = Map<const CxtThreadStmt,NodeBS>;
+    using InstToThreadStmtSetMap = Map<const Instruction*,CxtThreadStmtSet>;
 
-    typedef Set<CxtStmt> LockSpan;
+    using LockSpan = Set<CxtStmt>;
 
-    typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef Map<FuncPair, bool> FuncPairToBool;
+    using FuncPair = std::pair<const Function*,const Function*>;
+    using FuncPairToBool = Map<FuncPair, bool>;
 
     /// Constructor
     MHP(TCT* t);
@@ -272,13 +272,13 @@ public:
         TDDead,  //  thread is dead
     };
 
-    typedef TCT::InstVec InstVec;
-    typedef Map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef Map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
-    typedef Set<NodePair> ThreadPairSet;
-    typedef Map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
-    typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
-    typedef Map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
+    using InstVec = TCT::InstVec;
+    using CxtStmtToAliveFlagMap = Map<const CxtStmt,ValDomain>;
+    using CxtStmtToTIDMap = Map<const CxtStmt,NodeBS>;
+    using ThreadPairSet = Set<NodePair>;
+    using CxtStmtToLoopMap = Map<const CxtStmt, const Loop*>;
+    using CxtStmtWorkList = FIFOWorkList<CxtStmt>;
+    using forkjoinToPTASCEVMap = Map<const Instruction*, PTASCEV>;
     ForkJoinAnalysis(TCT* t) : tct(t)
     {
         collectSCEVInfo();

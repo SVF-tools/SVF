@@ -81,7 +81,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -119,7 +119,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -156,7 +156,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -202,7 +202,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -249,7 +249,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -259,7 +259,7 @@ public:
 class MSSAPHISVFGNode : public MRSVFGNode
 {
 public:
-    typedef Map<u32_t,const MRVer*> OPVers;
+    using OPVers = Map<u32_t, const MRVer *>;
 
 protected:
     const MemSSA::MDEF* res;
@@ -275,7 +275,7 @@ public:
     //@{
     inline const MRVer* getOpVer(u32_t pos) const
     {
-        OPVers::const_iterator it = opVers.find(pos);
+        auto it = opVers.find(pos);
         assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
@@ -321,7 +321,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -360,7 +360,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -386,7 +386,7 @@ public:
         return (fun==nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         assert(isFormalINPHI() && "expect a formal parameter phi");
         return fun;
@@ -422,7 +422,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
 private:
     const SVFFunction* fun;

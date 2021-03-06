@@ -59,10 +59,10 @@ class SVFGBuilder
 {
 
 public:
-    typedef PointerAnalysis::CallSiteSet CallSiteSet;
-    typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
-    typedef PointerAnalysis::FunctionSet FunctionSet;
-    typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
+    using CallSiteSet = PointerAnalysis::CallSiteSet;
+    using CallEdgeMap = PointerAnalysis::CallEdgeMap;
+    using FunctionSet = PointerAnalysis::FunctionSet;
+    using SVFGEdgeSet = SVFG::SVFGEdgeSetTy;
 
     /// Constructor
     SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
@@ -93,8 +93,8 @@ public:
     /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
     inline void markValidVFEdge(SVFGEdgeSet& edges)
     {
-        for(SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
-            vfEdgesAtIndCallSite.erase(*it);
+        for(auto *edge : edges)
+            vfEdgesAtIndCallSite.erase(edge);
     }
     /// Return true if this is an VF Edge pre-connected by Andersen's analysis
     inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge)

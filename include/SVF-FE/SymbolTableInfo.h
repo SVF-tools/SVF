@@ -47,18 +47,18 @@ public:
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
-    typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
+    using ValueToIDMapTy = OrderedMap<const Value *, SymID>;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
+    using IDToMemMapTy = OrderedMap<SymID, MemObj *>;
     /// function to sym id map
-    typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
+    using FunToIDMapTy = OrderedMap<const Function *, SymID>;
     /// sym id to sym type map
-    typedef OrderedMap<SymID,SYMTYPE> IDToSymTyMapTy;
+    using IDToSymTyMapTy = OrderedMap<SymID, SYMTYPE>;
     /// struct type to struct info map
-    typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
-    typedef Set<CallSite> CallSiteSet;
-    typedef OrderedMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
-    typedef OrderedMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
+    using TypeToFieldInfoMap = OrderedMap<const Type *, StInfo *>;
+    using CallSiteSet = Set<CallSite>;
+    using CallSiteToIDMapTy = OrderedMap<const Instruction *, CallSiteID>;
+    using IDToCallSiteMapTy = OrderedMap<CallSiteID, const Instruction *>;
 
     //@}
 
@@ -246,7 +246,7 @@ public:
     inline const MemObj* createDummyObj(SymID symId, const Type* type)
     {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        MemObj* memObj = new MemObj(symId, type);
+        auto* memObj = new MemObj(symId, type);
         objMap[symId] = memObj;
         return memObj;
     }
@@ -270,7 +270,7 @@ public:
             return blkPtrSymID();
         else
         {
-            ValueToIDMapTy::const_iterator iter =  valSymMap.find(val);
+            auto iter =  valSymMap.find(val);
             assert(iter!=valSymMap.end() &&"value sym not found");
             return iter->second;
         }
@@ -287,7 +287,7 @@ public:
     /// find the unique defined global across multiple modules
     inline const Value* getGlobalRep(const Value* val) const
     {
-        if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+        if(const auto* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
         {
             if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
                 val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
@@ -297,28 +297,28 @@ public:
 
     inline SymID getObjSym(const Value *val) const
     {
-        ValueToIDMapTy::const_iterator iter = objSymMap.find(getGlobalRep(val));
+        auto iter = objSymMap.find(getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
     }
 
     inline MemObj* getObj(SymID id) const
     {
-        IDToMemMapTy::const_iterator iter = objMap.find(id);
+        auto iter = objMap.find(id);
         assert(iter!=objMap.end() && "obj not found");
         return iter->second;
     }
 
     inline SymID getRetSym(const Function *val) const
     {
-        FunToIDMapTy::const_iterator iter =  returnSymMap.find(val);
+        auto iter =  returnSymMap.find(val);
         assert(iter!=returnSymMap.end() && "ret sym not found");
         return iter->second;
     }
 
     inline SymID getVarargSym(const Function *val) const
     {
-        FunToIDMapTy::const_iterator iter =  varargSymMap.find(val);
+        auto iter =  varargSymMap.find(val);
         assert(iter!=varargSymMap.end() && "vararg sym not found");
         return iter->second;
     }
@@ -371,7 +371,7 @@ public:
     TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T)
     {
         assert(T);
-        TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
+        auto it = typeToFieldInfo.find(T);
         if (it != typeToFieldInfo.end())
             return it;
         else
@@ -439,10 +439,10 @@ protected:
     TypeToFieldInfoMap typeToFieldInfo;
 
     ///The struct type with the most fields
-    const Type* maxStruct;
+    const Type* maxStruct{};
 
     ///The number of fields in max_struct
-    u32_t maxStSize;
+    u32_t maxStSize{};
 };
 
 

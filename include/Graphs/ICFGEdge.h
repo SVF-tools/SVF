@@ -30,6 +30,7 @@
 #ifndef ICFGEdge_H_
 #define ICFGEdge_H_
 
+#include "Graphs/GenericGraph.h"
 namespace SVF
 {
 
@@ -38,7 +39,7 @@ class ICFGNode;
 /*!
  * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
  */
-typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
+using GenericICFGEdgeTy = GenericEdge<ICFGNode>;
 class ICFGEdge : public GenericICFGEdgeTy
 {
 
@@ -53,7 +54,7 @@ public:
         RetCF,
     };
 
-    typedef ICFGEdgeK SVFGEdgeK;
+    using SVFGEdgeK = ICFGEdgeK;
 
 public:
     /// Constructor
@@ -84,8 +85,8 @@ public:
         return getEdgeKind() == IntraCF;
     }
     //@}
-    typedef GenericNode<ICFGNode,ICFGEdge>::GEdgeSetTy ICFGEdgeSetTy;
-    typedef ICFGEdgeSetTy SVFGEdgeSetTy;
+    using ICFGEdgeSetTy = GenericNode<ICFGNode, ICFGEdge>::GEdgeSetTy;
+    using SVFGEdgeSetTy = ICFGEdgeSetTy;
     /// Compute the unique edgeFlag value from edge kind and CallSiteID.
     static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs)
     {
@@ -117,7 +118,7 @@ public:
     /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
     /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
 
-    typedef std::pair<const Value*,NodeID> BranchCondition;
+    using BranchCondition = std::pair<const Value *, NodeID>;
 
     /// Constructor
     IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF)

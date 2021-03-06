@@ -17,7 +17,7 @@ template<typename ItTy = User::const_op_iterator>
 class generic_bridge_gep_type_iterator : public std::iterator<std::forward_iterator_tag, Type *, ptrdiff_t>
 {
 
-    typedef std::iterator<std::forward_iterator_tag,Type *, ptrdiff_t> super;
+    using super = std::iterator<std::forward_iterator_tag, Type *, ptrdiff_t>;
     ItTy OpIt;
     PointerIntPair<Type *,1> CurTy;
     unsigned AddrSpace;
@@ -71,7 +71,7 @@ public:
     {
         if ( CurTy.getInt() )
             return CurTy.getPointer();
-        CompositeType *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
+        auto *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
         return CT->getTypeAtIndex(getOperand());
     }
 
@@ -94,7 +94,7 @@ public:
         {
             CurTy.setInt(false);
         }
-        else if ( CompositeType * CT = dyn_cast<CompositeType>(CurTy.getPointer()) )
+        else if ( auto * CT = dyn_cast<CompositeType>(CurTy.getPointer()) )
         {
             CurTy.setPointer(CT->getTypeAtIndex(getOperand()));
         }
@@ -117,11 +117,11 @@ public:
 };
 
 
-typedef generic_bridge_gep_type_iterator<> bridge_gep_iterator;
+using bridge_gep_iterator = generic_bridge_gep_type_iterator<>;
 
 inline bridge_gep_iterator bridge_gep_begin(const User* GEP)
 {
-    auto *GEPOp = llvm::cast<GEPOperator>(GEP);
+    const auto *GEPOp = llvm::cast<GEPOperator>(GEP);
     return bridge_gep_iterator::begin(GEPOp->getSourceElementType(),
                                       llvm::cast<PointerType>(GEPOp->getPointerOperandType()->getScalarType())->getAddressSpace(),
                                       GEP->op_begin() + 1);
@@ -134,7 +134,7 @@ inline bridge_gep_iterator bridge_gep_end(const User* GEP)
 
 inline bridge_gep_iterator bridge_gep_begin(const User &GEP)
 {
-    auto &GEPOp = llvm::cast<GEPOperator>(GEP);
+    const auto &GEPOp = llvm::cast<GEPOperator>(GEP);
     return bridge_gep_iterator::begin( GEPOp.getSourceElementType(),
                                        llvm::cast<PointerType>(GEPOp.getPointerOperandType()->getScalarType())->getAddressSpace(),
                                        GEP.op_begin() + 1);

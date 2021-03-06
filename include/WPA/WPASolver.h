@@ -46,19 +46,19 @@ class WPASolver
 
 public:
     ///Define the GTraits and node iterator for printing
-    typedef llvm::GraphTraits<GraphType> GTraits;
-    typedef typename GTraits::NodeRef           GNODE;
-    typedef typename GTraits::EdgeType          GEDGE;
-    typedef typename GTraits::ChildIteratorType child_iterator;
+    using GTraits = llvm::GraphTraits<GraphType>;
+    using GNODE = typename GTraits::NodeRef;
+    using GEDGE = typename GTraits::EdgeType;
+    using child_iterator = typename GTraits::ChildIteratorType;
 
-    typedef SCCDetection<GraphType> SCC;
+    using SCC = SCCDetection<GraphType>;
 
-    typedef FIFOWorkList<NodeID> WorkList;
+    using WorkList = FIFOWorkList<NodeID>;
 
 protected:
 
     /// Constructor
-    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), scc(nullptr), numOfIteration(0)
+    WPASolver(): reanalyze(false), iterationForPrintStat(1000), _graph(nullptr), scc(nullptr)
     {
     }
     /// Destructor
@@ -176,9 +176,9 @@ protected:
     //@}
 
     /// Reanalyze if any constraint value changed
-    bool reanalyze;
+    bool reanalyze{};
     /// print out statistics for i-th iteration
-    u32_t iterationForPrintStat;
+    u32_t iterationForPrintStat{};
 
 
     /// Get node on the graph
@@ -205,7 +205,7 @@ protected:
 
 public:
     /// num of iterations during constaint solving
-    u32_t numOfIteration;
+    u32_t numOfIteration{};
 };
 
 } // End namespace SVF

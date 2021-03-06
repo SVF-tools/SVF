@@ -54,13 +54,13 @@ public:
 
 protected:
     /// Partition regions
-    virtual void partitionMRs();
+    void partitionMRs() override;
 
     /// Get memory region at a load
-    virtual void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) override;
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) override;
 private:
     /// Create memory regions for each points-to target.
     void createDistinctMR(const SVFFunction* func, const PointsTo& cpts);
@@ -73,9 +73,9 @@ private:
 class IntraDisjointMRG : public MRGenerator
 {
 public:
-    typedef OrderedMap<PointsTo, PointsToList> PtsToSubPtsMap;
-    typedef Map<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
-    typedef Map<const SVFFunction*, PointsToList> FunToInterMap;
+    using PtsToSubPtsMap = OrderedMap<PointsTo, PointsToList>;
+    using FunToPtsMap = Map<const SVFFunction *, PtsToSubPtsMap>;
+    using FunToInterMap = Map<const SVFFunction *, PointsToList>;
 
     IntraDisjointMRG(BVDataPTAImpl* p, bool ptrOnly) : MRGenerator(p, ptrOnly)
     {}
@@ -85,7 +85,7 @@ public:
 protected:
 
     /// Partition regions
-    virtual void partitionMRs();
+    void partitionMRs() override;
 
     /**
      * Get memory regions to be inserted at a load statement.
@@ -93,8 +93,8 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const SVFFunction* fun)
+    inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
+                                      const SVFFunction* fun) override
     {
         const PointsToList& inters = getIntersList(fun);
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
@@ -103,7 +103,7 @@ protected:
     void getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cpts, const PointsToList& inters);
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun) override;
 
     /// Create disjoint memory region
     void createDisjointMR(const SVFFunction* func, const PointsTo& cpts);
@@ -124,7 +124,7 @@ private:
 
     inline const PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func) const
     {
-        FunToPtsMap::const_iterator it = funcToPtsMap.find(func);
+        auto it = funcToPtsMap.find(func);
         assert(it != funcToPtsMap.end() && "can not find pts map for specified function");
         return it->second;
     }
@@ -146,7 +146,7 @@ public:
 
 protected:
     /// Partition regions
-    virtual void partitionMRs();
+    void partitionMRs() override;
 
     /**
      * Get memory regions to be inserted at a load statement.
@@ -154,8 +154,8 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
-                                      const SVFFunction*)
+    inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
+                                      const SVFFunction*) override
     {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }

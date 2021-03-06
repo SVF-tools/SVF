@@ -36,10 +36,7 @@
 #include "Util/ThreadAPI.h"
 #include "llvm/Support/JSON.h"
 
-namespace SVF
-{
-
-namespace SVFUtil
+namespace SVF::SVFUtil
 {
 
 
@@ -53,7 +50,7 @@ inline bool isAnAllocationWraper(const Instruction*)
 /// Return LLVM function if this value is
 inline const Function* getLLVMFunction(const Value* val)
 {
-    const Function *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
+    const auto *fun = SVFUtil::dyn_cast<Function>(val->stripPointerCasts());
     return fun;
 }
 
@@ -428,11 +425,10 @@ inline bool isProgEntryFunction (const Function * fun)
 /// Get program entry function from module.
 inline const SVFFunction* getProgEntryFunction(SVFModule* svfModule)
 {
-    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    for (const auto *fun : *svfModule)
     {
-        const SVFFunction *fun = *it;
-        if (isProgEntryFunction(fun))
-            return (fun);
+         if (isProgEntryFunction(fun))
+            return fun;
     }
     return nullptr;
 }
@@ -508,7 +504,7 @@ const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
 //@{
 inline const ConstantExpr *isGepConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::GetElementPtr)
             return constExpr;
@@ -518,7 +514,7 @@ inline const ConstantExpr *isGepConstantExpr(const Value *val)
 
 inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::IntToPtr)
             return constExpr;
@@ -528,7 +524,7 @@ inline const ConstantExpr *isInt2PtrConstantExpr(const Value *val)
 
 inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::PtrToInt)
             return constExpr;
@@ -538,7 +534,7 @@ inline const ConstantExpr *isPtr2IntConstantExpr(const Value *val)
 
 inline const ConstantExpr *isCastConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::BitCast)
             return constExpr;
@@ -548,7 +544,7 @@ inline const ConstantExpr *isCastConstantExpr(const Value *val)
 
 inline const ConstantExpr *isSelectConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::Select)
             return constExpr;
@@ -558,7 +554,7 @@ inline const ConstantExpr *isSelectConstantExpr(const Value *val)
 
 inline const ConstantExpr *isTruncConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::Trunc ||
                 constExpr->getOpcode() == Instruction::FPTrunc ||
@@ -572,7 +568,7 @@ inline const ConstantExpr *isTruncConstantExpr(const Value *val)
 
 inline const ConstantExpr *isCmpConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if(constExpr->getOpcode() == Instruction::ICmp || constExpr->getOpcode() == Instruction::FCmp)
             return constExpr;
@@ -582,7 +578,7 @@ inline const ConstantExpr *isCmpConstantExpr(const Value *val)
 
 inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if((constExpr->getOpcode() >= Instruction::BinaryOpsBegin) && (constExpr->getOpcode() <= Instruction::BinaryOpsEnd))
             return constExpr;
@@ -592,7 +588,7 @@ inline const ConstantExpr *isBinaryConstantExpr(const Value *val)
 
 inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
 {
-    if(const ConstantExpr* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
+    if(const auto* constExpr = SVFUtil::dyn_cast<ConstantExpr>(val))
     {
         if((constExpr->getOpcode() >= Instruction::UnaryOpsBegin) && (constExpr->getOpcode() <= Instruction::UnaryOpsEnd))
             return constExpr;
@@ -625,8 +621,6 @@ bool isIRFile(const std::string &filename);
 void processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                       std::vector<std::string> &moduleNameVec);
 
-} // End namespace SVFUtil
-
-} // End namespace SVF
+} // namespace SVF::SVFUtil
 
 #endif /* INCLUDE_SVF_FE_LLVMUTIL_H_ */

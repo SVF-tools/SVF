@@ -31,6 +31,7 @@
 #define PAGNODE_H_
 
 #include "Graphs/GenericGraph.h"
+#include "Graphs/PAGEdge.h"
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/SymbolTableInfo.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -41,7 +42,9 @@ namespace SVF
 /*
  * PAG node
  */
-typedef GenericNode<PAGNode,PAGEdge> GenericPAGNodeTy;
+class PAGNode;
+
+using GenericPAGNodeTy = GenericNode<PAGNode, PAGEdge>;
 class PAGNode : public GenericPAGNodeTy
 {
 
@@ -171,7 +174,7 @@ public:
     /// Has incoming PAG edges
     inline bool hasIncomingEdges(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        auto it = InEdgeKindToSetMap.find(kind);
         if (it != InEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -181,7 +184,7 @@ public:
     /// Has incoming VariantGepEdges
     inline bool hasIncomingVariantGepEdge() const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(PAGEdge::VariantGep);
+        auto it = InEdgeKindToSetMap.find(PAGEdge::VariantGep);
         if (it != InEdgeKindToSetMap.end())
         {
             return (!it->second.empty());
@@ -192,7 +195,7 @@ public:
     /// Get incoming PAGEdge iterator
     inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesBegin(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        auto it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
@@ -200,7 +203,7 @@ public:
     /// Get incoming PAGEdge iterator
     inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesEnd(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        auto it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
@@ -208,7 +211,7 @@ public:
     /// Has outgoing PAG edges
     inline bool hasOutgoingEdges(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        auto it = OutEdgeKindToSetMap.find(kind);
         if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -218,7 +221,7 @@ public:
     /// Get outgoing PAGEdge iterator
     inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        auto it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
@@ -226,7 +229,7 @@ public:
     /// Get outgoing PAGEdge iterator
     inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(PAGEdge::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        auto it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
@@ -296,14 +299,14 @@ public:
     {
     }
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         if (value && value->hasName())
             return value->getName();
         return "";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -356,19 +359,19 @@ public:
     }
 
     /// Return name of a LLVM value
-    virtual const std::string getValueName() const
+    virtual const std::string getValueName() const override
     {
         if (value && value->hasName())
             return value->getName();
         return "";
     }
     /// Return type of the value
-    inline virtual const llvm::Type* getType() const
+    inline const llvm::Type* getType() const override
     {
         return mem->getType();
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -419,14 +422,14 @@ public:
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::utostr(getOffset());
         return "offset_" + llvm::utostr(getOffset());
     }
 
-    inline const Type* getType() const
+    inline const Type* getType() const override
     {
         return gepValType;
     }
@@ -436,7 +439,7 @@ public:
         return fieldIdx;
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -500,20 +503,20 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const llvm::Type* getType() const
+    inline const llvm::Type* getType() const override
     {
         return SymbolTableInfo::SymbolInfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         if (value && value->hasName())
             return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
         return "offset_" + llvm::itostr(ls.getOffset());
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -554,14 +557,14 @@ public:
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         if (value && value->hasName())
             return value->getName().str() + " (base object)";
         return " (base object)";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -594,12 +597,12 @@ public:
     }
 
     /// Return name of a LLVM value
-    const std::string getValueName() const
+    const std::string getValueName() const override
     {
         return value->getName().str() + "_ret";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -633,12 +636,12 @@ public:
     }
 
     /// Return name of a LLVM value
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return value->getName().str() + "_vararg";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -674,12 +677,12 @@ public:
 
 
     /// Return name of this node
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return "dummyVal";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -715,12 +718,12 @@ public:
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return "dummyObj";
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -751,12 +754,12 @@ public:
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return "clone of " + ObjPN::getValueName();
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -787,12 +790,12 @@ public:
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return "clone (gep) of " + GepObjPN::getValueName();
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -823,12 +826,12 @@ public:
     }
 
     /// Return name of this node
-    inline const std::string getValueName() const
+    inline const std::string getValueName() const override
     {
         return "clone (FI) of " + FIObjPN::getValueName();
     }
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 } // End namespace SVF

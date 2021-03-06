@@ -29,11 +29,11 @@ class PCG
 {
 
 public:
-    typedef Set<const Function*> FunSet;
-    typedef std::vector<const Function*> FunVec;
-    typedef Set<const Instruction*> CallInstSet;
-    typedef FIFOWorkList<const Function*> FunWorkList;
-    typedef FIFOWorkList<const BasicBlock*> BBWorkList;
+    using FunSet = Set<const Function*>;
+    using FunVec = std::vector<const Function*>;
+    using CallInstSet = Set<const Instruction*>;
+    using FunWorkList = FIFOWorkList<const Function*>;
+    using BBWorkList = FIFOWorkList<const BasicBlock*>;
 
 private:
     FunSet spawners;

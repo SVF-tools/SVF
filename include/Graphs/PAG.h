@@ -48,34 +48,34 @@ class PAG : public GenericGraph<PAGNode,PAGEdge>
 {
 
 public:
-    typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef OrderedMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
-    typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
-    typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
-    typedef Set<const PAGEdge*> PAGEdgeSet;
-    typedef std::vector<const PAGEdge*> PAGEdgeList;
-    typedef std::vector<const PAGNode*> PAGNodeList;
-    typedef std::vector<const CopyPE*> CopyPEList;
-    typedef std::vector<const BinaryOPPE*> BinaryOPList;
-    typedef std::vector<const UnaryOPPE*> UnaryOPList;
-    typedef std::vector<const CmpPE*> CmpPEList;
-    typedef Map<const PAGNode*,CopyPEList> PHINodeMap;
-    typedef Map<const PAGNode*,BinaryOPList> BinaryNodeMap;
-    typedef Map<const PAGNode*,UnaryOPList> UnaryNodeMap;
-    typedef Map<const PAGNode*,CmpPEList> CmpNodeMap;
-    typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
-    typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
-    typedef Map<const RetBlockNode*,const PAGNode*> CSToRetMap;
-    typedef Map<const SVFFunction*,const PAGNode*> FunToRetMap;
-    typedef Map<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
-    typedef Map<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
-    typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, Size_t> NodeOffset;
-    typedef std::pair<NodeID, LocationSet> NodeLocationSet;
-    typedef Map<NodeOffset,NodeID> NodeOffsetMap;
-    typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
-    typedef Map<const Value*, NodeLocationSetMap> GepValPNMap;
-    typedef Map<NodePair,NodeID> NodePairSetMap;
+    using CallSiteSet = Set<const CallBlockNode *>;
+    using CallSiteToFunPtrMap = OrderedMap<const CallBlockNode *, NodeID>;
+    using FunPtrToCallSitesMap = Map<NodeID, CallSiteSet>;
+    using MemObjToFieldsMap = Map<NodeID, NodeBS>;
+    using PAGEdgeSet = Set<const PAGEdge *>;
+    using PAGEdgeList = std::vector<const PAGEdge *>;
+    using PAGNodeList = std::vector<const PAGNode *>;
+    using CopyPEList = std::vector<const CopyPE *>;
+    using BinaryOPList = std::vector<const BinaryOPPE *>;
+    using UnaryOPList = std::vector<const UnaryOPPE *>;
+    using CmpPEList = std::vector<const CmpPE *>;
+    using PHINodeMap = Map<const PAGNode *, CopyPEList>;
+    using BinaryNodeMap = Map<const PAGNode *, BinaryOPList>;
+    using UnaryNodeMap = Map<const PAGNode *, UnaryOPList>;
+    using CmpNodeMap = Map<const PAGNode *, CmpPEList>;
+    using FunToArgsListMap = Map<const SVFFunction *, PAGNodeList>;
+    using CSToArgsListMap = Map<const CallBlockNode *, PAGNodeList>;
+    using CSToRetMap = Map<const RetBlockNode *, const PAGNode *>;
+    using FunToRetMap = Map<const SVFFunction *, const PAGNode *>;
+    using FunToPAGEdgeSetMap = Map<const SVFFunction *, PAGEdgeSet>;
+    using Inst2PAGEdgesMap = Map<const ICFGNode *, PAGEdgeList>;
+    using NodeToNodeMap = Map<NodeID, NodeID>;
+    using NodeOffset = std::pair<NodeID, Size_t>;
+    using NodeLocationSet = std::pair<NodeID, LocationSet>;
+    using NodeOffsetMap = Map<NodeOffset, NodeID>;
+    using NodeLocationSetMap = Map<NodeLocationSet, NodeID>;
+    using GepValPNMap = Map<const Value *, NodeLocationSetMap>;
+    using NodePairSetMap = Map<NodePair, NodeID>;
 
 private:
     SymbolTableInfo* symInfo;
@@ -132,9 +132,9 @@ public:
     inline void initialiseCandidatePointers()
     {
         // collect candidate pointers for demand-driven analysis
-        for (iterator nIter = begin(); nIter != end(); ++nIter)
+        for (auto & nIter : *this)
         {
-            NodeID nodeId = nIter->first;
+            NodeID nodeId = nIter.first;
             // do not compute points-to for isolated node
             if (isValidPointer(nodeId) == false)
                 continue;
@@ -342,7 +342,7 @@ public:
     /// Get function arguments list
     inline const PAGNodeList& getFunArgsList(const SVFFunction*  func) const
     {
-        FunToArgsListMap::const_iterator it = funArgsListMap.find(func);
+        auto it = funArgsListMap.find(func);
         assert(it != funArgsListMap.end() && "this function doesn't have arguments");
         return it->second;
     }
@@ -359,7 +359,7 @@ public:
     /// Get callsite argument list
     inline const PAGNodeList& getCallSiteArgsList(const CallBlockNode* cs) const
     {
-        CSToArgsListMap::const_iterator it = callSiteArgsListMap.find(cs);
+        auto it = callSiteArgsListMap.find(cs);
         assert(it != callSiteArgsListMap.end() && "this call site doesn't have arguments");
         return it->second;
     }
@@ -371,7 +371,7 @@ public:
     /// Get callsite return
     inline const PAGNode* getCallSiteRet(const RetBlockNode* cs) const
     {
-        CSToRetMap::const_iterator it = callSiteRetMap.find(cs);
+        auto it = callSiteRetMap.find(cs);
         assert(it != callSiteRetMap.end() && "this call site doesn't have return");
         return it->second;
     }
@@ -387,7 +387,7 @@ public:
     /// Get function return list
     inline const PAGNode* getFunRet(const SVFFunction*  func) const
     {
-        FunToRetMap::const_iterator it = funRetMap.find(func);
+        auto it = funRetMap.find(func);
         assert(it != funRetMap.end() && "this function doesn't have return");
         return it->second;
     }
@@ -428,12 +428,12 @@ public:
     /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
     inline NodeID getGepValNode(const Value* curInst, NodeID base, const LocationSet& ls) const
     {
-        GepValPNMap::const_iterator iter = GepValNodeMap.find(curInst);
+        auto iter = GepValNodeMap.find(curInst);
         if(iter==GepValNodeMap.end()){
             return UINT_MAX;
         }
         else{
-            NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
+            auto lit = iter->second.find(std::make_pair(base, ls));
             if(lit==iter->second.end())
                 return UINT_MAX;
             else
@@ -455,13 +455,13 @@ public:
     }
     inline NodeID getFunPtr(const CallBlockNode* cs) const
     {
-        CallSiteToFunPtrMap::const_iterator it = indCallSiteToFunPtrMap.find(cs);
+        auto it = indCallSiteToFunPtrMap.find(cs);
         assert(it!=indCallSiteToFunPtrMap.end() && "indirect callsite not have a function pointer?");
         return it->second;
     }
     inline const CallSiteSet& getIndCallSites(NodeID funPtr) const
     {
-        FunPtrToCallSitesMap::const_iterator it = funPtrToCallSitesMap.find(funPtr);
+        auto it = funPtrToCallSitesMap.find(funPtr);
         assert(it!=funPtrToCallSitesMap.end() && "function pointer not used at any indirect callsite?");
         return it->second;
     }
@@ -491,7 +491,7 @@ public:
     {
         PAGEdge edge(src,dst,kind);
         const PAGEdge::PAGEdgeSetTy& edgeSet = getEdgeSet(kind);
-        PAGEdge::PAGEdgeSetTy::const_iterator it = edgeSet.find(&edge);
+        auto it = edgeSet.find(&edge);
         assert(it != edgeSet.end() && "can not find pag edge");
         return (*it);
     }
@@ -567,7 +567,7 @@ public:
     {
         PAGNode* node = pag->getPAGNode(id);
         assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-        ObjPN* obj = SVFUtil::cast<ObjPN>(node);
+        auto* obj = SVFUtil::cast<ObjPN>(node);
         return getFIObjNode(obj->getMemObj());
     }
     //@}
@@ -665,7 +665,7 @@ public:
     {
         const PAGNode* node = pag->getPAGNode(id);
         assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-        const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
+        const auto* obj = SVFUtil::cast<ObjPN>(node);
         return obj->getMemObj();
     }
     //@}
@@ -864,7 +864,7 @@ template<> struct GraphTraits<Inverse<SVF::PAGNode *> > : public GraphTraits<Inv
 
 template<> struct GraphTraits<SVF::PAG*> : public GraphTraits<SVF::GenericGraph<SVF::PAGNode,SVF::PAGEdge>* >
 {
-    typedef SVF::PAGNode *NodeRef;
+    using NodeRef = SVF::PAGNode *;
 };
 
 } // End namespace llvm
