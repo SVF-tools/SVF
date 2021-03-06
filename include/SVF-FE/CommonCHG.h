@@ -11,6 +11,8 @@
 #ifndef COMMONCHG_H_
 #define COMMONCHG_H_
 
+#include "Util/BasicTypes.h"
+
 namespace SVF
 {
 

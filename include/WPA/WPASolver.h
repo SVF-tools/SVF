@@ -31,6 +31,7 @@
 #ifndef GRAPHSOLVER_H_
 #define GRAPHSOLVER_H_
 
+#include "Util/SCC.h"
 #include "Util/WorkList.h"
 
 namespace SVF
