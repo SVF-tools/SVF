@@ -53,7 +53,7 @@ const string VThunkFuncLabel = "virtual thunk to ";
 const string clsName = "class.";
 const string structName = "struct.";
 
-static bool isOperOverload(const string name)
+static bool isOperOverload(const string &name)
 {
     s32_t leftnum = 0, rightnum = 0;
     string subname = name;
@@ -229,7 +229,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
         else
             return false;
     }
-    if (const FunctionType *functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
+    if (const auto *functy = SVFUtil::dyn_cast<FunctionType>(elemTy))
     {
         const Type *paramty = functy->getParamType(0);
         string className = cppUtil::getClassNameFromType(paramty);
@@ -333,24 +333,23 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     {
         return true;
     }
-    else
+
+    for (const User *thisU : thisPtr1->users())
     {
-        for (const User *thisU : thisPtr1->users())
+        if (const auto *store = SVFUtil::dyn_cast<StoreInst>(thisU))
         {
-            if (const auto *store = SVFUtil::dyn_cast<StoreInst>(thisU))
+            for (const User *storeU : store->getPointerOperand()->users())
             {
-                for (const User *storeU : store->getPointerOperand()->users())
+                if (const auto *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                 {
-                    if (const auto *load = SVFUtil::dyn_cast<LoadInst>(storeU))
-                    {
-                        if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
-                            return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
-                    }
+                    if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
+                        return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());
                 }
             }
         }
-        return false;
     }
+    return false;
+
 }
 
 const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
@@ -373,7 +372,7 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs)
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != nullptr);
     const Value *vfuncptr = loadInst->getPointerOperand();
-    const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
+    const auto *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     assert(gepInst != nullptr);
     const Value *vtbl = gepInst->getPointerOperand();
     return vtbl;
@@ -384,10 +383,10 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != nullptr);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
-    const GetElementPtrInst *vfuncptrgepinst =
+    const auto *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
-    const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
+    const auto *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
     if (idx == nullptr)
     {
@@ -402,7 +401,7 @@ u64_t cppUtil::getVCallIdx(CallSite cs)
 string cppUtil::getClassNameFromType(const Type *ty)
 {
     string className = "";
-    if (const PointerType *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
+    if (const auto *ptrType = SVFUtil::dyn_cast<PointerType>(ty))
     {
         const Type *elemType = ptrType->getElementType();
         if (SVFUtil::isa<StructType>(elemType) &&
@@ -462,11 +461,11 @@ bool cppUtil::isConstructor(const Function *F)
     {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
-    if (dname.className.size() > 0 && (dname.className.compare(dname.funcName) == 0))
+    if (!dname.className.empty() && (dname.className == dname.funcName))
         /// TODO: on mac os function name is an empty string after demangling
         return true;
-    else
-        return false;
+
+    return false;
 }
 
 bool cppUtil::isDestructor(const Function *F)
@@ -490,13 +489,13 @@ bool cppUtil::isDestructor(const Function *F)
     {
         dname.className = getBeforeBrackets(dname.className.substr(colon+2));
     }
-    if (dname.className.size() > 0 && dname.funcName.size() > 0 &&
+    if (!dname.className.empty() && !dname.funcName.empty() &&
             dname.className.size() + 1 == dname.funcName.size() &&
             dname.funcName.compare(0, 1, "~") == 0 &&
-            dname.className.compare(dname.funcName.substr(1)) == 0)
+            dname.className == dname.funcName.substr(1))
         return true;
-    else
-        return false;
+
+    return false;
 }
 
 string cppUtil::getClassNameOfThisPtr(CallSite cs)
@@ -505,10 +504,10 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
     Instruction *inst = cs.getInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
-        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
+        const auto &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
         thisPtrClassName = mdstr.getString().str();
     }
-    if (thisPtrClassName.size() == 0)
+    if (thisPtrClassName.empty())
     {
         const Value *thisPtr = getVCallThisPtr(cs);
         thisPtrClassName = getClassNameFromType(thisPtr->getType());
@@ -532,7 +531,7 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs)
     Instruction *inst = cs.getInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
-        const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
+        const auto &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
         funName = mdstr.getString().str();
     }
     return funName;
@@ -549,7 +548,7 @@ bool cppUtil::VCallInCtorOrDtor(CallSite cs)
     if (isConstructor(func) || isDestructor(func))
     {
         struct DemangledName dname = demangle(func->getName().str());
-        if (classNameOfThisPtr.compare(dname.className) == 0)
+        if (classNameOfThisPtr == dname.className)
             return true;
     }
     return false;

@@ -64,7 +64,7 @@ void Steensgaard::setEC(NodeID node, NodeID rep)
 
 
 /// merge node into equiv class and merge node's pts into ec's pts
-void Steensgaard::ecUnion(NodeID node, NodeID ec){
+void Steensgaard::ecUnion(NodeID node, NodeID ec) {
     if(unionPts(ec, node))
         pushIntoWorklist(ec);
     setEC(node,ec);
@@ -75,11 +75,11 @@ void Steensgaard::ecUnion(NodeID node, NodeID ec){
  */
 void Steensgaard::processAllAddr()
 {
-    for (ConstraintGraph::const_iterator nodeIt = consCG->begin(), nodeEit = consCG->end(); nodeIt != nodeEit; nodeIt++)
+    for (auto nodeIt : *consCG)
     {
-        ConstraintNode * cgNode = nodeIt->second;
-        for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
-                it != eit; ++it){
+        ConstraintNode * cgNode = nodeIt.second;
+        for (auto it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
+             it != eit; ++it){
             numOfProcessedAddr++;
 
             const AddrCGEdge* addr = cast<AddrCGEdge>(*it);

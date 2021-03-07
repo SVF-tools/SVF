@@ -202,17 +202,17 @@ public:
     void buildCHGEdges(const SVFFunction* F);
     void connectInheritEdgeViaCall(const SVFFunction* caller, CallSite cs);
     void connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* store);
-    void addEdge(const std::string className,
-                 const std::string baseClassName,
+    void addEdge(const std::string &className,
+                 const std::string &baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
-    CHNode *getNode(const std::string name) const;
-    CHNode *createNode(const std::string name);
+    CHNode *getNode(const std::string &name) const;
+    CHNode *createNode(const std::string &name);
     void buildClassNameToAncestorsDescendantsMap();
     void buildVirtualFunctionToIDMap();
     void buildCSToCHAVtblsAndVfnsMap();
     void readInheritanceMetadataFromModule(const Module &M);
     void analyzeVTables(const Module &M);
-    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
+    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string &className);
     const CHNodeSetTy& getCSClasses(CallSite cs);
     void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
@@ -223,8 +223,8 @@ public:
         auto it = virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
-        else
-            return -1;
+
+        return -1;
     }
     inline const SVFFunction* getVirtualFunctionBasedonID(s32_t id) const
     {

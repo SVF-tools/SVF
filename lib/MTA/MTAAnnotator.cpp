@@ -7,6 +7,7 @@
 
 #include "MTA/MTAAnnotator.h"
 #include "MTA/LockAnalysis.h"
+#include "SVF-FE/LLVMUtil.h"
 #include <sstream>
 
 using namespace SVF;
@@ -21,12 +22,12 @@ void MTAAnnotator::annotateDRCheck(Instruction* inst)
     rawstr << DR_CHECK;
 
     /// memcpy and memset is not annotated
-    if (StoreInst* st = SVFUtil::dyn_cast<StoreInst>(inst))
+    if (auto* st = SVFUtil::dyn_cast<StoreInst>(inst))
     {
         numOfAnnotatedSt++;
         addMDTag(inst, st->getPointerOperand(), rawstr.str());
     }
-    else if (LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(inst))
+    else if (auto* ld = SVFUtil::dyn_cast<LoadInst>(inst))
     {
         numOfAnnotatedLd++;
         addMDTag(inst, ld->getPointerOperand(), rawstr.str());
@@ -36,12 +37,12 @@ void MTAAnnotator::annotateDRCheck(Instruction* inst)
 void MTAAnnotator::collectLoadStoreInst(SVFModule* mod)
 {
 
-    for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+    for (auto & F : *mod)
     {
-        const Function* fun = (*F);
+        const Function* fun = F;
         if (SVFUtil::isExtCall(fun))
             continue;
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
+        for (inst_iterator II = inst_begin(F), E = inst_end(F); II != E; ++II)
         {
             const Instruction *inst = &*II;
             if (SVFUtil::isa<LoadInst>(inst))
@@ -70,7 +71,7 @@ void MTAAnnotator::collectLoadStoreInst(SVFModule* mod)
 
 const Value* MTAAnnotator::getStoreOperand(const Instruction* inst)
 {
-    if (const StoreInst* st = SVFUtil::dyn_cast<StoreInst>(inst))
+    if (const auto* st = SVFUtil::dyn_cast<StoreInst>(inst))
     {
         return st->getPointerOperand();
     }
@@ -88,11 +89,12 @@ const Value* MTAAnnotator::getStoreOperand(const Instruction* inst)
 }
 const Value* MTAAnnotator::getLoadOperand(const Instruction* inst)
 {
-    if (const LoadInst* ld = SVFUtil::dyn_cast<LoadInst>(inst))
+    if (const auto* ld = SVFUtil::dyn_cast<LoadInst>(inst))
     {
         return ld->getPointerOperand();
     }
-    else if (isMemcpy(inst))
+
+    if (isMemcpy(inst))
     {
         return inst->getOperand(1);
     }
@@ -123,19 +125,17 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 
     /// find fork arguments' objects
     const PAGEdge::PAGEdgeSetTy& forkedges = pag->getPTAEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
+    for (auto *edge : forkedges)
     {
-        PAGEdge* edge = *it;
-        worklist |= pta->getPts(edge->getDstID());
+         worklist |= pta->getPts(edge->getDstID());
         worklist |= pta->getPts(edge->getSrcID());
     }
 
     /// find global pointer-to objects
     const PAG::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
-    for (PAG::PAGEdgeSet::iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
+    for (const auto *edge : globaledges)
     {
-        const PAGEdge* edge = *it;
-        if (edge->getEdgeKind() == PAGEdge::Addr)
+         if (edge->getEdgeKind() == PAGEdge::Addr)
         {
             worklist.set(edge->getSrcID());
         }
@@ -148,43 +148,43 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
         nonlocalobjs.set(obj);
         worklist.reset(obj);
         PointsTo pts = pta->getPts(obj);
-        for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
+        for (const auto& pt : pts)
         {
-            if (!nonlocalobjs.test(*pit))
-                worklist.set(*pit);
+            if (!nonlocalobjs.test(pt))
+                worklist.set(pt);
         }
         NodeBS fields = pag->getAllFieldsObjNode(obj);
-        for (NodeBS::iterator pit = fields.begin(), epit = fields.end(); pit != epit; ++pit)
+        for (const auto& field : fields)
         {
-            if (!nonlocalobjs.test(*pit))
-                worklist.set(*pit);
+            if (!nonlocalobjs.test(field))
+                worklist.set(field);
         }
     }
 
     /// compute all store and load instructions that may operate a non-local object.
     InstSet needannost;
     InstSet needannold;
-    for (InstSet::iterator it = storeset.begin(), eit = storeset.end(); it != eit; ++it)
+    for (const auto *it : storeset)
     {
-        PointsTo pts = pta->getPts(pag->getValueNode(getStoreOperand(*it)));
-        for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
+        PointsTo pts = pta->getPts(pag->getValueNode(getStoreOperand(it)));
+        for (const auto& pt : pts)
         {
-            if (nonlocalobjs.test(*pit))
+            if (nonlocalobjs.test(pt))
             {
-                needannost.insert(*it);
+                needannost.insert(it);
                 break;
             }
         }
     }
 
-    for (InstSet::iterator it = loadset.begin(), eit = loadset.end(); it != eit; ++it)
+    for (const auto *it : loadset)
     {
-        PointsTo pts = pta->getPts(pag->getValueNode(getLoadOperand(*it)));
-        for (PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit != epit; ++pit)
+        PointsTo pts = pta->getPts(pag->getValueNode(getLoadOperand(it)));
+        for (const auto& pt : pts)
         {
-            if (nonlocalobjs.test(*pit))
+            if (nonlocalobjs.test(pt))
             {
-                needannold.insert(*it);
+                needannold.insert(it);
                 break;
             }
         }
@@ -208,9 +208,9 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
     DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune Alias or MHP pairs\n"));
     InstSet needannost;
     InstSet needannold;
-    for (InstSet::iterator it1 = storeset.begin(), eit1 = storeset.end(); it1 != eit1; ++it1)
+    for (auto it1 = storeset.begin(), eit1 = storeset.end(); it1 != eit1; ++it1)
     {
-        for (InstSet::iterator it2 = it1, eit2 = storeset.end(); it2 != eit2; ++it2)
+        for (auto it2 = it1, eit2 = storeset.end(); it2 != eit2; ++it2)
         {
             if(!pta->alias(getStoreOperand(*it1), getStoreOperand(*it2)))
                 continue;
@@ -232,23 +232,23 @@ void MTAAnnotator::pruneAliasMHP(PointerAnalysis* pta)
                 needannost.insert(*it2);
             }
         }
-        for (InstSet::iterator it2 = loadset.begin(), eit2 = loadset.end(); it2 != eit2; ++it2)
+        for (const auto *it2 : loadset)
         {
-            if(!pta->alias(getStoreOperand(*it1), getLoadOperand(*it2)))
+            if(!pta->alias(getStoreOperand(*it1), getLoadOperand(it2)))
                 continue;
 
             if (AnnoMHP)
             {
-                if (mhp->mayHappenInParallel(*it1, *it2) && !lsa->isProtectedByCommonLock(*it1, *it2))
+                if (mhp->mayHappenInParallel(*it1, it2) && !lsa->isProtectedByCommonLock(*it1, it2))
                 {
                     needannost.insert(*it1);
-                    needannold.insert(*it2);
+                    needannold.insert(it2);
                 }
             }
             else
             {
                 needannost.insert(*it1);
-                needannold.insert(*it2);
+                needannold.insert(it2);
             }
         }
     }
@@ -270,12 +270,12 @@ void MTAAnnotator::performAnnotate()
 {
     if (!AnnoFlag)
         return;
-    for (InstSet::iterator it = storeset.begin(), eit = storeset.end(); it != eit; ++it)
+    for (const auto *it : storeset)
     {
-        annotateDRCheck(const_cast<Instruction*>(*it));
+        annotateDRCheck(const_cast<Instruction*>(it));
     }
-    for (InstSet::iterator it = loadset.begin(), eit = loadset.end(); it != eit; ++it)
+    for (const auto *it : loadset)
     {
-        annotateDRCheck(const_cast<Instruction*>(*it));
+        annotateDRCheck(const_cast<Instruction*>(it));
     }
 }

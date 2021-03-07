@@ -64,13 +64,13 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
 {
     PAG* pag = svfg->getPAG();
     NodeVector worklist;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(auto it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         PAGNode* pagNode = it->second;
         if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
             continue;
 
-        if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
+        if(auto* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
             if(SVFUtil::isa<DummyObjPN>(pag->getPAGNode(gepobj->getBaseNode())))
                 continue;
         }
@@ -88,9 +88,9 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
         worklist.pop_back();
         globs.set(id);
         const PointsTo& pts = pta->getPts(id);
-        for(PointsTo::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it)
+        for(const auto& pt : pts)
         {
-            globs |= CollectPtsChain(pta,*it,cachedPtsMap);
+            globs |= CollectPtsChain(pta,pt,cachedPtsMap);
         }
     }
 }
@@ -100,30 +100,28 @@ NodeBS& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPT
     PAG* pag = svfg->getPAG();
 
     NodeID baseId = pag->getBaseObjNode(id);
-    NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
+    auto it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
         return it->second;
-    else
+
+    PointsTo& pts = cachedPtsMap[baseId];
+    pts |= pag->getFieldsAfterCollapse(baseId);
+
+    WorkList worklist;
+    for(const auto& pt : pts)
+        worklist.push(pt);
+
+    while(!worklist.empty())
     {
-        PointsTo& pts = cachedPtsMap[baseId];
-        pts |= pag->getFieldsAfterCollapse(baseId);
-
-        WorkList worklist;
-        for(PointsTo::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it)
-            worklist.push(*it);
-
-        while(!worklist.empty())
+        NodeID nodeId = worklist.pop();
+        const PointsTo& tmp = pta->getPts(nodeId);
+        for(const auto &it : tmp)
         {
-            NodeID nodeId = worklist.pop();
-            const PointsTo& tmp = pta->getPts(nodeId);
-            for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
-            {
-                pts |= CollectPtsChain(pta,*it,cachedPtsMap);
-            }
+            pts |= CollectPtsChain(pta,it,cachedPtsMap);
         }
-        return pts;
     }
 
+    return pts;
 }
 
 /*!
@@ -142,11 +140,11 @@ bool SaberSVFGBuilder::accessGlobal(BVDataPTAImpl* pta,const PAGNode* pagNode)
 void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
 {
 
-    for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it)
+    for(auto & it : *svfg)
     {
-        const SVFGNode* node = it->second;
+        const SVFGNode* node = it.second;
 
-        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
+        if(const auto* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
             /// for store, connect the RHS/LHS pointer to its def
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
@@ -183,25 +181,21 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
 void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
 {
     PAG* pag = PAG::getPAG();
-    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
-            eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
+    for(auto & it : pag->getCallSiteArgsMap())
     {
         PTACallGraph::FunctionSet callees;
-        callgraph->getCallees(it->first, callees);
-        for (PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
-                ecit = callees.end(); cit != ecit; cit++)
+        callgraph->getCallees(it.first, callees);
+        for (const auto *fun : callees)
         {
 
-            const SVFFunction* fun = *cit;
-            if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
+             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                PAG::PAGNodeList& arglist = it->second;
-                for(PAG::PAGNodeList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
-					const PAGNode *pagNode = *ait;
-					if (pagNode->isPointer()) {
-						addActualParmVFGNode(pagNode, it->first);
-						svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it->first)->getId());
+                PAG::PAGNodeList& arglist = it.second;
+                for(const auto *pagNode : arglist){
+						if (pagNode->isPointer()) {
+						addActualParmVFGNode(pagNode, it.first);
+						svfg->addIntraDirectVFEdge(svfg->getDefSVFGNode(pagNode)->getId(), svfg->getActualParmVFGNode(pagNode, it.first)->getId());
 					}
                 }
             }

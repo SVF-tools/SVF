@@ -40,7 +40,7 @@ void SaberAnnotator::annotateSource()
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_SLICESOURCE ; //<< _curSlice->getSource()->getId();
-    if(const Instruction* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getLLVMValue(_curSlice->getSource())))
+    if(const auto* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getLLVMValue(_curSlice->getSource())))
     {
         addMDTag(const_cast<Instruction*>(sourceinst),rawstr.str());
     }
@@ -54,14 +54,13 @@ void SaberAnnotator::annotateSource()
  */
 void SaberAnnotator::annotateSinks()
 {
-    for(ProgSlice::SVFGNodeSet::const_iterator it = _curSlice->getSinks().begin(),
-            eit = _curSlice->getSinks().end(); it!=eit; ++it)
+    for(const auto *it : _curSlice->getSinks())
     {
-        if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(*it))
+        if(const auto* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(it))
         {
             const Instruction* sinkinst = ap->getCallSite()->getCallSite();
             assert(SVFUtil::isa<CallInst>(sinkinst) && "not a call instruction?");
-            const CallInst* sink = SVFUtil::cast<CallInst>(sinkinst);
+            const auto* sink = SVFUtil::cast<CallInst>(sinkinst);
             std::string str;
             raw_string_ostream rawstr(str);
             rawstr << SB_SLICESINK << _curSlice->getSource()->getId();
@@ -83,7 +82,7 @@ void SaberAnnotator::annotateFeasibleBranch(const BranchInst *brInst, u32_t succ
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_FESIBLE << _curSlice->getSource()->getId();
-    BranchInst* br = const_cast<BranchInst*>(brInst);
+    auto* br = const_cast<BranchInst*>(brInst);
     addMDTag(br,br->getCondition(),rawstr.str());
 }
 
@@ -98,7 +97,7 @@ void SaberAnnotator::annotateInfeasibleBranch(const BranchInst *brInst, u32_t su
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_INFESIBLE << _curSlice->getSource()->getId();
-    BranchInst* br = const_cast<BranchInst*>(brInst);
+    auto* br = const_cast<BranchInst*>(brInst);
     addMDTag(br,br->getCondition(),rawstr.str());
 }
 

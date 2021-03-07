@@ -156,7 +156,6 @@ void PCG::collectSpawners()
  */
 void PCG::collectSpawnees()
 {
-
     /// find all the spawnees recursively on call graph
     FunWorkList worklist;
     for (FunSet::iterator it = spawnees.begin(), eit = spawnees.end(); it != eit; ++it)

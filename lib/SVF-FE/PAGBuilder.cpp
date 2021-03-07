@@ -71,10 +71,9 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
     ExternalPAG::initialise(svfModule);
 
     /// handle functions
-    for (SVFModule::iterator fit = svfModule->begin(), efit = svfModule->end();
-            fit != efit; ++fit)
+    for (auto & fit : *svfModule)
     {
-        const SVFFunction& fun = **fit;
+        const SVFFunction& fun = *fit;
         /// collect return node of function fun
         if(!SVFUtil::isExtCall(&fun))
         {
@@ -102,11 +101,9 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
                 pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
             }
         }
-        for (Function::iterator bit = fun.getLLVMFun()->begin(), ebit = fun.getLLVMFun()->end();
-                bit != ebit; ++bit)
+        for (auto & bb : *fun.getLLVMFun())
         {
-            BasicBlock& bb = *bit;
-            for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
+             for (BasicBlock::iterator it = bb.begin(), eit = bb.end();
                     it != eit; ++it)
             {
                 Instruction& inst = *it;
@@ -212,7 +209,7 @@ bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls)
  */
 void PAGBuilder::processCE(const Value *val)
 {
-    if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
+    if (const auto* ref = SVFUtil::dyn_cast<Constant>(val))
     {
         if (const ConstantExpr* gepce = isGepConstantExpr(ref))
         {

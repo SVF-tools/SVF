@@ -56,12 +56,12 @@ void VersionedFlowSensitive::finalize()
 void VersionedFlowSensitive::prelabel(void)
 {
     double start = stat->getClk(true);
-    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    for (auto & it : *svfg)
     {
-        NodeID l = it->first;
-        const SVFGNode *sn = it->second;
+        NodeID l = it.first;
+        const SVFGNode *sn = it.second;
 
-        if (const StoreSVFGNode *stn = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+        if (const auto *stn = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
             // l: *p = q.
             // If p points to o (Andersen's), l yields a new version for o.
@@ -85,7 +85,7 @@ void VersionedFlowSensitive::prelabel(void)
             // so we give it one just in case. This is sound but imprecise.
             for (const SVFGEdge *e : sn->getOutEdges())
             {
-                const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+                const auto *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
                 if (!ie) continue;
                 for (NodeID o : ie->getPointsTo())
                 {
@@ -116,7 +116,7 @@ void VersionedFlowSensitive::meldLabel(void) {
 
         // Propagate l's y to lp's c for all l --o--> lp.
         for (const SVFGEdge *e : sl->getOutEdges()) {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            const auto *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
 
             NodeID lp = ie->getDstNode()->getId();
@@ -175,7 +175,7 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             NodeID o = omv.first;
             MeldVersion &mv = omv.second;
 
-            Map<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            auto foundVersion = mvv.find(mv);
             // If a mapping for foudnVersion exists, use it, otherwise create a new Version,
             // keep track of it, and use that.
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
@@ -197,7 +197,7 @@ void VersionedFlowSensitive::mapMeldVersions(void)
             NodeID o = omv.first;
             MeldVersion &mv = omv.second;
 
-            Map<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
+            auto foundVersion = mvv.find(mv);
             Version v = foundVersion == mvv.end() ? mvv[mv] = ++curVersion : foundVersion->second;
             yieldl[o] = v;
         }
@@ -216,7 +216,7 @@ bool VersionedFlowSensitive::delta(NodeID l)
     // Whether a node is a delta node or not. Decent boon to performance.
     static Map<NodeID, bool> deltaCache;
 
-    Map<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
+    auto isDelta = deltaCache.find(l);
     if (isDelta != deltaCache.end()) return isDelta->second;
 
     const SVFGNode *s = svfg->getSVFGNode(l);
@@ -254,7 +254,7 @@ bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) 
 {
     // Choose which map we are checking.
     const LocVersionMap &m = v == CONSUME ? consume : yield;
-    const LocVersionMap::const_iterator ml = m.find(l);
+    const auto ml = m.find(l);
     if (ml == m.end()) return false;
     return ml->second.find(o) != ml->second.end();
 }
@@ -262,13 +262,13 @@ bool VersionedFlowSensitive::hasVersion(NodeID l, NodeID o, enum VersionType v) 
 void VersionedFlowSensitive::determineReliance(void)
 {
     double start = stat->getClk(true);
-    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    for (auto & it : *svfg)
     {
-        NodeID l = it->first;
-        const SVFGNode *sn = it->second;
+        NodeID l = it.first;
+        const SVFGNode *sn = it.second;
         for (const SVFGEdge *e : sn->getOutEdges())
         {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            const auto *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
 
             ObjToVersionMap &yieldl = yield[l];
@@ -309,7 +309,7 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v, bool recurse)
 {
     double start = stat->getClk();
 
-    Map<Version, Set<Version>>::iterator relyingVersions = versionReliance[o].find(v);
+    auto relyingVersions = versionReliance[o].find(v);
     if (relyingVersions != versionReliance[o].end())
     {
         for (Version r : relyingVersions->second)
@@ -351,7 +351,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         }
         else if (SVFUtil::isa<FormalINSVFGNode>(dstNode) || SVFUtil::isa<ActualOUTSVFGNode>(dstNode))
         {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            const auto *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             assert(ie && "VFS::updateConnectedNodes: given direct edge?");
             bool changed = false;
 
@@ -499,11 +499,11 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 void VersionedFlowSensitive::dumpReliances(void) const
 {
     SVFUtil::outs() << "# Version reliances\n";
-    for (const Map<NodeID, Map<Version, Set<Version>>>::value_type &ovrv : versionReliance)
+    for (const auto &ovrv : versionReliance)
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (const Map<Version, Set<Version>>::value_type &vrv : ovrv.second)
+        for (const auto &vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
@@ -525,12 +525,12 @@ void VersionedFlowSensitive::dumpReliances(void) const
     }
 
     SVFUtil::outs() << "# Statement reliances\n";
-    for (const Map<NodeID, Map<Version, NodeBS>>::value_type &ovss : stmtReliance)
+    for (const auto &ovss : stmtReliance)
     {
         NodeID o = ovss.first;
         SVFUtil::outs() << "  Object " << o << "\n";
 
-        for (const Map<Version, NodeBS>::value_type &vss : ovss.second)
+        for (const auto &vss : ovss.second)
         {
             Version v = vss.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for statements: ";

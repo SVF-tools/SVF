@@ -105,9 +105,9 @@ NodeStack& AndersenLCD::SCCDetect()
 
     NodeSet sccCandidates;
     sccCandidates.clear();
-    for (NodeSet::iterator it = lcdCandidates.begin(); it != lcdCandidates.end(); ++it)
-        if (sccRepNode(*it) == *it)
-            sccCandidates.insert(*it);
+    for (const auto& lcdCandidate : lcdCandidates)
+        if (sccRepNode(lcdCandidate) == lcdCandidate)
+            sccCandidates.insert(lcdCandidate);
 
     double sccStart = stat->getClk();
     /// Detect SCC cycles

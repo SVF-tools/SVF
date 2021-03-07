@@ -66,8 +66,8 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
     ContextCond::setMaxCxtLen(cxtLimit);
 
-    for (SVFGNodeSetIter iter = sourcesBegin(), eiter = sourcesEnd();
-            iter != eiter; ++iter)
+    for (auto iter = sourcesBegin(), eiter = sourcesEnd();
+         iter != eiter; ++iter)
     {
         setCurSlice(*iter);
 
@@ -86,8 +86,8 @@ void SrcSnkDDA::analyze(SVFModule* module)
         {
             DBOUT(DSaber, outs() << "Forward process for slice:" << (*iter)->getId() << " (size = " << getCurSlice()->getForwardSliceSize() << ")\n");
 
-            for (SVFGNodeSetIter sit = getCurSlice()->sinksBegin(), esit =
-                        getCurSlice()->sinksEnd(); sit != esit; ++sit)
+            for (auto sit = getCurSlice()->sinksBegin(), esit =
+                     getCurSlice()->sinksEnd(); sit != esit; ++sit)
             {
                 ContextCond cxt;
                 DPIm item((*sit)->getId(),cxt);
@@ -133,8 +133,8 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
         else
             continue;
 
-        for (SVFGNode::const_iterator it = node->OutEdgeBegin(), eit =
-                    node->OutEdgeEnd(); it != eit; ++it)
+        for (auto it = node->OutEdgeBegin(), eit =
+                 node->OutEdgeEnd(); it != eit; ++it)
         {
             const SVFGEdge* edge = (*it);
             assert(edge->isDirectVFGEdge() && "the edge should always be direct VF");
@@ -168,8 +168,8 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
     }
     if(reachFunExit)
         return true;
-    else
-        return false;
+
+    return false;
 }
 
 
@@ -247,8 +247,8 @@ void SrcSnkDDA::BWProcessIncomingEdge(const DPIm&, SVFGEdge* edge)
     const SVFGNode* srcNode = edge->getSrcNode();
     if(backwardVisited(srcNode))
         return;
-    else
-        addBackwardVisited(srcNode);
+
+    addBackwardVisited(srcNode);
 
     ContextCond cxt;
     DPIm newItem(srcNode->getId(), cxt);
@@ -271,11 +271,11 @@ void SrcSnkDDA::setCurSlice(const SVFGNode* src)
 void SrcSnkDDA::annotateSlice(ProgSlice* slice)
 {
     getSVFG()->getStat()->addToSources(slice->getSource());
-    for(SVFGNodeSetIter it = slice->sinksBegin(), eit = slice->sinksEnd(); it!=eit; ++it )
+    for(auto it = slice->sinksBegin(), eit = slice->sinksEnd(); it!=eit; ++it )
         getSVFG()->getStat()->addToSinks(*it);
-    for(SVFGNodeSetIter it = slice->forwardSliceBegin(), eit = slice->forwardSliceEnd(); it!=eit; ++it )
+    for(auto it = slice->forwardSliceBegin(), eit = slice->forwardSliceEnd(); it!=eit; ++it )
         getSVFG()->getStat()->addToForwardSlice(*it);
-    for(SVFGNodeSetIter it = slice->backwardSliceBegin(), eit = slice->backwardSliceEnd(); it!=eit; ++it )
+    for(auto it = slice->backwardSliceBegin(), eit = slice->backwardSliceEnd(); it!=eit; ++it )
         getSVFG()->getStat()->addToBackwardSlice(*it);
 }
 

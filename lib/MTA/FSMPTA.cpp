@@ -119,7 +119,7 @@ SVFGEdge*  MTASVFGBuilder::addTDEdges(NodeID srcId, NodeID dstId, PointsTo& pts)
     else
     {
         MTASVFGBuilder::numOfNewSVFGEdges++;
-        ThreadMHPIndSVFGEdge* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode,dstNode);
+        auto* indirectEdge = new ThreadMHPIndSVFGEdge(srcNode,dstNode);
         indirectEdge->addPointsTo(pts);
         return (svfg->addSVFGEdge(indirectEdge) ? indirectEdge : nullptr);
     }
@@ -133,8 +133,8 @@ void MTASVFGBuilder::performRemovingMHPEdges()
         recordedges.erase(recordedges.begin());
 
         PointsTo remove_pts = edge2pts[edgepair];
-        const StmtSVFGNode*  n1 = SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(edgepair.first));
-        const StmtSVFGNode*  n2 = SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(edgepair.second));
+        const auto*  n1 = SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(edgepair.first));
+        const auto*  n2 = SVFUtil::cast<StmtSVFGNode>(svfg->getSVFGNode(edgepair.second));
 
         assert (n1&&n2 && "one node of removed pair is null");
         assert (n1->hasOutgoingEdge() && "n1 doesn't have out edge");
@@ -213,7 +213,7 @@ bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n, InstSet mergespan)
     for (SVFGNodeIDSet::iterator it = prev.begin(), eit = prev.end(); it != eit; ++it)
     {
         assert (SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) && "prev is not a store node");
-        const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
+        const auto* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
         const Instruction* prevIns = prevNode->getInst();
         if (mergespan.find(prevIns)!=mergespan.end())
             return false;
@@ -233,7 +233,7 @@ bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n)
     for (SVFGNodeIDSet::iterator it = prev.begin(), eit = prev.end(); it != eit; ++it)
     {
         assert(SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) && "prev is not a store node");
-        const StmtSVFGNode* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
+        const auto* prevNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
         const Instruction* prevIns = prevNode->getInst();
 
         if (lockana->isInSameSpan(prevIns, n->getInst()))
@@ -254,7 +254,7 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n, InstSet mergespan)
     for (SVFGNodeIDSet::iterator it = succ.begin(), eit = succ.end(); it != eit; ++it)
     {
         assert ((SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(*it)) || SVFUtil::isa<LoadSVFGNode>(svfg->getSVFGNode(*it))) && "succ is not a store/load node");
-        const StmtSVFGNode* succNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
+        const auto* succNode = SVFUtil::dyn_cast<StmtSVFGNode>(svfg->getSVFGNode(*it));
         const Instruction* succIns = succNode->getInst();
 
         if (mergespan.find(succIns)!=mergespan.end())
@@ -411,7 +411,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
         SVFGEdge* edge = *iter;
         if (edge->isIndirectVFGEdge())
         {
-            IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
+            auto* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
             PointsTo pts = e->getPointsTo();
             if(pts.test(o))
                 worklist.insert(edge->getDstNode());
@@ -432,7 +432,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
                 SVFGEdge* edge = *iter;
                 if (edge->isIndirectVFGEdge() && visited.find(edge->getDstNode()) == visited.end())
                 {
-                    IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
+                    auto* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
                     PointsTo pts = e->getPointsTo();
                     if(pts.test(o))
                         worklist.insert(edge->getDstNode());

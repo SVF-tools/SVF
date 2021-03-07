@@ -83,10 +83,10 @@ void CSC::visit(NodeID nodeId, Size_t _w)
     _S.push(nodeId);
 
     ConstraintNode* node = _consG->getConstraintNode(nodeId);
-    for (ConstraintNode::const_iterator eit = node->directOutEdgeBegin(); eit != node->directOutEdgeEnd(); ++eit)
+    for (auto eit = node->directOutEdgeBegin(); eit != node->directOutEdgeEnd(); ++eit)
     {
         Size_t offset;
-        if (NormalGepCGEdge* gepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit))
+        if (auto* gepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit))
             offset = gepCGEdge->getOffset();
         else
             offset = 0;
@@ -106,7 +106,7 @@ void CSC::visit(NodeID nodeId, Size_t _w)
         ConstraintNode* backNode = _consG->getConstraintNode(backNodeId);
         if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
         {
-            NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
+            auto* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
             Size_t _w = normalGep->getLocationSet().getOffset();
             Size_t _l = _D[nodeId] +_w - _D[backNodeId];
             backNode->strides.set(_l);

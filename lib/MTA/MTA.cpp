@@ -112,7 +112,7 @@ bool MTA::runOnModule(SVFModule* module)
  */
 LockAnalysis* MTA::computeLocksets(TCT* tct)
 {
-    LockAnalysis* lsa = new LockAnalysis(tct);
+    auto* lsa = new LockAnalysis(tct);
     lsa->analyze();
     return lsa;
 }
@@ -172,32 +172,29 @@ void MTA::detect(SVFModule* module)
 
     Set<const Instruction*> needcheckinst;
     // Add symbols for all of the functions and the instructions in them.
-    for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
+    for (auto & F : *module)
     {
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
+        for (inst_iterator II = inst_begin(F), E = inst_end(F); II != E; ++II)
         {
             const Instruction *inst = &*II;
-            if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))
+            if (const auto* load = SVFUtil::dyn_cast<LoadInst>(inst))
             {
                 loads.insert(load);
             }
-            else if (const StoreInst* store = SVFUtil::dyn_cast<StoreInst>(inst))
+            else if (const auto* store = SVFUtil::dyn_cast<StoreInst>(inst))
             {
                 stores.insert(store);
             }
         }
     }
 
-    for (LoadSet::const_iterator lit = loads.begin(), elit = loads.end(); lit != elit; ++lit)
+    for (const auto *load : loads)
     {
-        const LoadInst* load = *lit;
         bool loadneedcheck = false;
-        for (StoreSet::const_iterator sit = stores.begin(), esit = stores.end(); sit != esit; ++sit)
+        for (const auto *store : stores)
         {
-            const StoreInst* store = *sit;
-
-            loadneedcheck = true;
+             loadneedcheck = true;
             needcheckinst.insert(store);
         }
         if (loadneedcheck)

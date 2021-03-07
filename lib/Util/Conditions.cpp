@@ -43,25 +43,23 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
 {
     if (lhs == getFalseCond() || rhs == getFalseCond())
         return getFalseCond();
-    else if (lhs == getTrueCond())
+
+    if (lhs == getTrueCond())
         return rhs;
-    else if (rhs == getTrueCond())
+
+    if (rhs == getTrueCond())
         return lhs;
-    else
+
+    DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
+    if(tmp==nullptr)
     {
-        DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==nullptr)
-        {
-            SVFUtil::writeWrnMsg("exceeds max bdd size \n");
-            ///drop the rhs condition
-            return lhs;
-        }
-        else
-        {
-            Cudd_Ref(tmp);
-            return tmp;
-        }
+        SVFUtil::writeWrnMsg("exceeds max bdd size \n");
+        ///drop the rhs condition
+        return lhs;
     }
+
+    Cudd_Ref(tmp);
+    return tmp;
 }
 
 /*!
@@ -71,35 +69,33 @@ DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
 {
     if (lhs == getTrueCond() || rhs == getTrueCond())
         return getTrueCond();
-    else if (lhs == getFalseCond())
+
+    if (lhs == getFalseCond())
         return rhs;
-    else if (rhs == getFalseCond())
+
+    if (rhs == getFalseCond())
         return lhs;
-    else
+    DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
+    if(tmp==nullptr)
     {
-        DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
-        if(tmp==nullptr)
-        {
-            SVFUtil::writeWrnMsg("exceeds max bdd size \n");
-            /// drop the two conditions here
-            return getTrueCond();
-        }
-        else
-        {
-            Cudd_Ref(tmp);
-            return tmp;
-        }
+        SVFUtil::writeWrnMsg("exceeds max bdd size \n");
+        /// drop the two conditions here
+        return getTrueCond();
     }
+
+    Cudd_Ref(tmp);
+    return tmp;
 }
 
 DdNode* BddCondManager::NEG(DdNode* lhs)
 {
     if (lhs == getTrueCond())
         return getFalseCond();
-    else if (lhs == getFalseCond())
+
+    if (lhs == getFalseCond())
         return getTrueCond();
-    else
-        return Cudd_Not(lhs);
+
+    return Cudd_Not(lhs);
 }
 //@}
 
@@ -117,7 +113,6 @@ void BddCondManager::ddClearFlag(DdNode * f) const
         return;
     ddClearFlag(cuddT(f));
     ddClearFlag(Cudd_Regular(cuddE(f)));
-    return;
 }
 
 void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const
@@ -150,11 +145,9 @@ void BddCondManager::dump(DdNode* lhs, raw_ostream & O)
     {
         NodeBS support;
         BddSupport(lhs, support);
-        for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter)
+        for (const auto& rid : support)
         {
-            unsigned rid = *iter;
-            O << rid << " ";
+             O << rid << " ";
         }
     }
 }
@@ -171,10 +164,8 @@ std::string BddCondManager::dumpStr(DdNode* lhs) const
     {
         NodeBS support;
         BddSupport(lhs, support);
-        for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter)
+        for (const auto& rid : support)
         {
-            unsigned rid = *iter;
             char int2str[16];
             sprintf(int2str, "%d", rid);
             str += int2str;

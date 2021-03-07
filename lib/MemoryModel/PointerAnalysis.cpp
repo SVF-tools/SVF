@@ -472,8 +472,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
     /// discover indirect pointer target
-    for (PointsTo::iterator ii = target.begin(), ie = target.end();
-            ii != ie; ii++)
+    for (const auto& ii : target)
     {
 
         if(getNumOfResolvedIndCallEdge() >= IndirectCallLimit)
@@ -482,7 +481,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             return;
         }
 
-        if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getPAGNode(*ii)))
+        if(auto* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getPAGNode(ii)))
         {
             const MemObj* obj = pag->getObject(objPN);
 

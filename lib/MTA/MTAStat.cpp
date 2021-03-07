@@ -26,17 +26,17 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     u32_t numOfJoinEdge = 0;
     u32_t numOfIndForksite = 0;
     u32_t numOfIndForkEdge = 0;
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
+    for (auto it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
     {
         bool indirectfork = false;
-        const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
+        const auto* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
         if(spawnee==nullptr)
         {
             numOfIndForksite++;
             indirectfork = true;
         }
-        for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = tcg->getForkEdgeBegin(*it), ecgIt =
-                    tcg->getForkEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
+        for (auto cgIt = tcg->getForkEdgeBegin(*it), ecgIt =
+                 tcg->getForkEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
         {
             numOfForkEdge++;
             if(indirectfork)
@@ -44,9 +44,9 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
         }
     }
 
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
+    for (auto it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
     {
-        for (ThreadCallGraph::JoinEdgeSet::const_iterator cgIt = tcg->getJoinEdgeBegin(*it), ecgIt =
+        for (auto cgIt = tcg->getJoinEdgeBegin(*it), ecgIt =
                     tcg->getJoinEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
         {
             numOfJoinEdge++;
@@ -96,9 +96,9 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         InstSet instSet1;
         InstSet instSet2;
         SVFModule* mod = mhp->getThreadCallGraph()->getModule();
-        for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
+        for (auto & F : *mod)
         {
-            const Function* fun = (*F);
+            const Function* fun = F;
             if(SVFUtil::isExtCall(fun))
                 continue;
             if(!mhp->isConnectedfromMain(fun))
@@ -119,15 +119,14 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
         }
 
 
-        for(InstSet::const_iterator it1 = instSet1.begin(), eit1 = instSet1.end(); it1!=eit1; ++it1)
+        for(const auto *it1 : instSet1)
         {
-            for(InstSet::const_iterator it2 = instSet2.begin(), eit2 = instSet2.end(); it2!=eit2; ++it2)
+            for(const auto *it2 : instSet2)
             {
-                mhp->mayHappenInParallel(*it1,*it2);
+                mhp->mayHappenInParallel(it1,it2);
             }
         }
     }
-
 
     generalNumMap.clear();
     PTNumStatMap.clear();

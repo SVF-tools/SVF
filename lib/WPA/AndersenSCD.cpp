@@ -186,7 +186,7 @@ void AndersenSCD::processPWC(ConstraintNode* rep)
             }
             for (ConstraintEdge* edge : node->getGepOutEdges())
             {
-                if (GepCGEdge *gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+                if (auto *gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 {
                     bool changed = processGep(nodeId, gepEdge);
                     if (changed && pwcNodes.find(edge->getDstID()) != pwcNodes.end())
@@ -208,7 +208,7 @@ void AndersenSCD::handleLoadStore(ConstraintNode* node)
 
     NodeID nodeId = node->getId();
     // handle load
-    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
+    for (auto it = node->outgoingLoadsBegin(),
             eit = node->outgoingLoadsEnd(); it != eit; ++it)
         for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
                     getPts(nodeId).end(); piter != epiter; ++piter)
@@ -221,17 +221,16 @@ void AndersenSCD::handleLoadStore(ConstraintNode* node)
         }
 
     // handle store
-    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
-            eit = node->incomingStoresEnd(); it != eit; ++it)
-        for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter =
-                    getPts(nodeId).end(); piter != epiter; ++piter)
+    for (auto it = node->incomingStoresBegin(),
+            eit = node->incomingStoresEnd(); it != eit; ++it) {
+        for (const auto& ptd : getPts(nodeId))
         {
-            NodeID ptd = *piter;
             if (processStore(ptd, *it))
             {
                 reanalyze = true;
             }
         }
+}
 
     double insertEnd = stat->getClk();
     timeOfProcessLoadStore += (insertEnd - insertStart) / TIMEINTERVAL;
@@ -276,12 +275,12 @@ bool AndersenSCD::updateCallGraph(const PointerAnalysis::CallSiteToFunPtrMap& ca
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+    for(auto & newEdge : newEdges)
     {
-        CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        CallSite cs = SVFUtil::getLLVMCallSite(newEdge.first->getCallSite());
+        for(const auto *cit : newEdge.second)
         {
-            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+            connectCaller2CalleeParams(cs,cit,cpySrcNodes);
         }
     }
 

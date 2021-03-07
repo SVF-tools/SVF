@@ -12,7 +12,7 @@ namespace SVF
 
     NodeIDAllocator *NodeIDAllocator::allocator = nullptr;
 
-    NodeIDAllocator *NodeIDAllocator::get(void)
+    NodeIDAllocator *NodeIDAllocator::get()
     {
         if (allocator == nullptr)
         {
@@ -22,7 +22,7 @@ namespace SVF
         return allocator;
     }
 
-    void NodeIDAllocator::unset(void)
+    void NodeIDAllocator::unset()
     {
         if (allocator != nullptr)
         {
@@ -31,12 +31,13 @@ namespace SVF
     }
 
     // Initialise counts to 4 because that's how many special nodes we have.
+
     NodeIDAllocator::NodeIDAllocator(void)
         : numObjects(4), numValues(4), numSymbols(4),
           numNodes(4), strategy(Options::NodeAllocStrat)
     { }
 
-    NodeID NodeIDAllocator::allocateObjectId(void)
+    NodeID NodeIDAllocator::allocateObjectId()
     {
         NodeID id = 0;
         if (strategy == Strategy::DENSE)
@@ -108,7 +109,7 @@ namespace SVF
         return id;
     }
 
-    NodeID NodeIDAllocator::allocateValueId(void)
+    NodeID NodeIDAllocator::allocateValueId()
     {
         NodeID id = 0;
         if (strategy == Strategy::DENSE)
@@ -139,7 +140,7 @@ namespace SVF
         return id;
     }
 
-    void NodeIDAllocator::endSymbolAllocation(void)
+    void NodeIDAllocator::endSymbolAllocation()
     {
         numSymbols = numNodes;
     }

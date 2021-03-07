@@ -104,11 +104,11 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             pushIntoWorklist(dstId);
             return true;
         }
-        else
-            return false;
+
+        return false;
     }
-    else
-        return Andersen::processGepPts(pts, edge);
+
+    return Andersen::processGepPts(pts, edge);
 }
 
 
@@ -132,7 +132,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             const MemObj* obj = pag->getBaseObj(init);
             const Size_t maxLimit = obj->getMaxFieldOffsetLimit();
             Size_t initOffset;
-            if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(initPN))
+            if (auto *gepNode = SVFUtil::dyn_cast<GepObjPN>(initPN))
                 initOffset = gepNode->getLocationSet().getOffset();
             else if (SVFUtil::isa<FIObjPN>(initPN) || SVFUtil::isa<DummyObjPN>(initPN))
                 initOffset = 0;
@@ -147,7 +147,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             while (loopFlag)
             {
                 loopFlag = false;
-                for (auto _f : offsets)
+                for (auto _f : offsets) {
                     for (auto _s : strides)
                     {
                         Size_t _f1 = _f + _s;
@@ -155,6 +155,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
                         if (loopFlag)
                             offsets.insert(_f1);
                     }
+}
             }
 
             // get gep objs

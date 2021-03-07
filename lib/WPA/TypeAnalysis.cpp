@@ -77,9 +77,9 @@ void TypeAnalysis::analyze()
 
 void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
 {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    for(auto callsite : callsites)
     {
-        const CallBlockNode* cbn = iter->first;
+        const CallBlockNode* cbn = callsite.first;
         CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
         if (isVirtualCallSite(cs))
         {
@@ -104,12 +104,11 @@ void TypeAnalysis::dumpCHAStats()
         return;
     }
 
-    s32_t pure_abstract_class_num = 0,
-          multi_inheritance_class_num = 0;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it)
+    s32_t pure_abstract_class_num = 0;
+    s32_t multi_inheritance_class_num = 0;
+    for (auto it : *chgraph)
     {
-        CHNode *node = it->second;
+        CHNode *node = it.second;
         outs() << "class " << node->getName() << "\n";
         if (node->isPureAbstract())
             pure_abstract_class_num++;
@@ -127,29 +126,25 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    s32_t vtblnum = 0,
-          vfunc_total = 0,
-          vtbl_max = 0,
-          pure_abstract = 0;
+    s32_t vtblnum = 0;
+    s32_t vfunc_total = 0;
+    s32_t vtbl_max = 0;
+    s32_t pure_abstract = 0;
     set<const SVFFunction*> allVirtualFunctions;
-    for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
-            it != eit; ++it)
+    for (auto it : *chgraph)
     {
-        CHNode *node = it->second;
+        CHNode *node = it.second;
         if (node->isPureAbstract())
             pure_abstract++;
 
         s32_t vfuncs_size = 0;
         const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
-        for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
-                veit = vecs.end(); vit != veit; ++vit)
+        for (const auto & vec : vecs)
         {
-            vfuncs_size += (*vit).size();
-            for (vector<const SVFFunction*>::const_iterator fit = (*vit).begin(),
-                    feit = (*vit).end(); fit != feit; ++fit)
+            vfuncs_size += vec.size();
+            for (const auto *func : vec)
             {
-                const SVFFunction* func = *fit;
-                allVirtualFunctions.insert(func);
+                 allVirtualFunctions.insert(func);
             }
         }
         if (vfuncs_size > 0)

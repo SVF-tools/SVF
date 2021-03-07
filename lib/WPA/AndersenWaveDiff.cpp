@@ -111,14 +111,14 @@ void AndersenWaveDiff::postProcessNode(NodeID nodeId)
     ConstraintNode* node = consCG->getConstraintNode(nodeId);
 
     // handle load
-    for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
+    for (auto it = node->outgoingLoadsBegin(), eit = node->outgoingLoadsEnd();
             it != eit; ++it)
     {
         if (handleLoad(nodeId, *it))
             reanalyze = true;
     }
     // handle store
-    for (ConstraintNode::const_iterator it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
+    for (auto it = node->incomingStoresBegin(), eit =  node->incomingStoresEnd();
             it != eit; ++it)
     {
         if (handleStore(nodeId, *it))
@@ -140,10 +140,10 @@ void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
     if (!getDiffPts(nodeId).empty())
     {
         for (ConstraintEdge* edge : node->getCopyOutEdges())
-            if (CopyCGEdge* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
+            if (auto* copyEdge = SVFUtil::dyn_cast<CopyCGEdge>(edge))
                 processCopy(nodeId, copyEdge);
         for (ConstraintEdge* edge : node->getGepOutEdges())
-            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+            if (auto* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 processGep(nodeId, gepEdge);
     }
 }
@@ -154,10 +154,9 @@ void AndersenWaveDiff::handleCopyGep(ConstraintNode* node)
 bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-            piter != epiter; ++piter)
+    for (const auto& piter : getPts(nodeId))
     {
-        if (processLoad(*piter, edge))
+        if (processLoad(piter, edge))
         {
             changed = true;
         }
@@ -171,10 +170,9 @@ bool AndersenWaveDiff::handleLoad(NodeID nodeId, const ConstraintEdge* edge)
 bool AndersenWaveDiff::handleStore(NodeID nodeId, const ConstraintEdge* edge)
 {
     bool changed = false;
-    for (PointsTo::iterator piter = getPts(nodeId).begin(), epiter = getPts(nodeId).end();
-            piter != epiter; ++piter)
+    for (const auto& piter : getPts(nodeId))
     {
-        if (processStore(*piter, edge))
+        if (processStore(piter, edge))
         {
             changed = true;
         }

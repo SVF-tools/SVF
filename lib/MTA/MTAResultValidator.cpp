@@ -59,7 +59,7 @@ NodeID MTAResultValidator::getIntArg(const Instruction* inst, unsigned int arg_n
 {
     assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
+    auto* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
@@ -69,9 +69,9 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
     assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
     assert((arg_num < cs.arg_size()) && "Does not has this argument");
-    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
-    const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
-    const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
+    const auto* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
+    const auto* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
+    const auto* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
     if (!cxtarray)
     {
         std::vector<std::string> strvec;
@@ -88,9 +88,9 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
     if (0 == x.size())
         return cxt;
     // Deal with the the second argument that records all callsites
-    for (std::vector<std::string>::iterator i = x.begin(); i != x.end(); i++)
+    for (auto & i : x)
     {
-        std::vector<std::string> y = split((*i), '.');
+        std::vector<std::string> y = split(i, '.');
         y[0].erase(y[0].find("cs"), 2);
 
         const Function* callee = tcg->getModule().getFunction(y[1]);
@@ -159,11 +159,11 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "[:";
-    for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
+    for (const auto& it : cxt)
     {
-        rawstr << " ' " << *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it).getInstruction());
-        rawstr << "  call  " << tcg->getCallSite(*it).getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
+        rawstr << " ' " << it << " ' ";
+        rawstr << *(tcg->getCallSite(it).getInstruction());
+        rawstr << "  call  " << tcg->getCallSite(it).getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(it)->getName() << ", \n";
     }
     rawstr << " ]";
     outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
@@ -191,7 +191,7 @@ bool MTAResultValidator::collectCallsiteTargets()
             {
                 NodeID csnum = atoi(bb->getName().str().substr(2).c_str());
                 const Instruction* inst = &bb->front();
-                while (1)
+                while (true)
                 {
                     if (SVFUtil::isa<CallInst>(inst))
                     {
@@ -200,7 +200,7 @@ bool MTAResultValidator::collectCallsiteTargets()
                     inst = inst->getNextNode();
                     assert(inst && "Wrong cs label, cannot find callsite");
                 }
-                const CallInst *csInst = SVFUtil::dyn_cast<CallInst>(inst);
+                const auto *csInst = SVFUtil::dyn_cast<CallInst>(inst);
                 csnumToInstMap[csnum] = csInst;
             }
         }
@@ -226,7 +226,7 @@ bool MTAResultValidator::collectCxtThreadTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const auto *inst = SVFUtil::dyn_cast<Instruction>(user);
 
         NodeID vthdnum = getIntArg(inst, 0);
         CallStrCxt cxt = getCxtArg(inst, 1);
@@ -248,13 +248,13 @@ bool MTAResultValidator::collectTCTTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const auto *inst = SVFUtil::dyn_cast<Instruction>(user);
 
         NodeID vthdnum = getIntArg(inst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
         std::vector<std::string> x = getStringArg(inst, 1);
 
-        for (std::vector<std::string>::iterator i = x.begin(); i != x.end(); i++)
+        for (auto i = x.begin(); i != x.end(); i++)
         {
             rthdToChildren[rthdnum].insert(vthdTorthd[atoi((*i).c_str())]);
         }
@@ -274,7 +274,7 @@ bool MTAResultValidator::collectInterleavingTargets()
     {
         const Use *u = &*it;
         const Value *user = u->getUser();
-        const Instruction *inst = SVFUtil::dyn_cast<Instruction>(user);
+        const auto *inst = SVFUtil::dyn_cast<Instruction>(user);
 
         NodeID vthdnum = getIntArg(inst, 0);
         NodeID rthdnum = vthdTorthd[vthdnum];
@@ -286,7 +286,7 @@ bool MTAResultValidator::collectInterleavingTargets()
         // Push thread itself into interleaving set
         lev.set(rthdnum);
         // Find rthd of given vthd and push it into interleaving set
-        for (std::vector<std::string>::iterator i = y.begin(); i != y.end(); i++)
+        for (auto i = y.begin(); i != y.end(); i++)
         {
             lev.set(vthdTorthd[atoi((*i).c_str())]);
         }
@@ -380,7 +380,7 @@ bool MTAResultValidator::validateTCT()
     {
         bool res_node = true;
         TCTNode* pnode = tct->getTCTNode(i);
-        for (TCT::ThreadCreateEdgeSet::const_iterator ci = tct->getChildrenBegin(pnode), cei = tct->getChildrenEnd(pnode); ci != cei;
+        for (auto ci = tct->getChildrenBegin(pnode), cei = tct->getChildrenEnd(pnode); ci != cei;
                 ci++)
         {
             NodeID tid = (*ci)->getDstID();
@@ -410,7 +410,7 @@ bool MTAResultValidator::validateTCT()
                 outs() << rthdTovthd[gid] << ", ";
             }
             outs() << "\nAnalysis children:\t";
-            for (TCT::ThreadCreateEdgeSet::const_iterator ci = tct->getChildrenBegin(pnode), cei = tct->getChildrenEnd(pnode); ci != cei;
+            for (auto ci = tct->getChildrenBegin(pnode), cei = tct->getChildrenEnd(pnode); ci != cei;
                     ci++)
             {
                 NodeID tid = (*ci)->getDstID();
@@ -439,31 +439,27 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                 outs() << "\nValidate Interleaving: Wrong at (" << SVFUtil::getSourceLoc(inst) << ")\n";
                 outs() << "Reason: The number of thread running on stmt is wrong\n";
                 outs() << "\n----Given threads:\n";
-                for (MHP::CxtThreadStmtSet::iterator thdlevi = (*seti).second.begin(), ethdlevi = (*seti).second.end(); thdlevi != ethdlevi;
-                        ++thdlevi)
+                for (const auto & thdlevi : (*seti).second)
                 {
                     outs() << "TID " << rthdTovthd[(*thdlevi).getTid()] << ": ";
-                    dumpCxt((*thdlevi).getContext());
+                    dumpCxt(thdlevi.getContext());
                 }
                 outs() << "\n----Analysis threads:\n";
-                for (MHP::CxtThreadStmtSet::const_iterator it = tsSet.begin(), eit = tsSet.end(); it != eit; ++it)
+                for (const auto & it : tsSet)
                 {
                     outs() << "TID " << rthdTovthd[(*it).getTid()] << ": ";
-                    dumpCxt((*it).getContext());
+                    dumpCxt(it.getContext());
                 }
                 outs() << "\n";
             }
             res = MTAResultValidator::INTERLEV_UNSOUND;
         }
 
-        for (MHP::CxtThreadStmtSet::const_iterator it = tsSet.begin(), eit = tsSet.end(); it != eit; ++it)
+        for (const auto & ts : tsSet)
         {
-            const CxtThreadStmt& ts = *it;
-            bool matched = false;
-            for (MHP::CxtThreadStmtSet::iterator it2 = (*seti).second.begin(), eit2 = (*seti).second.end(); it2 != eit2; ++it2)
+             bool matched = false;
+            for (const auto & ts2 : (*seti).second)
             {
-                const CxtThreadStmt& ts2 = *it2;
-
                 if (ts2.getTid() == ts.getTid() && matchCxt(ts2.getContext(), ts.getContext()))
                 {
                     matched = true;
@@ -488,9 +484,9 @@ MTAResultValidator::INTERLEV_FLAG MTAResultValidator::validateInterleaving()
                         if (lev.count() >= lev2.count())
                         {
                             bool findeveryelement = true;
-                            for (NodeBS::iterator it = lev2.begin(), eit = lev2.end(); it != eit; it++)
+                            for (const auto& it : lev2)
                             {
-                                if (!lev.test(*it))
+                                if (!lev.test(it))
                                 {
                                     findeveryelement = false;
                                     break;

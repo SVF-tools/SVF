@@ -102,7 +102,7 @@ void FlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
-    for (PAG::const_iterator nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
+    for (auto nodeIt = pag->begin(), nodeEit = pag->end(); nodeIt != nodeEit; nodeIt++)
     {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
@@ -123,8 +123,8 @@ void FlowSensitiveStat::performStat()
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
     unsigned numOfNode = 0;
-    SVFG::iterator svfgNodeIt = fspta->svfg->begin();
-    SVFG::iterator svfgNodeEit = fspta->svfg->end();
+    auto svfgNodeIt = fspta->svfg->begin();
+    auto svfgNodeEit = fspta->svfg->end();
     for (; svfgNodeIt != svfgNodeEit; ++svfgNodeIt)
     {
         numOfNode++;
@@ -270,11 +270,10 @@ void FlowSensitiveStat::performStat()
 void FlowSensitiveStat::statNullPtr()
 {
     _NumOfNullPtr = 0;
-    for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter)
+    for (auto & iter : *fspta->getPAG())
     {
-        NodeID pagNodeId = iter->first;
-        PAGNode* pagNode = iter->second;
+        NodeID pagNodeId = iter.first;
+        PAGNode* pagNode = iter.second;
         PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
         PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
@@ -331,8 +330,8 @@ void FlowSensitiveStat::statPtsSize()
     /// get points-to set size information for top-level pointers.
     u32_t totalValidTopLvlPointers = 0;
     u32_t topTopLvlPtsSize = 0;
-    for (PAG::iterator iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
-            iter != eiter; ++iter)
+    for (auto iter = fspta->getPAG()->begin(), eiter = fspta->getPAG()->end();
+         iter != eiter; ++iter)
     {
         NodeID node = iter->first;
         if (fspta->getPAG()->isValidTopLevelPtr(iter->second) == false)
@@ -362,8 +361,8 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     _NumOfSVFGNodesHaveInOut[inOrOut] = data.size();
 
     u32_t inOutPtsSize = 0;
-    DFInOutMap::const_iterator it = data.begin();
-    DFInOutMap::const_iterator eit = data.end();
+    auto it = data.begin();
+    auto eit = data.end();
     for (; it != eit; ++it)
     {
         const SVFGNode* node = fspta->svfg->getSVFGNode(it->first);
@@ -390,8 +389,8 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
 
         // Count PAG nodes and their points-to set size.
         const PtsMap& cptsMap = it->second;
-        PtsMap::const_iterator ptsIt = cptsMap.begin();
-        PtsMap::const_iterator ptsEit = cptsMap.end();
+        auto ptsIt = cptsMap.begin();
+        auto ptsEit = cptsMap.end();
         for (; ptsIt != ptsEit; ++ptsIt)
         {
             if (ptsIt->second.empty()) 
@@ -441,23 +440,23 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     // *p = q && { o } in pts_ander(p) means there is a possibility of 1 OUT PTS.
     // For OUTs at stores, we must also account for WU/SUs.
     const SVFG *svfg = fspta->svfg;
-    for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
+    for (auto it : *svfg)
     {
-        NodeID s = it->first;
-        const SVFGNode *sn = it->second;
+        NodeID s = it.first;
+        const SVFGNode *sn = it.second;
 
         // Unique objects coming into s.
         NodeBS incomingObjects;
         for (const SVFGEdge *e : sn->getInEdges())
         {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            const auto *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             if (!ie) continue;
             for (NodeID o : ie->getPointsTo()) incomingObjects.set(o);
         }
 
         _PotentialNumOfVarHaveINOUTPts[IN] += incomingObjects.count();
 
-        if (const StoreSVFGNode *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
+        if (const auto *store = SVFUtil::dyn_cast<StoreSVFGNode>(sn))
         {
             NodeID p = store->getPAGDstNodeID();
             // Reuse incomingObjects; what's already in there will be propagated forwarded
@@ -474,12 +473,12 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
  */
 void FlowSensitiveStat::statAddrVarPtsSize()
 {
-    SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = fspta->svfg->begin();
-    SVFG::SVFGNodeIDToNodeMapTy::const_iterator eit = fspta->svfg->end();
+    auto it = fspta->svfg->begin();
+    auto eit = fspta->svfg->end();
     for (; it != eit; ++it)
     {
         const SVFGNode* node = it->second;
-        if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+        if (const auto* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
             calculateAddrVarPts(store->getPAGDstNodeID(), store);
         }

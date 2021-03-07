@@ -220,7 +220,6 @@ void TCT::collectMultiForkedThreads()
  */
 void TCT::handleCallRelation(CxtThreadProc& ctp, const PTACallGraphEdge* cgEdge, CallSite cs)
 {
-
     const Function* callee = cgEdge->getDstNode()->getFunction();
 
     CallStrCxt cxt(ctp.getContext());
@@ -471,7 +470,6 @@ void TCT::getNextInsts(const Instruction* curInst, InstVec& instList)
  */
 void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* callee)
 {
-
     const Function* caller = call->getParent()->getParent();
     CallSiteID csId = tcg->getCallSiteID(getLLVMCallSite(call),callee);
 

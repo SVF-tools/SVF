@@ -48,7 +48,7 @@ void VersionedFlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
-    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    for (auto it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
         PAGNode* pagNode = it->second;
@@ -67,10 +67,10 @@ void VersionedFlowSensitiveStat::performStat()
     unsigned numOfCopy = 0;
     unsigned numOfStore = 0;
     unsigned numOfNode = 0;
-    for (SVFG::iterator it = vfspta->svfg->begin(); it != vfspta->svfg->end(); ++it)
+    for (auto & it : *vfspta->svfg)
     {
         numOfNode++;
-        SVFGNode* svfgNode = it->second;
+        SVFGNode* svfgNode = it.second;
         if (SVFUtil::isa<CopySVFGNode>(svfgNode)) numOfCopy++;
         else if (SVFUtil::isa<StoreSVFGNode>(svfgNode)) numOfStore++;
     }
@@ -208,7 +208,7 @@ void VersionedFlowSensitiveStat::ptsSizeStat()
 {
     u32_t totalValidTopLvlPointers = 0;
     u32_t totalTopLvlPtsSize = 0;
-    for (PAG::iterator it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
+    for (auto it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
     {
         if (!vfspta->getPAG()->isValidTopLevelPtr(it->second)) continue;
 

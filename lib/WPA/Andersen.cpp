@@ -204,7 +204,7 @@ void Andersen::handleCopyGep(ConstraintNode* node)
             processCopy(nodeId, edge);
         for (ConstraintEdge* edge : node->getGepOutEdges())
         {
-            if (GepCGEdge* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
+            if (auto* gepEdge = SVFUtil::dyn_cast<GepCGEdge>(edge))
                 processGep(nodeId, gepEdge);
         }
     }
@@ -221,7 +221,7 @@ void Andersen::handleLoadStore(ConstraintNode *node)
     {
         NodeID ptd = *piter;
         // handle load
-        for (ConstraintNode::const_iterator it = node->outgoingLoadsBegin(),
+        for (auto it = node->outgoingLoadsBegin(),
                 eit = node->outgoingLoadsEnd(); it != eit; ++it)
         {
             if (processLoad(ptd, *it))
@@ -229,7 +229,7 @@ void Andersen::handleLoadStore(ConstraintNode *node)
         }
 
         // handle store
-        for (ConstraintNode::const_iterator it = node->incomingStoresBegin(),
+        for (auto it = node->incomingStoresBegin(),
                 eit = node->incomingStoresEnd(); it != eit; ++it)
         {
             if (processStore(ptd, *it))
@@ -243,10 +243,10 @@ void Andersen::handleLoadStore(ConstraintNode *node)
  */
 void Andersen::processAllAddr()
 {
-    for (ConstraintGraph::const_iterator nodeIt = consCG->begin(), nodeEit = consCG->end(); nodeIt != nodeEit; nodeIt++)
+    for (auto nodeIt : *consCG)
     {
-        ConstraintNode * cgNode = nodeIt->second;
-        for (ConstraintNode::const_iterator it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
+        ConstraintNode * cgNode = nodeIt.second;
+        for (auto it = cgNode->incomingAddrsBegin(), eit = cgNode->incomingAddrsEnd();
                 it != eit; ++it)
             processAddr(SVFUtil::cast<AddrCGEdge>(*it));
     }
@@ -368,7 +368,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
             tmpDstPts.set(baseId);
         }
     }
-    else if (const NormalGepCGEdge* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
+    else if (const auto* normalGepEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
     {
         // TODO: after the node is set to field insensitive, handling invariant
         // gep edge may lose precision because offsets here are ignored, and the
@@ -460,10 +460,9 @@ void Andersen::mergeSccCycle()
  */
 void Andersen::mergeSccNodes(NodeID repNodeId, const NodeBS& subNodes)
 {
-    for (NodeBS::iterator nodeIt = subNodes.begin(); nodeIt != subNodes.end(); nodeIt++)
+    for (const auto& subNodeId : subNodes)
     {
-        NodeID subNodeId = *nodeIt;
-        if (subNodeId != repNodeId)
+         if (subNodeId != repNodeId)
         {
             mergeNodeToRep(subNodeId, repNodeId);
         }
@@ -479,12 +478,12 @@ bool Andersen::collapseNodePts(NodeID nodeId)
     const PointsTo& nodePts = getPts(nodeId);
     /// Points to set may be changed during collapse, so use a clone instead.
     PointsTo ptsClone = nodePts;
-    for (PointsTo::iterator ptsIt = ptsClone.begin(), ptsEit = ptsClone.end(); ptsIt != ptsEit; ptsIt++)
+    for (const auto& ptsIt : ptsClone)
     {
-        if (isFieldInsensitive(*ptsIt))
+        if (isFieldInsensitive(ptsIt))
             continue;
 
-        if (collapseField(*ptsIt))
+        if (collapseField(ptsIt))
             changed = true;
     }
     return changed;
@@ -513,20 +512,18 @@ bool Andersen::collapseField(NodeID nodeId)
     NodeID baseId = consCG->getFIObjNode(nodeId);
     NodeID baseRepNodeId = consCG->sccRepNode(baseId);
     NodeBS & allFields = consCG->getAllFieldsObjNode(baseId);
-    for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit; fieldIt++)
+    for (const auto& fieldId : allFields)
     {
-        NodeID fieldId = *fieldIt;
-        if (fieldId != baseId)
+         if (fieldId != baseId)
         {
             // use the reverse pts of this field node to find all pointers point to it
             const NodeSet &revPts = getRevPts(fieldId);
-            for (NodeSet::const_iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
-                    ptdIt != ptdEit; ptdIt++)
+            for (const auto& revPt : revPts)
             {
                 // change the points-to target from field to base node
-                clearPts(*ptdIt, fieldId);
-                addPts(*ptdIt, baseId);
-                pushIntoWorklist(*ptdIt);
+                clearPts(revPt, fieldId);
+                addPts(revPt, baseId);
+                pushIntoWorklist(revPt);
 
                 changed = true;
             }
@@ -582,17 +579,17 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     CallEdgeMap newEdges;
     onTheFlyCallGraphSolve(callsites,newEdges);
     NodePairSet cpySrcNodes;	/// nodes as a src of a generated new copy edge
-    for(CallEdgeMap::iterator it = newEdges.begin(), eit = newEdges.end(); it!=eit; ++it )
+    for(auto & newEdge : newEdges)
     {
-        CallSite cs = SVFUtil::getLLVMCallSite(it->first->getCallSite());
-        for(FunctionSet::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        CallSite cs = SVFUtil::getLLVMCallSite(newEdge.first->getCallSite());
+        for(const auto *cit : newEdge.second)
         {
-            connectCaller2CalleeParams(cs,*cit,cpySrcNodes);
+            connectCaller2CalleeParams(cs,cit,cpySrcNodes);
         }
     }
-    for(NodePairSet::iterator it = cpySrcNodes.begin(), eit = cpySrcNodes.end(); it!=eit; ++it)
+    for(const auto & cpySrcNode : cpySrcNodes)
     {
-        pushIntoWorklist(it->first);
+        pushIntoWorklist(cpySrcNode.first);
     }
 
     double cgUpdateEnd = stat->getClk();
@@ -672,8 +669,10 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
         const PAG::PAGNodeList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        PAG::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        auto funArgIt = funArgList.begin();
+        auto funArgEit = funArgList.end();
+        auto csArgIt  = csArgList.begin();
+        auto csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
@@ -774,10 +773,9 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     /// update nodeToRepMap, for each subs of current node updates its rep to newRepId
     //  update nodeToSubsMap, union its subs with its rep Subs
     NodeBS& nodeSubs = consCG->sccSubNodes(nodeId);
-    for(NodeBS::iterator sit = nodeSubs.begin(), esit = nodeSubs.end(); sit!=esit; ++sit)
+    for(const auto& subId : nodeSubs)
     {
-        NodeID subId = *sit;
-        consCG->setRep(subId,newRepId);
+         consCG->setRep(subId,newRepId);
     }
     repSubs |= nodeSubs;
     consCG->setSubs(newRepId,repSubs);
@@ -789,10 +787,9 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
  */
 void Andersen::dumpTopLevelPtsTo()
 {
-    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
-            nIter != this->getAllValidPtrs().end(); ++nIter)
+    for (const auto& nIter : this->getAllValidPtrs())
     {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        const PAGNode* node = getPAG()->getPAGNode(nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());
@@ -807,13 +804,12 @@ void Andersen::dumpTopLevelPtsTo()
                 outs() << "\t\tPointsTo: { ";
 
                 multiset<Size_t> line;
-                for (PointsTo::iterator it = pts.begin(), eit = pts.end();
-                        it != eit; ++it)
+                for (const auto& pt : pts)
                 {
-                    line.insert(*it);
+                    line.insert(pt);
                 }
-                for (multiset<Size_t>::const_iterator it = line.begin(); it != line.end(); ++it)
-                    outs() << *it << " ";
+                for (const auto&it : line)
+                    outs() << it << " ";
                 outs() << "}\n\n";
             }
         }

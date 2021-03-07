@@ -63,16 +63,15 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
     _NumOfNodesInCycles = 0;
     NodeSet repNodes;
     repNodes.clear();
-    for(ConstraintGraph::iterator it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
+    for(auto it = consCG->begin(), eit = consCG->end(); it!=eit; ++it)
     {
         // sub nodes have been removed from the constraint graph, only rep nodes are left.
         NodeID repNode = consCG->sccRepNode(it->first);
         NodeBS& subNodes = consCG->sccSubNodes(repNode);
         NodeBS clone = subNodes;
-        for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
+        for (const auto& nodeId : subNodes)
         {
-            NodeID nodeId = *it;
-            PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
+             PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
             if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
@@ -105,12 +104,11 @@ void AndersenStat::constraintGraphStat()
     u32_t numOfCopys = 0;
     u32_t numOfGeps = 0;
     // collect copy and gep edges
-    for(ConstraintEdge::ConstraintEdgeSetTy::iterator it = consCG->getDirectCGEdges().begin(),
-            eit = consCG->getDirectCGEdges().end(); it!=eit; ++it)
+    for(auto *it : consCG->getDirectCGEdges())
     {
-        if(SVFUtil::isa<CopyCGEdge>(*it))
+        if(SVFUtil::isa<CopyCGEdge>(it))
             numOfCopys++;
-        else if(SVFUtil::isa<GepCGEdge>(*it))
+        else if(SVFUtil::isa<GepCGEdge>(it))
             numOfGeps++;
         else
             assert(false && "what else!!");
@@ -137,45 +135,44 @@ void AndersenStat::constraintGraphStat()
     u32_t storemaxOut = 0;
 
 
-    for (ConstraintGraph::ConstraintNodeIDToNodeMapTy::iterator nodeIt = consCG->begin(), nodeEit = consCG->end();
-            nodeIt != nodeEit; nodeIt++)
+    for (auto & nodeIt : *consCG)
     {
         totalNodeNumber++;
-        if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
+        if(nodeIt.second->getInEdges().empty() && nodeIt.second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
-        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getPAGNode(nodeIt->first)))
+        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getPAGNode(nodeIt.first)))
             objNodeNumber++;
 
-        u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
+        u32_t nCopyIn = nodeIt.second->getDirectInEdges().size();
         if(nCopyIn > copymaxIn)
             copymaxIn = nCopyIn;
         copytotalIn +=nCopyIn;
-        u32_t nCopyOut = nodeIt->second->getDirectOutEdges().size();
+        u32_t nCopyOut = nodeIt.second->getDirectOutEdges().size();
         if(nCopyOut > copymaxOut)
             copymaxOut = nCopyOut;
         copytotalOut +=nCopyOut;
-        u32_t nLoadIn = nodeIt->second->getLoadInEdges().size();
+        u32_t nLoadIn = nodeIt.second->getLoadInEdges().size();
         if(nLoadIn > loadmaxIn)
             loadmaxIn = nLoadIn;
         loadtotalIn +=nLoadIn;
-        u32_t nLoadOut = nodeIt->second->getLoadOutEdges().size();
+        u32_t nLoadOut = nodeIt.second->getLoadOutEdges().size();
         if(nLoadOut > loadmaxOut)
             loadmaxOut = nLoadOut;
         loadtotalOut +=nLoadOut;
-        u32_t nStoreIn = nodeIt->second->getStoreInEdges().size();
+        u32_t nStoreIn = nodeIt.second->getStoreInEdges().size();
         if(nStoreIn > storemaxIn)
             storemaxIn = nStoreIn;
         storetotalIn +=nStoreIn;
-        u32_t nStoreOut = nodeIt->second->getStoreOutEdges().size();
+        u32_t nStoreOut = nodeIt.second->getStoreOutEdges().size();
         if(nStoreOut > storemaxOut)
             storemaxOut = nStoreOut;
         storetotalOut +=nStoreOut;
-        u32_t nAddrIn = nodeIt->second->getAddrInEdges().size();
+        u32_t nAddrIn = nodeIt.second->getAddrInEdges().size();
         if(nAddrIn > addrmaxIn)
             addrmaxIn = nAddrIn;
         addrtotalIn +=nAddrIn;
-        u32_t nAddrOut = nodeIt->second->getAddrOutEdges().size();
+        u32_t nAddrOut = nodeIt.second->getAddrOutEdges().size();
         if(nAddrOut > addrmaxOut)
             addrmaxOut = nAddrOut;
         addrtotalOut +=nAddrOut;
@@ -220,11 +217,10 @@ void AndersenStat::statNullPtr()
 {
 
     _NumOfNullPtr = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
-            iter != eiter; ++iter)
+    for (auto & iter : *pta->getPAG())
     {
-        NodeID pagNodeId = iter->first;
-        PAGNode* pagNode = iter->second;
+        NodeID pagNodeId = iter.first;
+        PAGNode* pagNode = iter.second;
         if (pagNode->isTopLevelPtr() == false)
             continue;
         PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
@@ -289,7 +285,7 @@ void AndersenStat::performStat()
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
     u32_t totalTopLevPtsSize = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (auto iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;

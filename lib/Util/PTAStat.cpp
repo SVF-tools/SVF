@@ -215,7 +215,7 @@ void PTAStat::callgraphStat()
 {
 
     PTACallGraph* graph = pta->getPTACallGraph();
-    PointerAnalysis::CallGraphSCC* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
+    auto* callgraphSCC = new PointerAnalysis::CallGraphSCC(graph);
     callgraphSCC->find();
 
     unsigned totalNode = 0;
@@ -226,8 +226,8 @@ void PTAStat::callgraphStat()
     unsigned edgeInCycle = 0;
 
     NodeSet sccRepNodeSet;
-    PTACallGraph::iterator it = graph->begin();
-    PTACallGraph::iterator eit = graph->end();
+    auto it = graph->begin();
+    auto eit = graph->end();
     for (; it != eit; ++it)
     {
         totalNode++;
@@ -240,8 +240,8 @@ void PTAStat::callgraphStat()
                 maxNodeInCycle = subNodes.count();
         }
 
-        PTACallGraphNode::const_iterator edgeIt = it->second->InEdgeBegin();
-        PTACallGraphNode::const_iterator edgeEit = it->second->InEdgeEnd();
+        auto edgeIt = it->second->InEdgeBegin();
+        auto edgeEit = it->second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
             PTACallGraphEdge *edge = *edgeIt;
@@ -278,21 +278,21 @@ void PTAStat::printStat(string statname)
     std::cout << "################ (program : " << moduleName << ")###############\n";
     std::cout.flags(std::ios::left);
     unsigned field_width = 20;
-    for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it)
+    for(auto & it : generalNumMap)
     {
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        std::cout << std::setw(field_width) << it.first << it.second << "\n";
     }
     std::cout << "-------------------------------------------------------\n";
-    for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it)
+    for(auto & it : timeStatMap)
     {
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        std::cout << std::setw(field_width) << it.first << it.second << "\n";
     }
-    for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
+    for(auto & it : PTNumStatMap)
     {
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        std::cout << std::setw(field_width) << it.first << it.second << "\n";
     }
 
     std::cout << "#######################################################" << std::endl;
@@ -307,19 +307,15 @@ void PTAStat::bitcastInstStat()
 {
     SVFModule* module = pta->getModule();
     u32_t numberOfBitCast = 0;
-    for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
-            funIter != funEiter; ++funIter)
+    for (auto funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
+         funIter != funEiter; ++funIter)
     {
         const Function* func = *funIter;
-        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
-                bbIt != bbEit; ++bbIt)
+        for (const auto & bb : *func)
         {
-            const BasicBlock& bb = *bbIt;
-            for (BasicBlock::const_iterator instIt = bb.begin(), instEit = bb.end();
-                    instIt != instEit; ++instIt)
+             for (const auto & inst : bb)
             {
-                const Instruction& inst = *instIt;
-                if (const BitCastInst* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst))
+                 if (const auto* bitcast = SVFUtil::dyn_cast<BitCastInst>(&inst))
                 {
                     if (SVFUtil::isa<PointerType>(bitcast->getSrcTy()))
                         numberOfBitCast++;
@@ -336,15 +332,13 @@ void PTAStat::branchStat()
     SVFModule* module = pta->getModule();
     u32_t numOfBB_2Succ = 0;
     u32_t numOfBB_3Succ = 0;
-    for (SVFModule::llvm_const_iterator funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
-            funIter != funEiter; ++funIter)
+    for (auto funIter = module->llvmFunBegin(), funEiter = module->llvmFunEnd();
+         funIter != funEiter; ++funIter)
     {
         const Function* func = *funIter;
-        for (Function::const_iterator bbIt = func->begin(), bbEit = func->end();
-                bbIt != bbEit; ++bbIt)
+        for (const auto & bb : *func)
         {
-            const BasicBlock& bb = *bbIt;
-            u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
+             u32_t numOfSucc = bb.getTerminator()->getNumSuccessors();
             if (numOfSucc == 2)
                 numOfBB_2Succ++;
             else if (numOfSucc > 2)

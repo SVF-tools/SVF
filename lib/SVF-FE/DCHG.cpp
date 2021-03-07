@@ -45,7 +45,7 @@ void DCHGraph::handleDICompositeType(const DICompositeType *compositeType)
                 DIDerivedType *firstMember = nullptr;
                 for (DINode *n : fields)
                 {
-                    if (DIDerivedType *fm = SVFUtil::dyn_cast<DIDerivedType>(n))
+                    if (auto *fm = SVFUtil::dyn_cast<DIDerivedType>(n))
                     {
                         if (fm->getTag() == dwarf::DW_TAG_member && !fm->isStaticMember())
                         {
@@ -76,7 +76,7 @@ void DCHGraph::handleDICompositeType(const DICompositeType *compositeType)
             for (DINode *field : fields)
             {
                 // fields[0] gives a type which is DW_TAG_member, we want the member's type (getBaseType).
-                DIDerivedType *firstMember = SVFUtil::dyn_cast<DIDerivedType>(field);
+                auto *firstMember = SVFUtil::dyn_cast<DIDerivedType>(field);
                 assert(firstMember != nullptr && "DCHG: expected member type");
                 addEdge(compositeType, firstMember->getBaseType(), DCHEdge::FIRST_FIELD);
             }
@@ -145,7 +145,7 @@ void DCHGraph::handleTypedef(const DIType *typedefType)
     // Check for nullptr because you can typedef void.
     while (typedefType != nullptr && typedefType->getTag() == dwarf::DW_TAG_typedef)
     {
-        const DIDerivedType *typedefDerivedType = SVFUtil::dyn_cast<DIDerivedType>(typedefType);
+        const auto *typedefDerivedType = SVFUtil::dyn_cast<DIDerivedType>(typedefType);
         // The typedef itself.
         typedefs.push_back(typedefDerivedType);
 
@@ -283,7 +283,7 @@ void DCHGraph::flatten(const DICompositeType *type)
     // Sort the fields from getElements. Especially a problem for classes; it's all jumbled up.
     std::vector<const DIDerivedType *> fields;
     DINodeArray fieldsDINA = type->getElements();
-    for (auto i : fieldsDINA)
+    for (auto *i : fieldsDINA)
     {
         if (const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(i))
         {
@@ -862,7 +862,7 @@ bool DCHGraph::teq(const DIType *t1, const DIType *t2)
     // This makes pointers, references, and arrays equivalent.
     // Will handle member types.
     if ((SVFUtil::isa<DIDerivedType>(t1) || t1->getTag() == dwarf::DW_TAG_array_type)
-            && (SVFUtil::isa<DIDerivedType>(t2) || t2->getTag() == dwarf::DW_TAG_array_type))
+        && (SVFUtil::isa<DIDerivedType>(t2) || t2->getTag() == dwarf::DW_TAG_array_type))
     {
         const DIType *base1;
         const DIType *base2;
@@ -1049,11 +1049,11 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
                 {
                     // fields[i] gives a type which is DW_TAG_member, we want the member's type (getBaseType).
                     // It can also give a Subprogram type if the class just had non-virtual functions.
-                    if (const DISubprogram *sp = SVFUtil::dyn_cast<DISubprogram>(fields[i]))
+                    if (const auto *sp = SVFUtil::dyn_cast<DISubprogram>(fields[i]))
                     {
                         ss << std::string(sp->getName());
                     }
-                    else if (const DIDerivedType *mt = SVFUtil::dyn_cast<DIDerivedType>(fields[i]))
+                    else if (const auto *mt = SVFUtil::dyn_cast<DIDerivedType>(fields[i]))
                     {
                         assert(mt->getTag() == dwarf::DW_TAG_member && "DCHG: expected member");
                         ss << diTypeToStr(mt->getBaseType());
@@ -1129,7 +1129,7 @@ static std::string indent(size_t n)
     return std::string(n, ' ');
 }
 
-void DCHGraph::print(void)
+void DCHGraph::print()
 {
     static const std::string line = "-------------------------------------\n";
     static const std::string thickLine = "=====================================\n";

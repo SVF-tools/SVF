@@ -301,7 +301,6 @@ void LockAnalysis::collectCxtLock()
  */
 void LockAnalysis::handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* cgEdge, CallSite cs)
 {
-
     const Function* callee = cgEdge->getDstNode()->getFunction();
 
     CallStrCxt cxt(clp.getContext());
@@ -423,7 +422,7 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
 void LockAnalysis::handleCall(const CxtStmt& cts)
 {
 
-    const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
+    const auto* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
 
     if (getTCG()->hasCallGraphEdge(call))

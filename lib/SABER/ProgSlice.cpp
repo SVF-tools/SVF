@@ -54,7 +54,7 @@ bool ProgSlice::AllPathReachableSolve()
         const SVFGNode* node = worklist.pop();
         setCurSVFGNode(node);
         Condition* cond = getVFCond(node);
-        for(SVFGNode::const_iterator it = node->OutEdgeBegin(), eit = node->OutEdgeEnd(); it!=eit; ++it)
+        for(auto it = node->OutEdgeBegin(), eit = node->OutEdgeEnd(); it!=eit; ++it)
         {
             const SVFGEdge* edge = (*it);
             const SVFGNode* succ = edge->getDstNode();
@@ -97,7 +97,7 @@ bool ProgSlice::isSatisfiableForAll()
 {
 
     Condition* guard = getFalseCond();
-    for(SVFGNodeSetIter it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
+    for(auto it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
     {
         guard = condOr(guard,getVFCond(*it));
     }
@@ -112,9 +112,9 @@ bool ProgSlice::isSatisfiableForAll()
 bool ProgSlice::isSatisfiableForPairs()
 {
 
-    for(SVFGNodeSetIter it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
+    for(auto it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
     {
-        for(SVFGNodeSetIter sit = it, esit = sinksEnd(); sit!=esit; ++sit)
+        for(auto sit = it, esit = sinksEnd(); sit!=esit; ++sit)
         {
             if(*it == *sit)
                 continue;
@@ -133,18 +133,18 @@ bool ProgSlice::isSatisfiableForPairs()
 const CallBlockNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
 {
     assert(edge->isCallVFGEdge() && "not a call svfg edge?");
-    if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
+    if(const auto* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
         return getSVFG()->getCallSite(callEdge->getCallSiteId());
-    else
-        return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
+
+    return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
 }
 const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 {
     assert(edge->isRetVFGEdge() && "not a return svfg edge?");
-    if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
+    if(const auto* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))
         return getSVFG()->getCallSite(callEdge->getCallSiteId());
-    else
-        return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
+
+    return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
 /*!
@@ -153,7 +153,7 @@ const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
  */
 const Value* ProgSlice::getLLVMValue(const SVFGNode* node) const
 {
-    if(const StmtSVFGNode* stmt = SVFUtil::dyn_cast<StmtSVFGNode>(node))
+    if(const auto* stmt = SVFUtil::dyn_cast<StmtSVFGNode>(node))
     {
         if(SVFUtil::isa<StoreSVFGNode>(stmt) == false)
         {
@@ -161,23 +161,23 @@ const Value* ProgSlice::getLLVMValue(const SVFGNode* node) const
                 return stmt->getPAGDstNode()->getValue();
         }
     }
-    else if(const PHISVFGNode* phi = SVFUtil::dyn_cast<PHISVFGNode>(node))
+    else if(const auto* phi = SVFUtil::dyn_cast<PHISVFGNode>(node))
     {
         return phi->getRes()->getValue();
     }
-    else if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
+    else if(const auto* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
     {
         return ap->getParam()->getValue();
     }
-    else if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
+    else if(const auto* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
     {
         return fp->getParam()->getValue();
     }
-    else if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
+    else if(const auto* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
     {
         return ar->getRev()->getValue();
     }
-    else if(const FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
+    else if(const auto* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
     {
         return fr->getRet()->getValue();
     }
@@ -200,17 +200,16 @@ std::string ProgSlice::evalFinalCond() const
     raw_string_ostream rawstr(str);
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
     Set<std::string> locations;
-    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    for(const auto& elem : elems)
     {
-        Condition* atom = pathAllocator->getCond(*it);
+        Condition* atom = pathAllocator->getCond(elem);
         const Instruction* tinst = pathAllocator->getCondInst(atom);
         locations.insert(getSourceLoc(tinst));
     }
     /// print leak path after eliminating duplicated element
-    for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();
-            iter!=eiter; ++iter)
+    for(const auto& location : locations)
     {
-        rawstr << "\t\t  --> (" << *iter << ") \n";
+        rawstr << "\t\t  --> (" << location << ") \n";
     }
 
     return rawstr.str();
@@ -227,11 +226,11 @@ void ProgSlice::annotatePaths()
     annotator.annotateSinks();
 
     NodeBS elems = pathAllocator->exactCondElem(finalCond);
-    for(NodeBS::iterator it = elems.begin(), eit = elems.end(); it!=eit; ++it)
+    for(const auto& elem : elems)
     {
-        Condition* atom = pathAllocator->getCond(*it);
+        Condition* atom = pathAllocator->getCond(elem);
         const Instruction* tinst = pathAllocator->getCondInst(atom);
-        if(const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(tinst))
+        if(const auto* br = SVFUtil::dyn_cast<BranchInst>(tinst))
         {
             annotator.annotateFeasibleBranch(br,0);
             annotator.annotateFeasibleBranch(br,1);

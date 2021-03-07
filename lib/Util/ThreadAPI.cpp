@@ -202,8 +202,8 @@ void ThreadAPI::performAPIStat(SVFModule* module)
 
     statInit(tdAPIStatMap);
 
-    for (SVFModule::llvm_iterator it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
-            ++it)
+    for (auto it = module->llvmFunBegin(), eit = module->llvmFunEnd(); it != eit;
+         ++it)
     {
 
         for (inst_iterator II = inst_begin(*it), E = inst_end(*it); II != E;
@@ -322,12 +322,11 @@ void ThreadAPI::performAPIStat(SVFModule* module)
               << ")###############\n";
     std::cout.flags(std::ios::left);
     unsigned field_width = 20;
-    for (llvm::StringMap<u32_t>::iterator it = tdAPIStatMap.begin(), eit =
-                tdAPIStatMap.end(); it != eit; ++it)
+    for (auto & it : tdAPIStatMap)
     {
-        std::string apiName = it->first();
+        std::string apiName = it.first();
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << apiName << " : " << it->second
+        std::cout << std::setw(field_width) << apiName << " : " << it.second
                   << "\n";
     }
     std::cout << "#######################################################"

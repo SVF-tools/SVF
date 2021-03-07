@@ -88,23 +88,21 @@ static llvm::RegisterPass<MergeFunctionRets> MP ("merge-rets",
 static ConstantExpr *
 hasConstantGEP (Value * V)
 {
-    if (ConstantExpr * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
+    if (auto * CE = SVFUtil::dyn_cast<ConstantExpr>(V))
     {
         if (CE->getOpcode() == Instruction::GetElementPtr)
         {
             return CE;
         }
-        else
+
+        for (unsigned index = 0; index < CE->getNumOperands(); ++index)
         {
-            for (unsigned index = 0; index < CE->getNumOperands(); ++index)
-            {
-                if (hasConstantGEP (CE->getOperand(index)))
-                    return CE;
-            }
+            if (hasConstantGEP (CE->getOperand(index)))
+                return CE;
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 //
@@ -161,7 +159,7 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
     //
     // Convert this constant expression into a regular instruction.
     //
-    Instruction * NewInst = 0;
+    Instruction * NewInst = nullptr;
     switch (CE->getOpcode())
     {
     case Instruction::GetElementPtr:
@@ -189,7 +187,7 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
     case Instruction::Or:
     case Instruction::Xor:
     {
-        Instruction::BinaryOps Op = (Instruction::BinaryOps)(CE->getOpcode());
+        auto Op = (Instruction::BinaryOps)(CE->getOpcode());
         NewInst = llvm::BinaryOperator::Create (Op,
                                                 CE->getOperand(0),
                                                 CE->getOperand(1),
@@ -200,7 +198,7 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
 
     case Instruction::FNeg:
     {
-        Instruction::UnaryOps Op = (Instruction::UnaryOps)(CE->getOpcode());
+        auto Op = (Instruction::UnaryOps)(CE->getOpcode());
         NewInst = llvm::UnaryOperator::Create (Op,
                                                 CE->getOperand(0),
                                                 CE->getName(),
@@ -221,7 +219,7 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
     case Instruction::IntToPtr:
     case Instruction::BitCast:
     {
-        Instruction::CastOps Op = (Instruction::CastOps)(CE->getOpcode());
+        auto Op = (Instruction::CastOps)(CE->getOpcode());
         NewInst = CastInst::Create (Op,
                                     CE->getOperand(0),
                                     CE->getType(),
@@ -233,7 +231,7 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
     case Instruction:: FCmp:
     case Instruction:: ICmp:
     {
-        Instruction::OtherOps Op = (Instruction::OtherOps)(CE->getOpcode());
+        auto Op = (Instruction::OtherOps)(CE->getOpcode());
         NewInst = CmpInst::Create (Op,
                                    static_cast<CmpInst::Predicate>(CE->getPredicate()),
                                    CE->getOperand(0),
@@ -282,7 +280,7 @@ bool
 BreakConstantGEPs::runOnModule (Module & module)
 {
     bool modified = false;
-    for (Module::iterator F = module.begin(), E = module.end(); F != E; ++F)
+    for (auto & F : module)
     {
         // Worklist of values to check for constant GEP expressions
         std::vector<Instruction *> Worklist;
@@ -291,15 +289,15 @@ BreakConstantGEPs::runOnModule (Module & module)
         // Initialize the worklist by finding all instructions that have one or more
         // operands containing a constant GEP expression.
         //
-        for (Function::iterator BB = (*F).begin(); BB != (*F).end(); ++BB)
+        for (auto & BB : F)
         {
-            for (BasicBlock::iterator i = BB->begin(); i != BB->end(); ++i)
+            for (auto & i : BB)
             {
                 //
                 // Scan through the operands of this instruction.  If it is a constant
                 // expression GEP, insert an instruction GEP before the instruction.
                 //
-                Instruction * I = &(*i);
+                Instruction * I = &i;
                 for (unsigned index = 0; index < I->getNumOperands(); ++index)
                 {
                     if (hasConstantGEP (I->getOperand(index)))
@@ -331,7 +329,7 @@ BreakConstantGEPs::runOnModule (Module & module)
             // instructions because the new instruction must be added to the
             // appropriate predecessor block.
             //
-            if (PHINode * PHI = SVFUtil::dyn_cast<PHINode>(I))
+            if (auto * PHI = SVFUtil::dyn_cast<PHINode>(I))
             {
                 for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index)
                 {

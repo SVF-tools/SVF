@@ -44,7 +44,7 @@ void LeakChecker::initSrcs()
 
     PAG* pag = getPAG();
     ICFG* icfg = pag->getICFG();
-    for(PAG::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
+    for(auto it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
     {
         const RetBlockNode* cs = it->first;
@@ -55,10 +55,9 @@ void LeakChecker::initSrcs()
 
         PTACallGraph::FunctionSet callees;
         getCallgraph()->getCallees(cs->getCallBlockNode(),callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        for(const auto *fun : callees)
         {
-            const SVFFunction* fun = *cit;
-            if (isSourceLikeFun(fun))
+             if (isSourceLikeFun(fun))
             {
                 CSWorkList worklist;
                 SVFGNodeBS visited;
@@ -78,10 +77,9 @@ void LeakChecker::initSrcs()
                     // if this node is in an allocation wrapper, find all its call nodes
                     if (isInAWrapper(node, csSet))
                     {
-                        for (CallSiteSet::iterator it = csSet.begin(), eit =
-                                    csSet.end(); it != eit; ++it)
+                        for (const auto *it : csSet)
                         {
-                            worklist.push(*it);
+                            worklist.push(it);
                         }
                     }
                     // otherwise, this is the source we are interested
@@ -109,24 +107,20 @@ void LeakChecker::initSnks()
 
     PAG* pag = getPAG();
 
-    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
-            eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
+    for(auto & it : pag->getCallSiteArgsMap())
     {
 
         PTACallGraph::FunctionSet callees;
-        getCallgraph()->getCallees(it->first,callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
+        getCallgraph()->getCallees(it.first,callees);
+        for(const auto *fun : callees)
         {
-            const SVFFunction* fun = *cit;
-			if (isSinkLikeFun(fun)) {
-				PAG::PAGNodeList &arglist = it->second;
+            	if (isSinkLikeFun(fun)) {
+				PAG::PAGNodeList &arglist = it.second;
 				assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
 				/// we only choose pointer parameters among all the actual parameters
-				for (PAG::PAGNodeList::const_iterator ait = arglist.begin(),
-						aeit = arglist.end(); ait != aeit; ++ait) {
-					const PAGNode *pagNode = *ait;
-					if (pagNode->isPointer()) {
-						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
+				for (const auto *pagNode : arglist) {
+						if (pagNode->isPointer()) {
+						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it.first);
 						addToSinks(snk);
 					}
 				}

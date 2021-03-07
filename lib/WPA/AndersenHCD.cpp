@@ -83,10 +83,9 @@ void AndersenHCD::mergeSCC(NodeID nodeId)
         // get online rep node
         NodeID rep = consCG->sccRepNode(oRep);
         const PointsTo &pts = getPts(nodeId);
-        for (PointsTo::iterator ptIt = pts.begin(), ptEit = pts.end(); ptIt != ptEit; ++ptIt)
+        for (const auto& tgt : pts)
         {
-            NodeID tgt = *ptIt;
-            ConstraintNode* tgtNode = consCG->getConstraintNode(tgt);
+             ConstraintNode* tgtNode = consCG->getConstraintNode(tgt);
             if (!tgtNode->getDirectInEdges().empty())
                 continue;
             if (tgtNode->getAddrOutEdges().size() > 1)
