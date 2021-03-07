@@ -155,10 +155,9 @@ void LLVMModuleSet::initialize()
     for (Module& mod : modules)
     {
         /// Function
-        for (Module::iterator it = mod.begin(), eit = mod.end();
-                it != eit; ++it)
+        for (auto & it : mod)
         {
-            Function *func = &*it;
+            Function *func = &it;
             svfModule->addFunctionSet(func);
         }
 
@@ -200,7 +199,7 @@ void LLVMModuleSet::addSVFMain()
             }
         }
     }
-    if(orgMain && getModuleNum() > 0 && init_funcs.size() > 0)
+    if(orgMain && getModuleNum() > 0 && !init_funcs.empty())
     {
         assert(mainMod && "Module with main function not found.");
         Module & M = *mainMod;
@@ -248,8 +247,11 @@ void LLVMModuleSet::addSVFMain()
 
 void LLVMModuleSet::buildFunToFunMap()
 {
-    Set<Function*> funDecls, funDefs;
-    Set<string> declNames, defNames, intersectNames;
+    Set<Function*> funDecls;
+    Set<Function*> funDefs;
+    Set<string> declNames;
+    Set<string> defNames;
+    Set<string> intersectNames;
     using NameToFunDefMapTy = Map<string, Function *>;
     using NameToFunDeclsMapTy = Map<string, Set<Function *> >;
 
@@ -269,7 +271,8 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
     // Find the intersectNames
-    Set<string>::iterator declIter, defIter;
+    Set<string>::iterator declIter;
+    Set<string>::iterator defIter;
     declIter = declNames.begin();
     defIter = defNames.begin();
     while (declIter != declNames.end() && defIter != defNames.end())

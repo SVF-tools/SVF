@@ -72,8 +72,8 @@ bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, Cal
 
         return false;
     }
-    else	// if this is an direct call
-        return true;
+    // if this is an direct call
+    return true;
 
 }
 
@@ -119,9 +119,8 @@ bool FlowDDA::handleBKCondition(LocDPItem& dpm, const SVFGEdge* edge)
 PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
 {
     PointsTo tmpDstPts;
-    for (PointsTo::iterator piter = srcPts.begin(); piter != srcPts.end(); ++piter)
+    for (auto ptd : srcPts)
     {
-        NodeID ptd = *piter;
         if (isBlkObjOrConstantObj(ptd))
             tmpDstPts.set(ptd);
         else
@@ -131,7 +130,7 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
                 setObjFieldInsensitive(ptd);
                 tmpDstPts.set(getFIObjNode(ptd));
             }
-            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
+            else if (const auto* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
             {
                 NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);

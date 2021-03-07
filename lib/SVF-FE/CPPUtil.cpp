@@ -77,10 +77,7 @@ static bool isOperOverload(const string name)
     {
         return true;
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 static string getBeforeParenthesis(const string &name)
@@ -128,8 +125,7 @@ bool cppUtil::isValVtbl(const Value *val)
     if (valName.compare(0, vtblLabelBeforeDemangle.size(),
                         vtblLabelBeforeDemangle) == 0)
         return true;
-    else
-        return false;
+    return false;
 }
 
 static void handleThunkFunction(cppUtil::DemangledName &dname) {
@@ -144,9 +140,8 @@ static void handleThunkFunction(cppUtil::DemangledName &dname) {
     // to get the real class name
 
     static vector<string> thunkPrefixes = {VThunkFuncLabel, NVThunkFunLabel};
-    for (unsigned i = 0; i < thunkPrefixes.size(); i++) {
-        auto prefix = thunkPrefixes[i];
-        if (dname.className.size() > prefix.size() &&
+    for (const auto& prefix : thunkPrefixes) {
+         if (dname.className.size() > prefix.size() &&
             dname.className.compare(0, prefix.size(), prefix) == 0)
         {
             dname.className = dname.className.substr(prefix.size());
@@ -229,7 +224,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     const Type *elemTy = valTy;
     for (s32_t i = 0; i < 3; ++i)
     {
-        if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
+        if (const auto *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = ptrTy->getElementType();
         else
             return false;
@@ -238,7 +233,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     {
         const Type *paramty = functy->getParamType(0);
         string className = cppUtil::getClassNameFromType(paramty);
-        if (className.size() > 0)
+        if (!className.empty())
         {
             return true;
         }
@@ -267,11 +262,11 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
     }
 
     const Value *vfunc = cs.getCalledValue();
-    if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
+    if (const auto *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
         const Value *vfuncptr = vfuncloadinst->getPointerOperand();
-        if (const GetElementPtrInst *vfuncptrgepinst =
-                    SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
+        if (const auto *vfuncptrgepinst =
+            SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr))
         {
             if (vfuncptrgepinst->getNumIndices() != 1)
                 return false;
@@ -293,8 +288,8 @@ bool cppUtil::isCPPThunkFunction(const Function *F) {
 const Function *cppUtil::getThunkTarget(const Function *F) {
     const Function *ret = nullptr;
 
-    for (auto &bb:*F) {
-        for (auto &inst: bb) {
+    for (const auto &bb:*F) {
+        for (const auto &inst: bb) {
             if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
                 || llvm::isa<CallBrInst>(inst)) {
                 llvm::ImmutableCallSite cs(&inst);
@@ -316,10 +311,8 @@ const Value *cppUtil::getVCallThisPtr(CallSite cs)
     {
         return cs.getArgument(1);
     }
-    else
-    {
-        return cs.getArgument(0);
-    }
+
+    return cs.getArgument(0);
 }
 
 /*!
@@ -344,11 +337,11 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     {
         for (const User *thisU : thisPtr1->users())
         {
-            if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
+            if (const auto *store = SVFUtil::dyn_cast<StoreInst>(thisU))
             {
                 for (const User *storeU : store->getPointerOperand()->users())
                 {
-                    if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
+                    if (const auto *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                     {
                         if(load->getNextNode() && SVFUtil::isa<CastInst>(load->getNextNode()))
                             return SVFUtil::cast<CastInst>(load->getNextNode()) == (thisPtr2->stripPointerCasts());

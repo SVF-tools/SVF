@@ -139,8 +139,7 @@ void PAGBuilder::initialiseNodes()
     pag->addBlackholePtrNode();
     addNullPtrNode();
 
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->valSyms().begin(); iter != symTable->valSyms().end();
+    for (auto iter =symTable->valSyms().begin(); iter != symTable->valSyms().end();
             ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add val node " << iter->second << "\n");
@@ -149,9 +148,9 @@ void PAGBuilder::initialiseNodes()
         pag->addValNode(iter->first, iter->second);
     }
 
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->objSyms().begin(); iter != symTable->objSyms().end();
-            ++iter)
+    for (auto iter = symTable->objSyms().begin();
+         iter != symTable->objSyms().end();
+         ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add obj node " << iter->second << "\n");
         if(iter->second == symTable->blackholeSymID() || iter->second == symTable->constantSymID())
@@ -159,17 +158,15 @@ void PAGBuilder::initialiseNodes()
         pag->addObjNode(iter->first, iter->second);
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
-                symTable->retSyms().begin(); iter != symTable->retSyms().end();
-            ++iter)
+    for (auto iter = symTable->retSyms().begin(); iter != symTable->retSyms().end();
+         ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add ret node " << iter->second << "\n");
         const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(iter->first);
         pag->addRetNode(fun, iter->second);
     }
 
-    for (SymbolTableInfo::FunToIDMapTy::iterator iter =
-                symTable->varargSyms().begin();
+    for (auto iter = symTable->varargSyms().begin();
             iter != symTable->varargSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add vararg node " << iter->second << "\n");
@@ -178,8 +175,8 @@ void PAGBuilder::initialiseNodes()
     }
 
     /// add address edges for constant nodes.
-    for (SymbolTableInfo::ValueToIDMapTy::iterator iter =
-                symTable->objSyms().begin(); iter != symTable->objSyms().end(); ++iter)
+    for (auto iter = symTable->objSyms().begin();
+         iter != symTable->objSyms().end(); ++iter)
     {
         DBOUT(DPAGBuild, outs() << "add address edges for constant node " << iter->second << "\n");
         const Value* val = iter->first;
@@ -351,13 +348,10 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
     }
     /// if we did not find the constant expression in the program,
     /// then we need to create a gep node for this field
-    else
-    {
-        const Type *gvartype = gvar->getType();
-        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
-            gvartype = ptype->getElementType();
-        return getGepValNode(gvar, LocationSet(offset), gvartype, offset);
-    }
+    const Type *gvartype = gvar->getType();
+    while (const auto *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
+        gvartype = ptype->getElementType();
+    return getGepValNode(gvar, LocationSet(offset), gvartype, offset);
 }
 
 /*For global variable initialization
@@ -446,8 +440,8 @@ void PAGBuilder::visitGlobal(SVFModule* svfModule)
 {
 
     /// initialize global variable
-    for (SVFModule::global_iterator I = svfModule->global_begin(), E =
-                svfModule->global_end(); I != E; ++I)
+    for (auto I = svfModule->global_begin(), E =
+             svfModule->global_end(); I != E; ++I)
     {
         GlobalVariable *gvar = *I;
         NodeID idx = getValueNode(gvar);
@@ -465,8 +459,8 @@ void PAGBuilder::visitGlobal(SVFModule* svfModule)
     }
 
     /// initialize global functions
-    for (SVFModule::llvm_const_iterator I = svfModule->llvmFunBegin(), E =
-                svfModule->llvmFunEnd(); I != E; ++I)
+    for (auto I = svfModule->llvmFunBegin(), E =
+             svfModule->llvmFunEnd(); I != E; ++I)
     {
         const Function *fun = *I;
         NodeID idx = getValueNode(fun);
@@ -478,7 +472,7 @@ void PAGBuilder::visitGlobal(SVFModule* svfModule)
     }
 
     // Handle global aliases (due to linkage of multiple bc files), e.g., @x = internal alias @y. We need to add a copy from y to x.
-    for (SVFModule::alias_iterator I = svfModule->alias_begin(), E = svfModule->alias_end(); I != E; I++)
+    for (auto I = svfModule->alias_begin(), E = svfModule->alias_end(); I != E; I++)
     {
         NodeID dst = pag->getValueNode(*I);
         NodeID src = pag->getValueNode((*I)->getAliasee());
@@ -520,7 +514,7 @@ void PAGBuilder::visitPHINode(PHINode &inst)
     for (Size_t i = 0; i < inst.getNumIncomingValues(); ++i)
     {
         const Value* val = inst.getIncomingValue(i);
-        const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
+        const auto* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
 
         NodeID src = getValueNode(val);
@@ -826,8 +820,10 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
-    CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
-    Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin(), ieF = F->getLLVMFun()->arg_end();
+    CallSite::arg_iterator itA = cs.arg_begin();
+    CallSite::arg_iterator ieA = cs.arg_end();
+    Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin();
+    Function::const_arg_iterator ieF = F->getLLVMFun()->arg_end();
     //Go through the fixed parameters.
     DBOUT(DPAGBuild, outs() << "      args:");
     for (; itF != ieF; ++itA, ++itF)
@@ -838,7 +834,8 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
             DBOUT(DPAGBuild, outs() << " !! not enough args\n");
             break;
         }
-        const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
+        const Value *AA = *itA;
+        const Value *FA = &*itF; //current actual/formal arg
 
         DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
 
@@ -886,7 +883,8 @@ const Type *PAGBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<Loca
 void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
 {
     assert(D && S);
-    NodeID vnD= getValueNode(D), vnS= getValueNode(S);
+    NodeID vnD= getValueNode(D);
+    NodeID vnS= getValueNode(S);
     if(!vnD || !vnS)
         return;
 
@@ -1332,9 +1330,9 @@ void PAGBuilder::handleIndCall(CallSite cs)
  */
 void PAGBuilder::sanityCheck()
 {
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (auto & nIter : *pag)
     {
-        (void) pag->getPAGNode(nIter->first);
+        (void) pag->getPAGNode(nIter.first);
         //TODO::
         // (1)  every source(root) node of a pag tree should be object node
         //       if a node has no incoming edge, but has outgoing edges
@@ -1385,8 +1383,8 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
         setCurrentLocation(cval, cbb);
         return gepNode;
     }
-    else
-        return gepval;
+
+    return gepval;
 }
 
 
@@ -1412,7 +1410,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     edge->setBB(curBB);
     edge->setValue(curVal);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
-    if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
+    if (const auto *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {
         const Function* srcFun = edge->getSrcNode()->getFunction();
         const Function* dstFun = edge->getDstNode()->getFunction();
@@ -1429,7 +1427,7 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
         icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
     }
-    else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
+    else if (const auto* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
         const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());

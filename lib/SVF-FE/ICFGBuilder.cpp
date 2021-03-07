@@ -40,10 +40,9 @@ using namespace SVFUtil;
  */
 void ICFGBuilder::build(SVFModule* svfModule)
 {
-    for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end(); iter != eiter; ++iter)
+    for (const auto *fun : *svfModule)
     {
-        const SVFFunction *fun = *iter;
-        if (SVFUtil::isExtCall(fun))
+         if (SVFUtil::isExtCall(fun))
             continue;
         WorkList worklist;
         processFunEntry(fun,worklist);
@@ -65,12 +64,11 @@ void ICFGBuilder::processFunEntry(const SVFFunction*  fun, WorkList& worklist)
         getNextInsts(entryInst, insts);
     else
         insts.push_back(entryInst);
-    for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
-            nit != enit; ++nit)
+    for (const auto *inst : insts)
     {
-        ICFGNode* instNode = getOrAddBlockICFGNode(*nit);           //add interprocedure edge
+        ICFGNode* instNode = getOrAddBlockICFGNode(inst);           //add interprocedure edge
         icfg->addIntraEdge(FunEntryBlockNode, instNode);
-        worklist.push(*nit);
+        worklist.push(inst);
     }
 }
 
@@ -98,11 +96,9 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             InstVec nextInsts;
             getNextInsts(inst, nextInsts);
             NodeID branchID = 0;
-            for (InstVec::const_iterator nit = nextInsts.begin(), enit =
-                        nextInsts.end(); nit != enit; ++nit)
+            for (const auto *succ : nextInsts)
             {
-                const Instruction* succ = *nit;
-                ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
+                 ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
                 if (isNonInstricCallSite(inst))
                 {
                     RetBlockNode* retICFGNode = getOrAddRetICFGNode(inst);
@@ -110,7 +106,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     srcNode = retICFGNode;
                 }
 
-                const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst);
+                const auto* br = SVFUtil::dyn_cast<BranchInst>(inst);
 
                 if(br && br->isConditional())
                     icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), branchID);
@@ -138,10 +134,9 @@ void ICFGBuilder::processFunExit(const SVFFunction*  fun)
         getPrevInsts(exitInst, insts);
     else
         insts.push_back(exitInst);
-    for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
-            nit != enit; ++nit)
+    for (const auto *inst : insts)
     {
-        ICFGNode* instNode = getOrAddBlockICFGNode(*nit);
+        ICFGNode* instNode = getOrAddBlockICFGNode(inst);
         icfg->addIntraEdge(instNode, FunExitBlockNode);
     }
 }
@@ -190,7 +185,7 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
 
     FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
     GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
-    IntraCFGEdge* intraEdge = new IntraCFGEdge(entryNode,globalNode);
+    auto* intraEdge = new IntraCFGEdge(entryNode,globalNode);
     icfg->addICFGEdge(intraEdge);
 }
 

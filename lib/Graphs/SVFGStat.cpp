@@ -247,43 +247,41 @@ void SVFGStat::processGraph()
     NodeSet nodeHasIndInEdge;
     NodeSet nodeHasIndOutEdge;
 
-    SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
-    SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
-    for (; it != eit; ++it)
+    for (auto & it : *graph)
     {
         numOfNodes++;
-        if (SVFUtil::isa<FormalINSVFGNode>(it->second))
+        if (SVFUtil::isa<FormalINSVFGNode>(it.second))
             numOfFormalIn++;
-        else if (SVFUtil::isa<FormalOUTSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalOUTSVFGNode>(it.second))
             numOfFormalOut++;
-        else if (SVFUtil::isa<FormalParmSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalParmSVFGNode>(it.second))
             numOfFormalParam++;
-        else if (SVFUtil::isa<FormalRetSVFGNode>(it->second))
+        else if (SVFUtil::isa<FormalRetSVFGNode>(it.second))
             numOfFormalRet++;
-        else if (SVFUtil::isa<ActualINSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualINSVFGNode>(it.second))
             numOfActualIn++;
-        else if (SVFUtil::isa<ActualOUTSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualOUTSVFGNode>(it.second))
             numOfActualOut++;
-        else if (SVFUtil::isa<ActualParmSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualParmSVFGNode>(it.second))
             numOfActualParam++;
-        else if (SVFUtil::isa<ActualRetSVFGNode>(it->second))
+        else if (SVFUtil::isa<ActualRetSVFGNode>(it.second))
             numOfActualRet++;
-        else if (SVFUtil::isa<AddrSVFGNode>(it->second))
+        else if (SVFUtil::isa<AddrSVFGNode>(it.second))
             numOfAddr++;
-        else if (SVFUtil::isa<CopySVFGNode>(it->second))
+        else if (SVFUtil::isa<CopySVFGNode>(it.second))
             numOfCopy++;
-        else if (SVFUtil::isa<GepSVFGNode>(it->second))
+        else if (SVFUtil::isa<GepSVFGNode>(it.second))
             numOfGep++;
-        else if (SVFUtil::isa<LoadSVFGNode>(it->second))
+        else if (SVFUtil::isa<LoadSVFGNode>(it.second))
             numOfLoad++;
-        else if (SVFUtil::isa<StoreSVFGNode>(it->second))
+        else if (SVFUtil::isa<StoreSVFGNode>(it.second))
             numOfStore++;
-        else if (SVFUtil::isa<PHISVFGNode>(it->second))
+        else if (SVFUtil::isa<PHISVFGNode>(it.second))
             numOfPhi++;
-        else if (SVFUtil::isa<MSSAPHISVFGNode>(it->second))
+        else if (SVFUtil::isa<MSSAPHISVFGNode>(it.second))
             numOfMSSAPhi++;
 
-        SVFGNode* node = it->second;
+        SVFGNode* node = it.second;
         calculateNodeDegrees(node, nodeHasIndInEdge, nodeHasIndOutEdge);
     }
 
@@ -311,11 +309,9 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
 
     // indirect in edge
     Size_t indInEdges = 0;
-    SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
-    SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
-    for (; edgeIt != edgeEit; ++edgeIt)
+    for (const auto &edgeIt:inEdges)
     {
-        if (IndirectSVFGEdge* edge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*edgeIt))
+        if (auto* edge = SVFUtil::dyn_cast<IndirectSVFGEdge>(edgeIt))
         {
             indInEdges++;
             nodeHasIndInEdge.insert(node->getId());
@@ -326,13 +322,13 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             totalIndEdgeLabels += cpts.count();
         }
 
-        if (SVFUtil::isa<CallDirSVFGEdge>(*edgeIt))
+        if (SVFUtil::isa<CallDirSVFGEdge>(edgeIt))
             totalDirCallEdge++;
-        else if (SVFUtil::isa<CallIndSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<CallIndSVFGEdge>(edgeIt))
             totalIndCallEdge++;
-        else if (SVFUtil::isa<RetDirSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<RetDirSVFGEdge>(edgeIt))
             totalDirRetEdge++;
-        else if (SVFUtil::isa<RetIndSVFGEdge>(*edgeIt))
+        else if (SVFUtil::isa<RetIndSVFGEdge>(edgeIt))
             totalIndRetEdge++;
     }
 
@@ -351,11 +347,9 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
 
     // indirect out edge
     Size_t indOutEdges = 0;
-    edgeIt = outEdges.begin();
-    edgeEit = outEdges.end();
-    for (; edgeIt != edgeEit; ++edgeIt)
+    for (auto *outEdge : outEdges)
     {
-        if ((*edgeIt)->isIndirectVFGEdge())
+        if (outEdge->isIndirectVFGEdge())
         {
             indOutEdges++;
             nodeHasIndOutEdge.insert(node->getId());
@@ -396,22 +390,20 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     svfgSCC->find();
 
     NodeSet sccRepNodeSet;
-    SVFG::SVFGNodeIDToNodeMapTy::iterator it = graph->begin();
-    SVFG::SVFGNodeIDToNodeMapTy::iterator eit = graph->end();
-    for (; it != eit; ++it)
+    for (auto & it : *graph)
     {
         totalNode++;
-        if(svfgSCC->isInCycle(it->first))
+        if(svfgSCC->isInCycle(it.first))
         {
             nodeInCycle++;
-            sccRepNodeSet.insert(svfgSCC->repNode(it->first));
-            const NodeBS& subNodes = svfgSCC->subNodes(it->first);
+            sccRepNodeSet.insert(svfgSCC->repNode(it.first));
+            const NodeBS& subNodes = svfgSCC->subNodes(it.first);
             if(subNodes.count() > maxNodeInCycle)
                 maxNodeInCycle = subNodes.count();
         }
 
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = it->second->InEdgeEnd();
+        auto edgeIt = it.second->InEdgeBegin();
+        auto edgeEit = it.second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
 

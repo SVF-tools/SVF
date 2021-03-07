@@ -218,11 +218,11 @@ bool DDAPass::edgeInCallGraphSCC(PointerAnalysis* pta,const SVFGEdge* edge)
 void DDAPass::collectCxtInsenEdgeForRecur(PointerAnalysis* pta, const SVFG* svfg,SVFGEdgeSet& insensitveEdges)
 {
 
-    for (SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = svfg->begin(),eit = svfg->end(); it != eit; ++it)
+    for (auto it : *svfg)
     {
 
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = it->second->InEdgeEnd();
+        auto edgeIt = it.second->InEdgeBegin();
+        auto edgeEit = it.second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
             const SVFGEdge* edge = *edgeIt;
@@ -243,11 +243,11 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
     OrderedSet<NodePair> insensitvefunPairs;
 
-    for (SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = svfg->begin(),eit = svfg->end(); it != eit; ++it)
+    for (auto it : *svfg)
     {
 
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = it->second->InEdgeEnd();
+        auto edgeIt = it.second->InEdgeBegin();
+        auto edgeEit = it.second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
             const SVFGEdge* edge = *edgeIt;
@@ -273,10 +273,10 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
         }
     }
 
-    for(SVFG::SVFGNodeIDToNodeMapTy::const_iterator it = svfg->begin(),eit = svfg->end(); it != eit; ++it)
+    for(auto it : *svfg)
     {
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = it->second->InEdgeBegin();
-        SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = it->second->InEdgeEnd();
+        auto edgeIt = it.second->InEdgeBegin();
+        auto edgeEit = it.second->InEdgeEnd();
         for (; edgeIt != edgeEit; ++edgeIt)
         {
             const SVFGEdge* edge = *edgeIt;
@@ -347,9 +347,9 @@ AliasResult DDAPass::alias(const Value* V1, const Value* V2)
 void DDAPass::printQueryPTS()
 {
     const OrderedNodeSet& candidates = _client->getCandidateQueries();
-    for (OrderedNodeSet::const_iterator it = candidates.begin(), eit = candidates.end(); it != eit; ++it)
+    for (auto it : candidates)
     {
-        const PointsTo& pts = _pta->getPts(*it);
-        _pta->dumpPts(*it,pts);
+        const PointsTo& pts = _pta->getPts(it);
+        _pta->dumpPts(it,pts);
     }
 }

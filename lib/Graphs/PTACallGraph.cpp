@@ -121,7 +121,7 @@ void PTACallGraph::destroy()
 void PTACallGraph::addCallGraphNode(const SVFFunction* fun)
 {
     NodeID id = callGraphNodeNum;
-    PTACallGraphNode* callGraphNode = new PTACallGraphNode(id, fun);
+    auto* callGraphNode = new PTACallGraphNode(id, fun);
     addGNode(id,callGraphNode);
     funToCallGraphNodeMap[fun] = callGraphNode;
     callGraphNodeNum++;
@@ -140,8 +140,8 @@ PTACallGraphEdge* PTACallGraph::hasGraphEdge(PTACallGraphNode* src, PTACallGraph
         assert(outEdge == inEdge && "edges not match");
         return outEdge;
     }
-    else
-        return nullptr;
+
+    return nullptr;
 }
 
 /*!
@@ -264,12 +264,12 @@ void PTACallGraph::verifyCallGraph()
 {
     auto it = indirectCallMap.begin();
     auto eit = indirectCallMap.end();
-    for (; it != eit; ++it)
+    for (const auto &it : indirectCallMap)
     {
-        const FunctionSet& targets = it->second;
-        if (targets.empty() == false)
+        const FunctionSet& targets = it.second;
+        if (!targets.empty())
         {
-            const CallBlockNode* cs = it->first;
+            const CallBlockNode* cs = it.first;
             const SVFFunction* func = cs->getCaller();
             if (getCallGraphNode(func)->isReachableFromProgEntry() == false)
                 writeWrnMsg(func->getName().str() + " has indirect call site but not reachable from main");
@@ -352,8 +352,8 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         {
             return "shape=circle";
         }
-        else
-            return "shape=Mrecord";
+
+        return "shape=Mrecord";
     }
 
     template<class EdgeIter>

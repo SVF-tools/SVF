@@ -49,7 +49,7 @@ static llvm::cl::opt<bool> TaintUninitStack("uninit-stack", llvm::cl::init(true)
 void DDAClient::answerQueries(PointerAnalysis* pta)
 {
 
-    DDAStat* stat = static_cast<DDAStat*>(pta->getStat());
+    auto* stat = static_cast<DDAStat*>(pta->getStat());
     u32_t vmrss = 0;
     u32_t vmsize = 0;
     SVFUtil::getMemoryUsageKB(&vmrss, &vmsize);
@@ -58,8 +58,8 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     collectCandidateQueries(pta->getPAG());
 
     u32_t count = 0;
-    for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
-            nIter != candidateQueries.end(); ++nIter,++count)
+    for (auto nIter = candidateQueries.begin();
+         nIter != candidateQueries.end(); ++nIter,++count)
     {
         PAGNode* node = pta->getPAG()->getPAGNode(*nIter);
         if(pta->getPAG()->isValidTopLevelPtr(node))
@@ -81,20 +81,19 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
 OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
 {
     setPAG(p);
-    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
-            eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
+    for(auto it : pag->getIndirectCallsites())
     {
-        if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it->first->getCallSite())))
+        if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it.first->getCallSite())))
         {
-            const Value *vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it->first->getCallSite()));
+            const Value *vtblPtr = cppUtil::getVCallVtblPtr(SVFUtil::getLLVMCallSite(it.first->getCallSite()));
             assert(pag->hasValueNode(vtblPtr) && "not a vtable pointer?");
             NodeID vtblId = pag->getValueNode(vtblPtr);
             addCandidate(vtblId);
-            vtableToCallSiteMap[vtblId] = it->first;
+            vtableToCallSiteMap[vtblId] = it.first;
         }
         else
         {
-            addCandidate(it->second);
+            addCandidate(it.second);
         }
     }
     return candidateQueries;
@@ -111,15 +110,14 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
     u32_t twoTargetCallsites = 0;
     u32_t moreThanTwoCallsites = 0;
 
-    for (VTablePtrToCallSiteMap::iterator nIter = vtableToCallSiteMap.begin();
-            nIter != vtableToCallSiteMap.end(); ++nIter)
+    for (auto & nIter : vtableToCallSiteMap)
     {
-        NodeID vtptr = nIter->first;
+        NodeID vtptr = nIter.first;
         const PointsTo& ddaPts = pta->getPts(vtptr);
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        const CallBlockNode* cbn = nIter->second;
+        const CallBlockNode* cbn = nIter.second;
 
         if(!callgraph->hasIndCSCallees(cbn))
         {
@@ -148,8 +146,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << *(nIter->second)->getCallSite() << "\n";
-        outs() << getSourceLoc((nIter->second)->getCallSite()) << "\n";
+        outs() << *(nIter.second)->getCallSite() << "\n";
+        outs() << getSourceLoc((nIter.second)->getCallSite()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
         outs() << "------DDA vfn num---(" << ander_vfns.size() << ")--\n";
@@ -180,27 +178,24 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 {
     setPAG(pag);
     PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
-                loads.end(); iter != eiter; ++iter)
+    for (auto *load : loads)
     {
-        PAGNode* loadsrc = (*iter)->getSrcNode();
+        PAGNode* loadsrc = load->getSrcNode();
         loadSrcNodes.insert(loadsrc);
         addCandidate(loadsrc->getId());
     }
 
     PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
-                stores.end(); iter != eiter; ++iter)
+    for (auto *store : stores)
     {
-        PAGNode* storedst = (*iter)->getDstNode();
+        PAGNode* storedst = store->getDstNode();
         storeDstNodes.insert(storedst);
         addCandidate(storedst->getId());
     }
     PAGEdge::PAGEdgeSetTy& geps = pag->getEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = geps.begin(), eiter =
-                geps.end(); iter != eiter; ++iter)
+    for (auto *gep : geps)
     {
-        PAGNode* gepsrc = (*iter)->getSrcNode();
+        PAGNode* gepsrc = gep->getSrcNode();
         gepSrcNodes.insert(gepsrc);
         addCandidate(gepsrc->getId());
     }
@@ -210,13 +205,11 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
 void AliasDDAClient::performStat(PointerAnalysis* pta)
 {
 
-    for(PAGNodeSet::const_iterator lit = loadSrcNodes.begin(); lit!=loadSrcNodes.end(); lit++)
+    for(const auto *node1 : loadSrcNodes)
     {
-        for(PAGNodeSet::const_iterator sit = storeDstNodes.begin(); sit!=storeDstNodes.end(); sit++)
+        for(const auto *node2 : storeDstNodes)
         {
-            const PAGNode* node1 = *lit;
-            const PAGNode* node2 = *sit;
-            if(node1->hasValue() && node2->hasValue())
+              if(node1->hasValue() && node2->hasValue())
             {
                 AliasResult result = pta->alias(node1->getId(),node2->getId());
 

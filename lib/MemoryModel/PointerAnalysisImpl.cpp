@@ -87,10 +87,10 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     PTDataTy *ptD = getPTDataTy();
     if (hasPtsMap())
     {
-        auto &ptsMap = getPtsMap();
-        for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+        const auto &ptsMap = getPtsMap();
+        for (const auto & it : ptsMap)
         {
-            NodeID var = it->first;
+            NodeID var = it.first;
             const PointsTo &pts = getPts(var);
 
             F.os() << var << " -> { ";
@@ -113,7 +113,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         PAGNode* pagNode = it->second;
-        if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode))
+        if (auto *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode))
         {
             F.os() << it->first << " ";
             F.os() << pag->getBaseObjNode(it->first) << " ";
@@ -211,10 +211,9 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
  */
 void BVDataPTAImpl::dumpTopLevelPtsTo()
 {
-    for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
-            nIter != this->getAllValidPtrs().end(); ++nIter)
+    for (const auto &nIter : this->getAllValidPtrs())
     {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        const PAGNode* node = getPAG()->getPAGNode(nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());
@@ -227,9 +226,8 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
             else
             {
                 outs() << "\t\tPointsTo: { ";
-                for (PointsTo::iterator it = pts.begin(), eit = pts.end();
-                        it != eit; ++it)
-                    outs() << *it << " ";
+                for (const auto &it : pts)
+                    outs() << it << " ";
                 outs() << "}\n\n";
             }
         }
@@ -245,9 +243,9 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
 void BVDataPTAImpl::dumpAllPts()
 {
     OrderedNodeSet pagNodes;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(auto & it : *pag)
     {
-        pagNodes.insert(it->first);
+        pagNodes.insert(it.first);
     }
 
     for (NodeID n : pagNodes)
@@ -267,9 +265,9 @@ void BVDataPTAImpl::dumpAllPts()
  */
 void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges)
 {
-    for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
+    for(auto callsite : callsites)
     {
-        const CallBlockNode* cs = iter->first;
+        const CallBlockNode* cs = callsite.first;
 
         if (isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())))
         {
@@ -279,7 +277,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
             resolveCPPIndCalls(cs, getPts(vtblId), newEdges);
         }
         else
-            resolveIndCalls(iter->first,getPts(iter->second),newEdges);
+            resolveIndCalls(callsite.first,getPts(callsite.second),newEdges);
     }
 }
 
@@ -323,6 +321,6 @@ AliasResult BVDataPTAImpl::alias(const PointsTo& p1, const PointsTo& p2)
 
     if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2))
         return llvm::MayAlias;
-    else
-        return llvm::NoAlias;
+
+    return llvm::NoAlias;
 }

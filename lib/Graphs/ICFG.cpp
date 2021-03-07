@@ -228,8 +228,8 @@ FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
     FunEntryBlockNode* b = getFunEntryICFGNode(fun);
     if (b == nullptr)
         return addFunEntryICFGNode(fun);
-    else
-        return b;
+
+    return b;
 }
 /// Add a function exit node
 FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
@@ -237,8 +237,8 @@ FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
     FunExitBlockNode* b = getFunExitICFGNode(fun);
     if (b == nullptr)
         return addFunExitICFGNode(fun);
-    else
-        return b;
+
+    return b;
 }
 
 /*!
@@ -254,8 +254,8 @@ ICFGEdge* ICFG::hasIntraICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdg
         assert(outEdge == inEdge && "edges not match");
         return outEdge;
     }
-    else
-        return nullptr;
+
+    return nullptr;
 }
 
 /*!
@@ -271,8 +271,8 @@ ICFGEdge* ICFG::hasInterICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdg
         assert(outEdge == inEdge && "edges not match");
         return outEdge;
     }
-    else
-        return nullptr;
+
+    return nullptr;
 }
 
 /*!
@@ -288,8 +288,8 @@ ICFGEdge* ICFG::hasThreadICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEd
         assert(outEdge == inEdge && "edges not match");
         return outEdge;
     }
-    else
-        return nullptr;
+
+    return nullptr;
 }
 
 
@@ -301,8 +301,8 @@ ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::
 
     ICFGEdge * edge = nullptr;
     Size_t counter = 0;
-    for (ICFGEdge::ICFGEdgeSetTy::iterator iter = src->OutEdgeBegin();
-            iter != src->OutEdgeEnd(); ++iter)
+    for (auto iter = src->OutEdgeBegin();
+         iter != src->OutEdgeEnd(); ++iter)
     {
         if ((*iter)->getDstID() == dst->getId() && (*iter)->getEdgeKind() == kind)
         {
@@ -326,11 +326,9 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
         assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
         return nullptr;
     }
-    else
-    {
-        IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
-        return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
-    }
+
+    auto* intraEdge = new IntraCFGEdge(srcNode,dstNode);
+    return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
 }
 
 /*!
@@ -344,12 +342,10 @@ ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, co
         assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
         return nullptr;
     }
-    else
-    {
-        IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
-        intraEdge->setBranchCondtion(condition,branchID);
-        return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
-    }
+
+    auto* intraEdge = new IntraCFGEdge(srcNode,dstNode);
+    intraEdge->setBranchCondtion(condition,branchID);
+    return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
 }
 
 
@@ -363,11 +359,9 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruct
         assert(edge->isCallCFGEdge() && "this should be a call CFG edge!");
         return nullptr;
     }
-    else
-    {
-        CallCFGEdge* callEdge = new CallCFGEdge(srcNode,dstNode,cs);
-        return (addICFGEdge(callEdge) ? callEdge : nullptr);
-    }
+
+    auto* callEdge = new CallCFGEdge(srcNode,dstNode,cs);
+    return (addICFGEdge(callEdge) ? callEdge : nullptr);
 }
 
 /*!
@@ -380,11 +374,10 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instructi
         assert(edge->isRetCFGEdge() && "this should be a return CFG edge!");
         return nullptr;
     }
-    else
-    {
-        RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode,cs);
-        return (addICFGEdge(retEdge) ? retEdge : nullptr);
-    }
+    
+    auto* retEdge = new RetCFGEdge(srcNode,dstNode,cs);
+    return (addICFGEdge(retEdge) ? retEdge : nullptr);
+
 }
 
 
@@ -401,17 +394,15 @@ void ICFG::dump(const std::string& file, bool simple)
  */
 void ICFG::updateCallGraph(PTACallGraph* callgraph)
 {
-    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
-    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
-    for (; iter != eiter; iter++)
+
+    for (auto & iter : callgraph->getIndCallMap())
     {
-        const CallBlockNode* callBlock = iter->first;
+        const CallBlockNode* callBlock = iter.first;
         const Instruction* cs = callBlock->getCallSite();
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
-        const PTACallGraph::FunctionSet & functions = iter->second;
-        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        const PTACallGraph::FunctionSet & functions = iter.second;
+        for (const auto *callee : functions)
         {
-            const SVFFunction*  callee = *func_iter;
             CallBlockNode* CallBlockNode = getCallBlockNode(cs);
             if (!isExtCall(callee))
             {
@@ -434,7 +425,7 @@ template<>
 struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
 {
 
-    typedef ICFGNode NodeType;
+    using NodeType = ICFGNode;
     DOTGraphTraits(bool isSimple = false) :
         DOTGraphTraits<PAG*>(isSimple)
     {
@@ -457,40 +448,38 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
+        if (auto* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             rawstr << bNode->toString();
 
             PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+            for (auto edge : edges)
             {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+                 rawstr << edge->toString();
             }
         }
-        else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
+        else if (auto* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
         {
             rawstr << entry->toString();
         }
-        else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
+        else if (auto* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
         {
             rawstr << exit->toString();
         }
-        else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
+        else if (auto* call = SVFUtil::dyn_cast<CallBlockNode>(node))
         {
             rawstr << call->toString();
         }
-        else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
+        else if (auto* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
         {
             rawstr << ret->toString();
         }
-        else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
+        else if (auto* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
             PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+            for (const auto *edge : edges)
             {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+                 rawstr << edge->toString();
             }
         }
         else
@@ -543,11 +532,13 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         assert(edge && "No edge found!!");
         if (SVFUtil::isa<CallCFGEdge>(edge))
             return "style=solid,color=red";
-        else if (SVFUtil::isa<RetCFGEdge>(edge))
+
+        if (SVFUtil::isa<RetCFGEdge>(edge))
             return "style=solid,color=blue";
-        else
-            return "style=solid";
-        return "";
+
+        return "style=solid";
+
+        // return "";
     }
 
     template<class EdgeIter>
@@ -558,9 +549,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
 
         std::string str;
         raw_string_ostream rawstr(str);
-        if (CallCFGEdge* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
+        if (auto* dirCall = SVFUtil::dyn_cast<CallCFGEdge>(edge))
             rawstr << dirCall->getCallSite();
-        else if (RetCFGEdge* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
+        else if (auto* dirRet = SVFUtil::dyn_cast<RetCFGEdge>(edge))
             rawstr << dirRet->getCallSite();
 
         return rawstr.str();

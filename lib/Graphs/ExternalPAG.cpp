@@ -104,9 +104,10 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
 
     // Handle the arguments;
     // Actual arguments.
-    CallSite::arg_iterator itA = cs->arg_begin(), ieA = cs->arg_end();
-    Function::const_arg_iterator itF = function->arg_begin(),
-                                 ieF = function->arg_end();
+    CallSite::arg_iterator itA = cs->arg_begin();
+    CallSite::arg_iterator ieA = cs->arg_end();
+    Function::const_arg_iterator itF = function->arg_begin();
+    Function::const_arg_iterator ieF = function->arg_end();
     // Formal arguments.
     size_t formalNodeIndex = 0;
 
@@ -154,7 +155,7 @@ bool ExternalPAG::hasExternalPAG(const SVFFunction* function)
 int getArgNo(const SVFFunction* function, const Value *arg)
 {
     int argNo = 0;
-    for (auto it = function->getLLVMFun()->arg_begin(); it != function->getLLVMFun()->arg_end();
+    for (auto *it = function->getLLVMFun()->arg_begin(); it != function->getLLVMFun()->arg_end();
             ++it, ++argNo)
     {
         if (arg->getName() == it->getName()) return argNo;
@@ -260,17 +261,17 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
     Map<const SVFFunction*, std::vector<PAGNode *>> functionToPAGNodes;
 
     Set<PAGNode *> callDsts;
-    for (PAG::iterator it = pag->begin(); it != pag->end(); ++it)
+    for (auto & it : *pag)
     {
-        PAGNode *currNode = it->second;
+        PAGNode *currNode = it.second;
         if (!currNode->hasOutgoingEdges(PAGEdge::PEDGEK::Call)) continue;
 
         // Where are these calls going?
-        for (PAGEdge::PAGEdgeSetTy::iterator it =
-                    currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
-                it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it)
+        for (auto it =
+                 currNode->getOutgoingEdgesBegin(PAGEdge::PEDGEK::Call);
+             it != currNode->getOutgoingEdgesEnd(PAGEdge::PEDGEK::Call); ++it)
         {
-            CallPE *callEdge = static_cast<CallPE *>(*it);
+            auto *callEdge = static_cast<CallPE *>(*it);
             const Instruction *inst = callEdge->getCallInst()->getCallSite();
             :: Function* currFunction =
                 static_cast<const CallInst *>(inst)->getCalledFunction();
@@ -296,11 +297,10 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
         }
     }
 
-    for (auto it = functionToPAGNodes.begin(); it != functionToPAGNodes.end();
-            ++it)
+    for (auto & functionToPAGNode : functionToPAGNodes)
     {
-        const SVFFunction* function = it->first;
-        std::string functionName = it->first->getName();
+        const SVFFunction* function = functionToPAGNode.first;
+        std::string functionName = functionToPAGNode.first->getName();
 
         // The final nodes and edges we will print.
         Set<PAGNode *> nodes;
@@ -308,14 +308,14 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
         // The search stack.
         std::stack<PAGNode *> todoNodes;
         // The arguments to the function.
-        std::vector<PAGNode *> argNodes = it->second;
+        std::vector<PAGNode *> argNodes = functionToPAGNode.second;
         PAGNode *retNode = nullptr;
 
 
         outs() << "PAG for function: " << functionName << "\n";
-        for (auto node = argNodes.begin(); node != argNodes.end(); ++node)
+        for (auto & argNode : argNodes)
         {
-            todoNodes.push(*node);
+            todoNodes.push(argNode);
         }
 
         while (!todoNodes.empty())
@@ -335,38 +335,37 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
             }
 
             auto outEdges = currNode->getOutEdges();
-            for (auto outEdge = outEdges.begin(); outEdge != outEdges.end();
-                    ++outEdge)
+            for (auto *outEdge : outEdges)
             {
-                edges.insert(*outEdge);
-                todoNodes.push((*outEdge)->getDstNode());
+                edges.insert(outEdge);
+                todoNodes.push(outEdge->getDstNode());
             }
         }
 
-        for (auto node = nodes.begin(); node != nodes.end(); ++node)
+        for (auto *node : nodes)
         {
             // TODO: proper file.
             // Argument nodes use extra information: it's argument number.
-            if (std::find(argNodes.begin(), argNodes.end(), *node)
+            if (std::find(argNodes.begin(), argNodes.end(), node)
                     != argNodes.end())
             {
-                outputPAGNode(outs(), *node,
-                              getArgNo(function, (*node)->getValue()));
+                outputPAGNode(outs(), node,
+                              getArgNo(function, node->getValue()));
             }
-            else if (*node == retNode)
+            else if (node == retNode)
             {
-                outputPAGNode(outs(), *node, "ret");
+                outputPAGNode(outs(), node, "ret");
             }
             else
             {
-                outputPAGNode(outs(), *node);
+                outputPAGNode(outs(), node);
             }
         }
 
-        for (auto edge = edges.begin(); edge != edges.end(); ++edge)
+        for (auto *edge : edges)
         {
             // TODO: proper file.
-            outputPAGEdge(outs(), *edge);
+            outputPAGEdge(outs(), edge);
         }
 
         outs() << "PAG for functionName " << functionName << " done\n";
@@ -397,30 +396,27 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
     Map<NodeID, PAGNode *> extToNewNodes;
 
     // Add the value nodes.
-    for (auto extNodeIt = this->getValueNodes().begin();
-            extNodeIt != this->getValueNodes().end(); ++extNodeIt)
+    for (auto extNodeIt : this->getValueNodes())
     {
         NodeID newNodeId = pag->addDummyValNode();
-        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
+        extToNewNodes[extNodeIt] = pag->getPAGNode(newNodeId);
     }
 
     // Add the object nodes.
-    for (auto extNodeIt = this->getObjectNodes().begin();
-            extNodeIt != this->getObjectNodes().end(); ++extNodeIt)
+    for (auto extNodeIt : this->getObjectNodes())
     {
         // TODO: fix obj node - there's more to it?
         NodeID newNodeId = pag->addDummyObjNode();
-        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
+        extToNewNodes[extNodeIt] = pag->getPAGNode(newNodeId);
     }
 
     // Add the edges.
-    for (auto extEdgeIt = this->getEdges().begin();
-            extEdgeIt != this->getEdges().end(); ++extEdgeIt)
+    for (const auto& extEdgeIt : this->getEdges())
     {
-        NodeID extSrcId = std::get<0>(*extEdgeIt);
-        NodeID extDstId = std::get<1>(*extEdgeIt);
-        std::string extEdgeType = std::get<2>(*extEdgeIt);
-        int extOffsetOrCSId = std::get<3>(*extEdgeIt);
+        NodeID extSrcId = std::get<0>(extEdgeIt);
+        NodeID extDstId = std::get<1>(extEdgeIt);
+        const std::string& extEdgeType = std::get<2>(extEdgeIt);
+        int extOffsetOrCSId = std::get<3>(extEdgeIt);
 
         PAGNode *srcNode = extToNewNodes[extSrcId];
         PAGNode *dstNode = extToNewNodes[extDstId];
@@ -479,11 +475,10 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
 
     // Record the arg nodes.
     Map<int, PAGNode *> argNodes;
-    for (auto argNodeIt = this->getArgNodes().begin();
-            argNodeIt != this->getArgNodes().end(); ++argNodeIt)
+    for (auto & argNodeIt : this->getArgNodes())
     {
-        int index = argNodeIt->first;
-        NodeID extNodeId = argNodeIt->second;
+        int index = argNodeIt.first;
+        NodeID extNodeId = argNodeIt.second;
         argNodes[index] = extToNewNodes[extNodeId];
     }
 

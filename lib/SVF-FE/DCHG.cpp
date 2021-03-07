@@ -168,11 +168,11 @@ void DCHGraph::buildVTables(const Module &module)
     for (Module::const_global_iterator gvI = module.global_begin(); gvI != module.global_end(); ++gvI)
     {
         // Though this will return more than GlobalVariables, we only care about GlobalVariables (for the vtbls).
-        const GlobalVariable *gv = SVFUtil::dyn_cast<const GlobalVariable>(&(*gvI));
+        const auto *gv = SVFUtil::dyn_cast<const GlobalVariable>(&(*gvI));
         if (gv == nullptr) continue;
         if (gv->hasMetadata(cppUtil::ctir::vtMDName) && gv->getNumOperands() > 0)
         {
-            DIType *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
+            auto *type = SVFUtil::dyn_cast<DIType>(gv->getMetadata(cppUtil::ctir::vtMDName));
             assert(type && "DCHG::buildVTables: bad metadata for ctir.vt");
             DCHNode *node = getOrCreateNode(type);
             node->setVTable(gv);
@@ -200,7 +200,7 @@ void DCHGraph::buildVTables(const Module &module)
                         continue;
                     }
 
-                    ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(c);
+                    auto *ce = SVFUtil::dyn_cast<ConstantExpr>(c);
                     assert(ce && "non-ConstantExpr, non-ConstantPointerNull in vtable?");
                     if (ce->getOpcode() == Instruction::BitCast)
                     {
@@ -283,9 +283,9 @@ void DCHGraph::flatten(const DICompositeType *type)
     // Sort the fields from getElements. Especially a problem for classes; it's all jumbled up.
     std::vector<const DIDerivedType *> fields;
     DINodeArray fieldsDINA = type->getElements();
-    for (unsigned i = 0; i < fieldsDINA.size(); ++i)
+    for (auto i : fieldsDINA)
     {
-        if (const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(fieldsDINA[i]))
+        if (const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(i))
         {
             // Don't care about subprograms, only member/inheritance.
             fields.push_back(dt);
@@ -316,9 +316,9 @@ void DCHGraph::flatten(const DICompositeType *type)
         }
         else if (fieldType->getTag() == dwarf::DW_TAG_array_type)
         {
-            const DICompositeType *arrayType = SVFUtil::dyn_cast<DICompositeType>(fieldType);
+            const auto *arrayType = SVFUtil::dyn_cast<DICompositeType>(fieldType);
             const DIType *baseType = arrayType->getBaseType();
-            if (const DICompositeType *cbt = SVFUtil::dyn_cast<DICompositeType>(baseType))
+            if (const auto *cbt = SVFUtil::dyn_cast<DICompositeType>(baseType))
             {
                 flatten(cbt);
                 for (const DIType *ft : fieldTypes[cbt])
@@ -365,7 +365,7 @@ void DCHGraph::gatherAggs(const DICompositeType *type)
 
         if (isAgg(bt))
         {
-            const DICompositeType *cbt = SVFUtil::dyn_cast<DICompositeType>(bt);
+            const auto *cbt = SVFUtil::dyn_cast<DICompositeType>(bt);
             containingAggs[getCanonicalType(type)].insert(getCanonicalType(cbt));
             gatherAggs(cbt);
             // These must be canonical already because of aggs.insert above/below.
@@ -377,17 +377,17 @@ void DCHGraph::gatherAggs(const DICompositeType *type)
     else
     {
         DINodeArray fields = type->getElements();
-        for (unsigned i = 0; i < fields.size(); ++i)
+        for (auto *field : fields)
         {
             // Unwrap the member (could be a subprogram, not type, so guard needed).
-            if (const DIDerivedType *mt = SVFUtil::dyn_cast<DIDerivedType>(fields[i]))
+            if (const DIDerivedType *mt = SVFUtil::dyn_cast<DIDerivedType>(field))
             {
                 const DIType *ft = mt->getBaseType();
                 ft = stripQualifiers(ft);
 
                 if (isAgg(ft))
                 {
-                    const DICompositeType *cft = SVFUtil::dyn_cast<DICompositeType>(ft);
+                    const auto *cft = SVFUtil::dyn_cast<DICompositeType>(ft);
                     containingAggs[getCanonicalType(type)].insert(getCanonicalType(cft));
                     gatherAggs(cft);
                     // These must be canonical already because of aggs.insert above.
@@ -479,7 +479,7 @@ void DCHGraph::buildCHG(bool extend)
 
     for (const DIType *type : finder.types())
     {
-        if (const DIBasicType *basicType = SVFUtil::dyn_cast<DIBasicType>(type))
+        if (const auto *basicType = SVFUtil::dyn_cast<DIBasicType>(type))
         {
             if (basicType->getEncoding() == dwarf::DW_ATE_unsigned_char
                     || basicType->getEncoding() == dwarf::DW_ATE_signed_char)
@@ -489,15 +489,15 @@ void DCHGraph::buildCHG(bool extend)
 
             handleDIBasicType(basicType);
         }
-        else if (const DICompositeType *compositeType = SVFUtil::dyn_cast<DICompositeType>(type))
+        else if (const auto *compositeType = SVFUtil::dyn_cast<DICompositeType>(type))
         {
             handleDICompositeType(compositeType);
         }
-        else if (const DIDerivedType *derivedType = SVFUtil::dyn_cast<DIDerivedType>(type))
+        else if (const auto *derivedType = SVFUtil::dyn_cast<DIDerivedType>(type))
         {
             handleDIDerivedType(derivedType);
         }
-        else if (const DISubroutineType *subroutineType = SVFUtil::dyn_cast<DISubroutineType>(type))
+        else if (const auto *subroutineType = SVFUtil::dyn_cast<DISubroutineType>(type))
         {
             handleDISubroutineType(subroutineType);
         }
@@ -518,7 +518,7 @@ void DCHGraph::buildCHG(bool extend)
         // void <-- char
         addEdge(charType, nullptr, DCHEdge::STD_DEF);
         // char <-- x, char <-- y, ...
-        for (iterator nodeI = begin(); nodeI != end(); ++nodeI)
+        for (auto nodeI = begin(); nodeI != end(); ++nodeI)
         {
             // Everything without a parent gets char as a parent.
             if (nodeI->second->getType() != nullptr
@@ -626,7 +626,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                  * if we can't get the function name of a virtual callsite, all virtual
                  * functions corresponding to idx will be valid
                  */
-                if (funName.size() == 0)
+                if (funName.empty())
                 {
                     virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
                 }
@@ -653,7 +653,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
                      * For other virtual function calls, the function name of the callsite
                      * and the function name of the target callee should match exactly
                      */
-                    if (funName.compare(calleeName) == 0)
+                    if (funName == calleeName)
                     {
                         virtualFunctions.insert(SVFUtil::getFunction(callee->getName()));
                     }
@@ -685,11 +685,11 @@ bool DCHGraph::isFieldOf(const DIType *f, const DIType *b)
     if (b->getTag() == dwarf::DW_TAG_array_type || b->getTag() == dwarf::DW_TAG_pointer_type)
     {
         const DIType *baseType = nullptr;
-        if (const DICompositeType *arrayType = SVFUtil::dyn_cast<DICompositeType>(b))
+        if (const auto *arrayType = SVFUtil::dyn_cast<DICompositeType>(b))
         {
             baseType = arrayType->getBaseType();
         }
-        else if (const DIDerivedType *ptrType = SVFUtil::dyn_cast<DIDerivedType>(b))
+        else if (const auto *ptrType = SVFUtil::dyn_cast<DIDerivedType>(b))
         {
             baseType = ptrType->getBaseType();
         }
@@ -772,7 +772,7 @@ const DIType *DCHGraph::stripQualifiers(const DIType *t)
                 || tag == dwarf::DW_TAG_typedef)
         {
             // Qualifier - get underlying type.
-            const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(t);
+            const auto *dt = SVFUtil::dyn_cast<DIDerivedType>(t);
             assert(t && "DCHG: expected DerivedType");
             t = dt->getBaseType();
         }
@@ -809,7 +809,7 @@ const DIType *DCHGraph::stripArray(const DIType *t)
     t = stripQualifiers(t);
     if (t->getTag() == dwarf::DW_TAG_array_type)
     {
-        const DICompositeType *at = SVFUtil::dyn_cast<DICompositeType>(t);
+        const auto *at = SVFUtil::dyn_cast<DICompositeType>(t);
         return stripArray(at->getBaseType());
     }
 
@@ -837,8 +837,8 @@ bool DCHGraph::teq(const DIType *t1, const DIType *t2)
     // Check if we need base type comparisons.
     if (SVFUtil::isa<DIBasicType>(t1) && SVFUtil::isa<DIBasicType>(t2))
     {
-        const DIBasicType *b1 = SVFUtil::dyn_cast<DIBasicType>(t1);
-        const DIBasicType *b2 = SVFUtil::dyn_cast<DIBasicType>(t2);
+        const auto *b1 = SVFUtil::dyn_cast<DIBasicType>(t1);
+        const auto *b2 = SVFUtil::dyn_cast<DIBasicType>(t2);
 
         unsigned enc1 = b1->getEncoding();
         unsigned enc2 = b2->getEncoding();
@@ -864,28 +864,29 @@ bool DCHGraph::teq(const DIType *t1, const DIType *t2)
     if ((SVFUtil::isa<DIDerivedType>(t1) || t1->getTag() == dwarf::DW_TAG_array_type)
             && (SVFUtil::isa<DIDerivedType>(t2) || t2->getTag() == dwarf::DW_TAG_array_type))
     {
-        const DIType *base1, *base2;
+        const DIType *base1;
+        const DIType *base2;
 
         // Set base1.
-        if (const DIDerivedType *d1 = SVFUtil::dyn_cast<DIDerivedType>(t1))
+        if (const auto *d1 = SVFUtil::dyn_cast<DIDerivedType>(t1))
         {
             base1 = d1->getBaseType();
         }
         else
         {
-            const DICompositeType *c1 = SVFUtil::dyn_cast<DICompositeType>(t1);
+            const auto *c1 = SVFUtil::dyn_cast<DICompositeType>(t1);
             assert(c1 && "teq: bad cast for array type");
             base1 = c1->getBaseType();
         }
 
         // Set base2.
-        if (const DIDerivedType *d2 = SVFUtil::dyn_cast<DIDerivedType>(t2))
+        if (const auto *d2 = SVFUtil::dyn_cast<DIDerivedType>(t2))
         {
             base2 = d2->getBaseType();
         }
         else
         {
-            const DICompositeType *c2 = SVFUtil::dyn_cast<DICompositeType>(t2);
+            const auto *c2 = SVFUtil::dyn_cast<DICompositeType>(t2);
             assert(c2 && "teq: bad cast for array type");
             base2 = c2->getBaseType();
         }
@@ -897,8 +898,8 @@ bool DCHGraph::teq(const DIType *t1, const DIType *t2)
 
     if (SVFUtil::isa<DICompositeType>(t1) && SVFUtil::isa<DICompositeType>(t2))
     {
-        const DICompositeType *ct1 = SVFUtil::dyn_cast<DICompositeType>(t1);
-        const DICompositeType *ct2 = SVFUtil::dyn_cast<DICompositeType>(t2);
+        const auto *ct1 = SVFUtil::dyn_cast<DICompositeType>(t1);
+        const auto *ct2 = SVFUtil::dyn_cast<DICompositeType>(t2);
 
         if (ct1->getTag() != ct2->getTag()) return false;
 
@@ -964,11 +965,11 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
         return "void";
     }
 
-    if (const DIBasicType *bt = SVFUtil::dyn_cast<DIBasicType>(t))
+    if (const auto *bt = SVFUtil::dyn_cast<DIBasicType>(t))
     {
         ss << std::string(bt->getName());
     }
-    else if (const DIDerivedType *dt = SVFUtil::dyn_cast<DIDerivedType>(t))
+    else if (const auto *dt = SVFUtil::dyn_cast<DIDerivedType>(t))
     {
         if (dt->getName() == "__vtbl_ptr_type")
         {
@@ -1012,7 +1013,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
             ss << std::string(dt->getName()) << "->" << diTypeToStr(dt->getBaseType());
         }
     }
-    else if (const DICompositeType *ct = SVFUtil::dyn_cast<DICompositeType>(t))
+    else if (const auto *ct = SVFUtil::dyn_cast<DICompositeType>(t))
     {
         if (ct->getTag() == dwarf::DW_TAG_class_type
                 || ct->getTag() == dwarf::DW_TAG_structure_type
@@ -1073,7 +1074,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
             DINodeArray sizes = ct->getElements();
             for (unsigned i = 0; i < sizes.size(); ++i)
             {
-                DISubrange *sr = SVFUtil::dyn_cast<DISubrange>(sizes[0]);
+                auto *sr = SVFUtil::dyn_cast<DISubrange>(sizes[0]);
                 assert(sr != nullptr && "DCHG: non-subrange as array element?");
                 int64_t count = -1;
                 if (const ConstantInt *ci = sr->getCount().dyn_cast<ConstantInt *>())
@@ -1093,7 +1094,7 @@ std::string DCHGraph::diTypeToStr(const DIType *t)
 
         }
     }
-    else if (const DISubroutineType *st = SVFUtil::dyn_cast<DISubroutineType>(t))
+    else if (const auto *st = SVFUtil::dyn_cast<DISubroutineType>(t))
     {
         DITypeRefArray types = st->getTypeArray();
         // Must have one element at least (the first type).
@@ -1139,9 +1140,9 @@ void DCHGraph::print(void)
     unsigned numStructs = 0;
     unsigned largestStruct = 0;
     NodeSet nodes;
-    for (DCHGraph::const_iterator it = begin(); it != end(); ++it)
+    for (auto it : *this)
     {
-        nodes.insert(it->first);
+        nodes.insert(it.first);
     }
 
     for (NodeID id : nodes)
@@ -1182,7 +1183,7 @@ void DCHGraph::print(void)
         }
 
         // Nothing was printed.
-        if (vfnVectors.size() == 0)
+        if (vfnVectors.empty())
         {
             SVFUtil::outs() << indent(currIndent) << "(none)\n";
         }
@@ -1219,7 +1220,7 @@ void DCHGraph::print(void)
                             << arrow << " [ " << diTypeToStr(edge->getDstNode()->getType()) << " ]\n";
         }
 
-        if (node->getOutEdges().size() == 0)
+        if (node->getOutEdges().empty())
         {
             SVFUtil::outs() << indent(currIndent) << "(none)\n";
         }
@@ -1242,7 +1243,7 @@ void DCHGraph::print(void)
             SVFUtil::outs() << indent(currIndent) << typedefName << "\n";
         }
 
-        if (typedefs.size() == 0)
+        if (typedefs.empty())
         {
             SVFUtil::outs() << indent(currIndent) << "(none)\n";
         }

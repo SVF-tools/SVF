@@ -69,10 +69,9 @@ void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val)
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
         const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ST);
-        for(std::vector<FieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
-                it!=eit; ++it)
+        for(const auto & flattenField : flattenFields)
         {
-            if((*it).getFlattenElemTy()->isPointerTy())
+            if(flattenField.getFlattenElemTy()->isPointerTy())
                 isPtrObj = true;
         }
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
@@ -182,7 +181,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         return false;
 
     const Type* ety = getType();
-    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
+    while (const auto *AT= SVFUtil::dyn_cast<ArrayType>(ety))
     {
         ety = AT->getElementType();
     }
@@ -191,11 +190,10 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     {
         bool hasIntersection = false;
         const vector<FieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety);
-        vector<FieldInfo>::const_iterator it = infovec.begin();
-        vector<FieldInfo>::const_iterator eit = infovec.end();
-        for (; it != eit; ++it)
+
+        for(const auto &it:infovec)
         {
-            const FieldInfo& fieldLS = *it;
+            const FieldInfo& fieldLS = it;
             if (ls.intersects(LocationSet(fieldLS)))
             {
                 hasIntersection = true;
@@ -206,27 +204,22 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         assert(hasIntersection && "cannot find field of specified offset");
         return true;
     }
-    else
+
+    if (isStaticObj() || isHeap())
     {
-        if (isStaticObj() || isHeap())
-        {
-            // TODO: Objects which cannot find proper field for a certain offset including
-            //       arguments in main(), static objects allocated before main and heap
-            //       objects. Right now they're considered to have infinite fields and we
-            //       treat each field as pointers conservatively.
-            //       Try to model static and heap objects more accurately in the future.
-            return false;
-        }
-        else
-        {
-            // TODO: Using new memory model (locMM) may create objects with spurious offset
-            //       as we simply return new offset by mod operation without checking its
-            //       correctness in LocSymTableInfo::getModulusOffset(). So the following
-            //       assertion may fail. Try to refine the new memory model.
-            //assert(ls.getOffset() == 0 && "cannot get a field from a non-struct type");
-            return (hasPtrObj() == false);
-        }
+        // TODO: Objects which cannot find proper field for a certain offset including
+        //       arguments in main(), static objects allocated before main and heap
+        //       objects. Right now they're considered to have infinite fields and we
+        //       treat each field as pointers conservatively.
+        //       Try to model static and heap objects more accurately in the future.
+        return false;
     }
+    // TODO: Using new memory model (locMM) may create objects with spurious offset
+    //       as we simply return new offset by mod operation without checking its
+    //       correctness in LocSymTableInfo::getModulusOffset(). So the following
+    //       assertion may fail. Try to refine the new memory model.
+    //assert(ls.getOffset() == 0 && "cannot get a field from a non-struct type");
+    return (hasPtrObj() == false);
 }
 
 

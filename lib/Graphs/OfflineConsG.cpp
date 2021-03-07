@@ -153,11 +153,11 @@ NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep)
     if (isaRef(rep))
     {
         NodeBS subNodes = oscc->subNodes(rep);
-        for (NodeBS::iterator subIt = subNodes.begin(), subEit = subNodes.end(); subIt != subEit; ++subIt)
+        for (const auto & subIt : subNodes)
         {
-            if (isaRef(*subIt))
+            if (isaRef(subIt))
             {
-                rep = *subIt;
+                rep = subIt;
                 break;
             }
         }
@@ -184,7 +184,7 @@ template<>
 struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
 {
 
-    typedef ConstraintNode NodeType;
+    using NodeType = ConstraintNode;
     DOTGraphTraits(bool isSimple = false) :
         DOTGraphTraits<PAG*>(isSimple)
     {
@@ -207,7 +207,6 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
             PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
             bool briefDisplay = true;
             bool nameDisplay = true;
-
 
             if (briefDisplay)
             {
@@ -233,11 +232,10 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
 
             return rawstr.str();
         }
-        else
-        {
-            rawstr<< n->getId();
-            return rawstr.str();
-        }
+        
+        rawstr<< n->getId();
+        return rawstr.str();
+
     }
 
     static std::string getNodeAttributes(NodeType *n, OfflineConsG*)
@@ -249,40 +247,41 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
             {
                 if (SVFUtil::isa<GepValPN>(node))
                     return "shape=hexagon";
-                else if (SVFUtil::isa<DummyValPN>(node))
+
+                if (SVFUtil::isa<DummyValPN>(node))
                     return "shape=diamond";
-                else
-                    return "shape=circle";
+
+                return "shape=circle";
             }
-            else if (SVFUtil::isa<ObjPN>(node))
+
+            if (SVFUtil::isa<ObjPN>(node))
             {
                 if (SVFUtil::isa<GepObjPN>(node))
                     return "shape=doubleoctagon";
-                else if (SVFUtil::isa<FIObjPN>(node))
+
+                if (SVFUtil::isa<FIObjPN>(node))
                     return "shape=septagon";
-                else if (SVFUtil::isa<DummyObjPN>(node))
+
+                if (SVFUtil::isa<DummyObjPN>(node))
                     return "shape=Mcircle";
-                else
-                    return "shape=doublecircle";
+                return "shape=doublecircle";
             }
-            else if (SVFUtil::isa<RetPN>(node))
+
+            if (SVFUtil::isa<RetPN>(node))
             {
                 return "shape=Mrecord";
             }
-            else if (SVFUtil::isa<VarArgPN>(node))
+
+            if (SVFUtil::isa<VarArgPN>(node))
             {
                 return "shape=octagon";
             }
-            else
-            {
-                assert(0 && "no such kind node!!");
-            }
+
+            assert(0 && "no such kind node!!");
             return "";
         }
-        else
-        {
-            return "shape=doublecircle";
-        }
+
+        return "shape=doublecircle";
     }
 
     template<class EdgeIter>
@@ -294,27 +293,29 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
         {
             return "color=green";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::Copy)
+
+        if (edge->getEdgeKind() == ConstraintEdge::Copy)
         {
             return "color=black";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::NormalGep
+
+        if (edge->getEdgeKind() == ConstraintEdge::NormalGep
                  || edge->getEdgeKind() == ConstraintEdge::VariantGep)
         {
             return "color=purple";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::Store)
+
+        if (edge->getEdgeKind() == ConstraintEdge::Store)
         {
             return "color=blue";
         }
-        else if (edge->getEdgeKind() == ConstraintEdge::Load)
+
+        if (edge->getEdgeKind() == ConstraintEdge::Load)
         {
             return "color=red";
         }
-        else
-        {
-            assert(0 && "No such kind edge!!");
-        }
+
+        assert(0 && "No such kind edge!!");
         return "";
     }
 

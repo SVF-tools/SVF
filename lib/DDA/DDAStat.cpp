@@ -90,11 +90,10 @@ void DDAStat::performStatPerQuery(NodeID ptr)
     PointsTo pts;
     if(flowDDA)
     {
-        for(FlowDDA::LocToDPMVecMap::const_iterator it =  flowDDA->getLocToDPMVecMap().begin(),
-                eit = flowDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        for(const auto & it : flowDDA->getLocToDPMVecMap())
         {
             NumOfLoc++;
-            u32_t num = it->second.size();
+            u32_t num = it.second.size();
             NumOfDPM += num;
             if(num > maxNumOfDPMPerLoc)
                 maxNumOfDPMPerLoc = num;
@@ -104,11 +103,10 @@ void DDAStat::performStatPerQuery(NodeID ptr)
     }
     else if(contextDDA)
     {
-        for(ContextDDA::LocToDPMVecMap::const_iterator it =  contextDDA->getLocToDPMVecMap().begin(),
-                eit = contextDDA->getLocToDPMVecMap().end(); it!=eit; ++it)
+        for(const auto & it : contextDDA->getLocToDPMVecMap())
         {
             NumOfLoc++;
-            u32_t num = it->second.size();
+            u32_t num = it.second.size();
             NumOfDPM += num;
             if(num > maxNumOfDPMPerLoc)
                 maxNumOfDPMPerLoc = num;
@@ -204,14 +202,14 @@ void DDAStat::performStat()
 
     getNumOfOOBQuery();
 
-    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    for (auto nodeIt : *PAG::getPAG())
     {
-        PAGNode* pagNode = nodeIt->second;
+        PAGNode* pagNode = nodeIt.second;
         if(SVFUtil::isa<ObjPN>(pagNode))
         {
-            if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
+            if(getPTA()->isLocalVarInRecursiveFun(nodeIt.first))
             {
-                localVarInRecursion.set(nodeIt->first);
+                localVarInRecursion.set(nodeIt.first);
             }
         }
     }
@@ -256,15 +254,15 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
         std::cout.flags(std::ios::left);
         unsigned field_width = 20;
         std::cout << "---------------------Stat Per Query--------------------------------\n";
-        for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
+        for (auto & it : timeStatMap)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            std::cout << std::setw(field_width) << it.first << it.second << "\n";
         }
-        for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it)
+        for (auto & it : NumPerQueryStatMap)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            std::cout << std::setw(field_width) << it.first << it.second << "\n";
         }
     }
     getPTA()->dumpPts(ptr, pts);
