@@ -4,6 +4,9 @@
 #ifndef MUTABLE_POINTSTO_H_
 #define MUTABLE_POINTSTO_H_
 
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "Util/SVFBasicTypes.h"
+
 namespace SVF
 {
 
