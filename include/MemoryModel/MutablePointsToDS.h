@@ -11,18 +11,33 @@
 namespace SVF
 {
 
-template <typename Key, typename Datum, typename Data>
+/// Templated function to insert an element into a Set, CondSet, or NodeBS.
+template <typename Key, typename KeySet>
+void insertKey(const Key &key, KeySet &keySet)
+{
+    keySet.insert(key);
+}
+
+// The template parameters are unnecessary, obviously, but removing it would
+// require us to create a .cpp. For one function, that seems to add more
+// than this hack.
+template <typename Key, typename KeySet>
+void insertKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.set(key);
+}
+
+template <typename Key, typename KeySet, typename Datum, typename Data>
 class MutableDFPTData;
 
 /// PTData implemented using points-to sets which are created once and updated continuously.
-template <typename Key, typename Datum, typename Data>
-class MutablePTData : public PTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class MutablePTData : public PTData<Key, KeySet, Datum, Data>
 {
-    friend class MutableDFPTData<Key, Datum, Data>;
+    friend class MutableDFPTData<Key, KeySet, Datum, Data>;
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
     typedef Map<Key, Data> PtsMap;
     typedef Map<Datum, KeySet> RevPtsMap;
@@ -93,12 +108,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutablePTData<Key, Datum, Data> *)
+    static inline bool classof(const MutablePTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutBase;
     }
@@ -135,7 +150,7 @@ private:
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        if (this->rev) revData.insert(tgr);
+        if (this->rev) insertKey<Key, KeySet>(tgr, revData);
     }
     inline void addRevPts(const Data &ptsData, const Key& tgr)
     {
@@ -153,16 +168,15 @@ protected:
 };
 
 /// DiffPTData implemented with points-to sets which are updated continuously.
-template <typename Key, typename Datum, typename Data>
-class MutableDiffPTData : public DiffPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class MutableDiffPTData : public DiffPTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef DiffPTData<Key, Datum, Data> BaseDiffPTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
+    typedef DiffPTData<Key, KeySet, Datum, Data> BaseDiffPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
-    typedef typename MutablePTData<Key, Datum, Data>::PtsMap PtsMap;
+    typedef typename MutablePTData<Key, KeySet, Datum, Data>::PtsMap PtsMap;
 
     /// Constructor
     MutableDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(reversePT, ty), mutPTData(reversePT) { }
@@ -251,12 +265,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableDiffPTData<Key, Datum, Data> *)
+    static inline bool classof(const MutableDiffPTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutDiff;
     }
@@ -277,22 +291,21 @@ protected:
 
 private:
     /// Backing to implement the basic PTData methods. This allows us to avoid multiple-inheritance.
-    MutablePTData<Key, Datum, Data> mutPTData;
+    MutablePTData<Key, KeySet, Datum, Data> mutPTData;
     /// Diff points-to to be propagated.
     PtsMap diffPtsMap;
     /// Points-to already propagated.
     PtsMap propaPtsMap;
 };
 
-template <typename Key, typename Datum, typename Data>
-class MutableDFPTData : public DFPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class MutableDFPTData : public DFPTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef MutablePTData<Key, Datum, Data> BaseMutPTData;
-    typedef DFPTData<Key, Datum, Data> BaseDFPTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
+    typedef MutablePTData<Key, KeySet, Datum, Data> BaseMutPTData;
+    typedef DFPTData<Key, KeySet, Datum, Data> BaseDFPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
     typedef typename BaseDFPTData::LocID LocID;
     typedef typename BaseMutPTData::PtsMap PtsMap;
@@ -473,11 +486,11 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableDFPTData<Key, Datum, Data> *)
+    static inline bool classof(const MutableDFPTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == BaseDFPTData::MutDataFlow
                || ptd->getPTDTY() == BaseDFPTData::IncMutDataFlow;
@@ -568,18 +581,18 @@ protected:
     DFPtsMap dfOutPtsMap;
     /// Backing to implement the basic PTData methods which are not overridden.
     /// This allows us to avoid multiple-inheritance.
-    MutablePTData<Key, Datum, Data> mutPTData;
+    MutablePTData<Key, KeySet, Datum, Data> mutPTData;
 };
 
 /// Incremental version of the mutable data-flow points-to data structure.
-template <typename Key, typename Datum, typename Data>
-class IncMutableDFPTData : public MutableDFPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class IncMutableDFPTData : public MutableDFPTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef MutablePTData<Key, Datum, Data> BaseMutPTData;
-    typedef DFPTData<Key, Datum, Data> BaseDFPTData;
-    typedef MutableDFPTData<Key, Datum, Data> BaseMutDFPTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
+    typedef MutablePTData<Key, KeySet, Datum, Data> BaseMutPTData;
+    typedef DFPTData<Key, KeySet, Datum, Data> BaseDFPTData;
+    typedef MutableDFPTData<Key, KeySet, Datum, Data> BaseMutDFPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
     typedef typename BaseDFPTData::LocID LocID;
@@ -709,12 +722,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const IncMutableDFPTData<Key, Datum, Data> *)
+    static inline bool classof(const IncMutableDFPTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == BasePTData::IncMutDataFlow;
     }
@@ -782,15 +795,13 @@ private:
 /// VersionedPTData implemented with mutable points-to set (Data).
 /// Implemented as a wrapper around two MutablePTDatas: one for Keys, one
 /// for VersionedKeys.
-template <typename Key, typename Datum, typename Data, typename VersionedKey>
-class MutableVersionedPTData : public VersionedPTData<Key, Datum, Data, VersionedKey>
+template <typename Key, typename KeySet, typename Datum, typename Data, typename VersionedKey, typename VersionedKeySet>
+class MutableVersionedPTData : public VersionedPTData<Key, KeySet, Datum, Data, VersionedKey, VersionedKeySet>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef VersionedPTData<Key, Datum, Data, VersionedKey> BaseVersionedPTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
+    typedef VersionedPTData<Key, KeySet, Datum, Data, VersionedKey, VersionedKeySet> BaseVersionedPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
-    typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
 
     MutableVersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::MutVersioned)
         : BaseVersionedPTData(reversePT, ty), tlPTData(reversePT), atPTData(reversePT) { }
@@ -885,12 +896,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableVersionedPTData<Key, Datum, Data, VersionedKey> *)
+    static inline bool classof(const MutableVersionedPTData<Key, KeySet, Datum, Data, VersionedKey, VersionedKeySet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutVersioned;
     }
@@ -898,9 +909,9 @@ public:
 
 private:
     /// PTData for Keys (top-level pointers, generally).
-    MutablePTData<Key, Datum, Data> tlPTData;
+    MutablePTData<Key, KeySet, Datum, Data> tlPTData;
     /// PTData for VersionedKeys (address-taken objects, generally).
-    MutablePTData<VersionedKey, Datum, Data> atPTData;
+    MutablePTData<VersionedKey, VersionedKeySet, Datum, Data> atPTData;
 };
 
 } // End namespace SVF

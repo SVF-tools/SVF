@@ -519,14 +519,13 @@ bool Andersen::collapseField(NodeID nodeId)
         if (fieldId != baseId)
         {
             // use the reverse pts of this field node to find all pointers point to it
-            const NodeSet &revPts = getRevPts(fieldId);
-            for (NodeSet::const_iterator ptdIt = revPts.begin(), ptdEit = revPts.end();
-                    ptdIt != ptdEit; ptdIt++)
+            const NodeBS &revPts = getRevPts(fieldId);
+            for (const NodeID o : revPts)
             {
                 // change the points-to target from field to base node
-                clearPts(*ptdIt, fieldId);
-                addPts(*ptdIt, baseId);
-                pushIntoWorklist(*ptdIt);
+                clearPts(o, fieldId);
+                addPts(o, baseId);
+                pushIntoWorklist(o);
 
                 changed = true;
             }

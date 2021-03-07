@@ -35,12 +35,10 @@ namespace SVF
 /// Key:   "owning" variable of a points-to set.
 /// Datum: elements in points-to sets.
 /// Data:  the points-to set; a collection of Datums.
-template <typename Key, typename Datum, typename Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
 class PTData
 {
 public:
-    typedef Set<Key> KeySet;
-
     /// Types of a points-to data structures.
     enum PTDataTy
     {
@@ -98,11 +96,11 @@ protected:
 /// Abstract diff points-to data with cached information.
 /// This is an optimisation on top of the base points-to data structure.
 /// The points-to information is propagated incrementally only for the different parts.
-template <typename Key, typename Datum, typename Data>
-class DiffPTData : public PTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class DiffPTData : public PTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
     DiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BasePTData(reversePT, ty) { }
@@ -126,11 +124,11 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DiffPTData<Key, Datum, Data> *)
+    static inline bool classof(const DiffPTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::Diff || ptd->getPTDTY() == PTDataTy::MutDiff;
     }
@@ -141,11 +139,11 @@ public:
 /// Points-to information is maintained at each program point (statement).
 /// For address-taken variables, every program point has two sets: IN and OUT points-to sets.
 /// For top-level variables, points-to sets are maintained flow-insensitively via getPts(var).
-template <typename Key, typename Datum, typename Data>
-class DFPTData : public PTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data>
+class DFPTData : public PTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
     typedef NodeID LocID;
@@ -197,12 +195,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const DFPTData<Key, Datum, Data> *)
+    static inline bool classof(const DFPTData<Key, KeySet, Datum, Data> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
@@ -214,15 +212,12 @@ public:
 /// PTData with normal keys and versioned keys. Replicates the PTData interface for
 /// versioned keys too. Intended to be used for versioned flow-sensitive PTA--hence the
 /// name--but can be used anywhere where there are two types of keys at play.
-template <typename Key, typename Datum, typename Data, typename VersionedKey>
-class VersionedPTData : public PTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Datum, typename Data, typename VersionedKey, typename VersionedKeySet>
+class VersionedPTData : public PTData<Key, KeySet, Datum, Data>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PTData<Key, KeySet, Datum, Data> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
-
-    typedef Set<VersionedKey> VersionedKeySet;
 
     VersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Versioned) : BasePTData(reversePT, ty) { }
 
@@ -243,12 +238,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const VersionedPTData<Key, Datum, Data, VersionedKey> *)
+    static inline bool classof(const VersionedPTData<Key, KeySet, Datum, Data, VersionedKey, VersionedKeySet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Datum, Data>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::Versioned || ptd->getPTDTY() == PTDataTy::MutVersioned;
     }
