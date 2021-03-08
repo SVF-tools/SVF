@@ -748,23 +748,9 @@ VFGEdge* VFG::hasInterVFGEdge(VFGNode* src, VFGNode* dst, VFGEdge::VFGEdgeK kind
 /*!
  * Return the corresponding VFGEdge
  */
-VFGEdge* VFG::getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind)
+VFGEdge* VFG::getIntraVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind)
 {
-
-    VFGEdge * edge = nullptr;
-    Size_t counter = 0;
-    for (VFGEdge::VFGEdgeSetTy::iterator iter = src->OutEdgeBegin();
-            iter != src->OutEdgeEnd(); ++iter)
-    {
-        if ((*iter)->getDstID() == dst->getId() && (*iter)->getEdgeKind() == kind)
-        {
-            counter++;
-            edge = (*iter);
-        }
-    }
-    assert(counter <= 1 && "there's more than one edge between two VFG nodes");
-    return edge;
-
+    return hasIntraVFGEdge(const_cast<VFGNode*>(src),const_cast<VFGNode*>(dst),kind);
 }
 
 

@@ -168,7 +168,7 @@ public:
     }
 
     /// Get a SVFG edge according to src and dst
-    VFGEdge* getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind);
+    VFGEdge* getIntraVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);

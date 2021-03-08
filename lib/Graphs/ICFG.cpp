@@ -413,11 +413,10 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         {
             const SVFFunction*  callee = *func_iter;
             CallBlockNode* CallBlockNode = getCallBlockNode(cs);
-            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
-            addCallEdge(CallBlockNode, calleeEntryNode, cs);
-
             if (!isExtCall(callee))
             {
+                FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+                addCallEdge(CallBlockNode, calleeEntryNode, cs);
                 RetBlockNode* retBlockNode = getRetBlockNode(cs);
                 FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
                 addRetEdge(calleeExitNode, retBlockNode, cs);
