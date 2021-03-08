@@ -42,15 +42,15 @@ class BVDataPTAImpl : public PointerAnalysis
 {
 
 public:
-    typedef PTData<NodeID, NodeID, PointsTo> PTDataTy;
-    typedef MutablePTData<NodeID, NodeID, PointsTo> MutPTDataTy;
-    typedef DiffPTData<NodeID, NodeID, PointsTo> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeID, PointsTo> MutDiffPTDataTy;
-    typedef DFPTData<NodeID, NodeID, PointsTo> DFPTDataTy;
-    typedef MutableDFPTData<NodeID, NodeID, PointsTo> MutDFPTDataTy;
-    typedef IncMutableDFPTData<NodeID, NodeID, PointsTo> IncMutDFPTDataTy;
-    typedef VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> VersionedPTDataTy;
-    typedef MutableVersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> MutVersionedPTDataTy;
+    typedef PTData<NodeID, NodeBS, NodeID, PointsTo> PTDataTy;
+    typedef MutablePTData<NodeID, NodeBS, NodeID, PointsTo> MutPTDataTy;
+    typedef DiffPTData<NodeID, NodeBS, NodeID, PointsTo> DiffPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeBS, NodeID, PointsTo> MutDiffPTDataTy;
+    typedef DFPTData<NodeID, NodeBS, NodeID, PointsTo> DFPTDataTy;
+    typedef MutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutDFPTDataTy;
+    typedef IncMutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> IncMutDFPTDataTy;
+    typedef VersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> VersionedPTDataTy;
+    typedef MutableVersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> MutVersionedPTDataTy;
 
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
@@ -79,7 +79,7 @@ public:
     {
         return ptD->getPts(id);
     }
-    virtual inline const NodeSet& getRevPts(NodeID nodeId)
+    virtual inline const NodeBS& getRevPts(NodeID nodeId)
     {
         return ptD->getRevPts(nodeId);
     }
@@ -242,10 +242,10 @@ class CondPTAImpl : public PointerAnalysis
 public:
     typedef CondVar<Cond> CVar;
     typedef CondStdSet<CVar>  CPtSet;
-    typedef PTData<CVar, CVar, CPtSet> PTDataTy;
-    typedef MutablePTData<CVar, CVar, CPtSet> MutPTDataTy;
+    typedef PTData<CVar, Set<CVar>, CVar, CPtSet> PTDataTy;
+    typedef MutablePTData<CVar, Set<CVar>, CVar, CPtSet> MutPTDataTy;
     typedef Map<NodeID,PointsTo> PtrToBVPtsMap; /// map a pointer to its BitVector points-to representation
-    typedef Map<NodeID, NodeSet> PtrToNSMap;
+    typedef Map<NodeID, NodeBS> PtrToNSMap;
     typedef Map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
@@ -442,7 +442,7 @@ protected:
                 for(typename CPtSet::const_iterator cit = it->second.begin(), ecit=it->second.end(); cit!=ecit; ++cit)
                 {
                     ptrToBVPtsMap[(it->first).get_id()].set(cit->get_id());
-                    objToNSRevPtsMap[cit->get_id()].insert((it->first).get_id());
+                    objToNSRevPtsMap[cit->get_id()].set((it->first).get_id());
                     ptrToCPtsMap[(it->first).get_id()].set(*cit);
                 }
             }
@@ -489,7 +489,7 @@ public:
         return ptrToCPtsMap[ptr];
     }
     /// Given an object return all pointers points to this object
-    virtual inline NodeSet& getRevPts(NodeID obj)
+    virtual inline NodeBS& getRevPts(NodeID obj)
     {
         assert(normalized && "Pts of all context-var have to be merged/normalized. Want to use getPts(CVar cvar)??");
         return objToNSRevPtsMap[obj];

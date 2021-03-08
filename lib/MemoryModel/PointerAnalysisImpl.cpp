@@ -9,6 +9,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
+#include "Util/Options.h"
 #include <fstream>
 #include <sstream>
 
@@ -29,9 +30,14 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
 {
     if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == Steensgaard_WPA)
+            || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
-        ptD = new MutDiffPTDataTy();
+        // Only maintain reverse points-to when the analysis is field-sensitive.
+        ptD = new MutDiffPTDataTy(Options::MaxFieldLimit != 0);
+    }
+    else if (type == Steensgaard_WPA)
+    {
+        ptD = new MutDiffPTDataTy(false);
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
