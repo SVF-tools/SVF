@@ -84,11 +84,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 
     // Write analysis results to file
-    PTDataTy *ptD = getPTDataTy();
-    if (hasPtsMap())
-    {
-        auto &ptsMap = getPtsMap();
-        for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
         {
             NodeID var = it->first;
             const PointsTo &pts = getPts(var);
@@ -106,8 +103,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
                 }
             }
             F.os() << "}\n";
-        }
     }
+
 
     // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)

@@ -179,21 +179,6 @@ protected:
         return v;
     }
 
-    inline bool hasPtsMap(void) const
-    {
-        return SVFUtil::isa<MutPTDataTy>(ptD) || SVFUtil::isa<MutDiffPTDataTy>(ptD);
-    }
-
-    inline const typename MutPTDataTy::PtsMap& getPtsMap() const
-    {
-        if (MutPTDataTy *m = SVFUtil::dyn_cast<MutPTDataTy>(ptD)) return m->getPtsMap();
-        else if (MutDiffPTDataTy *md = SVFUtil::dyn_cast<MutDiffPTDataTy>(ptD)) return md->getPtsMap();
-        else {
-			assert(false && "BVDataPTAImpl::getPtsMap: not a PTData with a PtsMap!");
-			return SVFUtil::dyn_cast<MutPTDataTy>(ptD)->getPtsMap();
-        }
-    }
-
     /// On the fly call graph construction
     virtual void onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites, CallEdgeMap& newEdges);
 
