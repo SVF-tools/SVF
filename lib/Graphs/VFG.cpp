@@ -28,15 +28,13 @@
  */
 
 
+#include "Util/Options.h"
 #include "Graphs/VFG.h"
 #include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> DumpVFG("dump-VFG", llvm::cl::init(false),
-                                   llvm::cl::desc("Dump dot graph of VFG"));
 
 const std::string VFGNode::toString() const {
     std::string str;

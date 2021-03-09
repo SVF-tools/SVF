@@ -9,6 +9,7 @@
 
 #include <sstream>
 
+#include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFUtil.h"
@@ -17,7 +18,6 @@
 
 using namespace SVF;
 
-static llvm::cl::opt<bool> printDCHG("print-dchg", llvm::cl::init(false), llvm::cl::desc("print the DCHG if debug information is available"));
 
 void DCHGraph::handleDIBasicType(const DIBasicType *basicType)
 {
@@ -529,7 +529,7 @@ void DCHGraph::buildCHG(bool extend)
         }
     }
 
-    if (printDCHG)
+    if (Options :: printDCHG)
     {
         print();
     }

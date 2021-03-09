@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/Options.h"
 #include "MTA/TCT.h"
 #include "MTA/MTA.h"
 #include "Util/DataFlowUtil.h"
@@ -13,8 +14,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> TCTDotGraph("dump-tct", llvm::cl::init(false), llvm::cl::desc("Dump dot graph of Call Graph"));
 
 /*!
  * An instruction i is in loop
@@ -431,7 +430,7 @@ void TCT::build()
 
     collectMultiForkedThreads();
 
-    if (TCTDotGraph)
+    if (Options :: TCTDotGraph)
     {
         print();
         dump("tct");
@@ -540,7 +539,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
  */
 void TCT::dump(const std::string& filename)
 {
-    if (TCTDotGraph)
+    if (Options :: TCTDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 

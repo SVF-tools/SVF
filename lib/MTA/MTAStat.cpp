@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/Options.h"
 #include "MTA/MTAStat.h"
 #include "MTA/TCT.h"
 #include "MTA/MHP.h"
@@ -15,7 +16,6 @@
 
 using namespace SVF;
 
-static llvm::cl::opt<bool> AllPairMHP("allpairMhp", llvm::cl::init(false), llvm::cl::desc("All pair MHP computation"));
 
 /*!
  * Statistics for thread call graph
@@ -91,7 +91,7 @@ void MTAStat::performTCTStat(TCT* tct)
 void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
 {
 
-    if(AllPairMHP)
+    if(Options :: AllPairMHP)
     {
         InstSet instSet1;
         InstSet instSet2;

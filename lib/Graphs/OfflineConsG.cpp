@@ -27,13 +27,11 @@
  *      Author: Yuxiang Lei
  */
 
+#include "Util/Options.h"
 #include "Graphs/OfflineConsG.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
-                                       llvm::cl::desc("Dump dot graph of Offline Constraint Graph"));
 
 /*!
  * Builder of offline constraint graph
@@ -170,7 +168,7 @@ NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep)
  */
 void OfflineConsG::dump(std::string name)
 {
-    if (OCGDotGraph)
+    if (Options :: OCGDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 

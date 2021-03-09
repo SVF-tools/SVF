@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/CallGraphBuilder.h"
 #include "SVF-FE/CHG.h"
 #include "SVF-FE/DCHG.h"
@@ -50,50 +51,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 
-static llvm::cl::opt<bool> TYPEPrint("print-type", llvm::cl::init(false),
-                                     llvm::cl::desc("Print type"));
-
-static llvm::cl::opt<bool> FuncPointerPrint("print-fp", llvm::cl::init(false),
-        llvm::cl::desc("Print targets of indirect call site"));
-
-static llvm::cl::opt<bool> PTSPrint("print-pts", llvm::cl::init(false),
-                                    llvm::cl::desc("Print points-to set of top-level pointers"));
-
-static llvm::cl::opt<bool> PTSAllPrint("print-all-pts", llvm::cl::init(false),
-                                       llvm::cl::desc("Print all points-to set of both top-level and address-taken variables"));
-
-static llvm::cl::opt<bool> PStat("stat", llvm::cl::init(true),
-                                 llvm::cl::desc("Statistic for Pointer analysis"));
-
-static llvm::cl::opt<unsigned> statBudget("statlimit",  llvm::cl::init(20),
-        llvm::cl::desc("Iteration budget for On-the-fly statistics"));
-
-static llvm::cl::opt<bool> PAGDotGraph("dump-pag", llvm::cl::init(false),
-                                       llvm::cl::desc("Dump dot graph of PAG"));
-
-static llvm::cl::opt<bool> DumpICFG("dump-icfg", llvm::cl::init(false),
-                                    llvm::cl::desc("Dump dot graph of ICFG"));
-
-static llvm::cl::opt<bool> CallGraphDotGraph("dump-callgraph", llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of Call Graph"));
-
-static llvm::cl::opt<bool> PAGPrint("print-pag", llvm::cl::init(false),
-                                    llvm::cl::desc("Print PAG to command line"));
-
-static llvm::cl::opt<unsigned> IndirectCallLimit("indCallLimit",  llvm::cl::init(50000),
-        llvm::cl::desc("Indirect solved call edge limit"));
-
-static llvm::cl::opt<bool> UsePreCompFieldSensitive("preFieldSensitive", llvm::cl::init(true),
-        llvm::cl::desc("Use pre-computed field-sensitivity for later analysis"));
-
-static llvm::cl::opt<bool> EnableAliasCheck("alias-check", llvm::cl::init(true),
-        llvm::cl::desc("Enable alias check functions"));
-
-static llvm::cl::opt<bool> EnableThreadCallGraph("enable-tcg", llvm::cl::init(true),
-        llvm::cl::desc("Enable pointer analysis to use thread call graph"));
-
-static llvm::cl::opt<bool> connectVCallOnCHA("vcall-cha", llvm::cl::init(false),
-        llvm::cl::desc("connect virtual calls using cha"));
 
 CommonCHGraph* PointerAnalysis::chgraph = nullptr;
 PAG* PointerAnalysis::pag = nullptr;
@@ -118,10 +75,10 @@ PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
 {
     pag = p;
-	OnTheFlyIterBudgetForStat = statBudget;
-    print_stat = PStat;
+	OnTheFlyIterBudgetForStat = Options :: statBudget;
+    print_stat = Options :: PStat;
     ptaImplTy = BaseImpl;
-    alias_validation = (alias_check && EnableAliasCheck);
+    alias_validation = (alias_check && Options :: EnableAliasCheck);
 }
 
 /*!
@@ -176,15 +133,15 @@ void PointerAnalysis::initialize()
         pag->dump("pag_initial");
 
     // dump ICFG
-    if (DumpICFG)
+    if (Options :: DumpICFG)
     	pag->getICFG()->dump("icfg_initial");
 
     // print to command line of the PAG graph
-    if (PAGPrint)
+    if (Options :: PAGPrint)
         pag->print();
 
     /// initialise pta call graph for every pointer analysis instance
-    if(EnableThreadCallGraph)
+    if(Options :: EnableThreadCallGraph)
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
@@ -199,7 +156,7 @@ void PointerAnalysis::initialize()
     callGraphSCCDetection();
 
     // dump callgraph
-	if (CallGraphDotGraph)
+	if (Options :: CallGraphDotGraph)
 		getPTACallGraph()->dump("callgraph_initial");
 }
 
@@ -239,7 +196,7 @@ void PointerAnalysis::resetObjFieldSensitive()
  */
 bool PointerAnalysis::dumpGraph()
 {
-    return PAGDotGraph;
+    return Options :: PAGDotGraph;
 }
 
 /*
@@ -269,31 +226,31 @@ void PointerAnalysis::finalize()
         pag->dump("pag_final");
 
     // dump ICFG
-    if (DumpICFG)
+    if (Options :: DumpICFG)
     	pag->getICFG()->dump("icfg_final");
 
     if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 
     /// Dump results
-    if (PTSPrint)
+    if (Options :: PTSPrint)
     {
         dumpTopLevelPtsTo();
         //dumpAllPts();
         //dumpCPts();
     }
 
-    if (TYPEPrint)
+    if (Options :: TYPEPrint)
         dumpAllTypes();
 
-    if(PTSAllPrint)
+    if(Options :: PTSAllPrint)
         dumpAllPts();
 
-    if (FuncPointerPrint)
+    if (Options :: FuncPointerPrint)
         printIndCSTargets();
 
     getPTACallGraph()->verifyCallGraph();
 
-	if (CallGraphDotGraph)
+	if (Options :: CallGraphDotGraph)
 		getPTACallGraph()->dump("callgraph_final");
 
     // FSTBHC has its own TBHC-specific test validation.
@@ -301,7 +258,7 @@ void PointerAnalysis::finalize()
             && !SVFUtil::isa<FlowSensitiveTBHC>(this))
         validateTests();
 
-    if (!UsePreCompFieldSensitive)
+    if (!Options :: UsePreCompFieldSensitive)
         resetObjFieldSensitive();
 }
 
@@ -481,7 +438,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             ii != ie; ii++)
     {
 
-        if(getNumOfResolvedIndCallEdge() >= IndirectCallLimit)
+        if(getNumOfResolvedIndCallEdge() >= Options :: IndirectCallLimit)
         {
             wrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
@@ -593,7 +550,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
     assert(isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())) && "not cpp virtual call");
 
     VFunSet vfns;
-    if (connectVCallOnCHA)
+    if (Options :: connectVCallOnCHA)
         getVFnsFromCHA(cs, vfns);
     else
         getVFnsFromPts(cs, target, vfns);

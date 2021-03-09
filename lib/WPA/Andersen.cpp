@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
 
@@ -54,21 +55,6 @@ double AndersenBase::timeOfProcessLoadStore = 0;
 double AndersenBase::timeOfUpdateCallGraph = 0;
 
 
-static llvm::cl::opt<bool> ConsCGDotGraph("dump-consG", llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of Constraint Graph"));
-static llvm::cl::opt<bool> PrintCGGraph("print-consG", llvm::cl::init(false),
-                                        llvm::cl::desc("Print Constraint Graph to Terminal"));
-
-static llvm::cl::opt<string> WriteAnder("write-ander",  llvm::cl::init(""),
-                                        llvm::cl::desc("Write Andersen's analysis results to a file"));
-static llvm::cl::opt<string> ReadAnder("read-ander",  llvm::cl::init(""),
-                                       llvm::cl::desc("Read Andersen's analysis results from a file"));
-static llvm::cl::opt<bool> PtsDiff("diff",  llvm::cl::init(true),
-                                   llvm::cl::desc("Disable diff pts propagation"));
-static llvm::cl::opt<bool> MergePWC("merge-pwc",  llvm::cl::init(true),
-                                    llvm::cl::desc("Enable PWC in graph solving"));
-
-
 /*!
  * Initilize analysis
  */
@@ -81,7 +67,7 @@ void AndersenBase::initialize()
     setGraph(consCG);
     /// Create statistic class
     stat = new AndersenStat(this);
-	if (ConsCGDotGraph)
+	if (Options :: ConsCGDotGraph)
 		consCG->dump("consCG_initial");
 }
 
@@ -91,10 +77,10 @@ void AndersenBase::initialize()
 void AndersenBase::finalize()
 {
     /// dump constraint graph if PAGDotGraph flag is enabled
-	if (ConsCGDotGraph)
+	if (Options :: ConsCGDotGraph)
 		consCG->dump("consCG_final");
 
-	if (PrintCGGraph)
+	if (Options :: PrintCGGraph)
 		consCG->print();
     BVDataPTAImpl::finalize();
 }
@@ -109,8 +95,8 @@ void AndersenBase::analyze()
     initialize();
 
     bool readResultsFromFile = false;
-    if(!ReadAnder.empty())
-        readResultsFromFile = this->readFromFile(ReadAnder);
+    if(!Options :: ReadAnder.empty())
+        readResultsFromFile = this->readFromFile(Options :: ReadAnder);
 
     if(!readResultsFromFile)
     {
@@ -140,8 +126,8 @@ void AndersenBase::analyze()
         finalize();
     }
 
-    if (!WriteAnder.empty())
-        this->writeToFile(WriteAnder);
+    if (!Options :: WriteAnder.empty())
+        this->writeToFile(Options :: WriteAnder);
 }
 
 
@@ -151,8 +137,8 @@ void AndersenBase::analyze()
 void Andersen::initialize()
 {
     resetData();
-    setDiffOpt(PtsDiff);
-    setPWCOpt(MergePWC);
+    setDiffOpt(Options :: PtsDiff);
+    setPWCOpt(Options :: MergePWC);
     AndersenBase::initialize();
     /// Initialize worklist
     processAllAddr();

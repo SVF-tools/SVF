@@ -6,6 +6,7 @@
  */
 
 
+#include "Util/Options.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
@@ -16,9 +17,6 @@ using namespace SVF;
 using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
-
-static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
-                                       llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
 
 
 /*!
@@ -35,7 +33,7 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
-        if (INCDFPTData)
+        if (Options :: INCDFPTData)
             ptD = new IncMutDFPTDataTy(false);
         else
             ptD = new MutDFPTDataTy(false);

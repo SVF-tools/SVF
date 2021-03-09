@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/Options.h"
 #include "MTA/PCG.h"
 #include "Util/SVFUtil.h"
 
@@ -30,7 +31,7 @@ bool PCG::analyze()
 
     //interferenceAnalysis();
 
-    //if (TDPrint) {
+    //if (Options :: TDPrint) {
     //printResults();
     //tdAPI->performAPIStat(mod);
     //}

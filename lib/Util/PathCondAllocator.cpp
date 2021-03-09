@@ -28,7 +28,7 @@
  *      Author: Yulei Sui
  */
 
-
+#include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/PathCondAllocator.h"
 #include "Util/DPItem.h"
@@ -45,8 +45,6 @@ u32_t VFPathCond::maximumPath = 0;
 
 u32_t PathCondAllocator::totalCondNum = 0;
 BddCondManager* PathCondAllocator::bddCondMgr = nullptr;
-static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
-        llvm::cl::desc("Print out path condition"));
 
 /*!
  * Allocate path condition for each branch
@@ -70,7 +68,7 @@ void PathCondAllocator::allocate(const SVFModule* M)
         }
     }
 
-    if(PrintPathCond)
+    if(Options :: PrintPathCond)
         printPathCond();
 
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation ends\n"));

@@ -28,18 +28,13 @@
  */
 
 
+#include "Util/Options.h"
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
 #include "SVF-FE/PAGBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> DumpSlice("dump-slice", llvm::cl::init(false),
-                                     llvm::cl::desc("Dump dot graph of Saber Slices"));
-
-static llvm::cl::opt<unsigned> cxtLimit("cxtlimit",  llvm::cl::init(3),
-                                        llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
 /// Initialize analysis
 void SrcSnkDDA::initialize(SVFModule* module)
@@ -64,7 +59,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
     initialize(module);
 
-    ContextCond::setMaxCxtLen(cxtLimit);
+    ContextCond::setMaxCxtLen(Options :: cxtLimit);
 
     for (SVFGNodeSetIter iter = sourcesBegin(), eiter = sourcesEnd();
             iter != eiter; ++iter)
@@ -96,7 +91,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
             DBOUT(DSaber, outs() << "Backward process for slice:" << (*iter)->getId() << " (size = " << getCurSlice()->getBackwardSliceSize() << ")\n");
 
-            if(DumpSlice)
+            if(Options :: DumpSlice)
                 annotateSlice(_curSlice);
 
             if(_curSlice->AllPathReachableSolve()== true)
@@ -282,7 +277,7 @@ void SrcSnkDDA::annotateSlice(ProgSlice* slice)
 void SrcSnkDDA::dumpSlices()
 {
 
-    if(DumpSlice)
+    if(Options :: DumpSlice)
         const_cast<SVFG*>(getSVFG())->dump("Slice",true);
 }
 
