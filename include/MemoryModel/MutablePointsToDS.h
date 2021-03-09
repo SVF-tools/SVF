@@ -4,27 +4,46 @@
 #ifndef MUTABLE_POINTSTO_H_
 #define MUTABLE_POINTSTO_H_
 
+#include "MemoryModel/AbstractPointsToDS.h"
+#include "Util/SVFBasicTypes.h"
+#include "Util/SVFUtil.h"
+
 namespace SVF
 {
 
-template <typename Key, typename Datum, typename Data>
+/// Templated function to insert an element into a Set, CondSet, or NodeBS.
+template <typename Key, typename KeySet>
+void insertKey(const Key &key, KeySet &keySet)
+{
+    keySet.insert(key);
+}
+
+// The template parameters are unnecessary, obviously, but removing it would
+// require us to create a .cpp. For one function, that seems to add more
+// than this hack.
+template <typename Key, typename KeySet>
+void insertKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.set(key);
+}
+
+template <typename Key, typename KeySet, typename Data, typename DataSet>
 class MutableDFPTData;
 
 /// PTData implemented using points-to sets which are created once and updated continuously.
-template <typename Key, typename Datum, typename Data>
-class MutablePTData : public PTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Data, typename DataSet>
+class MutablePTData : public PTData<Key, KeySet, Data, DataSet>
 {
-    friend class MutableDFPTData<Key, Datum, Data>;
+    friend class MutableDFPTData<Key, KeySet, Data, DataSet>;
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
+    typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
-    typedef Map<Key, Data> PtsMap;
-    typedef Map<Datum, KeySet> RevPtsMap;
+    typedef Map<Key, DataSet> PtsMap;
+    typedef Map<Data, KeySet> RevPtsMap;
     typedef typename PtsMap::iterator PtsMapIter;
     typedef typename PtsMap::const_iterator PtsMapConstIter;
-    typedef typename Data::iterator iterator;
+    typedef typename DataSet::iterator iterator;
 
     /// Constructor
     MutablePTData(bool reversePT = true, PTDataTy ty = PTDataTy::MutBase) : BasePTData(reversePT, ty) { }
@@ -43,18 +62,18 @@ public:
         revPtsMap.clear();
     }
 
-    virtual inline const Data& getPts(const Key& var) override
+    virtual inline const DataSet& getPts(const Key& var) override
     {
         return ptsMap[var];
     }
 
-    virtual inline const KeySet& getRevPts(const Datum& datum) override
+    virtual inline const KeySet& getRevPts(const Data& datum) override
     {
         assert(this->rev && "MutablePTData::getRevPts: constructed without reverse PT support!");
         return revPtsMap[datum];
     }
 
-    virtual inline bool addPts(const Key &dstKey, const Datum& element) override
+    virtual inline bool addPts(const Key &dstKey, const Data& element) override
     {
         addSingleRevPts(revPtsMap[element], dstKey);
         return addPts(ptsMap[dstKey], element);
@@ -66,10 +85,10 @@ public:
         return unionPts(ptsMap[dstKey], getPts(srcKey));
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const Data& srcData) override
+    virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        addRevPts(srcData,dstKey);
-        return unionPts(ptsMap[dstKey], srcData);
+        addRevPts(srcDataSet,dstKey);
+        return unionPts(ptsMap[dstKey], srcDataSet);
     }
 
     virtual inline void dumpPTData() override
@@ -77,7 +96,7 @@ public:
         dumpPts(ptsMap);
     }
 
-    virtual void clearPts(const Key& var, const Datum& element) override
+    virtual void clearPts(const Key& var, const Data& element) override
     {
         ptsMap[var].reset(element);
     }
@@ -89,12 +108,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutablePTData<Key, Datum, Data> *)
+    static inline bool classof(const MutablePTData<Key, KeySet, Data, DataSet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutBase;
     }
@@ -106,11 +125,11 @@ protected:
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {
             const Key& var = nodeIt->first;
-            const Data & pts = nodeIt->second;
+            const DataSet & pts = nodeIt->second;
             if (pts.empty())
                 continue;
             O << var << " ==> { ";
-            for(typename Data::iterator cit = pts.begin(), ecit=pts.end(); cit!=ecit; ++cit)
+            for(typename DataSet::iterator cit = pts.begin(), ecit=pts.end(); cit!=ecit; ++cit)
             {
                 O << *cit << " ";
             }
@@ -121,19 +140,19 @@ protected:
 private:
     /// Internal union/add points-to helper methods.
     ///@{
-    inline bool unionPts(Data& dstData, const Data& srcData)
+    inline bool unionPts(DataSet& dstDataSet, const DataSet& srcDataSet)
     {
-        return dstData |= srcData;
+        return dstDataSet |= srcDataSet;
     }
-    inline bool addPts(Data &d, const Datum& e)
+    inline bool addPts(DataSet &d, const Data& e)
     {
         return d.test_and_set(e);
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        if (this->rev) revData.insert(tgr);
+        if (this->rev) insertKey<Key, KeySet>(tgr, revData);
     }
-    inline void addRevPts(const Data &ptsData, const Key& tgr)
+    inline void addRevPts(const DataSet &ptsData, const Key& tgr)
     {
         if (this->rev)
         {
@@ -149,16 +168,15 @@ protected:
 };
 
 /// DiffPTData implemented with points-to sets which are updated continuously.
-template <typename Key, typename Datum, typename Data>
-class MutableDiffPTData : public DiffPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Data, typename DataSet>
+class MutableDiffPTData : public DiffPTData<Key, KeySet, Data, DataSet>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef DiffPTData<Key, Datum, Data> BaseDiffPTData;
+    typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
+    typedef DiffPTData<Key, KeySet, Data, DataSet> BaseDiffPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
-    typedef typename MutablePTData<Key, Datum, Data>::PtsMap PtsMap;
+    typedef typename MutablePTData<Key, KeySet, Data, DataSet>::PtsMap PtsMap;
 
     /// Constructor
     MutableDiffPTData(bool reversePT = true, PTDataTy ty = PTDataTy::Diff) : BaseDiffPTData(reversePT, ty), mutPTData(reversePT) { }
@@ -175,18 +193,18 @@ public:
         mutPTData.clear();
     }
 
-    virtual inline const Data& getPts(const Key& var) override
+    virtual inline const DataSet& getPts(const Key& var) override
     {
         return mutPTData.getPts(var);
     }
 
-    virtual inline const KeySet& getRevPts(const Datum& datum) override
+    virtual inline const KeySet& getRevPts(const Data& datum) override
     {
         assert(this->rev && "MutableDiffPTData::getRevPts: constructed without reverse PT support!");
         return mutPTData.getRevPts(datum);
     }
 
-    virtual inline bool addPts(const Key &dstKey, const Datum& element) override
+    virtual inline bool addPts(const Key &dstKey, const Data& element) override
     {
         return mutPTData.addPts(dstKey, element);
     }
@@ -196,12 +214,12 @@ public:
         return mutPTData.unionPts(dstKey, srcKey);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const Data& srcData) override
+    virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        return mutPTData.unionPts(dstKey, srcData);
+        return mutPTData.unionPts(dstKey, srcDataSet);
     }
 
-    virtual void clearPts(const Key& var, const Datum& element) override
+    virtual void clearPts(const Key& var, const Data& element) override
     {
         mutPTData.clearPts(var, element);
     }
@@ -216,18 +234,18 @@ public:
         mutPTData.dumpPTData();
     }
 
-    virtual inline const Data &getDiffPts(Key &var) override
+    virtual inline const DataSet &getDiffPts(Key &var) override
     {
         return getMutDiffPts(var);
     }
 
-    virtual inline bool computeDiffPts(Key &var, const Data &all) override
+    virtual inline bool computeDiffPts(Key &var, const DataSet &all) override
     {
         /// Clear diff pts.
-        Data& diff = getMutDiffPts(var);
+        DataSet& diff = getMutDiffPts(var);
         diff.clear();
         /// Get all pts.
-        Data& propa = getPropaPts(var);
+        DataSet& propa = getPropaPts(var);
         diff.intersectWithComplement(all, propa);
         propa = all;
         return !diff.empty();
@@ -235,8 +253,8 @@ public:
 
     virtual inline void updatePropaPtsMap(Key &src, Key &dst) override
     {
-        Data& srcPropa = getPropaPts(src);
-        Data& dstPropa = getPropaPts(dst);
+        DataSet& srcPropa = getPropaPts(src);
+        DataSet& dstPropa = getPropaPts(dst);
         dstPropa &= srcPropa;
     }
 
@@ -247,12 +265,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableDiffPTData<Key, Datum, Data> *)
+    static inline bool classof(const MutableDiffPTData<Key, KeySet, Data, DataSet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutDiff;
     }
@@ -260,35 +278,34 @@ public:
 
 protected:
     /// Get diff PTS that can be modified.
-    inline Data &getMutDiffPts(Key &var)
+    inline DataSet &getMutDiffPts(Key &var)
     {
         return diffPtsMap[var];
     }
 
     /// Get propagated points to.
-    inline Data &getPropaPts(Key &var)
+    inline DataSet &getPropaPts(Key &var)
     {
         return propaPtsMap[var];
     }
 
 private:
     /// Backing to implement the basic PTData methods. This allows us to avoid multiple-inheritance.
-    MutablePTData<Key, Datum, Data> mutPTData;
+    MutablePTData<Key, KeySet, Data, DataSet> mutPTData;
     /// Diff points-to to be propagated.
     PtsMap diffPtsMap;
     /// Points-to already propagated.
     PtsMap propaPtsMap;
 };
 
-template <typename Key, typename Datum, typename Data>
-class MutableDFPTData : public DFPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Data, typename DataSet>
+class MutableDFPTData : public DFPTData<Key, KeySet, Data, DataSet>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef MutablePTData<Key, Datum, Data> BaseMutPTData;
-    typedef DFPTData<Key, Datum, Data> BaseDFPTData;
+    typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
+    typedef MutablePTData<Key, KeySet, Data, DataSet> BaseMutPTData;
+    typedef DFPTData<Key, KeySet, Data, DataSet> BaseDFPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
 
     typedef typename BaseDFPTData::LocID LocID;
     typedef typename BaseMutPTData::PtsMap PtsMap;
@@ -312,12 +329,12 @@ public:
         mutPTData.clear();
     }
 
-    virtual inline const Data& getPts(const Key& var) override
+    virtual inline const DataSet& getPts(const Key& var) override
     {
         return mutPTData.getPts(var);
     }
 
-    virtual inline const KeySet& getRevPts(const Datum& datum) override
+    virtual inline const KeySet& getRevPts(const Data& datum) override
     {
         assert(this->rev && "MutableDFPTData::getRevPts: constructed without reverse PT support!");
         return mutPTData.getRevPts(datum);
@@ -351,13 +368,13 @@ public:
         return (ptsMap.find(var) != ptsMap.end());
     }
 
-    virtual inline Data& getDFInPtsSet(LocID loc, const Key& var) override
+    virtual inline DataSet& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& inSet = dfInPtsMap[loc];
         return inSet[var];
     }
 
-    virtual inline Data& getDFOutPtsSet(LocID loc, const Key& var) override
+    virtual inline DataSet& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& outSet = dfOutPtsMap[loc];
         return outSet[var];
@@ -453,11 +470,11 @@ public:
     {
         return unionPts(mutPTData.ptsMap[dstKey], getPts(srcKey));
     }
-    virtual inline bool unionPts(const Key& dstKey, const Data& srcData) override
+    virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        return unionPts(mutPTData.ptsMap[dstKey],srcData);
+        return unionPts(mutPTData.ptsMap[dstKey],srcDataSet);
     }
-    virtual void clearPts(const Key& var, const Datum& element) override
+    virtual void clearPts(const Key& var, const Data& element) override
     {
         mutPTData.clearPts(var, element);
     }
@@ -469,11 +486,11 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableDFPTData<Key, Datum, Data> *)
+    static inline bool classof(const MutableDFPTData<Key, KeySet, Data, DataSet> *)
     {
         return true;
     }
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == BaseDFPTData::MutDataFlow
                || ptd->getPTDTY() == BaseDFPTData::IncMutDataFlow;
@@ -483,11 +500,11 @@ public:
 protected:
     /// Internal union/add points-to helper methods.
     ///@{
-    inline bool unionPts(Data& dstData, const Data& srcData)
+    inline bool unionPts(DataSet& dstDataSet, const DataSet& srcDataSet)
     {
-        return dstData |= srcData;
+        return dstDataSet |= srcDataSet;
     }
-    inline bool addPts(Data &d, const Datum& e)
+    inline bool addPts(DataSet &d, const Data& e)
     {
         return d.test_and_set(e);
     }
@@ -547,7 +564,7 @@ public:
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {
             const Key& var = nodeIt->first;
-            const Data & pts = nodeIt->second;
+            const DataSet & pts = nodeIt->second;
             if (pts.empty())
                 continue;
             O << "<" << var << ",{";
@@ -564,25 +581,25 @@ protected:
     DFPtsMap dfOutPtsMap;
     /// Backing to implement the basic PTData methods which are not overridden.
     /// This allows us to avoid multiple-inheritance.
-    MutablePTData<Key, Datum, Data> mutPTData;
+    MutablePTData<Key, KeySet, Data, DataSet> mutPTData;
 };
 
 /// Incremental version of the mutable data-flow points-to data structure.
-template <typename Key, typename Datum, typename Data>
-class IncMutableDFPTData : public MutableDFPTData<Key, Datum, Data>
+template <typename Key, typename KeySet, typename Data, typename DataSet>
+class IncMutableDFPTData : public MutableDFPTData<Key, KeySet, Data, DataSet>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef MutablePTData<Key, Datum, Data> BaseMutPTData;
-    typedef DFPTData<Key, Datum, Data> BaseDFPTData;
-    typedef MutableDFPTData<Key, Datum, Data> BaseMutDFPTData;
+    typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
+    typedef MutablePTData<Key, KeySet, Data, DataSet> BaseMutPTData;
+    typedef DFPTData<Key, KeySet, Data, DataSet> BaseDFPTData;
+    typedef MutableDFPTData<Key, KeySet, Data, DataSet> BaseMutDFPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
     typedef typename BaseDFPTData::LocID LocID;
-    typedef Map<LocID, Data> UpdatedVarMap;	///< for propagating only newly added variable in IN/OUT set
+    typedef Map<LocID, DataSet> UpdatedVarMap;	///< for propagating only newly added variable in IN/OUT set
     typedef typename UpdatedVarMap::iterator UpdatedVarMapIter;
     typedef typename UpdatedVarMap::const_iterator UpdatedVarconstIter;
-    typedef typename Data::iterator DataIter;
+    typedef typename DataSet::iterator DataIter;
 
 private:
     UpdatedVarMap outUpdatedVarMap;
@@ -656,7 +673,7 @@ public:
         if (this->hasDFInSet(loc))
         {
             /// Only variables has new pts from IN set need to be updated.
-            Data pts = getDFInUpdatedVar(loc);
+            DataSet pts = getDFInUpdatedVar(loc);
             for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
             {
                 const Key var = *ptsIt;
@@ -694,7 +711,7 @@ public:
     {
         if (this->hasDFOutSet(loc))
         {
-            Data pts = getDFOutUpdatedVar(loc);
+            DataSet pts = getDFOutUpdatedVar(loc);
             for (DataIter ptsIt = pts.begin(), ptsEit = pts.end(); ptsIt != ptsEit; ++ptsIt)
             {
                 const Key var = *ptsIt;
@@ -705,12 +722,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const IncMutableDFPTData<Key, Datum, Data> *)
+    static inline bool classof(const IncMutableDFPTData<Key, KeySet, Data, DataSet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == BasePTData::IncMutDataFlow;
     }
@@ -739,7 +756,7 @@ private:
         return false;
     }
     /// Get all var which have new pts informationin loc's IN set
-    inline const Data& getDFInUpdatedVar(LocID loc)
+    inline const DataSet& getDFInUpdatedVar(LocID loc)
     {
         return inUpdatedVarMap[loc];
     }
@@ -768,25 +785,23 @@ private:
         return false;
     }
     /// Get all var which have new pts informationin loc's OUT set
-    inline const Data& getDFOutUpdatedVar(LocID loc)
+    inline const DataSet& getDFOutUpdatedVar(LocID loc)
     {
         return outUpdatedVarMap[loc];
     }
     //@}
 };
 
-/// VersionedPTData implemented with mutable points-to set (Data).
+/// VersionedPTData implemented with mutable points-to set (DataSet).
 /// Implemented as a wrapper around two MutablePTDatas: one for Keys, one
 /// for VersionedKeys.
-template <typename Key, typename Datum, typename Data, typename VersionedKey>
-class MutableVersionedPTData : public VersionedPTData<Key, Datum, Data, VersionedKey>
+template <typename Key, typename KeySet, typename Data, typename DataSet, typename VersionedKey, typename VersionedKeySet>
+class MutableVersionedPTData : public VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet>
 {
 public:
-    typedef PTData<Key, Datum, Data> BasePTData;
-    typedef VersionedPTData<Key, Datum, Data, VersionedKey> BaseVersionedPTData;
+    typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
+    typedef VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet> BaseVersionedPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
-    typedef typename BasePTData::KeySet KeySet;
-    typedef typename BaseVersionedPTData::VersionedKeySet VersionedKeySet;
 
     MutableVersionedPTData(bool reversePT = true, PTDataTy ty = PTDataTy::MutVersioned)
         : BaseVersionedPTData(reversePT, ty), tlPTData(reversePT), atPTData(reversePT) { }
@@ -799,31 +814,31 @@ public:
         atPTData.clear();
     }
 
-    virtual const Data& getPts(const Key& vk) override
+    virtual const DataSet& getPts(const Key& vk) override
     {
         return tlPTData.getPts(vk);
     }
-    virtual const Data& getPts(const VersionedKey& vk) override
+    virtual const DataSet& getPts(const VersionedKey& vk) override
     {
         return atPTData.getPts(vk);
     }
 
-    virtual const KeySet& getRevPts(const Datum& datum) override
+    virtual const KeySet& getRevPts(const Data& datum) override
     {
         assert(this->rev && "MutableVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(datum);
     }
-    virtual const VersionedKeySet& getVersionedKeyRevPts(const Datum& datum) override
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Data& datum) override
     {
         assert(this->rev && "MutableVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(datum);
     }
 
-    virtual bool addPts(const Key& k, const Datum& element) override
+    virtual bool addPts(const Key& k, const Data& element) override
     {
         return tlPTData.addPts(k, element);
     }
-    virtual bool addPts(const VersionedKey& vk, const Datum& element) override
+    virtual bool addPts(const VersionedKey& vk, const Data& element) override
     {
         return atPTData.addPts(vk, element);
     }
@@ -844,20 +859,20 @@ public:
     {
         return tlPTData.unionPts(dstVar, atPTData.getPts(srcVar));
     }
-    virtual bool unionPts(const Key& dstVar, const Data& srcData) override
+    virtual bool unionPts(const Key& dstVar, const DataSet& srcDataSet) override
     {
-        return tlPTData.unionPts(dstVar, srcData);
+        return tlPTData.unionPts(dstVar, srcDataSet);
     }
-    virtual bool unionPts(const VersionedKey& dstVar, const Data& srcData) override
+    virtual bool unionPts(const VersionedKey& dstVar, const DataSet& srcDataSet) override
     {
-        return atPTData.unionPts(dstVar, srcData);
+        return atPTData.unionPts(dstVar, srcDataSet);
     }
 
-    virtual void clearPts(const Key& k, const Datum& element) override
+    virtual void clearPts(const Key& k, const Data& element) override
     {
         tlPTData.clearPts(k, element);
     }
-    virtual void clearPts(const VersionedKey& vk, const Datum& element) override
+    virtual void clearPts(const VersionedKey& vk, const Data& element) override
     {
         atPTData.clearPts(vk, element);
     }
@@ -881,12 +896,12 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const MutableVersionedPTData<Key, Datum, Data, VersionedKey> *)
+    static inline bool classof(const MutableVersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet> *)
     {
         return true;
     }
 
-    static inline bool classof(const PTData<Key, Datum, Data>* ptd)
+    static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == PTDataTy::MutVersioned;
     }
@@ -894,9 +909,9 @@ public:
 
 private:
     /// PTData for Keys (top-level pointers, generally).
-    MutablePTData<Key, Datum, Data> tlPTData;
+    MutablePTData<Key, KeySet, Data, DataSet> tlPTData;
     /// PTData for VersionedKeys (address-taken objects, generally).
-    MutablePTData<VersionedKey, Datum, Data> atPTData;
+    MutablePTData<VersionedKey, VersionedKeySet, Data, DataSet> atPTData;
 };
 
 } // End namespace SVF

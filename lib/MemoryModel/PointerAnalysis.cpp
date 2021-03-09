@@ -226,8 +226,10 @@ void PointerAnalysis::finalize()
         pag->dump("pag_final");
 
     // dump ICFG
-    if (Options :: DumpICFG)
-    	pag->getICFG()->dump("icfg_final");
+    if (Options :: DumpICFG){
+		pag->getICFG()->updateCallGraph(ptaCallGraph);
+		pag->getICFG()->dump("icfg_final");
+    }
 
     if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 

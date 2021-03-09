@@ -247,7 +247,7 @@ public:
 
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
+    virtual const NodeBS& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts()
