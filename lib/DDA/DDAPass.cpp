@@ -68,14 +68,14 @@ bool DDAPass::runOnModule(Module& module)
 void DDAPass::selectClient(SVFModule* module)
 {
 
-    if (!Options :: userInputQuery.empty())
+    if (!Options :: UserInputQuery.empty())
     {
         /// solve function pointer
-        if (Options :: userInputQuery == "funptr")
+        if (Options :: UserInputQuery == "funptr")
         {
             _client = new FunptrDDAClient(module);
         }
-        else if (Options :: userInputQuery == "alias")
+        else if (Options :: UserInputQuery == "alias")
         {
             _client = new AliasDDAClient(module);
         }
@@ -83,10 +83,10 @@ void DDAPass::selectClient(SVFModule* module)
         else
         {
             _client = new DDAClient(module);
-            if (Options :: userInputQuery != "all")
+            if (Options :: UserInputQuery != "all")
             {
                 u32_t buf; // Have a buffer
-                stringstream ss(Options :: userInputQuery); // Insert the user input string into a stream
+                stringstream ss(Options :: UserInputQuery); // Insert the user input string into a stream
                 while (ss >> buf)
                     _client->setQuery(buf);
             }
@@ -107,8 +107,8 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 	PAGBuilder builder;
 	PAG* pag = builder.build(module);
 
-    VFPathCond::setMaxPathLen(Options :: maxPathLen);
-    ContextCond::setMaxCxtLen(Options :: maxContextLen);
+    VFPathCond::setMaxPathLen(Options :: MaxPathLen);
+    ContextCond::setMaxCxtLen(Options :: MaxContextLen);
 
     /// Initialize pointer analysis.
     switch (kind)
@@ -128,7 +128,7 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
         break;
     }
 
-    if(Options :: WPANUM)
+    if(Options :: WPANum)
     {
         _client->collectWPANum(module);
     }
@@ -140,13 +140,13 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
         _client->answerQueries(_pta);
         ///finalize
         _pta->finalize();
-        if(Options :: printCPts)
+        if(Options :: PrintCPts)
             _pta->dumpCPts();
 
         if (_pta->printStat())
             _client->performStat(_pta);
 
-        if (Options :: printQueryPts)
+        if (Options :: PrintQueryPts)
             printQueryPTS();
     }
 }
@@ -157,9 +157,9 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
  */
 void DDAPass::initCxtInsensitiveEdges(PointerAnalysis* pta, const SVFG* svfg,const SVFGSCC* svfgSCC, SVFGEdgeSet& insensitveEdges)
 {
-    if(Options :: insenRecur)
+    if(Options :: InsenRecur)
         collectCxtInsenEdgeForRecur(pta,svfg,insensitveEdges);
-    else if(Options :: insenCycle)
+    else if(Options :: InsenCycle)
         collectCxtInsenEdgeForVFCycle(pta,svfg,svfgSCC,insensitveEdges);
 }
 

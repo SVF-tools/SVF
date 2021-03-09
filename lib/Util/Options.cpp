@@ -27,7 +27,7 @@ namespace SVF
 
 
     // ContextDDA.cpp
-    const llvm::cl::opt<unsigned long long> Options::cxtBudget(
+    const llvm::cl::opt<unsigned long long> Options::CxtBudget(
         "cxtbg", 
         llvm::cl::init(10000),
         llvm::cl::desc("Maximum step budget of context-sensitive traversing"));
@@ -80,49 +80,49 @@ namespace SVF
         llvm::cl::desc("detect uninitialized stack variables"));
 
     // DDAPass.cpp
-    const llvm::cl::opt<unsigned> Options::maxPathLen(
+    const llvm::cl::opt<unsigned> Options::MaxPathLen(
         "maxpath",  
         llvm::cl::init(100000),
         llvm::cl::desc("Maximum path limit for DDA"));
 
-    const llvm::cl::opt<unsigned> Options::maxContextLen(
+    const llvm::cl::opt<unsigned> Options::MaxContextLen(
         "maxcxt",  
         llvm::cl::init(3),
         llvm::cl::desc("Maximum context limit for DDA"));
 
-    const llvm::cl::opt<std::string> Options::userInputQuery(
+    const llvm::cl::opt<std::string> Options::UserInputQuery(
         "query",  
         llvm::cl::init("all"),
         llvm::cl::desc("Please specify queries by inputing their pointer ids"));
 
-    const llvm::cl::opt<bool> Options::insenRecur(
+    const llvm::cl::opt<bool> Options::InsenRecur(
         "inrecur", 
         llvm::cl::init(false),
         llvm::cl::desc("Mark context insensitive SVFG edges due to function recursions"));
 
-    const llvm::cl::opt<bool> Options::insenCycle(
+    const llvm::cl::opt<bool> Options::InsenCycle(
         "incycle", 
         llvm::cl::init(false),
         llvm::cl::desc("Mark context insensitive SVFG edges due to value-flow cycles"));
 
-    const llvm::cl::opt<bool> Options::printCPts(
+    const llvm::cl::opt<bool> Options::PrintCPts(
         "cpts", 
         llvm::cl::init(false),
         llvm::cl::desc("Dump conditional points-to set "));
 
-    const llvm::cl::opt<bool> Options::printQueryPts(
+    const llvm::cl::opt<bool> Options::PrintQueryPts(
         "print-query-pts",
         llvm::cl::init(false),
         llvm::cl::desc("Dump queries' conditional points-to set "));
 
-    const llvm::cl::opt<bool> Options::WPANUM(
+    const llvm::cl::opt<bool> Options::WPANum(
         "wpanum", 
         llvm::cl::init(false),
         llvm::cl::desc("collect WPA FS number only "));
 
 
     // FlowDDA.cpp
-    const llvm::cl::opt<unsigned long long> Options::flowBudget(
+    const llvm::cl::opt<unsigned long long> Options::FlowBudget(
         "flowbg",  
         llvm::cl::init(10000),
         llvm::cl::desc("Maximum step budget of flow-sensitive traversing"));
@@ -136,7 +136,7 @@ namespace SVF
 
     
     // Program Assignment Graph for pointer analysis (PAG.cpp)
-    llvm::cl::opt<bool> Options::HANDBLACKHOLE(
+    llvm::cl::opt<bool> Options::HandBlackHole(
         "blk", 
         llvm::cl::init(false),
         llvm::cl::desc("Hanle blackhole edge"));
@@ -172,14 +172,14 @@ namespace SVF
 
 
     // Location set for modeling abstract memory object (LocationSet.cpp)
-    const llvm::cl::opt<bool> Options::singleStride(
+    const llvm::cl::opt<bool> Options::SingleStride(
         "stride-only", 
         llvm::cl::init(false),
         llvm::cl::desc("Only use single stride in LocMemoryModel"));
 
     
     // Base class of pointer analyses (PointerAnalysis.cpp)
-    const llvm::cl::opt<bool> Options::TYPEPrint(
+    const llvm::cl::opt<bool> Options::TypePrint(
         "print-type", 
         llvm::cl::init(false),
         llvm::cl::desc("Print type"));
@@ -204,7 +204,7 @@ namespace SVF
         llvm::cl::init(true),
         llvm::cl::desc("Statistic for Pointer analysis"));
 
-    const llvm::cl::opt<unsigned> Options::statBudget(
+    const llvm::cl::opt<unsigned> Options::StatBudget(
         "statlimit", 
         llvm::cl::init(20),
         llvm::cl::desc("Iteration budget for On-the-fly statistics"));
@@ -249,7 +249,7 @@ namespace SVF
         llvm::cl::init(true),
         llvm::cl::desc("Enable pointer analysis to use thread call graph"));
 
-    const llvm::cl::opt<bool> Options::connectVCallOnCHA(
+    const llvm::cl::opt<bool> Options::ConnectVCallOnCHA(
         "vcall-cha", 
         llvm::cl::init(false),
         llvm::cl::desc("connect virtual calls using cha"));
@@ -402,21 +402,21 @@ namespace SVF
         llvm::cl::init(false),
         llvm::cl::desc("Dump dot graph of Saber Slices"));
 
-    const llvm::cl::opt<unsigned> Options::cxtLimit(
+    const llvm::cl::opt<unsigned> Options::CxtLimit(
         "cxtlimit",  
         llvm::cl::init(3),
         llvm::cl::desc("Source-Sink Analysis Contexts Limit"));
 
     
     // CHG.cpp
-    const llvm::cl::opt<bool> Options::dumpCHA(
+    const llvm::cl::opt<bool> Options::DumpCHA(
         "dump-cha", 
         llvm::cl::init(false), 
         llvm::cl::desc("dump the class hierarchy graph"));
 
 
     // DCHG.cpp
-    const llvm::cl::opt<bool> Options::printDCHG(
+    const llvm::cl::opt<bool> Options::PrintDCHG(
         "print-dchg", 
         llvm::cl::init(false), 
         llvm::cl::desc("print the DCHG if debug information is available"));
@@ -440,14 +440,14 @@ namespace SVF
         llvm::cl::init(false),
         llvm::cl::desc("Bytes/bits modeling of memory locations"));
 
-    const llvm::cl::opt<bool> Options::modelConsts(
+    const llvm::cl::opt<bool> Options::ModelConsts(
         "modelConsts", 
         llvm::cl::init(false),
         llvm::cl::desc("Modeling individual constant objects"));
 
     
     // Conditions.cpp
-    const llvm::cl::opt<unsigned> Options::maxBddSize(
+    const llvm::cl::opt<unsigned> Options::MaxBddSize(
         "maxbddsize",  
         llvm::cl::init(100000),
         llvm::cl::desc("Maximum context limit for DDA"));
@@ -520,19 +520,19 @@ namespace SVF
 
     
     // TypeAnalysis.cpp
-    const llvm::cl::opt<bool> Options::genICFG(
+    const llvm::cl::opt<bool> Options::GenICFG(
         "genicfg", 
         llvm::cl::init(true), 
         llvm::cl::desc("Generate ICFG graph"));
 
 
     //WPAPass.cpp
-    const llvm::cl::opt<bool> Options::anderSVFG(
+    const llvm::cl::opt<bool> Options::AnderSVFG(
         "svfg", 
         llvm::cl::init(false),
         llvm::cl::desc("Generate SVFG after Andersen's Analysis"));
 
-    const llvm::cl::opt<bool> Options::printAliases(
+    const llvm::cl::opt<bool> Options::PrintAliases(
         "print-aliases", 
         llvm::cl::init(false),
         llvm::cl::desc("Print results for all pair aliases"));

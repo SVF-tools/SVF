@@ -95,7 +95,7 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
             symInfo = new LocSymTableInfo();
         else
             symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(Options :: modelConsts);
+        symInfo->setModelConstants(Options :: ModelConsts);
     }
     return symInfo;
 }

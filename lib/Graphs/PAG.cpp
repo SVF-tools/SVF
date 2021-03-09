@@ -460,7 +460,7 @@ RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
  */
 PAGEdge* PAG::addBlackHoleAddrPE(NodeID node)
 {
-    if(Options :: HANDBLACKHOLE)
+    if(Options :: HandBlackHole)
         return pag->addAddrPE(pag->getBlackHoleNode(), node);
     else
         return pag->addCopyPE(pag->getNullPtr(), node);
@@ -1022,7 +1022,7 @@ void PAG::dump(std::string name)
  */
 void PAG::handleBlackHole(bool b)
 {
-    Options :: HANDBLACKHOLE = b;
+    Options :: HandBlackHole = b;
 }
 
 namespace llvm

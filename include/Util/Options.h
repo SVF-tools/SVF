@@ -30,7 +30,7 @@ public:
     static const llvm::cl::opt<unsigned> MaxFieldLimit;
 
     // ContextDDA.cpp
-    static const llvm::cl::opt<unsigned long long> cxtBudget;
+    static const llvm::cl::opt<unsigned long long> CxtBudget;
 
     // DDAClient.cpp
     static const llvm::cl::opt<bool> SingleLoad;
@@ -44,24 +44,23 @@ public:
     static const llvm::cl::opt<bool> TaintUninitStack;
 
     // DDAPass.cpp
-    static const llvm::cl::opt<unsigned> maxPathLen;
-    static const llvm::cl::opt<unsigned> maxContextLen;
-    // static const llvm::cl::opt<string> userInputQuery;
-    static const llvm::cl::opt<std :: string> userInputQuery;
-    static const llvm::cl::opt<bool> insenRecur;
-    static const llvm::cl::opt<bool> insenCycle;
-    static const llvm::cl::opt<bool> printCPts;
-    static const llvm::cl::opt<bool> printQueryPts;
-    static const llvm::cl::opt<bool> WPANUM;
+    static const llvm::cl::opt<unsigned> MaxPathLen;
+    static const llvm::cl::opt<unsigned> MaxContextLen;
+    static const llvm::cl::opt<std :: string> UserInputQuery;
+    static const llvm::cl::opt<bool> InsenRecur;
+    static const llvm::cl::opt<bool> InsenCycle;
+    static const llvm::cl::opt<bool> PrintCPts;
+    static const llvm::cl::opt<bool> PrintQueryPts;
+    static const llvm::cl::opt<bool> WPANum;
 
     // FlowDDA.cpp
-    static const llvm::cl::opt<unsigned long long> flowBudget;
+    static const llvm::cl::opt<unsigned long long> FlowBudget;
 
     // Offline constraint graph (OfflineConsG.cpp)
     static const llvm::cl::opt<bool> OCGDotGraph;
 
     // Program Assignment Graph for pointer analysis (PAG.cpp)
-    static llvm::cl::opt<bool> HANDBLACKHOLE;
+    static llvm::cl::opt<bool> HandBlackHole;
     static const llvm::cl::opt<bool> FirstFieldEqBase;
 
     // SVFG optimizer (SVFGOPT.cpp)
@@ -73,15 +72,15 @@ public:
     static const llvm::cl::opt<bool> DumpVFG;
 
      // Location set for modeling abstract memory object (LocationSet.cpp)
-    static const llvm::cl::opt<bool> singleStride;
+    static const llvm::cl::opt<bool> SingleStride;
 
     // Base class of pointer analyses (PointerAnalysis.cpp)
-    static const llvm::cl::opt<bool> TYPEPrint;
+    static const llvm::cl::opt<bool> TypePrint;
     static const llvm::cl::opt<bool> FuncPointerPrint;
     static const llvm::cl::opt<bool> PTSPrint;
     static const llvm::cl::opt<bool> PTSAllPrint;
     static const llvm::cl::opt<bool> PStat;
-    static const llvm::cl::opt<unsigned> statBudget;
+    static const llvm::cl::opt<unsigned> StatBudget;
     static const llvm::cl::opt<bool> PAGDotGraph;
     static const llvm::cl::opt<bool> DumpICFG;
     static const llvm::cl::opt<bool> CallGraphDotGraph;
@@ -90,7 +89,7 @@ public:
     static const llvm::cl::opt<bool> UsePreCompFieldSensitive;
     static const llvm::cl::opt<bool> EnableAliasCheck;
     static const llvm::cl::opt<bool> EnableThreadCallGraph;
-    static const llvm::cl::opt<bool> connectVCallOnCHA;
+    static const llvm::cl::opt<bool> ConnectVCallOnCHA;
 
     // PointerAnalysisImpl.cpp
     static const llvm::cl::opt<bool> INCDFPTData;
@@ -146,13 +145,13 @@ public:
 
     // Source-sink analyzer (SrcSnkDDA.cpp)
     static const llvm::cl::opt<bool> DumpSlice;
-    static const llvm::cl::opt<unsigned> cxtLimit;
+    static const llvm::cl::opt<unsigned> CxtLimit;
 
     // CHG.cpp
-    static const llvm::cl::opt<bool> dumpCHA;
+    static const llvm::cl::opt<bool> DumpCHA;
 
     // DCHG.cpp
-    static const llvm::cl::opt<bool> printDCHG;
+    static const llvm::cl::opt<bool> PrintDCHG;
 
     // LLVMModule.cpp
     static const llvm::cl::opt<std::string> Graphtxt;
@@ -160,10 +159,10 @@ public:
 
     // SymbolTableInfo.cpp
     static const llvm::cl::opt<bool> LocMemModel;
-    static const llvm::cl::opt<bool> modelConsts;
+    static const llvm::cl::opt<bool> ModelConsts;
 
     // Conditions.cpp
-    static const llvm::cl::opt<unsigned> maxBddSize;
+    static const llvm::cl::opt<unsigned> MaxBddSize;
 
     // PathCondAllocator.cpp
     static const llvm::cl::opt<bool> PrintPathCond;
@@ -189,11 +188,11 @@ public:
     static const llvm::cl::opt<bool> TBHCAllReuse;;
 
     // TypeAnalysis.cpp
-    static const llvm::cl::opt<bool> genICFG;
+    static const llvm::cl::opt<bool> GenICFG;
 
     //WPAPass.cpp
-    static const llvm::cl::opt<bool> anderSVFG;
-    static const llvm::cl::opt<bool> printAliases;
+    static const llvm::cl::opt<bool> AnderSVFG;
+    static const llvm::cl::opt<bool> PrintAliases;
 };
 };  // namespace SVF
 

@@ -46,7 +46,7 @@ using namespace std;
 void TypeAnalysis::initialize()
 {
 	AndersenBase::initialize();
-    if (Options :: genICFG)
+    if (Options :: GenICFG)
     {
         icfg = PAG::getPAG()->getICFG();
         icfg->dump("icfg_initial");

@@ -46,7 +46,7 @@ void LocationSet::addElemNumStridePair(const NodePair& pair)
     if (pair.first == 0 || pair.second == 0)
         return;
 
-    if (Options :: singleStride)
+    if (Options :: SingleStride)
     {
         if (numStridePair.empty())
             numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),pair.second));

@@ -75,7 +75,7 @@ PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
 {
     pag = p;
-	OnTheFlyIterBudgetForStat = Options :: statBudget;
+	OnTheFlyIterBudgetForStat = Options :: StatBudget;
     print_stat = Options :: PStat;
     ptaImplTy = BaseImpl;
     alias_validation = (alias_check && Options :: EnableAliasCheck);
@@ -241,7 +241,7 @@ void PointerAnalysis::finalize()
         //dumpCPts();
     }
 
-    if (Options :: TYPEPrint)
+    if (Options :: TypePrint)
         dumpAllTypes();
 
     if(Options :: PTSAllPrint)
@@ -552,7 +552,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
     assert(isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())) && "not cpp virtual call");
 
     VFunSet vfns;
-    if (Options :: connectVCallOnCHA)
+    if (Options :: ConnectVCallOnCHA)
         getVFnsFromCHA(cs, vfns);
     else
         getVFnsFromPts(cs, target, vfns);

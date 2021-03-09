@@ -529,7 +529,7 @@ void DCHGraph::buildCHG(bool extend)
         }
     }
 
-    if (Options :: printDCHG)
+    if (Options :: PrintDCHG)
     {
         print();
     }

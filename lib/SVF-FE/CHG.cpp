@@ -112,7 +112,7 @@ void CHGraph::buildCHG()
     timeEnd = CLOCK_IN_MS();
     buildingCHGTime = (timeEnd - timeStart) / TIMEINTERVAL;
 
-    if (Options :: dumpCHA)
+    if (Options :: DumpCHA)
         dump("cha");
 }
 

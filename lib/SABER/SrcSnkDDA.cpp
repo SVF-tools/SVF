@@ -59,7 +59,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
     initialize(module);
 
-    ContextCond::setMaxCxtLen(Options :: cxtLimit);
+    ContextCond::setMaxCxtLen(Options :: CxtLimit);
 
     for (SVFGNodeSetIter iter = sourcesBegin(), eiter = sourcesEnd();
             iter != eiter; ++iter)
