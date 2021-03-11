@@ -387,8 +387,8 @@ const CHGraph::CHNodeSetTy& CHGraph::getInstancesAndDescendants(const string cla
 void CHGraph::addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f) {
     const auto *lf = f->getLLVMFun();
     if (isCPPThunkFunction(lf)) {
-        const auto *tf = getThunkTarget(lf);
-        v.push_back(svfMod->getSVFFunction(tf));
+        if(const auto *tf = getThunkTarget(lf))
+            v.push_back(svfMod->getSVFFunction(tf));
     } else {
         v.push_back(f);
     }
