@@ -309,9 +309,13 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     {
         rawstr << getSourceLocOfFunction(func);
     }
+    else if(SVFUtil::isConstantData(val))
+    {
+        rawstr << "constant data";
+    }
     else
     {
-        rawstr << "Can only get source location for instruction, argument, global var or function.";
+        rawstr << "Can only get source location for instruction, argument, global var, function or constant data.";
     }
     rawstr << " }";
 

@@ -144,16 +144,16 @@ const std::string IntraCFGEdge::toString() const {
 const std::string CallCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallCFGEdge CallSite: " << *cs << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CallCFGEdge " << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 
 const std::string RetCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetCFGEdge CallSite: " << *cs << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "RetCFGEdge " << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 
