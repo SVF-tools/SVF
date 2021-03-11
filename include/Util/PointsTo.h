@@ -151,7 +151,7 @@ public:
         using pointer = unsigned *;
         using reference = unsigned &;
 
-        PointsToIterator(void) = default;
+        PointsToIterator(void) = delete;
 
         /// Returns an iterator to the beginning of pt if end is false, and to
         /// the end of pt if end is true.

@@ -552,10 +552,15 @@ namespace SVF
             if (accountForOcc) originalSbv *= occ;
 
             // Check number of words for original BV.
-            const std::pair<PointsTo::iterator, PointsTo::iterator> minMax =
-                std::minmax_element(pts.begin(), pts.end());
+            NodeID min = UINT_MAX;
+            NodeID max = 0;
+            for (NodeID o : pts)
+            {
+                if (o < min) min = 0;
+                if (o > max) max = 0;
+            }
             words.clear();
-            for (NodeID b = *minMax.first; b <= *minMax.second; ++b)
+            for (NodeID b = min; b <= max; ++b)
             {
                 words.insert(b / NATIVE_INT_SIZE);
             }
@@ -569,7 +574,8 @@ namespace SVF
             if (accountForOcc) newSbv *= occ;
 
             // Check number of words for new BV.
-            NodeID min = UINT_MAX, max = 0;
+            min = UINT_MAX;
+            max = 0;
             for (const NodeID o : pts)
             {
                 const NodeID mappedO = nodeMap[o];
