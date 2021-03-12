@@ -12,6 +12,7 @@
 #ifndef COREBITVECTOR_H_
 #define COREBITVECTOR_H_
 
+#include <assert.h>
 #include <vector>
 
 namespace SVF
