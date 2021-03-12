@@ -309,6 +309,10 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     {
         rawstr << getSourceLocOfFunction(func);
     }
+    else if (const BasicBlock* bb = SVFUtil::dyn_cast<BasicBlock>(val))
+    {
+        rawstr << "basic block: " << bb->getName() << " " << getSourceLoc(bb->getFirstNonPHI());
+    }
     else if(SVFUtil::isConstantData(val))
     {
         rawstr << "constant data";
