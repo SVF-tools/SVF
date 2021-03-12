@@ -45,13 +45,15 @@ public:
     /// Copy costructor.
     PointsTo(const PointsTo &pt);
     /// Move constructor.
-    PointsTo(const PointsTo &&pt);
+    PointsTo(PointsTo &&pt);
+
+    ~PointsTo(void);
 
     /// Copy assignment.
     PointsTo &operator=(const PointsTo &rhs);
 
     /// Move assignment.
-    PointsTo &operator=(const PointsTo &&rhs);
+    PointsTo &operator=(PointsTo &&rhs);
 
     /// Returns true if set is empty.
     bool empty(void) const;
@@ -127,12 +129,15 @@ public:
     bool metaSame(const PointsTo &pt) const;
 
 private:
-    // TODO: will change to a union or polymorphic type eventually.
-    /// Sparse bit vector backing.
-    SparseBitVector sbv;
-
-    /// Core bit vector backing.
-    CoreBitVector cbv;
+    /// Holds backing data structure.
+    /// TODO: std::variant when we move to C++17.
+    union
+    {
+        /// Sparse bit vector backing.
+        SparseBitVector sbv;
+        /// Core bit vector backing.
+        CoreBitVector cbv;
+    };
 
     /// Type of this points-to set.
     enum Type type;
@@ -151,11 +156,17 @@ public:
         using pointer = unsigned *;
         using reference = unsigned &;
 
+        /// Deleted because we don't want iterators with null pt.
         PointsToIterator(void) = delete;
+        PointsToIterator(const PointsToIterator &pt);
+        PointsToIterator(PointsToIterator &&pt);
 
         /// Returns an iterator to the beginning of pt if end is false, and to
         /// the end of pt if end is true.
         PointsToIterator(const PointsTo *pt, bool end=false);
+
+        PointsToIterator &operator=(const PointsToIterator &rhs);
+        PointsToIterator &operator=(PointsToIterator &&rhs);
 
         /// Pre-increment: ++it.
         const PointsToIterator &operator++(void);
@@ -178,10 +189,13 @@ public:
     private:
         /// PointsTo we are iterating over.
         const PointsTo *pt;
-        /// Iterator into the PointsTo.
-        /// TODO:
-        SparseBitVector::iterator sbvIt;
-        CoreBitVector::iterator cbvIt;
+        /// Iterator into the backing data structure. Discriminated by pt->type.
+        /// TODO: std::variant when we move to C++17.
+        union
+        {
+            SparseBitVector::iterator sbvIt;
+            CoreBitVector::iterator cbvIt;
+        };
     };
 };
 

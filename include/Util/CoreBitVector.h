@@ -43,13 +43,13 @@ public:
     CoreBitVector(const CoreBitVector &cbv);
 
     /// Move constructor.
-    CoreBitVector(const CoreBitVector &&cbv);
+    CoreBitVector(CoreBitVector &&cbv);
 
     /// Copy assignment.
     CoreBitVector &operator=(const CoreBitVector &rhs);
 
     /// Move assignment.
-    CoreBitVector &operator=(const CoreBitVector &&rhs);
+    CoreBitVector &operator=(CoreBitVector &&rhs);
 
     /// Returns true if no bits are set.
     bool empty(void) const;
@@ -142,7 +142,7 @@ public:
         using pointer = unsigned *;
         using reference = unsigned &;
 
-        CoreBitVectorIterator(void) = default;
+        CoreBitVectorIterator(void) = delete;
 
         /// Returns an iterator to the beginning of cbv if end is false, and to
         /// the end of cbv if end is true.
@@ -155,6 +155,12 @@ public:
             // need to because that is the first element.
             if (wordIt != cbv->words.end() && !(cbv->words[0] & (Word)0b1)) ++(*this);
         }
+
+        CoreBitVectorIterator(const CoreBitVectorIterator &cbv) = default;
+        CoreBitVectorIterator(CoreBitVectorIterator &&cbv) = default;
+
+        CoreBitVectorIterator &operator=(const CoreBitVectorIterator &cbv) = default;
+        CoreBitVectorIterator &operator=(CoreBitVectorIterator &&cbv) = default;
 
         /// Pre-increment: ++it.
         const CoreBitVectorIterator &operator++(void)

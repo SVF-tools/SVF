@@ -36,7 +36,7 @@ CoreBitVector::CoreBitVector(size_t n)
 CoreBitVector::CoreBitVector(const CoreBitVector &cbv)
     : offset(cbv.offset), words(cbv.words) { }
 
-CoreBitVector::CoreBitVector(const CoreBitVector &&cbv)
+CoreBitVector::CoreBitVector(CoreBitVector &&cbv)
     : offset(cbv.offset), words(std::move(cbv.words)) { }
 
 CoreBitVector &CoreBitVector::operator=(const CoreBitVector &rhs)
@@ -46,7 +46,7 @@ CoreBitVector &CoreBitVector::operator=(const CoreBitVector &rhs)
     return *this;
 }
 
-CoreBitVector &CoreBitVector::operator=(const CoreBitVector &&rhs)
+CoreBitVector &CoreBitVector::operator=(CoreBitVector &&rhs)
 {
     this->offset = rhs.offset;
     this->words = std::move(rhs.words);
