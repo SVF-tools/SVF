@@ -556,8 +556,8 @@ namespace SVF
             NodeID max = 0;
             for (NodeID o : pts)
             {
-                if (o < min) min = 0;
-                if (o > max) max = 0;
+                if (o < min) min = o;
+                if (o > max) max = o;
             }
             words.clear();
             for (NodeID b = min; b <= max; ++b)
