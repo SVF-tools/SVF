@@ -191,7 +191,7 @@ bool CoreBitVector::operator|=(const CoreBitVector &rhs)
     if (this == &rhs) return false;
 
     // TODO: some redundancy in extendTo calls.
-    if (finalBit() <= rhs.offset || finalBit() < rhs.finalBit()) extendForward(rhs.finalBit());
+    if (finalBit() < rhs.finalBit()) extendForward(rhs.finalBit());
     if (offset > rhs.offset) extendBackward(rhs.offset);
 
     // Start counting this where rhs starts.
@@ -201,18 +201,18 @@ bool CoreBitVector::operator|=(const CoreBitVector &rhs)
     // Only need to test against rhs's size since we extended this to hold rhs.
     Word *thisWords = &words[thisIndex];
     const Word *rhsWords = &rhs.words[rhsIndex];
-    size_t length = rhs.words.size();
+    const size_t length = rhs.words.size();
     Word changed = 0;
 
     // Can start counting from 0 because we took the addresses of both
     // word vectors at the correct index.
-    #pragma omp simd reduction(&:unchanged)
+    #pragma omp simd
     for (size_t i = 0 ; i < length; ++i)
     {
         const Word oldWord = thisWords[i];
         // Is there anything in rhs not in *this?
-        changed |= (~oldWord) & rhsWords[i];
         thisWords[i] = thisWords[i] | rhsWords[i];
+        changed |= oldWord ^ thisWords[i];
     }
 
     return changed;
