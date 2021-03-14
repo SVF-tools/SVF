@@ -53,7 +53,7 @@ void SVFGOPT::buildSVFG()
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
 
-    keepActualOutFormalIn = Options :: KeepAOFI;
+    keepActualOutFormalIn = Options::KeepAOFI;
 
     stat->sfvgOptStart();
     handleInterValueFlow();
@@ -67,7 +67,7 @@ void SVFGOPT::buildSVFG()
  */
 SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
 {
-    if (Options :: ContextInsensitive)
+    if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
     else
         return addCallIndirectVFEdge(srcId, dstId, cpts, csid);
@@ -78,7 +78,7 @@ SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteI
  */
 SVFGEdge* SVFGOPT::addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
 {
-    if (Options :: ContextInsensitive)
+    if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
     else
         return addRetIndirectVFEdge(srcId, dstId, cpts, csid);
@@ -373,7 +373,7 @@ bool SVFGOPT::canBeRemoved(const SVFGNode * node)
  */
 void SVFGOPT::parseSelfCycleHandleOption()
 {
-    std::string choice = (Options :: SelfCycle.getValue().empty()) ? "" : Options :: SelfCycle.getValue();
+    std::string choice = (Options::SelfCycle.getValue().empty()) ? "" : Options::SelfCycle.getValue();
     if (choice.empty() || choice == KeepAllSelfCycle)
         keepAllSelfCycle = true;
     else if (choice == KeepContextSelfCycle)

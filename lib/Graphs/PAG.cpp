@@ -460,7 +460,7 @@ RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
  */
 PAGEdge* PAG::addBlackHoleAddrPE(NodeID node)
 {
-    if(Options :: HandBlackHole)
+    if(Options::HandBlackHole)
         return pag->addAddrPE(pag->getBlackHoleNode(), node);
     else
         return pag->addCopyPE(pag->getNullPtr(), node);
@@ -606,7 +606,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     NodeID base = getObjectNode(obj);
 
     // Base and first field are the same memory location.
-    if (Options :: FirstFieldEqBase && ls.getOffset() == 0) return base;
+    if (Options::FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
@@ -1022,7 +1022,7 @@ void PAG::dump(std::string name)
  */
 void PAG::handleBlackHole(bool b)
 {
-    Options :: HandBlackHole = b;
+    Options::HandBlackHole = b;
 }
 
 namespace llvm

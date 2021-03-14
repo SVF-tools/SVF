@@ -155,7 +155,7 @@ void MRGenerator::collectModRefForLoadStore()
         const SVFFunction& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
-        if (Options :: IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
+        if (Options::IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
             continue;
 
         for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();

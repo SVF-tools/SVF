@@ -39,7 +39,7 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
-        if (Options :: INCDFPTData)
+        if (Options::INCDFPTData)
             ptD = new IncMutDFPTDataTy(false);
         else
             ptD = new MutDFPTDataTy(false);

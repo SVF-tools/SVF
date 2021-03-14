@@ -66,7 +66,7 @@ std::string SVFUtil::wrnMsg(std::string msg)
 
 void SVFUtil::writeWrnMsg(std::string msg)
 {
-    if(Options :: DisableWarn) return;
+    if(Options::DisableWarn) return;
     outs() << wrnMsg(msg) << "\n";
 }
 

@@ -31,7 +31,7 @@ bool PCG::analyze()
 
     //interferenceAnalysis();
 
-    //if (Options :: TDPrint) {
+    //if (Options::TDPrint) {
     //printResults();
     //tdAPI->performAPIStat(mod);
     //}

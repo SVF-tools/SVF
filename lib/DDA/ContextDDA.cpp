@@ -53,7 +53,7 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
 {
 
     resetQuery();
-    LocDPItem::setMaxBudget(Options :: CxtBudget);
+    LocDPItem::setMaxBudget(Options::CxtBudget);
 
     NodeID id = var.get_id();
     PAGNode* node = getPAG()->getPAGNode(id);

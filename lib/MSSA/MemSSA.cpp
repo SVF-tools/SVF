@@ -55,9 +55,9 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (!Options :: MemPar.getValue().empty())
+    if (!Options::MemPar.getValue().empty())
     {
-        std::string strategy = Options :: MemPar.getValue();
+        std::string strategy = Options::MemPar.getValue();
         if (strategy == kDistinctMemPar)
             mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
         else if (strategy == kIntraDisjointMemPar)
@@ -600,7 +600,7 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(raw_ostream& Out)
 {
-    if (!Options :: DumpMSSA)
+    if (!Options::DumpMSSA)
         return;
 
     PAG* pag = pta->getPAG();
@@ -609,7 +609,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
             fit != efit; ++fit)
     {
         const SVFFunction* fun = *fit;
-        if(Options :: MSSAFun!="" && Options :: MSSAFun!=fun->getName())
+        if(Options::MSSAFun!="" && Options::MSSAFun!=fun->getName())
             continue;
 
         Out << "==========FUNCTION: " << fun->getName() << "==========\n";

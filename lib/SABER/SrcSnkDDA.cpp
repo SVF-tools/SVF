@@ -59,7 +59,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
     initialize(module);
 
-    ContextCond::setMaxCxtLen(Options :: CxtLimit);
+    ContextCond::setMaxCxtLen(Options::CxtLimit);
 
     for (SVFGNodeSetIter iter = sourcesBegin(), eiter = sourcesEnd();
             iter != eiter; ++iter)
@@ -91,7 +91,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
 
             DBOUT(DSaber, outs() << "Backward process for slice:" << (*iter)->getId() << " (size = " << getCurSlice()->getBackwardSliceSize() << ")\n");
 
-            if(Options :: DumpSlice)
+            if(Options::DumpSlice)
                 annotateSlice(_curSlice);
 
             if(_curSlice->AllPathReachableSolve()== true)
@@ -277,7 +277,7 @@ void SrcSnkDDA::annotateSlice(ProgSlice* slice)
 void SrcSnkDDA::dumpSlices()
 {
 
-    if(Options :: DumpSlice)
+    if(Options::DumpSlice)
         const_cast<SVFG*>(getSVFG())->dump("Slice",true);
 }
 

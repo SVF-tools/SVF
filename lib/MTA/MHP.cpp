@@ -170,7 +170,7 @@ void MHP::analyzeInterleaving()
     updateNonCandidateFunInterleaving();
 
 
-    if(Options :: PrintInterLev)
+    if(Options::PrintInterLev)
         printInterleaving();
 
     validateResults();

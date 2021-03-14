@@ -69,7 +69,7 @@ void MemObj::init(const Value *val)
     if (refTy)
     {
         Type *objTy = refTy->getElementType();
-        if(Options :: LocMemModel)
+        if(Options::LocMemModel)
             typeInfo = new LocObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         else
             typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
@@ -91,11 +91,11 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 {
     if (symInfo == nullptr)
     {
-        if(Options :: LocMemModel)
+        if(Options::LocMemModel)
             symInfo = new LocSymTableInfo();
         else
             symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(Options :: ModelConsts);
+        symInfo->setModelConstants(Options::ModelConsts);
     }
     return symInfo;
 }

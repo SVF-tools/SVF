@@ -75,10 +75,10 @@ PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
 {
     pag = p;
-	OnTheFlyIterBudgetForStat = Options :: StatBudget;
-    print_stat = Options :: PStat;
+	OnTheFlyIterBudgetForStat = Options::StatBudget;
+    print_stat = Options::PStat;
     ptaImplTy = BaseImpl;
-    alias_validation = (alias_check && Options :: EnableAliasCheck);
+    alias_validation = (alias_check && Options::EnableAliasCheck);
 }
 
 /*!
@@ -133,15 +133,15 @@ void PointerAnalysis::initialize()
         pag->dump("pag_initial");
 
     // dump ICFG
-    if (Options :: DumpICFG)
+    if (Options::DumpICFG)
     	pag->getICFG()->dump("icfg_initial");
 
     // print to command line of the PAG graph
-    if (Options :: PAGPrint)
+    if (Options::PAGPrint)
         pag->print();
 
     /// initialise pta call graph for every pointer analysis instance
-    if(Options :: EnableThreadCallGraph)
+    if(Options::EnableThreadCallGraph)
     {
         ThreadCallGraph* cg = new ThreadCallGraph();
         ThreadCallGraphBuilder bd(cg, pag->getICFG());
@@ -156,7 +156,7 @@ void PointerAnalysis::initialize()
     callGraphSCCDetection();
 
     // dump callgraph
-	if (Options :: CallGraphDotGraph)
+	if (Options::CallGraphDotGraph)
 		getPTACallGraph()->dump("callgraph_initial");
 }
 
@@ -196,7 +196,7 @@ void PointerAnalysis::resetObjFieldSensitive()
  */
 bool PointerAnalysis::dumpGraph()
 {
-    return Options :: PAGDotGraph;
+    return Options::PAGDotGraph;
 }
 
 /*
@@ -226,7 +226,7 @@ void PointerAnalysis::finalize()
         pag->dump("pag_final");
 
     // dump ICFG
-    if (Options :: DumpICFG){
+    if (Options::DumpICFG){
 		pag->getICFG()->updateCallGraph(ptaCallGraph);
 		pag->getICFG()->dump("icfg_final");
     }
@@ -234,25 +234,25 @@ void PointerAnalysis::finalize()
     if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 
     /// Dump results
-    if (Options :: PTSPrint)
+    if (Options::PTSPrint)
     {
         dumpTopLevelPtsTo();
         //dumpAllPts();
         //dumpCPts();
     }
 
-    if (Options :: TypePrint)
+    if (Options::TypePrint)
         dumpAllTypes();
 
-    if(Options :: PTSAllPrint)
+    if(Options::PTSAllPrint)
         dumpAllPts();
 
-    if (Options :: FuncPointerPrint)
+    if (Options::FuncPointerPrint)
         printIndCSTargets();
 
     getPTACallGraph()->verifyCallGraph();
 
-	if (Options :: CallGraphDotGraph)
+	if (Options::CallGraphDotGraph)
 		getPTACallGraph()->dump("callgraph_final");
 
     // FSTBHC has its own TBHC-specific test validation.
@@ -260,7 +260,7 @@ void PointerAnalysis::finalize()
             && !SVFUtil::isa<FlowSensitiveTBHC>(this))
         validateTests();
 
-    if (!Options :: UsePreCompFieldSensitive)
+    if (!Options::UsePreCompFieldSensitive)
         resetObjFieldSensitive();
 }
 
@@ -440,7 +440,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             ii != ie; ii++)
     {
 
-        if(getNumOfResolvedIndCallEdge() >= Options :: IndirectCallLimit)
+        if(getNumOfResolvedIndCallEdge() >= Options::IndirectCallLimit)
         {
             wrnMsg("Resolved Indirect Call Edges are Out-Of-Budget, please increase the limit");
             return;
@@ -552,7 +552,7 @@ void PointerAnalysis::resolveCPPIndCalls(const CallBlockNode* cs, const PointsTo
     assert(isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())) && "not cpp virtual call");
 
     VFunSet vfns;
-    if (Options :: ConnectVCallOnCHA)
+    if (Options::ConnectVCallOnCHA)
         getVFnsFromCHA(cs, vfns);
     else
         getVFnsFromPts(cs, target, vfns);

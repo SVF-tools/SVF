@@ -20,7 +20,7 @@ using namespace SVFUtil;
 void FlowDDA::computeDDAPts(NodeID id)
 {
     resetQuery();
-    LocDPItem::setMaxBudget(Options :: FlowBudget);
+    LocDPItem::setMaxBudget(Options::FlowBudget);
 
     PAGNode* node = getPAG()->getPAGNode(id);
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));

@@ -72,7 +72,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
     // We read PAG from LLVM IR
-    if(Options :: Graphtxt.getValue().empty())
+    if(Options::Graphtxt.getValue().empty())
     {
         if(moduleNameVec.empty())
         {
@@ -83,7 +83,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     }
     // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
     else
-        SVFModule::setPagFromTXT(Options :: Graphtxt.getValue());
+        SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
 
     if(!moduleNameVec.empty())
         svfModule = new SVFModule(*moduleNameVec.begin());
@@ -146,7 +146,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::initialize()
 {
-    if (Options :: SVFMain)
+    if (Options::SVFMain)
         addSVFMain();
 
     for (Module& mod : modules)

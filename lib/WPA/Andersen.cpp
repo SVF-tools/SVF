@@ -67,7 +67,7 @@ void AndersenBase::initialize()
     setGraph(consCG);
     /// Create statistic class
     stat = new AndersenStat(this);
-	if (Options :: ConsCGDotGraph)
+	if (Options::ConsCGDotGraph)
 		consCG->dump("consCG_initial");
 }
 
@@ -77,10 +77,10 @@ void AndersenBase::initialize()
 void AndersenBase::finalize()
 {
     /// dump constraint graph if PAGDotGraph flag is enabled
-	if (Options :: ConsCGDotGraph)
+	if (Options::ConsCGDotGraph)
 		consCG->dump("consCG_final");
 
-	if (Options :: PrintCGGraph)
+	if (Options::PrintCGGraph)
 		consCG->print();
     BVDataPTAImpl::finalize();
 }
@@ -95,8 +95,8 @@ void AndersenBase::analyze()
     initialize();
 
     bool readResultsFromFile = false;
-    if(!Options :: ReadAnder.empty())
-        readResultsFromFile = this->readFromFile(Options :: ReadAnder);
+    if(!Options::ReadAnder.empty())
+        readResultsFromFile = this->readFromFile(Options::ReadAnder);
 
     if(!readResultsFromFile)
     {
@@ -126,8 +126,8 @@ void AndersenBase::analyze()
         finalize();
     }
 
-    if (!Options :: WriteAnder.empty())
-        this->writeToFile(Options :: WriteAnder);
+    if (!Options::WriteAnder.empty())
+        this->writeToFile(Options::WriteAnder);
 }
 
 
@@ -137,8 +137,8 @@ void AndersenBase::analyze()
 void Andersen::initialize()
 {
     resetData();
-    setDiffOpt(Options :: PtsDiff);
-    setPWCOpt(Options :: MergePWC);
+    setDiffOpt(Options::PtsDiff);
+    setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
     /// Initialize worklist
     processAllAddr();

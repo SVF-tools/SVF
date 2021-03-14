@@ -91,7 +91,7 @@ void MTAStat::performTCTStat(TCT* tct)
 void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
 {
 
-    if(Options :: AllPairMHP)
+    if(Options::AllPairMHP)
     {
         InstSet instSet1;
         InstSet instSet2;

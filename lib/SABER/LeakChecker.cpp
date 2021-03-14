@@ -163,7 +163,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
         slice->annotatePaths();
     }
 
-    if(Options :: ValidateTests)
+    if(Options::ValidateTests)
         testsValidation(slice);
 }
 

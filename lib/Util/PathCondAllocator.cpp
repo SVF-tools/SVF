@@ -68,7 +68,7 @@ void PathCondAllocator::allocate(const SVFModule* M)
         }
     }
 
-    if(Options :: PrintPathCond)
+    if(Options::PrintPathCond)
         printPathCond();
 
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation ends\n"));

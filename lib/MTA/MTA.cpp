@@ -61,12 +61,12 @@ bool MTA::runOnModule(SVFModule* module)
 
 
     /*
-    if (Options :: AndersenAnno) {
+    if (Options::AndersenAnno) {
         pta = mhp->getTCT()->getPTA();
         if (pta->printStat())
             stat->performMHPPairStat(mhp,lsa);
         AndersenWaveDiff::releaseAndersenWaveDiff();
-    } else if (Options :: FSAnno) {
+    } else if (Options::FSAnno) {
 
         reportMemoryUsageKB("Mem before analysis");
         DBOUT(DGENERAL, outs() << pasMsg("FSMPTA analysis\n"));

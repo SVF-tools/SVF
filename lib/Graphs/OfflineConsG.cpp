@@ -168,7 +168,7 @@ NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep)
  */
 void OfflineConsG::dump(std::string name)
 {
-    if (Options :: OCGDotGraph)
+    if (Options::OCGDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
