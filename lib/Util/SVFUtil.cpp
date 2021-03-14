@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
@@ -45,8 +46,6 @@ using namespace SVF;
 #define KCYA  "\x1B[1;36m"
 #define KWHT  "\x1B[1;37m"
 
-static llvm::cl::opt<bool> DisableWarn("dwarn", llvm::cl::init(true),
-                                       llvm::cl::desc("Disable warning"));
 
 
 /*!
@@ -67,7 +66,7 @@ std::string SVFUtil::wrnMsg(std::string msg)
 
 void SVFUtil::writeWrnMsg(std::string msg)
 {
-    if(DisableWarn) return;
+    if(Options::DisableWarn) return;
     outs() << wrnMsg(msg) << "\n";
 }
 

@@ -27,14 +27,13 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SABER/LeakChecker.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<bool> ValidateTests("valid-tests", llvm::cl::init(false),
-        llvm::cl::desc("Validate memory leak tests"));
 
 /*!
  * Initialize sources
@@ -164,7 +163,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
         slice->annotatePaths();
     }
 
-    if(ValidateTests)
+    if(Options::ValidateTests)
         testsValidation(slice);
 }
 

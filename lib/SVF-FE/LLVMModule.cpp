@@ -27,6 +27,7 @@
  *      Author: Xiaokang Fan
  */
 
+#include "Util/Options.h"
 #include <queue>
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -53,10 +54,6 @@ using namespace SVF;
 #define SVF_MAIN_FUNC_NAME           "svf.main"
 #define SVF_GLOBAL_SUB_I_XXX          "_GLOBAL__sub_I_"
 
-static llvm::cl::opt<std::string> Graphtxt("graphtxt", llvm::cl::value_desc("filename"),
-        llvm::cl::desc("graph txt file to build PAG"));
-static llvm::cl::opt<bool> SVFMain("svfmain", llvm::cl::init(false), llvm::cl::desc("add svf.main()"));
-
 LLVMModuleSet *LLVMModuleSet::llvmModuleSet = nullptr;
 std::string SVFModule::pagReadFromTxt = "";
 
@@ -75,7 +72,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
     // We read PAG from LLVM IR
-    if(Graphtxt.getValue().empty())
+    if(Options::Graphtxt.getValue().empty())
     {
         if(moduleNameVec.empty())
         {
@@ -86,7 +83,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     }
     // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
     else
-        SVFModule::setPagFromTXT(Graphtxt.getValue());
+        SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
 
     if(!moduleNameVec.empty())
         svfModule = new SVFModule(*moduleNameVec.begin());
@@ -149,7 +146,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 
 void LLVMModuleSet::initialize()
 {
-    if (SVFMain)
+    if (Options::SVFMain)
         addSVFMain();
 
     for (Module& mod : modules)

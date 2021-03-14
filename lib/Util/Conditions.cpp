@@ -28,13 +28,11 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "Util/Conditions.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
-
-static llvm::cl::opt<unsigned> maxBddSize("maxbddsize",  llvm::cl::init(100000),
-        llvm::cl::desc("Maximum context limit for DDA"));
 
 /// Operations on conditions.
 //@{
@@ -49,7 +47,7 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
         return lhs;
     else
     {
-        DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
+        DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
         if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
@@ -77,7 +75,7 @@ DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
         return lhs;
     else
     {
-        DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, maxBddSize);
+        DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
         if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");

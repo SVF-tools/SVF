@@ -32,20 +32,13 @@
  *
  */
 
+#include "Util/Options.h"
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<bool> ContextInsensitive("ci-svfg", llvm::cl::init(false),
-        llvm::cl::desc("Reduce SVFG into a context-insensitive one"));
-
-static llvm::cl::opt<bool> KeepAOFI("keepAOFI", llvm::cl::init(false),
-                                    llvm::cl::desc("Keep formal-in and actual-out parameters"));
-
-static llvm::cl::opt<std::string> SelfCycle("keep-self-cycle", llvm::cl::value_desc("keep self cycle"),
-        llvm::cl::desc("How to handle self cycle edges: all, context, none"));
 static std::string KeepAllSelfCycle = "all";
 static std::string KeepContextSelfCycle = "context";
 static std::string KeepNoneSelfCycle = "none";
@@ -60,7 +53,7 @@ void SVFGOPT::buildSVFG()
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
 
-    keepActualOutFormalIn = KeepAOFI;
+    keepActualOutFormalIn = Options::KeepAOFI;
 
     stat->sfvgOptStart();
     handleInterValueFlow();
@@ -74,7 +67,7 @@ void SVFGOPT::buildSVFG()
  */
 SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
 {
-    if (ContextInsensitive)
+    if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
     else
         return addCallIndirectVFEdge(srcId, dstId, cpts, csid);
@@ -85,7 +78,7 @@ SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteI
  */
 SVFGEdge* SVFGOPT::addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
 {
-    if (ContextInsensitive)
+    if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
     else
         return addRetIndirectVFEdge(srcId, dstId, cpts, csid);
@@ -380,7 +373,7 @@ bool SVFGOPT::canBeRemoved(const SVFGNode * node)
  */
 void SVFGOPT::parseSelfCycleHandleOption()
 {
-    std::string choice = (SelfCycle.getValue().empty()) ? "" : SelfCycle.getValue();
+    std::string choice = (Options::SelfCycle.getValue().empty()) ? "" : Options::SelfCycle.getValue();
     if (choice.empty() || choice == KeepAllSelfCycle)
         keepAllSelfCycle = true;
     else if (choice == KeepContextSelfCycle)

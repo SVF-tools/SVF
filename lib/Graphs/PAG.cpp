@@ -27,18 +27,13 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "Graphs/PAG.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> HANDBLACKHOLE("blk", llvm::cl::init(false),
-        llvm::cl::desc("Hanle blackhole edge"));
-
-static llvm::cl::opt<bool> FirstFieldEqBase("ff-eq-base", llvm::cl::init(true),
-        llvm::cl::desc("Treat base objects as their first fields"));
 
 
 u64_t PAGEdge::callEdgeLabelCounter = 0;
@@ -444,7 +439,7 @@ RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
  */
 PAGEdge* PAG::addBlackHoleAddrPE(NodeID node)
 {
-    if(HANDBLACKHOLE)
+    if(Options::HandBlackHole)
         return pag->addAddrPE(pag->getBlackHoleNode(), node);
     else
         return pag->addCopyPE(pag->getNullPtr(), node);
@@ -590,7 +585,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     NodeID base = getObjectNode(obj);
 
     // Base and first field are the same memory location.
-    if (FirstFieldEqBase && ls.getOffset() == 0) return base;
+    if (Options::FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
@@ -1006,7 +1001,7 @@ void PAG::dump(std::string name)
  */
 void PAG::handleBlackHole(bool b)
 {
-    HANDBLACKHOLE = b;
+    Options::HandBlackHole = b;
 }
 
 namespace llvm

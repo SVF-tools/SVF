@@ -49,12 +49,6 @@ using namespace SVFUtil;
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
-static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
-                                       llvm::cl::desc("Bytes/bits modeling of memory locations"));
-
-static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
-                                       llvm::cl::desc("Modeling individual constant objects"));
-
 /*
  * Initial the memory object here
  */
@@ -75,7 +69,7 @@ void MemObj::init(const Value *val)
     if (refTy)
     {
         Type *objTy = refTy->getElementType();
-        if(LocMemModel)
+        if(Options::LocMemModel)
             typeInfo = new LocObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         else
             typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
@@ -97,11 +91,11 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 {
     if (symInfo == nullptr)
     {
-        if(LocMemModel)
+        if(Options::LocMemModel)
             symInfo = new LocSymTableInfo();
         else
             symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(modelConsts);
+        symInfo->setModelConstants(Options::ModelConsts);
     }
     return symInfo;
 }

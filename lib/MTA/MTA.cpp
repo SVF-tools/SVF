@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/Options.h"
 #include "MTA/MTA.h"
 #include "MTA/MHP.h"
 #include "MTA/TCT.h"
@@ -18,10 +19,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 static llvm::RegisterPass<MTA> RACEDETECOR("pmhp", "May-Happen-in-Parallel Analysis");
-
-static llvm::cl::opt<bool> AndersenAnno("tsan-ander", llvm::cl::init(false), llvm::cl::desc("Add TSan annotation according to Andersen"));
-
-static llvm::cl::opt<bool> FSAnno("tsan-fs", llvm::cl::init(false), llvm::cl::desc("Add TSan annotation according to flow-sensitive analysis"));
 
 
 char MTA::ID = 0;
@@ -64,12 +61,12 @@ bool MTA::runOnModule(SVFModule* module)
 
 
     /*
-    if (AndersenAnno) {
+    if (Options::AndersenAnno) {
         pta = mhp->getTCT()->getPTA();
         if (pta->printStat())
             stat->performMHPPairStat(mhp,lsa);
         AndersenWaveDiff::releaseAndersenWaveDiff();
-    } else if (FSAnno) {
+    } else if (Options::FSAnno) {
 
         reportMemoryUsageKB("Mem before analysis");
         DBOUT(DGENERAL, outs() << pasMsg("FSMPTA analysis\n"));

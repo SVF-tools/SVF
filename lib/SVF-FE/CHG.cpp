@@ -36,6 +36,7 @@
 #include <assert.h>
 #include <stack>
 
+#include "Util/Options.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/CHG.h"
 #include "SVF-FE/SymbolTableInfo.h"
@@ -48,7 +49,6 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
-static llvm::cl::opt<bool> dumpCHA("dump-cha", llvm::cl::init(false), llvm::cl::desc("dump the class hierarchy graph"));
 
 const string pureVirtualFunName = "__cxa_pure_virtual";
 
@@ -112,7 +112,7 @@ void CHGraph::buildCHG()
     timeEnd = CLOCK_IN_MS();
     buildingCHGTime = (timeEnd - timeStart) / TIMEINTERVAL;
 
-    if (dumpCHA)
+    if (Options::DumpCHA)
         dump("cha");
 }
 
