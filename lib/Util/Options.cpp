@@ -3,7 +3,6 @@
 #include <llvm/Support/CommandLine.h>
 #include "Util/Options.h"
 
-
 namespace SVF
 {
     const llvm::cl::opt<bool> Options::MarkedClocksOnly(
@@ -138,6 +137,14 @@ namespace SVF
         llvm::cl::desc("collect WPA FS number only ")
     );
 
+    /// register this into alias analysis group
+    //static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
+    llvm::cl::bits<PointerAnalysis::PTATY> Options::DDASelected(
+        llvm::cl::desc("Select pointer analysis"),
+        llvm::cl::values(
+            clEnumValN(PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"),
+            clEnumValN(PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis")
+    ));
 
     // FlowDDA.cpp
     const llvm::cl::opt<unsigned long long> Options::FlowBudget(
@@ -538,7 +545,7 @@ namespace SVF
 
     // SVFUtil.cpp
     const llvm::cl::opt<bool> Options::DisableWarn(
-        "d-warn", 
+        "dwarn", 
         llvm::cl::init(true),
         llvm::cl::desc("Disable warning")
     );
@@ -546,13 +553,13 @@ namespace SVF
     
     // Andersen.cpp
     const llvm::cl::opt<bool> Options::ConsCGDotGraph(
-        "dump-cons-g", 
+        "dump-constraint-graph", 
         llvm::cl::init(false),
         llvm::cl::desc("Dump dot graph of Constraint Graph")
     );
 
     const llvm::cl::opt<bool> Options::PrintCGGraph(
-        "print-cons-g", 
+        "print-constraint-graph", 
         llvm::cl::init(false),
         llvm::cl::desc("Print Constraint Graph to Terminal")
     );
@@ -625,4 +632,33 @@ namespace SVF
         llvm::cl::init(false),
         llvm::cl::desc("Print results for all pair aliases")
     );
+
+    llvm::cl::bits<PointerAnalysis::PTATY> Options::PASelected(
+        llvm::cl::desc("Select pointer analysis"),
+        llvm::cl::values(
+            clEnumValN(PointerAnalysis::Andersen_WPA, "nander", "Standard inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenLCD_WPA, "lander", "Lazy cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenHCD_WPA, "hander", "Hybrid cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenHLCD_WPA, "hlander", "Hybrid lazy cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "wander", "Wave propagation inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"),
+            // Disabled till further work is done.
+            // clEnumValN(PointerAnalysis::AndersenWaveDiffWithType_WPA, "andertype", "Diff wave propagation with type inclusion-based analysis"),
+            clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
+            clEnumValN(PointerAnalysis::FSTBHC_WPA, "fstbhc", "Sparse flow-sensitive type-based heap cloning pointer analysis"),
+            clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
+            clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA")
+        ));
+
+
+    llvm::cl::bits<WPAPass::AliasCheckRule> Options::AliasRule(llvm::cl::desc("Select alias check rule"),
+        llvm::cl::values(
+            clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
+            clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
+        ));
+
+    
 }; // namespace SVF.

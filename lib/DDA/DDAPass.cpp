@@ -23,17 +23,6 @@ char DDAPass::ID = 0;
 
 static llvm::RegisterPass<DDAPass> DDAPA("dda", "Demand-driven Pointer Analysis Pass");
 
-/// register this into alias analysis group
-//static RegisterAnalysisGroup<AliasAnalysis> AA_GROUP(DDAPA);
-
-static llvm::cl::bits<PointerAnalysis::PTATY> DDASelected(llvm::cl::desc("Select pointer analysis"),
-        llvm::cl::values(
-            clEnumValN(PointerAnalysis::FlowS_DDA, "dfs", "Demand-driven flow sensitive analysis"),
-            clEnumValN(PointerAnalysis::Cxt_DDA, "cxt", "Demand-driven context- flow- sensitive analysis")
-        ));
-
-
-
 DDAPass::~DDAPass()
 {
     // _pta->dumpStat();
@@ -52,7 +41,7 @@ void DDAPass::runOnModule(SVFModule* module)
     for (u32_t i = PointerAnalysis::FlowS_DDA;
             i < PointerAnalysis::Default_PTA; i++)
     {
-        if (DDASelected.isSet(i))
+        if (Options::DDASelected.isSet(i))
             runPointerAnalysis(module, i);
     }
 }

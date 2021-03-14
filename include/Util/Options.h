@@ -5,6 +5,8 @@
 
 #include "Util/NodeIDAllocator.h"
 #include <sstream>
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "WPA/WPAPass.h"
 
 namespace SVF
 {
@@ -52,6 +54,7 @@ public:
     static const llvm::cl::opt<bool> PrintCPts;
     static const llvm::cl::opt<bool> PrintQueryPts;
     static const llvm::cl::opt<bool> WPANum;
+    static llvm::cl::bits<PointerAnalysis::PTATY> DDASelected;
 
     // FlowDDA.cpp
     static const llvm::cl::opt<unsigned long long> FlowBudget;
@@ -193,6 +196,9 @@ public:
     //WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
+    static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
+    static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
+
 };
 };  // namespace SVF
 
