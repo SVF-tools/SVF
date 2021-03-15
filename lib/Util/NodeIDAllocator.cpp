@@ -172,6 +172,7 @@ namespace SVF
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
+        assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
         Map<std::string, std::string> stats;
         double totalTime = 0.0;
