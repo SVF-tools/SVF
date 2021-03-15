@@ -50,7 +50,8 @@
 // #pragma message("Do not use fenv header.")
 #else
 // #pragma message("Use fenv header. If there is a warning about unknown #pragma STDC FENV_ACCESS, this can be ignored.")
-#pragma STDC FENV_ACCESS on
+// TODO
+//#pragma STDC FENV_ACCESS ON
 #include <fenv.h>
 #endif
 

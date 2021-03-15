@@ -7,8 +7,8 @@
  */
 
 
-#ifndef WPA_H_
-#define WPA_H_
+#ifndef DDAPASS_H_
+#define DDAPASS_H_
 
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "DDA/DDAClient.h"
@@ -31,7 +31,7 @@ public:
     typedef OrderedSet<const SVFGEdge*> SVFGEdgeSet;
     typedef std::vector<PointerAnalysis*> PTAVector;
 
-    DDAPass() : ModulePass(ID), _pta(NULL), _client(NULL) {}
+    DDAPass() : ModulePass(ID), _pta(nullptr), _client(nullptr) {}
     ~DDAPass();
 
     virtual inline void getAnalysisUsage(AnalysisUsage &au) const

@@ -298,7 +298,7 @@ public:
     MemObj(const Value *val, SymID id);
 
     /// Constructor for black hole and constant obj
-    MemObj(SymID id, const Type* type = NULL);
+    MemObj(SymID id, const Type* type = nullptr);
 
     /// Destructor
     ~MemObj()

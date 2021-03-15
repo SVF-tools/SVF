@@ -502,7 +502,7 @@ const MDNode *TypeBasedHeapCloning::getRawCTirMetadata(const Value *v)
 NodeID TypeBasedHeapCloning::addCloneDummyObjNode(const MemObj *mem)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(NULL, new CloneDummyObjPN(id, mem), id);
+    return ppag->addObjNode(nullptr, new CloneDummyObjPN(id, mem), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneGepObjNode(const MemObj *mem, const LocationSet &l)

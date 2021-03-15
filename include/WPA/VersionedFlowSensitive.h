@@ -177,7 +177,7 @@ private:
     FIFOWorkList<NodeID> vWorklist;
 
     /// Points-to DS for working with versions.
-    VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> *vPtD;
+    BVDataPTAImpl::VersionedPTDataTy *vPtD;
 
     /// Additional statistics.
     //@{

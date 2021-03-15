@@ -167,7 +167,7 @@ public:
         }
         else{
             assert(false && "no other kind!");
-            return NULL;
+            return nullptr;
         }
     }
 

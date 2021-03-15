@@ -151,7 +151,7 @@ public:
     /// Create signle instance of flow-sensitive pointer analysis
     static FSMPTA* createFSMPTA(SVFModule* module, MHP* m, LockAnalysis* la)
     {
-        if (mfspta == NULL)
+        if (mfspta == nullptr)
         {
             mfspta = new FSMPTA(m,la);
             mfspta->analyze(module);
@@ -164,7 +164,7 @@ public:
     {
         if (mfspta)
             delete mfspta;
-        mfspta = NULL;
+        mfspta = nullptr;
     }
 
     /// Get MHP

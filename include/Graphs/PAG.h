@@ -147,7 +147,7 @@ public:
     //@{
     static inline PAG* getPAG(bool buildFromFile = false)
     {
-        if (pag == NULL)
+        if (pag == nullptr)
         {
             pag = new PAG(buildFromFile);
         }
@@ -157,7 +157,7 @@ public:
     {
         if (pag)
             delete pag;
-        pag = NULL;
+        pag = nullptr;
     }
     //@}
 
@@ -527,7 +527,7 @@ public:
     }
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
-    /// return NULL is this node is not a ObjPN type
+    /// return nullptr is this node is not a ObjPN type
     //@{
     inline const MemObj*getObject(NodeID id) const
     {
@@ -535,7 +535,7 @@ public:
         if(const ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(node))
             return getObject(objPN);
         else
-            return NULL;
+            return nullptr;
     }
     inline const MemObj*getObject(const ObjPN* node) const
     {
@@ -727,16 +727,16 @@ public:
     }
     inline NodeID addDummyValNode(NodeID i)
     {
-        return addValNode(NULL, new DummyValPN(i), i);
+        return addValNode(nullptr, new DummyValPN(i), i);
     }
-    inline NodeID addDummyObjNode(const Type* type = NULL)
+    inline NodeID addDummyObjNode(const Type* type = nullptr)
     {
         return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {
         const MemObj* mem = addDummyMemObj(i, type);
-        return addObjNode(NULL, new DummyObjPN(i,mem), i);
+        return addObjNode(nullptr, new DummyObjPN(i,mem), i);
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
@@ -744,11 +744,11 @@ public:
     }
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
+        return addObjNode(nullptr, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(NULL, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(nullptr, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
     }
     inline NodeID addBlackholePtrNode()
     {

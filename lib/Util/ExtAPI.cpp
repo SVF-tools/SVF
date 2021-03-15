@@ -13,7 +13,7 @@
 using namespace std;
 using namespace SVF;
 
-ExtAPI* ExtAPI::extAPI = NULL;
+ExtAPI* ExtAPI::extAPI = nullptr;
 
 namespace {
 

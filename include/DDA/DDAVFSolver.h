@@ -40,30 +40,30 @@ public:
     typedef OrderedMap<const SVFGNode*, DPTItemSet> StoreToPMSetMap;
 
     ///Constructor
-    DDAVFSolver(): outOfBudgetQuery(false),_pag(NULL),_svfg(NULL),_ander(NULL),_callGraph(NULL), _callGraphSCC(NULL), _svfgSCC(NULL), ddaStat(NULL)
+    DDAVFSolver(): outOfBudgetQuery(false),_pag(nullptr),_svfg(nullptr),_ander(nullptr),_callGraph(nullptr), _callGraphSCC(nullptr), _svfgSCC(nullptr), ddaStat(nullptr)
     {
     }
     /// Destructor
     virtual ~DDAVFSolver()
     {
-        if(_ander != NULL)
+        if(_ander != nullptr)
         {
             // AndersenWaveDiff::releaseAndersenWaveDiff();
-            _ander = NULL;
+            _ander = nullptr;
         }
 
-        if (_svfg != NULL)
+        if (_svfg != nullptr)
         {
             // DDASVFGBuilder::releaseDDASVFG();
-            _svfg = NULL;
+            _svfg = nullptr;
         }
 
-        if (_svfgSCC != NULL)
+        if (_svfgSCC != nullptr)
             delete _svfgSCC;
-        _svfgSCC = NULL;
+        _svfgSCC = nullptr;
 
-        _callGraph = NULL;
-        _callGraphSCC = NULL;
+        _callGraph = nullptr;
+        _callGraphSCC = nullptr;
     }
     /// Return candidate pointers for DDA
     inline NodeBS& getCandidateQueries()
@@ -368,7 +368,7 @@ protected:
         const SVFGNode* loadSrc = getDefSVFGNode(load->getPAGSrcNode());
         DBOUT(DDDA, SVFUtil::outs() << "!##start new computation from loadSrc svfgNode " <<
               load->getId() << " --> " << loadSrc->getId() << "\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(loadSrc,load,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(loadSrc,load,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,load->getPAGSrcNodeID(),oldDpm,edge);
 
@@ -379,7 +379,7 @@ protected:
         const SVFGNode* storeDst = getDefSVFGNode(store->getPAGDstNode());
         DBOUT(DDDA, SVFUtil::outs() << "!##start new computation from storeDst svfgNode " <<
               store->getId() << " --> " << storeDst->getId() << "\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(storeDst,store,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(storeDst,store,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,store->getPAGDstNodeID(),oldDpm,edge);
     }
@@ -389,7 +389,7 @@ protected:
         const SVFGNode* storeSrc = getDefSVFGNode(store->getPAGSrcNode());
         DBOUT(DDDA, SVFUtil::outs() << "++backtrace to storeSrc from svfgNode " << getLoadDpm(oldDpm).getLoc()->getId() << " to "<<
               store->getId() << " to " << storeSrc->getId() <<"\n");
-        const SVFGEdge* edge = getSVFG()->getSVFGEdge(storeSrc,store,SVFGEdge::IntraDirectVF);
+        const SVFGEdge* edge = getSVFG()->getIntraVFGEdge(storeSrc,store,SVFGEdge::IntraDirectVF);
         assert(edge && "Edge not found!!");
         backwardPropDpm(pts,store->getPAGSrcNodeID(),oldDpm,edge);
     }
@@ -581,7 +581,7 @@ protected:
     /// SVFG SCC detection
     inline void SVFGSCCDetection()
     {
-        if(_svfgSCC==NULL)
+        if(_svfgSCC==nullptr)
         {
             _svfgSCC = new SVFGSCC(getSVFG());
         }

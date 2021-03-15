@@ -33,7 +33,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-AndersenSFR *AndersenSFR::sfrAndersen = NULL;
+AndersenSFR *AndersenSFR::sfrAndersen = nullptr;
 
 /*!
  *

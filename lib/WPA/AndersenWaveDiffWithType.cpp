@@ -5,7 +5,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-AndersenWaveDiffWithType* AndersenWaveDiffWithType::diffWaveWithType = NULL;
+AndersenWaveDiffWithType* AndersenWaveDiffWithType::diffWaveWithType = nullptr;
 
 
 /// process "bitcast" CopyCGEdge
