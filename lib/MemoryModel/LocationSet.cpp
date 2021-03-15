@@ -29,14 +29,13 @@
  *
  */
 
+#include "Util/Options.h"
 #include "MemoryModel/LocationSet.h"
 #include "MemoryModel/MemModel.h"
 #include "Util/PointsTo.h"
 
 using namespace SVF;
 
-static llvm::cl::opt<bool> singleStride("stride-only", llvm::cl::init(false),
-                                        llvm::cl::desc("Only use single stride in LocMemoryModel"));
 
 /*!
  * Add element num and stride pair
@@ -48,7 +47,7 @@ void LocationSet::addElemNumStridePair(const NodePair& pair)
     if (pair.first == 0 || pair.second == 0)
         return;
 
-    if (singleStride)
+    if (Options::SingleStride)
     {
         if (numStridePair.empty())
             numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),pair.second));

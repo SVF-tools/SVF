@@ -172,6 +172,7 @@ namespace SVF
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
+        assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
         Map<std::string, std::string> stats;
         double totalTime = 0.0;
@@ -189,11 +190,6 @@ namespace SVF
         // Nodes to some of the objects they share a set with.
         // TODO: describe why "some", use vector not Map.
         Map<NodeID, Set<NodeID>> graph;
-        // Number of objects we're reallocating is the largest node (recall, we
-        // assume a dense allocation, which goes from 0--modulo specials--to some n).
-        // If we "allocate" for specials, it is not a problem except 2 potentially wasted
-        // allocations. This is trivial enough to make special handling not worth it.
-        size_t numObjects = 0;
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
@@ -208,7 +204,6 @@ namespace SVF
                 Set<NodeID> &firstOsNeighbours = graph[firstO];
                 for (const NodeID o : pts)
                 {
-                    if (o >= numObjects) numObjects = o + 1;
                     if (o != firstO)
                     {
                         firstOsNeighbours.insert(o);
@@ -219,6 +214,7 @@ namespace SVF
 
         }
 
+        size_t numObjects = NodeIDAllocator::get()->numObjects;
         stats[NumObjects] = std::to_string(numObjects);
 
         size_t numPartitions = 0;
@@ -552,10 +548,15 @@ namespace SVF
             if (accountForOcc) originalSbv *= occ;
 
             // Check number of words for original BV.
-            const std::pair<PointsTo::iterator, PointsTo::iterator> minMax =
-                std::minmax_element(pts.begin(), pts.end());
+            NodeID min = UINT_MAX;
+            NodeID max = 0;
+            for (NodeID o : pts)
+            {
+                if (o < min) min = o;
+                if (o > max) max = o;
+            }
             words.clear();
-            for (NodeID b = *minMax.first; b <= *minMax.second; ++b)
+            for (NodeID b = min; b <= max; ++b)
             {
                 words.insert(b / NATIVE_INT_SIZE);
             }
@@ -569,7 +570,8 @@ namespace SVF
             if (accountForOcc) newSbv *= occ;
 
             // Check number of words for new BV.
-            NodeID min = UINT_MAX, max = 0;
+            min = UINT_MAX;
+            max = 0;
             for (const NodeID o : pts)
             {
                 const NodeID mappedO = nodeMap[o];

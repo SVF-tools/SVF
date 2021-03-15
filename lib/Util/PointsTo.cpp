@@ -9,6 +9,8 @@
  *      Author: Mohamad Barbar
  */
 
+#include <new>
+
 #include "Util/PointsTo.h"
 #include "Util/BasicTypes.h"
 
@@ -16,37 +18,64 @@ namespace SVF
 {
 
 PointsTo::PointsTo(Type type, MappingPtr nodeMapping, MappingPtr reverseNodeMapping)
-    : type(type), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping) { }
+    : type(type), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping)
+{
+    if (type == SBV) new (&sbv) SparseBitVector();
+    else if (type == CBV) new (&cbv) CoreBitVector();
+    else assert(false && "PointsTo::PointsTo: unknown type");
+}
 
 PointsTo::PointsTo(const PointsTo &pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
-      reverseNodeMapping(pt.reverseNodeMapping), sbv(pt.sbv), cbv(pt.cbv) { }
+      reverseNodeMapping(pt.reverseNodeMapping)
+{
+    if (type == SBV) new (&sbv) SparseBitVector(pt.sbv);
+    else if (type == CBV) new (&cbv) CoreBitVector(pt.cbv);
+    else assert(false && "PointsTo::PointsTo&: unknown type");
+}
 
-PointsTo::PointsTo(const PointsTo &&pt)
+PointsTo::PointsTo(PointsTo &&pt)
     : type(pt.type), nodeMapping(pt.nodeMapping),
-      reverseNodeMapping(pt.reverseNodeMapping),
-      sbv(std::move(pt.sbv)), cbv(std::move(pt.cbv)) { }
+      reverseNodeMapping(pt.reverseNodeMapping)
+{
+    if (type == SBV) new (&sbv) SparseBitVector(std::move(pt.sbv));
+    else if (type == CBV) new (&cbv) CoreBitVector(std::move(pt.cbv));
+    else assert(false && "PointsTo::PointsTo&&: unknown type");
+}
+
+PointsTo::~PointsTo(void)
+{
+    if (type == SBV) sbv.~SparseBitVector();
+    else if (type == CBV) cbv.~CoreBitVector();
+    else assert(false && "PointsTo::~PointsTo: unknown type");
+
+    nodeMapping = nullptr;
+    reverseNodeMapping = nullptr;
+}
 
 PointsTo &PointsTo::operator=(const PointsTo &rhs)
 {
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
-    // TODO:
-    this->sbv = rhs.sbv;
-    this->cbv = rhs.cbv;
+    // Placement new because if type has changed, we have
+    // not constructed the new type yet.
+    if (type == SBV) new (&sbv) SparseBitVector(rhs.sbv);
+    else if (type == CBV) new (&cbv) CoreBitVector(rhs.cbv);
+    else assert(false && "PointsTo::PointsTo=&: unknown type");
 
     return *this;
 }
 
-PointsTo &PointsTo::operator=(const PointsTo &&rhs)
+PointsTo &PointsTo::operator=(PointsTo &&rhs)
 {
     this->type = rhs.type;
     this->nodeMapping = rhs.nodeMapping;
     this->reverseNodeMapping = rhs.reverseNodeMapping;
-    // TODO:
-    this->sbv = std::move(rhs.sbv);
-    this->cbv = std::move(rhs.cbv);
+    // See comment in copy assignment.
+    if (type == SBV) new (&sbv) SparseBitVector(std::move(rhs.sbv));
+    else if (type == CBV) new (&cbv) CoreBitVector(std::move(rhs.cbv));
+    else assert(false && "PointsTo::PointsTo=&&: unknown type");
 
     return *this;
 }
@@ -191,7 +220,6 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
 
 size_t PointsTo::hash(void) const
 {
-    // TODO:
     if (type == CBV) return cbv.hash();
     else if (type == SBV)
     {
@@ -229,8 +257,77 @@ bool PointsTo::metaSame(const PointsTo &pt) const
 PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
     : pt(pt)
 {
-    if (pt->type == Type::CBV) cbvIt = end ? pt->cbv.end() : pt->cbv.begin();
-    else if (pt->type == Type::SBV) sbvIt = end ? pt->sbv.end() : pt->sbv.begin();
+    if (pt->type == Type::CBV)
+    {
+        new (&cbvIt) CoreBitVector::iterator(end ? pt->cbv.end() : pt->cbv.begin());
+    }
+    else if (pt->type == Type::SBV)
+    {
+        new (&sbvIt) SparseBitVector::iterator(end ? pt->sbv.end() : pt->sbv.begin());
+    }
+    else assert(false && "PointsToIterator::PointsToIterator: unknown type");
+}
+
+PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
+    : pt(pt.pt)
+{
+    if (this->pt->type == PointsTo::Type::SBV)
+    {
+        new (&sbvIt) SparseBitVector::iterator(pt.sbvIt);
+    }
+    else if (this->pt->type == PointsTo::Type::CBV)
+    {
+        new (&cbvIt) CoreBitVector::iterator(pt.cbvIt);
+    }
+    else assert(false && "PointsToIterator::PointsToIterator&: unknown type");
+}
+
+PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
+    : pt(pt.pt)
+{
+    if (this->pt->type == PointsTo::Type::SBV)
+    {
+        new (&sbvIt) SparseBitVector::iterator(std::move(pt.sbvIt));
+    }
+    else if (this->pt->type == PointsTo::Type::CBV)
+    {
+        new (&cbvIt) CoreBitVector::iterator(std::move(pt.cbvIt));
+    }
+    else assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
+}
+
+PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(const PointsToIterator &rhs)
+{
+    this->pt = rhs.pt;
+
+    if (this->pt->type == PointsTo::Type::SBV)
+    {
+        new (&sbvIt) SparseBitVector::iterator(rhs.sbvIt);
+    }
+    else if (this->pt->type == PointsTo::Type::CBV)
+    {
+        new (&cbvIt) CoreBitVector::iterator(rhs.cbvIt);
+    }
+    else assert(false && "PointsToIterator::PointsToIterator&: unknown type");
+
+    return *this;
+}
+
+PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(PointsToIterator &&rhs)
+{
+    this->pt = rhs.pt;
+
+    if (this->pt->type == PointsTo::Type::SBV)
+    {
+        new (&sbvIt) SparseBitVector::iterator(std::move(rhs.sbvIt));
+    }
+    else if (this->pt->type == PointsTo::Type::CBV)
+    {
+        new (&cbvIt) CoreBitVector::iterator(std::move(rhs.cbvIt));
+    }
+    else assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
+
+    return *this;
 }
 
 const PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator++(void)
@@ -279,8 +376,7 @@ bool PointsTo::PointsToIterator::operator!=(const PointsToIterator &rhs) const
 
 bool PointsTo::PointsToIterator::atEnd(void) const
 {
-    // TODO: null case.
-    if (pt == nullptr) return true;
+    assert(pt != nullptr && "PointsToIterator::atEnd: iterator iterating over nothing!");
     if (pt->type == Type::CBV) return cbvIt == pt->cbv.end();
     else if (pt->type == Type::SBV) return sbvIt == pt->sbv.end();
     assert(false && "PointsToIterator::atEnd: unknown type");

@@ -62,7 +62,7 @@ const char* MemSSAStat::NumOfBBHasMSSAPhi = "BBHasMSSAPhi";	///< Number of basic
 /*!
  * Constructor
  */
-MemSSAStat::MemSSAStat(MemSSA* memSSA) : PTAStat(NULL)
+MemSSAStat::MemSSAStat(MemSSA* memSSA) : PTAStat(nullptr)
 {
     mssa = memSSA;
     startClk();
@@ -135,7 +135,7 @@ void MemSSAStat::printStat()
 /*!
  * Constructor
  */
-SVFGStat::SVFGStat(SVFG* g) : PTAStat(NULL)
+SVFGStat::SVFGStat(SVFG* g) : PTAStat(nullptr)
 {
     graph = g;
     clear();

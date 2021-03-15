@@ -320,7 +320,7 @@ public:
         InstToLoopMap::const_iterator it = joinSiteToLoopMap.find(join);
         if(it!=joinSiteToLoopMap.end())
             return it->second;
-        return NULL;
+        return nullptr;
     }
     /// Return true if a join instruction must be executed inside a loop
     bool isJoinMustExecutedInLoop(const Loop* lp,const Instruction* join);
@@ -455,7 +455,7 @@ private:
     void setMultiForkedAttrs(CxtThread& ct)
     {
         /// non-main thread
-        if(ct.getThread() != NULL)
+        if(ct.getThread() != nullptr)
         {
             ct.setInloop(isInLoopInstruction(ct.getThread()));
             ct.setIncycle(isInRecursion(ct.getThread()));
@@ -505,7 +505,7 @@ private:
     {
         if(tcgSCC)
             delete tcgSCC;
-        tcgSCC=NULL;
+        tcgSCC=nullptr;
     }
 
     FunSet entryFuncSet; /// Procedures that are neither called by other functions nor extern functions

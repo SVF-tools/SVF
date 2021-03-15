@@ -68,7 +68,7 @@ private:
 public:
     static inline LLVMModuleSet *getLLVMModuleSet()
     {
-        if (llvmModuleSet == NULL)
+        if (llvmModuleSet == nullptr)
             llvmModuleSet = new LLVMModuleSet();
         return llvmModuleSet;
     }
@@ -77,7 +77,7 @@ public:
     {
         if (llvmModuleSet)
             delete llvmModuleSet;
-        llvmModuleSet = NULL;
+        llvmModuleSet = nullptr;
     }
 
     SVFModule* buildSVFModule(Module &mod);

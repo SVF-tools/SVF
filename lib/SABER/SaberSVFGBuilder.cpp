@@ -153,7 +153,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
-                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
+                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
                 assert(edge && "Edge not found!");
                 svfg->removeSVFGEdge(edge);
 
@@ -165,7 +165,7 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
-                SVFGEdge* edge = svfg->getSVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
+                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
                 assert(edge && "Edge not found!");
                 svfg->removeSVFGEdge(edge);
 

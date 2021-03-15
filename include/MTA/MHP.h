@@ -305,7 +305,7 @@ public:
         CxtStmtToLoopMap::const_iterator it = cxtJoinInLoop.find(cs);
         if(it!=cxtJoinInLoop.end())
             return it->second;
-        return NULL;
+        return nullptr;
     }
     /// Whether thread t1 happens-before thread t2
     inline bool isHBPair(NodeID tid1, NodeID tid2)

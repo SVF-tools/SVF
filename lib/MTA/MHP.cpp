@@ -5,7 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
-
+#include "Util/Options.h"
 #include "MTA/MHP.h"
 #include "MTA/MTA.h"
 #include "MTA/LockAnalysis.h"
@@ -15,10 +15,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-
-
-static llvm::cl::opt<bool> PrintInterLev("print-interlev", llvm::cl::init(false),llvm::cl::desc("Print Thread Interleaving Results"));
-static llvm::cl::opt<bool> DoLockAnalysis("lockanalysis", llvm::cl::init(true),llvm::cl::desc("Run Lock Analysis"));
 
 
 /*!
@@ -174,7 +170,7 @@ void MHP::analyzeInterleaving()
     updateNonCandidateFunInterleaving();
 
 
-    if(PrintInterLev)
+    if(Options::PrintInterLev)
         printInterleaving();
 
     validateResults();
@@ -1102,7 +1098,7 @@ bool ForkJoinAnalysis::sameLoopTripCount(const Instruction* forkSite, const Inst
     const Loop *forkSiteLoop = tct->getLoop(forkSite);
     const Loop *joinSiteLoop = tct->getLoop(joinSite);
 
-    if(forkSiteLoop == NULL || joinSiteLoop == NULL)
+    if(forkSiteLoop == nullptr || joinSiteLoop == nullptr)
         return false;
 
     const SCEV* forkLoopCountScev = forkSE->getMaxBackedgeTakenCount(forkSiteLoop);
