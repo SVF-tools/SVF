@@ -18,3 +18,6 @@ doxygen/
 *.opt
 *.log
 *.status
+*.obj
+toc.txt
+cmake-build-debug

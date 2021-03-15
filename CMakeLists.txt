@@ -5,6 +5,7 @@ project("SVF")
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
+set(ENV{LLVM_DIR} "/home/fordrl/localllvm")
 if(NOT COMMAND add_llvm_library)
     if (DEFINED LLVM_DIR)
         set(ENV{LLVM_DIR} "${LLVM_DIR}")
