@@ -190,11 +190,6 @@ namespace SVF
         // Nodes to some of the objects they share a set with.
         // TODO: describe why "some", use vector not Map.
         Map<NodeID, Set<NodeID>> graph;
-        // Number of objects we're reallocating is the largest node (recall, we
-        // assume a dense allocation, which goes from 0--modulo specials--to some n).
-        // If we "allocate" for specials, it is not a problem except 2 potentially wasted
-        // allocations. This is trivial enough to make special handling not worth it.
-        size_t numObjects = 0;
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
@@ -209,7 +204,6 @@ namespace SVF
                 Set<NodeID> &firstOsNeighbours = graph[firstO];
                 for (const NodeID o : pts)
                 {
-                    if (o >= numObjects) numObjects = o + 1;
                     if (o != firstO)
                     {
                         firstOsNeighbours.insert(o);
@@ -220,6 +214,7 @@ namespace SVF
 
         }
 
+        size_t numObjects = NodeIDAllocator::get()->numObjects;
         stats[NumObjects] = std::to_string(numObjects);
 
         size_t numPartitions = 0;
