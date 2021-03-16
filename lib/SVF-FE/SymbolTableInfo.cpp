@@ -45,6 +45,8 @@ using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 
+static llvm::cl::opt<bool> SymTabPrint("print-symbol-table", llvm::cl::init(false),
+                                    llvm::cl::desc("Print Symbol Table to command line"));
 
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
@@ -585,6 +587,9 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
     }
 
     NodeIDAllocator::get()->endSymbolAllocation();
+    if (SymTabPrint) {
+        SymbolTableInfo::SymbolInfo()->dump();
+    }
 }
 
 /*!
@@ -999,6 +1004,101 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     }
 }
 
+std::string SymbolTableInfo::toString(SYMTYPE symtype)
+{
+    switch (symtype) {
+        case SYMTYPE::BlackHole: {
+            return "BlackHole";
+        }
+        case SYMTYPE::ConstantObj: {
+            return "ConstantObj";
+        }
+        case SYMTYPE::BlkPtr: {
+            return "BlkPtr";
+        }
+        case SYMTYPE::NullPtr: {
+            return "NullPtr";
+        }
+        case SYMTYPE::ValSym: {
+            return "ValSym";
+        }
+        case SYMTYPE::ObjSym: {
+            return "ObjSym";
+        }
+        case SYMTYPE::RetSym: {
+            return "RetSym";
+        }
+        case SYMTYPE::VarargSym: {
+            return "VarargSym";
+        }
+        default: {
+            return "Invalid SYMTYPE";
+        }
+    }
+}
+
+void SymbolTableInfo::dump()
+{
+    OrderedMap<SymID, Value*> idmap;
+    SymID maxid = 0;
+    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    dbgs() << "{SymbolTableInfo \n";
+    for (SymID symid = 0; symid <= maxid; ++symid) {
+        SYMTYPE symtype = this->symTyMap.at(symid);
+        string typestring = toString(symtype);
+        dbgs() << "  " << typestring << symid;
+        if (symtype < SYMTYPE::ValSym) {
+            dbgs() << "\n";
+        } else {
+            auto I = idmap.find(symid);
+            if (I == idmap.end()) {
+                dbgs() << "No value\n";
+                break;
+            }
+            const Value* val = I->second;
+            dbgs() << " -> ";
+            if (const Function *fun = SVFUtil::dyn_cast<Function>(val)) {
+                // fun->dump();
+                string nm = fun->getName();
+                dbgs() << "Function " << nm << "\n";
+            }else{
+                val->dump();
+            }
+        }
+    }
+    dbgs() << "}\n";
+}
 
 /*
  * Get the type size given a target data layout

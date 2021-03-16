@@ -55,6 +55,12 @@ inline raw_ostream &errs()
     return llvm::errs();
 }
 
+/// Overwrite llvm::errs()
+inline raw_ostream &dbgs()
+{
+    return llvm::dbgs();
+}
+
 /// Dump sparse bitvector set
 void dumpSet(NodeBS To, raw_ostream & O = SVFUtil::outs());
 
