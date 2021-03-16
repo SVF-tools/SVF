@@ -423,6 +423,11 @@ public:
     /// Debug method
     void printFlattenFields(const Type* type);
 
+    static std::string toString(SYMTYPE symtype);
+
+    /// Another debug method
+    virtual void dump();
+
 protected:
     /// Collect the struct info
     virtual void collectStructInfo(const StructType *T);
