@@ -324,3 +324,20 @@ std::string SVFUtil::getSourceLoc(const Value* val)
 
     return rawstr.str();
 }
+
+
+/*!
+ * return string of an LLVM Value
+ */
+const std::string SVFUtil::value2String(const Value* value) {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value){
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}

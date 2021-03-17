@@ -42,18 +42,6 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = nullptr;
 
-static const std::string value2String(const Value* value) {
-    std::string str;
-    raw_string_ostream rawstr(str);
-    if(value){
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
-            rawstr << " " << fun->getName() << " ";
-        else
-            rawstr << " " << *value << " ";
-        rawstr << getSourceLoc(value);
-    }
-    return rawstr.str();
-}
 
 const std::string PAGNode::toString() const {
     std::string str;
