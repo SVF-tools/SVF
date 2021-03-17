@@ -149,7 +149,6 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     const size_t lSize = laterOffsetCBV.words.size();
 
     size_t e = 0;
-    #pragma omp simd
     for ( ; e != laterOffset; ++e)
     {
         // If a bit is set where the other CBV doesn't even start,
