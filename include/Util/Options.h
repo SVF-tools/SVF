@@ -163,6 +163,7 @@ public:
     // SymbolTableInfo.cpp
     static const llvm::cl::opt<bool> LocMemModel;
     static const llvm::cl::opt<bool> ModelConsts;
+    static const llvm::cl::opt<bool> SymTabPrint;
 
     // Conditions.cpp
     static const llvm::cl::opt<unsigned> MaxBddSize;
