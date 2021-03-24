@@ -266,6 +266,14 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             unsigned Column = Loc->getColumn();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
+            if(File.str().empty() || Line == 0) {
+                auto inlineLoc = Loc->getInlinedAt();
+                if(inlineLoc) {
+                    Line = inlineLoc->getLine();
+                    Column = inlineLoc->getColumn();
+                    File = inlineLoc->getFilename();
+                }   
+            }
             rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
     }
