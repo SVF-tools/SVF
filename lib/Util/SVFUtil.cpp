@@ -341,3 +341,15 @@ const std::string SVFUtil::value2String(const Value* value) {
     }
     return rawstr.str();
 }
+
+void SVFFunction::viewCFG() {
+    if (fun != nullptr) {
+        fun->viewCFG();
+    }
+}
+
+void SVFFunction::viewCFGOnly() {
+    if (fun != nullptr) {
+        fun->viewCFGOnly();
+    }
+}
