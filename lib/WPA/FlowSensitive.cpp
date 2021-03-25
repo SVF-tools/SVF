@@ -137,9 +137,18 @@ void FlowSensitive::finalize()
         Map<std::string, std::string> stats;
         const PTDataTy *ptd = getPTDataTy();
         // TODO: should we use liveOnly?
+        Map<PointsTo, unsigned> allPts = ptd->getAllPts(true);
         // TODO: parameterise final arg.
-        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats, true);
-        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), allPts, stats, true);
+        NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
+
+        // Do the same for the candidates. TODO: probably temporary for eval. purposes.
+        for (std::tuple<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
+        {
+            // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
+            NodeIDAllocator::Clusterer::evaluate(std::get<1>(candidate), allPts, stats, true);
+            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + std::to_string(std::get<0>(candidate)), stats);
+        }
     }
 
     PointerAnalysis::finalize();
