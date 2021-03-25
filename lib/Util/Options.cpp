@@ -261,6 +261,12 @@ namespace SVF
         llvm::cl::desc("Dump dot graph of ICFG")
     );
 
+    const llvm::cl::opt<bool> Options::IncludePAGInICFGDump(
+         "include-pag-icfg-dump",
+         llvm::cl::init(true),
+         llvm::cl::desc("When dumping ICFG, include Program Assignment Graph information.")
+    );
+
     const llvm::cl::opt<bool> Options::CallGraphDotGraph(
         "dump-callgraph", 
         llvm::cl::init(false),

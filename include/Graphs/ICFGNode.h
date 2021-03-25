@@ -126,6 +126,8 @@ public:
 
     virtual const std::string toString() const;
 
+    void dump() const;
+
 protected:
     const SVFFunction* fun;
     const BasicBlock* bb;
