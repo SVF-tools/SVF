@@ -734,7 +734,7 @@ PointsTo FlowSensitive::cluster(void)
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
 
     PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, "aux-ander"));
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 

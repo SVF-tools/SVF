@@ -159,6 +159,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::DistanceMatrixTime = "DistanceMatrixTime";
     const std::string NodeIDAllocator::Clusterer::FastClusterTime = "FastClusterTime";
     const std::string NodeIDAllocator::Clusterer::DendogramTraversalTime = "DendogramTravTime";
+    const std::string NodeIDAllocator::Clusterer::EvalTime = "EvalTime";
     const std::string NodeIDAllocator::Clusterer::TotalTime = "TotalTime";
     const std::string NodeIDAllocator::Clusterer::TheoreticalNumWords = "TheoreticalWords";
     const std::string NodeIDAllocator::Clusterer::OriginalBvNumWords = "OriginalBvWords";
@@ -168,18 +169,20 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::NumPartitions = "NumPartitions";
     const std::string NodeIDAllocator::Clusterer::NumGtIntPartitions = "NumGtIntPartitions";
     const std::string NodeIDAllocator::Clusterer::LargestPartition = "LargestPartition";
+    const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::string evalSubtitle)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
         assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
-        Map<std::string, std::string> stats;
+        Map<std::string, std::string> overallStats;
         double totalTime = 0.0;
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
         double dendogramTraversalTime = 0.0;
         double partitionTime = 0.0;
+        double evalTime = 0.0;
 
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
@@ -215,7 +218,7 @@ namespace SVF
         }
 
         size_t numObjects = NodeIDAllocator::get()->numObjects;
-        stats[NumObjects] = std::to_string(numObjects);
+        overallStats[NumObjects] = std::to_string(numObjects);
 
         size_t numPartitions = 0;
         std::vector<unsigned> objectsPartition;
@@ -287,72 +290,122 @@ namespace SVF
 
         double clkEnd = PTAStat::getClk(true);
         partitionTime = (clkEnd - clkStart) / TIMEINTERVAL;
+        overallStats[PartitionTime] = std::to_string(partitionTime);
+        overallStats[NumPartitions] = std::to_string(numPartitions);
 
-        // Mapping we'll return.
-        std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
-
-        unsigned numGtIntPartitions = 0;
-        unsigned largestPartition = 0;
-        // Current new node ID; the result of a node ID mapping.
-        unsigned allocCounter = 0;
-        for (unsigned part = 0; part < numPartitions; ++part)
+        std::vector<hclust_fast_methods> methods;
+        if (Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
         {
-            const size_t partNumObjects = partitionsObjects[part].size();
-            // Round up to next Word: ceiling of current allocation to get how
-            // many words and multiply to get the number of bits.
-            allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+            methods.push_back(HCLUST_METHOD_SINGLE);
+            methods.push_back(HCLUST_METHOD_COMPLETE);
+            methods.push_back(HCLUST_METHOD_AVERAGE);
+        }
+        else
+        {
+            methods.push_back(Options::ClusterMethod);
+        }
 
-            if (partNumObjects > largestPartition) largestPartition = partNumObjects;
+        for (const hclust_fast_methods method : methods)
+        {
+            std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
-            // For partitions with fewer than 64 objects, we can just allocate them
-            // however as they will be in the one int regardless..
-            if (partNumObjects < NATIVE_INT_SIZE)
+            unsigned numGtIntPartitions = 0;
+            unsigned largestPartition = 0;
+            // Current new node ID; the result of a node ID mapping.
+            unsigned allocCounter = 0;
+            for (unsigned part = 0; part < numPartitions; ++part)
             {
-                for (NodeID o : partitionsObjects[part]) nodeMap[o] = allocCounter++;
-                continue;
+                const size_t partNumObjects = partitionsObjects[part].size();
+                // Round up to next Word: ceiling of current allocation to get how
+                // many words and multiply to get the number of bits.
+                allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+
+                if (partNumObjects > largestPartition) largestPartition = partNumObjects;
+
+                // For partitions with fewer than 64 objects, we can just allocate them
+                // however as they will be in the one int regardless..
+                if (partNumObjects < NATIVE_INT_SIZE)
+                {
+                    for (NodeID o : partitionsObjects[part]) nodeMap[o] = allocCounter++;
+                    continue;
+                }
+
+                ++numGtIntPartitions;
+
+                clkStart = PTAStat::getClk(true);
+                double *distMatrix = getDistanceMatrix(partitionsPointsTos[part], partNumObjects, partitionReverseMappings[part]);
+                clkEnd = PTAStat::getClk(true);
+                distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
+
+                clkStart = PTAStat::getClk(true);
+                int *dendogram = new int[2 * (partNumObjects - 1)];
+                double *height = new double[partNumObjects - 1];
+                hclust_fast(partNumObjects, distMatrix, method, dendogram, height);
+                delete[] distMatrix;
+                delete[] height;
+                clkEnd = PTAStat::getClk(true);
+                fastClusterTime += (clkEnd - clkStart) / TIMEINTERVAL;
+
+                clkStart = PTAStat::getClk(true);
+                Set<int> visited;
+                traverseDendogram(nodeMap, dendogram, partNumObjects, allocCounter, visited, partNumObjects - 1, partitionMappings[part]);
+                delete[] dendogram;
+                clkEnd = PTAStat::getClk(true);
+                dendogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
             }
 
-            ++numGtIntPartitions;
+            candidates.push_back(std::make_tuple(method, nodeMap));
 
-            clkStart = PTAStat::getClk(true);
-            double *distMatrix = getDistanceMatrix(partitionsPointsTos[part], partNumObjects, partitionReverseMappings[part]);
-            clkEnd = PTAStat::getClk(true);
-            distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
-
-            clkStart = PTAStat::getClk(true);
-            int *dendogram = new int[2 * (partNumObjects - 1)];
-            double *height = new double[partNumObjects - 1];
-            hclust_fast(partNumObjects, distMatrix, Options::ClusterMethod, dendogram, height);
-            delete[] distMatrix;
-            delete[] height;
-            clkEnd = PTAStat::getClk(true);
-            fastClusterTime += (clkEnd - clkStart) / TIMEINTERVAL;
-
-            clkStart = PTAStat::getClk(true);
-            Set<int> visited;
-            traverseDendogram(nodeMap, dendogram, partNumObjects, allocCounter, visited, partNumObjects - 1, partitionMappings[part]);
-            delete[] dendogram;
-            clkEnd = PTAStat::getClk(true);
-            dendogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
+            // Though we "update" these in the loop, they will be the same every iteration.
+            overallStats[NumGtIntPartitions] = std::to_string(numGtIntPartitions);
+            overallStats[LargestPartition] = std::to_string(largestPartition);
         }
 
-        stats[NumPartitions] = std::to_string(numPartitions);
-        stats[NumGtIntPartitions] = std::to_string(numGtIntPartitions);
-        stats[LargestPartition] = std::to_string(largestPartition);
-        stats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
-        stats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
-        stats[FastClusterTime] = std::to_string(fastClusterTime);
-        stats[PartitionTime] = std::to_string(partitionTime);
-        stats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + partitionTime);
-
-        if (evalSubtitle != "")
+        // In case we're not comparing anything, set to first "candidate".
+        std::vector<NodeID> bestMapping = std::get<1>(candidates[0]);
+        hclust_fast_methods bestMethod = std::get<0>(candidates[0]);
+        // Number of bits required for the best candidate.
+        size_t bestWords = std::numeric_limits<size_t>::max();
+        if (evalSubtitle != "" || Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
         {
-            // TODO: parameterise final arg.
-            evaluate(nodeMap, pointsToSets, stats, true);
-            printStats(evalSubtitle, stats);
+            for (std::tuple<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
+            {
+                Map<std::string, std::string> candidateStats;
+                hclust_fast_methods candidateMethod = std::get<0>(candidate);
+                std::vector<NodeID> candidateMapping = std::get<1>(candidate);
+
+                // TODO: parameterise final arg.
+                clkStart = PTAStat::getClk(true);
+                evaluate(candidateMapping, pointsToSets, candidateStats, true);
+                clkEnd = PTAStat::getClk(true);
+                evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
+                printStats(evalSubtitle + ": candidate method " + std::to_string(candidateMethod), candidateStats);
+
+                // TODO: check stats for best node map.
+                size_t candidateWords = 0;
+                if (Options::StagedPtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
+                else if (Options::StagedPtType == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
+                else assert(false && "Clusterer::cluster: unsupported BV type");
+
+                if (candidateWords < bestWords)
+                {
+                    bestWords = candidateWords;
+                    bestMethod = candidateMethod;
+                    bestMapping = candidateMapping;
+                }
+            }
+
+            overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
+            overallStats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
+            overallStats[FastClusterTime] = std::to_string(fastClusterTime);
+            overallStats[EvalTime] = std::to_string(evalTime);
+            overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + partitionTime + evalTime);
+
+            overallStats[BestCandidate] = std::to_string(bestMethod); 
+            printStats(evalSubtitle + ": overall", overallStats);
         }
 
-        return nodeMap;
+        return bestMapping;
     }
 
     std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std::vector<NodeID> &nodeMapping)
@@ -602,11 +655,11 @@ namespace SVF
     void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
     {
         // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
-        const static std::array<std::string, 14> statKeys =
+        const static std::array<std::string, 16> statKeys =
             { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
               NewSbvNumWords, NewBvNumWords, NumPartitions, NumGtIntPartitions,
-              LargestPartition, PartitionTime, DistanceMatrixTime,
-              FastClusterTime, DendogramTraversalTime, TotalTime };
+              LargestPartition, PartitionTime, DistanceMatrixTime, FastClusterTime,
+              DendogramTraversalTime, EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;
         std::cout.flags(std::ios::left);

@@ -30,6 +30,7 @@
 #ifndef FLOWSENSITIVEANALYSIS_H_
 #define FLOWSENSITIVEANALYSIS_H_
 
+#include "FastCluster/fastcluster.h"
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
@@ -279,6 +280,9 @@ protected:
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;
     AndersenWaveDiff *ander;
+
+    /// Save candidate mappings for evaluation's sake.
+    std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> candidateMappings;
 
     /// Statistics.
     //@{
