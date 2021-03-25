@@ -52,7 +52,7 @@ public:
     /// VFG kind
     enum VFGK
     {
-        ORIGSVFGK, PTRONLYSVFGK
+        FULLSVFG, PTRONLYSVFG, FULLSVFG_OPT, PTRONLYSVFG_OPT
     };
 
     typedef Map<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
@@ -99,14 +99,13 @@ protected:
     PTACallGraph* callgraph;
     PAG* pag;
     VFGK kind;
-    bool dumpVFG;
 
     /// Clean up memory
     void destroy();
 
 public:
     /// Constructor
-    VFG(PTACallGraph* callgraph, VFGK k = ORIGSVFGK);
+    VFG(PTACallGraph* callgraph, VFGK k = FULLSVFG);
 
     /// Destructor
     virtual ~VFG()
@@ -123,20 +122,8 @@ public:
     /// Return true if this VFG only contains pointer related SVFGNodes for pointer analysis
     inline bool isPtrOnlySVFG() const
     {
-        return kind == PTRONLYSVFGK;
+        return (kind == PTRONLYSVFG) || (kind == PTRONLYSVFG_OPT);
     }
-
-	/// Whether to dump VFG;
-	inline void setDumpVFG(bool flag)
-	{
-		dumpVFG = flag;
-	}
-
-	/// Whether to dump VFG;
-	inline bool getDumpVFG() const
-	{
-		return dumpVFG;
-	}
 
     /// Return PAG
     inline PAG* getPAG() const

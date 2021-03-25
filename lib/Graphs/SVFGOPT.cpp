@@ -48,8 +48,8 @@ void SVFGOPT::buildSVFG()
 {
     SVFG::buildSVFG();
 
-    if(getDumpVFG())
-    	dump("SVFG_before_opt");
+    if(Options::DumpVFG)
+        dump("SVFG_before_opt");
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("\tSVFG Optimisation\n"));
 

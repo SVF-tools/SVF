@@ -198,7 +198,7 @@ namespace SVF
 
     // Sparse value-flow graph (VFG.cpp)
     const llvm::cl::opt<bool> Options::DumpVFG(
-        "dump-vfg", 
+        "dump-vfg",
         llvm::cl::init(false),
         llvm::cl::desc("Dump dot graph of VFG")
     );
