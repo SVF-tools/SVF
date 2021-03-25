@@ -64,6 +64,9 @@ const std::string ICFGNode::toString() const {
     return rawstr.str();
 }
 
+void ICFGNode::dump() const {
+    outs() << this->toString() << "\n";
+}
 
 const std::string GlobalBlockNode::toString() const {
     std::string str;
@@ -397,6 +400,14 @@ void ICFG::dump(const std::string& file, bool simple)
 }
 
 /*!
+ * View ICFG
+ */
+void ICFG::view()
+{
+    llvm::ViewGraph(this, "Interprocedural Control-Flow Graph");
+}
+
+/*!
  * Update ICFG for indirect calls
  */
 void ICFG::updateCallGraph(PTACallGraph* callgraph)
@@ -460,11 +471,15 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+            rawstr << value2String(bNode->getInst()) << " \t";
+            PAG* pag = PAG::getPAG(false, true /* skipCreate */);
+            if (pag != nullptr) {
+                PAG::PAGEdgeList&  edges = pag->getInstPTAPAGEdgeList(bNode);
+                for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                {
+                    const PAGEdge* edge = *it;
+                    rawstr << edge->toString();
+                }
             }
             rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
@@ -486,11 +501,14 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+            PAG* pag = PAG::getPAG(false, true /* skipCreate */);
+            if (pag != nullptr) {
+                PAG::PAGEdgeList&  edges = pag->getInstPTAPAGEdgeList(glob);
+                for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                {
+                    const PAGEdge* edge = *it;
+                    rawstr << edge->toString();
+                }
             }
         }
         else
