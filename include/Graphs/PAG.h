@@ -153,6 +153,13 @@ public:
         }
         return pag;
     }
+
+    /// Return pointer to PAG if it has been built, otherwise nullptr.
+    static inline PAG* tryGetPAG()
+    {
+        return pag;
+    }
+
     static void releasePAG()
     {
         if (pag)
