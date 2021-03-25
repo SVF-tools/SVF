@@ -147,7 +147,7 @@ void FlowSensitive::finalize()
         {
             // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
             NodeIDAllocator::Clusterer::evaluate(std::get<1>(candidate), allPts, stats, true);
-            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + std::to_string(std::get<0>(candidate)), stats);
+            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + SVFUtil::hclustMethodToString(std::get<0>(candidate)), stats);
         }
     }
 

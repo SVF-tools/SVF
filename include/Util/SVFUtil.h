@@ -30,6 +30,7 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
+#include "FastCluster/fastcluster.h"
 #include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
 #include "Util/PointsTo.h"
@@ -240,6 +241,9 @@ void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
         to[ptocc.first] += ptocc.second;
     }
 }
+
+/// Returns a string representation of a hclust method.
+std::string hclustMethodToString(hclust_fast_methods method);
 
 } // End namespace SVFUtil
 

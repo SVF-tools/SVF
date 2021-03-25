@@ -372,6 +372,7 @@ namespace SVF
             {
                 Map<std::string, std::string> candidateStats;
                 hclust_fast_methods candidateMethod = std::get<0>(candidate);
+                std::string candidateMethodName = SVFUtil::hclustMethodToString(candidateMethod);
                 std::vector<NodeID> candidateMapping = std::get<1>(candidate);
 
                 // TODO: parameterise final arg.
@@ -379,7 +380,7 @@ namespace SVF
                 evaluate(candidateMapping, pointsToSets, candidateStats, true);
                 clkEnd = PTAStat::getClk(true);
                 evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
-                printStats(evalSubtitle + ": candidate method " + std::to_string(candidateMethod), candidateStats);
+                printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
 
                 // TODO: check stats for best node map.
                 size_t candidateWords = 0;
@@ -401,7 +402,7 @@ namespace SVF
             overallStats[EvalTime] = std::to_string(evalTime);
             overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + partitionTime + evalTime);
 
-            overallStats[BestCandidate] = std::to_string(bestMethod); 
+            overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMethod);
             printStats(evalSubtitle + ": overall", overallStats);
         }
 
