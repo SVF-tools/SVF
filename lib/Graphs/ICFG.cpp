@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include <Util/Options.h>
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
@@ -64,6 +65,9 @@ const std::string ICFGNode::toString() const {
     return rawstr.str();
 }
 
+void ICFGNode::dump() const {
+    outs() << this->toString() << "\n";
+}
 
 const std::string GlobalBlockNode::toString() const {
     std::string str;
@@ -397,6 +401,14 @@ void ICFG::dump(const std::string& file, bool simple)
 }
 
 /*!
+ * View ICFG
+ */
+void ICFG::view()
+{
+    llvm::ViewGraph(this, "Interprocedural Control-Flow Graph");
+}
+
+/*!
  * Update ICFG for indirect calls
  */
 void ICFG::updateCallGraph(PTACallGraph* callgraph)
@@ -460,11 +472,22 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+            if (Options::IncludePAGInICFGDump) {
+                PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
+                rawstr << value2String(bNode->getInst()) << " \t";
+                PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end();
+                if (it == eit) {
+                    // No edges, so we need to dump the instruction.
+                    rawstr << value2String(bNode->getInst()) << " \t";
+                }  else {
+                    for (; it != eit; ++it)
+                    {
+                        const PAGEdge* edge = *it;
+                        rawstr << edge->toString();
+                    }
+                }
+            } else {
+                rawstr << value2String(bNode->getInst()) << " \t";
             }
             rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
@@ -486,11 +509,13 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
+            if (Options::IncludePAGInICFGDump) {
+                PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
+                for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                {
+                    const PAGEdge* edge = *it;
+                    rawstr << edge->toString();
+                }
             }
         }
         else
