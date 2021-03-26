@@ -353,6 +353,12 @@ namespace SVF
         llvm::cl::desc("cluster partitions separately")
     );
 
+    const llvm::cl::opt<bool> Options::PredictPtOcc(
+        "cluster-predict-occ",
+        llvm::cl::init(false),
+        llvm::cl::desc("try to predict which points-to sets are more important in staged analysis")
+    );
+
     // Memory region (MemRegion.cpp)
     const llvm::cl::opt<bool> Options::IgnoreDeadFun(
         "mssa-ignore-dead-fun", 
