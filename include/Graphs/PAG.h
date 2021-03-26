@@ -147,17 +147,21 @@ public:
     /// Sometimes we want to check if PAG has been made, but not make it if it has not.
     /// In that case use skipCreate = true.
     //@{
-    static inline PAG* getPAG(bool buildFromFile = false, bool skipCreate = false)
+    static inline PAG* getPAG(bool buildFromFile = false)
     {
         if (pag == nullptr)
         {
-            if (skipCreate) {
-                return nullptr;
-            }
             pag = new PAG(buildFromFile);
         }
         return pag;
     }
+
+    /// Return pointer to PAG if it has been built, otherwise nullptr.
+    static inline PAG* tryGetPAG()
+    {
+        return pag;
+    }
+
     static void releasePAG()
     {
         if (pag)
