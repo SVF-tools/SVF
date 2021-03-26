@@ -350,7 +350,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         const SVFFunction* fun = node->getFunction();
         if (!SVFUtil::isExtCall(fun))
         {
-            return "shape=circle";
+            return "shape=box";
         }
         else
             return "shape=Mrecord";

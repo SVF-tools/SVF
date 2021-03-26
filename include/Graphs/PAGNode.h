@@ -250,6 +250,9 @@ public:
 
     virtual const std::string toString() const;
 
+    /// Dump to console for debugging
+    void dump() const;
+
     //@}
     /// Overloading operator << for dumping PAGNode value
     //@{

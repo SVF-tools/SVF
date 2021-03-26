@@ -657,7 +657,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
             else if (SVFUtil::isa<DummyValPN>(node))
                 return "shape=diamond";
             else
-                return "shape=circle";
+                return "shape=box";
         }
         else if (SVFUtil::isa<ObjPN>(node))
         {
@@ -666,9 +666,9 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
             else if(SVFUtil::isa<FIObjPN>(node))
                 return "shape=septagon";
             else if (SVFUtil::isa<DummyObjPN>(node))
-                return "shape=Mcircle";
+                return "shape=house";
             else
-                return "shape=doublecircle";
+                return "shape=invhouse";
         }
         else if (SVFUtil::isa<RetPN>(node))
         {

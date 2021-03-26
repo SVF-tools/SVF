@@ -50,6 +50,10 @@ const std::string PAGNode::toString() const {
     return rawstr.str();
 }
 
+void PAGNode::dump() const {
+    outs() << this->toString() << "\n";
+}
+
 const std::string ValPN::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -983,6 +987,13 @@ void PAG::dump(std::string name)
     GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
+/*!
+ * View PAG
+ */
+void PAG::view()
+{
+    llvm::ViewGraph(this, "ProgramAssignmentGraph");
+}
 
 /*!
  * Whether to handle blackhole edge
@@ -1045,7 +1056,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
             else if (SVFUtil::isa<DummyValPN>(node))
                 return "shape=diamond";
             else
-                return "shape=circle";
+                return "shape=box";
         }
         else if (SVFUtil::isa<ObjPN>(node))
         {
@@ -1054,9 +1065,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
             else if(SVFUtil::isa<FIObjPN>(node))
                 return "shape=septagon";
             else if (SVFUtil::isa<DummyObjPN>(node))
-                return "shape=Mcircle";
+                return "shape=house";
             else
-                return "shape=doublecircle";
+                return "shape=invhouse";
         }
         else if (SVFUtil::isa<RetPN>(node))
         {
