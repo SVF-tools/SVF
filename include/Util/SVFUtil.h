@@ -230,6 +230,7 @@ inline const SVFFunction* getCallee(const Instruction *inst)
 //@{
 std::string  getSourceLoc(const Value *val);
 std::string  getSourceLocOfFunction(const Function *F);
+const std::string value2String(const Value* value);
 //@}
 
 /// Given a map mapping points-to sets to a count, adds from into to.

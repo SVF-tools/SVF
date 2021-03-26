@@ -253,6 +253,12 @@ public:
         return getLLVMFun()->isVarArg();
     }
 
+    // Dump Control Flow Graph of llvm function, with instructions
+    void viewCFG();
+
+    // Dump Control Flow Graph of llvm function, without instructions
+    void viewCFGOnly();
+
 };
 
 class SVFGlobal : public SVFValue

@@ -275,6 +275,14 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             unsigned Column = Loc->getColumn();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
+            if(File.str().empty() || Line == 0) {
+                auto inlineLoc = Loc->getInlinedAt();
+                if(inlineLoc) {
+                    Line = inlineLoc->getLine();
+                    Column = inlineLoc->getColumn();
+                    File = inlineLoc->getFilename();
+                }   
+            }
             rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
     }
@@ -350,5 +358,33 @@ std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
         return "svf-best";
     default:
         assert(false && "SVFUtil::hclustMethodToString: unknown method");
+    }
+}
+
+/*!
+ * return string of an LLVM Value
+ */
+const std::string SVFUtil::value2String(const Value* value) {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(value){
+        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
+            rawstr << " " << fun->getName() << " ";
+        else
+            rawstr << " " << *value << " ";
+        rawstr << getSourceLoc(value);
+    }
+    return rawstr.str();
+}
+
+void SVFFunction::viewCFG() {
+    if (fun != nullptr) {
+        fun->viewCFG();
+    }
+}
+
+void SVFFunction::viewCFGOnly() {
+    if (fun != nullptr) {
+        fun->viewCFGOnly();
     }
 }

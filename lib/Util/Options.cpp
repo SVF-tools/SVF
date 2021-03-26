@@ -198,7 +198,7 @@ namespace SVF
 
     // Sparse value-flow graph (VFG.cpp)
     const llvm::cl::opt<bool> Options::DumpVFG(
-        "dump-vfg", 
+        "dump-vfg",
         llvm::cl::init(false),
         llvm::cl::desc("Dump dot graph of VFG")
     );
@@ -567,7 +567,12 @@ namespace SVF
         llvm::cl::desc("Modeling individual constant objects")
     );
 
-    
+    const llvm::cl::opt<bool> Options::SymTabPrint(
+            "print-symbol-table", llvm::cl::init(false),
+            llvm::cl::desc("Print Symbol Table to command line")
+    );
+
+
     // Conditions.cpp
     const llvm::cl::opt<unsigned> Options::MaxBddSize(
         "max-bdd-size",  

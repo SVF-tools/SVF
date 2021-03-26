@@ -18,3 +18,4 @@ doxygen/
 *.opt
 *.log
 *.status
+*.obj

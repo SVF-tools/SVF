@@ -43,24 +43,22 @@ SVFG* SVFGBuilder::globalSvfg = nullptr;
 
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
-    return build(pta, VFG::PTRONLYSVFGK);
+    return build(pta, VFG::PTRONLYSVFG_OPT);
 }
 
 SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta)
 {
-    Options::OPTSVFG = false;
-    return build(pta, VFG::PTRONLYSVFGK);
+    return build(pta, VFG::PTRONLYSVFG);
 }
 
 SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
 {
-    return build(pta, VFG::ORIGSVFGK);
+    return build(pta, VFG::FULLSVFG_OPT);
 }
 
 SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta)
 {
-    Options::OPTSVFG = false;
-    return build(pta, VFG::ORIGSVFGK);
+    return build(pta, VFG::FULLSVFG);
 }
 
 
@@ -79,7 +77,7 @@ void SVFGBuilder::buildSVFG()
 SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
 {
 
-    MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFGK==kind));
+    MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
 
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
     if(Options::SingleVFG)
@@ -87,7 +85,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
         if(globalSvfg==nullptr)
         {
             /// Note that we use callgraph from andersen analysis here
-            if(Options::OPTSVFG)
+            if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
                 svfg = globalSvfg = new SVFGOPT(mssa, kind);
             else
                 svfg = globalSvfg = new SVFG(mssa, kind);
@@ -96,7 +94,7 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     }
     else
     {
-        if(Options::OPTSVFG)
+        if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
             svfg = new SVFGOPT(mssa, kind);
         else
             svfg = new SVFG(mssa,kind);
@@ -107,10 +105,8 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
 
-    svfg->setDumpVFG(Options::DumpVFG);
-
     if(Options::DumpVFG)
-    	svfg->dump("svfg_final");
+        svfg->dump("svfg_final");
 
     return svfg;
 }

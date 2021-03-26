@@ -42,18 +42,6 @@ PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
 
 PAG* PAG::pag = nullptr;
 
-static const std::string value2String(const Value* value) {
-    std::string str;
-    raw_string_ostream rawstr(str);
-    if(value){
-        if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
-            rawstr << " " << fun->getName() << " ";
-        else
-            rawstr << " " << *value << " ";
-        rawstr << getSourceLoc(value);
-    }
-    return rawstr.str();
-}
 
 const std::string PAGNode::toString() const {
     std::string str;
@@ -584,14 +572,14 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
 {
     NodeID base = getObjectNode(obj);
 
-    // Base and first field are the same memory location.
-    if (Options::FirstFieldEqBase && ls.getOffset() == 0) return base;
-
     /// if this obj is field-insensitive, just return the field-insensitive node.
     if (obj->isFieldInsensitive())
         return getFIObjNode(obj);
 
     LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
+
+    // Base and first field are the same memory location.
+    if (Options::FirstFieldEqBase && ls.getOffset() == 0) return base;
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
     if (iter == GepObjNodeMap.end())

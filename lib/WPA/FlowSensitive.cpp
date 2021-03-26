@@ -53,7 +53,11 @@ void FlowSensitive::initialize()
     assert(!Options::ClusterAnder && "FlowSensitive::initialize: cluster auxliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
-    svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
+    if(Options::OPTSVFG)
+        svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
+    else
+        svfg = memSSA.buildPTROnlySVFGWithoutOPT(ander);
+
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
@@ -113,7 +117,7 @@ void FlowSensitive::analyze()
  */
 void FlowSensitive::finalize()
 {
-	if(svfg->getDumpVFG())
+	if(Options::DumpVFG)
 		svfg->dump("fs_solved", true);
 
     NodeStack& nodeStack = WPASolver<SVFG*>::SCCDetect();

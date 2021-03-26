@@ -77,7 +77,7 @@ const std::string IntraBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraBlockNode ID: " << getId();
-    rawstr << " " << *getInst() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getInst()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -111,7 +111,7 @@ const std::string CallBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -119,7 +119,7 @@ const std::string RetBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -459,14 +459,14 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         rawstr << "NodeID: " << node->getId() << "\n";
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
-            rawstr << bNode->toString();
-
+            rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
             PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
             for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
                 rawstr << edge->toString();
             }
+            rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
         else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
         {
