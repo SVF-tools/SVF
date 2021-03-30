@@ -317,8 +317,12 @@ namespace SVF
             {
                 const size_t regionNumObjects = regionsObjects[region].size();
                 // Round up to next Word: ceiling of current allocation to get how
-                // many words and multiply to get the number of bits.
-                allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+                // many words and multiply to get the number of bits; if we're aligning.
+                if (Options::RegionAlign)
+                {
+                    allocCounter =
+                        ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
+                }
 
                 if (regionNumObjects > largestRegion) largestRegion = regionNumObjects;
 

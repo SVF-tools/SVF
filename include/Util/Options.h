@@ -52,6 +52,9 @@ public:
     /// Cluster partitions separately.
     static const llvm::cl::opt<bool> RegionedClustering;
 
+    /// Align identifiers in each region to a word.
+    static const llvm::cl::opt<bool> RegionAlign;
+
     /// Predict occurences of points-to sets in the staged points-to set to
     /// weigh more common points-to sets as more important.
     static const llvm::cl::opt<bool> PredictPtOcc;

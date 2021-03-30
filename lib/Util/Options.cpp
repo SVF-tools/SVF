@@ -353,6 +353,12 @@ namespace SVF
         llvm::cl::desc("cluster regions separately")
     );
 
+    const llvm::cl::opt<bool> Options::RegionAlign(
+        "cluster-region-aligned",
+        llvm::cl::init(true),
+        llvm::cl::desc("align each region's identifiers to the native word size")
+    );
+
     const llvm::cl::opt<bool> Options::PredictPtOcc(
         "cluster-predict-occ",
         llvm::cl::init(false),
