@@ -20,7 +20,6 @@ UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-cl
 LLVMHome="llvm-10.0.0.obj"
 Z3Home="z3.obj"
 CTIRHome="ctir.obj"
-SVFTests="Test-Suite"
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
 # depending on OS.
@@ -122,21 +121,6 @@ export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR =" $LLVM_DIR
 
 ########
-# Download SVF Test Suite
-#######
-
-if [ ! -d "$SVFTests" ]
-then
-   git clone "https://github.com/SVF-tools/Test-Suite.git"
-   if [[ $sysOS == "Linux" ]] ; then
-   	cd ./$SVFTests
-   	./generate_bc.sh
-   	cd ..
-   fi
-fi
-
-
-########
 # Build SVF
 ########
 if [[ $1 == 'debug' ]]
@@ -162,20 +146,6 @@ then
   . ./setup.sh debug
 else
   . ./setup.sh
-fi
-
-#########
-# Run ctest
-########
-if [[ $sysOS == "Linux" ]]  
-then
-   if [[ $1 == 'debug' ]]
-   then
-     cd ./'Debug-build'
-   else 
-     cd ./'Release-build'
-   fi
-  ctest --v
 fi
 
 #########
