@@ -155,7 +155,7 @@ namespace SVF
     }
 
     const std::string NodeIDAllocator::Clusterer::NumObjects = "NumObjects";
-    const std::string NodeIDAllocator::Clusterer::PartitionTime = "PartitionTime";
+    const std::string NodeIDAllocator::Clusterer::RegioningTime = "RegioningTime";
     const std::string NodeIDAllocator::Clusterer::DistanceMatrixTime = "DistanceMatrixTime";
     const std::string NodeIDAllocator::Clusterer::FastClusterTime = "FastClusterTime";
     const std::string NodeIDAllocator::Clusterer::DendogramTraversalTime = "DendogramTravTime";
@@ -166,9 +166,9 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::OriginalSbvNumWords = "OriginalSbvWords";
     const std::string NodeIDAllocator::Clusterer::NewBvNumWords = "NewBvWords";
     const std::string NodeIDAllocator::Clusterer::NewSbvNumWords = "NewSbvWords";
-    const std::string NodeIDAllocator::Clusterer::NumPartitions = "NumPartitions";
-    const std::string NodeIDAllocator::Clusterer::NumGtIntPartitions = "NumGtIntPartitions";
-    const std::string NodeIDAllocator::Clusterer::LargestPartition = "LargestPartition";
+    const std::string NodeIDAllocator::Clusterer::NumRegions = "NumRegions";
+    const std::string NodeIDAllocator::Clusterer::NumGtIntRegions = "NumGtIntRegions";
+    const std::string NodeIDAllocator::Clusterer::LargestRegion = "LargestRegion";
     const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
 
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
@@ -181,7 +181,7 @@ namespace SVF
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
         double dendogramTraversalTime = 0.0;
-        double partitionTime = 0.0;
+        double regioningTime = 0.0;
         double evalTime = 0.0;
 
         // Pair of nodes to their (minimum) distance and the number of occurrences of that distance.
@@ -220,61 +220,61 @@ namespace SVF
         size_t numObjects = NodeIDAllocator::get()->numObjects;
         overallStats[NumObjects] = std::to_string(numObjects);
 
-        size_t numPartitions = 0;
-        std::vector<unsigned> objectsPartition;
-        if (Options::PartitionedClustering)
+        size_t numRegions = 0;
+        std::vector<unsigned> objectsRegion;
+        if (Options::RegionedClustering)
         {
-            objectsPartition = partitionObjects(graph, numObjects, numPartitions);
+            objectsRegion = regionObjects(graph, numObjects, numRegions);
         }
         else
         {
-            // Just a single big partition (0).
-            objectsPartition.insert(objectsPartition.end(), numObjects, 0);
-            numPartitions = 1;
+            // Just a single big region (0).
+            objectsRegion.insert(objectsRegion.end(), numObjects, 0);
+            numRegions = 1;
         }
 
         // Set needs to be ordered because getDistanceMatrix, in its n^2 iteration, expects
         // sets to be ordered (we are building a condensed matrix, not a full matrix, so it
-        // matters). In getDistanceMatrix, doing partitionReverseMapping for oi and oj, where
+        // matters). In getDistanceMatrix, doing regionReverseMapping for oi and oj, where
         // oi < oj, and getting a result moi > moj gives incorrect results.
         // In the condensed matrix, [b][a] where b >= a, is incorrect.
-        std::vector<OrderedSet<NodeID>> partitionsObjects(numPartitions);
-        for (NodeID o = 0; o < numObjects; ++o) partitionsObjects[objectsPartition[o]].insert(o);
+        std::vector<OrderedSet<NodeID>> regionsObjects(numRegions);
+        for (NodeID o = 0; o < numObjects; ++o) regionsObjects[objectsRegion[o]].insert(o);
 
         // Size of the return node mapping. It is potentially larger than the number of
-        // objects because we align each partition to NATIVE_INT_SIZE.
+        // objects because we align each region to NATIVE_INT_SIZE.
         size_t numMappings = 0;
 
-        // Maps a partition (label) to a mapping which maps 0 to n to all objects
-        // in that partition.
-        std::vector<std::vector<NodeID>> partitionMappings(numPartitions);
-        // The reverse: partition to mapping of objects to a 0 to n from above.
-        std::vector<Map<NodeID, unsigned>> partitionReverseMappings(numPartitions);
-        // We can thus use 0 to n for each partition to create smaller distance matrices.
-        for (unsigned part = 0; part < numPartitions; ++part)
+        // Maps a region (label) to a mapping which maps 0 to n to all objects
+        // in that region.
+        std::vector<std::vector<NodeID>> regionMappings(numRegions);
+        // The reverse: region to mapping of objects to a 0 to n from above.
+        std::vector<Map<NodeID, unsigned>> regionReverseMappings(numRegions);
+        // We can thus use 0 to n for each region to create smaller distance matrices.
+        for (unsigned region = 0; region < numRegions; ++region)
         {
             size_t curr = 0;
             // With the OrderedSet above, o1 < o2 => map[o1] < map[o2].
-            for (NodeID o : partitionsObjects[part])
+            for (NodeID o : regionsObjects[region])
             {
-                // push_back here is just like p...[part][curr] = o.
-                partitionMappings[part].push_back(o);
-                partitionReverseMappings[part][o] = curr++;
+                // push_back here is just like p...[region][curr] = o.
+                regionMappings[region].push_back(o);
+                regionReverseMappings[region][o] = curr++;
             }
 
-            // curr is the number of objects. A partition with no objects makes no sense.
+            // curr is the number of objects. A region with no objects makes no sense.
             assert(curr != 0);
 
-            // Number of bits needed for this partition if we were
+            // Number of bits needed for this region if we were
             // to start assigning from 0 rounded up to the fewest needed
             // native ints. This is added to the number of mappings since
-            // we align each partition to a native int.
-            numMappings += requiredBits(partitionsObjects[part].size());
+            // we align each region to a native int.
+            numMappings += requiredBits(regionsObjects[region].size());
         }
 
-        // Points-to sets which are relevant to a partition, i.e., those whose elements
-        // belong to that partition. Pair is for occurences.
-        std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> partitionsPointsTos(numPartitions);
+        // Points-to sets which are relevant to a region, i.e., those whose elements
+        // belong to that region. Pair is for occurences.
+        std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> regionsPointsTos(numRegions);
         for (const Map<PointsTo, unsigned>::value_type &pto : pointsToSets)
         {
             const PointsTo &pt = pto.first;
@@ -282,16 +282,16 @@ namespace SVF
             if (pt.empty()) continue;
             // Guaranteed that begin() != end() because of the continue above.
             const NodeID o = *(pt.begin());
-            unsigned part = objectsPartition[o];
+            unsigned region = objectsRegion[o];
             // In our "graph", objects in the same points-to set have an edge between them,
-            // so they are all in the same connected component/partition.
-            partitionsPointsTos[part].push_back(std::make_pair(&pt, occ));
+            // so they are all in the same connected component/region.
+            regionsPointsTos[region].push_back(std::make_pair(&pt, occ));
         }
 
         double clkEnd = PTAStat::getClk(true);
-        partitionTime = (clkEnd - clkStart) / TIMEINTERVAL;
-        overallStats[PartitionTime] = std::to_string(partitionTime);
-        overallStats[NumPartitions] = std::to_string(numPartitions);
+        regioningTime = (clkEnd - clkStart) / TIMEINTERVAL;
+        overallStats[RegioningTime] = std::to_string(regioningTime);
+        overallStats[NumRegions] = std::to_string(numRegions);
 
         std::vector<hclust_fast_methods> methods;
         if (Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
@@ -309,38 +309,38 @@ namespace SVF
         {
             std::vector<NodeID> nodeMap(numObjects, UINT_MAX);
 
-            unsigned numGtIntPartitions = 0;
-            unsigned largestPartition = 0;
+            unsigned numGtIntRegions = 0;
+            unsigned largestRegion = 0;
             // Current new node ID; the result of a node ID mapping.
             unsigned allocCounter = 0;
-            for (unsigned part = 0; part < numPartitions; ++part)
+            for (unsigned region = 0; region < numRegions; ++region)
             {
-                const size_t partNumObjects = partitionsObjects[part].size();
+                const size_t regionNumObjects = regionsObjects[region].size();
                 // Round up to next Word: ceiling of current allocation to get how
                 // many words and multiply to get the number of bits.
                 allocCounter = ((allocCounter + NATIVE_INT_SIZE - 1) / NATIVE_INT_SIZE) * NATIVE_INT_SIZE;
 
-                if (partNumObjects > largestPartition) largestPartition = partNumObjects;
+                if (regionNumObjects > largestRegion) largestRegion = regionNumObjects;
 
-                // For partitions with fewer than 64 objects, we can just allocate them
+                // For regions with fewer than 64 objects, we can just allocate them
                 // however as they will be in the one int regardless..
-                if (partNumObjects < NATIVE_INT_SIZE)
+                if (regionNumObjects < NATIVE_INT_SIZE)
                 {
-                    for (NodeID o : partitionsObjects[part]) nodeMap[o] = allocCounter++;
+                    for (NodeID o : regionsObjects[region]) nodeMap[o] = allocCounter++;
                     continue;
                 }
 
-                ++numGtIntPartitions;
+                ++numGtIntRegions;
 
                 clkStart = PTAStat::getClk(true);
-                double *distMatrix = getDistanceMatrix(partitionsPointsTos[part], partNumObjects, partitionReverseMappings[part]);
+                double *distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects, regionReverseMappings[region]);
                 clkEnd = PTAStat::getClk(true);
                 distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
 
                 clkStart = PTAStat::getClk(true);
-                int *dendogram = new int[2 * (partNumObjects - 1)];
-                double *height = new double[partNumObjects - 1];
-                hclust_fast(partNumObjects, distMatrix, method, dendogram, height);
+                int *dendogram = new int[2 * (regionNumObjects - 1)];
+                double *height = new double[regionNumObjects - 1];
+                hclust_fast(regionNumObjects, distMatrix, method, dendogram, height);
                 delete[] distMatrix;
                 delete[] height;
                 clkEnd = PTAStat::getClk(true);
@@ -348,7 +348,7 @@ namespace SVF
 
                 clkStart = PTAStat::getClk(true);
                 Set<int> visited;
-                traverseDendogram(nodeMap, dendogram, partNumObjects, allocCounter, visited, partNumObjects - 1, partitionMappings[part]);
+                traverseDendogram(nodeMap, dendogram, regionNumObjects, allocCounter, visited, regionNumObjects - 1, regionMappings[region]);
                 delete[] dendogram;
                 clkEnd = PTAStat::getClk(true);
                 dendogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
@@ -357,8 +357,8 @@ namespace SVF
             candidates.push_back(std::make_tuple(method, nodeMap));
 
             // Though we "update" these in the loop, they will be the same every iteration.
-            overallStats[NumGtIntPartitions] = std::to_string(numGtIntPartitions);
-            overallStats[LargestPartition] = std::to_string(largestPartition);
+            overallStats[NumGtIntRegions] = std::to_string(numGtIntRegions);
+            overallStats[LargestRegion] = std::to_string(largestRegion);
         }
 
         // In case we're not comparing anything, set to first "candidate".
@@ -400,7 +400,7 @@ namespace SVF
             overallStats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
             overallStats[FastClusterTime] = std::to_string(fastClusterTime);
             overallStats[EvalTime] = std::to_string(evalTime);
-            overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + partitionTime + evalTime);
+            overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + regioningTime + evalTime);
 
             overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMethod);
             printStats(evalSubtitle + ": overall", overallStats);
@@ -507,7 +507,7 @@ namespace SVF
         return distMatrix;
     }
 
-    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &partitionNodeMap)
+    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &regionNodeMap)
     {
         if (visited.find(index) != visited.end()) return;
         visited.insert(index);
@@ -517,28 +517,28 @@ namespace SVF
         {
             // Reached a leaf.
             // -1 because the items start from 1 per fastcluster (TODO).
-            nodeMap[partitionNodeMap[std::abs(left) - 1]] = allocCounter;
+            nodeMap[regionNodeMap[std::abs(left) - 1]] = allocCounter;
             ++allocCounter;
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left, partitionNodeMap);
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left, regionNodeMap);
         }
 
         // Repeat for the right child.
         int right = dendogram[(numObjects - 1) + index - 1];
         if (right < 0)
         {
-            nodeMap[partitionNodeMap[std::abs(right) - 1]] = allocCounter;
+            nodeMap[regionNodeMap[std::abs(right) - 1]] = allocCounter;
             ++allocCounter;
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right, partitionNodeMap);
+            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right, regionNodeMap);
         }
     }
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::partitionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::regionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels)
     {
         unsigned label = UINT_MAX;
         std::vector<NodeID> labels(numObjects, UINT_MAX);
@@ -658,8 +658,8 @@ namespace SVF
         // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
         const static std::array<std::string, 16> statKeys =
             { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
-              NewSbvNumWords, NewBvNumWords, NumPartitions, NumGtIntPartitions,
-              LargestPartition, PartitionTime, DistanceMatrixTime, FastClusterTime,
+              NewSbvNumWords, NewBvNumWords, NumRegions, NumGtIntRegions,
+              LargestRegion, RegioningTime, DistanceMatrixTime, FastClusterTime,
               DendogramTraversalTime, EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;

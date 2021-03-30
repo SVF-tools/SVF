@@ -50,7 +50,7 @@ public:
     static const llvm::cl::opt<enum hclust_fast_methods> ClusterMethod;
 
     /// Cluster partitions separately.
-    static const llvm::cl::opt<bool> PartitionedClustering;
+    static const llvm::cl::opt<bool> RegionedClustering;
 
     /// Predict occurences of points-to sets in the staged points-to set to
     /// weigh more common points-to sets as more important.

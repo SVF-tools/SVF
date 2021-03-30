@@ -106,7 +106,7 @@ public:
         /// Statistics strings.
         ///@{
         static const std::string NumObjects;
-        static const std::string PartitionTime;
+        static const std::string RegioningTime;
         static const std::string DistanceMatrixTime;
         static const std::string FastClusterTime;
         static const std::string DendogramTraversalTime;
@@ -117,9 +117,9 @@ public:
         static const std::string OriginalSbvNumWords;
         static const std::string NewBvNumWords;
         static const std::string NewSbvNumWords;
-        static const std::string NumPartitions;
-        static const std::string NumGtIntPartitions;
-        static const std::string LargestPartition;
+        static const std::string NumRegions;
+        static const std::string NumGtIntRegions;
+        static const std::string LargestRegion;
         static const std::string BestCandidate;
         ///@}
 
@@ -161,13 +161,13 @@ public:
         /// Traverses the dendogram produced by fastcluster, making node o, where o is the nth leaf (per
         /// recursive DFS) map to n. index is the dendogram node to work off. The traversal should start
         /// at the top, which is the "last" (consider that it is 2D) element of the dendogram, numObjects - 1.
-        static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &partitionNodeMap);
+        static inline void traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &regionNodeMap);
 
         /// Returns a vector mapping object IDs to a label such that if two objects appear
         /// in the same points-to set, they have the same label. The "appear in the same
         /// points-to set" is encoded by graph which is an adjacency list ensuring that
         /// x in pt(p) and y in pt(p) -> x is reachable from y. 
-        static inline std::vector<unsigned> partitionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels);
+        static inline std::vector<unsigned> regionObjects(const Map<NodeID, Set<NodeID>> &graph, size_t numObjects, size_t &numLabels);
     };
 };
 

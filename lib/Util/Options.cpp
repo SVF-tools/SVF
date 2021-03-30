@@ -346,11 +346,11 @@ namespace SVF
         )
     );
 
-    const llvm::cl::opt<bool> Options::PartitionedClustering(
+    const llvm::cl::opt<bool> Options::RegionedClustering(
         // Use cluster to "gather" the options closer together, even if it sounds a little worse.
-        "cluster-partitioned",
+        "cluster-regioned",
         llvm::cl::init(true),
-        llvm::cl::desc("cluster partitions separately")
+        llvm::cl::desc("cluster regions separately")
     );
 
     const llvm::cl::opt<bool> Options::PredictPtOcc(
