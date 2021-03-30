@@ -450,7 +450,7 @@ namespace SVF
     {
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
-        for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects + 2;
+        for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects * numObjects;
 
         // TODO: maybe use machine epsilon?
         // For reducing distance due to extra occurrences.
