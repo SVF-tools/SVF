@@ -70,9 +70,9 @@ const std::string PAGNode::getNodeAttributes() const {
         else if(SVFUtil::isa<FIObjPN>(this))
             return "shape=box3d";
         else if (SVFUtil::isa<DummyObjPN>(this))
-            return "shape=house";
+            return "shape=tab";
         else
-            return "shape=invhouse";
+            return "shape=component";
     }
     else if (SVFUtil::isa<RetPN>(this))
     {
