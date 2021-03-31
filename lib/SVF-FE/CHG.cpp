@@ -918,7 +918,7 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
     {
         if (node->isPureAbstract())
         {
-            return "shape=house";
+            return "shape=tab";
         }
         else
             return "shape=box";
