@@ -649,7 +649,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
-        return node->getNodeAttributes();
+        return node->getNodeAttrForDotDisplay();
     }
 
     template<class EdgeIter>

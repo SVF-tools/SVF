@@ -251,7 +251,7 @@ public:
     virtual const std::string toString() const;
 
     /// Get shape and/or color of node for .dot display.
-    virtual const std::string getNodeAttributes() const;
+    virtual const std::string getNodeAttrForDotDisplay() const;
 
     /// Dump to console for debugging
     void dump() const;

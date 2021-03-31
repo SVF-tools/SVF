@@ -243,7 +243,7 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
         if (PAG::getPAG()->findPAGNode(n->getId()))
         {
             PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-            return node->getNodeAttributes();
+            return node->getNodeAttrForDotDisplay();
         }
         else
         {

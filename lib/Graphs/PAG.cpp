@@ -51,7 +51,7 @@ const std::string PAGNode::toString() const {
 }
 
 /// Get shape and/or color of node for .dot display.
-const std::string PAGNode::getNodeAttributes() const {
+const std::string PAGNode::getNodeAttrForDotDisplay() const {
     // TODO: Maybe use over-rides instead of these ifs,
     // But this puts them conveniently together.
     if (SVFUtil::isa<ValPN>(this))
@@ -97,7 +97,6 @@ const std::string ValPN::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ValPN ID: " << getId();
-    rawstr << "\n";
     rawstr << value2String(value);
     return rawstr.str();
 }
@@ -1107,7 +1106,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(PAGNode *node, PAG*)
     {
-        return node->getNodeAttributes();
+        return node->getNodeAttrForDotDisplay();
     }
 
     template<class EdgeIter>
