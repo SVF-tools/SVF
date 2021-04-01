@@ -579,7 +579,7 @@ NodeID PAG::getGepObjNode(const MemObj* obj, const LocationSet& ls)
     LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
-    if (Options::FirstFieldEqBase && ls.getOffset() == 0) return base;
+    if (Options::FirstFieldEqBase && newLS.getOffset() == 0) return base;
 
     NodeLocationSetMap::iterator iter = GepObjNodeMap.find(std::make_pair(base, newLS));
     if (iter == GepObjNodeMap.end())
