@@ -359,6 +359,12 @@ namespace SVF
         llvm::cl::desc("align each region's identifiers to the native word size")
     );
 
+    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
+        "fs-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
+
     const llvm::cl::opt<bool> Options::PredictPtOcc(
         "cluster-predict-occ",
         llvm::cl::init(false),

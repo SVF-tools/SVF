@@ -27,6 +27,9 @@
  *      Author: Yulei Sui
  */
 
+#include <signal.h>
+#include <unistd.h>
+
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
@@ -72,6 +75,14 @@ void FlowSensitive::initialize()
     stat = new FlowSensitiveStat(this);
 }
 
+void timeLimitReached(int signum)
+{
+    std::cout.flush();
+    SVFUtil::outs().flush();
+    SVFUtil::outs() << "Time limit reached\n";
+    exit(101);
+}
+
 /*!
  * Start analysis
  */
@@ -79,6 +90,12 @@ void FlowSensitive::analyze()
 {
     /// Initialization for the Solver
     initialize();
+
+    if (Options::FsTimeLimit != 0)
+    {
+        signal(SIGALRM, &timeLimitReached);
+        alarm(Options::FsTimeLimit);
+    }
 
     double start = stat->getClk(true);
     /// Start solving constraints
@@ -97,6 +114,9 @@ void FlowSensitive::analyze()
         solveWorklist();
     }
     while (updateCallGraph(getIndirectCallsites()));
+
+    // Cancel alarm which may have been set: we're done.
+    alarm(0);
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 

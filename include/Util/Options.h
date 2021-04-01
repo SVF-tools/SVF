@@ -59,6 +59,9 @@ public:
     /// weigh more common points-to sets as more important.
     static const llvm::cl::opt<bool> PredictPtOcc;
 
+    /// Time limit for the main phase (i.e., the actual solving) of FS analyses.
+    static const llvm::cl::opt<unsigned> FsTimeLimit;
+
     // ContextDDA.cpp
     static const llvm::cl::opt<unsigned long long> CxtBudget;
 
