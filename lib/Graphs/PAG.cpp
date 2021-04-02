@@ -105,7 +105,6 @@ const std::string ObjPN::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ObjPN ID: " << getId();
-    rawstr << "\n";
     rawstr << value2String(value);
     return rawstr.str();
 }
