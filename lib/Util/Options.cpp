@@ -257,7 +257,7 @@ namespace SVF
 
     const llvm::cl::opt<bool> Options::PAGDotGraphShorter(
             "dump-pag-shorter",
-            llvm::cl::init(false),
+            llvm::cl::init(true),
             llvm::cl::desc("If dumping dot graph of PAG, use shorter lines")
     );
 
