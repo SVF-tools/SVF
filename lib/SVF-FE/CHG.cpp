@@ -918,10 +918,10 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
     {
         if (node->isPureAbstract())
         {
-            return "shape=Mcircle";
+            return "shape=tab";
         }
         else
-            return "shape=circle";
+            return "shape=box";
     }
 
     template<class EdgeIter>
