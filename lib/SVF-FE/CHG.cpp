@@ -886,6 +886,10 @@ void CHGraph::dump(const std::string& filename)
     printCH();
 }
 
+void CHGraph::view()
+{
+    llvm::ViewGraph(this, "Class Hierarchy Graph");
+}
 
 namespace llvm
 {
