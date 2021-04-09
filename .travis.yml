@@ -34,13 +34,14 @@ script:
   - . ./build.sh
   - cd ./Release-build
   - ctest --v
+  - cd $TRAVIS_BUILD_DIR
 
 after_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
   - git clone https://github.com/SVF-tools/SVF-npm.git
-  - cp -rf ./SVF/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
-  - cp ./SVF/Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
-  - cp ./SVF/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
+  - cp -rf $TRAVIS_BUILD_DIR/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
+  - cp $TRAVIS_BUILD_DIR/Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
+  - cp $TRAVIS_BUILD_DIR/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
   - cd SVF-npm
   - git add .
   - git commit -m'update svflib'
