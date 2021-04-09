@@ -185,7 +185,7 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
     const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(svfModule);
 
     /// Return back if the main function is not found, the bc file might be a library only
-    if(mainFunc == NULL)
+    if(mainFunc == nullptr)
         return;
 
     FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);

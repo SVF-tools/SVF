@@ -5,6 +5,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "DDA/ContextDDA.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
@@ -12,8 +13,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<unsigned long long> cxtBudget("cxtbg",  llvm::cl::init(10000),
-        llvm::cl::desc("Maximum step budget of context-sensitive traversing"));
 /*!
  * Constructor
  */
@@ -31,7 +30,7 @@ ContextDDA::~ContextDDA()
 {
     if(flowDDA)
         delete flowDDA;
-    flowDDA = NULL;
+    flowDDA = nullptr;
 }
 
 /*!
@@ -54,7 +53,7 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
 {
 
     resetQuery();
-    LocDPItem::setMaxBudget(cxtBudget);
+    LocDPItem::setMaxBudget(Options::CxtBudget);
 
     NodeID id = var.get_id();
     PAGNode* node = getPAG()->getPAGNode(id);

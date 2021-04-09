@@ -34,7 +34,7 @@ public:
     /// Create an singleton instance
     static Steensgaard* createSteensgaard(PAG* _pag)
     {
-        if(steens==NULL)
+        if(steens==nullptr)
         {
             steens = new Steensgaard(_pag);
             steens->analyze();
@@ -46,7 +46,7 @@ public:
     {
         if (steens)
             delete steens;
-        steens = NULL;
+        steens = nullptr;
     }
 
     virtual void solveWorklist();
@@ -74,26 +74,26 @@ public:
     /// Operation of points-to set
     virtual inline const PointsTo& getPts(NodeID id)
     {
-        return getPTDataTy()->getPts(getECNode(id));
+        return getPTDataTy()->getPts(getEC(id));
     }
     /// pts(id) = pts(id) U target
     virtual inline bool unionPts(NodeID id, const PointsTo& target)
     {
-        id = getECNode(id);
+        id = getEC(id);
         return getPTDataTy()->unionPts(id, target);
     }
     /// pts(id) = pts(id) U pts(ptd)
     virtual inline bool unionPts(NodeID id, NodeID ptd)
     {
-        id = getECNode(id);
-        ptd = getECNode(ptd);
+        id = getEC(id);
+        ptd = getEC(ptd);
         return getPTDataTy()->unionPts(id,ptd);
     }
 
     /// API for equivalence class operations
     /// Every constraint node maps to an unique equivalence class EC
     /// An equivalence class has a set of sub constraint nodes.
-    inline NodeID getECNode(NodeID id) const
+    inline NodeID getEC(NodeID id) const
     {
         NodeToEquivClassMap::const_iterator it = nodeToECMap.find(id);
         if(it==nodeToECMap.end())
@@ -101,10 +101,8 @@ public:
         else
             return it->second;
     }
-    inline void setEC(NodeID node, NodeID rep)
-    {
-        nodeToECMap[node] = rep;
-    }
+    void setEC(NodeID node, NodeID rep);
+
     inline Set<NodeID>& getSubNodes(NodeID id)
     {
         nodeToSubsMap[id].insert(id);

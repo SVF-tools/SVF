@@ -7,6 +7,7 @@
  *      Author: Mohamad Barbar
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "WPA/FlowSensitiveTBHC.h"
@@ -15,17 +16,13 @@
 
 using namespace SVF;
 
-/// Whether we allow reuse for TBHC.
-static llvm::cl::opt<bool> TBHCStoreReuse("tbhc-store-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse in at stores in FSTBHC"));
-static llvm::cl::opt<bool> TBHCAllReuse("tbhc-all-reuse", llvm::cl::init(false), llvm::cl::desc("Allow for object reuse everywhere in FSTBHC"));
-
 FlowSensitiveTBHC::FlowSensitiveTBHC(PAG* _pag, PTATY type) : FlowSensitive(_pag, type), TypeBasedHeapCloning(this)
 {
     // Using `this` as the argument for TypeBasedHeapCloning is okay. As PointerAnalysis, it's
     // already constructed. TypeBasedHeapCloning also doesn't use pta in the constructor so it
     // just needs to be allocated, which it is.
-    allReuse = TBHCAllReuse;
-    storeReuse = allReuse || TBHCStoreReuse;
+    allReuse = Options::TBHCAllReuse;
+    storeReuse = allReuse || Options::TBHCStoreReuse;
 }
 
 void FlowSensitiveTBHC::analyze()
@@ -278,7 +275,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
     const DIType *tildet = getTypeFromCTirMetadata(gep);
     if (tildet != undefType)
     {
-        bool reuse = TBHCAllReuse || (TBHCStoreReuse && !gepIsLoad(gep->getId()));
+        bool reuse = Options::TBHCAllReuse || (Options::TBHCStoreReuse && !gepIsLoad(gep->getId()));
         changed = init(gep->getId(), q, tildet, reuse, true);
     }
 
@@ -373,7 +370,7 @@ bool FlowSensitiveTBHC::processLoad(const LoadSVFGNode* load)
     const DIType *tildet = getTypeFromCTirMetadata(load);
     if (tildet != undefType)
     {
-        changed = init(load->getId(), load->getPAGSrcNodeID(), tildet, TBHCAllReuse);
+        changed = init(load->getId(), load->getPAGSrcNodeID(), tildet, Options::TBHCAllReuse);
     }
 
     // We want to perform the initialisation for non-pointer nodes but not process the load.
@@ -428,7 +425,7 @@ bool FlowSensitiveTBHC::processStore(const StoreSVFGNode* store)
     const DIType *tildet = getTypeFromCTirMetadata(store);
     if (tildet != undefType)
     {
-        changed = init(store->getId(), store->getPAGDstNodeID(), tildet, TBHCAllReuse || TBHCStoreReuse);
+        changed = init(store->getId(), store->getPAGDstNodeID(), tildet, Options::TBHCAllReuse || Options::TBHCStoreReuse);
     }
 
     // Like processLoad: we want to perform initialisation for non-pointers but not the store.

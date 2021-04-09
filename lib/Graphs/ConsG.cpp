@@ -28,6 +28,7 @@
  */
 
 #include "Graphs/ConsG.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -44,7 +45,7 @@ void ConstraintGraph::buildCG()
     // initialize nodes
     for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
-        addConstraintNode(new ConstraintNode(it->first),it->first);
+		addConstraintNode(new ConstraintNode(it->first), it->first);
     }
 
     // initialize edges
@@ -157,7 +158,7 @@ AddrCGEdge* ConstraintGraph::addAddrCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Addr))
-        return NULL;
+        return nullptr;
     AddrCGEdge* edge = new AddrCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = AddrCGEdgeSet.insert(edge).second;
     assert(added && "not added??");
@@ -176,7 +177,7 @@ CopyCGEdge* ConstraintGraph::addCopyCGEdge(NodeID src, NodeID dst)
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Copy)
             || srcNode == dstNode)
-        return NULL;
+        return nullptr;
 
     CopyCGEdge* edge = new CopyCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -195,7 +196,7 @@ NormalGepCGEdge*  ConstraintGraph::addNormalGepCGEdge(NodeID src, NodeID dst, co
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::NormalGep))
-        return NULL;
+        return nullptr;
 
     NormalGepCGEdge* edge = new NormalGepCGEdge(srcNode, dstNode,ls, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -213,7 +214,7 @@ VariantGepCGEdge* ConstraintGraph::addVariantGepCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::VariantGep))
-        return NULL;
+        return nullptr;
 
     VariantGepCGEdge* edge = new VariantGepCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = directEdgeSet.insert(edge).second;
@@ -231,7 +232,7 @@ LoadCGEdge* ConstraintGraph::addLoadCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Load))
-        return NULL;
+        return nullptr;
 
     LoadCGEdge* edge = new LoadCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = LoadCGEdgeSet.insert(edge).second;
@@ -249,7 +250,7 @@ StoreCGEdge* ConstraintGraph::addStoreCGEdge(NodeID src, NodeID dst)
     ConstraintNode* srcNode = getConstraintNode(src);
     ConstraintNode* dstNode = getConstraintNode(dst);
     if(hasEdge(srcNode,dstNode,ConstraintEdge::Store))
-        return NULL;
+        return nullptr;
 
     StoreCGEdge* edge = new StoreCGEdge(srcNode, dstNode, edgeIndex++);
     bool added = StoreCGEdgeSet.insert(edge).second;
@@ -586,6 +587,13 @@ void ConstraintGraph::print()
 }
 
 /*!
+ * View dot graph of Constraint graph from debugger.
+ */
+void ConstraintGraph::view() {
+    llvm::ViewGraph(this, "Constraint Graph");
+}
+
+/*!
  * GraphTraits specialization for constraint graph
  */
 namespace llvm
@@ -606,12 +614,17 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         return "ConstraintG";
     }
 
+    static bool isNodeHidden(NodeType *n) {
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        return node->isIsolatedNode();
+    }
+
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
-        bool briefDisplay = true;
+        bool briefDisplay = Options::BriefConsCGDotGraph;
         bool nameDisplay = true;
         std::string str;
         raw_string_ostream rawstr(str);
@@ -632,9 +645,9 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         {
             // print the whole value
             if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
-                rawstr << *node->getValue();
+                rawstr << node->getId() << ":" << value2String(node->getValue());
             else
-                rawstr << "";
+                rawstr << node->getId() << ":";
 
         }
 
@@ -644,40 +657,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
-
-        if (SVFUtil::isa<ValPN>(node))
-        {
-            if(SVFUtil::isa<GepValPN>(node))
-                return "shape=hexagon";
-            else if (SVFUtil::isa<DummyValPN>(node))
-                return "shape=diamond";
-            else
-                return "shape=circle";
-        }
-        else if (SVFUtil::isa<ObjPN>(node))
-        {
-            if(SVFUtil::isa<GepObjPN>(node))
-                return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjPN>(node))
-                return "shape=septagon";
-            else if (SVFUtil::isa<DummyObjPN>(node))
-                return "shape=Mcircle";
-            else
-                return "shape=doublecircle";
-        }
-        else if (SVFUtil::isa<RetPN>(node))
-        {
-            return "shape=Mrecord";
-        }
-        else if (SVFUtil::isa<VarArgPN>(node))
-        {
-            return "shape=octagon";
-        }
-        else
-        {
-            assert(0 && "no such kind node!!");
-        }
-        return "";
+        return node->getNodeAttrForDotDisplay();
     }
 
     template<class EdgeIter>

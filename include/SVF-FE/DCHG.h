@@ -74,14 +74,14 @@ public:
     typedef std::vector<const Function*> FuncVector;
 
     DCHNode(const DIType *diType, NodeID i = 0, GNodeK k = 0)
-        : GenericNode<DCHNode, DCHEdge>(i, k), vtable(NULL), flags(0)
+        : GenericNode<DCHNode, DCHEdge>(i, k), vtable(nullptr), flags(0)
     {
         this->diType = diType;
-        if (diType == NULL)
+        if (diType == nullptr)
         {
             typeName = "null-void";
         }
-        else if (diType->getRawName() != NULL)
+        else if (diType->getRawName() != nullptr)
         {
             typeName = diType->getName();
         }
@@ -264,7 +264,7 @@ public:
             return false;
         }
 
-        return getNode(type)->getVTable() != NULL;
+        return getNode(type)->getVTable() != nullptr;
     }
 
     virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override;
@@ -420,7 +420,7 @@ private:
         return diTypeToNodeMap.find(type) != diTypeToNodeMap.end();
     }
 
-    /// Returns the node for type (NULL if it doesn't exist).
+    /// Returns the node for type (nullptr if it doesn't exist).
     DCHNode *getNode(const DIType *type)
     {
         type = getCanonicalType(type);
@@ -435,7 +435,7 @@ private:
 
     /// Creates an edge between from t1 to t2.
     DCHEdge *addEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKind et);
-    /// Returns the edge between t1 and t2 if it exists, returns NULL otherwise.
+    /// Returns the edge between t1 and t2 if it exists, returns nullptr otherwise.
     DCHEdge *hasEdge(const DIType *t1, const DIType *t2, DCHEdge::GEdgeKind et);
 
     /// Number of types (nodes) in the graph.

@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Peng Di
  */
 
+#include "Util/Options.h"
 #include "MTA/TCT.h"
 #include "MTA/MTA.h"
 #include "Util/DataFlowUtil.h"
@@ -13,8 +14,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> TCTDotGraph("dump-tct", llvm::cl::init(false), llvm::cl::desc("Dump dot graph of Call Graph"));
 
 /*!
  * An instruction i is in loop
@@ -388,7 +387,7 @@ void TCT::build()
 
     collectLoopInfoForJoin();
 
-    // the fork site of main function is initialized with NULL.
+    // the fork site of main function is initialized with nullptr.
     // the context of main is initialized with empty
     // start routine is empty
 
@@ -398,7 +397,7 @@ void TCT::build()
         if (!isCandidateFun(*it))
             continue;
         CallStrCxt cxt;
-        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, NULL, cxt, *it);
+        TCTNode* mainTCTNode = getOrCreateTCTNode(cxt, nullptr, cxt, *it);
         CxtThreadProc t(mainTCTNode->getId(), cxt, *it);
         pushToCTPWorkList(t);
     }
@@ -431,7 +430,7 @@ void TCT::build()
 
     collectMultiForkedThreads();
 
-    if (TCTDotGraph)
+    if (Options::TCTDotGraph)
     {
         print();
         dump("tct");
@@ -540,7 +539,7 @@ void TCT::dumpCxt(CallStrCxt& cxt)
  */
 void TCT::dump(const std::string& filename)
 {
-    if (TCTDotGraph)
+    if (Options::TCTDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
@@ -570,7 +569,7 @@ TCTEdge* TCT::hasGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind) con
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 /*!
@@ -584,7 +583,7 @@ TCTEdge* TCT::getGraphEdge(TCTNode* src, TCTNode* dst, TCTEdge::CEDGEK kind)
         if (edge->getEdgeKind() == kind && edge->getDstID() == dst->getId())
             return edge;
     }
-    return NULL;
+    return nullptr;
 }
 namespace llvm
 {

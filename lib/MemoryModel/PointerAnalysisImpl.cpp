@@ -6,9 +6,11 @@
  */
 
 
+#include "Util/Options.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
+#include "Util/Options.h"
 #include <fstream>
 #include <sstream>
 
@@ -17,9 +19,6 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
-static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
-                                       llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
-
 
 /*!
  * Constructor
@@ -27,15 +26,20 @@ static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
 BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check)
 {
-    if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
+    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
-            || type == AndersenSCD_WPA || type == AndersenSFR_WPA || type == Steensgaard_WPA)
+            || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
-        ptD = new MutDiffPTDataTy();
+        // Only maintain reverse points-to when the analysis is field-sensitive.
+        ptD = new MutDiffPTDataTy(Options::MaxFieldLimit != 0);
+    }
+    else if (type == Steensgaard_WPA)
+    {
+        ptD = new MutDiffPTDataTy(false);
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
-        if (INCDFPTData)
+        if (Options::INCDFPTData)
             ptD = new IncMutDFPTDataTy(false);
         else
             ptD = new MutDFPTDataTy(false);
@@ -84,11 +88,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 
     // Write analysis results to file
-    PTDataTy *ptD = getPTDataTy();
-    if (hasPtsMap())
-    {
-        auto &ptsMap = getPtsMap();
-        for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
         {
             NodeID var = it->first;
             const PointsTo &pts = getPts(var);
@@ -106,8 +107,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
                 }
             }
             F.os() << "}\n";
-        }
     }
+
 
     // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)

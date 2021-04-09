@@ -28,7 +28,7 @@
  *      Author: Yulei Sui
  */
 
-
+#include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/PathCondAllocator.h"
 #include "Util/DPItem.h"
@@ -44,9 +44,7 @@ u32_t VFPathCond::maximumPathLen = 0;
 u32_t VFPathCond::maximumPath = 0;
 
 u32_t PathCondAllocator::totalCondNum = 0;
-BddCondManager* PathCondAllocator::bddCondMgr = NULL;
-static llvm::cl::opt<bool> PrintPathCond("print-pc", llvm::cl::init(false),
-        llvm::cl::desc("Print out path condition"));
+BddCondManager* PathCondAllocator::bddCondMgr = nullptr;
 
 /*!
  * Allocate path condition for each branch
@@ -70,7 +68,7 @@ void PathCondAllocator::allocate(const SVFModule* M)
         }
     }
 
-    if(PrintPathCond)
+    if(Options::PrintPathCond)
         printPathCond();
 
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation ends\n"));
@@ -194,7 +192,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
             return getFalseCond();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -235,7 +233,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
     }
     /// no branch call program exit
     else
-        return NULL;
+        return nullptr;
 
 }
 
@@ -276,7 +274,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         if(allPDT)
             return getTrueCond();
     }
-    return NULL;
+    return nullptr;
 }
 
 /*!
@@ -399,7 +397,7 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
  */
 PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0)
 {
-    assert(BB1 && BB2 && "expect NULL BB here!");
+    assert(BB1 && BB2 && "expect nullptr BB here!");
 
     DominatorTree* dt = getDT(BB1->getParent());
     /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
@@ -504,7 +502,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
 void PathCondAllocator::destroy()
 {
     delete bddCondMgr;
-    bddCondMgr = NULL;
+    bddCondMgr = nullptr;
 }
 
 /*!

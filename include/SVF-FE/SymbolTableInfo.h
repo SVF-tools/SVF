@@ -93,18 +93,17 @@ private:
     /// Whether to model constants
     bool modelConstants;
 
+    /// total number of symbols
+    SymID totalSymNum;
+
 protected:
     /// Constructor
     SymbolTableInfo(void) :
-        modelConstants(false), maxStruct(NULL), maxStSize(0)
+        modelConstants(false), maxStruct(nullptr), maxStSize(0), mod(nullptr), totalSymNum(0)
     {
     }
 
 public:
-    /// Statistics
-    //@{
-    static SymID totalSymNum;
-    //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
@@ -113,7 +112,7 @@ public:
     static void releaseSymbolInfo()
     {
         delete symInfo;
-        symInfo = NULL;
+        symInfo = nullptr;
     }
     virtual ~SymbolTableInfo()
     {
@@ -150,7 +149,7 @@ public:
     /// Get target machine data layout
     inline static DataLayout* getDataLayout(Module* mod)
     {
-        if(dl==NULL)
+        if(dl==nullptr)
             return dl = new DataLayout(mod);
         return dl;
     }
@@ -423,6 +422,11 @@ public:
 
     /// Debug method
     void printFlattenFields(const Type* type);
+
+    static std::string toString(SYMTYPE symtype);
+
+    /// Another debug method
+    virtual void dump();
 
 protected:
     /// Collect the struct info

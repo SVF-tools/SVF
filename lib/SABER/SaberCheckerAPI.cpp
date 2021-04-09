@@ -32,7 +32,7 @@
 using namespace std;
 using namespace SVF;
 
-SaberCheckerAPI* SaberCheckerAPI::ckAPI = NULL;
+SaberCheckerAPI* SaberCheckerAPI::ckAPI = nullptr;
 
 namespace {
 

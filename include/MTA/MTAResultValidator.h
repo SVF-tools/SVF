@@ -54,7 +54,7 @@ protected:
 
     /*
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
-     * same BasicBlock. Return NULL if none exists.
+     * same BasicBlock. Return nullptr if none exists.
      */
     const Instruction *getPreviousMemoryAccessInst(const Instruction *I);
 
@@ -385,7 +385,7 @@ private:
     /*!
      * Get the previous LoadInst or StoreInst from Instruction "I" in the
      * same BasicBlock.
-     * Return NULL if none exists.
+     * Return nullptr if none exists.
      */
     const Instruction *getPreviousMemoryAccessInst(
         const Instruction *I)
@@ -403,7 +403,7 @@ private:
             }
             I = I->getPrevNode();
         }
-        return NULL;
+        return nullptr;
     }
 
     /// Constant RC_FLAG values

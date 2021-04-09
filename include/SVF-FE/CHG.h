@@ -82,7 +82,7 @@ public:
     typedef std::vector<const SVFFunction*> FuncVector;
 
     CHNode (const std::string name, NodeID i = 0, GNodeK k = 0):
-        GenericCHNodeTy(i, k), vtable(NULL), className(name), flags(0)
+        GenericCHNodeTy(i, k), vtable(nullptr), className(name), flags(0)
     {
     }
     ~CHNode()
@@ -168,7 +168,7 @@ private:
      *
      * virtualFunctionVectors = {{Af1, Af2, ...}, {Bg1, Bg2, ...}}
      */
-    std::vector<std::vector<const SVFFunction*>> virtualFunctionVectors;
+    std::vector<FuncVector> virtualFunctionVectors;
 };
 
 /// class hierarchy graph
@@ -216,6 +216,7 @@ public:
     const CHNodeSetTy& getCSClasses(CallSite cs);
     void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
+    void view();
     void printCH();
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const
@@ -236,7 +237,7 @@ public:
             if (it->second == id)
                 return it->first;
         }
-        return NULL;
+        return nullptr;
     }
 
     inline void addInstances(const std::string templateName, CHNode* node)
@@ -284,6 +285,9 @@ public:
     {
         return chg->getKind() == Standard;
     }
+
+protected:
+    void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 
 private:
     SVFModule* svfMod;

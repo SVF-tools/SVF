@@ -54,7 +54,7 @@ public:
 
     /// Constructor
 	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL)
+        :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -62,9 +62,9 @@ public:
     /// Destructor
     virtual ~AndersenBase()
     {
-        if (consCG != NULL)
+        if (consCG != nullptr)
             delete consCG;
-        consCG = NULL;
+        consCG = nullptr;
     }
 
     /// Andersen analysis
@@ -76,6 +76,11 @@ public:
     /// Finalize analysis
     virtual void finalize();
 
+    /// Implement it in child class to update call graph
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
+    {
+        return false;
+    }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -332,16 +337,8 @@ protected:
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
-    /// Update call graph for all the indirect callsites
-    virtual inline bool updateCallGraph()
-    {
-        return updateCallGraph(getIndirectCallsites());
-    }
-
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
-
-
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
@@ -424,7 +421,7 @@ public:
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
     {
-        if(diffWave==NULL)
+        if(diffWave==nullptr)
         {
             diffWave = new AndersenWaveDiff(_pag, AndersenWaveDiff_WPA, false);
             diffWave->analyze();
@@ -436,7 +433,7 @@ public:
     {
         if (diffWave)
             delete diffWave;
-        diffWave = NULL;
+        diffWave = nullptr;
     }
 
     virtual void solveWorklist();
@@ -506,13 +503,13 @@ private:
 public:
     AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
     {
-        assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
+        assert(getTypeSystem()!=nullptr && "a type system is required for this pointer analysis");
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(PAG* p)
     {
-        if(diffWaveWithType==NULL)
+        if(diffWaveWithType==nullptr)
         {
             diffWaveWithType = new AndersenWaveDiffWithType(p);
             diffWaveWithType->analyze();
@@ -524,7 +521,7 @@ public:
     {
         if (diffWaveWithType)
             delete diffWaveWithType;
-        diffWaveWithType = NULL;
+        diffWaveWithType = nullptr;
     }
 
 protected:
@@ -641,7 +638,7 @@ private:
 
 public:
     AndersenHCD(PAG* _pag, PTATY type = AndersenHCD_WPA) :
-        Andersen(_pag, type), oCG(NULL)
+        Andersen(_pag, type), oCG(nullptr)
     {
     }
 

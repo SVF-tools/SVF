@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "MSSA/MemRegion.h"
 #include "MSSA/MSSAMuChi.h"
@@ -38,8 +39,6 @@ using namespace SVFUtil;
 Size_t MemRegion::totalMRNum = 0;
 Size_t MRVer::totalVERNum = 0;
 
-static llvm::cl::opt<bool> IgnoreDeadFun("mssa-ignoreDeadFun", llvm::cl::init(false),
-        llvm::cl::desc("Don't construct memory SSA for deadfunction"));
 
 /*!
  * Clean up memory
@@ -54,9 +53,9 @@ void MRGenerator::destroy()
     }
 
     delete callGraphSCC;
-    callGraphSCC = NULL;
-    callGraph = NULL;
-    pta = NULL;
+    callGraphSCC = nullptr;
+    callGraph = nullptr;
+    pta = nullptr;
 }
 
 /*!
@@ -156,7 +155,7 @@ void MRGenerator::collectModRefForLoadStore()
         const SVFFunction& fun = **fi;
 
         /// if this function does not have any caller, then we do not care its MSSA
-        if (IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
+        if (Options::IgnoreDeadFun && isDeadFunction(fun.getLLVMFun()))
             continue;
 
         for (Function::const_iterator iter = fun.getLLVMFun()->begin(), eiter = fun.getLLVMFun()->end();

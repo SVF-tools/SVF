@@ -219,7 +219,7 @@ private:
     Function* fun;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(NULL)
+        isDecl(false), isIntri(false), fun(nullptr)
     {
     }
 
@@ -252,6 +252,12 @@ public:
     {
         return getLLVMFun()->isVarArg();
     }
+
+    // Dump Control Flow Graph of llvm function, with instructions
+    void viewCFG();
+
+    // Dump Control Flow Graph of llvm function, without instructions
+    void viewCFGOnly();
 
 };
 

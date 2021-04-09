@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
 #include "Util/TypeBasedHeapCloning.h"
@@ -34,12 +35,11 @@
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
 
-static llvm::cl::opt<bool> CTirAliasEval("ctir-alias-eval", llvm::cl::init(false), llvm::cl::desc("Prints alias evaluation of ctir instructions in FS analyses"));
 
 using namespace SVF;
 using namespace SVFUtil;
 
-FlowSensitive* FlowSensitive::fspta = NULL;
+FlowSensitive* FlowSensitive::fspta = nullptr;
 
 /*!
  * Initialize analysis
@@ -50,7 +50,11 @@ void FlowSensitive::initialize()
 
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
-    svfg = CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
+    if(Options::OPTSVFG)
+        svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
+    else
+        svfg = memSSA.buildPTROnlySVFGWithoutOPT(ander);
+
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
@@ -78,8 +82,8 @@ void FlowSensitive::analyze()
 
         callGraphSCC->find();
 
-        solve();
-
+        initWorklist();
+        solveWorklist();
     }
     while (updateCallGraph(getIndirectCallsites()));
 
@@ -88,7 +92,7 @@ void FlowSensitive::analyze()
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
 
-    if (CTirAliasEval)
+    if (Options::CTirAliasEval)
     {
         printCTirAliasStats();
     }
@@ -102,7 +106,7 @@ void FlowSensitive::analyze()
  */
 void FlowSensitive::finalize()
 {
-	if(svfg->getDumpVFG())
+	if(Options::DumpVFG)
 		svfg->dump("fs_solved", true);
 
     NodeStack& nodeStack = WPASolver<SVFG*>::SCCDetect();

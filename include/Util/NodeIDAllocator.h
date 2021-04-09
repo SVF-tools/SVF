@@ -18,24 +18,18 @@ public:
     /// Allocation strategy to use.
     enum Strategy
     {
-        /// Used to initialise from llvm::cl::opt.
-        NONE,
         /// Allocate objects contiguously, separate from values, and vice versa.
         /// If [****...*****] is the space of unsigned integers, we allocate as,
         /// [ssssooooooo...vvvvvvv] (o = object, v = value, s = special).
         DENSE,
+        /// Allocate objects objects and values sequentially, intermixed.
+        SEQ,
         /// Allocate values and objects as they come in with a single counter.
         /// GEP objects are allocated as an offset from their base (see implementation
         /// of allocateGepObjectId). The purpose of this allocation strategy
         /// is human readability.
         DEBUG,
     };
-
-    /// Option strings as written by the user.
-    ///@{
-    static const std::string userStrategyDense;
-    static const std::string userStrategyDebug;
-    ///@}
 
     /// These nodes, and any nodes before them are assumed allocated
     /// as objects and values. For simplicity's sake, numObjects and
@@ -88,7 +82,7 @@ private:
     NodeID numNodes;
     ///@}
 
-    /// Strategy to allocate with. Initially NONE.
+    /// Strategy to allocate with.
     enum Strategy strategy;
 
     /// Single allocator.

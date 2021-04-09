@@ -47,7 +47,8 @@ const string vtblLabelAfterDemangle = "vtable for ";
 const string vfunPreLabel = "_Z";
 
 // label for multi inheritance virtual function
-const string mInheritanceVFunLabel = "non-virtual thunk to ";
+const string NVThunkFunLabel = "non-virtual thunk to ";
+const string VThunkFuncLabel = "virtual thunk to ";
 
 const string clsName = "class.";
 const string structName = "struct.";
@@ -82,7 +83,7 @@ static bool isOperOverload(const string name)
     }
 }
 
-static string getBeforeParenthesis(const string name)
+static string getBeforeParenthesis(const string &name)
 {
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
@@ -100,7 +101,7 @@ static string getBeforeParenthesis(const string name)
     return name.substr(0, pos);
 }
 
-string cppUtil::getBeforeBrackets(const string name)
+string cppUtil::getBeforeBrackets(const string &name)
 {
     if (name[name.size() - 1] != '>')
     {
@@ -131,6 +132,31 @@ bool cppUtil::isValVtbl(const Value *val)
         return false;
 }
 
+static void handleThunkFunction(cppUtil::DemangledName &dname) {
+    // when handling multi-inheritance,
+    // the compiler may generate thunk functions
+    // to perform `this` pointer adjustment
+    // they are indicated with `virtual thunk to `
+    // and `nun-virtual thunk to`.
+    // if the classname starts with part of a
+    // demangled name starts with
+    // these prefixes, we need to remove the prefix
+    // to get the real class name
+
+    static vector<string> thunkPrefixes = {VThunkFuncLabel, NVThunkFunLabel};
+    for (unsigned i = 0; i < thunkPrefixes.size(); i++) {
+        auto prefix = thunkPrefixes[i];
+        if (dname.className.size() > prefix.size() &&
+            dname.className.compare(0, prefix.size(), prefix) == 0)
+        {
+            dname.className = dname.className.substr(prefix.size());
+            dname.isThunkFunc = true;
+            return;
+
+        }
+    }
+}
+
 /*
  * input: _ZN****
  * after abi::__cxa_demangle:
@@ -152,13 +178,14 @@ bool cppUtil::isValVtbl(const Value *val)
  * functionName: f<...::...>
  */
 
-struct cppUtil::DemangledName cppUtil::demangle(const string name)
+struct cppUtil::DemangledName cppUtil::demangle(const string &name)
 {
     struct cppUtil::DemangledName dname;
+    dname.isThunkFunc = false;
 
     s32_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-    if (realname == NULL)
+    if (realname == nullptr)
     {
         dname.className = "";
         dname.funcName = "";
@@ -189,13 +216,8 @@ struct cppUtil::DemangledName cppUtil::demangle(const string name)
             }
         }
     }
-    /// multiple inheritance
-    if (dname.className.size() > mInheritanceVFunLabel.size() &&
-            dname.className.compare(0, mInheritanceVFunLabel.size(),
-                                    mInheritanceVFunLabel) == 0)
-    {
-        dname.className = dname.className.substr(mInheritanceVFunLabel.size());
-    }
+
+    handleThunkFunction(dname);
 
     return dname;
 }
@@ -234,7 +256,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 bool cppUtil::isVirtualCallSite(CallSite cs)
 {
 	// the callsite must be an indirect one with at least one argument (this ptr)
-    if (cs.getCalledFunction() != NULL || cs.arg_empty())
+    if (cs.getCalledFunction() != nullptr || cs.arg_empty())
         return false;
 
     // When compiled with ctir, we'd be using the DCHG which has its own
@@ -261,6 +283,31 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
         }
     }
     return false;
+}
+
+bool cppUtil::isCPPThunkFunction(const Function *F) {
+    cppUtil::DemangledName dname = cppUtil::demangle(F->getName());
+    return dname.isThunkFunc;
+}
+
+const Function *cppUtil::getThunkTarget(const Function *F) {
+    const Function *ret = nullptr;
+
+    for (auto &bb:*F) {
+        for (auto &inst: bb) {
+            if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
+                || llvm::isa<CallBrInst>(inst)) {
+                llvm::ImmutableCallSite cs(&inst);
+                assert(cs.getCalledFunction() &&
+                       "Indirect call detected in thunk func");
+                assert(ret == nullptr && "multiple callsites in thunk func");
+
+                ret = cs.getCalledFunction();
+            }
+        }
+    }
+
+    return ret;
 }
 
 const Value *cppUtil::getVCallThisPtr(CallSite cs)
@@ -331,10 +378,10 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
 const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 {
     const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
-    assert(loadInst != NULL);
+    assert(loadInst != nullptr);
     const Value *vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
-    assert(gepInst != NULL);
+    assert(gepInst != nullptr);
     const Value *vtbl = gepInst->getPointerOperand();
     return vtbl;
 }
@@ -342,14 +389,14 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 u64_t cppUtil::getVCallIdx(CallSite cs)
 {
     const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
-    assert(vfuncloadinst != NULL);
+    assert(vfuncloadinst != nullptr);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
         SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
     User::const_op_iterator oi = vfuncptrgepinst->idx_begin();
     const ConstantInt *idx = SVFUtil::dyn_cast<ConstantInt>(&(*oi));
     u64_t idx_value;
-    if (idx == NULL)
+    if (idx == nullptr)
     {
         SVFUtil::errs() << "vcall gep idx not constantint\n";
         idx_value = 0;
@@ -389,7 +436,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     string vtblName = value->getName().str();
     s32_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
-    if (realname != NULL)
+    if (realname != nullptr)
     {
         string realnameStr = string(realname);
         if (realnameStr.compare(0, vtblLabelAfterDemangle.size(),

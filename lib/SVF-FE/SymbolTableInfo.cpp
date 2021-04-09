@@ -33,6 +33,7 @@
 #include "SVF-FE/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
 #include "Util/NodeIDAllocator.h"
+#include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -44,26 +45,15 @@ using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 
-
-DataLayout* SymbolTableInfo::dl = NULL;
-SymbolTableInfo* SymbolTableInfo::symInfo = NULL;
-SymID SymbolTableInfo::totalSymNum = 0;
-
-static llvm::cl::opt<unsigned> maxFieldNumLimit("fieldlimit",  llvm::cl::init(512),
-        llvm::cl::desc("Maximum field number for field sensitive analysis"));
-
-static llvm::cl::opt<bool> LocMemModel("locMM", llvm::cl::init(false),
-                                       llvm::cl::desc("Bytes/bits modeling of memory locations"));
-
-static llvm::cl::opt<bool> modelConsts("modelConsts", llvm::cl::init(false),
-                                       llvm::cl::desc("Modeling individual constant objects"));
+DataLayout* SymbolTableInfo::dl = nullptr;
+SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 /*
  * Initial the memory object here
  */
 void MemObj::init(const Value *val)
 {
-    const PointerType *refTy = NULL;
+    const PointerType *refTy = nullptr;
 
     const Instruction *I = SVFUtil::dyn_cast<Instruction>(val);
 
@@ -78,10 +68,10 @@ void MemObj::init(const Value *val)
     if (refTy)
     {
         Type *objTy = refTy->getElementType();
-        if(LocMemModel)
-            typeInfo = new LocObjTypeInfo(val, objTy, maxFieldNumLimit);
+        if(Options::LocMemModel)
+            typeInfo = new LocObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         else
-            typeInfo = new ObjTypeInfo(val, objTy, maxFieldNumLimit);
+            typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
         typeInfo->init(val);
     }
     else
@@ -98,13 +88,13 @@ void MemObj::init(const Value *val)
  */
 SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 {
-    if (symInfo == NULL)
+    if (symInfo == nullptr)
     {
-        if(LocMemModel)
+        if(Options::LocMemModel)
             symInfo = new LocSymTableInfo();
         else
             symInfo = new SymbolTableInfo();
-        symInfo->setModelConstants(modelConsts);
+        symInfo->setModelConstants(Options::ModelConsts);
     }
     return symInfo;
 }
@@ -452,7 +442,7 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
 
     mod = svfModule;
 
-    StInfo::setMaxFieldLimit(maxFieldNumLimit);
+    StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
 
     // Object #0 is black hole the object that may point to any object
     assert(totalSymNum == BlackHole && "Something changed!");
@@ -594,6 +584,9 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
     }
 
     NodeIDAllocator::get()->endSymbolAllocation();
+    if (Options::SymTabPrint) {
+        SymbolTableInfo::SymbolInfo()->dump();
+    }
 }
 
 /*!
@@ -1008,6 +1001,94 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     }
 }
 
+std::string SymbolTableInfo::toString(SYMTYPE symtype)
+{
+    switch (symtype) {
+        case SYMTYPE::BlackHole: {
+            return "BlackHole";
+        }
+        case SYMTYPE::ConstantObj: {
+            return "ConstantObj";
+        }
+        case SYMTYPE::BlkPtr: {
+            return "BlkPtr";
+        }
+        case SYMTYPE::NullPtr: {
+            return "NullPtr";
+        }
+        case SYMTYPE::ValSym: {
+            return "ValSym";
+        }
+        case SYMTYPE::ObjSym: {
+            return "ObjSym";
+        }
+        case SYMTYPE::RetSym: {
+            return "RetSym";
+        }
+        case SYMTYPE::VarargSym: {
+            return "VarargSym";
+        }
+        default: {
+            return "Invalid SYMTYPE";
+        }
+    }
+}
+
+void SymbolTableInfo::dump()
+{
+    OrderedMap<SymID, Value*> idmap;
+    SymID maxid = 0;
+    for (ValueToIDMapTy::iterator iter = valSymMap.begin(); iter != valSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (ValueToIDMapTy::iterator iter = objSymMap.begin(); iter != objSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = returnSymMap.begin(); iter != returnSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    for (FunToIDMapTy::iterator iter = varargSymMap.begin(); iter != varargSymMap.end();
+         ++iter)
+    {
+        const SymID i = iter->second;
+        maxid = max(i, maxid);
+        Value* val = (Value*) iter->first;
+        idmap[i] = val;
+    }
+    outs() << "{SymbolTableInfo \n";
+    for (SymID symid = 0; symid <= maxid; ++symid) {
+        SYMTYPE symtype = this->symTyMap.at(symid);
+        string typestring = toString(symtype);
+        outs() << "  " << typestring << symid;
+        if (symtype < SYMTYPE::ValSym) {
+            outs() << "\n";
+        } else {
+            auto I = idmap.find(symid);
+            if (I == idmap.end()) {
+                outs() << "No value\n";
+                break;
+            }
+            const Value* val = I->second;
+            outs() << " -> " << value2String(val) << "\n";
+        }
+    }
+    outs() << "}\n";
+}
 
 /*
  * Get the type size given a target data layout

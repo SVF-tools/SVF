@@ -40,7 +40,7 @@
 using namespace std;
 using namespace SVF;
 
-ThreadAPI* ThreadAPI::tdAPI = NULL;
+ThreadAPI* ThreadAPI::tdAPI = nullptr;
 
 namespace
 {

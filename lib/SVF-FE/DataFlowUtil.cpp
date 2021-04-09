@@ -94,7 +94,7 @@ PostDominatorTree* PTACFInfoBuilder::getPostDT(const Function* f)
 
     Function* fun = const_cast<Function*>(f);
 	if(f->isDeclaration())
-		return NULL;
+		return nullptr;
     FunToPostDTMap::iterator it = funToPDTMap.find(fun);
     if(it==funToPDTMap.end())
     {
