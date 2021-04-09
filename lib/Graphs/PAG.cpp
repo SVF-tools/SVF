@@ -295,7 +295,7 @@ const std::string GepPE::toString() const{
 const std::string NormalGepPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "NormalGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }

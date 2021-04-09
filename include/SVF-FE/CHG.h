@@ -216,6 +216,7 @@ public:
     const CHNodeSetTy& getCSClasses(CallSite cs);
     void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
+    void view();
     void printCH();
 
     inline s32_t getVirtualFunctionID(const SVFFunction* vfn) const

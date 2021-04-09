@@ -177,6 +177,7 @@ public:
 
     // Andersen.cpp
     static const llvm::cl::opt<bool> ConsCGDotGraph;
+    static const llvm::cl::opt<bool> BriefConsCGDotGraph;
     static const llvm::cl::opt<bool> PrintCGGraph;
     // static const llvm::cl::opt<string> WriteAnder;
     static const llvm::cl::opt<std :: string> WriteAnder;

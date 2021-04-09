@@ -569,6 +569,12 @@ namespace SVF
         llvm::cl::desc("Dump dot graph of Constraint Graph")
     );
 
+    const llvm::cl::opt<bool> Options::BriefConsCGDotGraph(
+            "brief-constraint-graph",
+            llvm::cl::init(true),
+            llvm::cl::desc("Dump dot graph of Constraint Graph")
+    );
+
     const llvm::cl::opt<bool> Options::PrintCGGraph(
         "print-constraint-graph", 
         llvm::cl::init(false),
