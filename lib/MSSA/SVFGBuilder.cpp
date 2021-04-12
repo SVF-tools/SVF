@@ -145,7 +145,10 @@ MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
     }
 
     mssa->performStat();
-    mssa->dumpMSSA();
+    if (Options::DumpMSSA)
+    {
+        mssa->dumpMSSA();
+    }
 
     return mssa;
 }
