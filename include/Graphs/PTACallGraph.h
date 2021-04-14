@@ -437,6 +437,9 @@ public:
 
     /// Dump the graph
     void dump(const std::string& filename);
+
+    /// View the graph from the debugger
+    void view();
 };
 
 } // End namespace SVF
