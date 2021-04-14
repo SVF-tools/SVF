@@ -335,7 +335,7 @@ namespace SVF
 
     const llvm::cl::opt<enum hclust_fast_methods> Options::ClusterMethod(
         "cluster-method",
-        llvm::cl::init(HCLUST_METHOD_SINGLE),
+        llvm::cl::init(HCLUST_METHOD_SVF_BEST),
         llvm::cl::desc("hierarchical clustering method for objects"),
         // TODO: maybe add descriptions.
         llvm::cl::values(
