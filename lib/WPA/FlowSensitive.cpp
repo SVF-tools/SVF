@@ -66,7 +66,7 @@ void FlowSensitive::initialize()
 
     /// VSFS wants to do its own clustering *after* versioning.
     /// TODO: bad dependency.
-    if (!SVFUtil::isa<VersionedFlowSensitive>(this) && Options::ClusterFs)
+    if (!SVFUtil::isa<VersionedFlowSensitive>(this))// && Options::ClusterFs)
     {
         PointsTo defaultPt = cluster();
         getPTDataTy()->setDefaultData(defaultPt);
@@ -156,7 +156,7 @@ void FlowSensitive::finalize()
     }
 
     // TODO: check -stat too.
-    if (Options::ClusterFs)
+    //if (Options::ClusterFs)
     {
         Map<std::string, std::string> stats;
         const PTDataTy *ptd = getPTDataTy();
@@ -771,7 +771,22 @@ PointsTo FlowSensitive::cluster(void)
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
-    return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
+    if (Options::ClusterFs)
+    {
+        return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
+    }
+    else
+    {
+        PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(nodeMapping->size());
+        PointsTo::MappingPtr reversePlainMapping = std::make_shared<std::vector<NodeID>>(nodeMapping->size());
+        for (NodeID i = 0; i < plainMapping->size(); ++i)
+        {
+            plainMapping->at(i) = i;
+            reversePlainMapping->at(i) = i;
+        }
+
+        return PointsTo(Options::StagedPtType, plainMapping, reversePlainMapping);
+    }
 }
 
 void FlowSensitive::printCTirAliasStats(void)
