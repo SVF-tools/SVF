@@ -596,13 +596,13 @@ namespace SVF
             const unsigned occ = ptsOcc.second;
             if (pts.count() == 0) continue;
 
-            unsigned theoretical = requiredBits(pts) / NATIVE_INT_SIZE;
+            u64_t theoretical = requiredBits(pts) / NATIVE_INT_SIZE;
             if (accountForOcc) theoretical *= occ;
 
             // Check number of words for original SBV.
             Set<unsigned> words;
             for (const NodeID o : pts) words.insert(o / NATIVE_INT_SIZE);
-            unsigned originalSbv = words.size();
+            u64_t originalSbv = words.size();
             if (accountForOcc) originalSbv *= occ;
 
             // Check number of words for original BV.
@@ -618,13 +618,13 @@ namespace SVF
             {
                 words.insert(b / NATIVE_INT_SIZE);
             }
-            unsigned originalBv = words.size();
+            u64_t originalBv = words.size();
             if (accountForOcc) originalBv *= occ;
 
             // Check number of words for new SBV.
             words.clear();
             for (const NodeID o : pts) words.insert(nodeMap[o] / NATIVE_INT_SIZE);
-            unsigned newSbv = words.size();
+            u64_t newSbv = words.size();
             if (accountForOcc) newSbv *= occ;
 
             // Check number of words for new BV.
@@ -640,7 +640,7 @@ namespace SVF
             words.clear();
             // No nodeMap[b] because min and max and from nodeMap.
             for (NodeID b = min; b <= max; ++b) words.insert(b / NATIVE_INT_SIZE);
-            unsigned newBv = words.size();
+            u64_t newBv = words.size();
             if (accountForOcc) newBv *= occ;
 
             totalTheoretical += theoretical;
