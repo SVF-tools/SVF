@@ -601,8 +601,9 @@ namespace SVF
 
             // Check number of words for original SBV.
             Set<unsigned> words;
-            for (const NodeID o : pts) words.insert(o / NATIVE_INT_SIZE);
-            u64_t originalSbv = words.size();
+            // TODO: nasty hardcoding.
+            for (const NodeID o : pts) words.insert(o / 128);
+            u64_t originalSbv = words.size() * 2;
             if (accountForOcc) originalSbv *= occ;
 
             // Check number of words for original BV.
@@ -623,8 +624,9 @@ namespace SVF
 
             // Check number of words for new SBV.
             words.clear();
-            for (const NodeID o : pts) words.insert(nodeMap[o] / NATIVE_INT_SIZE);
-            u64_t newSbv = words.size();
+            // TODO: nasty hardcoding.
+            for (const NodeID o : pts) words.insert(nodeMap[o] / 128);
+            u64_t newSbv = words.size() * 2;
             if (accountForOcc) newSbv *= occ;
 
             // Check number of words for new BV.
