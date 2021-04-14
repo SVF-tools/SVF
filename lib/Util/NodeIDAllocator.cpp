@@ -170,6 +170,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::NumGtIntRegions = "NumGtIntRegions";
     const std::string NodeIDAllocator::Clusterer::LargestRegion = "LargestRegion";
     const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
+    const std::string NodeIDAllocator::Clusterer::NumNonTrivialRegionObjects = "NumNonTrivObj";
 
     std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
     {
@@ -311,6 +312,7 @@ namespace SVF
 
             unsigned numGtIntRegions = 0;
             unsigned largestRegion = 0;
+            unsigned nonTrivialRegionObjects = 0;
             // Current new node ID; the result of a node ID mapping.
             unsigned allocCounter = 0;
             for (unsigned region = 0; region < numRegions; ++region)
@@ -335,6 +337,7 @@ namespace SVF
                 }
 
                 ++numGtIntRegions;
+                nonTrivialRegionObjects += regionNumObjects;
 
                 clkStart = PTAStat::getClk(true);
                 double *distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects, regionReverseMappings[region]);
@@ -363,6 +366,7 @@ namespace SVF
             // Though we "update" these in the loop, they will be the same every iteration.
             overallStats[NumGtIntRegions] = std::to_string(numGtIntRegions);
             overallStats[LargestRegion] = std::to_string(largestRegion);
+            overallStats[NumNonTrivialRegionObjects] = std::to_string(nonTrivialRegionObjects);
         }
 
         // In case we're not comparing anything, set to first "candidate".
@@ -662,11 +666,12 @@ namespace SVF
     void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
     {
         // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
-        const static std::array<std::string, 16> statKeys =
+        const static std::array<std::string, 17> statKeys =
             { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
               NewSbvNumWords, NewBvNumWords, NumRegions, NumGtIntRegions,
-              LargestRegion, RegioningTime, DistanceMatrixTime, FastClusterTime,
-              DendogramTraversalTime, EvalTime, TotalTime, BestCandidate };
+              NumNonTrivialRegionObjects, LargestRegion, RegioningTime,
+              DistanceMatrixTime, FastClusterTime, DendogramTraversalTime,
+              EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;
         std::cout.flags(std::ios::left);

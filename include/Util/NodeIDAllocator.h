@@ -121,6 +121,7 @@ public:
         static const std::string NumGtIntRegions;
         static const std::string LargestRegion;
         static const std::string BestCandidate;
+        static const std::string NumNonTrivialRegionObjects;
         ///@}
 
     public:
