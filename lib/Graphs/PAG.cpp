@@ -1123,7 +1123,7 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-	static bool isNodeHidden(PAGNode *node) {
+	static bool isNodeHidden(PAGNode *node, PAG*) {
 		return node->isIsolatedNode();
 	}
 
