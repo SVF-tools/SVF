@@ -569,7 +569,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
         {
             const CallSite &cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
             const Function *fn = cs.getCalledFunction();
-            if (fn == nullptr || !isAliasTestFunction(fn->getName()))
+            if (fn == nullptr || !isAliasTestFunction(static_cast<std::string>(fn->getName())))
             {
                 continue;
             }

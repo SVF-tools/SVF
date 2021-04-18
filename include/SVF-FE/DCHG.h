@@ -83,7 +83,7 @@ public:
         }
         else if (diType->getRawName() != nullptr)
         {
-            typeName = diType->getName();
+            typeName = static_cast<std::string>(diType->getName());
         }
         else
         {

@@ -325,7 +325,7 @@ void ThreadAPI::performAPIStat(SVFModule* module)
     for (llvm::StringMap<u32_t>::iterator it = tdAPIStatMap.begin(), eit =
                 tdAPIStatMap.end(); it != eit; ++it)
     {
-        std::string apiName = it->first();
+        std::string apiName = static_cast<std::string>(it->first());
         // format out put with width 20 space
         std::cout << std::setw(field_width) << apiName << " : " << it->second
                   << "\n";

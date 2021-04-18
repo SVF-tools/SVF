@@ -305,7 +305,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName();
+            return static_cast<std::string>(value->getName());
         return "";
     }
 
@@ -365,7 +365,7 @@ public:
     virtual const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName();
+            return static_cast<std::string>(value->getName());
         return "";
     }
     /// Return type of the value

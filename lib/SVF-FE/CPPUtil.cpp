@@ -286,7 +286,7 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
 }
 
 bool cppUtil::isCPPThunkFunction(const Function *F) {
-    cppUtil::DemangledName dname = cppUtil::demangle(F->getName());
+    cppUtil::DemangledName dname = cppUtil::demangle(static_cast<std::string>(F->getName()));
     return dname.isThunkFunc;
 }
 

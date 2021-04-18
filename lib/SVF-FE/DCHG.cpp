@@ -1236,7 +1236,7 @@ void DCHGraph::print(void)
             std::string typedefName = "void";
             if (tdef != nullptr)
             {
-                typedefName = tdef->getName();
+                typedefName = static_cast<std::string>(tdef->getName());
             }
 
             SVFUtil::outs() << indent(currIndent) << typedefName << "\n";

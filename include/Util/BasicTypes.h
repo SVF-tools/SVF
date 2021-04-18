@@ -61,6 +61,9 @@
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
 
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/IR/CFG.h"
+
 namespace SVF
 {
 
@@ -85,7 +88,11 @@ typedef llvm::User User;
 typedef llvm::Use Use;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
-typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+#if LLVM_VERSION_MAJOR >= 11
+    typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
+#else
+    typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+#endif
 typedef llvm::ModulePass ModulePass;
 typedef llvm::AnalysisUsage AnalysisUsage;
 
@@ -188,7 +195,11 @@ typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 
 /// LLVM Iterators
 typedef llvm::inst_iterator inst_iterator;
-typedef llvm::succ_const_iterator succ_const_iterator;
+#if LLVM_VERSION_MAJOR >= 11
+    typedef llvm::const_succ_iterator succ_const_iterator;
+#else
+    typedef llvm::succ_const_iterator succ_const_iterator;
+#endif
 typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::const_pred_iterator const_pred_iterator;
 typedef llvm::gep_type_iterator gep_type_iterator;
