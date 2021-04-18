@@ -59,8 +59,8 @@ NodeID MTAResultValidator::getIntArg(const Instruction* inst, unsigned int arg_n
 {
     assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getArgument(arg_num));
-    assert((arg_num < cs.arg_size()) && "Does not has this argument");
+    ConstantInt* x = SVFUtil::dyn_cast<ConstantInt>(cs.getCallArgOperand(arg_num));
+    assert((arg_num < cs.getInstruction()->arg_size()) && "Does not has this argument");
     return (NodeID) x->getSExtValue();
 }
 
@@ -68,8 +68,8 @@ std::vector<std::string> MTAResultValidator::getStringArg(const Instruction* ins
 {
     assert(SVFUtil::isa<CallInst>(inst) && "getFirstIntArg: inst is not a callinst");
     CallSite cs = SVFUtil::getLLVMCallSite(inst);
-    assert((arg_num < cs.arg_size()) && "Does not has this argument");
-    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(arg_num));
+    assert((arg_num < cs.getInstruction()->arg_size()) && "Does not has this argument");
+    const GetElementPtrInst* gepinst = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getCallArgOperand(arg_num));
     const Constant* arrayinst = SVFUtil::dyn_cast<Constant>(gepinst->getOperand(0));
     const ConstantDataArray* cxtarray = SVFUtil::dyn_cast<ConstantDataArray>(arrayinst->getOperand(0));
     if (!cxtarray)

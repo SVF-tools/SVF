@@ -537,9 +537,9 @@ void DCHGraph::buildCHG(bool extend)
 
 const VFunSet &DCHGraph::getCSVFsBasedonCHA(CallSite cs)
 {
-    if (csCHAMap.find(cs) != csCHAMap.end())
+    if (csCHAMap.find(&cs) != csCHAMap.end())
     {
-        return csCHAMap[cs];
+        return csCHAMap[&cs];
     }
 
     VFunSet vfns;
@@ -547,9 +547,9 @@ const VFunSet &DCHGraph::getCSVFsBasedonCHA(CallSite cs)
     getVFnsFromVtbls(cs, vtbls, vfns);
 
     // Cache.
-    csCHAMap.insert({cs, vfns});
+    csCHAMap.insert({&cs, vfns});
     // Return cached object, not the stack object.
-    return csCHAMap[cs];
+    return csCHAMap[&cs];
 }
 
 const VTableSet &DCHGraph::getCSVtblsBasedonCHA(CallSite cs)
@@ -601,7 +601,7 @@ void DCHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vi
 
             const Function *callee = vfnV[idx];
             // Practically a copy of that in lib/MemoryModel/CHA.cpp
-            if (cs.arg_size() == callee->arg_size() || (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
+            if (cs.getInstruction()->arg_size() == callee->arg_size() || (cs.getInstruction()->getFunctionType()->isVarArg() && callee->isVarArg()))
             {
                 cppUtil::DemangledName dname = cppUtil::demangle(callee->getName().str());
                 std::string calleeName = dname.funcName;

@@ -83,7 +83,7 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
         CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
         if (isVirtualCallSite(cs))
         {
-            virtualCallSites.insert(cs);
+            virtualCallSites.insert(&cs);
             const Value *vtbl = getVCallVtblPtr(cs);
             assert(pag->hasValueNode(vtbl));
             VFunSet vfns;

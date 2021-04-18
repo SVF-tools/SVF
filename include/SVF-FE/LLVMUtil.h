@@ -232,7 +232,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     if (isHeapAllocExtCallViaArg(cs))
     {
         int argPos = getHeapAllocHoldingArgPosition(cs);
-        const Value *arg = cs.getArgument(argPos);
+        const Value *arg = cs.getCallArgOperand(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(argType->getElementType());
     }
@@ -241,7 +241,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     {
         assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
                && "Must be heap alloc via ret, or static allocation site");
-        refType = SVFUtil::dyn_cast<PointerType>(cs.getType());
+        refType = SVFUtil::dyn_cast<PointerType>(cs.getInstruction()->getType());
     }
     assert(refType && "Allocated object must be held by a pointer-typed value.");
     return refType;
@@ -249,7 +249,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
 
 inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction *inst)
 {
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs = SVFUtil::getLLVMCallSite(inst);
     return getRefTypeOfHeapAllocOrStatic(cs);
 }
 //@}

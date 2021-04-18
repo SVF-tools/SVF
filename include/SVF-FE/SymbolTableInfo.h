@@ -56,7 +56,7 @@ public:
     typedef OrderedMap<SymID,SYMTYPE> IDToSymTyMapTy;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
-    typedef Set<CallSite> CallSiteSet;
+    typedef Set<CallSite*> CallSiteSet;
     typedef OrderedMap<const Instruction*,CallSiteID> CallSiteToIDMapTy;
     typedef OrderedMap<CallSiteID,const Instruction*> IDToCallSiteMapTy;
 

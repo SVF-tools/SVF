@@ -365,7 +365,7 @@ protected:
     /// Maps types to a set with their vtable and all their children's.
     Map<const DIType *, VTableSet> vtblCHAMap;
     /// Maps callsites to a set of potential virtual functions based on CHA.
-    Map<CallSite, VFunSet> csCHAMap;
+    Map<CallSite*, VFunSet> csCHAMap;
     /// Maps types to their canonical type (many-to-one).
     Map<const DIType *, const DIType *> canonicalTypeMap;
     /// Set of all possible canonical types (i.e. values of canonicalTypeMap).

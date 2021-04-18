@@ -695,10 +695,10 @@ void PAGBuilder::visitCallSite(CallSite cs)
     pag->addCallSite(callBlockNode);
 
     /// Collect callsite arguments and returns
-    for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
+    for(auto itA = cs.getInstruction()->arg_begin(), ieA = cs.getInstruction()->arg_end(); itA!=ieA; ++itA)
         pag->addCallSiteArgs(callBlockNode,pag->getPAGNode(getValueNode(*itA)));
 
-    if(!cs.getType()->isVoidTy())
+    if(!cs.getInstruction()->getType()->isVoidTy())
         pag->addCallSiteRets(retBlockNode,pag->getPAGNode(getValueNode(cs.getInstruction())));
 
     const SVFFunction *callee = getCallee(cs);
@@ -819,14 +819,14 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
     //Does it actually return a ptr?
-    if (!cs.getType()->isVoidTy())
+    if (!cs.getInstruction()->getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(F);
         CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
-    CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
+    auto itA = cs.getInstruction()->arg_begin(), ieA = cs.getInstruction()->arg_end();
     Function::const_arg_iterator itF = F->getLLVMFun()->arg_begin(), ieF = F->getLLVMFun()->arg_end();
     //Go through the fixed parameters.
     DBOUT(DPAGBuild, outs() << "      args:");
@@ -940,7 +940,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
         {
             assert(isHeapAllocExtCallViaArg(cs) && "Must be heap alloc call via arg.");
             int arg_pos = getHeapAllocHoldingArgPosition(callee);
-            const Value *arg = cs.getArgument(arg_pos);
+            const Value *arg = cs.getCallArgOperand(arg_pos);
             if (arg->getType()->isPointerTy())
             {
                 NodeID vnArg = getValueNode(arg);
@@ -973,7 +973,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // if ptr is null then we will treat it as a malloc
                 // if ptr is not null, then we assume a new data memory will be attached to
                 // the tail of old allocated memory block.
-                if(SVFUtil::isa<ConstantPointerNull>(cs.getArgument(0)))
+                if(SVFUtil::isa<ConstantPointerNull>(cs.getCallArgOperand(0)))
                 {
                     NodeID val = getValueNode(inst);
                     NodeID obj = getObjectNode(inst);
@@ -1004,7 +1004,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 default:
                     arg_pos= 0;
                 }
-                Value *src= cs.getArgument(arg_pos);
+                Value *src= cs.getCallArgOperand(arg_pos);
                 if(SVFUtil::isa<PointerType>(src->getType()))
                 {
                     NodeID srcNode = getValueNode(src);
@@ -1022,46 +1022,46 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
 				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
                 if(SVFUtil::isa<PointerType>(inst->getType()))
-                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
+                    addCopyEdge(getValueNode(cs.getCallArgOperand(0)), getValueNode(inst));
                 break;
             }
             case ExtAPI::EFT_L_A0__A0R_A1R:
             {
-                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+                addComplexConsForExt(cs.getCallArgOperand(0), cs.getCallArgOperand(1));
                 //memcpy returns the dest.
                 if(SVFUtil::isa<PointerType>(inst->getType()))
                 {
-                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
+                    addCopyEdge(getValueNode(cs.getCallArgOperand(0)), getValueNode(inst));
                 }
                 break;
             }
             case ExtAPI::EFT_A1R_A0R:
-                addComplexConsForExt(cs.getArgument(1), cs.getArgument(0));
+                addComplexConsForExt(cs.getCallArgOperand(1), cs.getCallArgOperand(0));
                 break;
             case ExtAPI::EFT_A3R_A1R_NS:
                 //These func. are never used to copy structs, so the size is 1.
-                addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), 1);
+                addComplexConsForExt(cs.getCallArgOperand(3), cs.getCallArgOperand(1), 1);
                 break;
             case ExtAPI::EFT_A1R_A0:
             {
-                NodeID vnD= getValueNode(cs.getArgument(1));
-                NodeID vnS= getValueNode(cs.getArgument(0));
+                NodeID vnD= getValueNode(cs.getCallArgOperand(1));
+                NodeID vnS= getValueNode(cs.getCallArgOperand(0));
                 if(vnD && vnS)
                     addStoreEdge(vnS,vnD);
                 break;
             }
             case ExtAPI::EFT_A2R_A1:
             {
-                NodeID vnD= getValueNode(cs.getArgument(2));
-                NodeID vnS= getValueNode(cs.getArgument(1));
+                NodeID vnD= getValueNode(cs.getCallArgOperand(2));
+                NodeID vnS= getValueNode(cs.getCallArgOperand(1));
                 if(vnD && vnS)
                     addStoreEdge(vnS,vnD);
                 break;
             }
             case ExtAPI::EFT_A4R_A1:
             {
-                NodeID vnD= getValueNode(cs.getArgument(4));
-                NodeID vnS= getValueNode(cs.getArgument(1));
+                NodeID vnD= getValueNode(cs.getCallArgOperand(4));
+                NodeID vnS= getValueNode(cs.getCallArgOperand(1));
                 if(vnD && vnS)
                     addStoreEdge(vnS,vnD);
                 break;
@@ -1072,8 +1072,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 				/// we will store src to the base of dst instead of dst.
 				/// dst = load base
 				/// store src base
-				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
-					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
+				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getCallArgOperand(0))) {
+					addStoreEdge(getValueNode(cs.getCallArgOperand(1)), getValueNode(load->getPointerOperand()));
 					if (SVFUtil::isa<PointerType>(inst->getType()))
 						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
 				}
@@ -1090,7 +1090,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 {
                     //Do the L_A0 part if the retval is used.
                     NodeID vnD= getValueNode(inst);
-                    Value *src= cs.getArgument(0);
+                    Value *src= cs.getCallArgOperand(0);
                     if(SVFUtil::isa<PointerType>(src->getType()))
                     {
                         NodeID vnS= getValueNode(src);
@@ -1101,8 +1101,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                         addBlackHoleAddrEdge(vnD);
                 }
                 //Do the A2R_A0 part.
-                NodeID vnD= getValueNode(cs.getArgument(2));
-                NodeID vnS= getValueNode(cs.getArgument(0));
+                NodeID vnD= getValueNode(cs.getCallArgOperand(2));
+                NodeID vnS= getValueNode(cs.getCallArgOperand(0));
                 if(vnD && vnS)
                     addStoreEdge(vnS,vnD);
                 break;
@@ -1133,8 +1133,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 break;
             case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
             {
-                Value *vArg1 = cs.getArgument(1);
-                Value *vArg3 = cs.getArgument(3);
+                Value *vArg1 = cs.getCallArgOperand(1);
+                Value *vArg3 = cs.getCallArgOperand(3);
 
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
@@ -1161,7 +1161,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 NodeID vnD = pag->getValueNode(inst);
 
-                Value *vArg = cs.getArgument(0);
+                Value *vArg = cs.getCallArgOperand(0);
                 NodeID vnArg = pag->getValueNode(vArg);
                 Size_t offset = pag->getLocationSetFromBaseNode(vnArg).getOffset();
 
@@ -1182,8 +1182,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_STD_LIST_HOOK:
             {
-                Value *vSrc = cs.getArgument(0);
-                Value *vDst = cs.getArgument(1);
+                Value *vSrc = cs.getCallArgOperand(0);
+                Value *vDst = cs.getCallArgOperand(1);
                 NodeID src = pag->getValueNode(vSrc);
                 NodeID dst = pag->getValueNode(vDst);
                 addStoreEdge(src, dst);
@@ -1194,8 +1194,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
-                    NodeID vnD = pag->getValueNode(cs.getArgument(0));
-                    NodeID vnS = pag->getValueNode(cs.getArgument(1));
+                    NodeID vnD = pag->getValueNode(cs.getCallArgOperand(0));
+                    NodeID vnS = pag->getValueNode(cs.getCallArgOperand(1));
                     addStoreEdge(vnS, vnD);
                 }
                 break;
@@ -1205,8 +1205,8 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
-                    NodeID vnD = getValueNode(cs.getArgument(0));
-                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    NodeID vnD = getValueNode(cs.getCallArgOperand(0));
+                    NodeID vnS = getValueNode(cs.getCallArgOperand(1));
                     assert(vnD && vnS && "dst or src not exist?");
                     NodeID dummy = pag->addDummyValNode();
                     addLoadEdge(vnS,dummy);
@@ -1219,7 +1219,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
                 if (symTable->getModelConstants())
                 {
-                    NodeID vnS = getValueNode(cs.getArgument(1));
+                    NodeID vnS = getValueNode(cs.getCallArgOperand(1));
                     assert(vnS && "src not exist?");
                     NodeID dummy = pag->addDummyValNode();
                     addLoadEdge(vnS,dummy);
@@ -1228,7 +1228,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::CPP_EFT_DYNAMIC_CAST:
             {
-                Value *vArg0 = cs.getArgument(0);
+                Value *vArg0 = cs.getCallArgOperand(0);
                 Value *retVal = cs.getInstruction();
                 NodeID src = getValueNode(vArg0);
                 assert(src && "src not exist?");
@@ -1324,7 +1324,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 void PAGBuilder::handleIndCall(CallSite cs)
 {
     const CallBlockNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
-    pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
+    pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledOperand()));
 }
 
 /*

@@ -172,8 +172,16 @@ inline bool isReturn(const Instruction* inst)
 inline CallSite getLLVMCallSite(const Instruction* inst)
 {
     assert(isCallSite(inst) && "not a callsite?");
-    CallSite cs(const_cast<Instruction*>(inst));
-    return cs;
+    auto CI = SVFUtil::dyn_cast<CallInst>(inst);
+    if (CI->getCalledFunction()) {
+        for (const Use &U : CI->getCalledFunction()->uses()) {
+            if (U.getUser() == CI) {
+                CallSite cs(&U);
+                return cs;
+            }
+        }
+    }
+    assert(!"Can not convert Instruction* to Use* success.");
 }
 
 /// Get the corresponding Function based on its name
@@ -210,7 +218,7 @@ inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 inline const SVFFunction* getCallee(const CallSite cs)
 {
     // FIXME: do we need to strip-off the casts here to discover more library functions
-    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledValue()->stripPointerCasts());
+    Function *callee = SVFUtil::dyn_cast<Function>(cs.getCalledOperand()->stripPointerCasts());
     return getDefFunForMultipleModule(callee);
 }
 
@@ -218,7 +226,7 @@ inline const SVFFunction* getCallee(const Instruction *inst)
 {
     if (!isCallSite(inst))
         return nullptr;
-    CallSite cs(const_cast<Instruction*>(inst));
+    CallSite cs = getLLVMCallSite(inst);
     return getCallee(cs);
 }
 //@}
