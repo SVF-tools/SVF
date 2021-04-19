@@ -1087,23 +1087,23 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         }
         else if(SVFUtil::isa<FormalParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<MRSVFGNode>(node))
         {
-            rawstr <<  "color=orange,style=double";
+            rawstr <<  "color=orange,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");
