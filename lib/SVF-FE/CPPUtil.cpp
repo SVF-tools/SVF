@@ -297,7 +297,7 @@ const Function *cppUtil::getThunkTarget(const Function *F) {
         for (auto &inst: bb) {
             if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
                 || llvm::isa<CallBrInst>(inst)) {
-                llvm::ImmutableCallSite cs(&inst);
+                CallSite cs(const_cast<Instruction*>(&inst));
                 assert(cs.getCalledFunction() &&
                        "Indirect call detected in thunk func");
                 assert(ret == nullptr && "multiple callsites in thunk func");
