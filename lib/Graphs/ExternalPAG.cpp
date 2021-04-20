@@ -74,18 +74,17 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
     PAG *pag = PAG::getPAG();
 
     Function* function = cs->getCalledFunction();
+    std::string functionName = static_cast<std::string>(function->getName());
 
     const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(function);
     if (!hasExternalPAG(svfFun)) return false;
-
-    std::string functionName = static_cast<std::string>(function->getName());
 
     Map<int, PAGNode*> argNodes =
         functionToExternalPAGEntries[svfFun];
     PAGNode *retNode = functionToExternalPAGReturns[svfFun];
 
     // Handle the return.
-    if (llvm::isa<PointerType>(cs->getInstruction()->getType()))
+    if (llvm::isa<PointerType>(cs->getType()))
     {
         NodeID dstrec = pag->getValueNode(cs->getInstruction());
         // Does it actually return a pointer?
@@ -106,7 +105,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
 
     // Handle the arguments;
     // Actual arguments.
-    auto itA = cs->getInstruction()->arg_begin(), ieA = cs->getInstruction()->arg_end();
+    CallSite::arg_iterator itA = cs->arg_begin(), ieA = cs->arg_end();
     Function::const_arg_iterator itF = function->arg_begin(),
                                  ieF = function->arg_end();
     // Formal arguments.

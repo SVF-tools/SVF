@@ -151,7 +151,7 @@ class Andersen:  public AndersenBase
 
 public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
-    typedef OrderedMap<CallSite*, NodeID> CallSite2DummyValPN;
+    typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)

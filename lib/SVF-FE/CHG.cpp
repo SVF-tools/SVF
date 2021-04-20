@@ -202,7 +202,7 @@ void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite c
     struct DemangledName dname = demangle(caller->getName().str());
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee)))
     {
-        if (cs.getInstruction()->arg_size() < 1 || (cs.getInstruction()->arg_size() < 2 && cs.getInstruction()->paramHasAttr(0, llvm::Attribute::StructRet)))
+        if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
         const Value *csThisPtr = getVCallThisPtr(cs);
         //const Argument *consThisPtr = getConstructorThisPtr(caller);
@@ -702,7 +702,7 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs)
 {
     assert(isVirtualCallSite(cs) && "not virtual callsite!");
 
-    CallSiteToCHNodesMap::const_iterator it = csToClassesMap.find(&cs);
+    CallSiteToCHNodesMap::const_iterator it = csToClassesMap.find(cs);
     if (it != csToClassesMap.end())
     {
         return it->second;
@@ -713,19 +713,19 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs)
         if (const CHNode* thisNode = getNode(thisPtrClassName))
         {
             const CHNodeSetTy& instAndDesces = getInstancesAndDescendants(thisPtrClassName);
-            csToClassesMap[&cs].insert(thisNode);
+            csToClassesMap[cs].insert(thisNode);
             for (CHNodeSetTy::const_iterator it = instAndDesces.begin(), eit = instAndDesces.end(); it != eit; ++it)
-                csToClassesMap[&cs].insert(*it);
+                csToClassesMap[cs].insert(*it);
         }
-        return csToClassesMap[&cs];
+        return csToClassesMap[cs];
     }
 }
 
 static bool checkArgTypes(CallSite cs, const Function *fn) {
 
     // here we skip the first argument (i.e., this pointer)
-    for (unsigned i = 1; i < cs.getInstruction()->arg_size(); i++) {
-        auto cs_arg = cs.getCallArgOperand(i);
+    for (unsigned i = 1; i < cs.arg_size(); i++) {
+        auto cs_arg = cs.getArgOperand(i);
         auto fn_arg = fn->getArg(i);
         if (cs_arg->getType() != fn_arg->getType()) {
             return false;
@@ -757,8 +757,8 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
                 feit = vfns.end(); fit != feit; ++fit)
         {
             const SVFFunction* callee = *fit;
-            if (cs.getInstruction()->arg_size() == callee->arg_size() ||
-                    (cs.getInstruction()->getFunctionType()->isVarArg() && callee->isVarArg()))
+            if (cs.arg_size() == callee->arg_size() ||
+                    (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match
@@ -831,14 +831,14 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap()
                 SymbolTableInfo::SymbolInfo()->getCallSiteSet().begin(), eit =
                 SymbolTableInfo::SymbolInfo()->getCallSiteSet().end(); it != eit; ++it)
     {
-        CallSite cs = **it;
+        CallSite cs = *it;
         if (!cppUtil::isVirtualCallSite(cs))
             continue;
         VTableSet vtbls;
         const CHNodeSetTy& chClasses = getCSClasses(cs);
-        for (CHNodeSetTy::const_iterator chit = chClasses.begin(), cheit = chClasses.end(); chit != cheit; ++chit)
+        for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
         {
-            const CHNode *child = *chit;
+            const CHNode *child = *it;
             const GlobalValue *vtbl = child->getVTable();
             if (vtbl != nullptr)
             {
@@ -847,11 +847,11 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap()
         }
         if (vtbls.size() > 0)
         {
-            csToCHAVtblsMap[&cs] = vtbls;
+            csToCHAVtblsMap[cs] = vtbls;
             VFunSet virtualFunctions;
             getVFnsFromVtbls(cs, vtbls, virtualFunctions);
             if (virtualFunctions.size() > 0)
-                csToCHAVFnsMap[&cs] = virtualFunctions;
+                csToCHAVFnsMap[cs] = virtualFunctions;
         }
     }
 }

@@ -147,15 +147,14 @@ public:
     void visitGetElementPtrInst(GetElementPtrInst &I);
     void visitCallInst(CallInst &I)
     {
-        visitCallSite(SVFUtil::getLLVMCallSite(&I));
+        visitCallSite(&I);
     }
     void visitInvokeInst(InvokeInst &II)
     {
-        visitCallSite(SVFUtil::getLLVMCallSite(&II));
+        visitCallSite(&II);
     }
     void visitCallBrInst(CallBrInst &I) {
-
-        return visitCallSite(SVFUtil::getLLVMCallSite(&I));
+      return visitCallSite(&I);
     }
     void visitCallSite(CallSite cs);
     void visitReturnInst(ReturnInst &I);

@@ -592,7 +592,7 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
-    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(&cs);
+    CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
     if(it != callsite2DummyValPN.end())
     {
         srcret = sccRepNode(it->second);
@@ -600,9 +600,9 @@ void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
     else
     {
         NodeID valNode = pag->addDummyValNode();
-        NodeID objNode = pag->addDummyObjNode(cs.getInstruction()->getType());
+        NodeID objNode = pag->addDummyObjNode(cs.getType());
         addPts(valNode,objNode);
-        callsite2DummyValPN.insert(std::make_pair(&cs,valNode));
+        callsite2DummyValPN.insert(std::make_pair(cs,valNode));
         consCG->addConstraintNode(new ConstraintNode(valNode),valNode);
         consCG->addConstraintNode(new ConstraintNode(objNode),objNode);
         srcret = valNode;

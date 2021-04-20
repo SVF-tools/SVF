@@ -179,9 +179,9 @@ public:
     typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
     typedef Map<std::string, CHNodeSetTy> NameToCHNodesMap;
-    typedef Map<CallSite*, CHNodeSetTy> CallSiteToCHNodesMap;
-    typedef Map<CallSite*, VTableSet> CallSiteToVTableSetMap;
-    typedef Map<CallSite*, VFunSet> CallSiteToVFunSetMap;
+    typedef Map<CallSite, CHNodeSetTy> CallSiteToCHNodesMap;
+    typedef Map<CallSite, VTableSet> CallSiteToVTableSetMap;
+    typedef Map<CallSite, VFunSet> CallSiteToVFunSetMap;
 
     typedef enum
     {
@@ -260,23 +260,23 @@ public:
 
     inline bool csHasVtblsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(&cs);
+        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
         return it != csToCHAVtblsMap.end();
     }
     inline bool csHasVFnsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(&cs);
+        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
         return it != csToCHAVFnsMap.end();
     }
     inline const VTableSet &getCSVtblsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(&cs);
+        CallSiteToVTableSetMap::const_iterator it = csToCHAVtblsMap.find(cs);
         assert(it != csToCHAVtblsMap.end() && "cs does not have vtabls based on CHA.");
         return it->second;
     }
     inline const VFunSet &getCSVFsBasedonCHA(CallSite cs) override
     {
-        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(&cs);
+        CallSiteToVFunSetMap::const_iterator it = csToCHAVFnsMap.find(cs);
         assert(it != csToCHAVFnsMap.end() && "cs does not have vfns based on CHA.");
         return it->second;
     }

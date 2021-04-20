@@ -147,7 +147,7 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(0);
+        return cs.getArgument(0);
     }
     inline const Value* getForkedThread(CallSite cs) const
     {
@@ -160,7 +160,7 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(2)->stripPointerCasts();
+        return cs.getArgument(2)->stripPointerCasts();
     }
     inline const Value* getForkedFun(CallSite cs) const
     {
@@ -173,7 +173,7 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(3);
+        return cs.getArgument(3);
     }
     inline const Value* getActualParmAtForkSite(CallSite cs) const
     {
@@ -187,7 +187,7 @@ public:
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(4)->stripPointerCasts();
+        return cs.getArgument(4)->stripPointerCasts();
     }
     inline const Value* getTaskFuncAtHareParForSite(CallSite cs) const
     {
@@ -201,7 +201,7 @@ public:
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(5);
+        return cs.getArgument(5);
     }
     inline const Value* getTaskDataAtHareParForSite(CallSite cs) const
     {
@@ -229,7 +229,7 @@ public:
     {
         assert(isTDJoin(inst) && "not a thread join function!");
         CallSite cs = getLLVMCallSite(inst);
-        Value* join = cs.getCallArgOperand(0);
+        Value* join = cs.getArgument(0);
         if(SVFUtil::isa<LoadInst>(join))
             return SVFUtil::cast<LoadInst>(join)->getPointerOperand();
         else if(SVFUtil::isa<Argument>(join))
@@ -247,7 +247,7 @@ public:
     {
         assert(isTDJoin(inst) && "not a thread join function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(1);
+        return cs.getArgument(1);
     }
     inline const Value* getRetParmAtJoinedSite(CallSite cs) const
     {
@@ -302,7 +302,7 @@ public:
     {
         assert((isTDAcquire(inst) || isTDRelease(inst)) && "not a lock acquire or release function");
         CallSite cs = getLLVMCallSite(inst);
-        return cs.getCallArgOperand(0);
+        return cs.getArgument(0);
     }
     inline const Value* getLockVal(CallSite cs) const
     {
