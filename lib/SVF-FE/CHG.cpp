@@ -202,7 +202,7 @@ void CHGraph::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSite c
     struct DemangledName dname = demangle(caller->getName().str());
     if ((isConstructor(caller) && isConstructor(callee)) || (isDestructor(caller) && isDestructor(callee)))
     {
-        if (cs->arg_size() < 1 || (cs->arg_size() < 2 && cs->paramHasAttr(0, llvm::Attribute::StructRet)))
+        if (cs.arg_size() < 1 || (cs.arg_size() < 2 && cs.paramHasAttr(0, llvm::Attribute::StructRet)))
             return;
         const Value *csThisPtr = getVCallThisPtr(cs);
         //const Argument *consThisPtr = getConstructorThisPtr(caller);
@@ -724,8 +724,8 @@ const CHGraph::CHNodeSetTy& CHGraph::getCSClasses(CallSite cs)
 static bool checkArgTypes(CallSite cs, const Function *fn) {
 
     // here we skip the first argument (i.e., this pointer)
-    for (unsigned i = 1; i < cs->arg_size(); i++) {
-        auto cs_arg = cs->getArgOperand(i);
+    for (unsigned i = 1; i < cs.arg_size(); i++) {
+        auto cs_arg = cs.getArgOperand(i);
         auto fn_arg = fn->getArg(i);
         if (cs_arg->getType() != fn_arg->getType()) {
             return false;
@@ -757,8 +757,8 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
                 feit = vfns.end(); fit != feit; ++fit)
         {
             const SVFFunction* callee = *fit;
-            if (cs->arg_size() == callee->arg_size() ||
-                    (cs->getFunctionType()->isVarArg() && callee->isVarArg()))
+            if (cs.arg_size() == callee->arg_size() ||
+                    (cs.getFunctionType()->isVarArg() && callee->isVarArg()))
             {
 
                 // if argument types do not match
@@ -836,9 +836,9 @@ void CHGraph::buildCSToCHAVtblsAndVfnsMap()
             continue;
         VTableSet vtbls;
         const CHNodeSetTy& chClasses = getCSClasses(cs);
-        for (CHNodeSetTy::const_iterator chit = chClasses.begin(), cheit = chClasses.end(); chit != cheit; ++chit)
+        for (CHNodeSetTy::const_iterator it = chClasses.begin(), eit = chClasses.end(); it != eit; ++it)
         {
-            const CHNode *child = *chit;
+            const CHNode *child = *it;
             const GlobalValue *vtbl = child->getVTable();
             if (vtbl != nullptr)
             {

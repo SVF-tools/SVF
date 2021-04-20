@@ -565,14 +565,14 @@ void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
 
                 CallSite cs = SVFUtil::getLLVMCallSite(inst);
                 callSiteSet.insert(cs);
-                for (auto it = cs->arg_begin();
-                        it != cs->arg_end(); ++it)
+                for (CallSite::arg_iterator it = cs.arg_begin();
+                        it != cs.arg_end(); ++it)
                 {
                     collectSym(*it);
                 }
                 // Calls to inline asm need to be added as well because the callee isn't
                 // referenced anywhere else.
-                const Value *Callee = cs->getCalledOperand();
+                const Value *Callee = cs.getCalledValue();
                 collectSym(Callee);
 
                 //TODO handle inlineAsm

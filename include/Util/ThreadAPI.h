@@ -123,7 +123,7 @@ public:
     }
     inline bool isTDFork(CallSite cs) const
     {
-        return isTDFork(cs);
+        return isTDFork(cs.getInstruction());
     }
     //@}
 
@@ -135,7 +135,7 @@ public:
     }
     inline bool isHareParFor(CallSite cs) const
     {
-        return isTDFork(cs);
+        return isTDFork(cs.getInstruction());
     }
     //@}
 
@@ -147,11 +147,11 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(0);
+        return cs.getArgument(0);
     }
     inline const Value* getForkedThread(CallSite cs) const
     {
-        return getForkedThread(cs);
+        return getForkedThread(cs.getInstruction());
     }
 
     /// Return the third argument of the call,
@@ -160,11 +160,11 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(2)->stripPointerCasts();
+        return cs.getArgument(2)->stripPointerCasts();
     }
     inline const Value* getForkedFun(CallSite cs) const
     {
-        return getForkedFun(cs);
+        return getForkedFun(cs.getInstruction());
     }
 
     /// Return the forth argument of the call,
@@ -173,11 +173,11 @@ public:
     {
         assert(isTDFork(inst) && "not a thread fork function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(3);
+        return cs.getArgument(3);
     }
     inline const Value* getActualParmAtForkSite(CallSite cs) const
     {
-        return getActualParmAtForkSite(cs);
+        return getActualParmAtForkSite(cs.getInstruction());
     }
     //@}
 
@@ -187,11 +187,11 @@ public:
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(4)->stripPointerCasts();
+        return cs.getArgument(4)->stripPointerCasts();
     }
     inline const Value* getTaskFuncAtHareParForSite(CallSite cs) const
     {
-        return getTaskFuncAtHareParForSite(cs);
+        return getTaskFuncAtHareParForSite(cs.getInstruction());
     }
     //@}
 
@@ -201,11 +201,11 @@ public:
     {
         assert(isHareParFor(inst) && "not a hare_parallel_for function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(5);
+        return cs.getArgument(5);
     }
     inline const Value* getTaskDataAtHareParForSite(CallSite cs) const
     {
-        return getTaskDataAtHareParForSite(cs);
+        return getTaskDataAtHareParForSite(cs.getInstruction());
     }
     //@}
 
@@ -217,7 +217,7 @@ public:
     }
     inline bool isTDJoin(CallSite cs) const
     {
-        return isTDJoin(cs);
+        return isTDJoin(cs.getInstruction());
     }
     //@}
 
@@ -229,7 +229,7 @@ public:
     {
         assert(isTDJoin(inst) && "not a thread join function!");
         CallSite cs = getLLVMCallSite(inst);
-        Value* join = cs->getArgOperand(0);
+        Value* join = cs.getArgument(0);
         if(SVFUtil::isa<LoadInst>(join))
             return SVFUtil::cast<LoadInst>(join)->getPointerOperand();
         else if(SVFUtil::isa<Argument>(join))
@@ -239,7 +239,7 @@ public:
     }
     inline const Value* getJoinedThread(CallSite cs) const
     {
-        return getJoinedThread(cs);
+        return getJoinedThread(cs.getInstruction());
     }
     /// Return the send argument of the call,
     /// Note that, it is the pthread_t pointer
@@ -247,11 +247,11 @@ public:
     {
         assert(isTDJoin(inst) && "not a thread join function!");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(1);
+        return cs.getArgument(1);
     }
     inline const Value* getRetParmAtJoinedSite(CallSite cs) const
     {
-        return getRetParmAtJoinedSite(cs);
+        return getRetParmAtJoinedSite(cs.getInstruction());
     }
     //@}
 
@@ -302,11 +302,11 @@ public:
     {
         assert((isTDAcquire(inst) || isTDRelease(inst)) && "not a lock acquire or release function");
         CallSite cs = getLLVMCallSite(inst);
-        return cs->getArgOperand(0);
+        return cs.getArgument(0);
     }
     inline const Value* getLockVal(CallSite cs) const
     {
-        return getLockVal(cs);
+        return getLockVal(cs.getInstruction());
     }
     //@}
 

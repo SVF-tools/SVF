@@ -256,17 +256,17 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
 bool cppUtil::isVirtualCallSite(CallSite cs)
 {
 	// the callsite must be an indirect one with at least one argument (this ptr)
-    if (cs->getCalledFunction() != nullptr || cs->arg_empty())
+    if (cs.getCalledFunction() != nullptr || cs.arg_empty())
         return false;
 
     // When compiled with ctir, we'd be using the DCHG which has its own
     // virtual annotations.
     if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
     {
-        return cs->getMetadata(cppUtil::ctir::derefMDName) != nullptr;
+        return cs.getInstruction()->getMetadata(cppUtil::ctir::derefMDName) != nullptr;
     }
 
-    const Value *vfunc = cs->getCalledOperand();
+    const Value *vfunc = cs.getCalledValue();
     if (const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(vfunc))
     {
         const Value *vfuncptr = vfuncloadinst->getPointerOperand();
@@ -297,12 +297,12 @@ const Function *cppUtil::getThunkTarget(const Function *F) {
         for (auto &inst: bb) {
             if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
                 || llvm::isa<CallBrInst>(inst)) {
-                auto *CB = SVFUtil::dyn_cast<CallBase>(&inst);
-                assert(CB->getCalledFunction() &&
+                llvm::ImmutableCallSite cs(&inst);
+                assert(cs.getCalledFunction() &&
                        "Indirect call detected in thunk func");
                 assert(ret == nullptr && "multiple callsites in thunk func");
 
-                ret = CB->getCalledFunction();
+                ret = cs.getCalledFunction();
             }
         }
     }
@@ -312,13 +312,13 @@ const Function *cppUtil::getThunkTarget(const Function *F) {
 
 const Value *cppUtil::getVCallThisPtr(CallSite cs)
 {
-    if (cs->paramHasAttr(0, llvm::Attribute::StructRet))
+    if (cs.paramHasAttr(0, llvm::Attribute::StructRet))
     {
-        return cs->getArgOperand(1);
+        return cs.getArgument(1);
     }
     else
     {
-        return cs->getArgOperand(0);
+        return cs.getArgument(0);
     }
 }
 
@@ -377,7 +377,7 @@ const Argument *cppUtil::getConstructorThisPtr(const Function* fun)
  */
 const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 {
-    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    const LoadInst *loadInst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(loadInst != nullptr);
     const Value *vfuncptr = loadInst->getPointerOperand();
     const GetElementPtrInst *gepInst = SVFUtil::dyn_cast<GetElementPtrInst>(vfuncptr);
@@ -388,7 +388,7 @@ const Value *cppUtil::getVCallVtblPtr(CallSite cs)
 
 u64_t cppUtil::getVCallIdx(CallSite cs)
 {
-    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs->getCalledOperand());
+    const LoadInst *vfuncloadinst = SVFUtil::dyn_cast<LoadInst>(cs.getCalledValue());
     assert(vfuncloadinst != nullptr);
     const Value *vfuncptr = vfuncloadinst->getPointerOperand();
     const GetElementPtrInst *vfuncptrgepinst =
@@ -509,7 +509,7 @@ bool cppUtil::isDestructor(const Function *F)
 string cppUtil::getClassNameOfThisPtr(CallSite cs)
 {
     string thisPtrClassName;
-    Instruction *inst = cs;
+    Instruction *inst = cs.getInstruction();
     if (const MDNode *N = inst->getMetadata("VCallPtrType"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -536,7 +536,7 @@ string cppUtil::getClassNameOfThisPtr(CallSite cs)
 string cppUtil::getFunNameOfVCallSite(CallSite cs)
 {
     string funName;
-    Instruction *inst = cs;
+    Instruction *inst = cs.getInstruction();
     if (const MDNode *N = inst->getMetadata("VCallFunName"))
     {
         const MDString &mdstr = SVFUtil::cast<MDString>((N->getOperand(0)));
@@ -552,7 +552,7 @@ string cppUtil::getFunNameOfVCallSite(CallSite cs)
 bool cppUtil::VCallInCtorOrDtor(CallSite cs)
 {
     std::string classNameOfThisPtr = getClassNameOfThisPtr(cs);
-    const Function *func = cs->getCaller();
+    const Function *func = cs.getCaller();
     if (isConstructor(func) || isDestructor(func))
     {
         struct DemangledName dname = demangle(func->getName().str());

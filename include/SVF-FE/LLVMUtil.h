@@ -93,7 +93,7 @@ inline bool isHeapAllocExtFunViaArg(const SVFFunction* fun)
 /// interfaces to be used externally
 inline bool isHeapAllocExtCallViaRet(const CallSite cs)
 {
-    bool isPtrTy = cs->getType()->isPointerTy();
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
     return isPtrTy && isHeapAllocExtFunViaRet(getCallee(cs));
 }
 
@@ -152,7 +152,7 @@ inline bool isReallocExtFun(const SVFFunction* fun)
 
 inline bool isReallocExtCall(const CallSite cs)
 {
-    bool isPtrTy = cs->getType()->isPointerTy();
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
     return isPtrTy && isReallocExtFun(getCallee(cs));
 }
 
@@ -193,7 +193,7 @@ inline bool isStaticExtFun(const SVFFunction* fun)
 
 inline bool isStaticExtCall(const CallSite cs)
 {
-    bool isPtrTy = cs->getType()->isPointerTy();
+    bool isPtrTy = cs.getInstruction()->getType()->isPointerTy();
     return isPtrTy && isStaticExtFun(getCallee(cs));
 }
 
@@ -232,7 +232,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     if (isHeapAllocExtCallViaArg(cs))
     {
         int argPos = getHeapAllocHoldingArgPosition(cs);
-        const Value *arg = cs->getArgOperand(argPos);
+        const Value *arg = cs.getArgument(argPos);
         if (const PointerType *argType = SVFUtil::dyn_cast<PointerType>(arg->getType()))
             refType = SVFUtil::dyn_cast<PointerType>(argType->getElementType());
     }
@@ -241,7 +241,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
     {
         assert((isStaticExtCall(cs) || isHeapAllocExtCallViaRet(cs))
                && "Must be heap alloc via ret, or static allocation site");
-        refType = SVFUtil::dyn_cast<PointerType>(cs->getType());
+        refType = SVFUtil::dyn_cast<PointerType>(cs.getType());
     }
     assert(refType && "Allocated object must be held by a pointer-typed value.");
     return refType;
@@ -249,7 +249,7 @@ inline const PointerType *getRefTypeOfHeapAllocOrStatic(const CallSite cs)
 
 inline const PointerType *getRefTypeOfHeapAllocOrStatic(const Instruction *inst)
 {
-    CallSite cs = SVFUtil::getLLVMCallSite(inst);
+    CallSite cs(const_cast<Instruction*>(inst));
     return getRefTypeOfHeapAllocOrStatic(cs);
 }
 //@}

@@ -568,7 +568,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
         for (const CallBlockNode *cbn : callSites)
         {
             const CallSite &cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
-            const Function *fn = cs->getCalledFunction();
+            const Function *fn = cs.getCalledFunction();
             if (fn == nullptr || !isAliasTestFunction(static_cast<std::string>(fn->getName())))
             {
                 continue;
@@ -582,7 +582,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
 
             // Find p.
             const Instruction *prevInst = nullptr;
-            const Instruction *currInst = cs;
+            const Instruction *currInst = cs.getInstruction();
             do
             {
                 if (const CallInst *ci = SVFUtil::dyn_cast<CallInst>(currInst))
@@ -695,7 +695,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
             msgStream << (passed ? SVFUtil::sucMsg("\t SUCCESS") : SVFUtil::errMsg("\t FAILURE"))
                       << " : " << testName
                       << " check <id:" << p << ", id:" << q << "> "
-                      << "at (" << SVFUtil::getSourceLoc(cs) << ")\n";
+                      << "at (" << SVFUtil::getSourceLoc(cs.getInstruction()) << ")\n";
             if (!passed)
                 assert(false && "test case failed!");
 
