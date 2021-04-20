@@ -65,7 +65,7 @@ public:
 
 public:
     /// Constructor
-    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), icfgNode(NULL)
+    VFGNode(NodeID i, VFGNodeK k): GenericVFGNodeTy(i,k), icfgNode(nullptr)
     {
 
     }
@@ -347,7 +347,7 @@ public:
     inline const PAGNode* getOpVer(u32_t pos) const
     {
         OPVers::const_iterator it = opVers.find(pos);
-        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
     inline void setOpVer(u32_t pos, const PAGNode* node)
@@ -418,7 +418,7 @@ public:
     inline const PAGNode* getOpVer(u32_t pos) const
     {
         OPVers::const_iterator it = opVers.find(pos);
-        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
     inline void setOpVer(u32_t pos, const PAGNode* node)
@@ -464,11 +464,13 @@ private:
 
 public:
     /// Constructor
-    UnaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,UnaryOp), res(r)
-    {
-        const UnaryOperator* unary = SVFUtil::dyn_cast<UnaryOperator>(r->getValue());
-        assert(unary && "not a unary operator?");
-    }
+	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
+		const Value *val = r->getValue();
+		bool unop = (SVFUtil::isa<UnaryOperator>(val)
+				|| SVFUtil::isa<BranchInst>(val)
+				|| SVFUtil::isa<SwitchInst>(val));
+		assert(unop && "not a unary operator or a BranchInst or a SwitchInst?");
+	}
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const UnaryOPVFGNode *)
@@ -489,7 +491,7 @@ public:
     inline const PAGNode* getOpVer(u32_t pos) const
     {
         OPVers::const_iterator it = opVers.find(pos);
-        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
     inline void setOpVer(u32_t pos, const PAGNode* node)
@@ -583,7 +585,7 @@ public:
     inline const PAGNode* getOpVer(u32_t pos) const
     {
         OPVers::const_iterator it = opVers.find(pos);
-        assert(it!=opVers.end() && "version is NULL, did not rename?");
+        assert(it!=opVers.end() && "version is nullptr, did not rename?");
         return it->second;
     }
     inline void setOpVer(u32_t pos, const PAGNode* node)
@@ -648,7 +650,7 @@ public:
     inline const ICFGNode* getOpIncomingBB(u32_t pos) const
     {
         OPIncomingBBs::const_iterator it = opIncomingBBs.find(pos);
-        assert(it!=opIncomingBBs.end() && "version is NULL, did not rename?");
+        assert(it!=opIncomingBBs.end() && "version is nullptr, did not rename?");
         return it->second;
     }
     inline void setOpVerAndBB(u32_t pos, const PAGNode* node, const ICFGNode* bb)
@@ -1006,18 +1008,18 @@ class InterPHIVFGNode : public PHIVFGNode
 
 public:
     /// Constructor interPHI for formal parameter
-    InterPHIVFGNode(NodeID id, const FormalParmVFGNode* fp) : PHIVFGNode(id, fp->getParam(), TInterPhi),fun(fp->getFun()),callInst(NULL) {}
+    InterPHIVFGNode(NodeID id, const FormalParmVFGNode* fp) : PHIVFGNode(id, fp->getParam(), TInterPhi),fun(fp->getFun()),callInst(nullptr) {}
     /// Constructor interPHI for actual return
     InterPHIVFGNode(NodeID id, const ActualRetVFGNode* ar) : PHIVFGNode(id, ar->getRev(), TInterPhi), fun(ar->getCaller()),callInst(ar->getCallSite()) {}
 
     inline bool isFormalParmPHI() const
     {
-        return (fun!=NULL) && (callInst == NULL);
+        return (fun!=nullptr) && (callInst == nullptr);
     }
 
     inline bool isActualRetPHI() const
     {
-        return (fun!=NULL) && (callInst != NULL);
+        return (fun!=nullptr) && (callInst != nullptr);
     }
 
     inline const SVFFunction* getFun() const

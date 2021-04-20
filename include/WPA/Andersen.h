@@ -54,7 +54,7 @@ public:
 
     /// Constructor
 	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
-        :  BVDataPTAImpl(_pag, type, alias_check), consCG(NULL)
+        :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
@@ -62,13 +62,13 @@ public:
     /// Destructor
     virtual ~AndersenBase()
     {
-        if (consCG != NULL)
+        if (consCG != nullptr)
             delete consCG;
-        consCG = NULL;
+        consCG = nullptr;
     }
 
     /// Andersen analysis
-    virtual void analyze() = 0;
+    virtual void analyze();
 
     /// Initialize analysis
     virtual void initialize();
@@ -76,6 +76,11 @@ public:
     /// Finalize analysis
     virtual void finalize();
 
+    /// Implement it in child class to update call graph
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
+    {
+        return false;
+    }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -94,7 +99,8 @@ public:
                 || pta->getAnalysisTy() == AndersenWaveDiffWithType_WPA
                 || pta->getAnalysisTy() == AndersenSCD_WPA
                 || pta->getAnalysisTy() == AndersenSFR_WPA
-				|| pta->getAnalysisTy() == TypeCPP_WPA);
+				|| pta->getAnalysisTy() == TypeCPP_WPA
+				|| pta->getAnalysisTy() == Steensgaard_WPA);
     }
     //@}
 
@@ -109,6 +115,27 @@ public:
     {
         PointerAnalysis::dumpStat();
     }
+
+    /// Statistics
+    //@{
+    static Size_t numOfProcessedAddr;   /// Number of processed Addr edge
+    static Size_t numOfProcessedCopy;   /// Number of processed Copy edge
+    static Size_t numOfProcessedGep;    /// Number of processed Gep edge
+    static Size_t numOfProcessedLoad;   /// Number of processed Load edge
+    static Size_t numOfProcessedStore;  /// Number of processed Store edge
+    static Size_t numOfSfrs;
+    static Size_t numOfFieldExpand;
+
+    static Size_t numOfSCCDetection;
+    static double timeOfSCCDetection;
+    static double timeOfSCCMerges;
+    static double timeOfCollapse;
+    static Size_t AveragePointsToSetSize;
+    static Size_t MaxPointsToSetSize;
+    static double timeOfProcessCopyGep;
+    static double timeOfProcessLoadStore;
+    static double timeOfUpdateCallGraph;
+    //@}
 
 protected:
     /// Constraint Graph
@@ -126,27 +153,6 @@ public:
     typedef SCCDetection<ConstraintGraph*> CGSCC;
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
-    /// Statistics
-    //@{
-    static Size_t numOfProcessedAddr;	/// Number of processed Addr edge
-    static Size_t numOfProcessedCopy;	/// Number of processed Copy edge
-    static Size_t numOfProcessedGep;	/// Number of processed Gep edge
-    static Size_t numOfProcessedLoad;	/// Number of processed Load edge
-    static Size_t numOfProcessedStore;	/// Number of processed Store edge
-    static Size_t numOfSfrs;
-    static Size_t numOfFieldExpand;
-
-    static Size_t numOfSCCDetection;
-    static double timeOfSCCDetection;
-    static double timeOfSCCMerges;
-    static double timeOfCollapse;
-    static Size_t AveragePointsToSetSize;
-    static Size_t MaxPointsToSetSize;
-    static double timeOfProcessCopyGep;
-    static double timeOfProcessLoadStore;
-    static double timeOfUpdateCallGraph;
-    //@}
-
     /// Constructor
     Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
@@ -158,9 +164,6 @@ public:
     {
 
     }
-
-    /// Andersen analysis
-    virtual void analyze();
 
     /// Initialize analysis
     virtual void initialize();
@@ -334,16 +337,8 @@ protected:
     /// Update call graph for the input indirect callsites
     virtual bool updateCallGraph(const CallSiteToFunPtrMap& callsites);
 
-    /// Update call graph for all the indirect callsites
-    virtual inline bool updateCallGraph()
-    {
-        return updateCallGraph(getIndirectCallsites());
-    }
-
     /// Connect formal and actual parameters for indirect callsites
     void connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, NodePairSet& cpySrcNodes);
-
-
 
     /// Merge sub node to its rep
     virtual void mergeNodeToRep(NodeID nodeId,NodeID newRepId);
@@ -426,7 +421,7 @@ public:
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
     {
-        if(diffWave==NULL)
+        if(diffWave==nullptr)
         {
             diffWave = new AndersenWaveDiff(_pag, AndersenWaveDiff_WPA, false);
             diffWave->analyze();
@@ -438,7 +433,7 @@ public:
     {
         if (diffWave)
             delete diffWave;
-        diffWave = NULL;
+        diffWave = nullptr;
     }
 
     virtual void solveWorklist();
@@ -508,13 +503,13 @@ private:
 public:
     AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
     {
-        assert(getTypeSystem()!=NULL && "a type system is required for this pointer analysis");
+        assert(getTypeSystem()!=nullptr && "a type system is required for this pointer analysis");
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(PAG* p)
     {
-        if(diffWaveWithType==NULL)
+        if(diffWaveWithType==nullptr)
         {
             diffWaveWithType = new AndersenWaveDiffWithType(p);
             diffWaveWithType->analyze();
@@ -526,7 +521,7 @@ public:
     {
         if (diffWaveWithType)
             delete diffWaveWithType;
-        diffWaveWithType = NULL;
+        diffWaveWithType = nullptr;
     }
 
 protected:
@@ -643,7 +638,7 @@ private:
 
 public:
     AndersenHCD(PAG* _pag, PTATY type = AndersenHCD_WPA) :
-        Andersen(_pag, type), oCG(NULL)
+        Andersen(_pag, type), oCG(nullptr)
     {
     }
 

@@ -76,7 +76,7 @@ private:
     CallSiteSet callSiteSet;
 
     // Singleton pattern here to enable instance of SymbolTableInfo can only be created once.
-    static SymbolTableInfo* symlnfo;
+    static SymbolTableInfo* symInfo;
 
     /// Module
     SVFModule* mod;
@@ -93,27 +93,26 @@ private:
     /// Whether to model constants
     bool modelConstants;
 
+    /// total number of symbols
+    SymID totalSymNum;
+
 protected:
     /// Constructor
-    SymbolTableInfo() :
-        modelConstants(false), maxStruct(NULL), maxStSize(0)
+    SymbolTableInfo(void) :
+        modelConstants(false), maxStruct(nullptr), maxStSize(0), mod(nullptr), totalSymNum(0)
     {
     }
 
 public:
-    /// Statistics
-    //@{
-    static SymID totalSymNum;
-    //@}
 
     /// Singleton design here to make sure we only have one instance during any analysis
     //@{
-    static SymbolTableInfo* Symbolnfo();
+    static SymbolTableInfo* SymbolInfo();
 
-    static void releaseSymbolnfo()
+    static void releaseSymbolInfo()
     {
-        delete symlnfo;
-        symlnfo = NULL;
+        delete symInfo;
+        symInfo = nullptr;
     }
     virtual ~SymbolTableInfo()
     {
@@ -150,7 +149,7 @@ public:
     /// Get target machine data layout
     inline static DataLayout* getDataLayout(Module* mod)
     {
-        if(dl==NULL)
+        if(dl==nullptr)
             return dl = new DataLayout(mod);
         return dl;
     }
@@ -423,6 +422,11 @@ public:
 
     /// Debug method
     void printFlattenFields(const Type* type);
+
+    static std::string toString(SYMTYPE symtype);
+
+    /// Another debug method
+    virtual void dump();
 
 protected:
     /// Collect the struct info

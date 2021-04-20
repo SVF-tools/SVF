@@ -65,7 +65,7 @@ public:
     typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
     /// Constructor
-    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(NULL), SVFGWithIndCall(_SVFGWithIndCall) {}
+    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
     /// Destructor
     virtual ~SVFGBuilder() {}
@@ -82,7 +82,7 @@ public:
     {
         if (globalSvfg)
             delete globalSvfg;
-        globalSvfg = NULL;
+        globalSvfg = nullptr;
     }
     /// Get SVFG instance
     inline SVFG* getSVFG() const

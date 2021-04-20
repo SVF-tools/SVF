@@ -25,7 +25,7 @@ namespace SVF
 class DDAClient
 {
 public:
-    DDAClient(SVFModule* mod) : pag(NULL), module(mod), curPtr(0), solveAll(true) {}
+    DDAClient(SVFModule* mod) : pag(nullptr), module(mod), curPtr(0), solveAll(true) {}
 
     virtual ~DDAClient() {}
 

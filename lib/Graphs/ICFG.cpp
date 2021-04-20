@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include <Util/Options.h>
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
@@ -35,10 +36,6 @@
 
 using namespace SVF;
 using namespace SVFUtil;
-
-
-static llvm::cl::opt<bool> DumpLLVMInst("dump-inst", llvm::cl::init(false),
-                                        llvm::cl::desc("Dump LLVM instruction for each ICFG Node"));
 
 
 FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
@@ -50,7 +47,7 @@ FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlo
     }
 }
 
-FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(NULL)
+FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(nullptr)
 {
     fun = f;
     // if function is implemented
@@ -68,6 +65,9 @@ const std::string ICFGNode::toString() const {
     return rawstr.str();
 }
 
+void ICFGNode::dump() const {
+    outs() << this->toString() << "\n";
+}
 
 const std::string GlobalBlockNode::toString() const {
     std::string str;
@@ -81,7 +81,7 @@ const std::string IntraBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraBlockNode ID: " << getId();
-    rawstr << " " << *getInst() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getInst()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -90,6 +90,10 @@ const std::string FunEntryBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunEntryBlockNode ID: " << getId();
+    if (isExtCall(getFun()))
+        rawstr << " Entry(" << ")\n";
+    else
+        rawstr << " Entry(" << getSourceLoc(getFun()->getLLVMFun()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
@@ -98,6 +102,10 @@ const std::string FunExitBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FunExitBlockNode ID: " << getId();
+    if (isExtCall(getFun()))
+        rawstr << " Exit(" << ")\n";
+    else
+        rawstr << " Exit(" << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI()) << ")\n";
     rawstr << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
@@ -107,7 +115,7 @@ const std::string CallBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -115,7 +123,7 @@ const std::string RetBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "RetBlockNode ID: " << getId();
-    rawstr << " " << *getCallSite() << " {fun: " << getFun()->getName() << "}";
+    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
     return rawstr.str();
 }
 
@@ -129,23 +137,27 @@ const std::string ICFGEdge::toString() const {
 const std::string IntraCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    if(brCondition.first == nullptr)
+        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    else
+        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "] with condition (" << *brCondition.first << "==" << brCondition.second << ") \t";
+
     return rawstr.str();
 }
 
 const std::string CallCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallCFGEdge CallSite: " << *cs << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CallCFGEdge " << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 
 const std::string RetCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetCFGEdge CallSite: " << *cs << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "RetCFGEdge " << " [";
+    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 
@@ -177,7 +189,7 @@ ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
     else
         node = getIntraBlockNode(inst);
 
-    assert (node!=NULL && "no ICFGNode for this instruction?");
+    assert (node!=nullptr && "no ICFGNode for this instruction?");
     return node;
 }
 
@@ -189,9 +201,9 @@ CallBlockNode* ICFG::getCallBlockNode(const Instruction* inst)
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallBlockNode* node = getCallICFGNode(inst);
-    if(node==NULL)
+    if(node==nullptr)
         node = addCallICFGNode(inst);
-    assert (node!=NULL && "no CallBlockNode for this instruction?");
+    assert (node!=nullptr && "no CallBlockNode for this instruction?");
     return node;
 }
 
@@ -200,16 +212,16 @@ RetBlockNode* ICFG::getRetBlockNode(const Instruction* inst)
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     RetBlockNode* node = getRetICFGNode(inst);
-    if(node==NULL)
+    if(node==nullptr)
         node = addRetICFGNode(inst);
-    assert (node!=NULL && "no RetBlockNode for this instruction?");
+    assert (node!=nullptr && "no RetBlockNode for this instruction?");
     return node;
 }
 
 IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst)
 {
     IntraBlockNode* node = getIntraBlockICFGNode(inst);
-    if(node==NULL)
+    if(node==nullptr)
         node = addIntraBlockICFGNode(inst);
     return node;
 }
@@ -218,7 +230,7 @@ IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst)
 FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
 {
     FunEntryBlockNode* b = getFunEntryICFGNode(fun);
-    if (b == NULL)
+    if (b == nullptr)
         return addFunEntryICFGNode(fun);
     else
         return b;
@@ -227,7 +239,7 @@ FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
 FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
 {
     FunExitBlockNode* b = getFunExitICFGNode(fun);
-    if (b == NULL)
+    if (b == nullptr)
         return addFunExitICFGNode(fun);
     else
         return b;
@@ -247,7 +259,7 @@ ICFGEdge* ICFG::hasIntraICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdg
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 /*!
@@ -264,7 +276,7 @@ ICFGEdge* ICFG::hasInterICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEdg
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 /*!
@@ -281,7 +293,7 @@ ICFGEdge* ICFG::hasThreadICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEd
         return outEdge;
     }
     else
-        return NULL;
+        return nullptr;
 }
 
 
@@ -291,7 +303,7 @@ ICFGEdge* ICFG::hasThreadICFGEdge(ICFGNode* src, ICFGNode* dst, ICFGEdge::ICFGEd
 ICFGEdge* ICFG::getICFGEdge(const ICFGNode* src, const ICFGNode* dst, ICFGEdge::ICFGEdgeK kind)
 {
 
-    ICFGEdge * edge = NULL;
+    ICFGEdge * edge = nullptr;
     Size_t counter = 0;
     for (ICFGEdge::ICFGEdgeSetTy::iterator iter = src->OutEdgeBegin();
             iter != src->OutEdgeEnd(); ++iter)
@@ -316,14 +328,34 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
     if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
     {
         assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
         IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
-        return (addICFGEdge(intraEdge) ? intraEdge : NULL);
+        return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
     }
 }
+
+/*!
+ * Add conditional intraprocedural edges between two nodes
+ */
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, NodeID branchID){
+
+    checkIntraEdgeParents(srcNode, dstNode);
+    if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
+    {
+        assert(edge->isIntraCFGEdge() && "this should be an intra CFG edge!");
+        return nullptr;
+    }
+    else
+    {
+        IntraCFGEdge* intraEdge = new IntraCFGEdge(srcNode,dstNode);
+        intraEdge->setBranchCondtion(condition,branchID);
+        return (addICFGEdge(intraEdge) ? intraEdge : nullptr);
+    }
+}
+
 
 /*!
  * Add interprocedural call edges between two nodes
@@ -333,12 +365,12 @@ ICFGEdge* ICFG::addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruct
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::CallCF))
     {
         assert(edge->isCallCFGEdge() && "this should be a call CFG edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
         CallCFGEdge* callEdge = new CallCFGEdge(srcNode,dstNode,cs);
-        return (addICFGEdge(callEdge) ? callEdge : NULL);
+        return (addICFGEdge(callEdge) ? callEdge : nullptr);
     }
 }
 
@@ -350,12 +382,12 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instructi
     if(ICFGEdge* edge = hasInterICFGEdge(srcNode,dstNode, ICFGEdge::RetCF))
     {
         assert(edge->isRetCFGEdge() && "this should be a return CFG edge!");
-        return NULL;
+        return nullptr;
     }
     else
     {
         RetCFGEdge* retEdge = new RetCFGEdge(srcNode,dstNode,cs);
-        return (addICFGEdge(retEdge) ? retEdge : NULL);
+        return (addICFGEdge(retEdge) ? retEdge : nullptr);
     }
 }
 
@@ -366,6 +398,14 @@ ICFGEdge* ICFG::addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instructi
 void ICFG::dump(const std::string& file, bool simple)
 {
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+}
+
+/*!
+ * View ICFG
+ */
+void ICFG::view()
+{
+    llvm::ViewGraph(this, "Interprocedural Control-Flow Graph");
 }
 
 /*!
@@ -385,11 +425,10 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         {
             const SVFFunction*  callee = *func_iter;
             CallBlockNode* CallBlockNode = getCallBlockNode(cs);
-            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
-            addCallEdge(CallBlockNode, calleeEntryNode, cs);
-
             if (!isExtCall(callee))
             {
+                FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+                addCallEdge(CallBlockNode, calleeEntryNode, cs);
                 RetBlockNode* retBlockNode = getRetBlockNode(cs);
                 FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
                 addRetEdge(calleeExitNode, retBlockNode, cs);
@@ -432,51 +471,34 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         rawstr << "NodeID: " << node->getId() << "\n";
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
-            rawstr << getSourceLoc(bNode->getInst()) << "\n";
-
+            rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
             PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                NodeID src = edge->getSrcID();
-                NodeID dst = edge->getDstID();
-                rawstr << dst << "<--" << src << "\n";
-                std::string srcValueName = edge->getSrcNode()->getValueName();
-                std::string dstValueName = edge->getDstNode()->getValueName();
-                rawstr << dstValueName << "<--" << srcValueName << "\n";
-
+            if (edges.empty()) {
+                rawstr << value2String(bNode->getInst()) << " \t";
+            } else {
+                for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                {
+                    const PAGEdge* edge = *it;
+                    rawstr << edge->toString();
+                }
             }
-
-            if(DumpLLVMInst)
-                rawstr << *(bNode->getInst()) << "\n";
+            rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
         else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
         {
-            if (isExtCall(entry->getFun()))
-                rawstr << "Entry(" << ")\n";
-            else
-                rawstr << "Entry(" << getSourceLoc(entry->getFun()->getLLVMFun()) << ")\n";
-            rawstr << "Fun[" << entry->getFun()->getName() << "]";
+            rawstr << entry->toString();
         }
         else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
         {
-            if (isExtCall(exit->getFun()))
-                rawstr << "Exit(" << ")\n";
-            else
-                rawstr << "Exit(" << ")\n";
-            rawstr << "Fun[" << exit->getFun()->getName() << "]";
+            rawstr << exit->toString();
         }
         else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
         {
-            rawstr << "Call("
-                   << getSourceLoc(call->getCallSite())
-                   << ")\n";
+            rawstr << call->toString();
         }
         else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
         {
-            rawstr << "Ret("
-                   << getSourceLoc(ret->getCallSite())
-                   << ")\n";
+            rawstr << ret->toString();
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
@@ -484,12 +506,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
             for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
-                NodeID src = edge->getSrcID();
-                NodeID dst = edge->getDstID();
-                rawstr << dst << "<--" << src << "\n";
-                std::string srcValueName = edge->getSrcNode()->getValueName();
-                std::string dstValueName = edge->getDstNode()->getValueName();
-                rawstr << dstValueName << "<--" << srcValueName << "\n";
+                rawstr << edge->toString();
             }
         }
         else

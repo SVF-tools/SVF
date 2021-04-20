@@ -67,10 +67,11 @@ public:
     typedef Set<const CallPE *> CallPESet;
     typedef Set<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
+    typedef std::list<const PAGEdge*> PAGEdgeList;
 
 public:
     /// Constructor
-    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(NULL), bb(NULL)
+    ICFGNode(NodeID i, ICFGNodeK k) : GenericICFGNodeTy(i, k), fun(nullptr), bb(nullptr)
     {
 
     }
@@ -110,12 +111,28 @@ public:
     }
     ///@}
 
+    /// Set/Get methods of VFGNodes
+    ///@{
+    inline void addPAGEdge(const PAGEdge *edge)
+    {
+        pagEdges.push_back(edge);
+    }
+
+    inline const PAGEdgeList& getPAGEdges() const
+    {
+        return pagEdges;
+    }
+    ///@}
+
     virtual const std::string toString() const;
+
+    void dump() const;
 
 protected:
     const SVFFunction* fun;
     const BasicBlock* bb;
-    VFGNodeList VFGNodes; //< a set of VFGNodes
+    VFGNodeList VFGNodes; //< a list of VFGNodes
+    PAGEdgeList pagEdges; //< a list of PAGEdges
 
 };
 
@@ -128,7 +145,7 @@ class GlobalBlockNode : public ICFGNode
 public:
     GlobalBlockNode(NodeID id) : ICFGNode(id, GlobalBlock)
     {
-    	bb = NULL;
+    	bb = nullptr;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -354,7 +371,7 @@ private:
     const RetBlockNode* ret;
     ActualParmVFGNodeVec APNodes;
 public:
-    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(NULL)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();
@@ -394,7 +411,7 @@ public:
     /// Return true if this is an indirect call
     inline bool isIndirectCall() const
     {
-        return NULL == SVFUtil::getCallee(cs);
+        return nullptr == SVFUtil::getCallee(cs);
     }
 
     /// Return the set of actual parameters
@@ -448,7 +465,7 @@ private:
     const CallBlockNode* callBlockNode;
 public:
     RetBlockNode(NodeID id, const Instruction* c, CallBlockNode* cb) :
-        InterBlockNode(id, FunRetBlock), cs(c), actualRet(NULL), callBlockNode(cb)
+        InterBlockNode(id, FunRetBlock), cs(c), actualRet(nullptr), callBlockNode(cb)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();

@@ -165,8 +165,10 @@ public:
             auto eit = LoadCGEdgeSet.find(&edge);
             return *eit;
         }
-        else
+        else{
             assert(false && "no other kind!");
+            return nullptr;
+        }
     }
 
     ///Add a PAG edge into Edge map
@@ -360,6 +362,9 @@ public:
     void dump(std::string name);
     /// Print CG into terminal
     void print();
+
+    /// View graph from the debugger.
+    void view();
 };
 
 } // End namespace SVF

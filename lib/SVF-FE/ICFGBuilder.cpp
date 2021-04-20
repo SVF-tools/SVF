@@ -97,6 +97,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             }
             InstVec nextInsts;
             getNextInsts(inst, nextInsts);
+            NodeID branchID = 0;
             for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                         nextInsts.end(); nit != enit; ++nit)
             {
@@ -108,8 +109,16 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     icfg->addIntraEdge(srcNode, retICFGNode);
                     srcNode = retICFGNode;
                 }
-                icfg->addIntraEdge(srcNode, dstNode);
+
+                const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst);
+
+                if(br && br->isConditional())
+                    icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), branchID);
+                else
+                    icfg->addIntraEdge(srcNode, dstNode);
+
                 worklist.push(succ);
+                branchID++;
             }
         }
     }
@@ -176,7 +185,7 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
     const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(svfModule);
 
     /// Return back if the main function is not found, the bc file might be a library only
-    if(mainFunc == NULL)
+    if(mainFunc == nullptr)
         return;
 
     FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);

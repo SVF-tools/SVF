@@ -56,7 +56,7 @@ private:
 public:
     typedef Set<const ICFGNode *> ICFGNodeSet;
 
-    ICFGStat(ICFG *cfg) : PTAStat(NULL), icfg(cfg)
+    ICFGStat(ICFG *cfg) : PTAStat(nullptr), icfg(cfg)
     {
         numOfNodes = 0;
         numOfCallNodes = 0;

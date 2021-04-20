@@ -1,4 +1,4 @@
-//===- VersionedFlowSensitive.h -- Flow-sensitive pointer analysis---------------------//
+//===- VersionedFlowSensitive.h -- Versioned flow-sensitive pointer analysis --------//
 
 /*
  * VersionedFlowSensitiveAnalysis.h
@@ -27,6 +27,10 @@ class SVFModule;
 class VersionedFlowSensitive : public FlowSensitive
 {
     friend class VersionedFlowSensitiveStat;
+
+private:
+    typedef llvm::SparseBitVector<> MeldVersion;
+
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
@@ -75,11 +79,30 @@ public:
     }
     //@}
 
+    /// Create single instance of versioned flow-sensitive points-to analysis.
+    static VersionedFlowSensitive *createVFSWPA(PAG *_pag)
+    {
+        if (vfspta == nullptr)
+        {
+            vfspta = new VersionedFlowSensitive(_pag);
+            vfspta->analyze();
+        }
+
+        return vfspta;
+    }
+
+    /// Release flow-sensitive pointer analysis
+    static void releaseVFSWPA()
+    {
+        if (vfspta) delete vfspta;
+        vfspta = nullptr;
+    }
+
 protected:
     virtual bool processLoad(const LoadSVFGNode* load) override;
     virtual bool processStore(const StoreSVFGNode* store) override;
     virtual void processNode(NodeID n) override;
-    virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges);
+    virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
@@ -117,6 +140,9 @@ private:
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
 
+    /// Dumps a MeldVersion to stdout.
+    static void dumpMeldVersion(MeldVersion &v);
+
     /// SVFG node (label) x object -> version to consume.
     /// Used during meld labeling. We use MeldVersions and Versions for performance.
     /// MeldVersions are currently SparseBitVectors which are necessary for the meld operator,
@@ -147,7 +173,7 @@ private:
     FIFOWorkList<NodeID> vWorklist;
 
     /// Points-to DS for working with versions.
-    VersionedPTData<NodeID, NodeID, PointsTo, VersionedVar> *vPtD;
+    BVDataPTAImpl::VersionedPTDataTy *vPtD;
 
     /// Additional statistics.
     //@{
@@ -160,6 +186,8 @@ private:
     double meldMappingTime;  ///< Time to map MeldVersions to Versions.
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
+
+    static VersionedFlowSensitive *vfspta;
 };
 
 } // End namespace SVF

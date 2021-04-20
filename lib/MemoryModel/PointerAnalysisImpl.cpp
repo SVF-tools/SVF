@@ -6,9 +6,11 @@
  */
 
 
+#include "Util/Options.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
+#include "Util/Options.h"
 #include <fstream>
 #include <sstream>
 
@@ -17,16 +19,7 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
-const std::string BVDataPTAImpl::PTBackingOptMutable = "mutable";
-const std::string BVDataPTAImpl::PTBackingOptPersistent = "persistent";
-
 PersistentPointsToCache<PointsTo> BVDataPTAImpl::ptCache = PersistentPointsToCache<PointsTo>(PointsTo());
-
-static llvm::cl::opt<bool> INCDFPTData("incdata", llvm::cl::init(true),
-                                       llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis"));
-
-static llvm::cl::opt<std::string> PTBacking("pt-backing", llvm::cl::init(BVDataPTAImpl::PTBackingOptMutable),
-                                       llvm::cl::desc("Backing type for the points-to data structure"));
 
 /*!
  * Constructor
@@ -34,40 +27,46 @@ static llvm::cl::opt<std::string> PTBacking("pt-backing", llvm::cl::init(BVDataP
 BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check)
 {
-    PTBackingType backingType;
-    if (PTBacking == PTBackingOptMutable) backingType = PTBackingType::Mutable;
-    else if (PTBacking == PTBackingOptPersistent) backingType = PTBackingType::Persistent;
-    else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unknown points-to backing type!");
-
-    if (type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
+    if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA
             || type == AndersenSCD_WPA || type == AndersenSFR_WPA)
     {
-        if (backingType == PTBackingType::Mutable) ptD = new MutDiffPTDataTy();
-        else if (backingType == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache());
+        // Only maintain reverse points-to when the analysis is field-sensitive, as objects turning
+        // field-insensitive is all it is used for.
+        bool maintainRevPts = Options::MaxFieldLimit != 0;
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDiffPTDataTy(maintainRevPts);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache(), maintainRevPts);
+        else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+    }
+    else if (type == Steensgaard_WPA)
+    {
+        // Steensgaard is only field-insensitive (for now?), so no reverse points-to.
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDiffPTDataTy(false);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDiffPTDataTy(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
     else if (type == FSSPARSE_WPA || type == FSTBHC_WPA)
     {
-        if (INCDFPTData)
-            if (backingType == PTBackingType::Mutable) ptD = new MutIncDFPTDataTy(false);
-            else if (backingType == PTBackingType::Persistent) ptD = new PersIncDFPTDataTy(getPtCache(), false);
+        if (Options::INCDFPTData)
+        {
+            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutIncDFPTDataTy(false);
+            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersIncDFPTDataTy(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
+        }
         else
         {
-            if (backingType == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);
-            else if (backingType == PTBackingType::Persistent) ptD = new PersDFPTDataTy(getPtCache(), false);
+            if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutDFPTDataTy(false);
+            else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersDFPTDataTy(getPtCache(), false);
             else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
         }
     }
     else if (type == VFS_WPA)
     {
-        if (backingType == PTBackingType::Mutable) ptD = new MutVersionedPTDataTy(false);
-        else if (backingType == PTBackingType::Persistent) ptD = new PersVersionedPTDataTy(getPtCache(), false);
+        if (Options::ptDataBacking == PTBackingType::Mutable) ptD = new MutVersionedPTDataTy(false);
+        else if (Options::ptDataBacking == PTBackingType::Persistent) ptD = new PersVersionedPTDataTy(getPtCache(), false);
         else assert(false && "BVDataPTAImpl::BVDataPTAImpl: unexpected points-to backing type!");
     }
-    else
-        assert(false && "no points-to data available");
+    else assert(false && "no points-to data available");
 
     ptaImplTy = BVDataImpl;
 }
@@ -106,11 +105,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     }
 
     // Write analysis results to file
-    PTDataTy *ptD = getPTDataTy();
-    if (hasPtsMap())
-    {
-        auto &ptsMap = getPtsMap();
-        for (auto it = ptsMap.begin(), ie = ptsMap.end(); it != ie; ++it)
+
+    for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
         {
             NodeID var = it->first;
             const PointsTo &pts = getPts(var);
@@ -128,8 +124,8 @@ void BVDataPTAImpl::writeToFile(const string& filename)
                 }
             }
             F.os() << "}\n";
-        }
     }
+
 
     // Write GepPAGNodes to file
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)

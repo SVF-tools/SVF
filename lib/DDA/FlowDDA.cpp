@@ -5,6 +5,7 @@
  *      Author: Yulei Sui, Sen Ye
  */
 
+#include "Util/Options.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
 
@@ -12,8 +13,6 @@ using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::cl::opt<unsigned long long> flowBudget("flowbg",  llvm::cl::init(10000),
-        llvm::cl::desc("Maximum step budget of flow-sensitive traversing"));
 
 /*!
  * Compute points-to set for queries
@@ -21,7 +20,7 @@ static llvm::cl::opt<unsigned long long> flowBudget("flowbg",  llvm::cl::init(10
 void FlowDDA::computeDDAPts(NodeID id)
 {
     resetQuery();
-    LocDPItem::setMaxBudget(flowBudget);
+    LocDPItem::setMaxBudget(Options::FlowBudget);
 
     PAGNode* node = getPAG()->getPAGNode(id);
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
@@ -161,7 +160,7 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
     {
 //        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
 //            const SVFFunction* fun = mallocSite->getParent()->getParent();
-//            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : NULL;
+//            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)
 //                return true;
 //            if(_callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId()))

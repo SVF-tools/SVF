@@ -44,10 +44,10 @@ class PTASCEV
 {
 
 public:
-    PTASCEV():scev(NULL), start(NULL), step(NULL),ptr(NULL),inloop(false),tripcount(0) {}
+    PTASCEV():scev(nullptr), start(nullptr), step(nullptr),ptr(nullptr),inloop(false),tripcount(0) {}
 
     /// Constructor
-    PTASCEV(const Value* p, const SCEV* s, ScalarEvolution* SE): scev(s),start(NULL), step(NULL), ptr(p), inloop(false), tripcount(0)
+    PTASCEV(const Value* p, const SCEV* s, ScalarEvolution* SE): scev(s),start(nullptr), step(nullptr), ptr(p), inloop(false), tripcount(0)
     {
         if(const SCEVAddRecExpr* ar = SVFUtil::dyn_cast<SCEVAddRecExpr>(s))
         {
@@ -160,7 +160,7 @@ public:
     static char ID;
 
     IteratedDominanceFrontier() :
-        DominanceFrontierBase(), DF(NULL)
+        DominanceFrontierBase(), DF(nullptr)
     {
     }
 

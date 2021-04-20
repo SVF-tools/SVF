@@ -68,7 +68,7 @@ void ObjTypeInfo::analyzeGlobalStackObjType(const Value* val)
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ST);
+        const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ST);
         for(std::vector<FieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
@@ -110,7 +110,7 @@ u32_t ObjTypeInfo::getObjSize(const Value* val)
     u32_t numOfFields = 1;
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        numOfFields = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety).size();
+        numOfFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety).size();
     }
     return numOfFields;
 }
@@ -138,7 +138,7 @@ void ObjTypeInfo::init(const Value* val)
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
         setFlag(GLOBVAR_OBJ);
-        if(SymbolTableInfo::Symbolnfo()->isConstantObjSym(val))
+        if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
             setFlag(CONST_OBJ);
         analyzeGlobalStackObjType(val);
         objSize = getObjSize(val);
@@ -190,7 +190,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
         bool hasIntersection = false;
-        const vector<FieldInfo> &infovec = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety);
+        const vector<FieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety);
         vector<FieldInfo>::const_iterator it = infovec.begin();
         vector<FieldInfo>::const_iterator eit = infovec.end();
         for (; it != eit; ++it)
@@ -251,7 +251,7 @@ void MemObj::init(const Type* type)
  * Constructor of a memory object
  */
 MemObj::MemObj(const Value *val, SymID id) :
-    refVal(val), GSymID(id), typeInfo(NULL)
+    refVal(val), GSymID(id), typeInfo(nullptr)
 {
     init(val);
 }
@@ -260,7 +260,7 @@ MemObj::MemObj(const Value *val, SymID id) :
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id, const Type* type) :
-    refVal(NULL), GSymID(id), typeInfo(NULL)
+    refVal(nullptr), GSymID(id), typeInfo(nullptr)
 {
     init(type);
 }
@@ -295,7 +295,7 @@ const Type* MemObj::getType() const
 void MemObj::destroy()
 {
     delete typeInfo;
-    typeInfo = NULL;
+    typeInfo = nullptr;
 }
 
 
@@ -378,7 +378,7 @@ bool LocSymTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi))
             {
                 assert(op && "non-const struct index in GEP");
-                const vector<u32_t> &so = SymbolTableInfo::Symbolnfo()->getFattenFieldOffsetVec(ST);
+                const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldOffsetVec(ST);
                 if ((unsigned)idx >= so.size())
                 {
                     outs() << "!! Struct index out of bounds" << idx << "\n";
@@ -497,7 +497,7 @@ LocationSet LocSymTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
         /// Find an appropriate field for this LocationSet
-        const std::vector<FieldInfo>& infovec = SymbolTableInfo::Symbolnfo()->getFlattenFieldInfoVec(ety);
+        const std::vector<FieldInfo>& infovec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety);
         std::vector<FieldInfo>::const_iterator it = infovec.begin();
         std::vector<FieldInfo>::const_iterator eit = infovec.end();
         for (; it != eit; ++it)
@@ -597,5 +597,5 @@ u32_t LocObjTypeInfo::getObjSize(const Value* val)
 {
 
     Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();
-    return LocSymTableInfo::Symbolnfo()->getTypeSizeInBytes(ety);
+    return LocSymTableInfo::SymbolInfo()->getTypeSizeInBytes(ety);
 }

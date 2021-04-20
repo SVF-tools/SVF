@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "MSSA/MemPartition.h"
 #include "MSSA/MemSSA.h"
@@ -35,14 +36,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-
-static llvm::cl::opt<bool> DumpMSSA("dump-mssa", llvm::cl::init(false),
-                                    llvm::cl::desc("Dump memory SSA"));
-static llvm::cl::opt<string> MSSAFun("mssafun",  llvm::cl::init(""),
-                                     llvm::cl::desc("Please specify which function needs to be dumped"));
-
-static llvm::cl::opt<std::string> MemPar("mempar", llvm::cl::value_desc("memory-partition-type"),
-        llvm::cl::desc("memory partition strategy"));
 static std::string kDistinctMemPar = "distinct";
 static std::string kIntraDisjointMemPar = "intra-disjoint";
 static std::string kInterDisjointMemPar = "inter-disjoint";
@@ -56,15 +49,15 @@ double MemSSA::timeOfSSARenaming  = 0;	///< Time for SSA rename
 /*!
  * Constructor
  */
-MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(NULL),dt(NULL)
+MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
 {
     pta = p;
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (!MemPar.getValue().empty())
+    if (!Options::MemPar.getValue().empty())
     {
-        std::string strategy = MemPar.getValue();
+        std::string strategy = Options::MemPar.getValue();
         if (strategy == kDistinctMemPar)
             mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
         else if (strategy == kIntraDisjointMemPar)
@@ -469,10 +462,10 @@ void MemSSA::destroy()
     }
 
     delete mrGen;
-    mrGen = NULL;
+    mrGen = nullptr;
     delete stat;
-    stat = NULL;
-    pta = NULL;
+    stat = nullptr;
+    pta = nullptr;
 }
 
 /*!
@@ -607,16 +600,13 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(raw_ostream& Out)
 {
-    if (!DumpMSSA)
-        return;
-
     PAG* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit)
     {
         const SVFFunction* fun = *fit;
-        if(MSSAFun!="" && MSSAFun!=fun->getName())
+        if(Options::MSSAFun!="" && Options::MSSAFun!=fun->getName())
             continue;
 
         Out << "==========FUNCTION: " << fun->getName() << "==========\n";

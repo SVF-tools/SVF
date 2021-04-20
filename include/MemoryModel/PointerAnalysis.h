@@ -68,6 +68,7 @@ public:
         AndersenSFR_WPA,    ///< Stride-based field representation
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
+        Steensgaard_WPA,      ///< Steensgaard PTA
         CSCallString_WPA,	///< Call string based context sensitive WPA
         CSSummary_WPA,		///< Summary based context sensitive WPA
         FSDATAFLOW_WPA,	///< Traditional Dataflow-based flow sensitive WPA
@@ -247,7 +248,7 @@ public:
 
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
-    virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
+    virtual const NodeBS& getRevPts(NodeID nodeId) = 0;
 
     /// Clear points-to data
     virtual void clearPts()
@@ -395,7 +396,7 @@ public:
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = NULL);
+    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = nullptr);
     /// Match arguments for callsite at caller and callee
     bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
 
@@ -404,7 +405,7 @@ public:
     /// CallGraph SCC detection
     inline void callGraphSCCDetection()
     {
-        if(callGraphSCC==NULL)
+        if(callGraphSCC==nullptr)
             callGraphSCC = new CallGraphSCC(ptaCallGraph);
 
         callGraphSCC->find();

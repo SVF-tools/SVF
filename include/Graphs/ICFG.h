@@ -76,7 +76,6 @@ public:
     /// Destructor
     virtual ~ICFG()
     {
-        destroy();
     }
 
     /// Get a ICFG node
@@ -104,6 +103,9 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
+    /// View graph from the debugger
+    void view();
+
     /// update ICFG for indirect calls
     void updateCallGraph(PTACallGraph* callgraph);
 
@@ -124,6 +126,7 @@ public:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
+    ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, NodeID branchID);
     ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
     ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
     //@}
@@ -181,7 +184,7 @@ private:
     {
         InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
         if (it == InstToBlockNodeMap.end())
-            return NULL;
+            return nullptr;
         return it->second;
     }
     inline IntraBlockNode* addIntraBlockICFGNode(const Instruction* inst)
@@ -197,7 +200,7 @@ private:
     {
         FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
         if (it == FunToFunEntryNodeMap.end())
-            return NULL;
+            return nullptr;
         return it->second;
     }
     inline FunEntryBlockNode* addFunEntryICFGNode(const SVFFunction* fun)
@@ -213,7 +216,7 @@ private:
     {
         FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
         if (it == FunToFunExitNodeMap.end())
-            return NULL;
+            return nullptr;
         return it->second;
     }
     inline FunExitBlockNode* addFunExitICFGNode(const SVFFunction* fun)
@@ -229,7 +232,7 @@ private:
     {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
         if (it == CSToCallNodeMap.end())
-            return NULL;
+            return nullptr;
         return it->second;
     }
     inline CallBlockNode* addCallICFGNode(const Instruction* cs)
@@ -245,7 +248,7 @@ private:
     {
         CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
         if (it == CSToRetNodeMap.end())
-            return NULL;
+            return nullptr;
         return it->second;
     }
     inline RetBlockNode* addRetICFGNode(const Instruction* cs)

@@ -27,13 +27,11 @@
  *      Author: Yuxiang Lei
  */
 
+#include "Util/Options.h"
 #include "Graphs/OfflineConsG.h"
 
 using namespace SVF;
 using namespace SVFUtil;
-
-static llvm::cl::opt<bool> OCGDotGraph("dump-ocg", llvm::cl::init(false),
-                                       llvm::cl::desc("Dump dot graph of Offline Constraint Graph"));
 
 /*!
  * Builder of offline constraint graph
@@ -170,7 +168,7 @@ NodeID OfflineConsG::solveRep(OSCC* oscc, NodeID rep)
  */
 void OfflineConsG::dump(std::string name)
 {
-    if (OCGDotGraph)
+    if (Options::OCGDotGraph)
         GraphPrinter::WriteGraphToFile(outs(), name, this);
 }
 
@@ -245,43 +243,11 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
         if (PAG::getPAG()->findPAGNode(n->getId()))
         {
             PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-            if (SVFUtil::isa<ValPN>(node))
-            {
-                if (SVFUtil::isa<GepValPN>(node))
-                    return "shape=hexagon";
-                else if (SVFUtil::isa<DummyValPN>(node))
-                    return "shape=diamond";
-                else
-                    return "shape=circle";
-            }
-            else if (SVFUtil::isa<ObjPN>(node))
-            {
-                if (SVFUtil::isa<GepObjPN>(node))
-                    return "shape=doubleoctagon";
-                else if (SVFUtil::isa<FIObjPN>(node))
-                    return "shape=septagon";
-                else if (SVFUtil::isa<DummyObjPN>(node))
-                    return "shape=Mcircle";
-                else
-                    return "shape=doublecircle";
-            }
-            else if (SVFUtil::isa<RetPN>(node))
-            {
-                return "shape=Mrecord";
-            }
-            else if (SVFUtil::isa<VarArgPN>(node))
-            {
-                return "shape=octagon";
-            }
-            else
-            {
-                assert(0 && "no such kind node!!");
-            }
-            return "";
+            return node->getNodeAttrForDotDisplay();
         }
         else
         {
-            return "shape=doublecircle";
+            return "shape=folder";
         }
     }
 

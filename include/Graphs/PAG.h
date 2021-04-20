@@ -33,6 +33,7 @@
 
 #include "PAGEdge.h"
 #include "PAGNode.h"
+#include "Util/NodeIDAllocator.h"
 #include "Util/SVFUtil.h"
 #include "Graphs/ICFG.h"
 
@@ -146,7 +147,7 @@ public:
     //@{
     static inline PAG* getPAG(bool buildFromFile = false)
     {
-        if (pag == NULL)
+        if (pag == nullptr)
         {
             pag = new PAG(buildFromFile);
         }
@@ -156,7 +157,7 @@ public:
     {
         if (pag)
             delete pag;
-        pag = NULL;
+        pag = nullptr;
     }
     //@}
 
@@ -179,7 +180,7 @@ public:
     /// Get LLVM Module
     inline SVFModule* getModule()
     {
-        return SymbolTableInfo::Symbolnfo()->getModule();
+        return SymbolTableInfo::SymbolInfo()->getModule();
     }
     inline void addCallSite(const CallBlockNode* call)
     {
@@ -526,7 +527,7 @@ public:
     }
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
-    /// return NULL is this node is not a ObjPN type
+    /// return nullptr is this node is not a ObjPN type
     //@{
     inline const MemObj*getObject(NodeID id) const
     {
@@ -534,7 +535,7 @@ public:
         if(const ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(node))
             return getObject(objPN);
         else
-            return NULL;
+            return nullptr;
     }
     inline const MemObj*getObject(const ObjPN* node) const
     {
@@ -722,32 +723,32 @@ public:
     //@{
     inline NodeID addDummyValNode()
     {
-        return addDummyValNode(nodeNum);
+        return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
     inline NodeID addDummyValNode(NodeID i)
     {
-        return addValNode(NULL, new DummyValPN(i), i);
+        return addValNode(nullptr, new DummyValPN(i), i);
     }
-    inline NodeID addDummyObjNode(const Type* type = NULL)
+    inline NodeID addDummyObjNode(const Type* type = nullptr)
     {
-        return addDummyObjNode(nodeNum, type);
+        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {
         const MemObj* mem = addDummyMemObj(i, type);
-        return addObjNode(NULL, new DummyObjPN(i,mem), i);
+        return addObjNode(nullptr, new DummyObjPN(i,mem), i);
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
-        return SymbolTableInfo::Symbolnfo()->createDummyObj(i,type);
+        return SymbolTableInfo::SymbolInfo()->createDummyObj(i,type);
     }
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(NULL, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
+        return addObjNode(nullptr, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(NULL, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(nullptr, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
     }
     inline NodeID addBlackholePtrNode()
     {
@@ -840,6 +841,9 @@ public:
 
     /// Dump PAG
     void dump(std::string name);
+
+    /// View graph from the debugger
+    void view();
 
 };
 

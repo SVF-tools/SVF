@@ -32,7 +32,7 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-AndersenWaveDiff* AndersenWaveDiff::diffWave = NULL;
+AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
 /*!
  * solve worklist

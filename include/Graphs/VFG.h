@@ -52,7 +52,7 @@ public:
     /// VFG kind
     enum VFGK
     {
-        ORIGSVFGK, PTRONLYSVFGK
+        FULLSVFG, PTRONLYSVFG, FULLSVFG_OPT, PTRONLYSVFG_OPT
     };
 
     typedef Map<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
@@ -99,14 +99,13 @@ protected:
     PTACallGraph* callgraph;
     PAG* pag;
     VFGK kind;
-    bool dumpVFG;
 
     /// Clean up memory
     void destroy();
 
 public:
     /// Constructor
-    VFG(PTACallGraph* callgraph, VFGK k = ORIGSVFGK);
+    VFG(PTACallGraph* callgraph, VFGK k = FULLSVFG);
 
     /// Destructor
     virtual ~VFG()
@@ -123,20 +122,8 @@ public:
     /// Return true if this VFG only contains pointer related SVFGNodes for pointer analysis
     inline bool isPtrOnlySVFG() const
     {
-        return kind == PTRONLYSVFGK;
+        return (kind == PTRONLYSVFG) || (kind == PTRONLYSVFG_OPT);
     }
-
-	/// Whether to dump VFG;
-	inline void setDumpVFG(bool flag)
-	{
-		dumpVFG = flag;
-	}
-
-	/// Whether to dump VFG;
-	inline bool getDumpVFG() const
-	{
-		return dumpVFG;
-	}
 
     /// Return PAG
     inline PAG* getPAG() const
@@ -168,10 +155,13 @@ public:
     }
 
     /// Get a SVFG edge according to src and dst
-    VFGEdge* getVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind);
+    VFGEdge* getIntraVFGEdge(const VFGNode* src, const VFGNode* dst, VFGEdge::VFGEdgeK kind);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
+
+    /// Dump graph into dot file
+    void view();
 
     /// Update VFG based on pointer analysis results
     void updateCallGraph(PointerAnalysis* pta);
@@ -382,7 +372,7 @@ protected:
         NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
         NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
         VFGEdge* edge = addInterEdgeFromAPToFP(actualParam, formalParam,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     /// Connect formal-ret and actual ret
@@ -391,7 +381,7 @@ protected:
         NodeID formalRet = getFormalRetVFGNode(funReturn)->getId();
         NodeID actualRet = getActualRetVFGNode(csReturn)->getId();
         VFGEdge* edge = addInterEdgeFromFRToAR(formalRet, actualRet,csId);
-        if (edge != NULL)
+        if (edge != nullptr)
             edges.insert(edge);
     }
     //@}
@@ -553,8 +543,12 @@ protected:
 		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
 		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
 		/// we will set this phi node's def later
-		if (!pag->isPhiNode(uniqueFunRet))
+		/// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
+		if (!pag->isPhiNode(uniqueFunRet)){
+			std::string warn = fun->getName();
+			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
 			setDef(uniqueFunRet, sNode);
+		}
     }
     /// Add a callsite Receive VFG node
     inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
@@ -569,7 +563,7 @@ protected:
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -585,7 +579,7 @@ protected:
     {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -601,7 +595,7 @@ protected:
     {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
@@ -618,7 +612,7 @@ protected:
     {
         UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
-        const PAGEdge* edge = NULL;
+        const PAGEdge* edge = nullptr;
         for(PAG::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;

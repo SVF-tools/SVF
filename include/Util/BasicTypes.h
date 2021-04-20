@@ -102,6 +102,8 @@ typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
 typedef llvm::VectorType VectorType;
+typedef llvm::MetadataAsValue MetadataAsValue;
+typedef llvm::BlockAddress BlockAddress;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
@@ -217,7 +219,7 @@ private:
     Function* fun;
 public:
     SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(NULL)
+        isDecl(false), isIntri(false), fun(nullptr)
     {
     }
 
@@ -250,6 +252,12 @@ public:
     {
         return getLLVMFun()->isVarArg();
     }
+
+    // Dump Control Flow Graph of llvm function, with instructions
+    void viewCFG();
+
+    // Dump Control Flow Graph of llvm function, without instructions
+    void viewCFGOnly();
 
 };
 
@@ -286,8 +294,7 @@ public:
 template <typename F, typename S>
 raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
 {
-    if (var.second == 0) o << var.first;
-    else o << var.first << ":" << var.second << "\n";
+    o << "<" << var.first << ", " << var.second << ">";
     return o;
 }
 
@@ -305,7 +312,7 @@ template <> struct std::hash<SVF::CallSite> {
 template <> struct std::hash<llvm::SparseBitVector<>>
 {
     size_t operator()(const llvm::SparseBitVector<> &sbv) const {
-        std::hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
         return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
 };

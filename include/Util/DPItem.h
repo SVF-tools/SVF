@@ -768,6 +768,26 @@ public:
         else
             return context < rhs.context;
     }
+    /// Overloading Operator=
+    inline CxtDPItem& operator= (const CxtDPItem& rhs)
+    {
+        if(*this!=rhs)
+        {
+            cur = rhs.cur;
+            context = rhs.context;
+        }
+        return *this;
+    }
+    /// Overloading Operator==
+    inline bool operator== (const CxtDPItem& rhs) const
+    {
+        return (cur == rhs.cur) && (context == rhs.context);
+    }
+    /// Overloading Operator!=
+    inline bool operator!= (const CxtDPItem& rhs) const
+    {
+        return !(*this == rhs);
+    }
 
 };
 
@@ -779,7 +799,7 @@ struct std::hash<SVF::CxtDPItem>
 {
     size_t operator()(const SVF::CxtDPItem &cdpi) const
     {
-        std::hash<std::pair<SVF::NodeID, SVF::ContextCond>> h;
+        SVF::Hash<std::pair<SVF::NodeID, SVF::ContextCond>> h;
         return h(std::make_pair(cdpi.getCurNodeID(), cdpi.getContexts()));
     }
 };
@@ -790,7 +810,7 @@ struct std::hash<SVF::StmtDPItem<LocCond>>
 {
     size_t operator()(const SVF::StmtDPItem<LocCond> &sdpi) const
     {
-        std::hash<std::pair<SVF::NodeID, const LocCond *>> h;
+        SVF::Hash<std::pair<SVF::NodeID, const LocCond *>> h;
         return h(std::make_pair(sdpi.getCurNodeID(), sdpi.getLoc()));
     }
 };
@@ -801,7 +821,7 @@ struct std::hash<SVF::CxtStmtDPItem<LocCond>>
 {
     size_t operator()(const SVF::CxtStmtDPItem<LocCond> &csdpi) const
     {
-        std::hash<std::pair<SVF::NodeID, std::pair<const LocCond *, SVF::ContextCond>>> h;
+        SVF::Hash<std::pair<SVF::NodeID, std::pair<const LocCond *, SVF::ContextCond>>> h;
         return h(std::make_pair(csdpi.getCurNodeID(),
                                 std::make_pair(csdpi.getLoc(), csdpi.getCond())));
     }
