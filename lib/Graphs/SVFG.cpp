@@ -727,6 +727,13 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         return "SVFG";
     }
 
+    /// isNodeHidden - If the function returns true, the given node is not
+    /// displayed in the graph
+    static bool isNodeHidden(NodeType *n, SVFG*) {
+        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        return node->isIsolatedNode();
+    }
+
     std::string getNodeLabel(NodeType *node, SVFG *graph)
     {
         if (isSimple())
