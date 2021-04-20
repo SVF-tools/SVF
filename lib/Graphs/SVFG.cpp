@@ -729,7 +729,7 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
 
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
-    static bool isNodeHidden(SVFGNode *node) {
+    static bool isNodeHidden(SVFGNode *node, SVFG*) {
         return node->getInEdges().empty() && node->getOutEdges().empty();
     }
 
