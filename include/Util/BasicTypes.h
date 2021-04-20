@@ -37,7 +37,9 @@
 #include <llvm/ADT/SmallVector.h>		// for small vector
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
+#if LLVM_VERSION_MAJOR < 11
 #include <llvm/IR/CallSite.h>
+#endif
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
 #include <llvm/IR/InstIterator.h>	// for inst iteration
 #include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
@@ -78,7 +80,12 @@ typedef llvm::Function Function;
 typedef llvm::BasicBlock BasicBlock;
 typedef llvm::Value Value;
 typedef llvm::Instruction Instruction;
+#if LLVM_VERSION_MAJOR >= 11
+//typedef llvm::AbstractCallSite CallSite;
+typedef llvm::CallBase* CallSite;
+#else
 typedef llvm::CallSite CallSite;
+#endif
 typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
@@ -141,6 +148,7 @@ typedef llvm::MDNode MDNode;
 
 /// LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
+typedef llvm::CallBase CallBase;
 typedef llvm::CallInst CallInst;
 typedef llvm::InvokeInst InvokeInst;
 typedef llvm::CallBrInst CallBrInst;
@@ -315,7 +323,7 @@ raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
 template <> struct std::hash<SVF::CallSite> {
     size_t operator()(const SVF::CallSite &cs) const {
         std::hash<SVF::Instruction *> h;
-        return h(cs.getInstruction());
+        return h(cs);
     }
 };
 

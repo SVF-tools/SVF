@@ -69,15 +69,16 @@ void ExternalPAG::initialise(SVFModule*)
     }
 }
 
-bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
+bool ExternalPAG::connectCallsiteToExternalPAG(CallSite cs)
 {
     PAG *pag = PAG::getPAG();
 
     Function* function = cs->getCalledFunction();
-    std::string functionName = static_cast<std::string>(function->getName());
 
     const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(function);
     if (!hasExternalPAG(svfFun)) return false;
+
+    std::string functionName = static_cast<std::string>(function->getName());
 
     Map<int, PAGNode*> argNodes =
         functionToExternalPAGEntries[svfFun];
@@ -86,13 +87,13 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
     // Handle the return.
     if (llvm::isa<PointerType>(cs->getType()))
     {
-        NodeID dstrec = pag->getValueNode(cs->getInstruction());
+        NodeID dstrec = pag->getValueNode(cs);
         // Does it actually return a pointer?
         if (SVFUtil::isa<PointerType>(function->getReturnType()))
         {
             if (retNode != nullptr)
             {
-                CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs->getInstruction());
+                CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs);
                 pag->addRetPE(retNode->getId(), dstrec, icfgNode);
             }
         }
@@ -105,7 +106,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
 
     // Handle the arguments;
     // Actual arguments.
-    CallSite::arg_iterator itA = cs->arg_begin(), ieA = cs->arg_end();
+    auto itA = cs->arg_begin(), ieA = cs->arg_end();
     Function::const_arg_iterator itF = function->arg_begin(),
                                  ieF = function->arg_end();
     // Formal arguments.
@@ -129,7 +130,7 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
 
         if (SVFUtil::isa<PointerType>((*itA)->getType()))
         {
-            CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs->getInstruction());
+            CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs);
             pag->addCallPE(actualArgNodeId, formalArgNode->getId(), icfgNode);
         }
         else

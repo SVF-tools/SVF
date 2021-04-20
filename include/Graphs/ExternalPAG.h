@@ -88,7 +88,7 @@ public:
     /// Connects callsite if a external PAG implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
-    static bool connectCallsiteToExternalPAG(CallSite *cs);
+    static bool connectCallsiteToExternalPAG(CallSite cs);
 
     /// Whether an external PAG implementing function exists.
     static bool hasExternalPAG(const SVFFunction* function);

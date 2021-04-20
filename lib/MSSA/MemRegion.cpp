@@ -235,7 +235,7 @@ void MRGenerator::collectModRefForCall()
 
     for (CallSite cs : SymbolTableInfo::SymbolInfo()->getCallSiteSet())
     {
-        const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs.getInstruction());
+        const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs);
         if(hasRefSideEffectOfCallSite(callBlockNode))
         {
             NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);

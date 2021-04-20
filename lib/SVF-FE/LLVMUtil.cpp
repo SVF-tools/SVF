@@ -282,7 +282,7 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
     {
         CallSite cs = getLLVMCallSite(inst);
         int arg_pos = getHeapAllocHoldingArgPosition(getCallee(cs));
-        const Value *arg = cs.getArgument(arg_pos);
+        const Value *arg = cs->getArgOperand(arg_pos);
         type = SVFUtil::dyn_cast<PointerType>(arg->getType());
     }
     else

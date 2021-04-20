@@ -306,13 +306,13 @@ void LockAnalysis::handleCallRelation(CxtLockProc& clp, const PTACallGraphEdge* 
 
     CallStrCxt cxt(clp.getContext());
 
-    if (isTDAcquire(cs.getInstruction()))
+    if (isTDAcquire(cs))
     {
-        addCxtLock(cxt,cs.getInstruction());
+        addCxtLock(cxt,cs);
         return;
     }
 
-    pushCxt(cxt, cs.getInstruction(), callee);
+    pushCxt(cxt, cs, callee);
 
     CxtLockProc newclp(cxt, callee);
     if (pushToCTPWorkList(newclp))
