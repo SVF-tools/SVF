@@ -60,6 +60,7 @@ void dumpSet(NodeBS To, raw_ostream & O = SVFUtil::outs());
 
 /// Dump points-to set
 void dumpPointsToSet(unsigned node, NodeBS To) ;
+void dumpSparseSet(const NodeBS& To);
 
 /// Dump alias set
 void dumpAliasSet(unsigned node, NodeBS To) ;
@@ -116,6 +117,16 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
     }
 }
 
+typedef struct
+{
+    bool operator()(const PointsTo& lhs, const PointsTo& rhs) const
+    {
+        return SVFUtil::cmpPts(lhs, rhs);
+    }
+} equalPointsTo;
+
+typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
+void dumpPointsToList(const PointsToList& ptl);
 
 inline bool isIntrinsicFun(const Function* func)
 {
