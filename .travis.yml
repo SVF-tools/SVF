@@ -7,7 +7,7 @@ matrix:
         dist: bionic
         sudo: required
       - os: osx
-        osx_image: xcode7.2
+        osx_image: xcode11.2.1
 
 env:
   - SVF_CTIR=1 SVF_Z3=1
@@ -17,7 +17,7 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test       ; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc-9 g++-9 nodejs; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 900 --slave /usr/bin/g++ g++ /usr/bin/g++-9; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 900 --slave /usr/bin/g++ g++ /usr/bin/g++-9; fi
 
 script:
   - git stash --all
