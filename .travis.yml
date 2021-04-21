@@ -7,7 +7,7 @@ matrix:
         dist: bionic
         sudo: required
       - os: osx
-        osx_image: xcode11.2.1
+        osx_image: xcode11.2
 
 env:
   - SVF_CTIR=1 SVF_Z3=1
