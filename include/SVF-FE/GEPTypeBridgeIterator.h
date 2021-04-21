@@ -71,8 +71,13 @@ public:
     {
         if ( CurTy.getInt() )
             return CurTy.getPointer();
+#if LLVM_VERSION_MAJOR >= 11
+        Type *CT = CurTy.getPointer();
+        return CT;
+#else
         CompositeType *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
         return CT->getTypeAtIndex(getOperand());
+#endif
     }
 
     // non-standard operators, these may not need be bridged but seems it's
@@ -94,10 +99,17 @@ public:
         {
             CurTy.setInt(false);
         }
+#if LLVM_VERSION_MAJOR >= 11
+        else if ( Type * CT = CurTy.getPointer() )
+        {
+            CurTy.setPointer(CT);
+        }
+#else
         else if ( CompositeType * CT = dyn_cast<CompositeType>(CurTy.getPointer()) )
         {
             CurTy.setPointer(CT->getTypeAtIndex(getOperand()));
         }
+#endif
         else
         {
             CurTy.setPointer(nullptr);

@@ -614,7 +614,11 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
         return "ConstraintG";
     }
 
+#if LLVM_VERSION_MAJOR >= 12
+    static bool isNodeHidden(NodeType *n, ConstraintGraph*) {
+#else
     static bool isNodeHidden(NodeType *n) {
+#endif
         PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
         return node->isIsolatedNode();
     }
