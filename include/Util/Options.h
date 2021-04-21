@@ -34,6 +34,12 @@ public:
     /// PTData type.
     static const llvm::cl::opt<BVDataPTAImpl::PTBackingType> ptDataBacking;
 
+    /// Time limit for the main phase (i.e., the actual solving) of FS analyses.
+    static const llvm::cl::opt<unsigned> FsTimeLimit;
+
+    /// Time limit for the Andersen's analyses.
+    static const llvm::cl::opt<unsigned> AnderTimeLimit;
+
     // ContextDDA.cpp
     static const llvm::cl::opt<unsigned long long> CxtBudget;
 

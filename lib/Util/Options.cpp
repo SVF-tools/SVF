@@ -32,6 +32,18 @@ namespace SVF
             clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
             clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
 
+    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
+        "fs-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
+
+    const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
+        "ander-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for Andersen's analyses")
+    );
+
     // ContextDDA.cpp
     const llvm::cl::opt<unsigned long long> Options::CxtBudget(
         "cxt-bg", 

@@ -27,6 +27,9 @@
  *      Author: Yulei Sui
  */
 
+#include <unistd.h>
+#include <signal.h>
+
 #include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
@@ -85,6 +88,14 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
+// TODO: clean up.
+static void timeLimitReached(int signum)
+{
+    std::cout.flush();
+    SVFUtil::outs().flush();
+    SVFUtil::outs() << "Andersen's: time limit reached\n";
+    exit(102);
+}
 
 /*!
  * Andersen analysis
@@ -103,6 +114,12 @@ void AndersenBase::analyze()
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
+        if (Options::AnderTimeLimit != 0)
+        {
+            signal(SIGALRM, &timeLimitReached);
+            alarm(Options::AnderTimeLimit);
+        }
+
         initWorklist();
         do
         {
@@ -119,6 +136,9 @@ void AndersenBase::analyze()
 
         }
         while (reanalyze);
+
+        // Analysis is finished, reset the alarm.
+        alarm(0);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
