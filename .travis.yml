@@ -23,9 +23,8 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ls /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/* ;fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ls /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/* ;fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ls /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/* ;fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ln -s \
-      /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk  \
-      /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ln -s /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk ; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ln -s /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk /Applications/Xcode-11.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk ; fi
 
 script:
   - git stash --all
