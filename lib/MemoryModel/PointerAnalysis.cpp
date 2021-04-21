@@ -207,7 +207,18 @@ void PointerAnalysis::dumpStat()
 {
 
     if(print_stat && stat)
+    {
         stat->performStat();
+        // TODO: implement classof!!
+        if (ptaImplTy == BVDataImpl)
+        {
+            const BVDataPTAImpl *bvpta = static_cast<BVDataPTAImpl *>(this);
+            if (Options::ptDataBacking == BVDataPTAImpl::PTBackingType::Persistent)
+            {
+                bvpta->getPtCache().printStats(PTAName());
+            }
+        }
+    }
 }
 
 /*!
