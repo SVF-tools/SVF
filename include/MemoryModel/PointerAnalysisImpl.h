@@ -66,6 +66,7 @@ public:
         Persistent,
     };
 
+    // TODO: make this not static?
     static PersistentPointsToCache<PointsTo> ptCache;
 
     /// Constructor
