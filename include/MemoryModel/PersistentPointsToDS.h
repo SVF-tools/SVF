@@ -773,6 +773,9 @@ public:
     typedef VersionedPTData<Key, KeySet, Data, DataSet, VersionedKey, VersionedKeySet> BaseVersionedPTData;
     typedef typename BasePTData::PTDataTy PTDataTy;
 
+    typedef typename PersistentPTData<Key, KeySet, Data, DataSet>::KeyToIDMap KeyToIDMap;
+    typedef typename PersistentPTData<VersionedKey, VersionedKeySet, Data, DataSet>::KeyToIDMap VersionedKeyToIDMap;
+
     PersistentVersionedPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersVersioned)
         : BaseVersionedPTData(reversePT, ty), tlPTData(cache, reversePT), atPTData(cache, reversePT) { }
 
@@ -876,6 +879,44 @@ public:
         return ptd->getPTDTY() == PTDataTy::PersVersioned;
     }
     ///@}
+
+    virtual std::pair<u64_t, u64_t> topN(const unsigned n) const override
+    {
+        // TODO: create a helper...
+
+        // How common are points-to sets across all maps and how many pointers are there?
+        Map<PointsToID, u64_t> ptCounts;
+        u64_t keys = 0;
+        for (const typename KeyToIDMap::value_type &ki : tlPTData.ptsMap)
+        {
+            // Ignore empty points-to sets.
+            if (ki.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
+            {
+                ++ptCounts[ki.second];
+                ++keys;
+            }
+        }
+
+        for (const typename VersionedKeyToIDMap::value_type &vki : atPTData.ptsMap)
+        {
+            if (vki.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
+            {
+                ++ptCounts[vki.second];
+                ++keys;
+            }
+        }
+
+        // Which points-to sets are the n most common?
+        std::vector<u64_t> counts;
+        for (const Map<PointsToID, u64_t>::value_type &ic : ptCounts) counts.push_back(ic.second);
+        std::sort(counts.begin(), counts.end(), std::greater<>());
+
+        // Sum of the counts of most common n points-to sets.
+        u64_t mostCommonCount = 0;
+        for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
+
+        return std::make_pair(mostCommonCount, keys);
+    }
 
 private:
     /// PTData for Keys (top-level pointers, generally).
