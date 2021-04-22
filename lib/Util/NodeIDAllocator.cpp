@@ -93,7 +93,7 @@ namespace SVF
                                                     numSymbols : maxFieldLimit
                                                 )));
             id = (offset + 1) * gepMultiplier + base;
-            assert(id > numNodes && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
+            assert(id > numSymbols && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
         }
         else
         {
