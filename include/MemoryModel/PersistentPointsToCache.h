@@ -122,14 +122,22 @@ public:
         {
             ++uniqueUnions;
 
-            // if x U y = z, then x U z = z and y U z = z.
-            operands = std::minmax(lhs, result);
-            unionCache[operands] = result;
-            operands = std::minmax(rhs, result);
-            unionCache[operands] = result;
+            // We can use lhs/rhs here rather than our ordered operands,
+            // because the operation was commutative.
 
-            // We count putting these into the map as performing property unions.
-            propertyUnions += 2;
+            // if x U y = z, then x U z = z,
+            if (lhs != result)
+            {
+                unionCache[std::minmax(lhs, result)] = result;
+                ++propertyUnions;
+            }
+
+            // and y U z = z.
+            if (rhs != result)
+            {
+                unionCache[std::minmax(rhs, result)] = result;
+                ++propertyUnions;
+            }
         }
 
         return result;
@@ -166,7 +174,28 @@ public:
 
         bool opPerformed = false;
         const PointsToID result = opPts(lhs, rhs, complementOp, complementCache, false, opPerformed);
-        if (opPerformed) ++uniqueComplements;
+
+        if (opPerformed)
+        {
+            ++uniqueComplements;
+
+            // We performed lhs - rhs = result, so...
+            if (result != emptyPointsToId())
+            {
+                // result AND rhs = EMPTY_SET,
+                intersectionCache[std::minmax(result, rhs)] = emptyPointsToId();
+                ++propertyIntersections;
+
+                // and result AND lhs = result,
+                intersectionCache[std::minmax(result, lhs)] = lhs;
+                ++propertyIntersections;
+
+                // and result - rhs = result.
+                complementCache[std::make_pair(result, rhs)] = result;
+                ++propertyComplements;
+            }
+        }
+
         return result;
     }
 
@@ -197,7 +226,30 @@ public:
 
         bool opPerformed = false;
         const PointsToID result = opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
-        if (opPerformed) ++uniqueIntersections;
+        if (opPerformed)
+        {
+            ++uniqueIntersections;
+
+            // When the result is empty, we won't be adding anything of substance.
+            if (result != emptyPointsToId())
+            {
+                // We performed lhs AND rhs = result, so...
+                // result AND rhs = result,
+                if (result != rhs)
+                {
+                    intersectionCache[std::minmax(result, rhs)] = result;
+                    ++propertyIntersections;
+                }
+
+                // and result AND lhs = result,
+                if (result != lhs)
+                {
+                    intersectionCache[std::minmax(result, lhs)] = result;
+                    ++propertyIntersections;
+                }
+            }
+        }
+
         return result;
     }
 
