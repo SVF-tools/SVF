@@ -130,6 +130,7 @@ public:
             {
                 unionCache[std::minmax(lhs, result)] = result;
                 ++propertyUnions;
+                ++totalUnions;
             }
 
             // and y U z = z.
@@ -137,6 +138,7 @@ public:
             {
                 unionCache[std::minmax(rhs, result)] = result;
                 ++propertyUnions;
+                ++totalUnions;
             }
         }
 
@@ -185,14 +187,17 @@ public:
                 // result AND rhs = EMPTY_SET,
                 intersectionCache[std::minmax(result, rhs)] = emptyPointsToId();
                 ++propertyIntersections;
+                ++totalIntersections;
 
                 // and result AND lhs = result,
                 intersectionCache[std::minmax(result, lhs)] = lhs;
                 ++propertyIntersections;
+                ++totalIntersections;
 
                 // and result - rhs = result.
                 complementCache[std::make_pair(result, rhs)] = result;
                 ++propertyComplements;
+                ++totalComplements;
             }
         }
 
@@ -239,6 +244,7 @@ public:
                 {
                     intersectionCache[std::minmax(result, rhs)] = result;
                     ++propertyIntersections;
+                    ++totalIntersections;
                 }
 
                 // and result AND lhs = result,
@@ -246,6 +252,7 @@ public:
                 {
                     intersectionCache[std::minmax(result, lhs)] = result;
                     ++propertyIntersections;
+                    ++totalIntersections;
                 }
             }
         }
