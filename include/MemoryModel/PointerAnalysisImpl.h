@@ -142,6 +142,13 @@ public:
         ptD->clear();
     }
 
+    /// Get points-to data structure
+    /// TODO: make protected again.
+    inline PTDataTy* getPTDataTy() const
+    {
+        return ptD;
+    }
+
     /// Expand FI objects
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
 
@@ -165,12 +172,6 @@ protected:
     {
         assert(false && "Virtual function not implemented!");
         return false;
-    }
-
-    /// Get points-to data structure
-    inline PTDataTy* getPTDataTy() const
-    {
-        return ptD;
     }
 
     inline DiffPTDataTy* getDiffPTDataTy() const

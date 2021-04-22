@@ -44,6 +44,9 @@
 #include "MemoryModel/PTAType.h"
 #include "Graphs/ExternalPAG.h"
 #include "WPA/FlowSensitiveTBHC.h"
+
+#include <iomanip>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -215,6 +218,11 @@ void PointerAnalysis::dumpStat()
             const BVDataPTAImpl *bvpta = static_cast<BVDataPTAImpl *>(this);
             if (Options::ptDataBacking == BVDataPTAImpl::PTBackingType::Persistent)
             {
+                // TODO: incorporate into stats.
+                std::pair<u64_t, u64_t> topNPts = bvpta->getPTDataTy()->topN(5);
+                std::cout.flags(std::ios::left);
+                std::cout << std::setw(20) << "TopNPts" << topNPts.first  << "\n";
+                std::cout << std::setw(20) << "AllPts"  << topNPts.second << "\n";
                 bvpta->getPtCache().printStats(PTAName());
             }
         }

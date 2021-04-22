@@ -19,6 +19,9 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
+#include <iomanip>
+#include <iostream>
+
 #include "Util/SVFBasicTypes.h"
 
 namespace SVF
@@ -111,6 +114,13 @@ public:
 
     /// Dump stored keys and points-to sets.
     virtual void dumpPTData() = 0;
+
+    /// Returns number of pointers using top n most common points-to sets and number of pointers.
+    /// TODO: clean up or remove API and hardcoded parts.
+    virtual std::pair<u64_t, u64_t> topN(const unsigned n) const
+    {
+        return std::make_pair(0, 0);
+    }
 
 protected:
     /// Whether we maintain reverse points-to sets or not.
