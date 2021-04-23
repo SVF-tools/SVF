@@ -51,6 +51,8 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
+    stat = new FlowSensitiveStat(this);
+
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     if(Options::OPTSVFG)
@@ -60,8 +62,6 @@ void FlowSensitive::initialize()
 
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
-
-    stat = new FlowSensitiveStat(this);
 }
 
 static void timeLimitReached(int signum)
