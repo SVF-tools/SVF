@@ -122,6 +122,13 @@ public:
         return std::make_pair(0, 0);
     }
 
+    /// Returns number of unique points-to sets in use.
+    /// TODO: clean up or remove API and hardcoded parts.
+    virtual u64_t inUsePointsToSets(void)
+    {
+        return 0;
+    }
+
 protected:
     /// Whether we maintain reverse points-to sets or not.
     bool rev;

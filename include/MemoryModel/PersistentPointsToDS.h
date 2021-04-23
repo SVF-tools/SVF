@@ -126,6 +126,12 @@ public:
         return std::make_pair(mostCommonCount, keys);
     }
 
+    virtual u64_t inUsePointsToSets(void)
+    {
+        std::vector<const KeyToIDMap *> maps = { &ptsMap };
+        return inUsePointsToSets(maps);
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const PersistentPTData<Key, KeySet, Data, DataSet> *)
@@ -162,6 +168,21 @@ private:
         }
 
         return changed;
+    }
+
+    /// Number of unique points-to sets in use for the KeyToIDMaps.
+    static inline u64_t inUsePointsToSets(const std::vector<const KeyToIDMap *> maps)
+    {
+        Set<PointsToID> pointsToSets;
+        for (const KeyToIDMap *kim : maps)
+        {
+            for (const typename KeyToIDMap::value_type &ki : *kim)
+            {
+                pointsToSets.insert(ki.second);
+            }
+        }
+
+        return pointsToSets.size();
     }
 
 protected:
@@ -274,6 +295,11 @@ public:
     std::pair<u64_t, u64_t> topN(const unsigned n) const override
     {
         return persPTData.topN(n);
+    }
+
+    virtual u64_t inUsePointsToSets(void)
+    {
+        return persPTData.inUsePointsToSets();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -500,6 +526,22 @@ public:
         for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
 
         return std::make_pair(mostCommonCount, keys);
+    }
+
+    virtual u64_t inUsePointsToSets(void)
+    {
+        std::vector<const KeyToIDMap *> maps;
+        maps.push_back(&persPTData.ptsMap);
+
+        for (const DFKeyToIDMap *dfMap : { &dfInPtsMap, &dfOutPtsMap } )
+        {
+            for (const typename DFKeyToIDMap::value_type &lkim : *dfMap)
+            {
+                maps.push_back(&lkim.second);
+            }
+        }
+
+        return BasePersPTData::inUsePointsToSets(maps);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -916,6 +958,22 @@ public:
         for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
 
         return std::make_pair(mostCommonCount, keys);
+    }
+
+    virtual u64_t inUsePointsToSets(void)
+    {
+        Set<PointsToID> pointsToSets;
+        for (const typename KeyToIDMap::value_type &ki : tlPTData.ptsMap)
+        {
+            pointsToSets.insert(ki.second);
+        }
+
+        for (const typename VersionedKeyToIDMap::value_type &vki : atPTData.ptsMap)
+        {
+            pointsToSets.insert(vki.second);
+        }
+
+        return pointsToSets.size();
     }
 
 private:

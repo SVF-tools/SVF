@@ -220,9 +220,11 @@ void PointerAnalysis::dumpStat()
             {
                 // TODO: incorporate into stats.
                 std::pair<u64_t, u64_t> topNPts = bvpta->getPTDataTy()->topN(5);
+                u64_t inUsePts = bvpta->getPTDataTy()->inUsePointsToSets();
                 std::cout.flags(std::ios::left);
-                std::cout << std::setw(20) << "TopNPts" << topNPts.first  << "\n";
-                std::cout << std::setw(20) << "AllPts"  << topNPts.second << "\n";
+                std::cout << std::setw(20) << "TopNPts"   << topNPts.first  << "\n";
+                std::cout << std::setw(20) << "AllPts"    << topNPts.second << "\n";
+                std::cout << std::setw(20) << "InUsePts"  << inUsePts       << "\n";
                 bvpta->getPtCache().printStats(PTAName());
             }
         }
