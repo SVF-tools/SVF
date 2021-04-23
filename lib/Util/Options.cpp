@@ -362,7 +362,7 @@ namespace SVF
     llvm::cl::opt<bool> Options::OPTSVFG(
         "opt-svfg", 
         llvm::cl::init(true),
-        llvm::cl::desc("unoptimized SVFG with formal-in and actual-out")
+        llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
     );
 
     
@@ -642,6 +642,12 @@ namespace SVF
         "svfg", 
         llvm::cl::init(false),
         llvm::cl::desc("Generate SVFG after Andersen's Analysis")
+    );
+
+    const llvm::cl::opt<bool> Options::WPAOPTSVFG(
+            "wpa-opt-svfg",
+            llvm::cl::init(false),
+            llvm::cl::desc("When using WPA pass, optimize SVFG to eliminate formal-in and actual-out (default false)")
     );
 
     const llvm::cl::opt<bool> Options::PrintAliases(
