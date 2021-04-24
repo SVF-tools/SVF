@@ -198,6 +198,7 @@ public:
 
     //WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
+    static const llvm::cl::opt<bool> WPAOPTSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
     static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
