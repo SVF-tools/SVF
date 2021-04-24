@@ -77,18 +77,18 @@ static void timeLimitReached(int signum)
  */
 void FlowSensitive::analyze()
 {
+    if (Options::FsTimeLimit != 0)
+    {
+        signal(SIGALRM, &timeLimitReached);
+        alarm(Options::FsTimeLimit);
+    }
+
     /// Initialization for the Solver
     initialize();
 
     double start = stat->getClk(true);
     /// Start solving constraints
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
-
-    if (Options::FsTimeLimit != 0)
-    {
-        signal(SIGALRM, &timeLimitReached);
-        alarm(Options::FsTimeLimit);
-    }
 
     do
     {
