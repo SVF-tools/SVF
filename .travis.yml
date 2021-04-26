@@ -28,12 +28,10 @@ script:
   - git clone "https://github.com/SVF-tools/Test-Suite.git"
   - . ./build.sh
   - cd ./Release-build
-  - ls -all
   - ctest
   - cd $TRAVIS_BUILD_DIR
 
 after_script:
-  - cd $TRAVIS_BUILD_DIR
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
   - git clone https://github.com/SVF-tools/SVF-npm.git
   - cp -rf $TRAVIS_BUILD_DIR/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
