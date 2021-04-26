@@ -27,6 +27,8 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then npm version patch; fi
   - git clone "https://github.com/SVF-tools/Test-Suite.git"
   - . ./build.sh
+  - cd ./Release-build
+  - ctest
   - cd $TRAVIS_BUILD_DIR
 
 after_script:
