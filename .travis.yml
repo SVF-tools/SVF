@@ -36,9 +36,16 @@ after_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
   - git clone https://github.com/SVF-tools/SVF-npm.git
   - cp -rf $TRAVIS_BUILD_DIR/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
+  - ls -all $TRAVIS_BUILD_DIR/include
+  - ls -all ./SVF-npm/SVF-$TRAVIS_OS_NAME/
   - cp $TRAVIS_BUILD_DIR/Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
+  - ls -all $TRAVIS_BUILD_DIR/Release-build/lib/libSvf.a
+  - ls -all ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
   - cp $TRAVIS_BUILD_DIR/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
+  - ls -all $TRAVIS_BUILD_DIR/Release-build/lib/CUDD/libCudd.a
+  - ls -all ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
   - cd SVF-npm
+  - git status
   - git add .
   - git commit -m'update svflib'
   - npm version patch
