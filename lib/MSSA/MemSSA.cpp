@@ -600,9 +600,6 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(raw_ostream& Out)
 {
-    if (!Options::DumpMSSA)
-        return;
-
     PAG* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
