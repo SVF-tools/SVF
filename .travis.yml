@@ -28,6 +28,7 @@ script:
   - git clone "https://github.com/SVF-tools/Test-Suite.git"
   - . ./build.sh
   - cd ./Release-build
+  - ls -all
   - ctest
   - cd $TRAVIS_BUILD_DIR
 
