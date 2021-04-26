@@ -32,6 +32,7 @@ script:
   - cd $TRAVIS_BUILD_DIR
 
 after_script:
+  - cd $TRAVIS_BUILD_DIR
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
   - git clone https://github.com/SVF-tools/SVF-npm.git
   - cp -rf $TRAVIS_BUILD_DIR/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
@@ -41,7 +42,6 @@ after_script:
   - git add .
   - git commit -m'update svflib'
   - npm version patch
-  - cd $TRAVIS_BUILD_DIR/SVF-npm
   - git push https://JasonZhongZexin:${git_key}@github.com/SVF-tools/SVF-npm.git   HEAD:master
 
 deploy:
