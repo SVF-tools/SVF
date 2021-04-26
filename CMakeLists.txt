@@ -55,6 +55,19 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_BINARY_DIR}/include
                     ${Z3_DIR}/include/)
 
+# checks if the test-suite is present, if it is then build bc files and add testing to cmake build
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
+    add_custom_target(
+        generatebc ALL
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite/generate_bc.sh
+    )
+    add_dependencies(generatebc SVF)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
+    enable_testing()
+    add_subdirectory(Test-Suite)
+    include(CTest)
+endif()
+
 LINK_DIRECTORIES(${Z3_DIR}/bin)
 add_subdirectory(lib)
 add_subdirectory(tools)

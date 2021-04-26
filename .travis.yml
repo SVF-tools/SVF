@@ -25,22 +25,18 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git add .; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git commit -m'update version'; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then npm version patch; fi
-  # Perform tests  
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sed -i "57i include_directories(\$\{CMAKE_CURRENT_SOURCE_DIR\}/Test-Suite)" CMakeLists.txt && 
-      sed -i -e '$a enable_testing()\nadd_subdirectory(Test-Suite)\ninclude(CTest)' CMakeLists.txt &&
-        git clone "https://github.com/SVF-tools/Test-Suite.git" &&
-          cd ./Test-Suite && ./generate_bc.sh &&
-            cd ..; fi
+  - git clone "https://github.com/SVF-tools/Test-Suite.git"
   - . ./build.sh
   - cd ./Release-build
-  - ctest --v
+  - ctest
+  - cd $TRAVIS_BUILD_DIR
 
 after_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cd ..; fi
   - git clone https://github.com/SVF-tools/SVF-npm.git
-  - cp -rf ./SVF/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
-  - cp ./SVF/Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
-  - cp ./SVF/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
+  - cp -rf $TRAVIS_BUILD_DIR/include ./SVF-npm/SVF-$TRAVIS_OS_NAME/
+  - cp $TRAVIS_BUILD_DIR/Release-build/lib/libSvf.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib
+  - cp $TRAVIS_BUILD_DIR/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-$TRAVIS_OS_NAME/Release-build/lib/CUDD
   - cd SVF-npm
   - git add .
   - git commit -m'update svflib'

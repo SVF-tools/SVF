@@ -316,6 +316,10 @@ void PTACallGraph::dump(const std::string& filename)
       GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
+void PTACallGraph::view()
+{
+    llvm::ViewGraph(this, "Call Graph");
+}
 
 namespace llvm
 {

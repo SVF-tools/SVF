@@ -28,6 +28,7 @@
  */
 
 
+#include <Graphs/SVFGNode.h>
 #include "Util/Options.h"
 #include "Graphs/VFG.h"
 #include "Util/SVFModule.h"
@@ -86,8 +87,7 @@ const std::string CmpVFGNode::toString() const {
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\n";
     if(res->hasValue()){
-        rawstr << " " << *res->getValue();
-        rawstr << SVFUtil::getSourceLoc(res->getValue());
+        rawstr << " " << value2String(res->getValue());
     }
     return rawstr.str();
 }
@@ -102,8 +102,7 @@ const std::string BinaryOPVFGNode::toString() const {
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
     if(res->hasValue()){
-        rawstr << " " << *res->getValue() << " ";
-        rawstr << SVFUtil::getSourceLoc(res->getValue());
+        rawstr << " " << value2String(res->getValue());
     }
     return rawstr.str();
 }
@@ -118,8 +117,7 @@ const std::string UnaryOPVFGNode::toString() const {
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
     if(res->hasValue()){
-        rawstr << " " << *res->getValue() << " ";
-        rawstr << SVFUtil::getSourceLoc(res->getValue());
+        rawstr << " " << value2String(res->getValue());
     }
     return rawstr.str();
 }
@@ -143,8 +141,7 @@ const std::string PHIVFGNode::toString() const {
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
     if(res->hasValue()){
-        rawstr << " " << *res->getValue();
-        rawstr << SVFUtil::getSourceLoc(res->getValue());
+        rawstr << " " << value2String(res->getValue());
     }
     return rawstr.str();
 }
@@ -160,8 +157,7 @@ const std::string IntraPHIVFGNode::toString() const {
         rawstr << it->second->getId() << ", ";
     rawstr << ")]\t";
     if(res->hasValue()){
-        rawstr << " " << *res->getValue();
-        rawstr << SVFUtil::getSourceLoc(res->getValue());
+        rawstr << " " << value2String(res->getValue());
     }
     return rawstr.str();
 }
@@ -228,9 +224,9 @@ const std::string InterPHIVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     if(isFormalParmPHI())
-        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << *res->getValue();
+        rawstr << "FormalParmPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << value2String(res->getValue());
     else
-        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << *res->getValue();
+        rawstr << "ActualRetPHI ID: " << getId() << " PAGNode ID: " << res->getId() << "\n" << value2String(res->getValue());
     return rawstr.str();
 }
 
@@ -760,6 +756,14 @@ void VFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
+/*!
+ * View VFG from the debugger.
+ */
+void VFG::view()
+{
+    llvm::ViewGraph(this, "Value Flow Graph");
+}
+
 
 void VFG::updateCallGraph(PointerAnalysis* pta)
 {
@@ -1013,6 +1017,10 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         {
             rawstr << fr->toString();
         }
+        else if (MRSVFGNode* mr = SVFUtil::dyn_cast<MRSVFGNode>(node))
+        {
+            rawstr << mr->toString();
+        }
         else
             assert(false && "what else kinds of nodes do we have??");
 
@@ -1079,19 +1087,23 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
         }
         else if(SVFUtil::isa<FormalParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualParmVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
+        }
+        else if (SVFUtil::isa<MRSVFGNode>(node))
+        {
+            rawstr <<  "color=orange,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");
@@ -1114,6 +1126,15 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<PAG*>
                 return "style=solid,color=blue";
             else
                 return "style=solid";
+        }
+        else if (SVFUtil::isa<IndirectSVFGEdge>(edge))
+        {
+            if (SVFUtil::isa<CallIndSVFGEdge>(edge))
+                return "style=dashed,color=red";
+            else if (SVFUtil::isa<RetIndSVFGEdge>(edge))
+                return "style=dashed,color=blue";
+            else
+                return "style=dashed";
         }
         else
         {

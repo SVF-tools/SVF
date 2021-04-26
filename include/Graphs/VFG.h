@@ -160,6 +160,9 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
+    /// Dump graph into dot file
+    void view();
+
     /// Update VFG based on pointer analysis results
     void updateCallGraph(PointerAnalysis* pta);
 

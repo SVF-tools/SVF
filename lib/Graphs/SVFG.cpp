@@ -727,6 +727,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         return "SVFG";
     }
 
+    /// isNodeHidden - If the function returns true, the given node is not
+    /// displayed in the graph
+    static bool isNodeHidden(SVFGNode *node) {
+        return node->getInEdges().empty() && node->getOutEdges().empty();
+    }
+
     std::string getNodeLabel(NodeType *node, SVFG *graph)
     {
         if (isSimple())
@@ -930,47 +936,47 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         }
         else if(SVFUtil::isa<FormalINSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<FormalOUTSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<FormalParmSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualINSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualOUTSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualParmSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<BinaryOPVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else if (SVFUtil::isa<CmpVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else if (SVFUtil::isa<UnaryOPVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");

@@ -111,6 +111,25 @@ void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs)
     outs() << "}\n";
 }
 
+// For use from the debugger.
+void SVFUtil::dumpSparseSet(const NodeBS& bs)
+{
+    outs() << "{";
+    dumpSet(bs);
+    outs() << "}\n";
+}
+
+void SVFUtil::dumpPointsToList(const PointsToList& ptl)
+{
+    outs() << "{";
+    for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end();
+         ii != ie; ii++)
+    {
+        auto bs = *ii;
+        dumpSparseSet(bs);
+    }
+    outs() << "}\n";
+}
 
 /*!
  * Dump alias set
