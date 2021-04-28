@@ -83,7 +83,7 @@ public:
         }
         else if (diType->getRawName() != nullptr)
         {
-            typeName = diType->getName();
+            typeName = diType->getName().str();
         }
         else
         {

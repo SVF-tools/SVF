@@ -74,7 +74,8 @@ bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
     PAG *pag = PAG::getPAG();
 
     Function* function = cs->getCalledFunction();
-    std::string functionName = function->getName();
+    std::string functionName = function->getName().str();
+
     const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(function);
     if (!hasExternalPAG(svfFun)) return false;
 
@@ -278,7 +279,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
             if (currFunction != nullptr)
             {
                 // Otherwise, it would be an indirect call which we don't want.
-                std::string currFunctionName = currFunction->getName();
+                std::string currFunctionName = currFunction->getName().str();
 
                 if (std::find(functions.begin(), functions.end(),
                               currFunctionName) != functions.end())
@@ -300,7 +301,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
             ++it)
     {
         const SVFFunction* function = it->first;
-        std::string functionName = it->first->getName();
+        std::string functionName = it->first->getName().str();
 
         // The final nodes and edges we will print.
         Set<PAGNode *> nodes;

@@ -222,7 +222,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
         return;
     }
 
-    std::string funName = source->getFun()->getName();
+    std::string funName = source->getFun()->getName().str();
 
     if (success)
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
@@ -270,7 +270,7 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
         return;
     }
 
-    std::string funName = source->getFun()->getName();
+    std::string funName = source->getFun()->getName().str();
 
     if (expectedFailure)
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
