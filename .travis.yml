@@ -7,7 +7,7 @@ matrix:
         dist: bionic
         sudo: required
       - os: osx
-        osx_image: xcode11.1
+        osx_image: xcode12.4
         sudo: required
 
 env:
@@ -17,10 +17,8 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test       ; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update       ; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc-9 g++-9 nodejs; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 900 --slave /usr/bin/g++ g++ /usr/bin/g++-9; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ln -s /Applications/Xcode-11.1.app /Applications/Xcode.app ; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then sudo ln -s /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install cmake gcc g++ nodejs; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk" ; fi
 
 script:
   - git stash --all
@@ -34,7 +32,7 @@ script:
   - git clone "https://github.com/SVF-tools/Test-Suite.git"
   - . ./build.sh
   - cd ./Release-build
-  - ctest
+  - ctest -VV
   - cd $TRAVIS_BUILD_DIR
 
 after_script:
@@ -53,4 +51,4 @@ after_script:
 deploy:
   provider: npm
   email: ${npm_email}
-  api_key: ${npm_token} 
+  api_key: ${npm_token}
