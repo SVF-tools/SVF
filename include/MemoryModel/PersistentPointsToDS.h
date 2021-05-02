@@ -843,7 +843,7 @@ public:
         assert(this->rev && "PersistentVersionedPTData::getRevPts: constructed without reverse PT support!");
         return tlPTData.getRevPts(data);
     }
-    virtual const VersionedKeySet& getVersionedKeyRevPts(const Data &data)
+    virtual const VersionedKeySet& getVersionedKeyRevPts(const Data &data) override
     {
         assert(this->rev && "PersistentVersionedPTData::getVersionedKeyRevPts: constructed without reverse PT support!");
         return atPTData.getRevPts(data);
