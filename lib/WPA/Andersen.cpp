@@ -97,6 +97,19 @@ static void timeLimitReached(int signum)
     exit(102);
 }
 
+// TODO: clean up.
+static bool callersAlarm(void)
+{
+    unsigned remainingSeconds = alarm(0);
+    if (remainingSeconds != 0)
+    {
+        // Reset the alarm, it's not our alarm.
+        alarm(remainingSeconds);
+        return true;
+    }
+    else return false;
+}
+
 /*!
  * Andersen analysis
  */
@@ -114,7 +127,8 @@ void AndersenBase::analyze()
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        if (Options::AnderTimeLimit != 0)
+        bool ourAlarm = !callersAlarm();
+        if (ourAlarm && Options::AnderTimeLimit != 0)
         {
             signal(SIGALRM, &timeLimitReached);
             alarm(Options::AnderTimeLimit);
@@ -137,8 +151,8 @@ void AndersenBase::analyze()
         }
         while (reanalyze);
 
-        // Analysis is finished, reset the alarm.
-        alarm(0);
+        // Analysis is finished, reset the alarm if we set it.
+        if (ourAlarm) alarm(0);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
