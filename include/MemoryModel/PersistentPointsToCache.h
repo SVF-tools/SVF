@@ -140,7 +140,7 @@ public:
                 ++propertyUnions;
                 ++totalUnions;
             }
-        }
+        } else ++lookupUnions;
 
         return result;
     }
@@ -199,7 +199,7 @@ public:
                 ++propertyComplements;
                 ++totalComplements;
             }
-        }
+        } else ++lookupComplements;
 
         return result;
     }
@@ -255,7 +255,7 @@ public:
                     ++totalIntersections;
                 }
             }
-        }
+        } else ++lookupIntersections;
 
         return result;
     }
@@ -273,14 +273,17 @@ public:
         std::cout << std::setw(fieldWidth) << "TotalUnions"           << totalUnions           << "\n";
         std::cout << std::setw(fieldWidth) << "PropertyUnions"        << propertyUnions        << "\n";
         std::cout << std::setw(fieldWidth) << "UniqueUnions"          << uniqueUnions          << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupUnions"          << lookupUnions          << "\n";
 
         std::cout << std::setw(fieldWidth) << "TotalComplements"      << totalComplements      << "\n";
         std::cout << std::setw(fieldWidth) << "PropertyComplements"   << propertyComplements   << "\n";
         std::cout << std::setw(fieldWidth) << "UniqueComplements"     << uniqueComplements     << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupComplements"     << lookupComplements     << "\n";
 
         std::cout << std::setw(fieldWidth) << "TotalIntersections"    << totalIntersections    << "\n";
         std::cout << std::setw(fieldWidth) << "PropertyIntersections" << propertyIntersections << "\n";
         std::cout << std::setw(fieldWidth) << "UniqueIntersections"   << uniqueIntersections   << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupIntersections"   << lookupIntersections   << "\n";
 
         std::cout.flush();
     }
@@ -342,12 +345,15 @@ private:
         totalUnions           = 0;
         uniqueUnions          = 0;
         propertyUnions        = 0;
+        lookupUnions          = 0;
         totalComplements      = 0;
         uniqueComplements     = 0;
         propertyComplements   = 0;
+        lookupComplements     = 0;
         totalIntersections    = 0;
         uniqueIntersections   = 0;
         propertyIntersections = 0;
+        lookupIntersections   = 0;
     }
 
 private:
@@ -373,12 +379,15 @@ private:
     u64_t totalUnions;
     u64_t uniqueUnions;
     u64_t propertyUnions;
+    u64_t lookupUnions;
     u64_t totalComplements;
     u64_t uniqueComplements;
     u64_t propertyComplements;
+    u64_t lookupComplements;
     u64_t totalIntersections;
     u64_t uniqueIntersections;
     u64_t propertyIntersections;
+    u64_t lookupIntersections;
 };
 
 } // End namespace SVF
