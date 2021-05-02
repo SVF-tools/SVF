@@ -126,7 +126,7 @@ public:
         return std::make_pair(mostCommonCount, keys);
     }
 
-    virtual u64_t inUsePointsToSets(void)
+    virtual u64_t inUsePointsToSets(void) override
     {
         std::vector<const KeyToIDMap *> maps = { &ptsMap };
         return inUsePointsToSets(maps);
@@ -297,7 +297,7 @@ public:
         return persPTData.topN(n);
     }
 
-    virtual u64_t inUsePointsToSets(void)
+    virtual u64_t inUsePointsToSets(void) override
     {
         return persPTData.inUsePointsToSets();
     }
@@ -528,7 +528,7 @@ public:
         return std::make_pair(mostCommonCount, keys);
     }
 
-    virtual u64_t inUsePointsToSets(void)
+    virtual u64_t inUsePointsToSets(void) override
     {
         std::vector<const KeyToIDMap *> maps;
         maps.push_back(&persPTData.ptsMap);
@@ -960,7 +960,7 @@ public:
         return std::make_pair(mostCommonCount, keys);
     }
 
-    virtual u64_t inUsePointsToSets(void)
+    virtual u64_t inUsePointsToSets(void) override
     {
         Set<PointsToID> pointsToSets;
         for (const typename KeyToIDMap::value_type &ki : tlPTData.ptsMap)
