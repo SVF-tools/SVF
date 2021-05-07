@@ -61,7 +61,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
         generatebc ALL
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite/generate_bc.sh
     )
-    add_dependencies(generatebc SVF)
+    add_dependencies(generatebc Svf)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
     enable_testing()
     add_subdirectory(Test-Suite)
