@@ -117,7 +117,7 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
     }
 }
 
-typedef struct
+typedef struct equalPointsTo
 {
     bool operator()(const PointsTo& lhs, const PointsTo& rhs) const
     {

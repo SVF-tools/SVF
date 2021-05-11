@@ -175,7 +175,7 @@ private:
     GNodeK kind;	///< Type of this SVFValue
 public:
     /// Constructor
-    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
+    SVFValue(const llvm::StringRef& val, SVFValKind k): value(val), kind(k)
     {
     }
 
