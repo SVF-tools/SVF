@@ -4,7 +4,7 @@ FROM ubuntu:18.04
 RUN set -e
 
 # Define LLVM version.
-ENV llvm_version=10.0.0
+ENV llvm_version=12.0.0
 
 # Define home directory
 ENV HOME=/home/SVF-tools
