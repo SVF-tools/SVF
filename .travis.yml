@@ -29,7 +29,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git add .; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git commit -m'update version'; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then npm version patch; fi
-  - git clone "https://github.com/SVF-tools/Test-Suite.git"
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then git clone "https://github.com/SVF-tools/Test-Suite.git"; fi
   - . ./build.sh
   - cd ./Release-build
   - ctest -VV

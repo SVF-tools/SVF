@@ -120,6 +120,14 @@ fi
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR =" $LLVM_DIR
 
+# if test-suite is present then build bc files for testing
+if [ -d "./Test-Suite" ]
+then
+    cd ./Test-Suite
+    ./generate_bc.sh
+    cd ..
+fi
+
 ########
 # Build SVF
 ########
