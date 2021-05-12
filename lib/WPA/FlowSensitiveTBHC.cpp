@@ -53,7 +53,8 @@ void FlowSensitiveTBHC::finalize(void)
     FlowSensitive::finalize();
     // ^ Will print call graph and alias stats.
 
-    dumpStats();
+    if(print_stat)
+        dumpStats();
     // getDFPTDataTy()->dumpPTData();
 
     validateTBHCTests(svfMod);
