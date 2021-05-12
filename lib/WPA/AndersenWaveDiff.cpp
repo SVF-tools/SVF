@@ -34,21 +34,9 @@ using namespace SVFUtil;
 
 AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
-<<<<<<< HEAD
 
-/*!
- * Initialize WaveDiff
- */
-void AndersenWaveDiff::initialize()
-{
-    Andersen::initialize();
     if (isWander)
         setDiffOpt(false);
-}
-
-
-=======
->>>>>>> parent of 448f611 (wander)
 /*!
  * solve worklist
  */
