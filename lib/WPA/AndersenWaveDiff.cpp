@@ -36,7 +36,7 @@ AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
 
 /*!
- *
+ * Initialize WaveDiff
  */
 void AndersenWaveDiff::initialize()
 {
