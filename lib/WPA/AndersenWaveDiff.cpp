@@ -34,7 +34,6 @@ using namespace SVFUtil;
 
 AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
-
 /*!
  * solve worklist
  */
