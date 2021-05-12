@@ -34,6 +34,18 @@ using namespace SVFUtil;
 
 AndersenWaveDiff* AndersenWaveDiff::diffWave = nullptr;
 
+
+/*!
+ *
+ */
+void AndersenWaveDiff::initialize()
+{
+    Andersen::initialize();
+    if (isWander)
+        setDiffOpt(false);
+}
+
+
 /*!
  * solve worklist
  */
