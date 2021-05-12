@@ -65,7 +65,6 @@ public:
         AndersenHLCD_WPA,   ///< Hybird lazy cycle detection andersen-style WPA
         AndersenSCD_WPA,    ///< Selective cycle detection andersen-style WPA
         AndersenSFR_WPA,    ///< Stride-based field representation
-        AndersenWave_WPA,	///< Wave propagation andersen-style WPA
         AndersenWaveDiff_WPA,	///< Diff wave propagation andersen-style WPA
         AndersenWaveDiffWithType_WPA,	///< Diff wave propagation with type info andersen-style WPA
         Steensgaard_WPA,      ///< Steensgaard PTA

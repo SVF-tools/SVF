@@ -414,11 +414,9 @@ class AndersenWaveDiff : public Andersen
 private:
 
     static AndersenWaveDiff* diffWave; // static instance
-    bool isWander;
 
 public:
-    AndersenWaveDiff(PAG* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true, bool _wander = false)
-            : Andersen(_pag, type, alias_check), isWander(_wander) {}
+    AndersenWaveDiff(PAG* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
     static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
@@ -438,7 +436,6 @@ public:
         diffWave = nullptr;
     }
 
-    virtual void initialize();
     virtual void solveWorklist();
     virtual void processNode(NodeID nodeId);
     virtual void postProcessNode(NodeID nodeId);
