@@ -434,6 +434,7 @@ private:
  */
 class DummyVersionPropSVFGNode : public VFGNode
 {
+public:
     DummyVersionPropSVFGNode(NodeID id, NodeID object, Version version)
         : VFGNode(id, DummyVProp), object(object), version(version)
     { }
