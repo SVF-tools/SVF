@@ -250,6 +250,14 @@ public:
         return nodeNum;
     }
 
+    inline const DummyVersionPropSVFGNode *addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
+    {
+        DummyVersionPropSVFGNode *dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);
+        // Not going through add[S]VFGNode because we have no ICFG edge.
+        addGNode(dvpNode->getId(), dvpNode);
+        return dvpNode;
+    }
+
 protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
