@@ -78,7 +78,7 @@ void VersionedFlowSensitive::prelabel(void)
                 ++numPrelabeledNodes;
             }
         }
-        else if (delta(l))
+        else if (svfg->isDeltaNode(l, ander->getPTACallGraph()))
         {
             // If l may change at runtime (new incoming edges), it's unknown whether
             // a new consume version is required (we only consider what the node may yield),
@@ -121,7 +121,7 @@ void VersionedFlowSensitive::meldLabel(void) {
 
             NodeID lp = ie->getDstNode()->getId();
             // Delta nodes had c set already and they are permanent.
-            if (delta(lp)) continue;
+            if (svfg->isDeltaNode(lp, ander->getPTACallGraph())) continue;
 
             bool lpIsStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp));
             // Consume and yield are the same for non-stores, so ignore them.
@@ -209,37 +209,6 @@ void VersionedFlowSensitive::mapMeldVersions(void)
 
     double end = stat->getClk(true);
     meldMappingTime += (end - start) / TIMEINTERVAL;
-}
-
-bool VersionedFlowSensitive::delta(NodeID l)
-{
-    // Whether a node is a delta node or not. Decent boon to performance.
-    static Map<NodeID, bool> deltaCache;
-
-    Map<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
-    if (isDelta != deltaCache.end()) return isDelta->second;
-
-    const SVFGNode *s = svfg->getSVFGNode(l);
-    // Cases:
-    //  * Function entry: can get new incoming indirect edges through ind. callsites.
-    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
-    //  * Otherwise: static.
-    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
-    {
-        PTACallGraphEdge::CallInstSet callsites;
-        /// use pre-analysis call graph to approximate all potential callsites
-        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
-
-        deltaCache[l] = !callsites.empty();
-        return !callsites.empty();
-    }
-    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
-    {
-        deltaCache[l] = cbn->isIndirectCall();
-        return cbn->isIndirectCall();
-    }
-
-    return false;
 }
 
 VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)

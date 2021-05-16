@@ -250,6 +250,11 @@ public:
         return nodeNum;
     }
 
+    /// Returns true if l is a delta node, i.e., may change due to
+    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
+    /// call graph built by the pre-analysis.
+    virtual bool isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const;
+
     inline const DummyVersionPropSVFGNode *addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
     {
         DummyVersionPropSVFGNode *dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);

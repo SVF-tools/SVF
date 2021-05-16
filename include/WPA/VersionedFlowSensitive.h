@@ -119,9 +119,6 @@ private:
     /// Moves meldConsume/Yield to consume/yield.
     void mapMeldVersions();
 
-    /// Returns whether l is a delta node.
-    bool delta(NodeID l);
-
     /// Returns a new MeldVersion for o during the prelabeling phase.
     MeldVersion newMeldVersion(NodeID o);
     /// Whether l has a consume/yield version for o.
