@@ -333,30 +333,25 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        if (SVFUtil::isa<PHISVFGNode>(dstNode))
+        // TODO: this is coarse: not everything needs to be pushed.
+        pushIntoWorklist(dst);
+
+        assert(svfg->isDeltaNode(dst, ander->getPTACallGraph())
+               && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
+        const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+        if (ie == nullptr) continue;
+
+        const PointsTo &ept = ie->getPointsTo();
+        // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
+        for (NodeID o : ept)
         {
-            pushIntoWorklist(dst);
-        }
-        else if (SVFUtil::isa<FormalINSVFGNode>(dstNode) || SVFUtil::isa<ActualOUTSVFGNode>(dstNode))
-        {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-            assert(ie && "VFS::updateConnectedNodes: given direct edge?");
-            bool changed = false;
+            if (!hasVersion(src, o, YIELD)) continue;
+            Version &srcY = yield[src][o];
+            if (!hasVersion(dst, o, CONSUME)) continue;
+            Version &dstC = consume[dst][o];
 
-            const PointsTo &ept = ie->getPointsTo();
-            // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
-            for (NodeID o : ept)
-            {
-                if (!hasVersion(src, o, YIELD)) continue;
-                Version &srcY = yield[src][o];
-                if (!hasVersion(dst, o, CONSUME)) continue;
-                Version &dstC = consume[dst][o];
-
-                versionReliance[o][srcY].insert(dstC);
-                propagateVersion(o, srcY);
-            }
-
-            if (changed) pushIntoWorklist(dst);
+            versionReliance[o][srcY].insert(dstC);
+            propagateVersion(o, srcY);
         }
     }
 }
