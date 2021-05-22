@@ -81,12 +81,6 @@ public:
         keepContextSelfCycle = true;
     }
 
-    virtual bool isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const
-    {
-        assert(false && "SVFGOPT::isDeltaNode: not implemented!");
-        return false;
-    }
-
 protected:
     virtual void buildSVFG();
 
