@@ -543,6 +543,39 @@ void VersionedFlowSensitive::dumpReliances(void) const
     }
 }
 
+void VersionedFlowSensitive::dumpLocVersionMaps(void) const
+{
+    SVFUtil::outs() << "# LocVersion Maps\n";
+    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        const NodeID loc = it->first;
+        bool locPrinted = false;
+        for (const LocVersionMap *lvm : { &consume, &yield })
+        {
+            if (lvm->find(loc) == lvm->end() || lvm->at(loc).empty()) continue;
+            if (!locPrinted)
+            {
+                SVFUtil::outs() << "  " << "SVFG node " << loc << "\n";
+                locPrinted = true;
+            }
+
+            SVFUtil::outs() << "    " << (lvm == &consume ? "Consume " : "Yield   ") << ": ";
+
+            bool first = true;
+            for (const ObjToVersionMap::value_type &ov : lvm->at(loc))
+            {
+                const NodeID o = ov.first;
+                const Version v = ov.second;
+                SVFUtil::outs() << (first ? "" : ", ") << "<" << o << ", " << v << ">";
+                first = false;
+            }
+
+            SVFUtil::outs() << "\n";
+        }
+    }
+
+}
+
 void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)
 {
     SVFUtil::outs() << "[ ";

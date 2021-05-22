@@ -137,6 +137,9 @@ private:
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
 
+    /// Dumps maps consume and yield.
+    void dumpLocVersionMaps(void) const;
+
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
 
