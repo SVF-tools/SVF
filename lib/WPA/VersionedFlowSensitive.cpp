@@ -329,25 +329,32 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        // TODO: this is coarse: not everything needs to be pushed.
-        pushIntoWorklist(dst);
-
         assert(svfg->isDeltaNode(dst, ander->getPTACallGraph())
                && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
-        const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-        if (ie == nullptr) continue;
 
-        const PointsTo &ept = ie->getPointsTo();
-        // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
-        for (NodeID o : ept)
+        if (SVFUtil::isa<PHISVFGNode>(dstNode)
+            || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
+            || SVFUtil::isa<ActualRetSVFGNode>(dstNode))
         {
-            if (!hasVersion(src, o, YIELD)) continue;
-            Version &srcY = yield[src][o];
-            if (!hasVersion(dst, o, CONSUME)) continue;
-            Version &dstC = consume[dst][o];
+            pushIntoWorklist(dst);
+        }
+        else
+        {
+            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+            assert(ie != nullptr && "VFS::updateConnectedNodes: given direct edge?");
 
-            versionReliance[o][srcY].insert(dstC);
-            propagateVersion(o, srcY);
+            const PointsTo &ept = ie->getPointsTo();
+            // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
+            for (NodeID o : ept)
+            {
+                if (!hasVersion(src, o, YIELD)) continue;
+                Version &srcY = yield[src][o];
+                if (!hasVersion(dst, o, CONSUME)) continue;
+                Version &dstC = consume[dst][o];
+
+                versionReliance[o][srcY].insert(dstC);
+                propagateVersion(o, srcY);
+            }
         }
     }
 }
