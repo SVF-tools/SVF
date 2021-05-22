@@ -80,25 +80,21 @@ void VersionedFlowSensitive::prelabel(void)
         }
         else if (svfg->isDeltaNode(l, ander->getPTACallGraph()))
         {
-            // If l may change at runtime (new incoming edges), it's unknown whether
-            // a new consume version is required (we only consider what the node may yield),
-            // so we give it one just in case. This is sound but imprecise.
-            for (const SVFGEdge *e : sn->getOutEdges())
+            // The outgoing edges are not only what will later be propagated. SVFGOPT may
+            // move around nodes such that there can be an MRSVFGNode with no incoming or
+            // outgoing edges which will be added at runtime. In essence, we can no
+            // longer rely on the outgoing edges of a delta node when SVFGOPT is enabled.
+            const MRSVFGNode *mr = SVFUtil::dyn_cast<MRSVFGNode>(sn);
+            if (mr != nullptr)
             {
-                const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-                if (!ie) continue;
-                for (NodeID o : ie->getPointsTo())
+                for (const NodeID o : mr->getPointsTo())
                 {
                     meldConsume[l][o] = newMeldVersion(o);
                 }
 
                 // Push into worklist because its consume == its yield.
                 vWorklist.push(l);
-
-                if (ie->getPointsTo().count() != 0)
-                {
-                    ++numPrelabeledNodes;
-                }
+                if (mr->getPointsTo().count() != 0) ++numPrelabeledNodes;
             }
         }
     }
