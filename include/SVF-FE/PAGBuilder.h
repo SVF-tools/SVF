@@ -175,10 +175,18 @@ public:
     void visitUnaryOperator(UnaryOperator &I);
     void visitCmpInst(CmpInst &I);
 
-    /// TODO: do we need to care about these corner cases?
-    void visitVAArgInst(VAArgInst&)
-    {
-    }
+    /// TODO: var arguments need to be handled.
+    /// https://llvm.org/docs/LangRef.html#id1911
+    void visitVAArgInst(VAArgInst&);
+    void visitVACopyInst(VACopyInst& I){}
+    void visitVAEndInst(VAEndInst& I){}
+    void visitVAStartInst(VAStartInst& I){}
+
+    /// <result> = freeze ty <val>
+    /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
+    /// Otherwise, this instruction is a no-op and returns the input <val>
+    void visitFreezeInst(FreezeInst& I);
+
     void visitExtractElementInst(ExtractElementInst &I);
 
     void visitInsertElementInst(InsertElementInst &I)
