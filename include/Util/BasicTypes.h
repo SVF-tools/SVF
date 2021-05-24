@@ -172,6 +172,11 @@ typedef llvm::FenceInst FenceInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::UndefValue UndefValue;
+typedef llvm::VACopyInst VACopyInst;
+typedef llvm::VAEndInst VAEndInst;
+typedef llvm::VAStartInst VAStartInst;
+typedef llvm::FreezeInst FreezeInst;
+
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
 #endif
