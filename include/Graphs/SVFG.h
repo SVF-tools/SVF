@@ -250,7 +250,7 @@ public:
         return nodeNum;
     }
 
-    /// Returns true if l is a delta node, i.e., may change due to
+    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
     /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
     /// call graph built by the pre-analysis.
     virtual bool isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const;
