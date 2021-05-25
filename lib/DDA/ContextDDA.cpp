@@ -315,7 +315,15 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     assert(mem && "memory object is null??");
     if(mem->isHeap())
     {
-        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal()))
+        if (!mem->getRefVal()) {
+            PAGNode *pnode = _pag->getPAGNode(getPtrNodeID(var));
+            assert((pnode->getNodeKind() == PAGNode::DummyObjNode || 
+                pnode->getNodeKind() == PAGNode::DummyValNode ||
+                pnode->getNodeKind() == PAGNode::CloneDummyObjNode) &&
+                "emtpy refVal in non-dummy object");
+            return false;
+        }
+        else if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal()))
         {
             const Function* fun = mallocSite->getFunction();
             const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
