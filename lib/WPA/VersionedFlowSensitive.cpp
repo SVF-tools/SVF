@@ -51,6 +51,7 @@ void VersionedFlowSensitive::finalize()
     FlowSensitive::finalize();
     // vPtD->dumpPTData();
     // dumpReliances();
+    // dumpLocVersionMaps();
 }
 
 void VersionedFlowSensitive::prelabel(void)
@@ -80,25 +81,21 @@ void VersionedFlowSensitive::prelabel(void)
         }
         else if (delta(l))
         {
-            // If l may change at runtime (new incoming edges), it's unknown whether
-            // a new consume version is required (we only consider what the node may yield),
-            // so we give it one just in case. This is sound but imprecise.
-            for (const SVFGEdge *e : sn->getOutEdges())
+            // The outgoing edges are not only what will later be propagated. SVFGOPT may
+            // move around nodes such that there can be an MRSVFGNode with no incoming or
+            // outgoing edges which will be added at runtime. In essence, we can no
+            // longer rely on the outgoing edges of a delta node when SVFGOPT is enabled.
+            const MRSVFGNode *mr = SVFUtil::dyn_cast<MRSVFGNode>(sn);
+            if (mr != nullptr)
             {
-                const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-                if (!ie) continue;
-                for (NodeID o : ie->getPointsTo())
+                for (const NodeID o : mr->getPointsTo())
                 {
                     meldConsume[l][o] = newMeldVersion(o);
                 }
 
                 // Push into worklist because its consume == its yield.
                 vWorklist.push(l);
-
-                if (ie->getPointsTo().count() != 0)
-                {
-                    ++numPrelabeledNodes;
-                }
+                if (mr->getPointsTo().count() != 0) ++numPrelabeledNodes;
             }
         }
     }
@@ -211,36 +208,36 @@ void VersionedFlowSensitive::mapMeldVersions(void)
     meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
-bool VersionedFlowSensitive::delta(NodeID l)
+bool VersionedFlowSensitive::delta(NodeID l) const
 {
     // Whether a node is a delta node or not. Decent boon to performance.
     static Map<NodeID, bool> deltaCache;
 
-    Map<NodeID, bool>::const_iterator isDelta = deltaCache.find(l);
-    if (isDelta != deltaCache.end()) return isDelta->second;
+    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
+    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
 
     const SVFGNode *s = svfg->getSVFGNode(l);
     // Cases:
     //  * Function entry: can get new incoming indirect edges through ind. callsites.
     //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
     //  * Otherwise: static.
+    bool isDelta = false;
     if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
     {
         PTACallGraphEdge::CallInstSet callsites;
         /// use pre-analysis call graph to approximate all potential callsites
         ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
-
-        deltaCache[l] = !callsites.empty();
-        return !callsites.empty();
+        isDelta = !callsites.empty();
     }
     else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
     {
-        deltaCache[l] = cbn->isIndirectCall();
-        return cbn->isIndirectCall();
+        isDelta = cbn->isIndirectCall();
     }
 
-    return false;
+    deltaCache[l] = isDelta;
+    return isDelta;
 }
+
 
 VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
@@ -364,15 +361,18 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        if (SVFUtil::isa<PHISVFGNode>(dstNode))
+        assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
+
+        if (SVFUtil::isa<PHISVFGNode>(dstNode)
+            || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
+            || SVFUtil::isa<ActualRetSVFGNode>(dstNode))
         {
             pushIntoWorklist(dst);
         }
-        else if (SVFUtil::isa<FormalINSVFGNode>(dstNode) || SVFUtil::isa<ActualOUTSVFGNode>(dstNode))
+        else
         {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-            assert(ie && "VFS::updateConnectedNodes: given direct edge?");
-            bool changed = false;
+            assert(ie != nullptr && "VFS::updateConnectedNodes: given direct edge?");
 
             const PointsTo &ept = ie->getPointsTo();
             // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
@@ -390,8 +390,6 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                     propagateVersion(o, srcY);
                 }
             }
-
-            if (changed) pushIntoWorklist(dst);
         }
     }
 }
@@ -581,6 +579,39 @@ void VersionedFlowSensitive::dumpReliances(void) const
             SVFUtil::outs() << "\n";
         }
     }
+}
+
+void VersionedFlowSensitive::dumpLocVersionMaps(void) const
+{
+    SVFUtil::outs() << "# LocVersion Maps\n";
+    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        const NodeID loc = it->first;
+        bool locPrinted = false;
+        for (const LocVersionMap *lvm : { &consume, &yield })
+        {
+            if (lvm->find(loc) == lvm->end() || lvm->at(loc).empty()) continue;
+            if (!locPrinted)
+            {
+                SVFUtil::outs() << "  " << "SVFG node " << loc << "\n";
+                locPrinted = true;
+            }
+
+            SVFUtil::outs() << "    " << (lvm == &consume ? "Consume " : "Yield   ") << ": ";
+
+            bool first = true;
+            for (const ObjToVersionMap::value_type &ov : lvm->at(loc))
+            {
+                const NodeID o = ov.first;
+                const Version v = ov.second;
+                SVFUtil::outs() << (first ? "" : ", ") << "<" << o << ", " << v << ">";
+                first = false;
+            }
+
+            SVFUtil::outs() << "\n";
+        }
+    }
+
 }
 
 void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)

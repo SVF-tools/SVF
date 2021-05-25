@@ -119,9 +119,6 @@ private:
     /// Moves meldConsume/Yield to consume/yield.
     void mapMeldVersions();
 
-    /// Returns whether l is a delta node.
-    bool delta(NodeID l);
-
     /// Returns a new MeldVersion for o during the prelabeling phase.
     MeldVersion newMeldVersion(NodeID o);
     /// Whether l has a consume/yield version for o.
@@ -137,8 +134,16 @@ private:
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
 
+    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
+    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
+    /// call graph built by the pre-analysis.
+    virtual bool delta(NodeID l) const;
+
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
+
+    /// Dumps maps consume and yield.
+    void dumpLocVersionMaps(void) const;
 
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
