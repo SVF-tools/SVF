@@ -34,6 +34,7 @@ private:
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
+    typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
 
     typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
@@ -134,8 +135,7 @@ private:
     /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.
-    /// recurse is used internally to keep recursive calls from messing up timing.
-    void propagateVersion(NodeID o, Version v, bool recurse=false);
+    void propagateVersion(NodeID o, Version v);
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
@@ -167,6 +167,10 @@ private:
     VersionRelianceMap versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
     Map<NodeID, Map<Version, NodeBS>> stmtReliance;
+
+    /// Maps an <object, version> pair to the SVFG node indicating that pair
+    /// needs to be propagated.
+    VarToPropNodeMap versionedVarToPropNode;
 
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.

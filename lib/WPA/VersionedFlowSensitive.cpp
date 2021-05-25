@@ -305,36 +305,55 @@ void VersionedFlowSensitive::determineReliance(void)
     relianceTime = (end - start) / TIMEINTERVAL;
 }
 
-void VersionedFlowSensitive::propagateVersion(NodeID o, Version v, bool recurse)
+void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
 
     Map<Version, Set<Version>>::iterator relyingVersions = versionReliance[o].find(v);
     if (relyingVersions != versionReliance[o].end())
     {
+        const VersionedVar srcVar = atKey(o, v);
         for (Version r : relyingVersions->second)
         {
-            if (vPtD->unionPts(atKey(o, r), atKey(o, v)))
+            const VersionedVar dstVar = atKey(o, r);
+            if (vPtD->unionPts(dstVar, srcVar))
             {
-                propagateVersion(o, r, true);
+                // o/r has changed.
+                // Add the dummy node to propagate it.
+                VarToPropNodeMap::const_iterator dvpIt = versionedVarToPropNode.find(dstVar);
+                const DummyVersionPropSVFGNode *dvp = nullptr;
+                if (dvpIt == versionedVarToPropNode.end())
+                {
+                    dvp = svfg->addDummyVersionPropSVFGNode(o, r);
+                    versionedVarToPropNode[dstVar] = dvp;
+                } else dvp = dvpIt->second;
+
+                assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
+                pushIntoWorklist(dvp->getId());
+
+                // Notify nodes which rely on o/r that it changed.
+                for (NodeID s : stmtReliance[o][r])
+                {
+                    pushIntoWorklist(s);
+                }
             }
         }
     }
 
-    // Notify nodes which rely on o/v that it changed.
-    for (NodeID s : stmtReliance[o][v])
-    {
-        pushIntoWorklist(s);
-    }
-
     double end = stat->getClk();
-    if (!recurse) versionPropTime += (end - start) / TIMEINTERVAL;
+    versionPropTime += (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::processNode(NodeID n)
 {
     SVFGNode* sn = svfg->getSVFGNode(n);
-    if (processSVFGNode(sn)) propagate(&sn);
+    // Handle DummyVersPropSVFGNode here so we don't have to override the long
+    // processSVFGNode. We also don't call propagate based on its result.
+    if (const DummyVersionPropSVFGNode *dvp = SVFUtil::dyn_cast<DummyVersionPropSVFGNode>(sn))
+    {
+        propagateVersion(dvp->getObject(), dvp->getVersion());
+    }
+    else if (processSVFGNode(sn)) propagate(&sn);
 }
 
 void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
@@ -364,8 +383,12 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                 if (!hasVersion(dst, o, CONSUME)) continue;
                 Version &dstC = consume[dst][o];
 
-                versionReliance[o][srcY].insert(dstC);
-                propagateVersion(o, srcY);
+                Set<Version> &versionsRelyingOnSrcY = versionReliance[o][srcY];
+                if (versionsRelyingOnSrcY.find(dstC) == versionsRelyingOnSrcY.end())
+                {
+                    versionsRelyingOnSrcY.insert(dstC);
+                    propagateVersion(o, srcY);
+                }
             }
 
             if (changed) pushIntoWorklist(dst);
@@ -489,7 +512,14 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
         {
             // Definitely has a yielded version (came from prelabelling) as these are
             // the changed objects which must've been pointed to in Andersen's too.
-            propagateVersion(o, yieldl[o]);
+            const Version y = yieldl[o];
+            propagateVersion(o, y);
+
+            // Some o/v pairs changed: statements need to know.
+            for (NodeID s : stmtReliance[o][y])
+            {
+                pushIntoWorklist(s);
+            }
         }
     }
 

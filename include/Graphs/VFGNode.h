@@ -55,7 +55,7 @@ public:
     {
         Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
-        FunRet, APIN, APOUT, FPIN, FPOUT, NPtr
+        FunRet, APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
     };
 
     typedef VFGEdge::VFGEdgeSetTy::iterator iterator;
