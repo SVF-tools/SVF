@@ -698,37 +698,6 @@ const CallBlockNode* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const
     return nullptr;
 }
 
-bool SVFG::isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const
-{
-    // Whether a node is a delta node or not. Decent boon to performance.
-    static Map<NodeID, bool> deltaCache;
-
-    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
-    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
-
-    const SVFGNode *s = getSVFGNode(l);
-    // Cases:
-    //  * Function entry: can get new incoming indirect edges through ind. callsites.
-    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
-    //  * Otherwise: static.
-    bool isDelta = false;
-    if (const SVFFunction *fn = isFunEntrySVFGNode(s))
-    {
-        PTACallGraphEdge::CallInstSet callsites;
-        /// use pre-analysis call graph to approximate all potential callsites
-        assert(approxCallGraph != nullptr && "SVFG::isDeltaNode: Given null clal graph!");
-        approxCallGraph->getIndCallSitesInvokingCallee(fn, callsites);
-        isDelta = !callsites.empty();
-    }
-    else if (const CallBlockNode *cbn = isCallSiteRetSVFGNode(s))
-    {
-        isDelta = cbn->isIndirectCall();
-    }
-
-    deltaCache[l] = isDelta;
-    return isDelta;
-}
-
 /*!
  * Perform Statistics
  */

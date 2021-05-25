@@ -250,11 +250,6 @@ public:
         return nodeNum;
     }
 
-    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
-    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
-    /// call graph built by the pre-analysis.
-    virtual bool isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const;
-
     /// Used *only* for Versioned FSPTA to encode propagation of versions
     /// in the worklist (allowing for breadth-first propagation).
     /// Returns the created node.

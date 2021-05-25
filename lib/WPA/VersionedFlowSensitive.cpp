@@ -79,7 +79,7 @@ void VersionedFlowSensitive::prelabel(void)
                 ++numPrelabeledNodes;
             }
         }
-        else if (svfg->isDeltaNode(l, ander->getPTACallGraph()))
+        else if (delta(l))
         {
             // The outgoing edges are not only what will later be propagated. SVFGOPT may
             // move around nodes such that there can be an MRSVFGNode with no incoming or
@@ -118,7 +118,7 @@ void VersionedFlowSensitive::meldLabel(void) {
 
             NodeID lp = ie->getDstNode()->getId();
             // Delta nodes had c set already and they are permanent.
-            if (svfg->isDeltaNode(lp, ander->getPTACallGraph())) continue;
+            if (delta(lp)) continue;
 
             bool lpIsStore = SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(lp));
             // Consume and yield are the same for non-stores, so ignore them.
@@ -271,6 +271,36 @@ void VersionedFlowSensitive::determineReliance(void)
     relianceTime = (end - start) / TIMEINTERVAL;
 }
 
+bool VersionedFlowSensitive::delta(NodeID l) const
+{
+    // Whether a node is a delta node or not. Decent boon to performance.
+    static Map<NodeID, bool> deltaCache;
+
+    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
+    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
+
+    const SVFGNode *s = svfg->getSVFGNode(l);
+    // Cases:
+    //  * Function entry: can get new incoming indirect edges through ind. callsites.
+    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
+    //  * Otherwise: static.
+    bool isDelta = false;
+    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+    {
+        PTACallGraphEdge::CallInstSet callsites;
+        /// use pre-analysis call graph to approximate all potential callsites
+        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+        isDelta = !callsites.empty();
+    }
+    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+    {
+        isDelta = cbn->isIndirectCall();
+    }
+
+    deltaCache[l] = isDelta;
+    return isDelta;
+}
+
 void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
@@ -330,8 +360,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        assert(svfg->isDeltaNode(dst, ander->getPTACallGraph())
-               && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
+        assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
 
         if (SVFUtil::isa<PHISVFGNode>(dstNode)
             || SVFUtil::isa<FormalParmSVFGNode>(dstNode)

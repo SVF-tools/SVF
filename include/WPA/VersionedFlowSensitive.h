@@ -134,6 +134,11 @@ private:
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
 
+    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
+    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
+    /// call graph built by the pre-analysis.
+    virtual bool delta(NodeID l) const;
+
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
 
