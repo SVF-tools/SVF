@@ -255,6 +255,9 @@ public:
     /// call graph built by the pre-analysis.
     virtual bool isDeltaNode(NodeID l, PTACallGraph *approxCallGraph) const;
 
+    /// Used *only* for Versioned FSPTA to encode propagation of versions
+    /// in the worklist (allowing for breadth-first propagation).
+    /// Returns the created node.
     inline const DummyVersionPropSVFGNode *addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
     {
         DummyVersionPropSVFGNode *dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);

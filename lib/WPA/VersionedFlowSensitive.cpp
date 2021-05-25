@@ -354,13 +354,11 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                 Version &dstC = consume[dst][o];
 
                 Set<Version> &versionsRelyingOnSrcY = versionReliance[o][srcY];
-                if (versionsRelyingOnSrcY.find(dstC) != versionsRelyingOnSrcY.end())
+                if (versionsRelyingOnSrcY.find(dstC) == versionsRelyingOnSrcY.end())
                 {
-                    continue;
+                    versionsRelyingOnSrcY.insert(dstC);
+                    propagateVersion(o, srcY);
                 }
-
-                versionsRelyingOnSrcY.insert(dstC);
-                propagateVersion(o, srcY);
             }
         }
     }
