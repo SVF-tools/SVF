@@ -208,6 +208,37 @@ void VersionedFlowSensitive::mapMeldVersions(void)
     meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
+bool VersionedFlowSensitive::delta(NodeID l) const
+{
+    // Whether a node is a delta node or not. Decent boon to performance.
+    static Map<NodeID, bool> deltaCache;
+
+    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
+    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
+
+    const SVFGNode *s = svfg->getSVFGNode(l);
+    // Cases:
+    //  * Function entry: can get new incoming indirect edges through ind. callsites.
+    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
+    //  * Otherwise: static.
+    bool isDelta = false;
+    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+    {
+        PTACallGraphEdge::CallInstSet callsites;
+        /// use pre-analysis call graph to approximate all potential callsites
+        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+        isDelta = !callsites.empty();
+    }
+    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+    {
+        isDelta = cbn->isIndirectCall();
+    }
+
+    deltaCache[l] = isDelta;
+    return isDelta;
+}
+
+
 VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {
     ++numPrelabelVersions;
@@ -269,36 +300,6 @@ void VersionedFlowSensitive::determineReliance(void)
 
     double end = stat->getClk(true);
     relianceTime = (end - start) / TIMEINTERVAL;
-}
-
-bool VersionedFlowSensitive::delta(NodeID l) const
-{
-    // Whether a node is a delta node or not. Decent boon to performance.
-    static Map<NodeID, bool> deltaCache;
-
-    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
-    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
-
-    const SVFGNode *s = svfg->getSVFGNode(l);
-    // Cases:
-    //  * Function entry: can get new incoming indirect edges through ind. callsites.
-    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
-    //  * Otherwise: static.
-    bool isDelta = false;
-    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
-    {
-        PTACallGraphEdge::CallInstSet callsites;
-        /// use pre-analysis call graph to approximate all potential callsites
-        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
-        isDelta = !callsites.empty();
-    }
-    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
-    {
-        isDelta = cbn->isIndirectCall();
-    }
-
-    deltaCache[l] = isDelta;
-    return isDelta;
 }
 
 void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
