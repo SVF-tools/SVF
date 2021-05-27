@@ -11,22 +11,6 @@
 namespace SVF
 {
 
-/// Templated function to insert an element into a Set, CondSet, or NodeBS.
-template <typename Key, typename KeySet>
-void insertKey(const Key &key, KeySet &keySet)
-{
-    keySet.insert(key);
-}
-
-// The template parameters are unnecessary, obviously, but removing it would
-// require us to create a .cpp. For one function, that seems to add more
-// than this hack.
-template <typename Key, typename KeySet>
-void insertKey(const NodeID &key, NodeBS &keySet)
-{
-    keySet.set(key);
-}
-
 template <typename Key, typename KeySet, typename Data, typename DataSet>
 class MutableDFPTData;
 
@@ -153,7 +137,7 @@ private:
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        if (this->rev) insertKey<Key, KeySet>(tgr, revData);
+        if (this->rev) SVFUtil::insertKey(tgr, revData);
     }
     inline void addRevPts(const DataSet &ptsData, const Key& tgr)
     {

@@ -241,6 +241,19 @@ std::string  getSourceLocOfFunction(const Function *F);
 const std::string value2String(const Value* value);
 //@}
 
+/// Inserts an element into a Set/CondSet (with ::insert).
+template <typename Key, typename KeySet>
+inline void insertKey(const Key &key, KeySet &keySet)
+{
+    keySet.insert(key);
+}
+
+/// Inserts a NodeID into a NodeBS.
+inline void insertKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.set(key);
+}
+
 /// Removes an element from a Set/CondSet (or anything implementing ::erase).
 template <typename Key, typename KeySet>
 inline void removeKey(const Key &key, KeySet &keySet)
