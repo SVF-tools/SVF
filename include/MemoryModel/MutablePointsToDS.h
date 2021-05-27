@@ -59,19 +59,19 @@ public:
 
     virtual inline bool addPts(const Key &dstKey, const Data& element) override
     {
-        if (this->rev) addSingleRevPts(revPtsMap[element], dstKey);
+        addSingleRevPts(revPtsMap[element], dstKey);
         return addPts(ptsMap[dstKey], element);
     }
 
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
-        if (this->rev) addRevPts(ptsMap[srcKey], dstKey);
+        addRevPts(ptsMap[srcKey], dstKey);
         return unionPts(ptsMap[dstKey], getPts(srcKey));
     }
 
     virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        if (this->rev) addRevPts(srcDataSet,dstKey);
+        addRevPts(srcDataSet,dstKey);
         return unionPts(ptsMap[dstKey], srcDataSet);
     }
 
@@ -82,14 +82,14 @@ public:
 
     virtual void clearPts(const Key& var, const Data& element) override
     {
-        if (this->rev) clearSingleRevPts(revPtsMap[element], var);
+        clearSingleRevPts(revPtsMap[element], var);
         ptsMap[var].reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
         DataSet &pts = ptsMap[var];
-        if (this->rev) clearRevPts(pts, var);
+        clearRevPts(pts, var);
         pts.clear();
     }
 
@@ -137,20 +137,32 @@ private:
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        SVFUtil::insertKey(tgr, revData);
+        if (this->rev)
+        {
+            SVFUtil::insertKey(tgr, revData);
+        }
     }
     inline void addRevPts(const DataSet &ptsData, const Key& tgr)
     {
-        for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
-            addSingleRevPts(revPtsMap[*it], tgr);
+        if (this->rev)
+        {
+            for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
+                addSingleRevPts(revPtsMap[*it], tgr);
+        }
     }
     inline void clearSingleRevPts(KeySet &revSet, const Key &k)
     {
-        SVFUtil::removeKey(k, revSet);
+        if (this->rev)
+        {
+            SVFUtil::removeKey(k, revSet);
+        }
     }
     inline void clearRevPts(const DataSet &pts, const Key &k)
     {
-        for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+        if (this->rev)
+        {
+            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+        }
     }
     ///@}
 
