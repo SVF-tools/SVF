@@ -82,14 +82,14 @@ public:
 
     virtual void clearPts(const Key& var, const Data& element) override
     {
-        clearRevPts(revPtsMap[element], var);
+        clearSingleRevPts(revPtsMap[element], var);
         ptsMap[var].reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
         DataSet &pts = ptsMap[var];
-        for (const Data &d : pts) clearRevPts(revPtsMap[d], var);
+        clearRevPts(pts, var);
         pts.clear();
     }
 
@@ -147,9 +147,16 @@ private:
                 addSingleRevPts(revPtsMap[*it], tgr);
         }
     }
-    inline void clearRevPts(KeySet &revSet, const Key &k)
+    inline void clearSingleRevPts(KeySet &revSet, const Key &k)
     {
         if (this->rev) SVFUtil::removeKey(k, revSet);
+    }
+    inline void clearRevPts(const DataSet &pts, const Key &k)
+    {
+        if (this->rev)
+        {
+            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+        }
     }
     ///@}
 
