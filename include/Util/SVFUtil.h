@@ -241,6 +241,19 @@ std::string  getSourceLocOfFunction(const Function *F);
 const std::string value2String(const Value* value);
 //@}
 
+/// Removes an element from a Set/CondSet (or anything implementing ::erase).
+template <typename Key, typename KeySet>
+inline void removeKey(const Key &key, KeySet &keySet)
+{
+    keySet.erase(key);
+}
+
+/// Removes a NodeID from a NodeBS.
+inline void removeKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.reset(key);
+}
+
 } // End namespace SVFUtil
 
 } // End namespace SVF

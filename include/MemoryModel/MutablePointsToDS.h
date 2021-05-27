@@ -98,12 +98,15 @@ public:
 
     virtual void clearPts(const Key& var, const Data& element) override
     {
+        clearRevPts(revPtsMap[element], var);
         ptsMap[var].reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
-        ptsMap[var].clear();
+        DataSet &pts = ptsMap[var];
+        for (const Data &d : pts) clearRevPts(revPtsMap[d], var);
+        pts.clear();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -159,6 +162,10 @@ private:
             for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
                 addSingleRevPts(revPtsMap[*it], tgr);
         }
+    }
+    inline void clearRevPts(KeySet &revSet, const Key &k)
+    {
+        if (this->rev) SVFUtil::removeKey(k, revSet);
     }
     ///@}
 
