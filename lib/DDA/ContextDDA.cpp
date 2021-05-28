@@ -317,9 +317,12 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     {
         if (!mem->getRefVal()) {
             PAGNode *pnode = _pag->getPAGNode(getPtrNodeID(var));
-            assert((SVFUtil::isa<DummyObjPN>(pnode) || 
-                    SVFUtil::isa<DummyValPN>(pnode)) &&
-                    "emtpy refVal in non-dummy object");
+            if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pnode)){
+                assert(SVFUtil::isa<DummyObjPN>(_pag->getPAGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
+            }
+            else{
+                assert((SVFUtil::isa<DummyObjPN>(pnode) || SVFUtil::isa<DummyValPN>(pnode)) && "empty refVal in non-dummy object");
+            }
             return true;
         }
         else if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal()))
