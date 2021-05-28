@@ -95,8 +95,11 @@ void AndersenBase::analyze()
     initialize();
 
     bool readResultsFromFile = false;
-    if(!Options::ReadAnder.empty())
+    if(!Options::ReadAnder.empty()) {
         readResultsFromFile = this->readFromFile(Options::ReadAnder);
+        // Finalize the analysis
+        PointerAnalysis::finalize();
+    }
 
     if(!readResultsFromFile)
     {
