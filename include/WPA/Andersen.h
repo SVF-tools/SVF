@@ -68,16 +68,16 @@ public:
     }
 
     /// Andersen analysis
-    virtual void analyze();
+    virtual void analyze() override;
 
     /// Initialize analysis
-    virtual void initialize();
+    virtual void initialize() override;
 
     /// Finalize analysis
-    virtual void finalize();
+    virtual void finalize() override;
 
     /// Implement it in child class to update call graph
-    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
+    virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&) override
     {
         return false;
     }
@@ -115,6 +115,13 @@ public:
     {
         PointerAnalysis::dumpStat();
     }
+
+    virtual void normalizePointsTo() override;
+
+    /// remove redundant gepnodes in constraint graph
+    void cleanConsCG(NodeID id);
+
+    NodeBS redundantGepNodes;
 
     /// Statistics
     //@{

@@ -30,6 +30,7 @@
 #ifndef INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 #define INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 
+#include <Graphs/ConsG.h>
 #include "MemoryModel/PointerAnalysis.h"
 
 namespace SVF
@@ -184,21 +185,7 @@ protected:
 
     /// Normalize points-to information for field-sensitive analysis,
     /// i.e., replace fieldObj with baseObj if it is field-insensitive
-    virtual void normalizePointsTo(){
-        for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter){
-            const PointsTo tmpPts = getPts(nIter->first);
-            for(NodeID obj : tmpPts){
-                NodeID baseObj = pag->getBaseObjNode(obj);
-                if(baseObj == obj)
-                    continue;
-                const MemObj* memObj = pag->getObject(obj);
-                if(memObj && memObj->isFieldInsensitive()){
-                    clearPts(nIter->first,obj);
-                    addPts(nIter->first,baseObj);
-                }
-            }
-        }
-    }
+    virtual void normalizePointsTo();
 
 private:
     /// Points-to data
