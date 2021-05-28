@@ -185,52 +185,7 @@ protected:
 
     /// Normalize points-to information for field-sensitive analysis,
     /// i.e., replace fieldObj with baseObj if it is field-insensitive
-    virtual void normalizePointsTo(){
-        PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-        PAG::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
-
-        // collect each gep node whose base node has been set as field-insensitive
-        NodeBS dropNodes;
-        for (auto t: memToFieldsMap){
-            NodeID base = t.first;
-            const MemObj* memObj = pag->getObject(base);
-            assert(memObj && "Invalid memobj in memToFieldsMap");
-            if (memObj->isFieldInsensitive()) {
-                for (NodeID id : t.second) {
-                    if (SVFUtil::isa<GepObjPN>(pag->getPAGNode(id))) {
-                        dropNodes.set(id);
-                    } else
-                        assert(id == base && "Not a GepObj Node or a baseObj Node?");
-                }
-            }
-        }
-
-        // remove the collected redundant gep nodes in each pointers's pts
-        for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
-            NodeID n = nIter->first;
-
-            const PointsTo &tmpPts = getPts(n);
-            for (NodeID obj : tmpPts) {
-                if (!dropNodes.test(obj))
-                    continue;
-                NodeID baseObj = pag->getBaseObjNode(obj);
-                clearPts(n, obj);
-                addPts(n, baseObj);
-            }
-        }
-
-        // clear GepObjNodeMap and memToFieldsMap for redundant gepnodes
-        // and remove those nodes from pag
-        for (NodeID n: dropNodes) {
-            NodeID base = pag->getBaseObjNode(n);
-            GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(n));
-            const LocationSet ls = gepNode->getLocationSet();
-            GepObjNodeMap.erase(std::make_pair(base, ls));
-            memToFieldsMap[base].reset(n);
-
-            pag->removeGNode(gepNode);
-        }
-    }
+    virtual void normalizePointsTo();
 
 private:
     /// Points-to data
