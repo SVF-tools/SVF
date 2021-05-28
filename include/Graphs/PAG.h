@@ -117,6 +117,18 @@ private:
 public:
     u32_t totalPTAPAGEdge;
 
+    /// Return memToFieldsMap
+    inline MemObjToFieldsMap& getMemToFieldsMap()
+    {
+        return memToFieldsMap;
+    }
+
+    /// Return GepObjNodeMap
+    inline NodeLocationSetMap& getGepObjNodeMap()
+    {
+        return GepObjNodeMap;
+    }
+
     /// Return ICFG
     inline ICFG* getICFG()
     {
