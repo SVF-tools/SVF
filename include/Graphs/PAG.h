@@ -771,13 +771,13 @@ public:
     /// Add a value (pointer) node
     inline NodeID addValNode(const Value*, PAGNode *node, NodeID i)
     {
-		assert(i<UINT_MAX && "exceeding the maximum node limits");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const Value*, PAGNode *node, NodeID i)
     {
-		assert(i<UINT_MAX && "exceeding the maximum node limits");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
