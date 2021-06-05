@@ -971,7 +971,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addBlackholeObjNode();
+                NodeID obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
