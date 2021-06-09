@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      
 # Customize the env variable
 env:
   SVF_CTIR: 1 
@@ -51,9 +52,15 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then git add .    ; fi
           if [ "$RUNNER_OS" = "Linux" ] && [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then npm version patch; fi
+          git clone "https://github.com/SVF-tools/Test-Suite.git"
           . ./build.sh
   
-
+      # run ctest
+      - name: ctest
+        run: |
+          cd ./Release-build
+          ctest -VV
+          cd $GITHUB_WORKSPACE
       # update-svf-lib
       - name: update-svf-lib
         run: |
