@@ -137,10 +137,10 @@ const std::string ICFGEdge::toString() const {
 const std::string IntraCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    if(brCondition.first == nullptr)
+    if(brCondition->first == nullptr)
         rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
     else
-        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "] with condition (" << *brCondition.first << "==" << brCondition.second << ") \t";
+        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "] with condition (" << *brCondition->first << "==" << brCondition->second << ") \t";
 
     return rawstr.str();
 }

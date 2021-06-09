@@ -139,18 +139,18 @@ public:
     }
     //@}
 
-    BranchCondition& getBranchCondtion(){
+    BranchCondition* getBranchCondtion() const{
         return brCondition;
     }
 
     void setBranchCondtion(const Value* pNode, NodeID branchID){
-        brCondition = std::make_pair(pNode,branchID);
+        brCondition = new BranchCondition(pNode, branchID);
     }
 
     virtual const std::string toString() const;
 
 private:
-    BranchCondition brCondition;
+    BranchCondition* brCondition;
 
 };
 
