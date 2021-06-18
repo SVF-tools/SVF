@@ -1,4 +1,4 @@
-name: svf-build
+name: svf-publish
 
 # Triggers the workflow on pushed to master ( merged ) 
 on: 
@@ -31,10 +31,13 @@ jobs:
           if [ "$RUNNER_OS" = "macOS" ]; then export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk" ; fi
           git config --global user.email ${{secrets.npm_email}}
           git config --global user.name "GitHub Actions Build"
+          
       # build-svf
       - name: build-svf
-        working-directory: ${{github.workspace}}
         run: |
+          cd $GITHUB_WORKSPACE
+          git stash --all
+          echo $(pwd)
           npm_version=`npm v svf-tools version`
           if [ "$RUNNER_OS" = "Linux" ]; then sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json  ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then git add .    ; fi
@@ -42,18 +45,18 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then npm version patch; fi
           git clone "https://github.com/SVF-tools/Test-Suite.git"
           . ./build.sh
-      
+          
       # update doxygen
       - name: update-doxygen
-        working-directory: ${{github.workspace}}/doc
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; doxygen doxygen.config    ; fi
-          if [ "$RUNNER_OS" = "Linux" ]; git clone https://github.com/SVF-tools/SVF-doxygen.git       ; fi
-          if [ "$RUNNER_OS" = "Linux" ]; then cp -r ./generated-doc/html ./SVF-doxygen/html       ; fi
-          if [ "$RUNNER_OS" = "Linux" ]; then cd SVF-doxygen    ; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       ; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       ; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE/SVF-doxygen       ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then git add .       ; fi
           if [ "$RUNNER_OS" = "Linux" ] && [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       ; fi
+      
   
       # run ctest
       - name: ctest
