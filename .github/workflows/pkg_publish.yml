@@ -47,7 +47,7 @@ jobs:
       - name: update-doxygen
         working-directory: ${{github.workspace}}/doc
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; doxygen doxygen.config; fi
+          if [ "$RUNNER_OS" = "Linux" ]; doxygen doxygen.config    ; fi
           if [ "$RUNNER_OS" = "Linux" ]; git clone https://github.com/SVF-tools/SVF-doxygen.git       ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then cp -r ./generated-doc/html ./SVF-doxygen/html       ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then cd SVF-doxygen    ; fi
