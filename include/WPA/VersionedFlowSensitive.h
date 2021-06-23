@@ -34,6 +34,7 @@ private:
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
+    typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
 
     typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
@@ -41,10 +42,16 @@ public:
     /// (o -> (v -> versions with rely on o:v).
     typedef Map<NodeID, Map<Version, Set<Version>>> VersionRelianceMap;
 
-    enum VersionType {
-        CONSUME,
-        YIELD,
-    };
+    /// For caching the first step in LocVersionMaps.
+    typedef struct VersionCache
+    {
+        /// SVFG node ID.
+        NodeID l;
+        /// Nested map, i.e. consume[l] or yield[l].
+        ObjToVersionMap *ovm;
+        /// Whether l and ovm can be accessed.
+        bool valid;
+    } VersionCache;
 
     /// If this version appears, there has been an error.
     static const Version invalidVersion;
@@ -113,18 +120,13 @@ private:
     /// Meld label the prelabeled SVFG.
     void meldLabel(void);
     /// Melds v2 into v1 (in place), returns whether a change occurred.
-    bool meld(MeldVersion &mv1, MeldVersion &mv2);
+    static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
 
     /// Moves meldConsume/Yield to consume/yield.
     void mapMeldVersions();
 
-    /// Returns whether l is a delta node.
-    bool delta(NodeID l);
-
     /// Returns a new MeldVersion for o during the prelabeling phase.
     MeldVersion newMeldVersion(NodeID o);
-    /// Whether l has a consume/yield version for o.
-    bool hasVersion(NodeID l, NodeID o, enum VersionType v) const;
 
     /// Determine which versions rely on which versions (e.g. c_l'(o) relies on y_l(o)
     /// given l-o->l' and y_l(o) = a, c_l'(o) = b), and which statements rely on which
@@ -134,11 +136,42 @@ private:
     /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.
-    /// recurse is used internally to keep recursive calls from messing up timing.
-    void propagateVersion(NodeID o, Version v, bool recurse=false);
+    void propagateVersion(NodeID o, Version v);
+
+    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
+    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
+    /// call graph built by the pre-analysis.
+    virtual bool delta(NodeID l) const;
+
+    /// Shared code for getConsume and getYield. They wrap this function.
+    Version getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm);
+
+    /// Returns the consumed version of o at l. If no such version exists, returns invalidVersion.
+    Version getConsume(const NodeID l, const NodeID o);
+
+    /// Returns the yielded version of o at l. If no such version exists, returns invalidVersion.
+    Version getYield(const NodeID l, const NodeID o);
+
+    /// Shared code for setConsume and setYield. They wrap this function.
+    void setVersion(const NodeID l, const NodeID o, const Version v, VersionCache &cache, LocVersionMap &lvm);
+
+    /// Sets the consumed version of o at l to v.
+    void setConsume(const NodeID l, const NodeID o, const Version v);
+
+    /// Sets the yielded version of o at l to v.
+    void setYield(const NodeID l, const NodeID o, const Version v);
+
+    /// Invalidates yieldCache.
+    void invalidateYieldCache(void);
+
+    /// Invalidates consumeCache.
+    void invalidateConsumeCache(void);
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
+
+    /// Dumps maps consume and yield.
+    void dumpLocVersionMaps(void) const;
 
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
@@ -159,14 +192,27 @@ private:
 
     /// Like meldConsume but with Versions, not MeldVersions.
     /// Created after meld labeling from meldConsume and used during the analysis.
+    /// When modifying consume itself (not a value) outside of setConsume, invalidateConsumeCache
+    /// should be called. E.g. if a call like consume[l] is an insertion.
     LocVersionMap consume;
     /// Actual yield map. Yield analogue to consume.
+    /// When modifying yield itself (not a value) outside of setYield, invalidateYieldCache
+    /// should be called.
     LocVersionMap yield;
+
+    /// Cache for the nested map in consume.
+    VersionCache consumeCache;
+    /// Cache for the nested map in yield.
+    VersionCache yieldCache;
 
     /// o -> (version -> versions which rely on it).
     VersionRelianceMap versionReliance;
     /// o x version -> statement nodes which rely on that o/version.
     Map<NodeID, Map<Version, NodeBS>> stmtReliance;
+
+    /// Maps an <object, version> pair to the SVFG node indicating that pair
+    /// needs to be propagated.
+    VarToPropNodeMap versionedVarToPropNode;
 
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.
