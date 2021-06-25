@@ -266,6 +266,12 @@ public:
     {
         return phiNodeMap;
     }
+        /// Get the corresponding PhiCopyPEs
+    inline const CopyPEList& getPhiCopyPEs(const PAGNode* node) const{
+        PHINodeMap::const_iterator it = phiNodeMap.find(node);
+        assert(it != phiNodeMap.end() && "PhiCopyPEs not found!");
+        return it->second;
+    }
     /// Add phi node information
     inline void addBinaryNode(const PAGNode* res, const BinaryOPPE* edge)
     {
@@ -280,6 +286,12 @@ public:
     inline BinaryNodeMap& getBinaryNodeMap()
     {
         return binaryNodeMap;
+    }
+    /// Get the corresponding BinaryPEs
+    inline const BinaryOPList& getBinaryPEs(const PAGNode* node) const{
+        BinaryNodeMap::const_iterator it = binaryNodeMap.find(node);
+        assert(it != binaryNodeMap.end() && "BinaryPEs not found!");
+        return it->second;
     }
     /// Add unary node information
     inline void addUnaryNode(const PAGNode* res, const UnaryOPPE* edge)
@@ -296,6 +308,12 @@ public:
     {
         return unaryNodeMap;
     }
+    /// Get the corresponding UnaryPEs
+    inline const UnaryOPList& getUnaryPEs(const PAGNode* node) const{
+        UnaryNodeMap::const_iterator it = unaryNodeMap.find(node);
+        assert(it != unaryNodeMap.end() && "UnaryPEs not found!");
+        return it->second;
+    }
     /// Add phi node information
     inline void addCmpNode(const PAGNode* res, const CmpPE* edge)
     {
@@ -310,6 +328,12 @@ public:
     inline CmpNodeMap& getCmpNodeMap()
     {
         return cmpNodeMap;
+    }
+    /// Get the corresponding CmpPEs
+    inline const CmpPEList& getCmpPEs(const PAGNode* node) const{
+        CmpNodeMap::const_iterator it = cmpNodeMap.find(node);
+        assert(it != cmpNodeMap.end() && "CmpPEs not found!");
+        return it->second;
     }
     //@}
 
