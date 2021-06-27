@@ -9,7 +9,7 @@ echo "Setting up environment for SVF"
 export SVFHOME=`pwd`
 if [ -z "$LLVM_DIR" ]
 then
-   export LLVM_DIR=$SVFHOME/llvm-10.0.0.obj
+   export LLVM_DIR=$SVFHOME/llvm-12.0.0.obj
 fi
 
 echo "LLVM_DIR =" $LLVM_DIR

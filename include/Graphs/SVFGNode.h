@@ -429,6 +429,43 @@ private:
     const CallBlockNode* callInst;
 };
 
+/*
+ * Dummy node which encodes propagation of an object/version pair.
+ */
+class DummyVersionPropSVFGNode : public VFGNode
+{
+public:
+    DummyVersionPropSVFGNode(NodeID id, NodeID object, Version version)
+        : VFGNode(id, DummyVProp), object(object), version(version)
+    { }
+
+    NodeID getObject(void) const { return object; }
+    Version getVersion(void) const { return version; }
+
+    /// Methods to support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const DummyVersionPropSVFGNode *)
+    {
+        return true;
+    }
+
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == DummyVProp;
+    }
+
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == DummyVProp;
+    }
+    //@}
+
+private:
+    const NodeID object;
+    const Version version;
+};
+
+
 } // End namespace SVF
 
 #endif /* INCLUDE_MSSA_SVFGNODE_H_ */

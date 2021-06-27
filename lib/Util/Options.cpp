@@ -15,9 +15,9 @@ namespace SVF
         llvm::cl::init(NodeIDAllocator::Strategy::DEBUG),
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
-            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately (default)"),
+            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
             clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed"),
-            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")));
+            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets (default)")));
 
     const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
         "field-limit",
@@ -381,7 +381,7 @@ namespace SVF
     llvm::cl::opt<bool> Options::OPTSVFG(
         "opt-svfg", 
         llvm::cl::init(true),
-        llvm::cl::desc("unoptimized SVFG with formal-in and actual-out")
+        llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
     );
 
     
@@ -663,6 +663,12 @@ namespace SVF
         llvm::cl::desc("Generate SVFG after Andersen's Analysis")
     );
 
+    const llvm::cl::opt<bool> Options::WPAOPTSVFG(
+            "wpa-opt-svfg",
+            llvm::cl::init(false),
+            llvm::cl::desc("When using WPA pass, optimize SVFG to eliminate formal-in and actual-out (default false)")
+    );
+
     const llvm::cl::opt<bool> Options::PrintAliases(
         "print-aliases", 
         llvm::cl::init(false),
@@ -678,7 +684,6 @@ namespace SVF
             clEnumValN(PointerAnalysis::AndersenHLCD_WPA, "hlander", "Hybrid lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"),
-            clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"),
             // Disabled till further work is done.

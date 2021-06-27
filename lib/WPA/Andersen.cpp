@@ -119,8 +119,11 @@ void AndersenBase::analyze()
     initialize();
 
     bool readResultsFromFile = false;
-    if(!Options::ReadAnder.empty())
+    if(!Options::ReadAnder.empty()) {
         readResultsFromFile = this->readFromFile(Options::ReadAnder);
+        // Finalize the analysis
+        PointerAnalysis::finalize();
+    }
 
     if(!readResultsFromFile)
     {
@@ -164,6 +167,33 @@ void AndersenBase::analyze()
         this->writeToFile(Options::WriteAnder);
 }
 
+void AndersenBase::cleanConsCG(NodeID id) {
+    consCG->resetSubs(consCG->getRep(id));
+    for (NodeID sub: consCG->getSubs(id))
+        consCG->resetRep(sub);
+    consCG->resetSubs(id);
+    consCG->resetRep(id);
+}
+
+void AndersenBase::normalizePointsTo()
+{
+    PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
+    PAG::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
+
+    // clear GepObjNodeMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
+    // for redundant gepnodes and remove those nodes from pag
+    for (NodeID n: redundantGepNodes) {
+        NodeID base = pag->getBaseObjNode(n);
+        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(n));
+        assert(gepNode && "Not a gep node in redundantGepNodes set");
+        const LocationSet ls = gepNode->getLocationSet();
+        GepObjNodeMap.erase(std::make_pair(base, ls));
+        memToFieldsMap[base].reset(n);
+        cleanConsCG(n);
+
+        pag->removeGNode(gepNode);
+    }
+}
 
 /*!
  * Initilize analysis
@@ -539,7 +569,7 @@ bool Andersen::collapseField(NodeID nodeId)
         if (fieldId != baseId)
         {
             // use the reverse pts of this field node to find all pointers point to it
-            const NodeBS &revPts = getRevPts(fieldId);
+            const NodeBS revPts = getRevPts(fieldId);
             for (const NodeID o : revPts)
             {
                 // change the points-to target from field to base node
@@ -553,6 +583,9 @@ bool Andersen::collapseField(NodeID nodeId)
             NodeID fieldRepNodeId = consCG->sccRepNode(fieldId);
             if (fieldRepNodeId != baseRepNodeId)
                 mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
+
+            // collect each gep node whose base node has been set as field-insensitive
+            redundantGepNodes.set(fieldId);
         }
     }
 

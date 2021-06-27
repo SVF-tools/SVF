@@ -804,6 +804,32 @@ void PAGBuilder::visitSwitchInst(SwitchInst &inst){
     pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
 }
 
+///   %ap = alloca %struct.va_list
+///  %ap2 = bitcast %struct.va_list* %ap to i8*
+/// ; Read a single integer argument from %ap2
+/// %tmp = va_arg i8* %ap2, i32 (VAArgInst)
+/// TODO: for now, create a copy edge from %ap2 to %tmp, we assume here %tmp should point to the n-th argument of the var_args
+void PAGBuilder::visitVAArgInst(VAArgInst &inst){
+    NodeID dst = getValueNode(&inst);
+    Value* opnd = inst.getPointerOperand();
+    NodeID src = getValueNode(opnd);
+    addCopyEdge(src,dst);
+}
+
+/// <result> = freeze ty <val>
+/// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
+/// Otherwise, this instruction is a no-op and returns the input <val>
+/// For now, we assume <val> is never a posion or undef.
+void PAGBuilder::visitFreezeInst(FreezeInst &inst){
+    NodeID dst = getValueNode(&inst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++)
+    {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        addCopyEdge(src,dst);
+    }
+}
+
 
 /*!
  * Add the constraints for a direct, non-external call.
@@ -945,7 +971,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addBlackholeObjNode();
+                NodeID obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);

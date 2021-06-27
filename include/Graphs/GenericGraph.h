@@ -95,7 +95,7 @@ public:
     /// Add the hash function for std::set (we also can overload operator< to implement this)
     //  and duplicated elements in the set are not inserted (binary tree comparison)
     //@{
-    typedef struct
+    typedef struct equalGEdge
     {
         bool operator()(const GenericEdge<NodeType>* lhs, const GenericEdge<NodeType>* rhs) const
         {

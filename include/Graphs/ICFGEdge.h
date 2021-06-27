@@ -139,7 +139,7 @@ public:
     }
     //@}
 
-    BranchCondition& getBranchCondtion(){
+    const BranchCondition& getBranchCondtion() const{
         return brCondition;
     }
 
