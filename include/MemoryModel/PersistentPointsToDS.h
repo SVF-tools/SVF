@@ -91,12 +91,13 @@ public:
         if (varId != complementId)
         {
             ptsMap[var] = complementId;
-            //revPtsMap[element].erase(var);
+            clearSingleRevPts(revPtsMap[element], var);
         }
     }
 
     virtual void clearFullPts(const Key& var) override
     {
+        clearRevPts(getPts(var), var);
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
     }
 
@@ -168,6 +169,22 @@ private:
         }
 
         return changed;
+    }
+
+    inline void clearSingleRevPts(KeySet &revSet, const Key &k)
+    {
+        if (this->rev)
+        {
+            SVFUtil::removeKey(k, revSet);
+        }
+    }
+
+    inline void clearRevPts(const DataSet &pts, const Key &k)
+    {
+        if (this->rev)
+        {
+            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
+        }
     }
 
     /// Number of unique points-to sets in use for the KeyToIDMaps.
