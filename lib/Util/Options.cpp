@@ -25,9 +25,9 @@ namespace SVF
         llvm::cl::desc("Maximum number of fields for field sensitive analysis"));
 
     const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
-        "pt-backing",
+        "ptd",
         llvm::cl::init(BVDataPTAImpl::PTBackingType::Mutable),
-        llvm::cl::desc("Backing type for the points-to data structure"),
+        llvm::cl::desc("Overarching points-to data structure"),
         llvm::cl::values(
             clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
             clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
