@@ -254,6 +254,23 @@ public:
                     ++propertyIntersections;
                     ++totalIntersections;
                 }
+
+                // Also (thanks reviewer #2)
+                // result U lhs = result,
+                if (result != emptyPointsToId() && result != lhs)
+                {
+                    unionCache[std::minmax(lhs, result)] = lhs;
+                    ++propertyUnions;
+                    ++totalUnions;
+                }
+
+                // And result U rhs = rhs.
+                if (result != emptyPointsToId() && result != rhs)
+                {
+                    unionCache[std::minmax(rhs, result)] = rhs;
+                    ++propertyUnions;
+                    ++totalUnions;
+                }
             }
         } else ++lookupIntersections;
 
