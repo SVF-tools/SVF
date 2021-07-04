@@ -21,6 +21,9 @@ namespace SVF
 /// A contiguous bit vector that only contains what it needs according
 /// to the operations carried. For example, when two bit vectors are unioned,
 /// their sizes may be increased to fit all the bits from the other set.
+/// This implementation never shrinks. Since points-to sets (generally) grow
+/// monotonically, does not have too big an impact on points-to analysis and
+/// so it isn't implemented.
 /// Abbreviated CBV.
 class CoreBitVector
 {
