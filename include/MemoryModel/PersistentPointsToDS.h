@@ -164,7 +164,7 @@ private:
             if (this->rev)
             {
                 const DataSet &srcPts = ptCache.getActualPts(srcId);
-                for (const Data &d : srcPts) insertKey<Key, KeySet>(dstKey, revPtsMap[d]);
+                for (const Data &d : srcPts) SVFUtil::insertKey(dstKey, revPtsMap[d]);
             }
         }
 
@@ -759,7 +759,7 @@ private:
     /// Add var into loc's IN updated set. Called when var's pts in loc's IN set is changed.
     inline void setVarDFInSetUpdated(LocID loc, const Key& var)
     {
-        insertKey<Key, KeySet>(var, inUpdatedVarMap[loc]);
+        SVFUtil::insertKey(var, inUpdatedVarMap[loc]);
     }
 
     /// Remove var from loc's IN updated set.
@@ -789,7 +789,7 @@ private:
     /// Add var into loc's OUT updated set. Called when var's pts in loc's OUT set changed
     inline void setVarDFOutSetUpdated(LocID loc, const Key& var)
     {
-        insertKey<Key, KeySet>(var, outUpdatedVarMap[loc]);
+        SVFUtil::insertKey(var, outUpdatedVarMap[loc]);
     }
 
     /// Remove var from loc's OUT updated set.

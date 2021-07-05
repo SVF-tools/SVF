@@ -27,24 +27,6 @@
 namespace SVF
 {
 
-/// Templated function to insert an element into a Set, CondSet, or NodeBS.
-/// Purpose: NodeBS uses set, the others use insert.
-template <typename Key, typename KeySet>
-void insertKey(const Key &key, KeySet &keySet)
-{
-    keySet.insert(key);
-}
-
-// The template parameters are unnecessary, obviously, but removing it would
-// require us to create a .cpp. For one function, that seems to add more
-// than this hack.
-template <typename Key, typename KeySet>
-void insertKey(const NodeID &key, NodeBS &keySet)
-{
-    keySet.set(key);
-}
-
-
 /// Basic points-to data structure
 /// Given a key (variable/condition variable), return its points-to data (pts/condition pts)
 /// It is designed flexible for different context, heap and path sensitive analysis
