@@ -306,7 +306,8 @@ public:
 
     virtual inline void clear() override
     {
-        // TODO: clear dfIn/OutPtsMaps.
+        dfInPtsMap.clear();
+        dfOutPtsMap.clear();
         persPTData.clear();
     }
 
@@ -623,6 +624,13 @@ public:
                 removeVarFromDFOutUpdatedSet(loc, var);
             }
         }
+    }
+
+    virtual inline void clear() override
+    {
+        outUpdatedVarMap.clear();
+        inUpdatedVarMap.clear();
+        BasePersDFPTData::clear();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
