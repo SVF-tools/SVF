@@ -267,6 +267,18 @@ inline void removeKey(const NodeID &key, NodeBS &keySet)
     keySet.reset(key);
 }
 
+/// Function to call when alarm for time limit hits.
+void timeLimitReached(int signum);
+
+/// Starts an analysis timer. If timeLimit is 0, sets no timer.
+/// If an alarm has already been set, does not set another.
+/// Returns whether we set a timer or not.
+bool startAnalysisLimitTimer(unsigned timeLimit);
+
+/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
+/// timer or not (return value of startLimitTimer).
+void stopAnalysisLimitTimer(bool limitTimerSet);
+
 } // End namespace SVFUtil
 
 } // End namespace SVF

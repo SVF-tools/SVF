@@ -380,3 +380,39 @@ void SVFFunction::viewCFGOnly() {
         fun->viewCFGOnly();
     }
 }
+
+void SVFUtil::timeLimitReached(int signum)
+{
+    std::cout.flush();
+    SVFUtil::outs().flush();
+    // TODO: output does not indicate which time limit is reached.
+    //       This can be better in the future.
+    SVFUtil::outs() << "WPA: time limit reached\n";
+    exit(101);
+}
+
+bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
+{
+    if (timeLimit == 0) return false;
+
+    // If an alarm is already set, don't set another. That means this analysis
+    // is part of another which has a time limit.
+    unsigned remainingSeconds = alarm(0);
+    if (remainingSeconds != 0)
+    {
+        // Continue the previous alarm and move on.
+        alarm(remainingSeconds);
+        return false;
+    }
+
+    signal(SIGALRM, &timeLimitReached);
+    alarm(timeLimit);
+    return true;
+}
+
+/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
+/// timer or not (return value of startLimitTimer).
+void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
+{
+    if (limitTimerSet) alarm(0);
+}

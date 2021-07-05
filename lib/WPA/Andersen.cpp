@@ -105,7 +105,7 @@ void AndersenBase::analyze()
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        bool limitTimerSet = PointerAnalysis::startLimitTimer(Options::AnderTimeLimit);
+        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit);
 
         initWorklist();
         do
@@ -125,7 +125,7 @@ void AndersenBase::analyze()
         while (reanalyze);
 
         // Analysis is finished, reset the alarm if we set it.
-        stopLimitTimer(limitTimerSet);
+        SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 

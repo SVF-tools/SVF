@@ -66,7 +66,7 @@ void FlowSensitive::initialize()
  */
 void FlowSensitive::analyze()
 {
-    bool limitTimerSet = PointerAnalysis::startLimitTimer(Options::FsTimeLimit);
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit);
 
     /// Initialization for the Solver
     initialize();
@@ -92,7 +92,7 @@ void FlowSensitive::analyze()
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
     // Reset the time-up alarm; analysis is done.
-    stopLimitTimer(limitTimerSet);
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
