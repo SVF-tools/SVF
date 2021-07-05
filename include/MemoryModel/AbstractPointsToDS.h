@@ -19,14 +19,10 @@
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
 
-#include <iomanip>
-#include <iostream>
-
 #include "Util/SVFBasicTypes.h"
 
 namespace SVF
 {
-
 /// Basic points-to data structure
 /// Given a key (variable/condition variable), return its points-to data (pts/condition pts)
 /// It is designed flexible for different context, heap and path sensitive analysis
