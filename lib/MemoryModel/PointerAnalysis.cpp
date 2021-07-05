@@ -44,6 +44,9 @@
 #include "MemoryModel/PTAType.h"
 #include "Graphs/ExternalPAG.h"
 #include "WPA/FlowSensitiveTBHC.h"
+
+#include <iomanip>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -207,7 +210,9 @@ void PointerAnalysis::dumpStat()
 {
 
     if(print_stat && stat)
+    {
         stat->performStat();
+    }
 }
 
 /*!

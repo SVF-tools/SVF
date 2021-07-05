@@ -497,7 +497,7 @@ public:
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
         return ptd->getPTDTY() == BaseDFPTData::MutDataFlow
-               || ptd->getPTDTY() == BaseDFPTData::IncMutDataFlow;
+               || ptd->getPTDTY() == BaseDFPTData::MutIncDataFlow;
     }
     ///@}
 
@@ -590,7 +590,7 @@ protected:
 
 /// Incremental version of the mutable data-flow points-to data structure.
 template <typename Key, typename KeySet, typename Data, typename DataSet>
-class IncMutableDFPTData : public MutableDFPTData<Key, KeySet, Data, DataSet>
+class MutableIncDFPTData : public MutableDFPTData<Key, KeySet, Data, DataSet>
 {
 public:
     typedef PTData<Key, KeySet, Data, DataSet> BasePTData;
@@ -611,9 +611,9 @@ private:
 
 public:
     /// Constructor
-    IncMutableDFPTData(bool reversePT = true, PTDataTy ty = BasePTData::IncMutDataFlow) : BaseMutDFPTData(reversePT, ty) { }
+    MutableIncDFPTData(bool reversePT = true, PTDataTy ty = BasePTData::MutIncDataFlow) : BaseMutDFPTData(reversePT, ty) { }
 
-    virtual ~IncMutableDFPTData() { }
+    virtual ~MutableIncDFPTData() { }
 
     virtual inline bool updateDFInFromIn(LocID srcLoc, const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
@@ -726,14 +726,14 @@ public:
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
-    static inline bool classof(const IncMutableDFPTData<Key, KeySet, Data, DataSet> *)
+    static inline bool classof(const MutableIncDFPTData<Key, KeySet, Data, DataSet> *)
     {
         return true;
     }
 
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == BasePTData::IncMutDataFlow;
+        return ptd->getPTDTY() == BasePTData::MutIncDataFlow;
     }
     ///@}
 private:

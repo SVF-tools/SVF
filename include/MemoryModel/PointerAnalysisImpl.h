@@ -44,14 +44,31 @@ class BVDataPTAImpl : public PointerAnalysis
 
 public:
     typedef PTData<NodeID, NodeBS, NodeID, PointsTo> PTDataTy;
-    typedef MutablePTData<NodeID, NodeBS, NodeID, PointsTo> MutPTDataTy;
     typedef DiffPTData<NodeID, NodeBS, NodeID, PointsTo> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeBS, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeBS, NodeID, PointsTo> DFPTDataTy;
-    typedef MutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutDFPTDataTy;
-    typedef IncMutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> IncMutDFPTDataTy;
     typedef VersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> VersionedPTDataTy;
+
+    typedef MutablePTData<NodeID, NodeBS, NodeID, PointsTo> MutPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeBS, NodeID, PointsTo> MutDiffPTDataTy;
+    typedef MutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutDFPTDataTy;
+    typedef MutableIncDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutIncDFPTDataTy;
     typedef MutableVersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> MutVersionedPTDataTy;
+
+    typedef PersistentPTData<NodeID, NodeBS, NodeID, PointsTo> PersPTDataTy;
+    typedef PersistentDiffPTData<NodeID, NodeBS, NodeID, PointsTo> PersDiffPTDataTy;
+    typedef PersistentDFPTData<NodeID, NodeBS, NodeID, PointsTo> PersDFPTDataTy;
+    typedef PersistentIncDFPTData<NodeID, NodeBS, NodeID, PointsTo> PersIncDFPTDataTy;
+    typedef PersistentVersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> PersVersionedPTDataTy;
+
+    /// How the PTData used is implemented.
+    enum PTBackingType
+    {
+        Mutable,
+        Persistent,
+    };
+
+    // TODO: make this not static?
+    static PersistentPointsToCache<PointsTo> ptCache;
 
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
@@ -60,6 +77,11 @@ public:
     virtual ~BVDataPTAImpl()
     {
         destroy();
+    }
+
+    static inline PersistentPointsToCache<PointsTo> &getPtCache(void)
+    {
+        return ptCache;
     }
 
     static inline bool classof(const PointerAnalysis *pta)
@@ -131,6 +153,12 @@ public:
     //@}
 
 protected:
+    /// Get points-to data structure
+    inline PTDataTy* getPTDataTy() const
+    {
+        return ptD;
+    }
+
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
     virtual void finalize()
@@ -144,12 +172,6 @@ protected:
     {
         assert(false && "Virtual function not implemented!");
         return false;
-    }
-
-    /// Get points-to data structure
-    inline PTDataTy* getPTDataTy() const
-    {
-        return ptD;
     }
 
     inline DiffPTDataTy* getDiffPTDataTy() const

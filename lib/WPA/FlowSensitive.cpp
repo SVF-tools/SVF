@@ -48,6 +48,8 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
+    stat = new FlowSensitiveStat(this);
+
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     // When evaluating ctir aliases, we want the whole SVFG.
     if(Options::OPTSVFG)
@@ -57,8 +59,6 @@ void FlowSensitive::initialize()
 
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
-
-    stat = new FlowSensitiveStat(this);
 }
 
 /*!
@@ -66,6 +66,8 @@ void FlowSensitive::initialize()
  */
 void FlowSensitive::analyze()
 {
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit);
+
     /// Initialization for the Solver
     initialize();
 
@@ -88,6 +90,9 @@ void FlowSensitive::analyze()
     while (updateCallGraph(getIndirectCallsites()));
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+
+    // Reset the time-up alarm; analysis is done.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;

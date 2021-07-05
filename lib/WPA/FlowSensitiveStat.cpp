@@ -320,6 +320,7 @@ void FlowSensitiveStat::statNullPtr()
  */
 void FlowSensitiveStat::statPtsSize()
 {
+    // TODO: needs to be made to work for persistent.
     if (SVFUtil::isa<FlowSensitive::MutDFPTDataTy>(fspta->getPTDataTy()))
     {
         // stat of IN set

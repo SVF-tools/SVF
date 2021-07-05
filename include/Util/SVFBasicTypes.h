@@ -87,6 +87,7 @@ typedef unsigned Version;
 typedef llvm::SparseBitVector<> NodeBS;
 typedef NodeBS PointsTo;
 typedef PointsTo AliasSet;
+typedef unsigned PointsToID;
 
 template <typename Key, typename Hash = Hash<Key>, typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<Key>> 
@@ -123,6 +124,21 @@ typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
+
+// TODO: be explicit that this is a pair of 32-bit unsigneds?
+template <> struct Hash<NodePair>
+{
+    size_t operator()(const NodePair &p) const {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
+    }
+};
+
 
 /// LLVM debug macros, define type of your DEBUG model of each pass
 #define DBOUT(TYPE, X) 	DEBUG_WITH_TYPE(TYPE, X)

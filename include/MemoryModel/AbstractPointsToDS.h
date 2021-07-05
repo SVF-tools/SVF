@@ -14,7 +14,7 @@
 ///                 MutableDiffPTData        MutableDFPTData    MutableVersionedPTData
 ///                                                ^
 ///                                                |
-///                                        IncMutableDFPTData
+///                                        MutableIncDFPTData
 
 #ifndef ABSTRACT_POINTSTO_H_
 #define ABSTRACT_POINTSTO_H_
@@ -49,9 +49,14 @@ public:
         MutDiff,
         DataFlow,
         MutDataFlow,
-        IncMutDataFlow,
+        MutIncDataFlow,
         Versioned,
         MutVersioned,
+        PersBase,
+        PersDiff,
+        PersDataFlow,
+        PersIncDataFlow,
+        PersVersioned,
     };
 
     PTData(bool reversePT = true, PTDataTy ty = PTDataTy::Base) : rev(reversePT), ptdTy(ty) { }
@@ -131,7 +136,9 @@ public:
     }
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::Diff || ptd->getPTDTY() == PTDataTy::MutDiff;
+        return ptd->getPTDTY() == PTDataTy::Diff
+               || ptd->getPTDTY() == PTDataTy::MutDiff
+               || ptd->getPTDTY() == PTDataTy::PersDiff;
     }
     ///@}
 };
@@ -205,7 +212,9 @@ public:
     {
         return ptd->getPTDTY() == BasePTData::DataFlow
                || ptd->getPTDTY() == BasePTData::MutDataFlow
-               || ptd->getPTDTY() == BasePTData::IncMutDataFlow;
+               || ptd->getPTDTY() == BasePTData::MutIncDataFlow
+               || ptd->getPTDTY() == BasePTData::PersDataFlow
+               || ptd->getPTDTY() == BasePTData::PersIncDataFlow;
     }
     ///@}
 };
@@ -246,7 +255,9 @@ public:
 
     static inline bool classof(const PTData<Key, KeySet, Data, DataSet>* ptd)
     {
-        return ptd->getPTDTY() == PTDataTy::Versioned || ptd->getPTDTY() == PTDataTy::MutVersioned;
+        return ptd->getPTDTY() == PTDataTy::Versioned
+               || ptd->getPTDTY() == PTDataTy::MutVersioned
+               || ptd->getPTDTY() == PTDataTy::PersVersioned;
     }
     ///@}
 };

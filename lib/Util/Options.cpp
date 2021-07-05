@@ -24,6 +24,25 @@ namespace SVF
         llvm::cl::init(512),
         llvm::cl::desc("Maximum number of fields for field sensitive analysis"));
 
+    const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
+        "ptd",
+        llvm::cl::init(BVDataPTAImpl::PTBackingType::Mutable),
+        llvm::cl::desc("Overarching points-to data structure"),
+        llvm::cl::values(
+            clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
+            clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
+
+    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
+        "fs-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
+
+    const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
+        "ander-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for Andersen's analyses (ignored when -fs-time-limit set)")
+    );
 
     // ContextDDA.cpp
     const llvm::cl::opt<unsigned long long> Options::CxtBudget(

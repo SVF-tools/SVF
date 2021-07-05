@@ -30,10 +30,14 @@
 #ifndef POINTERANALYSIS_H_
 #define POINTERANALYSIS_H_
 
+#include <unistd.h>
+#include <signal.h>
+
 #include "Graphs/PAG.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/MutablePointsToDS.h"
+#include "MemoryModel/PersistentPointsToDS.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
 #include "Util/PathCondAllocator.h"
