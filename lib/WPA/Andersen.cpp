@@ -27,9 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include <unistd.h>
-#include <signal.h>
-
 #include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
@@ -88,27 +85,6 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
-static void timeLimitReached(int signum)
-{
-    std::cout.flush();
-    SVFUtil::outs().flush();
-    SVFUtil::outs() << "Andersen's: time limit reached\n";
-    exit(102);
-}
-
-/// Returns whether the current alarm is for the caller of Andersen, not ours.
-static bool callersAlarm(void)
-{
-    unsigned remainingSeconds = alarm(0);
-    if (remainingSeconds != 0)
-    {
-        // Reset the alarm, it's not our alarm.
-        alarm(remainingSeconds);
-        return true;
-    }
-    else return false;
-}
-
 /*!
  * Andersen analysis
  */
@@ -129,14 +105,7 @@ void AndersenBase::analyze()
         // Start solving constraints
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
-        bool ourAlarm = !callersAlarm();
-        // If it's not our alarm, it's probably FS's alarm and we don't want to mess with that.
-        // TODO: maybe make AnderTimeLimit and FsTimeLimit work together?
-        if (ourAlarm && Options::AnderTimeLimit != 0)
-        {
-            signal(SIGALRM, &timeLimitReached);
-            alarm(Options::AnderTimeLimit);
-        }
+        bool limitTimerSet = PointerAnalysis::startLimitTimer(Options::AnderTimeLimit);
 
         initWorklist();
         do
@@ -156,7 +125,7 @@ void AndersenBase::analyze()
         while (reanalyze);
 
         // Analysis is finished, reset the alarm if we set it.
-        if (ourAlarm) alarm(0);
+        stopLimitTimer(limitTimerSet);
 
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 

@@ -27,9 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include <signal.h>
-#include <unistd.h>
-
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
@@ -64,24 +61,12 @@ void FlowSensitive::initialize()
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 }
 
-static void timeLimitReached(int signum)
-{
-    std::cout.flush();
-    SVFUtil::outs().flush();
-    SVFUtil::outs() << "FS: time limit reached\n";
-    exit(101);
-}
-
 /*!
  * Start analysis
  */
 void FlowSensitive::analyze()
 {
-    if (Options::FsTimeLimit != 0)
-    {
-        signal(SIGALRM, &timeLimitReached);
-        alarm(Options::FsTimeLimit);
-    }
+    bool limitTimerSet = PointerAnalysis::startLimitTimer(Options::FsTimeLimit);
 
     /// Initialization for the Solver
     initialize();
@@ -107,7 +92,7 @@ void FlowSensitive::analyze()
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
     // Reset the time-up alarm; analysis is done.
-    alarm(0);
+    stopLimitTimer(limitTimerSet);
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;
