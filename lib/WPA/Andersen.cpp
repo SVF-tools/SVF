@@ -130,6 +130,8 @@ void AndersenBase::analyze()
         DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
 
         bool ourAlarm = !callersAlarm();
+        // If it's not our alarm, it's probably FS's alarm and we don't want to mess with that.
+        // TODO: maybe make AnderTimeLimit and FsTimeLimit work together?
         if (ourAlarm && Options::AnderTimeLimit != 0)
         {
             signal(SIGALRM, &timeLimitReached);
