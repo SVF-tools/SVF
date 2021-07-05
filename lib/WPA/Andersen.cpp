@@ -96,7 +96,7 @@ static void timeLimitReached(int signum)
     exit(102);
 }
 
-/// Returns whether the current alarm is ours.
+/// Returns whether the current alarm is for the caller of Andersen, not ours.
 static bool callersAlarm(void)
 {
     unsigned remainingSeconds = alarm(0);
