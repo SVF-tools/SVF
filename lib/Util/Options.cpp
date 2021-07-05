@@ -41,7 +41,7 @@ namespace SVF
     const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
         "ander-time-limit",
         llvm::cl::init(0),
-        llvm::cl::desc("time limit for Andersen's analyses")
+        llvm::cl::desc("time limit for Andersen's analyses (ignored when -fs-time-limit set)")
     );
 
     // ContextDDA.cpp

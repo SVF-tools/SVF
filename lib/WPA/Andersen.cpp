@@ -88,7 +88,6 @@ void AndersenBase::finalize()
     BVDataPTAImpl::finalize();
 }
 
-// TODO: clean up.
 static void timeLimitReached(int signum)
 {
     std::cout.flush();
@@ -97,7 +96,7 @@ static void timeLimitReached(int signum)
     exit(102);
 }
 
-// TODO: clean up.
+/// Returns whether the current alarm is ours.
 static bool callersAlarm(void)
 {
     unsigned remainingSeconds = alarm(0);
