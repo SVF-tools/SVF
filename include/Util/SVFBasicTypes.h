@@ -125,7 +125,6 @@ typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
 
-// TODO: move stuff around.
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
 template <> struct Hash<NodePair>
 {
