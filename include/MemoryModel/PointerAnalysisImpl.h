@@ -143,13 +143,6 @@ public:
         ptD->clear();
     }
 
-    /// Get points-to data structure
-    /// TODO: make protected again.
-    inline PTDataTy* getPTDataTy() const
-    {
-        return ptD;
-    }
-
     /// Expand FI objects
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
 
@@ -160,6 +153,12 @@ public:
     //@}
 
 protected:
+    /// Get points-to data structure
+    inline PTDataTy* getPTDataTy() const
+    {
+        return ptD;
+    }
+
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
     virtual void finalize()

@@ -101,38 +101,6 @@ public:
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
     }
 
-    virtual std::pair<u64_t, u64_t> topN(const unsigned n) const override
-    {
-        // How many pointers does each points-to set have?
-        Map<PointsToID, u64_t> ptCounts;
-        u64_t keys = 0;
-        for (const typename KeyToIDMap::value_type &pi : ptsMap)
-        {
-            if (pi.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
-            {
-                ++ptCounts[pi.second];
-                ++keys;
-            }
-        }
-
-        // Which points-to sets are the n most common?
-        std::vector<u64_t> counts;
-        for (const Map<PointsToID, u64_t>::value_type &ic : ptCounts) counts.push_back(ic.second);
-        std::sort(counts.begin(), counts.end(), std::greater<>());
-
-        // Sum of the counts of most common n points-to sets.
-        u64_t mostCommonCount = 0;
-        for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
-
-        return std::make_pair(mostCommonCount, keys);
-    }
-
-    virtual u64_t inUsePointsToSets(void) override
-    {
-        std::vector<const KeyToIDMap *> maps = { &ptsMap };
-        return inUsePointsToSets(maps);
-    }
-
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const PersistentPTData<Key, KeySet, Data, DataSet> *)
@@ -185,21 +153,6 @@ private:
         {
             for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
         }
-    }
-
-    /// Number of unique points-to sets in use for the KeyToIDMaps.
-    static inline u64_t inUsePointsToSets(const std::vector<const KeyToIDMap *> maps)
-    {
-        Set<PointsToID> pointsToSets;
-        for (const KeyToIDMap *kim : maps)
-        {
-            for (const typename KeyToIDMap::value_type &ki : *kim)
-            {
-                pointsToSets.insert(ki.second);
-            }
-        }
-
-        return pointsToSets.size();
     }
 
 protected:
@@ -307,16 +260,6 @@ public:
     virtual inline void clearPropaPts(Key &var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
-    }
-
-    std::pair<u64_t, u64_t> topN(const unsigned n) const override
-    {
-        return persPTData.topN(n);
-    }
-
-    virtual u64_t inUsePointsToSets(void) override
-    {
-        return persPTData.inUsePointsToSets();
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -502,63 +445,6 @@ public:
     virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
-    }
-
-    std::pair<u64_t, u64_t> topN(const unsigned n) const override
-    {
-        // All points in this PTData mapping keys to PTSs.
-        std::vector<const KeyToIDMap *> keyToIdMaps;
-        keyToIdMaps.push_back(&persPTData.ptsMap);
-        for (const DFKeyToIDMap *dfMap : { &dfInPtsMap, &dfOutPtsMap } )
-        {
-            for (const typename DFKeyToIDMap::value_type &lki : *dfMap)
-            {
-                keyToIdMaps.push_back(&lki.second);
-            }
-        }
-
-        // How common are points-to sets across all maps and how many pointers are there?
-        Map<PointsToID, u64_t> ptCounts;
-        u64_t keys = 0;
-        for (const KeyToIDMap *kim : keyToIdMaps)
-        {
-            for (const typename KeyToIDMap::value_type &ki : *kim)
-            {
-                // Ignore empty points-to sets.
-                if (ki.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
-                {
-                    ++ptCounts[ki.second];
-                    ++keys;
-                }
-            }
-        }
-
-        // Which points-to sets are the n most common?
-        std::vector<u64_t> counts;
-        for (const Map<PointsToID, u64_t>::value_type &ic : ptCounts) counts.push_back(ic.second);
-        std::sort(counts.begin(), counts.end(), std::greater<>());
-
-        // Sum of the counts of most common n points-to sets.
-        u64_t mostCommonCount = 0;
-        for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
-
-        return std::make_pair(mostCommonCount, keys);
-    }
-
-    virtual u64_t inUsePointsToSets(void) override
-    {
-        std::vector<const KeyToIDMap *> maps;
-        maps.push_back(&persPTData.ptsMap);
-
-        for (const DFKeyToIDMap *dfMap : { &dfInPtsMap, &dfOutPtsMap } )
-        {
-            for (const typename DFKeyToIDMap::value_type &lkim : *dfMap)
-            {
-                maps.push_back(&lkim.second);
-            }
-        }
-
-        return BasePersPTData::inUsePointsToSets(maps);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -938,60 +824,6 @@ public:
         return ptd->getPTDTY() == PTDataTy::PersVersioned;
     }
     ///@}
-
-    virtual std::pair<u64_t, u64_t> topN(const unsigned n) const override
-    {
-        // TODO: create a helper...
-
-        // How common are points-to sets across all maps and how many pointers are there?
-        Map<PointsToID, u64_t> ptCounts;
-        u64_t keys = 0;
-        for (const typename KeyToIDMap::value_type &ki : tlPTData.ptsMap)
-        {
-            // Ignore empty points-to sets.
-            if (ki.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
-            {
-                ++ptCounts[ki.second];
-                ++keys;
-            }
-        }
-
-        for (const typename VersionedKeyToIDMap::value_type &vki : atPTData.ptsMap)
-        {
-            if (vki.second != PersistentPointsToCache<DataSet>::emptyPointsToId())
-            {
-                ++ptCounts[vki.second];
-                ++keys;
-            }
-        }
-
-        // Which points-to sets are the n most common?
-        std::vector<u64_t> counts;
-        for (const Map<PointsToID, u64_t>::value_type &ic : ptCounts) counts.push_back(ic.second);
-        std::sort(counts.begin(), counts.end(), std::greater<>());
-
-        // Sum of the counts of most common n points-to sets.
-        u64_t mostCommonCount = 0;
-        for (size_t i = 0; i < n && i < counts.size(); ++i) mostCommonCount += counts[i];
-
-        return std::make_pair(mostCommonCount, keys);
-    }
-
-    virtual u64_t inUsePointsToSets(void) override
-    {
-        Set<PointsToID> pointsToSets;
-        for (const typename KeyToIDMap::value_type &ki : tlPTData.ptsMap)
-        {
-            pointsToSets.insert(ki.second);
-        }
-
-        for (const typename VersionedKeyToIDMap::value_type &vki : atPTData.ptsMap)
-        {
-            pointsToSets.insert(vki.second);
-        }
-
-        return pointsToSets.size();
-    }
 
 private:
     /// PTData for Keys (top-level pointers, generally).
