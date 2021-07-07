@@ -149,7 +149,7 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     const size_t lSize = laterOffsetCBV.words.size();
 
     size_t e = 0;
-    for ( ; e != laterOffset; ++e)
+    for ( ; e != laterOffset && e != eSize; ++e)
     {
         // If a bit is set where the other CBV doesn't even start,
         // they are obviously not equal.
