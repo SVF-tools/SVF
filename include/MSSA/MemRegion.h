@@ -103,7 +103,7 @@ public:
     /// add the hash function here to sort elements and remove
     /// and remove duplicated element in the set (binary tree comparision)
     //@{
-    typedef struct
+    typedef struct equalMemRegion
     {
         bool operator()(const MemRegion* lhs, const MemRegion* rhs) const
         {
@@ -111,7 +111,7 @@ public:
         }
     } equalMemRegion;
 
-    typedef struct
+    typedef struct equalPointsTo
     {
         bool operator()(const PointsTo& lhs, const PointsTo& rhs) const
         {
