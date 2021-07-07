@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Util/SVFBasicTypes.h"
+#include "Util/BitVector.h"
 #include "Util/CoreBitVector.h"
 
 namespace SVF
@@ -30,6 +31,7 @@ public:
     {
         SBV,
         CBV,
+        BV,
     };
 
     class PointsToIterator;
@@ -137,6 +139,8 @@ private:
         SparseBitVector sbv;
         /// Core bit vector backing.
         CoreBitVector cbv;
+        /// Bit vector backing.
+        BitVector bv;
     };
 
     /// Type of this points-to set.
@@ -195,6 +199,7 @@ public:
         {
             SparseBitVector::iterator sbvIt;
             CoreBitVector::iterator cbvIt;
+            BitVector::iterator bvIt;
         };
     };
 };
