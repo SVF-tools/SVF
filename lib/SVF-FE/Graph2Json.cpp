@@ -1,4 +1,7 @@
+#include "llvm/Support/JSON.h"
+
 #include "SVF-FE/Graph2Json.h"
+
 #include <fstream>	// for ICFGBuilderFromFile
 #include <string>	// for ICFGBuilderFromFile
 #include <sstream>	// for ICFGBuilderFromFile
