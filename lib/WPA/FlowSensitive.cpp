@@ -66,7 +66,7 @@ void FlowSensitive::initialize()
 
     /// VSFS wants to do its own clustering *after* versioning.
     /// TODO: bad dependency.
-    if (!SVFUtil::isa<VersionedFlowSensitive>(this) && Options::ClusterFs)
+    if (!SVFUtil::isa<VersionedFlowSensitive>(this))
     {
         PointsTo defaultPt = cluster();
         getPTDataTy()->setDefaultData(defaultPt);

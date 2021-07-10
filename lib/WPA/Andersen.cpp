@@ -144,11 +144,8 @@ void Andersen::initialize()
     setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
 
-    if (Options::ClusterAnder)
-    {
-        PointsTo defaultPt = cluster();
-        getPTDataTy()->setDefaultData(defaultPt);
-    }
+    PointsTo defaultPt = cluster();
+    getPTDataTy()->setDefaultData(defaultPt);
 
     /// Initialize worklist
     processAllAddr();
