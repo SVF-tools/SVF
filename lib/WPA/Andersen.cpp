@@ -144,8 +144,11 @@ void Andersen::initialize()
     setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
 
-    PointsTo defaultPt = cluster();
-    getPTDataTy()->setDefaultData(defaultPt);
+    if (Options::ClusterAnder)
+    {
+        PointsTo defaultPt = cluster();
+        getPTDataTy()->setDefaultData(defaultPt);
+    }
 
     /// Initialize worklist
     processAllAddr();
@@ -157,6 +160,7 @@ void Andersen::initialize()
 void Andersen::finalize()
 {
     // TODO: check -stat too.
+    // TODO: broken
     if (Options::ClusterAnder)
     {
         Map<std::string, std::string> stats;
