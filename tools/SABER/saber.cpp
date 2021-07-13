@@ -46,9 +46,6 @@ static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
 static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
                                         llvm::cl::desc("Double Free Detection"));
 
-static llvm::cl::opt<bool> UAFCHECKER("uaf", llvm::cl::init(false),
-                                      llvm::cl::desc("Use-After-Free Detection"));
-
 int main(int argc, char ** argv)
 {
 
