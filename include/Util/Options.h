@@ -6,6 +6,7 @@
 #include "Util/NodeIDAllocator.h"
 #include <sstream>
 #include "MemoryModel/PointerAnalysisImpl.h"
+#include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
 
 namespace SVF
@@ -114,7 +115,7 @@ public:
     static const llvm::cl::opt<bool> DumpMSSA;
     static const llvm::cl::opt<std :: string> MSSAFun;
     // static const llvm::cl::opt<string> MSSAFun;
-    static const llvm::cl::opt<std::string> MemPar;
+    static const llvm::cl::opt<MemSSA::MemPartition> MemPar;
 
     // SVFG builder (SVFGBuilder.cpp)
     static const llvm::cl::opt<bool> SVFGWithIndirectCall;

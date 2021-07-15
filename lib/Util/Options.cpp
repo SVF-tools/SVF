@@ -358,10 +358,14 @@ namespace SVF
         llvm::cl::desc("Please specify which function needs to be dumped")
     );
 
-    const llvm::cl::opt<std::string> Options::MemPar(
+    const llvm::cl::opt<MemSSA::MemPartition> Options::MemPar(
         "mem-par", 
-        llvm::cl::value_desc("memory-partition-type"),
-        llvm::cl::desc("memory partition strategy")
+        llvm::cl::init(MemSSA::MemPartition::IntraDisjoint),
+        llvm::cl::desc("Memory region partiion strategies (e.g., for SVFG construction)"),
+        llvm::cl::values(
+            clEnumValN(MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"),
+            clEnumValN(MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"),
+            clEnumValN(MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"))
     );
 
 

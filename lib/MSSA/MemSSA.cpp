@@ -36,10 +36,6 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-static std::string kDistinctMemPar = "distinct";
-static std::string kIntraDisjointMemPar = "intra-disjoint";
-static std::string kInterDisjointMemPar = "inter-disjoint";
-
 
 double MemSSA::timeOfGeneratingMemRegions = 0;	///< Time for allocating regions
 double MemSSA::timeOfCreateMUCHI  = 0;	///< Time for generating mu/chi for load/store/calls
@@ -55,22 +51,15 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     assert((pta->getAnalysisTy()!=PointerAnalysis::Default_PTA)
            && "please specify a pointer analysis");
 
-    if (!Options::MemPar.getValue().empty())
-    {
-        std::string strategy = Options::MemPar.getValue();
-        if (strategy == kDistinctMemPar)
-            mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
-        else if (strategy == kIntraDisjointMemPar)
-            mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
-        else if (strategy == kInterDisjointMemPar)
-            mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
-        else
-            assert(false && "unrecognised memory partition strategy");
-    }
-    else
-    {
+    if (Options::MemPar == MemPartition::Distinct)
+        mrGen = new DistinctMRG(pta, ptrOnlyMSSA);
+    else if (Options::MemPar == MemPartition::IntraDisjoint)
         mrGen = new IntraDisjointMRG(pta, ptrOnlyMSSA);
-    }
+    else if (Options::MemPar == MemPartition::InterDisjoint)
+        mrGen = new InterDisjointMRG(pta, ptrOnlyMSSA);
+    else
+        assert(false && "unrecognised memory partition strategy");
+
 
     stat = new MemSSAStat(this);
 
