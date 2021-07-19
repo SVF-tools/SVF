@@ -54,7 +54,7 @@ void VersionedFlowSensitive::finalize()
     FlowSensitive::finalize();
     // vPtD->dumpPTData();
     // dumpReliances();
-    dumpLocVersionMaps();
+    // dumpLocVersionMaps();
 }
 
 void VersionedFlowSensitive::prelabel(void)
