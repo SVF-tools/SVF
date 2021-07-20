@@ -88,6 +88,12 @@ public:
         return icfgNode->getFun();
     }
 
+    /// Return the corresponding LLVM value, if possible, nullptr otherwise.
+    virtual const Value* getValue() const
+    {
+        return nullptr;
+    }
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
@@ -182,6 +188,7 @@ public:
     }
     //@}
 
+    const Value* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -371,6 +378,7 @@ public:
         return opVers.end();
     }
     //@}
+    const Value* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -443,6 +451,7 @@ public:
     }
     //@}
 
+    const Value* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -626,6 +635,7 @@ public:
     }
     //@}
 
+    const Value* getValue() const override;
     const std::string toString() const override;
 };
 
@@ -760,6 +770,7 @@ public:
     }
     //@}
 
+    const Value* getValue() const override;
     const std::string toString() const override;
 };
 
