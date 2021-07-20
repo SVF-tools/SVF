@@ -182,7 +182,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -221,7 +221,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -260,7 +260,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -299,7 +299,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -371,7 +371,7 @@ public:
         return opVers.end();
     }
     //@}
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -443,7 +443,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -555,7 +555,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -626,7 +626,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -679,7 +679,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -716,7 +716,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -760,7 +760,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -809,7 +809,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -877,7 +877,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -933,7 +933,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -997,7 +997,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -1054,7 +1054,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
 private:
     const SVFFunction* fun;
@@ -1102,7 +1102,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 } // End namespace SVF
