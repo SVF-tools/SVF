@@ -225,7 +225,7 @@ public:
     inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,const CallBlockNode* cs) const
     {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
-        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter VFG node can not be found??");
+        assert(it!=PAGNodeToActualParmMap.end() && "actual parameter VFG node can not be found??");
         return it->second;
     }
     inline ActualRetVFGNode* getActualRetVFGNode(const PAGNode* aret) const

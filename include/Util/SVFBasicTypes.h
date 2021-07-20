@@ -133,8 +133,6 @@ template <> struct Hash<NodePair>
         // and u64_t. If NodeID is not actually u32_t or size_t
         // is not u64_t we should be fine since we get a
         // consistent result.
-        uint32_t first = (uint32_t)(p.first);
-        uint32_t second = (uint32_t)(p.second);
         return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
     }
 };

@@ -836,7 +836,7 @@ public:
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -959,7 +959,7 @@ public:
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -1022,7 +1022,7 @@ public:
         return (fun!=nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;

@@ -381,7 +381,7 @@ void SVFFunction::viewCFGOnly() {
     }
 }
 
-void SVFUtil::timeLimitReached(int signum)
+void SVFUtil::timeLimitReached(int)
 {
     std::cout.flush();
     SVFUtil::outs().flush();

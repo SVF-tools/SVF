@@ -178,9 +178,9 @@ public:
     /// TODO: var arguments need to be handled.
     /// https://llvm.org/docs/LangRef.html#id1911
     void visitVAArgInst(VAArgInst&);
-    void visitVACopyInst(VACopyInst& I){}
-    void visitVAEndInst(VAEndInst& I){}
-    void visitVAStartInst(VAStartInst& I){}
+    void visitVACopyInst(VACopyInst&){}
+    void visitVAEndInst(VAEndInst&){}
+    void visitVAStartInst(VAStartInst&){}
 
     /// <result> = freeze ty <val>
     /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`

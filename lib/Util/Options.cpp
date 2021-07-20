@@ -710,6 +710,4 @@ namespace SVF
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
-
-    
-}; // namespace SVF.
+} // namespace SVF.

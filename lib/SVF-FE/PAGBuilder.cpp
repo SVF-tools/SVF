@@ -1388,7 +1388,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
     if (gepval==UINT_MAX)
     {
-		assert(UINT_MAX==-1 && "maximum limit of unsigned int is not -1?");
+        assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
          * 1. PAGBuilder::addComplexConsForExt to handle external calls

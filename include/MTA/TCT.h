@@ -45,7 +45,7 @@ public:
     }
     /// Classof
     //@{
-    static inline bool classof(const TCTEdge *edge)
+    static inline bool classof(const TCTEdge*)
     {
         return true;
     }

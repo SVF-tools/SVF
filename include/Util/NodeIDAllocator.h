@@ -89,6 +89,6 @@ private:
     static NodeIDAllocator *allocator;
 };
 
-};  // namespace SVF
+}  // namespace SVF
 
 #endif  // ifdef NODEIDALLOCATOR_H_

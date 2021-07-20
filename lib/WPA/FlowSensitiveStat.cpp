@@ -444,7 +444,6 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     const SVFG *svfg = fspta->svfg;
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
-        NodeID s = it->first;
         const SVFGNode *sn = it->second;
 
         // Unique objects coming into s.

@@ -202,7 +202,7 @@ public:
 
     //FlowSensitiveTBHC.cpp
     static const llvm::cl::opt<bool> TBHCStoreReuse;
-    static const llvm::cl::opt<bool> TBHCAllReuse;;
+    static const llvm::cl::opt<bool> TBHCAllReuse;
 
     // TypeAnalysis.cpp
     static const llvm::cl::opt<bool> GenICFG;
@@ -215,6 +215,6 @@ public:
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
 
 };
-};  // namespace SVF
+}  // namespace SVF
 
 #endif  // ifdef OPTIONS_H_
