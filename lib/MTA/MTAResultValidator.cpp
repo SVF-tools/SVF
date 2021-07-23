@@ -93,10 +93,11 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
         std::vector<std::string> y = split((*i), '.');
         y[0].erase(y[0].find("cs"), 2);
 
-        const Function* callee = tcg->getModule().getFunction(y[1]);
+        const SVFFunction* callee = SVFUtil::getFunction(y[1]);
         CallSite cs = SVFUtil::getLLVMCallSite(csnumToInstMap[atoi(y[0].c_str())]);
         assert(callee && "callee error");
-        CallSiteID csId = tcg->getCallSiteID(cs, callee);
+        CallBlockNode* cbn = mhp->getTCT()->getCallBlockNode(cs.getInstruction());
+        CallSiteID csId = tcg->getCallSiteID(cbn, callee);
         cxt.push_back(csId);
     }
     return cxt;
@@ -162,8 +163,8 @@ void MTAResultValidator::dumpCxt(const CallStrCxt& cxt) const
     for (CallStrCxt::const_iterator it = cxt.begin(), eit = cxt.end(); it != eit; ++it)
     {
         rawstr << " ' " << *it << " ' ";
-        rawstr << *(tcg->getCallSite(*it).getInstruction());
-        rawstr << "  call  " << tcg->getCallSite(*it).getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
+        rawstr << *(tcg->getCallSite(*it)->getCallSite());
+        rawstr << "  call  " << tcg->getCallSite(*it)->getCaller()->getName() << "-->" << tcg->getCalleeOfCallSite(*it)->getName() << ", \n";
     }
     rawstr << " ]";
     outs() << "max cxt = " << cxt.size() << rawstr.str() << "\n";
@@ -182,9 +183,9 @@ void MTAResultValidator::dumpInterlev(NodeBS& lev)
 
 bool MTAResultValidator::collectCallsiteTargets()
 {
-    for (SVFModule::const_iterator fi = tcg->getModule().begin(), efi = tcg->getModule().end(); fi != efi; ++fi)
+    for (SVFModule::const_iterator fi = getModule()->begin(), efi = getModule()->end(); fi != efi; ++fi)
     {
-        for (Function::const_iterator bi = (*fi)->begin(), ebi = (*fi)->end(); bi != ebi; ++bi)
+        for (Function::const_iterator bi = ((*fi)->getLLVMFun())->begin(), ebi = ((*fi)->getLLVMFun())->end(); bi != ebi; ++bi)
         {
             const BasicBlock* bb = &*bi;
             if (!bb->getName().str().compare(0, 2, "cs"))
@@ -212,7 +213,14 @@ bool MTAResultValidator::collectCallsiteTargets()
 
 bool MTAResultValidator::collectCxtThreadTargets()
 {
-    const Function *F = tcg->getModule().getFunction(CXT_THREAD);
+    const Function *F;
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
+    	const std::string fName = (*it)->getName().str();
+    	if(fName.find(CXT_THREAD) != std::string::npos) {
+    		F = (*it);
+    		break;
+    	}
+    }
     if (!F)
         return false;
 
@@ -240,7 +248,14 @@ bool MTAResultValidator::collectTCTTargets()
 {
 
     // Collect call sites of all TCT_ACCESS function calls.
-    const Function *F = tcg->getModule().getFunction(TCT_ACCESS);
+    const Function *F;
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
+    	const std::string fName = (*it)->getName().str();
+    	if(fName.find(TCT_ACCESS) != std::string::npos) {
+    		F = (*it);
+    		break;
+    	}
+    }
     if (!F)
         return false;
 
@@ -266,7 +281,14 @@ bool MTAResultValidator::collectInterleavingTargets()
 {
 
     // Collect call sites of all INTERLEV_ACCESS function calls.
-    const Function *F = tcg->getModule().getFunction(INTERLEV_ACCESS);
+    const Function *F;
+    for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
+    	const std::string fName = (*it)->getName().str();
+    	if(fName.find(INTERLEV_ACCESS) != std::string::npos) {
+    		F = (*it);
+    		break;
+    	}
+    }
     if (!F)
         return false;
 

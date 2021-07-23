@@ -122,12 +122,12 @@ public:
     typedef std::vector<const Instruction*> InstVec;
     typedef Set<const Instruction*> InstSet;
     typedef Set<const PTACallGraphNode*> PTACGNodeSet;
-    typedef Map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
-    typedef Map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef Map<const CxtThread,const Function*> CxtThreadToFun;
+    typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
+    typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
+    typedef Map<CxtThread,const Function*> CxtThreadToFun;
     typedef Map<const Instruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
-    typedef set<CxtThreadProc> CxtThreadProcSet;
+    typedef Set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
@@ -146,6 +146,19 @@ public:
     {
         destroy();
     }
+    /// Get CallBlockNode given inst
+    CallBlockNode* getCallBlockNode(const Instruction* inst) {
+		return pta->getICFG()->getCallICFGNode(inst);
+	}
+	/// Get SVFFuntion given Function 
+	const SVFFunction* getSVFFun(const Function* fun) const {
+		return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+	}
+	/// Get SVFFModule
+	SVFModule* getSVFModule() const {
+		return pta->getModule();
+	}
+	
     /// Get TCG
     inline ThreadCallGraph* getThreadCallGraph() const
     {
@@ -232,6 +245,10 @@ public:
     inline bool isCandidateFun(const Function* fun) const
     {
         return candidateFuncSet.find(fun)!=candidateFuncSet.end();
+    }
+    inline bool isCandidateFun(const SVFFunction* fun) const
+    {
+        return isCandidateFun(fun->getLLVMFun());
     }
 
     /// Whether two functions in the same callgraph scc

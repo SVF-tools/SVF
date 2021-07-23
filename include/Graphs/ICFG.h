@@ -176,6 +176,14 @@ public:
     {
         return globalBlockNode;
     }
+    /// Get/Add a call node
+    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
+    {
+        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
+        if (it == CSToCallNodeMap.end())
+            return nullptr;
+        return it->second;
+    }
     //@}
 
 private:
@@ -227,14 +235,7 @@ private:
         return sNode;
     }
 
-    /// Get/Add a call node
-    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
-    {
-        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
-        if (it == CSToCallNodeMap.end())
-            return nullptr;
-        return it->second;
-    }
+    
     inline CallBlockNode* addCallICFGNode(const Instruction* cs)
     {
         CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);

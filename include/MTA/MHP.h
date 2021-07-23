@@ -9,9 +9,7 @@
 #define MHP_H_
 
 #include "MTA/TCT.h"
-#include <set>
-#include <vector>
-
+#include "Util/SVFUtil.h"
 namespace SVF
 {
 
@@ -28,11 +26,10 @@ class MHP
 public:
     typedef Set<const Function*> FunSet;
     typedef Set<const Instruction*> InstSet;
-    typedef Set<const StmtSVFGNode*> SVFGNodeSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
-    typedef Map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
+    typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
     typedef Map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
 
     typedef Set<CxtStmt> LockSpan;
@@ -273,10 +270,10 @@ public:
     };
 
     typedef TCT::InstVec InstVec;
-    typedef Map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef Map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
+    typedef Map<CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
+    typedef Map<CxtStmt,NodeBS> CxtStmtToTIDMap;
     typedef Set<NodePair> ThreadPairSet;
-    typedef Map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
+    typedef Map<CxtStmt, const Loop*> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
     typedef Map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
     ForkJoinAnalysis(TCT* t) : tct(t)
