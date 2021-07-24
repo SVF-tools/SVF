@@ -33,13 +33,34 @@ public:
 		return _mod;
 	}
 private:
+	// Get CallBlockNode
+	inline CallBlockNode* getCBN(const Instruction* inst) {
+		return _la->getTCT()->getCallBlockNode(inst);
+	}
 	const Instruction *getPreviousMemoryAccessInst( const Instruction *I) {
         I = I->getPrevNode();
         while (I)
         {
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
-            if (const SVFFunction *callee = SVFUtil::getCallee(I))
+            SVFFunction* callee = nullptr;
+            
+            if(SVFUtil::isa<CallInst> (I)) {
+            	PTACallGraph::FunctionSet callees;
+		        _la->getTCT()->getThreadCallGraph()->getCallees(getCBN(I), callees);
+		        
+		        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+		                	ecit = callees.end(); cit!=ecit; cit++)
+		    	{
+					if(*cit != nullptr) {
+						callee = const_cast<SVFFunction*> (*cit);
+						break;
+					}
+						
+		    	}
+            }
+            
+            if (callee)
             {
                 if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)
                         || callee->getName().find("llvm.memset") != StringRef::npos)

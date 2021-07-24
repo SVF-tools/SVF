@@ -116,8 +116,7 @@ public:
 
 private:
 	
-	inline const PTACallGraph::FunctionSet getCallee(const Instruction* inst) {
-		PTACallGraph::FunctionSet callees;
+	inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
         tcg->getCallees(getCBN(inst), callees);
         return callees;
 	}
@@ -486,6 +485,10 @@ private:
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
+    inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
+        getTCG()->getCallees(getCBN(inst), callees);
+        return callees;
+	}
     /// ThreadCallGraph
     inline ThreadCallGraph* getTCG() const
     {

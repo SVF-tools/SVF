@@ -151,7 +151,8 @@ void MHP::analyzeInterleaving()
                 else if(SVFUtil::isa<CallInst>(curInst) && !isExtCall(curInst))
                 {
                     handleCall(cts,rootTid);
-                    if(!tct->isCandidateFun(getCallee(curInst)))
+                    PTACallGraph::FunctionSet callees;
+                    if(!tct->isCandidateFun(getCallee(curInst, callees)))
                        handleIntra(cts);
                 }
                 else if(SVFUtil::isa<ReturnInst>(curInst))
@@ -786,7 +787,7 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 DBOUT(DMTA,outs() << "-----\nForkJoinAnalysis root thread: " << it->first << " ");
                 DBOUT(DMTA,cts.dump());
                 DBOUT(DMTA,outs() << "-----\n");
-
+				PTACallGraph::FunctionSet callees;
                 if(isTDFork(curInst))
                 {
                     handleFork(cts,rootTid);
@@ -795,8 +796,9 @@ void ForkJoinAnalysis::analyzeForkJoinPair()
                 {
                     handleJoin(cts,rootTid);
                 }
-                else if(SVFUtil::isa<CallInst>(curInst) && tct->isCandidateFun(getCallee(curInst)))
+                else if(SVFUtil::isa<CallInst>(curInst) && tct->isCandidateFun(getCallee(curInst, callees)))
                 {
+                	
                     handleCall(cts,rootTid);
                 }
                 else if(SVFUtil::isa<ReturnInst>(curInst))

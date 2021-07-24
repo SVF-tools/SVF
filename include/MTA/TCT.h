@@ -242,7 +242,7 @@ public:
     //@}
 
     /// Whether it is a candidate function for indirect call
-    inline bool isCandidateFun(const PTACallGraph::FunctionSet callees) const
+    inline bool isCandidateFun(const PTACallGraph::FunctionSet& callees) const
     {
     	for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
                     	ecit = callees.end(); cit!=ecit; cit++)
