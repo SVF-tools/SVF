@@ -180,14 +180,7 @@ public:
     //@}
 
 private:
-	/// Get/Add a call node
-    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
-    {
-        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
-        if (it == CSToCallNodeMap.end())
-            return nullptr;
-        return it->second;
-    }
+	
     /// Get/Add IntraBlock ICFGNode
     inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst)
     {
@@ -236,13 +229,20 @@ private:
         return sNode;
     }
 
-    
+    /// Get/Add a call node
     inline CallBlockNode* addCallICFGNode(const Instruction* cs)
     {
         CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
         addICFGNode(sNode);
         CSToCallNodeMap[cs] = sNode;
         return sNode;
+    }
+    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
+    {
+        CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
+        if (it == CSToCallNodeMap.end())
+            return nullptr;
+        return it->second;
     }
 
     /// Get/Add a return node
