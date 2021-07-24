@@ -112,7 +112,7 @@ LockResultValidator::LOCK_FLAG LockResultValidator::validateStmtInLock() {
 			CxtLockSetStr LS = instToCxtLockSet[inst];
 			if(LS.size() != (*it).second.size()) {
 				if (Options::PrintValidRes) {
-		            outs() << "\nValidate Stmt's Lock : Wrong at (" << SVFUtil::value2String(inst) << ")\n";
+		            outs() << errMsg("\nValidate Stmt's Lock : Wrong at: ") << SVFUtil::value2String(inst) << "\n";
 		            outs() << "Reason: The number of lock on current stmt is wrong\n";
 		            outs() << "\n----Given locks:\n";
 		            for (CxtLockSetStr::iterator it1 = LS.begin(),eit1 = LS.end(); it1 != eit1; it++) {
