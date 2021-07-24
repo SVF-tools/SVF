@@ -241,16 +241,23 @@ public:
     }
     //@}
 
-    /// Whether it is a candidate function
-    inline bool isCandidateFun(const Function* fun) const
+    /// Whether it is a candidate function for indirect call
+    inline bool isCandidateFun(const PTACallGraph::FunctionSet callees) const
     {
-        return candidateFuncSet.find(fun)!=candidateFuncSet.end();
+    	for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+                    	ecit = callees.end(); cit!=ecit; cit++)
+        {
+        	if(candidateFuncSet.find((*cit)->getLLVMFun())!=candidateFuncSet.end())
+        		return true;
+        }
+        return false;
     }
-    inline bool isCandidateFun(const SVFFunction* fun) const
-    {
-        return isCandidateFun(fun->getLLVMFun());
-    }
-
+	inline bool isCandidateFun(const Function* fun) const {
+		return candidateFuncSet.find(fun)!=candidateFuncSet.end();
+	}
+	inline bool isCandidateFun(const SVFFunction* fun) const {
+		return isCandidateFun(fun->getLLVMFun());
+	}
     /// Whether two functions in the same callgraph scc
     inline bool inSameCallGraphSCC(const PTACallGraphNode* src,const PTACallGraphNode* dst)
     {

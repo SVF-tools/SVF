@@ -116,16 +116,10 @@ public:
 
 private:
 	
-	inline const SVFFunction* getCallee(const Instruction* inst) {
+	inline const PTACallGraph::FunctionSet getCallee(const Instruction* inst) {
 		PTACallGraph::FunctionSet callees;
         tcg->getCallees(getCBN(inst), callees);
-        for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
-                    	ecit = callees.end(); cit!=ecit; cit++)
-        {
-        	if((*cit) != nullptr)
-        		return *cit;
-        }
-        return nullptr;
+        return callees;
 	}
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
