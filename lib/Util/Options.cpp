@@ -465,6 +465,12 @@ namespace SVF
         llvm::cl::init(false), 
         llvm::cl::desc("Print MHP Validation Results")
     );
+    // LockResultValidator.cpp
+    const llvm::cl::opt<bool> Options::LockValid(
+        "print-lock-validation", 
+        llvm::cl::init(false), 
+        llvm::cl::desc("Print Lock Validation Results")
+    );
 
 
     // MTAStat.cpp

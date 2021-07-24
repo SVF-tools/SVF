@@ -60,8 +60,8 @@ void LockAnalysis::analyze()
 
     DOTIMESTAT(double lockEnd = PTAStat::getClk(true));
     DOTIMESTAT(lockTime += (lockEnd - lockStart) / TIMEINTERVAL);
-
-    validateResults();
+	if(Options::LockValid)
+    	validateResults();
 }
 
 
