@@ -151,17 +151,8 @@ void MHP::analyzeInterleaving()
                 else if(SVFUtil::isa<CallInst>(curInst) && !isExtCall(curInst))
                 {
                     handleCall(cts,rootTid);
-                    PTACallGraph::FunctionSet callees;
-                    CallBlockNode* cbn = tct->getCallBlockNode(curInst);
-                    tcg->getCallees(cbn, callees);
-                    for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
-                    	ecit = callees.end(); cit!=ecit; cit++) {
-                    		const SVFFunction* fun = *cit;
-                    		if(!tct->isCandidateFun(fun->getLLVMFun()))
-                    			handleIntra(cts);
-                    	}
-                    // if(!tct->isCandidateFun(getCallee(curInst)))
-                     //   handleIntra(cts);
+                    if(!tct->isCandidateFun(getCallee(curInst)))
+                       handleIntra(cts);
                 }
                 else if(SVFUtil::isa<ReturnInst>(curInst))
                 {
@@ -252,7 +243,7 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
-    CallBlockNode* cbn = tct->getCallBlockNode(call);
+    CallBlockNode* cbn = getCBN(call);
     if(tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
     	
@@ -332,7 +323,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallBlockNode* cbn = getCBN(call);
     if(tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
@@ -741,7 +732,7 @@ void ForkJoinAnalysis::collectSCEVInfo()
         for(CallInstSet::const_iterator sit = it->second.begin(), esit = it->second.end(); sit!=esit; ++sit)
         {
             const Instruction* callInst =  *sit;
-            if(tct->getThreadCallGraph()->isForksite(tct->getCallBlockNode(callInst)))
+            if(tct->getThreadCallGraph()->isForksite(getCBN(callInst)))
             {
                 const Value *forkSiteTidPtr = getForkedThread(callInst);
                 // const SCEV *forkSiteTidPtrSCEV = SE->getSCEV(const_cast<Value*>(forkSiteTidPtr));
@@ -837,7 +828,7 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallBlockNode* cbn = getCBN(call);
     if(getTCG()->hasThreadForkEdge(cbn))
     {
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(cbn),
@@ -863,7 +854,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDJoin(call));
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallBlockNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
     {
         const Instruction* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
@@ -922,7 +913,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
 
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallBlockNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
     {
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),

@@ -176,7 +176,11 @@ public:
     {
         return globalBlockNode;
     }
-    /// Get/Add a call node
+    
+    //@}
+
+private:
+	/// Get/Add a call node
     inline CallBlockNode* getCallICFGNode(const Instruction* cs)
     {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
@@ -184,9 +188,6 @@ public:
             return nullptr;
         return it->second;
     }
-    //@}
-
-private:
     /// Get/Add IntraBlock ICFGNode
     inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst)
     {

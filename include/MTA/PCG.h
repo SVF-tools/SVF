@@ -124,7 +124,7 @@ public:
     }
 	
 	CallBlockNode* getCallBlockNode(const Instruction* inst) {
-		return pta->getICFG()->getCallICFGNode(inst);
+		return pta->getICFG()->getCallBlockNode(inst);
 	}
 	const SVFFunction* getSVFFun(const Function* fun) const {
 		return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
