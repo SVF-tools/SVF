@@ -26,10 +26,10 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
     u32_t numOfJoinEdge = 0;
     u32_t numOfIndForksite = 0;
     u32_t numOfIndForkEdge = 0;
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
+    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->forksitesBegin(), eit = tcg->forksitesEnd(); it != eit; ++it)
     {
         bool indirectfork = false;
-        const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun(*it));
+        const Function* spawnee = SVFUtil::dyn_cast<Function>(tcg->getThreadAPI()->getForkedFun((*it)->getCallSite()));
         if(spawnee==nullptr)
         {
             numOfIndForksite++;
@@ -44,7 +44,7 @@ void MTAStat::performThreadCallGraphStat(ThreadCallGraph* tcg)
         }
     }
 
-    for (ThreadCallGraph::CallSiteSet::iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
+    for (ThreadCallGraph::CallSiteSet::const_iterator it = tcg->joinsitesBegin(), eit = tcg->joinsitesEnd(); it != eit; ++it)
     {
         for (ThreadCallGraph::JoinEdgeSet::const_iterator cgIt = tcg->getJoinEdgeBegin(*it), ecgIt =
                     tcg->getJoinEdgeEnd(*it); cgIt != ecgIt; ++cgIt)
@@ -95,15 +95,16 @@ void MTAStat::performMHPPairStat(MHP* mhp, LockAnalysis* lsa)
     {
         InstSet instSet1;
         InstSet instSet2;
-        SVFModule* mod = mhp->getThreadCallGraph()->getModule();
+        SVFModule* mod = mhp->getTCT()->getSVFModule();
         for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
         {
-            const Function* fun = (*F);
+            const SVFFunction* fun = (*F);
+            const Function* llvmfun = fun->getLLVMFun();
             if(SVFUtil::isExtCall(fun))
                 continue;
-            if(!mhp->isConnectedfromMain(fun))
+            if(!mhp->isConnectedfromMain(llvmfun))
                 continue;
-            for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II)
+            for (const_inst_iterator II = inst_begin(llvmfun), E = inst_end(llvmfun); II != E; ++II)
             {
                 const Instruction *inst = &*II;
                 if(SVFUtil::isa<LoadInst>(inst))

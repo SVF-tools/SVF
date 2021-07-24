@@ -38,10 +38,9 @@ void MTAAnnotator::collectLoadStoreInst(SVFModule* mod)
 
     for (SVFModule::iterator F = mod->begin(), E = mod->end(); F != E; ++F)
     {
-        const Function* fun = (*F);
-        if (SVFUtil::isExtCall(fun))
+        if (SVFUtil::isExtCall(*F))
             continue;
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
+        for (inst_iterator II = inst_begin((*F)->getLLVMFun()), E = inst_end((*F)->getLLVMFun()); II != E; ++II)
         {
             const Instruction *inst = &*II;
             if (SVFUtil::isa<LoadInst>(inst))
@@ -123,7 +122,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 
     /// find fork arguments' objects
     const PAGEdge::PAGEdgeSetTy& forkedges = pag->getPTAEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
+    for (PAGEdge::PAGEdgeSetTy::const_iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
     {
         PAGEdge* edge = *it;
         worklist |= pta->getPts(edge->getDstID());
@@ -132,7 +131,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
 
     /// find global pointer-to objects
     const PAG::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
-    for (PAG::PAGEdgeSet::iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
+    for (PAG::PAGEdgeSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
     {
         const PAGEdge* edge = *it;
         if (edge->getEdgeKind() == PAGEdge::Addr)

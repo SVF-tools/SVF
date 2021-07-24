@@ -14,11 +14,12 @@
 #include "WPA/Andersen.h"
 #include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/PAGBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
-static llvm::RegisterPass<MTA> RACEDETECOR("pmhp", "May-Happen-in-Parallel Analysis");
+static llvm::RegisterPass<MTA> RACEDETECOR("mta", "May-Happen-in-Parallel Analysis");
 
 
 char MTA::ID = 0;
@@ -42,8 +43,8 @@ MTA::~MTA()
 
 bool MTA::runOnModule(Module& module)
 {
-    SVFModule* m(module);
-    return runOnModule(m);
+    SVFModule mm(module.getName().str());
+    return runOnModule(&mm);
 }
 
 /*!
@@ -119,7 +120,9 @@ MHP* MTA::computeMHP(SVFModule* module)
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
-    PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(module);
+    PAGBuilder builder;
+    PAG* pag = builder.build(module);
+    PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getPTACallGraph()->dump("ptacg");
 
     DBOUT(DGENERAL, outs() << pasMsg("Build TCT\n"));
@@ -172,7 +175,7 @@ void MTA::detect(SVFModule* module)
     for (SVFModule::iterator F = module->begin(), E = module->end(); F != E; ++F)
     {
         // collect and create symbols inside the function body
-        for (inst_iterator II = inst_begin(*F), E = inst_end(*F); II != E; ++II)
+        for (inst_iterator II = inst_begin((*F)->getLLVMFun()), E = inst_end((*F)->getLLVMFun()); II != E; ++II)
         {
             const Instruction *inst = &*II;
             if (const LoadInst* load = SVFUtil::dyn_cast<LoadInst>(inst))

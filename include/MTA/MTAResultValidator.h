@@ -8,16 +8,15 @@
 #ifndef MTARESULTVALIDATOR_H_
 #define MTARESULTVALIDATOR_H_
 
-#include <MemoryModel/PointerAnalysisImpl.h>
-#include "MTA/TCT.h"
 #include "MTA/MHP.h"
-#include "Util/SVFUtil.h"
-#include "Graphs/ThreadCallGraph.h"
 
 /*!
  * Validate the result of context-sensitive analysis, including context-sensitive
  * thread detection and thread interleaving.
  */
+ namespace SVF{
+ typedef unsigned NodeID;
+ 
 class MTAResultValidator
 {
 
@@ -28,6 +27,7 @@ public:
     {
         tcg = mhp->getThreadCallGraph();
         tdAPI = tcg->getThreadAPI();
+        mod = mhp->getTCT()->getSVFModule();
     }
     // Destructor
     ~MTAResultValidator()
@@ -36,7 +36,9 @@ public:
 
     // Analysis
     void analyze();
-
+	inline SVFModule* getModule() const {
+		return mod;
+	}
 protected:
 
     /*
@@ -113,12 +115,12 @@ protected:
 
 private:
 
-    Map<NodeID, const CallInst*> csnumToInstMap;
-    Map<NodeID, CallStrCxt> vthdToCxt;
-    Map<NodeID, NodeID> vthdTorthd;
-    Map<NodeID, NodeID> rthdTovthd;
+    typedef Map<NodeID, const CallInst*> csnumToInst;
+    typedef Map<NodeID, CallStrCxt> vthdToCxtMap;
+    typedef Map<NodeID, NodeID> vthdTorthdMap;
+    typedef Map<NodeID, NodeID> rthdTovthdMap;
 
-    Map<NodeID, Set<NodeID>> rthdToChildren;
+    typedef Map<NodeID, Set<NodeID>> rthdToChildrenMap;
 
     MHP::InstToThreadStmtSetMap instToTSMap; // Map a instruction to CxtThreadStmtSet
     MHP::ThreadStmtToThreadInterleav threadStmtToInterLeaving; /// Map a statement to its thread interleavings
@@ -130,7 +132,12 @@ private:
     ThreadAPI* tdAPI;
     ThreadCallGraph* tcg;
     MHP* mhp;
-
+	vthdToCxtMap vthdToCxt;
+	vthdTorthdMap vthdTorthd;
+	rthdTovthdMap rthdTovthd;
+	csnumToInst	csnumToInstMap;
+	rthdToChildrenMap rthdToChildren;
+	SVFModule* mod;
     /// Constant INTERLEV_FLAG values
     //@{
     static const INTERLEV_FLAG INTERLEV_TRUE = 0x01;
@@ -266,7 +273,14 @@ protected:
     {
         // Collect call sites of all RC_ACCESS function calls.
         std::vector<const CallInst*> csInsts;
-        const Function *F = M.getFunction(RC_ACCESS);
+        const Function *F;
+ 		for(auto it = M->llvmFunBegin(); it != M->llvmFunEnd(); it++){
+ 			const std::string fName = (*it)->getName().str();
+ 			if(fName.find(RC_ACCESS) != std::string::npos) {
+ 				F = (*it);
+ 				break;
+ 			}
+ 		}       
         if (!F)     return;
 
         for (Value::const_use_iterator it = F->use_begin(), ie =
@@ -395,7 +409,8 @@ private:
         {
             if (SVFUtil::isa<LoadInst>(I) || SVFUtil::isa<StoreInst>(I))
                 return I;
-            if (const Function *callee = SVFUtil::getCallee(I))
+                
+            if (const SVFFunction *callee = SVFUtil::getCallee(I))
             {
                 if (ExtAPI::EFT_L_A0__A0R_A1R == ExtAPI::getExtAPI()->get_type(callee)
                         || callee->getName().find("llvm.memset") != StringRef::npos)
@@ -418,5 +433,5 @@ private:
     /// of the validation properties in the target program.
     static constexpr char const *RC_ACCESS = "RC_ACCESS";
 };
-
+}	// namespace SVF end
 #endif /* MTARESULTVALIDATOR_H_ */

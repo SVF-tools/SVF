@@ -144,7 +144,8 @@ public:
 
     // MTAResultValidator.cpp
     static const llvm::cl::opt<bool> PrintValidRes;
-
+	
+	static const llvm::cl::opt<bool> LockValid;
     //MTAStat.cpp
     static const llvm::cl::opt<bool> AllPairMHP;
 
