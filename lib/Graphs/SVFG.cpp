@@ -544,6 +544,25 @@ void SVFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
+std::set<const SVFGNode*> SVFG::fromLLVMValue(const llvm::Value* value) const
+{
+    PAG* pag = PAG::getPAG();
+    std::set<const SVFGNode*> ret;
+    // search for all PAGEdges first
+    for (const PAGEdge* pagEdge : pag->getValueEdges(value)) {
+        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
+        if (it != PAGEdgeToStmtVFGNodeMap.end()) {
+            ret.emplace(it->second);
+        }
+    }
+    // add all PAGNodes
+    PAGNode* pagNode = pag->getPAGNode(pag->getValueNode(value));
+    if(hasDef(pagNode)) {
+        ret.emplace(getDefSVFGNode(pagNode));
+    }
+    return ret;
+}
+
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */

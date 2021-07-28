@@ -1437,6 +1437,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     assert(curVal && "current Val is nullptr?");
     edge->setBB(curBB);
     edge->setValue(curVal);
+    // backmap in valuToEdgeMap
+    pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {
