@@ -135,7 +135,7 @@ const std::string PHIVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "PHIVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge: [" << res->getId() << " = PHI(";
+    rawstr << "PAGNode: [" << res->getId() << " = PHI(";
     for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
@@ -151,7 +151,7 @@ const std::string IntraPHIVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "IntraPHIVFGNode ID: " << getId() << " ";
-    rawstr << "PAGEdge: [" << res->getId() << " = PHI(";
+    rawstr << "PAGNode: [" << res->getId() << " = PHI(";
     for(PHIVFGNode::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << it->second->getId() << ", ";
