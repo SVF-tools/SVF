@@ -449,15 +449,6 @@ public:
 namespace llvm
 {
 
-template<class PairTy, class NodeTy>
-struct pair_unary_function
-{
-    NodeTy operator()(PairTy pair) const {
-      return pair.second;
-    }
-};
-
-
 /*!
  * GraphTraits for nodes
  */
@@ -547,19 +538,23 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericGraph<NodeTy,
     {
         return nullptr; // return null here, maybe later we could create a dummy node
     }
+
     typedef std::pair<SVF::NodeID, NodeType*> PairTy;
-    typedef pair_unary_function<PairTy, NodeType*> DerefVal;
+    static inline NodeType* deref_val(PairTy P)
+    {
+        return P.second;
+    }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename GenericGraphTy::iterator, DerefVal> nodes_iterator;
+    typedef mapped_iterator<typename GenericGraphTy::iterator, decltype(&deref_val)> nodes_iterator;
 
     static nodes_iterator nodes_begin(GenericGraphTy *G)
     {
-        return map_iterator(G->begin(), DerefVal());
+        return map_iterator(G->begin(), &deref_val);
     }
     static nodes_iterator nodes_end(GenericGraphTy *G)
     {
-        return map_iterator(G->end(), DerefVal());
+        return map_iterator(G->end(), &deref_val);
     }
 
     static unsigned graphSize(GenericGraphTy* G)
