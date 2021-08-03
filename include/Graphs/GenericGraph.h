@@ -449,14 +449,6 @@ public:
 namespace llvm
 {
 
-template<class EdgeTy, class NodeTy>
-struct edge_unary_function
-{
-    NodeTy operator()(EdgeTy edge) const {
-      return edge->getDstNode();
-    }
-};
-
 template<class PairTy, class NodeTy>
 struct pair_unary_function
 {
@@ -474,10 +466,13 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
-    typedef edge_unary_function<EdgeType*, NodeType*> DerefEdge;
+    static inline NodeType* edge_dest(const EdgeType* E)
+    {
+        return E->getDstNode();
+    }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
+    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
     static NodeType* getEntryNode(NodeType* pagN)
     {
@@ -486,21 +481,20 @@ template<class NodeTy,class EdgeTy> struct GraphTraits<SVF::GenericNode<NodeTy,E
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeBegin(), DerefEdge());
+        return map_iterator(N->OutEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->OutEdgeEnd(), DerefEdge());
+        return map_iterator(N->OutEdgeEnd(), &edge_dest);
     }
     static inline ChildIteratorType direct_child_begin(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeBegin(), DerefEdge());
+        return map_iterator(N->directOutEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType direct_child_end(const NodeType *N)
     {
-        return map_iterator(N->directOutEdgeEnd(), DerefEdge());
+        return map_iterator(N->directOutEdgeEnd(), &edge_dest);
     }
-
 };
 
 /*!
@@ -512,10 +506,13 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
 
-    typedef edge_unary_function<EdgeType*, NodeType*> DerefEdge;
+    static inline NodeType* edge_dest(const EdgeType* E)
+    {
+        return E->getSrcNode();
+    }
 
     // nodes_iterator/begin/end - Allow iteration over all nodes in the graph
-    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, DerefEdge> ChildIteratorType;
+    typedef mapped_iterator<typename SVF::GenericNode<NodeTy,EdgeTy>::iterator, decltype(&edge_dest)> ChildIteratorType;
 
     static inline NodeType* getEntryNode(Inverse<NodeType* > G)
     {
@@ -524,11 +521,11 @@ struct GraphTraits<Inverse<SVF::GenericNode<NodeTy,EdgeTy>* > >
 
     static inline ChildIteratorType child_begin(const NodeType* N)
     {
-        return map_iterator(N->InEdgeBegin(), DerefEdge());
+        return map_iterator(N->InEdgeBegin(), &edge_dest);
     }
     static inline ChildIteratorType child_end(const NodeType* N)
     {
-        return map_iterator(N->InEdgeEnd(), DerefEdge());
+        return map_iterator(N->InEdgeEnd(), &edge_dest);
     }
 
     static inline unsigned getNodeID(const NodeType* N)
