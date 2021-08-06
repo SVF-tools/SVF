@@ -40,7 +40,7 @@ public:
     /// Maps locations to all versions it sees (through objects).
     typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
-    typedef Map<NodeID, Map<Version, Set<Version>>> VersionRelianceMap;
+    typedef Map<NodeID, Map<Version, std::vector<Version>>> VersionRelianceMap;
 
     /// For caching the first step in LocVersionMaps.
     typedef struct VersionCache
