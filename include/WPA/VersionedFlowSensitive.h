@@ -138,6 +138,10 @@ private:
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
 
+    /// Propagates version v of o to version vp of o. time indicates whether it should record time
+    /// taken itself.
+    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
+
     /// Returns true if l is a delta node, i.e., may have new incoming edges due to
     /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
     /// call graph built by the pre-analysis.

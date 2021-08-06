@@ -316,33 +316,43 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
     Map<Version, std::vector<Version>>::iterator relyingVersions = versionReliance[o].find(v);
     if (relyingVersions != versionReliance[o].end())
     {
-        const VersionedVar srcVar = atKey(o, v);
         for (Version r : relyingVersions->second)
         {
-            const VersionedVar dstVar = atKey(o, r);
-            if (vPtD->unionPts(dstVar, srcVar))
-            {
-                // o/r has changed.
-                // Add the dummy propagation node to tell the solver to propagate it later.
-                const DummyVersionPropSVFGNode *dvp = nullptr;
-                VarToPropNodeMap::const_iterator dvpIt = versionedVarToPropNode.find(dstVar);
-                if (dvpIt == versionedVarToPropNode.end())
-                {
-                    dvp = svfg->addDummyVersionPropSVFGNode(o, r);
-                    versionedVarToPropNode[dstVar] = dvp;
-                } else dvp = dvpIt->second;
-
-                assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
-                pushIntoWorklist(dvp->getId());
-
-                // Notify nodes which rely on o/r that it changed.
-                for (NodeID s : stmtReliance[o][r]) pushIntoWorklist(s);
-            }
+            propagateVersion(o, v, r, false);
         }
     }
 
     double end = stat->getClk();
     versionPropTime += (end - start) / TIMEINTERVAL;
+}
+
+void VersionedFlowSensitive::propagateVersion(const NodeID o, const Version v, const Version vp, bool time/*=true*/)
+{
+    double start = time ? stat->getClk() : 0.0;
+
+    const VersionedVar srcVar = atKey(o, v);
+    const VersionedVar dstVar = atKey(o, vp);
+    if (vPtD->unionPts(dstVar, srcVar))
+    {
+        // o:vp has changed.
+        // Add the dummy propagation node to tell the solver to propagate it later.
+        const DummyVersionPropSVFGNode *dvp = nullptr;
+        VarToPropNodeMap::const_iterator dvpIt = versionedVarToPropNode.find(dstVar);
+        if (dvpIt == versionedVarToPropNode.end())
+        {
+            dvp = svfg->addDummyVersionPropSVFGNode(o, vp);
+            versionedVarToPropNode[dstVar] = dvp;
+        } else dvp = dvpIt->second;
+
+        assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
+        pushIntoWorklist(dvp->getId());
+
+        // Notify nodes which rely on o:vp that it changed.
+        for (NodeID s : stmtReliance[o][vp]) pushIntoWorklist(s);
+    }
+
+    double end = time ? stat->getClk() : 0.0;
+    if (time) versionPropTime += (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::processNode(NodeID n)
@@ -394,7 +404,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                 if (std::find(versionsRelyingOnSrcY.begin(), versionsRelyingOnSrcY.end(), dstC) == versionsRelyingOnSrcY.end())
                 {
                     versionsRelyingOnSrcY.push_back(dstC);
-                    propagateVersion(o, srcY);
+                    propagateVersion(o, srcY, dstC);
                 }
             }
         }
