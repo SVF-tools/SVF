@@ -40,7 +40,7 @@ public:
     /// Maps locations to all versions it sees (through objects).
     typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
-    typedef Map<NodeID, Map<Version, Set<Version>>> VersionRelianceMap;
+    typedef Map<NodeID, Map<Version, std::vector<Version>>> VersionRelianceMap;
 
     /// For caching the first step in LocVersionMaps.
     typedef struct VersionCache
@@ -137,6 +137,10 @@ private:
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.
     void propagateVersion(NodeID o, Version v);
+
+    /// Propagates version v of o to version vp of o. time indicates whether it should record time
+    /// taken itself.
+    void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
 
     /// Returns true if l is a delta node, i.e., may have new incoming edges due to
     /// on-the-fly call graph resolution. approxCallGraph is the over-approximate

@@ -250,6 +250,9 @@ VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeI
 
 void VersionedFlowSensitive::determineReliance(void)
 {
+    // Use a set-based version to build, then we'll move things to vectors.
+    Map<NodeID, Map<Version, Set<Version>>> setVersionReliance;
+
     double start = stat->getClk(true);
     for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -270,7 +273,7 @@ void VersionedFlowSensitive::determineReliance(void)
                 const Version cp = getConsume(lp, o);
                 if (cp == invalidVersion) continue;
 
-                if (cp != y) versionReliance[o][y].insert(cp);
+                if (cp != y) setVersionReliance[o][y].insert(cp);
             }
         }
 
@@ -290,6 +293,18 @@ void VersionedFlowSensitive::determineReliance(void)
         }
     }
 
+    for (const std::pair<NodeID, Map<Version, Set<Version>>> &ovvs : setVersionReliance)
+    {
+        const NodeID o = ovvs.first;
+        Map<Version, std::vector<Version>> &osRelying = versionReliance[o];
+        for (const std::pair<Version, Set<Version>> &vvs : ovvs.second)
+        {
+            const Version v = vvs.first;
+            const Set<Version> &vs = vvs.second;
+            osRelying[v] = std::vector<Version>(vs.begin(), vs.end());
+        }
+    }
+
     double end = stat->getClk(true);
     relianceTime = (end - start) / TIMEINTERVAL;
 }
@@ -298,36 +313,46 @@ void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
 
-    Map<Version, Set<Version>>::iterator relyingVersions = versionReliance[o].find(v);
+    Map<Version, std::vector<Version>>::iterator relyingVersions = versionReliance[o].find(v);
     if (relyingVersions != versionReliance[o].end())
     {
-        const VersionedVar srcVar = atKey(o, v);
         for (Version r : relyingVersions->second)
         {
-            const VersionedVar dstVar = atKey(o, r);
-            if (vPtD->unionPts(dstVar, srcVar))
-            {
-                // o/r has changed.
-                // Add the dummy propagation node to tell the solver to propagate it later.
-                const DummyVersionPropSVFGNode *dvp = nullptr;
-                VarToPropNodeMap::const_iterator dvpIt = versionedVarToPropNode.find(dstVar);
-                if (dvpIt == versionedVarToPropNode.end())
-                {
-                    dvp = svfg->addDummyVersionPropSVFGNode(o, r);
-                    versionedVarToPropNode[dstVar] = dvp;
-                } else dvp = dvpIt->second;
-
-                assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
-                pushIntoWorklist(dvp->getId());
-
-                // Notify nodes which rely on o/r that it changed.
-                for (NodeID s : stmtReliance[o][r]) pushIntoWorklist(s);
-            }
+            propagateVersion(o, v, r, false);
         }
     }
 
     double end = stat->getClk();
     versionPropTime += (end - start) / TIMEINTERVAL;
+}
+
+void VersionedFlowSensitive::propagateVersion(const NodeID o, const Version v, const Version vp, bool time/*=true*/)
+{
+    double start = time ? stat->getClk() : 0.0;
+
+    const VersionedVar srcVar = atKey(o, v);
+    const VersionedVar dstVar = atKey(o, vp);
+    if (vPtD->unionPts(dstVar, srcVar))
+    {
+        // o:vp has changed.
+        // Add the dummy propagation node to tell the solver to propagate it later.
+        const DummyVersionPropSVFGNode *dvp = nullptr;
+        VarToPropNodeMap::const_iterator dvpIt = versionedVarToPropNode.find(dstVar);
+        if (dvpIt == versionedVarToPropNode.end())
+        {
+            dvp = svfg->addDummyVersionPropSVFGNode(o, vp);
+            versionedVarToPropNode[dstVar] = dvp;
+        } else dvp = dvpIt->second;
+
+        assert(dvp != nullptr && "VFS::propagateVersion: propagation dummy node not found?");
+        pushIntoWorklist(dvp->getId());
+
+        // Notify nodes which rely on o:vp that it changed.
+        for (NodeID s : stmtReliance[o][vp]) pushIntoWorklist(s);
+    }
+
+    double end = time ? stat->getClk() : 0.0;
+    if (time) versionPropTime += (end - start) / TIMEINTERVAL;
 }
 
 void VersionedFlowSensitive::processNode(NodeID n)
@@ -339,7 +364,10 @@ void VersionedFlowSensitive::processNode(NodeID n)
     {
         propagateVersion(dvp->getObject(), dvp->getVersion());
     }
-    else if (processSVFGNode(sn)) propagate(&sn);
+    else if (processSVFGNode(sn))
+    {
+        propagate(&sn);
+    }
 }
 
 void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
@@ -372,11 +400,11 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                 Version dstC = getConsume(dst, o);
                 if (dstC == invalidVersion) continue;
 
-                Set<Version> &versionsRelyingOnSrcY = versionReliance[o][srcY];
-                if (versionsRelyingOnSrcY.find(dstC) == versionsRelyingOnSrcY.end())
+                std::vector<Version> &versionsRelyingOnSrcY = versionReliance[o][srcY];
+                if (std::find(versionsRelyingOnSrcY.begin(), versionsRelyingOnSrcY.end(), dstC) == versionsRelyingOnSrcY.end())
                 {
-                    versionsRelyingOnSrcY.insert(dstC);
-                    propagateVersion(o, srcY);
+                    versionsRelyingOnSrcY.push_back(dstC);
+                    propagateVersion(o, srcY, dstC);
                 }
             }
         }
@@ -587,11 +615,11 @@ void VersionedFlowSensitive::invalidateConsumeCache(void)
 void VersionedFlowSensitive::dumpReliances(void) const
 {
     SVFUtil::outs() << "# Version reliances\n";
-    for (const Map<NodeID, Map<Version, Set<Version>>>::value_type ovrv : versionReliance)
+    for (const Map<NodeID, Map<Version, std::vector<Version>>>::value_type &ovrv : versionReliance)
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (const Map<Version, Set<Version>>::value_type vrv : ovrv.second)
+        for (const Map<Version, std::vector<Version>>::value_type vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";
