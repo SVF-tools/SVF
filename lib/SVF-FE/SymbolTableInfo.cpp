@@ -664,6 +664,7 @@ void SymbolTableInfo::collectVal(const Value *val)
  */
 void SymbolTableInfo::collectObj(const Value *val)
 {
+    val = getGlobalRep(val);
     ValueToIDMapTy::iterator iter = objSymMap.find(val);
     if (iter == objSymMap.end())
     {

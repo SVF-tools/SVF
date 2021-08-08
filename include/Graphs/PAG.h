@@ -731,7 +731,7 @@ public:
     inline NodeID addObjNode(const Value* val, NodeID i)
     {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
-        assert(((mem->getSymId() == i) || (symInfo->getGlobalRep(val)!=val)) && "not same object id?");
+        assert(((mem->getSymId() == i)) && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
