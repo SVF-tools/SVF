@@ -112,7 +112,7 @@ protected:
     virtual void updateConnectedNodes(const SVFGEdgeSetTy& newEdges) override;
 
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
-    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge* edge) override { return false; }
+    virtual bool propAlongIndirectEdge(const IndirectSVFGEdge*) override { return false; }
 
 private:
     /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.

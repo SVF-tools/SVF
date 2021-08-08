@@ -365,6 +365,8 @@ PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0),
     icfg = new ICFG();
     ICFGBuilder builder(icfg);
     builder.build(getModule());
+    // insert dummy value if a correct value cannot be found
+    valueToEdgeMap[nullptr] = PAGEdgeSet();
 }
 
 /*!

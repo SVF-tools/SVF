@@ -99,7 +99,7 @@ private:
 protected:
     /// Constructor
     SymbolTableInfo(void) :
-        modelConstants(false), maxStruct(nullptr), maxStSize(0), mod(nullptr), totalSymNum(0)
+        mod(nullptr), modelConstants(false), totalSymNum(0), maxStruct(nullptr), maxStSize(0)
     {
     }
 

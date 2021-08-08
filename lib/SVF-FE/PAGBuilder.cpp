@@ -1388,7 +1388,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
     if (gepval==UINT_MAX)
     {
-		assert(UINT_MAX==-1 && "maximum limit of unsigned int is not -1?");
+        assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
          * 1. PAGBuilder::addComplexConsForExt to handle external calls
@@ -1437,6 +1437,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     assert(curVal && "current Val is nullptr?");
     edge->setBB(curBB);
     edge->setValue(curVal);
+    // backmap in valuToEdgeMap
+    pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {

@@ -88,6 +88,12 @@ public:
         return icfgNode->getFun();
     }
 
+    /// Return the corresponding LLVM value, if possible, nullptr otherwise.
+    virtual const Value* getValue() const
+    {
+        return nullptr;
+    }
+
     /// Overloading operator << for dumping ICFG node ID
     //@{
     friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
@@ -182,7 +188,8 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const Value* getValue() const override;
+    const std::string toString() const override;
 };
 
 /*!
@@ -221,7 +228,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -260,7 +267,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -299,7 +306,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -371,7 +378,8 @@ public:
         return opVers.end();
     }
     //@}
-    virtual const std::string toString() const;
+    const Value* getValue() const override;
+    const std::string toString() const override;
 };
 
 
@@ -443,7 +451,8 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const Value* getValue() const override;
+    const std::string toString() const override;
 };
 
 /*!
@@ -555,7 +564,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -626,7 +635,8 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const Value* getValue() const override;
+    const std::string toString() const override;
 };
 
 
@@ -679,7 +689,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -716,7 +726,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -760,7 +770,8 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const Value* getValue() const override;
+    const std::string toString() const override;
 };
 
 /*
@@ -809,7 +820,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 
@@ -836,7 +847,7 @@ public:
     }
 
     /// Return function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -877,7 +888,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -933,7 +944,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*!
@@ -959,7 +970,7 @@ public:
         return param;
     }
     /// Function
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         return fun;
     }
@@ -997,7 +1008,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 /*
@@ -1022,7 +1033,7 @@ public:
         return (fun!=nullptr) && (callInst != nullptr);
     }
 
-    inline const SVFFunction* getFun() const
+    inline const SVFFunction* getFun() const override
     {
         assert((isFormalParmPHI() || isActualRetPHI())  && "expect a formal parameter phi");
         return fun;
@@ -1054,7 +1065,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 
 private:
     const SVFFunction* fun;
@@ -1102,7 +1113,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const std::string toString() const override;
 };
 
 } // End namespace SVF

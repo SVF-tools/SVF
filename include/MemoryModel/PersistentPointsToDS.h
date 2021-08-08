@@ -176,7 +176,7 @@ public:
 
     /// Constructor
     PersistentDiffPTData(PersistentPointsToCache<DataSet> &cache, bool reversePT = true, PTDataTy ty = PTDataTy::PersDiff)
-        : BaseDiffPTData(reversePT, ty), persPTData(cache, reversePT), ptCache(cache) { }
+        : BaseDiffPTData(reversePT, ty), ptCache(cache), persPTData(cache, reversePT) { }
 
     virtual ~PersistentDiffPTData() { }
 
@@ -316,7 +316,7 @@ public:
         return persPTData.getPts(var);
     }
 
-    virtual inline const KeySet& getRevPts(const Data &datum) override
+    virtual inline const KeySet& getRevPts(const Data&) override
     {
         assert(false && "PersistentDFPTData::getRevPts: not supported yet!");
     }

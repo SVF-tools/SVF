@@ -70,6 +70,7 @@ public:
     typedef Map<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<const Value*,PAGEdgeSet> ValueToEdgeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
@@ -97,6 +98,7 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
+    ValueToEdgeMap valueToEdgeMap;	///< Map llvm::Values to all corresponding PAGEdges
     static PAG* pag;	///< Singleton pattern here to enable instance of PAG can only be created once.
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
@@ -561,6 +563,25 @@ public:
     {
         return mem->getSymId();
     }
+    /// Get all PAG Edges that corresponds to an LLVM value
+    inline const PAGEdgeSet& getValueEdges(const Value *V)
+    {
+        auto it = valueToEdgeMap.find(V);
+        if (it == valueToEdgeMap.end()) {
+            //special empty set
+            return valueToEdgeMap.at(nullptr);
+        }
+        return it->second;
+    }
+
+    inline void mapValueToEdge(const Value *V, PAGEdge *edge)
+    {
+        auto inserted = valueToEdgeMap.emplace(V, PAGEdgeSet{edge});
+        if (!inserted.second) {
+            inserted.first->second.emplace(edge);
+        }
+    }
+
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
     /// return nullptr is this node is not a ObjPN type

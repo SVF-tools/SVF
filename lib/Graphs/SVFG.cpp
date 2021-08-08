@@ -156,6 +156,26 @@ const std::string ThreadMHPIndSVFGEdge::toString() const {
     return rawstr.str();
 }
 
+const Value* StmtSVFGNode::getValue() const {
+    return getPAGEdge()->getValue();
+}
+
+const Value* CmpVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* BinaryOPVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* PHIVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* ArgumentVFGNode::getValue() const {
+    return param->getValue();
+}
+
 
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
 {
@@ -522,6 +542,25 @@ SVFGEdge* SVFG::addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const Ac
 void SVFG::dump(const std::string& file, bool simple)
 {
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+}
+
+std::set<const SVFGNode*> SVFG::fromLLVMValue(const llvm::Value* value) const
+{
+    PAG* pag = PAG::getPAG();
+    std::set<const SVFGNode*> ret;
+    // search for all PAGEdges first
+    for (const PAGEdge* pagEdge : pag->getValueEdges(value)) {
+        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
+        if (it != PAGEdgeToStmtVFGNodeMap.end()) {
+            ret.emplace(it->second);
+        }
+    }
+    // add all PAGNodes
+    PAGNode* pagNode = pag->getPAGNode(pag->getValueNode(value));
+    if(hasDef(pagNode)) {
+        ret.emplace(getDefSVFGNode(pagNode));
+    }
+    return ret;
 }
 
 /**
