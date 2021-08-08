@@ -95,11 +95,11 @@ private:
     //@}
     /// Spawn sites iterators
     //@{
-    inline CallInstSet::iterator spawnSitesBegin() const
+    inline CallInstSet::const_iterator spawnSitesBegin() const
     {
         return spawnCallSites.begin();
     }
-    inline CallInstSet::iterator spawnSitesEnd() const
+    inline CallInstSet::const_iterator spawnSitesEnd() const
     {
         return spawnCallSites.end();
     }
@@ -122,7 +122,13 @@ public:
     virtual ~PCG()
     {
     }
-
+	
+	CallBlockNode* getCallBlockNode(const Instruction* inst) {
+		return pta->getICFG()->getCallBlockNode(inst);
+	}
+	const SVFFunction* getSVFFun(const Function* fun) const {
+		return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+	}
     /// Interface to query whether two function may happen-in-parallel
     virtual bool mayHappenInParallel(const Instruction* i1, const Instruction* i2) const;
     bool mayHappenInParallelBetweenFunctions(const Function* fun1, const Function* fun2) const;
@@ -162,27 +168,27 @@ public:
 
     /// Iterators for thread properties of a procedure
     //@{
-    inline FunSet::iterator spawnersBegin(const Function* fun) const
+    inline FunSet::const_iterator spawnersBegin(const Function* fun) const
     {
         return spawners.begin();
     }
-    inline FunSet::iterator spawnersEnd(const Function* fun) const
+    inline FunSet::const_iterator spawnersEnd(const Function* fun) const
     {
         return spawners.end();
     }
-    inline FunSet::iterator spawneesBegin(const Function* fun) const
+    inline FunSet::const_iterator spawneesBegin(const Function* fun) const
     {
         return spawnees.begin();
     }
-    inline FunSet::iterator spawneesEnd(const Function* fun) const
+    inline FunSet::const_iterator spawneesEnd(const Function* fun) const
     {
         return spawnees.end();
     }
-    inline FunSet::iterator followersBegin(const Function* fun) const
+    inline FunSet::const_iterator followersBegin(const Function* fun) const
     {
         return followers.begin();
     }
-    inline FunSet::iterator followersEnd(const Function* fun) const
+    inline FunSet::const_iterator followersEnd(const Function* fun) const
     {
         return followers.end();
     }

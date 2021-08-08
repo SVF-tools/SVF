@@ -12,10 +12,7 @@
  *
  */
 #include "MTA/TCT.h"
-#include "MTA/MHP.h"
-#include "Util/DataFlowUtil.h"
-#include <set>
-#include <vector>
+#include "SVF-FE/DataFlowUtil.h"
 
 namespace SVF
 {
@@ -45,7 +42,7 @@ public:
     typedef Map<const Instruction*, CISpan>CILockToSpan;
     typedef Set<const Function*> FunSet;
     typedef Map<const Instruction*, InstSet> InstToInstSetMap;
-    typedef Map<const CxtStmt, ValDomain> CxtStmtToLockFlagMap;
+    typedef Map<CxtStmt, ValDomain> CxtStmtToLockFlagMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
     typedef Set<CxtStmt> LockSpan;
     typedef Set<CxtStmt> CxtStmtSet;
@@ -55,12 +52,11 @@ public:
     typedef Map<CxtLock, NodeBS> CxtLockToLockSet;
     typedef Map<const Instruction*, NodeBS> LockSiteToLockSet;
     typedef Map<const Instruction*, LockSpan> InstToCxtStmtSet;
-    typedef Map<const CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
+    typedef Map<CxtStmt, CxtLockSet> CxtStmtToCxtLockSet;
     typedef FIFOWorkList<CxtLockProc> CxtLockProcVec;
-    typedef set<CxtLockProc> CxtLockProcSet;
+    typedef Set<CxtLockProc> CxtLockProcSet;
 
-    typedef std::pair<const Function*,const Function*> FuncPair;
-    typedef Map<FuncPair, bool> FuncPairToBool;
+    typedef Map<const Instruction*, CxtStmtSet> InstToCxtStmt;
 
     LockAnalysis(TCT* t) : tct(t), lockTime(0),numOfTotalQueries(0), numOfLockedQueries(0), lockQueriesTime(0)
     {
@@ -228,7 +224,10 @@ public:
         }
         return find;
     }
-
+	
+	CxtStmtToCxtLockSet getCSTCLS() {
+		return cxtStmtToCxtLockSet;
+	}
     /// Touch this context statement
     inline void touchCxtStmt(CxtStmt& cts)
     {
@@ -298,7 +297,11 @@ public:
     }
     /// Print locks and spans
     void printLocks(const CxtStmt& cts);
-
+    
+	/// Get tct 
+	TCT* getTCT() {
+		return tct;
+	}
 private:
     /// Handle fork
     void handleFork(const CxtStmt& cts);
@@ -473,7 +476,6 @@ private:
     /// Candidate functions which relevant to locks/unlocks
     //@{
     FunSet lockcandidateFuncSet;
-    FuncPairToBool nonCandidateFuncLockRelMap;
     //@}
 
     /// Used for context-insensitive intra-procedural locks

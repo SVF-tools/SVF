@@ -9,9 +9,7 @@
 #define MHP_H_
 
 #include "MTA/TCT.h"
-#include <set>
-#include <vector>
-
+#include "Util/SVFUtil.h"
 namespace SVF
 {
 
@@ -28,11 +26,10 @@ class MHP
 public:
     typedef Set<const Function*> FunSet;
     typedef Set<const Instruction*> InstSet;
-    typedef Set<const StmtSVFGNode*> SVFGNodeSet;
     typedef TCT::InstVec InstVec;
     typedef FIFOWorkList<CxtThreadStmt> CxtThreadStmtWorkList;
     typedef Set<CxtThreadStmt> CxtThreadStmtSet;
-    typedef Map<const CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
+    typedef Map<CxtThreadStmt,NodeBS> ThreadStmtToThreadInterleav;
     typedef Map<const Instruction*,CxtThreadStmtSet> InstToThreadStmtSetMap;
 
     typedef Set<CxtStmt> LockSpan;
@@ -63,7 +60,11 @@ public:
     {
         return tct;
     }
-
+	
+	// Get CallBlockNode
+	inline CallBlockNode* getCBN(const Instruction* inst) {
+		return tct->getCallBlockNode(inst);
+	}
 
     /// Whether the function is connected from main function in thread call graph
     bool isConnectedfromMain(const Function* fun);
@@ -114,6 +115,11 @@ public:
     void printInterleaving();
 
 private:
+	
+	inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
+        tcg->getCallees(getCBN(inst), callees);
+        return callees;
+	}
     /// Update non-candidate functions' interleaving.
     /// Copy interleaving threads of the entry inst to other insts.
     void updateNonCandidateFunInterleaving();
@@ -273,10 +279,10 @@ public:
     };
 
     typedef TCT::InstVec InstVec;
-    typedef Map<const CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
-    typedef Map<const CxtStmt,NodeBS> CxtStmtToTIDMap;
+    typedef Map<CxtStmt,ValDomain> CxtStmtToAliveFlagMap;
+    typedef Map<CxtStmt,NodeBS> CxtStmtToTIDMap;
     typedef Set<NodePair> ThreadPairSet;
-    typedef Map<const CxtStmt, const Loop*> CxtStmtToLoopMap;
+    typedef Map<CxtStmt, const Loop*> CxtStmtToLoopMap;
     typedef FIFOWorkList<CxtStmt> CxtStmtWorkList;
     typedef Map<const Instruction*, PTASCEV> forkjoinToPTASCEVMap;
     ForkJoinAnalysis(TCT* t) : tct(t)
@@ -373,6 +379,10 @@ private:
     {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
+    // Get CallBlockNode
+	inline CallBlockNode* getCBN(const Instruction* inst) {
+		return tct->getCallBlockNode(inst);
+	}
     /// Mark thread flags for cxtStmt
     //@{
     /// Get the flag for a cxtStmt
@@ -475,6 +485,10 @@ private:
     {
         return getTCG()->getThreadAPI()->getJoinedThread(call);
     }
+    inline const PTACallGraph::FunctionSet& getCallee(const Instruction* inst, PTACallGraph::FunctionSet& callees) {
+        getTCG()->getCallees(getCBN(inst), callees);
+        return callees;
+	}
     /// ThreadCallGraph
     inline ThreadCallGraph* getTCG() const
     {

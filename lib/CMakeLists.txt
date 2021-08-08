@@ -17,6 +17,7 @@ file (GLOB SOURCES
         MemoryModel/*.cpp
         MSSA/*.cpp
         WPA/*.cpp
+        MTA/*.cpp
         SABER/*.cpp
         DDA/*.cpp)
 add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd)

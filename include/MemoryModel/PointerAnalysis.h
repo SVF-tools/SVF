@@ -165,6 +165,10 @@ protected:
     TypeSystem *typeSystem;
 
 public:
+	/// Get ICFG
+	inline ICFG* getICFG() const {
+		return pag->getICFG();
+	}
     /// Return number of resolved indirect call edges
     inline Size_t getNumOfResolvedIndCallEdge() const
     {

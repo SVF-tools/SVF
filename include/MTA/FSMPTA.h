@@ -12,12 +12,48 @@
 #include "WPA/FlowSensitive.h"
 #include "MSSA/SVFGBuilder.h"
 #include "MTA/LockAnalysis.h"
-
+#include "MTA/MHP.h"
 namespace SVF
 {
 
 class MHP;
 class LockAnalysis;
+
+
+class SVFGNodeLockSpan {
+public:
+	SVFGNodeLockSpan(const StmtSVFGNode* SVFGnode, LockAnalysis::LockSpan lockspan) :
+	SVFGNode(SVFGnode), lockSpan(lockspan) {}
+	virtual ~SVFGNodeLockSpan() {}
+	
+	inline bool operator< (const SVFGNodeLockSpan& rhs) const {
+		if (SVFGNode != rhs.getSVFGNode())
+			return SVFGNode < rhs.getSVFGNode();
+		return lockSpan.size() < rhs.getLockSpan().size();
+	}
+	inline SVFGNodeLockSpan& operator= (const SVFGNodeLockSpan& rhs) {
+		if(*this != rhs) {
+			SVFGNode = rhs.getSVFGNode();
+			lockSpan = rhs.getLockSpan();
+		}
+		return *this;
+	}
+	inline bool operator== (const SVFGNodeLockSpan& rhs) const {
+		return (SVFGNode == rhs.getSVFGNode() && lockSpan == rhs.getLockSpan());
+	}
+	inline bool operator!= (const SVFGNodeLockSpan& rhs) const {
+		return !(*this == rhs);
+	}
+	inline const StmtSVFGNode* getSVFGNode() const {
+		return SVFGNode;
+	}
+	inline const LockAnalysis::LockSpan getLockSpan() const {
+		return lockSpan;
+	}
+private:
+	const StmtSVFGNode* SVFGNode;
+	LockAnalysis::LockSpan lockSpan;
+};	
 
 /*!
  * SVFG builder for DDA
@@ -34,9 +70,8 @@ public:
     typedef NodeBS SVFGNodeIDSet;
     typedef Set<const Instruction*> InstSet;
     typedef std::pair<NodeID,NodeID> NodeIDPair;
-
-    typedef std::pair<const StmtSVFGNode*, LockAnalysis::LockSpan> SVFGNodeLockSpanPair;
-    typedef Map<SVFGNodeLockSpanPair, bool> PairToBoolMap;
+    typedef Map<SVFGNodeLockSpan, bool> PairToBoolMap;
+    
     /// Constructor
     MTASVFGBuilder(MHP* m, LockAnalysis* la) : SVFGBuilder(), mhp(m), lockana(la)
     {
@@ -135,7 +170,7 @@ class FSMPTA : public FlowSensitive
 public:
 
     /// Constructor
-    FSMPTA(MHP* m, LockAnalysis* la) : FlowSensitive(), mhp(m), lockana(la)
+    FSMPTA(MHP* m, LockAnalysis* la) : FlowSensitive(m->getTCT()->getPTA()->getPAG()), mhp(m), lockana(la)
     {
     }
 
@@ -146,14 +181,18 @@ public:
 
     /// Initialize analysis
     void initialize(SVFModule* module);
-
+	
+	inline PAG* getPAG() {
+		return mhp->getTCT()->getPTA()->getPAG();
+	}
+	
     /// Create signle instance of flow-sensitive pointer analysis
     static FSMPTA* createFSMPTA(SVFModule* module, MHP* m, LockAnalysis* la)
     {
         if (mfspta == nullptr)
         {
             mfspta = new FSMPTA(m,la);
-            mfspta->analyze(module);
+            mfspta->analyze();
         }
         return mfspta;
     }
@@ -179,5 +218,13 @@ private:
 };
 
 } // End namespace SVF
+
+template <> struct std::hash<SVF::SVFGNodeLockSpan> {
+	size_t operator()(const SVF::SVFGNodeLockSpan &cs) const {
+		std::hash<SVF::StmtSVFGNode* >h;
+		SVF::StmtSVFGNode* node = const_cast<SVF::StmtSVFGNode* > (cs.getSVFGNode());
+		return h(node);
+	}
+};
 
 #endif /* FSPTANALYSIS_H_ */

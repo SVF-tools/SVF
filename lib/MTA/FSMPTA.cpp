@@ -177,7 +177,7 @@ void MTASVFGBuilder::performRemovingMHPEdges()
 /// whether is a first write in the lock span.
 bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n, LockAnalysis::LockSpan lspan)
 {
-    SVFGNodeLockSpanPair pair = std::make_pair(n,lspan);
+    SVFGNodeLockSpan pair(n,lspan);
     if (pairheadmap.find(pair) != pairheadmap.end())
         return pairheadmap[pair];
 
@@ -262,7 +262,7 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n, LockAnalysis::LockSpan 
 {
     assert(SVFUtil::isa<StoreSVFGNode>(n) && "Node is not a store node");
 
-    SVFGNodeLockSpanPair pair = std::make_pair(n,lspan);
+    SVFGNodeLockSpan pair(n,lspan);
     if (pairtailmap.find(pair) != pairtailmap.end())
         return pairtailmap[pair];
 
@@ -756,9 +756,9 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
  */
 void FSMPTA::initialize(SVFModule* module)
 {
-    PointerAnalysis::initialize(module);
+    PointerAnalysis::initialize();
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     MTASVFGBuilder mtaSVFGBuilder(mhp,lockana);
     svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
     setGraph(svfg);
