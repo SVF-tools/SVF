@@ -544,7 +544,7 @@ void SVFG::dump(const std::string& file, bool simple)
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
 }
 
-std::set<const SVFGNode*> SVFG::fromLLVMValue(const llvm::Value* value) const
+std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 {
     PAG* pag = PAG::getPAG();
     std::set<const SVFGNode*> ret;
