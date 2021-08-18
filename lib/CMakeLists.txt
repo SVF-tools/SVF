@@ -20,9 +20,9 @@ file (GLOB SOURCES
         MTA/*.cpp
         SABER/*.cpp
         DDA/*.cpp)
-add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd)
+add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd z3)
 
-link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd )
+link_directories( ${CMAKE_BINARY_DIR}/lib/Cudd ${Z3_DIR}/bin)
 
 
 if(DEFINED IN_SOURCE_BUILD)
