@@ -32,10 +32,79 @@
 
 #include "Util/BasicTypes.h"
 #include <stdio.h>
+
 #include "CUDD/cuddInt.h"
+#include "z3++.h"
 
 namespace SVF
 {
+
+class z3CondManager{
+
+public:
+
+    /// Constructor
+    z3CondManager(): solver(cxt)
+    {
+    }
+
+    /// Destructor
+    ~z3CondManager()
+    {
+    }
+
+    z3::expr Cudd_bdd(u32_t i)
+    {
+        return cxt.bv_const(std::to_string(i).c_str(),i);
+    }
+    
+    inline u32_t BddVarNum()
+    {
+        return solver.get_model().size();
+    }
+
+    inline z3::expr getTrueCond() 
+    {
+        return cxt.bool_val(true); 
+    }
+
+    inline z3::expr getFalseCond() 
+    {
+        return cxt.bool_val(false); 
+    }
+
+    /// Operations on conditions.
+    //@{
+    z3::expr AND(const z3::expr& lhs, const z3::expr& rhs){
+        return lhs && rhs;
+    }
+    z3::expr OR(const z3::expr& lhs, const z3::expr& rhs){
+        return lhs || rhs;
+    }
+    z3::expr NEG(z3::expr lhs){
+        return !lhs;
+    }
+    //@}
+
+    void dump(z3::expr e, std::ostream & out){
+        out << e;
+    }
+
+    void printModel(){
+        std::cout << solver.check() << "\n";
+        z3::model m = solver.get_model();
+        for (u32_t i = 0; i < m.size(); i++) {
+            z3::func_decl v = m[static_cast<s32_t>(i)];
+            std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
+        }
+    }
+
+
+private:
+    z3::context cxt;
+    z3::solver solver;
+};
+
 
 /**
  * Using Cudd as conditions.
