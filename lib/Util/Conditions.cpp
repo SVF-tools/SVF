@@ -123,16 +123,15 @@ void CondManager::extractSubConds(const CondExpr *e, NodeBS &support) const
 /// Print out one particular expression
 inline void CondManager::printDbg(const CondExpr *e)
 {
-    //std::cout << e->getExpr() << "\n";
+    std::cout << e->getExpr() << "\n";
 }
 
 /// Return string format of this expression
 std::string CondManager::dumpStr(const CondExpr *e) const
 {
-    //std::ostringstream out;
-    //out << e->getExpr();
-    //return out.str();
-    return "";
+    std::ostringstream out;
+    out << e->getExpr();
+    return out.str();
 }
 
 /// Operations on conditions.
