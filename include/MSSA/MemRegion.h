@@ -34,6 +34,7 @@
 #include "Graphs/PTACallGraph.h"
 #include "Util/WorkList.h"
 #include "Graphs/ICFG.h"
+#include "Util/Conditions.h"
 
 #include <set>
 
@@ -49,7 +50,7 @@ class MemRegion
 {
 
 public:
-    typedef DdNode* Condition;
+    typedef CondManager::Condition* Condition;
 private:
     /// region ID 0 is reserved
     static Size_t totalMRNum;

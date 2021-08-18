@@ -39,70 +39,75 @@
 namespace SVF
 {
 
-class z3CondManager{
+class CondExpr{
 
 public:
 
-    /// Constructor
-    z3CondManager(): solver(cxt)
-    {
+    CondExpr(const z3::expr& _e): e(_e){
     }
+    const z3::expr& getExpr() const{
+        return e;
+    }
+private:
+    z3::expr e;
+};
+
+class CondManager{
+
+public:
+    typedef CondExpr Condition;
+    //typedef DdNode Condition;
+
+    /// Constructor
+    CondManager();
 
     /// Destructor
-    ~z3CondManager()
-    {
-    }
+    ~CondManager();
 
-    z3::expr Cudd_bdd(u32_t i)
-    {
-        return cxt.bv_const(std::to_string(i).c_str(),i);
-    }
-    
-    inline u32_t BddVarNum()
-    {
-        return solver.get_model().size();
-    }
+    /// Create a single condition
+    CondExpr* createCond(u32_t i);
 
-    inline z3::expr getTrueCond() 
-    {
-        return cxt.bool_val(true); 
-    }
+    /// Return the number of condition expressions
+    u32_t getCondNumber();
 
-    inline z3::expr getFalseCond() 
+    /// Return the unique true condition
+    inline static CondExpr* getTrueCond() 
     {
-        return cxt.bool_val(false); 
+        return trueCond;
     }
-
+    /// Return the unique false condition
+    inline static CondExpr* getFalseCond() 
+    {
+        return falseCond;
+    }
     /// Operations on conditions.
     //@{
-    z3::expr AND(const z3::expr& lhs, const z3::expr& rhs){
-        return lhs && rhs;
-    }
-    z3::expr OR(const z3::expr& lhs, const z3::expr& rhs){
-        return lhs || rhs;
-    }
-    z3::expr NEG(z3::expr lhs){
-        return !lhs;
-    }
+    CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs);
+    CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs);
+    CondExpr* NEG(const CondExpr* lhs);
     //@}
 
-    void dump(z3::expr e, std::ostream & out){
-        out << e;
-    }
+    /// Return memory usage for this condition manager
+    std::string getMemUsage();
 
-    void printModel(){
-        std::cout << solver.check() << "\n";
-        z3::model m = solver.get_model();
-        for (u32_t i = 0; i < m.size(); i++) {
-            z3::func_decl v = m[static_cast<s32_t>(i)];
-            std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
-        }
-    }
+    /// Dump out all expressions
+    void printModel();
 
+    /// Print out one particular expression
+    void printDbg(const CondExpr* e);
+
+    /// Return string format of this expression
+    std::string dumpStr(const CondExpr* e) const;
+
+    /// Extract sub conditions of this expression
+    void extractSubConds(const CondExpr* e,  NodeBS &support) const;
 
 private:
     z3::context cxt;
-    z3::solver solver;
+    z3::solver sol;
+    static CondExpr* trueCond;
+    static CondExpr* falseCond;
+    Set<CondExpr*> allocatedConds;
 };
 
 
@@ -125,15 +130,10 @@ public:
         Cudd_Quit(m_bdd_mgr);
     }
 
-    DdNode* Cudd_bdd(u32_t i)
+    DdNode* createCond(u32_t i)
     {
         return Cudd_bddIthVar(m_bdd_mgr, i);
     }
-    inline unsigned BddVarNum()
-    {
-        return Cudd_ReadSize(m_bdd_mgr);
-    }
-
     inline DdNode* getTrueCond() const
     {
         return BddOne();
@@ -143,21 +143,13 @@ public:
         return BddZero();
     }
 
-    inline u32_t getBDDMemUsage()
+    inline std::string getMemUsage()
     {
-        return Cudd_ReadMemoryInUse(m_bdd_mgr);
+        return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
     }
     inline u32_t getCondNumber()
     {
         return Cudd_ReadNodeCount(m_bdd_mgr);
-    }
-    inline u32_t getMaxLiveCondNumber()
-    {
-        return Cudd_ReadPeakLiveNodeCount(m_bdd_mgr);
-    }
-    inline void markForRelease(DdNode* cond)
-    {
-        Cudd_RecursiveDeref(m_bdd_mgr,cond);
     }
     /// Operations on conditions.
     //@{
@@ -172,18 +164,10 @@ public:
      */
     void ddClearFlag(DdNode * f) const;
     void BddSupportStep( DdNode * f,  NodeBS &support) const;
-    void BddSupport( DdNode * f,  NodeBS &support) const;
+    void extractSubConds( DdNode * f,  NodeBS &support) const;
     void dump(DdNode* lhs, raw_ostream & O);
     std::string dumpStr(DdNode* lhs) const;
-    /// print minterms and debug information for the Ddnode
-    inline void printMinterms(DdNode* d)
-    {
-        Cudd_PrintMinterm(m_bdd_mgr,d);
-    }
-    inline void printDbg(DdNode* d)
-    {
-        Cudd_PrintDebug(m_bdd_mgr,d,0,3);
-    }
+
 private:
     inline DdNode* BddOne() const
     {

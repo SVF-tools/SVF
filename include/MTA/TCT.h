@@ -12,6 +12,7 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
+#include "SVF-FE/DataFlowUtil.h"
 #include <set>
 #include <vector>
 

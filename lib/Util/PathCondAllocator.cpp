@@ -44,7 +44,6 @@ u32_t VFPathCond::maximumPathLen = 0;
 u32_t VFPathCond::maximumPath = 0;
 
 u32_t PathCondAllocator::totalCondNum = 0;
-BddCondManager* PathCondAllocator::bddCondMgr = nullptr;
 
 /*!
  * Allocate path condition for each branch
@@ -495,15 +494,6 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
     return getCFCond(dstBB);
 }
 
-
-/*!
- * Release memory
- */
-void PathCondAllocator::destroy()
-{
-    delete bddCondMgr;
-    bddCondMgr = nullptr;
-}
 
 /*!
  * Print path conditions

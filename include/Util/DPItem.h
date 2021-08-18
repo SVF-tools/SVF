@@ -30,7 +30,7 @@
 #ifndef DPITEM_H_
 #define DPITEM_H_
 
-#include "Util/PathCondAllocator.h"
+#include "Util/Conditions.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>    // std::sort
@@ -441,12 +441,12 @@ class VFPathCond : public ContextCond
 {
 
 public:
-    typedef PathCondAllocator::Condition PathCond;
+    typedef CondManager::Condition PathCond;
     typedef std::vector<std::pair<NodeID,NodeID> > EdgeSet;
 
 public:
     /// Constructor
-    VFPathCond(PathCond* p = PathCondAllocator::trueCond()) : ContextCond(), path(p)
+    VFPathCond(PathCond* p = CondManager::getTrueCond()) : ContextCond(), path(p)
     {
     }
     /// Copy Constructor
@@ -521,7 +521,7 @@ public:
         }
         return false;
     }
-    inline bool addPath(PathCondAllocator* allocator, PathCond* c, NodeID from, NodeID to)
+    inline bool addPath(CondManager* allocator, PathCond* c, NodeID from, NodeID to)
     {
         if(pathLen() < maximumPathLen)
         {
@@ -539,14 +539,14 @@ public:
     }
     /// Condition operatoration
     //@{
-    inline bool condAnd(PathCondAllocator* allocator, PathCond* c)
+    inline bool condAnd(CondManager* allocator, PathCond* c)
     {
-        path = allocator->condAnd(path,c);
+        path = allocator->AND(path,c);
         return path != allocator->getFalseCond();
     }
-    inline void condOr(PathCondAllocator* allocator, PathCond* c)
+    inline void condOr(CondManager* allocator, PathCond* c)
     {
-        path = allocator->condOr(path,c);
+        path = allocator->OR(path,c);
     }
     //@}
 
@@ -660,7 +660,7 @@ public:
         return this->vfpath;
     }
     /// Add a value-flow path (avoid adding duplicated paths)
-    inline bool addVFPath(PathCondAllocator* allocator, PathCond* c, NodeID from, NodeID to)
+    inline bool addVFPath(CondManager* allocator, PathCond* c, NodeID from, NodeID to)
     {
         return this->vfpath.addPath(allocator,c,from,to);
     }
