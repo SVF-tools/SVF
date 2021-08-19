@@ -3,7 +3,6 @@
 # type './build.sh debug'  for debug build
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
-# if the Z3_DIR variable is not set, Z3 will be downloaded (only if variable SVF_Z3 is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
 
 #########
@@ -86,7 +85,7 @@ fi
 ########
 # Download Z3 if need be.
 #######
-if [ -n "$SVF_Z3" -a ! -d "$Z3_DIR" ]
+if [ ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
