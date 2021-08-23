@@ -177,9 +177,11 @@ const Value* ArgumentVFGNode::getValue() const {
 }
 
 
-FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
+FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const PointsTo pointsTo, const MRVer* mrVer, const SVFFunction* func): MRSVFGNode(id, FPOUT)
 {
-    cpts = exit->getMR()->getPointsTo();
+    cpts = pointsTo;
+    fun = func;
+    ver = mrVer;
 }
 
 /*!
@@ -252,38 +254,49 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     for(MemSSA::BBToPhiSetMap::iterator it = mssa->getBBToPhiSetMap().begin(),
             eit = mssa->getBBToPhiSetMap().end(); it!=eit; ++it)
     {
-        for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addIntraMSSAPHISVFGNode(*pi);
+        for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+            MemSSA::PHI* phi =  *pi;
+            addIntraMSSAPHISVFGNode(phi->getBasicBlock(), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), phi->getMR()->getPointsTo());
+        }
     }
     /// initialize memory SSA entry chi nodes
     for(MemSSA::FunToEntryChiSetMap::iterator it = mssa->getFunToEntryChiSetMap().begin(),
             eit = mssa->getFunToEntryChiSetMap().end(); it!=eit; ++it)
     {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addFormalINSVFGNode(SVFUtil::cast<ENTRYCHI>(*pi));
+        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+            const MemSSA::ENTRYCHI* chi = SVFUtil::cast<ENTRYCHI>(*pi);
+            addFormalINSVFGNode(chi->getFunction(), chi->getResVer(), chi->getMR()->getPointsTo());
+        }
     }
     /// initialize memory SSA return mu nodes
     for(MemSSA::FunToReturnMuSetMap::iterator it = mssa->getFunToRetMuSetMap().begin(),
             eit = mssa->getFunToRetMuSetMap().end(); it!=eit; ++it)
     {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addFormalOUTSVFGNode(SVFUtil::cast<RETMU>(*pi));
+        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+              const MemSSA::RETMU* mu = SVFUtil::cast<RETMU>(*pi);
+              addFormalOUTSVFGNode(mu->getFunction(), mu->getMR()->getPointsTo(), mu->getVer());
+        }
     }
     /// initialize memory SSA callsite mu nodes
     for(MemSSA::CallSiteToMUSetMap::iterator it = mssa->getCallSiteToMuSetMap().begin(),
             eit = mssa->getCallSiteToMuSetMap().end();
             it!=eit; ++it)
     {
-        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addActualINSVFGNode(SVFUtil::cast<CALLMU>(*pi));
+        for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+            const MemSSA::CALLMU* mu = SVFUtil::cast<CALLMU>(*pi);
+            addActualINSVFGNode(mu->getCallSite(), mu->getMR()->getPointsTo(), mu->getVer());
+        }
     }
     /// initialize memory SSA callsite chi nodes
     for(MemSSA::CallSiteToCHISetMap::iterator it = mssa->getCallSiteToChiSetMap().begin(),
             eit = mssa->getCallSiteToChiSetMap().end();
             it!=eit; ++it)
     {
-        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi)
-            addActualOUTSVFGNode(SVFUtil::cast<CALLCHI>(*pi));
+        for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
+            const MemSSA::CALLCHI* chi = SVFUtil::cast<CALLCHI>(*pi);
+            addActualOUTSVFGNode(chi->getCallSite(), chi->getResVer(), chi->getMR()->getPointsTo());
+        }
+
     }
 }
 
@@ -324,7 +337,7 @@ void SVFG::connectIndirectSVFGEdges()
         else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
             PTACallGraphEdge::CallInstSet callInstSet;
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getEntryChi()->getFunction(),callInstSet);
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallBlockNode* cs = *it;
@@ -334,15 +347,15 @@ void SVFG::connectIndirectSVFGEdges()
                 for(ActualINSVFGNodeSet::iterator ait = actualIns.begin(), aeit = actualIns.end(); ait!=aeit; ++ait)
                 {
                     const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(*ait));
-                    addInterIndirectVFCallEdge(actualIn,formalIn,getCallSiteID(cs, formalIn->getFun()));
+                    addInterIndirectVFCallEdge(actualIn,formalIn,getCallSiteID(cs, formalIn->getFunction()));
                 }
             }
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
             PTACallGraphEdge::CallInstSet callInstSet;
-            const MemSSA::RETMU* retMu = formalOut->getRetMU();
-            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(retMu->getFunction(),callInstSet);
+            // const MemSSA::RETMU* retMu = formalOut->getRetMU();
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFunction(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
                 const CallBlockNode* cs = *it;
@@ -355,12 +368,12 @@ void SVFG::connectIndirectSVFGEdges()
                     addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(cs, formalOut->getFun()));
                 }
             }
-            NodeID def = getDef(retMu->getVer());
-            addIntraIndirectVFEdge(def,nodeId, retMu->getVer()->getMR()->getPointsTo());
+            NodeID def = getDef(formalOut->getVer());
+            addIntraIndirectVFEdge(def,nodeId, formalOut->getVer()->getMR()->getPointsTo());
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
-            const MRVer* ver = actualIn->getCallMU()->getVer();
+            const MRVer* ver = actualIn->getVer();
             NodeID def = getDef(ver);
             addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
         }
