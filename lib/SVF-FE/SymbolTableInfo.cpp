@@ -270,7 +270,7 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             // If the operand after src pointer is non-constant, it is likely array access
             // field_idx = getelementptr struct_A, %struct_A* %1, i64 idx, where idx is a non-constant offset
             if(gi.getOperand() == gepOp->getOperand(1)
-            //  && gepOp->getPointerOperand()->getType()->getPointerElementType()->isStructTy()
+              && gepOp->getPointerOperand()->getType()->getPointerElementType()->isStructTy()
             ){
                 continue;
             }
