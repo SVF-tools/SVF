@@ -261,47 +261,18 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
         //The int-value object of the current index operand
         //  (may not be constant for arrays).
         ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
-
-                
-        // Handle non-constant index
-        // Given a gep edge p = q + idx, where idx is non-constant
-        if(!op)
-        {
-            // If the operand after src pointer is non-constant, it is likely array access
-            // field_idx = getelementptr struct_A, %struct_A* %1, i64 idx, where idx is a non-constant offset
-            if(gi.getOperand() == gepOp->getOperand(1)
-              && gepOp->getPointerOperand()->getType()->getPointerElementType()->isStructTy()
-            ){
-                continue;
-            }
-            return false;
-        }
-        //The actual index
-        Size_t idx = op->getSExtValue();
-
-
-        // Handling single value types, for constant index, including pointer, integer, etc 
-        // These GEP instructions are simply making address computations from the base pointer address
-        // e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
-        // e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
-        // Case 1: This operation is likely accessing an array through pointer p.
-        // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant) or a pointer-arithematic
-        // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
-        // For both cases, we conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
-        // (This handling is unsound since the program itself is not ANSI-compliant)
-
-        // Verify this condition
-        if ((*gi)->isSingleValueType())
-        {
-            ls.setFldIdx(0);
-            ls.setByteOffset(idx);
-        }
-
-
+ 
         // Handling struct here
         if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
+            // If the operand after src pointer is non-constant, it is likely array access, while the struct pointer is an element pointer in an array
+            // field_idx = getelementptr struct_A, %struct_A* %1, i64 %idx, where idx is a non-constant offset
+            if(!op && gi.getOperand() == gepOp->getOperand(1)){
+                continue;
+            }
             assert(op && "non-const struct index in GEP");
+            //The actual index
+            Size_t idx = op->getSExtValue();
             const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
             if ((unsigned)idx >= so.size())
             {
@@ -310,6 +281,29 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             }
             //add the translated offset
             ls.setFldIdx(ls.getOffset() + so[idx]);
+        }
+
+        if ((*gi)->isSingleValueType())
+        {
+            if(!op){
+                // Handle non-constant index
+                // Given a gep edge p = q + idx, where idx is non-constant
+                return false;
+            }
+            //The actual index
+            Size_t idx = op->getSExtValue();
+
+            // Handling single value types, for constant index, including pointer, integer, etc 
+            // These GEP instructions are simply making address computations from the base pointer address
+            // e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
+            // e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
+            // Case 1: This operation is likely accessing an array through pointer p.
+            // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant) or a pointer-arithematic
+            // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
+            // For both cases, we conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
+            // (This handling is unsound since the program itself is not ANSI-compliant)
+            ls.setFldIdx(0);
+            ls.setByteOffset(idx);
         }
     }
     return true;
