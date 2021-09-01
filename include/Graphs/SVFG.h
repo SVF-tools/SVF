@@ -94,6 +94,7 @@ public:
     typedef MemSSA::ENTRYCHI ENTRYCHI;
     typedef MemSSA::CALLCHI CALLCHI;
     typedef MemSSA::CALLMU CALLMU;
+    NodeID totalSVFGNode;
 
 protected:
     MSSAVarToDefMapTy MSSAVarToDefMap;	///< map a memory SSA operator to its definition SVFG node
@@ -394,43 +395,43 @@ protected:
     }
 
     /// Add memory Function entry chi SVFG node
-    inline void addFormalINSVFGNode(const SVFFunction* func,  const MRVer* resVer, const PointsTo pointsTo)
+    inline void addFormalINSVFGNode(const FunEntryBlockNode* funEntry,  const MRVer* resVer)
     {
-        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++, pointsTo, func);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(func));
+        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++, resVer->getMR()->getPointsTo(), funEntry->getFun());
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(funEntry->getFun()));
         setDef(resVer,sNode);
-        funToFormalINMap[func].set(sNode->getId());
+        funToFormalINMap[funEntry->getFun()].set(sNode->getId());
     }
 
     /// Add memory Function return mu SVFG node
-    inline void addFormalOUTSVFGNode(const SVFFunction* func, const PointsTo pointsTo, const MRVer* ver)
+    inline void addFormalOUTSVFGNode(const FunExitBlockNode* funExit, const MRVer* ver)
     {
-        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++, pointsTo, ver, func);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(func));
-        funToFormalOUTMap[func].set(sNode->getId());
+        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++, ver->getMR()->getPointsTo(), ver, funExit->getFun());
+        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(funExit->getFun()));
+        funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
     }
 
     /// Add memory callsite mu SVFG node
-    inline void addActualINSVFGNode(const CallBlockNode* callsite, const PointsTo pointsTo, const MRVer* ver)
+    inline void addActualINSVFGNode(const CallBlockNode* callsite, const MRVer* ver)
     {
-        ActualINSVFGNode* sNode = new ActualINSVFGNode(totalVFGNode++, callsite, pointsTo, ver);
+        ActualINSVFGNode* sNode = new ActualINSVFGNode(totalVFGNode++, callsite, ver->getMR()->getPointsTo(), ver);
         addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(callsite->getCallSite()));
         callSiteToActualINMap[callsite].set(sNode->getId());
     }
 
     /// Add memory callsite chi SVFG node
-    inline void addActualOUTSVFGNode(const CallBlockNode* callsite, const MRVer* resVer, const PointsTo pointsTo)
+    inline void addActualOUTSVFGNode(const CallBlockNode* callsite, const MRVer* resVer)
     {
-        ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalVFGNode++, callsite, pointsTo);
+        ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(totalVFGNode++, callsite, resVer->getMR()->getPointsTo());
         addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(callsite->getCallSite()));
         setDef(resVer,sNode);
         callSiteToActualOUTMap[callsite].set(sNode->getId());
     }
 
     /// Add memory SSA PHI SVFG node
-    inline void addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer, const PointsTo pointsTo)
+    inline void addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer)
     {
-        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, pointsTo);
+        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, resVer->getMR()->getPointsTo());
         addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(&(basicBlock->front())));
         for(MemSSA::PHI::OPVers::const_iterator it = opVerBegin, eit=opVerEnd; it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);

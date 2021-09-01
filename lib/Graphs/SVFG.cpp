@@ -36,6 +36,8 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+NodeID totalSVFGNode;
+
 const std::string MRSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -256,7 +258,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             MemSSA::PHI* phi =  *pi;
-            addIntraMSSAPHISVFGNode(phi->getBasicBlock(), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), phi->getMR()->getPointsTo());
+            addIntraMSSAPHISVFGNode(phi->getBasicBlock(), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer());
         }
     }
     /// initialize memory SSA entry chi nodes
@@ -265,7 +267,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             const MemSSA::ENTRYCHI* chi = SVFUtil::cast<ENTRYCHI>(*pi);
-            addFormalINSVFGNode(chi->getFunction(), chi->getResVer(), chi->getMR()->getPointsTo());
+            addFormalINSVFGNode(new FunEntryBlockNode(totalSVFGNode++,chi->getFunction()), chi->getResVer());
         }
     }
     /// initialize memory SSA return mu nodes
@@ -274,7 +276,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
               const MemSSA::RETMU* mu = SVFUtil::cast<RETMU>(*pi);
-              addFormalOUTSVFGNode(mu->getFunction(), mu->getMR()->getPointsTo(), mu->getVer());
+              addFormalOUTSVFGNode(new FunExitBlockNode(totalSVFGNode++,mu->getFunction()), mu->getVer());
         }
     }
     /// initialize memory SSA callsite mu nodes
@@ -284,7 +286,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             const MemSSA::CALLMU* mu = SVFUtil::cast<CALLMU>(*pi);
-            addActualINSVFGNode(mu->getCallSite(), mu->getMR()->getPointsTo(), mu->getVer());
+            addActualINSVFGNode(mu->getCallSite(), mu->getVer());
         }
     }
     /// initialize memory SSA callsite chi nodes
@@ -294,7 +296,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             const MemSSA::CALLCHI* chi = SVFUtil::cast<CALLCHI>(*pi);
-            addActualOUTSVFGNode(chi->getCallSite(), chi->getResVer(), chi->getMR()->getPointsTo());
+            addActualOUTSVFGNode(chi->getCallSite(), chi->getResVer());
         }
 
     }
