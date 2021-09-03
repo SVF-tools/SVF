@@ -90,7 +90,6 @@ public:
 class FormalINSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::ENTRYCHI* chi;
     const SVFFunction* fun;
 
 public:
@@ -99,11 +98,6 @@ public:
     {
         cpts = resVer->getMR()->getPointsTo();
         fun = func;
-    }
-    /// EntryCHI
-    inline const MemSSA::ENTRYCHI* getEntryChi() const
-    {
-        return chi;
     }
 
     inline const SVFFunction* getFunction() const
@@ -136,19 +130,12 @@ public:
 class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::RETMU* mu;
     const SVFFunction* fun;
     const MRVer* ver;
 
 public:
     /// Constructor
     FormalOUTSVFGNode(NodeID id, const MRVer* ver, const SVFFunction* func);
-
-    /// RetMU
-    inline const MemSSA::RETMU* getRetMU() const
-    {
-        return mu;
-    }
 
     inline const SVFFunction* getFunction() const
     {
@@ -185,7 +172,6 @@ public:
 class ActualINSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::CALLMU* mu;
     const CallBlockNode* cs;
     const MRVer* ver;
 public:
@@ -201,11 +187,7 @@ public:
     {
         return cs;
     }
-    /// CallMU
-    inline const MemSSA::CALLMU* getCallMU() const
-    {
-        return mu;
-    }
+
     /// Ver
     inline const MRVer* getVer() const
     {
@@ -239,7 +221,6 @@ public:
 class ActualOUTSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::CALLCHI* chi;
     const CallBlockNode* cs;
 
 public:
@@ -253,11 +234,6 @@ public:
     inline const CallBlockNode* getCallSite() const
     {
         return cs;
-    }
-    /// CallCHI
-    inline const MemSSA::CALLCHI* getCallCHI() const
-    {
-        return chi;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
