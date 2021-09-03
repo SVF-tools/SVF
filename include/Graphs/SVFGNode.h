@@ -95,9 +95,9 @@ private:
 
 public:
     /// Constructor
-    FormalINSVFGNode(NodeID id, const PointsTo pointsTo, const SVFFunction* func): MRSVFGNode(id, FPIN)
+    FormalINSVFGNode(NodeID id, const MRVer* resVer, const SVFFunction* func): MRSVFGNode(id, FPIN)
     {
-        cpts = pointsTo;
+        cpts = resVer->getMR()->getPointsTo();
         fun = func;
     }
     /// EntryCHI
@@ -142,7 +142,7 @@ private:
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const PointsTo pointsTo, const MRVer* ver, const SVFFunction* func);
+    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const SVFFunction* func);
 
     /// RetMU
     inline const MemSSA::RETMU* getRetMU() const
@@ -190,10 +190,10 @@ private:
     const MRVer* ver;
 public:
     /// Constructor
-    ActualINSVFGNode(NodeID id, const CallBlockNode* c, const PointsTo pointsTo, const MRVer* mrver):
+    ActualINSVFGNode(NodeID id, const CallBlockNode* c, const MRVer* mrver):
         MRSVFGNode(id, APIN), cs(c)
     {
-        cpts = pointsTo;
+        cpts = mrver->getMR()->getPointsTo();
         ver = mrver;
     }
     /// Callsite
@@ -244,10 +244,10 @@ private:
 
 public:
     /// Constructor
-    ActualOUTSVFGNode(NodeID id, const CallBlockNode* cal, const PointsTo pointsTo):
+    ActualOUTSVFGNode(NodeID id, const CallBlockNode* cal, const MRVer* resVer):
         MRSVFGNode(id, APOUT), cs(cal)
     {
-        cpts = pointsTo;
+        cpts = resVer->getMR()->getPointsTo();
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const

@@ -179,9 +179,9 @@ const Value* ArgumentVFGNode::getValue() const {
 }
 
 
-FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const PointsTo pointsTo, const MRVer* mrVer, const SVFFunction* func): MRSVFGNode(id, FPOUT)
+FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const SVFFunction* func): MRSVFGNode(id, FPOUT)
 {
-    cpts = pointsTo;
+    cpts = mrVer->getMR()->getPointsTo();
     fun = func;
     ver = mrVer;
 }
