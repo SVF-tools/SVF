@@ -91,6 +91,7 @@ class FormalINSVFGNode : public MRSVFGNode
 {
 private:
     const SVFFunction* fun;
+    const MRVer* ver;
 
 public:
     /// Constructor
@@ -98,11 +99,23 @@ public:
     {
         cpts = resVer->getMR()->getPointsTo();
         fun = func;
+        ver = resVer;
     }
 
     inline const SVFFunction* getFunction() const
     {
         return fun;
+    }
+
+    /// Return points-to of the MR
+    inline const PointsTo& getPointsTo() const
+    {
+        return cpts;
+    }
+
+    inline const MRVer* getVer() const
+    {
+        return ver;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -222,6 +235,7 @@ class ActualOUTSVFGNode : public MRSVFGNode
 {
 private:
     const CallBlockNode* cs;
+    const MRVer* ver;
 
 public:
     /// Constructor
@@ -229,11 +243,24 @@ public:
         MRSVFGNode(id, APOUT), cs(cal)
     {
         cpts = resVer->getMR()->getPointsTo();
+        ver = resVer;
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
     {
         return cs;
+    }
+
+    /// Return points-to of the MR
+    inline const PointsTo& getPointsTo() const
+    {
+        return cpts;
+    }
+
+    /// Ver
+    inline const MRVer* getVer() const
+    {
+        return ver;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -270,11 +297,6 @@ protected:
 
 public:
     /// Constructor
-    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def)
-    {
-        cpts = def->getMR()->getPointsTo();
-    }
-
     MSSAPHISVFGNode(NodeID id, const PointsTo pointsTo,VFGNodeK k = MPhi): MRSVFGNode(id, k)
     {
         cpts = pointsTo;
@@ -381,9 +403,9 @@ class InterMSSAPHISVFGNode : public MSSAPHISVFGNode
 
 public:
     /// Constructor interPHI for formal parameter
-    InterMSSAPHISVFGNode(NodeID id, const FormalINSVFGNode* fi) : MSSAPHISVFGNode(id, fi->getEntryChi(), MInterPhi),fun(fi->getFun()),callInst(nullptr) {}
+    InterMSSAPHISVFGNode(NodeID id, const FormalINSVFGNode* fi) : MSSAPHISVFGNode(id, fi->getPointsTo(), MInterPhi),fun(fi->getFun()),callInst(nullptr) {}
     /// Constructor interPHI for actual return
-    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getCallCHI(), MInterPhi), fun(nullptr),callInst(ao->getCallSite()) {}
+    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getPointsTo(), MInterPhi), fun(nullptr),callInst(ao->getCallSite()) {}
 
     inline bool isFormalINPHI() const
     {

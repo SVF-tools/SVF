@@ -49,9 +49,9 @@ const std::string FormalINSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalINSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
-    rawstr << getEntryChi()->getMR()->getMRID() << "V_" << getEntryChi()->getResVer()->getSSAVersion() <<
-            " = ENCHI(MR_" << getEntryChi()->getMR()->getMRID() << "V_" << getEntryChi()->getOpVer()->getSSAVersion() << ")\n";
-    rawstr << getEntryChi()->getMR()->dumpStr() << "\n";
+    rawstr << getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() <<
+            " = ENCHI(MR_" << getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() << ")\n";
+    rawstr << getVer()->getMR()->dumpStr() << "\n";
     return rawstr.str();
 }
 
@@ -59,8 +59,8 @@ const std::string FormalOUTSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FormalOUTSVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
-    rawstr << "RETMU(" << getRetMU()->getMR()->getMRID() << "V_" << getRetMU()->getVer()->getSSAVersion() << ")\n";
-                rawstr  << getRetMU()->getMR()->dumpStr() << "\n";
+    rawstr << "RETMU(" << getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() << ")\n";
+                rawstr  << getVer()->getMR()->dumpStr() << "\n";
     return rawstr.str();
 }
 
@@ -68,8 +68,8 @@ const std::string ActualINSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualINSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
-    rawstr << "CSMU(" << getCallMU()->getMR()->getMRID() << "V_" << getCallMU()->getVer()->getSSAVersion() << ")\n";
-                rawstr << getCallMU()->getMR()->dumpStr() << "\n";
+    rawstr << "CSMU(" << getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() << ")\n";
+                rawstr << getVer()->getMR()->dumpStr() << "\n";
                 rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]";
     return rawstr.str();
 }
@@ -78,9 +78,9 @@ const std::string ActualOUTSVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ActualOUTSVFGNode ID: " << getId() << " at callsite: " <<  *getCallSite()->getCallSite() << " {fun: " << getFun()->getName() << "}";
-    rawstr <<  getCallCHI()->getMR()->getMRID() << "V_" << getCallCHI()->getResVer()->getSSAVersion() <<
-           " = CSCHI(MR_" << getCallCHI()->getMR()->getMRID() << "V_" << getCallCHI()->getOpVer()->getSSAVersion() << ")\n";
-    rawstr << getCallCHI()->getMR()->dumpStr() << "\n";
+    rawstr <<  getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() <<
+           " = CSCHI(MR_" << getVer()->getMR()->getMRID() << "V_" << getVer()->getSSAVersion() << ")\n";
+    rawstr << getVer()->getMR()->dumpStr() << "\n";
     rawstr << "CS[" << getSourceLoc(getCallSite()->getCallSite()) << "]" ;
     return rawstr.str();
 }
