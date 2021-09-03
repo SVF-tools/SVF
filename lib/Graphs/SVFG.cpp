@@ -89,14 +89,14 @@ const std::string MSSAPHISVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "MSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
-    rawstr << "MR_" << getRes()->getMR()->getMRID()
-           << "V_" << getRes()->getResVer()->getSSAVersion() << " = PHI(";
+    rawstr << "MR_" << getResVer()->getMR()->getMRID()
+           << "V_" << getResVer()->getSSAVersion() << " = PHI(";
     for (MemSSA::PHI::OPVers::const_iterator it = opVerBegin(), eit = opVerEnd();
             it != eit; it++)
         rawstr << "MR_" << it->second->getMR()->getMRID() << "V_" << it->second->getSSAVersion() << ", ";
     rawstr << ")\n";
 
-    rawstr << getRes()->getMR()->dumpStr();
+    rawstr << getResVer()->getMR()->dumpStr();
     rawstr << getSourceLoc(&getICFGNode()->getBB()->back());
     return rawstr.str();
 }

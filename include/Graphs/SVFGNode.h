@@ -292,7 +292,7 @@ public:
     typedef Map<u32_t,const MRVer*> OPVers;
 
 protected:
-    const MemSSA::MDEF* res;
+    const MRVer* resVer; 
     OPVers opVers;
 
 public:
@@ -302,6 +302,16 @@ public:
         cpts = pointsTo;
     }
 
+    MSSAPHISVFGNode(NodeID id, const MRVer* resVer,VFGNodeK k = MPhi): MRSVFGNode(id, k)
+    {
+        cpts = resVer->getMR()->getPointsTo();
+        resVer = resVer; 
+    }
+      /// Ver
+    inline const MRVer* getResVer() const
+    {
+        return resVer;
+    }
     /// MSSA phi operands
     //@{
     inline const MRVer* getOpVer(u32_t pos) const
@@ -313,10 +323,6 @@ public:
     inline void setOpVer(u32_t pos, const MRVer* node)
     {
         opVers[pos] = node;
-    }
-    inline const MemSSA::MDEF* getRes() const
-    {
-        return res;
     }
     inline u32_t getOpVerNum() const
     {
@@ -363,7 +369,7 @@ class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
 
 public:
     /// Constructor
-    IntraMSSAPHISVFGNode(NodeID id, const PointsTo pointsTo): MSSAPHISVFGNode(id, pointsTo, MIntraPhi)
+    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer): MSSAPHISVFGNode(id, resVer, MIntraPhi)
     {
     }
 
