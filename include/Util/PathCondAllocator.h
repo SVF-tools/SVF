@@ -47,7 +47,9 @@ class PathCondAllocator
 public:
     static u32_t totalCondNum;
 
-    typedef CondExpr Condition;
+    typedef DdNode Condition;     /// bdd condition
+    //typedef CondExpr Condition;   /// z3 condition
+
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
     typedef Map<const Condition*, const Instruction* > CondToTermInstMap;	// map a condition to its branch instruction
@@ -286,7 +288,7 @@ private:
     const Value* curEvalVal;			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
-    CondManager condMgr;		///< bbd manager
+    BddCondManager condMgr;		///< bbd manager
     //CondManager condMgr;		///< z3 manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
     IndexToConditionMap indexToCondMap;
