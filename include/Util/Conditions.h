@@ -55,9 +55,6 @@ private:
 class CondManager{
 
 public:
-    typedef CondExpr Condition;
-    //typedef DdNode Condition;
-
     /// Constructor
     CondManager();
 

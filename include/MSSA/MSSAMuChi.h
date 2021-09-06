@@ -166,7 +166,7 @@ private:
 public:
     /// Constructor/Destructor for MU
     //@{
-    LoadMU(const BasicBlock* b,const LoadPE* i, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    LoadMU(const BasicBlock* b,const LoadPE* i, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::LoadMSSAMU,m,c), inst(i), bb(b)
     {
     }
@@ -221,7 +221,7 @@ private:
 public:
     /// Constructor/Destructor for MU
     //@{
-    CallMU(const CallBlockNode* cs, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    CallMU(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::CallMSSAMU,m,c), callsite(cs)
     {
     }
@@ -275,7 +275,7 @@ private:
 public:
     /// Constructor/Destructor for MU
     //@{
-    RetMU(const SVFFunction* f, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    RetMU(const SVFFunction* f, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::RetMSSAMU,m,c), fun(f)
     {
     }
@@ -460,7 +460,7 @@ private:
 public:
     /// Constructors for StoreCHI
     //@{
-    StoreCHI(const BasicBlock* b, const StorePE* i, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    StoreCHI(const BasicBlock* b, const StorePE* i, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::StoreMSSACHI,m,c), bb(b), inst(i)
     {
     }
@@ -519,7 +519,7 @@ private:
 public:
     /// Constructors for StoreCHI
     //@{
-    CallCHI(const CallBlockNode* cs, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    CallCHI(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs)
     {
     }
@@ -576,7 +576,7 @@ private:
 public:
     /// Constructors for EntryCHI
     //@{
-    EntryCHI(const SVFFunction* f, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    EntryCHI(const SVFFunction* f, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::EntryMSSACHI,m,c),fun(f)
     {
     }
@@ -632,7 +632,7 @@ private:
 public:
     /// Constructors for PHI
     //@{
-    MSSAPHI(const BasicBlock* b, const MemRegion* m, Cond c = CondManager::getTrueCond()) :
+    MSSAPHI(const BasicBlock* b, const MemRegion* m, Cond c = true) :
         MSSADEF(MSSADEF::SSAPHI,m), bb(b), cond(c)
     {
     }

@@ -40,8 +40,8 @@ using namespace SVFUtil;
 u64_t DPItem::maximumBudget = ULONG_MAX - 1;
 u32_t ContextCond::maximumCxtLen = 0;
 u32_t ContextCond::maximumCxt = 0;
-u32_t VFPathCond::maximumPathLen = 0;
-u32_t VFPathCond::maximumPath = 0;
+u32_t ContextCond::maximumPathLen = 0;
+u32_t ContextCond::maximumPath = 0;
 
 u32_t PathCondAllocator::totalCondNum = 0;
 
