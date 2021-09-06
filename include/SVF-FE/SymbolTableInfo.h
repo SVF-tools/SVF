@@ -84,9 +84,6 @@ private:
     /// Max field limit
     static u32_t maxFieldLimit;
 
-    /// Invoke llvm passes to modify module
-    void prePassSchedule(SVFModule* svfModule);
-
     /// Clean up memory
     void destroy();
 

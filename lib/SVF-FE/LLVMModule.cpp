@@ -32,7 +32,7 @@
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/BreakConstantExpr.h"
 
 using namespace std;
 using namespace SVF;
@@ -101,15 +101,36 @@ void LLVMModuleSet::build()
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
+    prePassSchedule();
+}
 
-    if (!SVFModule::pagReadFromTXT()) {
-        /// building symbol table
-        DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
-        symInfo->buildMemModel(svfModule);
+/*!
+ * Invoke llvm passes to modify module
+ */
+void LLVMModuleSet::prePassSchedule()
+{
+    assert(svfModule && "svfModule not initialized?");
+
+    /// BreakConstantGEPs Pass
+    std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    {
+        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+        p1->runOnModule(*module);
     }
 
+    /// MergeFunctionRets Pass
+    std::unique_ptr<UnifyFunctionExitNodes> p2 =
+        std::make_unique<UnifyFunctionExitNodes>();
+    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
+    {
+        Function *fun = *F;
+        if (fun->isDeclaration())
+            continue;
+        p2->runOnFunction(*fun);
+    }
 }
+
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {

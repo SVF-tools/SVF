@@ -48,6 +48,7 @@ int main(int argc, char ** argv)
                                 "Whole Program Points-to Analysis\n");
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    svfModule->buildSymbolTableInfo();
 
     WPAPass *wpa = new WPAPass();
     wpa->runOnModule(svfModule);
