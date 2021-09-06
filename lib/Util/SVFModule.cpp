@@ -22,6 +22,10 @@
 
 
 #include "Util/SVFModule.h"
+#include "SVF-FE/SymbolTableInfo.h"
+#include "Util/SVFUtil.h"
+
+using namespace SVF;
 
 void SVFModule::buildSymbolTableInfo()
 {
