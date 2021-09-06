@@ -234,6 +234,8 @@ private:
     void initialize();
     void buildFunToFunMap();
     void buildGlobalDefToRepMap();
+    /// Invoke llvm passes to modify module
+    void prePassSchedule();
 };
 
 } // End namespace SVF

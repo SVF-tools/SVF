@@ -284,7 +284,6 @@ void SrcSnkDDA::dumpSlices()
 void SrcSnkDDA::printBDDStat()
 {
 
-    outs() << "BDD Mem usage: " << PathCondAllocator::getMemUsage() << "\n";
-    outs() << "BDD Number: " << PathCondAllocator::getCondNum() << "\n";
-    outs() << "BDD max live number: " << PathCondAllocator::getMaxLiveCondNumber() << "\n";
+    outs() << "BDD Mem usage: " << getPathAllocator()->getMemUsage() << "\n";
+    outs() << "BDD Number: " << getPathAllocator()->getCondNum() << "\n";
 }

@@ -11,6 +11,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/DPItem.h"
 #include "DDA/DDAVFSolver.h"
+#include "SVF-FE/DataFlowUtil.h"
 
 namespace SVF
 {

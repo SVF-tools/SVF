@@ -49,7 +49,7 @@ class MemRegion
 {
 
 public:
-    typedef DdNode* Condition;
+    typedef bool Condition;
 private:
     /// region ID 0 is reserved
     static Size_t totalMRNum;

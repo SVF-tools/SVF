@@ -31,7 +31,6 @@
 #define CONDVAR_H_
 
 #include "Util/SVFUtil.h"
-#include "Util/Conditions.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace SVF

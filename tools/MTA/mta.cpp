@@ -20,6 +20,7 @@ int main(int argc, char ** argv)
                                 "MTA Analysis\n");
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    svfModule->buildSymbolTableInfo();
 
     MTA *mta = new MTA();
     mta->runOnModule(svfModule);

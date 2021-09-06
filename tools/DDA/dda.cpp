@@ -51,6 +51,7 @@ int main(int argc, char ** argv)
                                 "Demand-Driven Points-to Analysis\n");
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    svfModule->buildSymbolTableInfo();
 
     DDAPass *dda = new DDAPass();
     dda->runOnModule(svfModule);

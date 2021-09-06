@@ -169,7 +169,7 @@ void DDAStat::performStatPerQuery(NodeID ptr)
     NumPerQueryStatMap["IndEdgeResolved"] = getPTA()->getNumOfResolvedIndCallEdge() - _NumOfIndCallEdgeSolved;
     NumPerQueryStatMap["AvgDPMAtLoc"] = avgDPMAtLoc;
     NumPerQueryStatMap["MaxDPMAtLoc"] = maxNumOfDPMPerLoc;
-    NumPerQueryStatMap["MaxPathPerQuery"] = VFPathCond::maximumPath;
+    NumPerQueryStatMap["MaxPathPerQuery"] = ContextCond::maximumPath;
     NumPerQueryStatMap["MaxCxtPerQuery"] = ContextCond::maximumCxt;
     NumPerQueryStatMap["NumOfMustAA"] = _NumOfMustAliases;
     NumPerQueryStatMap["NumOfInfePath"] = _NumOfInfeasiblePath;
@@ -229,7 +229,7 @@ void DDAStat::performStat()
     PTNumStatMap["NumOfStepInCycle"] =  _TotalNumOfStepInCycle;
     timeStatMap["AvgDPMAtLoc"] = (double)_AvgNumOfDPMAtSVFGNode/_TotalNumOfQuery;
     PTNumStatMap["MaxDPMAtLoc"] = _MaxNumOfDPMAtSVFGNode;
-    PTNumStatMap["MaxPathPerQuery"] = VFPathCond::maximumPath;
+    PTNumStatMap["MaxPathPerQuery"] = ContextCond::maximumPath;
     PTNumStatMap["MaxCxtPerQuery"] = ContextCond::maximumCxt;
     PTNumStatMap["MaxCPtsSize"] = _MaxCPtsSize;
     PTNumStatMap["MaxPtsSize"] = _MaxPtsSize;

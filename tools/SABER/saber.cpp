@@ -57,6 +57,7 @@ int main(int argc, char ** argv)
                                 "Source-Sink Bug Detector\n");
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    svfModule->buildSymbolTableInfo();
 
     LeakChecker *saber;
 
