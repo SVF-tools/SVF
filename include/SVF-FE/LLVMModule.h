@@ -61,7 +61,7 @@ private:
     GlobalDefToRepMapTy GlobalDefToRepMap;
 
     /// Constructor
-    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr) {}
+    LLVMModuleSet(): svfModule(nullptr), cxts(nullptr), preProcessed(false) {}
 
     void build();
 
@@ -87,6 +87,8 @@ public:
 		assert(svfModule && "svfModule has not been built yet!");
 		return svfModule;
 	}
+
+    void preProcessBCs(std::vector<std::string> &moduleNameVec);
 
     u32_t getModuleNum() const
     {
@@ -236,6 +238,7 @@ private:
     void buildGlobalDefToRepMap();
     /// Invoke llvm passes to modify module
     void prePassSchedule();
+    bool preProcessed;
 };
 
 } // End namespace SVF

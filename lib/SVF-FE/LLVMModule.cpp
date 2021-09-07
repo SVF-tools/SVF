@@ -71,37 +71,45 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 {
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
-    // We read PAG from LLVM IR
-    if(Options::Graphtxt.getValue().empty())
-    {
-        if(moduleNameVec.empty())
-        {
-            SVFUtil::outs() << "no LLVM bc file is found!\n";
-            exit(0);
-        }
-        //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
-    }
-    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
-    else
-        SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
+    loadModules(moduleNameVec);
 
     if(!moduleNameVec.empty())
         svfModule = new SVFModule(*moduleNameVec.begin());
     else
         svfModule = new SVFModule();
 
-    loadModules(moduleNameVec);
     build();
 
     return svfModule;
 }
+
+void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
+{
+    loadModules(moduleNameVec);
+    prePassSchedule();
+
+    std::string preProcessSuffix = ".pre.bc";
+    // Get the existing module names, remove old extention, add preProcessSuffix
+    for (u32_t i = 0; i < moduleNameVec.size(); i++)
+    {
+        u32_t lastIndex = moduleNameVec[i].find_last_of("."); 
+        std::string rawName = moduleNameVec[i].substr(0, lastIndex);
+        moduleNameVec[i] = (rawName + preProcessSuffix);
+    }
+
+    dumpModulesToFile(preProcessSuffix);
+    preProcessed = true;
+}
+
+
 
 void LLVMModuleSet::build()
 {
     initialize();
     buildFunToFunMap();
     buildGlobalDefToRepMap();
-    prePassSchedule();
+    if(preProcessed==false)
+        prePassSchedule();
 }
 
 /*!
@@ -122,18 +130,37 @@ void LLVMModuleSet::prePassSchedule()
     /// MergeFunctionRets Pass
     std::unique_ptr<UnifyFunctionExitNodes> p2 =
         std::make_unique<UnifyFunctionExitNodes>();
-    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
     {
-        Function *fun = *F;
-        if (fun->isDeclaration())
-            continue;
-        p2->runOnFunction(*fun);
+        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+        for (auto F = module->begin(), E = module->end(); F != E; ++F)
+        {
+            Function &fun = *F;
+            if (fun.isDeclaration())
+                continue;
+            p2->runOnFunction(fun);
+        }
     }
 }
 
 
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
+
+        // We read PAG from LLVM IR
+    if(Options::Graphtxt.getValue().empty())
+    {
+        if(moduleNameVec.empty())
+        {
+            SVFUtil::outs() << "no LLVM bc file is found!\n";
+            exit(0);
+        }
+        //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
+    }
+    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+    else
+        SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
+        
     //
     // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
     // We should use only one LLVMContext object for multiple modules in the same thread.
