@@ -99,6 +99,8 @@ void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
 
     dumpModulesToFile(preProcessSuffix);
     preProcessed = true;
+
+    releaseLLVMModuleSet();
 }
 
 
@@ -117,8 +119,6 @@ void LLVMModuleSet::build()
  */
 void LLVMModuleSet::prePassSchedule()
 {
-    assert(svfModule && "svfModule not initialized?");
-
     /// BreakConstantGEPs Pass
     std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
     for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
