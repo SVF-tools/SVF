@@ -27,6 +27,7 @@
  *      Author: Yulei Sui
  */
 
+#include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/SVFG.h"
@@ -218,6 +219,8 @@ void SVFG::buildSVFG()
     stat->startClk();
 
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+    if (!Options::WriteSVFG.empty())
+        writeToFile(Options::WriteSVFG);
 
     stat->ATVFNodeStart();
     addSVFGNodesForAddrTakenVars();
@@ -229,6 +232,29 @@ void SVFG::buildSVFG()
     connectIndirectSVFGEdges();
     stat->indVFEdgeEnd();
 
+}
+
+void SVFG::writeToFile(const string& filename) 
+{
+    outs() << "Writing SVFG analysis to '" << filename << "'...";
+    error_code err;
+    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
+    if (err)
+    {
+        outs() << "  error opening file for writing!\n";
+        F.os().clear_error();
+        return;
+    }
+    F.os() << "test";
+
+    // Job finish and close file
+    F.os().close();
+    if (!F.os().has_error())
+    {
+        outs() << "\n";
+        F.keep();
+        return;
+    }
 }
 
 /*
