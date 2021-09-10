@@ -245,7 +245,14 @@ void SVFG::writeToFile(const string& filename)
         F.os().clear_error();
         return;
     }
-    F.os() << "test";
+
+
+     for(iterator it = begin(), eit = end(); it!=eit; ++it)
+    {
+        NodeID nodeId = it->first;
+        const SVFGNode* node = it->second;
+        F.os() << nodeId << "\n"; 
+    }
 
     // Job finish and close file
     F.os().close();
