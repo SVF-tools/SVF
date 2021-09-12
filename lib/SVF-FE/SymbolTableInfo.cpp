@@ -261,29 +261,8 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
         //The int-value object of the current index operand
         //  (may not be constant for arrays).
         ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
- 
-        // Handling struct here
-        if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
-        {
-            // If the operand after src pointer is non-constant, it is likely array access, while the struct pointer is an element pointer in an array
-            // field_idx = getelementptr struct_A, %struct_A* %1, i64 %idx, where idx is a non-constant offset
-            if(!op && gi.getOperand() == gepOp->getOperand(1)){
-                continue;
-            }
-            assert(op && "non-const struct index in GEP");
-            //The actual index
-            Size_t idx = op->getSExtValue();
-            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
-            if ((unsigned)idx >= so.size())
-            {
-                outs() << "!! Struct index out of bounds" << idx << "\n";
-                assert(0);
-            }
-            //add the translated offset
-            ls.setFldIdx(ls.getOffset() + so[idx]);
-        }
-
-        if ((*gi)->isSingleValueType())
+	    
+	if ((*gi)->isSingleValueType())
         {
             if(!op){
                 // Handle non-constant index
@@ -304,6 +283,27 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             // (This handling is unsound since the program itself is not ANSI-compliant)
             ls.setFldIdx(0);
             ls.setByteOffset(idx);
+        }
+ 
+        // Handling struct here
+        else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+        {
+            // If the operand after src pointer is non-constant, it is likely array access, while the struct pointer is an element pointer in an array
+            // field_idx = getelementptr struct_A, %struct_A* %1, i64 %idx, where idx is a non-constant offset
+            if(!op && gi.getOperand() == gepOp->getOperand(1)){
+                continue;
+            }
+            assert(op && "non-const struct index in GEP");
+            //The actual index
+            Size_t idx = op->getSExtValue();
+            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
+            if ((unsigned)idx >= so.size())
+            {
+                outs() << "!! Struct index out of bounds" << idx << "\n";
+                assert(0);
+            }
+            //add the translated offset
+            ls.setFldIdx(ls.getOffset() + so[idx]);
         }
     }
     return true;
