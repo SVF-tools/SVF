@@ -91,17 +91,23 @@ class FormalINSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
+    const FunEntryBlockNode* funEntry; 
 
 public:
     /// Constructor
-    FormalINSVFGNode(NodeID id, const MRVer* resVer): MRSVFGNode(id, FPIN)
+    FormalINSVFGNode(NodeID id, const MRVer* resVer, const FunEntryBlockNode* funEntry): MRSVFGNode(id, FPIN)
     {
         cpts = resVer->getMR()->getPointsTo();
         ver = resVer;
+        funEntry = funEntry; 
     }
     inline const MRVer* getMRVer() const
     {
         return ver;
+    }
+    inline const FunEntryBlockNode* getFunEntryNode() const
+    {
+        return funEntry;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -130,10 +136,16 @@ class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
+    const FunExitBlockNode* funExit; 
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const MRVer* ver);
+    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitBlockNode* funExit);
+
+    inline const FunExitBlockNode* getFunExitNode() const
+    {
+        return funExit;
+    }
 
     inline const MRVer* getMRVer() const
     {
@@ -335,9 +347,33 @@ class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
 {
 
 public:
+    const llvm::BasicBlock* basicBlock;
+    const MRVer* resVer;
     /// Constructor
-    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer): MSSAPHISVFGNode(id, resVer, MIntraPhi)
+    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer, const llvm::BasicBlock* basicBlock): MSSAPHISVFGNode(id, resVer, MIntraPhi)
     {
+        basicBlock = basicBlock; 
+        resVer = resVer; 
+    }
+
+     inline const MRVer* getMRVer() const
+    {
+        return resVer;
+    }
+
+    inline OPVers::const_iterator opVerBegin() const
+    {
+        return opVers.begin();
+    }
+
+    inline OPVers::const_iterator opVerEnd() const
+    {
+        return opVers.end();
+    }
+
+    inline const llvm::BasicBlock* getBasicBlock() const
+    {
+        return basicBlock;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

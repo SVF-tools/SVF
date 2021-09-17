@@ -398,7 +398,7 @@ protected:
     /// Add memory Function entry chi SVFG node
     inline void addFormalINSVFGNode(const FunEntryBlockNode* funEntry,  const MRVer* resVer)
     {
-        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++, resVer);
+        FormalINSVFGNode* sNode = new FormalINSVFGNode(totalVFGNode++, resVer, funEntry);
         addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(funEntry->getFun()));
         setDef(resVer,sNode);
         funToFormalINMap[funEntry->getFun()].set(sNode->getId());
@@ -407,7 +407,7 @@ protected:
     /// Add memory Function return mu SVFG node
     inline void addFormalOUTSVFGNode(const FunExitBlockNode* funExit, const MRVer* ver)
     {
-        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++, ver);
+        FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(totalVFGNode++, ver, funExit);
         addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(funExit->getFun()));
         funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
     }
@@ -432,7 +432,7 @@ protected:
     /// Add memory SSA PHI SVFG node
     inline void addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer)
     {
-        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, resVer);
+        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, resVer, basicBlock);
         addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(&(basicBlock->front())));
         for(MemSSA::PHI::OPVers::const_iterator it = opVerBegin, eit=opVerEnd; it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);

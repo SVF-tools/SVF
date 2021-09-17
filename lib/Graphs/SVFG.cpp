@@ -179,10 +179,11 @@ const Value* ArgumentVFGNode::getValue() const {
 }
 
 
-FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer): MRSVFGNode(id, FPOUT)
+FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExitBlockNode* funExit): MRSVFGNode(id, FPOUT)
 {
     cpts = mrVer->getMR()->getPointsTo();
     ver = mrVer;
+    funExit = funExit; 
 }
 
 /*!
@@ -254,68 +255,11 @@ void SVFG::writeToFile(const string& filename)
     {
         NodeID nodeId = it->first;
         const SVFGNode* node = it->second;
-
-        if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
+        if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
-        }
-        else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
-        {
-        }
-        else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
-        {
-            F.os() << nodeId << " FormalINSVFGNode\n";
-        }
-        else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
-        {
-            F.os() << nodeId << " FormalOUTSVFGNode\n";
-        }
-        else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
-        {
-            F.os() << nodeId << " ActualINSVFGNode\n";
-
-        }
-        else if(SVFUtil::isa<ActualOUTSVFGNode>(node))
-        {
-            F.os() << nodeId << " ActualOUTSVFGNode\n";
-        }
-        else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
-        {
-        }
-    }
-
-    F.os() << "\n";
-
-    // edges
-    for(iterator it = begin(), eit = end(); it!=eit; ++it)
-    {
-        NodeID nodeId = it->first;
-        const SVFGNode* node = it->second;
-        if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
-        {
-            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadPE>(loadNode->getPAGEdge()));
-            for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
-            {
-                if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
-                {
-                    NodeID def = getDef(mu->getMRVer());
-                    // addIntraIndirectVFEdge(def,nodeId, mu->getMRVer()->getMR()->getPointsTo());
-                }
-            }
-        }
-        else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
-        {
-            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StorePE>(storeNode->getPAGEdge()));
-            for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
-            {
-                if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
-                {
-                    NodeID def = getDef(chi->getOpVer());
-                    // addIntraIndirectVFEdge(def,nodeId, chi->getOpVer()->getMR()->getPointsTo());
-                }
-            }
-        }
-        else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
-        {
+            //node
+            F.os() << nodeId << " FormalINSVFGNode " << "[";
+            //edges
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
@@ -328,14 +272,19 @@ void SVFG::writeToFile(const string& filename)
                 {
                     const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(*ait));
                     // addInterIndirectVFCallEdge(actualIn,formalIn,getCallSiteID(cs, formalIn->getFun()));
-                    F.os() << formalIn->getId() << "->" << actualIn->getId() << "\n";
+                    F.os() << actualIn->getId() << ",";
                 }
             }
+            F.os() << "] ";
+            //parameters
+            F.os() << "MRVer: "<< formalIn -> getMRVer() << " FunEntry: " << formalIn -> getFunEntryNode() << "\n";
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
+            //node
+            F.os() << nodeId << " FormalOUTSVFGNode " << "[";
+            //edges
             PTACallGraphEdge::CallInstSet callInstSet;
-            // const MemSSA::RETMU* retMu = formalOut->getRetMU();
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
@@ -346,39 +295,56 @@ void SVFG::writeToFile(const string& filename)
                 for(ActualOUTSVFGNodeSet::iterator ait = actualOuts.begin(), aeit = actualOuts.end(); ait!=aeit; ++ait)
                 {
                     const ActualOUTSVFGNode* actualOut = SVFUtil::cast<ActualOUTSVFGNode>(getSVFGNode(*ait));
-                    addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(cs, formalOut->getFun()));
-                    F.os() << formalOut->getId() << "->" << actualOut->getId() << "\n";
+                    // addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(cs, formalOut->getFun()));
+                    F.os() << actualOut->getId() << ",";
                 }
             }
+            F.os() << "] ";
             NodeID def = getDef(formalOut->getMRVer());
-            addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
+            // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
+            //parameters
+            F.os() << "MRVer: "<< formalOut -> getMRVer() << " FunExit: " << formalOut -> getFunExitNode() << "\n";
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
+            //node
+            F.os() << nodeId << " ActualINSVFGNode " << "[";
+            //edges
             const MRVer* ver = actualIn->getMRVer();
             NodeID def = getDef(ver);
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
-            F.os() << nodeId << "->" << def << "\n";
-
-
+            F.os() << def << "] ";
+            //parameters
+            F.os() << "MRVer: "<< actualIn -> getMRVer() << " Callsite: " << actualIn -> getCallSite() << "\n";
         }
-        else if(SVFUtil::isa<ActualOUTSVFGNode>(node))
+        else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
-            /// There's no need to connect actual out node to its definition site in the same function.
+            //node
+            F.os() << nodeId << " ActualOUTSVFGNode ";
+            //parameters
+            F.os() << "MRVer: "<< actualOut -> getMRVer() << " Callsite: " << actualOut -> getCallSite() << "\n";
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
+            //node
+            F.os() << nodeId << " PHISVFGNode " << "[";
+            //edges
             for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
                     it != eit; it++)
             {
                 const MRVer* op = it->second;
                 NodeID def = getDef(op);
                 // addIntraIndirectVFEdge(def,nodeId, op->getMR()->getPointsTo());
-                F.os() << nodeId << "->" << def << "\n";
+                F.os() << def << ",";
             }
+            F.os() << "] ";
+            //parameters
+            const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
+            F.os() << "MRVer: "<< intraPhiNode -> getMRVer() << " Basic Block: " << intraPhiNode -> getBasicBlock() << "\n";
+            // " OpVerBegin: " << &(phiNode->opVerBegin()) << " OpVerEnd: " << &(phiNode->opVerEnd()) << "\n";
         }
     }
-
+    F.os() << "\n";
     // Job finish and close file
     F.os().close();
     if (!F.os().has_error())
