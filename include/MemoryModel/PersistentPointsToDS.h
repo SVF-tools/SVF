@@ -319,6 +319,7 @@ public:
     virtual inline const KeySet& getRevPts(const Data&) override
     {
         assert(false && "PersistentDFPTData::getRevPts: not supported yet!");
+        return *(KeySet*)nullptr; // suppress -Werror=return-type
     }
 
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
