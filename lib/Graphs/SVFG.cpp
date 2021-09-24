@@ -277,7 +277,7 @@ void SVFG::writeToFile(const string& filename)
             }
             F.os() << "] ";
             //parameters
-            F.os() << "MRVer: "<< formalIn -> getMRVer() << " FunEntry: " << formalIn -> getFunEntryNode() << "\n";
+            F.os() << "MRVer: "<< *formalIn->getMRVer() << " FunEntry: " << formalIn->getFunEntryNode() << "\n";
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
@@ -303,7 +303,7 @@ void SVFG::writeToFile(const string& filename)
             NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            F.os() << "MRVer: "<< formalOut -> getMRVer() << " FunExit: " << formalOut -> getFunExitNode() << "\n";
+            F.os() << "MRVer: "<< *formalOut->getMRVer() << " FunExit: " << formalOut->getFunExitNode() << "\n";
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
@@ -315,14 +315,14 @@ void SVFG::writeToFile(const string& filename)
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
             F.os() << def << "] ";
             //parameters
-            F.os() << "MRVer: "<< actualIn -> getMRVer() << " Callsite: " << actualIn -> getCallSite() << "\n";
+            F.os() << "MRVer: "<< *ver << " Callsite: " << actualIn->getCallSite()->toString() << "\n";
         }
         else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             //node
             F.os() << nodeId << " ActualOUTSVFGNode ";
             //parameters
-            F.os() << "MRVer: "<< actualOut -> getMRVer() << " Callsite: " << actualOut -> getCallSite() << "\n";
+            F.os() << "MRVer: "<< *actualOut->getMRVer() << " Callsite: " << actualOut->getCallSite()->toString() << "\n";
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
@@ -340,10 +340,11 @@ void SVFG::writeToFile(const string& filename)
             F.os() << "] ";
             //parameters
             const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
-            F.os() << "MRVer: "<< intraPhiNode -> getMRVer() << " Basic Block: " << intraPhiNode -> getBasicBlock() << "\n";
-            // " OpVerBegin: " << &(phiNode->opVerBegin()) << " OpVerEnd: " << &(phiNode->opVerEnd()) << "\n";
+            // F.os() << "MRVer: "<< intraPhiNode->getMRVer() << " Basic Block: " << intraPhiNode->getBasicBlock() << "\n";
+            F.os() << "MRVer: "<< *phiNode->getResVer() << "\n";
         }
     }
+
     F.os() << "\n";
     // Job finish and close file
     F.os().close();

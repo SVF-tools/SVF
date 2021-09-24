@@ -276,7 +276,7 @@ public:
     typedef Map<u32_t,const MRVer*> OPVers;
 
 protected:
-    const MRVer* resVer; 
+    const MRVer* ver; 
     OPVers opVers;
 
 public:
@@ -284,12 +284,12 @@ public:
     MSSAPHISVFGNode(NodeID id, const MRVer* resVer,VFGNodeK k = MPhi): MRSVFGNode(id, k)
     {
         cpts = resVer->getMR()->getPointsTo();
-        resVer = resVer; 
+        ver = resVer; 
     }
       /// Ver
     inline const MRVer* getResVer() const
     {
-        return resVer;
+        return ver;
     }
     /// MSSA phi operands
     //@{
