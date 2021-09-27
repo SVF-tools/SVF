@@ -116,7 +116,7 @@ public:
     inline NodeBS exactCondElem(Condition* cond)
     {
         NodeBS elems;
-        condMgr.extractSubConds(cond,elems);
+        condMgr.extractSubConds(cond->getExpr(),elems);
         return elems;
     }
 

@@ -135,7 +135,7 @@ public:
     std::string dumpStr(const CondExpr* e) const;
 
     /// Extract sub conditions of this expression
-    void extractSubConds(const CondExpr* e,  NodeBS &support) const;
+    void extractSubConds(const z3::expr& e,  NodeBS &support) const;
 
     /// whether condition is satisfiable
     bool isSatisfiable(const z3::expr& e);

@@ -194,16 +194,15 @@ std::string CondManager::getMemUsage()
 }
 
 /// Extract sub conditions of this expression
-void CondManager::extractSubConds(const CondExpr *e, NodeBS &support) const
+void CondManager::extractSubConds(const z3::expr& e, NodeBS &support) const
 {
-//    if (e->getExpr().num_args() == 0)
-//        if (!e->getExpr().is_true() && !e->getExpr().is_false())
-//            support.set(e->getExpr().hash());
-//    for (u32_t i = 0; i < e->getExpr().num_args(); ++i) {
-//        const z3::expr &expr = e->getExpr().arg(i);
-//        if (!expr.is_true() && !expr.is_false())
-//            support.set(expr.hash());
-//    }
+    if (e.num_args() == 0)
+        if (!e.is_true() && !e.is_false())
+            support.set(e.hash());
+    for (u32_t i = 0; i < e.num_args(); ++i) {
+        const z3::expr &expr = e.arg(i);
+        extractSubConds(expr, support);
+    }
 }
 
 /// solve condition
