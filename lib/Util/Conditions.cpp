@@ -40,51 +40,130 @@ CondExpr* CondManager::falseCond = nullptr;
 /// Constructor
 CondManager::CondManager() : sol(cxt)
 {
-    trueCond = new CondExpr(cxt.bool_val(true));
-    falseCond = new CondExpr(cxt.bool_val(false));
+    const z3::expr &trueExpr = cxt.bool_val(true);
+    trueCond = new CondExpr(trueExpr);
+    allocatedConds[trueExpr.hash()] = trueCond;
+    const z3::expr &falseExpr = cxt.bool_val(false);
+    falseCond = new CondExpr(falseExpr);
+    allocatedConds[falseExpr.hash()] = falseCond;
 }
 
 /// Destructor
 CondManager::~CondManager()
 {
-    delete trueCond;
-    delete falseCond;
-    for (CondExpr *cond : allocatedConds)
+    for (const auto& it : allocatedConds)
     {
-        delete cond;
+        delete it.second;
     }
 }
 
 /// And operator for two expressions
 CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
 {
-    CondExpr *cond = new CondExpr(lhs->getExpr() && rhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+    if (lhs->getExpr().is_false() || rhs->getExpr().is_false())
+        return falseCond;
+    else if (lhs->getExpr().is_true()){
+        assert(allocatedConds.count(rhs->getExpr().hash()) && "rhs not in allocated conds");
+        return allocatedConds[rhs->getExpr().hash()];
+    } else if (rhs->getExpr().is_true()){
+        assert(allocatedConds.count(lhs->getExpr().hash()) && "lhs not in allocated conds");
+        return allocatedConds[lhs->getExpr().hash()];
+    } else {
+        const z3::expr& expr = (lhs->getExpr() && rhs->getExpr()).simplify();
+        if (allocatedConds.count(expr.hash()))
+            return allocatedConds[expr.hash()];
+        else{
+            Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
+            Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
+            for (const auto &e: rhs->getBrExprMap())
+                lhsBrMap.insert(e);
+            for (const auto &e: rhs->getSwitchValuesExprMap())
+                lhsSwitchValuesExprMap.insert(e);
+            CondExpr *cond = new CondExpr(expr);
+            cond->setBrExprMap(lhsBrMap);
+            cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
+            allocatedConds[expr.hash()] = cond;
+            return cond;
+        }
+    }
 }
 
 /// Or operator for two expressions
 CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
 {
-    CondExpr *cond = new CondExpr(lhs->getExpr() || rhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+    if (lhs->getExpr().is_true() || rhs->getExpr().is_true())
+        return trueCond;
+    else if (lhs->getExpr().is_false()){
+        assert(allocatedConds.count(rhs->getExpr().hash()) && "rhs not in allocated conds");
+        return allocatedConds[rhs->getExpr().hash()];
+    } else if (rhs->getExpr().is_false()){
+        assert(allocatedConds.count(lhs->getExpr().hash()) && "lhs not in allocated conds");
+        return allocatedConds[lhs->getExpr().hash()];
+    } else {
+        const z3::expr& expr = (lhs->getExpr() || rhs->getExpr()).simplify();
+        if (allocatedConds.count(expr.hash()))
+            return allocatedConds[expr.hash()];
+        else{
+            Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
+            Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
+            for (const auto &e: rhs->getBrExprMap())
+                lhsBrMap.insert(e);
+            for (const auto &e: rhs->getSwitchValuesExprMap())
+                lhsSwitchValuesExprMap.insert(e);
+            CondExpr *cond = new CondExpr(expr);
+            cond->setBrExprMap(lhsBrMap);
+            cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
+            allocatedConds[expr.hash()] = cond;
+            return cond;
+        }
+    }
 }
 
 /// Neg operator for an expression
 CondExpr* CondManager::NEG(const CondExpr *lhs)
 {
-    CondExpr *cond = new CondExpr(!lhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+    if (lhs->getExpr().is_true())
+        return falseCond;
+    else if (lhs->getExpr().is_false())
+        return trueCond;
+    else{
+        const z3::expr& expr = (!lhs->getExpr()).simplify();
+        if (allocatedConds.count(expr.hash()))
+            return allocatedConds[expr.hash()];
+        else{
+            CondExpr *cond = new CondExpr(expr);
+            cond->setBrExprMap(lhs->getBrExprMap());
+            cond->setSwitchValuesMap(lhs->getSwitchValuesExprMap());
+            allocatedConds[expr.hash()] = cond;
+            return cond;
+        }
+    }
 }
 
 /// Create a single condition
 CondExpr* CondManager::createCond(u32_t i)
 {
-    CondExpr *cond = new CondExpr(cxt.bv_const(std::to_string(i).c_str(), i));
-    allocatedConds.insert(cond);
-    return cond;
+    const z3::expr &expr = cxt.bool_const(("c" + std::to_string(i)).c_str());
+    if (allocatedConds.count(expr.hash()))
+        return allocatedConds[expr.hash()];
+    else{
+        CondExpr *cond = new CondExpr(expr);
+        allocatedConds[expr.hash()] = cond;
+        return cond;
+    }
+}
+
+/// Create a single condition
+CondExpr* CondManager::createCond(const z3::expr& e)
+{
+    z3::expr es = e.simplify();
+    if (allocatedConds.count(es.hash()))
+        return allocatedConds[es.hash()];
+    else{
+        CondExpr *cond = new CondExpr(es);
+        allocatedConds[es.hash()] = cond;
+        return cond;
+    }
 }
 
 /// Return the number of condition expressions
@@ -117,7 +196,25 @@ std::string CondManager::getMemUsage()
 /// Extract sub conditions of this expression
 void CondManager::extractSubConds(const CondExpr *e, NodeBS &support) const
 {
+//    if (e->getExpr().num_args() == 0)
+//        if (!e->getExpr().is_true() && !e->getExpr().is_false())
+//            support.set(e->getExpr().hash());
+//    for (u32_t i = 0; i < e->getExpr().num_args(); ++i) {
+//        const z3::expr &expr = e->getExpr().arg(i);
+//        if (!expr.is_true() && !expr.is_false())
+//            support.set(expr.hash());
+//    }
+}
 
+/// solve condition
+bool CondManager::isSatisfiable(const z3::expr& e){
+    sol.reset();
+    sol.add(e);
+    z3::check_result result = sol.check();
+    if (result == z3::sat || result == z3::unknown)
+        return true;
+    else
+        return false;
 }
 
 /// Print out one particular expression

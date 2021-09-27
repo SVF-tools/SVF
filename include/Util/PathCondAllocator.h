@@ -47,8 +47,10 @@ class PathCondAllocator
 public:
     static u32_t totalCondNum;
 
-    typedef DdNode Condition;     /// bdd condition
-    //typedef CondExpr Condition;   /// z3 condition
+//    typedef DdNode Condition;     /// bdd condition
+    typedef CondExpr Condition;   /// z3 condition
+    typedef z3::expr Z3Expr;
+    typedef z3::expr_vector Z3ExprVector;
 
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
@@ -58,7 +60,7 @@ public:
     typedef Map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
 
-    typedef Map<u32_t,Condition*> IndexToConditionMap;
+//    typedef Map<u32_t,Condition*> IndexToConditionMap;
 
     /// Constructor
     PathCondAllocator()
@@ -123,18 +125,20 @@ public:
         return condMgr.dumpStr(cond);
     }
     /// Given an index, get its condition
-    inline Condition* getCond(u32_t i) const
+    inline Condition* getCond(u32_t i)
     {
-        IndexToConditionMap::const_iterator it = indexToCondMap.find(i);
-        assert(it!=indexToCondMap.end() && "condition not found!");
-        return it->second;
+//        IndexToConditionMap::const_iterator it = indexToCondMap.find(i);
+//        assert(it!=indexToCondMap.end() && "condition not found!");
+//        return it->second;
+        return condMgr.getCond(i);
     }
     /// Create new BDD condition
     inline Condition* createNewCond(u32_t i)
     {
-        assert(indexToCondMap.find(i)==indexToCondMap.end() && "This should be fresh index to create new BDD");
+//        assert(indexToCondMap.find(i)==indexToCondMap.end() && "This should be fresh index to create new BDD");
         Condition* d = condMgr.createCond(i);
-        indexToCondMap[i] = d;
+        d->insertBrExpr(d->getExpr());
+//        indexToCondMap[i] = d;
         return d;
     }
     /// Allocate a new condition
@@ -204,6 +208,24 @@ public:
     /// Print out the path condition information
     void printPathCond();
 
+    /// whether condition is satisfiable
+    inline bool isSatisfiable(Condition* condition){
+        return condMgr.isSatisfiable(condition->getExpr());
+    }
+
+    /// whether condition is satisfiable for all possible boolean guards
+    bool isAllSatisfiable(Condition* condition);
+
+    /// enumerate all branch condition
+    void enumerateBranchConditions(Map<u32_t, Z3Expr>::const_iterator curit,
+                                   Map<u32_t, Z3Expr>::const_iterator eit,
+                                   std::vector<Z3Expr> &tmpExpr,
+                                   std::vector<std::vector<Z3Expr>> &exprVec,
+                                   Map<u32_t, std::vector<uint64_t>> &switchValues);
+
+    /// enumerate all branch condition
+    Z3ExprVector enumerateConditions(Condition *condition);
+
 private:
 
     /// Allocate path condition for every basic block
@@ -259,7 +281,7 @@ private:
     inline bool setCFCond(const BasicBlock* bb, Condition* cond)
     {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
-        if(it!=bbToCondMap.end() && it->second == cond)
+        if(it!=bbToCondMap.end() && *(it->second) == *cond)
             return false;
 
         bbToCondMap[bb] = cond;
@@ -288,10 +310,10 @@ private:
     const Value* curEvalVal;			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
-    BddCondManager condMgr;		///< bbd manager
-    //CondManager condMgr;		///< z3 manager
+//    BddCondManager condMgr;		///< bbd manager
+    CondManager condMgr;		///< z3 manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
-    IndexToConditionMap indexToCondMap;
+//    IndexToConditionMap indexToCondMap;
 
 };
 

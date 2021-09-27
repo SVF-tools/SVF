@@ -48,8 +48,43 @@ public:
     const z3::expr& getExpr() const{
         return e;
     }
+
+    /// get/insert/set condition hash to branch conditions map
+    //{@
+    Map<u32_t, z3::expr> getBrExprMap() const{
+        return breMap;
+    }
+    void insertBrExpr(const z3::expr& er) {
+        breMap.insert(std::make_pair(er.hash(), er));
+    }
+    void setBrExprMap(Map<u32_t, z3::expr> _bre){
+        breMap = std::move(_bre);
+    }
+    //@}
+
+    /// get/insert/set switch values
+    //{@
+    Map<u32_t, std::vector<uint64_t>> getSwitchValuesExprMap() const{
+        return switchValuesMap;
+    }
+    void insertSwitchValue(const z3::expr& er, const std::vector<uint64_t>& v) {
+        switchValuesMap.insert(std::make_pair(er.hash(), v));
+    }
+    void setSwitchValuesMap(Map<u32_t, std::vector<uint64_t>> _switchValuesMap){
+        switchValuesMap = std::move(_switchValuesMap);
+    }
+    //@}
+
+    // branch condition is the same
+    bool operator==(const CondExpr &condExpr) const {
+        return z3::eq(getExpr(), condExpr.getExpr());
+    }
+
 private:
     z3::expr e;
+    Map<u32_t, z3::expr> breMap; ///< mapping branch condition's hash to branch condition (Note: only store left value for switch)
+    Map<u32_t, std::vector<uint64_t>> switchValuesMap; ///< mapping switch condition's hash to all possible right values (aka cases)
+
 };
 
 class CondManager{
@@ -63,6 +98,9 @@ public:
 
     /// Create a single condition
     CondExpr* createCond(u32_t i);
+
+    /// Create a single condition
+    CondExpr* createCond(const z3::expr& i);
 
     /// Return the number of condition expressions
     u32_t getCondNumber();
@@ -99,12 +137,27 @@ public:
     /// Extract sub conditions of this expression
     void extractSubConds(const CondExpr* e,  NodeBS &support) const;
 
+    /// whether condition is satisfiable
+    bool isSatisfiable(const z3::expr& e);
+
+    inline z3::context& getctx(){
+        return cxt;
+    }
+
+    inline CondExpr* getCond(u32_t h) {
+        if (allocatedConds.count(h))
+            return allocatedConds[h];
+        else
+            return nullptr;
+    }
+
 private:
     z3::context cxt;
     z3::solver sol;
     static CondExpr* trueCond;
     static CondExpr* falseCond;
-    Set<CondExpr*> allocatedConds;
+//    Set<CondExpr*> allocatedConds;
+    Map<u32_t, CondExpr*> allocatedConds;
 };
 
 
