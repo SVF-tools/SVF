@@ -794,10 +794,10 @@ void FlowSensitive::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigned *m
 
             switch (alias(p, q))
             {
-            case llvm::NoAlias:
+            case llvm::AliasResult::Kind::NoAlias:
                 ++(*noAliases);
                 break;
-            case llvm::MayAlias:
+            case llvm::AliasResult::Kind::MayAlias:
                 ++(*mayAliases);
                 break;
             default:

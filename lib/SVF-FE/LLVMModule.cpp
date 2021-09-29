@@ -467,7 +467,7 @@ void LLVMModuleSet::dumpModulesToFile(const std::string suffix)
             OutputFilename = moduleName + suffix;
 
         std::error_code EC;
-        raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::F_None);
+        raw_fd_ostream OS(OutputFilename.c_str(), EC, llvm::sys::fs::OF_None);
 
 #if (LLVM_VERSION_MAJOR >= 7)
         WriteBitcodeToFile(mod, OS);

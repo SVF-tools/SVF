@@ -202,7 +202,7 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 AliasResult WPAPass::alias(const Value* V1, const Value* V2)
 {
 
-    AliasResult result = llvm::MayAlias;
+    AliasResult result = llvm::AliasResult::Kind::MayAlias;
 
     PAG* pag = _pta->getPAG();
 
@@ -217,25 +217,25 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2)
         if (Options::AliasRule.getBits() == 0 || Options::AliasRule.isSet(Veto))
         {
             /// Return NoAlias if any PTA gives NoAlias result
-            result = llvm::MayAlias;
+            result = llvm::AliasResult::Kind::MayAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::NoAlias)
-                    result = llvm::NoAlias;
+                if ((*it)->alias(V1, V2) == llvm::AliasResult::Kind::NoAlias)
+                    result = llvm::AliasResult::Kind::NoAlias;
             }
         }
         else if (Options::AliasRule.isSet(Conservative))
         {
             /// Return MayAlias if any PTA gives MayAlias result
-            result = llvm::NoAlias;
+            result = llvm::AliasResult::Kind::NoAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::MayAlias)
-                    result = llvm::MayAlias;
+                if ((*it)->alias(V1, V2) == llvm::AliasResult::Kind::MayAlias)
+                    result = llvm::AliasResult::Kind::MayAlias;
             }
         }
     }
