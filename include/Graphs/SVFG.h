@@ -267,6 +267,7 @@ public:
     }
 
     virtual void writeToFile(const std::string& filename);
+    virtual void readFile(const std::string& filename);
 
 protected:
     /// Add indirect def-use edges of a memory region between two statements,

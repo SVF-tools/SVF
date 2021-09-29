@@ -33,6 +33,8 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
+#include <fstream>
+
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -219,21 +221,33 @@ void SVFG::buildSVFG()
 
     stat->startClk();
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+
+     if (!Options::ReadSVFG.empty()){
+
+        readFile(Options::ReadSVFG);
 
 
-    stat->ATVFNodeStart();
-    addSVFGNodesForAddrTakenVars();
-    stat->ATVFNodeEnd();
+     } else {
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
+        DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
 
-    stat->indVFEdgeStart();
-    connectIndirectSVFGEdges();
-    stat->indVFEdgeEnd();
 
+        stat->ATVFNodeStart();
+        addSVFGNodesForAddrTakenVars();
+        stat->ATVFNodeEnd();
+
+        DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
+
+        stat->indVFEdgeStart();
+        connectIndirectSVFGEdges();
+        stat->indVFEdgeEnd();
+
+     }
+      
+    
     if (!Options::WriteSVFG.empty())
         writeToFile(Options::WriteSVFG);
+    
 
 }
 
@@ -258,7 +272,7 @@ void SVFG::writeToFile(const string& filename)
         if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << " FormalINSVFGNode " << "[";
+            F.os() << "Id: " << "{" << nodeId << "}" << " Type: {FormalINSVFGNode} " << "Edges: [";
             //edges
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
@@ -277,12 +291,12 @@ void SVFG::writeToFile(const string& filename)
             }
             F.os() << "] ";
             //parameters
-            F.os() << "MRVer: "<< *formalIn->getMRVer() << " FunEntry: " << formalIn->getFunEntryNode() << "\n";
+            F.os() << "MRVer: " << "{" << *formalIn->getMRVer() << "}" << " FunEntry: " << "{" << formalIn->getFunEntryNode() << "}" << "\n";
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << " FormalOUTSVFGNode " << "[";
+            F.os() << "Id: "<< "{" << nodeId << "}" << " Type: {FormalOUTSVFGNode} " <<  "Edges: [";
             //edges
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
@@ -303,31 +317,31 @@ void SVFG::writeToFile(const string& filename)
             NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            F.os() << "MRVer: "<< *formalOut->getMRVer() << " FunExit: " << formalOut->getFunExitNode() << "\n";
+            F.os() << "MRVer: " << "{" << *formalOut->getMRVer() << "}" << " FunExit: " << "{" << formalOut->getFunExitNode() << "}" << "\n";
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << " ActualINSVFGNode " << "[";
+            F.os() << "Id: " << "{" << nodeId << "}" << " Type: {ActualINSVFGNode} " << "Edges: [";
             //edges
             const MRVer* ver = actualIn->getMRVer();
             NodeID def = getDef(ver);
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
             F.os() << def << "] ";
             //parameters
-            F.os() << "MRVer: "<< *ver << " Callsite: " << actualIn->getCallSite()->toString() << "\n";
+            F.os() << "MRVer: "<< "{" << *ver << "}" << " Callsite: " << "{" << actualIn->getCallSite()->toString() << "}" << "\n";
         }
         else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << " ActualOUTSVFGNode ";
+            F.os() << "Id: "<< "{" << nodeId << "}" << " Type: {ActualOUTSVFGNode} ";
             //parameters
-            F.os() << "MRVer: "<< *actualOut->getMRVer() << " Callsite: " << actualOut->getCallSite()->toString() << "\n";
+            F.os() << "MRVer: " << "{" << *actualOut->getMRVer() << "}" << " Callsite: "  <<  "{" << actualOut->getCallSite()->toString() << "}" << "\n";
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
             //node
-            F.os() << nodeId << " PHISVFGNode " << "[";
+            F.os() << "Id: "<< "{" << nodeId << "}" << " Type: {PHISVFGNode} " << "Edges: [";
             //edges
             for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
                     it != eit; it++)
@@ -341,7 +355,7 @@ void SVFG::writeToFile(const string& filename)
             //parameters
             const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
             // F.os() << "MRVer: "<< intraPhiNode->getMRVer() << " Basic Block: " << intraPhiNode->getBasicBlock() << "\n";
-            F.os() << "MRVer: "<< *phiNode->getResVer() << "\n";
+            F.os() << "MRVer: "<< "{" << *phiNode->getResVer() << "}" << "\n";
         }
     }
 
@@ -352,8 +366,45 @@ void SVFG::writeToFile(const string& filename)
     {
         outs() << "\n";
         F.keep();
+        return;       
+    }
+}
+
+
+void SVFG::readFile(const string& filename){
+
+    outs() << "Loading SVFG analysis results from '" << filename << "'...";
+
+    ifstream F(filename.c_str());
+    if (!F.is_open())
+    {
+        outs() << "  error opening file for reading!\n";
         return;
     }
+    //loop through each line and recreate the nodes and indirect edges
+
+    string line;
+    while (F.good())
+    {
+        getline(F, line);
+
+
+        size_t pos_start = line.find("{");
+        size_t pos_end = line.find("}");
+
+        string pos_contents_Id = line.substr(pos_start, pos_end);
+
+
+        outs() << pos_contents_Id << "\n";
+
+            
+
+
+    }
+
+    
+
+
 }
 
 /*
