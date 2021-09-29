@@ -42,10 +42,10 @@ CondManager::CondManager() : sol(cxt)
 {
     const z3::expr &trueExpr = cxt.bool_val(true);
     trueCond = new CondExpr(trueExpr);
-    allocatedConds[trueExpr.hash()] = trueCond;
+    allocatedConds[trueExpr.id()] = trueCond;
     const z3::expr &falseExpr = cxt.bool_val(false);
     falseCond = new CondExpr(falseExpr);
-    allocatedConds[falseExpr.hash()] = falseCond;
+    allocatedConds[falseExpr.id()] = falseCond;
 }
 
 /// Destructor
@@ -63,15 +63,15 @@ CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
     if (lhs->getExpr().is_false() || rhs->getExpr().is_false())
         return falseCond;
     else if (lhs->getExpr().is_true()){
-        assert(allocatedConds.count(rhs->getExpr().hash()) && "rhs not in allocated conds");
-        return allocatedConds[rhs->getExpr().hash()];
+        assert(allocatedConds.count(rhs->getExpr().id()) && "rhs not in allocated conds");
+        return allocatedConds[rhs->getExpr().id()];
     } else if (rhs->getExpr().is_true()){
-        assert(allocatedConds.count(lhs->getExpr().hash()) && "lhs not in allocated conds");
-        return allocatedConds[lhs->getExpr().hash()];
+        assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
+        return allocatedConds[lhs->getExpr().id()];
     } else {
         const z3::expr& expr = (lhs->getExpr() && rhs->getExpr()).simplify();
-        if (allocatedConds.count(expr.hash()))
-            return allocatedConds[expr.hash()];
+        if (allocatedConds.count(expr.id()))
+            return allocatedConds[expr.id()];
         else{
             Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
             Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
@@ -82,7 +82,7 @@ CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
             CondExpr *cond = new CondExpr(expr);
             cond->setBrExprMap(lhsBrMap);
             cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
-            allocatedConds[expr.hash()] = cond;
+            allocatedConds[expr.id()] = cond;
             return cond;
         }
     }
@@ -94,15 +94,15 @@ CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
     if (lhs->getExpr().is_true() || rhs->getExpr().is_true())
         return trueCond;
     else if (lhs->getExpr().is_false()){
-        assert(allocatedConds.count(rhs->getExpr().hash()) && "rhs not in allocated conds");
-        return allocatedConds[rhs->getExpr().hash()];
+        assert(allocatedConds.count(rhs->getExpr().id()) && "rhs not in allocated conds");
+        return allocatedConds[rhs->getExpr().id()];
     } else if (rhs->getExpr().is_false()){
-        assert(allocatedConds.count(lhs->getExpr().hash()) && "lhs not in allocated conds");
-        return allocatedConds[lhs->getExpr().hash()];
+        assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
+        return allocatedConds[lhs->getExpr().id()];
     } else {
         const z3::expr& expr = (lhs->getExpr() || rhs->getExpr()).simplify();
-        if (allocatedConds.count(expr.hash()))
-            return allocatedConds[expr.hash()];
+        if (allocatedConds.count(expr.id()))
+            return allocatedConds[expr.id()];
         else{
             Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
             Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
@@ -113,7 +113,7 @@ CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
             CondExpr *cond = new CondExpr(expr);
             cond->setBrExprMap(lhsBrMap);
             cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
-            allocatedConds[expr.hash()] = cond;
+            allocatedConds[expr.id()] = cond;
             return cond;
         }
     }
@@ -128,13 +128,13 @@ CondExpr* CondManager::NEG(const CondExpr *lhs)
         return trueCond;
     else{
         const z3::expr& expr = (!lhs->getExpr()).simplify();
-        if (allocatedConds.count(expr.hash()))
-            return allocatedConds[expr.hash()];
+        if (allocatedConds.count(expr.id()))
+            return allocatedConds[expr.id()];
         else{
             CondExpr *cond = new CondExpr(expr);
             cond->setBrExprMap(lhs->getBrExprMap());
             cond->setSwitchValuesMap(lhs->getSwitchValuesExprMap());
-            allocatedConds[expr.hash()] = cond;
+            allocatedConds[expr.id()] = cond;
             return cond;
         }
     }
@@ -144,11 +144,11 @@ CondExpr* CondManager::NEG(const CondExpr *lhs)
 CondExpr* CondManager::createCond(u32_t i)
 {
     const z3::expr &expr = cxt.bool_const(("c" + std::to_string(i)).c_str());
-    if (allocatedConds.count(expr.hash()))
-        return allocatedConds[expr.hash()];
+    if (allocatedConds.count(expr.id()))
+        return allocatedConds[expr.id()];
     else{
         CondExpr *cond = new CondExpr(expr);
-        allocatedConds[expr.hash()] = cond;
+        allocatedConds[expr.id()] = cond;
         return cond;
     }
 }
@@ -157,11 +157,11 @@ CondExpr* CondManager::createCond(u32_t i)
 CondExpr* CondManager::createCond(const z3::expr& e)
 {
     z3::expr es = e.simplify();
-    if (allocatedConds.count(es.hash()))
-        return allocatedConds[es.hash()];
+    if (allocatedConds.count(es.id()))
+        return allocatedConds[es.id()];
     else{
         CondExpr *cond = new CondExpr(es);
-        allocatedConds[es.hash()] = cond;
+        allocatedConds[es.id()] = cond;
         return cond;
     }
 }
@@ -198,7 +198,7 @@ void CondManager::extractSubConds(const z3::expr& e, NodeBS &support) const
 {
     if (e.num_args() == 0)
         if (!e.is_true() && !e.is_false())
-            support.set(e.hash());
+            support.set(e.id());
     for (u32_t i = 0; i < e.num_args(); ++i) {
         const z3::expr &expr = e.arg(i);
         extractSubConds(expr, support);

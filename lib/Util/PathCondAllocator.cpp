@@ -508,8 +508,8 @@ PathCondAllocator::enumerateBranchConditions(Map<u32_t, Z3Expr>::const_iterator 
         exprVec.push_back(tmpExpr);
         return;
     }
-    if (switchValues.count(curit->second.hash())) {
-        for (const auto &value: switchValues[curit->second.hash()]) {
+    if (switchValues.count(curit->second.id())) {
+        for (const auto &value: switchValues[curit->second.id()]) {
             tmpExpr.push_back(curit->second == condMgr.getctx().real_val(value));
             enumerateBranchConditions(std::next(curit), eit, tmpExpr, exprVec, switchValues);
             tmpExpr.pop_back();

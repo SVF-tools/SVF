@@ -55,7 +55,7 @@ public:
         return breMap;
     }
     void insertBrExpr(const z3::expr& er) {
-        breMap.insert(std::make_pair(er.hash(), er));
+        breMap.insert(std::make_pair(er.id(), er));
     }
     void setBrExprMap(Map<u32_t, z3::expr> _bre){
         breMap = std::move(_bre);
@@ -68,7 +68,7 @@ public:
         return switchValuesMap;
     }
     void insertSwitchValue(const z3::expr& er, const std::vector<uint64_t>& v) {
-        switchValuesMap.insert(std::make_pair(er.hash(), v));
+        switchValuesMap.insert(std::make_pair(er.id(), v));
     }
     void setSwitchValuesMap(Map<u32_t, std::vector<uint64_t>> _switchValuesMap){
         switchValuesMap = std::move(_switchValuesMap);
