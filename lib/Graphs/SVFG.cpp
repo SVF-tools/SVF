@@ -381,29 +381,73 @@ void SVFG::readFile(const string& filename){
         outs() << "  error opening file for reading!\n";
         return;
     }
-    //loop through each line and recreate the nodes and indirect edges
-
+    //outer loop through each line in the file
     string line;
     while (F.good())
     {
-        getline(F, line);
+       getline(F, line);
 
-        std::string s = line; 
-        std::string delimiter = ">=";
+       std::string s = line; 
+       std::string delimiter = ">=";
 
-
+       string temp; 
+       int index = 0; 
        //implement delimiter to split string using ">="
        size_t last = 0; size_t next = 0; 
+
+       NodeID id; 
+       string type;
+       string edges;
+       string MR;
+       string FunEntry;
+       string FunExit; 
+       string Callsite;
+       string resVer;
+       //inner loop through each element in the line
        while ((next = s.find(delimiter, last)) != string::npos) 
-        {   outs() << s.substr(last, next-last) << "\n";   
+        {   
+            // outs() << s.substr(last, next-last) << "\n"; 
+            temp = s.substr(last, next-last); 
             last = next + 2; 
-        } 
-        outs() << s.substr(last) << "\n";
+
+            if(index == 0){id = atoi(temp.c_str());}
+            if(index == 1){type = temp;}
+
+            if(index > 1){
+                if(type == "FormalINSVFGNode" || type == "FormalOUTSVFGNode"){
+                    if(index == 2){edges = temp;}
+                    if(index == 3){MR = temp;}
+                } else if(type == "ActualINSVFGNode"){
+                    if(index == 2){edges = temp;};
+                    if(index == 3){MR = temp;};
+                } else if(type == "ActualOUTSVFGNode"){
+                      if(index == 2){MR = temp;};
+                } else {
+                     if(index == 2){edges = temp;};
+                }
+            }
+            index++; 
+        }
+
+        // outs() << s.substr(last) << "\n";
+        //add nodes and edges using the variables we extracted
+        if(type == "FormalINSVFGNode"){
+            FunEntry = s.substr(last); 
+            outs() << "yeet" << id << type << edges << MR << FunEntry << "\n";
+        } else if(type == "FormalOUTSVFGNode"){
+            FunExit = s.substr(last); 
+            outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
+        } else if(type == "ActualINSVFGNode"){
+            Callsite = s.substr(last); 
+            outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
+        } else if(type == "ActualOUTSVFGNode"){
+            Callsite = s.substr(last); 
+            outs() << "yeet" << id << type << MR << Callsite << "\n";
+        } else {
+            resVer =  s.substr(last);
+            outs() << "yeet" << id << type << edges << resVer << "\n";     
+        }
     }
-
-    
-
-
 }
 
 /*
