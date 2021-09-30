@@ -553,7 +553,7 @@ bool PathCondAllocator::isAllSatisfiable(Condition* condition){
     const Z3ExprVector &exprVector = enumerateConditions(condition);
     for (const auto &e: exprVector) {
         // return false if one path is leaked
-        if (!condMgr.isSatisfiable(e.simplify()))
+        if (!condMgr.isSatisfiable(condMgr.simplify(e)))
             return false;
     }
     return true;

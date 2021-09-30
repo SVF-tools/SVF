@@ -57,6 +57,25 @@ CondManager::~CondManager()
     }
 }
 
+/// Simplify
+z3::expr CondManager::simplify(const z3::expr& expr){
+    z3::goal g(cxt);
+    z3::tactic qe(cxt, "ctx-solver-simplify");
+    g.add(expr);
+    z3::apply_result r = qe(g);
+    z3::goal result_goal = r[0];
+    const z3::expr &asExpr = result_goal.as_expr();
+    z3::expr res(cxt.bool_val(false));
+    for (u32_t i = 0; i < r.size(); ++i) {
+        if (res.is_false()) {
+            res = r[i].as_expr();
+        } else {
+            res = res || r[i].as_expr();
+        }
+    }
+    return res;
+}
+
 /// And operator for two expressions
 CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
 {
@@ -69,7 +88,7 @@ CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
         assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
         return allocatedConds[lhs->getExpr().id()];
     } else {
-        const z3::expr& expr = (lhs->getExpr() && rhs->getExpr()).simplify();
+        const z3::expr& expr = simplify(lhs->getExpr() && rhs->getExpr());
         if (allocatedConds.count(expr.id()))
             return allocatedConds[expr.id()];
         else{
@@ -100,7 +119,7 @@ CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
         assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
         return allocatedConds[lhs->getExpr().id()];
     } else {
-        const z3::expr& expr = (lhs->getExpr() || rhs->getExpr()).simplify();
+        const z3::expr& expr = simplify(lhs->getExpr() || rhs->getExpr());
         if (allocatedConds.count(expr.id()))
             return allocatedConds[expr.id()];
         else{
@@ -127,7 +146,7 @@ CondExpr* CondManager::NEG(const CondExpr *lhs)
     else if (lhs->getExpr().is_false())
         return trueCond;
     else{
-        const z3::expr& expr = (!lhs->getExpr()).simplify();
+        const z3::expr& expr = simplify(!lhs->getExpr());
         if (allocatedConds.count(expr.id()))
             return allocatedConds[expr.id()];
         else{
@@ -156,7 +175,7 @@ CondExpr* CondManager::createCond(u32_t i)
 /// Create a single condition
 CondExpr* CondManager::createCond(const z3::expr& e)
 {
-    z3::expr es = e.simplify();
+    z3::expr es = simplify(e);
     if (allocatedConds.count(es.id()))
         return allocatedConds[es.id()];
     else{

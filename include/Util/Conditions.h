@@ -115,6 +115,9 @@ public:
     {
         return falseCond;
     }
+
+    /// simplify
+    z3::expr simplify(const z3::expr& expr);
     /// Operations on conditions.
     //@{
     CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs);
