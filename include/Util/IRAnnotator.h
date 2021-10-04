@@ -22,14 +22,16 @@ namespace SVF
 class IRAnnotator
 {
 public:
-    IRAnnotator() {}
+    IRAnnotator():
+        mainModule(nullptr),
+        ander(nullptr)
+    {}
     ~IRAnnotator() {}
 
     void processAndersenResults(PAG *pag, AndersenBase *ander, bool writeFlag)
     {
         this->ander = ander;
-        auto mainMod = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
-        this->mainModule = mainMod;
+        mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
 
         // Add a named metadata node used to check whether or not 
         // this IR has been annotated with Andersen information
