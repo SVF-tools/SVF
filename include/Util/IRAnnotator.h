@@ -22,73 +22,63 @@ namespace SVF
 class IRAnnotator
 {
 public:
-    IRAnnotator(): 
-        mainModule(nullptr),
-        ander(nullptr)
-     {}
+    IRAnnotator() {}
     ~IRAnnotator() {}
 
     void processAndersenResults(PAG *pag, AndersenBase *ander, bool writeFlag)
     {
         this->ander = ander;
-        mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
+        auto mainMod = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
+        this->mainModule = mainMod;
 
-        if (writeFlag == true)
-        {
-            writeAndersenMetadata(pag, ander);
-        }
-        else
-        {
-            readAndersenMetadata(pag, ander);
-        }
-    }
-
-private:
-    void writeAndersenMetadata(PAG *pag, AndersenBase *ander)
-    {
-        mainModule->getOrInsertNamedMetadata("PAG-Annotated");
-        LLVMContext &context = mainModule->getContext();
+        // Add a named metadata node used to check whether or not 
+        // this IR has been annotated with Andersen information
+        if (writeFlag)
+            mainModule->getOrInsertNamedMetadata("PAG-Annotated");
 
         for (auto it = pag->begin(); it != pag->end(); ++it)
         {
             auto nodeId = it->first;
             auto pagNode = it->second;
+            auto gepNode = SVFUtil::dyn_cast<GepObjPN>(pagNode);
 
-            // Write dynamically created nodes use in Andersen analysis
-            if (auto gepNode = SVFUtil::dyn_cast<GepObjPN>(pagNode))
+            if (gepNode && writeFlag)
             {
-                auto baseNodeId = gepNode->getBaseNode();
-                auto locationSetOffset = gepNode->getLocationSet().getOffset();
-
-                llvm::SmallVector<llvm::Metadata *, 32> operands;
-                operands.push_back(llvm::MDString::get(context, std::to_string(baseNodeId)));
-                operands.push_back(llvm::MDString::get(context, std::to_string(locationSetOffset)));
-
-                llvm::MDTuple *metadata = llvm::MDTuple::get(context, operands);
-                std::string label = "gepnode-" + std::to_string(nodeId);
-
-                mainModule->getOrInsertNamedMetadata(label)->addOperand(metadata);
+                writePAGgepNode(nodeId, gepNode);
             }
             else if (pagNode->hasValue())
             {
-                processPAGMetadata(pagNode->getValue(), nodeId, true);
+                processPAGNode(pagNode->getValue(), nodeId, writeFlag);
             }
         }
+
+        if (!writeFlag)
+            readPAGgepNodes(pag);
     }
 
-    void readAndersenMetadata(PAG *pag, AndersenBase *ander)
+private:
+    // Write the PAGgepNode to the IR such that metadata name is the PAG node id and the operands
+    // are its base node's id and location offset
+    void writePAGgepNode(SVF::NodeID nodeId, GepObjPN* gepNode)
     {
-        for (auto it = pag->begin(); it != pag->end(); ++it)
-        {
-            auto nodeId = it->first;
-            auto pagNode = it->second;
+        auto baseNodeId = gepNode->getBaseNode();
+        auto locationSetOffset = gepNode->getLocationSet().getOffset();
 
-            if (pagNode->hasValue())
-            {
-                processPAGMetadata(pagNode->getValue(), nodeId, false);
-            }
-        }
+        LLVMContext &context = mainModule->getContext();
+        llvm::SmallVector<llvm::Metadata *, 32> operands;
+        operands.push_back(llvm::MDString::get(context, std::to_string(baseNodeId)));
+        operands.push_back(llvm::MDString::get(context, std::to_string(locationSetOffset)));
 
+        llvm::MDTuple *metadata = llvm::MDTuple::get(context, operands);
+        std::string label = "gepnode-" + std::to_string(nodeId);
+
+        mainModule->getOrInsertNamedMetadata(label)->addOperand(metadata);
+    }
+
+    // Reads the PAGGepNodes in the annotated IR and creates a new PAG Node based on the
+    // data contained in the operands of the metadata node
+    void readPAGgepNodes(PAG *pag)
+    {
         for (auto it = mainModule->named_metadata_begin(); it != mainModule->named_metadata_end(); ++it)
         {
             std::string label = it->getName().str();
@@ -113,56 +103,36 @@ private:
         }
     }
 
-    void processPAGMetadata(const SVF::Value *value, const SVF::NodeID nodeId, bool writeFlag)
+    // Deduce the LLVM value's type, and process the metadata accordingly
+    void processPAGNode(const Value *value, SVF::NodeID nodeId, bool writeFlag)
     {
         if (auto instruction = const_cast<Instruction *>(SVFUtil::dyn_cast<Instruction>(value)))
         {
-            if (writeFlag)
-                addInstructionMetadata(instruction, nodeId);
-            else
-                readInstructionMetadata(instruction, nodeId);
+            processInstructionNode(instruction, nodeId, writeFlag);
         }
         else if (auto argument = const_cast<Argument *>(SVFUtil::dyn_cast<Argument>(value)))
         {
-            if (writeFlag)
-                addArgumentMetadata(argument, nodeId);
-            else
-                readArgumentMetadata(argument, nodeId);
+            processArgumentNode(argument, nodeId, writeFlag);
         }
         else if (auto function = const_cast<Function *>(SVFUtil::dyn_cast<Function>(value)))
         {
-            if (writeFlag)
-                addFunctionMetadata(function, nodeId);
-            else
-                readFunctionMetadata(function, nodeId);
+            processFunctionNode(function, nodeId, writeFlag);
         }
         else if (auto globalVar = const_cast<GlobalVariable *>(SVFUtil::dyn_cast<GlobalVariable>(value)))
         {
-            if (writeFlag)
-                addGlobalVarMetadata(globalVar, nodeId);
-            else
-                readGlobalVarMetadata(globalVar, nodeId);
+            processGlobalVarNode(globalVar, nodeId, writeFlag);
         }
         else if (auto basicBlock = const_cast<BasicBlock *>(SVFUtil::dyn_cast<BasicBlock>(value)))
         {
-            if (writeFlag)
-                addBasicBlockMetadata(basicBlock, nodeId);
-            else
-                readBasicBlockMetadata(basicBlock, nodeId);
+            processBasicBlockNode(basicBlock, nodeId, writeFlag);
         }
         else if (auto constant = const_cast<Constant *>(SVFUtil::dyn_cast<Constant>(value)))
         {
-            if (writeFlag)
-                addConstantMetadata(constant, nodeId);
-            else
-                readConstantMetadata(nodeId);
+            processConstantNode(nodeId, writeFlag);
         }
         else if (auto inlineAsm = const_cast<llvm::InlineAsm *>(SVFUtil::dyn_cast<llvm::InlineAsm>(value)))
         {
-            if (writeFlag)
-                addInlineAsmMetadata(inlineAsm, nodeId);
-            else
-                readInlineAsmMetadata(inlineAsm, nodeId);
+            processInlineAsmNode(inlineAsm, nodeId, writeFlag);
         }
         else
         {
@@ -171,130 +141,133 @@ private:
         }
     }
 
-    inline void readInstructionMetadata(Instruction *inst, const SVF::NodeID nodeId)
+    void processInstructionNode(Instruction *instruction, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "inode-" + std::to_string(nodeId);
-        auto mdNode = inst->getMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at instruction");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readArgumentMetadata(Argument *arg, const SVF::NodeID nodeId)
-    {
-        std::string label = "anode-" + std::to_string(nodeId);
-        auto mdNode = arg->getParent()->getMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at argument");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readFunctionMetadata(Function *func, const SVF::NodeID nodeId)
-    {
-        std::string label = "fnode-" + std::to_string(nodeId);
-        auto mdNode = func->getMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at function");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readConstantMetadata(const SVF::NodeID nodeId)
-    {
-        std::string label = "cnode-" + std::to_string(nodeId);
-        auto mdNode = mainModule->getNamedMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at function");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readGlobalVarMetadata(GlobalVariable *gvar, const SVF::NodeID &nodeId)
-    {
-        std::string label = "gnode-" + std::to_string(nodeId);
-        auto mdNode = gvar->getMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at function");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readBasicBlockMetadata(BasicBlock *bb, const SVF::NodeID &nodeId)
-    {
-        std::string label = "bnode-" + std::to_string(nodeId);
-        auto mdNode = bb->getParent()->getMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at function");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void readInlineAsmMetadata(llvm::InlineAsm *inlineAsm, const SVF::NodeID nodeId)
-    {
-        std::string label = "iAsmnode-" + std::to_string(nodeId);
-        auto mdNode = mainModule->getNamedMetadata(label);
-        assert(mdNode != nullptr && "Failed to retrive valid node id at function");
-        addPtsToInfo(nodeId, mdNode);
-    }
-
-    inline void addInstructionMetadata(Instruction *instruction, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = instruction->getContext();
-        std::string label = "inode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        instruction->setMetadata(label, mdNodePts);
-    }
-
-    inline void addArgumentMetadata(Argument *arguments, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = arguments->getContext();
-        std::string label = "anode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        arguments->getParent()->setMetadata(label, mdNodePts);
-    }
-
-    inline void addFunctionMetadata(Function *function, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = function->getContext();
-        std::string label = "fnode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        function->setMetadata(label, mdNodePts);
-    }
-
-    inline void addConstantMetadata(const Constant *value, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = value->getContext();
-        std::string label = "cnode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        mainModule->getOrInsertNamedMetadata(label)->addOperand(mdNodePts);
-    }
-
-    inline void addGlobalVarMetadata(GlobalVariable *globalVar, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = globalVar->getContext();
-        std::string label = "gnode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        globalVar->setMetadata(label, mdNodePts);
-    }
-
-    inline void addBasicBlockMetadata(BasicBlock *basicBlock, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = basicBlock->getContext();
-        std::string label = "bnode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        basicBlock->getParent()->setMetadata(label, mdNodePts);
-    }
-
-    inline void addInlineAsmMetadata(llvm::InlineAsm *inlineAsm, const SVF::NodeID &nodeId)
-    {
-        LLVMContext &context = mainModule->getContext();
-        std::string label = "iAsmnode-" + std::to_string(nodeId);
-        auto mdNodePts = getMdNodePts(nodeId, context);
-        mainModule->getOrInsertNamedMetadata(label)->addOperand(mdNodePts);
-    }
-
-    inline llvm::MDTuple* getMdNodePts(const SVF::NodeID &nodeId, LLVMContext &context)
-    {
-        llvm::SmallVector<llvm::Metadata *, 32> operands;
-        auto &ptsTo = ander->getPts(nodeId);
-        for (const auto p : ptsTo)
+        
+        if (writeFlag)
         {
-            operands.push_back(llvm::MDString::get(context, std::to_string(p)));
+            LLVMContext &context = instruction->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            instruction->setMetadata(label, mdNodePts);
         }
-        return llvm::MDTuple::get(context, operands);
+        else
+        {
+            auto mdNode = instruction->getMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at instruction");
+            addAndersenMetadata(nodeId, mdNode);
+        }
     }
 
-    inline void addPtsToInfo(const SVF::NodeID &nodeId, MDNode *mdNode)
+    void processArgumentNode(Argument *argument, const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "anode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = argument->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            argument->getParent()->setMetadata(label, mdNodePts);
+        }
+        else
+        {
+            auto mdNode = argument->getParent()->getMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at argument");
+            addAndersenMetadata(nodeId, mdNode);
+        }
+    }
+
+    void processFunctionNode(Function *function, const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "fnode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = function->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            function->setMetadata(label, mdNodePts);
+        }
+        else
+        {
+            auto mdNode = function->getMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at function");
+            addAndersenMetadata(nodeId, mdNode);
+        }
+    }
+
+    void processGlobalVarNode(GlobalVariable *globalVar, const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "gnode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = globalVar->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            globalVar->setMetadata(label, mdNodePts);
+        }
+        else
+        {
+            auto mdNode = globalVar->getMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at instruction");
+            addAndersenMetadata(nodeId, mdNode);
+        }
+    }
+
+    void processBasicBlockNode(BasicBlock *basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "bnode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = basicBlock->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            basicBlock->getParent()->setMetadata(label, mdNodePts);
+        }
+        else
+        {
+            auto mdNode = basicBlock->getParent()->getMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at basicBlock");
+            addAndersenMetadata(nodeId, mdNode);
+        }
+    }
+
+    void processConstantNode(const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "cnode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = mainModule->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            mainModule->getOrInsertNamedMetadata(label)->addOperand(mdNodePts);
+        }
+        else
+        {
+            auto mdNode = mainModule->getNamedMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at instruction");
+            addAndersenNamedMetdata(nodeId, mdNode);
+        }
+    }
+
+    void processInlineAsmNode(llvm::InlineAsm *inlineAsm, const SVF::NodeID &nodeId, bool writeFlag)
+    {
+        std::string label = "iAsmnode-" + std::to_string(nodeId);
+        
+        if (writeFlag)
+        {
+            LLVMContext &context = mainModule->getContext();
+            auto mdNodePts = getMdNodePts(nodeId, context);
+            mainModule->getOrInsertNamedMetadata(label)->addOperand(mdNodePts);
+        }
+        else
+        {
+            auto mdNode = mainModule->getNamedMetadata(label);
+            assert(mdNode != nullptr && "Failed to retrive valid node id at inlineAsm");
+            addAndersenNamedMetdata(nodeId, mdNode);
+        }
+    }
+
+    void addAndersenMetadata(const SVF::NodeID &nodeId, MDNode *mdNode)
     {
         if (mdNode)
         {
@@ -306,7 +279,8 @@ private:
             }
         }
     }
-    inline void addPtsToInfo(const SVF::NodeID &nodeId, NamedMDNode *mdNode)
+
+    void addAndersenNamedMetdata(const SVF::NodeID &nodeId, NamedMDNode *mdNode)
     {
         if (mdNode)
         {
@@ -323,8 +297,21 @@ private:
             }
         }
     }
+
+    inline llvm::MDTuple* getMdNodePts(const SVF::NodeID &nodeId, LLVMContext &context)
+    {
+        llvm::SmallVector<llvm::Metadata *, 32> operands;
+        auto &ptsTo = ander->getPts(nodeId);
+        for (const auto p : ptsTo)
+        {
+            operands.push_back(llvm::MDString::get(context, std::to_string(p)));
+        }
+        return llvm::MDTuple::get(context, operands);
+    }
+
     Module* mainModule;
     AndersenBase* ander;
+
 };
 
 } // End namespace SVF
