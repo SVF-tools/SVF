@@ -9,7 +9,7 @@
 #define IRANNOTATOR_H_
 
 #include "Graphs/PAG.h"
-#include "WPA/Andersen.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/SVFUtil.h"
 #include "llvm/IR/Metadata.h"
 
@@ -24,13 +24,13 @@ class IRAnnotator
 public:
     IRAnnotator():
         mainModule(nullptr),
-        ander(nullptr)
+        ptsTo(nullptr)
     {}
     ~IRAnnotator() {}
 
-    void processAndersenResults(PAG *pag, AndersenBase *ander, bool writeFlag)
+    void processAndersenResults(PAG *pag, BVDataPTAImpl *ptsTo, bool writeFlag)
     {
-        this->ander = ander;
+        this->ptsTo = ptsTo;
         mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
 
         // Add a named metadata node used to check whether or not 
@@ -277,7 +277,7 @@ private:
             {
                 auto anderNodeIdStr = llvm::cast<llvm::MDString>(mdNode->getOperand(i))->getString().str();
                 auto anderNodeId = SVF::NodeID(std::stoul(anderNodeIdStr));
-                ander->addPts(nodeId, anderNodeId);
+                ptsTo->addPts(nodeId, anderNodeId);
             }
         }
     }
@@ -294,7 +294,7 @@ private:
                 {
                     auto anderNodeIdStr = llvm::cast<llvm::MDString>(node->getOperand(j))->getString().str();
                     auto anderNodeId = SVF::NodeID(std::stoul(anderNodeIdStr));
-                    ander->addPts(nodeId, anderNodeId);
+                    ptsTo->addPts(nodeId, anderNodeId);
                 }
             }
         }
@@ -303,8 +303,8 @@ private:
     inline llvm::MDTuple* getMdNodePts(const SVF::NodeID &nodeId, LLVMContext &context)
     {
         llvm::SmallVector<llvm::Metadata *, 32> operands;
-        auto &ptsTo = ander->getPts(nodeId);
-        for (const auto p : ptsTo)
+        auto &ptTo = ptsTo->getPts(nodeId);
+        for (const auto p : ptTo)
         {
             operands.push_back(llvm::MDString::get(context, std::to_string(p)));
         }
@@ -312,7 +312,7 @@ private:
     }
 
     Module* mainModule;
-    AndersenBase* ander;
+    BVDataPTAImpl *ptsTo;
 
 };
 

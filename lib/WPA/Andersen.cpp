@@ -30,7 +30,6 @@
 #include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "WPA/Andersen.h"
-#include "Util/IRAnnotator.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -91,15 +90,11 @@ void AndersenBase::finalize()
  */
 void AndersenBase::analyze()
 {
-    auto irAnnotator = std::make_unique<IRAnnotator>();
-    auto pag = getPAG();
-    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
-
     /// Initialization for the Solver
     initialize();
 
     bool readResultsFromFile = false;
-    if(!Options::ReadAnder.empty() && mainModule->getNamedMetadata("PAG-Annotated") == nullptr) {
+    if(!Options::ReadAnder.empty()) {
         readResultsFromFile = this->readFromFile(Options::ReadAnder);
         // Finalize the analysis
         PointerAnalysis::finalize();
@@ -107,47 +102,35 @@ void AndersenBase::analyze()
 
     if(!readResultsFromFile)
     {
-        // If the results are in the IR, read them
-        if (mainModule->getNamedMetadata("PAG-Annotated") != nullptr)
+        // Start solving constraints
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+
+        bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit);
+
+        initWorklist();
+        do
         {
-            irAnnotator->processAndersenResults(pag, this, false);
-            PointerAnalysis::finalize();
+            numOfIteration++;
+            if (0 == numOfIteration % iterationForPrintStat)
+                printStat();
+
+            reanalyze = false;
+
+            solveWorklist();
+
+            if (updateCallGraph(getIndirectCallsites()))
+                reanalyze = true;
+
         }
-        else
-        {
-            // Start solving constraints
-            DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Start Solving Constraints\n"));
+        while (reanalyze);
 
-            bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::AnderTimeLimit);
+        // Analysis is finished, reset the alarm if we set it.
+        SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
-            initWorklist();
-            do
-            {
-                numOfIteration++;
-                if (0 == numOfIteration % iterationForPrintStat)
-                    printStat();
+        DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
 
-                reanalyze = false;
-
-                solveWorklist();
-
-                if (updateCallGraph(getIndirectCallsites()))
-                    reanalyze = true;
-
-            }
-            while (reanalyze);
-
-            // Analysis is finished, reset the alarm if we set it.
-            SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
-
-            DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
-
-            // Finalize the analysis
-            finalize();
-
-            // Write results as metadata in the IR
-            irAnnotator->processAndersenResults(pag, this, true);
-        }
+        // Finalize the analysis
+        finalize();
     }
 
     if (!Options::WriteAnder.empty())
