@@ -59,13 +59,13 @@ CondManager::~CondManager()
 
 /// Simplify
 z3::expr CondManager::simplify(const z3::expr& expr){
-    z3::goal g(cxt);
-    z3::tactic qe(cxt, "ctx-solver-simplify");
+    z3::goal g(expr.ctx());
+    z3::tactic qe(expr.ctx(), "ctx-solver-simplify");
     g.add(expr);
     z3::apply_result r = qe(g);
     z3::goal result_goal = r[0];
     const z3::expr &asExpr = result_goal.as_expr();
-    z3::expr res(cxt.bool_val(false));
+    z3::expr res(expr.ctx().bool_val(false));
     for (u32_t i = 0; i < r.size(); ++i) {
         if (res.is_false()) {
             res = r[i].as_expr();
@@ -82,28 +82,20 @@ CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
     if (lhs->getExpr().is_false() || rhs->getExpr().is_false())
         return falseCond;
     else if (lhs->getExpr().is_true()){
-        assert(allocatedConds.count(rhs->getExpr().id()) && "rhs not in allocated conds");
-        return allocatedConds[rhs->getExpr().id()];
+        IDToCondExprMap::const_iterator it = allocatedConds.find(rhs->getId());
+        assert(it != allocatedConds.end() && "rhs not in allocated conds");
+        return it->second;
     } else if (rhs->getExpr().is_true()){
-        assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
-        return allocatedConds[lhs->getExpr().id()];
+        IDToCondExprMap::const_iterator it = allocatedConds.find(lhs->getId());
+        assert(it != allocatedConds.end() && "lhs not in allocated conds");
+        return it->second;
     } else {
         const z3::expr& expr = simplify(lhs->getExpr() && rhs->getExpr());
-        if (allocatedConds.count(expr.id()))
-            return allocatedConds[expr.id()];
-        else{
-            Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
-            Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
-            for (const auto &e: rhs->getBrExprMap())
-                lhsBrMap.insert(e);
-            for (const auto &e: rhs->getSwitchValuesExprMap())
-                lhsSwitchValuesExprMap.insert(e);
-            CondExpr *cond = new CondExpr(expr);
-            cond->setBrExprMap(lhsBrMap);
-            cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
-            allocatedConds[expr.id()] = cond;
-            return cond;
-        }
+        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+        if (it != allocatedConds.end())
+            return it->second;
+        else
+            return allocatedConds[expr.id()] = &((*lhs) && (*rhs));
     }
 }
 
@@ -113,28 +105,20 @@ CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
     if (lhs->getExpr().is_true() || rhs->getExpr().is_true())
         return trueCond;
     else if (lhs->getExpr().is_false()){
-        assert(allocatedConds.count(rhs->getExpr().id()) && "rhs not in allocated conds");
-        return allocatedConds[rhs->getExpr().id()];
+        IDToCondExprMap::const_iterator it = allocatedConds.find(rhs->getId());
+        assert(it != allocatedConds.end() && "rhs not in allocated conds");
+        return it->second;
     } else if (rhs->getExpr().is_false()){
-        assert(allocatedConds.count(lhs->getExpr().id()) && "lhs not in allocated conds");
-        return allocatedConds[lhs->getExpr().id()];
+        IDToCondExprMap::const_iterator it = allocatedConds.find(lhs->getId());
+        assert(it != allocatedConds.end() && "lhs not in allocated conds");
+        return it->second;
     } else {
         const z3::expr& expr = simplify(lhs->getExpr() || rhs->getExpr());
-        if (allocatedConds.count(expr.id()))
-            return allocatedConds[expr.id()];
-        else{
-            Map<u32_t, z3::expr> lhsBrMap = lhs->getBrExprMap();
-            Map<u32_t, std::vector<uint64_t>> lhsSwitchValuesExprMap = lhs->getSwitchValuesExprMap();
-            for (const auto &e: rhs->getBrExprMap())
-                lhsBrMap.insert(e);
-            for (const auto &e: rhs->getSwitchValuesExprMap())
-                lhsSwitchValuesExprMap.insert(e);
-            CondExpr *cond = new CondExpr(expr);
-            cond->setBrExprMap(lhsBrMap);
-            cond->setSwitchValuesMap(lhsSwitchValuesExprMap);
-            allocatedConds[expr.id()] = cond;
-            return cond;
-        }
+        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+        if (it != allocatedConds.end())
+            return it->second;
+        else
+            return allocatedConds[expr.id()] = &((*lhs) || (*rhs));
     }
 }
 
@@ -147,15 +131,11 @@ CondExpr* CondManager::NEG(const CondExpr *lhs)
         return trueCond;
     else{
         const z3::expr& expr = simplify(!lhs->getExpr());
-        if (allocatedConds.count(expr.id()))
-            return allocatedConds[expr.id()];
-        else{
-            CondExpr *cond = new CondExpr(expr);
-            cond->setBrExprMap(lhs->getBrExprMap());
-            cond->setSwitchValuesMap(lhs->getSwitchValuesExprMap());
-            allocatedConds[expr.id()] = cond;
-            return cond;
-        }
+        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+        if (it != allocatedConds.end())
+            return it->second;
+        else
+            return allocatedConds[expr.id()] = &(!(*lhs));
     }
 }
 
@@ -163,12 +143,13 @@ CondExpr* CondManager::NEG(const CondExpr *lhs)
 CondExpr* CondManager::createCond(u32_t i)
 {
     const z3::expr &expr = cxt.bool_const(("c" + std::to_string(i)).c_str());
-    if (allocatedConds.count(expr.id()))
-        return allocatedConds[expr.id()];
+    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+    if (it != allocatedConds.end())
+        return it->second;
     else{
         CondExpr *cond = new CondExpr(expr);
-        allocatedConds[expr.id()] = cond;
-        return cond;
+        cond->insertBranchCondIDs(expr.id());
+        return allocatedConds[expr.id()] = cond;
     }
 }
 
@@ -176,12 +157,13 @@ CondExpr* CondManager::createCond(u32_t i)
 CondExpr* CondManager::createCond(const z3::expr& e)
 {
     z3::expr es = simplify(e);
-    if (allocatedConds.count(es.id()))
-        return allocatedConds[es.id()];
+    IDToCondExprMap::const_iterator it = allocatedConds.find(e.id());
+    if (it != allocatedConds.end())
+        return it->second;
     else{
-        CondExpr *cond = new CondExpr(es);
-        allocatedConds[es.id()] = cond;
-        return cond;
+        CondExpr *cond = new CondExpr(e);
+        cond->insertBranchCondIDs(e.id());
+        return allocatedConds[e.id()] = cond;
     }
 }
 
@@ -224,7 +206,9 @@ void CondManager::extractSubConds(const z3::expr& e, NodeBS &support) const
     }
 }
 
-/// solve condition
+/*!
+ * whether z3 condition e is satisfiable
+ */
 bool CondManager::isSatisfiable(const z3::expr& e){
     sol.reset();
     sol.add(e);
@@ -233,6 +217,77 @@ bool CondManager::isSatisfiable(const z3::expr& e){
         return true;
     else
         return false;
+}
+
+
+/*!
+ * whether the conditions of **All Paths** are satisfiable
+ *
+ * we first build a truth table of the unique boolean identifiers of the condition e,
+ * and then check whether e is all satisfiable under each row of the truth table
+ */
+bool CondManager::isAllSatisfiable(const CondExpr* e){
+    const z3::expr_vector &allPathConds = enumerateAllPathConditions(e);
+    for (const auto pathCond: allPathConds) {
+        if (!isSatisfiable(pathCond))
+            return false;
+    }
+    return true;
+}
+
+/*!
+ * build truth table (truthTable)
+ */
+void
+CondManager::buildTruthTable(Set<u32_t>::const_iterator curit,
+                             Set<u32_t>::const_iterator eit,
+                             std::vector<z3::expr> &tmpExpr,
+                             std::vector<std::vector<z3::expr>> &truthTable) {
+    if (curit == eit) {
+        truthTable.push_back(tmpExpr);
+        return;
+    }
+    IDToCondExprMap::const_iterator it = allocatedConds.find(*curit);
+    assert(it != allocatedConds.end() && "id not in allocated conditions!");
+    tmpExpr.push_back(it->second->getExpr());
+    buildTruthTable(std::next(curit), eit, tmpExpr, truthTable);
+    tmpExpr.pop_back();
+
+    tmpExpr.push_back(!it->second->getExpr());
+    buildTruthTable(std::next(curit), eit, tmpExpr, truthTable);
+    tmpExpr.pop_back();
+}
+
+/*!
+ * Enumerate all path conditions by assigning each row of the truth table
+ * to the boolean identifiers of the original condition
+ *
+ * e.g.,
+ * The original condition (C) is: C1 || (!C1) && C2
+ * Its truth table is: {(C1 && C2), (C1 && !C2), (!C1 && C2), (!C1 && !C2)}
+ * Its all path conditions are as follows:
+ *      * (C) && (C1 && C2),
+ *      * (C) && (C1 && !C2)
+ *      * (C) && (!C1 && C2)
+ *      * (C) && (!C1 && !C2)
+ */
+z3::expr_vector CondManager::enumerateAllPathConditions(const CondExpr* condition){
+    const Set<u32_t> brCondIDs = condition->getBranchCondIDs();
+    z3::expr_vector allPathConds(condition->getContext());
+    std::vector<z3::expr> tmpExpr;
+    // the target truth table
+    std::vector<std::vector<z3::expr>> truthTable;
+    buildTruthTable(brCondIDs.begin(), brCondIDs.end(), tmpExpr, truthTable);
+    for(const auto& row: truthTable){
+        // assign each row of the truth table to the
+        // boolean identifiers of the original condition
+        z3::expr expr = condition->getExpr();
+        for (const auto &bre: row) {
+            expr = expr && bre;
+        }
+        allPathConds.push_back(expr);
+    }
+    return allPathConds;
 }
 
 /// Print out one particular expression

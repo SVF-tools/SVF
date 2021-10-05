@@ -495,69 +495,6 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
     return getCFCond(dstBB);
 }
 
-/*!
- * enumerate all branch condition
- */
-void
-PathCondAllocator::enumerateBranchConditions(Map<u32_t, Z3Expr>::const_iterator curit,
-                                             Map<u32_t, Z3Expr>::const_iterator eit,
-                                             std::vector<Z3Expr> &tmpExpr,
-                                             std::vector<std::vector<Z3Expr>> &exprVec,
-                                             Map<u32_t, std::vector<uint64_t>> &switchValues) {
-    if (curit == eit) {
-        exprVec.push_back(tmpExpr);
-        return;
-    }
-    if (switchValues.count(curit->second.id())) {
-        for (const auto &value: switchValues[curit->second.id()]) {
-            tmpExpr.push_back(curit->second == condMgr.getctx().real_val(value));
-            enumerateBranchConditions(std::next(curit), eit, tmpExpr, exprVec, switchValues);
-            tmpExpr.pop_back();
-        }
-    } else {
-        tmpExpr.push_back(curit->second);
-        enumerateBranchConditions(std::next(curit), eit, tmpExpr, exprVec, switchValues);
-        tmpExpr.pop_back();
-
-        tmpExpr.push_back(!curit->second);
-        enumerateBranchConditions(std::next(curit), eit, tmpExpr, exprVec, switchValues);
-        tmpExpr.pop_back();
-    }
-
-}
-
-/*!
- * enumerate all possible conditions
- */
-PathCondAllocator::Z3ExprVector PathCondAllocator::enumerateConditions(Condition* condition){
-    const Map<u32_t, Z3Expr> brExpr = condition->getBrExprMap();
-    Map<u32_t, std::vector<uint64_t>> switchValues = condition->getSwitchValuesExprMap();
-    Z3ExprVector resExpr(condMgr.getctx());
-    std::vector<Z3Expr> tmpExpr;
-    std::vector<std::vector<Z3Expr>> exprVec;
-    enumerateBranchConditions(brExpr.begin(), brExpr.end(), tmpExpr, exprVec, switchValues);
-    for(const auto& exprs: exprVec){
-        z3::expr expr = condition->getExpr();
-        for (const auto &bre: exprs) {
-            expr = expr && bre;
-        }
-        resExpr.push_back(expr);
-    }
-    return resExpr;
-}
-
-/*!
- * whether condition is satisfiable for all possible boolean guards
- */
-bool PathCondAllocator::isAllSatisfiable(Condition* condition){
-    const Z3ExprVector &exprVector = enumerateConditions(condition);
-    for (const auto &e: exprVector) {
-        // return false if one path is leaked
-        if (!condMgr.isSatisfiable(condMgr.simplify(e)))
-            return false;
-    }
-    return true;
-}
 
 /*!
  * Print path conditions

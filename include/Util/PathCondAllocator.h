@@ -49,8 +49,6 @@ public:
 
 //    typedef DdNode Condition;     /// bdd condition
     typedef CondExpr Condition;   /// z3 condition
-    typedef z3::expr Z3Expr;
-    typedef z3::expr_vector Z3ExprVector;
 
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
     typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
@@ -124,22 +122,15 @@ public:
     {
         return condMgr.dumpStr(cond);
     }
-    /// Given an index, get its condition
-    inline Condition* getCond(u32_t i)
+    /// Given an z3 expr id, get its condition
+    inline Condition* getCond(u32_t i) const
     {
-//        IndexToConditionMap::const_iterator it = indexToCondMap.find(i);
-//        assert(it!=indexToCondMap.end() && "condition not found!");
-//        return it->second;
         return condMgr.getCond(i);
     }
-    /// Create new BDD condition
+    /// Create new z3 condition
     inline Condition* createNewCond(u32_t i)
     {
-//        assert(indexToCondMap.find(i)==indexToCondMap.end() && "This should be fresh index to create new BDD");
-        Condition* d = condMgr.createCond(i);
-        d->insertBrExpr(d->getExpr());
-//        indexToCondMap[i] = d;
-        return d;
+        return condMgr.createCond(i);
     }
     /// Allocate a new condition
     inline Condition* newCond(const Instruction* inst)
@@ -214,17 +205,9 @@ public:
     }
 
     /// whether condition is satisfiable for all possible boolean guards
-    bool isAllSatisfiable(Condition* condition);
-
-    /// enumerate all branch condition
-    void enumerateBranchConditions(Map<u32_t, Z3Expr>::const_iterator curit,
-                                   Map<u32_t, Z3Expr>::const_iterator eit,
-                                   std::vector<Z3Expr> &tmpExpr,
-                                   std::vector<std::vector<Z3Expr>> &exprVec,
-                                   Map<u32_t, std::vector<uint64_t>> &switchValues);
-
-    /// enumerate all branch condition
-    Z3ExprVector enumerateConditions(Condition *condition);
+    inline bool isAllSatisfiable(Condition* condition){
+        return condMgr.isAllSatisfiable(condition);
+    }
 
 private:
 
