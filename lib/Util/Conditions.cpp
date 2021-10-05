@@ -79,64 +79,35 @@ z3::expr CondManager::simplify(const z3::expr& expr){
 /// And operator for two expressions
 CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
 {
-    if (lhs->getExpr().is_false() || rhs->getExpr().is_false())
-        return falseCond;
-    else if (lhs->getExpr().is_true()){
-        IDToCondExprMap::const_iterator it = allocatedConds.find(rhs->getId());
-        assert(it != allocatedConds.end() && "rhs not in allocated conds");
+    const z3::expr& expr = simplify(lhs->getExpr() && rhs->getExpr());
+    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+    if (it != allocatedConds.end())
         return it->second;
-    } else if (rhs->getExpr().is_true()){
-        IDToCondExprMap::const_iterator it = allocatedConds.find(lhs->getId());
-        assert(it != allocatedConds.end() && "lhs not in allocated conds");
-        return it->second;
-    } else {
-        const z3::expr& expr = simplify(lhs->getExpr() && rhs->getExpr());
-        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-        if (it != allocatedConds.end())
-            return it->second;
-        else
-            return allocatedConds[expr.id()] = &((*lhs) && (*rhs));
-    }
+    else
+        return allocatedConds[expr.id()] = (*lhs) && (*rhs);
+
 }
 
 /// Or operator for two expressions
 CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
 {
-    if (lhs->getExpr().is_true() || rhs->getExpr().is_true())
-        return trueCond;
-    else if (lhs->getExpr().is_false()){
-        IDToCondExprMap::const_iterator it = allocatedConds.find(rhs->getId());
-        assert(it != allocatedConds.end() && "rhs not in allocated conds");
+    const z3::expr& expr = simplify(lhs->getExpr() || rhs->getExpr());
+    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+    if (it != allocatedConds.end())
         return it->second;
-    } else if (rhs->getExpr().is_false()){
-        IDToCondExprMap::const_iterator it = allocatedConds.find(lhs->getId());
-        assert(it != allocatedConds.end() && "lhs not in allocated conds");
-        return it->second;
-    } else {
-        const z3::expr& expr = simplify(lhs->getExpr() || rhs->getExpr());
-        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-        if (it != allocatedConds.end())
-            return it->second;
-        else
-            return allocatedConds[expr.id()] = &((*lhs) || (*rhs));
-    }
+    else
+        return allocatedConds[expr.id()] = (*lhs) || (*rhs);
 }
 
 /// Neg operator for an expression
 CondExpr* CondManager::NEG(const CondExpr *lhs)
 {
-    if (lhs->getExpr().is_true())
-        return falseCond;
-    else if (lhs->getExpr().is_false())
-        return trueCond;
-    else{
-        const z3::expr& expr = simplify(!lhs->getExpr());
-        IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-        if (it != allocatedConds.end())
-            return it->second;
-        else
-            return allocatedConds[expr.id()] = &(!(*lhs));
-    }
+    const z3::expr& expr = simplify(!lhs->getExpr());
+    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+    if (it != allocatedConds.end())
+        return it->second;
+    else
+        return allocatedConds[expr.id()] = !(*lhs);
 }
 
 /// Create a single condition
@@ -236,7 +207,7 @@ bool CondManager::isAllSatisfiable(const CondExpr* e){
 }
 
 /*!
- * build truth table (truthTable)
+ * build truth table (stored in truthTable)
  */
 void
 CondManager::buildTruthTable(Set<u32_t>::const_iterator curit,

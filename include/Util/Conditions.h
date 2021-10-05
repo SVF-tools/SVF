@@ -74,12 +74,15 @@ public:
 
     // branch condition is the same
     bool operator==(const CondExpr &condExpr) const {
-        return z3::eq(getExpr(), condExpr.getExpr());
+        return getId() == condExpr.getId();
     }
 
-    friend CondExpr& operator||(const CondExpr &lhs, const CondExpr &rhs);
-    friend CondExpr& operator&&(const CondExpr &lhs, const CondExpr &rhs);
-    friend CondExpr& operator!(const CondExpr &lhs);
+    /// overload logical operators
+    //{@
+    friend CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs);
+    friend CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs);
+    friend CondExpr* operator!(const CondExpr &lhs);
+    //@}
 
 private:
     z3::expr e;
@@ -148,7 +151,7 @@ public:
     /// whether the conditions of **All Paths** are satisfiable
     bool isAllSatisfiable(const CondExpr* e);
 
-    /// build truth table
+    /// build truth table (stored in truthTable)
     void buildTruthTable(Set<u32_t>::const_iterator curit,
                          Set<u32_t>::const_iterator eit,
                          std::vector<z3::expr> &tmpExpr,
@@ -174,32 +177,32 @@ private:
     IDToCondExprMap allocatedConds;
 };
 
-inline CondExpr& operator||(const CondExpr &lhs, const CondExpr &rhs) {
+inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
     const z3::expr &expr = CondManager::simplify(lhs.getExpr() || rhs.getExpr());
     Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
     for (u32_t id: rhs.getBranchCondIDs())
         lhsCondIDs.insert(id);
     CondExpr *cond = new CondExpr(expr);
     cond->setBranchCondIDs(lhsCondIDs);
-    return *cond;
+    return cond;
 }
 
-inline CondExpr& operator&&(const CondExpr &lhs, const CondExpr &rhs) {
+inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
     const z3::expr &expr = CondManager::simplify(lhs.getExpr() && rhs.getExpr());
     Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
     for (u32_t id: rhs.getBranchCondIDs())
         lhsCondIDs.insert(id);
     CondExpr *cond = new CondExpr(expr);
     cond->setBranchCondIDs(lhsCondIDs);
-    return *cond;
+    return cond;
 }
 
-inline CondExpr& operator!(const CondExpr &lhs) {
+inline CondExpr* operator!(const CondExpr &lhs) {
     const z3::expr &expr = CondManager::simplify(!lhs.getExpr());
     Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
     CondExpr *cond = new CondExpr(expr);
     cond->setBranchCondIDs(lhsCondIDs);
-    return *cond;
+    return cond;
 }
 
 /**
