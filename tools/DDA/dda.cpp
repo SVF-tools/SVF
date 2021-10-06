@@ -8,6 +8,7 @@
 //#include "MemoryModel/ComTypeModel.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "DDA/DDAPass.h"
+#include "Util/Options.h"
 
 using namespace llvm;
 using namespace SVF;
@@ -49,6 +50,11 @@ int main(int argc, char ** argv)
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Demand-Driven Points-to Analysis\n");
+
+    if (Options::WriteAnder == "ir_annotator")
+    {
+        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+    }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();

@@ -11,6 +11,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/Options.h"
+#include "Util/IRAnnotator.h"
 #include <fstream>
 #include <sstream>
 
@@ -93,6 +94,8 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
  */
 void BVDataPTAImpl::writeToFile(const string& filename)
 {
+    writeToModule();
+
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
@@ -165,6 +168,13 @@ void BVDataPTAImpl::writeToFile(const string& filename)
  */
 bool BVDataPTAImpl::readFromFile(const string& filename)
 {
+    // If the module annotations are available, read from there instead
+    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
+    if (mainModule->getNamedMetadata("PAG-Annotated") != nullptr)
+    {
+        return readFromModule();
+    }
+
     outs() << "Loading pointer analysis results from '" << filename << "'...";
 
     ifstream F(filename.c_str());
@@ -260,6 +270,31 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     F.close();
     outs() << "\n";
 
+    return true;
+}
+
+/*!
+ * Store pointer analysis result into the current LLVM module as metadata.
+ * It includes the points-to relations, and all PAG nodes including those
+ * created when solving Andersen's constraints.
+ */
+void BVDataPTAImpl::writeToModule()
+{
+    auto irAnnotator = std::make_unique<IRAnnotator>();
+    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
+
+    irAnnotator->processAndersenResults(pag, this, true);
+}
+
+/*!
+ * Load pointer analysis result from the metadata in the module.
+ * It populates BVDataPTAImpl with the points-to data, and updates PAG with
+ * the PAG offset nodes created during Andersen's solving stage.
+ */
+bool BVDataPTAImpl::readFromModule()
+{
+    auto irAnnotator = std::make_unique<IRAnnotator>();
+    irAnnotator->processAndersenResults(pag, this, false);
     return true;
 }
 

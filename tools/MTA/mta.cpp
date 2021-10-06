@@ -1,5 +1,6 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "MTA/MTA.h"
+#include "Util/Options.h"
 
 using namespace llvm;
 using namespace std;
@@ -18,6 +19,11 @@ int main(int argc, char ** argv)
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "MTA Analysis\n");
+
+    if (Options::WriteAnder == "ir_annotator")
+    {
+        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+    }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();

@@ -697,7 +697,6 @@ static const ei_pair ei_pairs[]=
 
     {"__rawmemchr", ExtAPI::EFT_L_A0},
     {"cairo_surface_reference", ExtAPI::EFT_L_A0},
-    {"dlsym", ExtAPI::EFT_L_A0},
     {"fgets", ExtAPI::EFT_L_A0},
     {"jpeg_std_error", ExtAPI::EFT_L_A0},
     {"memchr", ExtAPI::EFT_L_A0},
@@ -738,6 +737,7 @@ static const ei_pair ei_pairs[]=
     {"memccpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memcpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"memmove", ExtAPI::EFT_L_A0__A0R_A1R},
+    {"dlsym", ExtAPI::EFT_L_A1__FunPtr},
     {"bcopy", ExtAPI::EFT_A1R_A0R},
     {"iconv", ExtAPI::EFT_A3R_A1R_NS},
     {"strtod", ExtAPI::EFT_A1R_A0},

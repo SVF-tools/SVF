@@ -150,14 +150,18 @@ int main(int argc, char ** argv)
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
-    LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+    
+    if (Options::WriteAnder == "ir_annotator")
+    {
+        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+    }
+
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
 
 	/// Build Program Assignment Graph (PAG)
 	PAGBuilder builder;
 	PAG* pag = builder.build(svfModule);
-    pag->dump("output_pag");
 
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);

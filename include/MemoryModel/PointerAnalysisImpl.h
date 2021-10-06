@@ -150,6 +150,8 @@ public:
     //@{
     virtual void writeToFile(const std::string& filename);
     virtual bool readFromFile(const std::string& filename);
+    virtual void writeToModule();
+    virtual bool readFromModule();
     //@}
 
 protected:
