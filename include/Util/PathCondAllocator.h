@@ -61,7 +61,7 @@ public:
 //    typedef Map<u32_t,Condition*> IndexToConditionMap;
 
     /// Constructor
-    PathCondAllocator()
+    PathCondAllocator(): condMgr(CondManager::getCondMgr())
     {
     }
     /// Destructor
@@ -70,21 +70,21 @@ public:
     }
     inline Condition* trueCond()
     {
-        return condMgr.getTrueCond();
+        return condMgr->getTrueCond();
     }
     inline Condition* falseCond()
     {
-        return condMgr.getFalseCond();
+        return condMgr->getFalseCond();
     }
     /// Statistics
     //@{
     inline std::string getMemUsage()
     {
-        return condMgr.getMemUsage();
+        return condMgr->getMemUsage();
     }
     inline u32_t getCondNum()
     {
-        return condMgr.getCondNumber();
+        return condMgr->getCondNumber();
     }
     //@}
 
@@ -92,45 +92,45 @@ public:
     //@{
     inline Condition* condAnd(Condition* lhs, Condition* rhs)
     {
-        return condMgr.AND(lhs,rhs);
+        return condMgr->AND(lhs,rhs);
     }
     inline Condition* condOr(Condition* lhs, Condition* rhs)
     {
-        return condMgr.OR(lhs,rhs);
+        return condMgr->OR(lhs,rhs);
     }
     inline Condition* condNeg(Condition* cond)
     {
-        return condMgr.NEG(cond);
+        return condMgr->NEG(cond);
     }
     inline Condition* getTrueCond() const
     {
-        return condMgr.getTrueCond();
+        return condMgr->getTrueCond();
     }
     inline Condition* getFalseCond() const
     {
-        return condMgr.getFalseCond();
+        return condMgr->getFalseCond();
     }
         /// Iterator every element of the bdd
     inline NodeBS exactCondElem(Condition* cond)
     {
         NodeBS elems;
-        condMgr.extractSubConds(cond->getExpr(),elems);
+        condMgr->extractSubConds(cond->getExpr(),elems);
         return elems;
     }
 
     inline std::string dumpCond(Condition* cond) const
     {
-        return condMgr.dumpStr(cond);
+        return condMgr->dumpStr(cond);
     }
     /// Given an z3 expr id, get its condition
     inline Condition* getCond(u32_t i) const
     {
-        return condMgr.getCond(i);
+        return condMgr->getCond(i);
     }
     /// Create new z3 condition
     inline Condition* createNewCond(u32_t i)
     {
-        return condMgr.createCond(i);
+        return condMgr->createCond(i);
     }
     /// Allocate a new condition
     inline Condition* newCond(const Instruction* inst)
@@ -201,12 +201,12 @@ public:
 
     /// whether condition is satisfiable
     inline bool isSatisfiable(Condition* condition){
-        return condMgr.isSatisfiable(condition->getExpr());
+        return condMgr->isSatisfiable(condition->getExpr());
     }
 
     /// whether condition is satisfiable for all possible boolean guards
     inline bool isAllSatisfiable(Condition* condition){
-        return condMgr.isAllSatisfiable(condition);
+        return condMgr->isAllSatisfiable(condition);
     }
 
 private:
@@ -294,7 +294,7 @@ private:
 
 protected:
 //    BddCondManager condMgr;		///< bbd manager
-    CondManager condMgr;		///< z3 manager
+    CondManager* condMgr;		///< z3 manager
     BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
 //    IndexToConditionMap indexToCondMap;
 

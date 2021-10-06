@@ -31,7 +31,7 @@
 #define BITVECTORCOND_H_
 
 #include "Util/BasicTypes.h"
-#include <stdio.h>
+#include <cstdio>
 
 #include "CUDD/cuddInt.h"
 #include "z3++.h"
@@ -43,7 +43,7 @@ class CondExpr{
 
 public:
 
-    CondExpr(const z3::expr& _e): e(_e){
+    explicit CondExpr(const z3::expr& _e): e(_e){
     }
     const z3::expr& getExpr() const{
         return e;
@@ -57,8 +57,8 @@ public:
     void insertBranchCondIDs(u32_t id) {
         branchCondIDs.insert(id);
     }
-    void setBranchCondIDs(Set<u32_t> _ids){
-        branchCondIDs = std::move(_ids);
+    void setBranchCondIDs(const Set<u32_t>& _ids){
+        branchCondIDs = _ids;
     }
     //@}
     
@@ -92,11 +92,31 @@ private:
 
 class CondManager{
 
-public:
-    typedef Map<u32_t, CondExpr*> IDToCondExprMap;
+private:
+    static CondManager* condMgr;
 
     /// Constructor
     CondManager();
+
+public:
+    /// Singleton design here to make sure we only have one instance during any analysis
+    //@{
+    static inline CondManager* getCondMgr()
+    {
+        if (condMgr == nullptr)
+        {
+            condMgr = new CondManager();
+        }
+        return condMgr;
+    }
+    static void releaseCondMgr()
+    {
+        delete condMgr;
+        condMgr = nullptr;
+    }
+    //@}
+
+    typedef Map<u32_t, CondExpr*> IDToCondExprMap;
 
     /// Destructor
     ~CondManager();
@@ -104,8 +124,8 @@ public:
     /// Create a single condition
     CondExpr* createCond(u32_t i);
 
-    /// Create a single condition
-    CondExpr* createCond(const z3::expr& i);
+    /// new a single condition
+    bool newCond(const z3::expr& i);
 
     /// Return the number of condition expressions
     u32_t getCondNumber();
@@ -125,9 +145,15 @@ public:
     static z3::expr simplify(const z3::expr& expr);
     /// Operations on conditions.
     //@{
-    CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs);
-    CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs);
-    CondExpr* NEG(const CondExpr* lhs);
+    static inline CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs){
+        return (*lhs) && (*rhs);
+    }
+    static inline CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs){
+        return (*lhs) || (*rhs);
+    }
+    static inline CondExpr* NEG(const CondExpr* lhs){
+        return !(*lhs);
+    }
     //@}
 
     /// Return memory usage for this condition manager
@@ -179,30 +205,49 @@ private:
 
 inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
     const z3::expr &expr = CondManager::simplify(lhs.getExpr() || rhs.getExpr());
-    Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-    for (u32_t id: rhs.getBranchCondIDs())
-        lhsCondIDs.insert(id);
-    CondExpr *cond = new CondExpr(expr);
-    cond->setBranchCondIDs(lhsCondIDs);
-    return cond;
+    CondManager *condMgr = CondManager::getCondMgr();
+    if (!condMgr->newCond(expr)) {
+        return condMgr->getCond(expr.id());;
+    } else {
+        // new condition
+        CondExpr *cond = condMgr->getCond(expr.id());
+        Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
+        for (u32_t id: rhs.getBranchCondIDs())
+            lhsCondIDs.insert(id);
+        cond->setBranchCondIDs(lhsCondIDs);
+        return cond;
+    }
 }
 
 inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
     const z3::expr &expr = CondManager::simplify(lhs.getExpr() && rhs.getExpr());
-    Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-    for (u32_t id: rhs.getBranchCondIDs())
-        lhsCondIDs.insert(id);
-    CondExpr *cond = new CondExpr(expr);
-    cond->setBranchCondIDs(lhsCondIDs);
-    return cond;
+    CondManager *condMgr = CondManager::getCondMgr();
+    if (!condMgr->newCond(expr)) {
+        return condMgr->getCond(expr.id());
+    } else {
+        // new condition
+        CondExpr *cond = condMgr->getCond(expr.id());
+        Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
+        for (u32_t id: rhs.getBranchCondIDs())
+            lhsCondIDs.insert(id);
+        cond->setBranchCondIDs(lhsCondIDs);
+        return cond;
+    }
 }
 
 inline CondExpr* operator!(const CondExpr &lhs) {
     const z3::expr &expr = CondManager::simplify(!lhs.getExpr());
-    Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-    CondExpr *cond = new CondExpr(expr);
-    cond->setBranchCondIDs(lhsCondIDs);
-    return cond;
+    CondManager *condMgr = CondManager::getCondMgr();
+    if (!condMgr->newCond(expr)) {
+        return condMgr->getCond(expr.id());
+    } else {
+        // new condition
+        CondExpr *cond = condMgr->getCond(expr.id());
+        Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
+        cond->setBranchCondIDs(lhsCondIDs);
+        cond->setBranchCondIDs(lhsCondIDs);
+        return cond;
+    }
 }
 
 /**

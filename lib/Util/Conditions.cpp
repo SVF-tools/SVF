@@ -36,6 +36,7 @@ using namespace SVF;
 
 CondExpr* CondManager::trueCond = nullptr;
 CondExpr* CondManager::falseCond = nullptr;
+CondManager* CondManager::condMgr = nullptr;
 
 /// Constructor
 CondManager::CondManager() : sol(cxt)
@@ -63,8 +64,6 @@ z3::expr CondManager::simplify(const z3::expr& expr){
     z3::tactic qe(expr.ctx(), "ctx-solver-simplify");
     g.add(expr);
     z3::apply_result r = qe(g);
-    z3::goal result_goal = r[0];
-    const z3::expr &asExpr = result_goal.as_expr();
     z3::expr res(expr.ctx().bool_val(false));
     for (u32_t i = 0; i < r.size(); ++i) {
         if (res.is_false()) {
@@ -76,39 +75,6 @@ z3::expr CondManager::simplify(const z3::expr& expr){
     return res;
 }
 
-/// And operator for two expressions
-CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
-{
-    const z3::expr& expr = simplify(lhs->getExpr() && rhs->getExpr());
-    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-    if (it != allocatedConds.end())
-        return it->second;
-    else
-        return allocatedConds[expr.id()] = (*lhs) && (*rhs);
-
-}
-
-/// Or operator for two expressions
-CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
-{
-    const z3::expr& expr = simplify(lhs->getExpr() || rhs->getExpr());
-    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-    if (it != allocatedConds.end())
-        return it->second;
-    else
-        return allocatedConds[expr.id()] = (*lhs) || (*rhs);
-}
-
-/// Neg operator for an expression
-CondExpr* CondManager::NEG(const CondExpr *lhs)
-{
-    const z3::expr& expr = simplify(!lhs->getExpr());
-    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-    if (it != allocatedConds.end())
-        return it->second;
-    else
-        return allocatedConds[expr.id()] = !(*lhs);
-}
 
 /// Create a single condition
 CondExpr* CondManager::createCond(u32_t i)
@@ -120,21 +86,20 @@ CondExpr* CondManager::createCond(u32_t i)
     else{
         CondExpr *cond = new CondExpr(expr);
         cond->insertBranchCondIDs(expr.id());
-        return allocatedConds[expr.id()] = cond;
+        return allocatedConds.emplace(expr.id(), cond).first->second;
     }
 }
 
-/// Create a single condition
-CondExpr* CondManager::createCond(const z3::expr& e)
+/// new a single condition
+bool CondManager::newCond(const z3::expr& e)
 {
-    z3::expr es = simplify(e);
     IDToCondExprMap::const_iterator it = allocatedConds.find(e.id());
     if (it != allocatedConds.end())
-        return it->second;
+        return false;
     else{
         CondExpr *cond = new CondExpr(e);
-        cond->insertBranchCondIDs(e.id());
-        return allocatedConds[e.id()] = cond;
+        allocatedConds.emplace(e.id(), cond);
+        return true;
     }
 }
 
@@ -235,12 +200,17 @@ CondManager::buildTruthTable(Set<u32_t>::const_iterator curit,
  *
  * e.g.,
  * The original condition (C) is: C1 || (!C1) && C2
- * Its truth table is: {(C1 && C2), (C1 && !C2), (!C1 && C2), (!C1 && !C2)}
+ * It contains two unique identifiers: C1 and C2, so its truth table is:
+ *         ===============
+ *         C1  0  0  1  1
+ *         ---------------
+ *         C2  0  1  0  1
+ *         ===============
  * Its all path conditions are as follows:
- *      * (C) && (C1 && C2),
- *      * (C) && (C1 && !C2)
- *      * (C) && (!C1 && C2)
- *      * (C) && (!C1 && !C2)
+ *      * (C) && (C1==0 && C2==0),
+ *      * (C) && (C1==0 && C2==1)
+ *      * (C) && (C1==1 && C2==0)
+ *      * (C) && (C1==1 && C2==1)
  */
 z3::expr_vector CondManager::enumerateAllPathConditions(const CondExpr* condition){
     const Set<u32_t> brCondIDs = condition->getBranchCondIDs();
@@ -249,12 +219,12 @@ z3::expr_vector CondManager::enumerateAllPathConditions(const CondExpr* conditio
     // the target truth table
     std::vector<std::vector<z3::expr>> truthTable;
     buildTruthTable(brCondIDs.begin(), brCondIDs.end(), tmpExpr, truthTable);
-    for(const auto& row: truthTable){
+    for(const auto& col: truthTable){
         // assign each row of the truth table to the
         // boolean identifiers of the original condition
         z3::expr expr = condition->getExpr();
-        for (const auto &bre: row) {
-            expr = expr && bre;
+        for (const auto &ele: col) {
+            expr = expr && ele;
         }
         allPathConds.push_back(expr);
     }
