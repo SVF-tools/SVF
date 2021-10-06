@@ -1064,6 +1064,22 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             case ExtAPI::EFT_A1R_A0R:
                 addComplexConsForExt(cs.getArgument(1), cs.getArgument(0));
                 break;
+            case ExtAPI::EFT_L_A1__FunPtr:
+            {
+                /// handling external function e.g., void *dlsym(void *handle, const char *funname); 
+                const Value *src = cs.getArgument(1);
+                if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
+                    src = stripConstantCasts(gep->getPointerOperand());
+                if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src)){
+                    if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer())){
+                        if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str())){
+                            NodeID srcNode = getValueNode(fun->getLLVMFun());
+                            addCopyEdge(srcNode,  getValueNode(inst));
+                        }
+                    }
+                }
+                break;
+            }
             case ExtAPI::EFT_A3R_A1R_NS:
                 //These func. are never used to copy structs, so the size is 1.
                 addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), 1);
