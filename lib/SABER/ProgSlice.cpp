@@ -61,21 +61,21 @@ bool ProgSlice::AllPathReachableSolve()
             if(inBackwardSlice(succ))
             {
                 Condition* vfCond = nullptr;
-                const BasicBlock* nodeBB = getSVFGNodeBB(node);
-                const BasicBlock* succBB = getSVFGNodeBB(succ);
+                const ICFGNode* srcICFGNode = node->getICFGNode();
+                const ICFGNode* succICFGNode = succ->getICFGNode();
                 /// clean up the control flow conditions for next round guard computation
                 clearCFCond();
 
                 if(edge->isCallVFGEdge())
                 {
-                    vfCond = ComputeInterCallVFGGuard(nodeBB,succBB, getCallSite(edge)->getParent());
+                    vfCond = ComputeInterCallVFGGuard(srcICFGNode, succICFGNode, getCallSite(edge));
                 }
                 else if(edge->isRetVFGEdge())
                 {
-                    vfCond = ComputeInterRetVFGGuard(nodeBB,succBB, getRetSite(edge)->getParent());
+                    vfCond = ComputeInterRetVFGGuard(srcICFGNode, succICFGNode, getRetSite(edge));
                 }
                 else
-                    vfCond = ComputeIntraVFGGuard(nodeBB,succBB);
+                    vfCond = ComputeIntraVFGGuard(srcICFGNode, succICFGNode);
 
                 Condition* succPathCond = condAnd(cond, vfCond);
                 if(setVFCond(succ,  condOr(getVFCond(succ), succPathCond) ))
@@ -246,7 +246,7 @@ void ProgSlice::destroy()
 //	for(SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.begin(), eit = svfgNodeToCondMap.end(); it!=eit; ++it){
 //		pathAllocator->markForRelease(it->second);
 //	}
-//	for(BBToCondMap::const_iterator it = bbToCondMap.begin(), eit = bbToCondMap.end(); it!=eit; ++it){
+//	for(ICFGNodeToCondMap::const_iterator it = icfgNodeToCondMap.begin(), eit = icfgNodeToCondMap.end(); it!=eit; ++it){
 //		pathAllocator->markForRelease(it->second);
 //	}
 }
