@@ -403,7 +403,7 @@ void SVFG::readFile(const string& filename){
        string FunExit; 
        string Callsite;
        string resVer;
-       //inner loop through each element in the line
+       //inner loop through to get each element in the line
        while ((next = s.find(delimiter, last)) != string::npos) 
         {   
             // outs() << s.substr(last, next-last) << "\n"; 
@@ -414,12 +414,9 @@ void SVFG::readFile(const string& filename){
             if(index == 1){type = temp;}
 
             if(index > 1){
-                if(type == "FormalINSVFGNode" || type == "FormalOUTSVFGNode"){
+                if(type == "FormalINSVFGNode" || type == "FormalOUTSVFGNode" || type == "ActualINSVFGNode"){
                     if(index == 2){edges = temp;}
                     if(index == 3){MR = temp;}
-                } else if(type == "ActualINSVFGNode"){
-                    if(index == 2){edges = temp;};
-                    if(index == 3){MR = temp;};
                 } else if(type == "ActualOUTSVFGNode"){
                       if(index == 2){MR = temp;};
                 } else {
@@ -429,22 +426,51 @@ void SVFG::readFile(const string& filename){
             index++; 
         }
 
+
+
         // outs() << s.substr(last) << "\n";
         //add nodes and edges using the variables we extracted
         if(type == "FormalINSVFGNode"){
             FunEntry = s.substr(last); 
+
+            //create Memory Region object
+
+            //create other objects needed for add node
+
+
             outs() << "yeet" << id << type << edges << MR << FunEntry << "\n";
         } else if(type == "FormalOUTSVFGNode"){
             FunExit = s.substr(last); 
+
+            //create Memory Region object
+
+            //create other objects needed for add node
+
+
             outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
         } else if(type == "ActualINSVFGNode"){
             Callsite = s.substr(last); 
+
+            //create Memory Region object
+
+            //create other objects needed for add node
+
+
             outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
         } else if(type == "ActualOUTSVFGNode"){
             Callsite = s.substr(last); 
+
+            //create Memory Region object
+
+
+            //create other objects needed for add node
+
             outs() << "yeet" << id << type << MR << Callsite << "\n";
         } else {
             resVer =  s.substr(last);
+
+            //create objects needed for add node
+
             outs() << "yeet" << id << type << edges << resVer << "\n";     
         }
     }

@@ -77,10 +77,10 @@ public:
         return def;
     }
 
-    friend raw_ostream& operator<<(raw_ostream &o, const MRVer& mrver)
+    /// Get MRVERID
+    inline MRVERID getID() const
     {
-        o << "MRVERID: " << mrver.vid <<" MemRegion: " << mrver.mr->dumpStr() << " MRVERSION: " << mrver.version << " MSSADef: " << mrver.def;
-        return o;
+        return vid;
     }
 };
 
@@ -386,12 +386,6 @@ public:
     virtual void dump()
     {
         SVFUtil::outs() << "DEF(MR_" << mr->getMRID() << "V_" << resVer->getSSAVersion() << ")\n";
-    }
-
-    friend raw_ostream& operator<<(raw_ostream &o, const MSSADEF& def)
-    {
-        o << "defType: " <<  def.type << " MemRegion: {" << def.mr->dumpStr() << "}";
-        return o;
     }
 };
 
@@ -722,6 +716,7 @@ public:
     }
 };
 
+raw_ostream& operator<<(raw_ostream &o, const MRVer& mrver); 
 } // End namespace SVF
 
 #endif /* MSSAMUCHI_H_ */
