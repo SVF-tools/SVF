@@ -385,26 +385,30 @@ void SVFG::readFile(const string& filename){
     string line;
     while (F.good())
     {
-       getline(F, line);
+        getline(F, line);
 
-       std::string s = line; 
-       std::string delimiter = ">=";
+        std::string s = line; 
+        std::string delimiter = ">=";
 
-       string temp; 
-       int index = 0; 
-       //implement delimiter to split string using ">="
-       size_t last = 0; size_t next = 0; 
+        string temp; 
+        int index = 0; 
+        //implement delimiter to split string using ">="
+        size_t last = 0; size_t next = 0; 
 
-       NodeID id; 
-       string type;
-       string edges;
-       string MR;
-       string FunEntry;
-       string FunExit; 
-       string Callsite;
-       string resVer;
-       //inner loop through to get each element in the line
-       while ((next = s.find(delimiter, last)) != string::npos) 
+        NodeID id; 
+        string type;
+        string edges;
+        string MR;
+        string FunEntry;
+        string FunExit; 
+        string Callsite;
+        string resVer;
+
+        unordered_map<int, MRVer*> nodeMRVers; 
+        unordered_map<int, string> nodeEdges; 
+
+        //inner loop through to get each element in the line
+        while ((next = s.find(delimiter, last)) != string::npos) 
         {   
             // outs() << s.substr(last, next-last) << "\n"; 
             temp = s.substr(last, next-last); 
@@ -418,56 +422,64 @@ void SVFG::readFile(const string& filename){
                     if(index == 2){edges = temp;}
                     if(index == 3){MR = temp;}
                 } else if(type == "ActualOUTSVFGNode"){
-                      if(index == 2){MR = temp;};
+                        if(index == 2){MR = temp;};
                 } else {
-                     if(index == 2){edges = temp;};
+                        if(index == 2){edges = temp;};
                 }
             }
             index++; 
         }
 
-        // outs() << s.substr(last) << "\n";
+        //create Memory Region object
+        next = MR.find("MemRegion: pts") + 15;
+        last = MR.find(" MRVERSION: ");
+        temp = MR.substr(next, last-next);
+        PointsTo dstPts;
+        // convert string to PointsTo
+        istringstream ss(temp);
+        NodeID obj;
+        ss >> obj;
+        dstPts.set(obj);
+        MemRegion* tempMemRegion = new MemRegion(dstPts);
+
+        // create mssdef
+        next = MR.find("MSSADef: ") + 9;
+        last = MR.find("}>=");
+        temp = MR.substr(next, last-next);
+        // convert string to deftype
+        istringstream ss1(temp.substr(0, temp.find(",")));
+        int obj1;
+        ss1 >> obj1;
+        MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
+        MSSADEF* tempDef = new MSSADEF(defType, tempMemRegion);
+
+        // mrversion
+        next = MR.find("MRVERSION: ") + 11;
+        last = MR.find(" MSSADef:");
+        temp = MR.substr(next, last-next);
+        // convert mrversion to nodeid
+        istringstream ss2(temp);
+        NodeID obj2;
+        ss2 >> obj2;
+        // create mrver
+        MRVer* tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+        nodeMRVers.insert(make_pair(id, tempMRVer));
+        // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction("0x0"));
+        // create node
+        // addFormalINSVFGNode(tempFunEntry, tempMRVer);
+
+        // get edges
+        next = edges.find("Edges: {") + 8;
+        last = edges.find("}");
+        temp = edges.substr(next, last-next);
+        nodeEdges.insert(make_pair(id, temp));
+        outs() << temp << "\n";            
+
         //add nodes and edges using the variables we extracted
         if(type == "FormalINSVFGNode"){
             FunEntry = s.substr(last); 
-            
-            //create Memory Region object
-            next = MR.find("MemRegion: pts") + 15;
-            last = MR.find(" MRVERSION: ");
-            temp = MR.substr(next, last-next);
-            PointsTo dstPts;
-            // convert string to PointsTo
-            istringstream ss(temp);
-            NodeID obj;
-            ss >> obj;
-            dstPts.set(obj);
-            MemRegion* tempMemRegion = new MemRegion(dstPts);
-
-            // create mssdef
-            next = MR.find("MSSADef: ") + 9;
-            last = MR.find("}>=");
-            temp = MR.substr(next, last-next);
-            MSSADEF::DEFTYPE type;
-            // convert string to deftype
-            istringstream ss1(temp.substr(0, temp.find(",")));
-            int obj1;
-            ss1 >> obj1;
-            type = static_cast<MSSADEF::DEFTYPE>(obj1);
-            MSSADEF* tempDef = new MSSADEF(type, tempMemRegion);
-
-            // mrversion
-            next = MR.find("MRVERSION: ") + 11;
-            last = MR.find(" MSSADef:");
-            temp = MR.substr(next, last-next);
-            // convert mrversion to nodeid
-            istringstream ss2(temp);
-            NodeID obj2;
-            ss2 >> obj2;
-            // create mrver
-            MRVer* tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
-            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction());
-            // addFormalINSVFGNode(tempFunEntry, tempMRVer);
            
+
         } else if(type == "FormalOUTSVFGNode"){
             FunExit = s.substr(last); 
 
