@@ -289,8 +289,9 @@ void SVFG::writeToFile(const string& filename)
             }
             F.os() << "}>=MVER: {";
             //parameters
-
-            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode()->toString() << "\n";
+            string funEntrystr = formalIn->getFunEntryNode()->toString();
+            funEntrystr.erase(remove(funEntrystr.begin(), funEntrystr.end(), '\n'), funEntrystr.end());
+            F.os() << *formalIn->getMRVer() << "}>=" << funEntrystr << ">=EndFunEntry" << "\n";
 
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
@@ -317,26 +318,32 @@ void SVFG::writeToFile(const string& filename)
             // NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            F.os() << *formalOut->getMRVer() << "}>=" << formalOut->getFunExitNode()->toString() << "\n";
+            string funExitstr = formalOut->getFunExitNode()->toString();
+            funExitstr.erase(remove(funExitstr.begin(), funExitstr.end(), '\n'), funExitstr.end());
+            F.os() << *formalOut->getMRVer() << "}>=" << funExitstr << ">=EndFunExit" << "\n";
 
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << ">=" << "ActualINSVFGNode" <<  ">=EDGES: {"; 
+            F.os() << nodeId << ">=" << "ActualINSVFGNode" <<  ">=Edges: {"; 
             //edges
             NodeID def = getDef(actualIn->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
             F.os() << def << "}>=MVER: {";
             //parameters
-            F.os() << *actualIn->getMRVer() << "}>="  <<  actualIn->getCallSite()->toString() << "\n";
+            string callSitestr = actualIn->getCallSite()->toString();
+            callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
+            F.os() << *actualIn->getMRVer() << "}>=" << callSitestr << "<=EndCallSite" << "\n";
         }
         else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             //node
             F.os() <<  nodeId << ">=" << "ActualOUTSVFGNode" << ">=MVER: {";
             //parameters
-            F.os()  << *actualOut->getMRVer() << "}>="  << actualOut->getCallSite()->toString() << "\n";
+            string callSitestr = actualOut->getCallSite()->toString();
+            callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
+            F.os()  << *actualOut->getMRVer() << "}>="  << callSitestr << "<=EndCallSite" << "\n";
 
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
@@ -382,6 +389,9 @@ void SVFG::readFile(const string& filename){
         outs() << "  error opening file for reading!\n";
         return;
     }
+    
+    unordered_map<int, MRVer*> nodeMRVers; 
+    unordered_map<int, string> nodeEdges; 
     //outer loop through each line in the file
     string line;
     while (F.good())
@@ -405,8 +415,6 @@ void SVFG::readFile(const string& filename){
         string Callsite;
         string resVer;
 
-        unordered_map<int, MRVer*> nodeMRVers; 
-        unordered_map<int, string> nodeEdges; 
 
         //inner loop through to get each element in the line
         while ((next = s.find(delimiter, last)) != string::npos) 
@@ -431,13 +439,12 @@ void SVFG::readFile(const string& filename){
             index++; 
         }
 
-<<<<<<< HEAD
-        
-         MemRegion* tempMemRegion;
-         MSSADEF* tempDef;
-         MRVer* tempMRVer; 
+        MemRegion* tempMemRegion;
+        MSSADEF* tempDef;
+        MRVer* tempMRVer; 
 
-        if(!MR.empty()){
+        if(!MR.empty())
+        {
             //create Memory Region object
             next = MR.find("MemRegion: pts") + 15;
             last = MR.find(" MRVERSION: ");
@@ -454,13 +461,12 @@ void SVFG::readFile(const string& filename){
             next = MR.find("MSSADef: ") + 9;
             last = MR.find("}>=");
             temp = MR.substr(next, last-next);
-            MSSADEF::DEFTYPE type;
             // convert string to deftype
             istringstream ss1(temp.substr(0, temp.find(",")));
             int obj1;
             ss1 >> obj1;
-            type = static_cast<MSSADEF::DEFTYPE>(obj1);
-            tempDef = new MSSADEF(type, tempMemRegion);
+            MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
+            tempDef = new MSSADEF(defType, tempMemRegion);
 
             // mrversion
             next = MR.find("MRVERSION: ") + 11;
@@ -472,80 +478,58 @@ void SVFG::readFile(const string& filename){
             ss2 >> obj2;
             // create mrver
             tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+            nodeMRVers.insert(make_pair(id, tempMRVer));
         }
 
-        // outs() << s.substr(last) << "\n";
-        //add nodes and edges using the variables we extracted
+        // get edges for each node to connect after adding nodes
+        if (!edges.empty())
+        {
+            next = edges.find("Edges: {") + 8;
+            last = edges.find("}");
+            temp = edges.substr(next, last-next);
+            nodeEdges.insert(make_pair(id, temp)); 
+        }
+        
+
+        //add nodes using the variables we extracted
         if(type == "FormalINSVFGNode"){
-            // FunEntry = s.substr(last); 
-            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, fun);
+            next = s.find(">=FunEntryBlockNode") + 20;
+            last = s.find(">=EndFunEntry");
+            FunEntry = s.substr(next, last-next);
+            outs() << FunEntry << "\n";
+            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction("0x0"));
+            // create node
             // addFormalINSVFGNode(tempFunEntry, tempMRVer);
-            // pag->getICFG()->getFunEntryBlockNode(chi->getFunction())
-=======
-        //create Memory Region object
-        next = MR.find("MemRegion: pts") + 15;
-        last = MR.find(" MRVERSION: ");
-        temp = MR.substr(next, last-next);
-        PointsTo dstPts;
-        // convert string to PointsTo
-        istringstream ss(temp);
-        NodeID obj;
-        ss >> obj;
-        dstPts.set(obj);
-        MemRegion* tempMemRegion = new MemRegion(dstPts);
 
-        // create mssdef
-        next = MR.find("MSSADef: ") + 9;
-        last = MR.find("}>=");
-        temp = MR.substr(next, last-next);
-        // convert string to deftype
-        istringstream ss1(temp.substr(0, temp.find(",")));
-        int obj1;
-        ss1 >> obj1;
-        MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
-        MSSADEF* tempDef = new MSSADEF(defType, tempMemRegion);
-
-        // mrversion
-        next = MR.find("MRVERSION: ") + 11;
-        last = MR.find(" MSSADef:");
-        temp = MR.substr(next, last-next);
-        // convert mrversion to nodeid
-        istringstream ss2(temp);
-        NodeID obj2;
-        ss2 >> obj2;
-        // create mrver
-        MRVer* tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
-        nodeMRVers.insert(make_pair(id, tempMRVer));
-        // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction("0x0"));
-        // create node
-        // addFormalINSVFGNode(tempFunEntry, tempMRVer);
-
-        // get edges
-        next = edges.find("Edges: {") + 8;
-        last = edges.find("}");
-        temp = edges.substr(next, last-next);
-        nodeEdges.insert(make_pair(id, temp));
-        outs() << temp << "\n";            
-
-        //add nodes and edges using the variables we extracted
-        if(type == "FormalINSVFGNode"){
-            FunEntry = s.substr(last); 
-           
-
->>>>>>> 1ec42860098f645ff4c233a144d2bad2c9cba1d8
         } else if(type == "FormalOUTSVFGNode"){
-            FunExit = s.substr(last);
-            // outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
+            next = s.find(">=FunExitBlockNode") + 19;
+            last = s.find(">=EndFunExit");
+            FunExit = s.substr(next, last-next);
+            outs() << FunExit << "\n";
+            // outs() << id << type << edges << MR << FunExit << "\n";
         } else if(type == "ActualINSVFGNode"){
-            Callsite = s.substr(last); 
-            // outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
+            next = s.find(">=CallBlockNode") + 16;
+            last = s.find("<=EndCallSite");
+            Callsite = s.substr(next, last-next);
+            outs() << Callsite << "\n";
+
+            // outs() << id << type << edges << MR << Callsite << "\n";
         } else if(type == "ActualOUTSVFGNode"){
-            Callsite = s.substr(last);
-            // outs() << "yeet" << id << type << MR << Callsite << "\n";
+            next = s.find(">=CallBlockNode") + 16;
+            last = s.find("<=EndCallSite");
+            Callsite = s.substr(next, last-next);
+            outs() << Callsite << "\n";
+            // outs() << id << type << MR << Callsite << "\n";
         } else {
-            resVer =  s.substr(last);
-            // outs() << "yeet" << id << type << edges << resVer << "\n";     
+
+            // outs() << id << type << edges << resVer << "\n";     
         }
+    }
+
+    // connect edges here
+    for (auto x: nodeEdges) 
+    {
+        outs() << x.first << " " << x.second << "\n";
     }
 }
 
