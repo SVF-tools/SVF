@@ -431,57 +431,6 @@ void SVFG::readFile(const string& filename){
             index++; 
         }
 
-<<<<<<< HEAD
-        
-         MemRegion* tempMemRegion;
-         MSSADEF* tempDef;
-         MRVer* tempMRVer; 
-
-        if(!MR.empty()){
-            //create Memory Region object
-            next = MR.find("MemRegion: pts") + 15;
-            last = MR.find(" MRVERSION: ");
-            temp = MR.substr(next, last-next);
-            PointsTo dstPts;
-            // convert string to PointsTo
-            istringstream ss(temp);
-            NodeID obj;
-            ss >> obj;
-            dstPts.set(obj);
-            tempMemRegion = new MemRegion(dstPts);
-
-            // create mssdef
-            next = MR.find("MSSADef: ") + 9;
-            last = MR.find("}>=");
-            temp = MR.substr(next, last-next);
-            MSSADEF::DEFTYPE type;
-            // convert string to deftype
-            istringstream ss1(temp.substr(0, temp.find(",")));
-            int obj1;
-            ss1 >> obj1;
-            type = static_cast<MSSADEF::DEFTYPE>(obj1);
-            tempDef = new MSSADEF(type, tempMemRegion);
-
-            // mrversion
-            next = MR.find("MRVERSION: ") + 11;
-            last = MR.find(" MSSADef:");
-            temp = MR.substr(next, last-next);
-            // convert mrversion to nodeid
-            istringstream ss2(temp);
-            NodeID obj2;
-            ss2 >> obj2;
-            // create mrver
-            tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
-        }
-
-        // outs() << s.substr(last) << "\n";
-        //add nodes and edges using the variables we extracted
-        if(type == "FormalINSVFGNode"){
-            // FunEntry = s.substr(last); 
-            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, fun);
-            // addFormalINSVFGNode(tempFunEntry, tempMRVer);
-            // pag->getICFG()->getFunEntryBlockNode(chi->getFunction())
-=======
         //create Memory Region object
         next = MR.find("MemRegion: pts") + 15;
         last = MR.find(" MRVERSION: ");
@@ -531,8 +480,6 @@ void SVFG::readFile(const string& filename){
         if(type == "FormalINSVFGNode"){
             FunEntry = s.substr(last); 
            
-
->>>>>>> 1ec42860098f645ff4c233a144d2bad2c9cba1d8
         } else if(type == "FormalOUTSVFGNode"){
             FunExit = s.substr(last);
             // outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
