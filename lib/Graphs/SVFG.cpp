@@ -244,11 +244,9 @@ void SVFG::buildSVFG()
 
      }
       
-    
     if (!Options::WriteSVFG.empty())
         writeToFile(Options::WriteSVFG);
     
-
 }
 
 void SVFG::writeToFile(const string& filename) 
@@ -272,7 +270,7 @@ void SVFG::writeToFile(const string& filename)
         if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << ">=" << "FormalINSVFGNode" << ">=";
+            F.os() << nodeId << ">=" << "FormalINSVFGNode" << ">=Edges: {";
             //edges
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
@@ -289,14 +287,15 @@ void SVFG::writeToFile(const string& filename)
                     F.os() << actualIn->getId() << ",";
                 }
             }
-            F.os() << ">=";
+            F.os() << "}>=MVER: {";
             //parameters
-            F.os() << *formalIn->getMRVer() << ">=" << formalIn->getFunEntryNode() << "\n";
+            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode() << "\n";
+
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << ">=" << "FormalOUTSVFGNode"  << ">=";
+            F.os() << nodeId << ">=" << "FormalOUTSVFGNode"  << ">=Edges: {";
             //edges
             PTACallGraphEdge::CallInstSet callInstSet;
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
@@ -313,35 +312,36 @@ void SVFG::writeToFile(const string& filename)
                     F.os() << actualOut->getId() << ",";
                 }
             }
-            F.os() << ">=";
-            NodeID def = getDef(formalOut->getMRVer());
+            F.os() << "}>=MVER: {";
+            // NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            F.os() << *formalOut->getMRVer() << ">=" << formalOut->getFunExitNode() << "\n";
+            F.os() << *formalOut->getMRVer() << "}>=" << formalOut->getFunExitNode() << "\n";
+
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
         {
             //node
-            F.os() << nodeId << ">=" << "ActualINSVFGNode" <<  ">="; 
+            F.os() << nodeId << ">=" << "ActualINSVFGNode" <<  ">=EDGES: {"; 
             //edges
-            const MRVer* ver = actualIn->getMRVer();
-            NodeID def = getDef(ver);
+            NodeID def = getDef(actualIn->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
-            F.os() << def << ">=";
+            F.os() << def << "}>=MVER: {";
             //parameters
-            F.os() << *ver << ">="  <<  actualIn->getCallSite()->toString() << "\n";
+            F.os() << *actualIn->getMRVer() << "}>="  <<  actualIn->getCallSite()->toString() << "\n";
         }
         else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             //node
-            F.os() <<  nodeId << ">=" << "ActualOUTSVFGNode" << ">=";
+            F.os() <<  nodeId << ">=" << "ActualOUTSVFGNode" << ">=MVER: {";
             //parameters
-            F.os()  << *actualOut->getMRVer() << ">="  << actualOut->getCallSite()->toString() << "\n";
+            F.os()  << *actualOut->getMRVer() << "}>="  << actualOut->getCallSite()->toString() << "\n";
+
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
             //node
-            F.os() << nodeId << ">=" << "PHISVFGNode" << ">="; 
+            F.os() << nodeId << ">=" << "PHISVFGNode" << ">=Edges: {"; 
             //edges
             for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
                     it != eit; it++)
@@ -351,11 +351,11 @@ void SVFG::writeToFile(const string& filename)
                 // addIntraIndirectVFEdge(def,nodeId, op->getMR()->getPointsTo());
                 F.os() << def << ",";
             }
-            F.os() << ">=";
+            F.os() << "}>=MVER: {";
             //parameters
             const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
             // F.os() << "MRVer: "<< intraPhiNode->getMRVer() << " Basic Block: " << intraPhiNode->getBasicBlock() << "\n";
-            F.os() << *phiNode->getResVer() << "\n";
+            F.os() << *phiNode->getResVer() << "}\n";
         }
     }
 
@@ -426,19 +426,48 @@ void SVFG::readFile(const string& filename){
             index++; 
         }
 
-
-
         // outs() << s.substr(last) << "\n";
         //add nodes and edges using the variables we extracted
         if(type == "FormalINSVFGNode"){
             FunEntry = s.substr(last); 
-
+            
             //create Memory Region object
+            next = MR.find("MemRegion: pts") + 15;
+            last = MR.find(" MRVERSION: ");
+            temp = MR.substr(next, last-next);
+            PointsTo dstPts;
+            // convert string to PointsTo
+            istringstream ss(temp);
+            NodeID obj;
+            ss >> obj;
+            dstPts.set(obj);
+            MemRegion* tempMemRegion = new MemRegion(dstPts);
 
-            //create other objects needed for add node
+            // create mssdef
+            next = MR.find("MSSADef: ") + 9;
+            last = MR.find("}>=");
+            temp = MR.substr(next, last-next);
+            MSSADEF::DEFTYPE type;
+            // convert string to deftype
+            istringstream ss1(temp.substr(0, temp.find(",")));
+            int obj1;
+            ss1 >> obj1;
+            type = static_cast<MSSADEF::DEFTYPE>(obj1);
+            MSSADEF* tempDef = new MSSADEF(type, tempMemRegion);
 
-
-            outs() << "yeet" << id << type << edges << MR << FunEntry << "\n";
+            // mrversion
+            next = MR.find("MRVERSION: ") + 11;
+            last = MR.find(" MSSADef:");
+            temp = MR.substr(next, last-next);
+            // convert mrversion to nodeid
+            istringstream ss2(temp);
+            NodeID obj2;
+            ss2 >> obj2;
+            // create mrver
+            MRVer* tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction());
+            // addFormalINSVFGNode(tempFunEntry, tempMRVer);
+           
         } else if(type == "FormalOUTSVFGNode"){
             FunExit = s.substr(last); 
 
@@ -446,8 +475,9 @@ void SVFG::readFile(const string& filename){
 
             //create other objects needed for add node
 
+            // outs() << MR << "\n";
 
-            outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
+            // outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
         } else if(type == "ActualINSVFGNode"){
             Callsite = s.substr(last); 
 
@@ -456,7 +486,7 @@ void SVFG::readFile(const string& filename){
             //create other objects needed for add node
 
 
-            outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
+            // outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
         } else if(type == "ActualOUTSVFGNode"){
             Callsite = s.substr(last); 
 
@@ -464,14 +494,16 @@ void SVFG::readFile(const string& filename){
 
 
             //create other objects needed for add node
+            // outs() << MR << "\n";
 
-            outs() << "yeet" << id << type << MR << Callsite << "\n";
+            // outs() << "yeet" << id << type << MR << Callsite << "\n";
         } else {
             resVer =  s.substr(last);
 
             //create objects needed for add node
+            // outs() << MR << "\n";
 
-            outs() << "yeet" << id << type << edges << resVer << "\n";     
+            // outs() << "yeet" << id << type << edges << resVer << "\n";     
         }
     }
 }
