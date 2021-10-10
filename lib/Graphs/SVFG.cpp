@@ -185,7 +185,7 @@ FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExi
 {
     cpts = mrVer->getMR()->getPointsTo();
     ver = mrVer;
-    funExit = funExit; 
+    funExitNode = funExit; 
 }
 
 /*!
@@ -289,7 +289,8 @@ void SVFG::writeToFile(const string& filename)
             }
             F.os() << "}>=MVER: {";
             //parameters
-            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode() << "\n";
+
+            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode()->toString() << "\n";
 
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
@@ -316,7 +317,7 @@ void SVFG::writeToFile(const string& filename)
             // NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            F.os() << *formalOut->getMRVer() << "}>=" << formalOut->getFunExitNode() << "\n";
+            F.os() << *formalOut->getMRVer() << "}>=" << formalOut->getFunExitNode()->toString() << "\n";
 
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
@@ -426,11 +427,12 @@ void SVFG::readFile(const string& filename){
             index++; 
         }
 
-        // outs() << s.substr(last) << "\n";
-        //add nodes and edges using the variables we extracted
-        if(type == "FormalINSVFGNode"){
-            FunEntry = s.substr(last); 
-            
+        
+         MemRegion* tempMemRegion;
+         MSSADEF* tempDef;
+         MRVer* tempMRVer; 
+
+        if(!MR.empty()){
             //create Memory Region object
             next = MR.find("MemRegion: pts") + 15;
             last = MR.find(" MRVERSION: ");
@@ -441,7 +443,7 @@ void SVFG::readFile(const string& filename){
             NodeID obj;
             ss >> obj;
             dstPts.set(obj);
-            MemRegion* tempMemRegion = new MemRegion(dstPts);
+            tempMemRegion = new MemRegion(dstPts);
 
             // create mssdef
             next = MR.find("MSSADef: ") + 9;
@@ -453,7 +455,7 @@ void SVFG::readFile(const string& filename){
             int obj1;
             ss1 >> obj1;
             type = static_cast<MSSADEF::DEFTYPE>(obj1);
-            MSSADEF* tempDef = new MSSADEF(type, tempMemRegion);
+            tempDef = new MSSADEF(type, tempMemRegion);
 
             // mrversion
             next = MR.find("MRVERSION: ") + 11;
@@ -464,45 +466,27 @@ void SVFG::readFile(const string& filename){
             NodeID obj2;
             ss2 >> obj2;
             // create mrver
-            MRVer* tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
-            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction());
+            tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+        }
+
+        // outs() << s.substr(last) << "\n";
+        //add nodes and edges using the variables we extracted
+        if(type == "FormalINSVFGNode"){
+            // FunEntry = s.substr(last); 
+            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, fun);
             // addFormalINSVFGNode(tempFunEntry, tempMRVer);
-           
+            // pag->getICFG()->getFunEntryBlockNode(chi->getFunction())
         } else if(type == "FormalOUTSVFGNode"){
-            FunExit = s.substr(last); 
-
-            //create Memory Region object
-
-            //create other objects needed for add node
-
-            // outs() << MR << "\n";
-
+            FunExit = s.substr(last);
             // outs() << "yeet" << id << type << edges << MR << FunExit << "\n";
         } else if(type == "ActualINSVFGNode"){
             Callsite = s.substr(last); 
-
-            //create Memory Region object
-
-            //create other objects needed for add node
-
-
             // outs() << "yeet" << id << type << edges << MR << Callsite << "\n";
         } else if(type == "ActualOUTSVFGNode"){
-            Callsite = s.substr(last); 
-
-            //create Memory Region object
-
-
-            //create other objects needed for add node
-            // outs() << MR << "\n";
-
+            Callsite = s.substr(last);
             // outs() << "yeet" << id << type << MR << Callsite << "\n";
         } else {
             resVer =  s.substr(last);
-
-            //create objects needed for add node
-            // outs() << MR << "\n";
-
             // outs() << "yeet" << id << type << edges << resVer << "\n";     
         }
     }

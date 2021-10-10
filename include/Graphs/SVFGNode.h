@@ -91,7 +91,7 @@ class FormalINSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunEntryBlockNode* funEntry; 
+    const FunEntryBlockNode* funEntryNode; 
 
 public:
     /// Constructor
@@ -99,7 +99,7 @@ public:
     {
         cpts = resVer->getMR()->getPointsTo();
         ver = resVer;
-        funEntry = funEntry; 
+        funEntryNode = funEntry; 
     }
     inline const MRVer* getMRVer() const
     {
@@ -107,7 +107,7 @@ public:
     }
     inline const FunEntryBlockNode* getFunEntryNode() const
     {
-        return funEntry;
+        return funEntryNode;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -136,15 +136,15 @@ class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunExitBlockNode* funExit; 
+    const FunExitBlockNode* funExitNode; 
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitBlockNode* funExit);
+    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitBlockNode* funExitNode);
 
     inline const FunExitBlockNode* getFunExitNode() const
     {
-        return funExit;
+        return funExitNode;
     }
 
     inline const MRVer* getMRVer() const
