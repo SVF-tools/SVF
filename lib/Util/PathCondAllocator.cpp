@@ -83,12 +83,14 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
 {
     u32_t succ_number = 0;
     for (auto it = icfgNode->directOutEdgeBegin(); it != icfgNode->directOutEdgeEnd(); ++it) {
-        if ((*it)->isIntraCFGEdge())
+        auto *intraEdge = SVFUtil::dyn_cast<IntraCFGEdge>(*it);
+        if (intraEdge && intraEdge->getBranchCondtion().first){
             ++succ_number;
+        }
     }
 
     // if successor number greater than 1, allocate new decision variable for successors
-    if(succ_number > 1 && getBBSuccessorNum(icfgNode->getBB())>1)
+    if(succ_number > 1)
     {
 
         //allocate log2(num_succ) decision variables
@@ -213,7 +215,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
     bool branch2 = isBBCallsProgExit(succ2);
 
     /// then branch calls program exit
-    if(branch1 == true && branch2 == false)
+    if(branch1 && !branch2)
     {
         // succ is then branch
         if(succ1 == succ)
@@ -223,7 +225,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     /// else branch calls program exit
-    else if(branch1 == false && branch2 == true)
+    else if(!branch1 && branch2)
     {
         // succ is else branch
         if(succ2 == succ)
@@ -233,7 +235,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     // two branches both call program exit
-    else if(branch1 == true && branch2 == true)
+    else if(branch1 && branch2)
     {
         return getFalseCond();
     }
@@ -264,7 +266,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         while(!exitbbs.empty())
         {
             BasicBlock* eb = exitbbs.pop_back_val();
-            if(isBBCallsProgExit(eb) == false)
+            if(!isBBCallsProgExit(eb))
                 filteredbbs.insert(eb);
         }
 
@@ -273,7 +275,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         PostDominatorTree* pdt = getPostDT(fun);
         for(Set<BasicBlock*>::const_iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
         {
-            if(pdt->dominates(dst,*it) == false)
+            if(!pdt->dominates(dst, *it))
                 allPDT =false;
         }
 
@@ -438,7 +440,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeInterCallVFGGuard(const 
  */
 PathCondAllocator::Condition* PathCondAllocator::ComputeInterRetVFGGuard(const ICFGNode*  srcBB, const ICFGNode*  dstBB, const ICFGNode* retBB)
 {
-    FunExitBlockNode *funExitNode = icfg->getFunExitBlockNode(dstBB->getFun());
+    FunExitBlockNode *funExitNode = icfg->getFunExitBlockNode(srcBB->getFun());
 
     Condition* c1 = ComputeIntraVFGGuard(srcBB,funExitNode);
     setCFCond(retBB,condOr(getCFCond(retBB),getCFCond(funExitNode)));
