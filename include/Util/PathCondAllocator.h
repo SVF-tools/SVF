@@ -75,11 +75,11 @@ public:
     }
     inline Condition* trueCond()
     {
-        return condMgr->getTrueCond();
+        return SVF::CondManager::getTrueCond();
     }
     inline Condition* falseCond()
     {
-        return condMgr->getFalseCond();
+        return SVF::CondManager::getFalseCond();
     }
     /// Statistics
     //@{
@@ -97,23 +97,23 @@ public:
     //@{
     inline Condition* condAnd(Condition* lhs, Condition* rhs)
     {
-        return condMgr->AND(lhs,rhs);
+        return SVF::CondManager::AND(lhs,rhs);
     }
     inline Condition* condOr(Condition* lhs, Condition* rhs)
     {
-        return condMgr->OR(lhs,rhs);
+        return SVF::CondManager::OR(lhs,rhs);
     }
     inline Condition* condNeg(Condition* cond)
     {
-        return condMgr->NEG(cond);
+        return SVF::CondManager::NEG(cond);
     }
     inline Condition* getTrueCond() const
     {
-        return condMgr->getTrueCond();
+        return SVF::CondManager::getTrueCond();
     }
     inline Condition* getFalseCond() const
     {
-        return condMgr->getFalseCond();
+        return SVF::CondManager::getFalseCond();
     }
         /// Iterator every element of the bdd
     inline NodeBS exactCondElem(Condition* cond)
@@ -153,7 +153,7 @@ public:
     /// Get llvm conditional expression
     inline const Instruction* getCondInst(const Condition* cond) const
     {
-        CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
+        auto it = condToInstMap.find(cond);
         assert(it!=condToInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
@@ -268,7 +268,7 @@ private:
     //@{
     inline bool setCFCond(const ICFGNode* bb, Condition* cond)
     {
-        ICFGNodeToCondMap::iterator it = icfgNodeToCondMap.find(bb);
+        auto it = icfgNodeToCondMap.find(bb);
         if(it != icfgNodeToCondMap.end() && *(it->second) == *cond)
             return false;
 
@@ -277,7 +277,7 @@ private:
     }
     inline Condition* getCFCond(const ICFGNode* bb) const
     {
-        ICFGNodeToCondMap::const_iterator it = icfgNodeToCondMap.find(bb);
+        auto it = icfgNodeToCondMap.find(bb);
         if(it == icfgNodeToCondMap.end())
         {
             return getFalseCond();

@@ -52,13 +52,12 @@ void PathCondAllocator::allocate(const SVFModule* M)
 {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (ICFG::const_iterator it = icfg->begin(), eit = icfg->end(); it!=eit; it++){
-        allocateForICFGNode(it->second);
-        bbToICFGNodeSet[it->second->getBB()].insert(it->second);
+    for (auto it : *icfg){
+        allocateForICFGNode(it.second);
+        bbToICFGNodeSet[it.second->getBB()].insert(it.second);
     }
-    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit)
+    for (auto func : *M)
     {
-        const SVFFunction * func = *fit;
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
@@ -95,7 +94,7 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
 
         //allocate log2(num_succ) decision variables
         double num = log(succ_number)/log(2);
-        u32_t bit_num = (u32_t)ceil(num);
+        auto bit_num = (u32_t)ceil(num);
         u32_t succ_index = 0;
         std::vector<Condition*> condVec;
         for(u32_t i = 0 ; i < bit_num; i++)
@@ -106,7 +105,7 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
         for (auto it = icfgNode->directOutEdgeBegin(); it != icfgNode->directOutEdgeEnd(); ++it) {
             const ICFGEdge *edge = *it;
             const ICFGNode *succ = edge->getDstNode();
-            
+
             Condition* path_cond = getTrueCond();
             ///TODO: handle BranchInst and SwitchInst individually here!!
 
@@ -129,7 +128,7 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
             }
             const Instruction *pInstruction = dyn_cast<IntraBlockNode>(icfgNode)->getInst();
             setBranchCond(icfgNode,succ->getBB(),path_cond);
-            
+
         }
     }
 }
@@ -139,7 +138,7 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
  */
 PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const ICFGNode * icfgNode, const ICFGEdge *icfgEdge) const
 {
-    ICFGNodeCondMap::const_iterator it = icfgNodeConds.find(icfgNode);
+    auto it = icfgNodeConds.find(icfgNode);
     assert(it!=icfgNodeConds.end() && "icfg Node does not have branch and conditions??");
     CondPosMap condPosMap = it->second;
     Condition *cond = nullptr;
@@ -186,7 +185,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
-        // succ is else branch
+            // succ is else branch
         else
             return getTrueCond();
     }
@@ -195,7 +194,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         // succ is then branch
         if(succ1 == succ)
             return getTrueCond();
-        // succ is else branch
+            // succ is else branch
         else
             return getFalseCond();
     }
@@ -220,26 +219,26 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
-        // succ is else branch
+            // succ is else branch
         else
             return getTrueCond();
     }
-    /// else branch calls program exit
+        /// else branch calls program exit
     else if(!branch1 && branch2)
     {
         // succ is else branch
         if(succ2 == succ)
             return getFalseCond();
-        // succ is then branch
+            // succ is then branch
         else
             return getTrueCond();
     }
-    // two branches both call program exit
+        // two branches both call program exit
     else if(branch1 && branch2)
     {
         return getFalseCond();
     }
-    /// no branch call program exit
+        /// no branch call program exit
     else
         return nullptr;
 
@@ -299,7 +298,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNo
         return getTrueCond();
     }
 
-    if(const BranchInst* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator()))
+    if(const auto* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator()))
     {
         assert(brInst->getNumSuccessors() == 2 && "not a two successors branch??");
         const BasicBlock* succ1 = brInst->getSuccessor(0);
@@ -334,7 +333,7 @@ bool PathCondAllocator::isNECmp(const CmpInst* cmp) const
 
 bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
 {
-    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
         return isTestContainsNullAndTheValue(cmp,val) && isEQCmp(cmp);
     }
@@ -343,7 +342,7 @@ bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
 
 bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const
 {
-    if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
+    if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
         return isTestContainsNullAndTheValue(cmp,val) && isNECmp(cmp);
     }
@@ -356,7 +355,7 @@ bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const 
     const Value* op0 = cmp->getOperand(0);
     const Value* op1 = cmp->getOperand(1);
     if((op0 == val && SVFUtil::isa<ConstantPointerNull>(op1))
-            || (op1 == val && SVFUtil::isa<ConstantPointerNull>(op0)) )
+       || (op1 == val && SVFUtil::isa<ConstantPointerNull>(op0)) )
         return true;
 
     return false;
@@ -389,9 +388,9 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
     if(it!=funToExitBBsMap.end())
     {
         PostDominatorTree* pdt = getPostDT(fun);
-        for(BasicBlockSet::const_iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++)
+        for(auto bit : it->second)
         {
-            if(pdt->dominates(*bit,bb))
+            if(pdt->dominates(bit,bb))
                 return true;
         }
     }
@@ -496,11 +495,11 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const ICFG
             if(setCFCond(succNode, condOr(getCFCond(succNode), succPathCond)))
                 worklist.push(succNode);
         }
-        
+
     }
 
     DBOUT(DSaber, outs() << " src_bb (" << srcICFGNode->getBB()->getName() <<
-          ") --> " << "dst_bb (" << dstICFGNode->getBB()->getName() << ") condition: " << getCFCond(dstICFGNode) << "\n");
+                         ") --> " << "dst_bb (" << dstICFGNode->getBB()->getName() << ") condition: " << getCFCond(dstICFGNode) << "\n");
 
     return getCFCond(dstICFGNode);
 }
@@ -514,17 +513,17 @@ void PathCondAllocator::printPathCond()
 
     outs() << "print path condition\n";
 
-    for(BBCondMap::const_iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it)
+    for(const auto & bbCond : bbConds)
     {
-        const BasicBlock* bb = it->first;
-        for(CondPosMap::const_iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        const BasicBlock* bb = bbCond.first;
+        for(auto cit : bbCond.second)
         {
             u32_t i=0;
             for (const BasicBlock *succ: successors(bb))
             {
-                if (i == cit->first)
+                if (i == cit.first)
                 {
-                    Condition* cond = cit->second;
+                    Condition* cond = cit.second;
                     outs() << bb->getName() << "-->" << succ->getName() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;
