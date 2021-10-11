@@ -163,12 +163,13 @@ bool CondManager::isSatisfiable(const z3::expr& e){
  * and then check whether e is all satisfiable under each row of the truth table
  */
 bool CondManager::isAllSatisfiable(const CondExpr* e){
-    const z3::expr_vector &allPathConds = enumerateAllPathConditions(e);
-    for (const auto pathCond: allPathConds) {
-        if (!isSatisfiable(pathCond))
-            return false;
-    }
-    return true;
+//    const z3::expr_vector &allPathConds = enumerateAllPathConditions(e);
+//    for (const auto pathCond: allPathConds) {
+//        if (!isSatisfiable(pathCond))
+//            return false;
+//    }
+//    return true;
+    return (*e) == *getTrueCond();
 }
 
 /*!
