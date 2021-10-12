@@ -34,7 +34,8 @@
 #include "SVF-FE/DataFlowUtil.h"
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
-#include "WPA/Andersen.h"
+#include "Graphs/ICFGNode.h"
+#include "Graphs/PAG.h"
 
 namespace SVF
 {
@@ -74,14 +75,7 @@ public:
     {
         CondManager::releaseCondMgr();
     }
-    static inline Condition* trueCond()
-    {
-        return SVF::CondManager::getTrueCond();
-    }
-    static inline Condition* falseCond()
-    {
-        return SVF::CondManager::getFalseCond();
-    }
+
     /// Statistics
     //@{
     inline std::string getMemUsage()
@@ -96,25 +90,25 @@ public:
 
     /// Condition operations
     //@{
-    static inline Condition* condAnd(Condition* lhs, Condition* rhs)
+    inline Condition* condAnd(Condition* lhs, Condition* rhs)
     {
-        return SVF::CondManager::AND(lhs,rhs);
+        return condMgr->AND(lhs,rhs);
     }
-    static inline Condition* condOr(Condition* lhs, Condition* rhs)
+    inline Condition* condOr(Condition* lhs, Condition* rhs)
     {
-        return SVF::CondManager::OR(lhs,rhs);
+        return condMgr->OR(lhs,rhs);
     }
-    static inline Condition* condNeg(Condition* cond)
+    inline Condition* condNeg(Condition* cond)
     {
-        return SVF::CondManager::NEG(cond);
+        return condMgr->NEG(cond);
     }
-    static inline Condition* getTrueCond()
+    inline Condition* getTrueCond() const
     {
-        return SVF::CondManager::getTrueCond();
+        return condMgr->getTrueCond();
     }
-    static inline Condition* getFalseCond()
+    inline Condition* getFalseCond() const
     {
-        return SVF::CondManager::getFalseCond();
+        return condMgr->getFalseCond();
     }
         /// Iterator every element of the bdd
     inline NodeBS exactCondElem(Condition* cond)
@@ -124,9 +118,9 @@ public:
         return elems;
     }
 
-    static inline std::string dumpCond(Condition* cond)
+    inline std::string dumpCond(Condition* cond) const
     {
-        return SVF::CondManager::dumpStr(cond);
+        return condMgr->dumpStr(cond);
     }
     /// Given an z3 expr id, get its condition
     inline Condition* getCond(u32_t i) const
@@ -136,7 +130,7 @@ public:
     /// Create new z3 condition
     inline Condition* createNewCond(u32_t i)
     {
-        return condMgr->createCond(i);
+        return condMgr->createCondForBranch(i);
     }
     /// Allocate a new condition
     inline Condition* newCond(const Instruction* inst)
@@ -207,7 +201,7 @@ public:
 
     /// whether condition is satisfiable
     inline bool isSatisfiable(Condition* condition){
-        return condMgr->isSatisfiable(condition->getExpr());
+        return condMgr->isSatisfiable(condition);
     }
 
     /// whether condition is satisfiable for all possible boolean guards
@@ -253,15 +247,15 @@ private:
     /// Evaluate test null/not null like expressions
     //@{
     /// Return true if the predicate of this compare instruction is equal
-    static bool isEQCmp(const CmpInst* cmp) ;
+    bool isEQCmp(const CmpInst* cmp) const;
     /// Return true if the predicate of this compare instruction is not equal
-    static bool isNECmp(const CmpInst* cmp) ;
+    bool isNECmp(const CmpInst* cmp) const;
     /// Return true if this is a test null expression
-    static bool isTestNullExpr(const Value* test,const Value* val) ;
+    bool isTestNullExpr(const Value* test,const Value* val) const;
     /// Return true if this is a test not null expression
-    static bool isTestNotNullExpr(const Value* test,const Value* val) ;
+    bool isTestNotNullExpr(const Value* test,const Value* val) const;
     /// Return true if two values on the predicate are what we want
-    static bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) ;
+    bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const;
     //@}
 
 

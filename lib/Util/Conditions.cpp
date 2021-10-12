@@ -59,7 +59,7 @@ CondManager::~CondManager()
 }
 
 /// Simplify
-z3::expr CondManager::simplify(const z3::expr& expr){
+z3::expr CondManager::simplify(const z3::expr& expr) const{
     z3::goal g(expr.ctx());
     z3::tactic qe(expr.ctx(), "ctx-solver-simplify");
     g.add(expr);
@@ -77,7 +77,7 @@ z3::expr CondManager::simplify(const z3::expr& expr){
 
 
 /// Create a single condition
-CondExpr* CondManager::createCond(u32_t i)
+CondExpr* CondManager::createCondForBranch(u32_t i)
 {
     const z3::expr &expr = cxt.bool_const(("c" + std::to_string(i)).c_str());
     IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
@@ -91,15 +91,24 @@ CondExpr* CondManager::createCond(u32_t i)
 }
 
 /// new a single condition
-bool CondManager::newCond(const z3::expr& e)
+CondExpr* CondManager::getExistingCond(const z3::expr& e) const
+{
+    auto it = allocatedConds.find(e.id());
+    if(it != allocatedConds.end())
+        return it->second;
+    else
+        return nullptr;
+}
+
+/// new a single condition
+CondExpr* CondManager::createNewCond(const z3::expr& e)
 {
     IDToCondExprMap::const_iterator it = allocatedConds.find(e.id());
     if (it != allocatedConds.end())
-        return false;
+        return it->second;
     else{
         auto *cond = new CondExpr(e);
-        allocatedConds.emplace(e.id(), cond);
-        return true;
+        return allocatedConds.emplace(e.id(), cond).first->second;
     }
 }
 
@@ -145,9 +154,9 @@ void CondManager::extractSubConds(const z3::expr& e, NodeBS &support) const
 /*!
  * whether z3 condition e is satisfiable
  */
-bool CondManager::isSatisfiable(const z3::expr& e){
+bool CondManager::isSatisfiable(const CondExpr* e){
     sol.reset();
-    sol.add(e);
+    sol.add(e->getExpr());
     z3::check_result result = sol.check();
     if (result == z3::sat || result == z3::unknown)
         return true;
@@ -163,12 +172,6 @@ bool CondManager::isSatisfiable(const z3::expr& e){
  * and then check whether e is all satisfiable under each row of the truth table
  */
 bool CondManager::isAllSatisfiable(const CondExpr* e){
-//    const z3::expr_vector &allPathConds = enumerateAllPathConditions(e);
-//    for (const auto pathCond: allPathConds) {
-//        if (!isSatisfiable(pathCond))
-//            return false;
-//    }
-//    return true;
     return (*e) == *getTrueCond();
 }
 
@@ -233,13 +236,13 @@ z3::expr_vector CondManager::enumerateAllPathConditions(const CondExpr* conditio
 }
 
 /// Print out one particular expression
-inline void CondManager::printDbg(const CondExpr *e)
+void CondManager::printDbg(const CondExpr *e) const
 {
     std::cout << e->getExpr() << "\n";
 }
 
 /// Return string format of this expression
-std::string CondManager::dumpStr(const CondExpr *e)
+std::string CondManager::dumpStr(const CondExpr *e) const
 {
     std::ostringstream out;
     out << e->getExpr();

@@ -320,17 +320,17 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNo
     return getBranchCond(icfgNode, icfgEdge);
 }
 
-bool PathCondAllocator::isEQCmp(const CmpInst* cmp)
+bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool PathCondAllocator::isNECmp(const CmpInst* cmp)
+bool PathCondAllocator::isNECmp(const CmpInst* cmp) const
 {
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val)
+bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
 {
     if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -339,7 +339,7 @@ bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val)
     return false;
 }
 
-bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val)
+bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const
 {
     if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -348,7 +348,7 @@ bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val)
     return false;
 }
 
-bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val)
+bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const
 {
 
     const Value* op0 = cmp->getOperand(0);
@@ -404,17 +404,7 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
  */
 PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0)
 {
-//    assert(BB1 && BB2 && "expect nullptr BB here!");
-//
-//    DominatorTree* dt = getDT(BB1->getParent());
-//    /// avoid both BB0 and BB1 dominate BB2 (e.g., while loop), then BB2 is not necessaryly a complement BB
-//    if(dt->dominates(BB1,BB2) && !dt->dominates(BB0,BB2))
-//    {
-//        Condition* cond =  ComputeIntraVFGGuard(BB1,BB2);
-//        return condNeg(cond);
-//    }
-
-    return trueCond();
+    return getTrueCond();
 }
 
 /*!

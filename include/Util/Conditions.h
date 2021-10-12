@@ -51,7 +51,7 @@ public:
 
     /// get/insert/set condition id
     //{@
-    Set<u32_t> getBranchCondIDs() const{
+    const Set<u32_t>& getBranchCondIDs() const{
         return branchCondIDs;
     }
     void insertBranchCondIDs(u32_t id) {
@@ -122,36 +122,38 @@ public:
     ~CondManager();
 
     /// Create a single condition
-    CondExpr* createCond(u32_t i);
+    CondExpr* createCondForBranch(u32_t i);
 
-    /// new a single condition
-    bool newCond(const z3::expr& i);
+    /// Get existing condition
+    CondExpr* getExistingCond(const z3::expr& e) const;
+    /// New a single condition
+    CondExpr* createNewCond(const z3::expr& i);
 
     /// Return the number of condition expressions
     u32_t getCondNumber();
 
     /// Return the unique true condition
-    inline static CondExpr* getTrueCond()
+    inline CondExpr* getTrueCond() const
     {
         return trueCond;
     }
     /// Return the unique false condition
-    inline static CondExpr* getFalseCond()
+    inline CondExpr* getFalseCond() const
     {
         return falseCond;
     }
 
     /// simplify
-    static z3::expr simplify(const z3::expr& expr);
+    z3::expr simplify(const z3::expr& expr) const;
     /// Operations on conditions.
     //@{
-    static inline CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs){
+    inline CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs){
         return (*lhs) && (*rhs);
     }
-    static inline CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs){
+    inline CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs){
         return (*lhs) || (*rhs);
     }
-    static inline CondExpr* NEG(const CondExpr* lhs){
+    inline CondExpr* NEG(const CondExpr* lhs){
         return !(*lhs);
     }
     //@}
@@ -163,16 +165,16 @@ public:
     void printModel();
 
     /// Print out one particular expression
-    static void printDbg(const CondExpr* e);
+    void printDbg(const CondExpr* e) const;
 
     /// Return string format of this expression
-    static std::string dumpStr(const CondExpr* e) ;
+    std::string dumpStr(const CondExpr* e) const;
 
     /// Extract sub conditions of this expression
     void extractSubConds(const z3::expr& e,  NodeBS &support) const;
 
     /// whether z3 condition e is satisfiable
-    bool isSatisfiable(const z3::expr& e);
+    bool isSatisfiable(const CondExpr* e);
 
     /// whether the conditions of **All Paths** are satisfiable
     bool isAllSatisfiable(const CondExpr* e);
@@ -204,13 +206,13 @@ private:
 };
 
 inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
-    const z3::expr &expr = CondManager::simplify(lhs.getExpr() || rhs.getExpr());
     CondManager *condMgr = CondManager::getCondMgr();
-    if (!condMgr->newCond(expr)) {
-        return condMgr->getCond(expr.id());
+    const z3::expr &expr = condMgr->simplify(lhs.getExpr() || rhs.getExpr());
+    if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        return cond;
     } else {
         // new condition
-        CondExpr *cond = condMgr->getCond(expr.id());
+        cond = condMgr->createNewCond(expr);
         Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
         for (u32_t id: rhs.getBranchCondIDs())
             lhsCondIDs.insert(id);
@@ -220,13 +222,13 @@ inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
 }
 
 inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
-    const z3::expr &expr = CondManager::simplify(lhs.getExpr() && rhs.getExpr());
     CondManager *condMgr = CondManager::getCondMgr();
-    if (!condMgr->newCond(expr)) {
-        return condMgr->getCond(expr.id());
+    const z3::expr &expr = condMgr->simplify(lhs.getExpr() && rhs.getExpr());
+    if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        return cond;
     } else {
         // new condition
-        CondExpr *cond = condMgr->getCond(expr.id());
+        cond = condMgr->createNewCond(expr);
         Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
         for (u32_t id: rhs.getBranchCondIDs())
             lhsCondIDs.insert(id);
@@ -236,16 +238,14 @@ inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
 }
 
 inline CondExpr* operator!(const CondExpr &lhs) {
-    const z3::expr &expr = CondManager::simplify(!lhs.getExpr());
     CondManager *condMgr = CondManager::getCondMgr();
-    if (!condMgr->newCond(expr)) {
-        return condMgr->getCond(expr.id());
+    const z3::expr &expr = condMgr->simplify(!lhs.getExpr());
+    if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        return cond;
     } else {
         // new condition
-        CondExpr *cond = condMgr->getCond(expr.id());
-        Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-        cond->setBranchCondIDs(lhsCondIDs);
-        cond->setBranchCondIDs(lhsCondIDs);
+        cond = condMgr->createNewCond(expr);
+        cond->setBranchCondIDs(lhs.getBranchCondIDs());
         return cond;
     }
 }
