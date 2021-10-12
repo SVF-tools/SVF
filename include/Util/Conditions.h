@@ -72,6 +72,11 @@ public:
         return getExpr().id();
     }
 
+    /// to string
+    std::string toString() const {
+        return getExpr().to_string();
+    }
+
     // branch condition is the same
     bool operator==(const CondExpr &condExpr) const {
         return getId() == condExpr.getId();

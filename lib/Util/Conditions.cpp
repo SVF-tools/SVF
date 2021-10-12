@@ -245,7 +245,7 @@ void CondManager::printDbg(const CondExpr *e) const
 std::string CondManager::dumpStr(const CondExpr *e) const
 {
     std::ostringstream out;
-    out << e->getExpr();
+    out << e->toString();
     return out.str();
 }
 

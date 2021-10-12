@@ -493,18 +493,18 @@ void PathCondAllocator::printPathCond()
 
     outs() << "print path condition\n";
 
-    for(const auto & bbCond : bbConds)
+    for(const auto & icfgCond : icfgNodeConds)
     {
-        const BasicBlock* bb = bbCond.first;
-        for(const auto& cit : bbCond.second)
+        const ICFGNode* icfgNode = icfgCond.first;
+        for(const auto& cit : icfgCond.second)
         {
             u32_t i=0;
-            for (const BasicBlock *succ: successors(bb))
+            for (const ICFGEdge *edge: icfgNode->getOutEdges())
             {
                 if (i == cit.first)
                 {
                     Condition* cond = cit.second;
-                    outs() << bb->getName() << "-->" << succ->getName() << ":";
+                    outs() << icfgNode->toString()<< "-->" << edge->getDstNode()->toString() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;
                 }
