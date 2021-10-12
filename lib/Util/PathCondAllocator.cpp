@@ -102,7 +102,7 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
             condVec.push_back(newCond(icfgNode->getBB()->getTerminator()));
         }
 
-        for (auto it = icfgNode->directOutEdgeBegin(); it != icfgNode->directOutEdgeEnd(); ++it) {
+        for (auto it = icfgNode->directOutEdgeBegin(); it != icfgNode->directOutEdgeEnd(); ++it, ++succ_index) {
             const ICFGEdge *edge = *it;
             const ICFGNode *succ = edge->getDstNode();
 
@@ -118,12 +118,12 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
                 u32_t tool = 0x01 << j;
                 if(tool & succ_index)
                 {
-                    path_cond = condAnd(path_cond, (condNeg(condVec.at(j))));
-                    condToInstMap[path_cond] = icfgNode->getBB()->getTerminator();
+                    path_cond = condAnd(path_cond, condVec.at(j));
                 }
                 else
                 {
-                    path_cond = condAnd(path_cond, condVec.at(j));
+                    path_cond = condAnd(path_cond, (condNeg(condVec.at(j))));
+                    condToInstMap[path_cond] = icfgNode->getBB()->getTerminator();
                 }
             }
             setBranchCond(icfgNode,succ->getBB(),path_cond);
@@ -135,23 +135,14 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
 /*!
  * Get a branch condition
  */
-PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const ICFGNode * icfgNode, const ICFGEdge *icfgEdge) const
+PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const ICFGNode * icfgNode, const BasicBlock *succBB) const
 {
     auto it = icfgNodeConds.find(icfgNode);
     assert(it!=icfgNodeConds.end() && "icfg Node does not have branch and conditions??");
     CondPosMap condPosMap = it->second;
-    Condition *cond = nullptr;
-    const auto *intraICFGNode = SVFUtil::dyn_cast<IntraBlockNode>(icfgNode);
-    assert(intraICFGNode && "icfg node not intra??");
-    const auto *brInst = SVFUtil::dyn_cast<BranchInst>(intraICFGNode->getInst());
-    assert(brInst && brInst->isConditional() && "not branch inst??");
-    const auto *intraCfgEdge = SVFUtil::dyn_cast<IntraCFGEdge>(icfgEdge);
-    assert(intraCfgEdge && "not intra edge??");
-    const IntraCFGEdge::BranchCondition &branchCond = intraCfgEdge->getBranchCondtion();
-    u32_t pos = branchCond.second;
+    u32_t pos = getBBSuccessorPos(icfgNode->getBB(), succBB);
     assert(condPosMap.count(pos) && "pos not in control condition map!");
-    cond = condPosMap[pos];
-    return cond;
+    return condPosMap[pos];
 }
 
 /*!
@@ -288,7 +279,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
  *  (2) Evaluate a branch when it is loop exit branch
  *  (3) Evaluate a branch when it is a test null like condition
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNode * icfgNode, const BasicBlock *succ, const Value* val, const ICFGEdge* icfgEdge)
+PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNode * icfgNode, const BasicBlock *succ, const Value* val)
 {
     const BasicBlock *bb = icfgNode->getBB();
     if(getBBSuccessorNum(bb) == 1)
@@ -317,7 +308,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNo
             return evalTestNullLike;
 
     }
-    return getBranchCond(icfgNode, icfgEdge);
+    return getBranchCond(icfgNode, succ);
 }
 
 bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const
@@ -476,7 +467,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const ICFG
             if(succ == icfgNode->getBB() || postDT->dominates(succ, icfgNode->getBB()))
                 brCond = getTrueCond();
             else
-                brCond = getEvalBrCond(icfgNode, succ, icfgEdge);
+                brCond = getEvalBrCond(icfgNode, succ);
 
             DBOUT(DSaber, outs() << " icfgNode (" << icfgNode->getBB()->getName() <<
                                  ") --> " << "succ_bb (" << succ->getName() << ") condition: " << brCond << "\n");

@@ -219,20 +219,20 @@ private:
     /// Set branch condition
     void setBranchCond(const ICFGNode *icfgNode, const BasicBlock *succ, Condition* cond);
     /// Get branch condition
-    Condition* getBranchCond(const ICFGNode * icfgNode, const ICFGEdge *icfgEdge) const;
+    Condition* getBranchCond(const ICFGNode * icfgNode, const BasicBlock *succBB) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    inline Condition* getEvalBrCond(const ICFGNode * icfgNode, const BasicBlock *succ, const ICFGEdge* icfgEdge)
+    inline Condition* getEvalBrCond(const ICFGNode * icfgNode, const BasicBlock *succ)
     {
         if(const Value* val = getCurEvalVal())
-            return evaluateBranchCond(icfgNode, succ, val, icfgEdge);
+            return evaluateBranchCond(icfgNode, succ, val);
         else
-            return getBranchCond(icfgNode,icfgEdge);
+            return getBranchCond(icfgNode,succ);
     }
     //@}
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition* evaluateBranchCond(const ICFGNode * icfgNode, const BasicBlock *succ, const Value* val, const ICFGEdge* icfgEdge) ;
+    Condition* evaluateBranchCond(const ICFGNode * icfgNode, const BasicBlock *succ, const Value* val) ;
     /// Evaluate loop exit branch
     Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
