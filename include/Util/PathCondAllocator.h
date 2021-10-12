@@ -72,12 +72,13 @@ public:
     /// Destructor
     virtual ~PathCondAllocator()
     {
+        CondManager::releaseCondMgr();
     }
-    inline Condition* trueCond()
+    static inline Condition* trueCond()
     {
         return SVF::CondManager::getTrueCond();
     }
-    inline Condition* falseCond()
+    static inline Condition* falseCond()
     {
         return SVF::CondManager::getFalseCond();
     }
@@ -95,23 +96,23 @@ public:
 
     /// Condition operations
     //@{
-    inline Condition* condAnd(Condition* lhs, Condition* rhs)
+    static inline Condition* condAnd(Condition* lhs, Condition* rhs)
     {
         return SVF::CondManager::AND(lhs,rhs);
     }
-    inline Condition* condOr(Condition* lhs, Condition* rhs)
+    static inline Condition* condOr(Condition* lhs, Condition* rhs)
     {
         return SVF::CondManager::OR(lhs,rhs);
     }
-    inline Condition* condNeg(Condition* cond)
+    static inline Condition* condNeg(Condition* cond)
     {
         return SVF::CondManager::NEG(cond);
     }
-    inline Condition* getTrueCond() const
+    static inline Condition* getTrueCond()
     {
         return SVF::CondManager::getTrueCond();
     }
-    inline Condition* getFalseCond() const
+    static inline Condition* getFalseCond()
     {
         return SVF::CondManager::getFalseCond();
     }
@@ -123,9 +124,9 @@ public:
         return elems;
     }
 
-    inline std::string dumpCond(Condition* cond) const
+    static inline std::string dumpCond(Condition* cond)
     {
-        return condMgr->dumpStr(cond);
+        return SVF::CondManager::dumpStr(cond);
     }
     /// Given an z3 expr id, get its condition
     inline Condition* getCond(u32_t i) const
@@ -252,15 +253,15 @@ private:
     /// Evaluate test null/not null like expressions
     //@{
     /// Return true if the predicate of this compare instruction is equal
-    bool isEQCmp(const CmpInst* cmp) const;
+    static bool isEQCmp(const CmpInst* cmp) ;
     /// Return true if the predicate of this compare instruction is not equal
-    bool isNECmp(const CmpInst* cmp) const;
+    static bool isNECmp(const CmpInst* cmp) ;
     /// Return true if this is a test null expression
-    bool isTestNullExpr(const Value* test,const Value* val) const;
+    static bool isTestNullExpr(const Value* test,const Value* val) ;
     /// Return true if this is a test not null expression
-    bool isTestNotNullExpr(const Value* test,const Value* val) const;
+    static bool isTestNotNullExpr(const Value* test,const Value* val) ;
     /// Return true if two values on the predicate are what we want
-    bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const;
+    static bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) ;
     //@}
 
 
@@ -296,7 +297,7 @@ private:
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     ICFGNodeToCondMap icfgNodeToCondMap;				///< map an ICFG Node to its path condition starting from root
     ICFGNodeCondMap icfgNodeConds;  // map ICFG node to its data and branch conditions
-    const Value* curEvalVal;			///< current llvm value to evaluate branch condition when computing guards
+    const Value* curEvalVal{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
 //    BddCondManager condMgr;		///< bbd manager

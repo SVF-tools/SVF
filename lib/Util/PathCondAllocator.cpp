@@ -32,7 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/PathCondAllocator.h"
 #include "Util/DPItem.h"
-#include <limits.h>
+#include <climits>
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -52,11 +52,11 @@ void PathCondAllocator::allocate(const SVFModule* M)
 {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (auto it : *icfg){
+    for (const auto& it : *icfg){
         allocateForICFGNode(it.second);
         bbToICFGNodeSet[it.second->getBB()].insert(it.second);
     }
-    for (auto func : *M)
+    for (const auto& func : *M)
     {
         if (!SVFUtil::isExtCall(func))
         {
@@ -126,7 +126,6 @@ void PathCondAllocator::allocateForICFGNode(const ICFGNode* icfgNode)
                     path_cond = condAnd(path_cond, condVec.at(j));
                 }
             }
-            const Instruction *pInstruction = dyn_cast<IntraBlockNode>(icfgNode)->getInst();
             setBranchCond(icfgNode,succ->getBB(),path_cond);
 
         }
@@ -272,9 +271,9 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
         PostDominatorTree* pdt = getPostDT(fun);
-        for(Set<BasicBlock*>::const_iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
+        for(const auto& filteredbb : filteredbbs)
         {
-            if(!pdt->dominates(dst, *it))
+            if(!pdt->dominates(dst, filteredbb))
                 allPDT =false;
         }
 
@@ -321,17 +320,17 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const ICFGNo
     return getBranchCond(icfgNode, icfgEdge);
 }
 
-bool PathCondAllocator::isEQCmp(const CmpInst* cmp) const
+bool PathCondAllocator::isEQCmp(const CmpInst* cmp)
 {
     return (cmp->getPredicate() == CmpInst::ICMP_EQ);
 }
 
-bool PathCondAllocator::isNECmp(const CmpInst* cmp) const
+bool PathCondAllocator::isNECmp(const CmpInst* cmp)
 {
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
+bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val)
 {
     if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -340,7 +339,7 @@ bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
     return false;
 }
 
-bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const
+bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val)
 {
     if(const auto* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
@@ -349,7 +348,7 @@ bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) co
     return false;
 }
 
-bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const
+bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val)
 {
 
     const Value* op0 = cmp->getOperand(0);
@@ -388,7 +387,7 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
     if(it!=funToExitBBsMap.end())
     {
         PostDominatorTree* pdt = getPostDT(fun);
-        for(auto bit : it->second)
+        for(const auto& bit : it->second)
         {
             if(pdt->dominates(bit,bb))
                 return true;
@@ -516,7 +515,7 @@ void PathCondAllocator::printPathCond()
     for(const auto & bbCond : bbConds)
     {
         const BasicBlock* bb = bbCond.first;
-        for(auto cit : bbCond.second)
+        for(const auto& cit : bbCond.second)
         {
             u32_t i=0;
             for (const BasicBlock *succ: successors(bb))

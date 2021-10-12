@@ -163,10 +163,10 @@ public:
     void printModel();
 
     /// Print out one particular expression
-    void printDbg(const CondExpr* e);
+    static void printDbg(const CondExpr* e);
 
     /// Return string format of this expression
-    std::string dumpStr(const CondExpr* e) const;
+    static std::string dumpStr(const CondExpr* e) ;
 
     /// Extract sub conditions of this expression
     void extractSubConds(const z3::expr& e,  NodeBS &support) const;
@@ -207,7 +207,7 @@ inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
     const z3::expr &expr = CondManager::simplify(lhs.getExpr() || rhs.getExpr());
     CondManager *condMgr = CondManager::getCondMgr();
     if (!condMgr->newCond(expr)) {
-        return condMgr->getCond(expr.id());;
+        return condMgr->getCond(expr.id());
     } else {
         // new condition
         CondExpr *cond = condMgr->getCond(expr.id());

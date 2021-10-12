@@ -84,7 +84,7 @@ CondExpr* CondManager::createCond(u32_t i)
     if (it != allocatedConds.end())
         return it->second;
     else{
-        CondExpr *cond = new CondExpr(expr);
+        auto *cond = new CondExpr(expr);
         cond->insertBranchCondIDs(expr.id());
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
@@ -97,7 +97,7 @@ bool CondManager::newCond(const z3::expr& e)
     if (it != allocatedConds.end())
         return false;
     else{
-        CondExpr *cond = new CondExpr(e);
+        auto *cond = new CondExpr(e);
         allocatedConds.emplace(e.id(), cond);
         return true;
     }
@@ -239,7 +239,7 @@ inline void CondManager::printDbg(const CondExpr *e)
 }
 
 /// Return string format of this expression
-std::string CondManager::dumpStr(const CondExpr *e) const
+std::string CondManager::dumpStr(const CondExpr *e)
 {
     std::ostringstream out;
     out << e->getExpr();
