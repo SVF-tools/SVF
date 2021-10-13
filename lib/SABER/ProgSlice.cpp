@@ -100,8 +100,6 @@ bool ProgSlice::isSatisfiableForAll()
     for(SVFGNodeSetIter it = sinksBegin(), eit = sinksEnd(); it!=eit; ++it)
     {
         Condition *pGuard = getVFCond(*it);
-        if (!isPartialReachable() && pathAllocator->isSatisfiable(pGuard))
-            setPartialReachable();
         guard = condOr(guard, pGuard);
     }
     setFinalCond(guard);

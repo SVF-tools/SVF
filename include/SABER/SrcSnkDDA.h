@@ -242,6 +242,7 @@ protected:
         if(isSink(node))
         {
             addSinkToCurSlice(node);
+            getCurSlice()->setPartialReachable();
         }
         else
             addToCurForwardSlice(node);
