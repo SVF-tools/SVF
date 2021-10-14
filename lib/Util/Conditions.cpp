@@ -86,7 +86,6 @@ CondExpr* CondManager::createCondForBranch(u32_t i)
         return it->second;
     else{
         auto *cond = new CondExpr(expr);
-        cond->insertBranchCondIDs(expr.id());
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
 }
@@ -155,9 +154,9 @@ void CondManager::extractSubConds(const z3::expr& e, NodeBS &support) const
 /*!
  * whether z3 condition e is satisfiable
  */
-bool CondManager::isSatisfiable(const z3::expr& e){
+bool CondManager::isSatisfiable(const CondExpr* cond){
     sol.reset();
-    sol.add(e);
+    sol.add(cond->getExpr());
     z3::check_result result = sol.check();
     if (result == z3::sat || result == z3::unknown)
         return true;
@@ -173,72 +172,7 @@ bool CondManager::isSatisfiable(const z3::expr& e){
  * and then check whether e is all satisfiable under each row of the truth table
  */
 bool CondManager::isAllSatisfiable(const CondExpr* e){
-    const z3::expr_vector &allPathConds = enumerateAllPathConditions(e);
-    for (const auto pathCond: allPathConds) {
-        if (!isSatisfiable(pathCond))
-            return false;
-    }
-    return true;
-}
-
-/*!
- * build truth table (stored in truthTable)
- */
-void
-CondManager::buildTruthTable(Set<u32_t>::const_iterator curit,
-                             Set<u32_t>::const_iterator eit,
-                             std::vector<z3::expr> &tmpExpr,
-                             std::vector<std::vector<z3::expr>> &truthTable) {
-    if (curit == eit) {
-        truthTable.push_back(tmpExpr);
-        return;
-    }
-    IDToCondExprMap::const_iterator it = allocatedConds.find(*curit);
-    assert(it != allocatedConds.end() && "id not in allocated conditions!");
-    tmpExpr.push_back(it->second->getExpr());
-    buildTruthTable(std::next(curit), eit, tmpExpr, truthTable);
-    tmpExpr.pop_back();
-
-    tmpExpr.push_back(!it->second->getExpr());
-    buildTruthTable(std::next(curit), eit, tmpExpr, truthTable);
-    tmpExpr.pop_back();
-}
-
-/*!
- * Enumerate all path conditions by assigning each row of the truth table
- * to the boolean identifiers of the original condition
- *
- * e.g.,
- * The original condition (C) is: C1 || (!C1) && C2
- * It contains two unique identifiers: C1 and C2, so its truth table is:
- *         ===============
- *         C1  0  0  1  1
- *         ---------------
- *         C2  0  1  0  1
- *         ===============
- * Its all path conditions are as follows:
- *      * (C) && (C1==0 && C2==0),
- *      * (C) && (C1==0 && C2==1)
- *      * (C) && (C1==1 && C2==0)
- *      * (C) && (C1==1 && C2==1)
- */
-z3::expr_vector CondManager::enumerateAllPathConditions(const CondExpr* condition){
-    const Set<u32_t> brCondIDs = condition->getBranchCondIDs();
-    z3::expr_vector allPathConds(condition->getContext());
-    std::vector<z3::expr> tmpExpr;
-    // the target truth table
-    std::vector<std::vector<z3::expr>> truthTable;
-    buildTruthTable(brCondIDs.begin(), brCondIDs.end(), tmpExpr, truthTable);
-    for(const auto& col: truthTable){
-        // assign each row of the truth table to the
-        // boolean identifiers of the original condition
-        z3::expr expr = condition->getExpr();
-        for (const auto &ele: col) {
-            expr = expr && ele;
-        }
-        allPathConds.push_back(expr);
-    }
-    return allPathConds;
+    return *e == *getTrueCond();
 }
 
 /// Print out one particular expression

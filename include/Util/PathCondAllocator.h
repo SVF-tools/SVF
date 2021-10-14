@@ -193,7 +193,7 @@ public:
 
     /// whether condition is satisfiable
     inline bool isSatisfiable(Condition* condition){
-        return condMgr->isSatisfiable(condition->getExpr());
+        return condMgr->isSatisfiable(condition);
     }
 
     /// whether condition is satisfiable for all possible boolean guards

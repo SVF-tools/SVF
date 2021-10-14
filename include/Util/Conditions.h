@@ -48,19 +48,6 @@ public:
     const z3::expr& getExpr() const{
         return e;
     }
-
-    /// get/insert/set condition id
-    //{@
-    Set<u32_t> getBranchCondIDs() const{
-        return branchCondIDs;
-    }
-    void insertBranchCondIDs(u32_t id) {
-        branchCondIDs.insert(id);
-    }
-    void setBranchCondIDs(const Set<u32_t>& _ids){
-        branchCondIDs = _ids;
-    }
-    //@}
     
     /// get ctx
     inline z3::context& getContext() const {
@@ -86,7 +73,6 @@ public:
 
 private:
     z3::expr e;
-    Set<u32_t> branchCondIDs; ///< record unique z3 expr id of the truth table
 
 };
 
@@ -175,21 +161,10 @@ public:
     void extractSubConds(const z3::expr& e,  NodeBS &support) const;
 
     /// whether z3 condition e is satisfiable
-    bool isSatisfiable(const z3::expr& e);
+    bool isSatisfiable(const CondExpr* cond);
 
     /// whether the conditions of **All Paths** are satisfiable
     bool isAllSatisfiable(const CondExpr* e);
-
-    /// build truth table (stored in truthTable)
-    void buildTruthTable(Set<u32_t>::const_iterator curit,
-                         Set<u32_t>::const_iterator eit,
-                         std::vector<z3::expr> &tmpExpr,
-                         std::vector<std::vector<z3::expr>> &truthTable);
-
-    /// Enumerate all path conditions by assigning each row of the truth table
-    /// to the boolean identifiers of the original condition
-    z3::expr_vector enumerateAllPathConditions(const CondExpr *condition);
-
 
     inline CondExpr* getCond(u32_t h) const {
         const IDToCondExprMap::const_iterator it = allocatedConds.find(h);
@@ -216,17 +191,10 @@ inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
         return condMgr->getExistingCond(lhs.getExpr());
     else{
         const z3::expr &expr = condMgr->simplify(lhs.getExpr() || rhs.getExpr());
-        if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        if (CondExpr *cond = condMgr->getExistingCond(expr))
             return cond;
-        } else {
-            // new condition
-            cond = condMgr->createNewCond(expr);
-            Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-            for (u32_t id: rhs.getBranchCondIDs())
-                lhsCondIDs.insert(id);
-            cond->setBranchCondIDs(lhsCondIDs);
-            return cond;
-        }
+        else
+            return condMgr->createNewCond(expr);
     }
 }
 
@@ -240,17 +208,10 @@ inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
         return condMgr->getExistingCond(lhs.getExpr());
     else {
         const z3::expr &expr = condMgr->simplify(lhs.getExpr() && rhs.getExpr());
-        if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        if (CondExpr *cond = condMgr->getExistingCond(expr))
             return cond;
-        } else {
-            // new condition
-            cond = condMgr->createNewCond(expr);
-            Set<u32_t> lhsCondIDs = lhs.getBranchCondIDs();
-            for (u32_t id: rhs.getBranchCondIDs())
-                lhsCondIDs.insert(id);
-            cond->setBranchCondIDs(lhsCondIDs);
-            return cond;
-        }
+        else
+            return condMgr->createNewCond(expr);
     }
 }
 
@@ -262,14 +223,10 @@ inline CondExpr* operator!(const CondExpr &lhs) {
         return condMgr->getTrueCond();
     else{
         const z3::expr &expr = !lhs.getExpr();
-        if (CondExpr *cond = condMgr->getExistingCond(expr)) {
+        if (CondExpr *cond = condMgr->getExistingCond(expr))
             return cond;
-        } else {
-            // new condition
-            cond = condMgr->createNewCond(expr);
-            cond->setBranchCondIDs(lhs.getBranchCondIDs());
-            return cond;
-        }
+        else
+            return condMgr->createNewCond(expr);
     }
 }
 
