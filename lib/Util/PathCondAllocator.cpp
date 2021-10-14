@@ -52,9 +52,8 @@ void PathCondAllocator::allocate(const SVFModule* M)
 {
     DBOUT(DGENERAL,outs() << pasMsg("path condition allocation starts\n"));
 
-    for (SVFModule::const_iterator fit = M->begin(); fit != M->end(); ++fit)
+    for (const auto& func : *M)
     {
-        const SVFFunction * func = *fit;
         if (!SVFUtil::isExtCall(func))
         {
             // Allocate conditions for a program.
@@ -207,7 +206,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
     bool branch2 = isBBCallsProgExit(succ2);
 
     /// then branch calls program exit
-    if(branch1 == true && branch2 == false)
+    if(branch1 && !branch2)
     {
         // succ is then branch
         if(succ1 == succ)
@@ -217,7 +216,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     /// else branch calls program exit
-    else if(branch1 == false && branch2 == true)
+    else if(!branch1 && branch2)
     {
         // succ is else branch
         if(succ2 == succ)
@@ -227,7 +226,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchIn
             return getTrueCond();
     }
     // two branches both call program exit
-    else if(branch1 == true && branch2 == true)
+    else if(branch1 && branch2)
     {
         return getFalseCond();
     }
@@ -258,16 +257,16 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
         while(!exitbbs.empty())
         {
             BasicBlock* eb = exitbbs.pop_back_val();
-            if(isBBCallsProgExit(eb) == false)
+            if(!isBBCallsProgExit(eb))
                 filteredbbs.insert(eb);
         }
 
         /// if the dst dominate all other loop exit bbs, then dst can certainly be reached
         bool allPDT = true;
         PostDominatorTree* pdt = getPostDT(fun);
-        for(Set<BasicBlock*>::const_iterator it = filteredbbs.begin(), eit = filteredbbs.end(); it!=eit; ++it)
+        for(const auto& filteredbb : filteredbbs)
         {
-            if(pdt->dominates(dst,*it) == false)
+            if(!pdt->dominates(dst,filteredbb))
                 allPDT =false;
         }
 
@@ -380,9 +379,9 @@ bool PathCondAllocator::isBBCallsProgExit(const BasicBlock* bb)
     if(it!=funToExitBBsMap.end())
     {
         PostDominatorTree* pdt = getPostDT(fun);
-        for(BasicBlockSet::const_iterator bit = it->second.begin(), ebit= it->second.end(); bit!=ebit; bit++)
+        for(const auto& bit : it->second)
         {
-            if(pdt->dominates(*bit,bb))
+            if(pdt->dominates(bit,bb))
                 return true;
         }
     }
@@ -407,7 +406,7 @@ PathCondAllocator::Condition* PathCondAllocator::getPHIComplementCond(const Basi
         return condNeg(cond);
     }
 
-    return trueCond();
+    return getTrueCond();
 }
 
 /*!
@@ -504,17 +503,17 @@ void PathCondAllocator::printPathCond()
 
     outs() << "print path condition\n";
 
-    for(BBCondMap::const_iterator it = bbConds.begin(), eit = bbConds.end(); it!=eit; ++it)
+    for(const auto & bbCond : bbConds)
     {
-        const BasicBlock* bb = it->first;
-        for(CondPosMap::const_iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
+        const BasicBlock* bb = bbCond.first;
+        for(const auto& cit : bbCond.second)
         {
             u32_t i=0;
             for (const BasicBlock *succ: successors(bb))
             {
-                if (i == cit->first)
+                if (i == cit.first)
                 {
-                    Condition* cond = cit->second;
+                    Condition* cond = cit.second;
                     outs() << bb->getName() << "-->" << succ->getName() << ":";
                     outs() << dumpCond(cond) << "\n";
                     break;

@@ -59,7 +59,7 @@ CondManager::~CondManager()
 }
 
 /// Simplify
-z3::expr CondManager::simplify(const z3::expr& expr){
+z3::expr CondManager::simplify(const z3::expr& expr) const{
     z3::goal g(expr.ctx());
     z3::tactic qe(expr.ctx(), "ctx-solver-simplify");
     g.add(expr);
@@ -76,30 +76,40 @@ z3::expr CondManager::simplify(const z3::expr& expr){
 }
 
 
+
 /// Create a single condition
-CondExpr* CondManager::createCond(u32_t i)
+CondExpr* CondManager::createCondForBranch(u32_t i)
 {
     const z3::expr &expr = cxt.bool_const(("c" + std::to_string(i)).c_str());
     IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
     if (it != allocatedConds.end())
         return it->second;
     else{
-        CondExpr *cond = new CondExpr(expr);
+        auto *cond = new CondExpr(expr);
         cond->insertBranchCondIDs(expr.id());
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
 }
 
 /// new a single condition
-bool CondManager::newCond(const z3::expr& e)
+CondExpr* CondManager::getExistingCond(const z3::expr& e) const
+{
+    auto it = allocatedConds.find(e.id());
+    if(it != allocatedConds.end())
+        return it->second;
+    else
+        return nullptr;
+}
+
+/// new a single condition
+CondExpr* CondManager::createNewCond(const z3::expr& e)
 {
     IDToCondExprMap::const_iterator it = allocatedConds.find(e.id());
     if (it != allocatedConds.end())
-        return false;
+        return it->second;
     else{
-        CondExpr *cond = new CondExpr(e);
-        allocatedConds.emplace(e.id(), cond);
-        return true;
+        auto *cond = new CondExpr(e);
+        return allocatedConds.emplace(e.id(), cond).first->second;
     }
 }
 

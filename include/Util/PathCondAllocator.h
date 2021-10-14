@@ -68,14 +68,6 @@ public:
     virtual ~PathCondAllocator()
     {
     }
-    inline Condition* trueCond()
-    {
-        return condMgr->getTrueCond();
-    }
-    inline Condition* falseCond()
-    {
-        return condMgr->getFalseCond();
-    }
     /// Statistics
     //@{
     inline std::string getMemUsage()
@@ -130,7 +122,7 @@ public:
     /// Create new z3 condition
     inline Condition* createNewCond(u32_t i)
     {
-        return condMgr->createCond(i);
+        return condMgr->createCondForBranch(i);
     }
     /// Allocate a new condition
     inline Condition* newCond(const Instruction* inst)
