@@ -183,11 +183,11 @@ private:
 
 inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
     CondManager *condMgr = CondManager::getCondMgr();
-    if (lhs == *condMgr->getTrueCond() || rhs == *condMgr->getTrueCond())
+    if (&lhs == condMgr->getTrueCond() || &rhs == condMgr->getTrueCond())
         return condMgr->getTrueCond();
-    else if (lhs == *condMgr->getFalseCond())
+    else if (&lhs == condMgr->getFalseCond())
         return condMgr->getExistingCond(rhs.getExpr());
-    else if (rhs == *condMgr->getFalseCond())
+    else if (&rhs == condMgr->getFalseCond())
         return condMgr->getExistingCond(lhs.getExpr());
     else{
         const z3::expr &expr = condMgr->simplify(lhs.getExpr() || rhs.getExpr());
@@ -200,11 +200,11 @@ inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
 
 inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
     CondManager *condMgr = CondManager::getCondMgr();
-    if (lhs == *condMgr->getFalseCond() || rhs == *condMgr->getFalseCond())
+    if (&lhs == condMgr->getFalseCond() || &rhs == condMgr->getFalseCond())
         return condMgr->getFalseCond();
-    else if (lhs == *condMgr->getTrueCond())
+    else if (&lhs == condMgr->getTrueCond())
         return condMgr->getExistingCond(rhs.getExpr());
-    else if (rhs == *condMgr->getTrueCond())
+    else if (&rhs == condMgr->getTrueCond())
         return condMgr->getExistingCond(lhs.getExpr());
     else {
         const z3::expr &expr = condMgr->simplify(lhs.getExpr() && rhs.getExpr());
@@ -217,9 +217,9 @@ inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
 
 inline CondExpr* operator!(const CondExpr &lhs) {
     CondManager *condMgr = CondManager::getCondMgr();
-    if (lhs == *condMgr->getTrueCond())
+    if (&lhs == condMgr->getTrueCond())
         return condMgr->getFalseCond();
-    else if (lhs == *condMgr->getFalseCond())
+    else if (&lhs == condMgr->getFalseCond())
         return condMgr->getTrueCond();
     else{
         const z3::expr &expr = !lhs.getExpr();

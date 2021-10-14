@@ -256,7 +256,7 @@ private:
     inline bool setCFCond(const BasicBlock* bb, Condition* cond)
     {
         BBToCondMap::iterator it = bbToCondMap.find(bb);
-        if(it!=bbToCondMap.end() && *(it->second) == *cond)
+        if(it!=bbToCondMap.end() && it->second == cond)
             return false;
 
         bbToCondMap[bb] = cond;
