@@ -231,7 +231,7 @@ protected:
     inline bool setVFCond(const SVFGNode* node, Condition* cond)
     {
         SVFGNodeToCondMap::iterator it = svfgNodeToCondMap.find(node);
-        if(it!=svfgNodeToCondMap.end() && it->second == cond)
+        if(it!=svfgNodeToCondMap.end() && *(it->second) == *cond)
             return false;
 
         svfgNodeToCondMap[node] = cond;

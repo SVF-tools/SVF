@@ -34,6 +34,13 @@
 
 using namespace SVF;
 
+bool CondExpr::operator==(const CondExpr &condExpr) const {
+    if(getExpr().id() == condExpr.getId())
+        return true;
+    CondManager *condMgr = CondManager::getCondMgr();
+    return condMgr->isEquivalentCond(condMgr->getExistingCond(getExpr()), condMgr->getExistingCond(condExpr.getExpr()));
+}
+
 CondExpr* CondManager::trueCond = nullptr;
 CondExpr* CondManager::falseCond = nullptr;
 CondManager* CondManager::condMgr = nullptr;
@@ -118,6 +125,51 @@ u32_t CondManager::getCondNumber()
     return sol.get_model().size();
 }
 
+CondExpr* CondManager::AND(const CondExpr* lhs, const CondExpr* rhs){
+    if (lhs == getFalseCond() || rhs == getFalseCond())
+        return getFalseCond();
+    else if (lhs == getTrueCond())
+        return getExistingCond(rhs->getExpr());
+    else if (rhs == getTrueCond())
+        return getExistingCond(lhs->getExpr());
+    else {
+        const z3::expr &expr = lhs->getExpr() && rhs->getExpr();
+        if (CondExpr *cond = getExistingCond(expr))
+            return cond;
+        else
+            return createNewCond(expr);
+    }
+}
+
+CondExpr* CondManager::OR(const CondExpr* lhs, const CondExpr* rhs){
+    if (lhs == getTrueCond() || rhs == getTrueCond())
+        return getTrueCond();
+    else if (lhs == getFalseCond())
+        return getExistingCond(rhs->getExpr());
+    else if (rhs == getFalseCond())
+        return getExistingCond(lhs->getExpr());
+    else{
+        const z3::expr &expr = lhs->getExpr() || rhs->getExpr();
+        if (CondExpr *cond = getExistingCond(expr))
+            return cond;
+        else
+            return createNewCond(expr);
+    }
+}
+CondExpr* CondManager::NEG(const CondExpr* lhs){
+    if (lhs == getTrueCond())
+        return getFalseCond();
+    else if (lhs == getFalseCond())
+        return getTrueCond();
+    else{
+        const z3::expr &expr = !lhs->getExpr();
+        if (CondExpr *cond = getExistingCond(expr))
+            return cond;
+        else
+            return createNewCond(expr);
+    }
+}
+
 /// Print the expressions in this model
 void CondManager::printModel()
 {
@@ -164,6 +216,11 @@ bool CondManager::isSatisfiable(const CondExpr* cond){
         return false;
 }
 
+bool CondManager::isEquivalentCond(const CondExpr* lhs, const CondExpr* rhs){
+    sol.reset();
+    sol.add(lhs->getExpr() != rhs->getExpr());
+    return sol.check() == z3::unsat;
+}
 
 /*!
  * whether the conditions of **All Paths** are satisfiable
@@ -172,7 +229,7 @@ bool CondManager::isSatisfiable(const CondExpr* cond){
  * and then check whether e is all satisfiable under each row of the truth table
  */
 bool CondManager::isAllSatisfiable(const CondExpr* e){
-    return *e == *getTrueCond();
+    return isEquivalentCond(e, getTrueCond());
 }
 
 /// Print out one particular expression

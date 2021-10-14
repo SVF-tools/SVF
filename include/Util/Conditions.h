@@ -60,16 +60,7 @@ public:
     }
 
     // branch condition is the same
-    bool operator==(const CondExpr &condExpr) const {
-        return getId() == condExpr.getId();
-    }
-
-    /// overload logical operators
-    //{@
-    friend CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs);
-    friend CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs);
-    friend CondExpr* operator!(const CondExpr &lhs);
-    //@}
+    bool operator==(const CondExpr &condExpr) const;
 
 private:
     z3::expr e;
@@ -134,15 +125,9 @@ public:
     z3::expr simplify(const z3::expr& expr) const;
     /// Operations on conditions.
     //@{
-    inline CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs){
-        return (*lhs) && (*rhs);
-    }
-    inline CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs){
-        return (*lhs) || (*rhs);
-    }
-    inline CondExpr* NEG(const CondExpr* lhs){
-        return !(*lhs);
-    }
+    CondExpr* AND(const CondExpr* lhs, const CondExpr* rhs);
+    CondExpr* OR(const CondExpr* lhs, const CondExpr* rhs);
+    CondExpr* NEG(const CondExpr* lhs);
     //@}
 
     /// Return memory usage for this condition manager
@@ -163,6 +148,9 @@ public:
     /// whether z3 condition e is satisfiable
     bool isSatisfiable(const CondExpr* cond);
 
+    /// whether e1 and e2 are equivalent expression
+    bool isEquivalentCond(const CondExpr* lhs, const CondExpr* rhs);
+
     /// whether the conditions of **All Paths** are satisfiable
     bool isAllSatisfiable(const CondExpr* e);
 
@@ -181,54 +169,6 @@ private:
     IDToCondExprMap allocatedConds;
 };
 
-inline CondExpr* operator||(const CondExpr &lhs, const CondExpr &rhs) {
-    CondManager *condMgr = CondManager::getCondMgr();
-    if (&lhs == condMgr->getTrueCond() || &rhs == condMgr->getTrueCond())
-        return condMgr->getTrueCond();
-    else if (&lhs == condMgr->getFalseCond())
-        return condMgr->getExistingCond(rhs.getExpr());
-    else if (&rhs == condMgr->getFalseCond())
-        return condMgr->getExistingCond(lhs.getExpr());
-    else{
-        const z3::expr &expr = condMgr->simplify(lhs.getExpr() || rhs.getExpr());
-        if (CondExpr *cond = condMgr->getExistingCond(expr))
-            return cond;
-        else
-            return condMgr->createNewCond(expr);
-    }
-}
-
-inline CondExpr* operator&&(const CondExpr &lhs, const CondExpr &rhs) {
-    CondManager *condMgr = CondManager::getCondMgr();
-    if (&lhs == condMgr->getFalseCond() || &rhs == condMgr->getFalseCond())
-        return condMgr->getFalseCond();
-    else if (&lhs == condMgr->getTrueCond())
-        return condMgr->getExistingCond(rhs.getExpr());
-    else if (&rhs == condMgr->getTrueCond())
-        return condMgr->getExistingCond(lhs.getExpr());
-    else {
-        const z3::expr &expr = condMgr->simplify(lhs.getExpr() && rhs.getExpr());
-        if (CondExpr *cond = condMgr->getExistingCond(expr))
-            return cond;
-        else
-            return condMgr->createNewCond(expr);
-    }
-}
-
-inline CondExpr* operator!(const CondExpr &lhs) {
-    CondManager *condMgr = CondManager::getCondMgr();
-    if (&lhs == condMgr->getTrueCond())
-        return condMgr->getFalseCond();
-    else if (&lhs == condMgr->getFalseCond())
-        return condMgr->getTrueCond();
-    else{
-        const z3::expr &expr = !lhs.getExpr();
-        if (CondExpr *cond = condMgr->getExistingCond(expr))
-            return cond;
-        else
-            return condMgr->createNewCond(expr);
-    }
-}
 
 /**
  * Using Cudd as conditions.
