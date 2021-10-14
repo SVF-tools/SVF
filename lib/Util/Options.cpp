@@ -613,13 +613,13 @@ namespace SVF
     const llvm::cl::opt<std::string> Options::WriteAnder(
         "write-ander",  
         llvm::cl::init(""),
-        llvm::cl::desc("Write Andersen's analysis results to a file")
+        llvm::cl::desc("-write-ander=ir_annotator (Annotated IR with Andersen's results) or write Andersen's analysis results to a user-specified text file")
     );
 
     const llvm::cl::opt<std::string> Options::ReadAnder(
         "read-ander",  
         llvm::cl::init(""),
-        llvm::cl::desc("Read Andersen's analysis results from a file")
+        llvm::cl::desc("-read-ander=ir_annotator (Read Andersen's analysis results from the annotated IR, e.g., *.pre.bc) or from a text file")
     );
 
     const llvm::cl::opt<bool> Options::PtsDiff(
