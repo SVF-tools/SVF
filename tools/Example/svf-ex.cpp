@@ -87,8 +87,8 @@ void traverseOnICFG(ICFG* icfg, const Instruction* inst)
     while (!worklist.empty())
     {
         const ICFGNode* vNode = worklist.pop();
-        for (ICFGNode::const_iterator it = iNode->OutEdgeBegin(), eit =
-                    iNode->OutEdgeEnd(); it != eit; ++it)
+        for (ICFGNode::const_iterator it = vNode->OutEdgeBegin(), eit =
+                    vNode->OutEdgeEnd(); it != eit; ++it)
         {
             ICFGEdge* edge = *it;
             ICFGNode* succNode = edge->getDstNode();
