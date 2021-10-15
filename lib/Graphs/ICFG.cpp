@@ -38,7 +38,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
+FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock), ID(id)
 {
     fun = f;
     // if function is implemented
@@ -47,7 +47,7 @@ FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlo
     }
 }
 
-FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(nullptr)
+FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), ID(id), formalRet(nullptr)
 {
     fun = f;
     // if function is implemented

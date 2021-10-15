@@ -33,6 +33,7 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
+#include "Graphs/ICFG.h"
 #include <fstream>
 
 
@@ -289,9 +290,9 @@ void SVFG::writeToFile(const string& filename)
             }
             F.os() << "}>=MVER: {";
             //parameters
-            string funEntrystr = formalIn->getFunEntryNode()->toString();
-            funEntrystr.erase(remove(funEntrystr.begin(), funEntrystr.end(), '\n'), funEntrystr.end());
-            F.os() << *formalIn->getMRVer() << "}>=" << funEntrystr << ">=EndFunEntry" << "\n";
+            // string funEntrystr = formalIn->getFunEntryNode()->toString();
+            // funEntrystr.erase(remove(funEntrystr.begin(), funEntrystr.end(), '\n'), funEntrystr.end());
+            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode()->getID() << "\n";
 
         }
         else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
@@ -318,9 +319,9 @@ void SVFG::writeToFile(const string& filename)
             // NodeID def = getDef(formalOut->getMRVer());
             // addIntraIndirectVFEdge(def,nodeId, formalOut->getMRVer()->getMR()->getPointsTo());
             //parameters
-            string funExitstr = formalOut->getFunExitNode()->toString();
-            funExitstr.erase(remove(funExitstr.begin(), funExitstr.end(), '\n'), funExitstr.end());
-            F.os() << *formalOut->getMRVer() << "}>=" << funExitstr << ">=EndFunExit" << "\n";
+            // string funExitstr = formalOut->getFunExitNode()->toString();
+            // funExitstr.erase(remove(funExitstr.begin(), funExitstr.end(), '\n'), funExitstr.end());
+            F.os() << *formalOut->getMRVer() << "}>=" <<  formalOut->getFunExitNode()->getID() << "\n";
 
         }
         else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
@@ -332,18 +333,18 @@ void SVFG::writeToFile(const string& filename)
             // addIntraIndirectVFEdge(def,nodeId, ver->getMR()->getPointsTo());
             F.os() << def << "}>=MVER: {";
             //parameters
-            string callSitestr = actualIn->getCallSite()->toString();
-            callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
-            F.os() << *actualIn->getMRVer() << "}>=" << callSitestr << "<=EndCallSite" << "\n";
+            // string callSitestr = actualIn->getCallSite()->toString();
+            // callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
+            F.os() << *actualIn->getMRVer() << "}>=" << actualIn->getCallSite()->getID() << "\n";
         }
         else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
         {
             //node
             F.os() <<  nodeId << ">=" << "ActualOUTSVFGNode" << ">=MVER: {";
             //parameters
-            string callSitestr = actualOut->getCallSite()->toString();
-            callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
-            F.os()  << *actualOut->getMRVer() << "}>="  << callSitestr << "<=EndCallSite" << "\n";
+            // string callSitestr = actualOut->getCallSite()->toString();
+            // callSitestr.erase(remove(callSitestr.begin(), callSitestr.end(), '\n'), callSitestr.end());
+            F.os()  << *actualOut->getMRVer() << "}>="  <<  actualOut->getCallSite()->getID() << "\n";
 
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
@@ -363,7 +364,8 @@ void SVFG::writeToFile(const string& filename)
             //parameters
             const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
             // F.os() << "MRVer: "<< intraPhiNode->getMRVer() << " Basic Block: " << intraPhiNode->getBasicBlock() << "\n";
-            F.os() << *phiNode->getResVer() << "}\n";
+            F.os() << *phiNode->getResVer() << "}>=" << intraPhiNode->getBasicBlock() << "\n";
+            // F.os() << intraPhiNode->opVerBegin() << ">=" <<  intraPhiNode->opVerEnd() << "\n";
         }
     }
 
@@ -405,6 +407,7 @@ void SVFG::readFile(const string& filename){
         int index = 0; 
         //implement delimiter to split string using ">="
         size_t last = 0; size_t next = 0; 
+        size_t outer_last = 0;
 
         NodeID id; 
         string type;
@@ -414,7 +417,9 @@ void SVFG::readFile(const string& filename){
         string FunExit; 
         string Callsite;
         string resVer;
-
+        string basicBlock; 
+        string opVerBegin; 
+        string opVerEnd; 
 
         //inner loop through to get each element in the line
         while ((next = s.find(delimiter, last)) != string::npos) 
@@ -422,18 +427,20 @@ void SVFG::readFile(const string& filename){
             // outs() << s.substr(last, next-last) << "\n"; 
             temp = s.substr(last, next-last); 
             last = next + 2; 
+            outer_last = next + 2; 
 
             if(index == 0){id = atoi(temp.c_str());}
             if(index == 1){type = temp;}
 
             if(index > 1){
-                if(type == "FormalINSVFGNode" || type == "FormalOUTSVFGNode" || type == "ActualINSVFGNode"){
+                if(type == "FormalINSVFGNode" || type == "FormalOUTSVFGNode" || type == "ActualINSVFGNode" || type == "PHISVFGNode"){
                     if(index == 2){edges = temp;}
                     if(index == 3){MR = temp;}
+                    //phi
+                    if(index == 4){basicBlock = temp;}
+                    // if(index == 5){opVerBegin = temp;}
                 } else if(type == "ActualOUTSVFGNode"){
                         if(index == 2){MR = temp;};
-                } else {
-                        if(index == 2){edges = temp;};
                 }
             }
             index++; 
@@ -489,40 +496,43 @@ void SVFG::readFile(const string& filename){
             temp = edges.substr(next, last-next);
             nodeEdges.insert(make_pair(id, temp)); 
         }
-        
 
+   
         //add nodes using the variables we extracted
         if(type == "FormalINSVFGNode"){
-            next = s.find(">=FunEntryBlockNode") + 20;
-            last = s.find(">=EndFunEntry");
-            FunEntry = s.substr(next, last-next);
-            outs() << FunEntry << "\n";
-            // FunEntryBlockNode* tempFunEntry = new FunEntryBlockNode(id, new SVFFunction("0x0"));
-            // create node
-            // addFormalINSVFGNode(tempFunEntry, tempMRVer);
+            NodeID FunID = atoi(s.substr(outer_last).c_str());
+            outs() << "FUN ID "<< s.substr(outer_last) << "\n";
+            // inline ICFGNode* getICFGNode(NodeID id) const
+            // // create node
+            addFormalINSVFGNode(SVFUtil::dyn_cast<FunEntryBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer);
 
         } else if(type == "FormalOUTSVFGNode"){
-            next = s.find(">=FunExitBlockNode") + 19;
-            last = s.find(">=EndFunExit");
-            FunExit = s.substr(next, last-next);
-            outs() << FunExit << "\n";
+            NodeID FunID =  atoi(s.substr(outer_last).c_str());
+            outs() << "FUN ID "<< s.substr(outer_last) << "\n";
+            addFormalOUTSVFGNode(SVFUtil::dyn_cast<FunExitBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer);
+
             // outs() << id << type << edges << MR << FunExit << "\n";
         } else if(type == "ActualINSVFGNode"){
-            next = s.find(">=CallBlockNode") + 16;
-            last = s.find("<=EndCallSite");
-            Callsite = s.substr(next, last-next);
-            outs() << Callsite << "\n";
+            NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
+            outs() << "CALLSITE ID "<< CallSiteID << "\n";
+            addActualINSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer);
 
             // outs() << id << type << edges << MR << Callsite << "\n";
         } else if(type == "ActualOUTSVFGNode"){
-            next = s.find(">=CallBlockNode") + 16;
-            last = s.find("<=EndCallSite");
-            Callsite = s.substr(next, last-next);
-            outs() << Callsite << "\n";
+            NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
+            outs() << "CALLSITE ID "<< s.substr(outer_last) << "\n";
+            addActualOUTSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer);
             // outs() << id << type << MR << Callsite << "\n";
         } else {
+            string basicblock =  s.substr(outer_last); 
+            outs() << "BASIC BLOCK " << s.substr(outer_last) << "\n"; 
 
-            // outs() << id << type << edges << resVer << "\n";     
+            typedef Map<u32_t,const MRVer*> OPVers;
+
+            //  const OPVers::const_iterator opVerBegin = OPVers.begin();
+
+            //  addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, opVerBegin , const Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer)   
+
         }
     }
 
