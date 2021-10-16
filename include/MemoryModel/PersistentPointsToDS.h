@@ -661,14 +661,14 @@ private:
     inline void removeVarFromDFInUpdatedSet(LocID loc, const Key& var)
     {
         typename UpdatedVarMap::iterator it = inUpdatedVarMap.find(loc);
-        if (it != inUpdatedVarMap.end()) it->second.reset(var);
+        if (it != inUpdatedVarMap.end()) it->second.erase(var);
     }
 
     /// Return TRUE if var has a new pts in loc's IN set
     inline bool varHasNewDFInPts(LocID loc, const Key& var)
     {
         typename UpdatedVarMap::iterator it = inUpdatedVarMap.find(loc);
-        if (it != inUpdatedVarMap.end()) return it->second.test(var);
+        if (it != inUpdatedVarMap.end()) return it->second.find(var) != it->second.end();
         return false;
     }
 
@@ -691,14 +691,14 @@ private:
     inline void removeVarFromDFOutUpdatedSet(LocID loc, const Key& var)
     {
         typename UpdatedVarMap::iterator it = outUpdatedVarMap.find(loc);
-        if (it != outUpdatedVarMap.end()) it->second.reset(var);
+        if (it != outUpdatedVarMap.end()) it->second.erase(var);
     }
 
     /// Return TRUE if var has a new pts in loc's OUT set.
     inline bool varHasNewDFOutPts(LocID loc, const Key& var)
     {
         typename UpdatedVarMap::iterator it = outUpdatedVarMap.find(loc);
-        if (it != outUpdatedVarMap.end()) return it->second.test(var);
+        if (it != outUpdatedVarMap.end()) return it->second.find(var) != it->second.end();
         return false;
     }
 
