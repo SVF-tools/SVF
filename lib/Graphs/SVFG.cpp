@@ -227,7 +227,6 @@ void SVFG::buildSVFG()
 
         readFile(Options::ReadSVFG);
 
-
      } else {
 
         DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
@@ -402,7 +401,7 @@ void SVFG::readFile(const string& filename){
         return;
     }
     
-    unordered_map<int, MRVer*> nodeMRVers; 
+    unordered_map<int, pair<MRVer*, string>> nodeMRVers; 
     unordered_map<int, string> nodeEdges; 
     //outer loop through each line in the file
     string line;
@@ -465,7 +464,7 @@ void SVFG::readFile(const string& filename){
         if(!MR.empty())
         {
             tempMRVer = getMRVERFromString(MR);
-            nodeMRVers.insert(make_pair(id, tempMRVer));
+            nodeMRVers.insert(make_pair(id, make_pair(tempMRVer, type)));
         }
 
         // get edges for each node to connect after adding nodes
@@ -526,20 +525,47 @@ void SVFG::readFile(const string& filename){
                 temp = temp.substr(last + 1);
                 index++;
             }
-            
-
-
             //  const OPVers::const_iterator opVerBegin = OPVers.begin();
 
             //  addIntraMSSAPHISVFGNode(SVFUtil::dyn_cast<BasicBlock>(pag->getICFG()->getBlockICFGNode(basicBlock)), OPVers.begin() , OPVers.end(), tempMRVer);
-
         }
     }
 
     // connect edges here
     for (auto x: nodeEdges) 
     {
-        outs() << x.first << " " << x.second << "\n";
+        if (x.second.empty())
+            continue;
+        string type = nodeMRVers[x.first].second;
+        vector<int> edges;
+        string s;
+        stringstream ss(x.second);
+        while (getline(ss, s, ',')) {
+            edges.push_back(atoi(s.c_str()));
+        }
+        
+        for (int edge: edges) 
+        {
+            outs() << "\n";
+            if(type == "FormalINSVFGNode")
+            {
+                // addInterIndirectVFCallEdge(actualIn,formalIn,getCallSiteID(cs, formalIn->getFun()));
+
+            } else if(type == "FormalOUTSVFGNode")
+            {
+                // addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(cs, formalOut->getFun()));
+            } else if(type == "ActualINSVFGNode")
+            {
+                // addIntraIndirectVFEdge(x.first,edge, nodeMRVers[x.first].first->getMR()->getPointsTo());
+            } else if(type == "ActualOUTSVFGNode")
+            {
+                /// There's no need to connect actual out node to its definition site in the same function.
+            }
+            else 
+            {
+                // addIntraIndirectVFEdge(x.first,edge, nodeMRVers[x.first].first->getMR()->getPointsTo());
+            }
+        }
     }
 }
 
