@@ -351,25 +351,35 @@ void SVFG::writeToFile(const string& filename)
         {
             //node
             F.os() << nodeId << ">=" << "PHISVFGNode" << ">=Edges: {"; 
+            unordered_map<u32_t,const MRVer*> opvers;
             //edges
             for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
                     it != eit; it++)
             {
                 const MRVer* op = it->second;
+                opvers.insert(make_pair(it->first, it->second));
                 NodeID def = getDef(op);
                 // addIntraIndirectVFEdge(def,nodeId, op->getMR()->getPointsTo());
                 F.os() << def << ",";
-            }
+            }            
+            // opvers
             F.os() << "}>=MVER: {";
             //parameters
             const IntraMSSAPHISVFGNode* intraPhiNode = SVFUtil::dyn_cast<IntraMSSAPHISVFGNode>(node);
             // F.os() << "MRVer: "<< intraPhiNode->getMRVer() << " Basic Block: " << intraPhiNode->getBasicBlock() << "\n";
-            F.os() << *phiNode->getResVer() << "}>=" << intraPhiNode->getBasicBlock() << "\n";
+
+            F.os() << *phiNode->getResVer() << "}>=" << intraPhiNode->getBasicBlock();
+
+            F.os() << ">=OPVers: {";
+            for (auto x: opvers) 
+            {
+                const MRVer* op = x.second;
+                F.os() << "{" << *op << "}" << ",";
+            }
+            F.os() << "}\n";
             // F.os() << intraPhiNode->opVerBegin() << ">=" <<  intraPhiNode->opVerEnd() << "\n";
         }
     }
-
-    F.os() << "\n";
     // Job finish and close file
     F.os().close();
     if (!F.os().has_error())
@@ -400,6 +410,9 @@ void SVFG::readFile(const string& filename){
     {
         getline(F, line);
 
+        if (line.empty())
+            continue;
+
         std::string s = line; 
         std::string delimiter = ">=";
 
@@ -418,8 +431,7 @@ void SVFG::readFile(const string& filename){
         string Callsite;
         string resVer;
         string basicBlock; 
-        string opVerBegin; 
-        string opVerEnd; 
+        string opVer;
 
         //inner loop through to get each element in the line
         while ((next = s.find(delimiter, last)) != string::npos) 
@@ -438,9 +450,9 @@ void SVFG::readFile(const string& filename){
                     if(index == 3){MR = temp;}
                     //phi
                     if(index == 4){basicBlock = temp;}
-                    // if(index == 5){opVerBegin = temp;}
+                    // if(index == 5){opVer = temp;}
                 } else if(type == "ActualOUTSVFGNode"){
-                        if(index == 2){MR = temp;};
+                    if(index == 2){MR = temp;};
                 }
             }
             index++; 
@@ -452,39 +464,7 @@ void SVFG::readFile(const string& filename){
 
         if(!MR.empty())
         {
-            //create Memory Region object
-            next = MR.find("MemRegion: pts") + 15;
-            last = MR.find(" MRVERSION: ");
-            temp = MR.substr(next, last-next);
-            PointsTo dstPts;
-            // convert string to PointsTo
-            istringstream ss(temp);
-            NodeID obj;
-            ss >> obj;
-            dstPts.set(obj);
-            tempMemRegion = new MemRegion(dstPts);
-
-            // create mssdef
-            next = MR.find("MSSADef: ") + 9;
-            last = MR.find("}>=");
-            temp = MR.substr(next, last-next);
-            // convert string to deftype
-            istringstream ss1(temp.substr(0, temp.find(",")));
-            int obj1;
-            ss1 >> obj1;
-            MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
-            tempDef = new MSSADEF(defType, tempMemRegion);
-
-            // mrversion
-            next = MR.find("MRVERSION: ") + 11;
-            last = MR.find(" MSSADef:");
-            temp = MR.substr(next, last-next);
-            // convert mrversion to nodeid
-            istringstream ss2(temp);
-            NodeID obj2;
-            ss2 >> obj2;
-            // create mrver
-            tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+            tempMRVer = getMRVERFromString(MR);
             nodeMRVers.insert(make_pair(id, tempMRVer));
         }
 
@@ -524,14 +504,34 @@ void SVFG::readFile(const string& filename){
             addActualOUTSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer);
             // outs() << id << type << MR << Callsite << "\n";
         } else {
-            string basicblock =  s.substr(outer_last); 
-            outs() << "BASIC BLOCK " << s.substr(outer_last) << "\n"; 
+            opVer =  s.substr(outer_last); 
+            // outs() << "BASIC BLOCK " << basicBlock << "\n"; 
+            // outs() << "Opvers " << opVer << "\n"; 
 
-            typedef Map<u32_t,const MRVer*> OPVers;
+            next = opVer.find("{") + 1;
+            last = opVer.find(",}");
+            temp = opVer.substr(next, last);
+            outs() << temp << "\n";
+            Map<u32_t,const MRVer*> OPVers;
+            int index = 0; 
+            while ((next = temp.find("{") + 1) != string::npos) {
+                if (temp == ",}")
+                    break;
+                last = temp.find("},");
+                string temp1;
+                temp1 = temp.substr(next, last-next);
+                tempMRVer = getMRVERFromString(temp1);
+                outs() << *tempMRVer << "\n";
+                OPVers.insert(make_pair(index, tempMRVer));
+                temp = temp.substr(last + 1);
+                index++;
+            }
+            
+
 
             //  const OPVers::const_iterator opVerBegin = OPVers.begin();
 
-            //  addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, opVerBegin , const Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer)   
+            //  addIntraMSSAPHISVFGNode(SVFUtil::dyn_cast<BasicBlock>(pag->getICFG()->getBlockICFGNode(basicBlock)), OPVers.begin() , OPVers.end(), tempMRVer);
 
         }
     }
@@ -541,6 +541,49 @@ void SVFG::readFile(const string& filename){
     {
         outs() << x.first << " " << x.second << "\n";
     }
+}
+
+MRVer* SVFG::getMRVERFromString(const string& s) 
+{
+    string temp;
+    size_t last = 0; size_t next = 0; 
+    MRVer* tempMRVer; 
+    MemRegion* tempMemRegion;
+    MSSADEF* tempDef;
+    //{create Memory Region object
+    next = s.find("MemRegion: pts") + 15;
+    last = s.find(" MRVERSION: ");
+    temp = s.substr(next, last-next);
+    PointsTo dstPts;
+    // convert string to PointsTo
+    istringstream ss(temp);
+    NodeID obj;
+    ss >> obj;
+    dstPts.set(obj);
+    tempMemRegion = new MemRegion(dstPts);
+
+    // create mssdef
+    next = s.find("MSSADef: ") + 9;
+    last = s.find("}>=");
+    temp = s.substr(next, last-next);
+    // convert string to deftype
+    istringstream ss1(temp.substr(0, temp.find(",")));
+    int obj1;
+    ss1 >> obj1;
+    MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
+    tempDef = new MSSADEF(defType, tempMemRegion);
+
+    // mrversion
+    next = s.find("MRVERSION: ") + 11;
+    last = s.find(" MSSADef:");
+    temp = s.substr(next, last-next);
+    // convert mrversion to nodeid
+    istringstream ss2(temp);
+    NodeID obj2;
+    ss2 >> obj2;
+    // create mrver
+    tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+    return tempMRVer;
 }
 
 /*
