@@ -22,7 +22,7 @@ file (GLOB SOURCES
         DDA/*.cpp)
 add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd ${Z3_LIBRARIES})
 
-link_directories(${CMAKE_BINARY_DIR}/lib/Cudd ${Z3_EXTRA_LINK_DIRS})
+link_directories(${CMAKE_BINARY_DIR}/lib/Cudd)
 
 
 if(DEFINED IN_SOURCE_BUILD)
