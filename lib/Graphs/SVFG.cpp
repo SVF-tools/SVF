@@ -157,6 +157,26 @@ const std::string ThreadMHPIndSVFGEdge::toString() const {
     return rawstr.str();
 }
 
+const Value* StmtSVFGNode::getValue() const {
+    return getPAGEdge()->getValue();
+}
+
+const Value* CmpVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* BinaryOPVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* PHIVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* ArgumentVFGNode::getValue() const {
+    return param->getValue();
+}
+
 
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit): MRSVFGNode(id, FPOUT), mu(exit)
 {
@@ -384,10 +404,9 @@ void SVFG::connectFromGlobalToProgEntry()
         if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(*storeIt))
         {
             /// connect this store to main function entry
-            const PointsTo& storePts = mssa->getPTA()->getPts(
-                                           store->getPAGDstNodeID());
+            const PointsTo& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID());
 
-            for (NodeBS::iterator fiIt = formalIns.begin(), fiEit =
+            for (FormalINSVFGNodeSet::iterator fiIt = formalIns.begin(), fiEit =
                         formalIns.end(); fiIt != fiEit; ++fiIt)
             {
                 NodeID formalInID = *fiIt;
@@ -523,6 +542,25 @@ SVFGEdge* SVFG::addInterIndirectVFRetEdge(const FormalOUTSVFGNode* src, const Ac
 void SVFG::dump(const std::string& file, bool simple)
 {
     GraphPrinter::WriteGraphToFile(outs(), file, this, simple);
+}
+
+std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
+{
+    PAG* pag = PAG::getPAG();
+    std::set<const SVFGNode*> ret;
+    // search for all PAGEdges first
+    for (const PAGEdge* pagEdge : pag->getValueEdges(value)) {
+        PAGEdgeToStmtVFGNodeMapTy::const_iterator it = PAGEdgeToStmtVFGNodeMap.find(pagEdge);
+        if (it != PAGEdgeToStmtVFGNodeMap.end()) {
+            ret.emplace(it->second);
+        }
+    }
+    // add all PAGNodes
+    PAGNode* pagNode = pag->getPAGNode(pag->getValueNode(value));
+    if(hasDef(pagNode)) {
+        ret.emplace(getDefSVFGNode(pagNode));
+    }
+    return ret;
 }
 
 /**
@@ -668,7 +706,7 @@ const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
     else if(const InterMSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<InterMSSAPHISVFGNode>(node))
     {
         if(mphi->isFormalINPHI())
-            return phi->getFun();
+            return mphi->getFun();
     }
     return nullptr;
 }
@@ -726,6 +764,16 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
     static std::string getGraphName(SVFG*)
     {
         return "SVFG";
+    }
+
+    /// isNodeHidden - If the function returns true, the given node is not
+    /// displayed in the graph
+#if LLVM_VERSION_MAJOR >= 12
+    static bool isNodeHidden(SVFGNode *node, SVFG*) {
+#else
+    static bool isNodeHidden(SVFGNode *node) {
+#endif
+        return node->getInEdges().empty() && node->getOutEdges().empty();
     }
 
     std::string getNodeLabel(NodeType *node, SVFG *graph)
@@ -931,47 +979,47 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
         }
         else if(SVFUtil::isa<FormalINSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<FormalOUTSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<FormalParmSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualINSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualOUTSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if(SVFUtil::isa<ActualParmSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<ActualRetSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<FormalRetSVFGNode>(node))
         {
-            rawstr <<  "color=yellow,style=double";
+            rawstr <<  "color=yellow,penwidth=2";
         }
         else if (SVFUtil::isa<BinaryOPVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else if (SVFUtil::isa<CmpVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else if (SVFUtil::isa<UnaryOPVFGNode>(node))
         {
-            rawstr <<  "color=black,style=double";
+            rawstr <<  "color=black,penwidth=2";
         }
         else
             assert(false && "no such kind of node!!");

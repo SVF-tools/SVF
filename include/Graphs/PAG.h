@@ -70,6 +70,7 @@ public:
     typedef Map<const SVFFunction*,PAGEdgeSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,PAGEdgeList> Inst2PAGEdgesMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
+    typedef Map<const Value*,PAGEdgeSet> ValueToEdgeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
@@ -97,6 +98,7 @@ private:
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
     FunToRetMap funRetMap;	///< Map a function to its unique function return PAGNodes
+    ValueToEdgeMap valueToEdgeMap;	///< Map llvm::Values to all corresponding PAGEdges
     static PAG* pag;	///< Singleton pattern here to enable instance of PAG can only be created once.
     CallSiteToFunPtrMap indCallSiteToFunPtrMap; ///< Map an indirect callsite to its function pointer
     FunPtrToCallSitesMap funPtrToCallSitesMap;	///< Map a function pointer to the callsites where it is used
@@ -116,6 +118,18 @@ private:
 
 public:
     u32_t totalPTAPAGEdge;
+
+    /// Return memToFieldsMap
+    inline MemObjToFieldsMap& getMemToFieldsMap()
+    {
+        return memToFieldsMap;
+    }
+
+    /// Return GepObjNodeMap
+    inline NodeLocationSetMap& getGepObjNodeMap()
+    {
+        return GepObjNodeMap;
+    }
 
     /// Return ICFG
     inline ICFG* getICFG()
@@ -254,6 +268,12 @@ public:
     {
         return phiNodeMap;
     }
+        /// Get the corresponding PhiCopyPEs
+    inline const CopyPEList& getPhiCopyPEs(const PAGNode* node) const{
+        PHINodeMap::const_iterator it = phiNodeMap.find(node);
+        assert(it != phiNodeMap.end() && "PhiCopyPEs not found!");
+        return it->second;
+    }
     /// Add phi node information
     inline void addBinaryNode(const PAGNode* res, const BinaryOPPE* edge)
     {
@@ -268,6 +288,12 @@ public:
     inline BinaryNodeMap& getBinaryNodeMap()
     {
         return binaryNodeMap;
+    }
+    /// Get the corresponding BinaryPEs
+    inline const BinaryOPList& getBinaryPEs(const PAGNode* node) const{
+        BinaryNodeMap::const_iterator it = binaryNodeMap.find(node);
+        assert(it != binaryNodeMap.end() && "BinaryPEs not found!");
+        return it->second;
     }
     /// Add unary node information
     inline void addUnaryNode(const PAGNode* res, const UnaryOPPE* edge)
@@ -284,6 +310,12 @@ public:
     {
         return unaryNodeMap;
     }
+    /// Get the corresponding UnaryPEs
+    inline const UnaryOPList& getUnaryPEs(const PAGNode* node) const{
+        UnaryNodeMap::const_iterator it = unaryNodeMap.find(node);
+        assert(it != unaryNodeMap.end() && "UnaryPEs not found!");
+        return it->second;
+    }
     /// Add phi node information
     inline void addCmpNode(const PAGNode* res, const CmpPE* edge)
     {
@@ -298,6 +330,12 @@ public:
     inline CmpNodeMap& getCmpNodeMap()
     {
         return cmpNodeMap;
+    }
+    /// Get the corresponding CmpPEs
+    inline const CmpPEList& getCmpPEs(const PAGNode* node) const{
+        CmpNodeMap::const_iterator it = cmpNodeMap.find(node);
+        assert(it != cmpNodeMap.end() && "CmpPEs not found!");
+        return it->second;
     }
     //@}
 
@@ -525,6 +563,25 @@ public:
     {
         return mem->getSymId();
     }
+    /// Get all PAG Edges that corresponds to an LLVM value
+    inline const PAGEdgeSet& getValueEdges(const Value *V)
+    {
+        auto it = valueToEdgeMap.find(V);
+        if (it == valueToEdgeMap.end()) {
+            //special empty set
+            return valueToEdgeMap.at(nullptr);
+        }
+        return it->second;
+    }
+
+    inline void mapValueToEdge(const Value *V, PAGEdge *edge)
+    {
+        auto inserted = valueToEdgeMap.emplace(V, PAGEdgeSet{edge});
+        if (!inserted.second) {
+            inserted.first->second.emplace(edge);
+        }
+    }
+
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
     /// return nullptr is this node is not a ObjPN type
@@ -695,7 +752,7 @@ public:
     inline NodeID addObjNode(const Value* val, NodeID i)
     {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
-        assert(((mem->getSymId() == i) || (symInfo->getGlobalRep(val)!=val)) && "not same object id?");
+        assert(((mem->getSymId() == i)) && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure
@@ -759,13 +816,13 @@ public:
     /// Add a value (pointer) node
     inline NodeID addValNode(const Value*, PAGNode *node, NodeID i)
     {
-		assert(i<UINT_MAX && "exceeding the maximum node limits");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a memory obj node
     inline NodeID addObjNode(const Value*, PAGNode *node, NodeID i)
     {
-		assert(i<UINT_MAX && "exceeding the maximum node limits");
+        assert(hasGNode(i) == false && "This NodeID clashes here. Please check NodeIDAllocator. Switch Strategy::DEBUG to SEQ or DENSE");
         return addNode(node,i);
     }
     /// Add a unique return node for a procedure
@@ -841,6 +898,9 @@ public:
 
     /// Dump PAG
     void dump(std::string name);
+
+    /// View graph from the debugger
+    void view();
 
 };
 

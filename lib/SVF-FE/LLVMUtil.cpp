@@ -28,7 +28,6 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
-#include "llvm/Support/JSON.h"
 
 using namespace SVF;
 

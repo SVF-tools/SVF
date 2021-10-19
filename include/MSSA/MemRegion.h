@@ -50,7 +50,7 @@ class MemRegion
 {
 
 public:
-    typedef DdNode* Condition;
+    typedef bool Condition;
 private:
     /// region ID 0 is reserved
     static Size_t totalMRNum;
@@ -142,9 +142,10 @@ public:
     ///Define mem region set
     typedef OrderedSet<const MemRegion*, MemRegion::equalMemRegion> MRSet;
     typedef Map<const PAGEdge*, const SVFFunction*> PAGEdgeToFunMap;
-    typedef OrderedSet<PointsTo, MemRegion::equalPointsTo> PointsToList;
-    typedef Map<const SVFFunction*, PointsToList > FunToPointsTosMap;
-    typedef OrderedMap<PointsTo, PointsTo, MemRegion::equalPointsTo > PtsToRepPtsSetMap;
+    typedef OrderedSet<PointsTo, SVFUtil::equalPointsTo> PointsToList;
+    typedef Map<const SVFFunction*, PointsTo> FunToPointsToMap;
+    typedef Map<const SVFFunction*, PointsToList> FunToPointsTosMap;
+    typedef OrderedMap<PointsTo, PointsTo, SVFUtil::equalPointsTo > PtsToRepPtsSetMap;
 
     /// Map a function to its region set
     typedef Map<const SVFFunction*, MRSet> FunToMRsMap;
@@ -167,7 +168,6 @@ public:
     //@{
     /// Map a function to its indirect refs/mods of memory objects
     typedef Map<const SVFFunction*, NodeBS> FunToNodeBSMap;
-    typedef Map<const SVFFunction*, PointsTo> FunToPointsToMap;
     /// Map a callsite to its indirect refs/mods of memory objects
     typedef Map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
     //@}

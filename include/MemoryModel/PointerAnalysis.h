@@ -30,6 +30,9 @@
 #ifndef POINTERANALYSIS_H_
 #define POINTERANALYSIS_H_
 
+#include <unistd.h>
+#include <signal.h>
+
 #include "Graphs/PAG.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
@@ -163,6 +166,10 @@ protected:
     TypeSystem *typeSystem;
 
 public:
+	/// Get ICFG
+	inline ICFG* getICFG() const {
+		return pag->getICFG();
+	}
     /// Return number of resolved indirect call edges
     inline Size_t getNumOfResolvedIndCallEdge() const
     {

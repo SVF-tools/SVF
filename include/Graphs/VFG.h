@@ -160,6 +160,9 @@ public:
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
+    /// Dump graph into dot file
+    void view();
+
     /// Update VFG based on pointer analysis results
     void updateCallGraph(PointerAnalysis* pta);
 
@@ -222,7 +225,7 @@ public:
     inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,const CallBlockNode* cs) const
     {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
-        assert(it!=PAGNodeToActualParmMap.end() && "acutal parameter VFG node can not be found??");
+        assert(it!=PAGNodeToActualParmMap.end() && "actual parameter VFG node can not be found??");
         return it->second;
     }
     inline ActualRetVFGNode* getActualRetVFGNode(const PAGNode* aret) const
@@ -542,7 +545,7 @@ protected:
 		/// we will set this phi node's def later
 		/// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
 		if (!pag->isPhiNode(uniqueFunRet)){
-			std::string warn = fun->getName();
+			std::string warn = fun->getName().str();
 			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
 			setDef(uniqueFunRet, sNode);
 		}

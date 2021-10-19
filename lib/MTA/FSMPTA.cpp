@@ -143,7 +143,7 @@ void MTASVFGBuilder::performRemovingMHPEdges()
             {
                 IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
                 const PointsTo& pts = e->getPointsTo();
-                for (NodeBS::iterator o = remove_pts.begin(), eo = remove_pts.end(); o != eo; ++o)
+                for (PointsTo::iterator o = remove_pts.begin(), eo = remove_pts.end(); o != eo; ++o)
                 {
                     if (const_cast<PointsTo&>(pts).test(*o))
                     {
@@ -178,7 +178,7 @@ void MTASVFGBuilder::performRemovingMHPEdges()
 /// whether is a first write in the lock span.
 bool MTASVFGBuilder::isHeadofSpan(const StmtSVFGNode* n, LockAnalysis::LockSpan lspan)
 {
-    SVFGNodeLockSpanPair pair = std::make_pair(n,lspan);
+    SVFGNodeLockSpan pair(n,lspan);
     if (pairheadmap.find(pair) != pairheadmap.end())
         return pairheadmap[pair];
 
@@ -263,7 +263,7 @@ bool MTASVFGBuilder::isTailofSpan(const StmtSVFGNode* n, LockAnalysis::LockSpan 
 {
     assert(SVFUtil::isa<StoreSVFGNode>(n) && "Node is not a store node");
 
-    SVFGNodeLockSpanPair pair = std::make_pair(n,lspan);
+    SVFGNodeLockSpan pair(n,lspan);
     if (pairtailmap.find(pair) != pairtailmap.end())
         return pairtailmap[pair];
 
@@ -653,7 +653,7 @@ void MTASVFGBuilder::readPrecision()
                 PointsTo pts = e->getPointsTo();
                 PointsTo remove_pts;
 
-                for (NodeBS::iterator o = pts.begin(), eo = pts.end(); o != eo; ++o)
+                for (PointsTo::iterator o = pts.begin(), eo = pts.end(); o != eo; ++o)
                 {
                     SVFGNodeIDSet succ1 = getSuccNodes(n1, *o);
                     SVFGNodeIDSet succ2 = getSuccNodes(n2, *o);
@@ -757,9 +757,9 @@ void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
  */
 void FSMPTA::initialize(SVFModule* module)
 {
-    PointerAnalysis::initialize(module);
+    PointerAnalysis::initialize();
 
-    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(module);
+    AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
     MTASVFGBuilder mtaSVFGBuilder(mhp,lockana);
     svfg = mtaSVFGBuilder.buildPTROnlySVFG(ander);
     setGraph(svfg);

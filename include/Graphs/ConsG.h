@@ -115,6 +115,7 @@ public:
     }
     inline bool hasConstraintNode(NodeID id) const
     {
+        id = sccRepNode(id);
         return hasGNode(id);
     }
     inline void removeConstraintNode(ConstraintNode* node)
@@ -253,6 +254,18 @@ public:
     {
         nodeToSubsMap.erase(node);
     }
+    inline NodeBS& getSubs(NodeID node)
+    {
+        return nodeToSubsMap[node];
+    }
+    inline NodeID getRep(NodeID node)
+    {
+        return nodeToRepMap[node];
+    }
+    inline void resetRep(NodeID node)
+    {
+        nodeToRepMap.erase(node);
+    }
     //@}
 
     /// Move incoming direct edges of a sub node which is outside the SCC to its rep node
@@ -362,6 +375,9 @@ public:
     void dump(std::string name);
     /// Print CG into terminal
     void print();
+
+    /// View graph from the debugger.
+    void view();
 };
 
 } // End namespace SVF

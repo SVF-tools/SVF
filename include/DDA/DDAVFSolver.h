@@ -333,7 +333,7 @@ protected:
         {
             if(const IndirectSVFGEdge* indirEdge = SVFUtil::dyn_cast<IndirectSVFGEdge>(*it))
             {
-                PointsTo& guard = const_cast<PointsTo&>(indirEdge->getPointsTo());
+                const PointsTo& guard = indirEdge->getPointsTo();
                 if(guard.test(obj))
                 {
                     DBOUT(DDDA, SVFUtil::outs() << "\t\t==backtrace indirectVF svfgNode " <<

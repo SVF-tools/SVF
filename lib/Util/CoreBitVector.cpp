@@ -304,7 +304,7 @@ void CoreBitVector::intersectWithComplement(const CoreBitVector &lhs, const Core
 size_t CoreBitVector::hash(void) const
 {
     if (words.size() == 0) return 0;
-    std::hash<std::pair<size_t, std::pair<Word, Word>>> h;
+    SVF::Hash<std::pair<size_t, std::pair<Word, Word>>> h;
     // TODO: best combination.
     return h(std::make_pair(words.size(), std::make_pair(words[0], words[words.size() - 1])));
 }

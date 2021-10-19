@@ -321,6 +321,7 @@ void FlowSensitiveStat::statNullPtr()
  */
 void FlowSensitiveStat::statPtsSize()
 {
+    // TODO: needs to be made to work for persistent.
     if (SVFUtil::isa<FlowSensitive::MutDFPTDataTy>(fspta->getPTDataTy()))
     {
         // stat of IN set
@@ -444,7 +445,6 @@ void FlowSensitiveStat::statInOutPtsSize(const DFInOutMap& data, ENUM_INOUT inOr
     const SVFG *svfg = fspta->svfg;
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
-        NodeID s = it->first;
         const SVFGNode *sn = it->second;
 
         // Unique objects coming into s.

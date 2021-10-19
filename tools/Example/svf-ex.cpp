@@ -150,8 +150,14 @@ int main(int argc, char ** argv)
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
                                 "Whole Program Points-to Analysis\n");
+    
+    if (Options::WriteAnder == "ir_annotator")
+    {
+        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+    }
 
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+    svfModule->buildSymbolTableInfo();
 
 	/// Build Program Assignment Graph (PAG)
 	PAGBuilder builder;
@@ -190,6 +196,8 @@ int main(int argc, char ** argv)
     delete svfg;
     AndersenWaveDiff::releaseAndersenWaveDiff();
     PAG::releasePAG();
+
+    LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
 
     return 0;
 }

@@ -30,6 +30,7 @@
 #ifndef INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 #define INCLUDE_MEMORYMODEL_POINTERANALYSISIMPL_H_
 
+#include <Graphs/ConsG.h>
 #include "MemoryModel/PointerAnalysis.h"
 #include "Util/PointsTo.h"
 
@@ -45,14 +46,16 @@ class BVDataPTAImpl : public PointerAnalysis
 public:
 
     typedef PTData<NodeID, NodeBS, NodeID, PointsTo> PTDataTy;
-    typedef MutablePTData<NodeID, NodeBS, NodeID, PointsTo> MutPTDataTy;
     typedef DiffPTData<NodeID, NodeBS, NodeID, PointsTo> DiffPTDataTy;
-    typedef MutableDiffPTData<NodeID, NodeBS, NodeID, PointsTo> MutDiffPTDataTy;
     typedef DFPTData<NodeID, NodeBS, NodeID, PointsTo> DFPTDataTy;
+    typedef VersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> VersionedPTDataTy;
+
+    typedef MutablePTData<NodeID, NodeBS, NodeID, PointsTo> MutPTDataTy;
+    typedef MutableDiffPTData<NodeID, NodeBS, NodeID, PointsTo> MutDiffPTDataTy;
     typedef MutableDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutDFPTDataTy;
     typedef MutableIncDFPTData<NodeID, NodeBS, NodeID, PointsTo> MutIncDFPTDataTy;
-    typedef VersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> VersionedPTDataTy;
     typedef MutableVersionedPTData<NodeID, NodeBS, NodeID, PointsTo, VersionedVar, Set<VersionedVar>> MutVersionedPTDataTy;
+
     typedef PersistentPTData<NodeID, NodeBS, NodeID, PointsTo> PersPTDataTy;
     typedef PersistentDiffPTData<NodeID, NodeBS, NodeID, PointsTo> PersDiffPTDataTy;
     typedef PersistentDFPTData<NodeID, NodeBS, NodeID, PointsTo> PersDFPTDataTy;
@@ -66,11 +69,7 @@ public:
         Persistent,
     };
 
-    /// Option name corresponding to PTBackingType::Mutable.
-    static const std::string PTBackingOptMutable;
-    /// Option name corresponding to PTBackingType::Persistent.
-    static const std::string PTBackingOptPersistent;
-
+    // TODO: make this not static?
     static PersistentPointsToCache<PointsTo> ptCache;
 
     /// Constructor
@@ -153,9 +152,17 @@ public:
     //@{
     virtual void writeToFile(const std::string& filename);
     virtual bool readFromFile(const std::string& filename);
+    virtual void writeToModule();
+    virtual bool readFromModule();
     //@}
 
 protected:
+    /// Get points-to data structure
+    inline PTDataTy* getPTDataTy() const
+    {
+        return ptD;
+    }
+
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
     virtual void finalize()
@@ -169,12 +176,6 @@ protected:
     {
         assert(false && "Virtual function not implemented!");
         return false;
-    }
-
-    /// Get points-to data structure
-    inline PTDataTy* getPTDataTy() const
-    {
-        return ptD;
     }
 
     inline DiffPTDataTy* getDiffPTDataTy() const
@@ -210,21 +211,7 @@ protected:
 
     /// Normalize points-to information for field-sensitive analysis,
     /// i.e., replace fieldObj with baseObj if it is field-insensitive
-    virtual void normalizePointsTo(){
-        for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter){
-            const PointsTo tmpPts = getPts(nIter->first);
-            for(NodeID obj : tmpPts){
-                NodeID baseObj = pag->getBaseObjNode(obj);
-                if(baseObj == obj)
-                    continue;
-                const MemObj* memObj = pag->getObject(obj);
-                if(memObj && memObj->isFieldInsensitive()){
-                    clearPts(nIter->first,obj);
-                    addPts(nIter->first,baseObj);
-                }
-            }
-        }
-    }
+    virtual void normalizePointsTo();
 
 private:
     /// Points-to data

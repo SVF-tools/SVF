@@ -75,34 +75,24 @@ public:
     /// Initialize sources and sinks
     //@{
     /// Initialize sources and sinks
-    virtual void initSrcs();
-    virtual void initSnks();
+    virtual void initSrcs() override;
+    virtual void initSnks() override;
     /// Whether the function is a heap allocator/reallocator (allocate memory)
-    virtual inline bool isSourceLikeFun(const SVFFunction* fun)
+    virtual inline bool isSourceLikeFun(const SVFFunction* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemAlloc(fun);
     }
     /// Whether the function is a heap deallocator (free/release memory)
-    virtual inline bool isSinkLikeFun(const SVFFunction* fun)
+    virtual inline bool isSinkLikeFun(const SVFFunction* fun) override
     {
         return SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun);
-    }
-    /// A SVFG node is source if it is an actualRet at malloc site
-    inline bool isSource(const SVFGNode* node)
-    {
-        return getSources().find(node)!=getSources().end();
-    }
-    /// A SVFG node is source if it is an actual parameter at dealloca site
-    inline bool isSink(const SVFGNode* node)
-    {
-        return getSinks().find(node)!=getSinks().end();
     }
     //@}
 
 protected:
     /// Report leaks
     //@{
-    virtual void reportBug(ProgSlice* slice);
+    virtual void reportBug(ProgSlice* slice) override;
     void reportNeverFree(const SVFGNode* src);
     void reportPartialLeak(const SVFGNode* src);
     //@}

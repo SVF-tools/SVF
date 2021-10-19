@@ -85,6 +85,10 @@ public:
     /// Returns true if this set and rhs share any elements.
     bool intersects(const PointsTo &rhs) const;
 
+    /// Returns the first element the set. Returns -1 when the set is empty.
+    /// TODO: should we diverge from LLVM about the int return?
+    int find_first(void);
+
     /// Returns true if this set and rhs contain exactly the same elements.
     bool operator==(const PointsTo &rhs) const;
 

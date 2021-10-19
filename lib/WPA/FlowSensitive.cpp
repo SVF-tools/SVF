@@ -27,9 +27,6 @@
  *      Author: Yulei Sui
  */
 
-#include <signal.h>
-#include <unistd.h>
-
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
@@ -52,9 +49,12 @@ void FlowSensitive::initialize()
 {
     PointerAnalysis::initialize();
 
+    stat = new FlowSensitiveStat(this);
+
     // TODO: support clustered aux. Andersen's.
-    assert(!Options::ClusterAnder && "FlowSensitive::initialize: cluster auxliary Andersen's unsupported.");
+    assert(!Options::ClusterAnder && "FlowSensitive::initialize: clustering auxiliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
+
     // When evaluating ctir aliases, we want the whole SVFG.
     if(Options::OPTSVFG)
         svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
@@ -71,8 +71,6 @@ void FlowSensitive::initialize()
         PointsTo defaultPt = cluster();
         getPTDataTy()->setDefaultData(defaultPt);
     }
-
-    stat = new FlowSensitiveStat(this);
 }
 
 void timeLimitReached(int signum)
@@ -88,14 +86,10 @@ void timeLimitReached(int signum)
  */
 void FlowSensitive::analyze()
 {
+    bool limitTimerSet = SVFUtil::startAnalysisLimitTimer(Options::FsTimeLimit);
+
     /// Initialization for the Solver
     initialize();
-
-    if (Options::FsTimeLimit != 0)
-    {
-        signal(SIGALRM, &timeLimitReached);
-        alarm(Options::FsTimeLimit);
-    }
 
     double start = stat->getClk(true);
     /// Start solving constraints
@@ -119,6 +113,9 @@ void FlowSensitive::analyze()
     alarm(0);
 
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("Finish Solving Constraints\n"));
+
+    // Reset the time-up alarm; analysis is done.
+    SVFUtil::stopAnalysisLimitTimer(limitTimerSet);
 
     double end = stat->getClk(true);
     solveTime += (end - start) / TIMEINTERVAL;

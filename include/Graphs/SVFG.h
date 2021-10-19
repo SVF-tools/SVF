@@ -174,6 +174,11 @@ public:
         return getSVFGNode(getDef(pagNode));
     }
 
+    /// Return the corresponding SVFGNodes to a given llvm::Value.
+    /// return an empty list, if the no mapping is possible
+    std::set<const SVFGNode*> fromValue(const llvm::Value* value) const;
+
+
     /// Perform statistics
     void performStat();
 
@@ -249,6 +254,17 @@ public:
     /// Return total SVFG node number
     inline u32_t getSVFGNodeNum() const {
         return nodeNum;
+    }
+
+    /// Used *only* for Versioned FSPTA to encode propagation of versions
+    /// in the worklist (allowing for breadth-first propagation).
+    /// Returns the created node.
+    inline const DummyVersionPropSVFGNode *addDummyVersionPropSVFGNode(const NodeID object, const NodeID version)
+    {
+        DummyVersionPropSVFGNode *dvpNode = new DummyVersionPropSVFGNode(totalVFGNode++, object, version);
+        // Not going through add[S]VFGNode because we have no ICFG edge.
+        addGNode(dvpNode->getId(), dvpNode);
+        return dvpNode;
     }
 
 protected:

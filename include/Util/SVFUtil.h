@@ -63,6 +63,7 @@ void dumpSet(PointsTo To, raw_ostream & O = SVFUtil::outs());
 
 /// Dump points-to set
 void dumpPointsToSet(unsigned node, NodeBS To) ;
+void dumpSparseSet(const NodeBS& To);
 
 /// Dump alias set
 void dumpAliasSet(unsigned node, NodeBS To) ;
@@ -119,6 +120,49 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
     }
 }
 
+inline bool cmpNodeBS(const NodeBS& lpts,const NodeBS& rpts)
+{
+    if (lpts.count() != rpts.count())
+        return (lpts.count() < rpts.count());
+    else
+    {
+        NodeBS::iterator bit = lpts.begin(), eit = lpts.end();
+        NodeBS::iterator rbit = rpts.begin(), reit = rpts.end();
+        for (; bit != eit && rbit != reit; bit++, rbit++)
+        {
+            if (*bit != *rbit)
+                return (*bit < *rbit);
+        }
+
+        return false;
+    }
+}
+
+typedef struct equalPointsTo
+{
+    bool operator()(const PointsTo& lhs, const PointsTo& rhs) const
+    {
+        return SVFUtil::cmpPts(lhs, rhs);
+    }
+} equalPointsTo;
+
+typedef struct equalNodeBS
+{
+    bool operator()(const NodeBS& lhs, const NodeBS& rhs) const
+    {
+        return SVFUtil::cmpNodeBS(lhs, rhs);
+    }
+} equalNodeBS;
+
+inline NodeBS ptsToNodeBS(const PointsTo &pts)
+{
+    NodeBS nbs;
+    for (const NodeID o : pts) nbs.set(o);
+    return nbs;
+}
+
+typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
+void dumpPointsToList(const PointsToList& ptl);
 
 inline bool isIntrinsicFun(const Function* func)
 {
@@ -245,6 +289,44 @@ void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
 
 /// Returns a string representation of a hclust method.
 std::string hclustMethodToString(hclust_fast_methods method);
+
+/// Inserts an element into a Set/CondSet (with ::insert).
+template <typename Key, typename KeySet>
+inline void insertKey(const Key &key, KeySet &keySet)
+{
+    keySet.insert(key);
+}
+
+/// Inserts a NodeID into a NodeBS.
+inline void insertKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.set(key);
+}
+
+/// Removes an element from a Set/CondSet (or anything implementing ::erase).
+template <typename Key, typename KeySet>
+inline void removeKey(const Key &key, KeySet &keySet)
+{
+    keySet.erase(key);
+}
+
+/// Removes a NodeID from a NodeBS.
+inline void removeKey(const NodeID &key, NodeBS &keySet)
+{
+    keySet.reset(key);
+}
+
+/// Function to call when alarm for time limit hits.
+void timeLimitReached(int signum);
+
+/// Starts an analysis timer. If timeLimit is 0, sets no timer.
+/// If an alarm has already been set, does not set another.
+/// Returns whether we set a timer or not.
+bool startAnalysisLimitTimer(unsigned timeLimit);
+
+/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
+/// timer or not (return value of startLimitTimer).
+void stopAnalysisLimitTimer(bool limitTimerSet);
 
 } // End namespace SVFUtil
 

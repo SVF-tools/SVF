@@ -103,7 +103,7 @@ static string getBeforeParenthesis(const string &name)
 
 string cppUtil::getBeforeBrackets(const string &name)
 {
-    if (name[name.size() - 1] != '>')
+    if (name.size() == 0 || name[name.size() - 1] != '>')
     {
         return name;
     }
@@ -286,7 +286,7 @@ bool cppUtil::isVirtualCallSite(CallSite cs)
 }
 
 bool cppUtil::isCPPThunkFunction(const Function *F) {
-    cppUtil::DemangledName dname = cppUtil::demangle(F->getName());
+    cppUtil::DemangledName dname = cppUtil::demangle(F->getName().str());
     return dname.isThunkFunc;
 }
 
@@ -297,10 +297,10 @@ const Function *cppUtil::getThunkTarget(const Function *F) {
         for (auto &inst: bb) {
             if (llvm::isa<CallInst>(inst) || llvm::isa<InvokeInst>(inst)
                 || llvm::isa<CallBrInst>(inst)) {
-                llvm::ImmutableCallSite cs(&inst);
-                assert(cs.getCalledFunction() &&
-                       "Indirect call detected in thunk func");
-                assert(ret == nullptr && "multiple callsites in thunk func");
+                CallSite cs(const_cast<Instruction*>(&inst));
+                // assert(cs.getCalledFunction() &&
+                //        "Indirect call detected in thunk func");
+                // assert(ret == nullptr && "multiple callsites in thunk func");
 
                 ret = cs.getCalledFunction();
             }
@@ -458,6 +458,9 @@ bool cppUtil::isConstructor(const Function *F)
         return false;
     }
     struct cppUtil::DemangledName dname = demangle(funcName.c_str());
+    if (dname.className.size() == 0) {
+        return false;
+    }
     dname.funcName = getBeforeBrackets(dname.funcName);
     dname.className = getBeforeBrackets(dname.className);
     size_t colon = dname.className.rfind("::");
@@ -486,6 +489,9 @@ bool cppUtil::isDestructor(const Function *F)
         return false;
     }
     struct cppUtil::DemangledName dname = demangle(funcName.c_str());
+    if (dname.className.size() == 0) {
+        return false;
+    }
     dname.funcName = getBeforeBrackets(dname.funcName);
     dname.className = getBeforeBrackets(dname.className);
     size_t colon = dname.className.rfind("::");

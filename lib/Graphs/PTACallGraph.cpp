@@ -316,6 +316,10 @@ void PTACallGraph::dump(const std::string& filename)
       GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
+void PTACallGraph::view()
+{
+    llvm::ViewGraph(this, "Call Graph");
+}
 
 namespace llvm
 {
@@ -350,7 +354,7 @@ struct DOTGraphTraits<PTACallGraph*> : public DefaultDOTGraphTraits
         const SVFFunction* fun = node->getFunction();
         if (!SVFUtil::isExtCall(fun))
         {
-            return "shape=circle";
+            return "shape=box";
         }
         else
             return "shape=Mrecord";

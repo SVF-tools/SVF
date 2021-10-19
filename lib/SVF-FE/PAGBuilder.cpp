@@ -804,6 +804,32 @@ void PAGBuilder::visitSwitchInst(SwitchInst &inst){
     pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
 }
 
+///   %ap = alloca %struct.va_list
+///  %ap2 = bitcast %struct.va_list* %ap to i8*
+/// ; Read a single integer argument from %ap2
+/// %tmp = va_arg i8* %ap2, i32 (VAArgInst)
+/// TODO: for now, create a copy edge from %ap2 to %tmp, we assume here %tmp should point to the n-th argument of the var_args
+void PAGBuilder::visitVAArgInst(VAArgInst &inst){
+    NodeID dst = getValueNode(&inst);
+    Value* opnd = inst.getPointerOperand();
+    NodeID src = getValueNode(opnd);
+    addCopyEdge(src,dst);
+}
+
+/// <result> = freeze ty <val>
+/// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
+/// Otherwise, this instruction is a no-op and returns the input <val>
+/// For now, we assume <val> is never a posion or undef.
+void PAGBuilder::visitFreezeInst(FreezeInst &inst){
+    NodeID dst = getValueNode(&inst);
+    for (u32_t i = 0; i < inst.getNumOperands(); i++)
+    {
+        Value* opnd = inst.getOperand(i);
+        NodeID src = getValueNode(opnd);
+        addCopyEdge(src,dst);
+    }
+}
+
 
 /*!
  * Add the constraints for a direct, non-external call.
@@ -945,7 +971,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addBlackholeObjNode();
+                NodeID obj = pag->addDummyObjNode();
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
@@ -1038,6 +1064,22 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             case ExtAPI::EFT_A1R_A0R:
                 addComplexConsForExt(cs.getArgument(1), cs.getArgument(0));
                 break;
+            case ExtAPI::EFT_L_A1__FunPtr:
+            {
+                /// handling external function e.g., void *dlsym(void *handle, const char *funname); 
+                const Value *src = cs.getArgument(1);
+                if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(src))
+                    src = stripConstantCasts(gep->getPointerOperand());
+                if(const GlobalVariable* glob = SVFUtil::dyn_cast<GlobalVariable>(src)){
+                    if(const ConstantDataArray* constarray = SVFUtil::dyn_cast<ConstantDataArray>(glob->getInitializer())){
+                        if(const SVFFunction* fun = getProgFunction(svfMod,constarray->getAsCString().str())){
+                            NodeID srcNode = getValueNode(fun->getLLVMFun());
+                            addCopyEdge(srcNode,  getValueNode(inst));
+                        }
+                    }
+                }
+                break;
+            }
             case ExtAPI::EFT_A3R_A1R_NS:
                 //These func. are never used to copy structs, so the size is 1.
                 addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), 1);
@@ -1362,7 +1404,7 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
     if (gepval==UINT_MAX)
     {
-		assert(UINT_MAX==-1 && "maximum limit of unsigned int is not -1?");
+        assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
          * 1. PAGBuilder::addComplexConsForExt to handle external calls
@@ -1411,6 +1453,8 @@ void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     assert(curVal && "current Val is nullptr?");
     edge->setBB(curBB);
     edge->setValue(curVal);
+    // backmap in valuToEdgeMap
+    pag->mapValueToEdge(curVal, edge);
     ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {

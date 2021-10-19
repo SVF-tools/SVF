@@ -250,6 +250,12 @@ public:
 
     virtual const std::string toString() const;
 
+    /// Get shape and/or color of node for .dot display.
+    virtual const std::string getNodeAttrForDotDisplay() const;
+
+    /// Dump to console for debugging
+    void dump() const;
+
     //@}
     /// Overloading operator << for dumping PAGNode value
     //@{
@@ -299,7 +305,7 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName();
+            return value->getName().str();
         return "";
     }
 
@@ -359,7 +365,7 @@ public:
     virtual const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName();
+            return value->getName().str();
         return "";
     }
     /// Return type of the value

@@ -34,6 +34,106 @@
 
 using namespace SVF;
 
+CondExpr* CondManager::trueCond = nullptr;
+CondExpr* CondManager::falseCond = nullptr;
+
+/// Constructor
+CondManager::CondManager() : sol(cxt)
+{
+    trueCond = new CondExpr(cxt.bool_val(true));
+    falseCond = new CondExpr(cxt.bool_val(false));
+}
+
+/// Destructor
+CondManager::~CondManager()
+{
+    delete trueCond;
+    delete falseCond;
+    for (CondExpr *cond : allocatedConds)
+    {
+        delete cond;
+    }
+}
+
+/// And operator for two expressions
+CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
+{
+    CondExpr *cond = new CondExpr(lhs->getExpr() && rhs->getExpr());
+    allocatedConds.insert(cond);
+    return cond;
+}
+
+/// Or operator for two expressions
+CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
+{
+    CondExpr *cond = new CondExpr(lhs->getExpr() || rhs->getExpr());
+    allocatedConds.insert(cond);
+    return cond;
+}
+
+/// Neg operator for an expression
+CondExpr* CondManager::NEG(const CondExpr *lhs)
+{
+    CondExpr *cond = new CondExpr(!lhs->getExpr());
+    allocatedConds.insert(cond);
+    return cond;
+}
+
+/// Create a single condition
+CondExpr* CondManager::createCond(u32_t i)
+{
+    CondExpr *cond = new CondExpr(cxt.bv_const(std::to_string(i).c_str(), i));
+    allocatedConds.insert(cond);
+    return cond;
+}
+
+/// Return the number of condition expressions
+u32_t CondManager::getCondNumber()
+{
+    return sol.get_model().size();
+}
+
+/// Print the expressions in this model
+void CondManager::printModel()
+{
+    std::cout << sol.check() << "\n";
+    z3::model m = sol.get_model();
+    for (u32_t i = 0; i < m.size(); i++)
+    {
+        z3::func_decl v = m[static_cast<s32_t>(i)];
+        std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
+    }
+}
+
+/// Return memory usage for this condition manager
+std::string CondManager::getMemUsage()
+{
+    //std::ostringstream os;
+    //memory::display_max_usage(os);
+    //return os.str();
+    return "";
+}
+
+/// Extract sub conditions of this expression
+void CondManager::extractSubConds(const CondExpr *e, NodeBS &support) const
+{
+
+}
+
+/// Print out one particular expression
+inline void CondManager::printDbg(const CondExpr *e)
+{
+    std::cout << e->getExpr() << "\n";
+}
+
+/// Return string format of this expression
+std::string CondManager::dumpStr(const CondExpr *e) const
+{
+    std::ostringstream out;
+    out << e->getExpr();
+    return out.str();
+}
+
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
@@ -131,7 +231,7 @@ void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const
     f->next = Cudd_Complement(f->next);
 }
 
-void BddCondManager::BddSupport(DdNode * f, NodeBS &support) const
+void BddCondManager::extractSubConds(DdNode * f, NodeBS &support) const
 {
     BddSupportStep( Cudd_Regular(f), support);
     ddClearFlag(Cudd_Regular(f));
@@ -147,7 +247,7 @@ void BddCondManager::dump(DdNode* lhs, raw_ostream & O)
     else
     {
         NodeBS support;
-        BddSupport(lhs, support);
+        extractSubConds(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
                 ++iter)
         {
@@ -168,7 +268,7 @@ std::string BddCondManager::dumpStr(DdNode* lhs) const
     else
     {
         NodeBS support;
-        BddSupport(lhs, support);
+        extractSubConds(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
                 ++iter)
         {

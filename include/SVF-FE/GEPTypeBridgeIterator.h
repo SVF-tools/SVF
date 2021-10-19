@@ -69,10 +69,23 @@ public:
 
     Type *getIndexedType() const
     {
+        assert(false && "needs to be refactored");
         if ( CurTy.getInt() )
             return CurTy.getPointer();
+#if LLVM_VERSION_MAJOR >= 11
+        Type * CT = CurTy.getPointer();
+        if (auto ST = dyn_cast<StructType>(CT))
+            return ST->getTypeAtIndex(getOperand());
+        else if (auto Array = dyn_cast<ArrayType>(CT))
+            return Array->getElementType();
+        else if (auto Vector = dyn_cast<VectorType>(CT))
+            return Vector->getElementType();
+        else
+            return CT;
+#else
         CompositeType *CT = llvm::cast<CompositeType>( CurTy.getPointer() );
         return CT->getTypeAtIndex(getOperand());
+#endif
     }
 
     // non-standard operators, these may not need be bridged but seems it's
@@ -94,10 +107,24 @@ public:
         {
             CurTy.setInt(false);
         }
+#if LLVM_VERSION_MAJOR >= 11
+        else if ( Type * CT = CurTy.getPointer() )
+        {
+            if (auto ST = dyn_cast<StructType>(CT))
+                CurTy.setPointer(ST->getTypeAtIndex(getOperand()));
+            else if (auto Array = dyn_cast<ArrayType>(CT))
+                CurTy.setPointer(Array->getElementType());
+            else if (auto Vector = dyn_cast<VectorType>(CT))
+                CurTy.setPointer(Vector->getElementType());
+            else
+                CurTy.setPointer(nullptr);
+        }
+#else
         else if ( CompositeType * CT = dyn_cast<CompositeType>(CurTy.getPointer()) )
         {
             CurTy.setPointer(CT->getTypeAtIndex(getOperand()));
         }
+#endif
         else
         {
             CurTy.setPointer(nullptr);

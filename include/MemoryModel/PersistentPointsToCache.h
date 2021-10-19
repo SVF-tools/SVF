@@ -12,6 +12,8 @@
 #ifndef PERSISTENT_POINTS_TO_H_
 #define PERSISTENT_POINTS_TO_H_
 
+#include <iomanip>
+#include <iostream>
 #include <vector>
 
 #include "Util/SVFBasicTypes.h"
@@ -40,6 +42,8 @@ public:
     {
         idToPts.push_back(new Data(emptyData));
         ptsToId[emptyData] = emptyPointsToId();
+
+        initStats();
     }
 
     /// Resets the cache removing everything except the emptyData it was initialised with.
@@ -58,6 +62,8 @@ public:
         intersectionCache.clear();
 
         idCounter = 1;
+        // Cache is empty...
+        initStats();
     }
 
     /// If pts is not in the PersistentPointsToCache, inserts it, assigns an ID, and returns
@@ -88,25 +94,53 @@ public:
     PointsToID unionPts(PointsToID lhs, PointsToID rhs)
     {
         static const DataOp unionOp = [](const Data &lhs, const Data &rhs) { return lhs | rhs; };
+
+        ++totalUnions;
+
+        // Order operands so we don't perform x U y and y U x separately.
         std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
 
-        // Trivial cases.
+        // Property cases.
         // EMPTY_SET U x
-        if (operands.first == emptyPointsToId()) return operands.second;
+        if (operands.first == emptyPointsToId())
+        {
+            ++propertyUnions;
+            return operands.second;
+        }
+
         // x U x
-        if (operands.first == operands.second) return operands.first;
+        if (operands.first == operands.second)
+        {
+            ++propertyUnions;
+            return operands.first;
+        }
 
         bool opPerformed = false;
         PointsToID result = opPts(lhs, rhs, unionOp, unionCache, true, opPerformed);
 
         if (opPerformed)
         {
-            // if x U y = z, then x U z = z and y U z = z.
-            operands = std::minmax(lhs, result);
-            unionCache[operands] = result;
-            operands = std::minmax(rhs, result);
-            unionCache[operands] = result;
-        }
+            ++uniqueUnions;
+
+            // We can use lhs/rhs here rather than our ordered operands,
+            // because the operation was commutative.
+
+            // if x U y = z, then x U z = z,
+            if (lhs != result)
+            {
+                unionCache[std::minmax(lhs, result)] = result;
+                ++propertyUnions;
+                ++totalUnions;
+            }
+
+            // and y U z = z.
+            if (rhs != result)
+            {
+                unionCache[std::minmax(rhs, result)] = result;
+                ++propertyUnions;
+                ++totalUnions;
+            }
+        } else ++lookupUnions;
 
         return result;
     }
@@ -116,32 +150,159 @@ public:
     {
         static const DataOp complementOp = [](const Data &lhs, const Data &rhs) { return lhs - rhs; };
 
-        // Trivial cases.
+        ++totalComplements;
+
+        // Property cases.
         // x - x
-        if (lhs == rhs) return emptyPointsToId();
+        if (lhs == rhs)
+        {
+            ++propertyComplements;
+            return emptyPointsToId();
+        }
+
         // x - EMPTY_SET
-        if (rhs == emptyPointsToId()) return lhs;
+        if (rhs == emptyPointsToId())
+        {
+            ++propertyComplements;
+            return lhs;
+        }
+
         // EMPTY_SET - x
-        if (lhs == emptyPointsToId()) return emptyPointsToId();
+        if (lhs == emptyPointsToId())
+        {
+            ++propertyComplements;
+            return emptyPointsToId();
+        }
 
         bool opPerformed = false;
-        return opPts(lhs, rhs, complementOp, complementCache, false, opPerformed);
+        const PointsToID result = opPts(lhs, rhs, complementOp, complementCache, false, opPerformed);
+
+        if (opPerformed)
+        {
+            ++uniqueComplements;
+
+            // We performed lhs - rhs = result, so...
+            if (result != emptyPointsToId())
+            {
+                // result AND rhs = EMPTY_SET,
+                intersectionCache[std::minmax(result, rhs)] = emptyPointsToId();
+                ++propertyIntersections;
+                ++totalIntersections;
+
+                // and result AND lhs = result,
+                intersectionCache[std::minmax(result, lhs)] = lhs;
+                ++propertyIntersections;
+                ++totalIntersections;
+
+                // and result - rhs = result.
+                complementCache[std::make_pair(result, rhs)] = result;
+                ++propertyComplements;
+                ++totalComplements;
+            }
+        } else ++lookupComplements;
+
+        return result;
     }
 
     /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
     PointsToID intersectPts(PointsToID lhs, PointsToID rhs)
     {
         static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs) { return lhs & rhs; };
+
+        ++totalIntersections;
+
+        // Order operands so we don't perform x U y and y U x separately.
         std::pair<PointsToID, PointsToID> operands = std::minmax(lhs, rhs);
 
-        // Trivial cases.
+        // Property cases.
         // EMPTY_SET & x
-        if (operands.first == emptyPointsToId()) return emptyPointsToId();
+        if (operands.first == emptyPointsToId())
+        {
+            ++propertyIntersections;
+            return emptyPointsToId();
+        }
+
         // x & x
-        if (operands.first == operands.second) return operands.first;
+        if (operands.first == operands.second)
+        {
+            ++propertyIntersections;
+            return operands.first;
+        }
 
         bool opPerformed = false;
-        return opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
+        const PointsToID result = opPts(lhs, rhs, intersectionOp, intersectionCache, true, opPerformed);
+        if (opPerformed)
+        {
+            ++uniqueIntersections;
+
+            // When the result is empty, we won't be adding anything of substance.
+            if (result != emptyPointsToId())
+            {
+                // We performed lhs AND rhs = result, so...
+                // result AND rhs = result,
+                if (result != rhs)
+                {
+                    intersectionCache[std::minmax(result, rhs)] = result;
+                    ++propertyIntersections;
+                    ++totalIntersections;
+                }
+
+                // and result AND lhs = result,
+                if (result != lhs)
+                {
+                    intersectionCache[std::minmax(result, lhs)] = result;
+                    ++propertyIntersections;
+                    ++totalIntersections;
+                }
+
+                // Also (thanks reviewer #2)
+                // result U lhs = result,
+                if (result != emptyPointsToId() && result != lhs)
+                {
+                    unionCache[std::minmax(lhs, result)] = lhs;
+                    ++propertyUnions;
+                    ++totalUnions;
+                }
+
+                // And result U rhs = rhs.
+                if (result != emptyPointsToId() && result != rhs)
+                {
+                    unionCache[std::minmax(rhs, result)] = rhs;
+                    ++propertyUnions;
+                    ++totalUnions;
+                }
+            }
+        } else ++lookupIntersections;
+
+        return result;
+    }
+
+    /// Print statistics on operations and points-to set numbers.
+    void printStats(const std::string subtitle) const
+    {
+        static const unsigned fieldWidth = 25;
+        std::cout.flags(std::ios::left);
+
+        std::cout << "****Persistent Points-To Cache Statistics: " << subtitle << "****\n";
+
+        std::cout << std::setw(fieldWidth) << "UniquePointsToSets"    << idToPts.size()        << "\n";
+
+        std::cout << std::setw(fieldWidth) << "TotalUnions"           << totalUnions           << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyUnions"        << propertyUnions        << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueUnions"          << uniqueUnions          << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupUnions"          << lookupUnions          << "\n";
+
+        std::cout << std::setw(fieldWidth) << "TotalComplements"      << totalComplements      << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyComplements"   << propertyComplements   << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueComplements"     << uniqueComplements     << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupComplements"     << lookupComplements     << "\n";
+
+        std::cout << std::setw(fieldWidth) << "TotalIntersections"    << totalIntersections    << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyIntersections" << propertyIntersections << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueIntersections"   << uniqueIntersections   << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupIntersections"   << lookupIntersections   << "\n";
+
+        std::cout.flush();
     }
 
     /// Returns all points-to sets stored by this cache as keys to a map.
@@ -215,6 +376,24 @@ private:
         return resultId;
     }
 
+    /// Initialises statistics variables to 0.
+    inline void initStats(void)
+    {
+
+        totalUnions           = 0;
+        uniqueUnions          = 0;
+        propertyUnions        = 0;
+        lookupUnions          = 0;
+        totalComplements      = 0;
+        uniqueComplements     = 0;
+        propertyComplements   = 0;
+        lookupComplements     = 0;
+        totalIntersections    = 0;
+        uniqueIntersections   = 0;
+        propertyIntersections = 0;
+        lookupIntersections   = 0;
+    }
+
 private:
     /// Maps points-to IDs (indices) to their corresponding points-to set.
     /// Reverse of idToPts.
@@ -236,6 +415,20 @@ private:
 
     /// Empty points-to set to construct.
     Data defaultData;
+
+    // Statistics:
+    u64_t totalUnions;
+    u64_t uniqueUnions;
+    u64_t propertyUnions;
+    u64_t lookupUnions;
+    u64_t totalComplements;
+    u64_t uniqueComplements;
+    u64_t propertyComplements;
+    u64_t lookupComplements;
+    u64_t totalIntersections;
+    u64_t uniqueIntersections;
+    u64_t propertyIntersections;
+    u64_t lookupIntersections;
 };
 
 } // End namespace SVF

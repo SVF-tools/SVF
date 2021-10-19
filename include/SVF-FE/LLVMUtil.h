@@ -34,7 +34,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
-#include "llvm/Support/JSON.h"
 
 namespace SVF
 {
@@ -423,6 +422,18 @@ inline bool isProgEntryFunction (const SVFFunction * fun)
 inline bool isProgEntryFunction (const Function * fun)
 {
     return fun && fun->getName().str() == "main";
+}
+
+/// Get program entry function from module.
+inline const SVFFunction* getProgFunction(SVFModule* svfModule, const std::string& funName)
+{
+    for (SVFModule::const_iterator it = svfModule->begin(), eit = svfModule->end(); it != eit; ++it)
+    {
+        const SVFFunction *fun = *it;
+        if (fun->getName()==funName)
+            return fun;
+    }
+    return nullptr;
 }
 
 /// Get program entry function from module.

@@ -32,7 +32,7 @@
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/BreakConstantExpr.h"
 
 using namespace std;
 using namespace SVF;
@@ -71,7 +71,83 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
 {
     assert(llvmModuleSet && "LLVM Module set needs to be created!");
 
-    // We read PAG from LLVM IR
+    loadModules(moduleNameVec);
+
+    if(!moduleNameVec.empty())
+        svfModule = new SVFModule(*moduleNameVec.begin());
+    else
+        svfModule = new SVFModule();
+
+    build();
+
+    return svfModule;
+}
+
+void LLVMModuleSet::preProcessBCs(std::vector<std::string> &moduleNameVec)
+{
+    loadModules(moduleNameVec);
+    prePassSchedule();
+
+    std::string preProcessSuffix = ".pre.bc";
+    // Get the existing module names, remove old extention, add preProcessSuffix
+    for (u32_t i = 0; i < moduleNameVec.size(); i++)
+    {
+        u32_t lastIndex = moduleNameVec[i].find_last_of("."); 
+        std::string rawName = moduleNameVec[i].substr(0, lastIndex);
+        moduleNameVec[i] = (rawName + preProcessSuffix);
+    }
+
+    dumpModulesToFile(preProcessSuffix);
+    preProcessed = true;
+
+    releaseLLVMModuleSet();
+}
+
+
+
+void LLVMModuleSet::build()
+{
+    initialize();
+    buildFunToFunMap();
+    buildGlobalDefToRepMap();
+    if(preProcessed==false)
+        prePassSchedule();
+}
+
+/*!
+ * Invoke llvm passes to modify module
+ */
+void LLVMModuleSet::prePassSchedule()
+{
+    /// BreakConstantGEPs Pass
+    std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    {
+        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+        p1->runOnModule(*module);
+    }
+
+    /// MergeFunctionRets Pass
+    std::unique_ptr<UnifyFunctionExitNodes> p2 =
+        std::make_unique<UnifyFunctionExitNodes>();
+    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
+    {
+        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
+        for (auto F = module->begin(), E = module->end(); F != E; ++F)
+        {
+            Function &fun = *F;
+            if (fun.isDeclaration())
+                continue;
+            p2->runOnFunction(fun);
+        }
+    }
+}
+
+
+void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
+{
+
+        // We read PAG from LLVM IR
     if(Options::Graphtxt.getValue().empty())
     {
         if(moduleNameVec.empty())
@@ -84,35 +160,7 @@ SVFModule* LLVMModuleSet::buildSVFModule(const std::vector<std::string> &moduleN
     // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
     else
         SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
-
-    if(!moduleNameVec.empty())
-        svfModule = new SVFModule(*moduleNameVec.begin());
-    else
-        svfModule = new SVFModule();
-
-    loadModules(moduleNameVec);
-    build();
-
-    return svfModule;
-}
-
-void LLVMModuleSet::build()
-{
-    initialize();
-    buildFunToFunMap();
-    buildGlobalDefToRepMap();
-
-    if (!SVFModule::pagReadFromTXT()) {
-        /// building symbol table
-        DBOUT(DGENERAL,SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
-        symInfo->buildMemModel(svfModule);
-    }
-
-}
-
-void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
-{
+        
     //
     // To avoid the following type bugs (t1 != t3) when parsing multiple modules,
     // We should use only one LLVMContext object for multiple modules in the same thread.

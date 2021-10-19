@@ -169,10 +169,21 @@ public:
     ///@{
     virtual void initSrcs() = 0;
     virtual void initSnks() = 0;
-    virtual bool isSourceLikeFun(const SVFFunction* fun) = 0;
-    virtual bool isSinkLikeFun(const SVFFunction* fun) = 0;
-    virtual bool isSource(const SVFGNode* node) = 0;
-    virtual bool isSink(const SVFGNode* node) = 0;
+    virtual bool isSourceLikeFun(const SVFFunction* fun) {
+        return false;
+    }
+
+    virtual bool isSinkLikeFun(const SVFFunction* fun) {
+        return false;
+    }
+
+    bool isSource(const SVFGNode* node) const {
+        return getSources().find(node)!=getSources().end();
+    }
+
+    bool isSink(const SVFGNode* node) const {
+        return getSinks().find(node)!=getSinks().end();
+    }
     ///@}
 
     /// Identify allocation wrappers

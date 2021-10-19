@@ -12,6 +12,7 @@
 #include "Util/SVFUtil.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Util/CxtStmt.h"
+#include "SVF-FE/DataFlowUtil.h"
 #include <set>
 #include <vector>
 
@@ -45,7 +46,7 @@ public:
     }
     /// Classof
     //@{
-    static inline bool classof(const TCTEdge *edge)
+    static inline bool classof(const TCTEdge*)
     {
         return true;
     }
@@ -122,12 +123,12 @@ public:
     typedef std::vector<const Instruction*> InstVec;
     typedef Set<const Instruction*> InstSet;
     typedef Set<const PTACallGraphNode*> PTACGNodeSet;
-    typedef Map<const CxtThread,TCTNode*> CxtThreadToNodeMap;
-    typedef Map<const CxtThread,CallStrCxt> CxtThreadToForkCxt;
-    typedef Map<const CxtThread,const Function*> CxtThreadToFun;
+    typedef Map<CxtThread,TCTNode*> CxtThreadToNodeMap;
+    typedef Map<CxtThread,CallStrCxt> CxtThreadToForkCxt;
+    typedef Map<CxtThread,const Function*> CxtThreadToFun;
     typedef Map<const Instruction*, const Loop*> InstToLoopMap;
     typedef FIFOWorkList<CxtThreadProc> CxtThreadProcVec;
-    typedef set<CxtThreadProc> CxtThreadProcSet;
+    typedef Set<CxtThreadProc> CxtThreadProcSet;
     typedef SCCDetection<PTACallGraph*> ThreadCallGraphSCC;
 
     /// Constructor
@@ -146,6 +147,19 @@ public:
     {
         destroy();
     }
+    /// Get CallBlockNode given inst
+    CallBlockNode* getCallBlockNode(const Instruction* inst) {
+		return pta->getICFG()->getCallBlockNode(inst);
+	}
+	/// Get SVFFuntion given Function 
+	const SVFFunction* getSVFFun(const Function* fun) const {
+		return LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+	}
+	/// Get SVFFModule
+	SVFModule* getSVFModule() const {
+		return pta->getModule();
+	}
+	
     /// Get TCG
     inline ThreadCallGraph* getThreadCallGraph() const
     {
@@ -228,12 +242,23 @@ public:
     }
     //@}
 
-    /// Whether it is a candidate function
-    inline bool isCandidateFun(const Function* fun) const
+    /// Whether it is a candidate function for indirect call
+    inline bool isCandidateFun(const PTACallGraph::FunctionSet& callees) const
     {
-        return candidateFuncSet.find(fun)!=candidateFuncSet.end();
+    	for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(),
+                    	ecit = callees.end(); cit!=ecit; cit++)
+        {
+        	if(candidateFuncSet.find((*cit)->getLLVMFun())!=candidateFuncSet.end())
+        		return true;
+        }
+        return false;
     }
-
+	inline bool isCandidateFun(const Function* fun) const {
+		return candidateFuncSet.find(fun)!=candidateFuncSet.end();
+	}
+	inline bool isCandidateFun(const SVFFunction* fun) const {
+		return isCandidateFun(fun->getLLVMFun());
+	}
     /// Whether two functions in the same callgraph scc
     inline bool inSameCallGraphSCC(const PTACallGraphNode* src,const PTACallGraphNode* dst)
     {

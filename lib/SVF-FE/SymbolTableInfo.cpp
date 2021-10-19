@@ -38,7 +38,6 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/BreakConstantExpr.h"
 #include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace std;
@@ -77,7 +76,7 @@ void MemObj::init(const Value *val)
     else
     {
         writeWrnMsg("try to create an object with a non-pointer type.");
-        writeWrnMsg(val->getName());
+        writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
         assert(false && "Memory object must be held by a pointer-typed ref value.");
     }
@@ -407,38 +406,11 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 
 
 /*!
- * Invoke llvm passes to modify module
- */
-void SymbolTableInfo::prePassSchedule(SVFModule* svfModule)
-{
-    /// BreakConstantGEPs Pass
-    std::unique_ptr<BreakConstantGEPs> p1 = std::make_unique<BreakConstantGEPs>();
-    for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
-    {
-        Module *module = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
-        p1->runOnModule(*module);
-    }
-
-    /// MergeFunctionRets Pass
-    std::unique_ptr<UnifyFunctionExitNodes> p2 =
-        std::make_unique<UnifyFunctionExitNodes>();
-    for (SVFModule::llvm_iterator F = svfModule->llvmFunBegin(), E = svfModule->llvmFunEnd(); F != E; ++F)
-    {
-        Function *fun = *F;
-        if (fun->isDeclaration())
-            continue;
-        p2->runOnFunction(*fun);
-    }
-}
-
-/*!
  *  This method identify which is value sym and which is object sym
  */
 void SymbolTableInfo::buildMemModel(SVFModule* svfModule)
 {
     SVFUtil::increaseStackSize();
-
-    prePassSchedule(svfModule);
 
     mod = svfModule;
 
@@ -664,6 +636,7 @@ void SymbolTableInfo::collectVal(const Value *val)
  */
 void SymbolTableInfo::collectObj(const Value *val)
 {
+    val = getGlobalRep(val);
     ValueToIDMapTy::iterator iter = objSymMap.find(val);
     if (iter == objSymMap.end())
     {

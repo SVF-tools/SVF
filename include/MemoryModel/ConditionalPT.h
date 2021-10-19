@@ -31,7 +31,6 @@
 #define CONDVAR_H_
 
 #include "Util/SVFUtil.h"
-#include "Util/Conditions.h"
 #include "llvm/Support/raw_ostream.h"
 #include "Util/PointsTo.h"
 
@@ -867,7 +866,7 @@ struct std::hash<SVF::CondStdSet<Element>>
     {
         // TODO: this is not a very good hash, but we probably won't be
         //       using it for now. Needed for other templates to compile...
-        std::hash<std::pair<Element, unsigned>> h;
+        SVF::Hash<std::pair<Element, unsigned>> h;
         return h(std::make_pair(*css.begin(), css.size()));
     }
 };

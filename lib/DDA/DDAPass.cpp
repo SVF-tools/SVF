@@ -97,7 +97,7 @@ void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 	PAGBuilder builder;
 	PAG* pag = builder.build(module);
 
-    VFPathCond::setMaxPathLen(Options::MaxPathLen);
+    ContextCond::setMaxPathLen(Options::MaxPathLen);
     ContextCond::setMaxCxtLen(Options::MaxContextLen);
 
     /// Initialize pointer analysis.

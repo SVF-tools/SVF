@@ -33,6 +33,7 @@
 
 #include "Util/Conditions.h"
 #include "Util/PointsTo.h"
+
 #include <sys/resource.h>		/// increase stack size
 
 using namespace SVF;
@@ -112,6 +113,25 @@ void SVFUtil::dumpPointsToSet(unsigned node, NodeBS bs)
     outs() << "}\n";
 }
 
+// For use from the debugger.
+void SVFUtil::dumpSparseSet(const NodeBS& bs)
+{
+    outs() << "{";
+    dumpSet(bs);
+    outs() << "}\n";
+}
+
+void SVFUtil::dumpPointsToList(const PointsToList& ptl)
+{
+    outs() << "{";
+    for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end();
+         ii != ie; ii++)
+    {
+        auto bs = *ii;
+        dumpSet(bs);
+    }
+    outs() << "}\n";
+}
 
 /*!
  * Dump alias set
@@ -387,4 +407,40 @@ void SVFFunction::viewCFGOnly() {
     if (fun != nullptr) {
         fun->viewCFGOnly();
     }
+}
+
+void SVFUtil::timeLimitReached(int)
+{
+    std::cout.flush();
+    SVFUtil::outs().flush();
+    // TODO: output does not indicate which time limit is reached.
+    //       This can be better in the future.
+    SVFUtil::outs() << "WPA: time limit reached\n";
+    exit(101);
+}
+
+bool SVFUtil::startAnalysisLimitTimer(unsigned timeLimit)
+{
+    if (timeLimit == 0) return false;
+
+    // If an alarm is already set, don't set another. That means this analysis
+    // is part of another which has a time limit.
+    unsigned remainingSeconds = alarm(0);
+    if (remainingSeconds != 0)
+    {
+        // Continue the previous alarm and move on.
+        alarm(remainingSeconds);
+        return false;
+    }
+
+    signal(SIGALRM, &timeLimitReached);
+    alarm(timeLimit);
+    return true;
+}
+
+/// Stops an analysis timer. limitTimerSet indicates whether the caller set the
+/// timer or not (return value of startLimitTimer).
+void SVFUtil::stopAnalysisLimitTimer(bool limitTimerSet)
+{
+    if (limitTimerSet) alarm(0);
 }

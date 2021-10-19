@@ -43,7 +43,7 @@ namespace SVF
 
     // Initialise counts to 4 because that's how many special nodes we have.
     NodeIDAllocator::NodeIDAllocator(void)
-        : numNodes(4), numObjects(4), numValues(4), numSymbols(4), strategy(Options::NodeAllocStrat)
+        : numObjects(4), numValues(4), numSymbols(4), numNodes(4), strategy(Options::NodeAllocStrat)
     { }
 
     NodeID NodeIDAllocator::allocateObjectId(void)
@@ -104,7 +104,7 @@ namespace SVF
                                                     numSymbols : maxFieldLimit
                                                 )));
             id = (offset + 1) * gepMultiplier + base;
-            assert(id > numNodes && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
+            assert(id > numSymbols && "NodeIDAllocator::allocateGepObjectId: GEP allocation clashing with other nodes");
         }
         else
         {

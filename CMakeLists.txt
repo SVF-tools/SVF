@@ -23,7 +23,7 @@ if(NOT COMMAND add_llvm_library)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O0 -fno-rtti")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O0")
         else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -fopenmp -mavx2 -O3 -fno-rtti")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -O3 -fno-rtti")
             set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMMON_FLAGS} -O3")
         endif()
 
@@ -50,17 +50,36 @@ Please set this to environment variable to point to the LLVM build directory\
 else()
         set(IN_SOURCE_BUILD 1)
 endif()
-set(Z3_DIR $ENV{Z3_DIR})
+
+if (DEFINED ENV{Z3_DIR})
+	get_filename_component(Z3_DIR $ENV{Z3_DIR} REALPATH BASE_DIR ${CMAKE_BINARY_DIR})
+    set(Z3_LIBRARIES ${Z3_DIR}/bin/libz3.a)
+	set(Z3_INSTALLS ${Z3_DIR}/include)
+	set(Z3_EXTRA_LINK_DIR ${Z3_DIR}/bin)
+else()
+    include(FindPkgConfig)
+    pkg_search_module(Z3 REQUIRED z3)
+	set(Z3_INSTALLS )
+	set(Z3_EXTRA_LINK_DIR )
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_BINARY_DIR}/include
-                    ${Z3_DIR}/include/)
+                    ${Z3_INSTALLS})
 
-LINK_DIRECTORIES(${Z3_DIR}/bin)
+# checks if the test-suite is present, if it is then build bc files and add testing to cmake build
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Test-Suite)
+    enable_testing()
+    add_subdirectory(Test-Suite)
+    include(CTest)
+endif()
+
 add_subdirectory(lib)
 add_subdirectory(tools)
 
 INSTALL(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ ${CMAKE_CURRENT_BINARY_DIR}/include/ ${Z3_DIR}/include/
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ ${CMAKE_CURRENT_BINARY_DIR}/include/ ${Z3_INSTALLS}
     COMPONENT devel
     DESTINATION include/svf
     FILES_MATCHING

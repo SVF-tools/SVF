@@ -322,6 +322,7 @@ public:
         assert(it!=funToCallGraphNodeMap.end() && "call graph node not found!!");
         return it->second;
     }
+    
     //@}
 
     /// Add/Get CallSiteID
@@ -437,6 +438,9 @@ public:
 
     /// Dump the graph
     void dump(const std::string& filename);
+
+    /// View the graph from the debugger
+    void view();
 };
 
 } // End namespace SVF

@@ -165,6 +165,12 @@ bool PointsTo::intersects(const PointsTo &rhs) const
     assert(false && "PointsTo::intersects: unknown type");
 }
 
+int PointsTo::find_first(void)
+{
+    if (count() == 0) return -1;
+    return *begin();
+}
+
 bool PointsTo::operator==(const PointsTo &rhs) const
 {
     assert(metaSame(rhs));

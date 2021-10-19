@@ -104,6 +104,13 @@ public:
     static double timeOfSSARenaming;	///< Time for SSA rename
     //@}
 
+    enum MemPartition
+    {
+        Distinct,
+        IntraDisjoint,
+        InterDisjoint
+    };
+
 protected:
     BVDataPTAImpl* pta;
     MRGenerator* mrGen;

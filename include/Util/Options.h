@@ -8,6 +8,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/PointsTo.h"
+#include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
 
 namespace SVF
@@ -59,8 +60,14 @@ public:
     /// weigh more common points-to sets as more important.
     static const llvm::cl::opt<bool> PredictPtOcc;
 
+    /// PTData type.
+    static const llvm::cl::opt<BVDataPTAImpl::PTBackingType> ptDataBacking;
+
     /// Time limit for the main phase (i.e., the actual solving) of FS analyses.
     static const llvm::cl::opt<unsigned> FsTimeLimit;
+
+    /// Time limit for the Andersen's analyses.
+    static const llvm::cl::opt<unsigned> AnderTimeLimit;
 
     // ContextDDA.cpp
     static const llvm::cl::opt<unsigned long long> CxtBudget;
@@ -116,6 +123,7 @@ public:
     static const llvm::cl::opt<bool> PStat;
     static const llvm::cl::opt<unsigned> StatBudget;
     static const llvm::cl::opt<bool> PAGDotGraph;
+    static const llvm::cl::opt<bool> PAGDotGraphShorter;
     static const llvm::cl::opt<bool> DumpICFG;
     static const llvm::cl::opt<bool> CallGraphDotGraph;
     static const llvm::cl::opt<bool> PAGPrint;
@@ -135,7 +143,7 @@ public:
     static const llvm::cl::opt<bool> DumpMSSA;
     static const llvm::cl::opt<std :: string> MSSAFun;
     // static const llvm::cl::opt<string> MSSAFun;
-    static const llvm::cl::opt<std::string> MemPar;
+    static const llvm::cl::opt<MemSSA::MemPartition> MemPar;
 
     // SVFG builder (SVFGBuilder.cpp)
     static const llvm::cl::opt<bool> SVFGWithIndirectCall;
@@ -164,7 +172,8 @@ public:
 
     // MTAResultValidator.cpp
     static const llvm::cl::opt<bool> PrintValidRes;
-
+	
+	static const llvm::cl::opt<bool> LockValid;
     //MTAStat.cpp
     static const llvm::cl::opt<bool> AllPairMHP;
 
@@ -207,6 +216,7 @@ public:
 
     // Andersen.cpp
     static const llvm::cl::opt<bool> ConsCGDotGraph;
+    static const llvm::cl::opt<bool> BriefConsCGDotGraph;
     static const llvm::cl::opt<bool> PrintCGGraph;
     // static const llvm::cl::opt<string> WriteAnder;
     static const llvm::cl::opt<std :: string> WriteAnder;
@@ -220,18 +230,19 @@ public:
 
     //FlowSensitiveTBHC.cpp
     static const llvm::cl::opt<bool> TBHCStoreReuse;
-    static const llvm::cl::opt<bool> TBHCAllReuse;;
+    static const llvm::cl::opt<bool> TBHCAllReuse;
 
     // TypeAnalysis.cpp
     static const llvm::cl::opt<bool> GenICFG;
 
     //WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
+    static const llvm::cl::opt<bool> WPAOPTSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
     static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
 
 };
-};  // namespace SVF
+}  // namespace SVF
 
 #endif  // ifdef OPTIONS_H_

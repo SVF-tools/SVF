@@ -886,6 +886,10 @@ void CHGraph::dump(const std::string& filename)
     printCH();
 }
 
+void CHGraph::view()
+{
+    llvm::ViewGraph(this, "Class Hierarchy Graph");
+}
 
 namespace llvm
 {
@@ -918,10 +922,10 @@ struct DOTGraphTraits<CHGraph*> : public DefaultDOTGraphTraits
     {
         if (node->isPureAbstract())
         {
-            return "shape=Mcircle";
+            return "shape=tab";
         }
         else
-            return "shape=circle";
+            return "shape=box";
     }
 
     template<class EdgeIter>

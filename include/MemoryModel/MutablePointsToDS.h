@@ -10,6 +10,7 @@
 
 namespace SVF
 {
+
 template <typename Key, typename KeySet, typename Data, typename DataSet>
 class MutableDFPTData;
 
@@ -81,12 +82,15 @@ public:
 
     virtual void clearPts(const Key& var, const Data& element) override
     {
+        clearSingleRevPts(revPtsMap[element], var);
         getMutPts(var).reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
-        getMutPts(var).clear();
+        DataSet &pts = getMutPts(var);
+        clearRevPts(pts, var);
+        pts.clear();
     }
 
     virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
@@ -157,7 +161,10 @@ private:
     }
     inline void addSingleRevPts(KeySet &revData, const Key& tgr)
     {
-        if (this->rev) insertKey(tgr, revData);
+        if (this->rev)
+        {
+            SVFUtil::insertKey(tgr, revData);
+        }
     }
     inline void addRevPts(const DataSet &ptsData, const Key& tgr)
     {
@@ -165,6 +172,20 @@ private:
         {
             for(iterator it = ptsData.begin(), eit = ptsData.end(); it!=eit; ++it)
                 addSingleRevPts(revPtsMap[*it], tgr);
+        }
+    }
+    inline void clearSingleRevPts(KeySet &revSet, const Key &k)
+    {
+        if (this->rev)
+        {
+            SVFUtil::removeKey(k, revSet);
+        }
+    }
+    inline void clearRevPts(const DataSet &pts, const Key &k)
+    {
+        if (this->rev)
+        {
+            for (const Data &d : pts) clearSingleRevPts(revPtsMap[d], k);
         }
     }
     ///@}

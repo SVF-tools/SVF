@@ -172,6 +172,6 @@ public:
     };
 };
 
-};  // namespace SVF
+}  // namespace SVF
 
 #endif  // ifdef NODEIDALLOCATOR_H_

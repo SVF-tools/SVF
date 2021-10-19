@@ -69,8 +69,8 @@ void PCG::initFromThreadAPI(SVFModule* module)
 {
     for (SVFModule::const_iterator fi = module->begin(), efi = module->end(); fi != efi; ++fi)
     {
-        const Function* fun = *fi;
-        for (const_inst_iterator II = inst_begin(fun), E = inst_end(fun); II != E; ++II)
+    	const Function* fun = (*fi)->getLLVMFun();
+        for (inst_iterator II = inst_begin((*fi)->getLLVMFun()), E = inst_end((*fi)->getLLVMFun()); II != E; ++II)
         {
             const Instruction *inst = &*II;
             if (tdAPI->isTDFork(inst))
@@ -126,27 +126,28 @@ void PCG::collectSpawners()
     while (!worklist.empty())
     {
         const Function* fun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(fun);
+        const SVFFunction* svffun = getSVFFun(fun);
+        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->InEdgeBegin(), eit = funNode->InEdgeEnd(); it != eit;
                 ++it)
         {
             PTACallGraphEdge* callEdge = (*it);
-            const Function* caller = callEdge->getSrcNode()->getFunction();
+            const Function* caller = callEdge->getSrcNode()->getFunction()->getLLVMFun();
             if (isSpawnerFun(caller) == false)
             {
                 worklist.push(caller);
                 addSpawnerFun(caller);
             }
             /// add all the callsites from callers to callee (spawner) as a spawn site.
-            for (PTACallGraphEdge::CallInstSet::iterator dit = callEdge->directCallsBegin(), deit =
+            for (PTACallGraphEdge::CallInstSet::const_iterator dit = callEdge->directCallsBegin(), deit =
                         callEdge->directCallsEnd(); dit != deit; ++dit)
             {
-                addSpawnsite(*dit);
+                addSpawnsite((*dit)->getCallSite());
             }
-            for (PTACallGraphEdge::CallInstSet::iterator dit = callEdge->indirectCallsBegin(), deit =
+            for (PTACallGraphEdge::CallInstSet::const_iterator dit = callEdge->indirectCallsBegin(), deit =
                         callEdge->indirectCallsEnd(); dit != deit; ++dit)
             {
-                addSpawnsite(*dit);
+                addSpawnsite((*dit)->getCallSite());
             }
         }
     }
@@ -167,11 +168,12 @@ void PCG::collectSpawnees()
     while (!worklist.empty())
     {
         const Function* fun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(fun);
+        const SVFFunction* svffun = getSVFFun(fun);
+        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const Function* caller = (*it)->getDstNode()->getFunction();
+            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
             if (isSpawneeFun(caller) == false)
             {
                 worklist.push(caller);
@@ -188,7 +190,7 @@ void PCG::collectSpawnees()
 void PCG::identifyFollowers()
 {
 
-    for (CallInstSet::iterator sit = spawnSitesBegin(), esit = spawnSitesEnd(); sit != esit; ++sit)
+    for (CallInstSet::const_iterator sit = spawnSitesBegin(), esit = spawnSitesEnd(); sit != esit; ++sit)
     {
         const Instruction* inst = *sit;
         BBWorkList bb_worklist;
@@ -204,13 +206,14 @@ void PCG::identifyFollowers()
                 // if this is an call/invoke instruction but not a spawn site
                 if ((SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst)) && !isSpawnsite(inst))
                 {
-                    if (callgraph->hasCallGraphEdge(inst))
+                	CallBlockNode* cbn = getCallBlockNode(inst);
+                    if (callgraph->hasCallGraphEdge(cbn))
                     {
-                        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(inst),
-                                ecgIt = callgraph->getCallEdgeEnd(inst); cgIt != ecgIt; ++cgIt)
+                        for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
+                                ecgIt = callgraph->getCallEdgeEnd(cbn); cgIt != ecgIt; ++cgIt)
                         {
                             const PTACallGraphEdge* edge = *cgIt;
-                            addFollowerFun(edge->getDstNode()->getFunction());
+                            addFollowerFun(edge->getDstNode()->getFunction()->getLLVMFun());
                         }
                     }
                 }
@@ -248,11 +251,12 @@ void PCG::collectFollowers()
     while (!worklist.empty())
     {
         const Function* fun = worklist.pop();
-        PTACallGraphNode* funNode = callgraph->getCallGraphNode(fun);
+        const SVFFunction* svffun = getSVFFun(fun);
+        PTACallGraphNode* funNode = callgraph->getCallGraphNode(svffun);
         for (PTACallGraphNode::const_iterator it = funNode->OutEdgeBegin(), eit = funNode->OutEdgeEnd(); it != eit;
                 ++it)
         {
-            const Function* caller = (*it)->getDstNode()->getFunction();
+            const Function* caller = (*it)->getDstNode()->getFunction()->getLLVMFun();
             if (isFollowerFun(caller) == false)
             {
                 worklist.push(caller);
@@ -278,10 +282,10 @@ void PCG::interferenceAnalysis()
     PCG::FunVec worklist;
     for (SVFModule::const_iterator F = mod->begin(), E = mod->end(); F != E; ++F)
     {
-        const Function* fun = *F;
+        const SVFFunction* fun = *F;
         if (isExtCall(fun))
             continue;
-        worklist.push_back(fun);
+        worklist.push_back(fun->getLLVMFun());
     }
 
     while (!worklist.empty())
@@ -321,9 +325,9 @@ void PCG::printResults()
 void PCG::printTDFuns()
 {
 
-    for (SVFModule::const_iterator fi = mod.begin(), efi = mod.end(); fi != efi; ++fi)
+    for (SVFModule::const_iterator fi = mod->begin(), efi = mod->end(); fi != efi; ++fi)
     {
-        const Function* fun = *fi;
+        const Function* fun = (*fi)->getLLVMFun();
         if (fun->isDeclaration())
             continue;
 

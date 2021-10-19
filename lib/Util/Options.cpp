@@ -15,15 +15,34 @@ namespace SVF
         llvm::cl::init(NodeIDAllocator::Strategy::DEBUG),
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
-            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately (default)"),
+            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
             clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed"),
-            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")));
+            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets (default)")));
 
     const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
         "field-limit",
         llvm::cl::init(512),
         llvm::cl::desc("Maximum number of fields for field sensitive analysis"));
 
+    const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
+        "ptd",
+        llvm::cl::init(BVDataPTAImpl::PTBackingType::Mutable),
+        llvm::cl::desc("Overarching points-to data structure"),
+        llvm::cl::values(
+            clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
+            clEnumValN(BVDataPTAImpl::PTBackingType::Persistent, "persistent", "points-to set ID per pointer, operations hash-consed")));
+
+    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
+        "fs-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
+
+    const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
+        "ander-time-limit",
+        llvm::cl::init(0),
+        llvm::cl::desc("time limit for Andersen's analyses (ignored when -fs-time-limit set)")
+    );
 
     // ContextDDA.cpp
     const llvm::cl::opt<unsigned long long> Options::CxtBudget(
@@ -255,6 +274,12 @@ namespace SVF
         llvm::cl::desc("Dump dot graph of PAG")
     );
 
+    const llvm::cl::opt<bool> Options::PAGDotGraphShorter(
+            "dump-pag-shorter",
+            llvm::cl::init(true),
+            llvm::cl::desc("If dumping dot graph of PAG, use shorter lines")
+    );
+
     const llvm::cl::opt<bool> Options::DumpICFG(
         "dump-icfg", 
         llvm::cl::init(false),
@@ -360,12 +385,6 @@ namespace SVF
         llvm::cl::desc("align each region's identifiers to the native word size")
     );
 
-    const llvm::cl::opt<unsigned> Options::FsTimeLimit(
-        "fs-time-limit",
-        llvm::cl::init(0),
-        llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
-    );
-
     const llvm::cl::opt<bool> Options::PredictPtOcc(
         "cluster-predict-occ",
         llvm::cl::init(false),
@@ -393,10 +412,14 @@ namespace SVF
         llvm::cl::desc("Please specify which function needs to be dumped")
     );
 
-    const llvm::cl::opt<std::string> Options::MemPar(
+    const llvm::cl::opt<MemSSA::MemPartition> Options::MemPar(
         "mem-par", 
-        llvm::cl::value_desc("memory-partition-type"),
-        llvm::cl::desc("memory partition strategy")
+        llvm::cl::init(MemSSA::MemPartition::IntraDisjoint),
+        llvm::cl::desc("Memory region partiion strategies (e.g., for SVFG construction)"),
+        llvm::cl::values(
+            clEnumValN(MemSSA::MemPartition::Distinct, "distinct", "memory region per each object"),
+            clEnumValN(MemSSA::MemPartition::IntraDisjoint, "intra-disjoint", "memory regions partioned based on each function"),
+            clEnumValN(MemSSA::MemPartition::InterDisjoint, "inter-disjoint", "memory regions partioned across functions"))
     );
 
 
@@ -416,7 +439,7 @@ namespace SVF
     llvm::cl::opt<bool> Options::OPTSVFG(
         "opt-svfg", 
         llvm::cl::init(true),
-        llvm::cl::desc("unoptimized SVFG with formal-in and actual-out")
+        llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
     );
 
     
@@ -492,9 +515,15 @@ namespace SVF
     
     // MTAResultValidator.cpp
     const llvm::cl::opt<bool> Options::PrintValidRes(
-        "print-mhp-validation", 
+        "mhp-validation", 
         llvm::cl::init(false), 
         llvm::cl::desc("Print MHP Validation Results")
+    );
+    // LockResultValidator.cpp
+    const llvm::cl::opt<bool> Options::LockValid(
+        "lock-validation", 
+        llvm::cl::init(false), 
+        llvm::cl::desc("Print Lock Validation Results")
     );
 
 
@@ -623,6 +652,12 @@ namespace SVF
         llvm::cl::desc("Dump dot graph of Constraint Graph")
     );
 
+    const llvm::cl::opt<bool> Options::BriefConsCGDotGraph(
+            "brief-constraint-graph",
+            llvm::cl::init(true),
+            llvm::cl::desc("Dump dot graph of Constraint Graph")
+    );
+
     const llvm::cl::opt<bool> Options::PrintCGGraph(
         "print-constraint-graph", 
         llvm::cl::init(false),
@@ -632,13 +667,13 @@ namespace SVF
     const llvm::cl::opt<std::string> Options::WriteAnder(
         "write-ander",  
         llvm::cl::init(""),
-        llvm::cl::desc("Write Andersen's analysis results to a file")
+        llvm::cl::desc("-write-ander=ir_annotator (Annotated IR with Andersen's results) or write Andersen's analysis results to a user-specified text file")
     );
 
     const llvm::cl::opt<std::string> Options::ReadAnder(
         "read-ander",  
         llvm::cl::init(""),
-        llvm::cl::desc("Read Andersen's analysis results from a file")
+        llvm::cl::desc("-read-ander=ir_annotator (Read Andersen's analysis results from the annotated IR, e.g., *.pre.bc) or from a text file")
     );
 
     const llvm::cl::opt<bool> Options::PtsDiff(
@@ -692,6 +727,12 @@ namespace SVF
         llvm::cl::desc("Generate SVFG after Andersen's Analysis")
     );
 
+    const llvm::cl::opt<bool> Options::WPAOPTSVFG(
+            "wpa-opt-svfg",
+            llvm::cl::init(false),
+            llvm::cl::desc("When using WPA pass, optimize SVFG to eliminate formal-in and actual-out (default false)")
+    );
+
     const llvm::cl::opt<bool> Options::PrintAliases(
         "print-aliases", 
         llvm::cl::init(false),
@@ -707,7 +748,6 @@ namespace SVF
             clEnumValN(PointerAnalysis::AndersenHLCD_WPA, "hlander", "Hybrid lazy cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenSCD_WPA, "sander", "Selective cycle detection inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenSFR_WPA, "sfrander", "Stride-based field representation includion-based analysis"),
-            clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "wander", "Wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::AndersenWaveDiff_WPA, "ander", "Diff wave propagation inclusion-based analysis"),
             clEnumValN(PointerAnalysis::Steensgaard_WPA, "steens", "Steensgaard's pointer analysis"),
             // Disabled till further work is done.
@@ -724,6 +764,4 @@ namespace SVF
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
-
-    
-}; // namespace SVF.
+} // namespace SVF.

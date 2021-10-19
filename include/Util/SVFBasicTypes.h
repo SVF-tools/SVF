@@ -48,6 +48,30 @@
 namespace SVF
 {
 
+/// provide extra hash function for std::pair handling
+template <class T> struct Hash;
+
+template <class S, class T> struct Hash<std::pair<S, T>> {
+    // Pairing function from: http://szudzik.com/ElegantPairing.pdf
+    static size_t szudzik(size_t a, size_t b)
+    {
+        return a > b ? b * b + a : a * a + a + b;
+    }
+
+    size_t operator()(const std::pair<S, T> &t) const {
+        Hash<decltype(t.first)> first;
+        Hash<decltype(t.second)> second;
+        return szudzik(first(t.first), second(t.second));
+    }
+};
+
+template <class T> struct Hash {
+    size_t operator()(const T &t) const {
+        std::hash<T> h;
+        return h(t);
+    }
+};
+
 typedef unsigned u32_t;
 typedef unsigned long long u64_t;
 typedef signed s32_t;
@@ -67,11 +91,11 @@ class PointsTo;
 typedef PointsTo AliasSet;
 typedef unsigned PointsToID;
 
-template <typename Key, typename Hash = std::hash<Key>, typename KeyEqual = std::equal_to<Key>,
+template <typename Key, typename Hash = Hash<Key>, typename KeyEqual = std::equal_to<Key>,
           typename Allocator = std::allocator<Key>> 
 using Set = std::unordered_set<Key, Hash, KeyEqual, Allocator>;
 
-template<typename Key, typename Value, typename Hash = std::hash<Key>,
+template<typename Key, typename Value, typename Hash = Hash<Key>,
     typename KeyEqual = std::equal_to<Key>,
     typename Allocator = std::allocator<std::pair<const Key, Value>>>
 using Map = std::unordered_map<Key, Value, Hash, KeyEqual, Allocator>;
@@ -102,6 +126,19 @@ typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
+
+// TODO: be explicit that this is a pair of 32-bit unsigneds?
+template <> struct Hash<NodePair>
+{
+    size_t operator()(const NodePair &p) const {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
+    }
+};
+
 
 /// LLVM debug macros, define type of your DEBUG model of each pass
 #define DBOUT(TYPE, X) 	DEBUG_WITH_TYPE(TYPE, X)
@@ -157,7 +194,7 @@ private:
     GNodeK kind;	///< Type of this SVFValue
 public:
     /// Constructor
-    SVFValue(const std::string& val, SVFValKind k): value(val), kind(k)
+    SVFValue(const llvm::StringRef& val, SVFValKind k): value(val), kind(k)
     {
     }
 
@@ -215,24 +252,8 @@ public:
     }
 };
 
-
-
 } // End namespace SVF
 
-/// Specialise hash for pairs.
-template <typename T, typename U> struct std::hash<std::pair<T, U>> {
-    // Pairing function from: http://szudzik.com/ElegantPairing.pdf
-    static size_t szudzik(size_t a, size_t b)
-    {
-        return a > b ? b * b + a : a * a + a + b;
-    }
-
-    size_t operator()(const std::pair<T, U> &p) const {
-        std::hash<T> h1;
-        std::hash<U> h2;
-        return szudzik(h1(p.first), h2(p.second));
-    }
-};
 
 template <> struct std::hash<SVF::NodePair> {
     size_t operator()(const SVF::NodePair &p) const {
@@ -256,7 +277,7 @@ struct std::hash<SVF::SmallVector<T, N>>
 
         // Iterate and accumulate the hash.
         size_t hash = 0;
-        std::hash<std::pair<T, size_t>> hts;
+        SVF::Hash<std::pair<T, size_t>> hts;
         std::hash<T> ht;
         for (const T &t : sv)
         {
@@ -264,6 +285,16 @@ struct std::hash<SVF::SmallVector<T, N>>
         }
 
         return hash;
+    }
+};
+
+/// Specialise hash for SparseBitVectors.
+template <unsigned N>
+struct std::hash<llvm::SparseBitVector<N>>
+{
+    size_t operator()(const llvm::SparseBitVector<N> &sbv) const {
+        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
 };
 

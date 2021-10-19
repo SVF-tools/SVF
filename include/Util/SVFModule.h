@@ -87,6 +87,8 @@ public:
             return true;
     }
 
+    void buildSymbolTableInfo();
+
     ///@{
     inline void addFunctionSet(Function* fun)
     {
