@@ -94,7 +94,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
             if(Options::DumpSlice)
                 annotateSlice(_curSlice);
 
-            if(_curSlice->AllPathReachableSolve()== true)
+            if(_curSlice->AllPathReachableSolve())
                 _curSlice->setAllReachable();
 
             DBOUT(DSaber, outs() << "Guard computation for slice:" << (*iter)->getId() << ")\n");

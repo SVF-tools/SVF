@@ -231,7 +231,8 @@ protected:
     inline bool setVFCond(const SVFGNode* node, Condition* cond)
     {
         SVFGNodeToCondMap::iterator it = svfgNodeToCondMap.find(node);
-        if(it!=svfgNodeToCondMap.end() && it->second == cond)
+        // until a fixed-point is reached (condition is not changed)
+        if(it!=svfgNodeToCondMap.end() && isEquivalentBranchCond(it->second, cond))
             return false;
 
         svfgNodeToCondMap[node] = cond;
@@ -254,6 +255,10 @@ protected:
         return pathAllocator->ComputeInterRetVFGGuard(src,dst,retBB);
     }
     //@}
+
+    inline bool isEquivalentBranchCond(const Condition *lhs, const Condition *rhs) const {
+        return pathAllocator->isEquivalentBranchCond(lhs, rhs);
+    };
 
     /// Return the basic block where a SVFGNode resides in
     /// a SVFGNode may not in a basic block if it is not a program statement
