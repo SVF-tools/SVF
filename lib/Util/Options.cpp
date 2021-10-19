@@ -348,6 +348,12 @@ namespace SVF
         llvm::cl::desc("Cluster for FS/VFS with auxiliary Andersen's")
     );
 
+    const llvm::cl::opt<bool> Options::PlainMappingFs(
+        "plain-mapping-fs",
+        llvm::cl::init(false),
+        llvm::cl::desc("Use an explicitly (not null) plain mapping for FS")
+    );
+
     const llvm::cl::opt<PointsTo::Type> Options::StagedPtType(
         "staged-pt-type",
         llvm::cl::init(PointsTo::Type::SBV),

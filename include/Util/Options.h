@@ -40,6 +40,9 @@ public:
     /// Whether to cluster FS or VFS with the auxiliary Andersen's.
     static const llvm::cl::opt<bool> ClusterFs;
 
+    /// Use an explicitly plain mapping with flow-sensitive (not null).
+    static const llvm::cl::opt<bool> PlainMappingFs;
+
     /// Type of points-to set to use for the main phase of a staged analysis (i.e., after
     /// clustering).
     static const llvm::cl::opt<PointsTo::Type> StagedPtType;

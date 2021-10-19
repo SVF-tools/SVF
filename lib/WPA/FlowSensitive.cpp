@@ -763,19 +763,22 @@ PointsTo FlowSensitive::cluster(void)
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
 
-    PointsTo::MappingPtr nodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
-    PointsTo::MappingPtr reverseNodeMapping =
-        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
-
     if (Options::ClusterFs)
     {
+        PointsTo::MappingPtr nodeMapping =
+            std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+        PointsTo::MappingPtr reverseNodeMapping =
+            std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
         return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
     }
-    else
+    else if (Options::PlainMappingFs)
     {
-        PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(nodeMapping->size());
-        PointsTo::MappingPtr reversePlainMapping = std::make_shared<std::vector<NodeID>>(nodeMapping->size());
+        assert(Options::NodeAllocStrat == NodeIDAllocator::Strategy::DENSE
+               && "FS::cluster: plain mapping requires dense allocation strategy.");
+
+        const size_t numObjects = NodeIDAllocator::get()->getNumObjects();
+        PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
+        PointsTo::MappingPtr reversePlainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
         for (NodeID i = 0; i < plainMapping->size(); ++i)
         {
             plainMapping->at(i) = i;
@@ -783,6 +786,10 @@ PointsTo FlowSensitive::cluster(void)
         }
 
         return PointsTo(Options::StagedPtType, plainMapping, reversePlainMapping);
+    }
+    else
+    {
+        return PointsTo(Options::StagedPtType, nullptr, nullptr);
     }
 }
 

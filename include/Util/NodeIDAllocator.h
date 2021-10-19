@@ -70,6 +70,9 @@ public:
     /// Notify the allocator that all symbols have had IDs allocated.
     void endSymbolAllocation(void);
 
+    /// Returns the total number of memory objects.
+    NodeID getNumObjects(void) const { return numObjects; }
+
 private:
     /// Builds a node ID allocator with the strategy specified on the command line.
     NodeIDAllocator(void);
