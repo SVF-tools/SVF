@@ -118,6 +118,7 @@ fi
 
 export PATH=$LLVM_DIR/bin:$PATH
 echo "LLVM_DIR =" $LLVM_DIR
+echo "Z3_DIR =" $Z3_DIR
 
 ########
 # Build SVF

@@ -294,7 +294,7 @@ void LLVMModuleSet::addSVFMain()
 void LLVMModuleSet::buildFunToFunMap()
 {
     Set<Function*> funDecls, funDefs;
-    Set<string> declNames, defNames, intersectNames;
+    OrderedSet<string> declNames, defNames, intersectNames;
     typedef Map<string, Function*> NameToFunDefMapTy;
     typedef Map<string, Set<Function*>> NameToFunDeclsMapTy;
 
@@ -314,7 +314,7 @@ void LLVMModuleSet::buildFunToFunMap()
         }
     }
     // Find the intersectNames
-    Set<string>::iterator declIter, defIter;
+    OrderedSet<string>::iterator declIter, defIter;
     declIter = declNames.begin();
     defIter = defNames.begin();
     while (declIter != declNames.end() && defIter != defNames.end())

@@ -32,7 +32,12 @@ jobs:
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           ${{github.workspace}}/build.sh
       # run ctest
-      - name: ctest
+      - name: ctest points-to
         working-directory: ${{github.workspace}}/Release-build
         run: 
-          ctest -VV
+          ctest -R points-to -VV
+      
+      - name: ctest differential analysis
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests -VV
