@@ -392,9 +392,9 @@ namespace SVF
 
                 // TODO: check stats for best node map.
                 size_t candidateWords = 0;
-                if (Options::StagedPtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
-                else if (Options::StagedPtType == PointsTo::CBV || Options::StagedPtType == PointsTo::BV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
-                else assert(false && "Clusterer::cluster: unsupported BV type");
+                if (Options::PtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
+                else if (Options::PtType == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
+                else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
 
                 if (candidateWords < bestWords)
                 {

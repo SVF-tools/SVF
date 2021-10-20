@@ -11,14 +11,15 @@
 
 #include <new>
 
+#include "Util/Options.h"
 #include "Util/PointsTo.h"
 #include "Util/BasicTypes.h"
 
 namespace SVF
 {
 
-PointsTo::PointsTo(Type type, MappingPtr nodeMapping, MappingPtr reverseNodeMapping)
-    : type(type), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping)
+PointsTo::PointsTo(MappingPtr nodeMapping, MappingPtr reverseNodeMapping)
+    : type(Options::PtType), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping)
 {
     if (type == SBV) new (&sbv) SparseBitVector();
     else if (type == CBV) new (&cbv) CoreBitVector();

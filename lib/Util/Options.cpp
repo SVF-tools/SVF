@@ -354,14 +354,14 @@ namespace SVF
         llvm::cl::desc("Use an explicitly (not null) plain mapping for FS")
     );
 
-    const llvm::cl::opt<PointsTo::Type> Options::StagedPtType(
-        "staged-pt-type",
+    const llvm::cl::opt<PointsTo::Type> Options::PtType(
+        "pt-type",
         llvm::cl::init(PointsTo::Type::SBV),
-        llvm::cl::desc("points-to set data structure to use in the main phase of a staged analysis"),
+        llvm::cl::desc("points-to set data structure to use in all analyses"),
         llvm::cl::values(
-            clEnumValN(PointsTo::Type::SBV, "sbv", "sparse bit vector"),
-            clEnumValN(PointsTo::Type::CBV, "cbv", "core bit vector (dynamic bit vector without leading and trailing 0s)"),
-            clEnumValN(PointsTo::Type::BV, "bv", "bit vector (dynamic bit vector without trailing 0s)")
+            clEnumValN(PointsTo::Type::SBV, "sbv", "sparse bit-vector"),
+            clEnumValN(PointsTo::Type::CBV, "cbv", "core bit-vector (dynamic bit-vector without leading and trailing 0s)"),
+            clEnumValN(PointsTo::Type::BV, "bv", "bit-vector (dynamic bit-vector without trailing 0s)")
         )
     );
 

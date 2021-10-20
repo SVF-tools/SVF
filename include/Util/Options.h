@@ -43,9 +43,8 @@ public:
     /// Use an explicitly plain mapping with flow-sensitive (not null).
     static const llvm::cl::opt<bool> PlainMappingFs;
 
-    /// Type of points-to set to use for the main phase of a staged analysis (i.e., after
-    /// clustering).
-    static const llvm::cl::opt<PointsTo::Type> StagedPtType;
+    /// Type of points-to set to use for all analyses.
+    static const llvm::cl::opt<PointsTo::Type> PtType;
 
     /// Clustering method for ClusterFs/ClusterAnder.
     /// TODO: we can separate it into two options, and make Clusterer::cluster take in a method

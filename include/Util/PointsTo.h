@@ -42,8 +42,7 @@ public:
 
 public:
     /// Construct empty points-to set.
-    PointsTo(Type type=Type::SBV, MappingPtr nodeMapping=nullptr,
-             MappingPtr reverseNodeMapping=nullptr);
+    PointsTo(MappingPtr nodeMapping=nullptr, MappingPtr reverseNodeMapping=nullptr);
     /// Copy costructor.
     PointsTo(const PointsTo &pt);
     /// Move constructor.

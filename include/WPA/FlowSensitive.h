@@ -277,7 +277,7 @@ protected:
     /// Returns the default PointsTo that accounts for clustering.
     /// If ClusterFs is not set, returns a default PointsTo which does not
     /// use the result of clustering (i.e., as if nothing happened).
-    /// Accounts for StagedPtType -- TODO: really poor design.
+    /// Accounts for Options::PtType.
     virtual PointsTo cluster(void);
 
     static FlowSensitive* fspta;

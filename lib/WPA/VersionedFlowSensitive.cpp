@@ -559,7 +559,7 @@ PointsTo VersionedFlowSensitive::cluster(void)
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
-    return PointsTo(Options::StagedPtType, nodeMapping, reverseNodeMapping);
+    return PointsTo(nodeMapping, reverseNodeMapping);
 }
 
 Version VersionedFlowSensitive::getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm)
