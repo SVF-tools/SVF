@@ -48,9 +48,6 @@ void VersionedFlowSensitive::initialize()
     mapMeldVersions();
 
     determineReliance();
-
-    PointsTo defaultPt = cluster();
-    getPTDataTy()->setDefaultData(defaultPt);
 }
 
 void VersionedFlowSensitive::finalize()

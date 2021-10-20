@@ -64,13 +64,9 @@ void FlowSensitive::initialize()
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
-    /// VSFS wants to do its own clustering *after* versioning.
-    /// TODO: bad dependency.
-    if (!SVFUtil::isa<VersionedFlowSensitive>(this))
-    {
-        PointsTo defaultPt = cluster();
-        getPTDataTy()->setDefaultData(defaultPt);
-    }
+    // If cluster option is not set, it will give us a no-mapping points-to set.
+    PointsTo defaultPt = cluster();
+    getPTDataTy()->setDefaultData(defaultPt);
 }
 
 void timeLimitReached(int signum)
