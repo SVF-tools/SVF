@@ -103,7 +103,7 @@ bool ProgSlice::isSatisfiableForAll()
     }
     setFinalCond(guard);
 
-    return guard == getTrueCond();
+    return pathAllocator->isAllPathReachable(guard);
 }
 
 /*!

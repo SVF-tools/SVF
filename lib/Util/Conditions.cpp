@@ -24,8 +24,8 @@
 /*
  * Conditions.cpp
  *
- *  Created on: Sep 22, 2014
- *      Author: Yulei Sui
+ *  Created on: Oct 19, 2021
+ *      Author: Yulei and Xiao
  */
 
 #include "Util/Options.h"
@@ -34,66 +34,146 @@
 
 using namespace SVF;
 
+
 CondExpr* CondManager::trueCond = nullptr;
 CondExpr* CondManager::falseCond = nullptr;
+CondManager* CondManager::condMgr = nullptr;
+u32_t CondManager::totalCondNum = 0;
 
-/// Constructor
+/*!
+ * Constructor
+ */
 CondManager::CondManager() : sol(cxt)
 {
-    trueCond = new CondExpr(cxt.bool_val(true));
-    falseCond = new CondExpr(cxt.bool_val(false));
+    const z3::expr &trueExpr = cxt.bool_val(true);
+    trueCond = getOrAddBranchCond(trueExpr, branchCondManager.getTrueCond());
+    const z3::expr &falseExpr = cxt.bool_val(false);
+    falseCond = getOrAddBranchCond(falseExpr, branchCondManager.getFalseCond());
 }
 
-/// Destructor
+/*!
+ * Destructor
+ */
 CondManager::~CondManager()
 {
-    delete trueCond;
-    delete falseCond;
-    for (CondExpr *cond : allocatedConds)
+    for (const auto& it : allocatedConds)
     {
-        delete cond;
+        delete it.second;
     }
 }
 
-/// And operator for two expressions
-CondExpr* CondManager::AND(const CondExpr *lhs, const CondExpr *rhs)
-{
-    CondExpr *cond = new CondExpr(lhs->getExpr() && rhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+/*!
+ *  Preprocess the condition,
+ *  e.g., Compressing using And-Inverter-Graph, Gaussian Elimination
+ */
+z3::expr CondManager::simplify(const z3::expr& expr) const{
+    z3::goal g(expr.ctx());
+    z3::tactic qe =
+            z3::tactic(expr.ctx(), "aig");
+    g.add(expr);
+    z3::apply_result r = qe(g);
+    z3::expr res(expr.ctx().bool_val(false));
+    for (u32_t i = 0; i < r.size(); ++i) {
+        if (res.is_false()) {
+            res = r[i].as_expr();
+        } else {
+            res = res || r[i].as_expr();
+        }
+    }
+    return res;
 }
 
-/// Or operator for two expressions
-CondExpr* CondManager::OR(const CondExpr *lhs, const CondExpr *rhs)
+
+
+/*!
+ * Create a fresh condition to encode each program branch
+ */
+CondExpr* CondManager::createFreshBranchCond(const Instruction* inst)
 {
-    CondExpr *cond = new CondExpr(lhs->getExpr() || rhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+    u32_t condCountIdx = totalCondNum++;
+    const z3::expr &expr = cxt.bool_const(("c" + std::to_string(condCountIdx)).c_str());
+    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
+    if (it != allocatedConds.end())
+        return it->second;
+    else{
+        BranchCond *branchCond = branchCondManager.createCond(condCountIdx);
+        auto *cond = new BranchCondExpr(expr, branchCond);
+        setCondInst(cond, inst);
+        branchCondToCondExpr.emplace(branchCond, cond);
+        return allocatedConds.emplace(expr.id(), cond).first->second;
+    }
 }
 
-/// Neg operator for an expression
-CondExpr* CondManager::NEG(const CondExpr *lhs)
+/*!
+ * Get or add a single branch condition,
+ * e.g., when doing condition conjunction
+ */
+CondExpr* CondManager::getOrAddBranchCond(const z3::expr& e, BranchCond* branchCond)
 {
-    CondExpr *cond = new CondExpr(!lhs->getExpr());
-    allocatedConds.insert(cond);
-    return cond;
+    auto it = branchCondToCondExpr.find(branchCond);
+    if(it != branchCondToCondExpr.end())
+        return it->second;
+    else{
+        auto *cond = new BranchCondExpr(e, branchCond);
+        branchCondToCondExpr.emplace(branchCond, cond);
+        return allocatedConds.emplace(e.id(), cond).first->second;
+    }
 }
 
-/// Create a single condition
-CondExpr* CondManager::createCond(u32_t i)
-{
-    CondExpr *cond = new CondExpr(cxt.bv_const(std::to_string(i).c_str(), i));
-    allocatedConds.insert(cond);
-    return cond;
-}
-
-/// Return the number of condition expressions
+/*!
+ * Return the number of condition expressions
+ */
 u32_t CondManager::getCondNumber()
 {
     return sol.get_model().size();
 }
+/// Operations on conditions.
+//@{
+CondExpr* CondManager::AND(CondExpr* lhs, CondExpr* rhs){
+    if (lhs == getFalseCond() || rhs == getFalseCond())
+        return getFalseCond();
+    else if (lhs == getTrueCond())
+        return rhs;
+    else if (rhs == getTrueCond())
+        return lhs;
+    else {
+        BranchCond *branchCond = branchCondManager.AND(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond(),
+                                                       SVFUtil::dyn_cast<BranchCondExpr>(rhs)->getBranchCond());
+        const z3::expr &expr = lhs->getExpr() && rhs->getExpr();
+        return getOrAddBranchCond(expr, branchCond);
+    }
+}
 
-/// Print the expressions in this model
+CondExpr* CondManager::OR(CondExpr* lhs, CondExpr* rhs){
+    if (lhs == getTrueCond() || rhs == getTrueCond())
+        return getTrueCond();
+    else if (lhs == getFalseCond())
+        return rhs;
+    else if (rhs == getFalseCond())
+        return lhs;
+    else{
+        BranchCond *branchCond = branchCondManager.OR(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond(),
+                                              SVFUtil::dyn_cast<BranchCondExpr>(rhs)->getBranchCond());
+        const z3::expr &expr = lhs->getExpr() || rhs->getExpr();
+        return getOrAddBranchCond(expr, branchCond);
+    }
+}
+CondExpr* CondManager::NEG(CondExpr* lhs){
+    if (lhs == getTrueCond())
+        return getFalseCond();
+    else if (lhs == getFalseCond())
+        return getTrueCond();
+    else{
+        BranchCond *branchCond = branchCondManager.NEG(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond());
+        const z3::expr &expr = !lhs->getExpr();
+        return getOrAddBranchCond(expr, branchCond);
+    }
+}
+//@}
+
+/*!
+ * Print the expressions in this model
+ */
 void CondManager::printModel()
 {
     std::cout << sol.check() << "\n";
@@ -105,7 +185,9 @@ void CondManager::printModel()
     }
 }
 
-/// Return memory usage for this condition manager
+/*!
+ * Return memory usage for this condition manager
+ */
 std::string CondManager::getMemUsage()
 {
     //std::ostringstream os;
@@ -114,19 +196,51 @@ std::string CondManager::getMemUsage()
     return "";
 }
 
-/// Extract sub conditions of this expression
-void CondManager::extractSubConds(const CondExpr *e, NodeBS &support) const
+/*!
+ * Extract sub conditions of this expression
+ */
+void CondManager::extractSubConds(const CondExpr* cond, NodeBS &support) const
 {
-
+    if (cond->getExpr().num_args() == 0)
+        if (!cond->getExpr().is_true() && !cond->getExpr().is_false())
+            support.set(cond->getExpr().id());
+    for (u32_t i = 0; i < cond->getExpr().num_args(); ++i) {
+        const z3::expr &expr = cond->getExpr().arg(i);
+        extractSubConds(getCond(expr.id()), support);
+    }
 }
 
-/// Print out one particular expression
+/*!
+ * Whether the condition is satisfiable
+ */
+bool CondManager::isSatisfiable(const CondExpr* cond){
+    sol.reset();
+    sol.add(cond->getExpr());
+    z3::check_result result = sol.check();
+    if (result == z3::sat || result == z3::unknown)
+        return true;
+    else
+        return false;
+}
+
+/*!
+ * Whether **All Paths** are reachable
+ */
+bool CondManager::isAllPathReachable(const CondExpr* e){
+    return isEquivalentBranchCond(e, getTrueCond());
+}
+
+/*!
+ * Print out one particular expression
+ */
 inline void CondManager::printDbg(const CondExpr *e)
 {
     std::cout << e->getExpr() << "\n";
 }
 
-/// Return string format of this expression
+/*!
+ * Return string format of this expression
+ */
 std::string CondManager::dumpStr(const CondExpr *e) const
 {
     std::ostringstream out;
@@ -137,7 +251,7 @@ std::string CondManager::dumpStr(const CondExpr *e) const
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
-DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
+BranchCondManager::BranchCond* BranchCondManager::AND(BranchCond* lhs, BranchCond* rhs)
 {
     if (lhs == getFalseCond() || rhs == getFalseCond())
         return getFalseCond();
@@ -147,7 +261,7 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
         return lhs;
     else
     {
-        DdNode* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
+        BranchCond* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
         if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
@@ -165,7 +279,7 @@ DdNode* BddCondManager::AND(DdNode* lhs, DdNode* rhs)
 /*!
  * Use Cudd_bddOrLimit interface to avoid bdds blow up
  */
-DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
+BranchCondManager::BranchCond* BranchCondManager::OR(BranchCond* lhs, BranchCond* rhs)
 {
     if (lhs == getTrueCond() || rhs == getTrueCond())
         return getTrueCond();
@@ -175,7 +289,7 @@ DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
         return lhs;
     else
     {
-        DdNode* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
+        BranchCond* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
         if(tmp==nullptr)
         {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
@@ -190,7 +304,7 @@ DdNode* BddCondManager::OR(DdNode* lhs, DdNode* rhs)
     }
 }
 
-DdNode* BddCondManager::NEG(DdNode* lhs)
+BranchCondManager::BranchCond* BranchCondManager::NEG(BranchCond* lhs)
 {
     if (lhs == getTrueCond())
         return getFalseCond();
@@ -205,7 +319,7 @@ DdNode* BddCondManager::NEG(DdNode* lhs)
  * Utilities for dumping conditions. These methods use global functions from CUDD
  * package and they can be removed outside this class scope to be used by others.
  */
-void BddCondManager::ddClearFlag(DdNode * f) const
+void BranchCondManager::ddClearFlag(BranchCond * f) const
 {
     if (!Cudd_IsComplement(f->next))
         return;
@@ -218,7 +332,7 @@ void BddCondManager::ddClearFlag(DdNode * f) const
     return;
 }
 
-void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const
+void BranchCondManager::BddSupportStep(BranchCond * f, NodeBS &support) const
 {
     if (cuddIsConstant(f) || Cudd_IsComplement(f->next))
         return;
@@ -231,7 +345,7 @@ void BddCondManager::BddSupportStep(DdNode * f, NodeBS &support) const
     f->next = Cudd_Complement(f->next);
 }
 
-void BddCondManager::extractSubConds(DdNode * f, NodeBS &support) const
+void BranchCondManager::extractSubConds(BranchCond * f, NodeBS &support) const
 {
     BddSupportStep( Cudd_Regular(f), support);
     ddClearFlag(Cudd_Regular(f));
@@ -240,7 +354,7 @@ void BddCondManager::extractSubConds(DdNode * f, NodeBS &support) const
 /*!
  * Dump BDD
  */
-void BddCondManager::dump(DdNode* lhs, raw_ostream & O)
+void BranchCondManager::dump(BranchCond* lhs, raw_ostream & O)
 {
     if (lhs == getTrueCond())
         O << "T";
@@ -260,7 +374,7 @@ void BddCondManager::dump(DdNode* lhs, raw_ostream & O)
 /*!
  * Dump BDD
  */
-std::string BddCondManager::dumpStr(DdNode* lhs) const
+std::string BranchCondManager::dumpStr(BranchCond* lhs) const
 {
     std::string str;
     if (lhs == getTrueCond())
