@@ -161,22 +161,14 @@ extern void Mtr_DeallocNode (MtrNode *node);
 extern MtrNode * Mtr_InitTree (void);
 extern void Mtr_FreeTree (MtrNode *node);
 extern MtrNode * Mtr_CopyTree (MtrNode *node, int expansion);
-extern void Mtr_MakeFirstChild (MtrNode *parent, MtrNode *child);
-extern void Mtr_MakeLastChild (MtrNode *parent, MtrNode *child);
-extern MtrNode * Mtr_CreateFirstChild (MtrNode *parent);
-extern MtrNode * Mtr_CreateLastChild (MtrNode *parent);
-extern void Mtr_MakeNextSibling (MtrNode *first, MtrNode *second);
 extern void Mtr_PrintTree (MtrNode *node);
 extern MtrNode * Mtr_InitGroupTree (int lower, int size);
 extern MtrNode * Mtr_MakeGroup (MtrNode *root, unsigned int low, unsigned int high, unsigned int flags);
-extern MtrNode * Mtr_DissolveGroup (MtrNode *group);
 extern MtrNode * Mtr_FindGroup (MtrNode *root, unsigned int low, unsigned int high);
-extern int Mtr_SwapGroups (MtrNode *first, MtrNode *second);
 extern void Mtr_ReorderGroups(MtrNode *treenode, int *permutation);
   
 extern void Mtr_PrintGroups (MtrNode *root, int silent);
   extern int Mtr_PrintGroupedOrder(MtrNode * root, int *invperm, FILE *fp);
-extern MtrNode * Mtr_ReadGroups (FILE *fp, int nleaves);
 
 /**AutomaticEnd***************************************************************/
 

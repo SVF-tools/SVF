@@ -997,20 +997,8 @@ dd->nextSample += 250000;}
 /* Function prototypes                                                       */
 /*---------------------------------------------------------------------------*/
 
-extern DdNode * cuddAddExistAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
-extern DdNode * cuddAddUnivAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
-extern DdNode * cuddAddOrAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
-extern DdNode * cuddAddApplyRecur (DdManager *dd, DdNode * (*)(DdManager *, DdNode **, DdNode **), DdNode *f, DdNode *g);
-extern DdNode * cuddAddMonadicApplyRecur (DdManager * dd, DdNode * (*op)(DdManager *, DdNode *), DdNode * f);
-extern DdNode * cuddAddScalarInverseRecur (DdManager *dd, DdNode *f, DdNode *epsilon);
 extern DdNode * cuddAddIteRecur (DdManager *dd, DdNode *f, DdNode *g, DdNode *h);
 extern DdNode * cuddAddCmplRecur (DdManager *dd, DdNode *f);
-extern DdNode * cuddAddNegateRecur (DdManager *dd, DdNode *f);
-extern DdNode * cuddAddRoundOffRecur (DdManager *dd, DdNode *f, double trunc);
-extern DdNode * cuddUnderApprox (DdManager *dd, DdNode *f, int numVars, int threshold, int safe, double quality);
-extern DdNode * cuddRemapUnderApprox (DdManager *dd, DdNode *f, int numVars, int threshold, double quality);
-extern DdNode * cuddBiasedUnderApprox (DdManager *dd, DdNode *f, DdNode *b, int numVars, int threshold, double quality1, double quality0);
-extern DdNode * cuddBddAndAbstractRecur (DdManager *manager, DdNode *f, DdNode *g, DdNode *cube);
 extern int cuddAnnealing (DdManager *table, int lower, int upper);
 extern DdNode * cuddBddExistAbstractRecur (DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * cuddBddXorExistAbstractRecur (DdManager *manager, DdNode *f, DdNode *g, DdNode *cube);
@@ -1019,8 +1007,6 @@ extern DdNode * cuddBddIteRecur (DdManager *dd, DdNode *f, DdNode *g, DdNode *h)
 extern DdNode * cuddBddIntersectRecur (DdManager *dd, DdNode *f, DdNode *g);
 extern DdNode * cuddBddAndRecur (DdManager *manager, DdNode *f, DdNode *g);
 extern DdNode * cuddBddXorRecur (DdManager *manager, DdNode *f, DdNode *g);
-extern DdNode * cuddBddTransfer (DdManager *ddS, DdManager *ddD, DdNode *f);
-extern DdNode * cuddAddBddDoPattern (DdManager *dd, DdNode *f);
 extern int cuddInitCache (DdManager *unique, unsigned int cacheSize, unsigned int maxCacheSize);
 extern void cuddCacheInsert (DdManager *table, ptruint op, DdNode *f, DdNode *g, DdNode *h, DdNode *data);
 extern void cuddCacheInsert2 (DdManager *table, DdNode * (*)(DdManager *, DdNode *, DdNode *), DdNode *f, DdNode *g, DdNode *data);
@@ -1032,26 +1018,14 @@ extern DdNode * cuddCacheLookup1 (DdManager *table, DdNode * (*)(DdManager *, Dd
 extern DdNode * cuddCacheLookup2Zdd (DdManager *table, DdNode * (*)(DdManager *, DdNode *, DdNode *), DdNode *f, DdNode *g);
 extern DdNode * cuddCacheLookup1Zdd (DdManager *table, DdNode * (*)(DdManager *, DdNode *), DdNode *f);
 extern DdNode * cuddConstantLookup (DdManager *table, ptruint op, DdNode *f, DdNode *g, DdNode *h);
-extern int cuddCacheProfile (DdManager *table, FILE *fp);
 extern void cuddCacheResize (DdManager *table);
 extern void cuddCacheFlush (DdManager *table);
 extern int cuddComputeFloorLog2 (unsigned int value);
-extern int cuddHeapProfile (DdManager *dd);
 extern void cuddPrintNode (DdNode *f, FILE *fp);
 extern void cuddPrintVarGroups (DdManager * dd, MtrNode * root, int zdd, int silent);
-extern DdNode * cuddBddClippingAnd (DdManager *dd, DdNode *f, DdNode *g, int maxDepth, int direction);
-extern DdNode * cuddBddClippingAndAbstract (DdManager *dd, DdNode *f, DdNode *g, DdNode *cube, int maxDepth, int direction);
 extern void cuddGetBranches (DdNode *g, DdNode **g1, DdNode **g0);
 extern DdNode * cuddCofactorRecur (DdManager *dd, DdNode *f, DdNode *g);
-extern DdNode * cuddBddComposeRecur (DdManager *dd, DdNode *f, DdNode *g, DdNode *proj);
-extern DdNode * cuddAddComposeRecur (DdManager *dd, DdNode *f, DdNode *g, DdNode *proj);
 extern int cuddExact (DdManager *table, int lower, int upper);
-extern DdNode * cuddBddConstrainRecur (DdManager *dd, DdNode *f, DdNode *c);
-extern DdNode * cuddBddRestrictRecur (DdManager *dd, DdNode *f, DdNode *c);
-extern DdNode * cuddBddNPAndRecur (DdManager *dd, DdNode *f, DdNode *c);
-extern DdNode * cuddAddConstrainRecur (DdManager *dd, DdNode *f, DdNode *c);
-extern DdNode * cuddAddRestrictRecur (DdManager *dd, DdNode *f, DdNode *c);
-extern DdNode * cuddBddLICompaction (DdManager *dd, DdNode *f, DdNode *c);
 extern int cuddGa (DdManager *table, int lower, int upper);
 extern int cuddTreeSifting (DdManager *table, Cudd_ReorderingType method);
 extern int cuddZddInitUniv (DdManager *zdd);
@@ -1059,43 +1033,20 @@ extern void cuddZddFreeUniv (DdManager *zdd);
 extern void cuddSetInteract (DdManager *table, int x, int y);
 extern int cuddTestInteract (DdManager *table, int x, int y);
 extern int cuddInitInteract (DdManager *table);
-extern DdLocalCache * cuddLocalCacheInit (DdManager *manager, unsigned int keySize, unsigned int cacheSize, unsigned int maxCacheSize);
-extern void cuddLocalCacheQuit (DdLocalCache *cache);
-extern void cuddLocalCacheInsert (DdLocalCache *cache, DdNodePtr *key, DdNode *value);
-extern DdNode * cuddLocalCacheLookup (DdLocalCache *cache, DdNodePtr *key);
 extern void cuddLocalCacheClearDead (DdManager *manager);
-extern int cuddIsInDeathRow (DdManager *dd, DdNode *f);
-extern int cuddTimesInDeathRow (DdManager *dd, DdNode *f);
 extern void cuddLocalCacheClearAll (DdManager *manager);
 #ifdef DD_CACHE_PROFILE
 extern int cuddLocalCacheProfile (DdLocalCache *cache);
 #endif
 extern DdHashTable * cuddHashTableInit (DdManager *manager, unsigned int keySize, unsigned int initSize);
 extern void cuddHashTableQuit (DdHashTable *hash);
-extern void cuddHashTableGenericQuit (DdHashTable *hash);
-extern int cuddHashTableInsert (DdHashTable *hash, DdNodePtr *key, DdNode *value, ptrint count);
-extern DdNode * cuddHashTableLookup (DdHashTable *hash, DdNodePtr *key);
 extern int cuddHashTableInsert1 (DdHashTable *hash, DdNode *f, DdNode *value, ptrint count);
 extern DdNode * cuddHashTableLookup1 (DdHashTable *hash, DdNode *f);
-extern int cuddHashTableInsert2 (DdHashTable *hash, DdNode *f, DdNode *g, DdNode *value, ptrint count);
-extern DdNode * cuddHashTableLookup2 (DdHashTable *hash, DdNode *f, DdNode *g);
-extern int cuddHashTableInsert3 (DdHashTable *hash, DdNode *f, DdNode *g, DdNode *h, DdNode *value, ptrint count);
-extern DdNode * cuddHashTableLookup3 (DdHashTable *hash, DdNode *f, DdNode *g, DdNode *h);
-extern int cuddHashTableGenericInsert(DdHashTable * hash, DdNode * f, void * value);
-extern void * cuddHashTableGenericLookup(DdHashTable * hash, DdNode * f);
-extern DdLevelQueue * cuddLevelQueueInit (int levels, int itemSize, int numBuckets);
-extern void cuddLevelQueueQuit (DdLevelQueue *queue);
-extern void * cuddLevelQueueFirst(DdLevelQueue * queue, void * key, int  level);
-extern void * cuddLevelQueueEnqueue (DdLevelQueue *queue, void *key, int level);
-extern void cuddLevelQueueDequeue (DdLevelQueue *queue, int level);
 extern int cuddLinearAndSifting (DdManager *table, int lower, int upper);
 extern int cuddLinearInPlace (DdManager * table, int  x, int  y);
 extern void cuddUpdateInteractionMatrix (DdManager * table, int  xindex, int  yindex);
 extern int cuddInitLinear (DdManager *table);
 extern int cuddResizeLinear (DdManager *table);
-extern DdNode * cuddBddLiteralSetIntersectionRecur (DdManager *dd, DdNode *f, DdNode *g);
-extern DdNode * cuddCProjectionRecur (DdManager *dd, DdNode *R, DdNode *Y, DdNode *Ysupp);
-extern DdNode * cuddBddClosestCube (DdManager *dd, DdNode *f, DdNode *g, CUDD_VALUE_TYPE bound);
 extern void cuddReclaim (DdManager *table, DdNode *n);
 extern void cuddReclaimZdd (DdManager *table, DdNode *n);
 extern void cuddClearDeathRow (DdManager *table);
@@ -1108,13 +1059,8 @@ extern int cuddNextLow (DdManager *table, int x);
 extern int cuddSwapInPlace (DdManager *table, int x, int y);
 extern int cuddBddAlignToZdd (DdManager *table);
 extern DdNode * cuddBddMakePrime (DdManager *dd, DdNode *cube, DdNode *f);
-extern DdNode * cuddSolveEqnRecur (DdManager *bdd, DdNode *F, DdNode *Y, DdNode **G, int n, int *yIndex, int i);
-extern DdNode * cuddVerifySol (DdManager *bdd, DdNode *F, DdNode **G, int *yIndex, int n);
 #ifdef ST_INCLUDED
-extern DdNode* cuddSplitSetRecur (DdManager *manager, st_table *mtable, int *varSeen, DdNode *p, double n, double max, int index);
 #endif
-extern DdNode * cuddSubsetHeavyBranch (DdManager *dd, DdNode *f, int numVars, int threshold);
-extern DdNode * cuddSubsetShortPaths (DdManager *dd, DdNode *f, int numVars, int threshold, int hardlimit);
 extern int cuddSymmCheck (DdManager *table, int x, int y);
 extern int cuddSymmSifting (DdManager *table, int lower, int upper);
 extern int cuddSymmSiftingConv (DdManager *table, int lower, int upper);
@@ -1129,14 +1075,9 @@ extern DdNode * cuddUniqueInterIVO (DdManager *unique, int index, DdNode *T, DdN
 extern DdNode * cuddUniqueInterZdd (DdManager *unique, int index, DdNode *T, DdNode *E);
 extern DdNode * cuddUniqueConst (DdManager *unique, CUDD_VALUE_TYPE value);
 extern void cuddRehash (DdManager *unique, int i);
-extern void cuddShrinkSubtable (DdManager *unique, int i);
-extern int cuddInsertSubtables (DdManager *unique, int n, int level);
-extern int cuddDestroySubtables (DdManager *unique, int n);
 extern int cuddResizeTableZdd (DdManager *unique, int index);
 extern void cuddSlowTableGrowth (DdManager *unique);
-extern int cuddP (DdManager *dd, DdNode *f);
 #ifdef ST_INCLUDED
-extern enum st_retval cuddStCountfree (char *key, char *value, char *arg);
 extern int cuddCollectNodes (DdNode *f, st_table *visited);
 #endif
 extern DdNodePtr * cuddNodeArray (DdNode *f, int *n);
@@ -1173,7 +1114,6 @@ extern DdNode * cuddZddDiff (DdManager *zdd, DdNode *P, DdNode *Q);
 extern DdNode * cuddZddChangeAux (DdManager *zdd, DdNode *P, DdNode *zvar);
 extern DdNode * cuddZddSubset1 (DdManager *dd, DdNode *P, int var);
 extern DdNode * cuddZddSubset0 (DdManager *dd, DdNode *P, int var);
-extern DdNode * cuddZddChange (DdManager *dd, DdNode *P, int var);
 extern int cuddZddSymmCheck (DdManager *table, int x, int y);
 extern int cuddZddSymmSifting (DdManager *table, int lower, int upper);
 extern int cuddZddSymmSiftingConv (DdManager *table, int lower, int upper);

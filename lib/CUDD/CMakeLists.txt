@@ -1,40 +1,9 @@
 set(SOURCES
-	cuddTable.c
-	cuddInit.c
-	cuddAPI.c
-	cuddRef.c
-	cuddCheck.c
-	cuddUtil.c
-	cuddCof.c
-	cuddSat.c
-	cuddReorder.c
-	cuddAddIte.c
-	cuddBddIte.c
-	cuddBddAbs.c
-	cuddZddReord.c
-	safe_mem.c
-	mtrBasic.c
-	mtrGroup.c
-	cuddCache.c
-	cuddLCache.c
-	cuddInteract.c
-	cuddGroup.c
-	cuddAnneal.c
-	cuddExact.c
-	cuddGenetic.c
-	cuddLinear.c
-	cuddSymmetry.c
-	cuddWindow.c
-	cuddZddFuncs.c
-	cuddZddGroup.c
-	cuddZddIsop.c
-	cuddZddSetop.c
-	cuddZddLin.c
-	cuddZddSymm.c
-	datalimit.c
-	cpu_time.c
 	epd.c
 	st.c
+	util.c
+	mtr.c
+	cuddInt.c
 )
 
 add_llvm_library(Cudd ${SOURCES} LINK_LIBS m)

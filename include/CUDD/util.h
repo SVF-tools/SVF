@@ -184,15 +184,7 @@ extern char *MMrealloc (char *, long);
 #endif
 
 extern long util_cpu_time (void);
-extern char *util_path_search (char const *);
-extern char *util_file_search (char const *, char *, char const *);
-extern int util_pipefork (char * const *, FILE **, FILE **, int *);
-extern void util_print_cpu_stats (FILE *);
-extern char *util_print_time (unsigned long);
-extern int util_save_image (char const *, char const *);
 extern char *util_strsav (char const *);
-extern char *util_tilde_expand (char const *);
-extern void util_restart (char const *, char const *, int);
 
 
 extern unsigned long getSoftDataLimit (void);
