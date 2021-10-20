@@ -98,7 +98,9 @@ CondExpr* CondManager::createFreshBranchCond(const Instruction* inst)
     else{
         BranchCond *branchCond = branchCondManager.createCond(condCountIdx);
         auto *cond = new BranchCondExpr(expr, branchCond);
+        auto *negCond = NEG(cond);
         setCondInst(cond, inst);
+        setCondInst(negCond, inst);
         branchCondToCondExpr.emplace(branchCond, cond);
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
