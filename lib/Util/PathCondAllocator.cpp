@@ -115,7 +115,6 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
                 if(tool & succ_index)
                 {
                     path_cond = condAnd(path_cond, (condNeg(condVec.at(j))));
-                    setCondInst(path_cond, bb.getTerminator());
                 }
                 else
                 {
