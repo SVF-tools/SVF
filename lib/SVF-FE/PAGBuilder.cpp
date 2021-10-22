@@ -933,6 +933,12 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
         sz = fields.size();
 
     assert(fields.size() >= sz && "the number of flattened fields is smaller than size");
+    if (fields.size() == 1 && (isConstantData(D) || isConstantData(S))) {
+        NodeID dummy = pag->addDummyValNode();
+        addLoadEdge(vnD,dummy);
+        addStoreEdge(dummy,vnS);
+        return;
+    }
 
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
