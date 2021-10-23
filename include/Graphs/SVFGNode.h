@@ -347,12 +347,10 @@ class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
 {
 
 public:
-    const llvm::BasicBlock* basicBlock;
     const MRVer* resVer;
     /// Constructor
-    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer, const llvm::BasicBlock* basicBlock): MSSAPHISVFGNode(id, resVer, MIntraPhi)
+    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer): MSSAPHISVFGNode(id, resVer, MIntraPhi)
     {
-        basicBlock = basicBlock; 
         resVer = resVer; 
     }
 
@@ -369,11 +367,6 @@ public:
     inline OPVers::const_iterator opVerEnd() const
     {
         return opVers.end();
-    }
-
-    inline const llvm::BasicBlock* getBasicBlock() const
-    {
-        return basicBlock;
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:

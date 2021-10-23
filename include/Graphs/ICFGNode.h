@@ -255,7 +255,6 @@ public:
     typedef std::vector<const PAGNode *> FormalParmNodeVec;
 private:
     FormalParmNodeVec FPNodes;
-    NodeID ID;
 public:
     FunEntryBlockNode(NodeID id, const SVFFunction* f);
 
@@ -263,11 +262,6 @@ public:
     inline const SVFFunction* getFun() const
     {
         return fun;
-    }
-
-     inline const NodeID getID() const
-    {
-        return ID;
     }
 
     /// Return the set of formal parameters
@@ -315,7 +309,6 @@ class FunExitBlockNode : public InterBlockNode
 {
 
 private:
-    const NodeID ID; 
     const SVFFunction* fun;
     const PAGNode *formalRet;
 public:
@@ -325,11 +318,6 @@ public:
     inline const SVFFunction* getFun() const
     {
         return fun;
-    }
-
-    inline const NodeID getID() const
-    {
-        return ID;
     }
 
     /// Return actual return parameter
@@ -382,17 +370,11 @@ private:
     const Instruction* cs;
     const RetBlockNode* ret;
     ActualParmVFGNodeVec APNodes;
-    const NodeID ID;
 public:
-    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(nullptr), ID(id)
+    CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
         fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(cs->getFunction());
         bb = cs->getParent();
-    }
-
-    inline const NodeID getID() const
-    {
-        return ID;
     }
 
     /// Return callsite

@@ -432,11 +432,11 @@ protected:
     }
 
     /// Add memory SSA PHI SVFG node
-    inline void addIntraMSSAPHISVFGNode(const llvm::BasicBlock* basicBlock, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, 
+    inline void addIntraMSSAPHISVFGNode(ICFGNode* BlockICFGNode, const Map<u32_t,const MRVer*>::const_iterator opVerBegin, 
     const  Map<u32_t,const MRVer*>::const_iterator opVerEnd, const MRVer* resVer)
     {
-        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, resVer, basicBlock);
-        addSVFGNode(sNode, pag->getICFG()->getBlockICFGNode(&(basicBlock->front())));
+        IntraMSSAPHISVFGNode* sNode = new IntraMSSAPHISVFGNode(totalVFGNode++, resVer);
+        addSVFGNode(sNode, BlockICFGNode);
         for(MemSSA::PHI::OPVers::const_iterator it = opVerBegin, eit=opVerEnd; it!=eit; ++it)
             sNode->setOpVer(it->first,it->second);
         setDef(resVer,sNode);
