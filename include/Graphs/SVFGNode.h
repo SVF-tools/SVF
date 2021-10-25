@@ -90,18 +90,24 @@ public:
 class FormalINSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::ENTRYCHI* chi;
+    const MRVer* ver;
+    const FunEntryBlockNode* funEntryNode; 
 
 public:
     /// Constructor
-    FormalINSVFGNode(NodeID id, const MemSSA::ENTRYCHI* entry): MRSVFGNode(id, FPIN), chi(entry)
+    FormalINSVFGNode(NodeID id, const MRVer* resVer, const FunEntryBlockNode* funEntry): MRSVFGNode(id, FPIN)
     {
-        cpts = entry->getMR()->getPointsTo();
+        cpts = resVer->getMR()->getPointsTo();
+        ver = resVer;
+        funEntryNode = funEntry; 
     }
-    /// EntryCHI
-    inline const MemSSA::ENTRYCHI* getEntryChi() const
+    inline const MRVer* getMRVer() const
     {
-        return chi;
+        return ver;
+    }
+    inline const FunEntryBlockNode* getFunEntryNode() const
+    {
+        return funEntryNode;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -129,16 +135,21 @@ public:
 class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::RETMU* mu;
+    const MRVer* ver;
+    const FunExitBlockNode* funExitNode; 
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const MemSSA::RETMU* exit);
+    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitBlockNode* funExitNode);
 
-    /// RetMU
-    inline const MemSSA::RETMU* getRetMU() const
+    inline const FunExitBlockNode* getFunExitNode() const
     {
-        return mu;
+        return funExitNode;
+    }
+
+    inline const MRVer* getMRVer() const
+    {
+        return ver;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -166,25 +177,28 @@ public:
 class ActualINSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::CALLMU* mu;
     const CallBlockNode* cs;
+    const MRVer* ver;
 public:
     /// Constructor
-    ActualINSVFGNode(NodeID id, const MemSSA::CALLMU* m, const CallBlockNode* c):
-        MRSVFGNode(id, APIN), mu(m), cs(c)
+    ActualINSVFGNode(NodeID id, const CallBlockNode* c, const MRVer* mrver):
+        MRSVFGNode(id, APIN), cs(c)
     {
-        cpts = m->getMR()->getPointsTo();
+        cpts = mrver->getMR()->getPointsTo();
+        ver = mrver;
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
     {
         return cs;
     }
-    /// CallMU
-    inline const MemSSA::CALLMU* getCallMU() const
+
+    /// Ver
+    inline const MRVer* getMRVer() const
     {
-        return mu;
+        return ver;
     }
+
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -212,27 +226,27 @@ public:
 class ActualOUTSVFGNode : public MRSVFGNode
 {
 private:
-    const MemSSA::CALLCHI* chi;
     const CallBlockNode* cs;
+    const MRVer* ver;
 
 public:
     /// Constructor
-    ActualOUTSVFGNode(NodeID id, const MemSSA::CALLCHI* c, const CallBlockNode* cal):
-        MRSVFGNode(id, APOUT), chi(c), cs(cal)
+    ActualOUTSVFGNode(NodeID id, const CallBlockNode* cal, const MRVer* resVer):
+        MRSVFGNode(id, APOUT), cs(cal)
     {
-        cpts = c->getMR()->getPointsTo();
+        cpts = resVer->getMR()->getPointsTo();
+        ver = resVer;
     }
     /// Callsite
     inline const CallBlockNode* getCallSite() const
     {
         return cs;
     }
-    /// CallCHI
-    inline const MemSSA::CALLCHI* getCallCHI() const
+    /// Ver
+    inline const MRVer* getMRVer() const
     {
-        return chi;
+        return ver;
     }
-
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const ActualOUTSVFGNode *)
@@ -262,14 +276,20 @@ public:
     typedef Map<u32_t,const MRVer*> OPVers;
 
 protected:
-    const MemSSA::MDEF* res;
+    const MRVer* ver; 
     OPVers opVers;
 
 public:
     /// Constructor
-    MSSAPHISVFGNode(NodeID id, const MemSSA::MDEF* def,VFGNodeK k = MPhi): MRSVFGNode(id, k), res(def)
+    MSSAPHISVFGNode(NodeID id, const MRVer* resVer,VFGNodeK k = MPhi): MRSVFGNode(id, k)
     {
-        cpts = def->getMR()->getPointsTo();
+        cpts = resVer->getMR()->getPointsTo();
+        ver = resVer; 
+    }
+      /// Ver
+    inline const MRVer* getResVer() const
+    {
+        return ver;
     }
     /// MSSA phi operands
     //@{
@@ -282,10 +302,6 @@ public:
     inline void setOpVer(u32_t pos, const MRVer* node)
     {
         opVers[pos] = node;
-    }
-    inline const MemSSA::MDEF* getRes() const
-    {
-        return res;
     }
     inline u32_t getOpVerNum() const
     {
@@ -331,9 +347,26 @@ class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
 {
 
 public:
+    const MRVer* resVer;
     /// Constructor
-    IntraMSSAPHISVFGNode(NodeID id, const MemSSA::PHI* phi): MSSAPHISVFGNode(id, phi, MIntraPhi)
+    IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer): MSSAPHISVFGNode(id, resVer, MIntraPhi)
     {
+        resVer = resVer; 
+    }
+
+     inline const MRVer* getMRVer() const
+    {
+        return resVer;
+    }
+
+    inline OPVers::const_iterator opVerBegin() const
+    {
+        return opVers.begin();
+    }
+
+    inline OPVers::const_iterator opVerEnd() const
+    {
+        return opVers.end();
     }
 
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -372,9 +405,9 @@ class InterMSSAPHISVFGNode : public MSSAPHISVFGNode
 
 public:
     /// Constructor interPHI for formal parameter
-    InterMSSAPHISVFGNode(NodeID id, const FormalINSVFGNode* fi) : MSSAPHISVFGNode(id, fi->getEntryChi(), MInterPhi),fun(fi->getFun()),callInst(nullptr) {}
+    InterMSSAPHISVFGNode(NodeID id, const FormalINSVFGNode* fi) : MSSAPHISVFGNode(id, fi->getMRVer(), MInterPhi),fun(fi->getFun()),callInst(nullptr) {}
     /// Constructor interPHI for actual return
-    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getCallCHI(), MInterPhi), fun(nullptr),callInst(ao->getCallSite()) {}
+    InterMSSAPHISVFGNode(NodeID id, const ActualOUTSVFGNode* ao) : MSSAPHISVFGNode(id, ao->getMRVer(), MInterPhi), fun(nullptr),callInst(ao->getCallSite()) {}
 
     inline bool isFormalINPHI() const
     {
