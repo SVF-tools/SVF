@@ -232,6 +232,42 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     stinfo->getFlattenFieldInfoVec().push_back(field);
 }
 
+/*
+    Handling single value types, for constant index, including pointer, integer, etc 
+    These GEP instructions are simply making address computations from the base pointer address
+    e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
+    e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
+*/
+void SymbolTableInfo::checkSingleValueType(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
+    auto srcptr = gepOp->getOperand(0);
+    llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
+    Type* sttype = nullptr;
+    if(castop1 && castop1->getSrcTy()->isPointerTy() && castop1->getSrcTy()->getPointerElementType()->isStructTy()){
+        sttype = castop1->getSrcTy()->getPointerElementType();
+    }else{
+        for(auto user : srcptr->users()){
+            if(SVFUtil::isa<llvm::BitCastOperator>(user)){
+                llvm::BitCastOperator* castop2 = SVFUtil::dyn_cast<llvm::BitCastOperator>(user);
+                if(castop2 && castop2->getDestTy()->isPointerTy() && castop2->getDestTy()->getPointerElementType()->isStructTy()){
+                    sttype = castop2->getDestTy()->getPointerElementType();
+                    break;
+                }
+            }
+        }
+    }
+    if(sttype){
+        // Case 1: It may also be used to access a field of a struct (which is not ANSI-compliant) or a pointer-arithematic
+        // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
+        // For both cases, we conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
+        // (This handling is unsound since the program itself is not ANSI-compliant)
+        const llvm::StructLayout* stdl = dl->getStructLayout(SVFUtil::dyn_cast<StructType>(sttype));
+        ls.setFldIdx(stdl->getElementContainingOffset(idx));
+    }else{
+        // Case 2: This operation is likely accessing an array through pointer p.
+        ls.setFldIdx(0);
+    }
+}
+
 /*!
  * Compute gep offset
  */
@@ -261,32 +297,9 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
         //The int-value object of the current index operand
         //  (may not be constant for arrays).
         ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
-	    
-	if ((*gi)->isSingleValueType())
-        {
-            if(!op){
-                // Handle non-constant index
-                // Given a gep edge p = q + idx, where idx is non-constant
-                return false;
-            }
-            //The actual index
-            Size_t idx = op->getSExtValue();
-
-            // Handling single value types, for constant index, including pointer, integer, etc 
-            // These GEP instructions are simply making address computations from the base pointer address
-            // e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
-            // e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
-            // Case 1: This operation is likely accessing an array through pointer p.
-            // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant) or a pointer-arithematic
-            // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
-            // For both cases, we conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
-            // (This handling is unsound since the program itself is not ANSI-compliant)
-            ls.setFldIdx(0);
-            ls.setByteOffset(idx);
-        }
  
         // Handling struct here
-        else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+        if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
             // If the operand after src pointer is non-constant, it is likely array access, while the struct pointer is an element pointer in an array
             // field_idx = getelementptr struct_A, %struct_A* %1, i64 %idx, where idx is a non-constant offset
@@ -304,6 +317,21 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             }
             //add the translated offset
             ls.setFldIdx(ls.getOffset() + so[idx]);
+        }
+
+        if ((*gi)->isSingleValueType())
+        {
+            if(!op){
+                // Handle non-constant index
+                // Given a gep edge p = q + idx, where idx is non-constant
+                return false;
+            }
+            // The actual index
+            Size_t idx = op->getSExtValue();
+
+            // Infer the possible real type of singlevalue gep
+            checkSingleValueType(gepOp, dataLayout, ls, idx);
+            ls.setByteOffset(idx);
         }
     }
     return true;
