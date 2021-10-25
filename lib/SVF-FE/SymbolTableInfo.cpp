@@ -232,7 +232,13 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     stinfo->getFlattenFieldInfoVec().push_back(field);
 }
 
-unsigned int SymbolTableInfo::checkSingleValueType(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
+/*
+    Handling single value types, for constant index, including pointer, integer, etc 
+    These GEP instructions are simply making address computations from the base pointer address
+    e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
+    e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
+*/
+unsigned int SymbolTableInfo::inferSingleValueOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
     auto srcptr = gepOp->getOperand(0);
     llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
     Type* sttype = nullptr;
@@ -323,14 +329,9 @@ bool SymbolTableInfo::computeGepOffset(const User *V, LocationSet& ls)
             // The actual index
             Size_t idx = op->getSExtValue();
 
-            /*
-                Handling single value types, for constant index, including pointer, integer, etc 
-                These GEP instructions are simply making address computations from the base pointer address
-                e.g. idx = (char*) &p - 4,  at this case gep only one offset index (idx)
-                e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
-            */
-            unsigned idx4offset = checkSingleValueType(gepOp, dataLayout, ls, idx);
-            ls.setFldIdx(idx4offset);
+            // infer the field offset based on the byte offset
+            unsigned fieldOffset = inferSingleValueOffset(gepOp, dataLayout, ls, idx);
+            ls.setFldIdx(fieldOffset);
             ls.setByteOffset(idx);
         }
     }
