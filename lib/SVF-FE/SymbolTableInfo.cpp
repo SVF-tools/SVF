@@ -255,10 +255,10 @@ unsigned int SymbolTableInfo::checkSingleValueType(const llvm::GEPOperator* gepO
         // For both cases, we conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
         // (This handling is unsound since the program itself is not ANSI-compliant)
         const llvm::StructLayout* stdl = dl->getStructLayout(SVFUtil::dyn_cast<StructType>(sttype));
-        ls.setFldIdx(stdl->getElementContainingOffset(idx));
+        return stdl->getElementContainingOffset(idx);
     }else{
         // Case 2: This operation is likely accessing an array through pointer p.
-        ls.setFldIdx(0);
+        return 0;
     }
 }
 
