@@ -408,8 +408,7 @@ public:
     }
     //@}
     
-    unsigned int checkSingleValueType(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx);
-
+    unsigned int inferSingleValueOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx);
 
     /// Compute gep offset
     virtual bool computeGepOffset(const User *V, LocationSet& ls);
