@@ -232,7 +232,7 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     stinfo->getFlattenFieldInfoVec().push_back(field);
 }
 
-void SymbolTableInfo::checkSingleValueType(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
+unsigned int SymbolTableInfo::checkSingleValueType(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
     auto srcptr = gepOp->getOperand(0);
     llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
     Type* sttype = nullptr;
