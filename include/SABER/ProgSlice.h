@@ -282,7 +282,7 @@ protected:
     inline void setCurSVFGNode(const SVFGNode* node)
     {
         _curSVFGNode = node;
-        pathAllocator->setCurEvalVal(getLLVMValue(_curSVFGNode));
+        pathAllocator->setCurEvalSVFGNode(node);
     }
     //@}
     /// Set final condition after all path reachability analysis

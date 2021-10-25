@@ -165,12 +165,12 @@ void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *su
 /*!
  * Evaluate null like expression for source-sink related bug detection in SABER
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ, const Value* val)
+PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ)
 {
 
     const BasicBlock* succ1 = brInst->getSuccessor(0);
 
-    if(isTestNullExpr(brInst->getCondition(),val))
+    if(isTestNullExpr(brInst->getCondition()))
     {
         // succ is then branch
         if(succ1 == succ)
@@ -179,7 +179,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         else
             return getTrueCond();
     }
-    if(isTestNotNullExpr(brInst->getCondition(),val))
+    if(isTestNotNullExpr(brInst->getCondition()))
     {
         // succ is then branch
         if(succ1 == succ)
@@ -279,7 +279,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateLoopExitBranch(const Ba
  *  (2) Evaluate a branch when it is loop exit branch
  *  (3) Evaluate a branch when it is a test null like condition
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ, const Value* val)
+PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ)
 {
     if(getBBSuccessorNum(bb) == 1)
     {
@@ -302,7 +302,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
         if(evalProgExit)
             return evalProgExit;
 
-        Condition* evalTestNullLike = evaluateTestNullLikeExpr(brInst,succ,val);
+        Condition* evalTestNullLike = evaluateTestNullLikeExpr(brInst,succ);
         if(evalTestNullLike)
             return evalTestNullLike;
 
@@ -320,34 +320,61 @@ bool PathCondAllocator::isNECmp(const CmpInst* cmp) const
     return (cmp->getPredicate() == CmpInst::ICMP_NE);
 }
 
-bool PathCondAllocator::isTestNullExpr(const Value* test,const Value* val) const
+bool PathCondAllocator::isTestNullExpr(const Value* test) const
 {
     if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
-        return isTestContainsNullAndTheValue(cmp,val) && isEQCmp(cmp);
+        return isTestContainsNullAndTheValue(cmp) && isEQCmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestNotNullExpr(const Value* test,const Value* val) const
+bool PathCondAllocator::isTestNotNullExpr(const Value* test) const
 {
     if(const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(test))
     {
-        return isTestContainsNullAndTheValue(cmp,val) && isNECmp(cmp);
+        return isTestContainsNullAndTheValue(cmp) && isNECmp(cmp);
     }
     return false;
 }
 
-bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const
+bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp) const
 {
 
-    const Value* op0 = cmp->getOperand(0);
-    const Value* op1 = cmp->getOperand(1);
-    if((op0 == val && SVFUtil::isa<ConstantPointerNull>(op1))
-       || (op1 == val && SVFUtil::isa<ConstantPointerNull>(op0)) )
-        return true;
-
+    const Value *op0 = cmp->getOperand(0);
+    const Value *op1 = cmp->getOperand(1);
+    if (SVFUtil::isa<StoreInst>(getCurEvalSVFGNode()->getValue())) {
+        if (SVFUtil::isa<ConstantPointerNull>(op1)) {
+            if (SVFUtil::isa<LoadInst>(op0)) {
+                Set<const Value*> inDirVal;
+                for (const auto& it: getCurEvalSVFGNode()->getOutEdges()) {
+                    if (it->isIndirectVFGEdge()) {
+                        inDirVal.insert(it->getDstNode()->getValue());
+                    }
+                }
+                // There is an indirect edge from cur svfg node (store) to cmp operand (load from top-level pointer)
+                //  e.g.,
+                //      cur svfg node -> 1. store i32* %0, i32** %p, align 8, !dbg !157
+                //      cmp operand   -> 2. %1 = load i32*, i32** %p, align 8, !dbg !159
+                //                       3. %tobool = icmp ne i32* %1, null, !dbg !159
+                //                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
+                //      There is an indirect edge 1->2 with value %0
+                return inDirVal.find(op0) != inDirVal.end();
+            }
+        } else if (SVFUtil::isa<ConstantPointerNull>(op0)) {
+            if (SVFUtil::isa<LoadInst>(op1)) {
+                Set<const Value*> inDirVal;
+                for (const auto& it: getCurEvalSVFGNode()->getOutEdges()) {
+                    if (it->isIndirectVFGEdge()) {
+                        inDirVal.insert(it->getDstNode()->getValue());
+                    }
+                }
+                return inDirVal.find(op1) != inDirVal.end();
+            }
+        }
+    }
     return false;
+
 }
 
 /*!
