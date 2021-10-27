@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # type './build.sh'  for release build
 # type './build.sh debug'  for debug build
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
@@ -9,7 +9,7 @@
 # VARs and Links
 ########
 SVFHOME=$(pwd)
-sysOS=`uname -s`
+sysOS=$(uname -s)
 MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-apple-darwin.tar.xz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
@@ -30,16 +30,48 @@ function generic_download_file {
         exit 1
     fi
 
-    if [[ "$sysOS" == "Darwin" ]]
-    then
-        curl -L "$1" -o "$2"
-    elif [[ "$sysOS" == "Linux" ]]
-    then
-        wget -c "$1" -O "$2"
+    if [ -f "$2" ]; then
+        echo "File $2 exists, skip download..."
+        return
+    fi
+
+    local download_failed=false
+    if type curl &> /dev/null; then
+        if ! curl -L "$1" -o "$2"; then
+            download_failed=true
+        fi
+    elif type wget &> /dev/null; then
+        if ! wget -c "$1" -O "$2"; then
+            download_failed=true
+        fi
     else
-        echo "Cannot download file for non-Darwin/-Linux."
+        echo "Cannot find download tool. Please install curl or wget."
+        exit 1
+    fi
+
+    if $download_failed; then
+        echo "Failed to download $1"
+        rm -f "$2"
+        exit 1
     fi
 }
+
+# check if unzip is missing (ctir, Z3)
+function check_unzip {
+    if ! type unzip &> /dev/null; then
+        echo "Cannot find unzip. Please install unzip."
+        exit 1
+    fi
+}
+
+# check if xz is missing (LLVM)
+function check_xz {
+    if ! type xz &> /dev/null; then
+        echo "Cannot find xz. Please install xz-utils."
+        exit 1
+    fi
+}
+
 
 # OS-specific values.
 urlLLVM=""
@@ -75,6 +107,7 @@ then
     then
         echo "Downloading LLVM binary for $OSDisplayName"
         generic_download_file "$urlLLVM" llvm.tar.xz
+        check_xz
         mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
         rm llvm.tar.xz
     fi
@@ -91,6 +124,7 @@ then
     then
         echo "Downloading Z3 binary for $OSDisplayName"
         generic_download_file "$urlZ3" z3.zip
+        check_unzip
         unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
         rm z3.zip
     fi
@@ -103,12 +137,13 @@ fi
 # This is required to compile fstbhc tests in Test-Suite.
 # We will only download if $CTIR is set (and if $CTIR_DIR doesn't exist).
 #######
-if [ -n "$SVF_CTIR" -a ! -d "$CTIR_DIR" ]
+if [ -n "$SVF_CTIR" ] && [ ! -d "$CTIR_DIR" ]
 then
     if [ ! -d "$CTIRHome" ]
     then
         echo "Downloading ctir Clang binary for $OSDisplayName"
         generic_download_file "$urlCTIR" ctir.zip
+        check_unzip
         mkdir -p "$CTIRHome" && unzip -q "ctir.zip" -d "$CTIRHome"
         rm ctir.zip
     fi
@@ -117,24 +152,24 @@ then
 fi
 
 export PATH=$LLVM_DIR/bin:$PATH
-echo "LLVM_DIR =" $LLVM_DIR
-echo "Z3_DIR =" $Z3_DIR
+echo "LLVM_DIR=$LLVM_DIR"
+echo "Z3_DIR=$Z3_DIR"
 
 ########
 # Build SVF
 ########
 if [[ $1 == 'debug' ]]
 then
-	rm -rf ./'Debug-build'
-	mkdir ./'Debug-build'
-	cd ./'Debug-build'
-	cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
+    rm -rf ./'Debug-build'
+    mkdir ./'Debug-build'
+    cd ./'Debug-build'
+    cmake -D CMAKE_BUILD_TYPE:STRING=Debug ../
 else
-	rm -rf ./'Release-build'
-	mkdir ./'Release-build'
-	cd ./'Release-build'
-	cmake ../
-fi
+    rm -rf ./'Release-build'
+    mkdir ./'Release-build'
+    cd ./'Release-build'
+    cmake ../
+    fi
 make -j 4
 
 ########
