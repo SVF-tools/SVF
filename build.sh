@@ -108,6 +108,7 @@ then
         echo "Downloading LLVM binary for $OSDisplayName"
         generic_download_file "$urlLLVM" llvm.tar.xz
         check_xz
+	echo "Unzipping llvm package..."
         mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
         rm llvm.tar.xz
     fi
@@ -125,6 +126,7 @@ then
         echo "Downloading Z3 binary for $OSDisplayName"
         generic_download_file "$urlZ3" z3.zip
         check_unzip
+	echo "Unzipping z3 package..."
         unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
         rm z3.zip
     fi
