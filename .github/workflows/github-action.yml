@@ -26,20 +26,26 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update       ; fi
           if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install cmake gcc g++ nodejs doxygen graphviz; fi
           if [ "$RUNNER_OS" = "macOS" ]; then export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk" ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git config --global user.email ${{secrets.npm_email}}; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git config --global user.name "GitHub Actions Build"; fi
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+            git config --global user.email ${{secrets.npm_email}}
+            git config --global user.name "GitHub Actions Build"
+          fi
       
       # build-svf
       - name: build-svf
         run: |
           cd $GITHUB_WORKSPACE
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git stash --all   ; fi
           echo $(pwd)
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then npm_version=`npm v svf-tools version`; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json  ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then git add .    ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ] && [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi 
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then npm version patch; fi
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+            git stash --all 
+            npm_version=`npm v svf-tools version`  
+            if [ "$RUNNER_OS" = "Linux" ]; then
+              sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
+              git add . 
+              if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
+              npm version patch
+            fi 
+          fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           ${{github.workspace}}/build.sh
 
@@ -62,32 +68,36 @@ jobs:
       # update doxygen
       - name: update-doxygen
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then cd $GITHUB_WORKSPACE/SVF-doxygen       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then git add .       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ] && [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       ; fi
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then 
+            cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
+            cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
+            cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
+            cd $GITHUB_WORKSPACE/SVF-doxygen       
+            git add .       
+            if [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       
+          fi
       
       # update-svf-lib
       - name: update-svf-lib
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cd $GITHUB_WORKSPACE        ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cd ..     ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git clone https://github.com/SVF-tools/SVF-npm.git; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then export osVersion="linux"; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "macOS" ]; then export osVersion="osx"; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then echo $osVersion   ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cp -rf $GITHUB_WORKSPACE/include ./SVF-npm/SVF-${osVersion}/        ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-npm/SVF-${osVersion}/Release-build/lib        ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cp $GITHUB_WORKSPACE/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-${osVersion}/Release-build/lib/CUDD       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cd SVF-npm        ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git add .       ; fi
-          if [ -n "$(git status -s)" ]; then git commit -m'update svflib' ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then npm version patch       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master       ; fi
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then cd $GITHUB_WORKSPACE      ; fi
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+            cd $GITHUB_WORKSPACE        
+            cd ..     
+            git clone https://github.com/SVF-tools/SVF-npm.git
+            if [ "$RUNNER_OS" = "Linux" ]; then export osVersion="linux"; fi
+            if [ "$RUNNER_OS" = "macOS" ]; then export osVersion="osx"; fi
+            echo $osVersion  
+            cp -rf $GITHUB_WORKSPACE/include ./SVF-npm/SVF-${osVersion}/       
+            cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-npm/SVF-${osVersion}/Release-build/lib        
+            cp $GITHUB_WORKSPACE/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-${osVersion}/Release-build/lib/CUDD       
+            cd SVF-npm
+            git add .      
+            if [ -n "$(git status -s)" ]; then git commit -m'update svflib' ; fi
+            npm version patch     
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master
+            cd $GITHUB_WORKSPACE      
+          fi
 
       # publish svf
       - uses: actions/setup-node@v2
