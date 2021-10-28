@@ -76,6 +76,12 @@ public:
     {
         return def;
     }
+
+    /// Get MRVERID
+    inline MRVERID getID() const
+    {
+        return vid;
+    }
 };
 
 
@@ -128,7 +134,7 @@ public:
         ver = v;
     }
     /// Get Ver
-    inline MRVer* getVer() const
+    inline MRVer* getMRVer() const
     {
         assert(ver!=nullptr && "version is nullptr, did not rename?");
         return ver;
@@ -203,7 +209,7 @@ public:
     /// Print MU
     virtual void dump()
     {
-        SVFUtil::outs() << "LDMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "LDMU(MR_" << this->getMR()->getMRID() << "V_" << this->getMRVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -258,7 +264,7 @@ public:
     /// Print MU
     virtual void dump()
     {
-        SVFUtil::outs() << "CALMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "CALMU(MR_" << this->getMR()->getMRID() << "V_" << this->getMRVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
@@ -303,7 +309,7 @@ public:
     /// Print MU
     virtual void dump()
     {
-        SVFUtil::outs() << "RETMU(MR_" << this->getMR()->getMRID() << "V_" << this->getVer()->getSSAVersion() << ") \t" <<
+        SVFUtil::outs() << "RETMU(MR_" << this->getMR()->getMRID() << "V_" << this->getMRVer()->getSSAVersion() << ") \t" <<
                         this->getMR()->dumpStr() << "\n";
     }
 };
