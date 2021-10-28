@@ -34,6 +34,8 @@
 #include "SVF-FE/DataFlowUtil.h"
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
+#include "Graphs/SVFG.h"
+
 
 namespace SVF
 {
@@ -168,14 +170,14 @@ public:
         bbToCondMap.clear();
     }
     /// Set current value for branch condition evaluation
-    inline void setCurEvalVal(const Value* val)
+    inline void setCurEvalSVFGNode(const SVFGNode* node)
     {
-        curEvalVal = val;
+        curEvalSVFGNode = node;
     }
     /// Get current value for branch condition evaluation
-    inline const Value* getCurEvalVal() const
+    inline const SVFGNode* getCurEvalSVFGNode() const
     {
-        return curEvalVal;
+        return curEvalSVFGNode;
     }
     //@}
 
@@ -210,8 +212,8 @@ private:
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
     inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
     {
-        if(const Value* val = getCurEvalVal())
-            return evaluateBranchCond(bb, succ, val);
+        if(getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
+            return evaluateBranchCond(bb, succ);
         else
             return getBranchCond(bb,succ);
     }
@@ -219,11 +221,11 @@ private:
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition* evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ, const Value* val) ;
+    Condition* evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ) ;
     /// Evaluate loop exit branch
     Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
-    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ, const Value* val);
+    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ);
     /// Return condition when there is a branch calls program exit
     Condition* evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ);
     /// Collect basic block contains program exit function call
@@ -238,11 +240,11 @@ private:
     /// Return true if the predicate of this compare instruction is not equal
     bool isNECmp(const CmpInst* cmp) const;
     /// Return true if this is a test null expression
-    bool isTestNullExpr(const Value* test,const Value* val) const;
+    bool isTestNullExpr(const Value* test) const;
     /// Return true if this is a test not null expression
-    bool isTestNotNullExpr(const Value* test,const Value* val) const;
+    bool isTestNotNullExpr(const Value* test) const;
     /// Return true if two values on the predicate are what we want
-    bool isTestContainsNullAndTheValue(const CmpInst* cmp, const Value* val) const;
+    bool isTestContainsNullAndTheValue(const CmpInst* cmp) const;
     //@}
 
 
@@ -277,7 +279,7 @@ private:
     PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
     BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
-    const Value* curEvalVal{};			///< current llvm value to evaluate branch condition when computing guards
+    const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
     CondManager* condMgr;		///< z3 manager

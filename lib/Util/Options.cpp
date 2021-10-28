@@ -120,6 +120,12 @@ namespace SVF
         llvm::cl::desc("Maximum context limit for DDA")
     );
 
+    const llvm::cl::opt<unsigned> Options::MaxStepInWrapper(
+            "max-step",
+            llvm::cl::init(10),
+            llvm::cl::desc("Maximum steps when traversing on SVFG to identify a memory allocation wrapper")
+    );
+
     const llvm::cl::opt<std::string> Options::UserInputQuery(
         "query",  
         llvm::cl::init("all"),

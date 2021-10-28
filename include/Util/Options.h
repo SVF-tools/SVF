@@ -58,6 +58,7 @@ public:
     // DDAPass.cpp
     static const llvm::cl::opt<unsigned> MaxPathLen;
     static const llvm::cl::opt<unsigned> MaxContextLen;
+    static const llvm::cl::opt<unsigned> MaxStepInWrapper;
     static const llvm::cl::opt<std :: string> UserInputQuery;
     static const llvm::cl::opt<bool> InsenRecur;
     static const llvm::cl::opt<bool> InsenCycle;
