@@ -7,12 +7,12 @@ namespace SVF
 {
     const llvm::cl::opt<bool> Options::MarkedClocksOnly(
         "marked-clocks-only",
-        llvm::cl::init(false),
+        llvm::cl::init(true),
         llvm::cl::desc("Only measure times where explicitly marked"));
 
     const llvm::cl::opt<NodeIDAllocator::Strategy> Options::NodeAllocStrat(
         "node-alloc-strat",
-        llvm::cl::init(NodeIDAllocator::Strategy::DEBUG),
+        llvm::cl::init(NodeIDAllocator::Strategy::SEQ),
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
             clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
@@ -26,7 +26,7 @@ namespace SVF
 
     const llvm::cl::opt<BVDataPTAImpl::PTBackingType> Options::ptDataBacking(
         "ptd",
-        llvm::cl::init(BVDataPTAImpl::PTBackingType::Mutable),
+        llvm::cl::init(BVDataPTAImpl::PTBackingType::Persistent),
         llvm::cl::desc("Overarching points-to data structure"),
         llvm::cl::values(
             clEnumValN(BVDataPTAImpl::PTBackingType::Mutable, "mutable", "points-to set per pointer"),
