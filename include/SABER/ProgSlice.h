@@ -31,6 +31,7 @@
 #define PROGSLICE_H_
 
 #include "Util/PathCondAllocator.h"
+#include "Util/SliceCondAllocator.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
 #include "Util/DPItem.h"
@@ -242,15 +243,15 @@ protected:
 
     /// Compute guards for value-flows
     //@{
-    inline Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst)
+    inline Condition* ComputeIntraVFGGuard(const ICFGNode* src, const ICFGNode* dst)
     {
         return pathAllocator->ComputeIntraVFGGuard(src,dst);
     }
-    inline Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB)
+    inline Condition* ComputeInterCallVFGGuard(const ICFGNode* src, const ICFGNode* dst, const ICFGNode* callBB)
     {
         return pathAllocator->ComputeInterCallVFGGuard(src,dst,callBB);
     }
-    inline Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB)
+    inline Condition* ComputeInterRetVFGGuard(const ICFGNode* src, const ICFGNode* dst, const ICFGNode* retBB)
     {
         return pathAllocator->ComputeInterRetVFGGuard(src,dst,retBB);
     }

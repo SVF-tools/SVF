@@ -35,6 +35,8 @@
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"
+#include "Graphs/ICFGNode.h"
+#include "Graphs/PAG.h"
 
 
 namespace SVF
@@ -51,15 +53,15 @@ public:
     typedef CondExpr Condition;   /// z3 condition
 
     typedef Map<u32_t,Condition*> CondPosMap;		///< map a branch to its Condition
-    typedef Map<const BasicBlock*, CondPosMap > BBCondMap;	// map bb to a Condition
+    typedef Map<const ICFGNode*, CondPosMap> ICFGNodeCondMap; ///< map ICFG node to a Condition
     typedef Set<const BasicBlock*> BasicBlockSet;
+    typedef Map<const ICFGNode*, Condition*> ICFGNodeToCondMap;	///< map a basic block to its condition during control-flow guard computation
     typedef Map<const Function*,  BasicBlockSet> FunToExitBBsMap;  ///< map a function to all its basic blocks calling program exit
-    typedef Map<const BasicBlock*, Condition*> BBToCondMap;	///< map a basic block to its condition during control-flow guard computation
-    typedef FIFOWorkList<const BasicBlock*> CFWorkList;	///< worklist for control-flow guard computation
+    typedef FIFOWorkList<const ICFGNode*> CFWorkList;	///< worklist for control-flow guard computation
 
 
     /// Constructor
-    PathCondAllocator(): condMgr(CondManager::getCondMgr())
+    PathCondAllocator(): condMgr(CondManager::getCondMgr()), icfg(PAG::getPAG()->getICFG())
     {
     }
     /// Destructor
@@ -157,17 +159,17 @@ public:
 
     /// Guard Computation for a value-flow (between two basic blocks)
     //@{
-    virtual Condition* ComputeIntraVFGGuard(const BasicBlock* src, const BasicBlock* dst);
-    virtual Condition* ComputeInterCallVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* callBB);
-    virtual Condition* ComputeInterRetVFGGuard(const BasicBlock* src, const BasicBlock* dst, const BasicBlock* retBB);
+    virtual Condition* ComputeIntraVFGGuard(const ICFGNode* srcICFGNode, const ICFGNode* dstICFGNode);
+    virtual Condition* ComputeInterCallVFGGuard(const ICFGNode* srcNode, const ICFGNode* dstNode, const ICFGNode* callNode);
+    virtual Condition* ComputeInterRetVFGGuard(const ICFGNode*  srcNode, const ICFGNode*  dstNode, const ICFGNode* retNode);
 
     /// Get complement condition (from B1 to B0) according to a complementBB (BB2) at a phi
     /// e.g., B0: dstBB; B1:incomingBB; B2:complementBB
-    virtual Condition* getPHIComplementCond(const BasicBlock* BB1, const BasicBlock* BB2, const BasicBlock* BB0);
+    virtual Condition* getPHIComplementCond(const ICFGNode* node1, const ICFGNode* node2, const ICFGNode* node0);
 
-    inline void clearCFCond()
+    inline virtual void clearCFCond()
     {
-        bbToCondMap.clear();
+        icfgNodeToCondMap.clear();
     }
     /// Set current value for branch condition evaluation
     inline void setCurEvalSVFGNode(const SVFGNode* node)
@@ -200,32 +202,32 @@ public:
 
 private:
 
-    /// Allocate path condition for every basic block
-    virtual void allocateForBB(const BasicBlock& bb);
+    /// Allocate path condition for every ICFG Node
+    virtual void allocateForICFGNode(const ICFGNode* icfgNode);
 
     /// Get/Set a branch condition, and its terminator instruction
     //@{
     /// Set branch condition
-    void setBranchCond(const BasicBlock *bb, const BasicBlock *succ, Condition* cond);
+    void setBranchCond(const IntraCFGEdge *edge, Condition* cond);
     /// Get branch condition
-    Condition* getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
+    Condition* getBranchCond(const IntraCFGEdge *edge) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
+    inline Condition* getEvalBrCond(const IntraCFGEdge* edge)
     {
         if(getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
-            return evaluateBranchCond(bb, succ);
+            return evaluateBranchCond(edge);
         else
-            return getBranchCond(bb,succ);
+            return getBranchCond(edge);
     }
     //@}
     /// Evaluate branch conditions
     //@{
     /// Evaluate the branch condtion
-    Condition* evaluateBranchCond(const BasicBlock * bb, const BasicBlock *succ) ;
+    Condition* evaluateBranchCond(const IntraCFGEdge *edge) ;
     /// Evaluate loop exit branch
     Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
-    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ);
+    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const IntraCFGEdge *edge);
     /// Return condition when there is a branch calls program exit
     Condition* evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ);
     /// Collect basic block contains program exit function call
@@ -250,20 +252,19 @@ private:
 
     /// Get/Set control-flow conditions
     //@{
-    inline bool setCFCond(const BasicBlock* bb, Condition* cond)
+    inline virtual bool setCFCond(const ICFGNode* icfgNode, Condition* cond, bool directFromBranch)
     {
-        BBToCondMap::iterator it = bbToCondMap.find(bb);
-        // until a fixed-point is reached (condition is not changed)
-        if(it!=bbToCondMap.end() && isEquivalentBranchCond(it->second, cond))
+        auto it = icfgNodeToCondMap.find(icfgNode);
+        if(it != icfgNodeToCondMap.end() && isEquivalentBranchCond(it->second, cond))
             return false;
 
-        bbToCondMap[bb] = cond;
+        icfgNodeToCondMap[icfgNode] = cond;
         return true;
     }
-    inline Condition* getCFCond(const BasicBlock* bb) const
+    inline Condition* getCFCond(const ICFGNode* icfgNode) const
     {
-        BBToCondMap::const_iterator it = bbToCondMap.find(bb);
-        if(it==bbToCondMap.end())
+        auto it = icfgNodeToCondMap.find(icfgNode);
+        if(it == icfgNodeToCondMap.end())
         {
             return getFalseCond();
         }
@@ -275,16 +276,20 @@ private:
     void destroy(){
 
     }
+    /// Whether succ ICFG node is valid (e.g., in backward slice)
+    virtual inline bool isValidSucc(const ICFGNode *node) const {
+        return true;
+    }
 
     PTACFInfoBuilder cfInfoBuilder;		    ///< map a function to its loop info
     FunToExitBBsMap funToExitBBsMap;		///< map a function to all its basic blocks calling program exit
-    BBToCondMap bbToCondMap;				///< map a basic block to its path condition starting from root
     const SVFGNode* curEvalSVFGNode{};			///< current llvm value to evaluate branch condition when computing guards
 
 protected:
     CondManager* condMgr;		///< z3 manager
-    BBCondMap bbConds;						///< map basic block to its successors/predecessors branch conditions
-
+    ICFGNodeCondMap icfgNodeConds;  ///< map ICFG node to its data and branch conditions
+    ICFGNodeToCondMap icfgNodeToCondMap;	///< map an ICFG Node to its path condition starting from root
+    ICFG* icfg;
 };
 
 } // End namespace SVF

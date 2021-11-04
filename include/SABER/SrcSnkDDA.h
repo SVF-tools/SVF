@@ -76,7 +76,7 @@ public:
     /// Constructor
     SrcSnkDDA() : _curSlice(nullptr), svfg(nullptr), ptaCallGraph(nullptr)
     {
-        pathCondAllocator = new PathCondAllocator();
+        pathCondAllocator = new SliceCondAllocator();
     }
     /// Destructor
     virtual ~SrcSnkDDA()
