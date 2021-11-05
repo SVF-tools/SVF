@@ -101,7 +101,13 @@ protected:
     virtual inline void connectFRetAndARet(const PAGNode* fun_ret, const PAGNode* cs_ret, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         NodeID phiId = getDef(cs_ret);
-        SVFGEdge* edge = addRetEdge(getDef(fun_ret), phiId, csId);
+        NodeID retdef = getDef(fun_ret);
+        /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).
+        /// Therefore, we do not connect return edge from a function without any return instruction.
+        if (retdef == getFormalRetVFGNode(fun_ret)->getId())
+            return;
+
+        SVFGEdge* edge = addRetEdge(retdef, phiId, csId);
         if (edge != nullptr)
         {
             PHISVFGNode* phi = SVFUtil::cast<PHISVFGNode>(getSVFGNode(phiId));
