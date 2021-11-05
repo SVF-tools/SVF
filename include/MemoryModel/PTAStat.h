@@ -31,7 +31,6 @@
 #define ANDERSENSTAT_H_
 
 #include "Util/BasicTypes.h"
-#include "Util/Options.h"
 #include <iostream>
 #include <map>
 #include <string>
@@ -136,11 +135,7 @@ public:
     /// When mark is true, real clock is always returned. When mark is false, it is
     /// only returned when Options::MarkedClocksOnly is not set.
     /// Default call for getClk is unmarked, while MarkedClocksOnly is false by default.
-    static inline double getClk(bool mark=false)
-    {
-        if (Options::MarkedClocksOnly && !mark) return 0.0;
-        return CLOCK_IN_MS();
-    }
+    static double getClk(bool mark=false);
 
     NUMStatMap generalNumMap;
     NUMStatMap PTNumStatMap;

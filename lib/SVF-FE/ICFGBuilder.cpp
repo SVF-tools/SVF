@@ -199,7 +199,7 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
 
     FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
     GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
-    IntraCFGEdge* intraEdge = new IntraCFGEdge(entryNode,globalNode);
+    IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, entryNode);
     icfg->addICFGEdge(intraEdge);
 }
 
