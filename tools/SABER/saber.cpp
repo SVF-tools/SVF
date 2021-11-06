@@ -30,6 +30,7 @@
 #include "SABER/LeakChecker.h"
 #include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
+#include "Util/Options.h"
 
 using namespace llvm;
 using namespace SVF;

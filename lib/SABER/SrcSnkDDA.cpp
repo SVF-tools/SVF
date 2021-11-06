@@ -32,6 +32,8 @@
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
 #include "SVF-FE/PAGBuilder.h"
+#include "Util/Options.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
