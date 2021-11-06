@@ -141,17 +141,14 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
 void ICFGBuilder::processFunExit(const SVFFunction*  fun)
 {
     FunExitBlockNode* FunExitBlockNode = icfg->getFunExitBlockNode(fun);
-    const Instruction* exitInst = &(getFunExitBB(fun->getLLVMFun())->back());
-    InstVec insts;
-    if (isIntrinsicInst(exitInst))
-        getPrevInsts(exitInst, insts);
-    else
-        insts.push_back(exitInst);
-    for (InstVec::const_iterator nit = insts.begin(), enit = insts.end();
-            nit != enit; ++nit)
+
+    for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
     {
-        ICFGNode* instNode = getOrAddBlockICFGNode(*nit);
-        icfg->addIntraEdge(instNode, FunExitBlockNode);
+        const Instruction *inst = &*II;
+        if(SVFUtil::isa<ReturnInst>(inst)) {
+            ICFGNode* instNode = getOrAddBlockICFGNode(inst);
+            icfg->addIntraEdge(instNode, FunExitBlockNode);
+        }
     }
 }
 
