@@ -190,7 +190,7 @@ public:
                 ++totalIntersections;
 
                 // and result AND lhs = result,
-                intersectionCache[std::minmax(result, lhs)] = lhs;
+                intersectionCache[std::minmax(result, lhs)] = result;
                 ++propertyIntersections;
                 ++totalIntersections;
 
