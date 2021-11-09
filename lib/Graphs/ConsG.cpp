@@ -619,8 +619,8 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
 #else
     static bool isNodeHidden(NodeType *n) {
 #endif
-        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
-        return node->isIsolatedNode();
+	if (n->getInEdges().empty() && n->getOutEdges().empty())
+		return true;
     }
 
     /// Return label of a VFG node with two display mode
