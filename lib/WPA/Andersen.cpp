@@ -838,7 +838,7 @@ PointsTo Andersen::cluster(void)
         keys.push_back(std::make_pair(pit->first, 1));
     }
 
-    std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> candidates;
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidates;
     PointsTo::MappingPtr nodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, candidates, "aux-steens"));
     PointsTo::MappingPtr reverseNodeMapping =

@@ -285,7 +285,7 @@ protected:
     AndersenWaveDiff *ander;
 
     /// Save candidate mappings for evaluation's sake.
-    std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> candidateMappings;
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidateMappings;
 
     /// Statistics.
     //@{

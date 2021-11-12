@@ -160,7 +160,7 @@ void FlowSensitive::finalize()
         NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
 
         // Do the same for the candidates. TODO: probably temporary for eval. purposes.
-        for (std::tuple<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
+        for (std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
         {
             // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
             NodeIDAllocator::Clusterer::evaluate(std::get<1>(candidate), allPts, stats, true);

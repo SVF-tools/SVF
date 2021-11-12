@@ -158,7 +158,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::RegioningTime = "RegioningTime";
     const std::string NodeIDAllocator::Clusterer::DistanceMatrixTime = "DistanceMatrixTime";
     const std::string NodeIDAllocator::Clusterer::FastClusterTime = "FastClusterTime";
-    const std::string NodeIDAllocator::Clusterer::DendogramTraversalTime = "DendogramTravTime";
+    const std::string NodeIDAllocator::Clusterer::DendrogramTraversalTime = "DendrogramTravTime";
     const std::string NodeIDAllocator::Clusterer::EvalTime = "EvalTime";
     const std::string NodeIDAllocator::Clusterer::TotalTime = "TotalTime";
     const std::string NodeIDAllocator::Clusterer::TheoreticalNumWords = "TheoreticalWords";
@@ -172,7 +172,7 @@ namespace SVF
     const std::string NodeIDAllocator::Clusterer::BestCandidate = "BestCandidate";
     const std::string NodeIDAllocator::Clusterer::NumNonTrivialRegionObjects = "NumNonTrivObj";
 
-    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::tuple<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
+    std::vector<NodeID> NodeIDAllocator::Clusterer::cluster(BVDataPTAImpl *pta, const std::vector<std::pair<NodeID, unsigned>> keys, std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates, std::string evalSubtitle)
     {
         assert(pta != nullptr && "Clusterer::cluster: given null BVDataPTAImpl");
         assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
@@ -181,7 +181,7 @@ namespace SVF
         double totalTime = 0.0;
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
-        double dendogramTraversalTime = 0.0;
+        double dendrogramTraversalTime = 0.0;
         double regioningTime = 0.0;
         double evalTime = 0.0;
 
@@ -189,11 +189,12 @@ namespace SVF
         Map<std::pair<NodeID, NodeID>, std::pair<unsigned, unsigned>> distances;
 
         double clkStart = PTAStat::getClk(true);
+
         // Map points-to sets to occurrences.
         Map<PointsTo, unsigned> pointsToSets;
-        // Nodes to some of the objects they share a set with.
-        // TODO: describe why "some", use vector not Map.
-        Map<NodeID, Set<NodeID>> graph;
+
+        // Objects each object shares at least a points-to set with.
+        Map<NodeID, Set<NodeID>> coPointeeGraph;
         for (const std::pair<NodeID, unsigned> &keyOcc : keys)
         {
             const PointsTo &pts = pta->getPts(keyOcc.first);
@@ -205,17 +206,16 @@ namespace SVF
             if (oldSize != pointsToSets.size())
             {
                 NodeID firstO = !pts.empty() ? *(pts.begin()) : 0;
-                Set<NodeID> &firstOsNeighbours = graph[firstO];
+                Set<NodeID> &firstOsNeighbours = coPointeeGraph[firstO];
                 for (const NodeID o : pts)
                 {
                     if (o != firstO)
                     {
                         firstOsNeighbours.insert(o);
-                        graph[o].insert(firstO);
+                        coPointeeGraph[o].insert(firstO);
                     }
                 }
             }
-
         }
 
         size_t numObjects = NodeIDAllocator::get()->numObjects;
@@ -225,7 +225,7 @@ namespace SVF
         std::vector<unsigned> objectsRegion;
         if (Options::RegionedClustering)
         {
-            objectsRegion = regionObjects(graph, numObjects, numRegions);
+            objectsRegion = regionObjects(coPointeeGraph, numObjects, numRegions);
         }
         else
         {
@@ -246,7 +246,7 @@ namespace SVF
         // objects because we align each region to NATIVE_INT_SIZE.
         size_t numMappings = 0;
 
-        // Maps a region (label) to a mapping which maps 0 to n to all objects
+        // Maps a region to a mapping which maps 0 to n to all objects
         // in that region.
         std::vector<std::vector<NodeID>> regionMappings(numRegions);
         // The reverse: region to mapping of objects to a 0 to n from above.
@@ -276,14 +276,14 @@ namespace SVF
         // Points-to sets which are relevant to a region, i.e., those whose elements
         // belong to that region. Pair is for occurences.
         std::vector<std::vector<std::pair<const PointsTo *, unsigned>>> regionsPointsTos(numRegions);
-        for (const Map<PointsTo, unsigned>::value_type &pto : pointsToSets)
+        for (const Map<PointsTo, unsigned>::value_type &ptocc : pointsToSets)
         {
-            const PointsTo &pt = pto.first;
-            const unsigned occ = pto.second;
+            const PointsTo &pt = ptocc.first;
+            const unsigned occ = ptocc.second;
             if (pt.empty()) continue;
-            // Guaranteed that begin() != end() because of the continue above.
-            const NodeID o = *(pt.begin());
-            unsigned region = objectsRegion[o];
+            // Guaranteed that begin() != end() because of the continue above. All objects in pt
+            // will be relevant to the same region.
+            unsigned region = objectsRegion[*(pt.begin())];
             // In our "graph", objects in the same points-to set have an edge between them,
             // so they are all in the same connected component/region.
             regionsPointsTos[region].push_back(std::make_pair(&pt, occ));
@@ -313,7 +313,6 @@ namespace SVF
             unsigned numGtIntRegions = 0;
             unsigned largestRegion = 0;
             unsigned nonTrivialRegionObjects = 0;
-            // Current new node ID; the result of a node ID mapping.
             unsigned allocCounter = 0;
             for (unsigned region = 0; region < numRegions; ++region)
             {
@@ -339,15 +338,13 @@ namespace SVF
                 ++numGtIntRegions;
                 nonTrivialRegionObjects += regionNumObjects;
 
-                clkStart = PTAStat::getClk(true);
-                double *distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects, regionReverseMappings[region]);
-                clkEnd = PTAStat::getClk(true);
-                distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
+                double *distMatrix = getDistanceMatrix(regionsPointsTos[region], regionNumObjects,
+                                                       regionReverseMappings[region], distanceMatrixTime);
 
                 clkStart = PTAStat::getClk(true);
-                int *dendogram = new int[2 * (regionNumObjects - 1)];
+                int *dendrogram = new int[2 * (regionNumObjects - 1)];
                 double *height = new double[regionNumObjects - 1];
-                hclust_fast(regionNumObjects, distMatrix, method, dendogram, height);
+                hclust_fast(regionNumObjects, distMatrix, method, dendrogram, height);
                 delete[] distMatrix;
                 delete[] height;
                 clkEnd = PTAStat::getClk(true);
@@ -355,13 +352,14 @@ namespace SVF
 
                 clkStart = PTAStat::getClk(true);
                 Set<int> visited;
-                traverseDendogram(nodeMap, dendogram, regionNumObjects, allocCounter, visited, regionNumObjects - 1, regionMappings[region]);
-                delete[] dendogram;
+                traverseDendrogram(nodeMap, dendrogram, regionNumObjects, allocCounter,
+                                   visited, regionNumObjects - 1, regionMappings[region]);
+                delete[] dendrogram;
                 clkEnd = PTAStat::getClk(true);
-                dendogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
+                dendrogramTraversalTime += (clkEnd - clkStart) / TIMEINTERVAL;
             }
 
-            candidates.push_back(std::make_tuple(method, nodeMap));
+            candidates.push_back(std::make_pair(method, nodeMap));
 
             // Though we "update" these in the loop, they will be the same every iteration.
             overallStats[NumGtIntRegions] = std::to_string(numGtIntRegions);
@@ -369,52 +367,20 @@ namespace SVF
             overallStats[NumNonTrivialRegionObjects] = std::to_string(nonTrivialRegionObjects);
         }
 
-        // In case we're not comparing anything, set to first "candidate".
-        std::vector<NodeID> bestMapping = std::get<1>(candidates[0]);
-        hclust_fast_methods bestMethod = std::get<0>(candidates[0]);
-        // Number of bits required for the best candidate.
-        size_t bestWords = std::numeric_limits<size_t>::max();
-        if (evalSubtitle != "" || Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
-        {
-            for (std::tuple<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
-            {
-                Map<std::string, std::string> candidateStats;
-                hclust_fast_methods candidateMethod = std::get<0>(candidate);
-                std::string candidateMethodName = SVFUtil::hclustMethodToString(candidateMethod);
-                std::vector<NodeID> candidateMapping = std::get<1>(candidate);
+        // Work out which of the mappings we generated looks best.
+        std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = determineBestMapping(candidates, pointsToSets,
+                                                                                               evalSubtitle, evalTime);
 
-                // TODO: parameterise final arg.
-                clkStart = PTAStat::getClk(true);
-                evaluate(candidateMapping, pointsToSets, candidateStats, true);
-                clkEnd = PTAStat::getClk(true);
-                evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
-                printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
+        overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
+        overallStats[DendrogramTraversalTime] = std::to_string(dendrogramTraversalTime);
+        overallStats[FastClusterTime] = std::to_string(fastClusterTime);
+        overallStats[EvalTime] = std::to_string(evalTime);
+        overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendrogramTraversalTime + fastClusterTime + regioningTime + evalTime);
 
-                // TODO: check stats for best node map.
-                size_t candidateWords = 0;
-                if (Options::PtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
-                else if (Options::PtType == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
-                else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
+        overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMapping.first);
+        printStats(evalSubtitle + ": overall", overallStats);
 
-                if (candidateWords < bestWords)
-                {
-                    bestWords = candidateWords;
-                    bestMethod = candidateMethod;
-                    bestMapping = candidateMapping;
-                }
-            }
-
-            overallStats[DistanceMatrixTime] = std::to_string(distanceMatrixTime);
-            overallStats[DendogramTraversalTime] = std::to_string(dendogramTraversalTime);
-            overallStats[FastClusterTime] = std::to_string(fastClusterTime);
-            overallStats[EvalTime] = std::to_string(evalTime);
-            overallStats[TotalTime] = std::to_string(distanceMatrixTime + dendogramTraversalTime + fastClusterTime + regioningTime + evalTime);
-
-            overallStats[BestCandidate] = SVFUtil::hclustMethodToString(bestMethod);
-            printStats(evalSubtitle + ": overall", overallStats);
-        }
-
-        return bestMapping;
+        return bestMapping.second;
     }
 
     std::vector<NodeID> NodeIDAllocator::Clusterer::getReverseNodeMapping(const std::vector<NodeID> &nodeMapping)
@@ -450,8 +416,11 @@ namespace SVF
         return ((n - 1) / NATIVE_INT_SIZE + 1) * NATIVE_INT_SIZE;
     }
 
-    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pair<const PointsTo *, unsigned>> pointsToSets, const size_t numObjects, const Map<NodeID, unsigned> &nodeMap)
+    double *NodeIDAllocator::Clusterer::getDistanceMatrix(const std::vector<std::pair<const PointsTo *, unsigned>> pointsToSets,
+                                                          const size_t numObjects, const Map<NodeID, unsigned> &nodeMap,
+                                                          double &distanceMatrixTime)
     {
+        const double clkStart = PTAStat::getClk(true);
         size_t condensedSize = (numObjects * (numObjects - 1)) / 2;
         double *distMatrix = new double[condensedSize];
         for (size_t i = 0; i < condensedSize; ++i) distMatrix[i] = numObjects * numObjects;
@@ -512,15 +481,18 @@ namespace SVF
 
         }
 
+        const double clkEnd = PTAStat::getClk(true);
+        distanceMatrixTime += (clkEnd - clkStart) / TIMEINTERVAL;
+
         return distMatrix;
     }
 
-    void NodeIDAllocator::Clusterer::traverseDendogram(std::vector<NodeID> &nodeMap, const int *dendogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &regionNodeMap)
+    void NodeIDAllocator::Clusterer::traverseDendrogram(std::vector<NodeID> &nodeMap, const int *dendrogram, const size_t numObjects, unsigned &allocCounter, Set<int> &visited, const int index, const std::vector<NodeID> &regionNodeMap)
     {
         if (visited.find(index) != visited.end()) return;
         visited.insert(index);
 
-        int left = dendogram[index - 1];
+        int left = dendrogram[index - 1];
         if (left < 0)
         {
             // Reached a leaf.
@@ -530,11 +502,11 @@ namespace SVF
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, left, regionNodeMap);
+            traverseDendrogram(nodeMap, dendrogram, numObjects, allocCounter, visited, left, regionNodeMap);
         }
 
         // Repeat for the right child.
-        int right = dendogram[(numObjects - 1) + index - 1];
+        int right = dendrogram[(numObjects - 1) + index - 1];
         if (right < 0)
         {
             nodeMap[regionNodeMap[std::abs(right) - 1]] = allocCounter;
@@ -542,7 +514,7 @@ namespace SVF
         }
         else
         {
-            traverseDendogram(nodeMap, dendogram, numObjects, allocCounter, visited, right, regionNodeMap);
+            traverseDendrogram(nodeMap, dendrogram, numObjects, allocCounter, visited, right, regionNodeMap);
         }
     }
 
@@ -663,6 +635,47 @@ namespace SVF
         stats[NewBvNumWords] = std::to_string(totalNewBv);
     }
 
+        // Work out which of the mappings we generated looks best.
+    std::pair<hclust_fast_methods, std::vector<NodeID>> NodeIDAllocator::Clusterer::determineBestMapping(
+            const std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> &candidates,
+            Map<PointsTo, unsigned> pointsToSets, const std::string &evalSubtitle, double &evalTime)
+    {
+        // In case we're not comparing anything, set to first "candidate".
+        std::pair<hclust_fast_methods, std::vector<NodeID>> bestMapping = candidates[0];
+        // Number of bits required for the best candidate.
+        size_t bestWords = std::numeric_limits<size_t>::max();
+        if (evalSubtitle != "" || Options::ClusterMethod == HCLUST_METHOD_SVF_BEST)
+        {
+            for (const std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidates)
+            {
+                Map<std::string, std::string> candidateStats;
+                hclust_fast_methods candidateMethod = candidate.first;
+                std::string candidateMethodName = SVFUtil::hclustMethodToString(candidateMethod);
+                std::vector<NodeID> candidateMapping = candidate.second;
+
+                // TODO: parameterise final arg.
+                const double clkStart = PTAStat::getClk(true);
+                evaluate(candidateMapping, pointsToSets, candidateStats, true);
+                const double clkEnd = PTAStat::getClk(true);
+                evalTime += (clkEnd - clkStart) / TIMEINTERVAL;
+                printStats(evalSubtitle + ": candidate " + candidateMethodName, candidateStats);
+
+                size_t candidateWords = 0;
+                if (Options::PtType == PointsTo::SBV) candidateWords = std::stoull(candidateStats[NewSbvNumWords]);
+                else if (Options::PtType == PointsTo::CBV) candidateWords = std::stoull(candidateStats[NewBvNumWords]);
+                else assert(false && "Clusterer::cluster: unsupported BV type for clustering.");
+
+                if (candidateWords < bestWords)
+                {
+                    bestWords = candidateWords;
+                    bestMapping = candidate;
+                }
+            }
+        }
+
+        return bestMapping;
+    }
+
     void NodeIDAllocator::Clusterer::printStats(std::string subtitle, Map<std::string, std::string> &stats)
     {
         // When not in order, it is too hard to compare original/new SBV/BV words, so this array forces an order.
@@ -670,7 +683,7 @@ namespace SVF
             { NumObjects, TheoreticalNumWords, OriginalSbvNumWords, OriginalBvNumWords,
               NewSbvNumWords, NewBvNumWords, NumRegions, NumGtIntRegions,
               NumNonTrivialRegionObjects, LargestRegion, RegioningTime,
-              DistanceMatrixTime, FastClusterTime, DendogramTraversalTime,
+              DistanceMatrixTime, FastClusterTime, DendrogramTraversalTime,
               EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;
