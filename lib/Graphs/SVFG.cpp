@@ -34,7 +34,7 @@
 #include "Graphs/SVFGStat.h"
 #include "Graphs/ICFG.h"
 #include <fstream>
-
+#include "Util/Options.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -220,19 +220,448 @@ void SVFG::buildSVFG()
     DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
 
     stat->startClk();
+    if (!Options::ReadSVFG.empty())
+    {       
+        readFile(Options::ReadSVFG);
+    } 
+    else 
+    {
+        DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+        stat->ATVFNodeStart();
+        addSVFGNodesForAddrTakenVars();
+        stat->ATVFNodeEnd();
+        DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
+        stat->indVFEdgeStart();
+        connectIndirectSVFGEdges();
+        stat->indVFEdgeEnd();
+    }
+      
+    if (!Options::WriteSVFG.empty())
+        writeToFile(Options::WriteSVFG);
+}
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Addr-taken Node\n"));
+void SVFG::writeToFile(const string& filename) 
+{
+    outs() << "Writing SVFG analysis to '" << filename << "'...";
+    error_code err;
+    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
+    if (err)
+    {
+        outs() << "  error opening file for writing!\n";
+        F.os().clear_error();
+        return;
+    }
+    F.os() << "__Nodes__\n";
+    // nodes
+    for(iterator it = begin(), eit = end(); it!=eit; ++it)
+    {
+        NodeID nodeId = it->first;
+        const SVFGNode* node = it->second;
+        if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "FormalINSVFGNode";
+            F.os() << ">=MVER: {";
+            F.os() << *formalIn->getMRVer() << "}>=" << formalIn->getFunEntryNode()->getId() << "\n";
+        }
+        else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "FormalOUTSVFGNode";
+            F.os() << ">=MVER: {";
+            F.os() << *formalOut->getMRVer() << "}>=" <<  formalOut->getFunExitNode()->getId() << "\n";
+        }
+        else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "ActualINSVFGNode";
+            F.os() << ">=MVER: {";
+            F.os() << *actualIn->getMRVer() << "}>=" << actualIn->getCallSite()->getId() << "\n";
+        }
+        else if(const ActualOUTSVFGNode* actualOut = SVFUtil::dyn_cast<ActualOUTSVFGNode>(node))
+        {
+            //node
+            F.os() <<  nodeId << ">=" << "ActualOUTSVFGNode" << ">=MVER: {";
+            F.os()  << *actualOut->getMRVer() << "}>="  <<  actualOut->getCallSite()->getId() << "\n";
+        }
+        else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
+        {
 
+            //node
+            F.os() << nodeId << ">=" << "PHISVFGNode";
+            unordered_map<u32_t,const MRVer*> opvers;
+            for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
+                    it != eit; it++)
+            {
+                opvers.insert(make_pair(it->first, it->second));
+            }              
+                // opvers
+            F.os() << ">=MVER: {";
+            F.os() << *phiNode->getResVer();
+            F.os() << "}>=" << pag->getICFG()->getBlockICFGNode(&(phiNode->getICFGNode()->getBB()->front()))->getId();
+            F.os() << ">=OPVers: {";
+            for (auto x: opvers) 
+            {
+                const MRVer* op = x.second;
+                F.os() << "{" << *op << "}" << ",";
+            }
+            F.os() << "}\n";
+        }
+    }
+
+    F.os() << "\n\n__Edges__\n";
+    // Edges
+    for(iterator it = begin(), eit = end(); it!=eit; ++it)
+    {
+        NodeID nodeId = it->first;
+        const SVFGNode* node = it->second;
+        if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
+        {
+            F.os() << nodeId << ">=" << "LoadNode"<< ">=Edges: (";
+            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadPE>(loadNode->getPAGEdge()));
+            for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
+            {
+                if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
+                {
+                    NodeID def = getDef(mu->getMRVer());
+                    F.os() << def << "|MVER: {"<< *mu->getMRVer() << "},";
+                }
+            }
+            F.os() << ")\n";
+        }
+        else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+        {
+            F.os() << nodeId << ">=" << "StoreNode" << ">=Edges: (";
+            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StorePE>(storeNode->getPAGEdge()));
+            for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
+            {
+                if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
+                {
+                    NodeID def = getDef(chi->getOpVer());
+                    F.os() << def << "|MVER: {"<< *chi->getOpVer() << "},";
+                }
+            }
+            F.os() << ")\n";
+        }
+        else if(const FormalINSVFGNode* formalIn = SVFUtil::dyn_cast<FormalINSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "FormalINSVFGNode" << ">=Edges: (";
+            //edges
+            PTACallGraphEdge::CallInstSet callInstSet;
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
+            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
+            {
+                const CallBlockNode* cs = *it;
+                if(!mssa->hasMU(cs))
+                    continue;
+                ActualINSVFGNodeSet& actualIns = getActualINSVFGNodes(cs);
+                for(ActualINSVFGNodeSet::iterator ait = actualIns.begin(), aeit = actualIns.end(); ait!=aeit; ++ait)
+                {
+                    const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(*ait));
+                    F.os() << actualIn->getId() << ",";
+                }
+            }
+            F.os() << ")\n";
+        }
+        else if(const FormalOUTSVFGNode* formalOut = SVFUtil::dyn_cast<FormalOUTSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "FormalOUTSVFGNode"  << ">=Edges: (";
+            //edges
+            PTACallGraphEdge::CallInstSet callInstSet;
+            mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
+            for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
+            {
+                const CallBlockNode* cs = *it;
+                if(!mssa->hasCHI(cs))
+                    continue;
+                ActualOUTSVFGNodeSet& actualOuts = getActualOUTSVFGNodes(cs);
+                for(ActualOUTSVFGNodeSet::iterator ait = actualOuts.begin(), aeit = actualOuts.end(); ait!=aeit; ++ait)
+                {
+                    const ActualOUTSVFGNode* actualOut = SVFUtil::cast<ActualOUTSVFGNode>(getSVFGNode(*ait));
+                    F.os() << actualOut->getId() << ",";
+                }
+            }
+            NodeID def = getDef(formalOut->getMRVer());
+            F.os() << "intra:" << def << ",";
+            F.os() << ")\n";
+        }
+        else if(const ActualINSVFGNode* actualIn = SVFUtil::dyn_cast<ActualINSVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "ActualINSVFGNode" <<  ">=Edges: ("; 
+            //edges
+            NodeID def = getDef(actualIn->getMRVer());
+            F.os() << def << ")\n";
+        }
+        else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
+        {
+            //node
+            F.os() << nodeId << ">=" << "PHISVFGNode" << ">=Edges: ("; 
+            //edges
+            for (MemSSA::PHI::OPVers::const_iterator it = phiNode->opVerBegin(), eit = phiNode->opVerEnd();
+                    it != eit; it++)
+            {
+                const MRVer* op = it->second;
+                NodeID def = getDef(op);
+                F.os() << def << "|MVER: {"<< *op << "},";
+            }
+            F.os() << ")\n";
+        }
+    }
+    // Job finish and close file
+    F.os().close();
+    if (!F.os().has_error())
+    {
+        outs() << "\n";
+        F.keep();
+        return;       
+    }
+}
+
+
+void SVFG::readFile(const string& filename){
+    outs() << "Loading SVFG analysis results from '" << filename << "'...";
+    ifstream F(filename.c_str());
+    if (!F.is_open())
+    {
+        outs() << " error opening file for reading!\n";
+        return;
+    }
+    //outer loop through each line in the file
+    string line;
+    // add nodes
     stat->ATVFNodeStart();
-    addSVFGNodesForAddrTakenVars();
+    while (F.good())
+    {
+        getline(F, line);
+        if (line.empty())
+            continue;
+        if (line.find("__Edges__") != std::string::npos)
+            break;
+
+        std::string s = line; 
+        std::string delimiter = ">=";
+        string temp; 
+        int index = 0;
+        //implement delimiter to split string using ">="
+        size_t last = 0; size_t next = 0; size_t outer_last = 0;
+        NodeID id; 
+        string type;
+        string MR;
+        string basicBlock; 
+        string opVer;
+        //inner loop through to get each element in the line
+        while ((next = s.find(delimiter, last)) != string::npos) 
+        {   
+            temp = s.substr(last, next-last); 
+            last = next + 2; 
+            outer_last = next + 2; 
+            if(index == 0) {id = atoi(temp.c_str());}
+            if(index == 1) {type = temp;}
+            if(index > 1)
+            {
+                if(index == 2) {MR = temp;}
+                if(index == 3) {basicBlock = temp;}
+            }
+            index++; 
+        }
+        MRVer* tempMRVer; 
+        if(!MR.empty())
+        {
+            tempMRVer = getMRVERFromString(MR);
+        } 
+        //add nodes using the variables we extracted
+        if(type == "FormalINSVFGNode")
+        {
+            NodeID FunID = atoi(s.substr(outer_last).c_str());
+            addFormalINSVFGNode(SVFUtil::dyn_cast<FunEntryBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
+        } else if(type == "FormalOUTSVFGNode")
+        {
+            NodeID FunID =  atoi(s.substr(outer_last).c_str());
+            addFormalOUTSVFGNode(SVFUtil::dyn_cast<FunExitBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
+        } else if(type == "ActualINSVFGNode")
+        {
+            NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
+            addActualINSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
+        } else if(type == "ActualOUTSVFGNode")
+        {
+            NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
+            addActualOUTSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
+        } else if (type == "PHISVFGNode") 
+        {
+            opVer =  s.substr(outer_last); 
+            next = opVer.find("{") + 1;
+            last = opVer.find(",}");
+            temp = opVer.substr(next, last);
+            Map<u32_t,const MRVer*> OPVers;
+            int index = 0; 
+            while ((next = temp.find("{") + 1) != string::npos) {
+                if (temp == ",}")
+                    break;
+                last = temp.find("},");
+                string temp1;
+                temp1 = temp.substr(next, last-next);
+                tempMRVer = getMRVERFromString(temp1);
+                OPVers.insert(make_pair(index, tempMRVer));
+                temp = temp.substr(last + 1);
+                index++;
+            } 
+            addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(atoi(basicBlock.c_str())), OPVers.begin(), OPVers.end(), tempMRVer, id);
+        } else 
+        {
+        }
+    }
     stat->ATVFNodeEnd();
-
-    DBOUT(DGENERAL, outs() << pasMsg("\tCreate SVFG Indirect Edge\n"));
-
     stat->indVFEdgeStart();
-    connectIndirectSVFGEdges();
+    // Edges 
+    while (F.good())
+    {   
+        getline(F, line);
+        if (line.empty())
+            continue;
+
+        std::string s = line; 
+        std::string delimiter = ">=";
+        string temp; 
+        int index = 0;
+        size_t last = 0; size_t next = 0; size_t outer_last = 0;
+        NodeID id; 
+        string type;
+        string edgeStr;
+        
+        //inner loop through to get each element in the line
+        while ((next = s.find(delimiter, last)) != string::npos) 
+        {   
+            temp = s.substr(last, next-last); 
+            last = next + 2; 
+            outer_last = next + 2; 
+            if(index == 0) {id = atoi(temp.c_str());}
+            if(index == 1) {type = temp;}
+            index++; 
+        }
+        edgeStr = s.substr(outer_last);
+
+        next = edgeStr.find("Edges: (") + 8;
+        last = edgeStr.find(")");
+        temp = edgeStr.substr(next, last-next);
+        if (temp.length() == 0)
+            continue;
+        // split edges by delimiter; , or }, depending on type
+        vector<string> edges;
+        if (type != "StoreNode" && type != "LoadNode" && type != "PHISVFGNode") 
+        {
+            string ss;
+            stringstream sss(temp);
+            while (getline(sss, ss, ',')) {
+                edges.push_back(ss);
+            }
+        } 
+        else
+        {
+            size_t pos = 0;
+            string ss;
+            while ((pos = temp.find("},")) != std::string::npos) {
+                ss = temp.substr(0, pos);
+                edges.push_back(ss);
+                temp.erase(0, pos + delimiter.length());
+            }
+            if (temp.length() > 0)
+                edges.push_back(temp);
+        }
+        // connnect edges
+        for (string x: edges) 
+        {
+            NodeID edge;
+            if (x.find("intra") == string::npos || type != "StoreNode" || type != "LoadNode")
+                edge = atoi(x.c_str());
+            if(type == "FormalINSVFGNode")
+            {
+                const FormalINSVFGNode* formalIn = SVFUtil::cast<FormalINSVFGNode>(getSVFGNode(id));
+                const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(edge));
+                addInterIndirectVFCallEdge(actualIn,formalIn, getCallSiteID(actualIn->getCallSite(), formalIn->getFun()));
+            } else if(type == "FormalOUTSVFGNode")
+            {
+                const FormalOUTSVFGNode* formalOut = SVFUtil::cast<FormalOUTSVFGNode>(getSVFGNode(id));
+                if (x.find("intra") != string::npos) 
+                {
+                    size_t next = x.find("intra:") + 6;
+                    edge = atoi(x.substr(next).c_str());
+                    addIntraIndirectVFEdge(edge, id, formalOut->getMRVer()->getMR()->getPointsTo());
+                } 
+                else
+                {
+                    const ActualOUTSVFGNode* actualOut = SVFUtil::cast<ActualOUTSVFGNode>(getSVFGNode(edge));
+                    addInterIndirectVFRetEdge(formalOut,actualOut,getCallSiteID(actualOut->getCallSite(), formalOut->getFun()));
+                }
+            } else if(type == "ActualINSVFGNode")
+            {
+                const ActualINSVFGNode* actualIn = SVFUtil::cast<ActualINSVFGNode>(getSVFGNode(id));
+                addIntraIndirectVFEdge(edge,id, actualIn->getMRVer()->getMR()->getPointsTo());
+            } else if(type == "ActualOUTSVFGNode")
+            {
+                // There's no need to connect actual out node to its definition site in the same function.
+            } else if (type == "StoreNode" || type == "LoadNode" || type == "PHISVFGNode")
+            {
+                last = x.find("|");
+                edge = atoi(x.substr(0, last).c_str());
+                string tempMRVerStr = x.substr(last + 1);
+                MRVer* tempMRVer; 
+                tempMRVer = getMRVERFromString(tempMRVerStr);
+                addIntraIndirectVFEdge(edge,id, tempMRVer->getMR()->getPointsTo());
+            } else {
+            }
+        }
+    }
     stat->indVFEdgeEnd();
-    
+    connectFromGlobalToProgEntry();
+}
+
+MRVer* SVFG::getMRVERFromString(const string& s) 
+{
+    string temp;
+    size_t last = 0; size_t next = 0; 
+    MRVer* tempMRVer; 
+    MemRegion* tempMemRegion;
+    MSSADEF* tempDef;
+    //{create Memory Region object
+    next = s.find("MemRegion: pts{") + 15;
+    last = s.find("} MRVERSION: ");
+    temp = s.substr(next, last-next);
+    // convert string to PointsTo
+    PointsTo dstPts;
+    string point;
+    stringstream ss(temp);
+    while (getline(ss, point, ' ')) 
+    {
+        istringstream sss(point);
+        NodeID obj;
+        sss >> obj;
+        dstPts.set(obj);
+    }
+    tempMemRegion = new MemRegion(dstPts);
+    // create mssdef
+    next = s.find("MSSADef: ") + 9;
+    last = s.find("}>=");
+    temp = s.substr(next, last-next);
+    // convert string to deftype
+    istringstream ss1(temp.substr(0, temp.find(",")));
+    int obj1;
+    ss1 >> obj1;
+    MSSADEF::DEFTYPE defType = static_cast<MSSADEF::DEFTYPE>(obj1);
+    tempDef = new MSSADEF(defType, tempMemRegion);
+    // mrversion
+    next = s.find("MRVERSION: ") + 11;
+    last = s.find(" MSSADef:");
+    temp = s.substr(next, last-next);
+    // convert mrversion to nodeid
+    istringstream ss2(temp);
+    NodeID obj2;
+    ss2 >> obj2;
+    // create mrver
+    tempMRVer = new MRVer(tempMemRegion, obj2, tempDef);
+    return tempMRVer;
 }
 
 /*
@@ -309,7 +738,6 @@ void SVFG::addSVFGNodesForAddrTakenVars()
  */
 void SVFG::connectIndirectSVFGEdges()
 {
-
     for(iterator it = begin(), eit = end(); it!=eit; ++it)
     {
         NodeID nodeId = it->first;
