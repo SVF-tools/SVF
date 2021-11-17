@@ -48,7 +48,7 @@ public:
 
     virtual inline const DataSet& getPts(const Key& var) override
     {
-        return getMutPts(var);
+        return ptsMap[var];
     }
 
     virtual inline const KeySet& getRevPts(const Data& datum) override
@@ -60,19 +60,19 @@ public:
     virtual inline bool addPts(const Key &dstKey, const Data& element) override
     {
         addSingleRevPts(revPtsMap[element], dstKey);
-        return addPts(getMutPts(dstKey), element);
+        return addPts(ptsMap[dstKey], element);
     }
 
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
-        addRevPts(getMutPts(srcKey), dstKey);
-        return unionPts(getMutPts(dstKey), getPts(srcKey));
+        addRevPts(ptsMap[srcKey], dstKey);
+        return unionPts(ptsMap[dstKey], getPts(srcKey));
     }
 
     virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
         addRevPts(srcDataSet,dstKey);
-        return unionPts(getMutPts(dstKey), srcDataSet);
+        return unionPts(ptsMap[dstKey], srcDataSet);
     }
 
     virtual inline void dumpPTData() override
@@ -83,12 +83,12 @@ public:
     virtual void clearPts(const Key& var, const Data& element) override
     {
         clearSingleRevPts(revPtsMap[element], var);
-        getMutPts(var).reset(element);
+        ptsMap[var].reset(element);
     }
 
     virtual void clearFullPts(const Key& var) override
     {
-        DataSet &pts = getMutPts(var);
+        DataSet &pts = ptsMap[var];
         clearRevPts(pts, var);
         pts.clear();
     }
@@ -119,18 +119,6 @@ public:
     ///@}
 
 protected:
-    /// Returns a reference to a mutable Data, constructing it as
-    /// defaultData if it doesn't exist.
-    inline DataSet &getMutPts(const Key& var)
-    {
-        size_t before = ptsMap.size();
-        DataSet &pts = ptsMap[var];
-        size_t after = ptsMap.size();
-
-        if (before != after) pts = BasePTData::defaultData;
-        return pts;
-    }
-
     virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
@@ -264,13 +252,13 @@ public:
 
     virtual inline const DataSet &getDiffPts(Key &var) override
     {
-        return getMutDiffPts(var);
+        return diffPtsMap[var];
     }
 
     virtual inline bool computeDiffPts(Key &var, const DataSet &all) override
     {
         /// Clear diff pts.
-        DataSet& diff = getMutDiffPts(var);
+        DataSet& diff = diffPtsMap[var];
         diff.clear();
         /// Get all pts.
         DataSet& propa = getPropaPts(var);
@@ -289,12 +277,6 @@ public:
     virtual inline void clearPropaPts(Key &var) override
     {
         getPropaPts(var).clear();
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        mutPTData.setDefaultData(dataSet);
     }
 
     virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
@@ -316,16 +298,10 @@ public:
     ///@}
 
 protected:
-    /// Get diff PTS that can be modified.
-    inline DataSet &getMutDiffPts(Key &var)
-    {
-        return diffPtsMap.insert({var, BasePTData::defaultData}).first->second;
-    }
-
     /// Get propagated points to.
     inline DataSet &getPropaPts(Key &var)
     {
-        return propaPtsMap.insert({var, BasePTData::defaultData}).first->second;
+        return propaPtsMap[var];
     }
 
 private:
@@ -410,25 +386,13 @@ public:
     virtual inline DataSet& getDFInPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& inSet = dfInPtsMap[loc];
-
-        size_t before = inSet.size();
-        DataSet &pts = inSet[var];
-        size_t after = inSet.size();
-
-        if (before != after) pts = BasePTData::defaultData;
-        return pts;
+        return inSet[var];
     }
 
     virtual inline DataSet& getDFOutPtsSet(LocID loc, const Key& var) override
     {
         PtsMap& outSet = dfOutPtsMap[loc];
-
-        size_t before = outSet.size();
-        DataSet &pts = outSet[var];
-        size_t after = outSet.size();
-
-        if (before != after) pts = BasePTData::defaultData;
-        return pts;
+        return outSet[var];
     }
 
     /// Get internal flow-sensitive data structures.
@@ -515,15 +479,15 @@ public:
     ///@{
     virtual inline bool addPts(const Key &dstKey, const Key& srcKey) override
     {
-        return addPts(mutPTData.getMutPts(dstKey), srcKey);
+        return addPts(mutPTData.ptsMap[dstKey], srcKey);
     }
     virtual inline bool unionPts(const Key& dstKey, const Key& srcKey) override
     {
-        return unionPts(mutPTData.getMutPts(dstKey), getPts(srcKey));
+        return unionPts(mutPTData.ptsMap[dstKey], getPts(srcKey));
     }
     virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        return unionPts(mutPTData.getMutPts(dstKey), srcDataSet);
+        return unionPts(mutPTData.ptsMap[dstKey], srcDataSet);
     }
     virtual void clearPts(const Key& var, const Data& element) override
     {
@@ -534,12 +498,6 @@ public:
         mutPTData.clearFullPts(var);
     }
     ///@}
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        mutPTData.setDefaultData(dataSet);
-    }
 
     virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
@@ -978,13 +936,6 @@ public:
         tlPTData.dumpPTData();
         SVFUtil::outs() << "== Address-taken points-to information\n";
         atPTData.dumpPTData();
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        tlPTData.setDefaultData(dataSet);
-        atPTData.setDefaultData(dataSet);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:

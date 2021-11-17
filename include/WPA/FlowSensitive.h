@@ -273,12 +273,11 @@ protected:
     }
     ///@}
 
-    /// Performs clustering based on ander.
-    /// Returns the default PointsTo that accounts for clustering.
-    /// If ClusterFs is not set, returns a default PointsTo which does not
-    /// use the result of clustering (i.e., as if nothing happened).
-    /// Accounts for Options::PtType.
-    virtual PointsTo cluster(void);
+    /// Performs clustering based on ander, setting the global best mapping
+    /// accordingly.
+    virtual void cluster(void);
+    /// Sets the global best mapping as a plain mapping, i.e. n -> n.
+    virtual void plainMap(void) const;
 
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;

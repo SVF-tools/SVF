@@ -414,9 +414,8 @@ protected:
     }
 
     /// Runs a Steensgaard analysis and performs clustering based on those
-    /// results.
-    /// Returns the default PointsTo that accounts for clustering.
-    virtual PointsTo cluster(void);
+    /// results set the global best mapping.
+    virtual void cluster(void) const;
 };
 
 

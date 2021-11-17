@@ -542,7 +542,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     return changed;
 }
 
-PointsTo VersionedFlowSensitive::cluster(void)
+void VersionedFlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
@@ -559,7 +559,7 @@ PointsTo VersionedFlowSensitive::cluster(void)
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
-    return PointsTo(nodeMapping, reverseNodeMapping);
+    PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
 }
 
 Version VersionedFlowSensitive::getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm)

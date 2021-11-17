@@ -178,11 +178,7 @@ void Andersen::initialize()
     setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
 
-    if (Options::ClusterAnder)
-    {
-        PointsTo defaultPt = cluster();
-        getPTDataTy()->setDefaultData(defaultPt);
-    }
+    if (Options::ClusterAnder) cluster();
 
     /// Initialize worklist
     processAllAddr();
@@ -201,7 +197,7 @@ void Andersen::finalize()
         const PTDataTy *ptd = getPTDataTy();
         // TODO: should we use liveOnly?
         // TODO: parameterise final arg.
-        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), ptd->getAllPts(true), stats, true);
+        NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), ptd->getAllPts(true), stats, true);
         NodeIDAllocator::Clusterer::printStats("post-main", stats);
     }
 
@@ -385,7 +381,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     numOfProcessedGep++;
 
-    PointsTo tmpDstPts(getPTDataTy()->getDefaultData());
+    PointsTo tmpDstPts;
     if (SVFUtil::isa<VariantGepCGEdge>(edge))
     {
         // If a pointer is connected by a variant gep edge,
@@ -828,7 +824,7 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     consCG->resetSubs(nodeId);
 }
 
-PointsTo Andersen::cluster(void)
+void Andersen::cluster(void) const
 {
     assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
@@ -844,7 +840,7 @@ PointsTo Andersen::cluster(void)
     PointsTo::MappingPtr reverseNodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
-    return PointsTo(nodeMapping, reverseNodeMapping);
+    PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
 }
 
 /*!

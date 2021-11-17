@@ -65,8 +65,10 @@ void FlowSensitive::initialize()
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 
     // If cluster option is not set, it will give us a no-mapping points-to set.
-    PointsTo defaultPt = cluster();
-    getPTDataTy()->setDefaultData(defaultPt);
+    assert(!(Options::ClusterFs && Options::PlainMappingFs)
+           && "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
+    if (Options::ClusterFs) cluster();
+    else if (Options::PlainMappingFs) plainMap();
 }
 
 void timeLimitReached(int signum)
@@ -156,15 +158,15 @@ void FlowSensitive::finalize()
         // TODO: should we use liveOnly?
         Map<PointsTo, unsigned> allPts = ptd->getAllPts(true);
         // TODO: parameterise final arg.
-        NodeIDAllocator::Clusterer::evaluate(*(ptd->getDefaultData().getNodeMapping()), allPts, stats, true);
+        NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), allPts, stats, true);
         NodeIDAllocator::Clusterer::printStats("post-main: best", stats);
 
         // Do the same for the candidates. TODO: probably temporary for eval. purposes.
         for (std::pair<hclust_fast_methods, std::vector<NodeID>> &candidate : candidateMappings)
         {
             // Can reuse stats, since we're always filling it with `evaluate`, it will always be overwritten.
-            NodeIDAllocator::Clusterer::evaluate(std::get<1>(candidate), allPts, stats, true);
-            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + SVFUtil::hclustMethodToString(std::get<0>(candidate)), stats);
+            NodeIDAllocator::Clusterer::evaluate(candidate.second, allPts, stats, true);
+            NodeIDAllocator::Clusterer::printStats("post-main: candidate " + SVFUtil::hclustMethodToString(candidate.first), stats);
         }
     }
 
@@ -469,7 +471,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     bool changed = false;
     const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
 
-    PointsTo tmpDstPts(getPTDataTy()->getDefaultData());
+    PointsTo tmpDstPts;
     if (SVFUtil::isa<VariantGepPE>(edge->getPAGEdge()))
     {
         for (NodeID o : srcPts)
@@ -754,39 +756,34 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
     return false;
 }
 
-PointsTo FlowSensitive::cluster(void)
+void FlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
     for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
 
-    if (Options::ClusterFs)
-    {
-        PointsTo::MappingPtr nodeMapping =
-            std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
-        PointsTo::MappingPtr reverseNodeMapping =
-            std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
-        return PointsTo(nodeMapping, reverseNodeMapping);
-    }
-    else if (Options::PlainMappingFs)
-    {
-        assert(Options::NodeAllocStrat == NodeIDAllocator::Strategy::DENSE
-               && "FS::cluster: plain mapping requires dense allocation strategy.");
+    PointsTo::MappingPtr nodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+    PointsTo::MappingPtr reverseNodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
 
-        const size_t numObjects = NodeIDAllocator::get()->getNumObjects();
-        PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
-        PointsTo::MappingPtr reversePlainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
-        for (NodeID i = 0; i < plainMapping->size(); ++i)
-        {
-            plainMapping->at(i) = i;
-            reversePlainMapping->at(i) = i;
-        }
+    PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
+}
 
-        return PointsTo(plainMapping, reversePlainMapping);
-    }
-    else
+void FlowSensitive::plainMap(void) const
+{
+    assert(Options::NodeAllocStrat == NodeIDAllocator::Strategy::DENSE
+           && "FS::cluster: plain mapping requires dense allocation strategy.");
+
+    const size_t numObjects = NodeIDAllocator::get()->getNumObjects();
+    PointsTo::MappingPtr plainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
+    PointsTo::MappingPtr reversePlainMapping = std::make_shared<std::vector<NodeID>>(numObjects);
+    for (NodeID i = 0; i < plainMapping->size(); ++i)
     {
-        return PointsTo(nullptr, nullptr);
+        plainMapping->at(i) = i;
+        reversePlainMapping->at(i) = i;
     }
+
+    PointsTo::setCurrentBestNodeMapping(plainMapping, reversePlainMapping);
 }
 
 void FlowSensitive::printCTirAliasStats(void)

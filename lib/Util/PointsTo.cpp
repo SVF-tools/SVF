@@ -18,8 +18,12 @@
 namespace SVF
 {
 
-PointsTo::PointsTo(MappingPtr nodeMapping, MappingPtr reverseNodeMapping)
-    : type(Options::PtType), nodeMapping(nodeMapping), reverseNodeMapping(reverseNodeMapping)
+PointsTo::MappingPtr PointsTo::currentBestNodeMapping = nullptr;
+PointsTo::MappingPtr PointsTo::currentBestReverseNodeMapping = nullptr;
+
+PointsTo::PointsTo(void)
+    : type(Options::PtType), nodeMapping(currentBestNodeMapping),
+      reverseNodeMapping(currentBestReverseNodeMapping)
 {
     if (type == SBV) new (&sbv) SparseBitVector();
     else if (type == CBV) new (&cbv) CoreBitVector();
@@ -175,6 +179,7 @@ int PointsTo::find_first(void)
 bool PointsTo::operator==(const PointsTo &rhs) const
 {
     assert(metaSame(rhs));
+
     if (type == CBV) return cbv == rhs.cbv;
     else if (type == SBV) return sbv == rhs.sbv;
     else if (type == BV) return bv == rhs.bv;
@@ -183,14 +188,16 @@ bool PointsTo::operator==(const PointsTo &rhs) const
 
 bool PointsTo::operator!=(const PointsTo &rhs) const
 {
-    // TODO: we're asserting twice... should be okay...
+    // TODO: we're asserting and checking twice... should be okay...
     assert(metaSame(rhs));
+
     return !(*this == rhs);
 }
 
 bool PointsTo::operator|=(const PointsTo &rhs)
 {
     assert(metaSame(rhs));
+
     if (type == CBV) return cbv |= rhs.cbv;
     else if (type == SBV) return sbv |= rhs.sbv;
     else if (type == BV) return bv |= rhs.bv;
@@ -213,6 +220,7 @@ bool PointsTo::operator|=(const NodeBS &rhs)
 bool PointsTo::operator&=(const PointsTo &rhs)
 {
     assert(metaSame(rhs));
+
     if (type == CBV) return cbv &= rhs.cbv;
     else if (type == SBV) return sbv &= rhs.sbv;
     else if (type == BV) return bv &= rhs.bv;
@@ -222,6 +230,7 @@ bool PointsTo::operator&=(const PointsTo &rhs)
 bool PointsTo::operator-=(const PointsTo &rhs)
 {
     assert(metaSame(rhs));
+
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
@@ -281,6 +290,34 @@ NodeID PointsTo::getExternalNode(NodeID n) const
 bool PointsTo::metaSame(const PointsTo &pt) const
 {
     return type == pt.type && nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
+}
+
+PointsTo::MappingPtr PointsTo::getCurrentBestNodeMapping(void)
+{
+    return currentBestNodeMapping;
+}
+
+PointsTo::MappingPtr PointsTo::getCurrentBestReverseNodeMapping(void)
+{
+    return currentBestReverseNodeMapping;
+}
+
+void PointsTo::setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
+                                         MappingPtr newCurrentBestReverseNodeMapping)
+{
+    currentBestNodeMapping = newCurrentBestNodeMapping;
+    currentBestReverseNodeMapping = newCurrentBestReverseNodeMapping;
+}
+
+void PointsTo::checkAndRemap(void)
+{
+    if (nodeMapping != currentBestNodeMapping)
+    {
+        // newPt constructed with correct node mapping.
+        PointsTo newPt;
+        for (const NodeID o : *this) newPt.set(o);
+        *this = std::move(newPt);
+    }
 }
 
 PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)

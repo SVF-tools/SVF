@@ -42,7 +42,7 @@ public:
 
 public:
     /// Construct empty points-to set.
-    PointsTo(MappingPtr nodeMapping=nullptr, MappingPtr reverseNodeMapping=nullptr);
+    PointsTo(void);
     /// Copy costructor.
     PointsTo(const PointsTo &pt);
     /// Move constructor.
@@ -122,7 +122,12 @@ public:
 
     MappingPtr getNodeMapping(void) const;
 
-public:
+    static MappingPtr getCurrentBestNodeMapping(void);
+    static MappingPtr getCurrentBestReverseNodeMapping(void);
+    static void setCurrentBestNodeMapping(MappingPtr newCurrentBestNodeMapping,
+                                          MappingPtr newCurrentBestReverseNodeMapping);
+
+private:
     /// Returns nodeMapping[n], checking for nullptr and size.
     NodeID getInternalNode(NodeID n) const;
 
@@ -133,7 +138,16 @@ public:
     /// and reverseNodeMapping
     bool metaSame(const PointsTo &pt) const;
 
+    /// Checks if this points-to set is using the current best mapping.
+    /// If not, remaps.
+    void checkAndRemap(void);
+
 private:
+    /// Best node mapping we know of the for the analyses at hand.
+    static MappingPtr currentBestNodeMapping;
+    /// Likewise, but reversed.
+    static MappingPtr currentBestReverseNodeMapping;
+
     /// Holds backing data structure.
     /// TODO: std::variant when we move to C++17.
     union

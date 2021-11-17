@@ -60,7 +60,7 @@ public:
 
     virtual inline bool addPts(const Key &dstKey, const Data &element) override
     {
-        DataSet srcPts(BasePTData::defaultData);
+        DataSet srcPts;
         srcPts.set(element);
         PointsToID srcId = ptCache.emplacePts(srcPts);
         return unionPtsFromId(dstKey, srcId);
@@ -84,7 +84,7 @@ public:
 
     virtual void clearPts(const Key &var, const Data &element) override
     {
-        DataSet toRemoveData(BasePTData::defaultData);
+        DataSet toRemoveData;
         toRemoveData.set(element);
         PointsToID toRemoveId = ptCache.emplacePts(toRemoveData);
         PointsToID varId = ptsMap[var];
@@ -100,12 +100,6 @@ public:
     {
         clearRevPts(getPts(var), var);
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        ptCache.setDefaultData(dataSet);
     }
 
     virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
@@ -285,13 +279,6 @@ public:
     virtual inline void clearPropaPts(Key &var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        persPTData.setDefaultData(dataSet);
-        ptCache.setDefaultData(dataSet);
     }
 
     virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
@@ -484,13 +471,6 @@ public:
     virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        persPTData.setDefaultData(dataSet);
-        ptCache.setDefaultData(dataSet);
     }
 
     virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
@@ -918,13 +898,6 @@ public:
         tlPTData.dumpPTData();
         SVFUtil::outs() << "== Address-taken points-to information\n";
         atPTData.dumpPTData();
-    }
-
-    virtual void setDefaultData(const DataSet &dataSet) override
-    {
-        BasePTData::setDefaultData(dataSet);
-        tlPTData.setDefaultData(dataSet);
-        atPTData.setDefaultData(dataSet);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
