@@ -154,7 +154,8 @@ void PointsTo::reset(unsigned n)
 
 bool PointsTo::contains(const PointsTo &rhs) const
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::contains: mappings of operands do not match!");
+
     if (type == CBV) return cbv.contains(rhs.cbv);
     else if (type == SBV) return sbv.contains(rhs.sbv);
     else if (type == BV) return bv.contains(rhs.bv);
@@ -163,7 +164,8 @@ bool PointsTo::contains(const PointsTo &rhs) const
 
 bool PointsTo::intersects(const PointsTo &rhs) const
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::intersects: mappings of operands do not match!");
+
     if (type == CBV) return cbv.intersects(rhs.cbv);
     else if (type == SBV) return sbv.intersects(rhs.sbv);
     else if (type == BV) return bv.intersects(rhs.bv);
@@ -178,7 +180,7 @@ int PointsTo::find_first(void)
 
 bool PointsTo::operator==(const PointsTo &rhs) const
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::==: mappings of operands do not match!");
 
     if (type == CBV) return cbv == rhs.cbv;
     else if (type == SBV) return sbv == rhs.sbv;
@@ -189,14 +191,14 @@ bool PointsTo::operator==(const PointsTo &rhs) const
 bool PointsTo::operator!=(const PointsTo &rhs) const
 {
     // TODO: we're asserting and checking twice... should be okay...
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::!=: mappings of operands do not match!");
 
     return !(*this == rhs);
 }
 
 bool PointsTo::operator|=(const PointsTo &rhs)
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::|=: mappings of operands do not match!");
 
     if (type == CBV) return cbv |= rhs.cbv;
     else if (type == SBV) return sbv |= rhs.sbv;
@@ -219,7 +221,7 @@ bool PointsTo::operator|=(const NodeBS &rhs)
 
 bool PointsTo::operator&=(const PointsTo &rhs)
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::&=: mappings of operands do not match!");
 
     if (type == CBV) return cbv &= rhs.cbv;
     else if (type == SBV) return sbv &= rhs.sbv;
@@ -229,7 +231,7 @@ bool PointsTo::operator&=(const PointsTo &rhs)
 
 bool PointsTo::operator-=(const PointsTo &rhs)
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::-=: mappings of operands do not match!");
 
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
@@ -239,7 +241,8 @@ bool PointsTo::operator-=(const PointsTo &rhs)
 
 bool PointsTo::intersectWithComplement(const PointsTo &rhs)
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
+
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
@@ -248,7 +251,9 @@ bool PointsTo::intersectWithComplement(const PointsTo &rhs)
 
 void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
 {
-    assert(metaSame(rhs));
+    assert(metaSame(rhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
+    assert(metaSame(lhs) && "PointsTo::intersectWithComplement: mappings of operands do not match!");
+
     if (type == CBV) cbv.intersectWithComplement(lhs.cbv, rhs.cbv);
     else if (type == SBV) sbv.intersectWithComplement(lhs.sbv, rhs.sbv);
     else if (type == BV) bv.intersectWithComplement(lhs.bv, rhs.bv);
@@ -289,6 +294,7 @@ NodeID PointsTo::getExternalNode(NodeID n) const
 
 bool PointsTo::metaSame(const PointsTo &pt) const
 {
+    // TODO: can probably remove type check?
     return type == pt.type && nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
 }
 
