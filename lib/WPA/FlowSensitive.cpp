@@ -612,8 +612,32 @@ bool FlowSensitive::isStrongUpdate(const SVFGNode* node, NodeID& singleton)
 bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 {
     double start = stat->getClk();
+    CallEdgeMap potentialNewEdges;
+    onTheFlyCallGraphSolve(callsites, potentialNewEdges);
+
+    // Bound the new edges by the Andersen's call graph.
+    // TODO: we want this to be an assertion.
+    const CallEdgeMap &andersCallEdgeMap = ander->getIndCallMap();
     CallEdgeMap newEdges;
-    onTheFlyCallGraphSolve(callsites, newEdges);
+    for (typename CallEdgeMap::value_type &csfs : potentialNewEdges)
+    {
+        const CallBlockNode *potentialCallSite = csfs.first;
+        const FunctionSet &potentialFunctionSet = csfs.second;
+
+        // Check this callsite even calls anything per Andersen's.
+        typename CallEdgeMap::const_iterator andersFunctionSetIt
+            = andersCallEdgeMap.find(potentialCallSite);
+        if (andersFunctionSetIt == andersCallEdgeMap.end()) continue;
+
+        const FunctionSet &andersFunctionSet = andersFunctionSetIt->second;
+        for (const SVFFunction *potentialFunction : potentialFunctionSet)
+        {
+            if (andersFunctionSet.find(potentialFunction) != andersFunctionSet.end())
+            {
+                newEdges[potentialCallSite].insert(potentialFunction);
+            }
+        }
+    }
 
     SVFGEdgeSetTy svfgEdges;
     connectCallerAndCallee(newEdges, svfgEdges);
