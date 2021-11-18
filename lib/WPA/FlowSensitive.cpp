@@ -612,29 +612,39 @@ bool FlowSensitive::isStrongUpdate(const SVFGNode* node, NodeID& singleton)
 bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 {
     double start = stat->getClk();
-    CallEdgeMap potentialNewEdges;
-    onTheFlyCallGraphSolve(callsites, potentialNewEdges);
+    CallEdgeMap newEdges;
+    onTheFlyCallGraphSolve(callsites, newEdges);
 
     // Bound the new edges by the Andersen's call graph.
-    // TODO: we want this to be an assertion.
+    // TODO: we want this to be an assertion eventually.
     const CallEdgeMap &andersCallEdgeMap = ander->getIndCallMap();
-    CallEdgeMap newEdges;
-    for (typename CallEdgeMap::value_type &csfs : potentialNewEdges)
+    for (typename CallEdgeMap::value_type &csfs : newEdges)
     {
         const CallBlockNode *potentialCallSite = csfs.first;
-        const FunctionSet &potentialFunctionSet = csfs.second;
+        FunctionSet &potentialFunctionSet = csfs.second;
 
         // Check this callsite even calls anything per Andersen's.
         typename CallEdgeMap::const_iterator andersFunctionSetIt
             = andersCallEdgeMap.find(potentialCallSite);
-        if (andersFunctionSetIt == andersCallEdgeMap.end()) continue;
+        if (andersFunctionSetIt == andersCallEdgeMap.end())
+        {
+            potentialFunctionSet.clear();
+        }
 
         const FunctionSet &andersFunctionSet = andersFunctionSetIt->second;
-        for (const SVFFunction *potentialFunction : potentialFunctionSet)
+        for (FunctionSet::iterator potentialFunctionIt = potentialFunctionSet.begin();
+             potentialFunctionIt != potentialFunctionSet.end(); )
         {
-            if (andersFunctionSet.find(potentialFunction) != andersFunctionSet.end())
+            const SVFFunction *potentialFunction = *potentialFunctionIt;
+            if (andersFunctionSet.find(potentialFunction) == andersFunctionSet.end())
             {
-                newEdges[potentialCallSite].insert(potentialFunction);
+                // potentialFunction is not in the Andersen's call graph -- remove it.
+                potentialFunctionIt = potentialFunctionSet.erase(potentialFunctionIt);
+            }
+            else
+            {
+                // potentialFunction is in the Andersen's call graph -- keep it..
+                ++potentialFunctionIt;
             }
         }
     }
