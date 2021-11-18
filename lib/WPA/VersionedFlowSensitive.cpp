@@ -378,7 +378,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        // TODO: assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
+        assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
 
         if (SVFUtil::isa<PHISVFGNode>(dstNode)
             || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
