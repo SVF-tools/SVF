@@ -102,6 +102,11 @@ public:
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
     }
 
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
+    }
+
     virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         Map<DataSet, unsigned> allPts;
@@ -242,6 +247,11 @@ public:
         return persPTData.clearFullPts(var);
     }
 
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
+    }
+
     virtual inline void dumpPTData() override
     {
         // TODO.
@@ -369,6 +379,11 @@ public:
     virtual void clearFullPts(const Key& var) override
     {
         persPTData.clearFullPts(var);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
     }
 
     virtual inline void dumpPTData() override
@@ -868,6 +883,12 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        // tlPTData and atPTData use the same cache.
+        tlPTData.remapAllPts();
     }
 
     virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override

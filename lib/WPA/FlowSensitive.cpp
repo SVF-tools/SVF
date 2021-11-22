@@ -55,6 +55,20 @@ void FlowSensitive::initialize()
     assert(!Options::ClusterAnder && "FlowSensitive::initialize: clustering auxiliary Andersen's unsupported.");
     ander = AndersenWaveDiff::createAndersenWaveDiff(getPAG());
 
+    // If cluster option is not set, it will give us a no-mapping points-to set.
+    assert(!(Options::ClusterFs && Options::PlainMappingFs)
+           && "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
+    if (Options::ClusterFs)
+    {
+        cluster();
+        ander->remapPointsToSets();
+    }
+    else if (Options::PlainMappingFs)
+    {
+        plainMap();
+        ander->remapPointsToSets();
+    }
+
     // When evaluating ctir aliases, we want the whole SVFG.
     if(Options::OPTSVFG)
         svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
@@ -63,12 +77,6 @@ void FlowSensitive::initialize()
 
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
-
-    // If cluster option is not set, it will give us a no-mapping points-to set.
-    assert(!(Options::ClusterFs && Options::PlainMappingFs)
-           && "FS::init: plain-mapping and cluster-fs are mutually exclusive.");
-    if (Options::ClusterFs) cluster();
-    else if (Options::PlainMappingFs) plainMap();
 }
 
 void timeLimitReached(int signum)

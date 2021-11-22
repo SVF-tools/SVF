@@ -99,6 +99,9 @@ public:
     /// Fully clears the points-to set of var.
     virtual void clearFullPts(const Key& var) = 0;
 
+    /// Remaps all points-to sets to use the current mapping.
+    virtual void remapAllPts(void) = 0;
+
     /// Dump stored keys and points-to sets.
     virtual void dumpPTData() = 0;
 

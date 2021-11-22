@@ -117,6 +117,10 @@ public:
     /// Return a hash of this set.
     size_t hash(void) const;
 
+    /// Checks if this points-to set is using the current best mapping.
+    /// If not, remaps.
+    void checkAndRemap(void);
+
     const_iterator begin(void) const { return PointsToIterator(this); }
     const_iterator end(void) const { return PointsToIterator(this, true); }
 
@@ -137,10 +141,6 @@ private:
     /// Returns true if this points-to set and pt have the same type, nodeMapping,
     /// and reverseNodeMapping
     bool metaSame(const PointsTo &pt) const;
-
-    /// Checks if this points-to set is using the current best mapping.
-    /// If not, remaps.
-    void checkAndRemap(void);
 
 private:
     /// Best node mapping we know of the for the analyses at hand.

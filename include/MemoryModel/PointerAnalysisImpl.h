@@ -147,6 +147,9 @@ public:
     /// Expand FI objects
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
 
+    /// Remap all points-to sets to use the current mapping.
+    void remapPointsToSets(void);
+
     /// Interface for analysis result storage on filesystem.
     //@{
     virtual void writeToFile(const std::string& filename);

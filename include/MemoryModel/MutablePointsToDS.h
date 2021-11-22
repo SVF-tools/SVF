@@ -93,6 +93,11 @@ public:
         pts.clear();
     }
 
+    virtual void remapAllPts(void) override
+    {
+        for (typename PtsMap::value_type &ppt : ptsMap) ppt.second.checkAndRemap();
+    }
+
     virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
     {
         Map<DataSet, unsigned> allPts;
@@ -243,6 +248,13 @@ public:
     virtual void clearFullPts(const Key& var) override
     {
         mutPTData.clearFullPts(var);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        mutPTData.remapAllPts();
+        for (typename PtsMap::value_type &ppt : diffPtsMap) ppt.second.checkAndRemap();
+        for (typename PtsMap::value_type &ppt : propaPtsMap) ppt.second.checkAndRemap();
     }
 
     virtual inline void dumpPTData() override
@@ -496,6 +508,19 @@ public:
     virtual void clearFullPts(const Key& var) override
     {
         mutPTData.clearFullPts(var);
+    }
+    virtual void remapAllPts(void) override
+    {
+        mutPTData.remapAllPts();
+        for (typename DFPtsMap::value_type &lopt : dfInPtsMap)
+        {
+            for (typename PtsMap::value_type &opt : lopt.second) opt.second.checkAndRemap();
+        }
+
+        for (typename DFPtsMap::value_type &lopt : dfOutPtsMap)
+        {
+            for (typename PtsMap::value_type &opt : lopt.second) opt.second.checkAndRemap();
+        }
     }
     ///@}
 
@@ -921,6 +946,12 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        tlPTData.remapAllPts();
+        atPTData.remapAllPts();
     }
 
     virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override

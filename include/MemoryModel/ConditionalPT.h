@@ -288,6 +288,10 @@ public:
     {
         return elements;
     }
+
+    /// TODO: dummy to use for PointsTo in the various PTData.
+    void checkAndRemap(void) const { }
+
 private:
     ElementSet elements;
 };
