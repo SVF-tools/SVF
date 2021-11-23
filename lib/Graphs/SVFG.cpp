@@ -234,10 +234,9 @@ void SVFG::buildSVFG()
         stat->indVFEdgeStart();
         connectIndirectSVFGEdges();
         stat->indVFEdgeEnd();
+        if (!Options::WriteSVFG.empty())
+            writeToFile(Options::WriteSVFG);
     }
-      
-    if (!Options::WriteSVFG.empty())
-        writeToFile(Options::WriteSVFG);
 }
 
 void SVFG::writeToFile(const string& filename) 
@@ -286,7 +285,6 @@ void SVFG::writeToFile(const string& filename)
         }
         else if(const MSSAPHISVFGNode* phiNode = SVFUtil::dyn_cast<MSSAPHISVFGNode>(node))
         {
-
             //node
             F.os() << "SVFGNodeID: " << nodeId << " >= " << "PHISVFGNode";
             unordered_map<u32_t,const MRVer*> opvers;
@@ -495,8 +493,8 @@ void SVFG::readFile(const string& filename){
                 last = temp.find("},");
                 string temp1;
                 temp1 = temp.substr(next, last-next);
-                tempMRVer = getMRVERFromString(temp1);
-                OPVers.insert(make_pair(index, tempMRVer));
+                MRVer* tempOPVer = getMRVERFromString(temp1);
+                OPVers.insert(make_pair(index, tempOPVer));
                 temp = temp.substr(last + 1);
                 index++;
             }
@@ -506,8 +504,12 @@ void SVFG::readFile(const string& filename){
         } else 
         {
         }
+
+        if (totalVFGNode < id)
+            totalVFGNode = id;
     }
     stat->ATVFNodeEnd();
+
     stat->indVFEdgeStart();
     // Edges 
     while (F.good())
