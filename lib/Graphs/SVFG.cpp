@@ -506,7 +506,7 @@ void SVFG::readFile(const string& filename){
         }
 
         if (totalVFGNode < id)
-            totalVFGNode = id;
+            totalVFGNode = id + 1;
     }
     stat->ATVFNodeEnd();
 
