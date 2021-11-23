@@ -33,7 +33,6 @@
  */
 
 #include "MSSA/MemPartition.h"
-#include "Util/PointsTo.h"
 
 using namespace SVF;
 
@@ -47,10 +46,10 @@ void DistinctMRG::partitionMRs()
     {
         const SVFFunction* fun = it->first;
         /// Collect all points-to target in a function scope.
-        PointsTo mergePts;
+        NodeBS mergePts;
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
         {
-            const PointsTo& pts = *cit;
+            const NodeBS& pts = *cit;
             mergePts |= pts;
         }
         createDistinctMR(fun, mergePts);
@@ -62,17 +61,17 @@ void DistinctMRG::partitionMRs()
  * 1. collect all points-to targets in a function scope.
  * 2. create memory region for each point-to target.
  */
-void DistinctMRG::createDistinctMR(const SVFFunction* func, const PointsTo& pts)
+void DistinctMRG::createDistinctMR(const SVFFunction* func, const NodeBS& pts)
 {
     /// Create memory regions for each points-to target.
 
-    PointsTo::iterator ptsIt = pts.begin();
-    PointsTo::iterator ptsEit = pts.end();
+    NodeBS::iterator ptsIt = pts.begin();
+    NodeBS::iterator ptsEit = pts.end();
     for (; ptsIt != ptsEit; ++ptsIt)
     {
         NodeID id = *ptsIt;
         // create new conditional points-to set with this single element.
-        PointsTo newPts;
+        NodeBS newPts;
         newPts.set(id);
 
         // set the rep cpts as itself.
@@ -89,17 +88,17 @@ void DistinctMRG::createDistinctMR(const SVFFunction* func, const PointsTo& pts)
  * @param fun The function being analyzed.
  * @param mrs Memory region set contains all possible target memory regions.
  */
-void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const SVFFunction*)
+void DistinctMRG::getMRsForLoad(MRSet& mrs, const NodeBS& pts, const SVFFunction*)
 {
     /// Get memory regions for each points-to element in cpts.
 
-    PointsTo::iterator ptsIt = pts.begin();
-    PointsTo::iterator ptsEit = pts.end();
+    NodeBS::iterator ptsIt = pts.begin();
+    NodeBS::iterator ptsEit = pts.end();
     for (; ptsIt != ptsEit; ++ptsIt)
     {
         NodeID id = *ptsIt;
         // create new conditional points-to set with this single element.
-        PointsTo newPts;
+        NodeBS newPts;
         newPts.set(id);
 
         MemRegion mr(newPts);
@@ -113,7 +112,7 @@ void DistinctMRG::getMRsForLoad(MRSet& mrs, const PointsTo& pts, const SVFFuncti
  * Get memory regions to be inserted at a load statement.
  * Just process as getMRsForLoad().
  */
-void DistinctMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+void DistinctMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun)
 {
     getMRsForLoad(aliasMRs, cpts, fun);
 }
@@ -130,7 +129,7 @@ void IntraDisjointMRG::partitionMRs()
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
                 cit!=ecit; ++cit)
         {
-            const PointsTo& cpts = *cit;
+            const NodeBS& cpts = *cit;
 
             PointsToList& inters = getIntersList(fun);
             computeIntersections(cpts, inters);
@@ -141,7 +140,7 @@ void IntraDisjointMRG::partitionMRs()
         for (PointsToList::const_iterator interIt = inters.begin(), interEit = inters.end();
                 interIt != interEit; ++interIt)
         {
-            const PointsTo& inter = *interIt;
+            const NodeBS& inter = *interIt;
             createDisjointMR(fun, inter);
         }
     }
@@ -150,7 +149,7 @@ void IntraDisjointMRG::partitionMRs()
 /**
  * Compute intersections between cpts and computed cpts intersections before.
  */
-void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& inters)
+void IntraDisjointMRG::computeIntersections(const NodeBS& cpts, PointsToList& inters)
 {
     if (inters.find(cpts) != inters.end())
     {
@@ -169,18 +168,18 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
         PointsToList toBeDeleted;
         PointsToList newInters;
 
-        PointsTo cpts_copy = cpts;	// make a copy since cpts may be changed.
+        NodeBS cpts_copy = cpts;	// make a copy since cpts may be changed.
 
         // check intersections with existing cpts in subSetMap
         for (PointsToList::const_iterator interIt = inters.begin(), interEit = inters.end();
                 interIt != interEit; ++interIt)
         {
-            const PointsTo& inter = *interIt;
+            const NodeBS& inter = *interIt;
 
             if (cpts_copy.intersects(inter))
             {
                 // compute intersection between cpts and inter
-                PointsTo new_inter = inter;
+                NodeBS new_inter = inter;
                 new_inter &= cpts_copy;
 
                 // remove old intersection and add new one if possible
@@ -190,7 +189,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
                     newInters.insert(new_inter);
 
                     // compute complement after intersection
-                    PointsTo complement = inter;
+                    NodeBS complement = inter;
                     complement.intersectWithComplement(new_inter);
                     if (complement.empty() == false)
                     {
@@ -209,7 +208,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
         for (PointsToList::const_iterator it = toBeDeleted.begin(), eit = toBeDeleted.end();
                 it != eit; ++it)
         {
-            const PointsTo& temp_cpts = *it;
+            const NodeBS& temp_cpts = *it;
             inters.erase(temp_cpts);
         }
 
@@ -217,7 +216,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
         for (PointsToList::const_iterator it = newInters.begin(), eit = newInters.end();
                 it != eit; ++it)
         {
-            const PointsTo& temp_cpts = *it;
+            const NodeBS& temp_cpts = *it;
             inters.insert(temp_cpts);
         }
 
@@ -230,7 +229,7 @@ void IntraDisjointMRG::computeIntersections(const PointsTo& cpts, PointsToList& 
 /**
  * Create memory regions for each points-to target.
  */
-void IntraDisjointMRG::createDisjointMR(const SVFFunction* func, const PointsTo& cpts)
+void IntraDisjointMRG::createDisjointMR(const SVFFunction* func, const NodeBS& cpts)
 {
     // set the rep cpts as itself.
     cptsToRepCPtsMap[cpts] = cpts;
@@ -239,13 +238,13 @@ void IntraDisjointMRG::createDisjointMR(const SVFFunction* func, const PointsTo&
     createMR(func, cpts);
 }
 
-void IntraDisjointMRG::getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cpts, const PointsToList& inters)
+void IntraDisjointMRG::getMRsForLoadFromInterList(MRSet& mrs, const NodeBS& cpts, const PointsToList& inters)
 {
     PointsToList::const_iterator it = inters.begin();
     PointsToList::const_iterator eit = inters.end();
     for (; it != eit; ++it)
     {
-        const PointsTo& inter = *it;
+        const NodeBS& inter = *it;
         if (cpts.contains(inter))
         {
             MemRegion mr(inter);
@@ -260,7 +259,7 @@ void IntraDisjointMRG::getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cp
  * Get memory regions to be inserted at a load statement.
  * Just process as getMRsForLoad().
  */
-void IntraDisjointMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun)
+void IntraDisjointMRG::getMRsForCallSiteRef(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun)
 {
     getMRsForLoad(aliasMRs, cpts, fun);
 }
@@ -276,7 +275,7 @@ void InterDisjointMRG::partitionMRs()
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
                 cit!=ecit; ++cit)
         {
-            const PointsTo& cpts = *cit;
+            const NodeBS& cpts = *cit;
 
             computeIntersections(cpts, inters);
         }
@@ -291,12 +290,12 @@ void InterDisjointMRG::partitionMRs()
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end();
                 cit!=ecit; ++cit)
         {
-            const PointsTo& cpts = *cit;
+            const NodeBS& cpts = *cit;
 
             for (PointsToList::const_iterator interIt = inters.begin(), interEit = inters.end();
                     interIt != interEit; ++interIt)
             {
-                const PointsTo& inter = *interIt;
+                const NodeBS& inter = *interIt;
                 if (cpts.contains(inter))
                     createDisjointMR(fun, inter);
             }

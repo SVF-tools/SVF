@@ -30,7 +30,6 @@
 #include "Graphs/SVFG.h"
 #include "Graphs/SVFGStat.h"
 #include "Graphs/PTACallGraph.h"
-#include "Util/PointsTo.h"
 
 using namespace SVF;
 
@@ -322,7 +321,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
             nodeHasIndInEdge.insert(node->getId());
             // get edge's weight
             // TODO: try a new method to calculate weight.
-            const PointsTo& cpts = edge->getPointsTo();
+            const NodeBS& cpts = edge->getPointsTo();
             avgWeight += cpts.count();
             totalIndEdgeLabels += cpts.count();
         }

@@ -87,6 +87,18 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     }
 }
 
+void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
+{
+    expandedPts = pts;
+    for (const NodeID o : pts)
+    {
+        if (pag->getBaseObjNode(o) == o || isFieldInsensitive(o))
+        {
+            expandedPts |= pag->getAllFieldsObjNode(o);
+        }
+    }
+}
+
 void BVDataPTAImpl::remapPointsToSets(void)
 {
     getPTDataTy()->remapAllPts();

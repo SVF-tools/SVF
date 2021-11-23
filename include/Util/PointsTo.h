@@ -114,6 +114,9 @@ public:
     /// Put intersection of lhs with complemenet of rhs into this set (overwrites).
     void intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs);
 
+    /// Returns this points-to set as a NodeBS.
+    NodeBS toNodeBS(void) const;
+
     /// Return a hash of this set.
     size_t hash(void) const;
 
@@ -221,13 +224,13 @@ public:
     };
 };
 
-/// Returns lhs | rhs.
+/// Returns a new lhs | rhs.
 PointsTo operator|(const PointsTo &lhs, const PointsTo &rhs);
 
-/// Returns lhs & rhs.
+/// Returns a new lhs & rhs.
 PointsTo operator&(const PointsTo &lhs, const PointsTo &rhs);
 
-/// Returns lhs - rhs.
+/// Returns a new lhs - rhs.
 PointsTo operator-(const PointsTo &lhs, const PointsTo &rhs);
 
 };

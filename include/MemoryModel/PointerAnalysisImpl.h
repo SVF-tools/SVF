@@ -146,6 +146,8 @@ public:
 
     /// Expand FI objects
     virtual void expandFIObjs(const PointsTo& pts, PointsTo& expandedPts);
+    /// TODO: remove repetition.
+    virtual void expandFIObjs(const NodeBS& pts, NodeBS& expandedPts);
 
     /// Remap all points-to sets to use the current mapping.
     void remapPointsToSets(void);

@@ -392,7 +392,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             assert(ie != nullptr && "VFS::updateConnectedNodes: given direct edge?");
 
-            const PointsTo &ept = ie->getPointsTo();
+            const NodeBS &ept = ie->getPointsTo();
             // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
             for (const NodeID o : ept)
             {

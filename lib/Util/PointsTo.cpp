@@ -260,6 +260,13 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
     else assert(false && "PointsTo::intersectWithComplement(PT, PT): unknown type");
 }
 
+NodeBS PointsTo::toNodeBS(void) const
+{
+    NodeBS nbs;
+    for (const NodeID o : *this) nbs.set(o);
+    return nbs;
+}
+
 size_t PointsTo::hash(void) const
 {
     if (type == CBV) return cbv.hash();
