@@ -108,17 +108,37 @@ void CoreBitVector::reset(unsigned bit)
 
 bool CoreBitVector::contains(const CoreBitVector &rhs) const
 {
-    // TODO.
-    assert(false && "contains unimplemented");
-    exit(1);
-    return false;
+    CoreBitVector tmp(*this);
+    tmp &= rhs;
+    return tmp == rhs;
 }
 
 bool CoreBitVector::intersects(const CoreBitVector &rhs) const
 {
-    // TODO.
-    assert(false && "intersects unimplemented");
-    exit(1);
+    // TODO: want some common iteration method.
+    if (empty() && rhs.empty()) return false;
+
+    const CoreBitVector &earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
+    const CoreBitVector &laterOffsetCBV = offset <= rhs.offset ? rhs : *this;
+
+    size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
+    size_t laterOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
+    laterOffset -= earlierOffset;
+
+    const Word *eWords = &earlierOffsetCBV.words[0];
+    const size_t eSize = earlierOffsetCBV.words.size();
+    const Word *lWords = &laterOffsetCBV.words[0];
+    const size_t lSize = laterOffsetCBV.words.size();
+
+    size_t e = 0;
+    for ( ; e != laterOffset && e != eSize; ++e) { }
+
+    size_t l = 0;
+    for ( ; e != eSize && l != lSize; ++e, ++l)
+    {
+        if (eWords[e] & lWords[l]) return true;
+    }
+
     return false;
 }
 
