@@ -153,7 +153,7 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     // TODO: repetition.
     // If they're equal, guaranteed that earlier will be *this, and later will be rhs.
     const CoreBitVector &earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
-    const CoreBitVector &laterOffsetCBV = offset >= rhs.offset ? rhs : *this;
+    const CoreBitVector &laterOffsetCBV = offset <= rhs.offset ? rhs : *this;
 
     // No need to worry about equality here; they're just numbers.
     size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
