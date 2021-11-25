@@ -33,6 +33,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/PAG.h"
 #include "Util/PointsTo.h"
+#include "Util/Options.h"
 
 using namespace SVF;
 
@@ -108,6 +109,11 @@ const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers 
 PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 {
 
+}
+
+double PTAStat::getClk(bool mark) {
+    if (Options::MarkedClocksOnly && !mark) return 0.0;
+    return CLOCK_IN_MS();
 }
 
 void PTAStat::performStat()

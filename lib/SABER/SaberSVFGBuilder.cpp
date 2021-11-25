@@ -29,6 +29,7 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 #include "SABER/SaberCheckerAPI.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
 #include "Util/PointsTo.h"
 
@@ -48,6 +49,8 @@ void SaberSVFGBuilder::buildSVFG()
     DBOUT(DGENERAL, outs() << pasMsg("\tRemove Dereference Direct SVFG Edge\n"));
 
     rmDerefDirSVFGEdges(pta);
+
+    rmIncomingEdgeForSUStore(pta);
 
     DBOUT(DGENERAL, outs() << pasMsg("\tAdd Sink SVFG Nodes\n"));
 
@@ -175,6 +178,72 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
                 }
             }
 
+        }
+    }
+}
+
+/*!
+ * Return TRUE if this is a strong update STORE statement.
+ */
+bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, BVDataPTAImpl* pta)
+{
+    bool isSU = false;
+    if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(node))
+    {
+        const PointsTo& dstCPSet = pta->getPts(store->getPAGDstNodeID());
+        if (dstCPSet.count() == 1)
+        {
+            /// Find the unique element in cpts
+            PointsTo::iterator it = dstCPSet.begin();
+            singleton = *it;
+
+            // Strong update can be made if this points-to target is not heap, array or field-insensitive.
+            if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
+                && PAG::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
+                && !pta->isLocalVarInRecursiveFun(singleton))
+            {
+                isSU = true;
+            }
+        }
+    }
+    return isSU;
+}
+
+/*!
+ * Remove Incoming Edge for strong-update (SU) store instruction
+ * Because the SU node does not receive indirect value
+ *
+ * e.g.,
+ *      L1: *p = O; (singleton)
+ *      L2: *p = _; (SU here)
+ *      We should remove the indirect value flow L1 -> L2
+ *      Because the points-to set of O from L1 does not pass to that after L2
+ */
+void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
+{
+
+    for(SVFG::iterator it = svfg->begin(), eit = svfg->end(); it!=eit; ++it)
+    {
+        const SVFGNode* node = it->second;
+
+        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
+        {
+            if(SVFUtil::isa<StoreSVFGNode>(stmtNode) && SVFUtil::isa<StoreInst>(stmtNode->getValue()))
+            {
+                NodeID singleton;
+                if(isStrongUpdate(node, singleton, pta)) {
+                    Set<SVFGEdge*> toRemove;
+                    for (SVFGNode::const_iterator it2 = node->InEdgeBegin(), eit2 = node->InEdgeEnd(); it2 != eit2; ++it2) {
+                        if ((*it2)->isIndirectVFGEdge()) {
+                            toRemove.insert(*it2);
+                        }
+                    }
+                    for (SVFGEdge* edge: toRemove) {
+                        svfg->removeSVFGEdge(edge);
+                    }
+                }
+
+            }
         }
     }
 }

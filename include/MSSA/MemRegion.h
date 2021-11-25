@@ -30,8 +30,9 @@
 #ifndef MEMORYREGION_H_
 #define MEMORYREGION_H_
 
-#include "MemoryModel/PointerAnalysisImpl.h"
+#include "Graphs/PAG.h"
 #include "Graphs/PTACallGraph.h"
+#include "Util/SCC.h"
 #include "Util/WorkList.h"
 #include "Graphs/ICFG.h"
 
@@ -265,12 +266,7 @@ private:
     void getCallGraphSCCRevTopoOrder(WorkList& worklist);
 
 protected:
-    MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
-        pta(p), ptrOnlyMSSA(ptrOnly)
-    {
-        callGraph = pta->getPTACallGraph();
-        callGraphSCC = new SCC(callGraph);
-    }
+    MRGenerator(BVDataPTAImpl* p, bool ptrOnly);
 
     /// A set of All memory regions
     MRSet memRegSet;
@@ -468,23 +464,9 @@ public:
     }
     //@}
     /// Whether this instruction has PAG Edge
-    inline bool hasPAGEdgeList(const Instruction* inst)
-    {
-        PAG* pag = pta->getPAG();
-        if (ptrOnlyMSSA)
-            return pag->hasPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
-        else
-            return pag->hasPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
-    }
+    bool hasPAGEdgeList(const Instruction* inst);
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
-    inline PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst)
-    {
-        PAG* pag = pta->getPAG();
-        if (ptrOnlyMSSA)
-            return pag->getInstPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
-        else
-            return pag->getInstPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
-    }
+    PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst);
 
     /// getModRefInfo APIs
     //@{

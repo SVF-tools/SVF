@@ -30,6 +30,7 @@
 #include "Graphs/SVFG.h"
 #include "WPA/Andersen.h"
 #include "SVF-FE/PAGBuilder.h"
+#include "Util/Options.h"
 
 using namespace llvm;
 using namespace std;

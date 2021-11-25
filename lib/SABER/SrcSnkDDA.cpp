@@ -32,6 +32,8 @@
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
 #include "SVF-FE/PAGBuilder.h"
+#include "Util/Options.h"
+#include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -94,7 +96,7 @@ void SrcSnkDDA::analyze(SVFModule* module)
             if(Options::DumpSlice)
                 annotateSlice(_curSlice);
 
-            if(_curSlice->AllPathReachableSolve()== true)
+            if(_curSlice->AllPathReachableSolve())
                 _curSlice->setAllReachable();
 
             DBOUT(DSaber, outs() << "Guard computation for slice:" << (*iter)->getId() << ")\n");
@@ -119,6 +121,7 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
     WorkList worklist;
     worklist.push(src);
     SVFGNodeBS visited;
+    u32_t step = 0;
     while (!worklist.empty())
     {
         const SVFGNode* node  = worklist.pop();
@@ -127,12 +130,15 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
             visited.set(node->getId());
         else
             continue;
+        // reaching maximum steps when traversing on SVFG to identify a memory allocation wrapper
+        if (step++ > Options::MaxStepInWrapper)
+            return false;
 
         for (SVFGNode::const_iterator it = node->OutEdgeBegin(), eit =
                     node->OutEdgeEnd(); it != eit; ++it)
         {
             const SVFGEdge* edge = (*it);
-            assert(edge->isDirectVFGEdge() && "the edge should always be direct VF");
+            //assert(edge->isDirectVFGEdge() && "the edge should always be direct VF");
             // if this is a call edge
             if(edge->isCallDirectVFGEdge())
             {
@@ -144,20 +150,29 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
                 reachFunExit = true;
                 csIdSet.insert(getSVFG()->getCallSite(SVFUtil::cast<RetDirSVFGEdge>(edge)->getCallSiteId()));
             }
-            // if this is an intra edge
+            // (1) an intra direct edge, we will keep tracking
+            // (2) an intra indirect edge, we only track if the succ SVFGNode is a load, which means we only track one level store-load pair .
+            // (3) do not track for all other interprocedural edges.
             else
             {
                 const SVFGNode* succ = edge->getDstNode();
-                if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
+                if(SVFUtil::isa<IntraDirSVFGEdge>(edge)){
+                    if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
                         || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
-                        || SVFUtil::isa<ActualRetSVFGNode>(succ))
+                        || SVFUtil::isa<ActualRetSVFGNode>(succ) || SVFUtil::isa<StoreSVFGNode>(succ))
+                    {
+                        worklist.push(succ);
+                    }
+                }
+                else if(SVFUtil::isa<IntraIndSVFGEdge>(edge))
                 {
-                    worklist.push(succ);
+                    if(SVFUtil::isa<LoadSVFGNode>(succ))
+                    {
+                        worklist.push(succ);
+                    }
                 }
                 else
-                {
                     return false;
-                }
             }
         }
     }

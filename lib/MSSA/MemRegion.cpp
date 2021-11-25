@@ -39,6 +39,12 @@ using namespace SVFUtil;
 Size_t MemRegion::totalMRNum = 0;
 Size_t MRVer::totalVERNum = 0;
 
+MRGenerator::MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
+    pta(p), ptrOnlyMSSA(ptrOnly)
+{
+    callGraph = pta->getPTACallGraph();
+    callGraphSCC = new SCC(callGraph);
+}
 
 /*!
  * Clean up memory
@@ -140,6 +146,24 @@ void MRGenerator::generateMRs()
     partitionMRs();
     /// attach memory regions for loads/stores/calls
     updateAliasMRs();
+}
+
+bool MRGenerator::hasPAGEdgeList(const Instruction* inst)
+{
+    PAG* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->hasPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+    else
+        return pag->hasPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+}
+
+PAG::PAGEdgeList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
+{
+    PAG* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->getInstPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+    else
+        return pag->getInstPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
 }
 
 /*!

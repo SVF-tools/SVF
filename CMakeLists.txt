@@ -67,7 +67,6 @@ message(STATUS "Found Z3: ${Z3_LIBRARIES}")
 message(STATUS "Z3 include dir: ${Z3_INCLUDES}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include
-                    ${CMAKE_CURRENT_BINARY_DIR}/include
                     ${Z3_INCLUDES})
 
 # checks if the test-suite is present, if it is then build bc files and add testing to cmake build
@@ -82,7 +81,7 @@ add_subdirectory(lib)
 add_subdirectory(tools)
 
 INSTALL(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ ${CMAKE_CURRENT_BINARY_DIR}/include/ ${Z3_INCLUDES}
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     COMPONENT devel
     DESTINATION include/svf
     FILES_MATCHING

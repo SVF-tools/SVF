@@ -31,6 +31,8 @@
 #define INCLUDE_UTIL_VFG_H_
 
 
+#include "Graphs/PAG.h"
+#include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
 
