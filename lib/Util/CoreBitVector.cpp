@@ -301,10 +301,14 @@ void CoreBitVector::intersectWithComplement(const CoreBitVector &lhs, const Core
 
 size_t CoreBitVector::hash(void) const
 {
-    if (words.size() == 0) return 0;
-    SVF::Hash<std::pair<size_t, std::pair<Word, Word>>> h;
-    // TODO: best combination.
-    return h(std::make_pair(words.size(), std::make_pair(words[0], words[words.size() - 1])));
+    // From https://stackoverflow.com/a/27216842
+    size_t h = words.size();
+    for (const Word &w : words)
+    {
+        h ^= w + 0x9e3779b9 + (h << 6) + (h >> 2);
+    }
+
+    return h;
 }
 
 void CoreBitVector::extendBackward(unsigned bit)
