@@ -35,7 +35,6 @@
 
 
 #include "Util/BasicTypes.h"
-#include "Util/PointsTo.h"
 
 namespace SVF
 {
@@ -231,8 +230,8 @@ public:
     /// Check relations of two location sets
     static inline LSRelation checkRelation(const LocationSet& LHS, const LocationSet& RHS)
     {
-        PointsTo lhsLocations = LHS.computeAllLocations();
-        PointsTo rhsLocations = RHS.computeAllLocations();
+        NodeBS lhsLocations = LHS.computeAllLocations();
+        NodeBS rhsLocations = RHS.computeAllLocations();
         if (lhsLocations.intersects(rhsLocations))
         {
             if (lhsLocations == rhsLocations)
@@ -274,7 +273,7 @@ private:
     bool increaseIfNotReachUpperBound(std::vector<NodeID>& indices,	const ElemNumStridePairVec& pairVec) const;
 
     /// Compute all possible locations according to offset and number-stride pairs.
-    PointsTo computeAllLocations() const;
+    NodeBS computeAllLocations() const;
 
     /// Return greatest common divisor
     inline unsigned gcd (unsigned n1, unsigned n2) const

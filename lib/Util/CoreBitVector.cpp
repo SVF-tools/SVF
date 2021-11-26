@@ -148,48 +148,26 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
 
     // TODO: maybe a simple equal offset, equal size path?
 
-    // We specifically don't want to equalise the offset and length, because
-    // 1) it's const, and 2) imagine testing equality for { 0, 1 } and { 0, 500 }...
-    // TODO: repetition.
-    // If they're equal, guaranteed that earlier will be *this, and later will be rhs.
-    const CoreBitVector &earlierOffsetCBV = offset <= rhs.offset ? *this : rhs;
-    const CoreBitVector &laterOffsetCBV = offset <= rhs.offset ? rhs : *this;
-
-    // No need to worry about equality here; they're just numbers.
-    size_t earlierOffset = (offset < rhs.offset ? offset : rhs.offset) / WordSize;
-    size_t laterOffset = (offset > rhs.offset ? offset : rhs.offset) / WordSize;
-    // Now convert to indices. We want to check what is between the smaller offset CBV
-    // and the larger one first. From 0 to the difference is what the earlier offset
-    // CBV has, but the later offset does not.
-    laterOffset -= earlierOffset;
-
-    const Word *eWords = &earlierOffsetCBV.words[0];
-    const size_t eSize = earlierOffsetCBV.words.size();
-    const Word *lWords = &laterOffsetCBV.words[0];
-    const size_t lSize = laterOffsetCBV.words.size();
-
-    size_t e = 0;
-    for ( ; e != laterOffset && e != eSize; ++e)
+    size_t lhsSetIndex = nextSetIndex(0);
+    size_t rhsSetIndex = rhs.nextSetIndex(0);
+    // Iterate comparing only words with set bits, if there is ever a mismatch,
+    // then the bit-vectors aren't equal.
+    while (lhsSetIndex < words.size() && rhsSetIndex < rhs.words.size())
     {
-        // If a bit is set where the other CBV doesn't even start,
-        // they are obviously not equal.
-        if (eWords[e]) return false;
+        // If the first bit is not the same in the word or words are different,
+        // then we have a mismatch.
+        if (lhsSetIndex * WordSize + offset != rhsSetIndex * WordSize + rhs.offset
+            || words[lhsSetIndex] != rhs.words[rhsSetIndex])
+        {
+            return false;
+        }
+
+        lhsSetIndex = nextSetIndex(lhsSetIndex + 1);
+        rhsSetIndex = rhs.nextSetIndex(rhsSetIndex + 1);
     }
 
-    size_t l = 0;
-    for ( ; e != eSize && l != lSize; ++e, ++l)
-    {
-        if (eWords[e] != lWords[l]) return false;
-    }
-
-    // In case a disparity in the sizes caused one to terminate earlier than the other,
-    // the one which terminated earlier (i.e., has more to iterate over) needs to have
-    // no bits set in its extended tail.
-    for ( ; e != eSize; ++e) if (eWords[e]) return false;
-    for ( ; l != lSize; ++l) if (lWords[l]) return false;
-
-    // We've come so far. It really has been a long ride. Congratulations; you're equal.
-    return true;
+    // Make sure both got to the end at the same time.
+    return lhsSetIndex >= words.size() && rhsSetIndex >= words.size();
 }
 
 bool CoreBitVector::operator!=(const CoreBitVector &rhs) const
@@ -383,6 +361,17 @@ bool CoreBitVector::canHold(unsigned bit) const
 unsigned CoreBitVector::finalBit(void) const
 {
     return offset + words.size() * WordSize - 1;
+}
+
+size_t CoreBitVector::nextSetIndex(const size_t start) const
+{
+    size_t index = start;
+    for ( ; index < words.size(); ++index)
+    {
+        if (words[index]) break;
+    }
+
+    return index;
 }
 
 };  // namespace SVF

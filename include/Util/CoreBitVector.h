@@ -135,6 +135,12 @@ private:
     /// Returns the first bit position that both this CBV and rhs *can* hold.
     unsigned firstCommonBit(const CoreBitVector &rhs) const;
 
+    /// Returns the next index in the words array at or after start which contains
+    /// set bits. This index and start are indices into the words array not
+    /// accounting for the offset. Returns a value greater than or equal to
+    /// words.size() when there are no more set bits.
+    size_t nextSetIndex(const size_t start) const;
+
 public:
     class CoreBitVectorIterator
     {
