@@ -20,13 +20,11 @@ using namespace SVFUtil;
 using namespace cppUtil;
 using namespace std;
 
-PersistentPointsToCache<PointsTo> BVDataPTAImpl::ptCache = PersistentPointsToCache<PointsTo>(PointsTo());
-
 /*!
  * Constructor
  */
 BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_check) :
-    PointerAnalysis(p, type, alias_check)
+    PointerAnalysis(p, type, alias_check), ptCache()
 {
     if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
             || type == AndersenLCD_WPA || type == TypeCPP_WPA || type == FlowS_DDA || type == AndersenWaveDiffWithType_WPA

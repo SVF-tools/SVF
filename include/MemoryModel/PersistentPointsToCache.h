@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "Util/SVFBasicTypes.h"
-#include "Util/PointsTo.h"
 
 namespace SVF
 {
@@ -38,10 +37,10 @@ public:
     static PointsToID emptyPointsToId(void) { return 0; };
 
 public:
-    PersistentPointsToCache(const Data &emptyData) : idCounter(1)
+    PersistentPointsToCache(void) : idCounter(1)
     {
-        idToPts.push_back(new Data(emptyData));
-        ptsToId[emptyData] = emptyPointsToId();
+        idToPts.push_back(new Data());
+        ptsToId[Data()] = emptyPointsToId();
 
         initStats();
     }
@@ -54,8 +53,8 @@ public:
         ptsToId.clear();
 
         // Put the empty data back in.
-        ptsToId[PointsTo()] = emptyPointsToId();
-        idToPts.push_back(new Data(PointsTo()));
+        ptsToId[Data()] = emptyPointsToId();
+        idToPts.push_back(new Data());
 
         unionCache.clear();
         complementCache.clear();
