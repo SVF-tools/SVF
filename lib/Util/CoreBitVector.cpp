@@ -13,6 +13,7 @@
 #include <llvm/Support/MathExtras.h>
 
 #include "Util/CoreBitVector.h"
+#include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF
@@ -59,9 +60,9 @@ bool CoreBitVector::empty(void) const
     return true;
 }
 
-unsigned CoreBitVector::count(void) const
+u32_t CoreBitVector::count(void) const
 {
-    unsigned n = 0;
+    u32_t n = 0;
     for (const Word &w : words) n += llvm::countPopulation(w);
     return n;
 }
@@ -73,7 +74,7 @@ void CoreBitVector::clear(void)
     words.shrink_to_fit();
 }
 
-bool CoreBitVector::test(unsigned bit) const
+bool CoreBitVector::test(u32_t bit) const
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return false;
     const Word &containingWord = words[(bit - offset) / WordSize];
@@ -81,7 +82,7 @@ bool CoreBitVector::test(unsigned bit) const
     return mask & containingWord;
 }
 
-bool CoreBitVector::test_and_set(unsigned bit)
+bool CoreBitVector::test_and_set(u32_t bit)
 {
     // TODO: can be faster.
     if (test(bit)) return false;
@@ -89,7 +90,7 @@ bool CoreBitVector::test_and_set(unsigned bit)
     return true;
 }
 
-void CoreBitVector::set(unsigned bit)
+void CoreBitVector::set(u32_t bit)
 {
     extendTo(bit);
 
@@ -98,7 +99,7 @@ void CoreBitVector::set(unsigned bit)
     containingWord |= mask;
 }
 
-void CoreBitVector::reset(unsigned bit)
+void CoreBitVector::reset(u32_t bit)
 {
     if (bit < offset || bit >= offset + words.size() * WordSize) return;
     Word &containingWord = words[(bit - offset) / WordSize];
@@ -220,7 +221,7 @@ bool CoreBitVector::operator&=(const CoreBitVector &rhs)
     // The first bit this and rhs have in common is the greater of
     // their offsets if the CBV with the smaller offset can hold
     // the greater offset.
-    unsigned greaterOffset = std::max(offset, rhs.offset);
+    u32_t greaterOffset = std::max(offset, rhs.offset);
 
     // If there is no overlap, then clear this CBV.
     if (!canHold(greaterOffset) || !rhs.canHold(greaterOffset))
@@ -268,7 +269,7 @@ bool CoreBitVector::operator-=(const CoreBitVector &rhs)
 {
     // Similar to |= in that we only iterate over rhs within this, but we
     // don't need to extend anything since nothing from rhs is being added.
-    unsigned greaterOffset = std::max(offset, rhs.offset);
+    u32_t greaterOffset = std::max(offset, rhs.offset);
     // TODO: calling twice.
     // No overlap if either cannot hold the greater offset.
     if (!canHold(greaterOffset) || !rhs.canHold(greaterOffset)) return false;
@@ -311,10 +312,10 @@ size_t CoreBitVector::hash(void) const
     return h + offset;
 }
 
-void CoreBitVector::extendBackward(unsigned bit)
+void CoreBitVector::extendBackward(u32_t bit)
 {
     // New offset is the starting bit of the word which contains bit.
-    unsigned newOffset = (bit / WordSize) * WordSize;
+    u32_t newOffset = (bit / WordSize) * WordSize;
 
     // TODO: maybe assertions?
     // Check if bit can already be included in this BV or if it's extendForward's problem.
@@ -324,21 +325,21 @@ void CoreBitVector::extendBackward(unsigned bit)
     offset = newOffset;
 }
 
-void CoreBitVector::extendForward(unsigned bit)
+void CoreBitVector::extendForward(u32_t bit)
 {
     // TODO: maybe assertions?
     // Not our problem; extendBackward's problem, or there is nothing to do.
     if (bit < offset || canHold(bit)) return;
 
     // Starting bit of word which would contain bit.
-    unsigned bitsWord = (bit / WordSize) * WordSize;
+    u32_t bitsWord = (bit / WordSize) * WordSize;
 
     // Add 1 to represent the final word starting at bitsWord.
-    unsigned wordsToAdd = 1 + (bitsWord - words.size() * WordSize - offset) / WordSize;
+    u32_t wordsToAdd = 1 + (bitsWord - words.size() * WordSize - offset) / WordSize;
     words.insert(words.end(), wordsToAdd, 0);
 }
 
-void CoreBitVector::extendTo(unsigned bit)
+void CoreBitVector::extendTo(u32_t bit)
 {
     if (offset == 0 && words.size() == 0)
     {
@@ -349,7 +350,7 @@ void CoreBitVector::extendTo(unsigned bit)
     else if (bit >= offset + words.size() * WordSize) extendForward(bit);
 }
 
-size_t CoreBitVector::indexForBit(unsigned bit) const
+size_t CoreBitVector::indexForBit(u32_t bit) const
 {
     assert(canHold(bit));
     // Recall, offset (and the bits in that word) are represented by words[0],
@@ -357,12 +358,12 @@ size_t CoreBitVector::indexForBit(unsigned bit) const
     return (bit - offset) / WordSize;
 }
 
-bool CoreBitVector::canHold(unsigned bit) const
+bool CoreBitVector::canHold(u32_t bit) const
 {
     return bit >= offset && bit < offset + words.size() * WordSize;
 }
 
-unsigned CoreBitVector::finalBit(void) const
+u32_t CoreBitVector::finalBit(void) const
 {
     return offset + words.size() * WordSize - 1;
 }

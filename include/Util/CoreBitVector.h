@@ -15,6 +15,8 @@
 #include <assert.h>
 #include <vector>
 
+#include "Util/SVFBasicTypes.h"
+
 namespace SVF
 {
 
@@ -58,23 +60,23 @@ public:
     bool empty(void) const;
 
     /// Returns number of bits set.
-    unsigned count(void) const;
+    u32_t count(void) const;
 
     /// Empty the CBV.
     void clear(void);
 
     /// Returns true if bit is set in this CBV.
-    bool test(unsigned bit) const;
+    bool test(u32_t bit) const;
 
     /// Check if bit is set. If it is, returns false.
     /// Otherwise, sets bit and returns true.
-    bool test_and_set(unsigned bit);
+    bool test_and_set(u32_t bit);
 
     /// Sets bit in the CBV.
-    void set(unsigned bit);
+    void set(u32_t bit);
 
     /// Resets bit in the CBV.
-    void reset(unsigned bit);
+    void reset(u32_t bit);
 
     /// Returns true if this CBV is a superset of rhs.
     bool contains(const CoreBitVector &rhs) const;
@@ -115,25 +117,25 @@ public:
 
 private:
     /// Add enough words (prepend) to be able to include bit.
-    void extendBackward(unsigned bit);
+    void extendBackward(u32_t bit);
 
     /// Add enough words (append) to be able to include bit.
-    void extendForward(unsigned bit);
+    void extendForward(u32_t bit);
 
     /// Add enough words (append xor prepend) to be able to include bit.
-    void extendTo(unsigned bit);
+    void extendTo(u32_t bit);
 
     /// Returns the index into words which would hold bit.
-    size_t indexForBit(unsigned bit) const;
+    size_t indexForBit(u32_t bit) const;
 
     /// Returns true if bit can fit in this CBV without resizing.
-    bool canHold(unsigned bit) const;
+    bool canHold(u32_t bit) const;
 
     /// Returns the last bit that this CBV can hold.
-    unsigned finalBit(void) const;
+    u32_t finalBit(void) const;
 
     /// Returns the first bit position that both this CBV and rhs *can* hold.
-    unsigned firstCommonBit(const CoreBitVector &rhs) const;
+    u32_t firstCommonBit(const CoreBitVector &rhs) const;
 
     /// Returns the next index in the words array at or after start which contains
     /// set bits. This index and start are indices into the words array not
@@ -146,10 +148,10 @@ public:
     {
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = unsigned;
+        using value_type = u32_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = unsigned *;
-        using reference = unsigned &;
+        using pointer = u32_t *;
+        using reference = u32_t &;
 
         CoreBitVectorIterator(void) = delete;
 
@@ -204,7 +206,7 @@ public:
         }
 
         /// Dereference: *it.
-        const unsigned operator*(void) const
+        const u32_t operator*(void) const
         {
             assert(!atEnd() && "CoreBitVectorIterator::*: dereferencing end!");
             size_t wordsIndex = wordIt - cbv->words.begin();
@@ -244,12 +246,12 @@ public:
         std::vector<Word>::const_iterator wordIt;
         /// Current bit in wordIt we are looking at
         /// (index into *wordIt).
-        unsigned bit;
+        u32_t bit;
     };
 
 private:
     /// The first bit of the first word.
-    unsigned offset;
+    u32_t offset;
     /// Our actual bit vector.
     std::vector<Word> words;
 };

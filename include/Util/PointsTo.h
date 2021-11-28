@@ -60,23 +60,23 @@ public:
     bool empty(void) const;
 
     /// Returns number of elements.
-    unsigned count(void) const;
+    u32_t count(void) const;
 
     /// Empty the set.
     void clear(void);
 
     /// Returns true if n is in this set.
-    bool test(unsigned n) const;
+    bool test(u32_t n) const;
 
     /// Check if n is in set. If it is, returns false.
     /// Otherwise, inserts n and returns true.
-    bool test_and_set(unsigned n);
+    bool test_and_set(u32_t n);
 
     /// Inserts n in the set.
-    void set(unsigned n);
+    void set(u32_t n);
 
     /// Removes n from the set.
-    void reset(unsigned n);
+    void reset(u32_t n);
 
     /// Returns true if this set is a superset of rhs.
     bool contains(const PointsTo &rhs) const;
@@ -175,10 +175,10 @@ public:
     {
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = unsigned;
+        using value_type = u32_t;
         using difference_type = std::ptrdiff_t;
-        using pointer = unsigned *;
-        using reference = unsigned &;
+        using pointer = u32_t *;
+        using reference = u32_t &;
 
         /// Deleted because we don't want iterators with null pt.
         PointsToIterator(void) = delete;
@@ -199,7 +199,7 @@ public:
         const PointsToIterator operator++(int);
 
         /// Dereference: *it.
-        const unsigned operator*(void) const;
+        const u32_t operator*(void) const;
 
         /// Equality: *this == rhs.
         bool operator==(const PointsToIterator &rhs) const;

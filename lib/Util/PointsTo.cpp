@@ -100,7 +100,7 @@ bool PointsTo::empty(void) const
 }
 
 /// Returns number of elements.
-unsigned PointsTo::count(void) const
+u32_t PointsTo::count(void) const
 {
     if (type == CBV) return cbv.count();
     else if (type == SBV) return sbv.count();
@@ -116,7 +116,7 @@ void PointsTo::clear(void)
     else assert(false && "PointsTo::clear: unknown type");
 }
 
-bool PointsTo::test(unsigned n) const
+bool PointsTo::test(u32_t n) const
 {
     n = getInternalNode(n);
     if (type == CBV) return cbv.test(n);
@@ -125,7 +125,7 @@ bool PointsTo::test(unsigned n) const
     assert(false && "PointsTo::test: unknown type");
 }
 
-bool PointsTo::test_and_set(unsigned n)
+bool PointsTo::test_and_set(u32_t n)
 {
     n = getInternalNode(n);
     if (type == CBV) return cbv.test_and_set(n);
@@ -134,7 +134,7 @@ bool PointsTo::test_and_set(unsigned n)
     assert(false && "PointsTo::test_and_set: unknown type");
 }
 
-void PointsTo::set(unsigned n)
+void PointsTo::set(u32_t n)
 {
     n = getInternalNode(n);
     if (type == CBV) cbv.set(n);
@@ -143,7 +143,7 @@ void PointsTo::set(unsigned n)
     else assert(false && "PointsTo::set: unknown type");
 }
 
-void PointsTo::reset(unsigned n)
+void PointsTo::reset(u32_t n)
 {
     n = getInternalNode(n);
     if (type == CBV) cbv.reset(n);
