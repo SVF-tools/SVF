@@ -301,8 +301,7 @@ NodeID PointsTo::getExternalNode(NodeID n) const
 
 bool PointsTo::metaSame(const PointsTo &pt) const
 {
-    // TODO: can probably remove type check?
-    return type == pt.type && nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
+    return nodeMapping == pt.nodeMapping && reverseNodeMapping == pt.reverseNodeMapping;
 }
 
 PointsTo::MappingPtr PointsTo::getCurrentBestNodeMapping(void)
