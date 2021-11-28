@@ -61,12 +61,15 @@ void FlowSensitive::initialize()
     if (Options::ClusterFs)
     {
         cluster();
-        ander->remapPointsToSets();
+        // Reset the points-to cache although empty so the new mapping could
+        // be applied to the inserted empty set.
+        getPtCache().reset();
     }
     else if (Options::PlainMappingFs)
     {
         plainMap();
-        ander->remapPointsToSets();
+        // As above.
+        getPtCache().reset();
     }
 
     // When evaluating ctir aliases, we want the whole SVFG.
