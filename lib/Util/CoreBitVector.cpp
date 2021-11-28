@@ -308,7 +308,7 @@ size_t CoreBitVector::hash(void) const
         h ^= w + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
 
-    return h;
+    return h + offset;
 }
 
 void CoreBitVector::extendBackward(unsigned bit)
