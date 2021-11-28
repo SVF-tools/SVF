@@ -19,13 +19,6 @@
 namespace SVF
 {
 
-void dump(const CoreBitVector &cbv) {
-    for (auto x : cbv) {
-        SVFUtil::outs() << x << ",";
-    }
-        SVFUtil::outs() << "END\n";
-}
-
 const size_t CoreBitVector::WordSize = sizeof(Word) * CHAR_BIT;
 
 CoreBitVector::CoreBitVector(void)
