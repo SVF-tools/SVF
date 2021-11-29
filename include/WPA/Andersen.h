@@ -36,7 +36,6 @@
 #include "Graphs/PAG.h"
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
-#include "Util/PointsTo.h"
 
 namespace SVF
 {

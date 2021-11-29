@@ -32,7 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 
 #include "Util/Conditions.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 
 #include <sys/resource.h>		/// increase stack size
 

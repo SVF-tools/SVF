@@ -32,7 +32,6 @@
 
 #include <Graphs/ConsG.h>
 #include "MemoryModel/PointerAnalysis.h"
-#include "Util/PointsTo.h"
 
 namespace SVF
 {

@@ -35,7 +35,6 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
-#include "Util/PointsTo.h"
 
 namespace SVF
 {

@@ -33,7 +33,7 @@
 #include "FastCluster/fastcluster.h"
 #include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 #include <time.h>
 
 namespace SVF

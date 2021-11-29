@@ -1,6 +1,6 @@
 #include "WPA/Andersen.h"
 #include "MemoryModel/PTAType.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

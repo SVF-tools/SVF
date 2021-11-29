@@ -31,7 +31,7 @@
 #include "WPA/Andersen.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

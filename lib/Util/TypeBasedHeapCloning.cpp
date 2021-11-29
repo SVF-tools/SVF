@@ -10,7 +10,6 @@
 #include "SVF-FE/CPPUtil.h"
 #include "Util/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "Util/PointsTo.h"
 
 using namespace SVF;
 

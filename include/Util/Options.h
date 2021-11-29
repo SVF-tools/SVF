@@ -7,7 +7,6 @@
 #include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
-#include "Util/PointsTo.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
 

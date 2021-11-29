@@ -11,7 +11,6 @@
 #include "Util/BasicTypes.h"
 #include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
-#include "Util/PointsTo.h"
 #include "Util/Options.h"
 
 namespace SVF

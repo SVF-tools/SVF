@@ -31,7 +31,6 @@
 #include "SABER/SaberCheckerAPI.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
-#include "Util/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

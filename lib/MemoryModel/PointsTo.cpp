@@ -12,7 +12,7 @@
 #include <new>
 
 #include "Util/Options.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 #include "Util/BasicTypes.h"
 
 namespace SVF

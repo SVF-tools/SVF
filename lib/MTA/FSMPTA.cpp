@@ -9,7 +9,7 @@
 #include "MTA/FSMPTA.h"
 #include "MTA/MHP.h"
 #include "MTA/PCG.h"
-#include "Util/PointsTo.h"
+#include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;
