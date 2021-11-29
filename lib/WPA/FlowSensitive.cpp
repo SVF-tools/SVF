@@ -34,6 +34,7 @@
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
+#include "Util/PointsTo.h"
 
 
 using namespace SVF;
@@ -327,7 +328,7 @@ bool FlowSensitive::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
     // Get points-to targets may be used by next SVFG node.
     // Propagate points-to set for node used in dst.
     const NodeBS& pts = edge->getPointsTo();
-    for (PointsTo::iterator ptdIt = pts.begin(), ptdEit = pts.end(); ptdIt != ptdEit; ++ptdIt)
+    for (NodeBS::iterator ptdIt = pts.begin(), ptdEit = pts.end(); ptdIt != ptdEit; ++ptdIt)
     {
         NodeID ptd = *ptdIt;
 
@@ -704,7 +705,7 @@ void FlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& edges)
             SVFGNode* srcNode = edge->getSrcNode();
 
             const NodeBS& pts = SVFUtil::cast<IndirectSVFGEdge>(edge)->getPointsTo();
-            for (PointsTo::iterator ptdIt = pts.begin(), ptdEit = pts.end(); ptdIt != ptdEit; ++ptdIt)
+            for (NodeBS::iterator ptdIt = pts.begin(), ptdEit = pts.end(); ptdIt != ptdEit; ++ptdIt)
             {
                 NodeID ptd = *ptdIt;
 

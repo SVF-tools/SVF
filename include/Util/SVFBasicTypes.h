@@ -85,7 +85,9 @@ typedef unsigned ThreadID;
 typedef unsigned Version;
 
 typedef llvm::SparseBitVector<> NodeBS;
-typedef NodeBS PointsTo;
+typedef llvm::SparseBitVector<> SparseBitVector;
+//typedef NodeBS PointsTo;
+class PointsTo;
 typedef PointsTo AliasSet;
 typedef unsigned PointsToID;
 
@@ -169,6 +171,9 @@ template <> struct Hash<NodePair>
 #define TIMEINTERVAL 1000
 #define CLOCK_IN_MS() (clock() / (CLOCKS_PER_SEC / TIMEINTERVAL))
 
+/// Size of native integer that we'll use for bit vectors, in bits.
+#define NATIVE_INT_SIZE (sizeof(unsigned long long) * CHAR_BIT)
+
 class SVFValue
 {
 
@@ -250,6 +255,18 @@ public:
 } // End namespace SVF
 
 
+template <> struct std::hash<SVF::NodePair> {
+    size_t operator()(const SVF::NodePair &p) const {
+        // Make sure our assumptions are sound: use u32_t
+        // and u64_t. If NodeID is not actually u32_t or size_t
+        // is not u64_t we should be fine since we get a
+        // consistent result.
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
+    }
+};
+
 /// Specialise hash for SmallVectors.
 template <typename T, unsigned N>
 struct std::hash<SVF::SmallVector<T, N>>
@@ -268,6 +285,16 @@ struct std::hash<SVF::SmallVector<T, N>>
         }
 
         return hash;
+    }
+};
+
+/// Specialise hash for SparseBitVectors.
+template <unsigned N>
+struct std::hash<llvm::SparseBitVector<N>>
+{
+    size_t operator()(const llvm::SparseBitVector<N> &sbv) const {
+        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
+        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
     }
 };
 

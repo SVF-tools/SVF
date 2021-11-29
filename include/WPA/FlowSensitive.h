@@ -30,9 +30,12 @@
 #ifndef FLOWSENSITIVEANALYSIS_H_
 #define FLOWSENSITIVEANALYSIS_H_
 
+#include "FastCluster/fastcluster.h"
 #include "Graphs/SVFGOPT.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/WPAFSSolver.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

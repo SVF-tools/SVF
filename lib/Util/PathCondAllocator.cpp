@@ -32,6 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/PathCondAllocator.h"
 #include "Util/DPItem.h"
+#include "Graphs/SVFG.h"
 #include <climits>
 
 using namespace SVF;
@@ -143,6 +144,14 @@ PathCondAllocator::Condition* PathCondAllocator::getBranchCond(const BasicBlock 
         assert(cit!=it->second.end() && "no condition on the branch??");
         return cit->second;
     }
+}
+
+PathCondAllocator::Condition* PathCondAllocator::getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
+{
+    if(getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
+        return evaluateBranchCond(bb, succ);
+    else
+        return getBranchCond(bb,succ);
 }
 
 /*!

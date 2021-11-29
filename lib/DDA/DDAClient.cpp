@@ -10,6 +10,7 @@
 
 #include "Util/Options.h"
 #include "Util/SVFUtil.h"
+#include "Util/PointsTo.h"
 #include "SVF-FE/CPPUtil.h"
 
 #include "DDA/DDAClient.h"

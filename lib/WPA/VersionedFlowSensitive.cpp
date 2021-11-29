@@ -9,6 +9,8 @@
 
 #include "WPA/Andersen.h"
 #include "WPA/VersionedFlowSensitive.h"
+#include "Util/Options.h"
+#include "Util/PointsTo.h"
 #include <iostream>
 
 using namespace SVF;

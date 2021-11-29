@@ -93,6 +93,23 @@ public:
         pts.clear();
     }
 
+    virtual void remapAllPts(void) override
+    {
+        for (typename PtsMap::value_type &ppt : ptsMap) ppt.second.checkAndRemap();
+    }
+
+    virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<DataSet, unsigned> allPts;
+        for (typename PtsMap::value_type ppt : ptsMap)
+        {
+            const DataSet &pt = ppt.second;
+            ++allPts[pt];
+        }
+
+        return allPts;
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const MutablePTData<Key, KeySet, Data, DataSet> *)
@@ -233,6 +250,13 @@ public:
         mutPTData.clearFullPts(var);
     }
 
+    virtual void remapAllPts(void) override
+    {
+        mutPTData.remapAllPts();
+        for (typename PtsMap::value_type &ppt : diffPtsMap) ppt.second.checkAndRemap();
+        for (typename PtsMap::value_type &ppt : propaPtsMap) ppt.second.checkAndRemap();
+    }
+
     virtual inline void dumpPTData() override
     {
         mutPTData.dumpPTData();
@@ -240,13 +264,13 @@ public:
 
     virtual inline const DataSet &getDiffPts(Key &var) override
     {
-        return getMutDiffPts(var);
+        return diffPtsMap[var];
     }
 
     virtual inline bool computeDiffPts(Key &var, const DataSet &all) override
     {
         /// Clear diff pts.
-        DataSet& diff = getMutDiffPts(var);
+        DataSet& diff = diffPtsMap[var];
         diff.clear();
         /// Get all pts.
         DataSet& propa = getPropaPts(var);
@@ -267,6 +291,11 @@ public:
         getPropaPts(var).clear();
     }
 
+    virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        return mutPTData.getAllPts(liveOnly);
+    }
+
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
     static inline bool classof(const MutableDiffPTData<Key, KeySet, Data, DataSet> *)
@@ -281,12 +310,6 @@ public:
     ///@}
 
 protected:
-    /// Get diff PTS that can be modified.
-    inline DataSet &getMutDiffPts(Key &var)
-    {
-        return diffPtsMap[var];
-    }
-
     /// Get propagated points to.
     inline DataSet &getPropaPts(Key &var)
     {
@@ -476,7 +499,7 @@ public:
     }
     virtual inline bool unionPts(const Key& dstKey, const DataSet& srcDataSet) override
     {
-        return unionPts(mutPTData.ptsMap[dstKey],srcDataSet);
+        return unionPts(mutPTData.ptsMap[dstKey], srcDataSet);
     }
     virtual void clearPts(const Key& var, const Data& element) override
     {
@@ -486,7 +509,42 @@ public:
     {
         mutPTData.clearFullPts(var);
     }
+    virtual void remapAllPts(void) override
+    {
+        mutPTData.remapAllPts();
+        for (typename DFPtsMap::value_type &lopt : dfInPtsMap)
+        {
+            for (typename PtsMap::value_type &opt : lopt.second) opt.second.checkAndRemap();
+        }
+
+        for (typename DFPtsMap::value_type &lopt : dfOutPtsMap)
+        {
+            for (typename PtsMap::value_type &opt : lopt.second) opt.second.checkAndRemap();
+        }
+    }
     ///@}
+
+    virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<DataSet, unsigned> allPts = mutPTData.getAllPts(liveOnly);
+        for (typename DFPtsMap::value_type lptsmap : dfInPtsMap)
+        {
+            for (typename PtsMap::value_type vpt : lptsmap.second)
+            {
+                ++allPts[vpt.second];
+            }
+        }
+
+        for (typename DFPtsMap::value_type lptm : dfOutPtsMap)
+        {
+            for (typename PtsMap::value_type vpt : lptm.second)
+            {
+                ++allPts[vpt.second];
+            }
+        }
+
+        return allPts;
+    }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
     ///@{
@@ -888,6 +946,19 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        tlPTData.remapAllPts();
+        atPTData.remapAllPts();
+    }
+
+    virtual inline Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<DataSet, unsigned> allPts = tlPTData.getAllPts(liveOnly);
+        SVFUtil::mergePtsOccMaps<DataSet>(allPts, atPTData.getAllPts(liveOnly));
+        return allPts;
     }
 
     virtual inline void dumpPTData() override

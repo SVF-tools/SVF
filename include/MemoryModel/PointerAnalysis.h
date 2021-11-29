@@ -40,6 +40,7 @@
 #include "MemoryModel/PersistentPointsToDS.h"
 #include "Graphs/PTACallGraph.h"
 #include "Util/SCC.h"
+#include "Util/PointsTo.h"
 
 namespace SVF
 {

@@ -32,6 +32,7 @@
 #include "SVF-FE/CHG.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
+#include "Util/PointsTo.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"

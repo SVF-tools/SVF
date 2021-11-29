@@ -421,7 +421,7 @@ void SVFG::connectFromGlobalToProgEntry()
         if (const StoreSVFGNode* store = SVFUtil::dyn_cast<StoreSVFGNode>(*storeIt))
         {
             /// connect this store to main function entry
-            const NodeBS& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID());
+            const NodeBS& storePts = mssa->getPTA()->getPts(store->getPAGDstNodeID()).toNodeBS();
 
             for (FormalINSVFGNodeSet::iterator fiIt = formalIns.begin(), fiEit =
                         formalIns.end(); fiIt != fiEit; ++fiIt)
