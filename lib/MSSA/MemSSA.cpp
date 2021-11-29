@@ -70,6 +70,11 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     timeOfGeneratingMemRegions += (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
+PAG* MemSSA::getPAG()
+{
+    return pta->getPAG();
+}
+
 /*!
  * Set DF/DT
  */

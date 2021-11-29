@@ -30,6 +30,7 @@
 #ifndef ANDERSENMEMSSA_H_
 #define ANDERSENMEMSSA_H_
 
+#include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/SVFGOPT.h"
 
 namespace SVF

@@ -310,10 +310,7 @@ public:
         destroy();
     }
     /// Return PAG
-    inline PAG* getPAG()
-    {
-        return pta->getPAG();
-    }
+    inline PAG* getPAG();
     /// Return PTA
     inline BVDataPTAImpl* getPTA() const
     {

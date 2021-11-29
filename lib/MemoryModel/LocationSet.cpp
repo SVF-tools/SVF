@@ -113,10 +113,10 @@ bool LocationSet::increaseIfNotReachUpperBound(std::vector<NodeID>& indices,
 /*!
  * Compute all possible locations according to offset and number-stride pairs.
  */
-PointsTo LocationSet::computeAllLocations() const
+NodeBS LocationSet::computeAllLocations() const
 {
 
-    PointsTo result;
+    NodeBS result;
     result.set(getOffset());
 
     if (isConstantOffset() == false)

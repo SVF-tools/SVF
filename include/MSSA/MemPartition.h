@@ -57,13 +57,13 @@ protected:
     virtual void partitionMRs();
 
     /// Get memory region at a load
-    virtual void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    virtual void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun);
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun);
 private:
     /// Create memory regions for each points-to target.
-    void createDistinctMR(const SVFFunction* func, const PointsTo& cpts);
+    void createDistinctMR(const SVFFunction* func, const NodeBS& cpts);
 
 };
 
@@ -73,7 +73,7 @@ private:
 class IntraDisjointMRG : public MRGenerator
 {
 public:
-    typedef OrderedMap<PointsTo, PointsToList> PtsToSubPtsMap;
+    typedef OrderedMap<NodeBS, PointsToList> PtsToSubPtsMap;
     typedef Map<const SVFFunction*, PtsToSubPtsMap> FunToPtsMap;
     typedef Map<const SVFFunction*, PointsToList> FunToInterMap;
 
@@ -93,23 +93,23 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts,
                                       const SVFFunction* fun)
     {
         const PointsToList& inters = getIntersList(fun);
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);
     }
 
-    void getMRsForLoadFromInterList(MRSet& mrs, const PointsTo& cpts, const PointsToList& inters);
+    void getMRsForLoadFromInterList(MRSet& mrs, const NodeBS& cpts, const PointsToList& inters);
 
     /// Get memory regions to be inserted at a load statement.
-    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const PointsTo& cpts, const SVFFunction* fun);
+    virtual void getMRsForCallSiteRef(MRSet& aliasMRs, const NodeBS& cpts, const SVFFunction* fun);
 
     /// Create disjoint memory region
-    void createDisjointMR(const SVFFunction* func, const PointsTo& cpts);
+    void createDisjointMR(const SVFFunction* func, const NodeBS& cpts);
 
     /// Compute intersections between cpts and computed cpts intersections before.
-    void computeIntersections(const PointsTo& cpts, PointsToList& inters);
+    void computeIntersections(const NodeBS& cpts, PointsToList& inters);
 
 private:
     inline PtsToSubPtsMap& getPtsSubSetMap(const SVFFunction* func)
@@ -154,7 +154,7 @@ protected:
      * @param fun The function being analyzed.
      * @param mrs Memory region set contains all possible target memory regions.
      */
-    virtual inline void getMRsForLoad(MRSet& aliasMRs, const PointsTo& cpts,
+    virtual inline void getMRsForLoad(MRSet& aliasMRs, const NodeBS& cpts,
                                       const SVFFunction*)
     {
         getMRsForLoadFromInterList(aliasMRs, cpts, inters);

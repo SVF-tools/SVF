@@ -65,7 +65,7 @@ void SVFGOPT::buildSVFG()
 /*!
  *
  */
-SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
+SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const NodeBS& cpts)
 {
     if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
@@ -76,7 +76,7 @@ SVFGEdge* SVFGOPT::addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteI
 /*!
  *
  */
-SVFGEdge* SVFGOPT::addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts)
+SVFGEdge* SVFGOPT::addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const NodeBS& cpts)
 {
     if (Options::ContextInsensitive)
         return addIntraIndirectVFEdge(srcId, dstId, cpts);
@@ -207,7 +207,7 @@ void SVFGOPT::retargetEdgesOfAInFOut(SVFGNode* node)
     assert(node->getInEdges().size() == 1 && "actual-in/formal-out can only have one incoming edge as its def size");
 
     SVFGNode* def = nullptr;
-    PointsTo inPointsTo;
+    NodeBS inPointsTo;
 
     SVFGNode::const_iterator it = node->InEdgeBegin();
     SVFGNode::const_iterator eit = node->InEdgeEnd();
@@ -227,7 +227,7 @@ void SVFGOPT::retargetEdgesOfAInFOut(SVFGNode* node)
     for (; it != eit; ++it)
     {
         const IndirectSVFGEdge* outEdge = SVFUtil::cast<IndirectSVFGEdge>(*it);
-        PointsTo intersection = inPointsTo;
+        NodeBS intersection = inPointsTo;
         intersection &= outEdge->getPointsTo();
 
         if (intersection.empty())
@@ -263,7 +263,7 @@ void SVFGOPT::retargetEdgesOfAOutFIn(SVFGNode* node)
         {
             const IndirectSVFGEdge* outEdge = SVFUtil::cast<IndirectSVFGEdge>(*outIt);
 
-            PointsTo intersection = inEdge->getPointsTo();
+            NodeBS intersection = inEdge->getPointsTo();
             intersection &= outEdge->getPointsTo();
             if (intersection.empty())
                 continue;
@@ -530,7 +530,7 @@ bool SVFGOPT::addNewSVFGEdge(NodeID srcId, NodeID dstId, const SVFGEdge* preEdge
     const IndirectSVFGEdge* preIndEdge = SVFUtil::cast<IndirectSVFGEdge>(preEdge);
     const IndirectSVFGEdge* succIndEdge = SVFUtil::cast<IndirectSVFGEdge>(succEdge);
 
-    PointsTo intersection = preIndEdge->getPointsTo();
+    NodeBS intersection = preIndEdge->getPointsTo();
     intersection &= succIndEdge->getPointsTo();
 
     if (intersection.empty())

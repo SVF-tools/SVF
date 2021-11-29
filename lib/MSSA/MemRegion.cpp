@@ -39,6 +39,12 @@ using namespace SVFUtil;
 Size_t MemRegion::totalMRNum = 0;
 Size_t MRVer::totalVERNum = 0;
 
+MRGenerator::MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
+    pta(p), ptrOnlyMSSA(ptrOnly)
+{
+    callGraph = pta->getPTACallGraph();
+    callGraphSCC = new SCC(callGraph);
+}
 
 /*!
  * Clean up memory
@@ -61,9 +67,9 @@ void MRGenerator::destroy()
 /*!
  * Generate a memory region and put in into functions which use it
  */
-void MRGenerator::createMR(const SVFFunction* fun, const PointsTo& cpts)
+void MRGenerator::createMR(const SVFFunction* fun, const NodeBS& cpts)
 {
-    const PointsTo& repCPts = getRepPointsTo(cpts);
+    const NodeBS& repCPts = getRepPointsTo(cpts);
     MemRegion mr(repCPts);
     MRSet::const_iterator mit = memRegSet.find(&mr);
     if(mit!=memRegSet.end())
@@ -84,7 +90,7 @@ void MRGenerator::createMR(const SVFFunction* fun, const PointsTo& cpts)
 /*!
  * Generate a memory region and put in into functions which use it
  */
-const MemRegion* MRGenerator::getMR(const PointsTo& cpts) const
+const MemRegion* MRGenerator::getMR(const NodeBS& cpts) const
 {
     MemRegion mr(getRepPointsTo(cpts));
     MRSet::iterator mit = memRegSet.find(&mr);
@@ -142,6 +148,24 @@ void MRGenerator::generateMRs()
     updateAliasMRs();
 }
 
+bool MRGenerator::hasPAGEdgeList(const Instruction* inst)
+{
+    PAG* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->hasPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+    else
+        return pag->hasPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+}
+
+PAG::PAGEdgeList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
+{
+    PAG* pag = pta->getPAG();
+    if (ptrOnlyMSSA)
+        return pag->getInstPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+    else
+        return pag->getInstPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
+}
+
 /*!
  * Generate memory regions for loads/stores
  */
@@ -174,7 +198,7 @@ void MRGenerator::collectModRefForLoadStore()
                     pagEdgeToFunMap[inst] = &fun;
                     if (const StorePE *st = SVFUtil::dyn_cast<StorePE>(inst))
                     {
-                        PointsTo cpts(pta->getPts(st->getDstID()));
+                        NodeBS cpts(pta->getPts(st->getDstID()));
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -184,7 +208,7 @@ void MRGenerator::collectModRefForLoadStore()
 
                     else if (const LoadPE *ld = SVFUtil::dyn_cast<LoadPE>(inst))
                     {
-                        PointsTo cpts(pta->getPts(ld->getSrcID()));
+                        NodeBS cpts(pta->getPts(ld->getSrcID()));
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -257,18 +281,18 @@ void MRGenerator::collectModRefForCall()
  * 1) map cpts to its superset(rep) which exists in the map, otherwise its superset is itself
  * 2) adjust existing items in the map if their supersets are cpts
  */
-void MRGenerator::sortPointsTo(const PointsTo& cpts)
+void MRGenerator::sortPointsTo(const NodeBS& cpts)
 {
 
     if(cptsToRepCPtsMap.find(cpts)!=cptsToRepCPtsMap.end())
         return;
 
     PointsToList subSetList;
-    PointsTo repCPts = cpts;
+    NodeBS repCPts = cpts;
     for(PtsToRepPtsSetMap::iterator it = cptsToRepCPtsMap.begin(),
             eit = cptsToRepCPtsMap.end(); it!=eit; ++it)
     {
-        PointsTo& existCPts = it->second;
+        NodeBS& existCPts = it->second;
         if(cpts.contains(existCPts))
         {
             subSetList.insert(it->first);
@@ -297,7 +321,7 @@ void MRGenerator::partitionMRs()
     /// TODO: we may need some refined region partitioning algorithm here
     /// For now, we just collapse all refs/mods objects at callsites into one region
     /// Consider modularly partition memory regions to speed up analysis (only partition regions within function scope)
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it)
     {
         for(PointsToList::iterator cit = it->second.begin(), ecit = it->second.end(); cit!=ecit; ++cit)
@@ -306,7 +330,7 @@ void MRGenerator::partitionMRs()
         }
     }
     /// Generate memory regions according to condition pts after computing superset
-    for(FunToPointsToMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
+    for(FunToPointsTosMap::iterator it = getFunToPointsToList().begin(), eit = getFunToPointsToList().end();
             it!=eit; ++it)
     {
         const SVFFunction* fun = it->first;
@@ -329,7 +353,7 @@ void MRGenerator::updateAliasMRs()
     {
         MRSet aliasMRs;
         const SVFFunction* fun = getFunction(it->first);
-        const PointsTo& storeCPts = it->second;
+        const NodeBS& storeCPts = it->second;
         getAliasMemRegions(aliasMRs,storeCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
@@ -341,7 +365,7 @@ void MRGenerator::updateAliasMRs()
     {
         MRSet aliasMRs;
         const SVFFunction* fun = getFunction(it->first);
-        const PointsTo& loadCPts = it->second;
+        const NodeBS& loadCPts = it->second;
         getMRsForLoad(aliasMRs, loadCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
@@ -355,7 +379,7 @@ void MRGenerator::updateAliasMRs()
     {
         const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
-        const PointsTo& callsiteModCPts = it->second;
+        const NodeBS& callsiteModCPts = it->second;
         getAliasMemRegions(aliasMRs,callsiteModCPts,fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
@@ -367,7 +391,7 @@ void MRGenerator::updateAliasMRs()
     {
         const SVFFunction* fun = it->first->getCaller();
         MRSet aliasMRs;
-        const PointsTo& callsiteRefCPts = it->second;
+        const NodeBS& callsiteRefCPts = it->second;
         getMRsForCallSiteRef(aliasMRs, callsiteRefCPts, fun);
         for(MRSet::iterator ait = aliasMRs.begin(), eait = aliasMRs.end(); ait!=eait; ++ait)
         {
@@ -475,8 +499,8 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
     while(!worklist.empty())
     {
         NodeID nodeId = worklist.pop();
-        const PointsTo& tmp = pta->getPts(nodeId);
-        for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
+        const NodeBS& tmp = pta->getPts(nodeId);
+        for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             argsPts |= CollectPtsChain(*it);
     }
 
@@ -488,8 +512,8 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
         const PAGNode* node = pta->getPAG()->getCallSiteRet(retBlockNode);
         if(node->isPointer())
         {
-            const PointsTo& tmp = pta->getPts(node->getId());
-            for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
+            const NodeBS& tmp = pta->getPts(node->getId());
+            for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
                 retPts |= CollectPtsChain(*it);
         }
     }
@@ -508,18 +532,18 @@ NodeBS& MRGenerator::CollectPtsChain(NodeID id)
         return it->second;
     else
     {
-        PointsTo& pts = cachedPtsChainMap[baseId];
+        NodeBS& pts = cachedPtsChainMap[baseId];
         pts |= pta->getPAG()->getFieldsAfterCollapse(baseId);
 
         WorkList worklist;
-        for(PointsTo::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it)
+        for(NodeBS::iterator it = pts.begin(), eit = pts.end(); it!=eit; ++it)
             worklist.push(*it);
 
         while(!worklist.empty())
         {
             NodeID nodeId = worklist.pop();
-            const PointsTo& tmp = pta->getPts(nodeId);
-            for(PointsTo::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
+            const NodeBS& tmp = pta->getPts(nodeId);
+            for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             {
                 pts |= CollectPtsChain(*it);
             }
@@ -643,12 +667,12 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
 /*!
  * Obtain the mod sets for a call, used for external ModRefInfo queries
  */
-PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs)
+NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
         PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite());
-        PointsTo mods;
+        NodeBS mods;
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
         {
@@ -667,12 +691,12 @@ PointsTo MRGenerator::getModInfoForCall(const CallBlockNode* cs)
 /*!
  * Obtain the ref sets for a call, used for external ModRefInfo queries
  */
-PointsTo MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
+NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
         PAGEdgeList& pagEdgeList = getPAGEdgesFromInst(cs->getCallSite());
-        PointsTo refs;
+        NodeBS refs;
         for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit =
                     pagEdgeList.end(); bit != ebit; ++bit)
         {
@@ -718,10 +742,10 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V)
 
     if (pta->getPAG()->hasValueNode(V))
     {
-        const PointsTo pts(pta->getPts(pta->getPAG()->getValueNode(V)));
-        const PointsTo csRef = getRefInfoForCall(cs);
-        const PointsTo csMod = getModInfoForCall(cs);
-        PointsTo ptsExpanded, csRefExpanded, csModExpanded;
+        const NodeBS pts(pta->getPts(pta->getPAG()->getValueNode(V)));
+        const NodeBS csRef = getRefInfoForCall(cs);
+        const NodeBS csMod = getModInfoForCall(cs);
+        NodeBS ptsExpanded, csRefExpanded, csModExpanded;
         pta->expandFIObjs(pts, ptsExpanded);
         pta->expandFIObjs(csRef, csRefExpanded);
         pta->expandFIObjs(csMod, csModExpanded);
@@ -754,11 +778,11 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockN
     if (getModRefInfo(cs1) == ModRefInfo::NoModRef || getModRefInfo(cs2) == ModRefInfo::NoModRef)
         return ModRefInfo::NoModRef;
 
-    const PointsTo cs1Ref = getRefInfoForCall(cs1);
-    const PointsTo cs1Mod = getModInfoForCall(cs1);
-    const PointsTo cs2Ref = getRefInfoForCall(cs2);
-    const PointsTo cs2Mod = getModInfoForCall(cs2);
-    PointsTo cs1RefExpanded, cs1ModExpanded, cs2RefExpanded, cs2ModExpanded;
+    const NodeBS cs1Ref = getRefInfoForCall(cs1);
+    const NodeBS cs1Mod = getModInfoForCall(cs1);
+    const NodeBS cs2Ref = getRefInfoForCall(cs2);
+    const NodeBS cs2Mod = getModInfoForCall(cs2);
+    NodeBS cs1RefExpanded, cs1ModExpanded, cs2RefExpanded, cs2ModExpanded;
     pta->expandFIObjs(cs1Ref, cs1RefExpanded);
     pta->expandFIObjs(cs1Mod, cs1ModExpanded);
     pta->expandFIObjs(cs2Ref, cs2RefExpanded);

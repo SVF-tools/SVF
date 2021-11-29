@@ -31,6 +31,8 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 
+#include "Util/Conditions.h"
+
 #include <sys/resource.h>		/// increase stack size
 
 using namespace SVF;
@@ -125,7 +127,7 @@ void SVFUtil::dumpPointsToList(const PointsToList& ptl)
          ii != ie; ii++)
     {
         auto bs = *ii;
-        dumpSparseSet(bs);
+        dumpSet(bs);
     }
     outs() << "}\n";
 }
@@ -350,7 +352,6 @@ std::string SVFUtil::getSourceLoc(const Value* val)
 
     return rawstr.str();
 }
-
 
 /*!
  * return string of an LLVM Value
