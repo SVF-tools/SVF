@@ -543,6 +543,26 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
     return changed;
 }
 
+void VersionedFlowSensitive::cluster(void)
+{
+    std::vector<std::pair<unsigned, unsigned>> keys;
+    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    {
+        unsigned occ = 1;
+        unsigned v = pit->first;
+        if (Options::PredictPtOcc && pag->getObject(v) != nullptr) occ = stmtReliance[v].size() + 1;
+        assert(occ != 0);
+        keys.push_back(std::make_pair(v, occ));
+    }
+
+    PointsTo::MappingPtr nodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
+    PointsTo::MappingPtr reverseNodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
+
+    PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
+}
+
 Version VersionedFlowSensitive::getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm)
 {
     if (cache.valid && l == cache.l)
