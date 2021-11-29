@@ -117,6 +117,24 @@ inline bool cmpPts (const PointsTo& lpts,const PointsTo& rpts)
     }
 }
 
+inline bool cmpNodeBS(const NodeBS& lpts,const NodeBS& rpts)
+{
+    if (lpts.count() != rpts.count())
+        return (lpts.count() < rpts.count());
+    else
+    {
+        NodeBS::iterator bit = lpts.begin(), eit = lpts.end();
+        NodeBS::iterator rbit = rpts.begin(), reit = rpts.end();
+        for (; bit != eit && rbit != reit; bit++, rbit++)
+        {
+            if (*bit != *rbit)
+                return (*bit < *rbit);
+        }
+
+        return false;
+    }
+}
+
 typedef struct equalPointsTo
 {
     bool operator()(const PointsTo& lhs, const PointsTo& rhs) const
@@ -125,7 +143,22 @@ typedef struct equalPointsTo
     }
 } equalPointsTo;
 
-typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
+typedef struct equalNodeBS
+{
+    bool operator()(const NodeBS& lhs, const NodeBS& rhs) const
+    {
+        return SVFUtil::cmpNodeBS(lhs, rhs);
+    }
+} equalNodeBS;
+
+inline NodeBS ptsToNodeBS(const PointsTo &pts)
+{
+    NodeBS nbs;
+    for (const NodeID o : pts) nbs.set(o);
+    return nbs;
+}
+
+typedef OrderedSet<PointsTo, equalNodeBS> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
 inline bool isIntrinsicFun(const Function* func)
@@ -240,6 +273,16 @@ std::string  getSourceLoc(const Value *val);
 std::string  getSourceLocOfFunction(const Function *F);
 const std::string value2String(const Value* value);
 //@}
+
+/// Given a map mapping points-to sets to a count, adds from into to.
+template <typename Data>
+void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
+{
+    for (const typename Map<Data, unsigned>::value_type &ptocc : from)
+    {
+        to[ptocc.first] += ptocc.second;
+    }
+}
 
 /// Inserts an element into a Set/CondSet (with ::insert).
 template <typename Key, typename KeySet>

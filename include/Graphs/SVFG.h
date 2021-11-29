@@ -269,10 +269,10 @@ public:
 protected:
     /// Add indirect def-use edges of a memory region between two statements,
     //@{
-    SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
-    SVFGEdge* addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId);
-    SVFGEdge* addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts,CallSiteID csId);
-    SVFGEdge* addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const PointsTo& cpts);
+    SVFGEdge* addIntraIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts);
+    SVFGEdge* addCallIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts,CallSiteID csId);
+    SVFGEdge* addRetIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts,CallSiteID csId);
+    SVFGEdge* addThreadMHPIndirectVFEdge(NodeID srcId, NodeID dstId, const NodeBS& cpts);
     //@}
 
     /// Add inter VF edge from callsite mu to function entry chi

@@ -118,7 +118,7 @@ protected:
     /// Connect actual-in and formal-in
     virtual inline void connectAInAndFIn(const ActualINSVFGNode* actualIn, const FormalINSVFGNode* formalIn, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
-        PointsTo intersection = actualIn->getPointsTo();
+        NodeBS intersection = actualIn->getPointsTo();
         intersection &= formalIn->getPointsTo();
         if (intersection.empty() == false)
         {
@@ -131,7 +131,7 @@ protected:
     /// Connect formal-out and actual-out
     virtual inline void connectFOutAndAOut(const FormalOUTSVFGNode* formalOut, const ActualOUTSVFGNode* actualOut, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
-        PointsTo intersection = formalOut->getPointsTo();
+        NodeBS intersection = formalOut->getPointsTo();
         intersection &= actualOut->getPointsTo();
         if (intersection.empty() == false)
         {
@@ -165,9 +165,9 @@ private:
     /// Add inter-procedural value flow edge
     //@{
     /// Add indirect call edge from src to dst with one call site ID.
-    SVFGEdge* addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts);
+    SVFGEdge* addCallIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const NodeBS& cpts);
     /// Add indirect ret edge from src to dst with one call site ID.
-    SVFGEdge* addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const PointsTo& cpts);
+    SVFGEdge* addRetIndirectSVFGEdge(NodeID srcId, NodeID dstId, CallSiteID csid, const NodeBS& cpts);
     //@}
 
     /// 1. Convert FormalParmSVFGNode into PHISVFGNode and add all ActualParmSVFGNoe which may
