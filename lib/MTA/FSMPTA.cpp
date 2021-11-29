@@ -141,12 +141,12 @@ void MTASVFGBuilder::performRemovingMHPEdges()
             if (edge->isIndirectVFGEdge() && (edge->getDstNode()==n2))
             {
                 IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
-                const PointsTo& pts = e->getPointsTo();
-                for (NodeBS::iterator o = remove_pts.begin(), eo = remove_pts.end(); o != eo; ++o)
+                const NodeBS& pts = e->getPointsTo();
+                for (PointsTo::iterator o = remove_pts.begin(), eo = remove_pts.end(); o != eo; ++o)
                 {
-                    if (const_cast<PointsTo&>(pts).test(*o))
+                    if (const_cast<NodeBS&>(pts).test(*o))
                     {
-                        const_cast<PointsTo&>(pts).reset(*o);
+                        const_cast<NodeBS&>(pts).reset(*o);
                         MTASVFGBuilder::numOfRemovedPTS ++;
                     }
                 }
@@ -406,7 +406,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
         if (edge->isIndirectVFGEdge())
         {
             IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
-            PointsTo pts = e->getPointsTo();
+            NodeBS pts = e->getPointsTo();
             if(pts.test(o))
                 worklist.insert(edge->getDstNode());
         }
@@ -427,7 +427,7 @@ MTASVFGBuilder::SVFGNodeIDSet MTASVFGBuilder::getSuccNodes(const StmtSVFGNode* n
                 if (edge->isIndirectVFGEdge() && visited.find(edge->getDstNode()) == visited.end())
                 {
                     IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
-                    PointsTo pts = e->getPointsTo();
+                    NodeBS pts = e->getPointsTo();
                     if(pts.test(o))
                         worklist.insert(edge->getDstNode());
                 }
@@ -649,7 +649,7 @@ void MTASVFGBuilder::readPrecision()
                 const StmtSVFGNode* n2 = SVFUtil::cast<StmtSVFGNode>(edge->getSrcNode());
 
                 IndirectSVFGEdge* e = SVFUtil::cast<IndirectSVFGEdge>(edge);
-                PointsTo pts = e->getPointsTo();
+                NodeBS pts = e->getPointsTo();
                 PointsTo remove_pts;
 
                 for (NodeBS::iterator o = pts.begin(), eo = pts.end(); o != eo; ++o)

@@ -42,14 +42,14 @@ namespace SVF
 class MRSVFGNode : public VFGNode
 {
 protected:
-    PointsTo cpts;
+    NodeBS cpts;
 
     // This constructor can only be used by derived classes
     MRSVFGNode(NodeID id, VFGNodeK k) : VFGNode(id, k) {}
 
 public:
     /// Return points-to of the MR
-    inline const PointsTo& getPointsTo() const
+    inline const NodeBS& getPointsTo() const
     {
         return cpts;
     }

@@ -46,7 +46,7 @@ public:
     typedef Set<const MRVer*> MRVerSet;
 private:
     MRVerSet mrs;
-    PointsTo cpts;
+    NodeBS cpts;
 public:
     /// Constructor
     IndirectSVFGEdge(VFGNode* s, VFGNode* d, GEdgeFlag k): VFGEdge(s,d,k)
@@ -54,11 +54,11 @@ public:
     }
     /// Handle memory region
     //@{
-    inline bool addPointsTo(const PointsTo& c)
+    inline bool addPointsTo(const NodeBS& c)
     {
         return (cpts |= c);
     }
-    inline const PointsTo& getPointsTo() const
+    inline const NodeBS& getPointsTo() const
     {
         return cpts;
     }
