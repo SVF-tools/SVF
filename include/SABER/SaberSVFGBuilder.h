@@ -44,7 +44,7 @@ class SaberSVFGBuilder : public SVFGBuilder
 
 public:
     typedef Set<const SVFGNode*> SVFGNodeSet;
-    typedef Map<NodeID, NodeBS> NodeToPTSSMap;
+    typedef Map<NodeID, PointsTo> NodeToPTSSMap;
     typedef FIFOWorkList<NodeID> WorkList;
 
     /// Constructor
@@ -94,9 +94,9 @@ private:
     bool accessGlobal(BVDataPTAImpl* pta,const PAGNode* pagNode);
 
     /// Collect objects along points-to chains
-    NodeBS& CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap);
+    PointsTo& CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap);
 
-    NodeBS globs;
+    PointsTo globs;
     /// Store all global SVFG nodes
     SVFGNodeSet globSVFGNodes;
 };

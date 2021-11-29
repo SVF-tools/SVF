@@ -29,6 +29,7 @@
 
 #include "SABER/SaberSVFGBuilder.h"
 #include "SABER/SaberCheckerAPI.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
 
 using namespace SVF;
@@ -97,7 +98,7 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
     }
 }
 
-NodeBS& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
+PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
     PAG* pag = svfg->getPAG();
 
