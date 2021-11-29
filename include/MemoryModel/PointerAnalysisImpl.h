@@ -67,9 +67,6 @@ public:
         Persistent,
     };
 
-    // TODO: make this not static?
-    static PersistentPointsToCache<PointsTo> ptCache;
-
     /// Constructor
     BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
@@ -79,7 +76,7 @@ public:
         destroy();
     }
 
-    static inline PersistentPointsToCache<PointsTo> &getPtCache(void)
+    inline PersistentPointsToCache<PointsTo> &getPtCache(void)
     {
         return ptCache;
     }
@@ -214,6 +211,8 @@ protected:
 private:
     /// Points-to data
     PTDataTy* ptD;
+
+    PersistentPointsToCache<PointsTo> ptCache;
 
 public:
     /// Interface expose to users of our pointer analysis, given Location infos

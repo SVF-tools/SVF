@@ -37,10 +37,10 @@ public:
     static PointsToID emptyPointsToId(void) { return 0; };
 
 public:
-    PersistentPointsToCache(const Data &emptyData) : idCounter(1)
+    PersistentPointsToCache(void) : idCounter(1)
     {
-        idToPts.push_back(new Data(emptyData));
-        ptsToId[emptyData] = emptyPointsToId();
+        idToPts.push_back(new Data());
+        ptsToId[Data()] = emptyPointsToId();
 
         initStats();
     }
@@ -48,14 +48,13 @@ public:
     /// Resets the cache removing everything except the emptyData it was initialised with.
     void reset(void)
     {
-        const Data *emptyData = idToPts[emptyPointsToId()];
-        for (const Data *d : idToPts) free(d);
+        for (const Data *d : idToPts) delete d;
         idToPts.clear();
         ptsToId.clear();
 
         // Put the empty data back in.
-        ptsToId[*emptyData] = emptyPointsToId();
-        idToPts.push_back(emptyData);
+        ptsToId[Data()] = emptyPointsToId();
+        idToPts.push_back(new Data());
 
         unionCache.clear();
         complementCache.clear();
@@ -305,6 +304,17 @@ public:
         std::cout.flush();
     }
 
+    /// Returns all points-to sets stored by this cache as keys to a map.
+    /// Values are all 1. We use the map to be more compatible with getAllPts
+    /// in the various PTDatas. Performance is a non-issue (for now) since this
+    /// is just used for evaluation's sake.
+    Map<Data, unsigned> getAllPts(void)
+    {
+        Map<Data, unsigned> allPts;
+        for (const Data *d : idToPts) allPts[*d] = 1;
+        return allPts;
+    }
+
     // TODO: ref count API for garbage collection.
 
 private:
@@ -378,7 +388,8 @@ private:
     /// Reverse of idToPts.
     /// Elements are only added through push_back, so the number of elements
     /// stored is the size of the vector.
-    std::vector<const Data *> idToPts;
+    /// Not const so we can remap.
+    std::vector<Data *> idToPts;
     /// Maps points-to sets to their corresponding ID.
     PTSToIDMap ptsToId;
 
