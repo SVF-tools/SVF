@@ -9,6 +9,7 @@
 #define DDASTAT_H_
 
 #include "MemoryModel/PTAStat.h"
+#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {

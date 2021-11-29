@@ -90,8 +90,17 @@ public:
     /// Fully clears the points-to set of var.
     virtual void clearFullPts(const Key& var) = 0;
 
+    /// Remaps all points-to sets to use the current mapping.
+    virtual void remapAllPts(void) = 0;
+
     /// Dump stored keys and points-to sets.
     virtual void dumpPTData() = 0;
+
+    /// Returns a mapping of points-to sets to the number of times
+    /// they are stored. liveOnly indicates whether to include only
+    /// points-to sets which correspond to a variable (matters when
+    /// dealing with non-GC persistent PT).
+    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const = 0;
 
 protected:
     /// Whether we maintain reverse points-to sets or not.

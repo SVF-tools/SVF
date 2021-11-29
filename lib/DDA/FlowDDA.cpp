@@ -8,6 +8,7 @@
 #include "Util/Options.h"
 #include "DDA/FlowDDA.h"
 #include "DDA/DDAClient.h"
+#include "MemoryModel/PointsTo.h"
 
 using namespace std;
 using namespace SVF;

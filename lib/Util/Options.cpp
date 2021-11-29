@@ -342,7 +342,67 @@ namespace SVF
         llvm::cl::desc("Enable incremental DFPTData for flow-sensitive analysis")
     );
 
-    
+    const llvm::cl::opt<bool> Options::ClusterAnder(
+        "cluster-ander",
+        llvm::cl::init(false),
+        llvm::cl::desc("Stage Andersen's with Steensgard's and cluster based on that")
+    );
+
+    const llvm::cl::opt<bool> Options::ClusterFs(
+        "cluster-fs",
+        llvm::cl::init(false),
+        llvm::cl::desc("Cluster for FS/VFS with auxiliary Andersen's")
+    );
+
+    const llvm::cl::opt<bool> Options::PlainMappingFs(
+        "plain-mapping-fs",
+        llvm::cl::init(false),
+        llvm::cl::desc("Use an explicitly (not null) plain mapping for FS")
+    );
+
+    const llvm::cl::opt<PointsTo::Type> Options::PtType(
+        "pt-type",
+        llvm::cl::init(PointsTo::Type::SBV),
+        llvm::cl::desc("points-to set data structure to use in all analyses"),
+        llvm::cl::values(
+            clEnumValN(PointsTo::Type::SBV, "sbv", "sparse bit-vector"),
+            clEnumValN(PointsTo::Type::CBV, "cbv", "core bit-vector (dynamic bit-vector without leading and trailing 0s)"),
+            clEnumValN(PointsTo::Type::BV, "bv", "bit-vector (dynamic bit-vector without trailing 0s)")
+        )
+    );
+
+    const llvm::cl::opt<enum hclust_fast_methods> Options::ClusterMethod(
+        "cluster-method",
+        llvm::cl::init(HCLUST_METHOD_SVF_BEST),
+        llvm::cl::desc("hierarchical clustering method for objects"),
+        // TODO: maybe add descriptions.
+        llvm::cl::values(
+            clEnumValN(HCLUST_METHOD_SINGLE,     "single", "single linkage; minimum spanning tree algorithm"),
+            clEnumValN(HCLUST_METHOD_COMPLETE, "complete", "complete linkage; nearest-neighbour-chain algorithm"),
+            clEnumValN(HCLUST_METHOD_AVERAGE,   "average", "unweighted average linkage; nearest-neighbour-chain algorithm"),
+            clEnumValN(HCLUST_METHOD_SVF_BEST,     "best", "try all linkage criteria; choose best")
+        )
+    );
+
+    const llvm::cl::opt<bool> Options::RegionedClustering(
+        // Use cluster to "gather" the options closer together, even if it sounds a little worse.
+        "cluster-regioned",
+        llvm::cl::init(true),
+        llvm::cl::desc("cluster regions separately")
+    );
+
+    const llvm::cl::opt<bool> Options::RegionAlign(
+        "cluster-region-aligned",
+        llvm::cl::init(true),
+        llvm::cl::desc("align each region's identifiers to the native word size")
+    );
+
+    const llvm::cl::opt<bool> Options::PredictPtOcc(
+        "cluster-predict-occ",
+        llvm::cl::init(false),
+        llvm::cl::desc("try to predict which points-to sets are more important in staged analysis")
+    );
+
     // Memory region (MemRegion.cpp)
     const llvm::cl::opt<bool> Options::IgnoreDeadFun(
         "mssa-ignore-dead-fun", 

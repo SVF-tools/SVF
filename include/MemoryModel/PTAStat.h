@@ -31,6 +31,7 @@
 #define ANDERSENSTAT_H_
 
 #include "Util/BasicTypes.h"
+#include "MemoryModel/PointsTo.h"
 #include <iostream>
 #include <map>
 #include <string>

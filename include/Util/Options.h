@@ -3,9 +3,10 @@
 #ifndef OPTIONS_H_
 #define OPTIONS_H_
 
-#include "Util/NodeIDAllocator.h"
 #include <sstream>
+#include "FastCluster/fastcluster.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
+#include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
 
@@ -31,6 +32,34 @@ public:
 
     /// Maximum number of field derivations for an object.
     static const llvm::cl::opt<unsigned> MaxFieldLimit;
+
+    /// Whether to stage Andersen's with Steensgaard and cluster based on that data.
+    static const llvm::cl::opt<bool> ClusterAnder;
+
+    /// Whether to cluster FS or VFS with the auxiliary Andersen's.
+    static const llvm::cl::opt<bool> ClusterFs;
+
+    /// Use an explicitly plain mapping with flow-sensitive (not null).
+    static const llvm::cl::opt<bool> PlainMappingFs;
+
+    /// Type of points-to set to use for all analyses.
+    static const llvm::cl::opt<PointsTo::Type> PtType;
+
+    /// Clustering method for ClusterFs/ClusterAnder.
+    /// TODO: we can separate it into two options, and make Clusterer::cluster take in a method
+    ///       argument rather than plugging Options::ClusterMethod *inside* Clusterer::cluster
+    ///       directly, but it seems we will always want single anyway, and this is for testing.
+    static const llvm::cl::opt<enum hclust_fast_methods> ClusterMethod;
+
+    /// Cluster partitions separately.
+    static const llvm::cl::opt<bool> RegionedClustering;
+
+    /// Align identifiers in each region to a word.
+    static const llvm::cl::opt<bool> RegionAlign;
+
+    /// Predict occurences of points-to sets in the staged points-to set to
+    /// weigh more common points-to sets as more important.
+    static const llvm::cl::opt<bool> PredictPtOcc;
 
     /// PTData type.
     static const llvm::cl::opt<BVDataPTAImpl::PTBackingType> ptDataBacking;

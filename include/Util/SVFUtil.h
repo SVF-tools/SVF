@@ -30,8 +30,10 @@
 #ifndef AnalysisUtil_H_
 #define AnalysisUtil_H_
 
+#include "FastCluster/fastcluster.h"
 #include "SVF-FE/LLVMModule.h"
 #include "Util/BasicTypes.h"
+#include "MemoryModel/PointsTo.h"
 #include <time.h>
 
 namespace SVF
@@ -57,6 +59,7 @@ inline raw_ostream &errs()
 
 /// Dump sparse bitvector set
 void dumpSet(NodeBS To, raw_ostream & O = SVFUtil::outs());
+void dumpSet(PointsTo To, raw_ostream & O = SVFUtil::outs());
 
 /// Dump points-to set
 void dumpPointsToSet(unsigned node, NodeBS To) ;

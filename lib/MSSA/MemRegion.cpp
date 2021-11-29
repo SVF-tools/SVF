@@ -198,7 +198,7 @@ void MRGenerator::collectModRefForLoadStore()
                     pagEdgeToFunMap[inst] = &fun;
                     if (const StorePE *st = SVFUtil::dyn_cast<StorePE>(inst))
                     {
-                        NodeBS cpts(pta->getPts(st->getDstID()));
+                        NodeBS cpts(pta->getPts(st->getDstID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -208,7 +208,7 @@ void MRGenerator::collectModRefForLoadStore()
 
                     else if (const LoadPE *ld = SVFUtil::dyn_cast<LoadPE>(inst))
                     {
-                        NodeBS cpts(pta->getPts(ld->getSrcID()));
+                        NodeBS cpts(pta->getPts(ld->getSrcID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -499,7 +499,7 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
     while(!worklist.empty())
     {
         NodeID nodeId = worklist.pop();
-        const NodeBS& tmp = pta->getPts(nodeId);
+        const NodeBS& tmp = pta->getPts(nodeId).toNodeBS();
         for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             argsPts |= CollectPtsChain(*it);
     }
@@ -512,7 +512,7 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
         const PAGNode* node = pta->getPAG()->getCallSiteRet(retBlockNode);
         if(node->isPointer())
         {
-            const NodeBS& tmp = pta->getPts(node->getId());
+            const NodeBS& tmp = pta->getPts(node->getId()).toNodeBS();
             for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
                 retPts |= CollectPtsChain(*it);
         }
@@ -542,7 +542,7 @@ NodeBS& MRGenerator::CollectPtsChain(NodeID id)
         while(!worklist.empty())
         {
             NodeID nodeId = worklist.pop();
-            const NodeBS& tmp = pta->getPts(nodeId);
+            const NodeBS& tmp = pta->getPts(nodeId).toNodeBS();
             for(NodeBS::iterator it = tmp.begin(), eit = tmp.end(); it!=eit; ++it)
             {
                 pts |= CollectPtsChain(*it);
@@ -678,7 +678,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
         {
             const PAGEdge* edge = *bit;
             if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
-                mods |= pta->getPts(st->getDstID());
+                mods |= pta->getPts(st->getDstID()).toNodeBS();
         }
         return mods;
     }
@@ -702,7 +702,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
         {
             const PAGEdge* edge = *bit;
             if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
-                refs |= pta->getPts(ld->getSrcID());
+                refs |= pta->getPts(ld->getSrcID()).toNodeBS();
         }
         return refs;
     }
@@ -742,7 +742,7 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V)
 
     if (pta->getPAG()->hasValueNode(V))
     {
-        const NodeBS pts(pta->getPts(pta->getPAG()->getValueNode(V)));
+        const NodeBS pts(pta->getPts(pta->getPAG()->getValueNode(V)).toNodeBS());
         const NodeBS csRef = getRefInfoForCall(cs);
         const NodeBS csMod = getModInfoForCall(cs);
         NodeBS ptsExpanded, csRefExpanded, csModExpanded;

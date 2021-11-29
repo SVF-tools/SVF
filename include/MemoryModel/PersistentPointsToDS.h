@@ -6,6 +6,7 @@
 
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/PersistentPointsToCache.h"
+#include "MemoryModel/PointsTo.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF
@@ -99,6 +100,29 @@ public:
     {
         clearRevPts(getPts(var), var);
         ptsMap[var] = PersistentPointsToCache<DataSet>::emptyPointsToId();
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
+    }
+
+    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<DataSet, unsigned> allPts;
+        if (liveOnly)
+        {
+            for (const typename KeyToIDMap::value_type &ki : ptsMap)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+        else
+        {
+            allPts = ptCache.getAllPts();
+        }
+
+        return allPts;
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -208,9 +232,9 @@ public:
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    virtual inline bool unionPts(const Key &dstKey, const DataSet &srcData) override
+    virtual inline bool unionPts(const Key &dstKey, const DataSet &srcDataSet) override
     {
-        return persPTData.unionPts(dstKey, srcData);
+        return persPTData.unionPts(dstKey, srcDataSet);
     }
 
     virtual void clearPts(const Key &var, const Data &element) override
@@ -221,6 +245,11 @@ public:
     virtual void clearFullPts(const Key &var) override
     {
         return persPTData.clearFullPts(var);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
     }
 
     virtual inline void dumpPTData() override
@@ -260,6 +289,11 @@ public:
     virtual inline void clearPropaPts(Key &var) override
     {
         propaPtsMap[var] = ptCache.emptyPointsToId();
+    }
+
+    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        return persPTData.getAllPts(liveOnly);
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -327,9 +361,9 @@ public:
         return persPTData.unionPts(dstKey, srcKey);
     }
 
-    virtual inline bool unionPts(const Key& dstKey, const DataSet &srcData) override
+    virtual inline bool unionPts(const Key& dstKey, const DataSet &srcDataSet) override
     {
-        return persPTData.unionPts(dstKey, srcData);
+        return persPTData.unionPts(dstKey, srcDataSet);
     }
 
     virtual inline bool addPts(const Key &dstKey, const Data &element) override
@@ -345,6 +379,11 @@ public:
     virtual void clearFullPts(const Key& var) override
     {
         persPTData.clearFullPts(var);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        ptCache.remapAllPts();
     }
 
     virtual inline void dumpPTData() override
@@ -447,6 +486,39 @@ public:
     virtual bool updateATVPts(const Key& srcVar, LocID dstLoc, const Key& dstVar) override
     {
         return unionPtsThroughIds(getDFOutPtIdRef(dstLoc, dstVar), persPTData.ptsMap[srcVar]);
+    }
+
+    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        Map<DataSet, unsigned> allPts = persPTData.getAllPts(liveOnly);
+        for (const typename DFKeyToIDMap::value_type &lki : dfInPtsMap)
+        {
+            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+
+        for (const typename DFKeyToIDMap::value_type &lki : dfOutPtsMap)
+        {
+            for (const typename KeyToIDMap::value_type &ki : lki.second)
+            {
+                ++allPts[ptCache.getActualPts(ki.second)];
+            }
+        }
+
+        if (!liveOnly)
+        {
+            // Subtract 1 from each counted points-to set because the live points-to
+            // sets have already been inserted and accounted for how often they occur.
+            // They will each occur one more time in the cache.
+            // In essence, we want the ptCache.getAllPts() to just add the unused, non-GC'd
+            // points-to sets to allPts.
+            for (typename Map<DataSet, unsigned>::value_type pto : allPts) pto.second -= 1;
+            SVFUtil::mergePtsOccMaps<DataSet>(allPts, ptCache.getAllPts());
+        }
+
+        return allPts;
     }
 
     /// Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -786,13 +858,13 @@ public:
     {
         return tlPTData.unionPtsFromId(dstVar, atPTData.ptsMap[srcVar]);
     }
-    virtual bool unionPts(const Key &dstVar, const DataSet &srcData) override
+    virtual bool unionPts(const Key &dstVar, const DataSet &srcDataSet) override
     {
-        return tlPTData.unionPts(dstVar, srcData);
+        return tlPTData.unionPts(dstVar, srcDataSet);
     }
-    virtual bool unionPts(const VersionedKey &dstVar, const DataSet &srcData) override
+    virtual bool unionPts(const VersionedKey &dstVar, const DataSet &srcDataSet) override
     {
-        return atPTData.unionPts(dstVar, srcData);
+        return atPTData.unionPts(dstVar, srcDataSet);
     }
 
     virtual void clearPts(const Key& k, const Data &element) override
@@ -811,6 +883,34 @@ public:
     virtual void clearFullPts(const VersionedKey& vk) override
     {
         atPTData.clearFullPts(vk);
+    }
+
+    virtual void remapAllPts(void) override
+    {
+        // tlPTData and atPTData use the same cache.
+        tlPTData.remapAllPts();
+    }
+
+    virtual Map<DataSet, unsigned> getAllPts(bool liveOnly) const override
+    {
+        // Explicitly pass in true because if we call it with false,
+        // we will double up on the cache, since it is shared with atPTData.
+        // if liveOnly == false, we will handle it in the if below.
+        Map<DataSet, unsigned> allPts = tlPTData.getAllPts(true);
+        SVFUtil::mergePtsOccMaps<DataSet>(allPts, atPTData.getAllPts(true));
+
+        if (!liveOnly)
+        {
+            // Subtract 1 from each counted points-to set because the live points-to
+            // sets have already been inserted and accounted for how often they occur.
+            // They will each occur one more time in the cache.
+            // In essence, we want the ptCache.getAllPts() to just add the unused, non-GC'd
+            // points-to sets to allPts.
+            for (typename Map<DataSet, unsigned>::value_type &pto : allPts) pto.second -= 1;
+            SVFUtil::mergePtsOccMaps<DataSet>(allPts, tlPTData.ptCache.getAllPts());
+        }
+
+        return allPts;
     }
 
     virtual inline void dumpPTData() override

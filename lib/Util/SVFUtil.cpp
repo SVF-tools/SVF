@@ -32,6 +32,7 @@
 #include "SVF-FE/LLVMUtil.h"
 
 #include "Util/Conditions.h"
+#include "MemoryModel/PointsTo.h"
 
 #include <sys/resource.h>		/// increase stack size
 
@@ -151,6 +152,14 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
             ii != ie; ii++)
     {
         O << " " << *ii << " ";
+    }
+}
+
+void SVFUtil::dumpSet(PointsTo pt, raw_ostream &o)
+{
+    for (NodeID n : pt)
+    {
+        o << " " << n << " ";
     }
 }
 

@@ -28,6 +28,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
+#include "MemoryModel/PointerAnalysis.h"
 #include "WPA/WPAStat.h"
 #include "WPA/Andersen.h"
 

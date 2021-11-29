@@ -65,6 +65,16 @@ public:
         initStats();
     }
 
+    /// Remaps all points-to sets stored in the cache to the current mapping.
+    void remapAllPts(void)
+    {
+        for (Data *d : idToPts) d->checkAndRemap();
+
+        // Rebuild ptsToId from idToPts.
+        ptsToId.clear();
+        for (PointsToID i = 0; i < idToPts.size(); ++i) ptsToId[*idToPts[i]] = i;
+    }
+
     /// If pts is not in the PersistentPointsToCache, inserts it, assigns an ID, and returns
     /// that ID. If it is, then the ID is returned.
     PointsToID emplacePts(const Data &pts)

@@ -358,13 +358,4 @@ template <> struct std::hash<SVF::CallSite> {
     }
 };
 
-/// Specialise hash for SparseBitVectors.
-template <> struct std::hash<llvm::SparseBitVector<>>
-{
-    size_t operator()(const llvm::SparseBitVector<> &sbv) const {
-        SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
-        return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
-    }
-};
-
 #endif /* BASICTYPES_H_ */

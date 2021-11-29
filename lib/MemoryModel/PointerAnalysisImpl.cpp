@@ -84,6 +84,23 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     }
 }
 
+void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
+{
+    expandedPts = pts;
+    for (const NodeID o : pts)
+    {
+        if (pag->getBaseObjNode(o) == o || isFieldInsensitive(o))
+        {
+            expandedPts |= pag->getAllFieldsObjNode(o);
+        }
+    }
+}
+
+void BVDataPTAImpl::remapPointsToSets(void)
+{
+    getPTDataTy()->remapAllPts();
+}
+
 /*!
  * Store pointer analysis result into a file.
  * It includes the points-to relations, and all PAG nodes including those

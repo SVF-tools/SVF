@@ -15,6 +15,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "Util/TypeBasedHeapCloning.h"
 #include "WPA/FlowSensitive.h"
+#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {

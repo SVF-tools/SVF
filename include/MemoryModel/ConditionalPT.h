@@ -32,6 +32,7 @@
 
 #include "Util/SVFUtil.h"
 #include "llvm/Support/raw_ostream.h"
+#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {

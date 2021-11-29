@@ -210,13 +210,7 @@ private:
     /// Get branch condition
     Condition* getBranchCond(const BasicBlock * bb, const BasicBlock *succ) const;
     ///Get a condition, evaluate the value for conditions if necessary (e.g., testNull like express)
-    inline Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ)
-    {
-        if(getCurEvalSVFGNode() && getCurEvalSVFGNode()->getValue())
-            return evaluateBranchCond(bb, succ);
-        else
-            return getBranchCond(bb,succ);
-    }
+    Condition* getEvalBrCond(const BasicBlock * bb, const BasicBlock *succ);
     //@}
     /// Evaluate branch conditions
     //@{

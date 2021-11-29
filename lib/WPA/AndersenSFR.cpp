@@ -28,6 +28,7 @@
  */
 
 #include "WPA/AndersenSFR.h"
+#include "MemoryModel/PointsTo.h"
 
 using namespace SVF;
 using namespace SVFUtil;

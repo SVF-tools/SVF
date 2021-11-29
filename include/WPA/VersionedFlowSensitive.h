@@ -14,6 +14,7 @@
 #include "MSSA/SVFGBuilder.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/WPAFSSolver.h"
+#include "MemoryModel/PointsTo.h"
 
 namespace SVF
 {

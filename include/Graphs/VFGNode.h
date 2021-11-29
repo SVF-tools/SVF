@@ -30,15 +30,14 @@
 #ifndef INCLUDE_UTIL_VFGNODE_H_
 #define INCLUDE_UTIL_VFGNODE_H_
 
-#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/GenericGraph.h"
 #include "Graphs/VFGEdge.h"
+#include "Graphs/ICFGNode.h"
+#include "Graphs/PAGNode.h"
+#include "Graphs/PAGEdge.h"
 
 namespace SVF
 {
-
-class VFGNode;
-class ICFGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements

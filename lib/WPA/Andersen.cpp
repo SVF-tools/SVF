@@ -29,7 +29,10 @@
 
 #include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
+#include "MemoryModel/PointsTo.h"
+#include "Util/Options.h"
 #include "WPA/Andersen.h"
+#include "WPA/Steensgaard.h"
 
 using namespace SVF;
 using namespace SVFUtil;

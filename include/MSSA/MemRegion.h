@@ -35,12 +35,13 @@
 #include "Util/SCC.h"
 #include "Util/WorkList.h"
 #include "Graphs/ICFG.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 
 #include <set>
 
 namespace SVF
 {
+
+class BVDataPTAImpl;
 
 typedef NodeID MRID;
 typedef NodeID MRVERID;
