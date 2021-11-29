@@ -19,7 +19,10 @@ file (GLOB SOURCES
         WPA/*.cpp
         MTA/*.cpp
         SABER/*.cpp
-        DDA/*.cpp)
+        DDA/*.cpp
+        FastCluster/*.cpp
+)
+
 add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd ${Z3_LIBRARIES})
 
 link_directories(${CMAKE_BINARY_DIR}/lib/Cudd)
