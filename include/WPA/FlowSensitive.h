@@ -273,9 +273,18 @@ protected:
     }
     ///@}
 
+    /// Performs clustering based on ander, setting the global best mapping
+    /// accordingly.
+    virtual void cluster(void);
+    /// Sets the global best mapping as a plain mapping, i.e. n -> n.
+    virtual void plainMap(void) const;
+
     static FlowSensitive* fspta;
     SVFGBuilder memSSA;
     AndersenWaveDiff *ander;
+
+    /// Save candidate mappings for evaluation's sake.
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidateMappings;
 
     /// Statistics.
     //@{

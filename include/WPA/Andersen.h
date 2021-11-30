@@ -411,6 +411,10 @@ protected:
     {
         return;
     }
+
+    /// Runs a Steensgaard analysis and performs clustering based on those
+    /// results set the global best mapping.
+    virtual void cluster(void) const;
 };
 
 

@@ -178,6 +178,9 @@ void Andersen::initialize()
     setDiffOpt(Options::PtsDiff);
     setPWCOpt(Options::MergePWC);
     AndersenBase::initialize();
+
+    if (Options::ClusterAnder) cluster();
+
     /// Initialize worklist
     processAllAddr();
 }
@@ -187,6 +190,18 @@ void Andersen::initialize()
  */
 void Andersen::finalize()
 {
+    // TODO: check -stat too.
+    // TODO: broken
+    if (Options::ClusterAnder)
+    {
+        Map<std::string, std::string> stats;
+        const PTDataTy *ptd = getPTDataTy();
+        // TODO: should we use liveOnly?
+        // TODO: parameterise final arg.
+        NodeIDAllocator::Clusterer::evaluate(*PointsTo::getCurrentBestNodeMapping(), ptd->getAllPts(true), stats, true);
+        NodeIDAllocator::Clusterer::printStats("post-main", stats);
+    }
+
     /// sanitize field insensitive obj
     /// TODO: Fields has been collapsed during Andersen::collapseField().
     //	sanitizePts();
@@ -809,6 +824,25 @@ void Andersen::updateNodeRepAndSubs(NodeID nodeId, NodeID newRepId)
     repSubs |= nodeSubs;
     consCG->setSubs(newRepId,repSubs);
     consCG->resetSubs(nodeId);
+}
+
+void Andersen::cluster(void) const
+{
+    assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
+    Steensgaard *steens = Steensgaard::createSteensgaard(pag);
+    std::vector<std::pair<unsigned, unsigned>> keys;
+    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    {
+        keys.push_back(std::make_pair(pit->first, 1));
+    }
+
+    std::vector<std::pair<hclust_fast_methods, std::vector<NodeID>>> candidates;
+    PointsTo::MappingPtr nodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(steens, keys, candidates, "aux-steens"));
+    PointsTo::MappingPtr reverseNodeMapping =
+        std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::getReverseNodeMapping(*nodeMapping));
+
+    PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
 }
 
 /*!

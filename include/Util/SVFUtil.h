@@ -287,6 +287,9 @@ void mergePtsOccMaps(Map<Data, unsigned> &to, const Map<Data, unsigned> from)
     }
 }
 
+/// Returns a string representation of a hclust method.
+std::string hclustMethodToString(hclust_fast_methods method);
+
 /// Inserts an element into a Set/CondSet (with ::insert).
 template <typename Key, typename KeySet>
 inline void insertKey(const Key &key, KeySet &keySet)

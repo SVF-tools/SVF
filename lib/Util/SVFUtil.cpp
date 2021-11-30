@@ -362,6 +362,25 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     return rawstr.str();
 }
 
+std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
+{
+    switch (method)
+    {
+    case HCLUST_METHOD_SINGLE:
+        return "single";
+    case HCLUST_METHOD_COMPLETE:
+        return "complete";
+    case HCLUST_METHOD_AVERAGE:
+        return "average";
+    case HCLUST_METHOD_MEDIAN:
+        return "median";
+    case HCLUST_METHOD_SVF_BEST:
+        return "svf-best";
+    default:
+        assert(false && "SVFUtil::hclustMethodToString: unknown method");
+    }
+}
+
 /*!
  * return string of an LLVM Value
  */

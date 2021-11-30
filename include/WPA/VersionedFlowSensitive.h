@@ -115,6 +115,9 @@ protected:
     /// Override to do nothing. Instead, we will use propagateVersion when necessary.
     virtual bool propAlongIndirectEdge(const IndirectSVFGEdge*) override { return false; }
 
+    /// Override since we want to assign different weights based on versioning.
+    virtual void cluster(void) override;
+
 private:
     /// Prelabel the SVFG: set y(o) for stores and c(o) for delta nodes to a new version.
     void prelabel(void);
