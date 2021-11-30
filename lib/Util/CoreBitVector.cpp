@@ -161,7 +161,7 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
     }
 
     // Make sure both got to the end at the same time.
-    return lhsSetIndex >= words.size() && rhsSetIndex >= words.size();
+    return lhsSetIndex >= words.size() && rhsSetIndex >= rhs.words.size();
 }
 
 bool CoreBitVector::operator!=(const CoreBitVector &rhs) const
