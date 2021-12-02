@@ -891,7 +891,25 @@ const SVFFunction* VFG::isFunEntryVFGNode(const VFGNode* node) const
 }
 
 
+const Value* StmtVFGNode::getValue() const {
+    return getPAGEdge()->getValue();
+}
 
+const Value* CmpVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* BinaryOPVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* PHIVFGNode::getValue() const {
+    return getRes()->getValue();
+}
+
+const Value* ArgumentVFGNode::getValue() const {
+    return param->getValue();
+}
 
 /*!
  * GraphTraits specialization

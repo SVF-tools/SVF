@@ -147,43 +147,6 @@ const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
         return getSVFG()->getCallSite(SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId());
 }
 
-/*!
- * Return llvm value for addr/copy/gep/load/phi/actualParam/formalParam/actualRet/formalRet
- * but not for store/mssaphi/actualIn/acutalOut/formalIn/formalOut
- */
-const Value* ProgSlice::getLLVMValue(const SVFGNode* node) const
-{
-    if(const StmtSVFGNode* stmt = SVFUtil::dyn_cast<StmtSVFGNode>(node))
-    {
-        if(SVFUtil::isa<StoreSVFGNode>(stmt) == false)
-        {
-            if(stmt->getPAGDstNode()->hasValue())
-                return stmt->getPAGDstNode()->getValue();
-        }
-    }
-    else if(const PHISVFGNode* phi = SVFUtil::dyn_cast<PHISVFGNode>(node))
-    {
-        return phi->getRes()->getValue();
-    }
-    else if(const ActualParmSVFGNode* ap = SVFUtil::dyn_cast<ActualParmSVFGNode>(node))
-    {
-        return ap->getParam()->getValue();
-    }
-    else if(const FormalParmSVFGNode* fp = SVFUtil::dyn_cast<FormalParmSVFGNode>(node))
-    {
-        return fp->getParam()->getValue();
-    }
-    else if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
-    {
-        return ar->getRev()->getValue();
-    }
-    else if(const FormalRetSVFGNode* fr = SVFUtil::dyn_cast<FormalRetSVFGNode>(node))
-    {
-        return fr->getRet()->getValue();
-    }
-
-    return nullptr;
-}
 
 /*!
  * Evaluate Atoms of a condition

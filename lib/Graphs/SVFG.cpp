@@ -161,26 +161,6 @@ const std::string ThreadMHPIndSVFGEdge::toString() const {
     return rawstr.str();
 }
 
-const Value* StmtSVFGNode::getValue() const {
-    return getPAGEdge()->getValue();
-}
-
-const Value* CmpVFGNode::getValue() const {
-    return getRes()->getValue();
-}
-
-const Value* BinaryOPVFGNode::getValue() const {
-    return getRes()->getValue();
-}
-
-const Value* PHIVFGNode::getValue() const {
-    return getRes()->getValue();
-}
-
-const Value* ArgumentVFGNode::getValue() const {
-    return param->getValue();
-}
-
 
 FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExitBlockNode* funExit): MRSVFGNode(id, FPOUT)
 {
