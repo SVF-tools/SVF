@@ -96,7 +96,10 @@ bool PointsTo::empty(void) const
     if (type == CBV) return cbv.empty();
     else if (type == SBV) return sbv.empty();
     else if (type == BV) return bv.empty();
-    assert(false && "PointsTo::empty: unknown type");
+    else {
+        assert(false && "PointsTo::empty: unknown type");
+        abort();
+    }
 }
 
 /// Returns number of elements.
@@ -105,7 +108,10 @@ u32_t PointsTo::count(void) const
     if (type == CBV) return cbv.count();
     else if (type == SBV) return sbv.count();
     else if (type == BV) return bv.count();
-    assert(false && "PointsTo::count: unknown type");
+    else {
+        assert(false && "PointsTo::count: unknown type");
+        abort();
+    }
 }
 
 void PointsTo::clear(void)
@@ -122,7 +128,10 @@ bool PointsTo::test(u32_t n) const
     if (type == CBV) return cbv.test(n);
     else if (type == SBV) return sbv.test(n);
     else if (type == BV) return bv.test(n);
-    assert(false && "PointsTo::test: unknown type");
+    else {
+        assert(false && "PointsTo::test: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::test_and_set(u32_t n)
@@ -131,7 +140,10 @@ bool PointsTo::test_and_set(u32_t n)
     if (type == CBV) return cbv.test_and_set(n);
     else if (type == SBV) return sbv.test_and_set(n);
     else if (type == BV) return bv.test_and_set(n);
-    assert(false && "PointsTo::test_and_set: unknown type");
+    else {
+        assert(false && "PointsTo::test_and_set: unknown type");
+        abort();
+    }
 }
 
 void PointsTo::set(u32_t n)
@@ -159,7 +171,10 @@ bool PointsTo::contains(const PointsTo &rhs) const
     if (type == CBV) return cbv.contains(rhs.cbv);
     else if (type == SBV) return sbv.contains(rhs.sbv);
     else if (type == BV) return bv.contains(rhs.bv);
-    assert(false && "PointsTo::contains: unknown type");
+    else {
+        assert(false && "PointsTo::contains: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::intersects(const PointsTo &rhs) const
@@ -169,7 +184,10 @@ bool PointsTo::intersects(const PointsTo &rhs) const
     if (type == CBV) return cbv.intersects(rhs.cbv);
     else if (type == SBV) return sbv.intersects(rhs.sbv);
     else if (type == BV) return bv.intersects(rhs.bv);
-    assert(false && "PointsTo::intersects: unknown type");
+    else {
+        assert(false && "PointsTo::intersects: unknown type");
+        abort();
+    }
 }
 
 int PointsTo::find_first(void)
@@ -185,7 +203,10 @@ bool PointsTo::operator==(const PointsTo &rhs) const
     if (type == CBV) return cbv == rhs.cbv;
     else if (type == SBV) return sbv == rhs.sbv;
     else if (type == BV) return bv == rhs.bv;
-    assert(false && "PointsTo::==: unknown type");
+    else {
+        assert(false && "PointsTo::==: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::operator!=(const PointsTo &rhs) const
@@ -203,7 +224,10 @@ bool PointsTo::operator|=(const PointsTo &rhs)
     if (type == CBV) return cbv |= rhs.cbv;
     else if (type == SBV) return sbv |= rhs.sbv;
     else if (type == BV) return bv |= rhs.bv;
-    assert(false && "PointsTo::|=: unknown type");
+    else{
+        assert(false && "PointsTo::|=: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::operator|=(const NodeBS &rhs)
@@ -226,7 +250,10 @@ bool PointsTo::operator&=(const PointsTo &rhs)
     if (type == CBV) return cbv &= rhs.cbv;
     else if (type == SBV) return sbv &= rhs.sbv;
     else if (type == BV) return bv &= rhs.bv;
-    assert(false && "PointsTo::&=: unknown type");
+    else{
+        assert(false && "PointsTo::&=: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::operator-=(const PointsTo &rhs)
@@ -236,7 +263,10 @@ bool PointsTo::operator-=(const PointsTo &rhs)
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
-    assert(false && "PointsTo::-=: unknown type");
+    else{
+        assert(false && "PointsTo::-=: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::intersectWithComplement(const PointsTo &rhs)
@@ -246,7 +276,9 @@ bool PointsTo::intersectWithComplement(const PointsTo &rhs)
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
-    assert(false && "PointsTo::intersectWithComplement(PT): unknown type");
+    else {
+        assert(false && "PointsTo::intersectWithComplement(PT): unknown type");
+    }
 }
 
 void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
@@ -257,7 +289,10 @@ void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)
     if (type == CBV) cbv.intersectWithComplement(lhs.cbv, rhs.cbv);
     else if (type == SBV) sbv.intersectWithComplement(lhs.sbv, rhs.sbv);
     else if (type == BV) bv.intersectWithComplement(lhs.bv, rhs.bv);
-    else assert(false && "PointsTo::intersectWithComplement(PT, PT): unknown type");
+    else {
+        assert(false && "PointsTo::intersectWithComplement(PT, PT): unknown type");
+        abort();
+    }
 }
 
 NodeBS PointsTo::toNodeBS(void) const
@@ -277,7 +312,10 @@ size_t PointsTo::hash(void) const
     }
     else if (type == BV) return bv.hash();
 
-    assert(false && "PointsTo::hash: unknown type");
+    else{
+        assert(false && "PointsTo::hash: unknown type");
+        abort();
+    }
 }
 
 PointsTo::MappingPtr PointsTo::getNodeMapping(void) const
@@ -347,7 +385,11 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
     {
         new (&bvIt) BitVector::iterator(end ? pt->bv.end() : pt->bv.begin());
     }
-    else assert(false && "PointsToIterator::PointsToIterator: unknown type");
+    else 
+    {
+        assert(false && "PointsToIterator::PointsToIterator: unknown type");
+        abort();
+    }
 }
 
 PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
@@ -365,7 +407,10 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsToIterator &pt)
     {
         new (&bvIt) BitVector::iterator(pt.bvIt);
     }
-    else assert(false && "PointsToIterator::PointsToIterator&: unknown type");
+    else {
+        assert(false && "PointsToIterator::PointsToIterator&: unknown type");
+        abort();
+    }
 }
 
 PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
@@ -383,7 +428,10 @@ PointsTo::PointsToIterator::PointsToIterator(PointsToIterator &&pt)
     {
         new (&bvIt) BitVector::iterator(std::move(pt.bvIt));
     }
-    else assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
+    else {
+        assert(false && "PointsToIterator::PointsToIterator&&: unknown type");
+        abort();
+    }
 }
 
 PointsTo::PointsToIterator &PointsTo::PointsToIterator::operator=(const PointsToIterator &rhs)
@@ -453,7 +501,10 @@ const NodeID PointsTo::PointsToIterator::operator*(void) const
     if (pt->type == Type::CBV) return pt->getExternalNode(*cbvIt);
     else if (pt->type == Type::SBV) return pt->getExternalNode(*sbvIt);
     else if (pt->type == Type::BV) return pt->getExternalNode(*bvIt);
-    assert(false && "PointsToIterator::*: unknown type");
+    else {
+        assert(false && "PointsToIterator::*: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::PointsToIterator::operator==(const PointsToIterator &rhs) const
@@ -465,7 +516,10 @@ bool PointsTo::PointsToIterator::operator==(const PointsToIterator &rhs) const
     if (pt->type == Type::CBV) return cbvIt == rhs.cbvIt;
     else if (pt->type == Type::SBV) return sbvIt == rhs.sbvIt;
     else if (pt->type == Type::BV) return bvIt == rhs.bvIt;
-    assert(false && "PointsToIterator::==: unknown type");
+    else {
+        assert(false && "PointsToIterator::==: unknown type");
+        abort();
+    }
 }
 
 bool PointsTo::PointsToIterator::operator!=(const PointsToIterator &rhs) const
@@ -481,7 +535,10 @@ bool PointsTo::PointsToIterator::atEnd(void) const
     if (pt->type == Type::CBV) return cbvIt == pt->cbv.end();
     else if (pt->type == Type::SBV) return sbvIt == pt->sbv.end();
     else if (pt->type == Type::BV) return bvIt == pt->bv.end();
-    assert(false && "PointsToIterator::atEnd: unknown type");
+    else {
+        assert(false && "PointsToIterator::atEnd: unknown type");
+        abort();
+    }
 }
 
 PointsTo operator|(const PointsTo &lhs, const PointsTo &rhs)
