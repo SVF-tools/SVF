@@ -34,6 +34,7 @@
 #include <system_error>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/FileSystem.h>		// for file open flag
+#include <llvm/ADT/GraphTraits.h>
 
 namespace llvm
 {
@@ -60,7 +61,7 @@ public:
         std::string Filename = GraphName + ".dot";
         O << "Writing '" << Filename << "'...";
         std::error_code ErrInfo;
-        llvm::ToolOutputFile F(Filename.c_str(), ErrInfo, llvm::sys::fs::F_None);
+        llvm::ToolOutputFile F(Filename.c_str(), ErrInfo, llvm::sys::fs::OF_None);
 
         if (!ErrInfo)
         {
