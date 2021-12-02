@@ -146,7 +146,7 @@ void AndersenBase::cleanConsCG(NodeID id) {
         consCG->resetRep(sub);
     consCG->resetSubs(id);
     consCG->resetRep(id);
-    assert(!consCG->hasGNode(id) && "this node should already have been merged to its field-insensitive base! ");
+    assert(!consCG->hasGNode(id) && "this is either a rep nodeid or a sub nodeid should have already been merged to its field-insensitive base! ");
 }
 
 void AndersenBase::normalizePointsTo()
@@ -570,10 +570,10 @@ bool Andersen::collapseField(NodeID nodeId)
             }
             // merge field node into base node, including edges and pts.
             NodeID fieldRepNodeId = consCG->sccRepNode(fieldId);
-            if (fieldRepNodeId != baseRepNodeId){
-                mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
-
+            mergeNodeToRep(fieldRepNodeId, baseRepNodeId);
+            if (fieldId != baseRepNodeId){
                 // gep node fieldId becomes redundant if it is merged to its base node who is set as field-insensitive
+                // two node IDs should be different otherwise this field is actually the base and should not be removed.
                 redundantGepNodes.set(fieldId);
             }
         }
