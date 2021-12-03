@@ -107,45 +107,6 @@ hasConstantGEP (Value * V)
     return 0;
 }
 
-//
-// Function: convertGEP()
-//
-// Description:
-//  Convert a GEP constant expression into a GEP instruction.
-//
-// Inputs:
-//  CE       - The GEP constant expression.
-//  InsertPt - The instruction before which to insert the new GEP instruction.
-//
-// Return value:
-//  A pointer to the new GEP instruction is returned.
-//
-static Instruction *
-convertGEP (ConstantExpr * CE, Instruction * InsertPt)
-{
-    //
-    // Create iterators to the indices of the constant expression.
-    //
-    std::vector<Value *> Indices;
-    for (unsigned index = 1; index < CE->getNumOperands(); ++index)
-    {
-        Indices.push_back (CE->getOperand (index));
-    }
-    llvm::ArrayRef<Value *> arrayIdices(Indices);
-    //
-    // Update the statistics.
-    //
-    ++GEPChanges;
-
-
-    //
-    // Make the new GEP instruction.
-    //
-    return (GetElementPtrInst::Create (nullptr,CE->getOperand(0),
-                                       arrayIdices,
-                                       CE->getName(),
-                                       InsertPt));
-}
 
 //
 // Function: convertExpression()
@@ -161,111 +122,12 @@ convertExpression (ConstantExpr * CE, Instruction * InsertPt)
     //
     // Convert this constant expression into a regular instruction.
     //
-    Instruction * NewInst = 0;
-    switch (CE->getOpcode())
-    {
-    case Instruction::GetElementPtr:
-    {
-        NewInst = convertGEP (CE, InsertPt);
-        break;
-    }
-
-    case Instruction::Add:
-    case Instruction::Sub:
-    case Instruction::Mul:
-    case Instruction::FAdd:
-    case Instruction::FSub:
-    case Instruction::FMul:
-    case Instruction::UDiv:
-    case Instruction::SDiv:
-    case Instruction::FDiv:
-    case Instruction::URem:
-    case Instruction::SRem:
-    case Instruction::FRem:
-    case Instruction::Shl:
-    case Instruction::LShr:
-    case Instruction::AShr:
-    case Instruction::And:
-    case Instruction::Or:
-    case Instruction::Xor:
-    {
-        Instruction::BinaryOps Op = (Instruction::BinaryOps)(CE->getOpcode());
-        NewInst = llvm::BinaryOperator::Create (Op,
-                                                CE->getOperand(0),
-                                                CE->getOperand(1),
-                                                CE->getName(),
-                                                InsertPt);
-        break;
-    }
-
-    case Instruction::FNeg:
-    {
-        Instruction::UnaryOps Op = (Instruction::UnaryOps)(CE->getOpcode());
-        NewInst = llvm::UnaryOperator::Create (Op,
-                                                CE->getOperand(0),
-                                                CE->getName(),
-                                                InsertPt);
-        break;
-    }
-
-    case Instruction::Trunc:
-    case Instruction::ZExt:
-    case Instruction::SExt:
-    case Instruction::FPToUI:
-    case Instruction::FPToSI:
-    case Instruction::UIToFP:
-    case Instruction::SIToFP:
-    case Instruction::FPTrunc:
-    case Instruction::FPExt:
-    case Instruction::PtrToInt:
-    case Instruction::IntToPtr:
-    case Instruction::BitCast:
-    {
-        Instruction::CastOps Op = (Instruction::CastOps)(CE->getOpcode());
-        NewInst = CastInst::Create (Op,
-                                    CE->getOperand(0),
-                                    CE->getType(),
-                                    CE->getName(),
-                                    InsertPt);
-        break;
-    }
-
-    case Instruction:: FCmp:
-    case Instruction:: ICmp:
-    {
-        Instruction::OtherOps Op = (Instruction::OtherOps)(CE->getOpcode());
-        NewInst = CmpInst::Create (Op,
-                                   static_cast<CmpInst::Predicate>(CE->getPredicate()),
-                                   CE->getOperand(0),
-                                   CE->getOperand(1),
-                                   CE->getName(),
-                                   InsertPt);
-        break;
-    }
-
-    case Instruction:: Select:
-        NewInst = SelectInst::Create (CE->getOperand(0),
-                                      CE->getOperand(1),
-                                      CE->getOperand(2),
-                                      CE->getName(),
-                                      InsertPt);
-        break;
-
-    case Instruction:: ExtractElement:
-    case Instruction:: InsertElement:
-    case Instruction:: ShuffleVector:
-    case Instruction:: InsertValue:
-    default:
-        assert (0 && "Unhandled constant expression!\n");
-        break;
-    }
-
-    //
-    // Update the statistics.
-    //
+    if (CE->getOpcode() == Instruction::GetElementPtr)
+        ++GEPChanges;
     ++TotalChanges;
-
-    return NewInst;
+    Instruction* Result = CE->getAsInstruction();
+    Result->insertBefore(InsertPt);
+    return Result;
 }
 
 //
