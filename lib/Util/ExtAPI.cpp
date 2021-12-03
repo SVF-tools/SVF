@@ -12,6 +12,8 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <utility>
+#include <assert.h>
 #include <string>
 #include <fstream>          // to read extAPI.txt
 
@@ -126,7 +128,7 @@ void ExtAPI::init()
         ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));
     } 
 
-    for(auto p= ei_pairs.cbegin(); p->n; ++p)
+    for(auto p= ei_pairs.begin(); p->n; ++p)
     {
         if(p->t != prev_t)
         {
