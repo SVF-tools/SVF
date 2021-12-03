@@ -40,7 +40,7 @@ void SaberAnnotator::annotateSource()
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_SLICESOURCE ; //<< _curSlice->getSource()->getId();
-    if(const Instruction* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getLLVMValue(_curSlice->getSource())))
+    if(const Instruction* sourceinst = SVFUtil::dyn_cast<Instruction>(_curSlice->getSource()->getValue()))
     {
         addMDTag(const_cast<Instruction*>(sourceinst),rawstr.str());
     }

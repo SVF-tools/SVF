@@ -160,9 +160,6 @@ public:
     bool isSatisfiableForAll();
     bool isSatisfiableForPairs();
 
-    /// Get llvm value from a SVFGNode
-    const Value* getLLVMValue(const SVFGNode* node) const;
-
     /// Get callsite ID and get returnsiteID from SVFGEdge
     //@{
     const CallBlockNode* getCallSite(const SVFGEdge* edge) const;
