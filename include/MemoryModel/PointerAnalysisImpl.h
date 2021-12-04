@@ -539,15 +539,15 @@ public:
         CPtSet cpts2;
         expandFIObjs(pts2,cpts2);
         if (containBlackHoleNode(cpts1) || containBlackHoleNode(cpts2))
-            return llvm::MayAlias;
+            return llvm::AliasResult::MayAlias;
         else if(this->getAnalysisTy()==PathS_DDA && contains(cpts1,cpts2) && contains(cpts2,cpts1))
         {
-            return llvm::MustAlias;
+            return llvm::AliasResult::MustAlias;
         }
         else if(overlap(cpts1,cpts2))
-            return llvm::MayAlias;
+            return llvm::AliasResult::MayAlias;
         else
-            return llvm::NoAlias;
+            return llvm::AliasResult::NoAlias;
     }
     /// Test blk node for cpts
     inline bool containBlackHoleNode(const CPtSet& cpts)

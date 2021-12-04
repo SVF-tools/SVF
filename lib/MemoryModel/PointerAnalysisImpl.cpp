@@ -113,7 +113,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     outs() << "Storing pointer analysis results to '" << filename << "'...";
 
     error_code err;
-    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
+    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::OF_None);
     if (err)
     {
         outs() << "  error opening file for writing!\n";
@@ -477,7 +477,7 @@ AliasResult BVDataPTAImpl::alias(const PointsTo& p1, const PointsTo& p2)
     expandFIObjs(p2,pts2);
 
     if (containBlackHoleNode(pts1) || containBlackHoleNode(pts2) || pts1.intersects(pts2))
-        return llvm::MayAlias;
+        return llvm::AliasResult::MayAlias;
     else
-        return llvm::NoAlias;
+        return llvm::AliasResult::NoAlias;
 }

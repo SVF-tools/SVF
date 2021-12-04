@@ -304,7 +304,7 @@ AliasResult DDAPass::alias(const Value* V1, const Value* V2)
         return _pta->alias(V1,V2);
     }
 
-    return llvm::MayAlias;
+    return llvm::AliasResult::MayAlias;
 }
 
 /*!
