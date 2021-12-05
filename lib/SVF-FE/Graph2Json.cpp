@@ -15,7 +15,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
 {
     outs() << "write symbols to '" << filename << "'...";
     std::error_code err;
-    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::F_None);
+    ToolOutputFile F(filename.c_str(), err, llvm::sys::fs::OF_None);
     if (err)
     {
         outs() << "  error opening file for writing!\n";

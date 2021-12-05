@@ -581,7 +581,7 @@ public:
         mutPTData.dumpPTData();
         /// dump points-to of address-taken variables
         std::error_code ErrInfo;
-        ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::F_None);
+        ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::OF_None);
         if (!ErrInfo)
         {
             raw_fd_ostream & osm = F.os();
