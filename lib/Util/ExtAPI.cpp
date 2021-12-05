@@ -143,13 +143,13 @@ void ExtAPI::init()
             t_seen.insert(p->t);
             prev_t= p->t;
         }
-        if(info.count(p->n))
-        {
-            fputs(p->n, stderr);
-            putc('\n', stderr);
-            assert(!"duplicate name in ei_pairs");
-        }
-        info[p->n]= p->t;
+        // if(info.count(p->n))
+        // {
+        //     fputs(p->n, stderr);
+        //     putc('\n', stderr);
+        //     assert(!"duplicate name in ei_pairs");
+        // }
+        // info[p->n]= p->t;
     }
 }
 
