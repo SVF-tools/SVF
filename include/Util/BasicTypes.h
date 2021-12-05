@@ -326,7 +326,7 @@ public:
     unsigned arg_size() const { return CB->arg_size(); }
     bool arg_empty() const { return CB->arg_empty(); }
     Value *getArgOperand(unsigned i) const { return CB->getArgOperand(i); }
-    unsigned getNumArgOperands() const { return CB->getNumArgOperands(); }
+    unsigned getNumArgOperands() const { return CB->arg_size(); }
     Function *getCalledFunction() const { return CB->getCalledFunction(); }
     Value *getCalledValue() const { return CB->getCalledOperand(); }
     Function *getCaller() const { return CB->getCaller(); }

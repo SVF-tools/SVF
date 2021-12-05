@@ -592,24 +592,24 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                 bool checkSuccessful = false;
                 if (fun == aliasTestMayAlias || fun == aliasTestMayAliasMangled)
                 {
-                    if (aliasRes == llvm::MayAlias || aliasRes == llvm::MustAlias)
+                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::MustAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestNoAlias || fun == aliasTestNoAliasMangled)
                 {
-                    if (aliasRes == llvm::NoAlias)
+                    if (aliasRes == llvm::AliasResult::NoAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestMustAlias || fun == aliasTestMustAliasMangled)
                 {
                     // change to must alias when our analysis support it
-                    if (aliasRes == llvm::MayAlias || aliasRes == llvm::MustAlias)
+                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::MustAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestPartialAlias || fun == aliasTestPartialAliasMangled)
                 {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == llvm::MayAlias)
+                    if (aliasRes == llvm::AliasResult::MayAlias)
                         checkSuccessful = true;
                 }
                 else
@@ -650,7 +650,7 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
                     checkFun->getLLVMFun()->user_end(); i != e; ++i)
             if (CallInst *call = SVFUtil::dyn_cast<CallInst>(*i))
             {
-                assert(call->getNumArgOperands() == 2
+                assert(call->arg_size() == 2
                        && "arguments should be two pointers!!");
                 Value* V1 = call->getArgOperand(0);
                 Value* V2 = call->getArgOperand(1);
@@ -660,13 +660,13 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
                 if (fun == aliasTestFailMayAlias || fun == aliasTestFailMayAliasMangled)
                 {
                     // change to must alias when our analysis support it
-                    if (aliasRes == llvm::NoAlias)
+                    if (aliasRes == llvm::AliasResult::NoAlias)
                         expectedFailure = true;
                 }
                 else if (fun == aliasTestFailNoAlias || fun == aliasTestFailNoAliasMangled)
                 {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == llvm::MayAlias || aliasRes == llvm::PartialAlias || aliasRes == llvm::MustAlias)
+                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::PartialAlias || aliasRes == llvm::AliasResult::MustAlias)
                         expectedFailure = true;
                 }
                 else
