@@ -13,7 +13,6 @@
 #include <set>
 #include <vector>
 #include <utility>
-#include <assert.h>
 #include <string>
 #include <fstream>          // to read extAPI.txt
 
@@ -122,8 +121,8 @@ void ExtAPI::init()
     // store ei_pairs to ei_pairs vector
     for(auto data_iter = data.begin(); data_iter != data.end(); ++data_iter){
         // check for duplicate side effects on the same external function name
-        assert(!ID_seen.count(data_iter->first) && "Cannot have multiple side effects for a single external function");
-        ID_seen.insert(data_iter->first);
+        // assert(!ID_seen.count(data_iter->first) && "Cannot have multiple side effects for a single external function");
+        // ID_seen.insert(data_iter->first);
         const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
         ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));
     } 
@@ -143,13 +142,13 @@ void ExtAPI::init()
             t_seen.insert(p->t);
             prev_t= p->t;
         }
-        // if(info.count(p->n))
-        // {
-        //     fputs(p->n, stderr);
-        //     putc('\n', stderr);
-        //     assert(!"duplicate name in ei_pairs");
-        // }
-        // info[p->n]= p->t;
+        if(info.count(p->n))
+        {
+            fputs(p->n, stderr);
+            putc('\n', stderr);
+            assert(!"duplicate name in ei_pairs");
+        }
+        info[p->n]= p->t;
     }
 }
 
