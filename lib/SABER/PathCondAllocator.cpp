@@ -30,7 +30,7 @@
 
 #include "Util/Options.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "Util/PathCondAllocator.h"
+#include "SABER/PathCondAllocator.h"
 #include "Util/DPItem.h"
 #include "Graphs/SVFG.h"
 #include <climits>
@@ -347,40 +347,39 @@ bool PathCondAllocator::isTestNotNullExpr(const Value* test) const
     return false;
 }
 
+/*!
+ * Return true if:
+ * (1) cmp contains a null value
+ * (2) there is an indirect edge from cur evaluated SVFG node to cmp operand
+ *
+ * e.g.,
+ *      cur svfg node -> 1. store i32* %0, i32** %p, align 8, !dbg !157
+ *      cmp operand   -> 2. %1 = load i32*, i32** %p, align 8, !dbg !159
+ *                       3. %tobool = icmp ne i32* %1, null, !dbg !159
+ *                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
+ *     There is an indirect edge 1->2 with value %0
+ */
 bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp) const
 {
 
     const Value *op0 = cmp->getOperand(0);
     const Value *op1 = cmp->getOperand(1);
-    if (SVFUtil::isa<StoreInst>(getCurEvalSVFGNode()->getValue())) {
-        if (SVFUtil::isa<ConstantPointerNull>(op1)) {
-            if (SVFUtil::isa<LoadInst>(op0)) {
-                Set<const Value*> inDirVal;
-                for (const auto& it: getCurEvalSVFGNode()->getOutEdges()) {
-                    if (it->isIndirectVFGEdge()) {
-                        inDirVal.insert(it->getDstNode()->getValue());
-                    }
-                }
-                // There is an indirect edge from cur svfg node (store) to cmp operand (load from top-level pointer)
-                //  e.g.,
-                //      cur svfg node -> 1. store i32* %0, i32** %p, align 8, !dbg !157
-                //      cmp operand   -> 2. %1 = load i32*, i32** %p, align 8, !dbg !159
-                //                       3. %tobool = icmp ne i32* %1, null, !dbg !159
-                //                       4. br i1 %tobool, label %if.end, label %if.then, !dbg !161
-                //      There is an indirect edge 1->2 with value %0
-                return inDirVal.find(op0) != inDirVal.end();
-            }
-        } else if (SVFUtil::isa<ConstantPointerNull>(op0)) {
-            if (SVFUtil::isa<LoadInst>(op1)) {
-                Set<const Value*> inDirVal;
-                for (const auto& it: getCurEvalSVFGNode()->getOutEdges()) {
-                    if (it->isIndirectVFGEdge()) {
-                        inDirVal.insert(it->getDstNode()->getValue());
-                    }
-                }
-                return inDirVal.find(op1) != inDirVal.end();
+    if (SVFUtil::isa<ConstantPointerNull>(op1)) {
+        Set<const Value *> inDirVal;
+        for (const auto &it: getCurEvalSVFGNode()->getOutEdges()) {
+            if (it->isIndirectVFGEdge()) {
+                inDirVal.insert(it->getDstNode()->getValue());
             }
         }
+        return inDirVal.find(op0) != inDirVal.end();
+    } else if (SVFUtil::isa<ConstantPointerNull>(op0)) {
+        Set<const Value *> inDirVal;
+        for (const auto &it: getCurEvalSVFGNode()->getOutEdges()) {
+            if (it->isIndirectVFGEdge()) {
+                inDirVal.insert(it->getDstNode()->getValue());
+            }
+        }
+        return inDirVal.find(op1) != inDirVal.end();
     }
     return false;
 
