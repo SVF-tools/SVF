@@ -630,7 +630,9 @@ Version VersionedFlowSensitive::getConsume(const NodeID l, const NodeID o)
 
 Version VersionedFlowSensitive::getYield(const NodeID l, const NodeID o)
 {
-    return getVersion(l, o, yieldCache, yield);
+    // Non-store: consume == yield.
+    if (SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(l))) return getVersion(l, o, yieldCache, yield);
+    else return getVersion(l, o, consumeCache, consume);
 }
 
 void VersionedFlowSensitive::setVersion(const NodeID l, const NodeID o, const Version v, VersionCache &cache, LocVersionMap &lvm)
@@ -659,7 +661,9 @@ void VersionedFlowSensitive::setConsume(const NodeID l, const NodeID o, const Ve
 
 void VersionedFlowSensitive::setYield(const NodeID l, const NodeID o, const Version v)
 {
-    setVersion(l, o, v, yieldCache, yield);
+    // Non-store: consume == yield.
+    if (SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(l))) setVersion(l, o, v, yieldCache, yield);
+    else setVersion(l, o, v, consumeCache, consume);
 }
 
 void VersionedFlowSensitive::invalidateYieldCache(void)
