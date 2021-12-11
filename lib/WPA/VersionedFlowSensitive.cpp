@@ -779,3 +779,100 @@ void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)
 
     SVFUtil::outs() << " ]";
 }
+
+void VersionedFlowSensitive::SCC::detectSCCs(VersionedFlowSensitive *vfs,
+                                             const SVFG *svfg, const NodeID object,
+                                             const Set<NodeID> &startingNodes,
+                                             std::vector<int> &partOf)
+{
+    partOf.resize(svfg->getTotalNodeNum());
+    std::fill(partOf.begin(), partOf.end(), -1);
+
+    // Static to avoid allocating each time.
+    static std::vector<int> indexOf;
+    indexOf.resize(svfg->getTotalNodeNum());
+    std::fill(indexOf.begin(), indexOf.end(), -1);
+
+    static std::vector<int> lowlinkOf;
+    lowlinkOf.resize(svfg->getTotalNodeNum());
+    std::fill(lowlinkOf.begin(), lowlinkOf.end(), -1);
+
+    static std::vector<bool> onStack;
+    onStack.resize(svfg->getTotalNodeNum());
+    std::fill(onStack.begin(), onStack.end(), -1);
+
+    std::stack<NodeID> stack;
+
+    int index = 0;
+    int currentSCC = 0;
+
+    std::stack<NodeID> nodesTodo;
+    for (const NodeID v : startingNodes)
+    {
+        if (indexOf[v] == -1)
+        {
+            visit(vfs, svfg, object, partOf, indexOf, lowlinkOf, onStack, stack,
+                  index, currentSCC, v, nodesTodo);
+        }
+    }
+}
+
+void VersionedFlowSensitive::SCC::visit(VersionedFlowSensitive *vfs,
+                                        const SVFG *svfg, const NodeID object,
+                                        std::vector<int> &partOf,
+                                        std::vector<int> &indexOf,
+                                        std::vector<int> &lowlinkOf,
+                                        std::vector<bool> &onStack,
+                                        std::stack<NodeID> &stack,
+                                        int &index,
+                                        int &currentSCC,
+                                        const NodeID v,
+                                        std::stack<NodeID> &nodesTodo)
+{
+    indexOf[v] = index;
+    lowlinkOf[v] = index;
+    ++index;
+    stack.push(v);
+    onStack[v] = true;
+
+    const SVFGNode *vn = svfg->getSVFGNode(v);
+    // bool vIsStore = !SVFUtil::isa<StoreSVFGNode>(vn);
+    for (const SVFGEdge *e : vn->getOutEdges())
+    {
+        const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
+        if (!ie || !ie->getPointsTo().test(object)) continue;
+
+        const NodeID w = ie->getDstNode()->getId();
+        // Ignore edges to delta nodes because they are prelabeled so cannot
+        // be part of the SCC v is in (already in nodesTodo from the prelabeled set).
+        if (vfs->delta(w)) continue;
+
+        // Similarly, store nodes.
+        const SVFGNode *wn = svfg->getSVFGNode(w);
+        if (SVFUtil::isa<StoreSVFGNode>(wn)) continue;
+
+        if (indexOf[w] == -1)
+        {
+            visit(vfs, svfg, object, partOf, indexOf, lowlinkOf, onStack, stack,
+                  index, currentSCC, w, nodesTodo);
+            lowlinkOf[v] = std::min(lowlinkOf[v], lowlinkOf[w]);
+        }
+        else if (onStack[w])
+        {
+            lowlinkOf[v] = std::min(lowlinkOf[v], indexOf[w]);
+        }
+    }
+
+    if (lowlinkOf[v] == indexOf[v])
+    {
+        ++currentSCC;
+        NodeID w = 0;
+        do
+        {
+            w = stack.top();
+            stack.pop();
+            onStack[w] = false;
+            partOf[w] = currentSCC;
+        } while (w != v);
+    }
+}
