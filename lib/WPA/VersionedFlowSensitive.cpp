@@ -211,36 +211,74 @@ void VersionedFlowSensitive::mapMeldVersions(void)
     meldMappingTime += (end - start) / TIMEINTERVAL;
 }
 
-bool VersionedFlowSensitive::delta(NodeID l) const
+bool VersionedFlowSensitive::delta(const NodeID l) const
 {
-    // Whether a node is a delta node or not. Decent boon to performance.
-    static Map<NodeID, bool> deltaCache;
-
-    Map<NodeID, bool>::const_iterator isDeltaIt = deltaCache.find(l);
-    if (isDeltaIt != deltaCache.end()) return isDeltaIt->second;
-
-    const SVFGNode *s = svfg->getSVFGNode(l);
-    // Cases:
-    //  * Function entry: can get new incoming indirect edges through ind. callsites.
-    //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
-    //  * Otherwise: static.
-    bool isDelta = false;
-    if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
-    {
-        PTACallGraphEdge::CallInstSet callsites;
-        /// use pre-analysis call graph to approximate all potential callsites
-        ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
-        isDelta = !callsites.empty();
-    }
-    else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
-    {
-        isDelta = cbn->isIndirectCall();
-    }
-
-    deltaCache[l] = isDelta;
-    return isDelta;
+    assert(l < deltaMap.size() && "VFS::delta: deltaMap is missing SVFG nodes!");
+    return deltaMap[l];
 }
 
+bool VersionedFlowSensitive::deltaSource(const NodeID l) const
+{
+    assert(l < deltaSourceMap.size() && "VFS::delta: deltaSourceMap is missing SVFG nodes!");
+    return deltaSourceMap[l];
+}
+
+void VersionedFlowSensitive::buildDeltaMaps(void)
+{
+    deltaMap.resize(svfg->getTotalNodeNum(), false);
+
+    // Call block nodes corresponding to all delta nodes.
+    Set<const CallBlockNode *> deltaCBNs;
+
+    for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        const NodeID l = it->first;
+        const SVFGNode *s = it->second;
+
+        // Cases:
+        //  * Function entry: can get new incoming indirect edges through ind. callsites.
+        //  * Callsite returns: can get new incoming indirect edges if the callsite is indirect.
+        //  * Otherwise: static.
+        bool isDelta = false;
+        if (const SVFFunction *fn = svfg->isFunEntrySVFGNode(s))
+        {
+            PTACallGraphEdge::CallInstSet callsites;
+            /// use pre-analysis call graph to approximate all potential callsites
+            ander->getPTACallGraph()->getIndCallSitesInvokingCallee(fn, callsites);
+            isDelta = !callsites.empty();
+
+            if (isDelta)
+            {
+                // TODO: could we use deltaCBNs in the call above, avoiding this loop?
+                for (const CallBlockNode *cbn : callsites) deltaCBNs.insert(cbn);
+            }
+        }
+        else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+        {
+            isDelta = cbn->isIndirectCall();
+            if (isDelta) deltaCBNs.insert(cbn);
+        }
+
+        deltaMap[l] = isDelta;
+    }
+
+    deltaSourceMap.resize(svfg->getTotalNodeNum(), false);
+
+    for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        const NodeID l = it->first;
+        const SVFGNode *s = it->second;
+
+        if (const CallBlockNode *cbn = SVFUtil::dyn_cast<CallBlockNode>(s->getICFGNode()))
+        {
+            if (deltaCBNs.find(cbn) != deltaCBNs.end()) deltaSourceMap[l] = true;
+        }
+
+        // TODO: this is an over-approximation but it sound, marking every formal out as
+        //       a delta-source.
+        if (SVFUtil::isa<FormalOUTSVFGNode>(s)) deltaSourceMap[l] = true;
+    }
+}
 
 VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
 {

@@ -146,10 +146,16 @@ private:
     /// taken itself.
     void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
 
-    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
-    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
-    /// call graph built by the pre-analysis.
-    virtual bool delta(NodeID l) const;
+    /// Fills in deltaMap and deltaSourceMap for the SVFG.
+    virtual void buildDeltaMaps(void);
+
+    /// Returns true if l is a delta node, i.e., may get a new incoming indirect
+    /// edge due to on-the-fly callgraph construction.
+    virtual bool delta(const NodeID l) const;
+
+    /// Returns true if l is a delta-source node, i.e., may get a new outgoing indirect
+    /// edge to a delta node due to on-the-fly callgraph construction.
+    virtual bool deltaSource(const NodeID l) const;
 
     /// Shared code for getConsume and getYield. They wrap this function.
     Version getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm);
@@ -228,6 +234,15 @@ private:
 
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VersionedPTDataTy *vPtD;
+
+    /// deltaMap[l] means SVFG node l is a delta node, i.e., may get new
+    /// incoming edges due to OTF callgraph construction.
+    std::vector<bool> deltaMap;
+
+    // deltaSourceMap[l] means SVFG node l *may* be a source to a delta node
+    // through an dge added as a result of on-the-fly callgraph
+    // construction.
+    std::vector<bool> deltaSourceMap;
 
     /// Additional statistics.
     //@{
