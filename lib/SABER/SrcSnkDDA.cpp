@@ -48,7 +48,7 @@ void SrcSnkDDA::initialize(SVFModule* module)
     if(Options::SABERFULLSVFG)
         svfg =  memSSA.buildFullSVFGWithoutOPT(ander);
     else
-        svfg =  memSSA.buildPTROnlySVFG(ander);
+        svfg =  memSSA.buildPTROnlySVFGWithoutOPT(ander);
     setGraph(memSSA.getSVFG());
     ptaCallGraph = ander->getPTACallGraph();
     //AndersenWaveDiff::releaseAndersenWaveDiff();
