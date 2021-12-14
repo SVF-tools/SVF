@@ -146,6 +146,15 @@ private:
     /// taken itself.
     void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
 
+    /// Fills in isStoreMap and isLoadMap.
+    virtual void buildIsStoreLoadMaps(void);
+
+    /// Returns true if l is a store node.
+    virtual bool isStore(const NodeID l) const;
+
+    /// Returns true if l is a load node.
+    virtual bool isLoad(const NodeID l) const;
+
     /// Fills in deltaMap and deltaSourceMap for the SVFG.
     virtual void buildDeltaMaps(void);
 
@@ -243,6 +252,12 @@ private:
     // through an dge added as a result of on-the-fly callgraph
     // construction.
     std::vector<bool> deltaSourceMap;
+
+    /// isStoreMap[l] means SVFG node l is a store node.
+    std::vector<bool> isStoreMap;
+
+    /// isLoadMap[l] means SVFG node l is a load node.
+    std::vector<bool> isLoadMap;
 
     /// Additional statistics.
     //@{

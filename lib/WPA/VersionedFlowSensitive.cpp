@@ -223,6 +223,29 @@ bool VersionedFlowSensitive::deltaSource(const NodeID l) const
     return deltaSourceMap[l];
 }
 
+void VersionedFlowSensitive::buildIsStoreLoadMaps(void)
+{
+    isStoreMap.resize(svfg->getTotalNodeNum(), false);
+    isLoadMap.resize(svfg->getTotalNodeNum(), false);
+    for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
+    {
+        if (SVFUtil::isa<StoreSVFGNode>(it->second)) isStoreMap[it->first] = true;
+        else if (SVFUtil::isa<LoadSVFGNode>(it->second)) isLoadMap[it->first] = true;
+    }
+}
+
+bool VersionedFlowSensitive::isStore(const NodeID l) const
+{
+    assert(l < isStoreMap.size() && "VFS::isStore: isStoreMap is missing SVFG nodes!");
+    return isStoreMap[l];
+}
+
+bool VersionedFlowSensitive::isLoad(const NodeID l) const
+{
+    assert(l < isLoadMap.size() && "VFS::isLoad: isLoadMap is missing SVFG nodes!");
+    return isLoadMap[l];
+}
+
 void VersionedFlowSensitive::buildDeltaMaps(void)
 {
     deltaMap.resize(svfg->getTotalNodeNum(), false);
