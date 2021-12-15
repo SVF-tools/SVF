@@ -30,7 +30,7 @@ class VersionedFlowSensitive : public FlowSensitive
     friend class VersionedFlowSensitiveStat;
 
 private:
-    typedef llvm::SparseBitVector<> MeldVersion;
+    typedef CoreBitVector MeldVersion;
 
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
