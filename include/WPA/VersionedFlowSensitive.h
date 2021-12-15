@@ -251,9 +251,9 @@ private:
     /// incoming edges due to OTF callgraph construction.
     std::vector<bool> deltaMap;
 
-    // deltaSourceMap[l] means SVFG node l *may* be a source to a delta node
-    // through an dge added as a result of on-the-fly callgraph
-    // construction.
+    /// deltaSourceMap[l] means SVFG node l *may* be a source to a delta node
+    /// through an dge added as a result of on-the-fly callgraph
+    /// construction.
     std::vector<bool> deltaSourceMap;
 
     /// isStoreMap[l] means SVFG node l is a store node.
