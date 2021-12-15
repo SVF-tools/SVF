@@ -469,8 +469,6 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         NodeID src = e->getSrcNode()->getId();
         NodeID dst = dstNode->getId();
 
-        assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
-
         if (SVFUtil::isa<PHISVFGNode>(dstNode)
             || SVFUtil::isa<FormalParmSVFGNode>(dstNode)
             || SVFUtil::isa<ActualRetSVFGNode>(dstNode))
@@ -481,6 +479,9 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
         {
             const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
             assert(ie != nullptr && "VFS::updateConnectedNodes: given direct edge?");
+
+            assert(delta(dst) && "VFS::updateConnectedNodes: new edges should be to delta nodes!");
+            assert(deltaSource(src) && "VFS::updateConnectedNodes: new indirect edges should be from delta source nodes!");
 
             const NodeBS &ept = ie->getPointsTo();
             // For every o, such that src --o--> dst, we need to set up reliance (and propagate).
