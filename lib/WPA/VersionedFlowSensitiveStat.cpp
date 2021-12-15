@@ -153,48 +153,35 @@ void VersionedFlowSensitiveStat::performStat()
 
 void VersionedFlowSensitiveStat::versionStat(void)
 {
-    Map<NodeID, Set<Version>> versions;
-    for (VersionedFlowSensitive::LocVersionMap::value_type &lov : vfspta->consume)
-    {
-        for (VersionedFlowSensitive::ObjToVersionMap::value_type &ov : lov.second)
-        {
-            versions[ov.first].insert(ov.second);
-        }
-    }
-
-    for (VersionedFlowSensitive::LocVersionMap::value_type &lov : vfspta->yield)
-    {
-        for (VersionedFlowSensitive::ObjToVersionMap::value_type &ov : lov.second)
-        {
-            versions[ov.first].insert(ov.second);
-        }
-    }
+    // TODO! Need to merge yield/consume.
+    _NumSingleVersion = 0;
+    _MaxVersions = 0;
 
     u32_t totalVersionPtsSize = 0;
-    for (Map<NodeID, Set<Version>>::value_type &ovs : versions)
+    for (const VersionedFlowSensitive::LocVersionMap *lvm : { &vfspta->consume, &vfspta->yield })
     {
-        NodeID o = ovs.first;
-        Set<Version> vs = ovs.second;
-
-        u32_t numOVersions = vs.size();
-        _NumVersions += numOVersions;
-        if (numOVersions > _MaxVersions) _MaxVersions = numOVersions;
-        if (numOVersions == 1) ++_NumSingleVersion;
-
-        for (const Set<Version>::value_type &v : vs)
+        for (const VersionedFlowSensitive::ObjToVersionMap  &lov : *lvm)
         {
-            // If the version was just over-approximate and never accessed, ignore.
-            // TODO: with vPtD changed there is no interface to check if the PTS
-            //       exists; an emptiness check is *not* an existence check.
-            if (vfspta->vPtD->getPts(vfspta->atKey(o, v)).empty()) continue;
+            for (const VersionedFlowSensitive::ObjToVersionMap::value_type &ov : lov)
+            {
+                const NodeID o = ov.first;
+                const Version v = ov.second;
 
-            const PointsTo &ovPts = vfspta->vPtD->getPts(vfspta->atKey(o, v));
-            if (!ovPts.empty()) ++_NumNonEmptyVersions;
-            else ++_NumEmptyVersions;
+                ++_NumVersions;
 
-            _TotalPtsSize += ovPts.count();
-            totalVersionPtsSize += ovPts.count();
-            if (ovPts.count() > _MaxVersionPtsSize) _MaxVersionPtsSize = ovPts.count();
+                // If the version was just over-approximate and never accessed, ignore.
+                // TODO: with vPtD changed there is no interface to check if the PTS
+                //       exists; an emptiness check is *not* an existence check.
+                if (vfspta->vPtD->getPts(vfspta->atKey(o, v)).empty()) continue;
+
+                const PointsTo &ovPts = vfspta->vPtD->getPts(vfspta->atKey(o, v));
+                if (!ovPts.empty()) ++_NumNonEmptyVersions;
+                else ++_NumEmptyVersions;
+
+                _TotalPtsSize += ovPts.count();
+                totalVersionPtsSize += ovPts.count();
+                if (ovPts.count() > _MaxVersionPtsSize) _MaxVersionPtsSize = ovPts.count();
+            }
         }
     }
 
