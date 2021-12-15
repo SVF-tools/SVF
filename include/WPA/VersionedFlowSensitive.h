@@ -34,12 +34,9 @@ private:
 
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
-    typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
     typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
 
     typedef std::vector<ObjToVersionMap> LocVersionMap;
-    /// Maps locations to all versions it sees (through objects).
-    typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
     typedef Map<NodeID, Map<Version, std::vector<Version>>> VersionRelianceMap;
 
@@ -115,12 +112,6 @@ private:
     /// Melds v2 into v1 (in place), returns whether a change occurred.
     static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
 
-    /// Moves meldConsume/Yield to consume/yield.
-    void mapMeldVersions();
-
-    /// Returns a new MeldVersion for o during the prelabeling phase.
-    MeldVersion newMeldVersion(NodeID o);
-
     /// Removes all indirect edges in the SVFG.
     void removeAllIndirectSVFGEdges(void);
 
@@ -191,22 +182,8 @@ private:
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
 
-    /// SVFG node (label) x object -> version to consume.
-    /// Used during meld labeling. We use MeldVersions and Versions for performance.
-    /// MeldVersions are currently SparseBitVectors which are necessary for the meld operator,
-    /// but when meld labeling is complete, we don't want to carry around SBVs and use them; integers
-    /// are better.
-    LocMeldVersionMap meldConsume;
-    /// SVFG node (label) x object -> version to yield.
-    /// Used during meld labeling.
-    /// For non-stores, yield == consume, so meldYield only has entries for stores.
-    LocMeldVersionMap meldYield;
-    /// Object -> MeldVersion counter. Used in the prelabeling phase to generate a
-    /// new MeldVersion.
-    Map<NodeID, unsigned> meldVersions;
-
-    /// Like meldConsume but with Versions, not MeldVersions.
-    /// Created after meld labeling from meldConsume and used during the analysis.
+    /// Maps locations to objects to a version. The object version is what is
+    /// consumed at that location.
     LocVersionMap consume;
     /// Actual yield map. Yield analogue to consume.
     LocVersionMap yield;
@@ -228,6 +205,8 @@ private:
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.
     FIFOWorkList<NodeID> vWorklist;
+
+    Set<NodeID> prelabeledObjects;
 
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VersionedPTDataTy *vPtD;
