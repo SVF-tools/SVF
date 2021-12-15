@@ -830,99 +830,99 @@ void VersionedFlowSensitive::dumpMeldVersion(MeldVersion &v)
     SVFUtil::outs() << " ]";
 }
 
-void VersionedFlowSensitive::SCC::detectSCCs(VersionedFlowSensitive *vfs,
-                                             const SVFG *svfg, const NodeID object,
-                                             const Set<NodeID> &startingNodes,
-                                             std::vector<int> &partOf)
+unsigned VersionedFlowSensitive::SCC::detectSCCs(VersionedFlowSensitive *vfs,
+                                                 const SVFG *svfg, const NodeID object,
+                                                 const std::vector<const SVFGNode *> &startingNodes,
+                                                 std::vector<int> &partOf,
+                                                 std::vector<const IndirectSVFGEdge *> &footprint)
 {
     partOf.resize(svfg->getTotalNodeNum());
     std::fill(partOf.begin(), partOf.end(), -1);
+    footprint.clear();
 
-    // Static to avoid allocating each time.
-    static std::vector<int> indexOf;
-    indexOf.resize(svfg->getTotalNodeNum());
-    std::fill(indexOf.begin(), indexOf.end(), -1);
-
-    static std::vector<int> lowlinkOf;
-    lowlinkOf.resize(svfg->getTotalNodeNum());
-    std::fill(lowlinkOf.begin(), lowlinkOf.end(), -1);
-
-    static std::vector<bool> onStack;
-    onStack.resize(svfg->getTotalNodeNum());
-    std::fill(onStack.begin(), onStack.end(), -1);
-
-    std::stack<NodeID> stack;
+    std::vector<NodeData> nodeData(svfg->getTotalNodeNum(), { -1, -1, false});
+    std::stack<const SVFGNode *> stack;
 
     int index = 0;
     int currentSCC = 0;
 
-    std::stack<NodeID> nodesTodo;
-    for (const NodeID v : startingNodes)
+    for (const SVFGNode *v : startingNodes)
     {
-        if (indexOf[v] == -1)
+        if (nodeData[v->getId()].index == -1)
         {
-            visit(vfs, svfg, object, partOf, indexOf, lowlinkOf, onStack, stack,
-                  index, currentSCC, v, nodesTodo);
+            visit(vfs, object, partOf, footprint, nodeData, stack, index, currentSCC, v);
         }
     }
+
+    // Make sure footprints with the same edges pass ==/hash the same.
+    std::sort(footprint.begin(), footprint.end());
+
+    return currentSCC;
 }
 
 void VersionedFlowSensitive::SCC::visit(VersionedFlowSensitive *vfs,
-                                        const SVFG *svfg, const NodeID object,
+                                        const NodeID object,
                                         std::vector<int> &partOf,
-                                        std::vector<int> &indexOf,
-                                        std::vector<int> &lowlinkOf,
-                                        std::vector<bool> &onStack,
-                                        std::stack<NodeID> &stack,
+                                        std::vector<const IndirectSVFGEdge *> &footprint,
+                                        std::vector<NodeData> &nodeData,
+                                        std::stack<const SVFGNode *> &stack,
                                         int &index,
                                         int &currentSCC,
-                                        const NodeID v,
-                                        std::stack<NodeID> &nodesTodo)
+                                        const SVFGNode *v)
 {
-    indexOf[v] = index;
-    lowlinkOf[v] = index;
-    ++index;
-    stack.push(v);
-    onStack[v] = true;
+    const NodeID vId = v->getId();
 
-    const SVFGNode *vn = svfg->getSVFGNode(v);
-    // bool vIsStore = !SVFUtil::isa<StoreSVFGNode>(vn);
-    for (const SVFGEdge *e : vn->getOutEdges())
+    nodeData[vId].index = index;
+    nodeData[vId].lowlink = index;
+    ++index;
+
+    stack.push(v);
+    nodeData[vId].onStack = true;
+
+    for (const SVFGEdge *e : v->getOutEdges())
     {
         const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-        if (!ie || !ie->getPointsTo().test(object)) continue;
+        if (!ie) continue;
 
-        const NodeID w = ie->getDstNode()->getId();
+        const SVFGNode *w = ie->getDstNode();
+        const NodeID wId = w->getId();
+
+        // If object is not part of the edge, there is no edge from v to w.
+        if (!ie->getPointsTo().test(object)) continue;
+
+        // Even if we don't count edges to stores and deltas for SCCs' sake, they
+        // are relevant to the footprint as a propagation still occurs over such edges.
+        footprint.push_back(ie);
+
         // Ignore edges to delta nodes because they are prelabeled so cannot
         // be part of the SCC v is in (already in nodesTodo from the prelabeled set).
-        if (vfs->delta(w)) continue;
-
         // Similarly, store nodes.
-        const SVFGNode *wn = svfg->getSVFGNode(w);
-        if (SVFUtil::isa<StoreSVFGNode>(wn)) continue;
+        if (vfs->delta(wId) || vfs->isStore(wId)) continue;
 
-        if (indexOf[w] == -1)
+        if (nodeData[wId].index == -1)
         {
-            visit(vfs, svfg, object, partOf, indexOf, lowlinkOf, onStack, stack,
-                  index, currentSCC, w, nodesTodo);
-            lowlinkOf[v] = std::min(lowlinkOf[v], lowlinkOf[w]);
+            visit(vfs, object, partOf, footprint, nodeData, stack, index, currentSCC, w);
+            nodeData[vId].lowlink = std::min(nodeData[vId].lowlink, nodeData[wId].lowlink);
         }
-        else if (onStack[w])
+        else if (nodeData[wId].onStack)
         {
-            lowlinkOf[v] = std::min(lowlinkOf[v], indexOf[w]);
+            nodeData[vId].lowlink = std::min(nodeData[vId].lowlink, nodeData[wId].index);
         }
     }
 
-    if (lowlinkOf[v] == indexOf[v])
+    if (nodeData[vId].lowlink == nodeData[vId].index)
     {
-        ++currentSCC;
-        NodeID w = 0;
+        const SVFGNode *w = nullptr;
         do
         {
             w = stack.top();
             stack.pop();
-            onStack[w] = false;
-            partOf[w] = currentSCC;
+            const NodeID wId = w->getId();
+            nodeData[wId].onStack = false;
+            partOf[wId] = currentSCC;
         } while (w != v);
+
+        // For the next SCC.
+        ++currentSCC;
     }
 }

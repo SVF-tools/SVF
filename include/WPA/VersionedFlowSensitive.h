@@ -278,24 +278,31 @@ private:
 
     class SCC
     {
+    private:
+        typedef struct NodeData
+        {
+            int index;
+            int lowlink;
+            bool onStack;
+        } NodeData;
+
     public:
-        static void detectSCCs(VersionedFlowSensitive *vfs,
-                               const SVFG *svfg, const NodeID object,
-                               const Set<NodeID> &startingNodes,
-                               std::vector<int> &partOf);
+        static unsigned detectSCCs(VersionedFlowSensitive *vfs,
+                                   const SVFG *svfg, const NodeID object,
+                                   const std::vector<const SVFGNode *> &startingNodes,
+                                   std::vector<int> &partOf,
+                                   std::vector<const IndirectSVFGEdge *> &footprint);
 
     private:
         static void visit(VersionedFlowSensitive *vfs,
-                          const SVFG *svfg, const NodeID object,
+                          const NodeID object,
                           std::vector<int> &partOf,
-                          std::vector<int> &indexOf,
-                          std::vector<int> &lowlinkOf,
-                          std::vector<bool> &onStack,
-                          std::stack<NodeID> &stack,
+                          std::vector<const IndirectSVFGEdge *> &footprint,
+                          std::vector<NodeData> &nodeData,
+                          std::stack<const SVFGNode *> &stack,
                           int &index,
                           int &currentSCC,
-                          const NodeID v,
-                          std::stack<NodeID> &nodesTodo);
+                          const SVFGNode *v);
     };
 };
 
