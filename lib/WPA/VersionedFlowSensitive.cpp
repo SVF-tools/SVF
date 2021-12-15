@@ -444,14 +444,6 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
     }
 }
 
-VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeID o)
-{
-    ++numPrelabelVersions;
-    MeldVersion nv;
-    nv.set(++meldVersions[o]);
-    return nv;
-}
-
 void VersionedFlowSensitive::removeAllIndirectSVFGEdges(void)
 {
     for (SVFG::iterator nodeIt = svfg->begin(); nodeIt != svfg->end(); ++nodeIt)
