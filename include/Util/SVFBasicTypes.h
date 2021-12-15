@@ -82,7 +82,6 @@ typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
-typedef unsigned Version;
 
 typedef llvm::SparseBitVector<> NodeBS;
 typedef llvm::SparseBitVector<> SparseBitVector;
@@ -111,7 +110,6 @@ template <typename T, unsigned N>
 using SmallVector = llvm::SmallVector<T, N>;
 
 typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::pair<NodeID, Version> VersionedVar;
 typedef OrderedSet<NodeID> OrderedNodeSet;
 typedef Set<NodeID> NodeSet;
 typedef Set<NodePair> NodePairSet;
@@ -126,6 +124,11 @@ typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
+
+typedef unsigned Version;
+typedef Set<Version> VersionSet;
+typedef std::pair<NodeID, Version> VersionedVar;
+typedef Set<VersionedVar> VersionedVarSet;
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
 template <> struct Hash<NodePair>
