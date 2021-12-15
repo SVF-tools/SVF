@@ -193,6 +193,12 @@ private:
     /// Invalidates consumeCache.
     void invalidateConsumeCache(void);
 
+    /// Returns the versions of o which rely on o:v.
+    std::vector<Version> &getReliantVersions(const NodeID o, const Version v);
+
+    /// Returns the statements which rely on o:v.
+    NodeBS &getStmtReliance(const NodeID o, const Version v);
+
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
 

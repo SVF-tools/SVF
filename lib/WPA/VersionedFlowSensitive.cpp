@@ -373,7 +373,7 @@ void VersionedFlowSensitive::determineReliance(void)
                 {
                     const NodeID o = ov.first;
                     const Version v = ov.second;
-                    stmtReliance[o][v].set(l);
+                    getStmtReliance(o, v).set(l);
                 }
             }
         }
@@ -394,18 +394,16 @@ void VersionedFlowSensitive::determineReliance(void)
     double end = stat->getClk(true);
     relianceTime = (end - start) / TIMEINTERVAL;
 }
+*/
 
 void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
 
-    Map<Version, std::vector<Version>>::iterator relyingVersions = versionReliance[o].find(v);
-    if (relyingVersions != versionReliance[o].end())
+    const std::vector<Version> &reliantVersions = getReliantVersions(o, v);
+    for (Version r : reliantVersions)
     {
-        for (Version r : relyingVersions->second)
-        {
-            propagateVersion(o, v, r, false);
-        }
+        propagateVersion(o, v, r, false);
     }
 
     double end = stat->getClk();
@@ -434,7 +432,7 @@ void VersionedFlowSensitive::propagateVersion(const NodeID o, const Version v, c
         pushIntoWorklist(dvp->getId());
 
         // Notify nodes which rely on o:vp that it changed.
-        for (NodeID s : stmtReliance[o][vp]) pushIntoWorklist(s);
+        for (NodeID s : getStmtReliance(o, vp)) pushIntoWorklist(s);
     }
 
     double end = time ? stat->getClk() : 0.0;
@@ -486,7 +484,7 @@ void VersionedFlowSensitive::updateConnectedNodes(const SVFGEdgeSetTy& newEdges)
                 Version dstC = getConsume(dst, o);
                 if (dstC == invalidVersion) continue;
 
-                std::vector<Version> &versionsRelyingOnSrcY = versionReliance[o][srcY];
+                std::vector<Version> &versionsRelyingOnSrcY = getReliantVersions(o, srcY);
                 if (std::find(versionsRelyingOnSrcY.begin(), versionsRelyingOnSrcY.end(), dstC) == versionsRelyingOnSrcY.end())
                 {
                     versionsRelyingOnSrcY.push_back(dstC);
@@ -620,7 +618,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
             propagateVersion(o, y);
 
             // Some o/v pairs changed: statements need to know.
-            for (NodeID s : stmtReliance[o][y]) pushIntoWorklist(s);
+            for (NodeID s : getStmtReliance(o, y)) pushIntoWorklist(s);
         }
     }
 
@@ -720,6 +718,16 @@ void VersionedFlowSensitive::invalidateYieldCache(void)
 void VersionedFlowSensitive::invalidateConsumeCache(void)
 {
     consumeCache.valid = false;
+}
+
+std::vector<Version> &VersionedFlowSensitive::getReliantVersions(const NodeID o, const Version v)
+{
+    return versionReliance[o][v];
+}
+
+NodeBS &VersionedFlowSensitive::getStmtReliance(const NodeID o, const Version v)
+{
+    return stmtReliance[o][v];
 }
 
 void VersionedFlowSensitive::dumpReliances(void) const
