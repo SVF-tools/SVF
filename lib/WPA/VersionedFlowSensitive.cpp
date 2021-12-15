@@ -311,6 +311,29 @@ VersionedFlowSensitive::MeldVersion VersionedFlowSensitive::newMeldVersion(NodeI
     return nv;
 }
 
+void VersionedFlowSensitive::removeAllIndirectSVFGEdges(void)
+{
+    for (SVFG::iterator nodeIt = svfg->begin(); nodeIt != svfg->end(); ++nodeIt)
+    {
+        SVFGNode *sn = nodeIt->second;
+
+        const SVFGEdgeSetTy &inEdges = sn->getInEdges();
+        std::vector<SVFGEdge *> toDeleteFromIn;
+        for (SVFGEdge *e : inEdges)
+        {
+            if (SVFUtil::isa<IndirectSVFGEdge>(e)) toDeleteFromIn.push_back(e);
+        }
+
+        for (SVFGEdge *e : toDeleteFromIn) svfg->removeSVFGEdge(e);
+
+        // Only need to iterate over incoming edges for each node because edges
+        // will be deleted from in/out through removeSVFGEdge.
+    }
+
+    setGraph(svfg);
+}
+
+/*
 void VersionedFlowSensitive::determineReliance(void)
 {
     // Use a set-based version to build, then we'll move things to vectors.
