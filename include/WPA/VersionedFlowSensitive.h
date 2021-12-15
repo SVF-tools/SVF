@@ -37,22 +37,11 @@ public:
     typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
     typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
 
-    typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
+    typedef std::vector<ObjToVersionMap> LocVersionMap;
     /// Maps locations to all versions it sees (through objects).
     typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
     /// (o -> (v -> versions with rely on o:v).
     typedef Map<NodeID, Map<Version, std::vector<Version>>> VersionRelianceMap;
-
-    /// For caching the first step in LocVersionMaps.
-    typedef struct VersionCache
-    {
-        /// SVFG node ID.
-        NodeID l;
-        /// Nested map, i.e. consume[l] or yield[l].
-        ObjToVersionMap *ovm;
-        /// Whether l and ovm can be accessed.
-        bool valid;
-    } VersionCache;
 
     /// If this version appears, there has been an error.
     static const Version invalidVersion;
@@ -170,28 +159,22 @@ private:
     virtual bool deltaSource(const NodeID l) const;
 
     /// Shared code for getConsume and getYield. They wrap this function.
-    Version getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm);
+    Version getVersion(const NodeID l, const NodeID o, const LocVersionMap &lvm) const;
 
     /// Returns the consumed version of o at l. If no such version exists, returns invalidVersion.
-    Version getConsume(const NodeID l, const NodeID o);
+    Version getConsume(const NodeID l, const NodeID o) const;
 
     /// Returns the yielded version of o at l. If no such version exists, returns invalidVersion.
-    Version getYield(const NodeID l, const NodeID o);
+    Version getYield(const NodeID l, const NodeID o) const;
 
     /// Shared code for setConsume and setYield. They wrap this function.
-    void setVersion(const NodeID l, const NodeID o, const Version v, VersionCache &cache, LocVersionMap &lvm);
+    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm);
 
     /// Sets the consumed version of o at l to v.
     void setConsume(const NodeID l, const NodeID o, const Version v);
 
     /// Sets the yielded version of o at l to v.
     void setYield(const NodeID l, const NodeID o, const Version v);
-
-    /// Invalidates yieldCache.
-    void invalidateYieldCache(void);
-
-    /// Invalidates consumeCache.
-    void invalidateConsumeCache(void);
 
     /// Returns the versions of o which rely on o:v.
     std::vector<Version> &getReliantVersions(const NodeID o, const Version v);
@@ -224,18 +207,9 @@ private:
 
     /// Like meldConsume but with Versions, not MeldVersions.
     /// Created after meld labeling from meldConsume and used during the analysis.
-    /// When modifying consume itself (not a value) outside of setConsume, invalidateConsumeCache
-    /// should be called. E.g. if a call like consume[l] is an insertion.
     LocVersionMap consume;
     /// Actual yield map. Yield analogue to consume.
-    /// When modifying yield itself (not a value) outside of setYield, invalidateYieldCache
-    /// should be called.
     LocVersionMap yield;
-
-    /// Cache for the nested map in consume.
-    VersionCache consumeCache;
-    /// Cache for the nested map in yield.
-    VersionCache yieldCache;
 
     /// o -> (version -> versions which rely on it).
     VersionRelianceMap versionReliance;
@@ -245,6 +219,11 @@ private:
     /// Maps an <object, version> pair to the SVFG node indicating that pair
     /// needs to be propagated.
     VarToPropNodeMap versionedVarToPropNode;
+
+    // Maps an object o to o' if o is equivalent to o' with respect to
+    // versioning. Thus, we don't need to store the versions of o and look
+    // up those for o' instead.
+    Map<NodeID, NodeID> equivalentObject;
 
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.

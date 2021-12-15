@@ -31,8 +31,10 @@ VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     relianceTime = prelabelingTime = meldLabelingTime = meldMappingTime = versionPropTime = 0.0;
     // We'll grab vPtD in initialize.
 
-    consumeCache = { 0, nullptr, false };
-    yieldCache = { 0, nullptr, false };
+    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    {
+        if (SVFUtil::isa<ObjPN>(it->second)) equivalentObject[it->first] = it->first;
+    }
 }
 
 void VersionedFlowSensitive::initialize()
@@ -43,6 +45,11 @@ void VersionedFlowSensitive::initialize()
     stat = new VersionedFlowSensitiveStat(this);
 
     vPtD = getVersionedPTDataTy();
+
+    buildIsStoreLoadMaps();
+    buildDeltaMaps();
+    consume.resize(svfg->getTotalNodeNum());
+    yield.resize(svfg->getTotalNodeNum());
 
     prelabel();
     meldLabel();
@@ -583,23 +590,19 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 
     // For all objects, perform pts(o:y) = pts(o:y) U pts(o:c) at loc,
     // except when a strong update is taking place.
-    const LocVersionMap::const_iterator lovmIt = consume.find(l);
-    if (lovmIt != consume.end())
+    for (const ObjToVersionMap::value_type &oc : consume[l])
     {
-        for (const ObjToVersionMap::value_type &oc : lovmIt->second)
+        const NodeID o = oc.first;
+        const Version c = oc.second;
+
+        // Strong-updated; don't propagate.
+        if (isSU && o == singleton) continue;
+
+        const Version y = getYield(l, o);
+        if (y != invalidVersion && vPtD->unionPts(atKey(o, y), atKey(o, c)))
         {
-            const NodeID o = oc.first;
-            const Version c = oc.second;
-
-            // Strong-updated; don't propagate.
-            if (isSU && o == singleton) continue;
-
-            const Version y = getYield(l, o);
-            if (y != invalidVersion && vPtD->unionPts(atKey(o, y), atKey(o, c)))
-            {
-                changed = true;
-                changedObjects.set(o);
-            }
+            changed = true;
+            changedObjects.set(o);
         }
     }
 
@@ -645,79 +648,44 @@ void VersionedFlowSensitive::cluster(void)
     PointsTo::setCurrentBestNodeMapping(nodeMapping, reverseNodeMapping);
 }
 
-Version VersionedFlowSensitive::getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm)
+Version VersionedFlowSensitive::getVersion(const NodeID l, const NodeID o, const LocVersionMap &lvm) const
 {
-    if (cache.valid && l == cache.l)
-    {
-        ObjToVersionMap::const_iterator foundVersion = cache.ovm->find(o);
-        return foundVersion == cache.ovm->end() ? invalidVersion : foundVersion->second;
-    }
+    const Map<NodeID, NodeID>::const_iterator canonObjectIt = equivalentObject.find(o);
+    const NodeID op = canonObjectIt == equivalentObject.end() ? o : canonObjectIt->second;
 
-    // Not const because the cache isn't as it is shared with setVersion.
-    LocVersionMap::iterator foundObjToVersionMap = lvm.find(l);
-    // If there are no obj -> version maps at l, then obviously there is no version for o.
-    if (foundObjToVersionMap == lvm.end()) return invalidVersion;
-
-    // We can cache lvm[l].
-    cache.l = l;
-    cache.ovm = &foundObjToVersionMap->second;
-    cache.valid = true;
-
-    ObjToVersionMap::const_iterator foundVersion = cache.ovm->find(o);
-    return foundVersion == cache.ovm->end() ? invalidVersion : foundVersion->second;
+    const ObjToVersionMap &ovm = lvm[l];
+    const ObjToVersionMap::const_iterator foundVersion = ovm.find(op);
+    return foundVersion == ovm.end() ? invalidVersion : foundVersion->second;
 }
 
-Version VersionedFlowSensitive::getConsume(const NodeID l, const NodeID o)
+Version VersionedFlowSensitive::getConsume(const NodeID l, const NodeID o) const
 {
-    return getVersion(l, o, consumeCache, consume);
+    return getVersion(l, o, consume);
 }
 
-Version VersionedFlowSensitive::getYield(const NodeID l, const NodeID o)
+Version VersionedFlowSensitive::getYield(const NodeID l, const NodeID o) const
 {
     // Non-store: consume == yield.
-    if (SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(l))) return getVersion(l, o, yieldCache, yield);
-    else return getVersion(l, o, consumeCache, consume);
+    if (isStore(l)) return getVersion(l, o, yield);
+    else return getVersion(l, o, consume);
 }
 
-void VersionedFlowSensitive::setVersion(const NodeID l, const NodeID o, const Version v, VersionCache &cache, LocVersionMap &lvm)
+void VersionedFlowSensitive::setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm)
 {
-    if (cache.valid && l == cache.l)
-    {
-        (*cache.ovm)[o] = v;
-        return;
-    }
-
-    // This can invalidate the cache but we're updating it in the next statement anyway.
     ObjToVersionMap &ovm = lvm[l];
-
-    // We can cache lvm[l].
-    cache.l = l;
-    cache.ovm = &ovm;
-    cache.valid = true;
-
     ovm[o] = v;
 }
 
 void VersionedFlowSensitive::setConsume(const NodeID l, const NodeID o, const Version v)
 {
-    setVersion(l, o, v, consumeCache, consume);
+    setVersion(l, o, v, consume);
 }
 
 void VersionedFlowSensitive::setYield(const NodeID l, const NodeID o, const Version v)
 {
     // Non-store: consume == yield.
-    if (SVFUtil::isa<StoreSVFGNode>(svfg->getSVFGNode(l))) setVersion(l, o, v, yieldCache, yield);
-    else setVersion(l, o, v, consumeCache, consume);
-}
-
-void VersionedFlowSensitive::invalidateYieldCache(void)
-{
-    yieldCache.valid = false;
-}
-
-void VersionedFlowSensitive::invalidateConsumeCache(void)
-{
-    consumeCache.valid = false;
+    if (isStore(l)) setVersion(l, o, v, yield);
+    else setVersion(l, o, v, consume);
 }
 
 std::vector<Version> &VersionedFlowSensitive::getReliantVersions(const NodeID o, const Version v)
@@ -796,7 +764,7 @@ void VersionedFlowSensitive::dumpLocVersionMaps(void) const
         bool locPrinted = false;
         for (const LocVersionMap *lvm : { &consume, &yield })
         {
-            if (lvm->find(loc) == lvm->end() || lvm->at(loc).empty()) continue;
+            if (lvm->at(loc).empty()) continue;
             if (!locPrinted)
             {
                 SVFUtil::outs() << "  " << "SVFG node " << loc << "\n";
