@@ -115,11 +115,6 @@ private:
     /// Removes all indirect edges in the SVFG.
     void removeAllIndirectSVFGEdges(void);
 
-    /// Determine which versions rely on which versions (e.g. c_l'(o) relies on y_l(o)
-    /// given l-o->l' and y_l(o) = a, c_l'(o) = b), and which statements rely on which
-    /// versions (e.g. node l relies on c_l(o)).
-    void determineReliance(void);
-
     /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
     /// Adds any statements which rely on any changes made to the worklist.

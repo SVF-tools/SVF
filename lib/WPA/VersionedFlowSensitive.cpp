@@ -513,69 +513,6 @@ void VersionedFlowSensitive::removeAllIndirectSVFGEdges(void)
     setGraph(svfg);
 }
 
-/*
-void VersionedFlowSensitive::determineReliance(void)
-{
-    // Use a set-based version to build, then we'll move things to vectors.
-    Map<NodeID, Map<Version, Set<Version>>> setVersionReliance;
-
-    double start = stat->getClk(true);
-    for (SVFG::iterator it = svfg->begin(); it != svfg->end(); ++it)
-    {
-        NodeID l = it->first;
-        const SVFGNode *ln = it->second;
-        for (const SVFGEdge *e : ln->getOutEdges())
-        {
-            const IndirectSVFGEdge *ie = SVFUtil::dyn_cast<IndirectSVFGEdge>(e);
-            if (!ie) continue;
-
-            for (const NodeID o : ie->getPointsTo())
-            {
-                // Given l --o--> lp, c(o) at lp relies on y(o) at l.
-                const NodeID lp = ie->getDstNode()->getId();
-
-                const Version y = getYield(l, o);
-                if (y == invalidVersion) continue;
-                const Version cp = getConsume(lp, o);
-                if (cp == invalidVersion) continue;
-
-                if (cp != y) setVersionReliance[o][y].insert(cp);
-            }
-        }
-
-        // When an object/version points-to set changes, these nodes need to know.
-        if (SVFUtil::isa<LoadSVFGNode>(ln) || SVFUtil::isa<StoreSVFGNode>(ln))
-        {
-            const LocVersionMap::const_iterator lovmIt = consume.find(l);
-            if (lovmIt != consume.end())
-            {
-                for (const ObjToVersionMap::value_type &ov : lovmIt->second)
-                {
-                    const NodeID o = ov.first;
-                    const Version v = ov.second;
-                    getStmtReliance(o, v).set(l);
-                }
-            }
-        }
-    }
-
-    for (const std::pair<NodeID, Map<Version, Set<Version>>> &ovvs : setVersionReliance)
-    {
-        const NodeID o = ovvs.first;
-        Map<Version, std::vector<Version>> &osRelying = versionReliance[o];
-        for (const std::pair<Version, Set<Version>> &vvs : ovvs.second)
-        {
-            const Version v = vvs.first;
-            const Set<Version> &vs = vvs.second;
-            osRelying[v] = std::vector<Version>(vs.begin(), vs.end());
-        }
-    }
-
-    double end = stat->getClk(true);
-    relianceTime = (end - start) / TIMEINTERVAL;
-}
-*/
-
 void VersionedFlowSensitive::propagateVersion(NodeID o, Version v)
 {
     double start = stat->getClk();
