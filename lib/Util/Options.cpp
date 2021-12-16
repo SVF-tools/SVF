@@ -38,6 +38,12 @@ namespace SVF
         llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
     );
 
+    const llvm::cl::opt<unsigned> Options::VersioningThreads(
+        "versioning-threads",
+        llvm::cl::init(1),
+        llvm::cl::desc("number of threads to use in the versioning phase of versioned flow-sensitive analysis")
+    );
+
     const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
         "ander-time-limit",
         llvm::cl::init(0),
