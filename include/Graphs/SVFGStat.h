@@ -108,52 +108,52 @@ public:
 
     void dirVFEdgeStart()
     {
-        connectDirSVFGEdgeTimeStart = CLOCK_IN_MS();
+        connectDirSVFGEdgeTimeStart = PTAStat::getClk(true);
     }
 
     void dirVFEdgeEnd()
     {
-        connectDirSVFGEdgeTimeEnd = CLOCK_IN_MS();
+        connectDirSVFGEdgeTimeEnd = PTAStat::getClk(true);
     }
 
     void indVFEdgeStart()
     {
-        connectIndSVFGEdgeTimeStart = CLOCK_IN_MS();
+        connectIndSVFGEdgeTimeStart = PTAStat::getClk(true);
     }
 
     void indVFEdgeEnd()
     {
-        connectIndSVFGEdgeTimeEnd = CLOCK_IN_MS();
+        connectIndSVFGEdgeTimeEnd = PTAStat::getClk(true);
     }
 
     void TLVFNodeStart()
     {
-        addTopLevelNodeTimeStart = CLOCK_IN_MS();
+        addTopLevelNodeTimeStart = PTAStat::getClk(true);
     }
 
     void TLVFNodeEnd()
     {
-        addTopLevelNodeTimeEnd = CLOCK_IN_MS();
+        addTopLevelNodeTimeEnd = PTAStat::getClk(true);
     }
 
     void ATVFNodeStart()
     {
-        addAddrTakenNodeTimeStart = CLOCK_IN_MS();
+        addAddrTakenNodeTimeStart = PTAStat::getClk(true);
     }
 
     void ATVFNodeEnd()
     {
-        addAddrTakenNodeTimeEnd = CLOCK_IN_MS();
+        addAddrTakenNodeTimeEnd = PTAStat::getClk(true);
     }
 
     void sfvgOptStart()
     {
-        svfgOptTimeStart = CLOCK_IN_MS();
+        svfgOptTimeStart = PTAStat::getClk(true);
     }
 
     void sfvgOptEnd()
     {
-        svfgOptTimeEnd = CLOCK_IN_MS();
+        svfgOptTimeEnd = PTAStat::getClk(true);
     }
 
 private:
