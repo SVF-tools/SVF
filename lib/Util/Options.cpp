@@ -745,10 +745,10 @@ namespace SVF
         llvm::cl::desc("Generate SVFG after Andersen's Analysis")
     );
 
-    const llvm::cl::opt<bool> Options::WPAOPTSVFG(
-            "wpa-opt-svfg",
+    const llvm::cl::opt<bool> Options::SABERFULLSVFG(
+            "saber-full-svfg",
             llvm::cl::init(false),
-            llvm::cl::desc("When using WPA pass, optimize SVFG to eliminate formal-in and actual-out (default false)")
+            llvm::cl::desc("When using SABER for bug detection pass, enable full svfg on top of the pointer-only one")
     );
 
     const llvm::cl::opt<bool> Options::PrintAliases(
