@@ -5,6 +5,7 @@
 
 #include <sstream>
 #include "FastCluster/fastcluster.h"
+#include "MemoryModel/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
@@ -18,6 +19,8 @@ class Options
 {
 public:
     Options(void) = delete;
+
+    static const llvm::cl::opt<enum PTAStat::ClockType> ClockType;
 
     /// If set, only return the clock when getClk is called as getClk(true).
     /// Retrieving the clock is slow but it should be fine for a few calls.
@@ -69,6 +72,9 @@ public:
 
     /// Time limit for the Andersen's analyses.
     static const llvm::cl::opt<unsigned> AnderTimeLimit;
+
+    /// Number of threads for the versioning phase.
+    static const llvm::cl::opt<unsigned> VersioningThreads;
 
     // ContextDDA.cpp
     static const llvm::cl::opt<unsigned long long> CxtBudget;
@@ -239,7 +245,7 @@ public:
 
     //WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
-    static const llvm::cl::opt<bool> WPAOPTSVFG;
+    static const llvm::cl::opt<bool> SABERFULLSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
     static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;

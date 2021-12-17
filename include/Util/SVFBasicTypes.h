@@ -82,7 +82,6 @@ typedef u32_t EdgeID;
 typedef unsigned SymID;
 typedef unsigned CallSiteID;
 typedef unsigned ThreadID;
-typedef unsigned Version;
 
 typedef llvm::SparseBitVector<> NodeBS;
 typedef llvm::SparseBitVector<> SparseBitVector;
@@ -111,7 +110,6 @@ template <typename T, unsigned N>
 using SmallVector = llvm::SmallVector<T, N>;
 
 typedef std::pair<NodeID, NodeID> NodePair;
-typedef std::pair<NodeID, Version> VersionedVar;
 typedef OrderedSet<NodeID> OrderedNodeSet;
 typedef Set<NodeID> NodeSet;
 typedef Set<NodePair> NodePairSet;
@@ -126,6 +124,11 @@ typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
 typedef SmallVector16 CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
+
+typedef unsigned Version;
+typedef Set<Version> VersionSet;
+typedef std::pair<NodeID, Version> VersionedVar;
+typedef Set<VersionedVar> VersionedVarSet;
 
 // TODO: be explicit that this is a pair of 32-bit unsigneds?
 template <> struct Hash<NodePair>
@@ -295,6 +298,23 @@ struct std::hash<llvm::SparseBitVector<N>>
     size_t operator()(const llvm::SparseBitVector<N> &sbv) const {
         SVF::Hash<std::pair<std::pair<size_t, size_t>, size_t>> h;
         return h(std::make_pair(std::make_pair(sbv.count(), sbv.find_first()), sbv.find_last()));
+    }
+};
+
+template <typename T>
+struct std::hash<std::vector<T>>
+{
+    size_t operator()(const std::vector<T> &v) const {
+        // TODO: repetition with CBV.
+        size_t h = v.size();
+
+        SVF::Hash<T> hf;
+        for (const T &t : v)
+        {
+            h ^= hf(t) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        }
+
+        return h;
     }
 };
 

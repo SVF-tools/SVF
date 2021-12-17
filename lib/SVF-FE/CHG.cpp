@@ -43,6 +43,7 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
+#include "MemoryModel/PTAStat.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -88,7 +89,7 @@ void CHGraph::buildCHG()
 {
 
     double timeStart, timeEnd;
-    timeStart = CLOCK_IN_MS();
+    timeStart = PTAStat::getClk(true);
     for (u32_t i = 0; i < LLVMModuleSet::getLLVMModuleSet()->getModuleNum(); ++i)
     {
         Module *M = LLVMModuleSet::getLLVMModuleSet()->getModule(i);
@@ -109,7 +110,7 @@ void CHGraph::buildCHG()
     DBOUT(DGENERAL, outs() << SVFUtil::pasMsg("build Internal Maps ...\n"));
     buildInternalMaps();
 
-    timeEnd = CLOCK_IN_MS();
+    timeEnd = PTAStat::getClk(true);
     buildingCHGTime = (timeEnd - timeStart) / TIMEINTERVAL;
 
     if (Options::DumpCHA)
