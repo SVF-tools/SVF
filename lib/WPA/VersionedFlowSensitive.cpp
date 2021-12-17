@@ -387,7 +387,7 @@ void VersionedFlowSensitive::meldLabel(void)
     for (unsigned i = 0; i < Options::VersioningThreads; ++i) workers.push_back(std::thread(meldVersionWorker, i));
     for (std::thread &worker : workers) worker.join();
 
-    delete versionMutexes;
+    delete[] versionMutexes;
 
     double end = stat->getClk(true);
     meldLabelingTime = (end - start) / TIMEINTERVAL;
