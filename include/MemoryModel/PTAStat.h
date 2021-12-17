@@ -122,16 +122,22 @@ public:
 
     typedef Map<const char*,double> TIMEStatMap;
 
+    enum ClockType
+    {
+        Wall,
+        CPU,
+    };
+
     PTAStat(PointerAnalysis* p);
     virtual ~PTAStat() {}
 
     virtual inline void startClk()
     {
-        startTime = CLOCK_IN_MS();
+        startTime = getClk(true);
     }
     virtual inline void endClk()
     {
-        endTime = CLOCK_IN_MS();
+        endTime = getClk(true);
     }
     /// When mark is true, real clock is always returned. When mark is false, it is
     /// only returned when Options::MarkedClocksOnly is not set.

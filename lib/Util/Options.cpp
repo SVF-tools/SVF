@@ -5,6 +5,16 @@
 
 namespace SVF
 {
+    const llvm::cl::opt<enum PTAStat::ClockType> Options::ClockType(
+        "clock-type",
+        llvm::cl::init(PTAStat::ClockType::CPU),
+        llvm::cl::desc("how time should be measured"),
+        llvm::cl::values(
+            clEnumValN(PTAStat::ClockType::Wall, "wall", "use wall time"),
+            clEnumValN(PTAStat::ClockType::CPU, "cpu", "use CPU time")
+        )
+    );
+
     const llvm::cl::opt<bool> Options::MarkedClocksOnly(
         "marked-clocks-only",
         llvm::cl::init(true),
