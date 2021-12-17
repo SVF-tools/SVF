@@ -246,6 +246,17 @@ private:
         } NodeData;
 
     public:
+        /// Determines the strongly connected components of svfg following only
+        /// edges labelled with object. partOf[n] = scc means nodes n is part of
+        /// SCC scc. startingNodes contains the nodes to begin the search from.
+        /// After completion, footprint will contain all edges which object
+        /// appears on (as reached through the algorithm described above) sorted.
+        ///
+        /// This is not a general SCC detection but specifically for versioning,
+        /// so edges to delta nodes are skipped as they are prelabelled. Edges
+        /// to stores are also skipped to as they yield a new version (they
+        /// cannot be part of an SCC containing more than themselves).
+        /// Skipped edges still form part of the footprint.
         static unsigned detectSCCs(VersionedFlowSensitive *vfs,
                                    const SVFG *svfg, const NodeID object,
                                    const std::vector<const SVFGNode *> &startingNodes,
@@ -253,6 +264,7 @@ private:
                                    std::vector<const IndirectSVFGEdge *> &footprint);
 
     private:
+        /// Called by detectSCCs then called recursively.
         static void visit(VersionedFlowSensitive *vfs,
                           const NodeID object,
                           std::vector<int> &partOf,
