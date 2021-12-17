@@ -30,29 +30,15 @@ class VersionedFlowSensitive : public FlowSensitive
     friend class VersionedFlowSensitiveStat;
 
 private:
-    typedef llvm::SparseBitVector<> MeldVersion;
+    typedef CoreBitVector MeldVersion;
 
 public:
     typedef Map<NodeID, Version> ObjToVersionMap;
-    typedef Map<NodeID, MeldVersion> ObjToMeldVersionMap;
     typedef Map<VersionedVar, const DummyVersionPropSVFGNode *> VarToPropNodeMap;
 
-    typedef Map<NodeID, ObjToVersionMap> LocVersionMap;
-    /// Maps locations to all versions it sees (through objects).
-    typedef Map<NodeID, ObjToMeldVersionMap> LocMeldVersionMap;
+    typedef std::vector<ObjToVersionMap> LocVersionMap;
     /// (o -> (v -> versions with rely on o:v).
     typedef Map<NodeID, Map<Version, std::vector<Version>>> VersionRelianceMap;
-
-    /// For caching the first step in LocVersionMaps.
-    typedef struct VersionCache
-    {
-        /// SVFG node ID.
-        NodeID l;
-        /// Nested map, i.e. consume[l] or yield[l].
-        ObjToVersionMap *ovm;
-        /// Whether l and ovm can be accessed.
-        bool valid;
-    } VersionCache;
 
     /// If this version appears, there has been an error.
     static const Version invalidVersion;
@@ -126,16 +112,8 @@ private:
     /// Melds v2 into v1 (in place), returns whether a change occurred.
     static bool meld(MeldVersion &mv1, const MeldVersion &mv2);
 
-    /// Moves meldConsume/Yield to consume/yield.
-    void mapMeldVersions();
-
-    /// Returns a new MeldVersion for o during the prelabeling phase.
-    MeldVersion newMeldVersion(NodeID o);
-
-    /// Determine which versions rely on which versions (e.g. c_l'(o) relies on y_l(o)
-    /// given l-o->l' and y_l(o) = a, c_l'(o) = b), and which statements rely on which
-    /// versions (e.g. node l relies on c_l(o)).
-    void determineReliance(void);
+    /// Removes all indirect edges in the SVFG.
+    void removeAllIndirectSVFGEdges(void);
 
     /// Propagates version v of o to any version of o which relies on v when o/v is changed.
     /// Recursively applies to reliant versions till no new changes are made.
@@ -146,22 +124,37 @@ private:
     /// taken itself.
     void propagateVersion(const NodeID o, const Version v, const Version vp, bool time=true);
 
-    /// Returns true if l is a delta node, i.e., may have new incoming edges due to
-    /// on-the-fly call graph resolution. approxCallGraph is the over-approximate
-    /// call graph built by the pre-analysis.
-    virtual bool delta(NodeID l) const;
+    /// Fills in isStoreMap and isLoadMap.
+    virtual void buildIsStoreLoadMaps(void);
+
+    /// Returns true if l is a store node.
+    virtual bool isStore(const NodeID l) const;
+
+    /// Returns true if l is a load node.
+    virtual bool isLoad(const NodeID l) const;
+
+    /// Fills in deltaMap and deltaSourceMap for the SVFG.
+    virtual void buildDeltaMaps(void);
+
+    /// Returns true if l is a delta node, i.e., may get a new incoming indirect
+    /// edge due to on-the-fly callgraph construction.
+    virtual bool delta(const NodeID l) const;
+
+    /// Returns true if l is a delta-source node, i.e., may get a new outgoing indirect
+    /// edge to a delta node due to on-the-fly callgraph construction.
+    virtual bool deltaSource(const NodeID l) const;
 
     /// Shared code for getConsume and getYield. They wrap this function.
-    Version getVersion(const NodeID l, const NodeID o, VersionCache &cache, LocVersionMap &lvm);
+    Version getVersion(const NodeID l, const NodeID o, const LocVersionMap &lvm) const;
 
     /// Returns the consumed version of o at l. If no such version exists, returns invalidVersion.
-    Version getConsume(const NodeID l, const NodeID o);
+    Version getConsume(const NodeID l, const NodeID o) const;
 
     /// Returns the yielded version of o at l. If no such version exists, returns invalidVersion.
-    Version getYield(const NodeID l, const NodeID o);
+    Version getYield(const NodeID l, const NodeID o) const;
 
     /// Shared code for setConsume and setYield. They wrap this function.
-    void setVersion(const NodeID l, const NodeID o, const Version v, VersionCache &cache, LocVersionMap &lvm);
+    void setVersion(const NodeID l, const NodeID o, const Version v, LocVersionMap &lvm);
 
     /// Sets the consumed version of o at l to v.
     void setConsume(const NodeID l, const NodeID o, const Version v);
@@ -169,11 +162,11 @@ private:
     /// Sets the yielded version of o at l to v.
     void setYield(const NodeID l, const NodeID o, const Version v);
 
-    /// Invalidates yieldCache.
-    void invalidateYieldCache(void);
+    /// Returns the versions of o which rely on o:v.
+    std::vector<Version> &getReliantVersions(const NodeID o, const Version v);
 
-    /// Invalidates consumeCache.
-    void invalidateConsumeCache(void);
+    /// Returns the statements which rely on o:v.
+    NodeBS &getStmtReliance(const NodeID o, const Version v);
 
     /// Dumps versionReliance and stmtReliance.
     void dumpReliances(void) const;
@@ -184,34 +177,11 @@ private:
     /// Dumps a MeldVersion to stdout.
     static void dumpMeldVersion(MeldVersion &v);
 
-    /// SVFG node (label) x object -> version to consume.
-    /// Used during meld labeling. We use MeldVersions and Versions for performance.
-    /// MeldVersions are currently SparseBitVectors which are necessary for the meld operator,
-    /// but when meld labeling is complete, we don't want to carry around SBVs and use them; integers
-    /// are better.
-    LocMeldVersionMap meldConsume;
-    /// SVFG node (label) x object -> version to yield.
-    /// Used during meld labeling.
-    /// For non-stores, yield == consume, so meldYield only has entries for stores.
-    LocMeldVersionMap meldYield;
-    /// Object -> MeldVersion counter. Used in the prelabeling phase to generate a
-    /// new MeldVersion.
-    Map<NodeID, unsigned> meldVersions;
-
-    /// Like meldConsume but with Versions, not MeldVersions.
-    /// Created after meld labeling from meldConsume and used during the analysis.
-    /// When modifying consume itself (not a value) outside of setConsume, invalidateConsumeCache
-    /// should be called. E.g. if a call like consume[l] is an insertion.
+    /// Maps locations to objects to a version. The object version is what is
+    /// consumed at that location.
     LocVersionMap consume;
     /// Actual yield map. Yield analogue to consume.
-    /// When modifying yield itself (not a value) outside of setYield, invalidateYieldCache
-    /// should be called.
     LocVersionMap yield;
-
-    /// Cache for the nested map in consume.
-    VersionCache consumeCache;
-    /// Cache for the nested map in yield.
-    VersionCache yieldCache;
 
     /// o -> (version -> versions which rely on it).
     VersionRelianceMap versionReliance;
@@ -222,26 +192,87 @@ private:
     /// needs to be propagated.
     VarToPropNodeMap versionedVarToPropNode;
 
+    // Maps an object o to o' if o is equivalent to o' with respect to
+    // versioning. Thus, we don't need to store the versions of o and look
+    // up those for o' instead.
+    Map<NodeID, NodeID> equivalentObject;
+
     /// Worklist for performing meld labeling, takes SVFG node l.
     /// Nodes are added when the version they yield is changed.
     FIFOWorkList<NodeID> vWorklist;
 
+    Set<NodeID> prelabeledObjects;
+
     /// Points-to DS for working with versions.
     BVDataPTAImpl::VersionedPTDataTy *vPtD;
+
+    /// deltaMap[l] means SVFG node l is a delta node, i.e., may get new
+    /// incoming edges due to OTF callgraph construction.
+    std::vector<bool> deltaMap;
+
+    /// deltaSourceMap[l] means SVFG node l *may* be a source to a delta node
+    /// through an dge added as a result of on-the-fly callgraph
+    /// construction.
+    std::vector<bool> deltaSourceMap;
+
+    /// isStoreMap[l] means SVFG node l is a store node.
+    std::vector<bool> isStoreMap;
+
+    /// isLoadMap[l] means SVFG node l is a load node.
+    std::vector<bool> isLoadMap;
 
     /// Additional statistics.
     //@{
     Size_t numPrelabeledNodes;  ///< Number of prelabeled nodes.
     Size_t numPrelabelVersions; ///< Number of versions created during prelabeling.
 
-    double relianceTime;     ///< Time to determine version and statement reliance.
     double prelabelingTime;  ///< Time to prelabel SVFG.
     double meldLabelingTime; ///< Time to meld label SVFG.
-    double meldMappingTime;  ///< Time to map MeldVersions to Versions.
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
 
     static VersionedFlowSensitive *vfspta;
+
+    class SCC
+    {
+    private:
+        typedef struct NodeData
+        {
+            int index;
+            int lowlink;
+            bool onStack;
+        } NodeData;
+
+    public:
+        /// Determines the strongly connected components of svfg following only
+        /// edges labelled with object. partOf[n] = scc means nodes n is part of
+        /// SCC scc. startingNodes contains the nodes to begin the search from.
+        /// After completion, footprint will contain all edges which object
+        /// appears on (as reached through the algorithm described above) sorted.
+        ///
+        /// This is not a general SCC detection but specifically for versioning,
+        /// so edges to delta nodes are skipped as they are prelabelled. Edges
+        /// to stores are also skipped to as they yield a new version (they
+        /// cannot be part of an SCC containing more than themselves).
+        /// Skipped edges still form part of the footprint.
+        static unsigned detectSCCs(VersionedFlowSensitive *vfs,
+                                   const SVFG *svfg, const NodeID object,
+                                   const std::vector<const SVFGNode *> &startingNodes,
+                                   std::vector<int> &partOf,
+                                   std::vector<const IndirectSVFGEdge *> &footprint);
+
+    private:
+        /// Called by detectSCCs then called recursively.
+        static void visit(VersionedFlowSensitive *vfs,
+                          const NodeID object,
+                          std::vector<int> &partOf,
+                          std::vector<const IndirectSVFGEdge *> &footprint,
+                          std::vector<NodeData> &nodeData,
+                          std::stack<const SVFGNode *> &stack,
+                          int &index,
+                          int &currentSCC,
+                          const SVFGNode *v);
+    };
 };
 
 } // End namespace SVF

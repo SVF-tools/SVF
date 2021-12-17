@@ -73,6 +73,9 @@ public:
     /// Time limit for the Andersen's analyses.
     static const llvm::cl::opt<unsigned> AnderTimeLimit;
 
+    /// Number of threads for the versioning phase.
+    static const llvm::cl::opt<unsigned> VersioningThreads;
+
     // ContextDDA.cpp
     static const llvm::cl::opt<unsigned long long> CxtBudget;
 
