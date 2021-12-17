@@ -124,10 +124,9 @@ double PTAStat::getClk(bool mark) {
     {
         return CLOCK_IN_MS();
     }
-    else
-    {
-        assert(false && "PTAStat::getClk: unknown clock type");
-    }
+
+    assert(false && "PTAStat::getClk: unknown clock type");
+    abort();
 }
 
 void PTAStat::performStat()
