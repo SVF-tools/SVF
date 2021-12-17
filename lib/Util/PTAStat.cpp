@@ -107,12 +107,27 @@ const char* PTAStat:: NumOfNullPointer = "NullPointer";	///< Number of pointers 
 
 PTAStat::PTAStat(PointerAnalysis* p) : startTime(0), endTime(0), pta(p)
 {
-
+    assert((Options::ClockType == ClockType::Wall || Options::ClockType == ClockType::CPU)
+           && "PTAStat: unknown clock type!");
 }
 
 double PTAStat::getClk(bool mark) {
     if (Options::MarkedClocksOnly && !mark) return 0.0;
-    return CLOCK_IN_MS();
+
+    if (Options::ClockType == ClockType::Wall)
+    {
+        struct timespec time;
+        clock_gettime(CLOCK_MONOTONIC, &time);
+        return (double)(time.tv_nsec + time.tv_sec * 1000000000) / 1000000.0;
+    }
+    else if (Options::ClockType == ClockType::CPU)
+    {
+        return CLOCK_IN_MS();
+    }
+    else
+    {
+        assert(false && "PTAStat::getClk: unknown clock type");
+    }
 }
 
 void PTAStat::performStat()

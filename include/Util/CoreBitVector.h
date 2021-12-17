@@ -200,6 +200,14 @@ private:
     std::vector<Word> words;
 };
 
+template <>
+struct Hash<CoreBitVector>
+{
+    size_t operator()(const CoreBitVector &cbv) const {
+        return cbv.hash();
+    }
+};
+
 };
 
 #endif  // COREBITVECTOR_H_

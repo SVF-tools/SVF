@@ -5,6 +5,16 @@
 
 namespace SVF
 {
+    const llvm::cl::opt<enum PTAStat::ClockType> Options::ClockType(
+        "clock-type",
+        llvm::cl::init(PTAStat::ClockType::CPU),
+        llvm::cl::desc("how time should be measured"),
+        llvm::cl::values(
+            clEnumValN(PTAStat::ClockType::Wall, "wall", "use wall time"),
+            clEnumValN(PTAStat::ClockType::CPU, "cpu", "use CPU time")
+        )
+    );
+
     const llvm::cl::opt<bool> Options::MarkedClocksOnly(
         "marked-clocks-only",
         llvm::cl::init(true),
@@ -36,6 +46,12 @@ namespace SVF
         "fs-time-limit",
         llvm::cl::init(0),
         llvm::cl::desc("time limit for main phase of flow-sensitive analyses")
+    );
+
+    const llvm::cl::opt<unsigned> Options::VersioningThreads(
+        "versioning-threads",
+        llvm::cl::init(1),
+        llvm::cl::desc("number of threads to use in the versioning phase of versioned flow-sensitive analysis")
     );
 
     const llvm::cl::opt<unsigned> Options::AnderTimeLimit(
@@ -739,10 +755,10 @@ namespace SVF
         llvm::cl::desc("Generate SVFG after Andersen's Analysis")
     );
 
-    const llvm::cl::opt<bool> Options::WPAOPTSVFG(
-            "wpa-opt-svfg",
+    const llvm::cl::opt<bool> Options::SABERFULLSVFG(
+            "saber-full-svfg",
             llvm::cl::init(false),
-            llvm::cl::desc("When using WPA pass, optimize SVFG to eliminate formal-in and actual-out (default false)")
+            llvm::cl::desc("When using SABER for bug detection pass, enable full svfg on top of the pointer-only one")
     );
 
     const llvm::cl::opt<bool> Options::PrintAliases(

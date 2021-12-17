@@ -82,8 +82,7 @@ protected:
     inline void setGraph(GraphType g)
     {
         _graph = g;
-        if(!scc)
-            scc = new SCC(_graph);
+        scc = new SCC(_graph);
     }
     //@}
 
