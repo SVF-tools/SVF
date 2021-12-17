@@ -378,6 +378,7 @@ std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
         return "svf-best";
     default:
         assert(false && "SVFUtil::hclustMethodToString: unknown method");
+        abort();
     }
 }
 
