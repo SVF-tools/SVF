@@ -31,7 +31,7 @@ VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
     numPrelabeledNodes = numPrelabelVersions = 0;
-    relianceTime = prelabelingTime = meldLabelingTime = meldMappingTime = versionPropTime = 0.0;
+    prelabelingTime = meldLabelingTime = versionPropTime = 0.0;
     // We'll grab vPtD in initialize.
 
     for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)

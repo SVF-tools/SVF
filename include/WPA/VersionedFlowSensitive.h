@@ -226,10 +226,8 @@ private:
     Size_t numPrelabeledNodes;  ///< Number of prelabeled nodes.
     Size_t numPrelabelVersions; ///< Number of versions created during prelabeling.
 
-    double relianceTime;     ///< Time to determine version and statement reliance.
     double prelabelingTime;  ///< Time to prelabel SVFG.
     double meldLabelingTime; ///< Time to meld label SVFG.
-    double meldMappingTime;  ///< Time to map MeldVersions to Versions.
     double versionPropTime;  ///< Time to propagate versions to versions which rely on them.
     //@}
 
