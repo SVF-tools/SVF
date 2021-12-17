@@ -5,6 +5,7 @@
 
 #include <sstream>
 #include "FastCluster/fastcluster.h"
+#include "MemoryModel/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
@@ -18,6 +19,8 @@ class Options
 {
 public:
     Options(void) = delete;
+
+    static const llvm::cl::opt<enum PTAStat::ClockType> ClockType;
 
     /// If set, only return the clock when getClk is called as getClk(true).
     /// Retrieving the clock is slow but it should be fine for a few calls.
