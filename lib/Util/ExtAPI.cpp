@@ -8,7 +8,9 @@
 */
 
 #include "Util/ExtAPI.h"
+#include "Util/SVFUtil.h"   // to help debug, remove after (not in original file)
 #include <stdio.h>
+#include <cstdlib>          // for getenv
 #include <map>
 #include <set>
 #include <vector>
@@ -57,72 +59,83 @@ struct ei_pair
  *  hasmntopt - returns arg0->mnt_opts
  */
 
-// transform line from txt file to its corresponding extf_t type
-map<string, ExtAPI::extf_t> extf_map = {
-    {"ExtAPI::EFT_NOOP", ExtAPI::EFT_NOOP},
-    {"ExtAPI::EFT_ALLOC", ExtAPI::EFT_ALLOC},
-    {"ExtAPI::EFT_REALLOC", ExtAPI::EFT_REALLOC},
-    {"ExtAPI::EFT_FREE", ExtAPI::EFT_FREE},
-    {"ExtAPI::EFT_NOSTRUCT_ALLOC", ExtAPI::EFT_NOSTRUCT_ALLOC},
-    {"ExtAPI::EFT_STAT", ExtAPI::EFT_STAT},
-    {"ExtAPI::EFT_STAT2", ExtAPI::EFT_STAT2},
-    {"ExtAPI::EFT_L_A0", ExtAPI::EFT_L_A0},
-    {"ExtAPI::EFT_L_A1", ExtAPI::EFT_L_A1},
-    {"ExtAPI::EFT_L_A2", ExtAPI::EFT_L_A2},
-    {"ExtAPI::EFT_L_A8", ExtAPI::EFT_L_A8},
-    {"ExtAPI::EFT_L_A0__A0R_A1", ExtAPI::EFT_L_A0__A0R_A1},
-    {"ExtAPI::EFT_L_A0__A0R_A1R", ExtAPI::EFT_L_A0__A0R_A1R},
-    {"ExtAPI::EFT_L_A1__FunPtr", ExtAPI::EFT_L_A1__FunPtr},
-    {"ExtAPI::EFT_A1R_A0R", ExtAPI::EFT_A1R_A0R},
-    {"ExtAPI::EFT_A3R_A1R_NS", ExtAPI::EFT_A3R_A1R_NS},
-    {"ExtAPI::EFT_A1R_A0", ExtAPI::EFT_A1R_A0},
-    {"ExtAPI::EFT_A2R_A1", ExtAPI::EFT_A2R_A1},
-    {"ExtAPI::EFT_A4R_A1", ExtAPI::EFT_A4R_A1},
-    {"ExtAPI::EFT_L_A0__A2R_A0", ExtAPI::EFT_L_A0__A2R_A0},
-    {"ExtAPI::EFT_L_A0__A1_A0", ExtAPI::EFT_L_A0__A1_A0},
-    {"ExtAPI::EFT_A0R_NEW", ExtAPI::EFT_A0R_NEW},
-    {"ExtAPI::EFT_A1R_NEW", ExtAPI::EFT_A1R_NEW},
-    {"ExtAPI::EFT_A2R_NEW", ExtAPI::EFT_A2R_NEW},
-    {"ExtAPI::EFT_A4R_NEW", ExtAPI::EFT_A4R_NEW},
-    {"ExtAPI::EFT_A11R_NEW", ExtAPI::EFT_A11R_NEW},
-    {"ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
-    {"ExtAPI::EFT_STD_RB_TREE_INCREMENT", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
-    {"ExtAPI::EFT_STD_LIST_HOOK", ExtAPI::EFT_STD_LIST_HOOK},
-    {"ExtAPI::CPP_EFT_A0R_A1", ExtAPI::CPP_EFT_A0R_A1},
-    {"ExtAPI::CPP_EFT_A0R_A1R", ExtAPI::CPP_EFT_A0R_A1R},
-    {"ExtAPI::CPP_EFT_A1R", ExtAPI::CPP_EFT_A1R},
-    {"ExtAPI::EFT_CXA_BEGIN_CATCH", ExtAPI::EFT_CXA_BEGIN_CATCH},
-    {"ExtAPI::CPP_EFT_DYNAMIC_CAST", ExtAPI::CPP_EFT_DYNAMIC_CAST},
-    {"ExtAPI::EFT_OTHER", ExtAPI::EFT_OTHER}
-};
-
-
 void ExtAPI::init()
 {
     set<extf_t> t_seen;
     extf_t prev_t= EFT_NOOP;
     t_seen.insert(EFT_NOOP);
 
-    fstream file("lib/extAPI.txt");     // read in txt file
+    vector<ei_pair> ei_pairs;           
+    vector<pair<std::string,std::string>> data;   // to preprocess extAPI.txt
+    set<std::string> ID_seen;
 
-    vector<ei_pair> ei_pairs;
-    vector<pair<string,string>> data;
-    set<string> ID_seen;
+    // source ./setup.sh (assert if env variables are not set up)
+    // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
+
+    // get SVF_DIR environment variable
+    const char* env = std::getenv("SVF_DIR");
+    assert(env != nullptr && "getting environment variable unsuccessful");
+    
+    string svf_dir(env);
+    std::string file_name = svf_dir + "/lib/extAPI.txt";
+    std::fstream file;     // read in txt file
+
+    file.open(file_name);
+    assert(file.is_open() && "file cannot be opened");
+    
+    // assert if file cannot be opened
 
     if(file.is_open()){
         string ID;                      // the external API function name
-        string effect;                  // the corresponding extf enum   
+        string effect;                  // the corresponding extf enum
         while(getline(file,ID,',') && getline(file,effect)){
             data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
         }
     }
     file.close();
 
-    // store ei_pairs to ei_pairs vector
-    for(auto data_iter = data.begin(); data_iter != data.end(); ++data_iter){
+    // transform line from txt file to its corresponding extf_t type
+    map<string, ExtAPI::extf_t> extf_map = {
+        {"ExtAPI::EFT_NOOP", ExtAPI::EFT_NOOP},
+        {"ExtAPI::EFT_ALLOC", ExtAPI::EFT_ALLOC},
+        {"ExtAPI::EFT_REALLOC", ExtAPI::EFT_REALLOC},
+        {"ExtAPI::EFT_FREE", ExtAPI::EFT_FREE},
+        {"ExtAPI::EFT_NOSTRUCT_ALLOC", ExtAPI::EFT_NOSTRUCT_ALLOC},
+        {"ExtAPI::EFT_STAT", ExtAPI::EFT_STAT},
+        {"ExtAPI::EFT_STAT2", ExtAPI::EFT_STAT2},
+        {"ExtAPI::EFT_L_A0", ExtAPI::EFT_L_A0},
+        {"ExtAPI::EFT_L_A1", ExtAPI::EFT_L_A1},
+        {"ExtAPI::EFT_L_A2", ExtAPI::EFT_L_A2},
+        {"ExtAPI::EFT_L_A8", ExtAPI::EFT_L_A8},
+        {"ExtAPI::EFT_L_A0__A0R_A1", ExtAPI::EFT_L_A0__A0R_A1},
+        {"ExtAPI::EFT_L_A0__A0R_A1R", ExtAPI::EFT_L_A0__A0R_A1R},
+        {"ExtAPI::EFT_L_A1__FunPtr", ExtAPI::EFT_L_A1__FunPtr},
+        {"ExtAPI::EFT_A1R_A0R", ExtAPI::EFT_A1R_A0R},
+        {"ExtAPI::EFT_A3R_A1R_NS", ExtAPI::EFT_A3R_A1R_NS},
+        {"ExtAPI::EFT_A1R_A0", ExtAPI::EFT_A1R_A0},
+        {"ExtAPI::EFT_A2R_A1", ExtAPI::EFT_A2R_A1},
+        {"ExtAPI::EFT_A4R_A1", ExtAPI::EFT_A4R_A1},
+        {"ExtAPI::EFT_L_A0__A2R_A0", ExtAPI::EFT_L_A0__A2R_A0},
+        {"ExtAPI::EFT_L_A0__A1_A0", ExtAPI::EFT_L_A0__A1_A0},
+        {"ExtAPI::EFT_A0R_NEW", ExtAPI::EFT_A0R_NEW},
+        {"ExtAPI::EFT_A1R_NEW", ExtAPI::EFT_A1R_NEW},
+        {"ExtAPI::EFT_A2R_NEW", ExtAPI::EFT_A2R_NEW},
+        {"ExtAPI::EFT_A4R_NEW", ExtAPI::EFT_A4R_NEW},
+        {"ExtAPI::EFT_A11R_NEW", ExtAPI::EFT_A11R_NEW},
+        {"ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
+        {"ExtAPI::EFT_STD_RB_TREE_INCREMENT", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+        {"ExtAPI::EFT_STD_LIST_HOOK", ExtAPI::EFT_STD_LIST_HOOK},
+        {"ExtAPI::CPP_EFT_A0R_A1", ExtAPI::CPP_EFT_A0R_A1},
+        {"ExtAPI::CPP_EFT_A0R_A1R", ExtAPI::CPP_EFT_A0R_A1R},
+        {"ExtAPI::CPP_EFT_A1R", ExtAPI::CPP_EFT_A1R},
+        {"ExtAPI::EFT_CXA_BEGIN_CATCH", ExtAPI::EFT_CXA_BEGIN_CATCH},
+        {"ExtAPI::CPP_EFT_DYNAMIC_CAST", ExtAPI::CPP_EFT_DYNAMIC_CAST},
+        {"ExtAPI::EFT_OTHER", ExtAPI::EFT_OTHER}
+    };
+
+    // construct ei_pairs and store ei_pairs to ei_pairs vector
+    for(auto data_iter = data.begin(); data_iter != data.end(); data_iter++){
         // check for duplicate side effects on the same external function name
-        // assert(!ID_seen.count(data_iter->first) && "Cannot have multiple side effects for a single external function");
-        // ID_seen.insert(data_iter->first);
         const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
         ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));
     } 
@@ -150,5 +163,4 @@ void ExtAPI::init()
         }
         info[p->n]= p->t;
     }
-}
-
+}   // end init() function

@@ -515,10 +515,10 @@ tmpfile64,ExtAPI::EFT_ALLOC
 xalloc,ExtAPI::EFT_ALLOC
 xcalloc,ExtAPI::EFT_ALLOC
 xmalloc,ExtAPI::EFT_ALLOC
-_Znwm,ExtAPI::EFT_ALLOC	
-_Znam,ExtAPI::EFT_ALLOC	
-_Znaj,ExtAPI::EFT_ALLOC	
-_Znwj,ExtAPI::EFT_ALLOC	
+_Znwm,ExtAPI::EFT_ALLOC
+_Znam,ExtAPI::EFT_ALLOC
+_Znaj,ExtAPI::EFT_ALLOC
+_Znwj,ExtAPI::EFT_ALLOC
 __cxa_allocate_exception,ExtAPI::EFT_ALLOC
 aligned_alloc,ExtAPI::EFT_ALLOC
 memalign,ExtAPI::EFT_ALLOC
@@ -641,8 +641,8 @@ sm_free,ExtAPI::EFT_FREE
 vim_free,ExtAPI::EFT_FREE
 xfree,ExtAPI::EFT_FREE
 fclose,ExtAPI::EFT_FREE
-_ZdaPv,ExtAPI::EFT_FREE	
-_ZdlPv,ExtAPI::EFT_FREE	
+_ZdaPv,ExtAPI::EFT_FREE
+_ZdlPv,ExtAPI::EFT_FREE
 __rawmemchr,ExtAPI::EFT_L_A0
 cairo_surface_reference,ExtAPI::EFT_L_A0
 fgets,ExtAPI::EFT_L_A0
@@ -733,4 +733,3 @@ _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_,ExtAPI::CPP_EFT_A0
 _ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E,ExtAPI::CPP_EFT_A1R
 _ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE,ExtAPI::CPP_EFT_A1R
 __dynamic_cast,ExtAPI::CPP_EFT_DYNAMIC_CAST
-0,ExtAPI::EFT_NOOP
