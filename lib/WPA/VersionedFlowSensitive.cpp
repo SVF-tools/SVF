@@ -38,6 +38,8 @@ VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
     {
         if (SVFUtil::isa<ObjPN>(it->second)) equivalentObject[it->first] = it->first;
     }
+
+    assert(!Options::OPTSVFG && "VFS: -opt-svfg not currently supported with VFS.");
 }
 
 void VersionedFlowSensitive::initialize()
