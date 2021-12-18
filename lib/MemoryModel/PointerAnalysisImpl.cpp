@@ -69,6 +69,13 @@ BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_che
     ptaImplTy = BVDataImpl;
 }
 
+void BVDataPTAImpl::finalize()
+{
+    normalizePointsTo();
+    PointerAnalysis::finalize();
+    if (Options::ptDataBacking == PTBackingType::Persistent && Options::PStat) ptCache.printStats("bv-finalize");
+}
+
 /*!
  * Expand all fields of an aggregate in all points-to sets
  */
