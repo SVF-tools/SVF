@@ -8,7 +8,7 @@
 */
 
 #include "Util/ExtAPI.h"
-#include "Util/SVFUtil.h"   // to help debug, remove after (not in original file)
+#include "Util/SVFUtil.h"
 #include <stdio.h>
 #include <cstdlib>          // for getenv
 #include <map>
@@ -67,7 +67,6 @@ void ExtAPI::init()
 
     vector<ei_pair> ei_pairs;           
     vector<pair<std::string,std::string>> data;   // to preprocess extAPI.txt
-    set<std::string> ID_seen;
 
     // source ./setup.sh (assert if env variables are not set up)
     // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
@@ -77,13 +76,11 @@ void ExtAPI::init()
     assert(env != nullptr && "getting environment variable unsuccessful");
     
     string svf_dir(env);
-    std::string file_name = svf_dir + "/lib/extAPI.txt";
+    std::string file_name = svf_dir + "/lib/extAPI.txt";        // extAPI.txt path
     std::fstream file;     // read in txt file
 
     file.open(file_name);
-    assert(file.is_open() && "file cannot be opened");
-    
-    // assert if file cannot be opened
+    assert(file.is_open() && "file cannot be opened");    // assert if file cannot be opened
 
     if(file.is_open()){
         string ID;                      // the external API function name
