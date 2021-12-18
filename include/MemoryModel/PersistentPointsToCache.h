@@ -138,7 +138,7 @@ public:
             if (lhs != result)
             {
                 unionCache[std::minmax(lhs, result)] = result;
-                ++propertyUnions;
+                ++preemptiveUnions;
                 ++totalUnions;
             }
 
@@ -146,7 +146,7 @@ public:
             if (rhs != result)
             {
                 unionCache[std::minmax(rhs, result)] = result;
-                ++propertyUnions;
+                ++preemptiveUnions;
                 ++totalUnions;
             }
         } else ++lookupUnions;
@@ -195,17 +195,17 @@ public:
             {
                 // result AND rhs = EMPTY_SET,
                 intersectionCache[std::minmax(result, rhs)] = emptyPointsToId();
-                ++propertyIntersections;
+                ++preemptiveIntersections;
                 ++totalIntersections;
 
                 // and result AND lhs = result,
                 intersectionCache[std::minmax(result, lhs)] = result;
-                ++propertyIntersections;
+                ++preemptiveIntersections;
                 ++totalIntersections;
 
                 // and result - rhs = result.
                 complementCache[std::make_pair(result, rhs)] = result;
-                ++propertyComplements;
+                ++preemptiveComplements;
                 ++totalComplements;
             }
         } else ++lookupComplements;
@@ -252,7 +252,7 @@ public:
                 if (result != rhs)
                 {
                     intersectionCache[std::minmax(result, rhs)] = result;
-                    ++propertyIntersections;
+                    ++preemptiveIntersections;
                     ++totalIntersections;
                 }
 
@@ -260,7 +260,7 @@ public:
                 if (result != lhs)
                 {
                     intersectionCache[std::minmax(result, lhs)] = result;
-                    ++propertyIntersections;
+                    ++preemptiveIntersections;
                     ++totalIntersections;
                 }
 
@@ -269,7 +269,7 @@ public:
                 if (result != emptyPointsToId() && result != lhs)
                 {
                     unionCache[std::minmax(lhs, result)] = lhs;
-                    ++propertyUnions;
+                    ++preemptiveUnions;
                     ++totalUnions;
                 }
 
@@ -277,7 +277,7 @@ public:
                 if (result != emptyPointsToId() && result != rhs)
                 {
                     unionCache[std::minmax(rhs, result)] = rhs;
-                    ++propertyUnions;
+                    ++preemptiveUnions;
                     ++totalUnions;
                 }
             }
@@ -294,22 +294,25 @@ public:
 
         std::cout << "****Persistent Points-To Cache Statistics: " << subtitle << "****\n";
 
-        std::cout << std::setw(fieldWidth) << "UniquePointsToSets"    << idToPts.size()        << "\n";
+        std::cout << std::setw(fieldWidth) << "UniquePointsToSets"      << idToPts.size()          << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalUnions"           << totalUnions           << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyUnions"        << propertyUnions        << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueUnions"          << uniqueUnions          << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupUnions"          << lookupUnions          << "\n";
+        std::cout << std::setw(fieldWidth) << "TotalUnions"             << totalUnions             << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyUnions"          << propertyUnions          << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueUnions"            << uniqueUnions            << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupUnions"            << lookupUnions            << "\n";
+        std::cout << std::setw(fieldWidth) << "PreemptiveUnions"        << preemptiveUnions        << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalComplements"      << totalComplements      << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyComplements"   << propertyComplements   << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueComplements"     << uniqueComplements     << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupComplements"     << lookupComplements     << "\n";
+        std::cout << std::setw(fieldWidth) << "TotalComplements"        << totalComplements        << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyComplements"     << propertyComplements     << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueComplements"       << uniqueComplements       << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupComplements"       << lookupComplements       << "\n";
+        std::cout << std::setw(fieldWidth) << "PreemptiveComplements"   << preemptiveComplements   << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalIntersections"    << totalIntersections    << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyIntersections" << propertyIntersections << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueIntersections"   << uniqueIntersections   << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupIntersections"   << lookupIntersections   << "\n";
+        std::cout << std::setw(fieldWidth) << "TotalIntersections"      << totalIntersections      << "\n";
+        std::cout << std::setw(fieldWidth) << "PropertyIntersections"   << propertyIntersections   << "\n";
+        std::cout << std::setw(fieldWidth) << "UniqueIntersections"     << uniqueIntersections     << "\n";
+        std::cout << std::setw(fieldWidth) << "LookupIntersections"     << lookupIntersections     << "\n";
+        std::cout << std::setw(fieldWidth) << "PreemptiveIntersections" << preemptiveIntersections << "\n";
 
         std::cout.flush();
     }
@@ -379,18 +382,21 @@ private:
     inline void initStats(void)
     {
 
-        totalUnions           = 0;
-        uniqueUnions          = 0;
-        propertyUnions        = 0;
-        lookupUnions          = 0;
-        totalComplements      = 0;
-        uniqueComplements     = 0;
-        propertyComplements   = 0;
-        lookupComplements     = 0;
-        totalIntersections    = 0;
-        uniqueIntersections   = 0;
-        propertyIntersections = 0;
-        lookupIntersections   = 0;
+        totalUnions              = 0;
+        uniqueUnions             = 0;
+        propertyUnions           = 0;
+        lookupUnions             = 0;
+        preemptiveUnions         = 0;
+        totalComplements         = 0;
+        uniqueComplements        = 0;
+        propertyComplements      = 0;
+        lookupComplements        = 0;
+        preemptiveComplements    = 0;
+        totalIntersections       = 0;
+        uniqueIntersections      = 0;
+        propertyIntersections    = 0;
+        lookupIntersections      = 0;
+        preemptiveIntersections  = 0;
     }
 
 private:
@@ -418,14 +424,17 @@ private:
     u64_t uniqueUnions;
     u64_t propertyUnions;
     u64_t lookupUnions;
+    u64_t preemptiveUnions;
     u64_t totalComplements;
     u64_t uniqueComplements;
     u64_t propertyComplements;
     u64_t lookupComplements;
+    u64_t preemptiveComplements;
     u64_t totalIntersections;
     u64_t uniqueIntersections;
     u64_t propertyIntersections;
     u64_t lookupIntersections;
+    u64_t preemptiveIntersections;
 };
 
 } // End namespace SVF
