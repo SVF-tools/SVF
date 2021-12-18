@@ -276,9 +276,9 @@ bool PointsTo::intersectWithComplement(const PointsTo &rhs)
     if (type == CBV) return cbv.intersectWithComplement(rhs.cbv);
     else if (type == SBV) return sbv.intersectWithComplement(rhs.sbv);
     else if (type == BV) return bv.intersectWithComplement(rhs.bv);
-    else {
-        assert(false && "PointsTo::intersectWithComplement(PT): unknown type");
-    }
+
+    assert(false && "PointsTo::intersectWithComplement(PT): unknown type");
+    abort();
 }
 
 void PointsTo::intersectWithComplement(const PointsTo &lhs, const PointsTo &rhs)

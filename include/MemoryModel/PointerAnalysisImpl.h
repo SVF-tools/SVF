@@ -165,11 +165,7 @@ protected:
 
 
     /// Finalization of pointer analysis, and normalize points-to information to Bit Vector representation
-    virtual void finalize()
-    {
-        normalizePointsTo();
-        PointerAnalysis::finalize();
-    }
+    virtual void finalize();
 
     /// Update callgraph. This should be implemented by its subclass.
     virtual inline bool updateCallGraph(const CallSiteToFunPtrMap&)
