@@ -157,7 +157,8 @@ public:
     /// Destructor
     virtual ~GenericNode()
     {
-
+      for (auto * edge : OutEdges)
+        delete edge;
     }
 
     /// Get ID
@@ -352,13 +353,8 @@ public:
     /// Release memory
     void destroy()
     {
-        for (iterator I = IDToNodeMap.begin(), E = IDToNodeMap.end(); I != E; ++I){
-            // NodeType* node = I->second;
-            // for(typename NodeType::iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it!=eit; ++it)
-            //         delete *it;
-        }
-        for (iterator I = IDToNodeMap.begin(), E = IDToNodeMap.end(); I != E; ++I)
-            delete I->second;
+        for (auto &entry : IDToNodeMap)
+          delete entry.second;
     }
     /// Iterators
     //@{
