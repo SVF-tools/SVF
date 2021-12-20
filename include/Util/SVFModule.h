@@ -68,6 +68,11 @@ public:
     {
     }
 
+    ~SVFModule()
+    {
+      for (auto * f : FunctionSet)
+        delete f;
+    }
 
     static inline void setPagFromTXT(std::string txt)
     {
