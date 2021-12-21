@@ -869,6 +869,9 @@ void PAG::destroy()
 {
     SymbolTableInfo::releaseSymbolInfo();
     symInfo = nullptr;
+
+    delete icfg;
+    icfg = nullptr;
 }
 
 /*!
