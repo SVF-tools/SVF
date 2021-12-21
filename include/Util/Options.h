@@ -158,6 +158,9 @@ public:
     static const llvm::cl::opt<bool> SingleVFG;
     static llvm::cl::opt<bool> OPTSVFG;
 
+    static const llvm::cl::opt<std :: string> WriteSVFG;
+    static const llvm::cl::opt<std :: string> ReadSVFG;
+
     // FSMPTA.cpp
     static const llvm::cl::opt<bool> UsePCG;
     static const llvm::cl::opt<bool> IntraLock;
