@@ -45,20 +45,26 @@ public:
         initStats();
     }
 
+    /// Clear the cache.
+    void clear()
+    {
+      for (const Data *d : idToPts) delete d;
+      idToPts.clear();
+      ptsToId.clear();
+
+      unionCache.clear();
+      complementCache.clear();
+      intersectionCache.clear();
+    }
+
     /// Resets the cache removing everything except the emptyData it was initialised with.
     void reset(void)
     {
-        for (const Data *d : idToPts) delete d;
-        idToPts.clear();
-        ptsToId.clear();
+        clear();
 
         // Put the empty data back in.
         ptsToId[Data()] = emptyPointsToId();
         idToPts.push_back(new Data());
-
-        unionCache.clear();
-        complementCache.clear();
-        intersectionCache.clear();
 
         idCounter = 1;
         // Cache is empty...
