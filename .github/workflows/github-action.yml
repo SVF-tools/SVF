@@ -7,6 +7,7 @@ on: [push, pull_request]
 env:
   SVF_CTIR: 1 
   SVF_Z3: 1
+  SVF_DIR: $GITHUB_WORKSPACE
 
 jobs:
   build:
@@ -57,7 +58,7 @@ jobs:
             fi 
           fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
-          ${{github.workspace}}/build.sh
+          source ${{github.workspace}}/build.sh
 
       # run ctest
       - name: ctest points-to
