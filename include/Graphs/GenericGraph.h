@@ -407,6 +407,7 @@ public:
         iterator it = IDToNodeMap.find(node->getId());
         assert(it != IDToNodeMap.end() && "can not find the node");
         IDToNodeMap.erase(it);
+        delete node;
     }
 
     /// Get total number of node/edge
