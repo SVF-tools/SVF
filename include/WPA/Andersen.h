@@ -31,6 +31,7 @@
 #define ANDERSENPASS_H_
 
 #include "MemoryModel/PointerAnalysisImpl.h"
+#include "SVF-FE/CommonCHG.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
 #include "Graphs/PAG.h"
@@ -65,6 +66,10 @@ public:
         if (consCG != nullptr)
             delete consCG;
         consCG = nullptr;
+
+        auto * chg = getCHGraph();
+        delete chg;
+        chg = nullptr;
     }
 
     /// Andersen analysis
