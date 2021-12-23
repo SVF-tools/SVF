@@ -28,9 +28,9 @@
  */
 
 #include "Util/Options.h"
+#include "SVF-FE/CommonCHG.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/PointsTo.h"
-#include "Util/Options.h"
 #include "WPA/Andersen.h"
 #include "WPA/Steensgaard.h"
 
@@ -57,6 +57,18 @@ double AndersenBase::timeOfProcessCopyGep = 0;
 double AndersenBase::timeOfProcessLoadStore = 0;
 double AndersenBase::timeOfUpdateCallGraph = 0;
 
+/*!
+ * Destructor
+ */
+AndersenBase::~AndersenBase()
+{
+  delete consCG;
+  consCG = nullptr;
+
+  auto * chg = getCHGraph();
+  delete chg;
+  chg = nullptr;
+}
 
 /*!
  * Initilize analysis

@@ -31,7 +31,6 @@
 #define ANDERSENPASS_H_
 
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "SVF-FE/CommonCHG.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
 #include "Graphs/PAG.h"
@@ -54,23 +53,14 @@ class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 public:
 
     /// Constructor
-	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+    AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
-    virtual ~AndersenBase()
-    {
-        if (consCG != nullptr)
-            delete consCG;
-        consCG = nullptr;
-
-        auto * chg = getCHGraph();
-        delete chg;
-        chg = nullptr;
-    }
+    ~AndersenBase() override;
 
     /// Andersen analysis
     virtual void analyze() override;
