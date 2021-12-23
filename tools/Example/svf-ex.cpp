@@ -160,9 +160,9 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
 
-	/// Build Program Assignment Graph (PAG)
-	PAGBuilder builder;
-	PAG* pag = builder.build(svfModule);
+    /// Build Program Assignment Graph (PAG)
+    PAGBuilder builder;
+    PAG* pag = builder.build(svfModule);
 
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -199,7 +199,10 @@ int main(int argc, char ** argv)
     PAG::releasePAG();
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
+    SVF::LLVMModuleSet::releaseLLVMModuleSet();
+    delete svfModule;
 
+    llvm::llvm_shutdown();
     return 0;
 }
 

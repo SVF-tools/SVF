@@ -79,12 +79,6 @@ void CHNode::getVirtualFunctions(u32_t idx, FuncVector &virtualFunctions) const
     }
 }
 
-CHGraph::~CHGraph()
-{
-    for (CHGraph::iterator it = this->begin(), eit = this->end(); it != eit; ++it)
-        delete it->second;
-}
-
 void CHGraph::buildCHG()
 {
 

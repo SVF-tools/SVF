@@ -53,19 +53,14 @@ class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 public:
 
     /// Constructor
-	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+    AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
-    virtual ~AndersenBase()
-    {
-        if (consCG != nullptr)
-            delete consCG;
-        consCG = nullptr;
-    }
+    ~AndersenBase() override;
 
     /// Andersen analysis
     virtual void analyze() override;

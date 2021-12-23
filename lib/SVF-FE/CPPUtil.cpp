@@ -215,6 +215,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
                 dname.funcName = beforeParenthesis.substr(colon + 2);
             }
         }
+        std::free(realname);
     }
 
     handleThunkFunction(dname);
@@ -444,6 +445,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
         {
             className = realnameStr.substr(vtblLabelAfterDemangle.size());
         }
+        std::free(realname);
     }
     return className;
 }

@@ -193,7 +193,7 @@ public:
     {
         this->kind = Standard;
     }
-    ~CHGraph();
+    ~CHGraph() override = default;
 
     void buildCHG();
     void buildInternalMaps();
