@@ -867,18 +867,11 @@ LocationSet PAG::getLocationSetFromBaseNode(NodeID nodeId)
  */
 void PAG::destroy()
 {
-    for (PAGEdge::PAGKindToEdgeSetMapTy::iterator I =
-                PAGEdgeKindToSetMap.begin(), E = PAGEdgeKindToSetMap.end(); I != E;
-            ++I)
-    {
-        for (PAGEdge::PAGEdgeSetTy::iterator edgeIt = I->second.begin(),
-                endEdgeIt = I->second.end(); edgeIt != endEdgeIt; ++edgeIt)
-        {
-            delete *edgeIt;
-        }
-    }
     SymbolTableInfo::releaseSymbolInfo();
     symInfo = nullptr;
+
+    delete icfg;
+    icfg = nullptr;
 }
 
 /*!

@@ -579,6 +579,9 @@ void SymbolTableInfo::destroy()
         if (iter->second)
             delete iter->second;
     }
+
+    delete dl;
+    dl = nullptr;
 }
 
 /*!

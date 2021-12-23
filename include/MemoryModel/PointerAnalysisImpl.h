@@ -91,6 +91,7 @@ public:
     {
         delete ptD;
         ptD = nullptr;
+        ptCache.clear();
     }
 
     /// Get points-to and reverse points-to
