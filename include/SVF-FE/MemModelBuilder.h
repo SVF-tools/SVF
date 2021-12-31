@@ -49,7 +49,6 @@ private:
 public:
     /// Constructor
     MemModelBuilder(SymbolTableInfo* si): symInfo(si){
-
     }
 
     /// Start building memory model
@@ -75,18 +74,8 @@ public:
     void handleCE(const Value *val);
     // @}
 
-
-    //     /// Collect the struct info
-    // virtual void collectStructInfo(const StructType *T);
-    // /// Collect the array info
-    // virtual void collectArrayInfo(const ArrayType* T);
-    // /// Collect simple type (non-aggregate) info
-    // virtual void collectSimpleTypeInfo(const Type* T);
-
     /// Create an objectInfo based on LLVM value
     ObjTypeInfo* createObjTypeInfo(const Value *val);
-    /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
-    // ObjTypeInfo* createObjTypeInfo(const Type *type = nullptr);
 
     /// Initialize TypeInfo based on LLVM Value
     void initTypeInfo(ObjTypeInfo* typeinfo, const Value* value);

@@ -300,16 +300,6 @@ public:
 
 };
 
-class SVFInstruction : public SVFValue
-{
-
-public:
-    SVFInstruction(const std::string& val): SVFValue(val,SVFValue::SVFInst)
-    {
-    }
-
-};
-
 class CallSite {
 private:
     CallBase *CB;

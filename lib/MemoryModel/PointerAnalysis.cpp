@@ -41,7 +41,6 @@
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
-#include "MemoryModel/PTAType.h"
 #include "Graphs/ExternalPAG.h"
 #include "WPA/FlowSensitiveTBHC.h"
 
@@ -105,9 +104,6 @@ void PointerAnalysis::destroy()
 
     delete stat;
     stat = nullptr;
-
-    delete typeSystem;
-    typeSystem = nullptr;
 }
 
 /*!

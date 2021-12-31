@@ -40,7 +40,6 @@
 namespace SVF
 {
 
-class PTAType;
 class SVFModule;
 
 /*!
@@ -462,94 +461,6 @@ protected:
         return;
     }
 };
-
-
-
-/**
- * Wave propagation with diff points-to set with type filter.
- */
-class AndersenWaveDiffWithType : public AndersenWaveDiff
-{
-
-private:
-
-    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
-
-    TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
-
-    void recordTypeMismatchedGep(NodeID obj, const GepCGEdge* gepEdge)
-    {
-        TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
-        if (it != typeMismatchedObjToEdges.end())
-        {
-            Set<const GepCGEdge*> &edges = it->second;
-            edges.insert(gepEdge);
-        }
-        else
-        {
-            Set<const GepCGEdge*> edges;
-            edges.insert(gepEdge);
-            typeMismatchedObjToEdges[obj] = edges;
-        }
-    }
-
-    static AndersenWaveDiffWithType* diffWaveWithType; // static instance
-
-    /// Handle diff points-to set.
-    //@{
-    virtual inline void computeDiffPts(NodeID id)
-    {
-        NodeID rep = sccRepNode(id);
-        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
-    }
-    virtual inline const PointsTo& getDiffPts(NodeID id)
-    {
-        NodeID rep = sccRepNode(id);
-        return getDiffPTDataTy()->getDiffPts(rep);
-    }
-    //@}
-
-public:
-    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
-    {
-        assert(getTypeSystem()!=nullptr && "a type system is required for this pointer analysis");
-    }
-
-    /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(PAG* p)
-    {
-        if(diffWaveWithType==nullptr)
-        {
-            diffWaveWithType = new AndersenWaveDiffWithType(p);
-            diffWaveWithType->analyze();
-            return diffWaveWithType;
-        }
-        return diffWaveWithType;
-    }
-    static void releaseAndersenWaveDiffWithType()
-    {
-        if (diffWaveWithType)
-            delete diffWaveWithType;
-        diffWaveWithType = nullptr;
-    }
-
-protected:
-    /// SCC detection
-    virtual NodeStack& SCCDetect();
-    /// merge types of nodes in a cycle
-    void mergeTypeOfNodes(const NodeBS &nodes);
-    /// process "bitcast" CopyCGEdge
-    virtual void processCast(const ConstraintEdge *edge);
-    /// update type of objects when process "bitcast" CopyCGEdge
-    void updateObjType(const Type *type, const PointsTo &objs);
-    /// process mismatched gep edges
-    void processTypeMismatchedGep(NodeID obj, const Type *type);
-    /// match types for Gep Edges
-    virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge);
-    /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge);
-};
-
 
 
 /*

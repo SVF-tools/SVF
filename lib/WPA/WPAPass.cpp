@@ -124,9 +124,6 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     case PointerAnalysis::AndersenWaveDiff_WPA:
         _pta = new AndersenWaveDiff(pag);
         break;
-    case PointerAnalysis::AndersenWaveDiffWithType_WPA:
-        _pta = new AndersenWaveDiffWithType(pag);
-        break;
     case PointerAnalysis::Steensgaard_WPA:
         _pta = new Steensgaard(pag);
         break;
