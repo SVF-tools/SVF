@@ -68,7 +68,7 @@ public:
     NodeID allocateValueId(void);
 
     /// Notify the allocator that all symbols have had IDs allocated.
-    void endSymbolAllocation(void);
+    NodeID endSymbolAllocation(void);
 
     /// Returns the total number of memory objects.
     NodeID getNumObjects(void) const { return numObjects; }

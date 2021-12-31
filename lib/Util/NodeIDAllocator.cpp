@@ -148,9 +148,10 @@ namespace SVF
         return id;
     }
 
-    void NodeIDAllocator::endSymbolAllocation(void)
+    NodeID NodeIDAllocator::endSymbolAllocation(void)
     {
         numSymbols = numNodes;
+        return numSymbols;
     }
 
     const std::string NodeIDAllocator::Clusterer::NumObjects = "NumObjects";
