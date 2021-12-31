@@ -22,7 +22,7 @@
 
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/MemModelBuilder.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
@@ -34,6 +34,7 @@ void SVFModule::buildSymbolTableInfo()
         /// building symbol table
         DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
         SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
-        symInfo->buildMemModel(this);
+        MemModelBuilder builder(symInfo);
+        builder.buildMemModel(this);
     }
 }

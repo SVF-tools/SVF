@@ -42,6 +42,8 @@ namespace SVF
 class SymbolTableInfo
 {
 
+friend class MemModelBuilder;
+
 public:
     /// various maps defined
     //{@
@@ -142,6 +144,11 @@ public:
     {
         return mod;
     }
+        /// Module
+    inline void setModule(SVFModule* m)
+    {
+        mod = m;
+    }
 
     /// Get target machine data layout
     inline static DataLayout* getDataLayout(Module* mod)
@@ -155,22 +162,6 @@ public:
     //@{
     u32_t getTypeSizeInBytes(const Type* type);
     u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
-    //@}
-
-    /// Start building memory model
-    void buildMemModel(SVFModule* svfModule);
-
-    /// collect the syms
-    //@{
-    void collectSym(const Value *val);
-
-    void collectVal(const Value *val);
-
-    void collectObj(const Value *val);
-
-    void collectRet(const Function *val);
-
-    void collectVararg(const Function *val);
     //@}
 
     /// special value
@@ -246,13 +237,6 @@ public:
         objMap[symId] = memObj;
         return memObj;
     }
-    // @}
-
-    /// Handle constant expression
-    // @{
-    void handleGlobalCE(const GlobalVariable *G);
-    void handleGlobalInitializerCE(const Constant *C, u32_t offset);
-    void handleCE(const Value *val);
     // @}
 
     /// Get different kinds of syms
@@ -433,17 +417,8 @@ protected:
     /// Collect simple type (non-aggregate) info
     virtual void collectSimpleTypeInfo(const Type* T);
 
-    /// Create an objectInfo based on LLVM value
-    ObjTypeInfo* createObjTypeInfo(const Value *val);
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
     ObjTypeInfo* createObjTypeInfo(const Type *type = nullptr);
-
-    /// Initialize TypeInfo based on LLVM Value
-    void initTypeInfo(ObjTypeInfo* typeinfo, const Value* value);
-    /// Analyse types of all flattened fields of this object
-    void analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val);
-    /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Value* val);
 
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
