@@ -629,14 +629,6 @@ namespace SVF
         llvm::cl::desc("add svf.main()")
     );
 
-    
-    // SymbolTableInfo.cpp
-    const llvm::cl::opt<bool> Options::LocMemModel(
-        "loc-mm", 
-        llvm::cl::init(false),
-        llvm::cl::desc("Bytes/bits modeling of memory locations")
-    );
-
     const llvm::cl::opt<bool> Options::ModelConsts(
         "model-consts", 
         llvm::cl::init(false),

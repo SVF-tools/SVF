@@ -206,7 +206,7 @@ public:
     {
         assert(isBlkObjOrConstantObj(symId));
         assert(objMap.find(symId)==objMap.end());
-        objMap[symId] = new MemObj(symId);;
+        objMap[symId] = new MemObj(symId, createObjTypeInfo());;
     }
 
     inline MemObj* getBlkObj() const
@@ -242,7 +242,7 @@ public:
     inline const MemObj* createDummyObj(SymID symId, const Type* type)
     {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        MemObj* memObj = new MemObj(symId, type);
+        MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
         objMap[symId] = memObj;
         return memObj;
     }
@@ -433,6 +433,18 @@ protected:
     /// Collect simple type (non-aggregate) info
     virtual void collectSimpleTypeInfo(const Type* T);
 
+    /// Create an objectInfo based on LLVM value
+    ObjTypeInfo* createObjTypeInfo(const Value *val);
+    /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
+    ObjTypeInfo* createObjTypeInfo(const Type *type = nullptr);
+
+    /// Initialize TypeInfo based on LLVM Value
+    void initTypeInfo(ObjTypeInfo* typeinfo, const Value* value);
+    /// Analyse types of all flattened fields of this object
+    void analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val);
+    /// Return size of this object based on LLVM value
+    u32_t getObjSize(const Value* val);
+
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
     /// fsize[i] is the number of fields in the largest such struct, else fsize[i] = 1.
@@ -446,60 +458,6 @@ protected:
     u32_t maxStSize;
 };
 
-
-
-
-/*!
- * Bytes/bits-level modeling of memory locations to handle weakly type languages.
- * (declared with one type but accessed as another)
- * Abstract memory objects are created according to the static allocated size.
- */
-class LocSymTableInfo : public SymbolTableInfo
-{
-
-public:
-    /// Constructor
-    LocSymTableInfo()
-    {
-    }
-    /// Destructor
-    virtual ~LocSymTableInfo()
-    {
-    }
-    /// Compute gep offset
-    virtual bool computeGepOffset(const User *V, LocationSet& ls);
-    /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
-
-    /// Verify struct size construction
-    void verifyStructSize(StInfo *stInfo, u32_t structSize);
-
-protected:
-    /// Collect the struct info
-    virtual void collectStructInfo(const StructType *T);
-    /// Collect the array info
-    virtual void collectArrayInfo(const ArrayType *T);
-};
-
-
-class LocObjTypeInfo : public ObjTypeInfo
-{
-
-public:
-    /// Constructor
-    LocObjTypeInfo(const Value* val, Type* t, Size_t max) : ObjTypeInfo(val,t,max)
-    {
-
-    }
-    /// Destructor
-    virtual ~LocObjTypeInfo()
-    {
-
-    }
-    /// Get the size of this object
-    u32_t getObjSize(const Value* val);
-
-};
 
 } // End namespace SVF
 
