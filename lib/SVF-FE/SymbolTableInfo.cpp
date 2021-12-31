@@ -47,10 +47,127 @@ using namespace SVFUtil;
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
+
+/*!
+ * Analyse types of all flattened fields of this object
+ */
+void SymbolTableInfo::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val)
+{
+
+    const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
+    assert(SVFUtil::isa<PointerType>(refty) && "this value should be a pointer type!");
+    Type* elemTy = refty->getElementType();
+    bool isPtrObj = false;
+    // Find the inter nested array element
+    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))
+    {
+        elemTy = AT->getElementType();
+        if(elemTy->isPointerTy())
+            isPtrObj = true;
+        if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
+                && SVFUtil::isa<ConstantArray>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
+        {
+            typeinfo->setFlag(ObjTypeInfo::CONST_ARRAY_OBJ);
+        }
+        else
+            typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
+    }
+    if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
+    {
+        const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ST);
+        for(std::vector<FieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
+                it!=eit; ++it)
+        {
+            if((*it).getFlattenElemTy()->isPointerTy())
+                isPtrObj = true;
+        }
+        if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
+                && SVFUtil::isa<ConstantStruct>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
+            typeinfo->setFlag(ObjTypeInfo::CONST_STRUCT_OBJ);
+        else
+            typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
+    }
+    else if (elemTy->isPointerTy())
+    {
+        isPtrObj = true;
+    }
+
+    if(isPtrObj)
+        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+}
+
+/*!
+ * Initialize the type info of an object
+ */
+void SymbolTableInfo::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
+    
+    Size_t objSize = 1;
+    // Global variable
+    if (SVFUtil::isa<Function>(val))
+    {
+        typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
+        analyzeGlobalStackObjType(typeinfo,val);
+        objSize = getObjSize(val);
+    }
+    else if(SVFUtil::isa<AllocaInst>(val))
+    {
+        typeinfo->setFlag(ObjTypeInfo::STACK_OBJ);
+        analyzeGlobalStackObjType(typeinfo,val);
+        objSize = getObjSize(val);
+    }
+    else if(SVFUtil::isa<GlobalVariable>(val))
+    {
+        typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
+        if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
+            typeinfo->setFlag(ObjTypeInfo::CONST_OBJ);
+        analyzeGlobalStackObjType(typeinfo,val);
+        objSize = getObjSize(val);
+    }
+    else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
+    {
+        typeinfo->analyzeHeapObjType(val->getType());
+        // Heap object, label its field as infinite here
+        objSize = -1;
+    }
+    else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val)))
+    {
+        typeinfo->analyzeStaticObjType(val->getType());
+        // static object allocated before main, label its field as infinite here
+        objSize = -1;
+    }
+    else if(ArgInProgEntryFunction(val))
+    {
+        typeinfo->analyzeStaticObjType(val->getType());
+        // user input data, label its field as infinite here
+        objSize = -1;
+    }
+    else
+        assert("what other object do we have??");
+
+    // Reset maxOffsetLimit if it is over the total fieldNum of this object
+    if(objSize > 0 && typeinfo->getMaxFieldOffsetLimit() > objSize)
+        typeinfo->setMaxFieldOffsetLimit(objSize);
+}
+
+/*!
+ * Return size of this Object
+ */
+u32_t SymbolTableInfo::getObjSize(const Value* val)
+{
+
+    Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();
+    u32_t numOfFields = 1;
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    {
+        numOfFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety).size();
+    }
+    return numOfFields;
+}
+
 /*
  * Initial the memory object here
  */
-void MemObj::init(const Value *val)
+ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Value *val)
 {
     const PointerType *refTy = nullptr;
 
@@ -67,11 +184,9 @@ void MemObj::init(const Value *val)
     if (refTy)
     {
         Type *objTy = refTy->getElementType();
-        if(Options::LocMemModel)
-            typeInfo = new LocObjTypeInfo(val, objTy, Options::MaxFieldLimit);
-        else
-            typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
-        typeInfo->init(val);
+        ObjTypeInfo* typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
+        initTypeInfo(typeInfo,val);
+        return typeInfo;
     }
     else
     {
@@ -79,7 +194,18 @@ void MemObj::init(const Value *val)
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
         assert(false && "Memory object must be held by a pointer-typed ref value.");
+        abort();
     }
+}
+
+/*
+ * Initial the memory object here (for a dummy object)
+ */
+ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
+{
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
+    typeInfo->analyzeHeapObjType(type);
+    return typeInfo;
 }
 
 /*!
@@ -89,10 +215,7 @@ SymbolTableInfo* SymbolTableInfo::SymbolInfo()
 {
     if (symInfo == nullptr)
     {
-        if(Options::LocMemModel)
-            symInfo = new LocSymTableInfo();
-        else
-            symInfo = new SymbolTableInfo();
+        symInfo = new SymbolTableInfo();
         symInfo->setModelConstants(Options::ModelConsts);
     }
     return symInfo;
@@ -659,8 +782,8 @@ void SymbolTableInfo::collectObj(const Value *val)
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
-            // create a memory object
-            MemObj* mem = new MemObj(val, id);
+            // create a memory object  
+            MemObj* mem = new MemObj(id, createObjTypeInfo(val), val);
             assert(objMap.find(id) == objMap.end());
             objMap[id] = mem;
         }
@@ -1089,6 +1212,7 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
     else
         return stTySL->getElementOffset(field_idx);
 }
+
 
 
 

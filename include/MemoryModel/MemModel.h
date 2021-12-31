@@ -172,18 +172,12 @@ public:
     {
 
     }
-    /// Initialize the object type
-    void init(const Value* value);
-
-    /// Get the size of this object,
-    /// derived classes can override this to get more precise object size
-    virtual u32_t getObjSize(const Value* val);
-
-    /// Analyse types of gobal and stack objects
-    void analyzeGlobalStackObjType(const Value* val);
 
     /// Analyse types of heap and static objects
-    void analyzeHeapStaticObjType(const Value* val);
+    void analyzeHeapObjType(const Type* type);
+
+    /// Analyse types of heap and static objects
+    void analyzeStaticObjType(const Type* type);
 
     /// Get LLVM type
     inline const Type* getType() const
@@ -295,25 +289,15 @@ private:
 public:
 
     /// Constructor
-    MemObj(const Value *val, SymID id);
-
-    /// Constructor for black hole and constant obj
-    MemObj(SymID id, const Type* type = nullptr);
+    MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
 
     /// Destructor
     ~MemObj()
     {
         destroy();
     }
-
-    /// Initialize the object
-    void init(const Value *val);
-
-    /// Initialize black hole and constant object
-    void init(const Type* type);
-
     /// Get obj type
-    const llvm::Type* getType() const;
+    const Type* getType() const;
 
     /// Get max field offset limit
     inline Size_t getMaxFieldOffsetLimit() const
