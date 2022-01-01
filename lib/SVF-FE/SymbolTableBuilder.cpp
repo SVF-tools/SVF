@@ -1,8 +1,8 @@
-//===- LocMemModel.cpp -- Memory model builder---------------------//
+//===- SymbolTableBuilder.cpp -- Symbol Table builder---------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * MemModelBuilder.cpp
+ * SymbolTableBuilder.cpp
  *
  *  Created on: Apr 28, 2014
  *      Author: Yulei Sui
@@ -29,8 +29,7 @@
 
 #include <memory>
 
-#include "SVF-FE/MemModelBuilder.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "SVF-FE/SymbolTableBuilder.h"
 #include "MemoryModel/MemModel.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
@@ -46,7 +45,7 @@ using namespace SVFUtil;
 /*!
  *  This method identify which is value sym and which is object sym
  */
-void MemModelBuilder::buildMemModel(SVFModule* svfModule)
+void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 {
     SVFUtil::increaseStackSize();
 
@@ -202,7 +201,7 @@ void MemModelBuilder::buildMemModel(SVFModule* svfModule)
 /*!
  * Collect symbols, including value and object syms
  */
-void MemModelBuilder::collectSym(const Value *val)
+void SymbolTableBuilder::collectSym(const Value *val)
 {
 
     //TODO: filter the non-pointer type // if (!SVFUtil::isa<PointerType>(val->getType()))  return;
@@ -229,7 +228,7 @@ void MemModelBuilder::collectSym(const Value *val)
 /*!
  * Get value sym, if not available create a new one
  */
-void MemModelBuilder::collectVal(const Value *val)
+void SymbolTableBuilder::collectVal(const Value *val)
 {
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->valSymMap.find(val);
     if (iter == symInfo->valSymMap.end())
@@ -252,9 +251,9 @@ void MemModelBuilder::collectVal(const Value *val)
 /*!
  * Get memory object sym, if not available create a new one
  */
-void MemModelBuilder::collectObj(const Value *val)
+void SymbolTableBuilder::collectObj(const Value *val)
 {
-    val = symInfo->getGlobalRep(val);
+    val = getGlobalRep(val);
     SymbolTableInfo::ValueToIDMapTy::iterator iter = symInfo->objSymMap.find(val);
     if (iter == symInfo->objSymMap.end())
     {
@@ -285,7 +284,7 @@ void MemModelBuilder::collectObj(const Value *val)
 /*!
  * Create unique return sym, if not available create a new one
  */
-void MemModelBuilder::collectRet(const Function *val)
+void SymbolTableBuilder::collectRet(const Function *val)
 {
     SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->returnSymMap.find(val);
     if (iter == symInfo->returnSymMap.end())
@@ -301,7 +300,7 @@ void MemModelBuilder::collectRet(const Function *val)
 /*!
  * Create vararg sym, if not available create a new one
  */
-void MemModelBuilder::collectVararg(const Function *val)
+void SymbolTableBuilder::collectVararg(const Function *val)
 {
     SymbolTableInfo::FunToIDMapTy::iterator iter = symInfo->varargSymMap.find(val);
     if (iter == symInfo->varargSymMap.end())
@@ -318,7 +317,7 @@ void MemModelBuilder::collectVararg(const Function *val)
 /*!
  * Handle constant expression
  */
-void MemModelBuilder::handleCE(const Value *val)
+void SymbolTableBuilder::handleCE(const Value *val)
 {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
@@ -384,7 +383,7 @@ void MemModelBuilder::handleCE(const Value *val)
 /*!
  * Handle global constant expression
  */
-void MemModelBuilder::handleGlobalCE(const GlobalVariable *G)
+void SymbolTableBuilder::handleGlobalCE(const GlobalVariable *G)
 {
     assert(G);
 
@@ -428,7 +427,7 @@ void MemModelBuilder::handleGlobalCE(const GlobalVariable *G)
 /*!
  * Handle global variable initialization
  */
-void MemModelBuilder::handleGlobalInitializerCE(const Constant *C,
+void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
         u32_t offset)
 {
 
@@ -467,7 +466,7 @@ void MemModelBuilder::handleGlobalInitializerCE(const Constant *C,
 /*
  * Initial the memory object here
  */
-ObjTypeInfo* MemModelBuilder::createObjTypeInfo(const Value *val)
+ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
 {
     const PointerType *refTy = nullptr;
 
@@ -502,7 +501,7 @@ ObjTypeInfo* MemModelBuilder::createObjTypeInfo(const Value *val)
 /*!
  * Analyse types of all flattened fields of this object
  */
-void MemModelBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val)
+void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
@@ -550,7 +549,7 @@ void MemModelBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Val
 /*!
  * Initialize the type info of an object
  */
-void MemModelBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
+void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
     Size_t objSize = 1;
     // Global variable
@@ -603,7 +602,7 @@ void MemModelBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
 /*!
  * Return size of this Object
  */
-u32_t MemModelBuilder::getObjSize(const Value* val)
+u32_t SymbolTableBuilder::getObjSize(const Value* val)
 {
 
     Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();

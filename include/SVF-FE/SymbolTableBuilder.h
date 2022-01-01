@@ -1,8 +1,8 @@
-//===- LocMemModel.h -- Memory model builder-----------------------//
+//===- SymbolTableBuilder.h -- Symbol Table builder-----------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -21,18 +21,18 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * MemModelBuilder.h
+ * SymbolTableBuilder.h
  *
  *  Created on: Apr 28, 2014
  *      Author: Yulei
  */
 
-#ifndef MEMMODELBUILDER_H_
-#define MEMMODELBUILDER_H_
+#ifndef SymbolTableBuilder_H_
+#define SymbolTableBuilder_H_
 
 #include "MemoryModel/MemModel.h"
 #include "SVF-FE/LLVMModule.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "MemoryModel/SymbolTableInfo.h"
 
 /*
 * This class is to build SymbolTableInfo, MemObjs and ObjTypeInfo
@@ -40,7 +40,7 @@
 namespace SVF
 {
 
-class MemModelBuilder 
+class SymbolTableBuilder 
 {
 
 private:
@@ -48,7 +48,7 @@ private:
 
 public:
     /// Constructor
-    MemModelBuilder(SymbolTableInfo* si): symInfo(si){
+    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si){
     }
 
     /// Start building memory model
@@ -83,9 +83,8 @@ public:
     void analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Return size of this object based on LLVM value
     u32_t getObjSize(const Value* val);
-
 };
 
 }
 
-#endif /* MEMMODELBUILDER_H_ */
+#endif /* SymbolTableBuilder_H_ */

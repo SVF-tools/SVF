@@ -241,6 +241,17 @@ inline const SVFFunction* getFunction(StringRef name)
     return nullptr;
 }
 
+/// find the unique defined global across multiple modules
+inline const Value* getGlobalRep(const Value* val) 
+{
+    if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
+            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
+    }
+    return val;
+}
+
 /// Get the definition of a function across multiple modules
 inline const SVFFunction* getDefFunForMultipleModule(const Function* fun)
 {

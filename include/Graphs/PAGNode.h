@@ -32,7 +32,7 @@
 
 #include "Graphs/GenericGraph.h"
 #include "MemoryModel/MemModel.h"
-#include "SVF-FE/SymbolTableInfo.h"
+#include "MemoryModel/SymbolTableInfo.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/PAGEdge.h"
 
