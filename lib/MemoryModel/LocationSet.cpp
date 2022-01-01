@@ -31,7 +31,7 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/LocationSet.h"
-#include "MemoryModel/MemModel.h"
+#include "MemoryModel/SVFSymbols.h"
 
 using namespace SVF;
 

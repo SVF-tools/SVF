@@ -584,7 +584,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
     /// or a local variable is in function recursion cycles
     else if(obj->isStack())
     {
-        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
+        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
         {
             const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
             if(fun!=curFun)

@@ -507,13 +507,13 @@ NodeID TypeBasedHeapCloning::addCloneDummyObjNode(const MemObj *mem)
 NodeID TypeBasedHeapCloning::addCloneGepObjNode(const MemObj *mem, const LocationSet &l)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(mem->getRefVal(), new CloneGepObjPN(mem, id, l), id);
+    return ppag->addObjNode(mem->getValue(), new CloneGepObjPN(mem, id, l), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneFIObjNode(const MemObj *mem)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(mem->getRefVal(), new CloneFIObjPN(mem->getRefVal(), id, mem), id);
+    return ppag->addObjNode(mem->getValue(), new CloneFIObjPN(mem->getValue(), id, mem), id);
 }
 
 const DIType *TypeBasedHeapCloning::getTypeFromCTirMetadata(const Value *v)

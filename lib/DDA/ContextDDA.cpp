@@ -316,7 +316,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     assert(mem && "memory object is null??");
     if(mem->isHeap())
     {
-        if (!mem->getRefVal()) {
+        if (!mem->getValue()) {
             PAGNode *pnode = _pag->getPAGNode(getPtrNodeID(var));
             if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pnode)){
                 assert(SVFUtil::isa<DummyObjPN>(_pag->getPAGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
@@ -326,7 +326,7 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
             }
             return true;
         }
-        else if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal()))
+        else if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue()))
         {
             const Function* fun = mallocSite->getFunction();
             const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);

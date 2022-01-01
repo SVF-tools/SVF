@@ -31,7 +31,7 @@
 #define PAGNODE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "MemoryModel/MemModel.h"
+#include "MemoryModel/SVFSymbols.h"
 #include "MemoryModel/SymbolTableInfo.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/PAGEdge.h"
@@ -483,9 +483,9 @@ public:
 
     /// Constructor
     GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
-        ObjPN(mem->getRefVal(), i, mem, ty), ls(l)
+        ObjPN(mem->getValue(), i, mem, ty), ls(l)
     {
-        base = mem->getSymId();
+        base = mem->getId();
     }
 
     /// offset of the mem object

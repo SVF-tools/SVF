@@ -56,7 +56,7 @@ void VersionedFlowSensitiveStat::performStat()
         if (SVFUtil::isa<ObjPN>(pagNode))
         {
             const MemObj *memObj = pag->getBaseObj(nodeId);
-            SymID baseId = memObj->getSymId();
+            SymID baseId = memObj->getId();
             if (nodeSet.insert(baseId).second)
             {
                 if (memObj->isFieldInsensitive()) fiObjNumber++;

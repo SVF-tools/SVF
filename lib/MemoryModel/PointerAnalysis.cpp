@@ -169,7 +169,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
     assert(obj && "object not found!!");
     if(obj->isStack())
     {
-        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
+        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
         {
             const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
             return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(fun)->getId());
@@ -453,7 +453,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
 
             if(obj->isFunction())
             {
-                const Function* calleefun = SVFUtil::cast<Function>(obj->getRefVal());
+                const Function* calleefun = SVFUtil::cast<Function>(obj->getValue());
                 const SVFFunction* callee = getDefFunForMultipleModule(calleefun);
 
                 /// if the arg size does not match then we do not need to connect this parameter

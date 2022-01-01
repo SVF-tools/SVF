@@ -30,7 +30,6 @@
 #include <memory>
 
 #include "SVF-FE/SymbolTableBuilder.h"
-#include "MemoryModel/MemModel.h"
 #include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
@@ -54,22 +53,20 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
     StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
 
     // Object #0 is black hole the object that may point to any object
-    assert(symInfo->totalSymNum == BlackHole && "Something changed!");
-    symInfo->symTyMap.insert(std::make_pair(symInfo->totalSymNum++, BlackHole));
-    symInfo->createBlkOrConstantObj(BlackHole);
+    assert(symInfo->totalSymNum++ == BlackHole && "Something changed!");
+    symInfo->symSet.insert(symInfo->createBlkObj(BlackHole));
 
     // Object #1 always represents the constant
-    assert(symInfo->totalSymNum == ConstantObj && "Something changed!");
-    symInfo->symTyMap.insert(std::make_pair(symInfo->totalSymNum++, ConstantObj));
-    symInfo->createBlkOrConstantObj(ConstantObj);
+    assert(symInfo->totalSymNum++ == ConstantObj && "Something changed!");
+    symInfo->symSet.insert(symInfo->createConstantObj(ConstantObj));
 
     // Pointer #2 always represents the pointer points-to black hole.
-    assert(symInfo->totalSymNum == BlkPtr && "Something changed!");
-    symInfo->symTyMap.insert(std::make_pair(symInfo->totalSymNum++, BlkPtr));
+    assert(symInfo->totalSymNum++ == BlkPtr && "Something changed!");
+    symInfo->symSet.insert(new BlkPtrSym(BlkPtr));
 
     // Pointer #3 always represents the null pointer.
-    assert(symInfo->totalSymNum == NullPtr && "Something changed!");
-    symInfo->symTyMap.insert(std::make_pair(symInfo->totalSymNum, NullPtr));
+    assert(symInfo->totalSymNum++ == NullPtr && "Something changed!");
+    symInfo->symSet.insert(new NullPtrSym(NullPtr));
 
     // Add symbols for all the globals .
     for (SVFModule::global_iterator I = svfModule->global_begin(), E =
@@ -236,7 +233,7 @@ void SymbolTableBuilder::collectVal(const Value *val)
         // create val sym and sym type
         SymID id = NodeIDAllocator::get()->allocateValueId();
         symInfo->valSymMap.insert(std::make_pair(val, id));
-        symInfo->symTyMap.insert(std::make_pair(id, ValSym));
+        symInfo->symSet.insert(new ValSym(id,val));
         DBOUT(DMemModel,
               outs() << "create a new value sym " << id << "\n");
         ///  handle global constant expression here
@@ -259,7 +256,7 @@ void SymbolTableBuilder::collectObj(const Value *val)
     {
         // if the object pointed by the pointer is a constant data (e.g., i32 0) or a global constant object (e.g. string)
         // then we treat them as one ConstantObj
-        if(isConstantData(val) || (symInfo->isConstantObjSym(val) && !symInfo->getModelConstants()))
+        if((symInfo->isConstantObjSym(val) && !symInfo->getModelConstants()))
         {
             symInfo->objSymMap.insert(std::make_pair(val, symInfo->constantSymID()));
         }
@@ -269,14 +266,14 @@ void SymbolTableBuilder::collectObj(const Value *val)
             // create obj sym and sym type
             SymID id = NodeIDAllocator::get()->allocateObjectId();
             symInfo->objSymMap.insert(std::make_pair(val, id));
-            symInfo->symTyMap.insert(std::make_pair(id, ObjSym));
             DBOUT(DMemModel,
                   outs() << "create a new obj sym " << id << "\n");
 
             // create a memory object  
-            MemObj* mem = new MemObj(id, createObjTypeInfo(val), val);
+            ObjSym* mem = new ObjSym(id, createObjTypeInfo(val), val);
             assert(symInfo->objMap.find(id) == symInfo->objMap.end());
             symInfo->objMap[id] = mem;
+            symInfo->symSet.insert(mem);
         }
     }
 }
@@ -291,7 +288,7 @@ void SymbolTableBuilder::collectRet(const Function *val)
     {
         SymID id = NodeIDAllocator::get()->allocateValueId();
         symInfo->returnSymMap.insert(std::make_pair(val, id));
-        symInfo->symTyMap.insert(std::make_pair(id, RetSym));
+        symInfo->symSet.insert(new RetSym(id,val));
         DBOUT(DMemModel,
               outs() << "create a return sym " << id << "\n");
     }
@@ -307,7 +304,7 @@ void SymbolTableBuilder::collectVararg(const Function *val)
     {
         SymID id = NodeIDAllocator::get()->allocateValueId();
         symInfo->varargSymMap.insert(std::make_pair(val, id));
-        symInfo->symTyMap.insert(std::make_pair(id, VarargSym));
+        symInfo->symSet.insert(new VarargSym(id,val));
         DBOUT(DMemModel,
               outs() << "create a vararg sym " << id << "\n");
     }
