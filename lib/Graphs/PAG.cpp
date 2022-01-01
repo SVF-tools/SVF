@@ -705,7 +705,7 @@ NodeID PAG::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     GepObjNodeMap[std::make_pair(base, ls)] = gepId;
     GepObjPN *node = new GepObjPN(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
-    return addObjNode(obj->getRefVal(), node, gepId);
+    return addObjNode(obj->getValue(), node, gepId);
 }
 
 /*!
@@ -715,9 +715,9 @@ NodeID PAG::addFIObjNode(const MemObj* obj)
 {
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = getObjectNode(obj);
-    memToFieldsMap[base].set(obj->getSymId());
-    FIObjPN *node = new FIObjPN(obj->getRefVal(), obj->getSymId(), obj);
-    return addObjNode(obj->getRefVal(), node, obj->getSymId());
+    memToFieldsMap[base].set(obj->getId());
+    FIObjPN *node = new FIObjPN(obj->getValue(), obj->getId(), obj);
+    return addObjNode(obj->getValue(), node, obj->getId());
 }
 
 

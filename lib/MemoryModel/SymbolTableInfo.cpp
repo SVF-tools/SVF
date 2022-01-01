@@ -31,7 +31,6 @@
 #include <memory>
 
 #include "MemoryModel/SymbolTableInfo.h"
-#include "MemoryModel/MemModel.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -351,7 +350,7 @@ const Type *SymbolTableInfo::getBaseTypeAndFlattenedFields(const Value *V, std::
 /*!
  * Get modulus offset given the type information
  */
-LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls)
+LocationSet SymbolTableInfo::getModulusOffset(const ObjSym* obj, const LocationSet& ls)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
@@ -381,11 +380,11 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
 void SymbolTableInfo::destroy()
 {
 
-    for (IDToMemMapTy::iterator iter = objMap.begin(); iter != objMap.end();
+    for (SymSet::iterator iter = symSet.begin(); iter != symSet.end();
             ++iter)
     {
-        if (iter->second)
-            delete iter->second;
+        if (*iter)
+            delete *iter;
     }
     for (TypeToFieldInfoMap::iterator iter = typeToFieldInfo.begin();
             iter != typeToFieldInfo.end(); ++iter)
@@ -541,16 +540,16 @@ std::string SymbolTableInfo::toString(SYMTYPE symtype)
         case SYMTYPE::NullPtr: {
             return "NullPtr";
         }
-        case SYMTYPE::ValSym: {
+        case SYMTYPE::ValSymbol: {
             return "ValSym";
         }
-        case SYMTYPE::ObjSym: {
+        case SYMTYPE::ObjSymbol: {
             return "ObjSym";
         }
-        case SYMTYPE::RetSym: {
+        case SYMTYPE::RetSymbol: {
             return "RetSym";
         }
-        case SYMTYPE::VarargSym: {
+        case SYMTYPE::VarargSymbol: {
             return "VarargSym";
         }
         default: {
@@ -596,21 +595,8 @@ void SymbolTableInfo::dump()
         idmap[i] = val;
     }
     outs() << "{SymbolTableInfo \n";
-    for (SymID symid = 0; symid <= maxid; ++symid) {
-        SYMTYPE symtype = this->symTyMap.at(symid);
-        string typestring = toString(symtype);
-        outs() << "  " << typestring << symid;
-        if (symtype < SYMTYPE::ValSym) {
-            outs() << "\n";
-        } else {
-            auto I = idmap.find(symid);
-            if (I == idmap.end()) {
-                outs() << "No value\n";
-                break;
-            }
-            const Value* val = I->second;
-            outs() << " -> " << value2String(val) << "\n";
-        }
+    for (const SVFVar* var : this->symSet) {
+        outs() << var->toString() << "\n";
     }
     outs() << "}\n";
 }

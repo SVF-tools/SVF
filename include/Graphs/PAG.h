@@ -561,7 +561,7 @@ public:
     /// getObject - return mem object id
     inline NodeID getObjectNode(const MemObj *mem)
     {
-        return mem->getSymId();
+        return mem->getId();
     }
     /// Get all PAG Edges that corresponds to an LLVM value
     inline const PAGEdgeSet& getValueEdges(const Value *V)
@@ -618,7 +618,7 @@ public:
     //@{
     inline NodeID getFIObjNode(const MemObj* obj) const
     {
-        return obj->getSymId();
+        return obj->getId();
     }
     inline NodeID getFIObjNode(NodeID id) const
     {
@@ -716,7 +716,7 @@ public:
     LocationSet getLocationSetFromBaseNode(NodeID nodeId);
     inline NodeID getBaseObjNode(NodeID id) const
     {
-        return getBaseObj(id)->getSymId();
+        return getBaseObj(id)->getId();
     }
     inline const MemObj* getBaseObj(NodeID id) const
     {
@@ -752,7 +752,7 @@ public:
     inline NodeID addObjNode(const Value* val, NodeID i)
     {
         MemObj* mem = symInfo->getObj(symInfo->getObjSym(val));
-        assert(((mem->getSymId() == i)) && "not same object id?");
+        assert(((mem->getId() == i)) && "not same object id?");
         return addFIObjNode(mem);
     }
     /// Add a unique return node for a procedure

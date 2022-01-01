@@ -448,7 +448,7 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack())
         {
-            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
+            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
             {
                 const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId());

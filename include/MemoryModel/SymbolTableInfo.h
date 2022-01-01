@@ -30,7 +30,7 @@
 #ifndef INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 #define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 
-#include "MemoryModel/MemModel.h"
+#include "MemoryModel/SVFSymbols.h"
 #include "Util/SVFUtil.h"
 
 namespace SVF
@@ -50,11 +50,11 @@ public:
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
+    typedef OrderedMap<SymID,ObjSym*> IDToMemMapTy;
     /// function to sym id map
     typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
     /// sym id to sym type map
-    typedef OrderedMap<SymID,SYMTYPE> IDToSymTyMapTy;
+    typedef OrderedSet<const SVFVar*> SymSet;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef Set<CallSite> CallSiteSet;
@@ -69,10 +69,10 @@ private:
 
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
-    IDToMemMapTy		objMap;		///< map a memory sym id to its obj
-    IDToSymTyMapTy	symTyMap;	/// < map a sym id to its type
     FunToIDMapTy returnSymMap;		///< return  map
     FunToIDMapTy varargSymMap;	    ///< vararg map
+    SymSet	symSet;	/// < a set of all symbols
+    IDToMemMapTy		objMap;		///< map a memory sym id to its obj
 
     CallSiteSet callSiteSet;
 
@@ -192,18 +192,29 @@ public:
         return (isBlkObj(id) || isConstantObj(id));
     }
 
-    inline void createBlkOrConstantObj(SymID symId)
+    inline ObjSym* createBlkObj(SymID symId)
     {
-        assert(isBlkObjOrConstantObj(symId));
+        assert(isBlkObj(symId));
         assert(objMap.find(symId)==objMap.end());
-        objMap[symId] = new MemObj(symId, createObjTypeInfo());;
+        ObjSym* obj = new BlackHoleSym(symId, createObjTypeInfo());
+        objMap[symId] = obj;
+        return obj;
     }
 
-    inline MemObj* getBlkObj() const
+    inline ObjSym* createConstantObj(SymID symId)
+    {
+        assert(isConstantObj(symId));
+        assert(objMap.find(symId)==objMap.end());
+        ObjSym* obj = new ConstantObjSym(symId, createObjTypeInfo());
+        objMap[symId] = obj;
+        return obj;
+    }
+
+    inline ObjSym* getBlkObj() const
     {
         return getObj(blackholeSymID());
     }
-    inline MemObj* getConstantObj() const
+    inline ObjSym* getConstantObj() const
     {
         return getObj(constantSymID());
     }
@@ -229,11 +240,12 @@ public:
     }
 
     /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
-    inline const MemObj* createDummyObj(SymID symId, const Type* type)
+    inline const ObjSym* createDummyObj(SymID symId, const Type* type)
     {
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
+        ObjSym* memObj = new ObjSym(symId, createObjTypeInfo(type));
         objMap[symId] = memObj;
+        symSet.insert(memObj);
         return memObj;
     }
     // @}
@@ -270,7 +282,7 @@ public:
         return iter->second;
     }
 
-    inline MemObj* getObj(SymID id) const
+    inline ObjSym* getObj(SymID id) const
     {
         IDToMemMapTy::const_iterator iter = objMap.find(id);
         assert(iter!=objMap.end() && "obj not found");
@@ -388,7 +400,7 @@ public:
     /// Collect type info
     void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
+    virtual LocationSet getModulusOffset(const ObjSym* obj, const LocationSet& ls);
 
     /// Debug method
     void printFlattenFields(const Type* type);

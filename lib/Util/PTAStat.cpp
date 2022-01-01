@@ -154,7 +154,7 @@ void PTAStat::performStat()
         if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node))
         {
             const MemObj* mem = obj->getMemObj();
-            if (memObjSet.insert(mem->getSymId()).second == false)
+            if (memObjSet.insert(mem->getId()).second == false)
                 continue;
             if(mem->isBlackHoleObj())
                 continue;

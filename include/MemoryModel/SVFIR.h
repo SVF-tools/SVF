@@ -56,8 +56,8 @@ public:
         return true;
     }
     ///@}
+
     virtual const std::string toString() const;
-    //@}
     
     /// Overloading operator << for printing
     //@{

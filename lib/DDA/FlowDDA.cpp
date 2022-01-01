@@ -159,7 +159,7 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
     assert(mem && "memory object is null??");
     if(mem->isHeap())
     {
-//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
+//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue())) {
 //            const SVFFunction* fun = mallocSite->getParent()->getParent();
 //            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)

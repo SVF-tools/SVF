@@ -1,8 +1,8 @@
-//===- MemModel.cpp -- Memory model for pointer analysis----------------------//
+//===- SVFSymbols.cpp -- SVF symbols and variables----------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -21,14 +21,14 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * MemModel.cpp
+ * SVFSymbols.cpp
  *
  *  Created on: Oct 11, 2013
  *      Author: Yulei Sui
  */
 
 #include "MemoryModel/SymbolTableInfo.h"
-#include "MemoryModel/MemModel.h"
+#include "MemoryModel/SVFSymbols.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -125,7 +125,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 /*!
  * Set mem object to be field sensitive (up to maximum field limit)
  */
-void MemObj::setFieldSensitive()
+void ObjSym::setFieldSensitive()
 {
     typeInfo->setMaxFieldOffsetLimit(StInfo::getMaxFieldLimit());
 }
@@ -134,22 +134,22 @@ void MemObj::setFieldSensitive()
 /*!
  * Constructor of a memory object
  */
-MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value *val) :
-    refVal(val), GSymID(id), typeInfo(ti)
+ObjSym::ObjSym(SymID id, ObjTypeInfo* ti, const Value *val) :
+    SVFVar(id, SYMTYPE::ObjSymbol, val), typeInfo(ti)
 {
 }
 
 /*!
  * Whether it is a black hole object
  */
-bool MemObj::isBlackHoleObj() const
+bool ObjSym::isBlackHoleObj() const
 {
-    return SymbolTableInfo::isBlkObj(GSymID);
+    return SymbolTableInfo::isBlkObj(getId());
 }
 
 
 /// Get obj type info
-const Type* MemObj::getType() const
+const Type* ObjSym::getType() const
 {
     if (isHeap() == false)
     {
@@ -158,18 +158,162 @@ const Type* MemObj::getType() const
         else
             return typeInfo->getType();
     }
-    else if (refVal && SVFUtil::isa<Instruction>(refVal))
-        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(refVal));
+    else if (getValue() && SVFUtil::isa<Instruction>(getValue()))
+        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(getValue()));
     else
         return typeInfo->getType();
 }
 /*
  * Destroy the fields of the memory object
  */
-void MemObj::destroy()
+void ObjSym::destroy()
 {
     delete typeInfo;
     typeInfo = nullptr;
+}
+
+/// Get max field offset limit
+Size_t ObjSym::getMaxFieldOffsetLimit() const
+{
+    return typeInfo->getMaxFieldOffsetLimit();
+}
+
+/// Return true if its field limit is 0
+bool ObjSym::isFieldInsensitive() const
+{
+    return getMaxFieldOffsetLimit() == 0;
+}
+
+/// Set the memory object to be field insensitive
+void ObjSym::setFieldInsensitive()
+{
+    typeInfo->setMaxFieldOffsetLimit(0);
+}
+
+bool ObjSym::isFunction() const
+{
+    return typeInfo->isFunction();
+}
+
+bool ObjSym::isGlobalObj() const
+{
+    return typeInfo->isGlobalObj();
+}
+
+bool ObjSym::isStaticObj() const
+{
+    return typeInfo->isStaticObj();
+}
+
+bool ObjSym::isStack() const
+{
+    return typeInfo->isStack();
+}
+
+bool ObjSym::isHeap() const
+{
+    return typeInfo->isHeap();
+}
+
+bool ObjSym::isStruct() const
+{
+    return typeInfo->isStruct();
+}
+
+bool ObjSym::isArray() const
+{
+    return typeInfo->isArray();
+}
+
+bool ObjSym::isVarStruct() const
+{
+    return typeInfo->isVarStruct();
+}
+
+bool ObjSym::isVarArray() const
+{
+    return typeInfo->isVarArray();
+}
+
+bool ObjSym::isConstStruct() const
+{
+    return typeInfo->isConstStruct();
+}
+
+bool ObjSym::isConstArray() const
+{
+    return typeInfo->isConstArray();
+}
+
+bool ObjSym::isConstant() const
+{
+    return typeInfo->isConstant();
+}
+
+bool ObjSym::hasPtrObj() const
+{
+    return typeInfo->hasPtrObj();
+}
+
+bool ObjSym::isNonPtrFieldObj(const LocationSet& ls) const
+{
+    return typeInfo->isNonPtrFieldObj(ls);
+}
+
+const std::string ValSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ValSym : " << getId() << SVFUtil::value2String(getValue())<< "\n";
+    return rawstr.str();
+}
+
+const std::string ObjSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ObjSym : " << getId() << SVFUtil::value2String(getValue())<< "\n";
+    return rawstr.str();
+}
+
+const std::string BlackHoleSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "BlackHoleSym : " << getId() << "\n";
+    return rawstr.str();
+}
+
+const std::string ConstantObjSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "ConstantObjSym : " << getId() << "\n";
+    return rawstr.str();
+}
+
+const std::string BlkPtrSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "BlkPtrSym : " << getId() << "\n";
+    return rawstr.str();
+}
+
+const std::string NullPtrSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "NullPtrSym : " << getId() << "\n";
+    return rawstr.str();
+}
+
+const std::string RetSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "RetSym : " << getId() << " of function: " << SVFUtil::cast<Function>(getValue())->getName() << "\n";
+    return rawstr.str();
+}
+
+const std::string VarargSym::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "VarargSym : " << getId() << " of function: " << SVFUtil::cast<Function>(getValue())->getName() << "\n";
+    return rawstr.str();
 }
 
 
