@@ -31,7 +31,7 @@
 #define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 
 #include "MemoryModel/MemModel.h"
-#include "SVF-FE/LLVMModule.h"
+#include "Util/SVFUtil.h"
 
 namespace SVF
 {
@@ -41,8 +41,7 @@ namespace SVF
  */
 class SymbolTableInfo
 {
-
-friend class MemModelBuilder;
+friend class SymbolTableBuilder;
 
 public:
     /// various maps defined
@@ -264,20 +263,9 @@ public:
             return (valSymMap.find(val) != valSymMap.end());
     }
 
-    /// find the unique defined global across multiple modules
-    inline const Value* getGlobalRep(const Value* val) const
-    {
-        if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
-        {
-            if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
-                val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
-        }
-        return val;
-    }
-
     inline SymID getObjSym(const Value *val) const
     {
-        ValueToIDMapTy::const_iterator iter = objSymMap.find(getGlobalRep(val));
+        ValueToIDMapTy::const_iterator iter = objSymMap.find(SVFUtil::getGlobalRep(val));
         assert(iter!=objSymMap.end() && "obj sym not found");
         return iter->second;
     }
@@ -304,6 +292,7 @@ public:
     }
     //@}
 
+ 
     /// Statistics
     //@{
     inline Size_t getTotalSymNum() const

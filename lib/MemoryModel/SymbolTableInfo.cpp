@@ -30,15 +30,11 @@
 
 #include <memory>
 
-#include "SVF-FE/SymbolTableInfo.h"
+#include "MemoryModel/SymbolTableInfo.h"
 #include "MemoryModel/MemModel.h"
-#include "Util/NodeIDAllocator.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/LLVMUtil.h"
-#include "SVF-FE/CPPUtil.h"
-#include "SVF-FE/GEPTypeBridgeIterator.h" // include bridge_gep_iterator
 
 using namespace std;
 using namespace SVF;

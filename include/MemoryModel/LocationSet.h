@@ -93,7 +93,6 @@ public:
 class LocationSet
 {
     friend class SymbolTableInfo;
-    friend class LocSymTableInfo;
 public:
     enum LSRelation
     {
