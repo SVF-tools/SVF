@@ -245,6 +245,7 @@ public:
         assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
         ObjSym* memObj = new ObjSym(symId, createObjTypeInfo(type));
         objMap[symId] = memObj;
+        symSet.insert(memObj);
         return memObj;
     }
     // @}
