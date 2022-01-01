@@ -380,11 +380,11 @@ LocationSet SymbolTableInfo::getModulusOffset(const ObjSym* obj, const LocationS
 void SymbolTableInfo::destroy()
 {
 
-    for (IDToMemMapTy::iterator iter = objMap.begin(); iter != objMap.end();
+    for (SymSet::iterator iter = symSet.begin(); iter != symSet.end();
             ++iter)
     {
-        if (iter->second)
-            delete iter->second;
+        if (*iter)
+            delete *iter;
     }
     for (TypeToFieldInfoMap::iterator iter = typeToFieldInfo.begin();
             iter != typeToFieldInfo.end(); ++iter)
