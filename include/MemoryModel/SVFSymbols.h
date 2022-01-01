@@ -69,7 +69,11 @@ public:
 
     /// Constructor
     SVFVar(SymID id, u32_t k, const Value *val): symId(id), refVal(val), kind(k){
+    }
 
+    /// Destructor
+    virtual ~SVFVar()
+    {
     }
 
     /// Get the reference value to this object
