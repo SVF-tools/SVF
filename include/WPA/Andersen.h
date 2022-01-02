@@ -33,7 +33,7 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
 
@@ -52,7 +52,7 @@ class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 public:
 
     /// Constructor
-    AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+    AndersenBase(SVFIR* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
@@ -155,7 +155,7 @@ public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Constructor
-    Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
+    Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
     {
     }
@@ -424,10 +424,10 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(PAG* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
+    AndersenWaveDiff(SVFIR* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
+    static AndersenWaveDiff* createAndersenWaveDiff(SVFIR* _pag)
     {
         if(diffWave==nullptr)
         {
@@ -475,13 +475,13 @@ private:
     NodeSet lcdCandidates;
 
 public:
-    AndersenLCD(PAG* _pag, PTATY type = AndersenLCD_WPA) :
+    AndersenLCD(SVFIR* _pag, PTATY type = AndersenLCD_WPA) :
         Andersen(_pag, type), metEdges({}), lcdCandidates( {})
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenLCD(PAG* _pag)
+    static AndersenLCD* createAndersenLCD(SVFIR* _pag)
     {
         if (lcdAndersen == nullptr)
         {
@@ -557,13 +557,13 @@ private:
     OfflineConsG* oCG;
 
 public:
-    AndersenHCD(PAG* _pag, PTATY type = AndersenHCD_WPA) :
+    AndersenHCD(SVFIR* _pag, PTATY type = AndersenHCD_WPA) :
         Andersen(_pag, type), oCG(nullptr)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHCD *createAndersenHCD(PAG* _pag)
+    static AndersenHCD *createAndersenHCD(SVFIR* _pag)
     {
         if (hcdAndersen == nullptr)
         {
@@ -628,13 +628,13 @@ private:
     static AndersenHLCD* hlcdAndersen;
 
 public:
-    AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
+    AndersenHLCD(SVFIR* _pag, PTATY type = AndersenHLCD_WPA) :
         Andersen(_pag, type), AndersenHCD(_pag, type), AndersenLCD(_pag, type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHLCD *createAndersenHLCD(PAG* _pag)
+    static AndersenHLCD *createAndersenHLCD(SVFIR* _pag)
     {
         if (hlcdAndersen == nullptr)
         {

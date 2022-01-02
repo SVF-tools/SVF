@@ -105,7 +105,7 @@ private:
         isext_cache.clear();
     }
 
-    // Singleton pattern here to enable instance of PAG can only be created once.
+    // Singleton pattern here to enable instance of SVFIR can only be created once.
     static ExtAPI* extAPI;
 
 public:

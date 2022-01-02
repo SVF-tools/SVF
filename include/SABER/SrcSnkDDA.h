@@ -110,10 +110,10 @@ public:
         dumpSlices();
     }
 
-    /// Get PAG
-    PAG* getPAG() const
+    /// Get SVFIR
+    SVFIR* getPAG() const
     {
-        return PAG::getPAG();
+        return SVFIR::getPAG();
     }
 
     /// Get SVFG

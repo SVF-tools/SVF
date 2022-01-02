@@ -179,12 +179,12 @@ void OfflineConsG::dump(std::string name)
 namespace llvm
 {
 template<>
-struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
+struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<SVFIR*>
 {
 
     typedef ConstraintNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<PAG*>(isSimple)
+        DOTGraphTraits<SVFIR*>(isSimple)
     {
     }
 
@@ -200,9 +200,9 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
     {
         std::string str;
         raw_string_ostream rawstr(str);
-        if (PAG::getPAG()->findPAGNode(n->getId()))
+        if (SVFIR::getPAG()->getGNode(n->getId()))
         {
-            PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
+            PAGNode *node = SVFIR::getPAG()->getGNode(n->getId());
             bool briefDisplay = true;
             bool nameDisplay = true;
 
@@ -240,10 +240,42 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<PAG*>
 
     static std::string getNodeAttributes(NodeType *n, OfflineConsG*)
     {
-        if (PAG::getPAG()->findPAGNode(n->getId()))
+        if (SVFIR::getPAG()->getGNode(n->getId()))
         {
-            PAGNode *node = PAG::getPAG()->getPAGNode(n->getId());
-            return node->getNodeAttrForDotDisplay();
+            PAGNode *node = SVFIR::getPAG()->getGNode(n->getId());
+            if (SVFUtil::isa<ValPN>(node))
+            {
+                if(SVFUtil::isa<GepValPN>(node))
+                    return "shape=hexagon";
+                else if (SVFUtil::isa<DummyValPN>(node))
+                    return "shape=diamond";
+                else
+                    return "shape=box";
+            }
+            else if (SVFUtil::isa<ObjPN>(node))
+            {
+                if(SVFUtil::isa<GepObjPN>(node))
+                    return "shape=doubleoctagon";
+                else if(SVFUtil::isa<FIObjPN>(node))
+                    return "shape=box3d";
+                else if (SVFUtil::isa<DummyObjPN>(node))
+                    return "shape=tab";
+                else
+                    return "shape=component";
+            }
+            else if (SVFUtil::isa<RetPN>(node))
+            {
+                return "shape=Mrecord";
+            }
+            else if (SVFUtil::isa<VarArgPN>(node))
+            {
+                return "shape=octagon";
+            }
+            else
+            {
+                assert(0 && "no such kind!!");
+            }
+            return "";
         }
         else
         {

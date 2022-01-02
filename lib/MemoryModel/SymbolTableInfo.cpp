@@ -41,7 +41,7 @@ using namespace SVFUtil;
 
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
-
+u32_t StInfo::maxFieldLimit = 0;
 
 /*
  * Initial the memory object here (for a dummy object)
@@ -350,7 +350,7 @@ const Type *SymbolTableInfo::getBaseTypeAndFlattenedFields(const Value *V, std::
 /*!
  * Get modulus offset given the type information
  */
-LocationSet SymbolTableInfo::getModulusOffset(const ObjSym* obj, const LocationSet& ls)
+LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationSet& ls)
 {
 
     /// if the offset is negative, it's possible that we're looking for an obj node out of range
@@ -380,11 +380,11 @@ LocationSet SymbolTableInfo::getModulusOffset(const ObjSym* obj, const LocationS
 void SymbolTableInfo::destroy()
 {
 
-    for (SymSet::iterator iter = symSet.begin(); iter != symSet.end();
+    for (IDToMemMapTy::iterator iter = objMap.begin(); iter != objMap.end();
             ++iter)
     {
-        if (*iter)
-            delete *iter;
+        if (iter->second)
+            delete iter->second;
     }
     for (TypeToFieldInfoMap::iterator iter = typeToFieldInfo.begin();
             iter != typeToFieldInfo.end(); ++iter)
@@ -451,6 +451,57 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val)
     return SVFUtil::isConstantData(val);
 }
 
+
+MemObj* SymbolTableInfo::createBlkObj(SymID symId)
+{
+    assert(isBlkObj(symId));
+    assert(objMap.find(symId)==objMap.end());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    objMap[symId] = obj;
+    return obj;
+}
+
+MemObj* SymbolTableInfo::createConstantObj(SymID symId)
+{
+    assert(isConstantObj(symId));
+    assert(objMap.find(symId)==objMap.end());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    objMap[symId] = obj;
+    return obj;
+}
+
+const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
+{
+    assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
+    MemObj* memObj = new MemObj(symId, createObjTypeInfo(type));
+    objMap[symId] = memObj;
+    return memObj;
+}
+
+const std::vector<u32_t>& SymbolTableInfo::getFattenFieldIdxVec(const Type *T)
+{
+    return getStructInfoIter(T)->second->getFieldIdxVec();
+}
+
+const std::vector<u32_t>& SymbolTableInfo::getFattenFieldOffsetVec(const Type *T)
+{
+    return getStructInfoIter(T)->second->getFieldOffsetVec();
+}
+
+const std::vector<FieldInfo>& SymbolTableInfo::getFlattenFieldInfoVec(const Type *T)
+{
+    return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
+}
+
+const Type* SymbolTableInfo::getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx)
+{
+    return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
+}
+
+const Type* SymbolTableInfo::getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset)
+{
+    return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
+}
 
 /*
  * Print out the composite type information
@@ -595,8 +646,8 @@ void SymbolTableInfo::dump()
         idmap[i] = val;
     }
     outs() << "{SymbolTableInfo \n";
-    for (const SVFVar* var : this->symSet) {
-        outs() << var->toString() << "\n";
+    for (auto iter : idmap) {
+        outs() << iter.first << " " << value2String(iter.second) << "\n";
     }
     outs() << "}\n";
 }
@@ -627,4 +678,227 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
 
 
 
+/*!
+ * Analyse types of heap and static objects
+ */
+void ObjTypeInfo::analyzeHeapObjType(const Type*)
+{
+    // TODO: Heap and static objects are considered as pointers right now.
+    //       Refine this function to get more details about heap and static objects.
+    setFlag(HEAP_OBJ);
+    setFlag(HASPTR_OBJ);
+}
+
+/*!
+ * Analyse types of heap and static objects
+ */
+void ObjTypeInfo::analyzeStaticObjType(const Type*)
+{
+    // TODO: Heap and static objects are considered as pointers right now.
+    //       Refine this function to get more details about heap and static objects.
+    setFlag(STATIC_OBJ);
+    setFlag(HASPTR_OBJ);
+}
+
+/*!
+ * Whether a location set is a pointer type or not
+ */
+bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
+{
+    if (isHeap() || isStaticObj())
+        return false;
+
+    const Type* ety = getType();
+    while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
+    {
+        ety = AT->getElementType();
+    }
+
+    if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
+    {
+        bool hasIntersection = false;
+        const vector<FieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety);
+        vector<FieldInfo>::const_iterator it = infovec.begin();
+        vector<FieldInfo>::const_iterator eit = infovec.end();
+        for (; it != eit; ++it)
+        {
+            const FieldInfo& fieldLS = *it;
+            if (ls.intersects(LocationSet(fieldLS)))
+            {
+                hasIntersection = true;
+                if (fieldLS.getFlattenElemTy()->isPointerTy())
+                    return false;
+            }
+        }
+        assert(hasIntersection && "cannot find field of specified offset");
+        return true;
+    }
+    else
+    {
+        if (isStaticObj() || isHeap())
+        {
+            // TODO: Objects which cannot find proper field for a certain offset including
+            //       arguments in main(), static objects allocated before main and heap
+            //       objects. Right now they're considered to have infinite fields and we
+            //       treat each field as pointers conservatively.
+            //       Try to model static and heap objects more accurately in the future.
+            return false;
+        }
+        else
+        {
+            // TODO: Using new memory model (locMM) may create objects with spurious offset
+            //       as we simply return new offset by mod operation without checking its
+            //       correctness in LocSymTableInfo::getModulusOffset(). So the following
+            //       assertion may fail. Try to refine the new memory model.
+            //assert(ls.getOffset() == 0 && "cannot get a field from a non-struct type");
+            return (hasPtrObj() == false);
+        }
+    }
+}
+
+
+/*!
+ * Set mem object to be field sensitive (up to maximum field limit)
+ */
+void MemObj::setFieldSensitive()
+{
+    typeInfo->setMaxFieldOffsetLimit(StInfo::getMaxFieldLimit());
+}
+
+
+/*!
+ * Constructor of a memory object
+ */
+MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value *val) :
+    symId(id), refVal(val), typeInfo(ti)
+{
+}
+
+/*!
+ * Whether it is a black hole object
+ */
+bool MemObj::isBlackHoleObj() const
+{
+    return SymbolTableInfo::isBlkObj(getId());
+}
+
+
+/// Get obj type info
+const Type* MemObj::getType() const
+{
+    if (isHeap() == false)
+    {
+        if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
+            return type->getElementType();
+        else
+            return typeInfo->getType();
+    }
+    else if (getValue() && SVFUtil::isa<Instruction>(getValue()))
+        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(getValue()));
+    else
+        return typeInfo->getType();
+}
+/*
+ * Destroy the fields of the memory object
+ */
+void MemObj::destroy()
+{
+    delete typeInfo;
+    typeInfo = nullptr;
+}
+
+/// Get max field offset limit
+Size_t MemObj::getMaxFieldOffsetLimit() const
+{
+    return typeInfo->getMaxFieldOffsetLimit();
+}
+
+/// Return true if its field limit is 0
+bool MemObj::isFieldInsensitive() const
+{
+    return getMaxFieldOffsetLimit() == 0;
+}
+
+/// Set the memory object to be field insensitive
+void MemObj::setFieldInsensitive()
+{
+    typeInfo->setMaxFieldOffsetLimit(0);
+}
+
+bool MemObj::isFunction() const
+{
+    return typeInfo->isFunction();
+}
+
+bool MemObj::isGlobalObj() const
+{
+    return typeInfo->isGlobalObj();
+}
+
+bool MemObj::isStaticObj() const
+{
+    return typeInfo->isStaticObj();
+}
+
+bool MemObj::isStack() const
+{
+    return typeInfo->isStack();
+}
+
+bool MemObj::isHeap() const
+{
+    return typeInfo->isHeap();
+}
+
+bool MemObj::isStruct() const
+{
+    return typeInfo->isStruct();
+}
+
+bool MemObj::isArray() const
+{
+    return typeInfo->isArray();
+}
+
+bool MemObj::isVarStruct() const
+{
+    return typeInfo->isVarStruct();
+}
+
+bool MemObj::isVarArray() const
+{
+    return typeInfo->isVarArray();
+}
+
+bool MemObj::isConstStruct() const
+{
+    return typeInfo->isConstStruct();
+}
+
+bool MemObj::isConstArray() const
+{
+    return typeInfo->isConstArray();
+}
+
+bool MemObj::isConstant() const
+{
+    return typeInfo->isConstant();
+}
+
+bool MemObj::hasPtrObj() const
+{
+    return typeInfo->hasPtrObj();
+}
+
+bool MemObj::isNonPtrFieldObj(const LocationSet& ls) const
+{
+    return typeInfo->isNonPtrFieldObj(ls);
+}
+
+const std::string MemObj::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "MemObj : " << getId() << SVFUtil::value2String(getValue())<< "\n";
+    return rawstr.str();
+}
 

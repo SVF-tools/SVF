@@ -1,5 +1,5 @@
 #include "llvm/Support/JSON.h"
-
+#include "MemoryModel/SVFIR.h"
 #include "SVF-FE/Graph2Json.h"
 
 #include <fstream>	// for ICFGBuilderFromFile
@@ -34,11 +34,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         if(IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
+            SVFIR::PAGEdgeList&  edges = SVFIR::getPAG()->getInstPTAPAGEdgeList(bNode);
             llvm::json::Array PAGEdge_array;
 
             //dump pag edges
-            for (PAG::PAGEdgeList::iterator it = edges.begin(),
+            for (SVFIR::PAGEdgeList::iterator it = edges.begin(),
                     eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
@@ -59,7 +59,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
                 PAGEdge_array.push_back(edge_value);
             }
             llvm::json::Value PagEdge_value = llvm::json::Array{PAGEdge_array};
-            ICFGNode_Obj["PAG Edges"] = PagEdge_value;
+            ICFGNode_Obj["SVFIR Edges"] = PagEdge_value;
         }
         else if(FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
         {

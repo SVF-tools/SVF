@@ -10,15 +10,15 @@
 #ifndef EXTERNALPAG_H_
 #define EXTERNALPAG_H_
 
-#include "Graphs/PAGNode.h"
+#include "MemoryModel/SVFVariables.h"
 
 extern llvm::cl::list<std::string> DumpPAGFunctions;
 
 namespace SVF
 {
 
-/// Represents the PAG of a function loaded externally (i.e. from file).
-/// It's purpose is to be attached to the main PAG (almost) seamlessly.
+/// Represents the SVFIR of a function loaded externally (i.e. from file).
+/// It's purpose is to be attached to the main SVFIR (almost) seamlessly.
 class ExternalPAG
 {
 private:
@@ -28,17 +28,17 @@ private:
             functionToExternalPAGEntries;
     static Map<const SVFFunction*, PAGNode *> functionToExternalPAGReturns;
 
-    /// Name of the function this external PAG represents.
+    /// Name of the function this external SVFIR represents.
     std::string functionName;
 
-    /// Value nodes in this external PAG, represented by NodeIDs
-    /// because we will rebuild these nodes in the main PAG.
+    /// Value nodes in this external SVFIR, represented by NodeIDs
+    /// because we will rebuild these nodes in the main SVFIR.
     NodeSet valueNodes;
-    /// Object nodes in this external PAG, represented by NodeIDs
-    /// because we will rebuild these nodes in the main PAG.
+    /// Object nodes in this external SVFIR, represented by NodeIDs
+    /// because we will rebuild these nodes in the main SVFIR.
     NodeSet objectNodes;
-    /// Edges in this external PAG, represented by the parts of an Edge because
-    /// we will rebuild these edges in the main PAG.
+    /// Edges in this external SVFIR, represented by the parts of an Edge because
+    /// we will rebuild these edges in the main SVFIR.
     OrderedSet<std::tuple<NodeID, NodeID, std::string, int>> edges;
 
     // Special nodes.
@@ -82,15 +82,15 @@ public:
     ~ExternalPAG() {}
 
     /// Parses command line arguments and attaches external PAGs to main
-    /// PAG.
+    /// SVFIR.
     static void initialise(SVFModule* svfModule);
 
-    /// Connects callsite if a external PAG implementing the relevant function
+    /// Connects callsite if a external SVFIR implementing the relevant function
     /// has been added.
     /// Returns true on success, false otherwise.
     static bool connectCallsiteToExternalPAG(CallSite *cs);
 
-    /// Whether an external PAG implementing function exists.
+    /// Whether an external SVFIR implementing function exists.
     static bool hasExternalPAG(const SVFFunction* function);
 
     /// Dump individual PAGs of specified functions. Currently to outs().
@@ -136,7 +136,7 @@ public:
     }
 
     /// Adds (creates new equivalents) all the nodes and edges of this extpag to
-    /// the main PAG. function is used as a key for future lookups.
+    /// the main SVFIR. function is used as a key for future lookups.
     /// Returns true on success, false otherwise (incl. if it already exists).
     bool addExternalPAG(const SVFFunction* function);
 

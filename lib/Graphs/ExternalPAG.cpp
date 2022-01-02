@@ -11,7 +11,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Graphs/ExternalPAG.h"
 #include "Util/BasicTypes.h"
 #include "Graphs/ICFG.h"
@@ -20,11 +20,11 @@ using namespace SVF;
 using namespace SVFUtil;
 
 llvm::cl::list<std::string> ExternalPAGArgs("extpags",
-        llvm::cl::desc("ExternalPAGs to use during PAG construction (format: func1@/path/to/graph,func2@/foo,..."),
+        llvm::cl::desc("ExternalPAGs to use during SVFIR construction (format: func1@/path/to/graph,func2@/foo,..."),
         llvm::cl::CommaSeparated);
 
 llvm::cl::list<std::string> DumpPAGFunctions("dump-function-pags",
-        llvm::cl::desc("Dump PAG for functions"),
+        llvm::cl::desc("Dump SVFIR for functions"),
         llvm::cl::CommaSeparated);
 
 
@@ -56,7 +56,7 @@ void ExternalPAG::initialise(SVFModule*)
     std::vector<std::pair<std::string, std::string>> parsedExternalPAGs
             = ExternalPAG::parseExternalPAGs(ExternalPAGArgs);
 
-    // Build ext PAGs (and add them) first to use them in PAG construction.
+    // Build ext PAGs (and add them) first to use them in SVFIR construction.
     for (auto extpagPair= parsedExternalPAGs.begin();
             extpagPair != parsedExternalPAGs.end(); ++extpagPair)
     {
@@ -71,7 +71,7 @@ void ExternalPAG::initialise(SVFModule*)
 
 bool ExternalPAG::connectCallsiteToExternalPAG(CallSite *cs)
 {
-    PAG *pag = PAG::getPAG();
+    SVFIR *pag = SVFIR::getPAG();
 
     Function* function = cs->getCalledFunction();
     std::string functionName = function->getName().str();
@@ -255,13 +255,13 @@ static void outputPAGEdge(raw_ostream &o, PAGEdge *pagEdge)
  */
 void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
 {
-    PAG *pag = PAG::getPAG();
+    SVFIR *pag = SVFIR::getPAG();
 
-    // Naive: first map functions to entries in PAG, then dump them.
+    // Naive: first map functions to entries in SVFIR, then dump them.
     Map<const SVFFunction*, std::vector<PAGNode *>> functionToPAGNodes;
 
     Set<PAGNode *> callDsts;
-    for (PAG::iterator it = pag->begin(); it != pag->end(); ++it)
+    for (SVFIR::iterator it = pag->begin(); it != pag->end(); ++it)
     {
         PAGNode *currNode = it->second;
         if (!currNode->hasOutgoingEdges(PAGEdge::PEDGEK::Call)) continue;
@@ -313,7 +313,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
         PAGNode *retNode = nullptr;
 
 
-        outs() << "PAG for function: " << functionName << "\n";
+        outs() << "SVFIR for function: " << functionName << "\n";
         for (auto node = argNodes.begin(); node != argNodes.end(); ++node)
         {
             todoNodes.push(*node);
@@ -370,7 +370,7 @@ void ExternalPAG::dumpFunctions(std::vector<std::string> functions)
             outputPAGEdge(outs(), *edge);
         }
 
-        outs() << "PAG for functionName " << functionName << " done\n";
+        outs() << "SVFIR for functionName " << functionName << " done\n";
     }
 }
 
@@ -380,7 +380,7 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
     // TODO: maybe some warning?
     if (function == nullptr) return false;
 
-    PAG *pag = PAG::getPAG();
+    SVFIR *pag = SVFIR::getPAG();
     if (hasExternalPAG(function)) return false;
 
     outs() << "Adding extpag " << this->getFunctionName() << "\n";
@@ -402,7 +402,7 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
             extNodeIt != this->getValueNodes().end(); ++extNodeIt)
     {
         NodeID newNodeId = pag->addDummyValNode();
-        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
+        extToNewNodes[*extNodeIt] = pag->getGNode(newNodeId);
     }
 
     // Add the object nodes.
@@ -411,7 +411,7 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
     {
         // TODO: fix obj node - there's more to it?
         NodeID newNodeId = pag->addDummyObjNode();
-        extToNewNodes[*extNodeIt] = pag->getPAGNode(newNodeId);
+        extToNewNodes[*extNodeIt] = pag->getGNode(newNodeId);
     }
 
     // Add the edges.

@@ -11,7 +11,7 @@
  */
 
 #include "SVF-FE/DCHG.h"
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/BasicTypes.h"
 
@@ -48,8 +48,8 @@ protected:
 
     /// DCHG *must* be set by extending class once the DCHG is available.
     void setDCHG(DCHGraph *dchg);
-    /// PAG *must* be set by extending class once the PAG is available.
-    void setPAG(PAG *pag);
+    /// SVFIR *must* be set by extending class once the SVFIR is available.
+    void setPAG(SVFIR *pag);
 
     /// Check if an object is a black hole obj or a constant object. Required since
     /// other implementations obviously do not account for clones.
@@ -97,7 +97,7 @@ protected:
     const NodeBS &getGepObjs(NodeID base);
 
     /// Returns the GEP object node(s) of base for ls. This may include clones.
-    /// If there are no GEP objects, then getGepObjNode is called on the PAG
+    /// If there are no GEP objects, then getGepObjNode is called on the SVFIR
     /// (through base's getGepObjNode) which will create one.
     const NodeBS getGepObjClones(NodeID base, unsigned offset);
 
@@ -109,11 +109,11 @@ protected:
     /// as a result of reuse.
     NodeID cloneObject(NodeID o, const DIType *type, bool reuse);
 
-    /// Add clone dummy object node to PAG.
+    /// Add clone dummy object node to SVFIR.
     inline NodeID addCloneDummyObjNode(const MemObj *mem);
-    /// Add clone GEP object node to PAG.
+    /// Add clone GEP object node to SVFIR.
     inline NodeID addCloneGepObjNode(const MemObj *mem, const LocationSet &l);
-    /// Add clone FI object node to PAG.
+    /// Add clone FI object node to SVFIR.
     inline NodeID addCloneFIObjNode(const MemObj *mem);
 
     /// Returns the ctir type attached to the value, nullptr if non-existant.
@@ -145,20 +145,20 @@ protected:
 private:
     /// PTA extending this class.
     BVDataPTAImpl *pta;
-    /// PAG the PTA uses. Just a shortcut for getPAG().
-    PAG *ppag = nullptr;
+    /// SVFIR the PTA uses. Just a shortcut for getPAG().
+    SVFIR *ppag = nullptr;
 
     /// Object -> its type.
     Map<NodeID, const DIType *> objToType;
     /// Object -> allocation site.
     /// The value NodeID depends on the pointer analysis (could be
-    /// an SVFG node or PAG node for example).
+    /// an SVFG node or SVFIR node for example).
     Map<NodeID, NodeID> objToAllocation;
     /// (Original) object -> set of its clones.
     Map<NodeID, NodeBS> objToClones;
     /// (Clone) object -> original object (opposite of objToclones).
     Map<NodeID, NodeID> cloneToOriginalObj;
-    /// Maps nodes (a location like a PAG node or SVFG node) to their filter set.
+    /// Maps nodes (a location like a SVFIR node or SVFG node) to their filter set.
     Map<NodeID, PointsTo> locToFilterSet;
     /// Maps objects to the GEP nodes beneath them.
     Map<NodeID, NodeBS> objToGeps;

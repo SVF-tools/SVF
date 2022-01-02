@@ -37,7 +37,7 @@ namespace SVF
 {
 
 /*
- * Generic CFL solver for demand-driven analysis based on different graphs (e.g. PAG, VFG, ThreadVFG)
+ * Generic CFL solver for demand-driven analysis based on different graphs (e.g. SVFIR, VFG, ThreadVFG)
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
 template<class GraphType, class DPIm = DPItem>

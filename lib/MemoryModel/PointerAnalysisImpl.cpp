@@ -22,7 +22,7 @@ using namespace std;
 /*!
  * Constructor
  */
-BVDataPTAImpl::BVDataPTAImpl(PAG* p, PointerAnalysis::PTATY type, bool alias_check) :
+BVDataPTAImpl::BVDataPTAImpl(SVFIR* p, PointerAnalysis::PTATY type, bool alias_check) :
     PointerAnalysis(p, type, alias_check), ptCache()
 {
     if (type == Andersen_BASE || type == Andersen_WPA || type == AndersenWaveDiff_WPA || type == AndersenHCD_WPA || type == AndersenHLCD_WPA
@@ -110,7 +110,7 @@ void BVDataPTAImpl::remapPointsToSets(void)
 
 /*!
  * Store pointer analysis result into a file.
- * It includes the points-to relations, and all PAG nodes including those
+ * It includes the points-to relations, and all SVFIR nodes including those
  * created when solving Andersen's constraints.
  */
 void BVDataPTAImpl::writeToFile(const string& filename)
@@ -184,14 +184,14 @@ void BVDataPTAImpl::writeToFile(const string& filename)
 
 /*!
  * Load pointer analysis result form a file.
- * It populates BVDataPTAImpl with the points-to data, and updates PAG with
- * the PAG offset nodes created during Andersen's solving stage.
+ * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
+ * the SVFIR offset nodes created during Andersen's solving stage.
  */
 bool BVDataPTAImpl::readFromFile(const string& filename)
 {
     // If the module annotations are available, read from there instead
     auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
-    if (mainModule->getNamedMetadata("PAG-Annotated") != nullptr)
+    if (mainModule->getNamedMetadata("SVFIR-Annotated") != nullptr)
     {
         return readFromModule();
     }
@@ -254,7 +254,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
     for (auto t: nodePtsMap)
         ptD->unionPts(t.first, strPtsMap[t.second]);
 
-    // Read PAG offset nodes
+    // Read SVFIR offset nodes
     while (F.good())
     {
         if (line == "------")     break;
@@ -266,7 +266,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         ss >> id >> base >> offset;
 
         NodeID n = pag->getGepObjNode(pag->getObject(base), LocationSet(offset));
-        assert(id == n && "Error adding GepObjNode into PAG!");
+        assert(id == n && "Error adding GepObjNode into SVFIR!");
 
         getline(F, line);
     }
@@ -296,7 +296,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 
 /*!
  * Store pointer analysis result into the current LLVM module as metadata.
- * It includes the points-to relations, and all PAG nodes including those
+ * It includes the points-to relations, and all SVFIR nodes including those
  * created when solving Andersen's constraints.
  */
 void BVDataPTAImpl::writeToModule()
@@ -309,8 +309,8 @@ void BVDataPTAImpl::writeToModule()
 
 /*!
  * Load pointer analysis result from the metadata in the module.
- * It populates BVDataPTAImpl with the points-to data, and updates PAG with
- * the PAG offset nodes created during Andersen's solving stage.
+ * It populates BVDataPTAImpl with the points-to data, and updates SVFIR with
+ * the SVFIR offset nodes created during Andersen's solving stage.
  */
 bool BVDataPTAImpl::readFromModule()
 {
@@ -327,7 +327,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        const PAGNode* node = getPAG()->getGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());
@@ -358,7 +358,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
 void BVDataPTAImpl::dumpAllPts()
 {
     OrderedNodeSet pagNodes;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         pagNodes.insert(it->first);
     }
@@ -400,8 +400,8 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
  * Normalize points-to information for field-sensitive analysis
  */
 void BVDataPTAImpl::normalizePointsTo() {
-    PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    PAG::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
+    SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
+    SVFIR::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
@@ -411,7 +411,7 @@ void BVDataPTAImpl::normalizePointsTo() {
         assert(memObj && "Invalid memobj in memToFieldsMap");
         if (memObj->isFieldInsensitive()) {
             for (NodeID id : t.second) {
-                if (SVFUtil::isa<GepObjPN>(pag->getPAGNode(id))) {
+                if (SVFUtil::isa<GepObjPN>(pag->getGNode(id))) {
                     dropNodes.set(id);
                 } else
                     assert(id == base && "Not a GepObj Node or a baseObj Node?");
@@ -420,7 +420,7 @@ void BVDataPTAImpl::normalizePointsTo() {
     }
 
     // remove the collected redundant gep nodes in each pointers's pts
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
+    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter) {
         NodeID n = nIter->first;
 
         const PointsTo &tmpPts = getPts(n);
@@ -437,7 +437,7 @@ void BVDataPTAImpl::normalizePointsTo() {
     // and remove those nodes from pag
     for (NodeID n: dropNodes) {
         NodeID base = pag->getBaseObjNode(n);
-        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(n));
+        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
         const LocationSet ls = gepNode->getLocationSet();
         GepObjNodeMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);

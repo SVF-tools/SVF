@@ -17,7 +17,7 @@
 
 using namespace SVF;
 
-FlowSensitiveTBHC::FlowSensitiveTBHC(PAG* _pag, PTATY type) : FlowSensitive(_pag, type), TypeBasedHeapCloning(this)
+FlowSensitiveTBHC::FlowSensitiveTBHC(SVFIR* _pag, PTATY type) : FlowSensitive(_pag, type), TypeBasedHeapCloning(this)
 {
     // Using `this` as the argument for TypeBasedHeapCloning is okay. As PointerAnalysis, it's
     // already constructed. TypeBasedHeapCloning also doesn't use pta in the constructor so it
@@ -63,10 +63,10 @@ void FlowSensitiveTBHC::finalize(void)
 
 void FlowSensitiveTBHC::backPropagate(NodeID clone)
 {
-    PAGNode *cloneObj = pag->getPAGNode(clone);
-    assert(cloneObj && "FSTBHC: clone does not exist in PAG?");
-    PAGNode *originalObj = pag->getPAGNode(getOriginalObj(clone));
-    assert(cloneObj && "FSTBHC: original object does not exist in PAG?");
+    PAGNode *cloneObj = pag->getGNode(clone);
+    assert(cloneObj && "FSTBHC: clone does not exist in SVFIR?");
+    PAGNode *originalObj = pag->getGNode(getOriginalObj(clone));
+    assert(cloneObj && "FSTBHC: original object does not exist in SVFIR?");
     // Check the original object too because when reuse of a gep occurs, the new object
     // is an FI object.
     if (SVFUtil::isa<CloneGepObjPN>(cloneObj) || SVFUtil::isa<GepObjPN>(originalObj))
@@ -143,7 +143,7 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
             }
         }
 
-        if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(o)))
+        if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(o)))
         {
             // Want the geps which are at the same "level" as this one (same mem obj, same offset).
             const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getLocationSet().getOffset());
@@ -648,7 +648,7 @@ void FlowSensitiveTBHC::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     for (NodeID o : pts)
     {
         expandedPts |= getAllFieldsObjNode(o);
-        while (const GepObjPN *gepObj = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(o)))
+        while (const GepObjPN *gepObj = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(o)))
         {
             expandedPts |= getAllFieldsObjNode(o);
             o = gepObj->getBaseNode();

@@ -40,7 +40,7 @@ AndersenHCD *AndersenHCD::hcdAndersen = nullptr;
 
 /*!
  * AndersenHCD initilizer,
- * including initilization of PAG, constraint graph and offline constraint graph
+ * including initilization of SVFIR, constraint graph and offline constraint graph
  */
 void AndersenHCD::initialize()
 {

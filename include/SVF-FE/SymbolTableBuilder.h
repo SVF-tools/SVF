@@ -30,7 +30,6 @@
 #ifndef SymbolTableBuilder_H_
 #define SymbolTableBuilder_H_
 
-#include "MemoryModel/SVFSymbols.h"
 #include "SVF-FE/LLVMModule.h"
 #include "MemoryModel/SymbolTableInfo.h"
 

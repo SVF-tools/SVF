@@ -73,11 +73,11 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
         const Value* forkedval = tdAPI->getForkedFun((*it)->getCallSite());
         if(SVFUtil::dyn_cast<Function>(forkedval)==nullptr)
         {
-            PAG* pag = pta->getPAG();
+            SVFIR* pag = pta->getPAG();
             const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getPAGNode(*ii)))
+                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
                 {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction())
@@ -97,11 +97,11 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
         const Value* forkedval = tdAPI->getTaskFuncAtHareParForSite((*it)->getCallSite());
         if(SVFUtil::dyn_cast<Function>(forkedval)==nullptr)
         {
-            PAG* pag = pta->getPAG();
+            SVFIR* pag = pta->getPAG();
             const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getPAGNode(*ii)))
+                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
                 {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction())

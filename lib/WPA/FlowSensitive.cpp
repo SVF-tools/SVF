@@ -793,7 +793,7 @@ bool FlowSensitive::propVarPtsAfterCGUpdated(NodeID var, const SVFGNode* src, co
 void FlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
+    for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit) keys.push_back(std::make_pair(pit->first, 1));
 
     PointsTo::MappingPtr nodeMapping =
         std::make_shared<std::vector<NodeID>>(NodeIDAllocator::Clusterer::cluster(ander, keys, candidateMappings, "aux-ander"));
@@ -825,7 +825,7 @@ void FlowSensitive::printCTirAliasStats(void)
     DCHGraph *dchg = SVFUtil::dyn_cast<DCHGraph>(chgraph);
     assert(dchg && "eval-ctir-aliases needs DCHG.");
 
-    // < SVFG node ID (loc), PAG node of interest (top-level pointer) >.
+    // < SVFG node ID (loc), SVFIR node of interest (top-level pointer) >.
     Set<std::pair<NodeID, NodeID>> cmpLocs;
     for (SVFG::iterator npair = svfg->begin(); npair != svfg->end(); ++npair)
     {

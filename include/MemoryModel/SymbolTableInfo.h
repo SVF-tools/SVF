@@ -30,11 +30,16 @@
 #ifndef INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 #define INCLUDE_SVF_FE_SYMBOLTABLEINFO_H_
 
-#include "MemoryModel/SVFSymbols.h"
-#include "Util/SVFUtil.h"
 
+#include "Util/SVFUtil.h"
+#include "MemoryModel/LocationSet.h"
+#include "Util/SVFModule.h"
 namespace SVF
 {
+
+class MemObj;
+class ObjTypeInfo;
+class StInfo;
 
 /*!
  * Symbol table of the memory model for analysis
@@ -44,17 +49,29 @@ class SymbolTableInfo
 friend class SymbolTableBuilder;
 
 public:
+
+    /// Symbol types
+    enum SYMTYPE
+    {
+        BlackHole,
+        ConstantObj,
+        BlkPtr,
+        NullPtr,
+        ValSymbol,
+        ObjSymbol,
+        RetSymbol,
+        VarargSymbol
+    };
+
     /// various maps defined
     //{@
     /// llvm value to sym id map
     /// local (%) and global (@) identifiers are pointer types which have a value node id.
     typedef OrderedMap<const Value *, SymID> ValueToIDMapTy;
     /// sym id to memory object map
-    typedef OrderedMap<SymID,ObjSym*> IDToMemMapTy;
+    typedef OrderedMap<SymID,MemObj*> IDToMemMapTy;
     /// function to sym id map
     typedef OrderedMap<const Function *, SymID> FunToIDMapTy;
-    /// sym id to sym type map
-    typedef OrderedSet<const SVFVar*> SymSet;
     /// struct type to struct info map
     typedef OrderedMap<const Type*, StInfo*> TypeToFieldInfoMap;
     typedef Set<CallSite> CallSiteSet;
@@ -71,7 +88,6 @@ private:
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap;		///< return  map
     FunToIDMapTy varargSymMap;	    ///< vararg map
-    SymSet	symSet;	/// < a set of all symbols
     IDToMemMapTy		objMap;		///< map a memory sym id to its obj
 
     CallSiteSet callSiteSet;
@@ -192,29 +208,15 @@ public:
         return (isBlkObj(id) || isConstantObj(id));
     }
 
-    inline ObjSym* createBlkObj(SymID symId)
-    {
-        assert(isBlkObj(symId));
-        assert(objMap.find(symId)==objMap.end());
-        ObjSym* obj = new BlackHoleSym(symId, createObjTypeInfo());
-        objMap[symId] = obj;
-        return obj;
-    }
+    MemObj* createBlkObj(SymID symId);
 
-    inline ObjSym* createConstantObj(SymID symId)
-    {
-        assert(isConstantObj(symId));
-        assert(objMap.find(symId)==objMap.end());
-        ObjSym* obj = new ConstantObjSym(symId, createObjTypeInfo());
-        objMap[symId] = obj;
-        return obj;
-    }
+    MemObj* createConstantObj(SymID symId);
 
-    inline ObjSym* getBlkObj() const
+    inline MemObj* getBlkObj() const
     {
         return getObj(blackholeSymID());
     }
-    inline ObjSym* getConstantObj() const
+    inline MemObj* getConstantObj() const
     {
         return getObj(constantSymID());
     }
@@ -239,15 +241,8 @@ public:
         return BlackHole;
     }
 
-    /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
-    inline const ObjSym* createDummyObj(SymID symId, const Type* type)
-    {
-        assert(objMap.find(symId)==objMap.end() && "this dummy obj has been created before");
-        ObjSym* memObj = new ObjSym(symId, createObjTypeInfo(type));
-        objMap[symId] = memObj;
-        symSet.insert(memObj);
-        return memObj;
-    }
+    /// Can only be invoked by SVFIR::addDummyNode() when creaing SVFIR from file.
+    const MemObj* createDummyObj(SymID symId, const Type* type);
     // @}
 
     /// Get different kinds of syms
@@ -282,7 +277,7 @@ public:
         return iter->second;
     }
 
-    inline ObjSym* getObj(SymID id) const
+    inline MemObj* getObj(SymID id) const
     {
         IDToMemMapTy::const_iterator iter = objMap.find(id);
         assert(iter!=objMap.end() && "obj not found");
@@ -369,26 +364,11 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    const inline std::vector<u32_t>& getFattenFieldIdxVec(const Type *T)
-    {
-        return getStructInfoIter(T)->second->getFieldIdxVec();
-    }
-    const inline std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T)
-    {
-        return getStructInfoIter(T)->second->getFieldOffsetVec();
-    }
-    const inline std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T)
-    {
-        return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
-    }
-    const inline Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx)
-    {
-        return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
-    }
-    const inline Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset)
-    {
-        return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
-    }
+    const std::vector<u32_t>& getFattenFieldIdxVec(const Type *T);
+    const std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T);
+    const std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T);
+    const Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx);
+    const Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset);
     //@}
 
     /// Compute gep offset
@@ -400,7 +380,7 @@ public:
     /// Collect type info
     void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
-    virtual LocationSet getModulusOffset(const ObjSym* obj, const LocationSet& ls);
+    virtual LocationSet getModulusOffset(const MemObj* obj, const LocationSet& ls);
 
     /// Debug method
     void printFlattenFields(const Type* type);
@@ -432,6 +412,317 @@ protected:
 
     ///The number of fields in max_struct
     u32_t maxStSize;
+};
+
+
+/*!
+ * Memory object symbols or MemObj (address-taken variables in LLVM-based languages)
+ */
+class MemObj 
+{
+
+private:
+    /// Type information of this object
+    ObjTypeInfo* typeInfo;
+    /// The unique value of this symbol/variable
+    const Value *refVal;
+    /// The unique id to represent this symbol
+    SymID symId;
+public:
+
+    /// Constructor
+    MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
+
+    /// Destructor
+    ~MemObj()
+    {
+        destroy();
+    }
+
+    virtual const std::string toString() const;
+
+    /// Get the reference value to this object
+    inline const Value* getValue() const
+    {
+        return refVal;
+    }
+
+    /// Get the memory object id
+    inline SymID getId() const
+    {
+        return symId;
+    }
+
+    /// Get obj type
+    const Type* getType() const;
+
+    /// Get max field offset limit
+    Size_t getMaxFieldOffsetLimit() const;
+
+    /// Return true if its field limit is 0
+    bool isFieldInsensitive() const;
+
+    /// Set the memory object to be field insensitive
+    void setFieldInsensitive();
+
+    /// Set the memory object to be field sensitive (up to max field limit)
+    void setFieldSensitive();
+
+    /// Whether it is a black hole object
+    bool isBlackHoleObj() const;
+
+    /// object attributes methods
+    //@{
+    bool isFunction() const;
+    bool isGlobalObj() const;
+    bool isStaticObj() const;
+    bool isStack() const;
+    bool isHeap() const;
+    bool isStruct() const;
+    bool isArray() const;
+    bool isVarStruct() const;
+    bool isVarArray() const;
+    bool isConstStruct() const;
+    bool isConstArray() const;
+    bool isConstant() const;
+    bool hasPtrObj() const;
+    bool isNonPtrFieldObj(const LocationSet& ls) const;
+    //@}
+
+    /// Operator overloading
+    inline bool operator==(const MemObj &mem) const
+    {
+        return getValue() == mem.getValue();
+    }
+
+    /// Clean up memory
+    void destroy();
+};
+
+
+
+
+/*!
+ * Struct information
+ */
+class StInfo
+{
+
+private:
+    /// flattened field indices of a struct
+    std::vector<u32_t> fldIdxVec;
+    /// flattened field offsets of of a struct
+    std::vector<u32_t> foffset;
+    /// Types of all fields of a struct
+    Map<u32_t, const llvm::Type*> fldIdx2TypeMap;
+    /// Types of all fields of a struct
+    Map<u32_t, const llvm::Type*> offset2TypeMap;
+    /// All field infos after flattening a struct
+    std::vector<FieldInfo> finfo;
+
+    /// Max field limit
+    static u32_t maxFieldLimit;
+
+public:
+    /// Constructor
+    StInfo()
+    {
+    }
+    /// Destructor
+    ~StInfo()
+    {
+    }
+
+    static inline void setMaxFieldLimit(u32_t limit)
+    {
+        maxFieldLimit = limit;
+    }
+
+    static inline u32_t getMaxFieldLimit()
+    {
+        return maxFieldLimit;
+    }
+
+    /// Get method for fields of a struct
+    //{@
+    inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx)
+    {
+        return fldIdx2TypeMap[fldIdx];
+    }
+    inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset)
+    {
+        return offset2TypeMap[offset];
+    }
+    inline std::vector<u32_t>& getFieldIdxVec()
+    {
+        return fldIdxVec;
+    }
+    inline std::vector<u32_t>& getFieldOffsetVec()
+    {
+        return foffset;
+    }
+    inline std::vector<FieldInfo>& getFlattenFieldInfoVec()
+    {
+        return finfo;
+    }
+    //@}
+
+    /// Add field (index and offset) with its corresponding type
+    inline void addFldWithType(u32_t fldIdx, u32_t offset, const llvm::Type* type)
+    {
+        fldIdxVec.push_back(fldIdx);
+        foffset.push_back(offset);
+        fldIdx2TypeMap[fldIdx] = type;
+        offset2TypeMap[offset] = type;
+    }
+};
+
+/*!
+ * Type Info of an abstract memory object
+ */
+class ObjTypeInfo
+{
+
+public:
+    typedef enum
+    {
+        FUNCTION_OBJ = 0x1,  // object is a function
+        GLOBVAR_OBJ = 0x2,  // object is a global variable
+        STATIC_OBJ = 0x4,  // object is a static variable allocated before main
+        STACK_OBJ = 0x8,  // object is a stack variable
+        HEAP_OBJ = 0x10,  // object is a heap variable
+        VAR_STRUCT_OBJ = 0x20,  // object contains struct
+        VAR_ARRAY_OBJ = 0x40,  // object contains array
+        CONST_STRUCT_OBJ = 0x80,  // constant struct
+        CONST_ARRAY_OBJ = 0x100,  // constant array
+        CONST_OBJ = 0x200,  // constant object str e.g.
+        HASPTR_OBJ = 0x400		// non pointer object including compound type have field that is a pointer type
+    } MEMTYPE;
+
+private:
+    /// LLVM type
+    const Type* type;
+    /// Type flags
+    Size_t flags;
+    /// Max offset for flexible field sensitive analysis
+    /// maximum number of field object can be created
+    /// minimum number is 0 (field insensitive analysis)
+    u32_t maxOffsetLimit;
+public:
+
+    /// Constructors
+    ObjTypeInfo(const Value*, const Type* t, u32_t max) :
+        type(t), flags(0), maxOffsetLimit(max)
+    {
+    }
+    /// Constructor
+    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max)
+    {
+
+    }
+    /// Destructor
+    virtual ~ObjTypeInfo()
+    {
+
+    }
+
+    /// Analyse types of heap and static objects
+    void analyzeHeapObjType(const Type* type);
+
+    /// Analyse types of heap and static objects
+    void analyzeStaticObjType(const Type* type);
+
+    /// Get LLVM type
+    inline const Type* getType() const
+    {
+        return type;
+    }
+
+    /// Get max field offset limit
+    inline u32_t getMaxFieldOffsetLimit()
+    {
+        return maxOffsetLimit;
+    }
+
+    /// Get max field offset limit
+    inline void setMaxFieldOffsetLimit(u32_t limit)
+    {
+        maxOffsetLimit = limit;
+    }
+
+    /// Flag for this object type
+    //@{
+    inline void setFlag(MEMTYPE mask)
+    {
+        flags |= mask;
+    }
+    inline bool hasFlag(MEMTYPE mask)
+    {
+        return (flags & mask) == mask;
+    }
+    //@}
+
+    /// Object attributes
+    //@{
+    inline bool isFunction()
+    {
+        return hasFlag(FUNCTION_OBJ);
+    }
+    inline bool isGlobalObj()
+    {
+        return hasFlag(GLOBVAR_OBJ);
+    }
+    inline bool isStaticObj()
+    {
+        return hasFlag(STATIC_OBJ);
+    }
+    inline bool isStack()
+    {
+        return hasFlag(STACK_OBJ);
+    }
+    inline bool isHeap()
+    {
+        return hasFlag(HEAP_OBJ);
+    }
+    //@}
+
+    /// Object attributes (noted that an object can be a nested compound types)
+    /// e.g. both isStruct and isArray can return true
+    //@{
+    inline bool isVarStruct()
+    {
+        return hasFlag(VAR_STRUCT_OBJ);
+    }
+    inline bool isConstStruct()
+    {
+        return hasFlag(CONST_STRUCT_OBJ);
+    }
+    inline bool isStruct()
+    {
+        return hasFlag(VAR_STRUCT_OBJ) || hasFlag(CONST_STRUCT_OBJ);
+    }
+    inline bool isVarArray()
+    {
+        return hasFlag(VAR_ARRAY_OBJ);
+    }
+    inline bool isConstArray()
+    {
+        return  hasFlag(CONST_ARRAY_OBJ);
+    }
+    inline bool isArray()
+    {
+        return hasFlag(VAR_ARRAY_OBJ) || hasFlag(CONST_ARRAY_OBJ);
+    }
+    inline bool isConstant()
+    {
+        return hasFlag(CONST_OBJ);
+    }
+    inline bool hasPtrObj()
+    {
+        return hasFlag(HASPTR_OBJ);
+    }
+    virtual bool isNonPtrFieldObj(const LocationSet& ls);
+    //@}
 };
 
 

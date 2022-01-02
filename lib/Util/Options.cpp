@@ -203,7 +203,7 @@ namespace SVF
     );
 
     
-    // Program Assignment Graph for pointer analysis (PAG.cpp)
+    // Program Assignment Graph for pointer analysis (SVFIR.cpp)
     llvm::cl::opt<bool> Options::HandBlackHole(
         "blk", 
         llvm::cl::init(false),
@@ -293,13 +293,13 @@ namespace SVF
     const llvm::cl::opt<bool> Options::PAGDotGraph(
         "dump-pag", 
         llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of PAG")
+        llvm::cl::desc("Dump dot graph of SVFIR")
     );
 
     const llvm::cl::opt<bool> Options::PAGDotGraphShorter(
             "dump-pag-shorter",
             llvm::cl::init(true),
-            llvm::cl::desc("If dumping dot graph of PAG, use shorter lines")
+            llvm::cl::desc("If dumping dot graph of SVFIR, use shorter lines")
     );
 
     const llvm::cl::opt<bool> Options::DumpICFG(
@@ -317,7 +317,7 @@ namespace SVF
     const llvm::cl::opt<bool> Options::PAGPrint(
         "print-pag", 
         llvm::cl::init(false),
-        llvm::cl::desc("Print PAG to command line")
+        llvm::cl::desc("Print SVFIR to command line")
     );
 
     const llvm::cl::opt<unsigned> Options::IndirectCallLimit(
@@ -620,7 +620,7 @@ namespace SVF
     const llvm::cl::opt<std::string> Options::Graphtxt(
         "graph-txt", 
         llvm::cl::value_desc("filename"),
-        llvm::cl::desc("graph txt file to build PAG")
+        llvm::cl::desc("graph txt file to build SVFIR")
     );
 
     const llvm::cl::opt<bool> Options::SVFMain(
@@ -775,7 +775,7 @@ namespace SVF
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
             clEnumValN(PointerAnalysis::FSTBHC_WPA, "fstbhc", "Sparse flow-sensitive type-based heap cloning pointer analysis"),
             clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
-            clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA")
+            clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA")
         ));
 
 

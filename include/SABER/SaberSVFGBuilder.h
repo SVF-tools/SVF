@@ -37,8 +37,6 @@
 namespace SVF
 {
 
-class PAGNode;
-
 class SaberSVFGBuilder : public SVFGBuilder
 {
 

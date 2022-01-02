@@ -73,7 +73,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
         for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
         {
             NodeID nodeId = *it;
-            PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
+            PAGNode* pagNode = pta->getPAG()->getGNode(nodeId);
             if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
@@ -145,7 +145,7 @@ void AndersenStat::constraintGraphStat()
         if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
-        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getPAGNode(nodeIt->first)))
+        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getGNode(nodeIt->first)))
             objNodeNumber++;
 
         u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
@@ -221,7 +221,7 @@ void AndersenStat::statNullPtr()
 {
 
     _NumOfNullPtr = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID pagNodeId = iter->first;
@@ -277,7 +277,7 @@ void AndersenStat::performStat()
     assert(SVFUtil::isa<AndersenBase>(pta) && "not an andersen pta pass!! what else??");
     endClk();
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     ConstraintGraph* consCG = pta->getConstraintGraph();
 
     // collect constraint graph cycles
@@ -290,7 +290,7 @@ void AndersenStat::performStat()
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
     u32_t totalTopLevPtsSize = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;
@@ -299,7 +299,7 @@ void AndersenStat::performStat()
         totalPointers++;
         totalPtsSize+=size;
 
-        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getPAGNode(node)))
+        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getGNode(node)))
         {
             totalTopLevPointers++;
             totalTopLevPtsSize+=size;

@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/MutablePointsToDS.h"
@@ -106,7 +106,7 @@ public:
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
     typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
+    typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
     typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
@@ -143,8 +143,8 @@ protected:
     u32_t OnTheFlyIterBudgetForStat;
     //@}
 
-    /// PAG
-    static PAG* pag;
+    /// SVFIR
+    static SVFIR* pag;
     /// Module
     SVFModule* svfMod;
     /// Pointer analysis Type
@@ -186,7 +186,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(PAG* pag, PTATY ty = Default_PTA, bool alias_check = true);
+    PointerAnalysis(SVFIR* pag, PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const
@@ -200,9 +200,9 @@ public:
         return ptaImplTy;
     }
 
-    /// Get/set PAG
+    /// Get/set SVFIR
     ///@{
-    inline PAG* getPAG() const
+    inline SVFIR* getPAG() const
     {
         return pag;
     }
@@ -227,7 +227,7 @@ public:
     /// Destructor
     virtual ~PointerAnalysis();
 
-    /// Initialization of a pointer analysis, including building symbol table and PAG etc.
+    /// Initialization of a pointer analysis, including building symbol table and SVFIR etc.
     virtual void initialize();
 
     /// Finalization of a pointer analysis, including checking alias correctness
@@ -344,7 +344,7 @@ public:
     ///@{
     inline bool isFIObjNode(NodeID id) const
     {
-        return (SVFUtil::isa<FIObjPN>(pag->getPAGNode(id)));
+        return (SVFUtil::isa<FIObjPN>(pag->getGNode(id)));
     }
     inline NodeID getBaseObjNode(NodeID id)
     {

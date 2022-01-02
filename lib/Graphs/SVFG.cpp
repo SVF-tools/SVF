@@ -543,7 +543,7 @@ void SVFG::dump(const std::string& file, bool simple)
 
 std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 {
-    PAG* pag = PAG::getPAG();
+    SVFIR* pag = SVFIR::getPAG();
     std::set<const SVFGNode*> ret;
     // search for all PAGEdges first
     for (const PAGEdge* pagEdge : pag->getValueEdges(value)) {
@@ -553,7 +553,7 @@ std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
         }
     }
     // add all PAGNodes
-    PAGNode* pagNode = pag->getPAGNode(pag->getValueNode(value));
+    PAGNode* pagNode = pag->getGNode(pag->getValueNode(value));
     if(hasDef(pagNode)) {
         ret.emplace(getDefSVFGNode(pagNode));
     }
@@ -571,10 +571,10 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
     {
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(callee);
-        PAG::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
-        PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        const SVFIR::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::PAGNodeList& funArgList = pag->getFunArgsList(callee);
+        SVFIR::PAGNodeList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
         for (; funArgIt != funArgEit && csArgIt != csArgEit; funArgIt++, csArgIt++)
         {
             const PAGNode *cs_arg = *csArgIt;
@@ -586,7 +586,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
         if (callee->getLLVMFun()->isVarArg())
         {
             NodeID varFunArg = pag->getVarargNode(callee);
-            const PAGNode* varFunArgNode = pag->getPAGNode(varFunArg);
+            const PAGNode* varFunArgNode = pag->getGNode(varFunArg);
             if (varFunArgNode->isPointer())
             {
                 for (; csArgIt != csArgEit; csArgIt++)
@@ -748,12 +748,12 @@ void SVFG::performStat()
 namespace llvm
 {
 template<>
-struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<PAG*>
+struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
 {
 
     typedef SVFGNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<PAG*>(isSimple)
+        DOTGraphTraits<SVFIR*>(isSimple)
     {
     }
 

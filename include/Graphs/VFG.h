@@ -31,7 +31,7 @@
 #define INCLUDE_UTIL_VFG_H_
 
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "Graphs/VFGEdge.h"
@@ -78,7 +78,7 @@ public:
     typedef VFGEdge::VFGEdgeSetTy::iterator VFGNodeIter;
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
-    typedef PAG::PAGEdgeSet PAGEdgeSet;
+    typedef SVFIR::PAGEdgeSet PAGEdgeSet;
     typedef Set<const VFGNode*> GlobalVFGNodeSet;
     typedef Set<const PAGNode*> PAGNodeSet;
 
@@ -99,7 +99,7 @@ protected:
 
     GlobalVFGNodeSet globalVFGNodes;	///< set of global store VFG nodes
     PTACallGraph* callgraph;
-    PAG* pag;
+    SVFIR* pag;
     VFGK kind;
 
     /// Clean up memory
@@ -127,8 +127,8 @@ public:
         return (kind == PTRONLYSVFG) || (kind == PTRONLYSVFG_OPT);
     }
 
-    /// Return PAG
-    inline PAG* getPAG() const
+    /// Return SVFIR
+    inline SVFIR* getPAG() const
     {
         return pag;
     }
@@ -261,12 +261,12 @@ public:
             const VFGNode* defNode = getVFGNode(getDef(pagNode));
             if (const AddrVFGNode* addr = SVFUtil::dyn_cast<AddrVFGNode>(defNode))
             {
-                if (PAG::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
+                if (SVFIR::getPAG()->isBlkObjOrConstantObj(addr->getPAGEdge()->getSrcID()))
                     return true;
             }
             else if(const CopyVFGNode* copy = SVFUtil::dyn_cast<CopyVFGNode>(defNode))
             {
-                if (PAG::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
+                if (SVFIR::getPAG()->isNullPtr(copy->getPAGEdge()->getSrcID()))
                     return true;
             }
         }
@@ -400,13 +400,13 @@ protected:
         }
         else
         {
-            assert((it->second == node->getId()) && "a PAG node can only have unique definition ");
+            assert((it->second == node->getId()) && "a SVFIR node can only have unique definition ");
         }
     }
     inline NodeID getDef(const PAGNode* pagNode) const
     {
         PAGNodeToDefMapTy::const_iterator it = PAGNodeToDefMap.find(pagNode);
-        assert(it!=PAGNodeToDefMap.end() && "PAG node does not have a definition??");
+        assert(it!=PAGNodeToDefMap.end() && "SVFIR node does not have a definition??");
         return it->second;
     }
     inline bool hasDef(const PAGNode* pagNode) const
@@ -503,7 +503,7 @@ protected:
         setDef(load->getDstNode(),sNode);
     }
     /// Add a Store VFG node,
-    /// To be noted store does not create a new pointer, we do not set def for any PAG node
+    /// To be noted store does not create a new pointer, we do not set def for any SVFIR node
     void addStoreVFGNode(const StorePE* store)
     {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
@@ -545,7 +545,7 @@ protected:
 		PAGNodeToFormalRetMap[uniqueFunRet] = sNode;
 		/// if this uniqueFunRet is a phi node, which means it will receive values from multiple return instructions of fun
 		/// we will set this phi node's def later
-		/// Ideally, every function uniqueFunRet should be a PhiNode (PAGBuilder.cpp), unless it does not have ret instruction
+		/// Ideally, every function uniqueFunRet should be a PhiNode (SVFIRBuilder.cpp), unless it does not have ret instruction
 		if (!pag->isPhiNode(uniqueFunRet)){
 			std::string warn = fun->getName().str();
 			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
@@ -561,12 +561,12 @@ protected:
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, PAG::CopyPEList& oplist)
+    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, SVFIR::CopyPEList& oplist)
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
         u32_t pos = 0;
         const PAGEdge* edge = nullptr;
-        for(PAG::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(SVFIR::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
             sNode->setOpVerAndBB(pos, edge->getSrcNode(), edge->getICFGNode());
@@ -577,12 +577,12 @@ protected:
         PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
     }
     /// Add a Compare VFG node
-    inline void addCmpVFGNode(const PAGNode* resNode, PAG::CmpPEList& oplist)
+    inline void addCmpVFGNode(const PAGNode* resNode, SVFIR::CmpPEList& oplist)
     {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
         const PAGEdge* edge = nullptr;
-        for(PAG::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(SVFIR::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
             sNode->setOpVer(pos, edge->getSrcNode());
@@ -593,12 +593,12 @@ protected:
         PAGNodeToCmpVFGNodeMap[resNode] = sNode;
     }
     /// Add a BinaryOperator VFG node
-    inline void addBinaryOPVFGNode(const PAGNode* resNode, PAG::BinaryOPList& oplist)
+    inline void addBinaryOPVFGNode(const PAGNode* resNode, SVFIR::BinaryOPList& oplist)
     {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
         const PAGEdge* edge = nullptr;
-        for(PAG::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(SVFIR::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
             sNode->setOpVer(pos, (*it)->getSrcNode());
@@ -610,12 +610,12 @@ protected:
         PAGNodeToBinaryOPVFGNodeMap[resNode] = sNode;
     }
     /// Add a UnaryOperator VFG node
-    inline void addUnaryOPVFGNode(const PAGNode* resNode, PAG::UnaryOPList& oplist)
+    inline void addUnaryOPVFGNode(const PAGNode* resNode, SVFIR::UnaryOPList& oplist)
     {
         UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
         u32_t pos = 0;
         const PAGEdge* edge = nullptr;
-        for(PAG::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(SVFIR::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
         {
             edge = *it;
             sNode->setOpVer(pos, (*it)->getSrcNode());

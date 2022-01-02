@@ -29,7 +29,7 @@ public:
     typedef SCCDetection<SVFG*> SVFGSCC;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef PTACallGraphEdge::CallInstSet CallInstSet;
-    typedef PAG::CallSiteSet CallSiteSet;
+    typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
     typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
@@ -287,7 +287,7 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(PAG* pag)
+    virtual inline void buildSVFG(SVFIR* pag)
     {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
         _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
@@ -473,7 +473,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -486,7 +486,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -750,7 +750,7 @@ protected:
     }
 
     bool outOfBudgetQuery;			///< Whether the current query is out of step limits
-    PAG* _pag;						///< PAG
+    SVFIR* _pag;						///< SVFIR
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;

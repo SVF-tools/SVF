@@ -75,7 +75,7 @@ AndersenBase::~AndersenBase()
  */
 void AndersenBase::initialize()
 {
-    /// Build PAG
+    /// Build SVFIR
     PointerAnalysis::initialize();
     /// Build Constraint Graph
     consCG = new ConstraintGraph(pag);
@@ -163,14 +163,14 @@ void AndersenBase::cleanConsCG(NodeID id) {
 
 void AndersenBase::normalizePointsTo()
 {
-    PAG::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    PAG::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
+    SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
+    SVFIR::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
 
     // clear GepObjNodeMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
     for (NodeID n: redundantGepNodes) {
         NodeID base = pag->getBaseObjNode(n);
-        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getPAGNode(n));
+        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
         const LocationSet ls = gepNode->getLocationSet();
         GepObjNodeMap.erase(std::make_pair(base, ls));
@@ -722,12 +722,12 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
     {
 
         // connect actual and formal param
-        const PAG::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const PAG::PAGNodeList& funArgList = pag->getFunArgsList(F);
+        const SVFIR::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::PAGNodeList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        PAG::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        PAG::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        SVFIR::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.
@@ -843,7 +843,7 @@ void Andersen::cluster(void) const
     assert(Options::MaxFieldLimit == 0 && "Andersen::cluster: clustering for Andersen's is currently only supported in field-insesnsitive analysis");
     Steensgaard *steens = Steensgaard::createSteensgaard(pag);
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         keys.push_back(std::make_pair(pit->first, 1));
     }
@@ -865,7 +865,7 @@ void Andersen::dumpTopLevelPtsTo()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        const PAGNode* node = getPAG()->getGNode(*nIter);
         if (getPAG()->isValidTopLevelPtr(node))
         {
             const PointsTo& pts = this->getPts(node->getId());

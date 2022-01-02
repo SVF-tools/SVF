@@ -33,8 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/VFGEdge.h"
 #include "Graphs/ICFGNode.h"
-#include "Graphs/PAGNode.h"
-#include "Graphs/PAGEdge.h"
+#include "MemoryModel/SVFIR.h"
 
 namespace SVF
 {
@@ -1092,7 +1091,7 @@ public:
         return node->isPointer();
     }
     /// Return corresponding PAGNode
-    const PAGNode* getPAGNode() const
+    const PAGNode* getGNode() const
     {
         return node;
     }

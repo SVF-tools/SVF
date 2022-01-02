@@ -184,7 +184,7 @@ public:
     /// Initialize analysis
     void initialize(SVFModule* module);
 	
-	inline PAG* getPAG() {
+	inline SVFIR* getPAG() {
 		return mhp->getTCT()->getPTA()->getPAG();
 	}
 	

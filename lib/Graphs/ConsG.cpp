@@ -43,7 +43,7 @@ void ConstraintGraph::buildCG()
 {
 
     // initialize nodes
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
 		addConstraintNode(new ConstraintNode(it->first), it->first);
     }
@@ -145,7 +145,7 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     : ConstraintEdge(s,d,Addr,id)
 {
     // Retarget addr edges may lead s to be a dummy node
-    PAGNode* node = PAG::getPAG()->getPAGNode(s->getId());
+    PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
     if (!SVFModule::pagReadFromTXT())
         assert(!SVFUtil::isa<DummyValPN>(node) && "a dummy node??");
 }
@@ -599,12 +599,12 @@ void ConstraintGraph::view() {
 namespace llvm
 {
 template<>
-struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
+struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
 {
 
     typedef ConstraintNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<PAG*>(isSimple)
+        DOTGraphTraits<SVFIR*>(isSimple)
     {
     }
 
@@ -626,7 +626,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
     /// Either you can choose to display the name of the value or the whole instruction
     static std::string getNodeLabel(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
+        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
         bool briefDisplay = Options::BriefConsCGDotGraph;
         bool nameDisplay = true;
         std::string str;
@@ -659,8 +659,40 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<PAG*>
 
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
-        PAGNode* node = PAG::getPAG()->getPAGNode(n->getId());
-        return node->getNodeAttrForDotDisplay();
+        PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
+        if (SVFUtil::isa<ValPN>(node))
+        {
+            if(SVFUtil::isa<GepValPN>(node))
+                return "shape=hexagon";
+            else if (SVFUtil::isa<DummyValPN>(node))
+                return "shape=diamond";
+            else
+                return "shape=box";
+        }
+        else if (SVFUtil::isa<ObjPN>(node))
+        {
+            if(SVFUtil::isa<GepObjPN>(node))
+               return "shape=doubleoctagon";
+            else if(SVFUtil::isa<FIObjPN>(node))
+                return "shape=box3d";
+            else if (SVFUtil::isa<DummyObjPN>(node))
+                return "shape=tab";
+            else
+                return "shape=component";
+        }
+        else if (SVFUtil::isa<RetPN>(node))
+        {
+            return "shape=Mrecord";
+        }
+        else if (SVFUtil::isa<VarArgPN>(node))
+        {
+            return "shape=octagon";
+        }
+        else
+        {
+            assert(0 && "no such kind!!");
+        }
+        return "";
     }
 
     template<class EdgeIter>

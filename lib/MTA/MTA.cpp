@@ -14,7 +14,7 @@
 #include "WPA/Andersen.h"
 #include "MTA/FSMPTA.h"
 #include "Util/SVFUtil.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 using namespace SVFUtil;
@@ -120,8 +120,8 @@ MHP* MTA::computeMHP(SVFModule* module)
 
     DBOUT(DGENERAL, outs() << pasMsg("MTA analysis\n"));
     DBOUT(DMTA, outs() << pasMsg("MTA analysis\n"));
-    PAGBuilder builder;
-    PAG* pag = builder.build(module);
+    SVFIRBuilder builder;
+    SVFIR* pag = builder.build(module);
     PointerAnalysis* pta = AndersenWaveDiff::createAndersenWaveDiff(pag);
     pta->getPTACallGraph()->dump("ptacg");
 

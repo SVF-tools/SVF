@@ -52,13 +52,13 @@ protected:
     NodeToNodeMap pwcReps;
 
 public:
-    AndersenSCD(PAG* _pag, PTATY type = AndersenSCD_WPA) :
+    AndersenSCD(SVFIR* _pag, PTATY type = AndersenSCD_WPA) :
         Andersen(_pag,type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(PAG* _pag)
+    static AndersenSCD *createAndersenSCD(SVFIR* _pag)
     {
         if (scdAndersen == nullptr)
         {
@@ -114,13 +114,13 @@ private:
     FieldReps fieldReps;
 
 public:
-    AndersenSFR(PAG* _pag, PTATY type = AndersenSFR_WPA) :
+    AndersenSFR(SVFIR* _pag, PTATY type = AndersenSFR_WPA) :
         AndersenSCD(_pag, type), csc(nullptr)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(PAG* _pag)
+    static AndersenSFR *createAndersenSFR(SVFIR* _pag)
     {
         if (sfrAndersen == nullptr)
         {

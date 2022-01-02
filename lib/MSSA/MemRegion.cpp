@@ -104,8 +104,8 @@ const MemRegion* MRGenerator::getMR(const NodeBS& cpts) const
  */
 void MRGenerator::collectGlobals()
 {
-    PAG* pag = pta->getPAG();
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    SVFIR* pag = pta->getPAG();
+    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(nIter->second))
         {
@@ -150,16 +150,16 @@ void MRGenerator::generateMRs()
 
 bool MRGenerator::hasPAGEdgeList(const Instruction* inst)
 {
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
         return pag->hasPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
     else
         return pag->hasPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
 }
 
-PAG::PAGEdgeList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
+SVFIR::PAGEdgeList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
 {
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
         return pag->getInstPTAPAGEdgeList(pag->getICFG()->getBlockICFGNode(inst));
     else
@@ -231,7 +231,7 @@ void MRGenerator::collectModRefForCall()
     DBOUT(DGENERAL, outs() << pasMsg("\t\tCollect Callsite PointsTo \n"));
 
     /// collect points-to information for callsites
-    for(PAG::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
+    for(SVFIR::CallSiteSet::const_iterator it =  pta->getPAG()->getCallSiteSet().begin(),
             eit = pta->getPAG()->getCallSiteSet().end(); it!=eit; ++it)
     {
         collectCallSitePts((*it));
@@ -480,15 +480,15 @@ void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
 {
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
     RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite());
 
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))
     {
-        const PAG::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
-        for(PAG::PAGNodeList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
+        const SVFIR::PAGNodeList& args = pta->getPAG()->getCallSiteArgsList(callBlockNode);
+        for(SVFIR::PAGNodeList::const_iterator itA = args.begin(), ieA = args.end(); itA!=ieA; ++itA)
         {
             const PAGNode* node = *itA;
             if(node->isPointer())

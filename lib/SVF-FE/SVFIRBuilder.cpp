@@ -1,4 +1,4 @@
-//===- PAGBuilder.cpp -- PAG builder-----------------------------------------//
+//===- SVFIRBuilder.cpp -- SVFIR builder-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,13 +21,13 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PAGBuilder.cpp
+ * SVFIRBuilder.cpp
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
  */
 
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
@@ -42,28 +42,28 @@ using namespace SVFUtil;
 
 
 /*!
- * Start building PAG here
+ * Start building SVFIR here
  */
-PAG* PAGBuilder::build(SVFModule* svfModule)
+SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
 {
 
-    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     if (SVFModule::pagReadFromTXT())
     {
         PAGBuilderFromFile fileBuilder(SVFModule::pagFileName());
         return fileBuilder.build();
     }
 
-    // If the PAG has been built before, then we return the unique PAG of the program
+    // If the SVFIR has been built before, then we return the unique SVFIR of the program
     if(pag->getNodeNumAfterPAGBuild() > 1)
     	return pag;
 
     svfMod = svfModule;
 
     /// initial external library information
-    /// initial PAG nodes
+    /// initial SVFIR nodes
     initialiseNodes();
-    /// initial PAG edges:
+    /// initial SVFIR edges:
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
@@ -78,16 +78,16 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
         /// collect return node of function fun
         if(!SVFUtil::isExtCall(&fun))
         {
-            /// Return PAG node will not be created for function which can not
+            /// Return SVFIR node will not be created for function which can not
             /// reach the return instruction due to call to abort(), exit(),
             /// etc. In 176.gcc of SPEC 2000, function build_objc_string() from
             /// c-lang.c shows an example when fun.doesNotReturn() evaluates
             /// to TRUE because of abort().
             if(fun.getLLVMFun()->doesNotReturn() == false && fun.getLLVMFun()->getReturnType()->isVoidTy() == false)
-                pag->addFunRet(&fun,pag->getPAGNode(pag->getReturnNode(&fun)));
+                pag->addFunRet(&fun,pag->getGNode(pag->getReturnNode(&fun)));
 
             /// To be noted, we do not record arguments which are in declared function without body
-            /// TODO: what about external functions with PAG imported by commandline?
+            /// TODO: what about external functions with SVFIR imported by commandline?
             for (Function::arg_iterator I = fun.getLLVMFun()->arg_begin(), E = fun.getLLVMFun()->arg_end();
                     I != E; ++I) {
                 setCurrentLocation(&*I,&fun.getLLVMFun()->getEntryBlock());
@@ -99,7 +99,7 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
                 //    if(I->getType()->isPointerTy())
                 //        addBlackHoleAddrEdge(argValNodeId);
                 //}
-                pag->addFunArgs(&fun,pag->getPAGNode(argValNodeId));
+                pag->addFunArgs(&fun,pag->getGNode(argValNodeId));
             }
         }
         for (Function::iterator bit = fun.getLLVMFun()->begin(), ebit = fun.getLLVMFun()->end();
@@ -128,9 +128,9 @@ PAG* PAGBuilder::build(SVFModule* svfModule)
 /*
  * Initial all the nodes from symbol table
  */
-void PAGBuilder::initialiseNodes()
+void SVFIRBuilder::initialiseNodes()
 {
-    DBOUT(DPAGBuild, outs() << "Initialise PAG Nodes ...\n");
+    DBOUT(DPAGBuild, outs() << "Initialise SVFIR Nodes ...\n");
 
     SymbolTableInfo* symTable = SymbolTableInfo::SymbolInfo();
 
@@ -205,7 +205,7 @@ void PAGBuilder::initialiseNodes()
  * otherwise if "i" is a variable determined by runtime, then it is a variant offset
  * Return TRUE if the offset of this GEP insn is a constant.
  */
-bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls)
+bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
 {
     return SymbolTableInfo::SymbolInfo()->computeGepOffset(V,ls);
 }
@@ -213,7 +213,7 @@ bool PAGBuilder::computeGepOffset(const User *V, LocationSet& ls)
 /*!
  * Handle constant expression, and connect the gep edge
  */
-void PAGBuilder::processCE(const Value *val)
+void SVFIRBuilder::processCE(const Value *val)
 {
     if (const Constant* ref = SVFUtil::dyn_cast<Constant>(val))
     {
@@ -265,8 +265,8 @@ void PAGBuilder::processCE(const Value *val)
             NodeID nres = pag->getValueNode(selectce);
             const CopyPE* cpy1 = addCopyEdge(nsrc1, nres);
             const CopyPE* cpy2 = addCopyEdge(nsrc2, nres);
-            pag->addPhiNode(pag->getPAGNode(nres),cpy1);
-            pag->addPhiNode(pag->getPAGNode(nres),cpy2);
+            pag->addPhiNode(pag->getGNode(nres),cpy1);
+            pag->addPhiNode(pag->getGNode(nres),cpy2);
             setCurrentLocation(cval, cbb);
         }
         // if we meet a int2ptr, then it points-to black hole
@@ -321,7 +321,7 @@ void PAGBuilder::processCE(const Value *val)
         else if (SVFUtil::isa<BlockAddress>(ref))
         {
 			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
 			const Value *cval = getCurrentValue();
 			const BasicBlock *cbb = getCurrentBB();
 			setCurrentLocation(ref, nullptr);
@@ -341,7 +341,7 @@ void PAGBuilder::processCE(const Value *val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
+NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -371,7 +371,7 @@ NodeID PAGBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
  * struct Z *m = &z;       // store z m  (pointer type)
  * struct Z n = {10,&z.s}; // store z.s n ,  &z.s constant expression (constant expression)
  */
-void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
+void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                u32_t offset)
 {
     DBOUT(DPAGBuild,
@@ -400,7 +400,7 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         else if (SVFUtil::isa<BlockAddress>(C))
         {
 			// blockaddress instruction (e.g. i8* blockaddress(@run_vm, %182))
-			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and PAGBuilder.cpp:183-194
+			// is treated as constant data object for now, see LLVMUtil.h:397, SymbolTableInfo.cpp:674 and SVFIRBuilder.cpp:183-194
 			processCE(C);
 			setCurrentLocation(C, nullptr);
 			addAddrEdge(pag->getConstantNode(), src);
@@ -440,9 +440,9 @@ void PAGBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
 }
 
 /*!
- *  Visit global variables for building PAG
+ *  Visit global variables for building SVFIR
  */
-void PAGBuilder::visitGlobal(SVFModule* svfModule)
+void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
 {
 
     /// initialize global variable
@@ -490,9 +490,9 @@ void PAGBuilder::visitGlobal(SVFModule* svfModule)
 
 /*!
  * Visit alloca instructions
- * Add edge V (dst) <-- O (src), V here is a value node on PAG, O is object node on PAG
+ * Add edge V (dst) <-- O (src), V here is a value node on SVFIR, O is object node on SVFIR
  */
-void PAGBuilder::visitAllocaInst(AllocaInst &inst)
+void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 {
 
     // AllocaInst should always be a pointer type
@@ -510,7 +510,7 @@ void PAGBuilder::visitAllocaInst(AllocaInst &inst)
 /*!
  * Visit phi instructions
  */
-void PAGBuilder::visitPHINode(PHINode &inst)
+void SVFIRBuilder::visitPHINode(PHINode &inst)
 {
 
     DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
@@ -525,14 +525,14 @@ void PAGBuilder::visitPHINode(PHINode &inst)
 
         NodeID src = getValueNode(val);
         const CopyPE* copy = addCopyEdge(src, dst);
-        pag->addPhiNode(pag->getPAGNode(dst), copy);
+        pag->addPhiNode(pag->getGNode(dst), copy);
     }
 }
 
 /*
  * Visit load instructions
  */
-void PAGBuilder::visitLoadInst(LoadInst &inst)
+void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 {
     DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
@@ -546,7 +546,7 @@ void PAGBuilder::visitLoadInst(LoadInst &inst)
 /*!
  * Visit store instructions
  */
-void PAGBuilder::visitStoreInst(StoreInst &inst)
+void SVFIRBuilder::visitStoreInst(StoreInst &inst)
 {
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
@@ -564,7 +564,7 @@ void PAGBuilder::visitStoreInst(StoreInst &inst)
 /*!
  * Visit getelementptr instructions
  */
-void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
+void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 {
 
     NodeID dst = getValueNode(&inst);
@@ -590,7 +590,7 @@ void PAGBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 /*
  * Visit cast instructions
  */
-void PAGBuilder::visitCastInst(CastInst &inst)
+void SVFIRBuilder::visitCastInst(CastInst &inst)
 {
 
     DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
@@ -614,7 +614,7 @@ void PAGBuilder::visitCastInst(CastInst &inst)
 /*!
  * Visit Binary Operator
  */
-void PAGBuilder::visitBinaryOperator(BinaryOperator &inst)
+void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
@@ -622,14 +622,14 @@ void PAGBuilder::visitBinaryOperator(BinaryOperator &inst)
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         const BinaryOPPE* binayPE = addBinaryOPEdge(src, dst);
-        pag->addBinaryNode(pag->getPAGNode(dst),binayPE);
+        pag->addBinaryNode(pag->getGNode(dst),binayPE);
     }
 }
 
 /*!
  * Visit Unary Operator
  */
-void PAGBuilder::visitUnaryOperator(UnaryOperator &inst)
+void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
@@ -637,14 +637,14 @@ void PAGBuilder::visitUnaryOperator(UnaryOperator &inst)
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
-        pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+        pag->addUnaryNode(pag->getGNode(dst),unaryPE);
     }
 }
 
 /*!
  * Visit compare instruction
  */
-void PAGBuilder::visitCmpInst(CmpInst &inst)
+void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 {
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
@@ -652,7 +652,7 @@ void PAGBuilder::visitCmpInst(CmpInst &inst)
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         const CmpPE* cmpPE = addCmpEdge(src, dst);
-        pag->addCmpNode(pag->getPAGNode(dst),cmpPE);
+        pag->addCmpNode(pag->getGNode(dst),cmpPE);
     }
 }
 
@@ -660,7 +660,7 @@ void PAGBuilder::visitCmpInst(CmpInst &inst)
 /*!
  * Visit select instructions
  */
-void PAGBuilder::visitSelectInst(SelectInst &inst)
+void SVFIRBuilder::visitSelectInst(SelectInst &inst)
 {
 
     DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
@@ -672,14 +672,14 @@ void PAGBuilder::visitSelectInst(SelectInst &inst)
     const CopyPE* cpy2 = addCopyEdge(src2, dst);
 
     /// Two operands have same incoming basic block, both are the current BB
-    pag->addPhiNode(pag->getPAGNode(dst), cpy1);
-    pag->addPhiNode(pag->getPAGNode(dst), cpy2);
+    pag->addPhiNode(pag->getGNode(dst), cpy1);
+    pag->addPhiNode(pag->getGNode(dst), cpy2);
 }
 
 /*
  * Visit callsites
  */
-void PAGBuilder::visitCallSite(CallSite cs)
+void SVFIRBuilder::visitCallSite(CallSite cs)
 {
 
     // skip llvm intrinsics
@@ -696,10 +696,10 @@ void PAGBuilder::visitCallSite(CallSite cs)
 
     /// Collect callsite arguments and returns
     for(CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end(); itA!=ieA; ++itA)
-        pag->addCallSiteArgs(callBlockNode,pag->getPAGNode(getValueNode(*itA)));
+        pag->addCallSiteArgs(callBlockNode,pag->getGNode(getValueNode(*itA)));
 
     if(!cs.getType()->isVoidTy())
-        pag->addCallSiteRets(retBlockNode,pag->getPAGNode(getValueNode(cs.getInstruction())));
+        pag->addCallSiteRets(retBlockNode,pag->getGNode(getValueNode(cs.getInstruction())));
 
     const SVFFunction *callee = getCallee(cs);
 
@@ -732,7 +732,7 @@ void PAGBuilder::visitCallSite(CallSite cs)
 /*!
  * Visit return instructions of a function
  */
-void PAGBuilder::visitReturnInst(ReturnInst &inst)
+void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 {
 
     // ReturnInst itself should always not be a pointer type
@@ -748,7 +748,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst)
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
         const CopyPE* copy = addCopyEdge(vnS, rnF);
-        pag->addPhiNode(pag->getPAGNode(rnF), copy);
+        pag->addPhiNode(pag->getGNode(rnF), copy);
     }
 }
 
@@ -761,7 +761,7 @@ void PAGBuilder::visitReturnInst(ReturnInst &inst)
  * however we can not create %call34 as an memory object, as it is register value.
  * Is that necessary treat extract value as getelementptr instruction later to get more precise results?
  */
-void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst)
+void SVFIRBuilder::visitExtractValueInst(ExtractValueInst  &inst)
 {
     NodeID dst = getValueNode(&inst);
     addBlackHoleAddrEdge(dst);
@@ -775,7 +775,7 @@ void PAGBuilder::visitExtractValueInst(ExtractValueInst  &inst)
  *
  * <result> = extractelement <4 x i32> %vec, i32 0    ; yields i32
  */
-void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
+void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
 {
     NodeID dst = getValueNode(&inst);
     addBlackHoleAddrEdge(dst);
@@ -785,7 +785,7 @@ void PAGBuilder::visitExtractElementInst(ExtractElementInst &inst)
  * Branch and switch instructions are treated as UnaryOP
  * br %cmp label %if.then, label %if.else
  */
-void PAGBuilder::visitBranchInst(BranchInst &inst){
+void SVFIRBuilder::visitBranchInst(BranchInst &inst){
     NodeID dst = getValueNode(&inst);
     NodeID src;
 	if (inst.isConditional())
@@ -793,15 +793,15 @@ void PAGBuilder::visitBranchInst(BranchInst &inst){
 	else
 		src = pag->getNullPtr();
 	const UnaryOPPE *unaryPE = addUnaryOPEdge(src, dst);
-    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+    pag->addUnaryNode(pag->getGNode(dst),unaryPE);
 }
 
-void PAGBuilder::visitSwitchInst(SwitchInst &inst){
+void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getCondition();
     NodeID src = getValueNode(opnd);
     const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
-    pag->addUnaryNode(pag->getPAGNode(dst),unaryPE);
+    pag->addUnaryNode(pag->getGNode(dst),unaryPE);
 }
 
 ///   %ap = alloca %struct.va_list
@@ -809,7 +809,7 @@ void PAGBuilder::visitSwitchInst(SwitchInst &inst){
 /// ; Read a single integer argument from %ap2
 /// %tmp = va_arg i8* %ap2, i32 (VAArgInst)
 /// TODO: for now, create a copy edge from %ap2 to %tmp, we assume here %tmp should point to the n-th argument of the var_args
-void PAGBuilder::visitVAArgInst(VAArgInst &inst){
+void SVFIRBuilder::visitVAArgInst(VAArgInst &inst){
     NodeID dst = getValueNode(&inst);
     Value* opnd = inst.getPointerOperand();
     NodeID src = getValueNode(opnd);
@@ -820,7 +820,7 @@ void PAGBuilder::visitVAArgInst(VAArgInst &inst){
 /// If <val> is undef or poison, ‘freeze’ returns an arbitrary, but fixed value of type `ty`
 /// Otherwise, this instruction is a no-op and returns the input <val>
 /// For now, we assume <val> is never a posion or undef.
-void PAGBuilder::visitFreezeInst(FreezeInst &inst){
+void SVFIRBuilder::visitFreezeInst(FreezeInst &inst){
     NodeID dst = getValueNode(&inst);
     for (u32_t i = 0; i < inst.getNumOperands(); i++)
     {
@@ -834,7 +834,7 @@ void PAGBuilder::visitFreezeInst(FreezeInst &inst){
 /*!
  * Add the constraints for a direct, non-external call.
  */
-void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
+void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 {
 
     assert(F);
@@ -900,7 +900,7 @@ void PAGBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type *PAGBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<LocationSet> &fields)
+const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<LocationSet> &fields)
 {
     return SymbolTableInfo::SymbolInfo()->getBaseTypeAndFlattenedFields(V, fields);
 }
@@ -909,7 +909,7 @@ const Type *PAGBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<Loca
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
+void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
 {
     assert(D && S);
     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
@@ -955,7 +955,7 @@ void PAGBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
 /*!
  * Handle external calls
  */
-void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
+void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 {
     const Instruction* inst = cs.getInstruction();
     if (isHeapAllocOrStaticExtCall(cs))
@@ -1304,7 +1304,7 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
         }
 
-        /// create inter-procedural PAG edges for thread forks
+        /// create inter-procedural SVFIR edges for thread forks
         if(isThreadForkCall(inst))
         {
             if(const Function* forkedFun = getLLVMFunction(getForkedFun(inst)) )
@@ -1333,11 +1333,11 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 ///    pag->addIndirectCallsites(cs,pag->getValueNode(fun));
             }
             /// If forkedFun does not pass to spawnee as function type but as void pointer
-            /// remember to update inter-procedural callgraph/PAG/SVFG etc. when indirect call targets are resolved
+            /// remember to update inter-procedural callgraph/SVFIR/SVFG etc. when indirect call targets are resolved
             /// We don't connect the callgraph here, further investigation is need to hanle mod-ref during SVFG construction.
         }
 
-        /// create inter-procedural PAG edges for hare_parallel_for calls
+        /// create inter-procedural SVFIR edges for hare_parallel_for calls
         else if(isHareParForCall(inst))
         {
             if(const Function* taskFunc = getLLVMFunction(getTaskFuncAtHareParForSite(inst)) )
@@ -1362,14 +1362,14 @@ void PAGBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
         }
 
-        /// TODO: inter-procedural PAG edges for thread joins
+        /// TODO: inter-procedural SVFIR edges for thread joins
     }
 }
 
 /*!
  * Indirect call is resolved on-the-fly during pointer analysis
  */
-void PAGBuilder::handleIndCall(CallSite cs)
+void SVFIRBuilder::handleIndCall(CallSite cs)
 {
     const CallBlockNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
     pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
@@ -1378,11 +1378,11 @@ void PAGBuilder::handleIndCall(CallSite cs)
 /*
  * TODO: more sanity checks might be needed here
  */
-void PAGBuilder::sanityCheck()
+void SVFIRBuilder::sanityCheck()
 {
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
-        (void) pag->getPAGNode(nIter->first);
+        (void) pag->getGNode(nIter->first);
         //TODO::
         // (1)  every source(root) node of a pag tree should be object node
         //       if a node has no incoming edge, but has outgoing edges
@@ -1404,7 +1404,7 @@ void PAGBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
+NodeID SVFIRBuilder::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
 {
     NodeID base = pag->getBaseValNode(getValueNode(val));
     NodeID gepval = pag->getGepValNode(curVal, base, ls);
@@ -1413,8 +1413,8 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
          * getGepValNode can only be called from two places:
-         * 1. PAGBuilder::addComplexConsForExt to handle external calls
-         * 2. PAGBuilder::getGlobalVarField to initialize global variable
+         * 1. SVFIRBuilder::addComplexConsForExt to handle external calls
+         * 2. SVFIRBuilder::getGlobalVarField to initialize global variable
          * so curVal can only be
          * 1. Instruction
          * 2. GlobalVariable
@@ -1441,17 +1441,17 @@ NodeID PAGBuilder::getGepValNode(const Value* val, const LocationSet& ls, const 
 /*
  * curVal   <-------->  PAGEdge
  * Instruction          Any Edge
- * Argument             CopyEdge  (PAG::addFormalParamBlackHoleAddrEdge)
- * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  PAGBuilder::processCE)
- *                      GepEdge   (GepConstantExpr   PAGBuilder::processCE)
- * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr PAG::addNullPtrNode)
- *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr PAG::addNullPtrNode)
- * GlobalVariable       AddrEdge  (PAGBuilder::visitGlobal)
- *                      GepEdge   (PAGBuilder::getGlobalVarField)
- * Function             AddrEdge  (PAGBuilder::visitGlobal)
- * Constant             StoreEdge (PAGBuilder::InitialGlobal)
+ * Argument             CopyEdge  (SVFIR::addFormalParamBlackHoleAddrEdge)
+ * ConstantExpr         CopyEdge  (Int2PtrConstantExpr   CastConstantExpr  SVFIRBuilder::processCE)
+ *                      GepEdge   (GepConstantExpr   SVFIRBuilder::processCE)
+ * ConstantPointerNull  CopyEdge  (3-->2 NullPtr-->BlkPtr SVFIR::addNullPtrNode)
+ *  				    AddrEdge  (0-->2 BlkObj-->BlkPtr SVFIR::addNullPtrNode)
+ * GlobalVariable       AddrEdge  (SVFIRBuilder::visitGlobal)
+ *                      GepEdge   (SVFIRBuilder::getGlobalVarField)
+ * Function             AddrEdge  (SVFIRBuilder::visitGlobal)
+ * Constant             StoreEdge (SVFIRBuilder::InitialGlobal)
  */
-void PAGBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
+void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 {
     if (SVFModule::pagReadFromTXT())
         return;

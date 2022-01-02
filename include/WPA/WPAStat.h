@@ -39,9 +39,8 @@ namespace SVF
 {
 
 class AndersenBase;
-class PAG;
+class SVFIR;
 class ConstraintGraph;
-class PAGNode;
 
 /*!
  * Statistics of Andersen's analysis

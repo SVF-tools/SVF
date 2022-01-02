@@ -117,7 +117,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
         return;
 
     DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune thread local pairs\n"));
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     PointsTo nonlocalobjs;
     PointsTo worklist;
 
@@ -131,8 +131,8 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
     }
 
     /// find global pointer-to objects
-    const PAG::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
-    for (PAG::PAGEdgeSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
+    const SVFIR::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
+    for (SVFIR::PAGEdgeSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
     {
         const PAGEdge* edge = *it;
         if (edge->getEdgeKind() == PAGEdge::Addr)

@@ -108,7 +108,7 @@ public:
     // Offline constraint graph (OfflineConsG.cpp)
     static const llvm::cl::opt<bool> OCGDotGraph;
 
-    // Program Assignment Graph for pointer analysis (PAG.cpp)
+    // Program Assignment Graph for pointer analysis (SVFIR.cpp)
     static llvm::cl::opt<bool> HandBlackHole;
     static const llvm::cl::opt<bool> FirstFieldEqBase;
 

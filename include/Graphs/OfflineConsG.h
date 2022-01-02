@@ -55,7 +55,7 @@ protected:
     NodeToRepMap norToRepMap;   // for each *a construct a --> rep, i.e., mapping a node of to a rep node for online constraint solving
 
 public:
-    OfflineConsG(PAG *p) : ConstraintGraph(p),
+    OfflineConsG(SVFIR *p) : ConstraintGraph(p),
         nodeToRefMap( {}), norToRepMap({})
     {
         buildOfflineCG();

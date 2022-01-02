@@ -68,7 +68,7 @@ public:
     };
 
     /// Constructor
-    BVDataPTAImpl(PAG* pag, PointerAnalysis::PTATY type, bool alias_check = true);
+    BVDataPTAImpl(SVFIR* pag, PointerAnalysis::PTATY type, bool alias_check = true);
 
     /// Destructor
     virtual ~BVDataPTAImpl()
@@ -261,7 +261,7 @@ public:
     typedef Map<NodeID,CPtSet> PtrToCPtsMap;	 /// map a pointer to its conditional points-to set
 
     /// Constructor
-    CondPTAImpl(PAG* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
+    CondPTAImpl(SVFIR* pag, PointerAnalysis::PTATY type) : PointerAnalysis(pag, type), normalized(false)
     {
         if (type == PathS_DDA || type == Cxt_DDA)
             ptD = new MutPTDataTy();
@@ -574,7 +574,7 @@ public:
     {
         for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin(); nIter != this->getAllValidPtrs().end(); ++nIter)
         {
-            const PAGNode* node = this->getPAG()->getPAGNode(*nIter);
+            const PAGNode* node = this->getPAG()->getGNode(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node))
             {
                 if (SVFUtil::isa<DummyObjPN>(node))

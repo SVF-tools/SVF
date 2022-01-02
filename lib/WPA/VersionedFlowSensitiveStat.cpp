@@ -41,7 +41,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     clearStat();
 
-    PAG *pag = vfspta->getPAG();
+    SVFIR *pag = vfspta->getPAG();
 
     versionStat();
     ptsSizeStat();
@@ -49,7 +49,7 @@ void VersionedFlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
-    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
         PAGNode* pagNode = it->second;
@@ -194,7 +194,7 @@ void VersionedFlowSensitiveStat::ptsSizeStat()
 {
     u32_t totalValidTopLvlPointers = 0;
     u32_t totalTopLvlPtsSize = 0;
-    for (PAG::iterator it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
+    for (SVFIR::iterator it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
     {
         if (!vfspta->getPAG()->isValidTopLevelPtr(it->second)) continue;
 
