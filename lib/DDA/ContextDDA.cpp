@@ -17,7 +17,7 @@ using namespace SVFUtil;
 /*!
  * Constructor
  */
-ContextDDA::ContextDDA(PAG* _pag,  DDAClient* client)
+ContextDDA::ContextDDA(SVFIR* _pag,  DDAClient* client)
     : CondPTAImpl<ContextCond>(_pag, PointerAnalysis::Cxt_DDA),DDAVFSolver<CxtVar,CxtPtSet,CxtLocDPItem>(),
       _client(client)
 {
@@ -57,7 +57,7 @@ const CxtPtSet& ContextDDA::computeDDAPts(const CxtVar& var)
     LocDPItem::setMaxBudget(Options::CxtBudget);
 
     NodeID id = var.get_id();
-    PAGNode* node = getPAG()->getPAGNode(id);
+    PAGNode* node = getPAG()->getGNode(id);
     CxtLocDPItem dpm = getDPIm(var, getDefSVFGNode(node));
 
     // start DDA analysis
@@ -169,7 +169,7 @@ bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* c
     if(getPAG()->isIndirectCallSites(cs))
     {
         NodeID id = getPAG()->getFunPtr(cs);
-        PAGNode* node = getPAG()->getPAGNode(id);
+        PAGNode* node = getPAG()->getGNode(id);
         CxtVar funptrVar(dpm.getCondVar().get_cond(), id);
         CxtLocDPItem funptrDpm = getDPIm(funptrVar,getDefSVFGNode(node));
         PointsTo pts = getBVPointsTo(findPT(funptrDpm));
@@ -317,9 +317,9 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
     if(mem->isHeap())
     {
         if (!mem->getValue()) {
-            PAGNode *pnode = _pag->getPAGNode(getPtrNodeID(var));
+            PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
             if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pnode)){
-                assert(SVFUtil::isa<DummyObjPN>(_pag->getPAGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
+                assert(SVFUtil::isa<DummyObjPN>(_pag->getGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
             }
             else{
                 assert((SVFUtil::isa<DummyObjPN>(pnode) || SVFUtil::isa<DummyValPN>(pnode)) && "empty refVal in non-dummy object");

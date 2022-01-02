@@ -101,7 +101,7 @@ public:
     }
     //@}
 
-    /// Direct and Indirect PAG edges
+    /// Direct and Indirect SVFIR edges
     inline bool isdirectEdge(ConstraintEdge::ConstraintEdgeK kind)
     {
         return (kind == ConstraintEdge::Copy || kind == ConstraintEdge::NormalGep || kind == ConstraintEdge::VariantGep );

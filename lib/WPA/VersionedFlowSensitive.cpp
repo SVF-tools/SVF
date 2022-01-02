@@ -27,14 +27,14 @@ VersionedVar VersionedFlowSensitive::atKey(NodeID var, Version version)
     return std::make_pair(var, version);
 }
 
-VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
+VersionedFlowSensitive::VersionedFlowSensitive(SVFIR *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
     numPrelabeledNodes = numPrelabelVersions = 0;
     prelabelingTime = meldLabelingTime = versionPropTime = 0.0;
     // We'll grab vPtD in initialize.
 
-    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         if (SVFUtil::isa<ObjPN>(it->second)) equivalentObject[it->first] = it->first;
     }
@@ -744,7 +744,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 void VersionedFlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         unsigned occ = 1;
         unsigned v = pit->first;

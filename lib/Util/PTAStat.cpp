@@ -31,12 +31,12 @@
 #include "Graphs/PTACallGraph.h"
 #include "MemoryModel/PTAStat.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Util/Options.h"
 
 using namespace SVF;
 
-const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< PAG value nodes
+const char* PTAStat:: TotalAnalysisTime = "TotalTime";	///< SVFIR value nodes
 const char* PTAStat:: SCCDetectionTime = "SCCDetectTime"; ///< Total SCC detection time
 const char* PTAStat:: SCCMergeTime = "SCCMergeTime"; ///< Total SCC merge time
 
@@ -44,49 +44,49 @@ const char* PTAStat:: ProcessLoadStoreTime = "LoadStoreTime";	///< process load 
 const char* PTAStat:: ProcessCopyGepTime = "CopyGepTime";	///< process copy and gep time
 const char* PTAStat:: UpdateCallGraphTime = "UpdateCGTime";	///< process copy and gep time
 
-const char* PTAStat:: TotalNumOfPointers = "TotalPointers";	///< PAG value nodes
-const char* PTAStat:: TotalNumOfObjects = "TotalObjects";	///< Total PAG object node
-const char* PTAStat:: TotalNumOfFieldObjects = "TotalFieldObjects";	///< Total PAG field object node
+const char* PTAStat:: TotalNumOfPointers = "TotalPointers";	///< SVFIR value nodes
+const char* PTAStat:: TotalNumOfObjects = "TotalObjects";	///< Total SVFIR object node
+const char* PTAStat:: TotalNumOfFieldObjects = "TotalFieldObjects";	///< Total SVFIR field object node
 const char* PTAStat:: MaxStructSize = "MaxStructSize";	///< Max struct size (bytes)
-const char* PTAStat:: TotalNumOfEdges = "TotalPAGEdges";	///< Total PAG edge number
+const char* PTAStat:: TotalNumOfEdges = "TotalPAGEdges";	///< Total SVFIR edge number
 
 const char* PTAStat:: NumOfFunctionObjs = "FunctionObjs";	///< function numbers
-const char* PTAStat:: NumOfGlobalObjs = "GlobalObjs";	///< PAG global object node
-const char* PTAStat:: NumOfHeapObjs  = "HeapObjs";	///< PAG heap object node
-const char* PTAStat:: NumOfStackObjs = "StackObjs";	///< PAG stack object node
+const char* PTAStat:: NumOfGlobalObjs = "GlobalObjs";	///< SVFIR global object node
+const char* PTAStat:: NumOfHeapObjs  = "HeapObjs";	///< SVFIR heap object node
+const char* PTAStat:: NumOfStackObjs = "StackObjs";	///< SVFIR stack object node
 
 const char* PTAStat::NumberOfFieldInsensitiveObj = "FIObjNum";
 const char* PTAStat::NumberOfFieldSensitiveObj = "FSObjNum";
 
-const char* PTAStat:: NumOfObjsHasVarStruct = "VarStructObj";	///< PAG object node has struct (maybe nested with array)
-const char* PTAStat:: NumOfObjsHasVarArray = "VarArrayObj";	///< PAG object node has array (maybe nested with struct)
-const char* PTAStat:: NumOfObjsHasConstStruct = "ConstStructObj";	///< PAG object node has const struct (maybe nested with array)
-const char* PTAStat:: NumOfObjsHasConstArray = "ConstArrayObj";	///< PAG object node has const array (maybe nested with struct)
-const char* PTAStat:: NumOfNonPtrObjs = "NonPtrObj";	///< PAG object node which is non pointer type object (do not have pts)
-const char* PTAStat:: NumOfConstantObjs = "ConstantObj";	///< PAG object node which is purely scalar
+const char* PTAStat:: NumOfObjsHasVarStruct = "VarStructObj";	///< SVFIR object node has struct (maybe nested with array)
+const char* PTAStat:: NumOfObjsHasVarArray = "VarArrayObj";	///< SVFIR object node has array (maybe nested with struct)
+const char* PTAStat:: NumOfObjsHasConstStruct = "ConstStructObj";	///< SVFIR object node has const struct (maybe nested with array)
+const char* PTAStat:: NumOfObjsHasConstArray = "ConstArrayObj";	///< SVFIR object node has const array (maybe nested with struct)
+const char* PTAStat:: NumOfNonPtrObjs = "NonPtrObj";	///< SVFIR object node which is non pointer type object (do not have pts)
+const char* PTAStat:: NumOfConstantObjs = "ConstantObj";	///< SVFIR object node which is purely scalar
 
-const char* PTAStat:: NumOfAddrs = "AddrsNum";		///< PAG addr edge
-const char* PTAStat:: NumOfLoads = "LoadsNum";		///< PAG load edge
-const char* PTAStat:: NumOfStores = "StoresNum";		///< PAG store edge
-const char* PTAStat:: NumOfCopys = "CopysNum";		///< PAG copy edge
-const char* PTAStat:: NumOfGeps = "GepsNum";		///< PAG gep edge
-const char* PTAStat:: NumOfCalls = "CallsNum";		///< PAG call edge
-const char* PTAStat:: NumOfReturns = "ReturnsNum";	///< PAG return edge
+const char* PTAStat:: NumOfAddrs = "AddrsNum";		///< SVFIR addr edge
+const char* PTAStat:: NumOfLoads = "LoadsNum";		///< SVFIR load edge
+const char* PTAStat:: NumOfStores = "StoresNum";		///< SVFIR store edge
+const char* PTAStat:: NumOfCopys = "CopysNum";		///< SVFIR copy edge
+const char* PTAStat:: NumOfGeps = "GepsNum";		///< SVFIR gep edge
+const char* PTAStat:: NumOfCalls = "CallsNum";		///< SVFIR call edge
+const char* PTAStat:: NumOfReturns = "ReturnsNum";	///< SVFIR return edge
 
-const char* PTAStat:: NumOfProcessedAddrs = "AddrProcessed";		///< PAG addr processed edge
-const char* PTAStat:: NumOfProcessedLoads = "LoadProcessed";		///< PAG load processed edge
-const char* PTAStat:: NumOfProcessedStores = "StoreProcessed";		///< PAG store processed edge
-const char* PTAStat:: NumOfProcessedCopys = "CopyProcessed";		///< PAG copy processed edge
-const char* PTAStat:: NumOfProcessedGeps = "GepProcessed";		///< PAG gep processed edge
+const char* PTAStat:: NumOfProcessedAddrs = "AddrProcessed";		///< SVFIR addr processed edge
+const char* PTAStat:: NumOfProcessedLoads = "LoadProcessed";		///< SVFIR load processed edge
+const char* PTAStat:: NumOfProcessedStores = "StoreProcessed";		///< SVFIR store processed edge
+const char* PTAStat:: NumOfProcessedCopys = "CopyProcessed";		///< SVFIR copy processed edge
+const char* PTAStat:: NumOfProcessedGeps = "GepProcessed";		///< SVFIR gep processed edge
 
 const char* PTAStat::NumOfSfr = "NumOfSFRs";                    ///< number of field representatives
 const char* PTAStat::NumOfFieldExpand = "NumOfFieldExpand";
 
-const char* PTAStat:: NumOfPointers = "Pointers";	///< PAG value node, each of them maps to a llvm value
-const char* PTAStat:: NumOfGepFieldPointers = "DYFieldPtrs";	///< PAG gep value node (field value, dynamically created dummy node)
+const char* PTAStat:: NumOfPointers = "Pointers";	///< SVFIR value node, each of them maps to a llvm value
+const char* PTAStat:: NumOfGepFieldPointers = "DYFieldPtrs";	///< SVFIR gep value node (field value, dynamically created dummy node)
 
-const char* PTAStat:: NumOfMemObjects = "MemObjects";	///< PAG object node, each of them maps to a llvm value
-const char* PTAStat:: NumOfGepFieldObjects = "DYFieldObjs";	///< PAG gep object node (field obj, dynamically created dummy node)
+const char* PTAStat:: NumOfMemObjects = "MemObjects";	///< SVFIR object node, each of them maps to a llvm value
+const char* PTAStat:: NumOfGepFieldObjects = "DYFieldObjs";	///< SVFIR gep object node (field obj, dynamically created dummy node)
 
 const char* PTAStat:: AveragePointsToSetSize = "AvgPtsSetSize";		///< Average Points-to set size
 const char* PTAStat:: AverageTopLevPointsToSetSize = "AvgTopLvlPtsSize";		///< Average Points-to set size of top level pointers
@@ -134,7 +134,7 @@ void PTAStat::performStat()
 
     callgraphStat();
 
-    PAG* pag = PAG::getPAG();
+    SVFIR* pag = SVFIR::getPAG();
     u32_t numOfFunction = 0;
     u32_t numOfGlobal = 0;
     u32_t numOfStack = 0;
@@ -148,7 +148,7 @@ void PTAStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> memObjSet;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
+    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
         if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node))
@@ -198,7 +198,7 @@ void PTAStat::performStat()
     generalNumMap[TotalNumOfFieldObjects] = pag->getFieldObjNodeNum();
     generalNumMap[MaxStructSize] = SymbolTableInfo::SymbolInfo()->getMaxStructSize();
     generalNumMap[TotalNumOfEdges] = pag->getPAGEdgeNum();
-    generalNumMap["TotalPTAPAGEdges"] = pag->totalPTAPAGEdge;
+    generalNumMap["TotalPTAPAGEdges"] = pag->getPTAPAGEdgeNum();
     generalNumMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
     generalNumMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 

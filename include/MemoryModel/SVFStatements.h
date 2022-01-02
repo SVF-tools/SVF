@@ -41,14 +41,14 @@ namespace SVF
 class SVFVar;
 
 /*
- * PAG edge between nodes
+ * SVFIR edge between nodes
  */
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
 
 public:
-    /// Thirteen kinds of PAG edges
+    /// Thirteen kinds of SVFIR edges
     /// Gep represents offset edge for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK

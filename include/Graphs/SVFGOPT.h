@@ -259,7 +259,7 @@ private:
     inline void resetDef(const PAGNode* pagNode, const SVFGNode* node)
     {
         PAGNodeToDefMapTy::iterator it = PAGNodeToDefMap.find(pagNode);
-        assert(it != PAGNodeToDefMap.end() && "a PAG node doesn't have definition before");
+        assert(it != PAGNodeToDefMap.end() && "a SVFIR node doesn't have definition before");
         PAGNodeToDefMap[pagNode] = node->getId();
     }
 
@@ -290,11 +290,11 @@ private:
     //@{
     inline bool actualInOfIndCS(const ActualINSVFGNode* ai) const
     {
-        return (PAG::getPAG()->isIndirectCallSites(ai->getCallSite()));
+        return (SVFIR::getPAG()->isIndirectCallSites(ai->getCallSite()));
     }
     inline bool actualOutOfIndCS(const ActualOUTSVFGNode* ao) const
     {
-        return (PAG::getPAG()->isIndirectCallSites(ao->getCallSite()));
+        return (SVFIR::getPAG()->isIndirectCallSites(ao->getCallSite()));
     }
     //@}
 

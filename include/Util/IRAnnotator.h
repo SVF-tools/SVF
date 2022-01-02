@@ -8,7 +8,7 @@
 #ifndef IRANNOTATOR_H_
 #define IRANNOTATOR_H_
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/SVFUtil.h"
 #include "llvm/IR/Metadata.h"
@@ -28,7 +28,7 @@ public:
     {}
     ~IRAnnotator() {}
 
-    void processAndersenResults(PAG *pag, BVDataPTAImpl *ptsTo, bool writeFlag)
+    void processAndersenResults(SVFIR *pag, BVDataPTAImpl *ptsTo, bool writeFlag)
     {
         this->ptsTo = ptsTo;
         mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
@@ -36,7 +36,7 @@ public:
         // Add a named metadata node used to check whether or not 
         // this IR has been annotated with Andersen information
         if (writeFlag)
-            mainModule->getOrInsertNamedMetadata("PAG-Annotated");
+            mainModule->getOrInsertNamedMetadata("SVFIR-Annotated");
 
         for (auto it = pag->begin(); it != pag->end(); ++it)
         {
@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    // Write the PAGgepNode to the IR such that metadata name is the PAG node id and the operands
+    // Write the PAGgepNode to the IR such that metadata name is the SVFIR node id and the operands
     // are its base node's id and location offset
     void writePAGgepNode(SVF::NodeID nodeId, GepObjPN* gepNode)
     {
@@ -77,9 +77,9 @@ private:
         mainModule->getOrInsertNamedMetadata(label)->addOperand(metadata);
     }
 
-    // Reads the PAGGepNodes in the annotated IR and creates a new PAG Node based on the
+    // Reads the PAGGepNodes in the annotated IR and creates a new SVFIR Node based on the
     // data contained in the operands of the metadata node
-    void readPAGgepNodes(PAG *pag)
+    void readPAGgepNodes(SVFIR *pag)
     {
         for (auto it = mainModule->named_metadata_begin(); it != mainModule->named_metadata_end(); ++it)
         {

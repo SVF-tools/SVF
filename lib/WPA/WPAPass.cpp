@@ -44,7 +44,7 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 #include "WPA/Steensgaard.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 
@@ -97,9 +97,9 @@ bool WPAPass::runOnModule(Module& module)
  */
 void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
-	/// Build PAG
-	PAGBuilder builder;
-	PAG* pag = builder.build(svfModule);
+	/// Build SVFIR
+	SVFIRBuilder builder;
+	SVFIR* pag = builder.build(svfModule);
     /// Initialize pointer analysis.
     switch (kind)
     {
@@ -170,12 +170,12 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 
 void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 {
-    PAG* pag = pta->getPAG();
-    for (PAG::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
+    SVFIR* pag = pta->getPAG();
+    for (SVFIR::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
     {
         PAGNode* node1 = lit->second;
         PAGNode* node2 = node1;
-        for (PAG::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
+        for (SVFIR::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
         {
             node2 = rit->second;
             if(node1==node2)
@@ -201,12 +201,12 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2)
 
     AliasResult result = llvm::AliasResult::MayAlias;
 
-    PAG* pag = _pta->getPAG();
+    SVFIR* pag = _pta->getPAG();
 
     /// TODO: When this method is invoked during compiler optimizations, the IR
     ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding PAG node. In this case, we only check alias
-    ///       between two Values if they both have PAG nodes. Otherwise, MayAlias
+    ///       find corresponding SVFIR node. In this case, we only check alias
+    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
     ///       will be returned.
     if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
     {

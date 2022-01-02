@@ -40,14 +40,14 @@ namespace SVF
 
 class SVFVar;
 /*
- * PAG node
+ * SVFIR node
  */
 typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
 
 public:
-    /// Nine kinds of PAG nodes
+    /// Nine kinds of SVFIR nodes
     /// ValNode: llvm pointer value
     /// ObjNode: memory object
     /// RetNode: unique return node
@@ -75,7 +75,7 @@ public:
 
 
 protected:
-    const Value* value; ///< value of this PAG node
+    const Value* value; ///< value of this SVFIR node
     SVFStmt::PAGKindToEdgeSetMapTy InEdgeKindToSetMap;
     SVFStmt::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
     bool isTLPointer;	/// top-level pointer
@@ -136,7 +136,7 @@ public:
             return false;
     }
 
-    /// Whether this is an isoloated node on the PAG graph
+    /// Whether this is an isoloated node on the SVFIR graph
     bool isIsolatedNode() const;
 
     /// Get name of the LLVM value
@@ -157,19 +157,19 @@ public:
         return nullptr;
     }
 
-    /// Get incoming PAG edges
+    /// Get incoming SVFIR edges
     inline SVFStmt::PAGEdgeSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
     {
         return InEdgeKindToSetMap[kind];
     }
 
-    /// Get outgoing PAG edges
+    /// Get outgoing SVFIR edges
     inline SVFStmt::PAGEdgeSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
 
-    /// Has incoming PAG edges
+    /// Has incoming SVFIR edges
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
@@ -206,7 +206,7 @@ public:
         return it->second.end();
     }
 
-    /// Has outgoing PAG edges
+    /// Has outgoing SVFIR edges
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
@@ -250,9 +250,6 @@ public:
     }
 
     virtual const std::string toString() const;
-
-    /// Get shape and/or color of node for .dot display.
-    virtual const std::string getNodeAttrForDotDisplay() const;
 
     /// Dump to console for debugging
     void dump() const;

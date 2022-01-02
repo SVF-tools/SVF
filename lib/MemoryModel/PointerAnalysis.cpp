@@ -55,7 +55,7 @@ using namespace cppUtil;
 
 
 CommonCHGraph* PointerAnalysis::chgraph = nullptr;
-PAG* PointerAnalysis::pag = nullptr;
+SVFIR* PointerAnalysis::pag = nullptr;
 
 const std::string PointerAnalysis::aliasTestMayAlias            = "MAYALIAS";
 const std::string PointerAnalysis::aliasTestMayAliasMangled     = "_Z8MAYALIASPvS_";
@@ -73,7 +73,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
 /*!
  * Constructor
  */
-PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
+PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
 {
     pag = p;
@@ -89,7 +89,7 @@ PointerAnalysis::PointerAnalysis(PAG* p, PTATY ty, bool alias_check) :
 PointerAnalysis::~PointerAnalysis()
 {
     destroy();
-    // do not delete the PAG for now
+    // do not delete the SVFIR for now
     //delete pag;
 }
 
@@ -111,7 +111,7 @@ void PointerAnalysis::destroy()
  */
 void PointerAnalysis::initialize()
 {
-	assert(pag && "PAG has not been built!");
+	assert(pag && "SVFIR has not been built!");
 	if (chgraph == nullptr) {
 		if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
 			DCHGraph *dchg = new DCHGraph(pag->getModule());
@@ -127,7 +127,7 @@ void PointerAnalysis::initialize()
 
     svfMod = pag->getModule();
 
-    // dump PAG
+    // dump SVFIR
     if (dumpGraph())
         pag->dump("pag_initial");
 
@@ -135,7 +135,7 @@ void PointerAnalysis::initialize()
     if (Options::DumpICFG)
     	pag->getICFG()->dump("icfg_initial");
 
-    // print to command line of the PAG graph
+    // print to command line of the SVFIR graph
     if (Options::PAGPrint)
         pag->print();
 
@@ -183,7 +183,7 @@ bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
  */
 void PointerAnalysis::resetObjFieldSensitive()
 {
-    for (PAG::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
+    for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
         if(ObjPN* node = SVFUtil::dyn_cast<ObjPN>(nIter->second))
             const_cast<MemObj*>(node->getMemObj())->setFieldSensitive();
@@ -221,8 +221,8 @@ void PointerAnalysis::finalize()
     /// Print statistics
     dumpStat();
 
-    PAG* pag = PAG::getPAG();
-    // dump PAG
+    SVFIR* pag = SVFIR::getPAG();
+    // dump SVFIR
     if (dumpGraph())
         pag->dump("pag_final");
 
@@ -291,7 +291,7 @@ void PointerAnalysis::dumpAllTypes()
     for (OrderedNodeSet::iterator nIter = this->getAllValidPtrs().begin();
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
-        const PAGNode* node = getPAG()->getPAGNode(*nIter);
+        const PAGNode* node = getPAG()->getGNode(*nIter);
         if (SVFUtil::isa<DummyObjPN>(node) || SVFUtil::isa<DummyValPN>(node))
             continue;
 
@@ -312,7 +312,7 @@ void PointerAnalysis::dumpAllTypes()
 void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 {
 
-    const PAGNode* node = pag->getPAGNode(ptr);
+    const PAGNode* node = pag->getGNode(ptr);
     /// print the points-to set of node which has the maximum pts size.
     if (SVFUtil::isa<DummyObjPN> (node))
     {
@@ -343,12 +343,12 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 
     for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
     {
-        const PAGNode* node = pag->getPAGNode(*it);
+        const PAGNode* node = pag->getGNode(*it);
         if(SVFUtil::isa<ObjPN>(node) == false)
             continue;
         NodeID ptd = node->getId();
         outs() << "!!Target NodeID " << ptd << "\t [";
-        const PAGNode* pagNode = pag->getPAGNode(ptd);
+        const PAGNode* pagNode = pag->getGNode(ptd);
         if (SVFUtil::isa<DummyValPN>(node))
             outs() << "DummyVal\n";
         else if (SVFUtil::isa<DummyObjPN>(node))
@@ -447,7 +447,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             return;
         }
 
-        if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getPAGNode(*ii)))
+        if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
         {
             const MemObj* obj = pag->getObject(objPN);
 
@@ -509,7 +509,7 @@ void PointerAnalysis::getVFnsFromPts(const CallBlockNode* cs, const PointsTo &ta
         const VTableSet &chaVtbls = chgraph->getCSVtblsBasedonCHA(SVFUtil::getLLVMCallSite(cs->getCallSite()));
         for (PointsTo::iterator it = target.begin(), eit = target.end(); it != eit; ++it)
         {
-            const PAGNode *ptdnode = pag->getPAGNode(*it);
+            const PAGNode *ptdnode = pag->getGNode(*it);
             if (ptdnode->hasValue())
             {
                 if (const GlobalValue *vtbl = SVFUtil::dyn_cast<GlobalValue>(ptdnode->getValue()))

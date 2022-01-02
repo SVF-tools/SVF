@@ -241,7 +241,7 @@ public:
         return BlackHole;
     }
 
-    /// Can only be invoked by PAG::addDummyNode() when creaing PAG from file.
+    /// Can only be invoked by SVFIR::addDummyNode() when creaing SVFIR from file.
     const MemObj* createDummyObj(SymID symId, const Type* type);
     // @}
 

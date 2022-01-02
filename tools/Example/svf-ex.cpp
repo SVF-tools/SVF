@@ -29,7 +29,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Graphs/SVFG.h"
 #include "WPA/Andersen.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "Util/Options.h"
 
 using namespace llvm;
@@ -62,7 +62,7 @@ std::string printPts(PointerAnalysis* pta, Value* val)
             ii != ie; ii++)
     {
         rawstr << " " << *ii << " ";
-        PAGNode* targetObj = pta->getPAG()->getPAGNode(*ii);
+        PAGNode* targetObj = pta->getPAG()->getGNode(*ii);
         if(targetObj->hasValue())
         {
             rawstr << "(" <<*targetObj->getValue() << ")\t ";
@@ -107,9 +107,9 @@ void traverseOnICFG(ICFG* icfg, const Instruction* inst)
  */
 void traverseOnVFG(const SVFG* vfg, Value* val)
 {
-    PAG* pag = PAG::getPAG();
+    SVFIR* pag = SVFIR::getPAG();
 
-    PAGNode* pNode = pag->getPAGNode(pag->getValueNode(val));
+    PAGNode* pNode = pag->getGNode(pag->getValueNode(val));
     const VFGNode* vNode = vfg->getDefSVFGNode(pNode);
     FIFOWorkList<const VFGNode*> worklist;
     Set<const VFGNode*> visited;
@@ -160,9 +160,9 @@ int main(int argc, char ** argv)
     SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
     svfModule->buildSymbolTableInfo();
 
-    /// Build Program Assignment Graph (PAG)
-    PAGBuilder builder;
-    PAG* pag = builder.build(svfModule);
+    /// Build Program Assignment Graph (SVFIR)
+    SVFIRBuilder builder;
+    SVFIR* pag = builder.build(svfModule);
 
     /// Create Andersen's pointer analysis
     Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -196,7 +196,7 @@ int main(int argc, char ** argv)
     delete vfg;
     delete svfg;
     AndersenWaveDiff::releaseAndersenWaveDiff();
-    PAG::releasePAG();
+    SVFIR::releasePAG();
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
     SVF::LLVMModuleSet::releaseLLVMModuleSet();

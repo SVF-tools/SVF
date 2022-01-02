@@ -31,7 +31,7 @@
 #include "SVF-FE/LLVMUtil.h"
 #include "Util/SVFModule.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Graphs/PTACallGraph.h"
 
 using namespace SVF;
@@ -443,12 +443,12 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
 namespace llvm
 {
 template<>
-struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
+struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
 {
 
     typedef ICFGNode NodeType;
     DOTGraphTraits(bool isSimple = false) :
-        DOTGraphTraits<PAG*>(isSimple)
+        DOTGraphTraits<SVFIR*>(isSimple)
     {
     }
 
@@ -472,11 +472,11 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
+            SVFIR::PAGEdgeList&  edges = SVFIR::getPAG()->getInstPTAPAGEdgeList(bNode);
             if (edges.empty()) {
                 rawstr << value2String(bNode->getInst()) << " \t";
             } else {
-                for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                for (SVFIR::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
                 {
                     const PAGEdge* edge = *it;
                     rawstr << edge->toString();
@@ -502,8 +502,8 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<PAG*>
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(glob);
-            for (PAG::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+            SVFIR::PAGEdgeList&  edges = SVFIR::getPAG()->getInstPTAPAGEdgeList(glob);
+            for (SVFIR::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
                 rawstr << edge->toString();

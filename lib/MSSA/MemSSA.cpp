@@ -70,7 +70,7 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     timeOfGeneratingMemRegions += (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
-PAG* MemSSA::getPAG()
+SVFIR* MemSSA::getPAG()
 {
     return pta->getPAG();
 }
@@ -126,7 +126,7 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
 void MemSSA::createMUCHI(const SVFFunction& fun)
 {
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
 
     DBOUT(DMSSA,
           outs() << "\t creating mu chi for function " << fun.getName()
@@ -279,7 +279,7 @@ void MemSSA::SSARename(const SVFFunction& fun)
 void MemSSA::SSARenameBB(const BasicBlock& bb)
 {
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     // record which mem region needs to pop stack
     MRVector memRegs;
 
@@ -594,7 +594,7 @@ u32_t MemSSA::getBBPhiNum() const
  */
 void MemSSA::dumpMSSA(raw_ostream& Out)
 {
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit)

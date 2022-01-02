@@ -28,7 +28,7 @@ class ContextDDA : public CondPTAImpl<ContextCond>, public DDAVFSolver<CxtVar,Cx
 
 public:
     /// Constructor
-    ContextDDA(PAG* _pag, DDAClient* client);
+    ContextDDA(SVFIR* _pag, DDAClient* client);
 
     /// Destructor
     virtual ~ContextDDA();

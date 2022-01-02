@@ -33,7 +33,7 @@ public:
     static const MDNode *getRawCTirMetadata(const SVFGNode *);
 
     /// Constructor
-    FlowSensitiveTBHC(PAG* _pag, PTATY type = FSTBHC_WPA);
+    FlowSensitiveTBHC(SVFIR* _pag, PTATY type = FSTBHC_WPA);
 
     /// Destructor
     virtual ~FlowSensitiveTBHC() { };

@@ -31,7 +31,7 @@
 #include "Util/Options.h"
 #include "SABER/SrcSnkDDA.h"
 #include "Graphs/SVFGStat.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 #include "Util/Options.h"
 #include "WPA/Andersen.h"
 
@@ -41,8 +41,8 @@ using namespace SVFUtil;
 /// Initialize analysis
 void SrcSnkDDA::initialize(SVFModule* module)
 {
-	PAGBuilder builder;
-	PAG* pag = builder.build(module);
+	SVFIRBuilder builder;
+	SVFIR* pag = builder.build(module);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     if(Options::SABERFULLSVFG)

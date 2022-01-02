@@ -1,4 +1,4 @@
-//===- PAGBuilder.h -- Building PAG-------------------------------------------//
+//===- SVFIRBuilder.h -- Building SVFIR-------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PAGBuilder.h
+ * SVFIRBuilder.h
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -30,7 +30,7 @@
 #ifndef PAGBUILDER_H_
 #define PAGBUILDER_H_
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Util/ExtAPI.h"
 #include "SVF-FE/ICFGBuilder.h"
 
@@ -39,32 +39,32 @@ namespace SVF
 
 class SVFModule;
 /*!
- *  PAG Builder
+ *  SVFIR Builder to create SVF variables and statements and PAG
  */
-class PAGBuilder: public llvm::InstVisitor<PAGBuilder>
+class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 {
 
 private:
-    PAG* pag;
+    SVFIR* pag;
     SVFModule* svfMod;
-    const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
-    const Value* curVal;	///< Current Value during PAG construction when visiting the module
+    const BasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
+    const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
-    PAGBuilder(): pag(PAG::getPAG()), svfMod(nullptr), curBB(nullptr),curVal(nullptr)
+    SVFIRBuilder(): pag(SVFIR::getPAG()), svfMod(nullptr), curBB(nullptr),curVal(nullptr)
     {
     }
     /// Destructor
-    virtual ~PAGBuilder()
+    virtual ~SVFIRBuilder()
     {
     }
 
-    /// Start building PAG here
-    virtual PAG* build(SVFModule* svfModule);
+    /// Start building SVFIR here
+    virtual SVFIR* build(SVFModule* svfModule);
 
-    /// Return PAG
-    PAG* getPAG() const
+    /// Return SVFIR
+    SVFIR* getPAG() const
     {
         return pag;
     }
@@ -76,7 +76,7 @@ public:
                  Size_t offset = 0, Instruction* cs = nullptr);
     // @}
 
-    /// Sanity check for PAG
+    /// Sanity check for SVFIR
     void sanityCheck();
 
     /// Get different kinds of node
@@ -384,6 +384,8 @@ public:
     //@}
 
 };
+
+typedef SVFIRBuilder PAGBuilder;
 
 } // End namespace SVF
 
