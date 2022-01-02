@@ -1,4 +1,4 @@
-//===- PAGEdge.h -- PAG edge class-------------------------------------------//
+//===- SVFStatements.h -- SVF statements-------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -22,7 +22,7 @@
 
 
 /*
- * PAGEdge.h
+ * SVFStatements.h
  *
  *  Created on: Nov 10, 2013
  *      Author: Yulei Sui
@@ -38,13 +38,13 @@
 namespace SVF
 {
 
-class PAGNode;
+class SVFVar;
 
 /*
  * PAG edge between nodes
  */
-typedef GenericEdge<PAGNode> GenericPAGEdgeTy;
-class PAGEdge : public GenericPAGEdgeTy
+typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
+class SVFStmt : public GenericPAGEdgeTy
 {
 
 public:
@@ -65,33 +65,33 @@ public:
     static Size_t totalEdgeNum;		///< Total edge number
 
     /// Constructor
-    PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k);
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k);
     /// Destructor
-    ~PAGEdge()
+    ~SVFStmt()
     {
     }
 
     /// ClassOf
     //@{
-    static inline bool classof(const PAGEdge*)
+    static inline bool classof(const SVFStmt*)
     {
         return true;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Addr ||
-               edge->getEdgeKind() == PAGEdge::Copy ||
-               edge->getEdgeKind() == PAGEdge::Store ||
-               edge->getEdgeKind() == PAGEdge::Load ||
-               edge->getEdgeKind() == PAGEdge::Call ||
-               edge->getEdgeKind() == PAGEdge::Ret ||
-               edge->getEdgeKind() == PAGEdge::NormalGep ||
-               edge->getEdgeKind() == PAGEdge::VariantGep ||
-               edge->getEdgeKind() == PAGEdge::ThreadFork ||
-               edge->getEdgeKind() == PAGEdge::ThreadJoin ||
-               edge->getEdgeKind() == PAGEdge::Cmp ||
-               edge->getEdgeKind() == PAGEdge::BinaryOp ||
-               edge->getEdgeKind() == PAGEdge::UnaryOp;
+        return edge->getEdgeKind() == SVFStmt::Addr ||
+               edge->getEdgeKind() == SVFStmt::Copy ||
+               edge->getEdgeKind() == SVFStmt::Store ||
+               edge->getEdgeKind() == SVFStmt::Load ||
+               edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::Ret ||
+               edge->getEdgeKind() == SVFStmt::NormalGep ||
+               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork ||
+               edge->getEdgeKind() == SVFStmt::ThreadJoin ||
+               edge->getEdgeKind() == SVFStmt::Cmp ||
+               edge->getEdgeKind() == SVFStmt::BinaryOp ||
+               edge->getEdgeKind() == SVFStmt::UnaryOp;
     }
     ///@}
 
@@ -157,16 +157,16 @@ public:
     virtual const std::string toString() const;
 
     //@}
-    /// Overloading operator << for dumping PAGNode value
+    /// Overloading operator << for dumping SVFVar value
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const PAGEdge &edge)
+    friend raw_ostream& operator<< (raw_ostream &o, const SVFStmt &edge)
     {
         o << edge.toString();
         return o;
     }
     //@}
 
-    typedef GenericNode<PAGNode,PAGEdge>::GEdgeSetTy PAGEdgeSetTy;
+    typedef GenericNode<SVFVar,SVFStmt>::GEdgeSetTy PAGEdgeSetTy;
     typedef Map<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
     typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
 
@@ -182,7 +182,7 @@ private:
 /*!
  * Copy edge
  */
-class AddrPE: public PAGEdge
+class AddrPE: public SVFStmt
 {
 private:
     AddrPE();                      ///< place holder
@@ -195,18 +195,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Addr;
+        return edge->getEdgeKind() == SVFStmt::Addr;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Addr;
+        return edge->getEdgeKind() == SVFStmt::Addr;
     }
     //@}
 
     /// constructor
-    AddrPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Addr)
+    AddrPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Addr)
     {
     }
 
@@ -217,7 +217,7 @@ public:
 /*!
  * Copy edge
  */
-class CopyPE: public PAGEdge
+class CopyPE: public SVFStmt
 {
 private:
     CopyPE();                      ///< place holder
@@ -230,18 +230,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Copy;
+        return edge->getEdgeKind() == SVFStmt::Copy;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Copy;
+        return edge->getEdgeKind() == SVFStmt::Copy;
     }
     //@}
 
     /// constructor
-    CopyPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Copy)
+    CopyPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Copy)
     {
     }
 
@@ -252,7 +252,7 @@ public:
 /*!
  * Compare instruction edge
  */
-class CmpPE: public PAGEdge
+class CmpPE: public SVFStmt
 {
 private:
     CmpPE();                      ///< place holder
@@ -265,18 +265,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Cmp;
+        return edge->getEdgeKind() == SVFStmt::Cmp;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Cmp;
+        return edge->getEdgeKind() == SVFStmt::Cmp;
     }
     //@}
 
     /// constructor
-    CmpPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Cmp)
+    CmpPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Cmp)
     {
     }
 
@@ -287,7 +287,7 @@ public:
 /*!
  * Binary instruction edge
  */
-class BinaryOPPE: public PAGEdge
+class BinaryOPPE: public SVFStmt
 {
 private:
     BinaryOPPE();                      ///< place holder
@@ -300,18 +300,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::BinaryOp;
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::BinaryOp;
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
     }
     //@}
 
     /// constructor
-    BinaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::BinaryOp)
+    BinaryOPPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::BinaryOp)
     {
     }
 
@@ -321,7 +321,7 @@ public:
 /*!
  * Unary instruction edge
  */
-class UnaryOPPE: public PAGEdge
+class UnaryOPPE: public SVFStmt
 {
 private:
     UnaryOPPE();                      ///< place holder
@@ -334,18 +334,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::UnaryOp;
+        return edge->getEdgeKind() == SVFStmt::UnaryOp;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::UnaryOp;
+        return edge->getEdgeKind() == SVFStmt::UnaryOp;
     }
     //@}
 
     /// constructor
-    UnaryOPPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::UnaryOp)
+    UnaryOPPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::UnaryOp)
     {
     }
 
@@ -356,7 +356,7 @@ public:
 /*!
  * Store edge
  */
-class StorePE: public PAGEdge
+class StorePE: public SVFStmt
 {
 private:
     StorePE();                      ///< place holder
@@ -370,19 +370,19 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Store;
+        return edge->getEdgeKind() == SVFStmt::Store;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Store;
+        return edge->getEdgeKind() == SVFStmt::Store;
     }
     //@}
 
     /// constructor
-    StorePE(PAGNode* s, PAGNode* d, const IntraBlockNode* st) :
-        PAGEdge(s, d, makeEdgeFlagWithStoreInst(PAGEdge::Store, st))
+    StorePE(SVFVar* s, SVFVar* d, const IntraBlockNode* st) :
+        SVFStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
     {
     }
 
@@ -393,7 +393,7 @@ public:
 /*!
  * Load edge
  */
-class LoadPE: public PAGEdge
+class LoadPE: public SVFStmt
 {
 private:
     LoadPE();                      ///< place holder
@@ -407,18 +407,18 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Load;
+        return edge->getEdgeKind() == SVFStmt::Load;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Load;
+        return edge->getEdgeKind() == SVFStmt::Load;
     }
     //@}
 
     /// constructor
-    LoadPE(PAGNode* s, PAGNode* d) : PAGEdge(s,d,PAGEdge::Load)
+    LoadPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Load)
     {
     }
 
@@ -429,7 +429,7 @@ public:
 /*!
  * Gep edge
  */
-class GepPE: public PAGEdge
+class GepPE: public SVFStmt
 {
 private:
     GepPE();                      ///< place holder
@@ -443,21 +443,21 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return 	edge->getEdgeKind() == PAGEdge::NormalGep ||
-                edge->getEdgeKind() == PAGEdge::VariantGep;
+        return 	edge->getEdgeKind() == SVFStmt::NormalGep ||
+                edge->getEdgeKind() == SVFStmt::VariantGep;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return	edge->getEdgeKind() == PAGEdge::NormalGep ||
-                edge->getEdgeKind() == PAGEdge::VariantGep;
+        return	edge->getEdgeKind() == SVFStmt::NormalGep ||
+                edge->getEdgeKind() == SVFStmt::VariantGep;
     }
     //@}
 
 protected:
     /// constructor
-    GepPE(PAGNode* s, PAGNode* d, PEDGEK k) : PAGEdge(s,d,k)
+    GepPE(SVFVar* s, SVFVar* d, PEDGEK k) : SVFStmt(s,d,k)
     {
 
     }
@@ -487,20 +487,20 @@ public:
     }
     static inline bool classof(const GepPE *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::NormalGep;
+        return edge->getEdgeKind() == SVFStmt::NormalGep;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::NormalGep;
+        return edge->getEdgeKind() == SVFStmt::NormalGep;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::NormalGep;
+        return edge->getEdgeKind() == SVFStmt::NormalGep;
     }
     //@}
 
     /// constructor
-    NormalGepPE(PAGNode* s, PAGNode* d, const LocationSet& l) : GepPE(s,d,PAGEdge::NormalGep), ls(l)
+    NormalGepPE(SVFVar* s, SVFVar* d, const LocationSet& l) : GepPE(s,d,SVFStmt::NormalGep), ls(l)
     {}
 
     /// offset of the gep edge
@@ -535,20 +535,20 @@ public:
     }
     static inline bool classof(const GepPE *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::VariantGep;
+        return edge->getEdgeKind() == SVFStmt::VariantGep;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::VariantGep;
+        return edge->getEdgeKind() == SVFStmt::VariantGep;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::VariantGep;
+        return edge->getEdgeKind() == SVFStmt::VariantGep;
     }
     //@}
 
     /// constructor
-    VariantGepPE(PAGNode* s, PAGNode* d) : GepPE(s,d,PAGEdge::VariantGep) {}
+    VariantGepPE(SVFVar* s, SVFVar* d) : GepPE(s,d,SVFStmt::VariantGep) {}
 
     virtual const std::string toString() const;
 
@@ -558,7 +558,7 @@ public:
 /*!
  * Call edge
  */
-class CallPE: public PAGEdge
+class CallPE: public SVFStmt
 {
 private:
     CallPE();                      ///< place holder
@@ -573,21 +573,21 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call
-        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
+        return edge->getEdgeKind() == SVFStmt::Call
+        	|| edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Call
-        	|| edge->getEdgeKind() == PAGEdge::ThreadFork;
+        return edge->getEdgeKind() == SVFStmt::Call
+        	|| edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     //@}
 
     /// constructor
-    CallPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Call) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+    CallPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Call) :
+        SVFStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -610,7 +610,7 @@ public:
 /*!
  * Return edge
  */
-class RetPE: public PAGEdge
+class RetPE: public SVFStmt
 {
 private:
     RetPE();                      ///< place holder
@@ -625,21 +625,21 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret
-			|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
+        return edge->getEdgeKind() == SVFStmt::Ret
+			|| edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::Ret
-    		|| edge->getEdgeKind() == PAGEdge::ThreadJoin;
+        return edge->getEdgeKind() == SVFStmt::Ret
+    		|| edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     //@}
 
     /// constructor
-    RetPE(PAGNode* s, PAGNode* d, const CallBlockNode* i, GEdgeKind k = PAGEdge::Ret) :
-        PAGEdge(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+    RetPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Ret) :
+        SVFStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -676,19 +676,19 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::ThreadFork;
+        return edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::ThreadFork;
+        return edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     //@}
 
     /// constructor
-    TDForkPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        CallPE(s,d,i,PAGEdge::ThreadFork)
+    TDForkPE(SVFVar* s, SVFVar* d, const CallBlockNode* i) :
+        CallPE(s,d,i,SVFStmt::ThreadFork)
     {
     }
 
@@ -714,19 +714,19 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGEdge *edge)
+    static inline bool classof(const SVFStmt *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::ThreadJoin;
+        return edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return edge->getEdgeKind() == PAGEdge::ThreadJoin;
+        return edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     //@}
 
     /// Constructor
-    TDJoinPE(PAGNode* s, PAGNode* d, const CallBlockNode* i) :
-        RetPE(s,d,i,PAGEdge::ThreadJoin)
+    TDJoinPE(SVFVar* s, SVFVar* d, const CallBlockNode* i) :
+        RetPE(s,d,i,SVFStmt::ThreadJoin)
     {
     }
 

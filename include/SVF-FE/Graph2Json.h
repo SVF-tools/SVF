@@ -2,8 +2,6 @@
 #define INCLUDE_SVF_FE_GRAPH2JSON_H_
 
 #include "Graphs/PAG.h"
-#include "Graphs/PAGEdge.h"
-#include "Graphs/PAGNode.h"
 #include "Graphs/ICFG.h"
 #include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"

@@ -1,8 +1,8 @@
-//===- PAGNode.h -- PAG node class-------------------------------------------//
+//===- SVFSymbols.h -- SVF Variables------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -21,29 +21,29 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PAGNode.h
+ * SVFVariables.h
  *
- *  Created on: Nov 10, 2013
+ *  Created on: Nov 11, 2013
  *      Author: Yulei Sui
  */
 
-#ifndef PAGNODE_H_
-#define PAGNODE_H_
+#ifndef OBJECTANDSYMBOL_H_
+#define OBJECTANDSYMBOL_H_
 
 #include "Graphs/GenericGraph.h"
-#include "MemoryModel/SVFSymbols.h"
 #include "MemoryModel/SymbolTableInfo.h"
 #include "SVF-FE/LLVMUtil.h"
-#include "Graphs/PAGEdge.h"
+#include "MemoryModel/SVFStatements.h"
 
 namespace SVF
 {
 
+class SVFVar;
 /*
  * PAG node
  */
-typedef GenericNode<PAGNode,PAGEdge> GenericPAGNodeTy;
-class PAGNode : public GenericPAGNodeTy
+typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
+class SVFVar : public GenericPAGNodeTy
 {
 
 public:
@@ -76,16 +76,16 @@ public:
 
 protected:
     const Value* value; ///< value of this PAG node
-    PAGEdge::PAGKindToEdgeSetMapTy InEdgeKindToSetMap;
-    PAGEdge::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
+    SVFStmt::PAGKindToEdgeSetMapTy InEdgeKindToSetMap;
+    SVFStmt::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
     bool isTLPointer;	/// top-level pointer
     bool isATPointer;	/// address-taken pointer
 
 public:
     /// Constructor
-    PAGNode(const Value* val, NodeID i, PNODEK k);
+    SVFVar(const Value* val, NodeID i, PNODEK k);
     /// Destructor
-    virtual ~PAGNode()
+    virtual ~SVFVar()
     {
     }
 
@@ -94,7 +94,7 @@ public:
     inline const Value* getValue() const
     {
         assert((this->getNodeKind() != DummyValNode && this->getNodeKind() != DummyObjNode) && "dummy node do not have value!");
-        assert((this->getId()!=SYMTYPE::BlackHole && this->getId() != SYMTYPE::ConstantObj) && "blackhole and constant obj do not have value");
+        assert((SymbolTableInfo::isBlkObjOrConstantObj(this->getId())==false) && "blackhole and constant obj do not have value");
         assert(value && "value is null (GepObjNode whose basenode is a DummyObj?)");
         return value;
     }
@@ -142,7 +142,7 @@ public:
     /// Get name of the LLVM value
     virtual const std::string getValueName() const = 0;
 
-    /// Return the function that this PAGNode resides in. Return nullptr if it is a global or constantexpr node
+    /// Return the function that this SVFVar resides in. Return nullptr if it is a global or constantexpr node
     virtual inline const Function* getFunction() const
     {
         if(value)
@@ -158,21 +158,21 @@ public:
     }
 
     /// Get incoming PAG edges
-    inline PAGEdge::PAGEdgeSetTy& getIncomingEdges(PAGEdge::PEDGEK kind)
+    inline SVFStmt::PAGEdgeSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
     {
         return InEdgeKindToSetMap[kind];
     }
 
     /// Get outgoing PAG edges
-    inline PAGEdge::PAGEdgeSetTy& getOutgoingEdges(PAGEdge::PEDGEK kind)
+    inline SVFStmt::PAGEdgeSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
 
     /// Has incoming PAG edges
-    inline bool hasIncomingEdges(PAGEdge::PEDGEK kind) const
+    inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         if (it != InEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -182,7 +182,7 @@ public:
     /// Has incoming VariantGepEdges
     inline bool hasIncomingVariantGepEdge() const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(PAGEdge::VariantGep);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
         if (it != InEdgeKindToSetMap.end())
         {
             return (!it->second.empty());
@@ -190,44 +190,44 @@ public:
         return false;
     }
 
-    /// Get incoming PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesBegin(PAGEdge::PEDGEK kind) const
+    /// Get incoming SVFStmt iterator
+    inline SVFStmt::PAGEdgeSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
-    /// Get incoming PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getIncomingEdgesEnd(PAGEdge::PEDGEK kind) const
+    /// Get incoming SVFStmt iterator
+    inline SVFStmt::PAGEdgeSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
 
     /// Has outgoing PAG edges
-    inline bool hasOutgoingEdges(PAGEdge::PEDGEK kind) const
+    inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
             return false;
     }
 
-    /// Get outgoing PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(PAGEdge::PEDGEK kind) const
+    /// Get outgoing SVFStmt iterator
+    inline SVFStmt::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
-    /// Get outgoing PAGEdge iterator
-    inline PAGEdge::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(PAGEdge::PEDGEK kind) const
+    /// Get outgoing SVFStmt iterator
+    inline SVFStmt::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
-        PAGEdge::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
@@ -235,14 +235,14 @@ public:
 
     ///  add methods of the components
     //@{
-    inline void addInEdge(PAGEdge* inEdge)
+    inline void addInEdge(SVFStmt* inEdge)
     {
         GNodeK kind = inEdge->getEdgeKind();
         InEdgeKindToSetMap[kind].insert(inEdge);
         addIncomingEdge(inEdge);
     }
 
-    inline void addOutEdge(PAGEdge* outEdge)
+    inline void addOutEdge(SVFStmt* outEdge)
     {
         GNodeK kind = outEdge->getEdgeKind();
         OutEdgeKindToSetMap[kind].insert(outEdge);
@@ -258,9 +258,9 @@ public:
     void dump() const;
 
     //@}
-    /// Overloading operator << for dumping PAGNode value
+    /// Overloading operator << for dumping SVFVar value
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const PAGNode &node)
+    friend raw_ostream& operator<< (raw_ostream &o, const SVFVar &node)
     {
         o << node.toString();
         return o;
@@ -273,7 +273,7 @@ public:
 /*
  * Value(Pointer) node
  */
-class ValPN: public PAGNode
+class ValPN: public SVFVar
 {
 
 public:
@@ -283,23 +283,23 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::ValNode ||
-               node->getNodeKind() == PAGNode::GepValNode ||
-               node->getNodeKind() == PAGNode::DummyValNode;
+        return node->getNodeKind() == SVFVar::ValNode ||
+               node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::DummyValNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::ValNode ||
-               node->getNodeKind() == PAGNode::GepValNode ||
-               node->getNodeKind() == PAGNode::DummyValNode;
+        return node->getNodeKind() == SVFVar::ValNode ||
+               node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::DummyValNode;
     }
     //@}
 
     /// Constructor
     ValPN(const Value* val, NodeID i, PNODEK ty = ValNode) :
-        PAGNode(val, i, ty)
+        SVFVar(val, i, ty)
     {
     }
     /// Return name of a LLVM value
@@ -317,14 +317,14 @@ public:
 /*
  * Memory Object node
  */
-class ObjPN: public PAGNode
+class ObjPN: public SVFVar
 {
 
 protected:
     const MemObj* mem;	///< memory object
     /// Constructor
     ObjPN(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
-        PAGNode(val, i, ty), mem(m)
+        SVFVar(val, i, ty), mem(m)
     {
     }
 public:
@@ -334,25 +334,25 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::ObjNode ||
-               node->getNodeKind() == PAGNode::GepObjNode ||
-               node->getNodeKind() == PAGNode::FIObjNode ||
-               node->getNodeKind() == PAGNode::DummyObjNode ||
-               node->getNodeKind() == PAGNode::CloneGepObjNode ||
-               node->getNodeKind() == PAGNode::CloneFIObjNode ||
-               node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::ObjNode ||
+               node->getNodeKind() == SVFVar::GepObjNode ||
+               node->getNodeKind() == SVFVar::FIObjNode ||
+               node->getNodeKind() == SVFVar::DummyObjNode ||
+               node->getNodeKind() == SVFVar::CloneGepObjNode ||
+               node->getNodeKind() == SVFVar::CloneFIObjNode ||
+               node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::ObjNode ||
-               node->getNodeKind() == PAGNode::GepObjNode ||
-               node->getNodeKind() == PAGNode::FIObjNode ||
-               node->getNodeKind() == PAGNode::DummyObjNode ||
-               node->getNodeKind() == PAGNode::CloneGepObjNode ||
-               node->getNodeKind() == PAGNode::CloneFIObjNode ||
-               node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::ObjNode ||
+               node->getNodeKind() == SVFVar::GepObjNode ||
+               node->getNodeKind() == SVFVar::FIObjNode ||
+               node->getNodeKind() == SVFVar::DummyObjNode ||
+               node->getNodeKind() == SVFVar::CloneGepObjNode ||
+               node->getNodeKind() == SVFVar::CloneFIObjNode ||
+               node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     //@}
 
@@ -401,15 +401,15 @@ public:
     }
     static inline bool classof(const ValPN * node)
     {
-        return node->getNodeKind() == PAGNode::GepValNode;
+        return node->getNodeKind() == SVFVar::GepValNode;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::GepValNode;
+        return node->getNodeKind() == SVFVar::GepValNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::GepValNode;
+        return node->getNodeKind() == SVFVar::GepValNode;
     }
     //@}
 
@@ -466,18 +466,18 @@ public:
     }
     static inline bool classof(const ObjPN * node)
     {
-        return node->getNodeKind() == PAGNode::GepObjNode
-               || node->getNodeKind() == PAGNode::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode
+               || node->getNodeKind() == SVFVar::CloneGepObjNode;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::GepObjNode
-               || node->getNodeKind() == PAGNode::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode
+               || node->getNodeKind() == SVFVar::CloneGepObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::GepObjNode
-               || node->getNodeKind() == PAGNode::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::GepObjNode
+               || node->getNodeKind() == SVFVar::CloneGepObjNode;
     }
     //@}
 
@@ -539,18 +539,18 @@ public:
     }
     static inline bool classof(const ObjPN * node)
     {
-        return node->getNodeKind() == PAGNode::FIObjNode
-               || node->getNodeKind() == PAGNode::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode
+               || node->getNodeKind() == SVFVar::CloneFIObjNode;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::FIObjNode
-               || node->getNodeKind() == PAGNode::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode
+               || node->getNodeKind() == SVFVar::CloneFIObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::FIObjNode
-               || node->getNodeKind() == PAGNode::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::FIObjNode
+               || node->getNodeKind() == SVFVar::CloneFIObjNode;
     }
     //@}
 
@@ -574,7 +574,7 @@ public:
 /*
  * Unique Return node of a procedure
  */
-class RetPN: public PAGNode
+class RetPN: public SVFVar
 {
 
 public:
@@ -584,19 +584,19 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::RetNode;
+        return node->getNodeKind() == SVFVar::RetNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::RetNode;
+        return node->getNodeKind() == SVFVar::RetNode;
     }
     //@}
 
     /// Constructor
     RetPN(const SVFFunction* val, NodeID i) :
-        PAGNode(val->getLLVMFun(), i, RetNode)
+        SVFVar(val->getLLVMFun(), i, RetNode)
     {
     }
 
@@ -613,7 +613,7 @@ public:
 /*
  * Unique vararg node of a procedure
  */
-class VarArgPN: public PAGNode
+class VarArgPN: public SVFVar
 {
 
 public:
@@ -623,19 +623,19 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::VarargNode;
+        return node->getNodeKind() == SVFVar::VarargNode;
     }
     //@}
 
     /// Constructor
     VarArgPN(const SVFFunction* val, NodeID i) :
-        PAGNode(val->getLLVMFun(), i, VarargNode)
+        SVFVar(val->getLLVMFun(), i, VarargNode)
     {
     }
 
@@ -664,13 +664,13 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::DummyValNode;
+        return node->getNodeKind() == SVFVar::DummyValNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::DummyValNode;
+        return node->getNodeKind() == SVFVar::DummyValNode;
     }
     //@}
 
@@ -703,15 +703,15 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::DummyObjNode
-               || node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::DummyObjNode
+               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::DummyObjNode
-               || node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::DummyObjNode
+               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     //@}
 
@@ -741,13 +741,13 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::CloneDummyObjNode;
+        return node->getNodeKind() == SVFVar::CloneDummyObjNode;
     }
     //@}
 
@@ -777,13 +777,13 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::CloneGepObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::CloneGepObjNode;
+        return node->getNodeKind() == SVFVar::CloneGepObjNode;
     }
     //@}
 
@@ -813,13 +813,13 @@ public:
     {
         return true;
     }
-    static inline bool classof(const PAGNode *node)
+    static inline bool classof(const SVFVar *node)
     {
-        return node->getNodeKind() == PAGNode::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::CloneFIObjNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
-        return node->getNodeKind() == PAGNode::CloneFIObjNode;
+        return node->getNodeKind() == SVFVar::CloneFIObjNode;
     }
     //@}
 
@@ -840,4 +840,6 @@ public:
 
 } // End namespace SVF
 
-#endif /* PAGNODE_H_ */
+
+
+#endif /* OBJECTANDSYMBOL_H_ */

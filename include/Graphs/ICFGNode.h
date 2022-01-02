@@ -41,8 +41,8 @@ class ICFGNode;
 class RetBlockNode;
 class CallPE;
 class RetPE;
-class PAGEdge;
-class PAGNode;
+class SVFStmt;
+class SVFVar;
 class VFGNode;
 
 /*!
@@ -67,7 +67,7 @@ public:
     typedef Set<const CallPE *> CallPESet;
     typedef Set<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
-    typedef std::list<const PAGEdge*> PAGEdgeList;
+    typedef std::list<const SVFStmt*> PAGEdgeList;
 
 public:
     /// Constructor
@@ -113,7 +113,7 @@ public:
 
     /// Set/Get methods of VFGNodes
     ///@{
-    inline void addPAGEdge(const PAGEdge *edge)
+    inline void addPAGEdge(const SVFStmt *edge)
     {
         pagEdges.push_back(edge);
     }
@@ -252,7 +252,7 @@ class FunEntryBlockNode : public InterBlockNode
 {
 
 public:
-    typedef std::vector<const PAGNode *> FormalParmNodeVec;
+    typedef std::vector<const SVFVar *> FormalParmNodeVec;
 private:
     FormalParmNodeVec FPNodes;
 public:
@@ -271,7 +271,7 @@ public:
     }
 
     /// Add formal parameters
-    inline void addFormalParms(const PAGNode *fp)
+    inline void addFormalParms(const SVFVar *fp)
     {
         FPNodes.push_back(fp);
     }
@@ -310,7 +310,7 @@ class FunExitBlockNode : public InterBlockNode
 
 private:
     const SVFFunction* fun;
-    const PAGNode *formalRet;
+    const SVFVar *formalRet;
 public:
     FunExitBlockNode(NodeID id, const SVFFunction* f);
 
@@ -321,13 +321,13 @@ public:
     }
 
     /// Return actual return parameter
-    inline const PAGNode *getFormalRet() const
+    inline const SVFVar *getFormalRet() const
     {
         return formalRet;
     }
 
     /// Add actual return parameter
-    inline void addFormalRet(const PAGNode *fr)
+    inline void addFormalRet(const SVFVar *fr)
     {
         formalRet = fr;
     }
@@ -365,7 +365,7 @@ class CallBlockNode : public InterBlockNode
 {
 
 public:
-    typedef std::vector<const PAGNode *> ActualParmVFGNodeVec;
+    typedef std::vector<const SVFVar *> ActualParmVFGNodeVec;
 private:
     const Instruction* cs;
     const RetBlockNode* ret;
@@ -421,7 +421,7 @@ public:
     }
 
     /// Add actual parameters
-    inline void addActualParms(const PAGNode *ap)
+    inline void addActualParms(const SVFVar *ap)
     {
         APNodes.push_back(ap);
     }
@@ -461,7 +461,7 @@ class RetBlockNode : public InterBlockNode
 
 private:
     const Instruction* cs;
-    const PAGNode *actualRet;
+    const SVFVar *actualRet;
     const CallBlockNode* callBlockNode;
 public:
     RetBlockNode(NodeID id, const Instruction* c, CallBlockNode* cb) :
@@ -482,13 +482,13 @@ public:
         return callBlockNode;
     }
     /// Return actual return parameter
-    inline const PAGNode *getActualRet() const
+    inline const SVFVar *getActualRet() const
     {
         return actualRet;
     }
 
     /// Add actual return parameter
-    inline void addActualRet(const PAGNode *ar)
+    inline void addActualRet(const SVFVar *ar)
     {
         actualRet = ar;
     }

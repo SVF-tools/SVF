@@ -36,22 +36,22 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-u64_t PAGEdge::callEdgeLabelCounter = 0;
-u64_t PAGEdge::storeEdgeLabelCounter = 0;
-PAGEdge::Inst2LabelMap PAGEdge::inst2LabelMap;
+u64_t SVFStmt::callEdgeLabelCounter = 0;
+u64_t SVFStmt::storeEdgeLabelCounter = 0;
+SVFStmt::Inst2LabelMap SVFStmt::inst2LabelMap;
 
 PAG* PAG::pag = nullptr;
 
 
-const std::string PAGNode::toString() const {
+const std::string SVFVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PAGNode ID: " << getId();
+    rawstr << "SVFVar ID: " << getId();
     return rawstr.str();
 }
 
 /// Get shape and/or color of node for .dot display.
-const std::string PAGNode::getNodeAttrForDotDisplay() const {
+const std::string SVFVar::getNodeAttrForDotDisplay() const {
     // TODO: Maybe use over-rides instead of these ifs,
     // But this puts them conveniently together.
     if (SVFUtil::isa<ValPN>(this))
@@ -89,7 +89,7 @@ const std::string PAGNode::getNodeAttrForDotDisplay() const {
     return "";
 }
 
-void PAGNode::dump() const {
+void SVFVar::dump() const {
     outs() << this->toString() << "\n";
 }
 
@@ -197,10 +197,10 @@ const std::string CloneFIObjPN::toString() const {
     return rawstr.str();
 }
 
-const std::string PAGEdge::toString() const {
+const std::string SVFStmt::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PAGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "SVFStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
@@ -374,9 +374,9 @@ PAG::PAG(bool buildFromFile) : fromFile(buildFromFile), nodeNumAfterPAGBuild(0),
  */
 AddrPE* PAG::addAddrPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::Addr))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Addr))
         return SVFUtil::cast<AddrPE>(edge);
     else
     {
@@ -391,9 +391,9 @@ AddrPE* PAG::addAddrPE(NodeID src, NodeID dst)
  */
 CopyPE* PAG::addCopyPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::Copy))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
         return SVFUtil::cast<CopyPE>(edge);
     else
     {
@@ -408,9 +408,9 @@ CopyPE* PAG::addCopyPE(NodeID src, NodeID dst)
  */
 CmpPE* PAG::addCmpPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::Cmp))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Cmp))
         return SVFUtil::cast<CmpPE>(edge);
     else
     {
@@ -426,9 +426,9 @@ CmpPE* PAG::addCmpPE(NodeID src, NodeID dst)
  */
 BinaryOPPE* PAG::addBinaryOPPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::BinaryOp))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::BinaryOp))
         return SVFUtil::cast<BinaryOPPE>(edge);
     else
     {
@@ -443,9 +443,9 @@ BinaryOPPE* PAG::addBinaryOPPE(NodeID src, NodeID dst)
  */
 UnaryOPPE* PAG::addUnaryOPPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::UnaryOp))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::UnaryOp))
         return SVFUtil::cast<UnaryOPPE>(edge);
     else
     {
@@ -460,9 +460,9 @@ UnaryOPPE* PAG::addUnaryOPPE(NodeID src, NodeID dst)
  */
 LoadPE* PAG::addLoadPE(NodeID src, NodeID dst)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(srcNode,dstNode, PAGEdge::Load))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Load))
         return SVFUtil::cast<LoadPE>(edge);
     else
     {
@@ -474,13 +474,13 @@ LoadPE* PAG::addLoadPE(NodeID src, NodeID dst)
 
 /*!
  * Add Store edge
- * Note that two store instructions may share the same Store PAGEdge
+ * Note that two store instructions may share the same Store SVFStmt
  */
 StorePE* PAG::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasLabeledEdge(srcNode,dstNode, PAGEdge::Store, curVal))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Store, curVal))
         return SVFUtil::cast<StorePE>(edge);
     else
     {
@@ -495,9 +495,9 @@ StorePE* PAG::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal)
  */
 CallPE* PAG::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasLabeledEdge(srcNode,dstNode, PAGEdge::Call, cs))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Call, cs))
         return SVFUtil::cast<CallPE>(edge);
     else
     {
@@ -512,9 +512,9 @@ CallPE* PAG::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs)
  */
 RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasLabeledEdge(srcNode,dstNode, PAGEdge::Ret, cs))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Ret, cs))
         return SVFUtil::cast<RetPE>(edge);
     else
     {
@@ -527,7 +527,7 @@ RetPE* PAG::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 /*!
  * Add blackhole/constant edge
  */
-PAGEdge* PAG::addBlackHoleAddrPE(NodeID node)
+SVFStmt* PAG::addBlackHoleAddrPE(NodeID node)
 {
     if(Options::HandBlackHole)
         return pag->addAddrPE(pag->getBlackHoleNode(), node);
@@ -540,9 +540,9 @@ PAGEdge* PAG::addBlackHoleAddrPE(NodeID node)
  */
 TDForkPE* PAG::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasLabeledEdge(srcNode,dstNode, PAGEdge::ThreadFork, cs))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadFork, cs))
         return SVFUtil::cast<TDForkPE>(edge);
     else
     {
@@ -557,9 +557,9 @@ TDForkPE* PAG::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs)
  */
 TDJoinPE* PAG::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 {
-    PAGNode* srcNode = getPAGNode(src);
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasLabeledEdge(srcNode,dstNode, PAGEdge::ThreadJoin, cs))
+    SVFVar* srcNode = getPAGNode(src);
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadJoin, cs))
         return SVFUtil::cast<TDJoinPE>(edge);
     else
     {
@@ -578,7 +578,7 @@ TDJoinPE* PAG::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 GepPE* PAG::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
 {
 
-    PAGNode* node = getPAGNode(src);
+    SVFVar* node = getPAGNode(src);
     if (!constGep || node->hasIncomingVariantGepEdge())
     {
         /// Since the offset from base to src is variant,
@@ -597,9 +597,9 @@ GepPE* PAG::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGe
 NormalGepPE* PAG::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls)
 {
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
-    PAGNode* baseNode = getPAGNode(getBaseValNode(src));
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(baseNode, dstNode, PAGEdge::NormalGep))
+    SVFVar* baseNode = getPAGNode(getBaseValNode(src));
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::NormalGep))
         return SVFUtil::cast<NormalGepPE>(edge);
     else
     {
@@ -616,9 +616,9 @@ NormalGepPE* PAG::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls)
 VariantGepPE* PAG::addVariantGepPE(NodeID src, NodeID dst)
 {
 
-    PAGNode* baseNode = getPAGNode(getBaseValNode(src));
-    PAGNode* dstNode = getPAGNode(dst);
-    if(PAGEdge* edge = hasNonlabeledEdge(baseNode, dstNode, PAGEdge::VariantGep))
+    SVFVar* baseNode = getPAGNode(getBaseValNode(src));
+    SVFVar* dstNode = getPAGNode(dst);
+    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::VariantGep))
         return SVFUtil::cast<VariantGepPE>(edge);
     else
     {
@@ -650,7 +650,7 @@ NodeID PAG::addGepValNode(const Value* curInst,const Value* gepVal, const Locati
  */
 NodeID PAG::getGepObjNode(NodeID id, const LocationSet& ls)
 {
-    PAGNode* node = pag->getPAGNode(id);
+    SVFVar* node = pag->getPAGNode(id);
     if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
         return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
     else if (FIObjPN* baseNode = SVFUtil::dyn_cast<FIObjPN>(node))
@@ -724,10 +724,10 @@ NodeID PAG::addFIObjNode(const MemObj* obj)
 /*!
  * Return true if it is an intra-procedural edge
  */
-PAGEdge* PAG::hasNonlabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind)
+SVFStmt* PAG::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
 {
-    PAGEdge edge(src,dst,kind);
-    PAGEdge::PAGEdgeSetTy::iterator it = PAGEdgeKindToSetMap[kind].find(&edge);
+    SVFStmt edge(src,dst,kind);
+    SVFStmt::PAGEdgeSetTy::iterator it = PAGEdgeKindToSetMap[kind].find(&edge);
     if (it != PAGEdgeKindToSetMap[kind].end())
     {
         return *it;
@@ -738,10 +738,10 @@ PAGEdge* PAG::hasNonlabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind
 /*!
  * Return true if it is an inter-procedural edge
  */
-PAGEdge* PAG::hasLabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, const ICFGNode* callInst)
+SVFStmt* PAG::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* callInst)
 {
-    PAGEdge edge(src,dst,PAGEdge::makeEdgeFlagWithCallInst(kind,callInst));
-    PAGEdge::PAGEdgeSetTy::iterator it = PAGEdgeKindToSetMap[kind].find(&edge);
+    SVFStmt edge(src,dst,SVFStmt::makeEdgeFlagWithCallInst(kind,callInst));
+    SVFStmt::PAGEdgeSetTy::iterator it = PAGEdgeKindToSetMap[kind].find(&edge);
     if (it != PAGEdgeKindToSetMap[kind].end())
     {
         return *it;
@@ -753,7 +753,7 @@ PAGEdge* PAG::hasLabeledEdge(PAGNode* src, PAGNode* dst, PAGEdge::PEDGEK kind, c
 /*!
  * Add a PAG edge into edge map
  */
-bool PAG::addEdge(PAGNode* src, PAGNode* dst, PAGEdge* edge)
+bool PAG::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
 {
 
     DBOUT(DPAGBuild,
@@ -786,7 +786,7 @@ NodeBS& PAG::getAllFieldsObjNode(const MemObj* obj)
  */
 NodeBS& PAG::getAllFieldsObjNode(NodeID id)
 {
-    const PAGNode* node = pag->getPAGNode(id);
+    const SVFVar* node = pag->getPAGNode(id);
     assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
     const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
     return getAllFieldsObjNode(obj->getMemObj());
@@ -799,7 +799,7 @@ NodeBS& PAG::getAllFieldsObjNode(NodeID id)
  */
 NodeBS PAG::getFieldsAfterCollapse(NodeID id)
 {
-    const PAGNode* node = pag->getPAGNode(id);
+    const SVFVar* node = pag->getPAGNode(id);
     assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
     const MemObj* mem = SVFUtil::cast<ObjPN>(node)->getMemObj();
     if(mem->isFieldInsensitive())
@@ -819,15 +819,15 @@ NodeBS PAG::getFieldsAfterCollapse(NodeID id)
  */
 NodeID PAG::getBaseValNode(NodeID nodeId)
 {
-    PAGNode* node  = getPAGNode(nodeId);
-    if (node->hasIncomingEdges(PAGEdge::NormalGep) ||  node->hasIncomingEdges(PAGEdge::VariantGep))
+    SVFVar* node  = getPAGNode(nodeId);
+    if (node->hasIncomingEdges(SVFStmt::NormalGep) ||  node->hasIncomingEdges(SVFStmt::VariantGep))
     {
-        PAGEdge::PAGEdgeSetTy& ngeps = node->getIncomingEdges(PAGEdge::NormalGep);
-        PAGEdge::PAGEdgeSetTy& vgeps = node->getIncomingEdges(PAGEdge::VariantGep);
+        SVFStmt::PAGEdgeSetTy& ngeps = node->getIncomingEdges(SVFStmt::NormalGep);
+        SVFStmt::PAGEdgeSetTy& vgeps = node->getIncomingEdges(SVFStmt::VariantGep);
 
         assert(((ngeps.size()+vgeps.size())==1) && "one node can only be connected by at most one gep edge!");
 
-        PAGNode::iterator it;
+        SVFVar::iterator it;
         if(!ngeps.empty())
             it = ngeps.begin();
         else
@@ -841,22 +841,22 @@ NodeID PAG::getBaseValNode(NodeID nodeId)
 }
 
 /*!
- * Get a base PAGNode given a pointer
+ * Get a base SVFVar given a pointer
  * Return the source node of its connected normal gep edge
  * Otherwise return the node id itself
  * Size_t offset : gep offset
  */
 LocationSet PAG::getLocationSetFromBaseNode(NodeID nodeId)
 {
-    PAGNode* node  = getPAGNode(nodeId);
-    PAGEdge::PAGEdgeSetTy& geps = node->getIncomingEdges(PAGEdge::NormalGep);
+    SVFVar* node  = getPAGNode(nodeId);
+    SVFStmt::PAGEdgeSetTy& geps = node->getIncomingEdges(SVFStmt::NormalGep);
     /// if this node is already a base node
     if(geps.empty())
         return LocationSet(0);
 
     assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
-    PAGNode::iterator it = geps.begin();
-    const PAGEdge* edge = *it;
+    SVFVar::iterator it = geps.begin();
+    const SVFStmt* edge = *it;
     assert(SVFUtil::isa<NormalGepPE>(edge) && "not a get edge??");
     const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
     return gepEdge->getLocationSet();
@@ -881,56 +881,56 @@ void PAG::print()
 {
 
     outs() << "-------------------PAG------------------------------------\n";
-    PAGEdge::PAGEdgeSetTy& addrs = pag->getEdgeSet(PAGEdge::Addr);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& addrs = pag->getEdgeSet(SVFStmt::Addr);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Addr --> " << (*iter)->getDstID()
                << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& copys = pag->getEdgeSet(PAGEdge::Copy);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& copys = pag->getEdgeSet(SVFStmt::Copy);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Copy --> " << (*iter)->getDstID()
                << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& calls = pag->getEdgeSet(PAGEdge::Call);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& calls = pag->getEdgeSet(SVFStmt::Call);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Call --> " << (*iter)->getDstID()
                << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& rets = pag->getEdgeSet(PAGEdge::Ret);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& rets = pag->getEdgeSet(SVFStmt::Ret);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = rets.begin(), eiter =
                 rets.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Ret --> " << (*iter)->getDstID()
                << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& tdfks = pag->getEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& tdfks = pag->getEdgeSet(SVFStmt::ThreadFork);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- ThreadFork --> "
                << (*iter)->getDstID() << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& tdjns = pag->getEdgeSet(PAGEdge::ThreadJoin);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& tdjns = pag->getEdgeSet(SVFStmt::ThreadJoin);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = tdjns.begin(), eiter =
                 tdjns.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- ThreadJoin --> "
                << (*iter)->getDstID() << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& ngeps = pag->getEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& ngeps = pag->getEdgeSet(SVFStmt::NormalGep);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
         NormalGepPE* gep = SVFUtil::cast<NormalGepPE>(*iter);
@@ -938,24 +938,24 @@ void PAG::print()
                << ") --> " << gep->getDstID() << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& vgeps = pag->getEdgeSet(PAGEdge::VariantGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& vgeps = pag->getEdgeSet(SVFStmt::VariantGep);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- VariantGep --> "
                << (*iter)->getDstID() << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& loads = pag->getEdgeSet(SVFStmt::Load);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Load --> " << (*iter)->getDstID()
                << "\n";
     }
 
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+    SVFStmt::PAGEdgeSetTy& stores = pag->getEdgeSet(SVFStmt::Store);
+    for (SVFStmt::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         outs() << (*iter)->getSrcID() << " -- Store --> " << (*iter)->getDstID()
@@ -970,13 +970,13 @@ void PAG::print()
  */
 bool PAG::isValidPointer(NodeID nodeId) const
 {
-    PAGNode* node = pag->getPAGNode(nodeId);
+    SVFVar* node = pag->getPAGNode(nodeId);
     if ((node->getInEdges().empty() && node->getOutEdges().empty()))
         return false;
     return node->isPointer();
 }
 
-bool PAG::isValidTopLevelPtr(const PAGNode* node)
+bool PAG::isValidTopLevelPtr(const SVFVar* node)
 {
     if (node->isTopLevelPtr())
     {
@@ -990,9 +990,9 @@ bool PAG::isValidTopLevelPtr(const PAGNode* node)
     return false;
 }
 /*!
- * PAGEdge constructor
+ * SVFStmt constructor
  */
-PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
+SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) :
     GenericPAGEdgeTy(s,d,k),value(nullptr),basicBlock(nullptr),icfgNode(nullptr)
 {
     edgeId = PAG::getPAG()->getTotalEdgeNum();
@@ -1002,15 +1002,15 @@ PAGEdge::PAGEdge(PAGNode* s, PAGNode* d, GEdgeFlag k) :
 /*!
  * Whether src and dst nodes are both pointer type
  */
-bool PAGEdge::isPTAEdge() const
+bool SVFStmt::isPTAEdge() const
 {
     return getSrcNode()->isPointer() && getDstNode()->isPointer();
 }
 
 /*!
- * PAGNode constructor
+ * SVFVar constructor
  */
-PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
+SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val)
 {
 
@@ -1058,7 +1058,7 @@ PAGNode::PAGNode(const Value* val, NodeID i, PNODEK k) :
     }
 }
 
-bool PAGNode::isIsolatedNode() const{
+bool SVFVar::isIsolatedNode() const{
 	if (getInEdges().empty() && getOutEdges().empty())
 		return true;
 	else if (isConstantData())
@@ -1103,7 +1103,7 @@ template<>
 struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 {
 
-    typedef PAGNode NodeType;
+    typedef SVFVar NodeType;
     typedef NodeType::iterator ChildIteratorType;
     DOTGraphTraits(bool isSimple = false) :
         DefaultDOTGraphTraits(isSimple)
@@ -1119,16 +1119,16 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
 #if LLVM_VERSION_MAJOR >= 12
-	static bool isNodeHidden(PAGNode *node, PAG*) {
+	static bool isNodeHidden(SVFVar *node, PAG*) {
 #else
-    static bool isNodeHidden(PAGNode *node) {
+    static bool isNodeHidden(SVFVar *node) {
 #endif
 		return node->isIsolatedNode();
 	}
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
-    static std::string getNodeLabel(PAGNode *node, PAG*)
+    static std::string getNodeLabel(SVFVar *node, PAG*)
     {
         std::string str;
         raw_string_ostream rawstr(str);
@@ -1142,15 +1142,15 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
 
     }
 
-    static std::string getNodeAttributes(PAGNode *node, PAG*)
+    static std::string getNodeAttributes(SVFVar *node, PAG*)
     {
         return node->getNodeAttrForDotDisplay();
     }
 
     template<class EdgeIter>
-    static std::string getEdgeAttributes(PAGNode*, EdgeIter EI, PAG*)
+    static std::string getEdgeAttributes(SVFVar*, EdgeIter EI, PAG*)
     {
-        const PAGEdge* edge = *(EI.getCurrent());
+        const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if (SVFUtil::isa<AddrPE>(edge))
         {
@@ -1206,9 +1206,9 @@ struct DOTGraphTraits<PAG*> : public DefaultDOTGraphTraits
     }
 
     template<class EdgeIter>
-    static std::string getEdgeSourceLabel(PAGNode*, EdgeIter EI)
+    static std::string getEdgeSourceLabel(SVFVar*, EdgeIter EI)
     {
-        const PAGEdge* edge = *(EI.getCurrent());
+        const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
         if(const CallPE* calledge = SVFUtil::dyn_cast<CallPE>(edge))
         {

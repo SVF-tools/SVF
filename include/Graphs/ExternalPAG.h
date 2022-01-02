@@ -10,7 +10,7 @@
 #ifndef EXTERNALPAG_H_
 #define EXTERNALPAG_H_
 
-#include "Graphs/PAGNode.h"
+#include "MemoryModel/SVFVariables.h"
 
 extern llvm::cl::list<std::string> DumpPAGFunctions;
 

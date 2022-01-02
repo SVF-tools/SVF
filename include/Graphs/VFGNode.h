@@ -33,8 +33,7 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/VFGEdge.h"
 #include "Graphs/ICFGNode.h"
-#include "Graphs/PAGNode.h"
-#include "Graphs/PAGEdge.h"
+#include "Graphs/PAG.h"
 
 namespace SVF
 {
