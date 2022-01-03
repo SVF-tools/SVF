@@ -330,7 +330,7 @@ public:
     CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
     {
         const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
-        assert(cmp && "not a binary operator?");
+        assert(cmp && "not a compare operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{

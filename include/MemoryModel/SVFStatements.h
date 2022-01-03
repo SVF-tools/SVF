@@ -266,7 +266,7 @@ private:
     OPVars opVars;
 public:
     /// Constructor, only used by subclassess but not external users
-    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(r, opnds.at(0), k), opVars(opnds)
+    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(opnds.at(0), r, k), opVars(opnds)
     {
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
