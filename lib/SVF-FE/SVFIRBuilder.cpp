@@ -617,13 +617,12 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
 void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
-    for (u32_t i = 0; i < inst.getNumOperands(); i++)
-    {
-        Value* opnd = inst.getOperand(i);
-        NodeID src = getValueNode(opnd);
-        const BinaryOPPE* binayPE = addBinaryOPEdge(src, dst);
-        pag->addBinaryNode(pag->getGNode(dst),binayPE);
-    }
+    assert(inst.getNumOperands() == 2 && "not two operands for BinaryOperator?");
+    Value* op1 = inst.getOperand(0);
+    NodeID op1Node = getValueNode(op1);
+    Value* op2 = inst.getOperand(1);
+    NodeID op2Node = getValueNode(op2);
+    const BinaryOPPE* binayPE = addBinaryOPEdge(op1Node, op2Node, dst);
 }
 
 /*!
@@ -637,7 +636,6 @@ void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
         Value* opnd = inst.getOperand(i);
         NodeID src = getValueNode(opnd);
         const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
-        pag->addUnaryNode(pag->getGNode(dst),unaryPE);
     }
 }
 
@@ -647,13 +645,12 @@ void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
 void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 {
     NodeID dst = getValueNode(&inst);
-    for (u32_t i = 0; i < inst.getNumOperands(); i++)
-    {
-        Value* opnd = inst.getOperand(i);
-        NodeID src = getValueNode(opnd);
-        const CmpPE* cmpPE = addCmpEdge(src, dst);
-        pag->addCmpNode(pag->getGNode(dst),cmpPE);
-    }
+    assert(inst.getNumOperands() == 2 && "not two operands for compare instruction?");
+    Value* op1 = inst.getOperand(0);
+    NodeID op1Node = getValueNode(op1);
+    Value* op2 = inst.getOperand(1);
+    NodeID op2Node = getValueNode(op2);
+    const CmpPE* cmpPE = addCmpEdge(op1Node, op2Node, dst);
 }
 
 
@@ -793,7 +790,6 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
 	else
 		src = pag->getNullPtr();
 	const UnaryOPPE *unaryPE = addUnaryOPEdge(src, dst);
-    pag->addUnaryNode(pag->getGNode(dst),unaryPE);
 }
 
 void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
@@ -801,7 +797,6 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
     Value* opnd = inst.getCondition();
     NodeID src = getValueNode(opnd);
     const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
-    pag->addUnaryNode(pag->getGNode(dst),unaryPE);
 }
 
 ///   %ap = alloca %struct.va_list

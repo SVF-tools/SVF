@@ -177,9 +177,9 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "ret")
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr));
     else if (edge == "cmp")
-        pag->addCmpPE(srcID, dstID);
+        pag->addCmpPE(srcID, dstID, dstID);
     else if (edge == "binary-op")
-        pag->addBinaryOPPE(srcID, dstID);
+        pag->addBinaryOPPE(srcID, dstID, dstID);
     else if (edge == "unary-op")
         pag->addUnaryOPPE(srcID, dstID);
     else

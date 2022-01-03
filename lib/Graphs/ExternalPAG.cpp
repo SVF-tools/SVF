@@ -462,11 +462,11 @@ bool ExternalPAG::addExternalPAG(const SVFFunction* function)
         }
         else if (extEdgeType == "cmp")
         {
-            pag->addCmpPE(srcId, dstId);
+            pag->addCmpPE(srcId, dstId, dstId);
         }
         else if (extEdgeType == "binary-op")
         {
-            pag->addBinaryOPPE(srcId, dstId);
+            pag->addBinaryOPPE(srcId, dstId,dstId);
         }
         else if (extEdgeType == "unary-op")
         {

@@ -486,25 +486,31 @@ void VFG::addVFGNodes()
             addIntraPHIVFGNode(pit->first, pit->second);
     }
     // initialize llvm binary nodes (binary operators)
-    SVFIR::BinaryNodeMap& binaryNodeMap = pag->getBinaryNodeMap();
-    for (SVFIR::BinaryNodeMap::iterator pit = binaryNodeMap.begin(), epit = binaryNodeMap.end(); pit != epit; ++pit)
+    PAGEdge::PAGEdgeSetTy& binaryops = getPAGEdgeSet(PAGEdge::BinaryOp);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = binaryops.begin(), eiter =
+                binaryops.end(); iter != eiter; ++iter)
     {
-        if (isInterestedPAGNode(pit->first))
-            addBinaryOPVFGNode(pit->first, pit->second);
+        const BinaryOPPE* edge = SVFUtil::cast<BinaryOPPE>(*iter);
+        if(isInterestedPAGNode(edge->getRes()))
+            addBinaryOPVFGNode(edge);
     }
     // initialize llvm unary nodes (unary operators)
-    SVFIR::UnaryNodeMap& unaryNodeMap = pag->getUnaryNodeMap();
-    for (SVFIR::UnaryNodeMap::iterator pit = unaryNodeMap.begin(), epit = unaryNodeMap.end(); pit != epit; ++pit)
+    PAGEdge::PAGEdgeSetTy& unaryops = getPAGEdgeSet(PAGEdge::UnaryOp);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = unaryops.begin(), eiter =
+                unaryops.end(); iter != eiter; ++iter)
     {
-        if (isInterestedPAGNode(pit->first))
-            addUnaryOPVFGNode(pit->first, pit->second);
+        const UnaryOPPE* edge = SVFUtil::cast<UnaryOPPE>(*iter);
+        if(isInterestedPAGNode(edge->getDstNode()))
+            addUnaryOPVFGNode(edge);
     }
     // initialize llvm cmp nodes (comparision)
-    SVFIR::CmpNodeMap& cmpNodeMap = pag->getCmpNodeMap();
-    for (SVFIR::CmpNodeMap::iterator pit = cmpNodeMap.begin(), epit =cmpNodeMap.end(); pit != epit; ++pit)
+    PAGEdge::PAGEdgeSetTy& cmps = getPAGEdgeSet(PAGEdge::Cmp);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = cmps.begin(), eiter =
+                cmps.end(); iter != eiter; ++iter)
     {
-        if (isInterestedPAGNode(pit->first))
-            addCmpVFGNode(pit->first, pit->second);
+        const CmpPE* edge = SVFUtil::cast<CmpPE>(*iter);
+        if(isInterestedPAGNode(edge->getRes()))
+            addCmpVFGNode(edge);
     }
 }
 
@@ -867,7 +873,7 @@ const PAGNode* VFG::getLHSTopLevPtr(const VFGNode* node) const
     else if(const FormalRetVFGNode* fr = SVFUtil::dyn_cast<FormalRetVFGNode>(node))
         return fr->getRet();
     else if(const NullPtrVFGNode* nullVFG = SVFUtil::dyn_cast<NullPtrVFGNode>(node))
-        return nullVFG->getGNode();
+        return nullVFG->getPAGNode();
     else
         assert(false && "unexpected node kind!");
     return nullptr;

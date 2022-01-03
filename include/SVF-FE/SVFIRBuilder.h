@@ -293,16 +293,16 @@ public:
         return edge;
     }
     /// Add Copy edge
-    inline CmpPE* addCmpEdge(NodeID src, NodeID dst)
+    inline CmpPE* addCmpEdge(NodeID op1, NodeID op2, NodeID dst)
     {
-        CmpPE *edge = pag->addCmpPE(src, dst);
+        CmpPE *edge = pag->addCmpPE(op1, op2, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline BinaryOPPE* addBinaryOPEdge(NodeID src, NodeID dst)
+    inline BinaryOPPE* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst)
     {
-        BinaryOPPE *edge = pag->addBinaryOPPE(src, dst);
+        BinaryOPPE *edge = pag->addBinaryOPPE(op1, op2, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -384,8 +384,6 @@ public:
     //@}
 
 };
-
-typedef SVFIRBuilder PAGBuilder;
 
 } // End namespace SVF
 

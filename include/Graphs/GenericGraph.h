@@ -108,7 +108,7 @@ public:
         }
     } equalGEdge;
 
-    inline bool operator==(const GenericEdge<NodeType>* rhs) const
+    virtual inline bool operator==(const GenericEdge<NodeType>* rhs) const
     {
         return (rhs->edgeFlag == this->edgeFlag && rhs->getSrcID() == this->getSrcID()
                 && rhs->getDstID() == this->getDstID());

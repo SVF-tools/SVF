@@ -1091,7 +1091,7 @@ public:
         return node->isPointer();
     }
     /// Return corresponding PAGNode
-    const PAGNode* getGNode() const
+    const PAGNode* getPAGNode() const
     {
         return node;
     }
