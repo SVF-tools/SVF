@@ -28,7 +28,7 @@
  */
 
 #include "Util/Options.h"
-#include "SVF-FE/CommonCHG.h"
+#include "Graphs/CHG.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/PointsTo.h"
 #include "WPA/Andersen.h"

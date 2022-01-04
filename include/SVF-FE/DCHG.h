@@ -15,7 +15,7 @@
 #define DCHG_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVF-FE/CommonCHG.h"
+#include "Graphs/CHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"

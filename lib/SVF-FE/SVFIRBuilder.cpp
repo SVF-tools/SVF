@@ -32,7 +32,6 @@
 #include "Util/SVFUtil.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
-#include "Graphs/ExternalPAG.h"
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
 
@@ -67,8 +66,6 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     ///// handle globals
     visitGlobal(svfModule);
     ///// collect exception vals in the program
-
-    ExternalPAG::initialise(svfModule);
 
     /// handle functions
     for (SVFModule::iterator fit = svfModule->begin(), efit = svfModule->end();
@@ -700,15 +697,8 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     {
         if (isExtCall(callee))
         {
-            if (ExternalPAG::hasExternalPAG(callee))
-            {
-                ExternalPAG::connectCallsiteToExternalPAG(&cs);
-            }
-            else
-            {
-                // There is no extpag for the function, use the old method.
-                handleExtCall(cs, callee);
-            }
+            // There is no extpag for the function, use the old method.
+            handleExtCall(cs, callee);
         }
         else
         {

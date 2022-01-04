@@ -25,13 +25,15 @@
  *
  *  Created on: Apr 13, 2016
  *      Author: Xiaokang Fan
+ * 
+ * Created on: Aug 24, 2019
+ *      Author: Mohamad Barbar
  */
 
 #ifndef CHA_H_
 #define CHA_H_
 
 #include "Util/SVFModule.h"
-#include "SVF-FE/CommonCHG.h"
 #include "Graphs/GenericGraph.h"
 #include "Util/WorkList.h"
 
@@ -40,6 +42,36 @@ namespace SVF
 
 class SVFModule;
 class CHNode;
+
+typedef Set<const GlobalValue*> VTableSet;
+typedef Set<const SVFFunction*> VFunSet;
+
+/// Common base for class hierarchy graph. Only implements what PointerAnalysis needs.
+class CommonCHGraph
+{
+public:
+    virtual ~CommonCHGraph() { };
+    enum CHGKind
+    {
+        Standard,
+        DI
+    };
+
+    virtual bool csHasVFnsBasedonCHA(CallSite cs) = 0;
+    virtual const VFunSet &getCSVFsBasedonCHA(CallSite cs) = 0;
+    virtual bool csHasVtblsBasedonCHA(CallSite cs) = 0;
+    virtual const VTableSet &getCSVtblsBasedonCHA(CallSite cs) = 0;
+    virtual void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) = 0;
+
+    CHGKind getKind(void) const
+    {
+        return kind;
+    }
+
+protected:
+    CHGKind kind;
+};
+
 
 typedef GenericEdge<CHNode> GenericCHEdgeTy;
 class CHEdge: public GenericCHEdgeTy
@@ -175,6 +207,8 @@ private:
 typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
+friend class CHGBuilder;
+
 public:
     typedef Set<const CHNode*> CHNodeSetTy;
     typedef FIFOWorkList<const CHNode*> WorkList;
@@ -195,25 +229,10 @@ public:
     }
     ~CHGraph() override = default;
 
-    void buildCHG();
-    void buildInternalMaps();
-    void buildCHGNodes(const GlobalValue *V);
-    void buildCHGNodes(const SVFFunction* F);
-    void buildCHGEdges(const SVFFunction* F);
-    void connectInheritEdgeViaCall(const SVFFunction* caller, CallSite cs);
-    void connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* store);
     void addEdge(const std::string className,
                  const std::string baseClassName,
                  CHEdge::CHEDGETYPE edgeType);
     CHNode *getNode(const std::string name) const;
-    CHNode *createNode(const std::string name);
-    void buildClassNameToAncestorsDescendantsMap();
-    void buildVirtualFunctionToIDMap();
-    void buildCSToCHAVtblsAndVfnsMap();
-    void readInheritanceMetadataFromModule(const Module &M);
-    void analyzeVTables(const Module &M);
-    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
-    const CHNodeSetTy& getCSClasses(CallSite cs);
     void getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &virtualFunctions) override;
     void dump(const std::string& filename);
     void view();
@@ -286,8 +305,6 @@ public:
         return chg->getKind() == Standard;
     }
 
-protected:
-    void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 
 private:
     SVFModule* svfMod;
