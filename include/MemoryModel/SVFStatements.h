@@ -262,7 +262,7 @@ public:
 class MultiOpndStmt : public SVFStmt{
 public:
     typedef std::vector<SVFVar*> OPVars;
-private:
+protected:
     OPVars opVars;
 public:
     /// Constructor, only used by subclassess but not external users
@@ -360,6 +360,9 @@ public:
     /// constructor
     PhiPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
     {
+    }
+    void addOpVar(SVFVar* op){
+        opVars.push_back(op);
     }
     virtual const std::string toString() const override;
 };

@@ -479,11 +479,13 @@ void VFG::addVFGNodes()
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
-    SVFIR::PHINodeMap& phiNodeMap = pag->getPhiNodeMap();
-    for (SVFIR::PHINodeMap::iterator pit = phiNodeMap.begin(), epit = phiNodeMap.end(); pit != epit; ++pit)
+    PAGEdge::PAGEdgeSetTy& phis = getPAGEdgeSet(PAGEdge::Phi);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = phis.begin(), eiter =
+                phis.end(); iter != eiter; ++iter)
     {
-        if (isInterestedPAGNode(pit->first))
-            addIntraPHIVFGNode(pit->first, pit->second);
+        const PhiPE* edge = SVFUtil::cast<PhiPE>(*iter);
+        if(isInterestedPAGNode(edge->getRes()))
+            addIntraPHIVFGNode(edge);
     }
     // initialize llvm binary nodes (binary operators)
     PAGEdge::PAGEdgeSetTy& binaryops = getPAGEdgeSet(PAGEdge::BinaryOp);

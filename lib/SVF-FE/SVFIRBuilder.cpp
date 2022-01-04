@@ -263,10 +263,8 @@ void SVFIRBuilder::processCE(const Value *val)
             NodeID nsrc1 = pag->getValueNode(src1);
             NodeID nsrc2 = pag->getValueNode(src2);
             NodeID nres = pag->getValueNode(selectce);
-            const CopyPE* cpy1 = addCopyEdge(nsrc1, nres);
-            const CopyPE* cpy2 = addCopyEdge(nsrc2, nres);
-            pag->addPhiNode(pag->getGNode(nres),cpy1);
-            pag->addPhiNode(pag->getGNode(nres),cpy2);
+            addPhiNode(nres,nsrc1);
+            addPhiNode(nres,nsrc2);
             setCurrentLocation(cval, cbb);
         }
         // if we meet a int2ptr, then it points-to black hole
@@ -524,8 +522,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
 
         NodeID src = getValueNode(val);
-        const CopyPE* copy = addCopyEdge(src, dst);
-        pag->addPhiNode(pag->getGNode(dst), copy);
+        addPhiNode(dst,src);
     }
 }
 
@@ -665,12 +662,10 @@ void SVFIRBuilder::visitSelectInst(SelectInst &inst)
     NodeID dst = getValueNode(&inst);
     NodeID src1 = getValueNode(inst.getTrueValue());
     NodeID src2 = getValueNode(inst.getFalseValue());
-    const CopyPE* cpy1 = addCopyEdge(src1, dst);
-    const CopyPE* cpy2 = addCopyEdge(src2, dst);
 
     /// Two operands have same incoming basic block, both are the current BB
-    pag->addPhiNode(pag->getGNode(dst), cpy1);
-    pag->addPhiNode(pag->getGNode(dst), cpy2);
+    addPhiNode(dst,src1);
+    addPhiNode(dst,src2);
 }
 
 /*
@@ -744,8 +739,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
-        const CopyPE* copy = addCopyEdge(vnS, rnF);
-        pag->addPhiNode(pag->getGNode(rnF), copy);
+        addPhiNode(rnF,vnS);
     }
 }
 
@@ -1472,7 +1466,13 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         if (!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
             assert(curBB && "instruction does not have a basic block??");
 
-        icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
+        /// We will have one unique function exit ICFGNode for all returns
+        if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curVal)){
+            const SVFFunction *fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(retInst->getParent()->getParent());
+            icfgNode = pag->getICFG()->getFunExitBlockNode(fun);
+        }
+        else
+            icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
     }
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {

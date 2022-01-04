@@ -561,20 +561,18 @@ protected:
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, SVFIR::CopyPEList& oplist)
+    inline void addIntraPHIVFGNode(const PhiPE* edge)
     {
-        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
+        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
         u32_t pos = 0;
-        const PAGEdge* edge = nullptr;
-        for(SVFIR::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(auto var : edge->getOpndVars())
         {
-            edge = *it;
-            sNode->setOpVerAndBB(pos, edge->getSrcNode(), edge->getICFGNode());
+            sNode->setOpVerAndBB(pos, var, edge->getICFGNode());
+            pos++;
         }
-        assert(edge && "edge not found?");
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(phiResNode,sNode);
-        PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
+        setDef(edge->getRes(),sNode);
+        PAGNodeToIntraPHIVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a Compare VFG node
     inline void addCmpVFGNode(const CmpPE* edge)

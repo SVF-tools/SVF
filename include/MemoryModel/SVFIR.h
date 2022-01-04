@@ -56,13 +56,7 @@ public:
     typedef std::vector<const SVFStmt*> PAGEdgeList;
     typedef std::vector<const SVFVar*> PAGNodeList;
     typedef std::vector<const CopyPE*> CopyPEList;
-    typedef std::vector<const BinaryOPPE*> BinaryOPList;
-    typedef std::vector<const UnaryOPPE*> UnaryOPList;
-    typedef std::vector<const CmpPE*> CmpPEList;
-    typedef Map<const SVFVar*,CopyPEList> PHINodeMap;
-    typedef Map<const SVFVar*,BinaryOPList> BinaryNodeMap;
-    typedef Map<const SVFVar*,UnaryOPList> UnaryNodeMap;
-    typedef Map<const SVFVar*,CmpPEList> CmpNodeMap;
+    typedef Map<const SVFVar*,PhiPE*> PHINodeMap;
     typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef Map<const RetBlockNode*,const SVFVar*> CSToRetMap;
@@ -220,22 +214,11 @@ public:
     {
         return callSiteSet;
     }
-    /// Add phi node information
-    inline void addPhiNode(const SVFVar* res, const CopyPE* edge)
-    {
-        phiNodeMap[res].push_back(edge);
-    }
     /// Whether this SVFVar is a result operand a of phi node
     inline bool isPhiNode(const SVFVar* node) const
     {
         return phiNodeMap.find(node) != phiNodeMap.end();
     }
-    /// Get all phi copy edges
-    inline PHINodeMap& getPhiNodeMap()
-    {
-        return phiNodeMap;
-    }
-
 
 private:
     /// Map a SVFStatement type to a set of corresponding SVF statements
@@ -628,10 +611,12 @@ private:
     AddrPE* addAddrPE(NodeID src, NodeID dst);
     /// Add Copy edge
     CopyPE* addCopyPE(NodeID src, NodeID dst);
+    /// Add phi node information
+    PhiPE*  addPhiNode(NodeID res, NodeID opnd);
     /// Add Copy edge
-    CmpPE* addCmpPE(NodeID src, NodeID op1, NodeID op2);
+    CmpPE* addCmpPE(NodeID op1, NodeID op2, NodeID dst);
     /// Add Copy edge
-    BinaryOPPE* addBinaryOPPE(NodeID src, NodeID op1, NodeID op2);
+    BinaryOPPE* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst);
     /// Add Unary edge
     UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst);
     /// Add Load edge

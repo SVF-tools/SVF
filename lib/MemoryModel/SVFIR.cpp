@@ -82,6 +82,26 @@ CopyPE* SVFIR::addCopyPE(NodeID src, NodeID dst)
 }
 
 /*!
+ * Add Phi statement 
+ */
+PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
+{
+    SVFVar* opNode = getGNode(opnd);
+    SVFVar* resNode = getGNode(res);
+    PHINodeMap::iterator it = phiNodeMap.find(resNode);
+    if(it == phiNodeMap.end()){
+        PhiPE* phi = new PhiPE(resNode, {opNode});
+        addToStmt2TypeMap(phi);
+        phiNodeMap[resNode] = phi;
+        return phi;
+    }
+    else{
+        it->second->addOpVar(opNode);
+        return it->second;
+    }
+}
+
+/*!
  * Add Compare edge
  */
 CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst)

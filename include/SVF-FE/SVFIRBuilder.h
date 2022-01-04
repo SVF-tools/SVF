@@ -293,6 +293,14 @@ public:
         return edge;
     }
     /// Add Copy edge
+    inline PhiPE* addPhiNode(NodeID res, NodeID opnd)
+    {
+        const CopyPE* copy = addCopyEdge(opnd, res);
+        PhiPE *edge = pag->addPhiNode(res,opnd);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
+    }
+    /// Add Copy edge
     inline CmpPE* addCmpEdge(NodeID op1, NodeID op2, NodeID dst)
     {
         CmpPE *edge = pag->addCmpPE(op1, op2, dst);
