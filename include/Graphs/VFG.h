@@ -561,70 +561,55 @@ protected:
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PAGNode* phiResNode, SVFIR::CopyPEList& oplist)
+    inline void addIntraPHIVFGNode(const PhiPE* edge)
     {
-        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,phiResNode);
+        IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
         u32_t pos = 0;
-        const PAGEdge* edge = nullptr;
-        for(SVFIR::CopyPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(auto var : edge->getOpndVars())
         {
-            edge = *it;
-            sNode->setOpVerAndBB(pos, edge->getSrcNode(), edge->getICFGNode());
+            sNode->setOpVerAndBB(pos, var, edge->getICFGNode());
+            pos++;
         }
-        assert(edge && "edge not found?");
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(phiResNode,sNode);
-        PAGNodeToIntraPHIVFGNodeMap[phiResNode] = sNode;
+        setDef(edge->getRes(),sNode);
+        PAGNodeToIntraPHIVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a Compare VFG node
-    inline void addCmpVFGNode(const PAGNode* resNode, SVFIR::CmpPEList& oplist)
+    inline void addCmpVFGNode(const CmpPE* edge)
     {
-        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, resNode);
+        CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
-        const PAGEdge* edge = nullptr;
-        for(SVFIR::CmpPEList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(auto var : edge->getOpndVars())
         {
-            edge = *it;
-            sNode->setOpVer(pos, edge->getSrcNode());
+            sNode->setOpVer(pos, var);
+            pos++;
         }
-        assert(edge && "edge not found?");
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(resNode,sNode);
-        PAGNodeToCmpVFGNodeMap[resNode] = sNode;
+        setDef(edge->getRes(),sNode);
+        PAGNodeToCmpVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a BinaryOperator VFG node
-    inline void addBinaryOPVFGNode(const PAGNode* resNode, SVFIR::BinaryOPList& oplist)
+    inline void addBinaryOPVFGNode(const BinaryOPPE* edge)
     {
-        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, resNode);
+        BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
-        const PAGEdge* edge = nullptr;
-        for(SVFIR::BinaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
+        for(auto var : edge->getOpndVars())
         {
-            edge = *it;
-            sNode->setOpVer(pos, (*it)->getSrcNode());
+            sNode->setOpVer(pos, var);
+            pos++;
         }
-
-        assert(edge && "edge not found?");
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(resNode,sNode);
-        PAGNodeToBinaryOPVFGNodeMap[resNode] = sNode;
+        setDef(edge->getRes(),sNode);
+        PAGNodeToBinaryOPVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a UnaryOperator VFG node
-    inline void addUnaryOPVFGNode(const PAGNode* resNode, SVFIR::UnaryOPList& oplist)
+    inline void addUnaryOPVFGNode(const UnaryOPPE* edge)
     {
-        UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, resNode);
-        u32_t pos = 0;
-        const PAGEdge* edge = nullptr;
-        for(SVFIR::UnaryOPList::const_iterator it = oplist.begin(), eit=oplist.end(); it!=eit; ++it,++pos)
-        {
-            edge = *it;
-            sNode->setOpVer(pos, (*it)->getSrcNode());
-        }
-
-        assert(edge && "edge not found?");
+        UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, edge->getDstNode());
+        sNode->setOpVer(0, edge->getSrcNode());
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(resNode,sNode);
-        PAGNodeToUnaryOPVFGNodeMap[resNode] = sNode;
+        setDef(edge->getDstNode(),sNode);
+        PAGNodeToUnaryOPVFGNodeMap[edge->getDstNode()] = sNode;
     }
 };
 

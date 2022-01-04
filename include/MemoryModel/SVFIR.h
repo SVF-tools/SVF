@@ -56,13 +56,7 @@ public:
     typedef std::vector<const SVFStmt*> PAGEdgeList;
     typedef std::vector<const SVFVar*> PAGNodeList;
     typedef std::vector<const CopyPE*> CopyPEList;
-    typedef std::vector<const BinaryOPPE*> BinaryOPList;
-    typedef std::vector<const UnaryOPPE*> UnaryOPList;
-    typedef std::vector<const CmpPE*> CmpPEList;
-    typedef Map<const SVFVar*,CopyPEList> PHINodeMap;
-    typedef Map<const SVFVar*,BinaryOPList> BinaryNodeMap;
-    typedef Map<const SVFVar*,UnaryOPList> UnaryNodeMap;
-    typedef Map<const SVFVar*,CmpPEList> CmpNodeMap;
+    typedef Map<const SVFVar*,PhiPE*> PHINodeMap;
     typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef Map<const RetBlockNode*,const SVFVar*> CSToRetMap;
@@ -87,9 +81,6 @@ private:
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
     PAGEdgeSet globPAGEdgesSet;	///< Global PAGEdges without control flow information
     PHINodeMap phiNodeMap;	///< A set of phi copy edges
-    BinaryNodeMap binaryNodeMap;	///< A set of binary edges
-    UnaryNodeMap unaryNodeMap;	///< A set of unary edges
-    CmpNodeMap cmpNodeMap;	///< A set of comparision edges
     FunToArgsListMap funArgsListMap;	///< Map a function to a list of all its formal parameters
     CSToArgsListMap callSiteArgsListMap;	///< Map a callsite to a list of all its actual parameters
     CSToRetMap callSiteRetMap;	///< Map a callsite to its callsite returns PAGNodes
@@ -166,16 +157,18 @@ public:
     {
         return SymbolTableInfo::SymbolInfo()->getModule();
     }
-    inline void addCallSite(const CallBlockNode* call)
-    {
-        callSiteSet.insert(call);
-    }
-    inline const CallSiteSet& getCallSiteSet() const
-    {
-        return callSiteSet;
-    }
-    /// Get/set methods to get control flow information of a SVFStmt
+    /// Get/set methods to get SVFStmts based on their kinds and ICFGNodes
     //@{
+    /// Get edges set according to its kind
+    inline SVFStmt::PAGEdgeSetTy& getEdgeSet(SVFStmt::PEDGEK kind)
+    {
+        return PAGEdgeKindToSetMap[kind];
+    }
+    /// Get PTA edges set according to its kind
+    inline SVFStmt::PAGEdgeSetTy& getPTAEdgeSet(SVFStmt::PEDGEK kind)
+    {
+        return PTAPAGEdgeKindToSetMap[kind];
+    }
     /// Whether this instruction has SVFIR Edge
     inline bool hasPAGEdgeList(const ICFGNode* inst) const
     {
@@ -213,93 +206,31 @@ public:
     {
         return globPAGEdgesSet;
     }
-    /// Add phi node information
-    inline void addPhiNode(const SVFVar* res, const CopyPE* edge)
+    inline void addCallSite(const CallBlockNode* call)
     {
-        phiNodeMap[res].push_back(edge);
+        callSiteSet.insert(call);
+    }
+    inline const CallSiteSet& getCallSiteSet() const
+    {
+        return callSiteSet;
     }
     /// Whether this SVFVar is a result operand a of phi node
     inline bool isPhiNode(const SVFVar* node) const
     {
         return phiNodeMap.find(node) != phiNodeMap.end();
     }
-    /// Get all phi copy edges
-    inline PHINodeMap& getPhiNodeMap()
-    {
-        return phiNodeMap;
-    }
-        /// Get the corresponding PhiCopyPEs
-    inline const CopyPEList& getPhiCopyPEs(const SVFVar* node) const{
-        PHINodeMap::const_iterator it = phiNodeMap.find(node);
-        assert(it != phiNodeMap.end() && "PhiCopyPEs not found!");
-        return it->second;
-    }
-    /// Add phi node information
-    inline void addBinaryNode(const SVFVar* res, const BinaryOPPE* edge)
-    {
-        binaryNodeMap[res].push_back(edge);
-    }
-    /// Whether this SVFVar is a result operand a of phi node
-    inline bool isBinaryNode(const SVFVar* node) const
-    {
-        return binaryNodeMap.find(node) != binaryNodeMap.end();
-    }
-    /// Get all phi copy edges
-    inline BinaryNodeMap& getBinaryNodeMap()
-    {
-        return binaryNodeMap;
-    }
-    /// Get the corresponding BinaryPEs
-    inline const BinaryOPList& getBinaryPEs(const SVFVar* node) const{
-        BinaryNodeMap::const_iterator it = binaryNodeMap.find(node);
-        assert(it != binaryNodeMap.end() && "BinaryPEs not found!");
-        return it->second;
-    }
-    /// Add unary node information
-    inline void addUnaryNode(const SVFVar* res, const UnaryOPPE* edge)
-    {
-        unaryNodeMap[res].push_back(edge);
-    }
-    /// Whether this SVFVar is an unary node
-    inline bool isUnaryNode(const SVFVar* node) const
-    {
-        return unaryNodeMap.find(node) != unaryNodeMap.end();
-    }
-    /// Get all unary edges
-    inline UnaryNodeMap& getUnaryNodeMap()
-    {
-        return unaryNodeMap;
-    }
-    /// Get the corresponding UnaryPEs
-    inline const UnaryOPList& getUnaryPEs(const SVFVar* node) const{
-        UnaryNodeMap::const_iterator it = unaryNodeMap.find(node);
-        assert(it != unaryNodeMap.end() && "UnaryPEs not found!");
-        return it->second;
-    }
-    /// Add phi node information
-    inline void addCmpNode(const SVFVar* res, const CmpPE* edge)
-    {
-        cmpNodeMap[res].push_back(edge);
-    }
-    /// Whether this SVFVar is a result operand a of phi node
-    inline bool isCmpNode(const SVFVar* node) const
-    {
-        return cmpNodeMap.find(node) != cmpNodeMap.end();
-    }
-    /// Get all phi copy edges
-    inline CmpNodeMap& getCmpNodeMap()
-    {
-        return cmpNodeMap;
-    }
-    /// Get the corresponding CmpPEs
-    inline const CmpPEList& getCmpPEs(const SVFVar* node) const{
-        CmpNodeMap::const_iterator it = cmpNodeMap.find(node);
-        assert(it != cmpNodeMap.end() && "CmpPEs not found!");
-        return it->second;
-    }
-    //@}
 
 private:
+    /// Map a SVFStatement type to a set of corresponding SVF statements
+    inline void addToStmt2TypeMap(SVFStmt* edge) {
+        bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
+        assert(added && "duplicated edge, not added!!!");
+        if (edge->isPTAEdge())
+        {
+            totalPTAPAGEdge++;
+            PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
+        }
+    }
     /// Get/set method for function/callsite arguments and returns
     //@{
     /// Add function arguments
@@ -680,10 +611,12 @@ private:
     AddrPE* addAddrPE(NodeID src, NodeID dst);
     /// Add Copy edge
     CopyPE* addCopyPE(NodeID src, NodeID dst);
+    /// Add phi node information
+    PhiPE*  addPhiNode(NodeID res, NodeID opnd);
     /// Add Copy edge
-    CmpPE* addCmpPE(NodeID src, NodeID dst);
+    CmpPE* addCmpPE(NodeID op1, NodeID op2, NodeID dst);
     /// Add Copy edge
-    BinaryOPPE* addBinaryOPPE(NodeID src, NodeID dst);
+    BinaryOPPE* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst);
     /// Add Unary edge
     UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst);
     /// Add Load edge

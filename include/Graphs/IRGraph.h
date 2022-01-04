@@ -51,16 +51,15 @@ public:
     typedef Set<const SVFStmt*> PAGEdgeSet;
     typedef Map<const Value*,PAGEdgeSet> ValueToEdgeMap;
 
-private:
+protected:
+    SVFStmt::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < SVFIR edge map containing all PAGEdges
+    SVFStmt::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; // initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
-    SVFStmt::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < SVFIR edge map containing all PAGEdges
-    SVFStmt::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
     ValueToEdgeMap valueToEdgeMap;	///< Map llvm::Values to all corresponding PAGEdges
     SymbolTableInfo* symInfo;
 
-protected:
     /// Add a node into the graph
     inline NodeID addNode(SVFVar* node, NodeID i)
     {
@@ -75,6 +74,9 @@ protected:
     /// Return true if this labeled edge exits, including store, call and load
     /// two store edge can have same dst and src but located in different basic blocks, thus flags are needed to distinguish them
     SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* cs);
+    /// Return MultiOpndStmt since it has more than one operands (we use operand 2 here to make the flag)
+    SVFStmt* hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2);
+
     /// Map a value to a set of edges
     inline void mapValueToEdge(const Value *V, SVFStmt *edge)
     {
@@ -102,17 +104,6 @@ public:
     {
         return fromFile;
     }
-    /// Get edges set according to its kind
-    inline SVFStmt::PAGEdgeSetTy& getEdgeSet(SVFStmt::PEDGEK kind)
-    {
-        return PAGEdgeKindToSetMap[kind];
-    }
-    /// Get PTA edges set according to its kind
-    inline SVFStmt::PAGEdgeSetTy& getPTAEdgeSet(SVFStmt::PEDGEK kind)
-    {
-        return PTAPAGEdgeKindToSetMap[kind];
-    }
-
     /// Get all SVFIR Edges that corresponds to an LLVM value
     inline const PAGEdgeSet& getValueEdges(const Value *V)
     {

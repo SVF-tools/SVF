@@ -57,6 +57,7 @@ AddrPE* SVFIR::addAddrPE(NodeID src, NodeID dst)
     else
     {
         AddrPE* addrPE = new AddrPE(srcNode, dstNode);
+        addToStmt2TypeMap(addrPE);
         addEdge(srcNode,dstNode, addrPE);
         return addrPE;
     }
@@ -74,24 +75,48 @@ CopyPE* SVFIR::addCopyPE(NodeID src, NodeID dst)
     else
     {
         CopyPE* copyPE = new CopyPE(srcNode, dstNode);
+        addToStmt2TypeMap(copyPE);
         addEdge(srcNode,dstNode, copyPE);
         return copyPE;
     }
 }
 
 /*!
+ * Add Phi statement 
+ */
+PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
+{
+    SVFVar* opNode = getGNode(opnd);
+    SVFVar* resNode = getGNode(res);
+    PHINodeMap::iterator it = phiNodeMap.find(resNode);
+    if(it == phiNodeMap.end()){
+        PhiPE* phi = new PhiPE(resNode, {opNode});
+        addToStmt2TypeMap(phi);
+        phiNodeMap[resNode] = phi;
+        return phi;
+    }
+    else{
+        it->second->addOpVar(opNode);
+        return it->second;
+    }
+}
+
+/*!
  * Add Compare edge
  */
-CmpPE* SVFIR::addCmpPE(NodeID src, NodeID dst)
+CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst)
 {
-    SVFVar* srcNode = getGNode(src);
+    SVFVar* op1Node = getGNode(op1);
+    SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Cmp))
+    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::Cmp, op2Node))
         return SVFUtil::cast<CmpPE>(edge);
     else
     {
-        CmpPE* cmp = new CmpPE(srcNode, dstNode);
-        addEdge(srcNode,dstNode, cmp);
+        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        CmpPE* cmp = new CmpPE(dstNode, opnds);
+        addToStmt2TypeMap(cmp);
+        addEdge(op1Node, dstNode, cmp);
         return cmp;
     }
 }
@@ -100,16 +125,19 @@ CmpPE* SVFIR::addCmpPE(NodeID src, NodeID dst)
 /*!
  * Add Compare edge
  */
-BinaryOPPE* SVFIR::addBinaryOPPE(NodeID src, NodeID dst)
+BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst)
 {
-    SVFVar* srcNode = getGNode(src);
+    SVFVar* op1Node = getGNode(op1);
+    SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::BinaryOp))
+    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::BinaryOp, op2Node))
         return SVFUtil::cast<BinaryOPPE>(edge);
     else
     {
-        BinaryOPPE* binaryOP = new BinaryOPPE(srcNode, dstNode);
-        addEdge(srcNode,dstNode, binaryOP);
+        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        BinaryOPPE* binaryOP = new BinaryOPPE(dstNode, opnds);
+        addToStmt2TypeMap(binaryOP);
+        addEdge(op1Node,dstNode, binaryOP);
         return binaryOP;
     }
 }
@@ -126,6 +154,7 @@ UnaryOPPE* SVFIR::addUnaryOPPE(NodeID src, NodeID dst)
     else
     {
         UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode);
+        addToStmt2TypeMap(unaryOP);
         addEdge(srcNode,dstNode, unaryOP);
         return unaryOP;
     }
@@ -143,6 +172,7 @@ LoadPE* SVFIR::addLoadPE(NodeID src, NodeID dst)
     else
     {
         LoadPE* loadPE = new LoadPE(srcNode, dstNode);
+        addToStmt2TypeMap(loadPE);
         addEdge(srcNode,dstNode, loadPE);
         return loadPE;
     }
@@ -161,6 +191,7 @@ StorePE* SVFIR::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal)
     else
     {
         StorePE* storePE = new StorePE(srcNode, dstNode, curVal);
+        addToStmt2TypeMap(storePE);
         addEdge(srcNode,dstNode, storePE);
         return storePE;
     }
@@ -178,6 +209,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs)
     else
     {
         CallPE* callPE = new CallPE(srcNode, dstNode, cs);
+        addToStmt2TypeMap(callPE);
         addEdge(srcNode,dstNode, callPE);
         return callPE;
     }
@@ -195,6 +227,7 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
     else
     {
         RetPE* retPE = new RetPE(srcNode, dstNode, cs);
+        addToStmt2TypeMap(retPE);
         addEdge(srcNode,dstNode, retPE);
         return retPE;
     }
@@ -223,6 +256,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs
     else
     {
         TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs);
+        addToStmt2TypeMap(forkPE);
         addEdge(srcNode,dstNode, forkPE);
         return forkPE;
     }
@@ -240,6 +274,7 @@ TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs
     else
     {
         TDJoinPE* joinPE = new TDJoinPE(srcNode, dstNode, cs);
+        addToStmt2TypeMap(joinPE);
         addEdge(srcNode,dstNode, joinPE);
         return joinPE;
     }
@@ -280,6 +315,7 @@ NormalGepPE* SVFIR::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls
     else
     {
         NormalGepPE* gepPE = new NormalGepPE(baseNode, dstNode, ls+baseLS);
+        addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
     }
@@ -299,6 +335,7 @@ VariantGepPE* SVFIR::addVariantGepPE(NodeID src, NodeID dst)
     else
     {
         VariantGepPE* gepPE = new VariantGepPE(baseNode, dstNode);
+        addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
     }

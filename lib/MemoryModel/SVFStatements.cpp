@@ -37,8 +37,9 @@ using namespace SVFUtil;
 
 u64_t SVFStmt::callEdgeLabelCounter = 0;
 u64_t SVFStmt::storeEdgeLabelCounter = 0;
+u64_t SVFStmt::multiOpndLabelCounter = 0;  
 SVFStmt::Inst2LabelMap SVFStmt::inst2LabelMap;
-
+SVFStmt::Var2LabelMap SVFStmt::var2LabelMap;
 /*!
  * SVFStmt constructor
  */
@@ -86,10 +87,21 @@ const std::string CopyPE::toString() const{
     return rawstr.str();
 }
 
+const std::string PhiPE::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "PhiPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
+    if (Options::PAGDotGraphShorter) {
+        rawstr << "\n";
+    }
+    rawstr << value2String(getValue());
+    return rawstr.str();
+}
+
 const std::string CmpPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CmpPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CmpPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -100,7 +112,7 @@ const std::string CmpPE::toString() const{
 const std::string BinaryOPPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "BinaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "BinaryOPPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -216,4 +228,15 @@ const std::string TDJoinPE::toString() const{
     }
     rawstr << value2String(getValue());
     return rawstr.str();
+}
+
+
+NodeID MultiOpndStmt::getOpVarID(u32_t pos) const
+{
+    return getOpVar(pos)->getId();
+}
+
+NodeID MultiOpndStmt::getResID() const
+{
+    return getRes()->getId();
 }

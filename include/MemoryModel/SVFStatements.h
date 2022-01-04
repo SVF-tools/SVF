@@ -53,7 +53,7 @@ public:
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin, Cmp, BinaryOp, UnaryOp
+        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, Phi, Cmp, BinaryOp, UnaryOp, ThreadFork, ThreadJoin
     };
 
 private:
@@ -87,11 +87,11 @@ public:
                edge->getEdgeKind() == SVFStmt::Ret ||
                edge->getEdgeKind() == SVFStmt::NormalGep ||
                edge->getEdgeKind() == SVFStmt::VariantGep ||
-               edge->getEdgeKind() == SVFStmt::ThreadFork ||
-               edge->getEdgeKind() == SVFStmt::ThreadJoin ||
                edge->getEdgeKind() == SVFStmt::Cmp ||
                edge->getEdgeKind() == SVFStmt::BinaryOp ||
-               edge->getEdgeKind() == SVFStmt::UnaryOp;
+               edge->getEdgeKind() == SVFStmt::UnaryOp  ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork ||
+               edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     ///@}
 
@@ -135,6 +135,15 @@ public:
     }
     //@}
 
+    /// Compute the unique edgeFlag value from edge kind and second variable operand for MultiOpndStmt.
+    static inline GEdgeFlag makeEdgeFlagWithAddionalOpnd(GEdgeKind k, const SVFVar* var)
+    {
+        Var2LabelMap::const_iterator iter = var2LabelMap.find(var);
+        u64_t label = (iter != var2LabelMap.end()) ?
+                      iter->second : multiOpndLabelCounter++;
+        return (label << EdgeKindMaskBits) | k;
+    }
+
     /// Compute the unique edgeFlag value from edge kind and call site Instruction.
     static inline GEdgeFlag makeEdgeFlagWithCallInst(GEdgeKind k, const ICFGNode* cs)
     {
@@ -172,11 +181,13 @@ public:
 
 private:
     typedef Map<const ICFGNode*, u32_t> Inst2LabelMap;
+    typedef Map<const SVFVar*, u32_t> Var2LabelMap;
     static Inst2LabelMap inst2LabelMap; ///< Call site Instruction to label map
+    static Var2LabelMap var2LabelMap;  ///< Second operand of MultiOpndStmt to label map
     static u64_t callEdgeLabelCounter;  ///< Call site Instruction counter
     static u64_t storeEdgeLabelCounter;  ///< Store Instruction counter
+    static u64_t multiOpndLabelCounter;  ///< MultiOpndStmt counter
 };
-
 
 
 /*!
@@ -210,7 +221,7 @@ public:
     {
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
@@ -245,19 +256,131 @@ public:
     {
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
+};
+
+class MultiOpndStmt : public SVFStmt{
+public:
+    typedef std::vector<SVFVar*> OPVars;
+protected:
+    OPVars opVars;
+public:
+    /// Constructor, only used by subclassess but not external users
+    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(opnds.at(0), r, k), opVars(opnds)
+    {
+    }
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const MultiOpndStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *node)
+    {
+        return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == BinaryOp ||
+               node->getEdgeKind() == Cmp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *node)
+    {
+        return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == BinaryOp ||
+               node->getEdgeKind() == Cmp;
+    }
+    //@}
+    /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and `r` is OpVar
+    //@{
+    /// Operand SVFVars
+    inline const SVFVar* getOpVar(u32_t pos) const
+    {
+        return opVars.at(pos);
+    }
+    /// Result SVFVar
+    inline const SVFVar* getRes() const
+    {
+        return getDstNode();
+    }
+    
+    NodeID getOpVarID(u32_t pos) const;
+    NodeID getResID() const;
+
+    inline u32_t getOpVarNum() const
+    {
+        return opVars.size();
+    }
+    inline const OPVars& getOpndVars() const{
+        return opVars;
+    }
+    inline OPVars::const_iterator opVarBegin() const
+    {
+        return opVars.begin();
+    }
+    inline OPVars::const_iterator opVerEnd() const
+    {
+        return opVars.end();
+    }
+    //@}
+};
+
+/*!
+ * Phi instruction edge
+ */
+class PhiPE: public MultiOpndStmt
+{
+private:
+    PhiPE();                      ///< place holder
+    PhiPE(const PhiPE &);  ///< place holder
+    void operator=(const PhiPE &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
+    SVFVar* getDstNode();    ///< place holder, use getRes() instead
+    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
+    SVFVar* getDstID();    ///< place holder, use getResID() instead
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const PhiPE *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    //@}
+
+    /// constructor
+    PhiPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
+    {
+    }
+    void addOpVar(SVFVar* op){
+        opVars.push_back(op);
+    }
+    virtual const std::string toString() const override;
 };
 
 
 /*!
  * Compare instruction edge
  */
-class CmpPE: public SVFStmt
+class CmpPE: public MultiOpndStmt
 {
 private:
     CmpPE();                      ///< place holder
     CmpPE(const CmpPE &);  ///< place holder
     void operator=(const CmpPE &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
+    SVFVar* getDstNode();    ///< place holder, use getRes() instead
+    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
+    SVFVar* getDstID();    ///< place holder, use getResID() instead
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -269,6 +392,10 @@ public:
     {
         return edge->getEdgeKind() == SVFStmt::Cmp;
     }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Cmp;
+    }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
         return edge->getEdgeKind() == SVFStmt::Cmp;
@@ -276,23 +403,27 @@ public:
     //@}
 
     /// constructor
-    CmpPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Cmp)
+    CmpPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Cmp)
     {
     }
-
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
 /*!
  * Binary instruction edge
  */
-class BinaryOPPE: public SVFStmt
+class BinaryOPPE: public MultiOpndStmt
 {
 private:
     BinaryOPPE();                      ///< place holder
     BinaryOPPE(const BinaryOPPE &);  ///< place holder
     void operator=(const BinaryOPPE &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
+    SVFVar* getDstNode();    ///< place holder, use getRes() instead
+    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
+    SVFVar* getDstID();    ///< place holder, use getResID() instead
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -304,6 +435,10 @@ public:
     {
         return edge->getEdgeKind() == SVFStmt::BinaryOp;
     }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
+    }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
         return edge->getEdgeKind() == SVFStmt::BinaryOp;
@@ -311,11 +446,10 @@ public:
     //@}
 
     /// constructor
-    BinaryOPPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::BinaryOp)
+    BinaryOPPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp)
     {
     }
-
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 /*!
@@ -349,7 +483,7 @@ public:
     {
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
@@ -386,7 +520,7 @@ public:
     {
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
@@ -422,7 +556,7 @@ public:
     {
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
@@ -513,7 +647,7 @@ public:
         return ls;
     }
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 /*!
@@ -550,7 +684,7 @@ public:
     /// constructor
     VariantGepPE(SVFVar* s, SVFVar* d) : GepPE(s,d,SVFStmt::VariantGep) {}
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 
 };
 
@@ -603,7 +737,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 
@@ -655,7 +789,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 

@@ -48,13 +48,6 @@ bool IRGraph::addEdge(SVFVar* src, SVFVar* dst, SVFStmt* edge)
           << " kind :" << dst->getNodeKind() << "\n");
     src->addOutEdge(edge);
     dst->addInEdge(edge);
-    bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
-    assert(added && "duplicated edge, not added!!!");
-    if (edge->isPTAEdge())
-    {
-        totalPTAPAGEdge++;
-        PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
-    }
     return true;
 }
 
@@ -73,7 +66,21 @@ SVFStmt* IRGraph::hasNonlabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK ki
 }
 
 /*!
- * Return true if it is an inter-procedural edge
+ * Return an MultiOpndStmt if found
+ */
+SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* op1, SVFStmt::PEDGEK kind, const SVFVar* op2)
+{
+    SVFStmt edge(src,op1,SVFStmt::makeEdgeFlagWithAddionalOpnd(kind,op2));
+    SVFStmt::PAGEdgeSetTy::iterator it = PAGEdgeKindToSetMap[kind].find(&edge);
+    if (it != PAGEdgeKindToSetMap[kind].end())
+    {
+        return *it;
+    }
+    return nullptr;
+}
+
+/*!
+ * Return an inter-procedural edge if found
  */
 SVFStmt* IRGraph::hasLabeledEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind, const ICFGNode* callInst)
 {
