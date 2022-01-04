@@ -92,6 +92,7 @@ PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
     if(it == phiNodeMap.end()){
         PhiPE* phi = new PhiPE(resNode, {opNode});
         addToStmt2TypeMap(phi);
+        addEdge(opNode, resNode, phi);
         phiNodeMap[resNode] = phi;
         return phi;
     }

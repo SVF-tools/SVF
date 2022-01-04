@@ -295,7 +295,6 @@ public:
     /// Add Copy edge
     inline PhiPE* addPhiNode(NodeID res, NodeID opnd)
     {
-        const CopyPE* copy = addCopyEdge(opnd, res);
         PhiPE *edge = pag->addPhiNode(res,opnd);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;

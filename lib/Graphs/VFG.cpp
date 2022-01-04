@@ -340,8 +340,8 @@ void VFG::addVFGNodes()
                 copys.end(); iter != eiter; ++iter)
     {
         const CopyPE* edge = SVFUtil::cast<CopyPE>(*iter);
-        if(!isPhiCopyEdge(edge))
-            addCopyVFGNode(edge);
+        assert(!isPhiCopyEdge(edge) && "Copy edges can not be a PhiNode (or from PhiNode)");
+        addCopyVFGNode(edge);
     }
 
     // initialize gep nodes
