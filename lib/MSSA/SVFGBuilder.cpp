@@ -69,8 +69,6 @@ void SVFGBuilder::buildSVFG()
 {
     MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
-    if(mssa->getPTA()->printStat())
-        svfg->performStat();
 }
 
 /// Create DDA SVFG
@@ -104,6 +102,9 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     /// Update call graph using pre-analysis results
     if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
+
+    if(mssa->getPTA()->printStat())
+        svfg->performStat();
 
     if(Options::DumpVFG)
         svfg->dump("svfg_final");

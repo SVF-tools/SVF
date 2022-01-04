@@ -183,7 +183,7 @@ int main(int argc, char ** argv)
     VFG* vfg = new VFG(callgraph);
 
     /// Sparse value-flow graph (SVFG)
-    SVFGBuilder svfBuilder;
+    SVFGBuilder svfBuilder(true);
     SVFG* svfg = svfBuilder.buildFullSVFGWithoutOPT(ander);
 
     /// Collect uses of an LLVM Value

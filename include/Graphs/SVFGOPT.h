@@ -103,8 +103,9 @@ protected:
         NodeID phiId = getDef(cs_ret);
         NodeID retdef = getDef(fun_ret);
         /// If a function does not have any return instruction. The def of a FormalRetVFGNode is itself (see VFG.h: addFormalRetVFGNode).
-        /// Therefore, we do not connect return edge from a function without any return instruction.
-        if (retdef == getFormalRetVFGNode(fun_ret)->getId())
+        /// Therefore, we do not connect return edge from a function without any return instruction (i.e., pag->isPhiNode(fun_ret)==false)
+        /// because unique fun_ret PAGNode was not collected as a PhiNode in SVFIRBuilder::visitReturnInst
+        if (pag->isPhiNode(fun_ret)==false)
             return;
 
         SVFGEdge* edge = addRetEdge(retdef, phiId, csId);
