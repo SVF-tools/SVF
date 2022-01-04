@@ -619,7 +619,8 @@ void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
     NodeID op1Node = getValueNode(op1);
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
-    const BinaryOPPE* binayPE = addBinaryOPEdge(op1Node, op2Node, dst);
+    u32_t opcode = inst.getOpcode();
+    const BinaryOPPE* binayPE = addBinaryOPEdge(op1Node, op2Node, dst, opcode);
 }
 
 /*!
@@ -628,12 +629,11 @@ void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
 void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
 {
     NodeID dst = getValueNode(&inst);
-    for (u32_t i = 0; i < inst.getNumOperands(); i++)
-    {
-        Value* opnd = inst.getOperand(i);
-        NodeID src = getValueNode(opnd);
-        const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
-    }
+    assert(inst.getNumOperands() == 1 && "not one operand for Unary instruction?");
+    Value* opnd = inst.getOperand(0);
+    NodeID src = getValueNode(opnd);
+    u32_t opcode = inst.getOpcode();
+    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst, opcode);
 }
 
 /*!
@@ -647,7 +647,8 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
     NodeID op1Node = getValueNode(op1);
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
-    const CmpPE* cmpPE = addCmpEdge(op1Node, op2Node, dst);
+    u32_t opcode = inst.getOpcode();
+    const CmpPE* cmpPE = addCmpEdge(op1Node, op2Node, dst, opcode);
 }
 
 
@@ -777,20 +778,35 @@ void SVFIRBuilder::visitExtractElementInst(ExtractElementInst &inst)
  * br %cmp label %if.then, label %if.else
  */
 void SVFIRBuilder::visitBranchInst(BranchInst &inst){
-    NodeID dst = getValueNode(&inst);
-    NodeID src;
+    NodeID brinst = getValueNode(&inst);
+    NodeID cond;
 	if (inst.isConditional())
-		src = getValueNode(inst.getCondition());
+		cond = getValueNode(inst.getCondition());
 	else
-		src = pag->getNullPtr();
-	const UnaryOPPE *unaryPE = addUnaryOPEdge(src, dst);
+		cond = pag->getNullPtr();
+
+    std::vector<const ICFGNode*> successors;
+    for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
+    {
+        const Instruction* succInst = &inst.getSuccessor(i)->front();
+        const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
+        successors.push_back(icfgNode);
+    }
+    const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
 }
 
 void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
-    NodeID dst = getValueNode(&inst);
-    Value* opnd = inst.getCondition();
-    NodeID src = getValueNode(opnd);
-    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst);
+    NodeID brinst = getValueNode(&inst);
+    NodeID cond = getValueNode(inst.getCondition());
+
+    std::vector<const ICFGNode*> successors;
+    for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
+    {
+        const Instruction* succInst = &inst.getSuccessor(i)->front();
+        const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
+        successors.push_back(icfgNode);
+    }
+    const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
 }
 
 ///   %ap = alloca %struct.va_list

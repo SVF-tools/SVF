@@ -122,6 +122,15 @@ const std::string UnaryOPVFGNode::toString() const {
     return rawstr.str();
 }
 
+const std::string BranchVFGNode::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "BranchVFGNode ID: " << getId() << " ";
+    rawstr << "PAGEdge: [" << brstmt->toString() << "\t";
+    return rawstr.str();
+}
+
+
 const std::string GepVFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
@@ -502,8 +511,17 @@ void VFG::addVFGNodes()
                 unaryops.end(); iter != eiter; ++iter)
     {
         const UnaryOPPE* edge = SVFUtil::cast<UnaryOPPE>(*iter);
-        if(isInterestedPAGNode(edge->getDstNode()))
+        if(isInterestedPAGNode(edge->getRes()))
             addUnaryOPVFGNode(edge);
+    }
+    // initialize llvm unary nodes (unary operators)
+    PAGEdge::PAGEdgeSetTy& brs = getPAGEdgeSet(PAGEdge::Branch);
+    for (PAGEdge::PAGEdgeSetTy::iterator iter = brs.begin(), eiter =
+                brs.end(); iter != eiter; ++iter)
+    {
+        const BranchStmt* edge = SVFUtil::cast<BranchStmt>(*iter);
+        if(isInterestedPAGNode(edge->getBranchInst()))
+            addBranchVFGNode(edge);
     }
     // initialize llvm cmp nodes (comparision)
     PAGEdge::PAGEdgeSetTy& cmps = getPAGEdgeSet(PAGEdge::Cmp);

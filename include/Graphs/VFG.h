@@ -68,6 +68,7 @@ public:
     typedef Map<const PAGNode*, IntraPHIVFGNode*> PAGNodeToPHIVFGNodeMapTy;
     typedef Map<const PAGNode*, BinaryOPVFGNode*> PAGNodeToBinaryOPVFGNodeMapTy;
     typedef Map<const PAGNode*, UnaryOPVFGNode*> PAGNodeToUnaryOPVFGNodeMapTy;
+    typedef Map<const PAGNode*, BranchVFGNode*> PAGNodeToBranchVFGNodeMapTy;
     typedef Map<const PAGNode*, CmpVFGNode*> PAGNodeToCmpVFGNodeMapTy;
     typedef Map<const SVFFunction*, VFGNodeSet > FunToVFGNodesMapTy;
 
@@ -93,6 +94,7 @@ protected:
     PAGNodeToPHIVFGNodeMapTy PAGNodeToIntraPHIVFGNodeMap;	///< map a PAGNode to its PHIVFGNode
     PAGNodeToBinaryOPVFGNodeMapTy PAGNodeToBinaryOPVFGNodeMap;	///< map a PAGNode to its BinaryOPVFGNode
     PAGNodeToUnaryOPVFGNodeMapTy PAGNodeToUnaryOPVFGNodeMap;	///< map a PAGNode to its UnaryOPVFGNode
+    PAGNodeToBranchVFGNodeMapTy PAGNodeToBranchVFGNodeMap;	///< map a PAGNode to its BranchVFGNode
     PAGNodeToCmpVFGNodeMapTy PAGNodeToCmpVFGNodeMap;	///< map a PAGNode to its CmpVFGNode
     PAGEdgeToStmtVFGNodeMapTy PAGEdgeToStmtVFGNodeMap;	///< map a PAGEdge to its StmtVFGNode
     FunToVFGNodesMapTy funToVFGNodesMap; ///< map a function to its VFGNodes;
@@ -216,6 +218,12 @@ public:
     {
         PAGNodeToUnaryOPVFGNodeMapTy::const_iterator it = PAGNodeToUnaryOPVFGNodeMap.find(pagNode);
         assert(it != PAGNodeToUnaryOPVFGNodeMap.end() && "UnaryOPVFGNode can not be found??");
+        return it->second;
+    }
+    inline BranchVFGNode* getBranchVFGNode(const PAGNode* pagNode) const
+    {
+        PAGNodeToBranchVFGNodeMapTy::const_iterator it = PAGNodeToBranchVFGNodeMap.find(pagNode);
+        assert(it != PAGNodeToBranchVFGNodeMap.end() && "BranchVFGNode can not be found??");
         return it->second;
     }
     inline CmpVFGNode* getCmpVFGNode(const PAGNode* pagNode) const
@@ -605,11 +613,19 @@ protected:
     /// Add a UnaryOperator VFG node
     inline void addUnaryOPVFGNode(const UnaryOPPE* edge)
     {
-        UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, edge->getDstNode());
-        sNode->setOpVer(0, edge->getSrcNode());
+        UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, edge->getRes());
+        sNode->setOpVer(0, edge->getOpVar());
         addVFGNode(sNode,edge->getICFGNode());
-        setDef(edge->getDstNode(),sNode);
-        PAGNodeToUnaryOPVFGNodeMap[edge->getDstNode()] = sNode;
+        setDef(edge->getRes(),sNode);
+        PAGNodeToUnaryOPVFGNodeMap[edge->getRes()] = sNode;
+    }
+    /// Add a BranchVFGNode 
+    inline void addBranchVFGNode(const BranchStmt* edge)
+    {
+        BranchVFGNode* sNode = new BranchVFGNode(totalVFGNode++, edge);
+        addVFGNode(sNode,edge->getICFGNode());
+        setDef(edge->getBranchInst(),sNode);
+        PAGNodeToBranchVFGNodeMap[edge->getBranchInst()] = sNode;
     }
 };
 

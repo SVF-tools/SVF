@@ -105,7 +105,7 @@ PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
 /*!
  * Add Compare edge
  */
-CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst)
+CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 {
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
@@ -115,7 +115,7 @@ CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst)
     else
     {
         std::vector<SVFVar*> opnds = {op1Node, op2Node};
-        CmpPE* cmp = new CmpPE(dstNode, opnds);
+        CmpPE* cmp = new CmpPE(dstNode, opnds, opcode);
         addToStmt2TypeMap(cmp);
         addEdge(op1Node, dstNode, cmp);
         return cmp;
@@ -126,7 +126,7 @@ CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst)
 /*!
  * Add Compare edge
  */
-BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst)
+BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 {
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
@@ -136,7 +136,7 @@ BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst)
     else
     {
         std::vector<SVFVar*> opnds = {op1Node, op2Node};
-        BinaryOPPE* binaryOP = new BinaryOPPE(dstNode, opnds);
+        BinaryOPPE* binaryOP = new BinaryOPPE(dstNode, opnds, opcode);
         addToStmt2TypeMap(binaryOP);
         addEdge(op1Node,dstNode, binaryOP);
         return binaryOP;
@@ -146,7 +146,7 @@ BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst)
 /*!
  * Add Unary edge
  */
-UnaryOPPE* SVFIR::addUnaryOPPE(NodeID src, NodeID dst)
+UnaryOPPE* SVFIR::addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -154,10 +154,28 @@ UnaryOPPE* SVFIR::addUnaryOPPE(NodeID src, NodeID dst)
         return SVFUtil::cast<UnaryOPPE>(edge);
     else
     {
-        UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode);
+        UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode, opcode);
         addToStmt2TypeMap(unaryOP);
         addEdge(srcNode,dstNode, unaryOP);
         return unaryOP;
+    }
+}
+
+/*
+* Add BranchStmt
+*/
+BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGNode*> succs)
+{
+    SVFVar* brNode = getGNode(br);
+    SVFVar* condNode = getGNode(cond);
+    if(SVFStmt* edge = hasNonlabeledEdge(condNode,brNode, SVFStmt::Branch))
+        return SVFUtil::cast<BranchStmt>(edge);
+    else
+    {
+        BranchStmt* branch = new BranchStmt(brNode, condNode, succs);
+        addToStmt2TypeMap(branch);
+        addEdge(condNode,brNode, branch);
+        return branch;
     }
 }
 

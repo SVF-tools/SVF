@@ -53,7 +53,7 @@ public:
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, Phi, Cmp, BinaryOp, UnaryOp, ThreadFork, ThreadJoin
+        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, Phi, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
     };
 
 private:
@@ -381,6 +381,8 @@ private:
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
     SVFVar* getDstID();    ///< place holder, use getResID() instead
+
+    u32_t opcode;
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -403,9 +405,15 @@ public:
     //@}
 
     /// constructor
-    CmpPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Cmp)
+    CmpPE(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), opcode(oc)
     {
     }
+
+    u32_t getOpcode() const
+    {
+        return opcode;
+    }
+    
     virtual const std::string toString() const override;
 };
 
@@ -423,6 +431,8 @@ private:
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
     SVFVar* getDstID();    ///< place holder, use getResID() instead
+
+    u32_t opcode;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -446,9 +456,15 @@ public:
     //@}
 
     /// constructor
-    BinaryOPPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp)
+    BinaryOPPE(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
     {
     }
+
+    u32_t getOpcode() const
+    {
+        return opcode;
+    }
+
     virtual const std::string toString() const override;
 };
 
@@ -461,6 +477,12 @@ private:
     UnaryOPPE();                      ///< place holder
     UnaryOPPE(const UnaryOPPE &);  ///< place holder
     void operator=(const UnaryOPPE &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, use getOpVar() instead
+    SVFVar* getDstNode();    ///< place holder, use getRes() instead
+    SVFVar* getSrcID();  ///< place holder, use getOpVarID() instead
+    SVFVar* getDstID();    ///< place holder, use getResID() instead
+
+    u32_t opcode;
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -479,13 +501,89 @@ public:
     //@}
 
     /// constructor
-    UnaryOPPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::UnaryOp)
+    UnaryOPPE(SVFVar* s, SVFVar* d, u32_t oc) : SVFStmt(s,d,SVFStmt::UnaryOp), opcode(oc)
     {
     }
+
+    u32_t getOpcode() const
+    {
+        return opcode;
+    }
+    inline const SVFVar* getOpVar() const{
+        return SVFStmt::getSrcNode();
+    }
+    inline const SVFVar* getRes() const{
+        return SVFStmt::getDstNode();
+    }
+    NodeID getOpVarID() const;
+    NodeID getResID() const;
 
     virtual const std::string toString() const override;
 };
 
+
+/*!
+ * Branch statements including if/else and switch 
+ */
+class BranchStmt: public SVFStmt
+{
+private:
+    BranchStmt();                      ///< place holder
+    BranchStmt(const BranchStmt &);  ///< place holder
+    void operator=(const BranchStmt &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, not allowed 
+    SVFVar* getDstNode();    ///< place holder, not allowed 
+    SVFVar* getSrcID();  ///< place holder, not allowed 
+    SVFVar* getDstID();    ///< place holder, not allowed 
+
+    std::vector<const ICFGNode*> successors;
+    const SVFVar* cond;
+    const SVFVar* brInst;
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BranchStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Branch;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Branch;
+    }
+    //@}
+
+    /// constructor
+    BranchStmt(SVFVar* inst, SVFVar* c, const std::vector<const ICFGNode*>& succs) : SVFStmt(c,inst,SVFStmt::Branch), successors(succs), cond(c), brInst(inst)
+    {
+    }
+
+    /// The branch is unconditional if cond is a null value
+    bool isUnconditional() const;
+    /// The branch is conditional if cond is not a null value
+    bool isConditional() const;
+    /// Return the condition 
+    const SVFVar* getCondition() const;
+    const SVFVar* getBranchInst() const{
+        return brInst;
+    }
+    /// Successors of this branch statement
+    ///@{
+    u32_t getNumSuccessors() const{
+        return successors.size();
+    }
+    const std::vector<const ICFGNode*>& getSuccessors() const{
+        return successors;
+    }
+    const ICFGNode* getSuccessor (u32_t i) const{
+        return successors.at(i);
+    }
+    ///@}
+    virtual const std::string toString() const override;
+};
 
 /*!
  * Store edge

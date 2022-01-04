@@ -197,19 +197,11 @@ public:
             inst2PTAPAGEdgesMap[inst].push_back(edge);
     }
     /// Get global PAGEdges (not in a procedure)
-    inline void addGlobalPAGEdge(const SVFStmt* edge)
-    {
-        globPAGEdgesSet.insert(edge);
-    }
-    /// Get global PAGEdges (not in a procedure)
     inline PAGEdgeSet& getGlobalPAGEdgeSet()
     {
         return globPAGEdgesSet;
     }
-    inline void addCallSite(const CallBlockNode* call)
-    {
-        callSiteSet.insert(call);
-    }
+    /// Get all callsites
     inline const CallSiteSet& getCallSiteSet() const
     {
         return callSiteSet;
@@ -220,54 +212,6 @@ public:
         return phiNodeMap.find(node) != phiNodeMap.end();
     }
 
-private:
-    /// Map a SVFStatement type to a set of corresponding SVF statements
-    inline void addToStmt2TypeMap(SVFStmt* edge) {
-        bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
-        assert(added && "duplicated edge, not added!!!");
-        if (edge->isPTAEdge())
-        {
-            totalPTAPAGEdge++;
-            PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
-        }
-    }
-    /// Get/set method for function/callsite arguments and returns
-    //@{
-    /// Add function arguments
-    inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
-    {
-        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
-        funEntryBlockNode->addFormalParms(arg);
-        funArgsListMap[fun].push_back(arg);
-    }
-    /// Add function returns
-    inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
-    {
-        FunExitBlockNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
-        funExitBlockNode->addFormalRet(ret);
-        funRetMap[fun] = ret;
-    }
-    /// Add callsite arguments
-    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const SVFVar* arg)
-    {
-        callBlockNode->addActualParms(arg);
-        callSiteArgsListMap[callBlockNode].push_back(arg);
-    }
-    /// Add callsite returns
-    inline void addCallSiteRets(RetBlockNode* retBlockNode,const SVFVar* arg)
-    {
-        retBlockNode->addActualRet(arg);
-        callSiteRetMap[retBlockNode]= arg;
-    }
-    /// Add indirect callsites
-    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr)
-    {
-        bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
-        funPtrToCallSitesMap[funPtr].insert(cs);
-        assert(added && "adding the same indirect callsite twice?");
-    }
-
-public:
     /// Function has arguments list
     inline bool hasFunArgsList(const SVFFunction* func) const
     {
@@ -515,8 +459,72 @@ public:
     NodeBS& getAllFieldsObjNode(NodeID id);
     NodeBS getFieldsAfterCollapse(NodeID id);
     //@}
+    inline NodeID addDummyValNode()
+    {
+        return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
+    }
+    inline NodeID addDummyObjNode(const Type* type = nullptr)
+    {
+        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
+    }
+    /// Whether a node is a valid pointer
+    //@{
+    bool isValidPointer(NodeID nodeId) const;
+
+    bool isValidTopLevelPtr(const SVFVar* node);
+    //@}
+
+    /// Print SVFIR
+    void print();
 
 private:
+
+    /// Map a SVFStatement type to a set of corresponding SVF statements
+    inline void addToStmt2TypeMap(SVFStmt* edge) {
+        bool added = PAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge).second;
+        assert(added && "duplicated edge, not added!!!");
+        if (edge->isPTAEdge())
+        {
+            totalPTAPAGEdge++;
+            PTAPAGEdgeKindToSetMap[edge->getEdgeKind()].insert(edge);
+        }
+    }
+    /// Get/set method for function/callsite arguments and returns
+    //@{
+    /// Add function arguments
+    inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
+    {
+        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
+        funEntryBlockNode->addFormalParms(arg);
+        funArgsListMap[fun].push_back(arg);
+    }
+    /// Add function returns
+    inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
+    {
+        FunExitBlockNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
+        funExitBlockNode->addFormalRet(ret);
+        funRetMap[fun] = ret;
+    }
+    /// Add callsite arguments
+    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const SVFVar* arg)
+    {
+        callBlockNode->addActualParms(arg);
+        callSiteArgsListMap[callBlockNode].push_back(arg);
+    }
+    /// Add callsite returns
+    inline void addCallSiteRets(RetBlockNode* retBlockNode,const SVFVar* arg)
+    {
+        retBlockNode->addActualRet(arg);
+        callSiteRetMap[retBlockNode]= arg;
+    }
+    /// Add indirect callsites
+    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr)
+    {
+        bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
+        funPtrToCallSitesMap[funPtr].insert(cs);
+        assert(added && "adding the same indirect callsite twice?");
+    }
+
     /// add node into SVFIR
     //@{
     /// Add a value (pointer) node
@@ -605,6 +613,16 @@ private:
         return addNode(node,i);
     }
 
+    /// Add global PAGEdges (not in a procedure)
+    inline void addGlobalPAGEdge(const SVFStmt* edge)
+    {
+        globPAGEdgesSet.insert(edge);
+    }
+    /// Add callsites
+    inline void addCallSite(const CallBlockNode* call)
+    {
+        callSiteSet.insert(call);
+    }
     /// Add an edge into SVFIR
     //@{
     /// Add Address edge
@@ -614,11 +632,13 @@ private:
     /// Add phi node information
     PhiPE*  addPhiNode(NodeID res, NodeID opnd);
     /// Add Copy edge
-    CmpPE* addCmpPE(NodeID op1, NodeID op2, NodeID dst);
+    CmpPE* addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
     /// Add Copy edge
-    BinaryOPPE* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst);
+    BinaryOPPE* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
     /// Add Unary edge
-    UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst);
+    UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode);
+    /// Add BranchStmt
+    BranchStmt* addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGNode*> succs);
     /// Add Load edge
     LoadPE* addLoadPE(NodeID src, NodeID dst);
     /// Add Store edge
@@ -641,25 +661,6 @@ private:
 
     /// Set a pointer points-to black hole (e.g. int2ptr)
     SVFStmt* addBlackHoleAddrPE(NodeID node);
-
-public:
-    inline NodeID addDummyValNode()
-    {
-        return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
-    }
-    inline NodeID addDummyObjNode(const Type* type = nullptr)
-    {
-        return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
-    }
-    /// Whether a node is a valid pointer
-    //@{
-    bool isValidPointer(NodeID nodeId) const;
-
-    bool isValidTopLevelPtr(const SVFVar* node);
-    //@}
-
-    /// Print SVFIR
-    void print();
 };
 
 typedef SVFIR PAG;

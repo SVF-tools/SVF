@@ -123,13 +123,28 @@ const std::string BinaryOPPE::toString() const{
 const std::string UnaryOPPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "UnaryOPPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "UnaryOPPE: [" << getResID() << "<--" << getOpVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
     rawstr << value2String(getValue());
     return rawstr.str();
 }
+
+const std::string BranchStmt::toString() const {
+    std::string str;
+    raw_string_ostream rawstr(str);
+    if(isConditional())
+        rawstr << "BranchStmt: [" <<  getCondition()->toString() << "]\t";
+    else
+        rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\t";
+    if (Options::PAGDotGraphShorter) {
+        rawstr << "\n";
+    }
+    rawstr << value2String(getValue());
+    return rawstr.str();
+}
+
 
 const std::string LoadPE::toString() const{
     std::string str;
@@ -239,4 +254,27 @@ NodeID MultiOpndStmt::getOpVarID(u32_t pos) const
 NodeID MultiOpndStmt::getResID() const
 {
     return getRes()->getId();
+}
+
+NodeID UnaryOPPE::getOpVarID() const{
+    return getOpVar()->getId();
+}
+NodeID UnaryOPPE::getResID() const{
+    return getRes()->getId();
+}
+
+
+/// The branch is unconditional if cond is a null value
+bool BranchStmt::isUnconditional() const {
+    return cond->getId() == SymbolTableInfo::SymbolInfo()->nullPtrSymID();
+}
+/// The branch is conditional if cond is not a null value
+bool BranchStmt::isConditional() const{
+    return cond->getId() != SymbolTableInfo::SymbolInfo()->nullPtrSymID();;
+}
+/// Return the condition 
+const SVFVar* BranchStmt::getCondition() const 
+{
+    //assert(isConditional() && "this is a unconditional branch"); 
+    return cond;
 }
