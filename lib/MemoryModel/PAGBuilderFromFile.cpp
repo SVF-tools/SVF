@@ -177,11 +177,17 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "ret")
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr));
     else if (edge == "cmp")
-        pag->addCmpPE(srcID, dstID, dstID);
+        pag->addCmpPE(srcID, dstID, dstID, dstID);
     else if (edge == "binary-op")
-        pag->addBinaryOPPE(srcID, dstID, dstID);
+        pag->addBinaryOPPE(srcID, dstID, dstID, dstID);
     else if (edge == "unary-op")
-        pag->addUnaryOPPE(srcID, dstID);
+        pag->addUnaryOPPE(srcID, dstID, dstID);
+    else if (edge == "phi")
+        pag->addPhiNode(srcID, dstID);
+    else if (edge == "branch"){
+        assert(false && "fix successors here!");
+        //pag->addBranchStmt(srcID, dstID, nullptr);
+    }
     else
         assert(false && "format not support, can not create such edge");
 }

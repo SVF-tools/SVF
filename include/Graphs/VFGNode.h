@@ -51,7 +51,7 @@ public:
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK
     {
-        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, TPhi, TIntraPhi, TInterPhi,
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
         FunRet, APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
     };
@@ -473,10 +473,7 @@ public:
     /// Constructor
 	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
 		const Value *val = r->getValue();
-		bool unop = (SVFUtil::isa<UnaryOperator>(val)
-				|| SVFUtil::isa<BranchInst>(val)
-				|| SVFUtil::isa<SwitchInst>(val));
-		assert(unop && "not a unary operator or a BranchInst or a SwitchInst?");
+		assert(SVFUtil::isa<UnaryOperator>(val) && "not a unary instruction ?");
 	}
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -509,6 +506,11 @@ public:
     {
         return res;
     }
+    inline const PAGNode* getOpVar() const
+    {
+        assert(getOpVerNum()==1 && "UnaryNode can only have one operand!");
+        return getOpVer(0);
+    }
     inline u32_t getOpVerNum() const
     {
         return opVers.size();
@@ -524,6 +526,57 @@ public:
     //@}
 
     virtual const std::string toString() const;
+};
+
+/*
+* Branch VFGNode including if/else and switch statements
+*/
+class BranchVFGNode: public VFGNode
+{
+private:
+    BranchVFGNode();                      ///< place holder
+    BranchVFGNode(const BranchVFGNode &);  ///< place holder
+    void operator=(const BranchVFGNode &); ///< place holder
+    const BranchStmt* brstmt;
+public:
+    /// Constructor
+	BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) {
+		const Value *val = r->getValue();
+		assert((SVFUtil::isa<BranchInst>(val) || SVFUtil::isa<SwitchInst>(val)) && "not a BranchInst or a SwitchInst?");
+	}
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BranchVFGNode *)
+    {
+        return true;
+    }
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == Branch;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Branch;
+    }
+    //@}
+
+    /// Return the branch statement 
+    const BranchStmt* getBranchStmt() const{
+        return brstmt;
+    }
+    /// Successors of this branch statement
+    ///@{
+    u32_t getNumSuccessors() const{
+        return brstmt->getNumSuccessors();
+    }
+    const std::vector<const ICFGNode*>& getSuccessors() const{
+        return brstmt->getSuccessors();
+    }
+    const ICFGNode* getSuccessor (u32_t i) const{
+        return brstmt->getSuccessor(i);
+    }
+    ///@}
+    virtual const std::string toString() const override;
 };
 
 /*!

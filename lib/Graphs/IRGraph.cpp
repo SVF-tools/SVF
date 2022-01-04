@@ -220,6 +220,10 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         {
             return "color=red";
         }
+        else if (SVFUtil::isa<PhiPE>(edge))
+        {
+            return "color=grey";
+        }
         else if (SVFUtil::isa<CmpPE>(edge))
         {
             return "color=grey";
@@ -229,6 +233,10 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
             return "color=grey";
         }
         else if (SVFUtil::isa<UnaryOPPE>(edge))
+        {
+            return "color=grey";
+        }
+        else if (SVFUtil::isa<BranchStmt>(edge))
         {
             return "color=grey";
         }

@@ -29,7 +29,7 @@
 
 #include "Util/Options.h"
 #include "SVF-FE/CallGraphBuilder.h"
-#include "SVF-FE/CHG.h"
+#include "SVF-FE/CHGBuilder.h"
 #include "SVF-FE/DCHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
@@ -41,7 +41,6 @@
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ThreadCallGraph.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/ExternalPAG.h"
 #include "WPA/FlowSensitiveTBHC.h"
 
 #include <iomanip>
@@ -120,7 +119,8 @@ void PointerAnalysis::initialize()
 			chgraph = dchg;
 		} else {
 			CHGraph *chg = new CHGraph(pag->getModule());
-			chg->buildCHG();
+            CHGBuilder builder(chg);
+			builder.buildCHG();
 			chgraph = chg;
 		}
 	}
@@ -231,8 +231,6 @@ void PointerAnalysis::finalize()
 		pag->getICFG()->updateCallGraph(ptaCallGraph);
 		pag->getICFG()->dump("icfg_final");
     }
-
-    if (!DumpPAGFunctions.empty()) ExternalPAG::dumpFunctions(DumpPAGFunctions);
 
     /// Dump results
     if (Options::PTSPrint)

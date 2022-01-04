@@ -267,6 +267,8 @@ public:
         return nullPtr;
     }
 
+public:
+
     NodeID getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
@@ -295,29 +297,34 @@ public:
     /// Add Copy edge
     inline PhiPE* addPhiNode(NodeID res, NodeID opnd)
     {
-        const CopyPE* copy = addCopyEdge(opnd, res);
         PhiPE *edge = pag->addPhiNode(res,opnd);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline CmpPE* addCmpEdge(NodeID op1, NodeID op2, NodeID dst)
+    inline CmpPE* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        CmpPE *edge = pag->addCmpPE(op1, op2, dst);
+        CmpPE *edge = pag->addCmpPE(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline BinaryOPPE* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst)
+    inline BinaryOPPE* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        BinaryOPPE *edge = pag->addBinaryOPPE(op1, op2, dst);
+        BinaryOPPE *edge = pag->addBinaryOPPE(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Unary edge
-    inline UnaryOPPE* addUnaryOPEdge(NodeID src, NodeID dst)
+    inline UnaryOPPE* addUnaryOPEdge(NodeID src, NodeID dst, u32_t opcode)
     {
-        UnaryOPPE *edge = pag->addUnaryOPPE(src, dst);
+        UnaryOPPE *edge = pag->addUnaryOPPE(src, dst, opcode);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
+    }
+    /// Add Branch statement 
+    inline BranchStmt* addBranchStmt(NodeID br, NodeID cond, const std::vector<const ICFGNode*> succs){
+        BranchStmt *edge = pag->addBranchStmt(br, cond, succs);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
