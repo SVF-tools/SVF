@@ -1,8 +1,8 @@
-//===----- CHG.h -- Base class of pointer analyses ---------------------------//
+//===----- CHG.h -- Class hirachary graph  ---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
