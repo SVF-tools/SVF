@@ -86,7 +86,7 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     {
         if (pag->getBaseObjVar(*pit) == *pit || isFieldInsensitive(*pit))
         {
-            expandedPts |= pag->getAllFieldsObjNode(*pit);
+            expandedPts |= pag->getAllFieldsObjVars(*pit);
         }
     }
 }
@@ -98,7 +98,7 @@ void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
     {
         if (pag->getBaseObjVar(o) == o || isFieldInsensitive(o))
         {
-            expandedPts |= pag->getAllFieldsObjNode(o);
+            expandedPts |= pag->getAllFieldsObjVars(o);
         }
     }
 }

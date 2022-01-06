@@ -302,9 +302,9 @@ public:
         return edge;
     }
     /// Add Copy edge
-    inline CmpStmt* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+    inline CmpStmt* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t predict)
     {
-        CmpStmt *edge = pag->addCmpStmt(op1, op2, dst, opcode);
+        CmpStmt *edge = pag->addCmpStmt(op1, op2, dst, predict);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

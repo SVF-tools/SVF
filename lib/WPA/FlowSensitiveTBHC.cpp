@@ -169,7 +169,7 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
         if (isFIObjNode(o))
         {
             /// If this is a field-insensitive obj, propagate all field node's pts
-            const NodeBS &allFields = getAllFieldsObjNode(o);
+            const NodeBS &allFields = getAllFieldsObjVars(o);
             for (NodeID f : allFields)
             {
                 if (propVarPtsFromSrcToDst(f, src, dst))
@@ -405,7 +405,7 @@ bool FlowSensitiveTBHC::processLoad(const LoadSVFGNode* load)
         {
             /// If the ptd is a field-insensitive node, we should also get all field nodes'
             /// points-to sets and pass them to pagDst.
-            const NodeBS &allFields = getAllFieldsObjNode(ptd);
+            const NodeBS &allFields = getAllFieldsObjVars(ptd);
             for (NodeID f : allFields)
             {
                 if (unionPtsFromIn(load, f, dstVar))
@@ -529,7 +529,7 @@ bool FlowSensitiveTBHC::processCopy(const CopySVFGNode* copy)
     return FlowSensitive::processCopy(copy) || changed;
 }
 
-const NodeBS& FlowSensitiveTBHC::getAllFieldsObjNode(NodeID id)
+const NodeBS& FlowSensitiveTBHC::getAllFieldsObjVars(NodeID id)
 {
     return getGepObjs(id);
 }
@@ -647,10 +647,10 @@ void FlowSensitiveTBHC::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     expandedPts = pts;
     for (NodeID o : pts)
     {
-        expandedPts |= getAllFieldsObjNode(o);
+        expandedPts |= getAllFieldsObjVars(o);
         while (const GepObjPN *gepObj = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(o)))
         {
-            expandedPts |= getAllFieldsObjNode(o);
+            expandedPts |= getAllFieldsObjVars(o);
             o = gepObj->getBaseNode();
         }
     }

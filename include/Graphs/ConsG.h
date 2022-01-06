@@ -310,9 +310,9 @@ public:
     {
         return pag->isBlkObjOrConstantObj(id);
     }
-    inline NodeBS& getAllFieldsObjNode(NodeID id)
+    inline NodeBS& getAllFieldsObjVars(NodeID id)
     {
-        return pag->getAllFieldsObjNode(id);
+        return pag->getAllFieldsObjVars(id);
     }
     inline NodeID getBaseObjVar(NodeID id)
     {
