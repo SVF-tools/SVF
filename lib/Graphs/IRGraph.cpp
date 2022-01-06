@@ -160,22 +160,22 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
 
     static std::string getNodeAttributes(SVFVar *node, IRGraph*)
     {
-        if (SVFUtil::isa<ValPN>(node))
+        if (SVFUtil::isa<ValVar>(node))
         {
-            if(SVFUtil::isa<GepValPN>(node))
+            if(SVFUtil::isa<GepValVar>(node))
                 return "shape=hexagon";
-            else if (SVFUtil::isa<DummyValPN>(node))
+            else if (SVFUtil::isa<DummyValVar>(node))
                 return "shape=diamond";
             else
                 return "shape=box";
         }
-        else if (SVFUtil::isa<ObjPN>(node))
+        else if (SVFUtil::isa<ObjVar>(node))
         {
             if(SVFUtil::isa<GepObjPN>(node))
                return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjPN>(node))
+            else if(SVFUtil::isa<FIObjVar>(node))
                 return "shape=box3d";
-            else if (SVFUtil::isa<DummyObjPN>(node))
+            else if (SVFUtil::isa<DummyObjVar>(node))
                 return "shape=tab";
             else
                 return "shape=component";
@@ -200,39 +200,39 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     {
         const SVFStmt* edge = *(EI.getCurrent());
         assert(edge && "No edge found!!");
-        if (SVFUtil::isa<AddrPE>(edge))
+        if (SVFUtil::isa<AddrStmt>(edge))
         {
             return "color=green";
         }
-        else if (SVFUtil::isa<CopyPE>(edge))
+        else if (SVFUtil::isa<CopyStmt>(edge))
         {
             return "color=black";
         }
-        else if (SVFUtil::isa<GepPE>(edge))
+        else if (SVFUtil::isa<GepStmt>(edge))
         {
             return "color=purple";
         }
-        else if (SVFUtil::isa<StorePE>(edge))
+        else if (SVFUtil::isa<StoreStmt>(edge))
         {
             return "color=blue";
         }
-        else if (SVFUtil::isa<LoadPE>(edge))
+        else if (SVFUtil::isa<LoadStmt>(edge))
         {
             return "color=red";
         }
-        else if (SVFUtil::isa<PhiPE>(edge))
+        else if (SVFUtil::isa<PhiStmt>(edge))
         {
             return "color=grey";
         }
-        else if (SVFUtil::isa<CmpPE>(edge))
+        else if (SVFUtil::isa<CmpStmt>(edge))
         {
             return "color=grey";
         }
-        else if (SVFUtil::isa<BinaryOPPE>(edge))
+        else if (SVFUtil::isa<BinaryOPStmt>(edge))
         {
             return "color=grey";
         }
-        else if (SVFUtil::isa<UnaryOPPE>(edge))
+        else if (SVFUtil::isa<UnaryOPStmt>(edge))
         {
             return "color=grey";
         }

@@ -140,13 +140,13 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             tmpDstPts.set(ptd);
         else
         {
-            if (SVFUtil::isa<VariantGepPE>(gep->getPAGEdge()))
+            if (SVFUtil::isa<VariantGepStmt>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(ptd.get_id());
                 CxtVar var(ptd.get_cond(),getFIObjNode(ptd.get_id()));
                 tmpDstPts.set(var);
             }
-            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
+            else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(gep->getPAGEdge()))
             {
                 CxtVar var(ptd.get_cond(),getGepObjNode(ptd.get_id(),normalGep->getLocationSet()));
                 tmpDstPts.set(var);
@@ -319,10 +319,10 @@ bool ContextDDA::isHeapCondMemObj(const CxtVar& var, const StoreSVFGNode*)
         if (!mem->getValue()) {
             PAGNode *pnode = _pag->getGNode(getPtrNodeID(var));
             if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pnode)){
-                assert(SVFUtil::isa<DummyObjPN>(_pag->getGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
+                assert(SVFUtil::isa<DummyObjVar>(_pag->getGNode(gepobj->getBaseNode())) && "emtpy refVal in a gep object whose base is a non-dummy object");
             }
             else{
-                assert((SVFUtil::isa<DummyObjPN>(pnode) || SVFUtil::isa<DummyValPN>(pnode)) && "empty refVal in non-dummy object");
+                assert((SVFUtil::isa<DummyObjVar>(pnode) || SVFUtil::isa<DummyValVar>(pnode)) && "empty refVal in non-dummy object");
             }
             return true;
         }

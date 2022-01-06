@@ -577,11 +577,11 @@ public:
             const PAGNode* node = this->getPAG()->getGNode(*nIter);
             if (this->getPAG()->isValidTopLevelPtr(node))
             {
-                if (SVFUtil::isa<DummyObjPN>(node))
+                if (SVFUtil::isa<DummyObjVar>(node))
                 {
                     SVFUtil::outs() << "##<Blackhole or constant> id:" << node->getId();
                 }
-                else if (!SVFUtil::isa<DummyValPN>(node))
+                else if (!SVFUtil::isa<DummyValVar>(node))
                 {
                     SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
                     //SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());

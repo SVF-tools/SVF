@@ -36,7 +36,7 @@ void TypeBasedHeapCloning::setPAG(SVFIR *pag)
 bool TypeBasedHeapCloning::isBlkObjOrConstantObj(NodeID o) const
 {
     if (isClone(o)) o = cloneToOriginalObj.at(o);
-    return SVFUtil::isa<ObjPN>(ppag->getGNode(o)) && ppag->isBlkObjOrConstantObj(o);
+    return SVFUtil::isa<ObjVar>(ppag->getGNode(o)) && ppag->isBlkObjOrConstantObj(o);
 }
 
 bool TypeBasedHeapCloning::isBase(const DIType *a, const DIType *b) const
@@ -120,7 +120,7 @@ void TypeBasedHeapCloning::addGepToObj(NodeID gep, NodeID base, unsigned offset)
     objToGeps[base].set(gep);
     const PAGNode *baseNode = ppag->getGNode(base);
     assert(baseNode && "TBHC: given bad base node?");
-    const ObjPN *baseObj = SVFUtil::dyn_cast<ObjPN>(baseNode);
+    const ObjVar *baseObj = SVFUtil::dyn_cast<ObjVar>(baseNode);
     assert(baseObj && "TBHC: non-object given for base?");
     // We can use the base or the gep mem. obj.; should be identical.
     const MemObj *baseMemObj = baseObj->getMemObj();
@@ -147,7 +147,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
     PAGNode *node = ppag->getGNode(base);
     assert(node && "TBHC: base object node does not exist.");
-    ObjPN *baseNode = SVFUtil::dyn_cast<ObjPN>(node);
+    ObjVar *baseNode = SVFUtil::dyn_cast<ObjVar>(node);
     assert(baseNode && "TBHC: base \"object\" node is not an object.");
 
     // totalOffset is the offset from the real base (i.e. base of base),
@@ -184,7 +184,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
     {
         PAGNode *node = ppag->getGNode(gep);
         assert(node && "TBHC: expected gep node doesn't exist.");
-        assert((SVFUtil::isa<GepObjPN>(node) || SVFUtil::isa<FIObjPN>(node))
+        assert((SVFUtil::isa<GepObjPN>(node) || SVFUtil::isa<FIObjVar>(node))
                && "TBHC: expected a GEP or FI object.");
 
         if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
@@ -292,7 +292,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
         // type if that object is field-insensitive.
         bool fieldInsensitive = false;
         std::vector<const DIType *> fieldTypes;
-        if (ObjPN *obj = SVFUtil::dyn_cast<ObjPN>(ppag->getGNode(o)))
+        if (ObjVar *obj = SVFUtil::dyn_cast<ObjVar>(ppag->getGNode(o)))
         {
             fieldInsensitive = obj->getMemObj()->isFieldInsensitive();
             if (tp != nullptr && (tp->getTag() == dwarf::DW_TAG_structure_type
@@ -314,14 +314,14 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
             assert(!isGep(obj) && "TBHC: GEP object is untyped!");
             prop = cloneObject(o, tildet, false);
             ++numInit;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGInit;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGInit;
         }
         else if (fieldInsensitive && tp && dchg->isFieldOf(tildet, tp))
         {
             // Field-insensitive object but the instruction is operating on a field.
             prop = o;
             ++numTBWU;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGTBWU;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGTBWU;
         }
         else if (gep && aggs.find(tildet) != aggs.end())
         {
@@ -334,7 +334,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
             // 'Struct S', not 'Array of S'.
             prop = cloneObject(o, tildet, false);
             ++numAgg;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGAgg;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGAgg;
         }
         else if (isBase(tp, tildet) && tp != tildet
                  && (reuse || dchg->isFirstField(tp, tildet) || (!reuse && pta->isHeapMemObj(o))))
@@ -349,21 +349,21 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
             //  - reuse: because it can happen to stack/heap objects.
             prop = cloneObject(o, tildet, reuse);
             ++numTBSSU;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGTBSSU;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGTBSSU;
         }
         else if (isBase(tildet, tp))
         {
             // Upcast.
             prop = o;
             ++numTBWU;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGTBWU;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGTBWU;
         }
         else if (tildet != tp && reuse)
         {
             // Reuse.
             prop = cloneObject(o, tildet, true);
             ++numReuse;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGReuse;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGReuse;
         }
         else
         {
@@ -371,7 +371,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
             filter = true;
             prop = o;
             ++numTBSU;
-            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjPN>(obj)) ++numSGTBSU;
+            if (!pta->isHeapMemObj(o) && !SVFUtil::isa<DummyObjVar>(obj)) ++numSGTBSU;
         }
 
         if (prop != o)
@@ -435,10 +435,10 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
         // IN sets and gepToSVFGRetriever in FSTBHC, so we don't care that clone comes
         // from o (we can get that by checking the base and offset).
         setOriginalObj(clone, getOriginalObj(o));
-        CloneGepObjPN *cloneGepObj = SVFUtil::dyn_cast<CloneGepObjPN>(ppag->getGNode(clone));
+        CloneGepObjVar *cloneGepObj = SVFUtil::dyn_cast<CloneGepObjVar>(ppag->getGNode(clone));
         cloneGepObj->setBaseNode(gepObj->getBaseNode());
     }
-    else if (SVFUtil::isa<FIObjPN>(obj) || SVFUtil::isa<DummyObjPN>(obj))
+    else if (SVFUtil::isa<FIObjVar>(obj) || SVFUtil::isa<DummyObjVar>(obj))
     {
         o = getOriginalObj(o);
         // Check there isn't an appropriate clone already.
@@ -451,13 +451,13 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
             }
         }
 
-        if (const FIObjPN *fiObj = SVFUtil::dyn_cast<FIObjPN>(obj))
+        if (const FIObjVar *fiObj = SVFUtil::dyn_cast<FIObjVar>(obj))
         {
             clone = addCloneFIObjNode(fiObj->getMemObj());
         }
         else
         {
-            const DummyObjPN *dummyObj = SVFUtil::dyn_cast<DummyObjPN>(obj);
+            const DummyObjVar *dummyObj = SVFUtil::dyn_cast<DummyObjVar>(obj);
             clone = addCloneDummyObjNode(dummyObj->getMemObj());
         }
         // We checked above that it's an FIObj or a DummyObj.
@@ -501,19 +501,19 @@ const MDNode *TypeBasedHeapCloning::getRawCTirMetadata(const Value *v)
 NodeID TypeBasedHeapCloning::addCloneDummyObjNode(const MemObj *mem)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(nullptr, new CloneDummyObjPN(id, mem), id);
+    return ppag->addObjNode(nullptr, new CloneDummyObjVar(id, mem), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneGepObjNode(const MemObj *mem, const LocationSet &l)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(mem->getValue(), new CloneGepObjPN(mem, id, l), id);
+    return ppag->addObjNode(mem->getValue(), new CloneGepObjVar(mem, id, l), id);
 }
 
 NodeID TypeBasedHeapCloning::addCloneFIObjNode(const MemObj *mem)
 {
     NodeID id = NodeIDAllocator::get()->allocateObjectId();
-    return ppag->addObjNode(mem->getValue(), new CloneFIObjPN(mem->getValue(), id, mem), id);
+    return ppag->addObjNode(mem->getValue(), new CloneFIObjVar(mem->getValue(), id, mem), id);
 }
 
 const DIType *TypeBasedHeapCloning::getTypeFromCTirMetadata(const Value *v)

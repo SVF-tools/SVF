@@ -65,10 +65,10 @@ const std::string SVFStmt::toString() const {
     return rawstr.str();
 }
 
-const std::string AddrPE::toString() const{
+const std::string AddrStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "AddrPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "AddrStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -76,10 +76,10 @@ const std::string AddrPE::toString() const{
     return rawstr.str();
 }
 
-const std::string CopyPE::toString() const{
+const std::string CopyStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CopyPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CopyStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -87,10 +87,10 @@ const std::string CopyPE::toString() const{
     return rawstr.str();
 }
 
-const std::string PhiPE::toString() const{
+const std::string PhiStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PhiPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
+    rawstr << "PhiStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -98,10 +98,10 @@ const std::string PhiPE::toString() const{
     return rawstr.str();
 }
 
-const std::string CmpPE::toString() const{
+const std::string CmpStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CmpPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
+    rawstr << "CmpStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -109,10 +109,10 @@ const std::string CmpPE::toString() const{
     return rawstr.str();
 }
 
-const std::string BinaryOPPE::toString() const{
+const std::string BinaryOPStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "BinaryOPPE: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
+    rawstr << "BinaryOPStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -120,10 +120,10 @@ const std::string BinaryOPPE::toString() const{
     return rawstr.str();
 }
 
-const std::string UnaryOPPE::toString() const{
+const std::string UnaryOPStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "UnaryOPPE: [" << getResID() << "<--" << getOpVarID() << "]\t";
+    rawstr << "UnaryOPStmt: [" << getResID() << "<--" << getOpVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -146,10 +146,10 @@ const std::string BranchStmt::toString() const {
 }
 
 
-const std::string LoadPE::toString() const{
+const std::string LoadStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "LoadPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "LoadStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -157,10 +157,10 @@ const std::string LoadPE::toString() const{
     return rawstr.str();
 }
 
-const std::string StorePE::toString() const{
+const std::string StoreStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "StorePE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "StoreStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -168,10 +168,10 @@ const std::string StorePE::toString() const{
     return rawstr.str();
 }
 
-const std::string GepPE::toString() const{
+const std::string GepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "GepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -179,10 +179,10 @@ const std::string GepPE::toString() const{
     return rawstr.str();
 }
 
-const std::string NormalGepPE::toString() const{
+const std::string NormalGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "NormalGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "NormalGepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -190,10 +190,10 @@ const std::string NormalGepPE::toString() const{
     return rawstr.str();
 }
 
-const std::string VariantGepPE::toString() const{
+const std::string VariantGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "VariantGepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -256,10 +256,10 @@ NodeID MultiOpndStmt::getResID() const
     return getRes()->getId();
 }
 
-NodeID UnaryOPPE::getOpVarID() const{
+NodeID UnaryOPStmt::getOpVarID() const{
     return getOpVar()->getId();
 }
-NodeID UnaryOPPE::getResID() const{
+NodeID UnaryOPStmt::getResID() const{
     return getRes()->getId();
 }
 

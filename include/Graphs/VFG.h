@@ -483,28 +483,28 @@ protected:
         setDef(pagNode,sNode);
     }
     /// Add an Address VFG node
-    inline void addAddrVFGNode(const AddrPE* addr)
+    inline void addAddrVFGNode(const AddrStmt* addr)
     {
         AddrVFGNode* sNode = new AddrVFGNode(totalVFGNode++,addr);
         addStmtVFGNode(sNode, addr);
         setDef(addr->getDstNode(),sNode);
     }
     /// Add a Copy VFG node
-    inline void addCopyVFGNode(const CopyPE* copy)
+    inline void addCopyVFGNode(const CopyStmt* copy)
     {
         CopyVFGNode* sNode = new CopyVFGNode(totalVFGNode++,copy);
         addStmtVFGNode(sNode, copy);
         setDef(copy->getDstNode(),sNode);
     }
     /// Add a Gep VFG node
-    inline void addGepVFGNode(const GepPE* gep)
+    inline void addGepVFGNode(const GepStmt* gep)
     {
         GepVFGNode* sNode = new GepVFGNode(totalVFGNode++,gep);
         addStmtVFGNode(sNode, gep);
         setDef(gep->getDstNode(),sNode);
     }
     /// Add a Load VFG node
-    void addLoadVFGNode(const LoadPE* load)
+    void addLoadVFGNode(const LoadStmt* load)
     {
         LoadVFGNode* sNode = new LoadVFGNode(totalVFGNode++,load);
         addStmtVFGNode(sNode, load);
@@ -512,7 +512,7 @@ protected:
     }
     /// Add a Store VFG node,
     /// To be noted store does not create a new pointer, we do not set def for any SVFIR node
-    void addStoreVFGNode(const StorePE* store)
+    void addStoreVFGNode(const StoreStmt* store)
     {
         StoreVFGNode* sNode = new StoreVFGNode(totalVFGNode++,store);
         addStmtVFGNode(sNode, store);
@@ -569,7 +569,7 @@ protected:
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PhiPE* edge)
+    inline void addIntraPHIVFGNode(const PhiStmt* edge)
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
         u32_t pos = 0;
@@ -583,7 +583,7 @@ protected:
         PAGNodeToIntraPHIVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a Compare VFG node
-    inline void addCmpVFGNode(const CmpPE* edge)
+    inline void addCmpVFGNode(const CmpStmt* edge)
     {
         CmpVFGNode* sNode = new CmpVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
@@ -597,7 +597,7 @@ protected:
         PAGNodeToCmpVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a BinaryOperator VFG node
-    inline void addBinaryOPVFGNode(const BinaryOPPE* edge)
+    inline void addBinaryOPVFGNode(const BinaryOPStmt* edge)
     {
         BinaryOPVFGNode* sNode = new BinaryOPVFGNode(totalVFGNode++, edge->getRes());
         u32_t pos = 0;
@@ -611,7 +611,7 @@ protected:
         PAGNodeToBinaryOPVFGNodeMap[edge->getRes()] = sNode;
     }
     /// Add a UnaryOperator VFG node
-    inline void addUnaryOPVFGNode(const UnaryOPPE* edge)
+    inline void addUnaryOPVFGNode(const UnaryOPStmt* edge)
     {
         UnaryOPVFGNode* sNode = new UnaryOPVFGNode(totalVFGNode++, edge->getRes());
         sNode->setOpVer(0, edge->getOpVar());

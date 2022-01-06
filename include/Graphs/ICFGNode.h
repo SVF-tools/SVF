@@ -47,7 +47,7 @@ class VFGNode;
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
- * including top-level pointers (ValPN) and address-taken objects (ObjPN)
+ * including top-level pointers (ValVar) and address-taken objects (ObjVar)
  */
 typedef GenericNode<ICFGNode, ICFGEdge> GenericICFGNodeTy;
 

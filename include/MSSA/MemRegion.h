@@ -146,15 +146,15 @@ public:
     /// Map loads/stores to its mem regions,
     /// TODO:visitAtomicCmpXchgInst, visitAtomicRMWInst??
     //@{
-    typedef Map<const LoadPE*, MRSet> LoadsToMRsMap;
-    typedef Map<const StorePE*, MRSet> StoresToMRsMap;
+    typedef Map<const LoadStmt*, MRSet> LoadsToMRsMap;
+    typedef Map<const StoreStmt*, MRSet> StoresToMRsMap;
     typedef Map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
-    typedef Map<const LoadPE*, NodeBS> LoadsToPointsToMap;
-    typedef Map<const StorePE*, NodeBS> StoresToPointsToMap;
+    typedef Map<const LoadStmt*, NodeBS> LoadsToPointsToMap;
+    typedef Map<const StoreStmt*, NodeBS> StoresToPointsToMap;
     typedef Map<const CallBlockNode*, NodeBS> CallSiteToPointsToMap;
     //@}
 
@@ -334,13 +334,13 @@ protected:
 
     /// Add cpts to store/load
     //@{
-    inline void addCPtsToStore(NodeBS& cpts, const StorePE *st, const SVFFunction* fun)
+    inline void addCPtsToStore(NodeBS& cpts, const StoreStmt *st, const SVFFunction* fun)
     {
         storesToPointsToMap[st] = cpts;
         funToPointsToMap[fun].insert(cpts);
         addModSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToLoad(NodeBS& cpts, const LoadPE *ld, const SVFFunction* fun)
+    inline void addCPtsToLoad(NodeBS& cpts, const LoadStmt *ld, const SVFFunction* fun)
     {
         loadsToPointsToMap[ld] = cpts;
         funToPointsToMap[fun].insert(cpts);
@@ -440,11 +440,11 @@ public:
     {
         return funToMRsMap[fun];
     }
-    inline MRSet& getLoadMRSet(const LoadPE* load)
+    inline MRSet& getLoadMRSet(const LoadStmt* load)
     {
         return loadsToMRsMap[load];
     }
-    inline MRSet& getStoreMRSet(const StorePE* store)
+    inline MRSet& getStoreMRSet(const StoreStmt* store)
     {
         return storesToMRsMap[store];
     }

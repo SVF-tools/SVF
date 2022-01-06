@@ -40,7 +40,7 @@ namespace SVF
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
- * including top-level pointers (ValPN) and address-taken objects (ObjPN)
+ * including top-level pointers (ValVar) and address-taken objects (ObjVar)
  */
 typedef GenericNode<VFGNode,VFGEdge> GenericVFGNodeTy;
 class VFGNode : public GenericVFGNodeTy
@@ -202,7 +202,7 @@ private:
 
 public:
     /// Constructor
-    LoadVFGNode(NodeID id, const LoadPE* edge): StmtVFGNode(id, edge,Load)
+    LoadVFGNode(NodeID id, const LoadStmt* edge): StmtVFGNode(id, edge,Load)
     {
 
     }
@@ -241,7 +241,7 @@ private:
 
 public:
     /// Constructor
-    StoreVFGNode(NodeID id,const StorePE* edge): StmtVFGNode(id,edge,Store)
+    StoreVFGNode(NodeID id,const StoreStmt* edge): StmtVFGNode(id,edge,Store)
     {
 
     }
@@ -280,7 +280,7 @@ private:
 
 public:
     /// Constructor
-    CopyVFGNode(NodeID id,const CopyPE* copy): StmtVFGNode(id,copy,Copy)
+    CopyVFGNode(NodeID id,const CopyStmt* copy): StmtVFGNode(id,copy,Copy)
     {
 
     }
@@ -591,7 +591,7 @@ private:
 
 public:
     /// Constructor
-    GepVFGNode(NodeID id,const GepPE* edge): StmtVFGNode(id,edge,Gep)
+    GepVFGNode(NodeID id,const GepStmt* edge): StmtVFGNode(id,edge,Gep)
     {
 
     }
@@ -753,7 +753,7 @@ private:
 
 public:
     /// Constructor
-    AddrVFGNode(NodeID id, const AddrPE* edge): StmtVFGNode(id, edge,Addr)
+    AddrVFGNode(NodeID id, const AddrStmt* edge): StmtVFGNode(id, edge,Addr)
     {
 
     }

@@ -472,7 +472,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
 
     PointsTo tmpDstPts;
-    if (SVFUtil::isa<VariantGepPE>(edge->getPAGEdge()))
+    if (SVFUtil::isa<VariantGepStmt>(edge->getPAGEdge()))
     {
         for (NodeID o : srcPts)
         {
@@ -486,7 +486,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
             tmpDstPts.set(getFIObjNode(o));
         }
     }
-    else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(edge->getPAGEdge()))
+    else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(edge->getPAGEdge()))
     {
         for (NodeID o : srcPts)
         {

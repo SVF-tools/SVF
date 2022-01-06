@@ -55,8 +55,8 @@ public:
     typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::vector<const SVFStmt*> PAGEdgeList;
     typedef std::vector<const SVFVar*> PAGNodeList;
-    typedef std::vector<const CopyPE*> CopyPEList;
-    typedef Map<const SVFVar*,PhiPE*> PHINodeMap;
+    typedef std::vector<const CopyStmt*> CopyPEList;
+    typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
     typedef Map<const SVFFunction*,PAGNodeList> FunToArgsListMap;
     typedef Map<const CallBlockNode*,PAGNodeList> CSToArgsListMap;
     typedef Map<const RetBlockNode*,const SVFVar*> CSToRetMap;
@@ -292,7 +292,7 @@ public:
     }
     //@}
 
-    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
+    /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
     inline NodeID getGepValNode(const Value* curInst, NodeID base, const LocationSet& ls) const
     {
         GepValPNMap::const_iterator iter = GepValNodeMap.find(curInst);
@@ -353,17 +353,17 @@ public:
 
     /// Get memory object - Return memory object according to pag node id
     /// return whole allocated memory object if this node is a gep obj node
-    /// return nullptr is this node is not a ObjPN type
+    /// return nullptr is this node is not a ObjVar type
     //@{
     inline const MemObj*getObject(NodeID id) const
     {
         const SVFVar* node = getGNode(id);
-        if(const ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(node))
+        if(const ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(node))
             return getObject(objPN);
         else
             return nullptr;
     }
-    inline const MemObj*getObject(const ObjPN* node) const
+    inline const MemObj*getObject(const ObjVar* node) const
     {
         return node->getMemObj();
     }
@@ -382,8 +382,8 @@ public:
     inline NodeID getFIObjNode(NodeID id) const
     {
         SVFVar* node = pag->getGNode(id);
-        assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-        ObjPN* obj = SVFUtil::cast<ObjPN>(node);
+        assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
+        ObjVar* obj = SVFUtil::cast<ObjVar>(node);
         return getFIObjNode(obj->getMemObj());
     }
     //@}
@@ -415,7 +415,7 @@ public:
     inline bool isNonPointerObj(NodeID id) const
     {
         SVFVar* node = getGNode(id);
-        if (FIObjPN* fiNode = SVFUtil::dyn_cast<FIObjPN>(node))
+        if (FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
         {
             return (fiNode->getMemObj()->hasPtrObj() == false);
         }
@@ -423,7 +423,7 @@ public:
         {
             return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
         }
-        else if (SVFUtil::isa<DummyObjPN>(node))
+        else if (SVFUtil::isa<DummyObjVar>(node))
         {
             return false;
         }
@@ -447,8 +447,8 @@ public:
     inline const MemObj* getBaseObj(NodeID id) const
     {
         const SVFVar* node = pag->getGNode(id);
-        assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-        const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
+        assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
+        const ObjVar* obj = SVFUtil::cast<ObjVar>(node);
         return obj->getMemObj();
     }
     //@}
@@ -530,7 +530,7 @@ private:
     /// Add a value (pointer) node
     inline NodeID addValNode(const Value* val, NodeID i)
     {
-        SVFVar *node = new ValPN(val,i);
+        SVFVar *node = new ValVar(val,i);
         return addValNode(val, node, i);
     }
     /// Add a memory obj node
@@ -565,12 +565,12 @@ private:
     //@{
     inline NodeID addDummyValNode(NodeID i)
     {
-        return addValNode(nullptr, new DummyValPN(i), i);
+        return addValNode(nullptr, new DummyValVar(i), i);
     }
     inline NodeID addDummyObjNode(NodeID i, const Type* type)
     {
         const MemObj* mem = addDummyMemObj(i, type);
-        return addObjNode(nullptr, new DummyObjPN(i,mem), i);
+        return addObjNode(nullptr, new DummyObjVar(i,mem), i);
     }
     inline const MemObj* addDummyMemObj(NodeID i, const Type* type)
     {
@@ -578,11 +578,11 @@ private:
     }
     inline NodeID addBlackholeObjNode()
     {
-        return addObjNode(nullptr, new DummyObjPN(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
+        return addObjNode(nullptr, new DummyObjVar(getBlackHoleNode(),getBlackHoleObj()), getBlackHoleNode());
     }
     inline NodeID addConstantObjNode()
     {
-        return addObjNode(nullptr, new DummyObjPN(getConstantNode(),getConstantObj()), getConstantNode());
+        return addObjNode(nullptr, new DummyObjVar(getConstantNode(),getConstantObj()), getConstantNode());
     }
     inline NodeID addBlackholePtrNode()
     {
@@ -626,33 +626,33 @@ private:
     /// Add an edge into SVFIR
     //@{
     /// Add Address edge
-    AddrPE* addAddrPE(NodeID src, NodeID dst);
+    AddrStmt* addAddrPE(NodeID src, NodeID dst);
     /// Add Copy edge
-    CopyPE* addCopyPE(NodeID src, NodeID dst);
+    CopyStmt* addCopyPE(NodeID src, NodeID dst);
     /// Add phi node information
-    PhiPE*  addPhiNode(NodeID res, NodeID opnd);
+    PhiStmt*  addPhiNode(NodeID res, NodeID opnd);
     /// Add Copy edge
-    CmpPE* addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
+    CmpStmt* addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
     /// Add Copy edge
-    BinaryOPPE* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
+    BinaryOPStmt* addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
     /// Add Unary edge
-    UnaryOPPE* addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode);
+    UnaryOPStmt* addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode);
     /// Add BranchStmt
     BranchStmt* addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGNode*> succs);
     /// Add Load edge
-    LoadPE* addLoadPE(NodeID src, NodeID dst);
+    LoadStmt* addLoadPE(NodeID src, NodeID dst);
     /// Add Store edge
-    StorePE* addStorePE(NodeID src, NodeID dst, const IntraBlockNode* val);
+    StoreStmt* addStorePE(NodeID src, NodeID dst, const IntraBlockNode* val);
     /// Add Call edge
     CallPE* addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Return edge
     RetPE* addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Gep edge
-    GepPE* addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
+    GepStmt* addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
-    NormalGepPE* addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls);
+    NormalGepStmt* addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Variant(Gep) edge
-    VariantGepPE* addVariantGepPE(NodeID src, NodeID dst);
+    VariantGepStmt* addVariantGepPE(NodeID src, NodeID dst);
     /// Add Thread fork edge for parameter passing
     TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Thread join edge for parameter passing

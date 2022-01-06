@@ -270,13 +270,13 @@ public:
 /*
  * Value(Pointer) node
  */
-class ValPN: public SVFVar
+class ValVar: public SVFVar
 {
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ValPN *)
+    static inline bool classof(const ValVar *)
     {
         return true;
     }
@@ -295,7 +295,7 @@ public:
     //@}
 
     /// Constructor
-    ValPN(const Value* val, NodeID i, PNODEK ty = ValNode) :
+    ValVar(const Value* val, NodeID i, PNODEK ty = ValNode) :
         SVFVar(val, i, ty)
     {
     }
@@ -314,20 +314,20 @@ public:
 /*
  * Memory Object node
  */
-class ObjPN: public SVFVar
+class ObjVar: public SVFVar
 {
 
 protected:
     const MemObj* mem;	///< memory object
     /// Constructor
-    ObjPN(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
+    ObjVar(const Value* val, NodeID i, const MemObj* m, PNODEK ty = ObjNode) :
         SVFVar(val, i, ty), mem(m)
     {
     }
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const ObjPN *)
+    static inline bool classof(const ObjVar *)
     {
         return true;
     }
@@ -381,7 +381,7 @@ public:
  * e.g. memcpy, temp gep value node needs to be created
  * Each Gep Value node is connected to base value node via gep edge
  */
-class GepValPN: public ValPN
+class GepValVar: public ValVar
 {
 
 private:
@@ -392,11 +392,11 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepValPN *)
+    static inline bool classof(const GepValVar *)
     {
         return true;
     }
-    static inline bool classof(const ValPN * node)
+    static inline bool classof(const ValVar * node)
     {
         return node->getNodeKind() == SVFVar::GepValNode;
     }
@@ -411,8 +411,8 @@ public:
     //@}
 
     /// Constructor
-    GepValPN(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
-        ValPN(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx)
+    GepValVar(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
+        ValVar(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx)
     {
     }
 
@@ -448,7 +448,7 @@ public:
  * Gep Obj node, this is dynamic generated for field sensitive analysis
  * Each gep obj node is one field of a MemObj (base)
  */
-class GepObjPN: public ObjPN
+class GepObjPN: public ObjVar
 {
 private:
     LocationSet ls;
@@ -461,7 +461,7 @@ public:
     {
         return true;
     }
-    static inline bool classof(const ObjPN * node)
+    static inline bool classof(const ObjVar * node)
     {
         return node->getNodeKind() == SVFVar::GepObjNode
                || node->getNodeKind() == SVFVar::CloneGepObjNode;
@@ -480,7 +480,7 @@ public:
 
     /// Constructor
     GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
-        ObjPN(mem->getValue(), i, mem, ty), ls(l)
+        ObjVar(mem->getValue(), i, mem, ty), ls(l)
     {
         base = mem->getId();
     }
@@ -524,17 +524,17 @@ public:
  * Field-insensitive Gep Obj node, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
  */
-class FIObjPN: public ObjPN
+class FIObjVar: public ObjVar
 {
 public:
 
     ///  Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const FIObjPN *)
+    static inline bool classof(const FIObjVar *)
     {
         return true;
     }
-    static inline bool classof(const ObjPN * node)
+    static inline bool classof(const ObjVar * node)
     {
         return node->getNodeKind() == SVFVar::FIObjNode
                || node->getNodeKind() == SVFVar::CloneFIObjNode;
@@ -552,8 +552,8 @@ public:
     //@}
 
     /// Constructor
-    FIObjPN(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) :
-        ObjPN(val, i, mem, ty)
+    FIObjVar(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = FIObjNode) :
+        ObjVar(val, i, mem, ty)
     {
     }
 
@@ -651,13 +651,13 @@ public:
 /*
  * Dummy node
  */
-class DummyValPN: public ValPN
+class DummyValVar: public ValVar
 {
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const DummyValPN *)
+    static inline bool classof(const DummyValVar *)
     {
         return true;
     }
@@ -672,7 +672,7 @@ public:
     //@}
 
     /// Constructor
-    DummyValPN(NodeID i) : ValPN(nullptr, i, DummyValNode)
+    DummyValVar(NodeID i) : ValVar(nullptr, i, DummyValNode)
     {
     }
 
@@ -690,13 +690,13 @@ public:
 /*
  * Dummy node
  */
-class DummyObjPN: public ObjPN
+class DummyObjVar: public ObjVar
 {
 
 public:
 
     //@{ Methods for support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const DummyObjPN *)
+    static inline bool classof(const DummyObjVar *)
     {
         return true;
     }
@@ -713,8 +713,8 @@ public:
     //@}
 
     /// Constructor
-    DummyObjPN(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode)
-        : ObjPN(nullptr, i, m, ty)
+    DummyObjVar(NodeID i,const MemObj* m, PNODEK ty = DummyObjNode)
+        : ObjVar(nullptr, i, m, ty)
     {
     }
 
@@ -730,11 +730,11 @@ public:
 /*
  * Clone object node for dummy objects.
  */
-class CloneDummyObjPN: public DummyObjPN
+class CloneDummyObjVar: public DummyObjVar
 {
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneDummyObjPN *)
+    static inline bool classof(const CloneDummyObjVar *)
     {
         return true;
     }
@@ -749,15 +749,15 @@ public:
     //@}
 
     /// Constructor
-    CloneDummyObjPN(NodeID i, const MemObj* m, PNODEK ty = CloneDummyObjNode)
-        : DummyObjPN(i, m, ty)
+    CloneDummyObjVar(NodeID i, const MemObj* m, PNODEK ty = CloneDummyObjNode)
+        : DummyObjVar(i, m, ty)
     {
     }
 
     /// Return name of this node
     inline const std::string getValueName() const
     {
-        return "clone of " + ObjPN::getValueName();
+        return "clone of " + ObjVar::getValueName();
     }
 
     virtual const std::string toString() const;
@@ -766,11 +766,11 @@ public:
 /*
  * Clone object for GEP objects.
  */
-class CloneGepObjPN : public GepObjPN
+class CloneGepObjVar : public GepObjPN
 {
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneGepObjPN *)
+    static inline bool classof(const CloneGepObjVar *)
     {
         return true;
     }
@@ -785,7 +785,7 @@ public:
     //@}
 
     /// Constructor
-    CloneGepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = CloneGepObjNode) :
+    CloneGepObjVar(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = CloneGepObjNode) :
         GepObjPN(mem, i, l, ty)
     {
     }
@@ -802,11 +802,11 @@ public:
 /*
  * Clone object for FI objects.
  */
-class CloneFIObjPN : public FIObjPN
+class CloneFIObjVar : public FIObjVar
 {
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
-    static inline bool classof(const CloneFIObjPN *)
+    static inline bool classof(const CloneFIObjVar *)
     {
         return true;
     }
@@ -821,15 +821,15 @@ public:
     //@}
 
     /// Constructor
-    CloneFIObjPN(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = CloneFIObjNode) :
-        FIObjPN(val, i, mem, ty)
+    CloneFIObjVar(const Value* val, NodeID i, const MemObj* mem, PNODEK ty = CloneFIObjNode) :
+        FIObjVar(val, i, mem, ty)
     {
     }
 
     /// Return name of this node
     inline const std::string getValueName() const
     {
-        return "clone (FI) of " + FIObjPN::getValueName();
+        return "clone (FI) of " + FIObjVar::getValueName();
     }
 
     virtual const std::string toString() const;

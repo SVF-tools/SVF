@@ -77,7 +77,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
             const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
+                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
                 {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction())
@@ -101,7 +101,7 @@ void ThreadCallGraph::updateCallGraph(PointerAnalysis* pta)
             const NodeBS targets = pta->getPts(pag->getValueNode(forkedval)).toNodeBS();
             for (NodeBS::iterator ii = targets.begin(), ie = targets.end(); ii != ie; ii++)
             {
-                if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
+                if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
                 {
                     const MemObj* obj = pag->getObject(objPN);
                     if(obj->isFunction())

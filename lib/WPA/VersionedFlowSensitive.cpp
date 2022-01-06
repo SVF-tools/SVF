@@ -36,7 +36,7 @@ VersionedFlowSensitive::VersionedFlowSensitive(SVFIR *_pag, PTATY type)
 
     for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
-        if (SVFUtil::isa<ObjPN>(it->second)) equivalentObject[it->first] = it->first;
+        if (SVFUtil::isa<ObjVar>(it->second)) equivalentObject[it->first] = it->first;
     }
 
     assert(!Options::OPTSVFG && "VFS: -opt-svfg not currently supported with VFS.");

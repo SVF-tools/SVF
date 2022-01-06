@@ -52,7 +52,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
                 edge_obj["dstValueName"] = edge->getDstNode()->getValueName();
                 if(edge->getEdgeKind()==PAGEdge::NormalGep)
                 {
-                    const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
+                    const NormalGepStmt* gepEdge = SVFUtil::cast<NormalGepStmt>(edge);
                     edge_obj["offset"] = gepEdge->getOffset();
                 }
                 llvm::json::Value edge_value = llvm::json::Object{edge_obj};

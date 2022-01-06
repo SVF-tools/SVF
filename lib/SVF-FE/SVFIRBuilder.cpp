@@ -617,7 +617,7 @@ void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
     u32_t opcode = inst.getOpcode();
-    const BinaryOPPE* binayPE = addBinaryOPEdge(op1Node, op2Node, dst, opcode);
+    const BinaryOPStmt* binayPE = addBinaryOPEdge(op1Node, op2Node, dst, opcode);
 }
 
 /*!
@@ -630,7 +630,7 @@ void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
     Value* opnd = inst.getOperand(0);
     NodeID src = getValueNode(opnd);
     u32_t opcode = inst.getOpcode();
-    const UnaryOPPE* unaryPE = addUnaryOPEdge(src, dst, opcode);
+    const UnaryOPStmt* unaryPE = addUnaryOPEdge(src, dst, opcode);
 }
 
 /*!
@@ -645,7 +645,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
     u32_t opcode = inst.getOpcode();
-    const CmpPE* cmpPE = addCmpEdge(op1Node, op2Node, dst, opcode);
+    const CmpStmt* cmpPE = addCmpEdge(op1Node, op2Node, dst, opcode);
 }
 
 
@@ -1468,8 +1468,8 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             assert(dstFun==curInst->getFunction() && "DstNode of the PAGEdge not in the same function?");
         }
 
-        /// We assume every GepValPN and its GepPE are unique across whole program
-        if (!(SVFUtil::isa<GepPE>(edge) && SVFUtil::isa<GepValPN>(edge->getDstNode())))
+        /// We assume every GepValVar and its GepStmt are unique across whole program
+        if (!(SVFUtil::isa<GepStmt>(edge) && SVFUtil::isa<GepValVar>(edge->getDstNode())))
             assert(curBB && "instruction does not have a basic block??");
 
         /// We will have one unique function exit ICFGNode for all returns

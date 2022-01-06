@@ -69,7 +69,7 @@ void FlowSensitiveTBHC::backPropagate(NodeID clone)
     assert(cloneObj && "FSTBHC: original object does not exist in SVFIR?");
     // Check the original object too because when reuse of a gep occurs, the new object
     // is an FI object.
-    if (SVFUtil::isa<CloneGepObjPN>(cloneObj) || SVFUtil::isa<GepObjPN>(originalObj))
+    if (SVFUtil::isa<CloneGepObjVar>(cloneObj) || SVFUtil::isa<GepObjPN>(originalObj))
     {
         // Since getGepObjClones is updated, some GEP nodes need to be redone.
         const NodeBS &retrievers = gepToSVFGRetrievers[getOriginalObj(clone)];
@@ -78,7 +78,7 @@ void FlowSensitiveTBHC::backPropagate(NodeID clone)
             pushIntoWorklist(r);
         }
     }
-    else if (SVFUtil::isa<CloneFIObjPN>(cloneObj) || SVFUtil::isa<CloneDummyObjPN>(cloneObj))
+    else if (SVFUtil::isa<CloneFIObjVar>(cloneObj) || SVFUtil::isa<CloneDummyObjVar>(cloneObj))
     {
         pushIntoWorklist(getAllocationSite(getOriginalObj(clone)));
     }
@@ -299,7 +299,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
         }
         else
         {
-            if (SVFUtil::isa<VariantGepPE>(gep->getPAGEdge()))
+            if (SVFUtil::isa<VariantGepStmt>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(oq);
                 tmpDstPts.set(oq);
@@ -314,7 +314,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                     }
                 }
             }
-            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
+            else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(gep->getPAGEdge()))
             {
                 const DIType *baseType = getType(oq);
 
