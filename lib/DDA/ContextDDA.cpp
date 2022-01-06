@@ -143,12 +143,12 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
             if (SVFUtil::isa<VariantGepStmt>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(ptd.get_id());
-                CxtVar var(ptd.get_cond(),getFIObjNode(ptd.get_id()));
+                CxtVar var(ptd.get_cond(),getFIObjVar(ptd.get_id()));
                 tmpDstPts.set(var);
             }
             else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(gep->getPAGEdge()))
             {
-                CxtVar var(ptd.get_cond(),getGepObjNode(ptd.get_id(),normalGep->getLocationSet()));
+                CxtVar var(ptd.get_cond(),getGepObjVar(ptd.get_id(),normalGep->getLocationSet()));
                 tmpDstPts.set(var);
             }
             else

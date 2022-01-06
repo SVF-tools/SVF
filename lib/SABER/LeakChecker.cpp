@@ -119,10 +119,10 @@ void LeakChecker::initSnks()
         {
             const SVFFunction* fun = *cit;
 			if (isSinkLikeFun(fun)) {
-				SVFIR::PAGNodeList &arglist = it->second;
+				SVFIR::SVFVarList &arglist = it->second;
 				assert(!arglist.empty()	&& "no actual parameter at deallocation site?");
 				/// we only choose pointer parameters among all the actual parameters
-				for (SVFIR::PAGNodeList::const_iterator ait = arglist.begin(),
+				for (SVFIR::SVFVarList::const_iterator ait = arglist.begin(),
 						aeit = arglist.end(); ait != aeit; ++ait) {
 					const PAGNode *pagNode = *ait;
 					if (pagNode->isPointer()) {

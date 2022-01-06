@@ -169,7 +169,7 @@ public:
     typedef Map<NodeID, NodeBS> NodeToPTSSMap;
 
     /// SVFIR edge list
-    typedef SVFIR::PAGEdgeList PAGEdgeList;
+    typedef SVFIR::SVFStmtList SVFStmtList;
     /// Call Graph SCC
     typedef SCCDetection<PTACallGraph*> SCC;
 
@@ -466,9 +466,9 @@ public:
     }
     //@}
     /// Whether this instruction has SVFIR Edge
-    bool hasPAGEdgeList(const Instruction* inst);
+    bool hasSVFStmtList(const Instruction* inst);
     /// Given an instruction, get all its the PAGEdge (statement) in sequence
-    PAGEdgeList& getPAGEdgesFromInst(const Instruction* inst);
+    SVFStmtList& getPAGEdgesFromInst(const Instruction* inst);
 
     /// getModRefInfo APIs
     //@{

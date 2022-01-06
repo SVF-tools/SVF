@@ -76,8 +76,8 @@ public:
 
 protected:
     const Value* value; ///< value of this SVFIR node
-    SVFStmt::PAGKindToEdgeSetMapTy InEdgeKindToSetMap;
-    SVFStmt::PAGKindToEdgeSetMapTy OutEdgeKindToSetMap;
+    SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
+    SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
     bool isTLPointer;	/// top-level pointer
     bool isATPointer;	/// address-taken pointer
 
@@ -158,13 +158,13 @@ public:
     }
 
     /// Get incoming SVFIR edges
-    inline SVFStmt::PAGEdgeSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
+    inline SVFStmt::SVFStmtSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
     {
         return InEdgeKindToSetMap[kind];
     }
 
     /// Get outgoing SVFIR edges
-    inline SVFStmt::PAGEdgeSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
+    inline SVFStmt::SVFStmtSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
@@ -172,7 +172,7 @@ public:
     /// Has incoming SVFIR edges
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         if (it != InEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -182,7 +182,7 @@ public:
     /// Has incoming VariantGepEdges
     inline bool hasIncomingVariantGepEdge() const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
         if (it != InEdgeKindToSetMap.end())
         {
             return (!it->second.empty());
@@ -191,17 +191,17 @@ public:
     }
 
     /// Get incoming SVFStmt iterator
-    inline SVFStmt::PAGEdgeSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
     /// Get incoming SVFStmt iterator
-    inline SVFStmt::PAGEdgeSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }
@@ -209,7 +209,7 @@ public:
     /// Has outgoing SVFIR edges
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
         else
@@ -217,17 +217,17 @@ public:
     }
 
     /// Get outgoing SVFStmt iterator
-    inline SVFStmt::PAGEdgeSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.begin();
     }
 
     /// Get outgoing SVFStmt iterator
-    inline SVFStmt::PAGEdgeSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
+    inline SVFStmt::SVFStmtSetTy::iterator getOutgoingEdgesEnd(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::PAGKindToEdgeSetMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
         assert(it!=OutEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
     }

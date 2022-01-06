@@ -102,7 +102,7 @@ PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeTo
 {
     SVFIR* pag = svfg->getPAG();
 
-    NodeID baseId = pag->getBaseObjNode(id);
+    NodeID baseId = pag->getBaseObjVar(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
         return it->second;
@@ -265,8 +265,8 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                SVFIR::PAGNodeList& arglist = it->second;
-                for(SVFIR::PAGNodeList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
+                SVFIR::SVFVarList& arglist = it->second;
+                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
 					const PAGNode *pagNode = *ait;
 					if (pagNode->isPointer()) {
 						addActualParmVFGNode(pagNode, it->first);

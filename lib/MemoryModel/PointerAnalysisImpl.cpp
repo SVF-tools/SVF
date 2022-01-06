@@ -84,7 +84,7 @@ void BVDataPTAImpl::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     expandedPts = pts;;
     for(PointsTo::iterator pit = pts.begin(), epit = pts.end(); pit!=epit; ++pit)
     {
-        if (pag->getBaseObjNode(*pit) == *pit || isFieldInsensitive(*pit))
+        if (pag->getBaseObjVar(*pit) == *pit || isFieldInsensitive(*pit))
         {
             expandedPts |= pag->getAllFieldsObjNode(*pit);
         }
@@ -96,7 +96,7 @@ void BVDataPTAImpl::expandFIObjs(const NodeBS& pts, NodeBS& expandedPts)
     expandedPts = pts;
     for (const NodeID o : pts)
     {
-        if (pag->getBaseObjNode(o) == o || isFieldInsensitive(o))
+        if (pag->getBaseObjVar(o) == o || isFieldInsensitive(o))
         {
             expandedPts |= pag->getAllFieldsObjNode(o);
         }
@@ -153,7 +153,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode))
         {
             F.os() << it->first << " ";
-            F.os() << pag->getBaseObjNode(it->first) << " ";
+            F.os() << pag->getBaseObjVar(it->first) << " ";
             F.os() << gepObjPN->getLocationSet().getOffset() << "\n";
         }
     }
@@ -165,7 +165,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     {
         PAGNode* pagNode = it->second;
         if (!isa<ObjVar>(pagNode)) continue;
-        NodeID n = pag->getBaseObjNode(it->first);
+        NodeID n = pag->getBaseObjVar(it->first);
         if (NodeIDs.test(n)) continue;
         F.os() << n << " ";
         F.os() << isFieldInsensitive(n) << "\n";
@@ -265,7 +265,7 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
         size_t offset;
         ss >> id >> base >> offset;
 
-        NodeID n = pag->getGepObjNode(pag->getObject(base), LocationSet(offset));
+        NodeID n = pag->getGepObjVar(pag->getObject(base), LocationSet(offset));
         assert(id == n && "Error adding GepObjNode into SVFIR!");
 
         getline(F, line);
@@ -401,7 +401,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
  */
 void BVDataPTAImpl::normalizePointsTo() {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
+    SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
     // collect each gep node whose base node has been set as field-insensitive
     NodeBS dropNodes;
@@ -427,19 +427,19 @@ void BVDataPTAImpl::normalizePointsTo() {
         for (NodeID obj : tmpPts) {
             if (!dropNodes.test(obj))
                 continue;
-            NodeID baseObj = pag->getBaseObjNode(obj);
+            NodeID baseObj = pag->getBaseObjVar(obj);
             clearPts(n, obj);
             addPts(n, baseObj);
         }
     }
 
-    // clear GepObjNodeMap and memToFieldsMap for redundant gepnodes
+    // clear GepObjVarMap and memToFieldsMap for redundant gepnodes
     // and remove those nodes from pag
     for (NodeID n: dropNodes) {
-        NodeID base = pag->getBaseObjNode(n);
+        NodeID base = pag->getBaseObjVar(n);
         GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
         const LocationSet ls = gepNode->getLocationSet();
-        GepObjNodeMap.erase(std::make_pair(base, ls));
+        GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
 
         pag->removeGNode(gepNode);

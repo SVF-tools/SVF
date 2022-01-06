@@ -269,13 +269,13 @@ public:
 
 public:
 
-    NodeID getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
     inline PAGEdge* addBlackHoleAddrEdge(NodeID node)
     {
-        PAGEdge *edge = pag->addBlackHoleAddrPE(node);
+        PAGEdge *edge = pag->addBlackHoleAddrStmt(node);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -283,42 +283,42 @@ public:
     /// Add Address edge
     inline AddrStmt* addAddrEdge(NodeID src, NodeID dst)
     {
-        AddrStmt *edge = pag->addAddrPE(src, dst);
+        AddrStmt *edge = pag->addAddrStmt(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
     inline CopyStmt* addCopyEdge(NodeID src, NodeID dst)
     {
-        CopyStmt *edge = pag->addCopyPE(src, dst);
+        CopyStmt *edge = pag->addCopyStmt(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline PhiStmt* addPhiNode(NodeID res, NodeID opnd)
+    inline PhiStmt* addPhiStmt(NodeID res, NodeID opnd)
     {
-        PhiStmt *edge = pag->addPhiNode(res,opnd);
+        PhiStmt *edge = pag->addPhiStmt(res,opnd);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
     inline CmpStmt* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        CmpStmt *edge = pag->addCmpPE(op1, op2, dst, opcode);
+        CmpStmt *edge = pag->addCmpStmt(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
     inline BinaryOPStmt* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        BinaryOPStmt *edge = pag->addBinaryOPPE(op1, op2, dst, opcode);
+        BinaryOPStmt *edge = pag->addBinaryOPStmt(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Unary edge
     inline UnaryOPStmt* addUnaryOPEdge(NodeID src, NodeID dst, u32_t opcode)
     {
-        UnaryOPStmt *edge = pag->addUnaryOPPE(src, dst, opcode);
+        UnaryOPStmt *edge = pag->addUnaryOPStmt(src, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -331,7 +331,7 @@ public:
     /// Add Load edge
     inline LoadStmt* addLoadEdge(NodeID src, NodeID dst)
     {
-        LoadStmt *edge = pag->addLoadPE(src, dst);
+        LoadStmt *edge = pag->addLoadStmt(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -343,7 +343,7 @@ public:
             node = pag->getICFG()->getIntraBlockNode(inst);
         else
             node = nullptr;
-        StoreStmt *edge = pag->addStorePE(src, dst, node);
+        StoreStmt *edge = pag->addStoreStmt(src, dst, node);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -364,21 +364,21 @@ public:
     /// Add Gep edge
     inline GepStmt* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
     {
-        GepStmt *edge = pag->addGepPE(src, dst, ls, constGep);
+        GepStmt *edge = pag->addGepStmt(src, dst, ls, constGep);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Offset(Gep) edge
     inline NormalGepStmt* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        NormalGepStmt *edge = pag->addNormalGepPE(src, dst, ls);
+        NormalGepStmt *edge = pag->addNormalGepStmt(src, dst, ls);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Variant(Gep) edge
     inline VariantGepStmt* addVariantGepEdge(NodeID src, NodeID dst)
     {
-        VariantGepStmt *edge = pag->addVariantGepPE(src, dst);
+        VariantGepStmt *edge = pag->addVariantGepStmt(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

@@ -99,7 +99,7 @@ private:
             SVF::Size_t locationSetOffset = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(1))->getString().str());
 
             LocationSet locationSet = LocationSet(locationSetOffset);
-            SVF::NodeID gepnodeId = pag->getGepObjNode(baseNodeId, locationSet);
+            SVF::NodeID gepnodeId = pag->getGepObjVar(baseNodeId, locationSet);
 
             assert(nodeId == gepnodeId && "nodeId != gepnodeId");
         }

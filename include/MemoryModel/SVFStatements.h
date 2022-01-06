@@ -175,9 +175,10 @@ public:
     }
     //@}
 
-    typedef GenericNode<SVFVar,SVFStmt>::GEdgeSetTy PAGEdgeSetTy;
-    typedef Map<EdgeID, PAGEdgeSetTy> PAGEdgeToSetMapTy;
-    typedef PAGEdgeToSetMapTy PAGKindToEdgeSetMapTy;
+    typedef GenericNode<SVFVar,SVFStmt>::GEdgeSetTy SVFStmtSetTy;
+    typedef Map<EdgeID, SVFStmtSetTy> PAGEdgeToSetMapTy;
+    typedef PAGEdgeToSetMapTy KindToSVFStmtMapTy;
+    typedef SVFStmtSetTy PAGEdgeSetTy;
 
 private:
     typedef Map<const ICFGNode*, u32_t> Inst2LabelMap;

@@ -260,8 +260,8 @@ void SVFIRBuilder::processCE(const Value *val)
             NodeID nsrc1 = pag->getValueNode(src1);
             NodeID nsrc2 = pag->getValueNode(src2);
             NodeID nres = pag->getValueNode(selectce);
-            addPhiNode(nres,nsrc1);
-            addPhiNode(nres,nsrc2);
+            addPhiStmt(nres,nsrc1);
+            addPhiStmt(nres,nsrc2);
             setCurrentLocation(cval, cbb);
         }
         // if we meet a int2ptr, then it points-to black hole
@@ -351,7 +351,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
         const Type *gvartype = gvar->getType();
         while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
             gvartype = ptype->getElementType();
-        return getGepValNode(gvar, LocationSet(offset), gvartype, offset);
+        return getGepValVar(gvar, LocationSet(offset), gvartype, offset);
     }
 }
 
@@ -519,7 +519,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
 
         NodeID src = getValueNode(val);
-        addPhiNode(dst,src);
+        addPhiStmt(dst,src);
     }
 }
 
@@ -662,8 +662,8 @@ void SVFIRBuilder::visitSelectInst(SelectInst &inst)
     NodeID src2 = getValueNode(inst.getFalseValue());
 
     /// Two operands have same incoming basic block, both are the current BB
-    addPhiNode(dst,src1);
-    addPhiNode(dst,src2);
+    addPhiStmt(dst,src1);
+    addPhiStmt(dst,src2);
 }
 
 /*
@@ -730,7 +730,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
         //vnS may be null if src is a null ptr
-        addPhiNode(rnF,vnS);
+        addPhiStmt(rnF,vnS);
     }
 }
 
@@ -938,8 +938,8 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        NodeID dField = getGepValNode(D,fields[index],dtype,index);
-        NodeID sField = getGepValNode(S,fields[index],stype,index);
+        NodeID dField = getGepValVar(D,fields[index],dtype,index);
+        NodeID sField = getGepValVar(S,fields[index],stype,index);
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
@@ -1193,7 +1193,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnD = getGepValNode(vArg3, fields[i], type, i);
+                    NodeID vnD = getGepValVar(vArg3, fields[i], type, i);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
@@ -1217,7 +1217,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnS = getGepValNode(vArg, fields[i], type, i);
+                    NodeID vnS = getGepValVar(vArg, fields[i], type, i);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
                 }
@@ -1399,15 +1399,15 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
 {
-    NodeID base = pag->getBaseValNode(getValueNode(val));
-    NodeID gepval = pag->getGepValNode(curVal, base, ls);
+    NodeID base = pag->getBaseValVar(getValueNode(val));
+    NodeID gepval = pag->getGepValVar(curVal, base, ls);
     if (gepval==UINT_MAX)
     {
         assert(((int) UINT_MAX)==-1 && "maximum limit of unsigned int is not -1?");
         /*
-         * getGepValNode can only be called from two places:
+         * getGepValVar can only be called from two places:
          * 1. SVFIRBuilder::addComplexConsForExt to handle external calls
          * 2. SVFIRBuilder::getGlobalVarField to initialize global variable
          * so curVal can only be
@@ -1505,7 +1505,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         assert(false && "what else value can we have?");
     }
 
-    pag->addToInstPAGEdgeList(icfgNode,edge);
+    pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addPAGEdge(edge);
 }
 
