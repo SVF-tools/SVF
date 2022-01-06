@@ -67,9 +67,9 @@ protected:
 
     void destroy();
 
-    PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    PAGEdge::SVFStmtSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
     {
-        return pag->getPTAEdgeSet(kind);
+        return pag->getPTASVFStmtSet(kind);
     }
 
     /// Wappers used internally, not expose to Andernsen Pass
@@ -314,9 +314,9 @@ public:
     {
         return pag->getAllFieldsObjNode(id);
     }
-    inline NodeID getBaseObjNode(NodeID id)
+    inline NodeID getBaseObjVar(NodeID id)
     {
-        return pag->getBaseObjNode(id);
+        return pag->getBaseObjVar(id);
     }
     inline bool isSingleFieldObj(NodeID id) const
     {
@@ -324,18 +324,18 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
     {
-        NodeID gep =  pag->getGepObjNode(id,ls);
+        NodeID gep =  pag->getGepObjVar(id,ls);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
             addConstraintNode(new ConstraintNode(gep),gep);
         return gep;
     }
     /// Get a field-insensitive node of a memory object
-    inline NodeID getFIObjNode(NodeID id)
+    inline NodeID getFIObjVar(NodeID id)
     {
-        NodeID fi = pag->getFIObjNode(id);
+        NodeID fi = pag->getFIObjVar(id);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if (sccRepNode(fi) == fi && hasConstraintNode(fi)==false)
             addConstraintNode(new ConstraintNode(fi),fi);

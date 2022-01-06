@@ -352,7 +352,7 @@ public:
         expandedCpts = cpts;;
         for(typename CPtSet::const_iterator cit = cpts.begin(), ecit=cpts.end(); cit!=ecit; ++cit)
         {
-            if(pag->getBaseObjNode(cit->get_id())==cit->get_id())
+            if(pag->getBaseObjVar(cit->get_id())==cit->get_id())
             {
                 NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
                 for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it)

@@ -164,16 +164,16 @@ void AndersenBase::cleanConsCG(NodeID id) {
 void AndersenBase::normalizePointsTo()
 {
     SVFIR::MemObjToFieldsMap &memToFieldsMap = pag->getMemToFieldsMap();
-    SVFIR::NodeLocationSetMap &GepObjNodeMap = pag->getGepObjNodeMap();
+    SVFIR::NodeLocationSetMap &GepObjVarMap = pag->getGepObjNodeMap();
 
-    // clear GepObjNodeMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
+    // clear GepObjVarMap/memToFieldsMap/nodeToSubsMap/nodeToRepMap
     // for redundant gepnodes and remove those nodes from pag
     for (NodeID n: redundantGepNodes) {
-        NodeID base = pag->getBaseObjNode(n);
+        NodeID base = pag->getBaseObjVar(n);
         GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
         const LocationSet ls = gepNode->getLocationSet();
-        GepObjNodeMap.erase(std::make_pair(base, ls));
+        GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);
         cleanConsCG(n);
 
@@ -411,11 +411,11 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
             if (!isFieldInsensitive(o))
             {
                 setObjFieldInsensitive(o);
-                consCG->addNodeToBeCollapsed(consCG->getBaseObjNode(o));
+                consCG->addNodeToBeCollapsed(consCG->getBaseObjVar(o));
             }
 
             // Add the field-insensitive node into pts.
-            NodeID baseId = consCG->getFIObjNode(o);
+            NodeID baseId = consCG->getFIObjVar(o);
             tmpDstPts.set(baseId);
         }
     }
@@ -434,7 +434,7 @@ bool Andersen::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 
             if (!matchType(edge->getSrcID(), o, normalGepEdge)) continue;
 
-            NodeID fieldSrcPtdNode = consCG->getGepObjNode(o, normalGepEdge->getLocationSet());
+            NodeID fieldSrcPtdNode = consCG->getGepObjVar(o, normalGepEdge->getLocationSet());
             tmpDstPts.set(fieldSrcPtdNode);
             addTypeForGepObjNode(fieldSrcPtdNode, normalGepEdge);
         }
@@ -561,7 +561,7 @@ bool Andersen::collapseField(NodeID nodeId)
     setObjFieldInsensitive(nodeId);
 
     // replace all occurrences of each field with the field-insensitive node
-    NodeID baseId = consCG->getFIObjNode(nodeId);
+    NodeID baseId = consCG->getFIObjVar(nodeId);
     NodeID baseRepNodeId = consCG->sccRepNode(baseId);
     NodeBS & allFields = consCG->getAllFieldsObjNode(baseId);
     for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit; fieldIt++)
@@ -722,12 +722,12 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
     {
 
         // connect actual and formal param
-        const SVFIR::PAGNodeList& csArgList = pag->getCallSiteArgsList(callBlockNode);
-        const SVFIR::PAGNodeList& funArgList = pag->getFunArgsList(F);
+        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(F);
         //Go through the fixed parameters.
         DBOUT(DPAGBuild, outs() << "      args:");
-        SVFIR::PAGNodeList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
-        SVFIR::PAGNodeList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
+        SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
+        SVFIR::SVFVarList::const_iterator csArgIt  = csArgList.begin(), csArgEit = csArgList.end();
         for (; funArgIt != funArgEit; ++csArgIt, ++funArgIt)
         {
             //Some programs (e.g. Linux kernel) leave unneeded parameters empty.

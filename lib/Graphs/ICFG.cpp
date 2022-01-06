@@ -472,11 +472,11 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
         {
             rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
-            SVFIR::PAGEdgeList&  edges = SVFIR::getPAG()->getInstPTAPAGEdgeList(bNode);
+            SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(bNode);
             if (edges.empty()) {
                 rawstr << value2String(bNode->getInst()) << " \t";
             } else {
-                for (SVFIR::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+                for (SVFIR::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
                 {
                     const PAGEdge* edge = *it;
                     rawstr << edge->toString();
@@ -502,8 +502,8 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         }
         else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
         {
-            SVFIR::PAGEdgeList&  edges = SVFIR::getPAG()->getInstPTAPAGEdgeList(glob);
-            for (SVFIR::PAGEdgeList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
+            SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(glob);
+            for (SVFIR::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
                 rawstr << edge->toString();

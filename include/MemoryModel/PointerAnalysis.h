@@ -346,17 +346,17 @@ public:
     {
         return (SVFUtil::isa<FIObjVar>(pag->getGNode(id)));
     }
-    inline NodeID getBaseObjNode(NodeID id)
+    inline NodeID getBaseObjVar(NodeID id)
     {
-        return pag->getBaseObjNode(id);
+        return pag->getBaseObjVar(id);
     }
-    inline NodeID getFIObjNode(NodeID id)
+    inline NodeID getFIObjVar(NodeID id)
     {
-        return pag->getFIObjNode(id);
+        return pag->getFIObjVar(id);
     }
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
     {
-        return pag->getGepObjNode(id,ls);
+        return pag->getGepObjVar(id,ls);
     }
     virtual inline const NodeBS& getAllFieldsObjNode(NodeID id)
     {

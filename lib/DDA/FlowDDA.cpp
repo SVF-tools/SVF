@@ -129,11 +129,11 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             if (SVFUtil::isa<VariantGepStmt>(gep->getPAGEdge()))
             {
                 setObjFieldInsensitive(ptd);
-                tmpDstPts.set(getFIObjNode(ptd));
+                tmpDstPts.set(getFIObjVar(ptd));
             }
             else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(gep->getPAGEdge()))
             {
-                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
+                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	normalGep->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
             }
             else

@@ -160,30 +160,30 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
 
     if (edge == "addr")
     {
-        pag->addAddrPE(srcID, dstID);
+        pag->addAddrStmt(srcID, dstID);
     }
     else if (edge == "copy")
-        pag->addCopyPE(srcID, dstID);
+        pag->addCopyStmt(srcID, dstID);
     else if (edge == "load")
-        pag->addLoadPE(srcID, dstID);
+        pag->addLoadStmt(srcID, dstID);
     else if (edge == "store")
-        pag->addStorePE(srcID, dstID, nullptr);
+        pag->addStoreStmt(srcID, dstID, nullptr);
     else if (edge == "gep")
-        pag->addNormalGepPE(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
     else if (edge == "variant-gep")
-        pag->addVariantGepPE(srcID, dstID);
+        pag->addVariantGepStmt(srcID, dstID);
     else if (edge == "call")
         pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr));
     else if (edge == "ret")
         pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr));
     else if (edge == "cmp")
-        pag->addCmpPE(srcID, dstID, dstID, dstID);
+        pag->addCmpStmt(srcID, dstID, dstID, dstID);
     else if (edge == "binary-op")
-        pag->addBinaryOPPE(srcID, dstID, dstID, dstID);
+        pag->addBinaryOPStmt(srcID, dstID, dstID, dstID);
     else if (edge == "unary-op")
-        pag->addUnaryOPPE(srcID, dstID, dstID);
+        pag->addUnaryOPStmt(srcID, dstID, dstID);
     else if (edge == "phi")
-        pag->addPhiNode(srcID, dstID);
+        pag->addPhiStmt(srcID, dstID);
     else if (edge == "branch"){
         assert(false && "fix successors here!");
         //pag->addBranchStmt(srcID, dstID, nullptr);

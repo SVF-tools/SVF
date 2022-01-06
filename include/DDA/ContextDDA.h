@@ -151,7 +151,7 @@ public:
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
         if (isFieldInsensitive(srcID))
-            srcID = getFIObjNode(srcID);
+            srcID = getFIObjVar(srcID);
 
         CxtVar var(dpm.getCond(),srcID);
         addDDAPts(pts,var);

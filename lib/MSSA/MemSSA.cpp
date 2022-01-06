@@ -159,10 +159,10 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
                 it != eit; ++it)
         {
             const Instruction* inst = &*it;
-            if(mrGen->hasPAGEdgeList(inst))
+            if(mrGen->hasSVFStmtList(inst))
             {
-                PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
-                for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+                for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit)
                 {
                     const PAGEdge* inst = *bit;
@@ -301,10 +301,10 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
             it != eit; ++it)
     {
         const Instruction* inst = &*it;
-        if(mrGen->hasPAGEdgeList(inst))
+        if(mrGen->hasSVFStmtList(inst))
         {
-            PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
-            for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+            SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+            for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                     bit!=ebit; ++bit)
             {
                 const PAGEdge* inst = *bit;
@@ -666,8 +666,8 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                 else
                 {
                     bool dump_preamble = false;
-                    PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
-                    for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+                    SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
+                    for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;
@@ -689,7 +689,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                     Out << inst << "\n";
 
                     bool has_chi = false;
-                    for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+                    for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;

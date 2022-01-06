@@ -155,8 +155,8 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
 {
     setPAG(pag);
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+    PAGEdge::SVFStmtSetTy& loads = pag->getSVFStmtSet(PAGEdge::Load);
+    for (PAGEdge::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
         PAGNode* loadsrc = (*iter)->getSrcNode();
@@ -164,16 +164,16 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
         addCandidate(loadsrc->getId());
     }
 
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+    PAGEdge::SVFStmtSetTy& stores = pag->getSVFStmtSet(PAGEdge::Store);
+    for (PAGEdge::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         PAGNode* storedst = (*iter)->getDstNode();
         storeDstNodes.insert(storedst);
         addCandidate(storedst->getId());
     }
-    PAGEdge::PAGEdgeSetTy& geps = pag->getEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = geps.begin(), eiter =
+    PAGEdge::SVFStmtSetTy& geps = pag->getSVFStmtSet(PAGEdge::NormalGep);
+    for (PAGEdge::SVFStmtSetTy::iterator iter = geps.begin(), eiter =
                 geps.end(); iter != eiter; ++iter)
     {
         PAGNode* gepsrc = (*iter)->getSrcNode();

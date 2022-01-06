@@ -216,13 +216,13 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
         if (isClone(base))
         {
-            // Don't use ppag->getGepObjNode because base and it's original object
+            // Don't use ppag->getGepObjVar because base and it's original object
             // have the same memory object which is the key SVFIR uses.
             newGep = addCloneGepObjNode(baseNode->getMemObj(), newLS);
         }
         else
         {
-            newGep = ppag->getGepObjNode(base, newLS);
+            newGep = ppag->getGepObjVar(base, newLS);
         }
 
         if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(ppag->getGNode(newGep)))
@@ -259,7 +259,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
         setType(newGep, newGepType);
         // We call the object created in the non-TBHC analysis the original object.
-        setOriginalObj(newGep, ppag->getGepObjNode(baseNode->getMemObj(), offset));
+        setOriginalObj(newGep, ppag->getGepObjVar(baseNode->getMemObj(), offset));
         setAllocationSite(newGep, 0);
 
         geps.set(newGep);

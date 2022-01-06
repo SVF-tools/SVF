@@ -94,7 +94,7 @@ public:
     typedef Map<const MemRegion*, MRVERSION> MemRegToCounterMap;
 
     /// SVFIR edge list
-    typedef SVFIR::PAGEdgeList PAGEdgeList;
+    typedef SVFIR::SVFStmtList SVFStmtList;
 
     /// Statistics
     //@{

@@ -97,8 +97,8 @@ protected:
     const NodeBS &getGepObjs(NodeID base);
 
     /// Returns the GEP object node(s) of base for ls. This may include clones.
-    /// If there are no GEP objects, then getGepObjNode is called on the SVFIR
-    /// (through base's getGepObjNode) which will create one.
+    /// If there are no GEP objects, then getGepObjVar is called on the SVFIR
+    /// (through base's getGepObjVar) which will create one.
     const NodeBS getGepObjClones(NodeID base, unsigned offset);
 
     /// Initialise the pointees of p at loc (which is type tildet *). reuse indicates

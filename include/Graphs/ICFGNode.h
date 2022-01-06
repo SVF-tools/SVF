@@ -67,7 +67,7 @@ public:
     typedef Set<const CallPE *> CallPESet;
     typedef Set<const RetPE *> RetPESet;
     typedef std::list<const VFGNode*> VFGNodeList;
-    typedef std::list<const SVFStmt*> PAGEdgeList;
+    typedef std::list<const SVFStmt*> SVFStmtList;
 
 public:
     /// Constructor
@@ -118,7 +118,7 @@ public:
         pagEdges.push_back(edge);
     }
 
-    inline const PAGEdgeList& getPAGEdges() const
+    inline const SVFStmtList& getPAGEdges() const
     {
         return pagEdges;
     }
@@ -132,7 +132,7 @@ protected:
     const SVFFunction* fun;
     const BasicBlock* bb;
     VFGNodeList VFGNodes; //< a list of VFGNodes
-    PAGEdgeList pagEdges; //< a list of PAGEdges
+    SVFStmtList pagEdges; //< a list of PAGEdges
 
 };
 

@@ -79,7 +79,7 @@ public:
     typedef VFGEdge::VFGEdgeSetTy::iterator VFGNodeIter;
     typedef VFGNodeIDToNodeMapTy::iterator iterator;
     typedef VFGNodeIDToNodeMapTy::const_iterator const_iterator;
-    typedef SVFIR::PAGEdgeSet PAGEdgeSet;
+    typedef SVFIR::SVFStmtSet SVFStmtSet;
     typedef Set<const VFGNode*> GlobalVFGNodeSet;
     typedef Set<const PAGNode*> PAGNodeSet;
 
@@ -427,12 +427,12 @@ protected:
     void addVFGNodes();
 
     /// Get PAGEdge set
-    virtual inline PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    virtual inline PAGEdge::SVFStmtSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
     {
         if (isPtrOnlySVFG())
-            return pag->getPTAEdgeSet(kind);
+            return pag->getPTASVFStmtSet(kind);
         else
-            return pag->getEdgeSet(kind);
+            return pag->getSVFStmtSet(kind);
     }
 
     virtual inline bool isInterestedPAGNode(const PAGNode* node) const

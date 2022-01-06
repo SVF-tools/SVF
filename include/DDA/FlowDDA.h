@@ -93,7 +93,7 @@ public:
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
         if (isFieldInsensitive(srcID))
-            srcID = getFIObjNode(srcID);
+            srcID = getFIObjVar(srcID);
 
         addDDAPts(pts,srcID);
         DBOUT(DDDA, SVFUtil::outs() << "\t add points-to target " << srcID << " to dpm ");

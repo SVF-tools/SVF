@@ -76,7 +76,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
             PAGNode* pagNode = pta->getPAG()->getGNode(nodeId);
             if (SVFUtil::isa<ObjVar>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
-                NodeID baseId = consCG->getBaseObjNode(nodeId);
+                NodeID baseId = consCG->getBaseObjVar(nodeId);
                 clone.reset(nodeId);
                 clone.set(baseId);
             }
@@ -228,8 +228,8 @@ void AndersenStat::statNullPtr()
         PAGNode* pagNode = iter->second;
         if (pagNode->isTopLevelPtr() == false)
             continue;
-        PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
-        PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
+        PAGEdge::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
+        PAGEdge::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
         {
             ///TODO: change the condition here to fetch the points-to set

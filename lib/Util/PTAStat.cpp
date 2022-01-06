@@ -202,13 +202,13 @@ void PTAStat::performStat()
     generalNumMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
     generalNumMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 
-    generalNumMap[NumOfAddrs] = pag->getEdgeSet(PAGEdge::Addr).size();
-    generalNumMap[NumOfLoads] = pag->getEdgeSet(PAGEdge::Load).size();
-    generalNumMap[NumOfStores] = pag->getEdgeSet(PAGEdge::Store).size();
-    generalNumMap[NumOfCopys] =  pag->getEdgeSet(PAGEdge::Copy).size();
-    generalNumMap[NumOfGeps] =  pag->getEdgeSet(PAGEdge::NormalGep).size() + pag->getEdgeSet(PAGEdge::VariantGep).size();
-    generalNumMap[NumOfCalls] = pag->getEdgeSet(PAGEdge::Call).size();
-    generalNumMap[NumOfReturns] = pag->getEdgeSet(PAGEdge::Ret).size();
+    generalNumMap[NumOfAddrs] = pag->getSVFStmtSet(PAGEdge::Addr).size();
+    generalNumMap[NumOfLoads] = pag->getSVFStmtSet(PAGEdge::Load).size();
+    generalNumMap[NumOfStores] = pag->getSVFStmtSet(PAGEdge::Store).size();
+    generalNumMap[NumOfCopys] =  pag->getSVFStmtSet(PAGEdge::Copy).size();
+    generalNumMap[NumOfGeps] =  pag->getSVFStmtSet(PAGEdge::NormalGep).size() + pag->getSVFStmtSet(PAGEdge::VariantGep).size();
+    generalNumMap[NumOfCalls] = pag->getSVFStmtSet(PAGEdge::Call).size();
+    generalNumMap[NumOfReturns] = pag->getSVFStmtSet(PAGEdge::Ret).size();
 
     generalNumMap[NumOfFunctionObjs] = numOfFunction;
     generalNumMap[NumOfGlobalObjs] = numOfGlobal;

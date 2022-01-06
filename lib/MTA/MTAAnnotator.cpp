@@ -122,8 +122,8 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
     PointsTo worklist;
 
     /// find fork arguments' objects
-    const PAGEdge::PAGEdgeSetTy& forkedges = pag->getPTAEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::const_iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
+    const PAGEdge::SVFStmtSetTy& forkedges = pag->getPTASVFStmtSet(PAGEdge::ThreadFork);
+    for (PAGEdge::SVFStmtSetTy::const_iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
     {
         PAGEdge* edge = *it;
         worklist |= pta->getPts(edge->getDstID());
@@ -131,8 +131,8 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
     }
 
     /// find global pointer-to objects
-    const SVFIR::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
-    for (SVFIR::PAGEdgeSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
+    const SVFIR::SVFStmtSet& globaledges = pag->getGlobalSVFStmtSet();
+    for (SVFIR::SVFStmtSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
     {
         const PAGEdge* edge = *it;
         if (edge->getEdgeKind() == PAGEdge::Addr)

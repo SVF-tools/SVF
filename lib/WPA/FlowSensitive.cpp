@@ -422,7 +422,7 @@ bool FlowSensitive::processAddr(const AddrSVFGNode* addr)
     /// TODO: If this object has been set as field-insensitive, just
     ///       add the insensitive object node into dst pointer's pts.
     if (isFieldInsensitive(srcID))
-        srcID = getFIObjNode(srcID);
+        srcID = getFIObjVar(srcID);
     bool changed = addPts(addr->getPAGDstNodeID(), srcID);
     double end = stat->getClk();
     addrTime += (end - start) / TIMEINTERVAL;
@@ -483,7 +483,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
             }
 
             setObjFieldInsensitive(o);
-            tmpDstPts.set(getFIObjNode(o));
+            tmpDstPts.set(getFIObjVar(o));
         }
     }
     else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(edge->getPAGEdge()))
@@ -496,7 +496,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = getGepObjNode(o, normalGep->getLocationSet());
+            NodeID fieldSrcPtdNode = getGepObjVar(o, normalGep->getLocationSet());
             tmpDstPts.set(fieldSrcPtdNode);
         }
     }

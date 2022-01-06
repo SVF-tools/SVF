@@ -242,7 +242,7 @@ void DDAStat::performStat()
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
     PTNumStatMap["NumOfMustAA"] = _TotalNumOfMustAliases;
     PTNumStatMap["NumOfInfePath"] = _TotalNumOfInfeasiblePath;
-    PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTAEdgeSet(PAGEdge::Store).size();
+    PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTASVFStmtSet(PAGEdge::Store).size();
     PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
     PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 

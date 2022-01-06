@@ -48,12 +48,12 @@ typedef SVFStmt PAGEdge;
 class IRGraph : public GenericGraph<SVFVar,SVFStmt>
 {
 public:
-    typedef Set<const SVFStmt*> PAGEdgeSet;
-    typedef Map<const Value*,PAGEdgeSet> ValueToEdgeMap;
+    typedef Set<const SVFStmt*> SVFStmtSet;
+    typedef Map<const Value*,SVFStmtSet> ValueToEdgeMap;
 
 protected:
-    SVFStmt::PAGKindToEdgeSetMapTy PAGEdgeKindToSetMap;  // < SVFIR edge map containing all PAGEdges
-    SVFStmt::PAGKindToEdgeSetMapTy PTAPAGEdgeKindToSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
+    SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;  // < SVFIR edge map containing all PAGEdges
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; // initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;
@@ -80,7 +80,7 @@ protected:
     /// Map a value to a set of edges
     inline void mapValueToEdge(const Value *V, SVFStmt *edge)
     {
-        auto inserted = valueToEdgeMap.emplace(V, PAGEdgeSet{edge});
+        auto inserted = valueToEdgeMap.emplace(V, SVFStmtSet{edge});
         if (!inserted.second) {
             inserted.first->second.emplace(edge);
         }
@@ -94,7 +94,7 @@ public:
     IRGraph(bool buildFromFile): fromFile(buildFromFile), nodeNumAfterPAGBuild(0), totalPTAPAGEdge(0){
         symInfo = SymbolTableInfo::SymbolInfo();
         // insert dummy value if a correct value cannot be found
-        valueToEdgeMap[nullptr] = PAGEdgeSet();
+        valueToEdgeMap[nullptr] = SVFStmtSet();
     }
 
     virtual ~IRGraph();
@@ -105,7 +105,7 @@ public:
         return fromFile;
     }
     /// Get all SVFIR Edges that corresponds to an LLVM value
-    inline const PAGEdgeSet& getValueEdges(const Value *V)
+    inline const SVFStmtSet& getValueEdges(const Value *V)
     {
         auto it = valueToEdgeMap.find(V);
         if (it == valueToEdgeMap.end()) {
