@@ -641,7 +641,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
         {
             /// If o is a field-insensitive object, we should also get all field nodes'
             /// points-to sets and pass them to p.
-            const NodeBS& fields = getAllFieldsObjNode(o);
+            const NodeBS& fields = getAllFieldsObjVars(o);
             for (NodeID of : fields)
             {
                 const Version c = getConsume(l, of);

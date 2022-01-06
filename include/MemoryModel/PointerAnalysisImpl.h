@@ -354,7 +354,7 @@ public:
         {
             if(pag->getBaseObjVar(cit->get_id())==cit->get_id())
             {
-                NodeBS& fields = pag->getAllFieldsObjNode(cit->get_id());
+                NodeBS& fields = pag->getAllFieldsObjVars(cit->get_id());
                 for(NodeBS::iterator it = fields.begin(), eit = fields.end(); it!=eit; ++it)
                 {
                     CVar cvar(cit->get_cond(),*it);

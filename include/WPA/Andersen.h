@@ -383,7 +383,7 @@ protected:
 
             for (NodeID o : fldInsenObjs)
             {
-                const NodeBS &allFields = consCG->getAllFieldsObjNode(o);
+                const NodeBS &allFields = consCG->getAllFieldsObjVars(o);
                 for (NodeID f : allFields) addPts(it->first, f);
             }
         }

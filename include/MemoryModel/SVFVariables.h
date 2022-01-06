@@ -40,14 +40,14 @@ namespace SVF
 
 class SVFVar;
 /*
- * SVFIR node
+ * SVFIR program variables (PAGNodes)
  */
 typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
 
 public:
-    /// Nine kinds of SVFIR nodes
+    /// Nine kinds of SVFIR variables
     /// ValNode: llvm pointer value
     /// ObjNode: memory object
     /// RetNode: unique return node
@@ -157,19 +157,19 @@ public:
         return nullptr;
     }
 
-    /// Get incoming SVFIR edges
+    /// Get incoming SVFIR statements (edges)
     inline SVFStmt::SVFStmtSetTy& getIncomingEdges(SVFStmt::PEDGEK kind)
     {
         return InEdgeKindToSetMap[kind];
     }
 
-    /// Get outgoing SVFIR edges
+    /// Get outgoing SVFIR statements (edges)
     inline SVFStmt::SVFStmtSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
 
-    /// Has incoming SVFIR edges
+    /// Has incoming SVFIR statements (edges)
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
@@ -206,7 +206,7 @@ public:
         return it->second.end();
     }
 
-    /// Has outgoing SVFIR edges
+    /// Has outgoing SVFIR statements (edges)
     inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
@@ -268,7 +268,7 @@ public:
 
 
 /*
- * Value(Pointer) node
+ * Value (Pointer) variable
  */
 class ValVar: public SVFVar
 {
@@ -312,7 +312,7 @@ public:
 
 
 /*
- * Memory Object node
+ * Memory Object variable
  */
 class ObjVar: public SVFVar
 {
@@ -377,9 +377,9 @@ public:
 
 
 /*
- * Gep Value (Pointer) node, this node can be dynamic generated for field sensitive analysis
- * e.g. memcpy, temp gep value node needs to be created
- * Each Gep Value node is connected to base value node via gep edge
+ * Gep Value (Pointer) variable, this variable can be dynamic generated for field sensitive analysis
+ * e.g. memcpy, temp gep value variable needs to be created
+ * Each Gep Value variable is connected to base value variable via gep edge
  */
 class GepValVar: public ValVar
 {
@@ -416,7 +416,7 @@ public:
     {
     }
 
-    /// offset of the base value node
+    /// offset of the base value variable
     inline u32_t getOffset() const
     {
         return ls.getOffset();
@@ -445,8 +445,8 @@ public:
 
 
 /*
- * Gep Obj node, this is dynamic generated for field sensitive analysis
- * Each gep obj node is one field of a MemObj (base)
+ * Gep Obj variable, this is dynamic generated for field sensitive analysis
+ * Each gep obj variable is one field of a MemObj (base)
  */
 class GepObjPN: public ObjVar
 {
@@ -521,7 +521,7 @@ public:
 };
 
 /*
- * Field-insensitive Gep Obj node, this is dynamic generated for field sensitive analysis
+ * Field-insensitive Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each field-insensitive gep obj node represents all fields of a MemObj (base)
  */
 class FIObjVar: public ObjVar
@@ -649,7 +649,7 @@ public:
 
 
 /*
- * Dummy node
+ * Dummy variable without any LLVM value
  */
 class DummyValVar: public ValVar
 {
@@ -688,7 +688,7 @@ public:
 
 
 /*
- * Dummy node
+ * Dummy object variable
  */
 class DummyObjVar: public ObjVar
 {

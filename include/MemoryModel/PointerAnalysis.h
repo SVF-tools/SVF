@@ -358,9 +358,9 @@ public:
     {
         return pag->getGepObjVar(id,ls);
     }
-    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id)
+    virtual inline const NodeBS& getAllFieldsObjVars(NodeID id)
     {
-        return pag->getAllFieldsObjNode(id);
+        return pag->getAllFieldsObjVars(id);
     }
     inline void setObjFieldInsensitive(NodeID id)
     {

@@ -563,7 +563,7 @@ bool Andersen::collapseField(NodeID nodeId)
     // replace all occurrences of each field with the field-insensitive node
     NodeID baseId = consCG->getFIObjVar(nodeId);
     NodeID baseRepNodeId = consCG->sccRepNode(baseId);
-    NodeBS & allFields = consCG->getAllFieldsObjNode(baseId);
+    NodeBS & allFields = consCG->getAllFieldsObjVars(baseId);
     for (NodeBS::iterator fieldIt = allFields.begin(), fieldEit = allFields.end(); fieldIt != fieldEit; fieldIt++)
     {
         NodeID fieldId = *fieldIt;

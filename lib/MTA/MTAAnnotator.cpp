@@ -153,7 +153,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
             if (!nonlocalobjs.test(*pit))
                 worklist.set(*pit);
         }
-        NodeBS fields = pag->getAllFieldsObjNode(obj);
+        NodeBS fields = pag->getAllFieldsObjVars(obj);
         for (NodeBS::iterator pit = fields.begin(), epit = fields.end(); pit != epit; ++pit)
         {
             if (!nonlocalobjs.test(*pit))
