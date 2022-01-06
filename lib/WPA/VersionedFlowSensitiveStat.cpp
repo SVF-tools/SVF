@@ -53,7 +53,7 @@ void VersionedFlowSensitiveStat::performStat()
     {
         NodeID nodeId = it->first;
         PAGNode* pagNode = it->second;
-        if (SVFUtil::isa<ObjPN>(pagNode))
+        if (SVFUtil::isa<ObjVar>(pagNode))
         {
             const MemObj *memObj = pag->getBaseObj(nodeId);
             SymID baseId = memObj->getId();

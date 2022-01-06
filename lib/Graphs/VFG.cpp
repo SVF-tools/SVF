@@ -340,7 +340,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
-        addAddrVFGNode(SVFUtil::cast<AddrPE>(*iter));
+        addAddrVFGNode(SVFUtil::cast<AddrStmt>(*iter));
     }
 
     // initialize copy nodes
@@ -348,7 +348,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
-        const CopyPE* edge = SVFUtil::cast<CopyPE>(*iter);
+        const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
         assert(!isPhiCopyEdge(edge) && "Copy edges can not be a PhiNode (or from PhiNode)");
         addCopyVFGNode(edge);
     }
@@ -358,14 +358,14 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        addGepVFGNode(SVFUtil::cast<NormalGepPE>(*iter));
+        addGepVFGNode(SVFUtil::cast<NormalGepStmt>(*iter));
     }
 
     PAGEdge::PAGEdgeSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
     for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter)
     {
-        addGepVFGNode(SVFUtil::cast<VariantGepPE>(*iter));
+        addGepVFGNode(SVFUtil::cast<VariantGepStmt>(*iter));
     }
 
     // initialize load nodes
@@ -373,7 +373,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
-        addLoadVFGNode(SVFUtil::cast<LoadPE>(*iter));
+        addLoadVFGNode(SVFUtil::cast<LoadStmt>(*iter));
     }
 
     // initialize store nodes
@@ -381,7 +381,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
-        addStoreVFGNode(SVFUtil::cast<StorePE>(*iter));
+        addStoreVFGNode(SVFUtil::cast<StoreStmt>(*iter));
     }
 
     PAGEdge::PAGEdgeSetTy& forks = getPAGEdgeSet(PAGEdge::ThreadFork);
@@ -492,7 +492,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = phis.begin(), eiter =
                 phis.end(); iter != eiter; ++iter)
     {
-        const PhiPE* edge = SVFUtil::cast<PhiPE>(*iter);
+        const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
         if(isInterestedPAGNode(edge->getRes()))
             addIntraPHIVFGNode(edge);
     }
@@ -501,7 +501,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = binaryops.begin(), eiter =
                 binaryops.end(); iter != eiter; ++iter)
     {
-        const BinaryOPPE* edge = SVFUtil::cast<BinaryOPPE>(*iter);
+        const BinaryOPStmt* edge = SVFUtil::cast<BinaryOPStmt>(*iter);
         if(isInterestedPAGNode(edge->getRes()))
             addBinaryOPVFGNode(edge);
     }
@@ -510,7 +510,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = unaryops.begin(), eiter =
                 unaryops.end(); iter != eiter; ++iter)
     {
-        const UnaryOPPE* edge = SVFUtil::cast<UnaryOPPE>(*iter);
+        const UnaryOPStmt* edge = SVFUtil::cast<UnaryOPStmt>(*iter);
         if(isInterestedPAGNode(edge->getRes()))
             addUnaryOPVFGNode(edge);
     }
@@ -528,7 +528,7 @@ void VFG::addVFGNodes()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = cmps.begin(), eiter =
                 cmps.end(); iter != eiter; ++iter)
     {
-        const CmpPE* edge = SVFUtil::cast<CmpPE>(*iter);
+        const CmpStmt* edge = SVFUtil::cast<CmpStmt>(*iter);
         if(isInterestedPAGNode(edge->getRes()))
             addCmpVFGNode(edge);
     }
@@ -1081,11 +1081,11 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
         if(StmtVFGNode* stmtNode = SVFUtil::dyn_cast<StmtVFGNode>(node))
         {
             const PAGEdge* edge = stmtNode->getPAGEdge();
-            if (SVFUtil::isa<AddrPE>(edge))
+            if (SVFUtil::isa<AddrStmt>(edge))
             {
                 rawstr <<  "color=green";
             }
-            else if (SVFUtil::isa<CopyPE>(edge))
+            else if (SVFUtil::isa<CopyStmt>(edge))
             {
                 rawstr <<  "color=black";
             }
@@ -1093,15 +1093,15 @@ struct DOTGraphTraits<VFG*> : public DOTGraphTraits<SVFIR*>
             {
                 rawstr <<  "color=black,style=dotted";
             }
-            else if (SVFUtil::isa<GepPE>(edge))
+            else if (SVFUtil::isa<GepStmt>(edge))
             {
                 rawstr <<  "color=purple";
             }
-            else if (SVFUtil::isa<StorePE>(edge))
+            else if (SVFUtil::isa<StoreStmt>(edge))
             {
                 rawstr <<  "color=blue";
             }
-            else if (SVFUtil::isa<LoadPE>(edge))
+            else if (SVFUtil::isa<LoadStmt>(edge))
             {
                 rawstr << "color=red";
             }

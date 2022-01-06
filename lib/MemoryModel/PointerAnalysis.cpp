@@ -185,7 +185,7 @@ void PointerAnalysis::resetObjFieldSensitive()
 {
     for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
-        if(ObjPN* node = SVFUtil::dyn_cast<ObjPN>(nIter->second))
+        if(ObjVar* node = SVFUtil::dyn_cast<ObjVar>(nIter->second))
             const_cast<MemObj*>(node->getMemObj())->setFieldSensitive();
     }
 }
@@ -290,7 +290,7 @@ void PointerAnalysis::dumpAllTypes()
             nIter != this->getAllValidPtrs().end(); ++nIter)
     {
         const PAGNode* node = getPAG()->getGNode(*nIter);
-        if (SVFUtil::isa<DummyObjPN>(node) || SVFUtil::isa<DummyValPN>(node))
+        if (SVFUtil::isa<DummyObjVar>(node) || SVFUtil::isa<DummyValVar>(node))
             continue;
 
         outs() << "##<" << node->getValue()->getName() << "> ";
@@ -305,18 +305,18 @@ void PointerAnalysis::dumpAllTypes()
 }
 
 /*!
- * Dump points-to of top-level pointers (ValPN)
+ * Dump points-to of top-level pointers (ValVar)
  */
 void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 {
 
     const PAGNode* node = pag->getGNode(ptr);
     /// print the points-to set of node which has the maximum pts size.
-    if (SVFUtil::isa<DummyObjPN> (node))
+    if (SVFUtil::isa<DummyObjVar> (node))
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValPN>(node) && !SVFModule::pagReadFromTXT()) {
+    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT()) {
 		if (node->hasValue()) {
 			outs() << "##<" << node->getValue()->getName() << "> ";
 			outs() << "Source Loc: " << getSourceLoc(node->getValue());
@@ -342,14 +342,14 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     for (PointsTo::iterator it = pts.begin(), eit = pts.end(); it != eit; ++it)
     {
         const PAGNode* node = pag->getGNode(*it);
-        if(SVFUtil::isa<ObjPN>(node) == false)
+        if(SVFUtil::isa<ObjVar>(node) == false)
             continue;
         NodeID ptd = node->getId();
         outs() << "!!Target NodeID " << ptd << "\t [";
         const PAGNode* pagNode = pag->getGNode(ptd);
-        if (SVFUtil::isa<DummyValPN>(node))
+        if (SVFUtil::isa<DummyValVar>(node))
             outs() << "DummyVal\n";
-        else if (SVFUtil::isa<DummyObjPN>(node))
+        else if (SVFUtil::isa<DummyObjVar>(node))
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
 		else {
 			if (!SVFModule::pagReadFromTXT()) {
@@ -445,7 +445,7 @@ void PointerAnalysis::resolveIndCalls(const CallBlockNode* cs, const PointsTo& t
             return;
         }
 
-        if(ObjPN* objPN = SVFUtil::dyn_cast<ObjPN>(pag->getGNode(*ii)))
+        if(ObjVar* objPN = SVFUtil::dyn_cast<ObjVar>(pag->getGNode(*ii)))
         {
             const MemObj* obj = pag->getObject(objPN);
 

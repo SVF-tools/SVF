@@ -344,7 +344,7 @@ public:
     ///@{
     inline bool isFIObjNode(NodeID id) const
     {
-        return (SVFUtil::isa<FIObjPN>(pag->getGNode(id)));
+        return (SVFUtil::isa<FIObjVar>(pag->getGNode(id)));
     }
     inline NodeID getBaseObjNode(NodeID id)
     {

@@ -193,16 +193,16 @@ private:
 /*!
  * Copy edge
  */
-class AddrPE: public SVFStmt
+class AddrStmt: public SVFStmt
 {
 private:
-    AddrPE();                      ///< place holder
-    AddrPE(const AddrPE &);  ///< place holder
-    void operator=(const AddrPE &); ///< place holder
+    AddrStmt();                      ///< place holder
+    AddrStmt(const AddrStmt &);  ///< place holder
+    void operator=(const AddrStmt &); ///< place holder
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const AddrPE *)
+    static inline bool classof(const AddrStmt *)
     {
         return true;
     }
@@ -217,7 +217,7 @@ public:
     //@}
 
     /// constructor
-    AddrPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Addr)
+    AddrStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Addr)
     {
     }
 
@@ -228,16 +228,16 @@ public:
 /*!
  * Copy edge
  */
-class CopyPE: public SVFStmt
+class CopyStmt: public SVFStmt
 {
 private:
-    CopyPE();                      ///< place holder
-    CopyPE(const CopyPE &);  ///< place holder
-    void operator=(const CopyPE &); ///< place holder
+    CopyStmt();                      ///< place holder
+    CopyStmt(const CopyStmt &);  ///< place holder
+    void operator=(const CopyStmt &); ///< place holder
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CopyPE *)
+    static inline bool classof(const CopyStmt *)
     {
         return true;
     }
@@ -252,7 +252,7 @@ public:
     //@}
 
     /// constructor
-    CopyPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Copy)
+    CopyStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Copy)
     {
     }
 
@@ -325,12 +325,12 @@ public:
 /*!
  * Phi instruction edge
  */
-class PhiPE: public MultiOpndStmt
+class PhiStmt: public MultiOpndStmt
 {
 private:
-    PhiPE();                      ///< place holder
-    PhiPE(const PhiPE &);  ///< place holder
-    void operator=(const PhiPE &); ///< place holder
+    PhiStmt();                      ///< place holder
+    PhiStmt(const PhiStmt &);  ///< place holder
+    void operator=(const PhiStmt &); ///< place holder
     SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
@@ -339,7 +339,7 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const PhiPE *)
+    static inline bool classof(const PhiStmt *)
     {
         return true;
     }
@@ -358,7 +358,7 @@ public:
     //@}
 
     /// constructor
-    PhiPE(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
+    PhiStmt(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
     {
     }
     void addOpVar(SVFVar* op){
@@ -371,12 +371,12 @@ public:
 /*!
  * Compare instruction edge
  */
-class CmpPE: public MultiOpndStmt
+class CmpStmt: public MultiOpndStmt
 {
 private:
-    CmpPE();                      ///< place holder
-    CmpPE(const CmpPE &);  ///< place holder
-    void operator=(const CmpPE &); ///< place holder
+    CmpStmt();                      ///< place holder
+    CmpStmt(const CmpStmt &);  ///< place holder
+    void operator=(const CmpStmt &); ///< place holder
     SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
@@ -386,7 +386,7 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const CmpPE *)
+    static inline bool classof(const CmpStmt *)
     {
         return true;
     }
@@ -405,7 +405,7 @@ public:
     //@}
 
     /// constructor
-    CmpPE(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), opcode(oc)
+    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), opcode(oc)
     {
     }
 
@@ -421,12 +421,12 @@ public:
 /*!
  * Binary instruction edge
  */
-class BinaryOPPE: public MultiOpndStmt
+class BinaryOPStmt: public MultiOpndStmt
 {
 private:
-    BinaryOPPE();                      ///< place holder
-    BinaryOPPE(const BinaryOPPE &);  ///< place holder
-    void operator=(const BinaryOPPE &); ///< place holder
+    BinaryOPStmt();                      ///< place holder
+    BinaryOPStmt(const BinaryOPStmt &);  ///< place holder
+    void operator=(const BinaryOPStmt &); ///< place holder
     SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
@@ -437,7 +437,7 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const BinaryOPPE *)
+    static inline bool classof(const BinaryOPStmt *)
     {
         return true;
     }
@@ -456,7 +456,7 @@ public:
     //@}
 
     /// constructor
-    BinaryOPPE(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
+    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
     {
     }
 
@@ -471,12 +471,12 @@ public:
 /*!
  * Unary instruction edge
  */
-class UnaryOPPE: public SVFStmt
+class UnaryOPStmt: public SVFStmt
 {
 private:
-    UnaryOPPE();                      ///< place holder
-    UnaryOPPE(const UnaryOPPE &);  ///< place holder
-    void operator=(const UnaryOPPE &); ///< place holder
+    UnaryOPStmt();                      ///< place holder
+    UnaryOPStmt(const UnaryOPStmt &);  ///< place holder
+    void operator=(const UnaryOPStmt &); ///< place holder
     SVFVar* getSrcNode();  ///< place holder, use getOpVar() instead
     SVFVar* getDstNode();    ///< place holder, use getRes() instead
     SVFVar* getSrcID();  ///< place holder, use getOpVarID() instead
@@ -486,7 +486,7 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const UnaryOPPE *)
+    static inline bool classof(const UnaryOPStmt *)
     {
         return true;
     }
@@ -501,7 +501,7 @@ public:
     //@}
 
     /// constructor
-    UnaryOPPE(SVFVar* s, SVFVar* d, u32_t oc) : SVFStmt(s,d,SVFStmt::UnaryOp), opcode(oc)
+    UnaryOPStmt(SVFVar* s, SVFVar* d, u32_t oc) : SVFStmt(s,d,SVFStmt::UnaryOp), opcode(oc)
     {
     }
 
@@ -588,17 +588,17 @@ public:
 /*!
  * Store edge
  */
-class StorePE: public SVFStmt
+class StoreStmt: public SVFStmt
 {
 private:
-    StorePE();                      ///< place holder
-    StorePE(const StorePE &);  ///< place holder
-    void operator=(const StorePE &); ///< place holder
+    StoreStmt();                      ///< place holder
+    StoreStmt(const StoreStmt &);  ///< place holder
+    void operator=(const StoreStmt &); ///< place holder
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const StorePE *)
+    static inline bool classof(const StoreStmt *)
     {
         return true;
     }
@@ -613,7 +613,7 @@ public:
     //@}
 
     /// constructor
-    StorePE(SVFVar* s, SVFVar* d, const IntraBlockNode* st) :
+    StoreStmt(SVFVar* s, SVFVar* d, const IntraBlockNode* st) :
         SVFStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
     {
     }
@@ -625,17 +625,17 @@ public:
 /*!
  * Load edge
  */
-class LoadPE: public SVFStmt
+class LoadStmt: public SVFStmt
 {
 private:
-    LoadPE();                      ///< place holder
-    LoadPE(const LoadPE &);  ///< place holder
-    void operator=(const LoadPE &); ///< place holder
+    LoadStmt();                      ///< place holder
+    LoadStmt(const LoadStmt &);  ///< place holder
+    void operator=(const LoadStmt &); ///< place holder
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const LoadPE *)
+    static inline bool classof(const LoadStmt *)
     {
         return true;
     }
@@ -650,7 +650,7 @@ public:
     //@}
 
     /// constructor
-    LoadPE(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Load)
+    LoadStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Load)
     {
     }
 
@@ -661,17 +661,17 @@ public:
 /*!
  * Gep edge
  */
-class GepPE: public SVFStmt
+class GepStmt: public SVFStmt
 {
 private:
-    GepPE();                      ///< place holder
-    GepPE(const GepPE &);  ///< place holder
-    void operator=(const GepPE &); ///< place holder
+    GepStmt();                      ///< place holder
+    GepStmt(const GepStmt &);  ///< place holder
+    void operator=(const GepStmt &); ///< place holder
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepPE *)
+    static inline bool classof(const GepStmt *)
     {
         return true;
     }
@@ -689,7 +689,7 @@ public:
 
 protected:
     /// constructor
-    GepPE(SVFVar* s, SVFVar* d, PEDGEK k) : SVFStmt(s,d,k)
+    GepStmt(SVFVar* s, SVFVar* d, PEDGEK k) : SVFStmt(s,d,k)
     {
 
     }
@@ -701,23 +701,23 @@ protected:
 /*!
  * Gep edge with a fixed offset
  */
-class NormalGepPE : public GepPE
+class NormalGepStmt : public GepStmt
 {
 private:
-    NormalGepPE(); ///< place holder
-    NormalGepPE(const NormalGepPE&); ///< place holder
-    void operator=(const NormalGepPE&); ///< place holder
+    NormalGepStmt(); ///< place holder
+    NormalGepStmt(const NormalGepStmt&); ///< place holder
+    void operator=(const NormalGepStmt&); ///< place holder
 
     LocationSet ls;	///< location set of the gep edge
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const NormalGepPE *)
+    static inline bool classof(const NormalGepStmt *)
     {
         return true;
     }
-    static inline bool classof(const GepPE *edge)
+    static inline bool classof(const GepStmt *edge)
     {
         return edge->getEdgeKind() == SVFStmt::NormalGep;
     }
@@ -732,7 +732,7 @@ public:
     //@}
 
     /// constructor
-    NormalGepPE(SVFVar* s, SVFVar* d, const LocationSet& l) : GepPE(s,d,SVFStmt::NormalGep), ls(l)
+    NormalGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,SVFStmt::NormalGep), ls(l)
     {}
 
     /// offset of the gep edge
@@ -751,21 +751,21 @@ public:
 /*!
  * Gep edge with a variant offset
  */
-class VariantGepPE : public GepPE
+class VariantGepStmt : public GepStmt
 {
 private:
-    VariantGepPE(); ///< place holder
-    VariantGepPE(const VariantGepPE&); ///< place holder
-    void operator=(const VariantGepPE&); ///< place holder
+    VariantGepStmt(); ///< place holder
+    VariantGepStmt(const VariantGepStmt&); ///< place holder
+    void operator=(const VariantGepStmt&); ///< place holder
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const VariantGepPE *)
+    static inline bool classof(const VariantGepStmt *)
     {
         return true;
     }
-    static inline bool classof(const GepPE *edge)
+    static inline bool classof(const GepStmt *edge)
     {
         return edge->getEdgeKind() == SVFStmt::VariantGep;
     }
@@ -780,7 +780,7 @@ public:
     //@}
 
     /// constructor
-    VariantGepPE(SVFVar* s, SVFVar* d) : GepPE(s,d,SVFStmt::VariantGep) {}
+    VariantGepStmt(SVFVar* s, SVFVar* d) : GepStmt(s,d,SVFStmt::VariantGep) {}
 
     virtual const std::string toString() const override;
 

@@ -107,7 +107,7 @@ void FlowSensitiveStat::performStat()
     {
         NodeID nodeId = nodeIt->first;
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjPN>(pagNode))
+        if(SVFUtil::isa<ObjVar>(pagNode))
         {
             const MemObj * memObj = pag->getBaseObj(nodeId);
             SymID baseId = memObj->getId();
@@ -294,7 +294,7 @@ void FlowSensitiveStat::statNullPtr()
             {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode))
+                if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode))
                 {
                     // if a pointer is in dead function, we do not care
                     if(isPtrInDeadFunction(pagNode->getValue()) == false)

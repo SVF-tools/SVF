@@ -166,9 +166,9 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
                         ebit = pagEdgeList.end(); bit != ebit; ++bit)
                 {
                     const PAGEdge* inst = *bit;
-                    if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
+                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(inst))
                         AddLoadMU(bb, load, mrGen->getLoadMRSet(load));
-                    else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
+                    else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(inst))
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
@@ -308,10 +308,10 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
                     bit!=ebit; ++bit)
             {
                 const PAGEdge* inst = *bit;
-                if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
+                if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(inst))
                     RenameMuSet(getMUSet(load));
 
-                else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
+                else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(inst))
                     RenameChiSet(getCHISet(store),memRegs);
 
             }
@@ -671,7 +671,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;
-                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge))
+                        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(edge))
                         {
                             MUSet& muSet = getMUSet(load);
                             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
@@ -693,7 +693,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;
-                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge))
+                        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(edge))
                         {
                             CHISet& chiSet = getCHISet(store);
                             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)

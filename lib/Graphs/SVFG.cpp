@@ -227,7 +227,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
-        StorePE* store = SVFUtil::cast<StorePE>(*iter);
+        StoreStmt* store = SVFUtil::cast<StoreStmt>(*iter);
         const StmtSVFGNode* sNode = getStmtVFGNode(store);
         for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi)
             setDef((*pi)->getResVer(),sNode);
@@ -297,7 +297,7 @@ void SVFG::connectIndirectSVFGEdges()
         const SVFGNode* node = it->second;
         if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
         {
-            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadPE>(loadNode->getPAGEdge()));
+            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getPAGEdge()));
             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
             {
                 if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
@@ -309,7 +309,7 @@ void SVFG::connectIndirectSVFGEdges()
         }
         else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StorePE>(storeNode->getPAGEdge()));
+            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getPAGEdge()));
             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
             {
                 if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
@@ -932,11 +932,11 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
         if(StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
         {
             const PAGEdge* edge = stmtNode->getPAGEdge();
-            if (SVFUtil::isa<AddrPE>(edge))
+            if (SVFUtil::isa<AddrStmt>(edge))
             {
                 rawstr <<  "color=green";
             }
-            else if (SVFUtil::isa<CopyPE>(edge))
+            else if (SVFUtil::isa<CopyStmt>(edge))
             {
                 rawstr <<  "color=black";
             }
@@ -944,15 +944,15 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
             {
                 rawstr <<  "color=black,style=dotted";
             }
-            else if (SVFUtil::isa<GepPE>(edge))
+            else if (SVFUtil::isa<GepStmt>(edge))
             {
                 rawstr <<  "color=purple";
             }
-            else if (SVFUtil::isa<StorePE>(edge))
+            else if (SVFUtil::isa<StoreStmt>(edge))
             {
                 rawstr <<  "color=blue";
             }
-            else if (SVFUtil::isa<LoadPE>(edge))
+            else if (SVFUtil::isa<LoadStmt>(edge))
             {
                 rawstr <<  "color=red";
             }

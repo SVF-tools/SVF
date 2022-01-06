@@ -281,44 +281,44 @@ public:
     }
 
     /// Add Address edge
-    inline AddrPE* addAddrEdge(NodeID src, NodeID dst)
+    inline AddrStmt* addAddrEdge(NodeID src, NodeID dst)
     {
-        AddrPE *edge = pag->addAddrPE(src, dst);
+        AddrStmt *edge = pag->addAddrPE(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline CopyPE* addCopyEdge(NodeID src, NodeID dst)
+    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst)
     {
-        CopyPE *edge = pag->addCopyPE(src, dst);
+        CopyStmt *edge = pag->addCopyPE(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline PhiPE* addPhiNode(NodeID res, NodeID opnd)
+    inline PhiStmt* addPhiNode(NodeID res, NodeID opnd)
     {
-        PhiPE *edge = pag->addPhiNode(res,opnd);
+        PhiStmt *edge = pag->addPhiNode(res,opnd);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline CmpPE* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+    inline CmpStmt* addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        CmpPE *edge = pag->addCmpPE(op1, op2, dst, opcode);
+        CmpStmt *edge = pag->addCmpPE(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Copy edge
-    inline BinaryOPPE* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+    inline BinaryOPStmt* addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     {
-        BinaryOPPE *edge = pag->addBinaryOPPE(op1, op2, dst, opcode);
+        BinaryOPStmt *edge = pag->addBinaryOPPE(op1, op2, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Unary edge
-    inline UnaryOPPE* addUnaryOPEdge(NodeID src, NodeID dst, u32_t opcode)
+    inline UnaryOPStmt* addUnaryOPEdge(NodeID src, NodeID dst, u32_t opcode)
     {
-        UnaryOPPE *edge = pag->addUnaryOPPE(src, dst, opcode);
+        UnaryOPStmt *edge = pag->addUnaryOPPE(src, dst, opcode);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -329,21 +329,21 @@ public:
         return edge;
     }
     /// Add Load edge
-    inline LoadPE* addLoadEdge(NodeID src, NodeID dst)
+    inline LoadStmt* addLoadEdge(NodeID src, NodeID dst)
     {
-        LoadPE *edge = pag->addLoadPE(src, dst);
+        LoadStmt *edge = pag->addLoadPE(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Store edge
-    inline StorePE* addStoreEdge(NodeID src, NodeID dst)
+    inline StoreStmt* addStoreEdge(NodeID src, NodeID dst)
     {
         IntraBlockNode* node;
         if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
             node = pag->getICFG()->getIntraBlockNode(inst);
         else
             node = nullptr;
-        StorePE *edge = pag->addStorePE(src, dst, node);
+        StoreStmt *edge = pag->addStorePE(src, dst, node);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -362,23 +362,23 @@ public:
         return edge;
     }
     /// Add Gep edge
-    inline GepPE* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+    inline GepStmt* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
     {
-        GepPE *edge = pag->addGepPE(src, dst, ls, constGep);
+        GepStmt *edge = pag->addGepPE(src, dst, ls, constGep);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Offset(Gep) edge
-    inline NormalGepPE* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline NormalGepStmt* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        NormalGepPE *edge = pag->addNormalGepPE(src, dst, ls);
+        NormalGepStmt *edge = pag->addNormalGepPE(src, dst, ls);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Variant(Gep) edge
-    inline VariantGepPE* addVariantGepEdge(NodeID src, NodeID dst)
+    inline VariantGepStmt* addVariantGepEdge(NodeID src, NodeID dst)
     {
-        VariantGepPE *edge = pag->addVariantGepPE(src, dst);
+        VariantGepStmt *edge = pag->addVariantGepPE(src, dst);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

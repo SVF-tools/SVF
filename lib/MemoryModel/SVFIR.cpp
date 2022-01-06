@@ -48,15 +48,15 @@ SVFIR::SVFIR(bool buildFromFile) : IRGraph(buildFromFile)
 /*!
  * Add Address edge
  */
-AddrPE* SVFIR::addAddrPE(NodeID src, NodeID dst)
+AddrStmt* SVFIR::addAddrPE(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Addr))
-        return SVFUtil::cast<AddrPE>(edge);
+        return SVFUtil::cast<AddrStmt>(edge);
     else
     {
-        AddrPE* addrPE = new AddrPE(srcNode, dstNode);
+        AddrStmt* addrPE = new AddrStmt(srcNode, dstNode);
         addToStmt2TypeMap(addrPE);
         addEdge(srcNode,dstNode, addrPE);
         return addrPE;
@@ -66,15 +66,15 @@ AddrPE* SVFIR::addAddrPE(NodeID src, NodeID dst)
 /*!
  * Add Copy edge
  */
-CopyPE* SVFIR::addCopyPE(NodeID src, NodeID dst)
+CopyStmt* SVFIR::addCopyPE(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
-        return SVFUtil::cast<CopyPE>(edge);
+        return SVFUtil::cast<CopyStmt>(edge);
     else
     {
-        CopyPE* copyPE = new CopyPE(srcNode, dstNode);
+        CopyStmt* copyPE = new CopyStmt(srcNode, dstNode);
         addToStmt2TypeMap(copyPE);
         addEdge(srcNode,dstNode, copyPE);
         return copyPE;
@@ -84,13 +84,13 @@ CopyPE* SVFIR::addCopyPE(NodeID src, NodeID dst)
 /*!
  * Add Phi statement 
  */
-PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
+PhiStmt* SVFIR::addPhiNode(NodeID res, NodeID opnd)
 {
     SVFVar* opNode = getGNode(opnd);
     SVFVar* resNode = getGNode(res);
     PHINodeMap::iterator it = phiNodeMap.find(resNode);
     if(it == phiNodeMap.end()){
-        PhiPE* phi = new PhiPE(resNode, {opNode});
+        PhiStmt* phi = new PhiStmt(resNode, {opNode});
         addToStmt2TypeMap(phi);
         addEdge(opNode, resNode, phi);
         phiNodeMap[resNode] = phi;
@@ -105,17 +105,17 @@ PhiPE* SVFIR::addPhiNode(NodeID res, NodeID opnd)
 /*!
  * Add Compare edge
  */
-CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+CmpStmt* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 {
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::Cmp, op2Node))
-        return SVFUtil::cast<CmpPE>(edge);
+        return SVFUtil::cast<CmpStmt>(edge);
     else
     {
         std::vector<SVFVar*> opnds = {op1Node, op2Node};
-        CmpPE* cmp = new CmpPE(dstNode, opnds, opcode);
+        CmpStmt* cmp = new CmpStmt(dstNode, opnds, opcode);
         addToStmt2TypeMap(cmp);
         addEdge(op1Node, dstNode, cmp);
         return cmp;
@@ -126,17 +126,17 @@ CmpPE* SVFIR::addCmpPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 /*!
  * Add Compare edge
  */
-BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+BinaryOPStmt* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
 {
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::BinaryOp, op2Node))
-        return SVFUtil::cast<BinaryOPPE>(edge);
+        return SVFUtil::cast<BinaryOPStmt>(edge);
     else
     {
         std::vector<SVFVar*> opnds = {op1Node, op2Node};
-        BinaryOPPE* binaryOP = new BinaryOPPE(dstNode, opnds, opcode);
+        BinaryOPStmt* binaryOP = new BinaryOPStmt(dstNode, opnds, opcode);
         addToStmt2TypeMap(binaryOP);
         addEdge(op1Node,dstNode, binaryOP);
         return binaryOP;
@@ -146,15 +146,15 @@ BinaryOPPE* SVFIR::addBinaryOPPE(NodeID op1, NodeID op2, NodeID dst, u32_t opcod
 /*!
  * Add Unary edge
  */
-UnaryOPPE* SVFIR::addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode)
+UnaryOPStmt* SVFIR::addUnaryOPPE(NodeID src, NodeID dst, u32_t opcode)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::UnaryOp))
-        return SVFUtil::cast<UnaryOPPE>(edge);
+        return SVFUtil::cast<UnaryOPStmt>(edge);
     else
     {
-        UnaryOPPE* unaryOP = new UnaryOPPE(srcNode, dstNode, opcode);
+        UnaryOPStmt* unaryOP = new UnaryOPStmt(srcNode, dstNode, opcode);
         addToStmt2TypeMap(unaryOP);
         addEdge(srcNode,dstNode, unaryOP);
         return unaryOP;
@@ -182,15 +182,15 @@ BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGN
 /*!
  * Add Load edge
  */
-LoadPE* SVFIR::addLoadPE(NodeID src, NodeID dst)
+LoadStmt* SVFIR::addLoadPE(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Load))
-        return SVFUtil::cast<LoadPE>(edge);
+        return SVFUtil::cast<LoadStmt>(edge);
     else
     {
-        LoadPE* loadPE = new LoadPE(srcNode, dstNode);
+        LoadStmt* loadPE = new LoadStmt(srcNode, dstNode);
         addToStmt2TypeMap(loadPE);
         addEdge(srcNode,dstNode, loadPE);
         return loadPE;
@@ -201,15 +201,15 @@ LoadPE* SVFIR::addLoadPE(NodeID src, NodeID dst)
  * Add Store edge
  * Note that two store instructions may share the same Store SVFStmt
  */
-StorePE* SVFIR::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal)
+StoreStmt* SVFIR::addStorePE(NodeID src, NodeID dst, const IntraBlockNode* curVal)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Store, curVal))
-        return SVFUtil::cast<StorePE>(edge);
+        return SVFUtil::cast<StoreStmt>(edge);
     else
     {
-        StorePE* storePE = new StorePE(srcNode, dstNode, curVal);
+        StoreStmt* storePE = new StoreStmt(srcNode, dstNode, curVal);
         addToStmt2TypeMap(storePE);
         addEdge(srcNode,dstNode, storePE);
         return storePE;
@@ -305,14 +305,14 @@ TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs
  * Find the base node id of src and connect base node to dst node
  * Create gep offset:  (offset + baseOff <nested struct gep size>)
  */
-GepPE* SVFIR::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+GepStmt* SVFIR::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
 {
 
     SVFVar* node = getGNode(src);
     if (!constGep || node->hasIncomingVariantGepEdge())
     {
         /// Since the offset from base to src is variant,
-        /// the new gep edge being created is also a VariantGepPE edge.
+        /// the new gep edge being created is also a VariantGepStmt edge.
         return addVariantGepPE(src, dst);
     }
     else
@@ -324,16 +324,16 @@ GepPE* SVFIR::addGepPE(NodeID src, NodeID dst, const LocationSet& ls, bool const
 /*!
  * Add normal (Gep) edge
  */
-NormalGepPE* SVFIR::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls)
+NormalGepStmt* SVFIR::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls)
 {
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValNode(src));
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::NormalGep))
-        return SVFUtil::cast<NormalGepPE>(edge);
+        return SVFUtil::cast<NormalGepStmt>(edge);
     else
     {
-        NormalGepPE* gepPE = new NormalGepPE(baseNode, dstNode, ls+baseLS);
+        NormalGepStmt* gepPE = new NormalGepStmt(baseNode, dstNode, ls+baseLS);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -344,16 +344,16 @@ NormalGepPE* SVFIR::addNormalGepPE(NodeID src, NodeID dst, const LocationSet& ls
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
  */
-VariantGepPE* SVFIR::addVariantGepPE(NodeID src, NodeID dst)
+VariantGepStmt* SVFIR::addVariantGepPE(NodeID src, NodeID dst)
 {
 
     SVFVar* baseNode = getGNode(getBaseValNode(src));
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::VariantGep))
-        return SVFUtil::cast<VariantGepPE>(edge);
+        return SVFUtil::cast<VariantGepStmt>(edge);
     else
     {
-        VariantGepPE* gepPE = new VariantGepPE(baseNode, dstNode);
+        VariantGepStmt* gepPE = new VariantGepStmt(baseNode, dstNode);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -364,7 +364,7 @@ VariantGepPE* SVFIR::addVariantGepPE(NodeID src, NodeID dst)
 
 /*!
  * Add a temp field value node, this method can only invoked by getGepValNode
- * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValPN.
+ * due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
  */
 NodeID SVFIR::addGepValNode(const Value* curInst,const Value* gepVal, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx)
 {
@@ -373,7 +373,7 @@ NodeID SVFIR::addGepValNode(const Value* curInst,const Value* gepVal, const Loca
     assert(0==GepValNodeMap[curInst].count(std::make_pair(base, ls))
            && "this node should not be created before");
     GepValNodeMap[curInst][std::make_pair(base, ls)] = i;
-    GepValPN *node = new GepValPN(gepVal, i, ls, type, fieldidx);
+    GepValVar *node = new GepValVar(gepVal, i, ls, type, fieldidx);
     return addValNode(gepVal, node, i);
 }
 
@@ -385,9 +385,9 @@ NodeID SVFIR::getGepObjNode(NodeID id, const LocationSet& ls)
     SVFVar* node = pag->getGNode(id);
     if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
         return getGepObjNode(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
-    else if (FIObjPN* baseNode = SVFUtil::dyn_cast<FIObjPN>(node))
+    else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
         return getGepObjNode(baseNode->getMemObj(), ls);
-    else if (DummyObjPN* baseNode = SVFUtil::dyn_cast<DummyObjPN>(node))
+    else if (DummyObjVar* baseNode = SVFUtil::dyn_cast<DummyObjVar>(node))
         return getGepObjNode(baseNode->getMemObj(), ls);
     else
     {
@@ -448,7 +448,7 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
     //assert(findPAGNode(i) == false && "this node should not be created before");
     NodeID base = obj->getId();
     memToFieldsMap[base].set(obj->getId());
-    FIObjPN *node = new FIObjPN(obj->getValue(), obj->getId(), obj);
+    FIObjVar *node = new FIObjVar(obj->getValue(), obj->getId(), obj);
     return addObjNode(obj->getValue(), node, obj->getId());
 }
 
@@ -467,8 +467,8 @@ NodeBS& SVFIR::getAllFieldsObjNode(const MemObj* obj)
 NodeBS& SVFIR::getAllFieldsObjNode(NodeID id)
 {
     const SVFVar* node = pag->getGNode(id);
-    assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-    const ObjPN* obj = SVFUtil::cast<ObjPN>(node);
+    assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
+    const ObjVar* obj = SVFUtil::cast<ObjVar>(node);
     return getAllFieldsObjNode(obj->getMemObj());
 }
 
@@ -480,8 +480,8 @@ NodeBS& SVFIR::getAllFieldsObjNode(NodeID id)
 NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
 {
     const SVFVar* node = pag->getGNode(id);
-    assert(SVFUtil::isa<ObjPN>(node) && "need an object node");
-    const MemObj* mem = SVFUtil::cast<ObjPN>(node)->getMemObj();
+    assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
+    const MemObj* mem = SVFUtil::cast<ObjVar>(node)->getMemObj();
     if(mem->isFieldInsensitive())
     {
         NodeBS bs;
@@ -513,7 +513,7 @@ NodeID SVFIR::getBaseValNode(NodeID nodeId)
         else
             it = vgeps.begin();
 
-        assert(SVFUtil::isa<GepPE>(*it) && "not a gep edge??");
+        assert(SVFUtil::isa<GepStmt>(*it) && "not a gep edge??");
         return (*it)->getSrcID();
     }
     else
@@ -537,8 +537,8 @@ LocationSet SVFIR::getLocationSetFromBaseNode(NodeID nodeId)
     assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
     SVFVar::iterator it = geps.begin();
     const SVFStmt* edge = *it;
-    assert(SVFUtil::isa<NormalGepPE>(edge) && "not a get edge??");
-    const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
+    assert(SVFUtil::isa<NormalGepStmt>(edge) && "not a get edge??");
+    const NormalGepStmt* gepEdge = SVFUtil::cast<NormalGepStmt>(edge);
     return gepEdge->getLocationSet();
 }
 
@@ -610,7 +610,7 @@ void SVFIR::print()
     for (SVFStmt::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        NormalGepPE* gep = SVFUtil::cast<NormalGepPE>(*iter);
+        NormalGepStmt* gep = SVFUtil::cast<NormalGepStmt>(*iter);
         outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
                << ") --> " << gep->getDstID() << "\n";
     }

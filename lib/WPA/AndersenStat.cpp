@@ -74,7 +74,7 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
         {
             NodeID nodeId = *it;
             PAGNode* pagNode = pta->getPAG()->getGNode(nodeId);
-            if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
+            if (SVFUtil::isa<ObjVar>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
                 NodeID baseId = consCG->getBaseObjNode(nodeId);
                 clone.reset(nodeId);
@@ -145,7 +145,7 @@ void AndersenStat::constraintGraphStat()
         if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
-        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getGNode(nodeIt->first)))
+        if(SVFUtil::isa<ObjVar>(pta->getPAG()->getGNode(nodeIt->first)))
             objNodeNumber++;
 
         u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
@@ -244,7 +244,7 @@ void AndersenStat::statNullPtr()
             {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode) )
+                if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode) )
                 {
                     // if a pointer is in dead function, we do not care
                     if(isPtrInDeadFunction(pagNode->getValue()) == false)

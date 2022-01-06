@@ -69,7 +69,7 @@ void ConstraintGraph::buildCG()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = phis.begin(), eiter =
                 phis.end(); iter != eiter; ++iter)
     {
-        const PhiPE* edge = SVFUtil::cast<PhiPE>(*iter);
+        const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
         for(const auto opVar : edge->getOpndVars())
             addCopyCGEdge(opVar->getId(),edge->getResID());
     }
@@ -110,7 +110,7 @@ void ConstraintGraph::buildCG()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        NormalGepPE* edge = SVFUtil::cast<NormalGepPE>(*iter);
+        NormalGepStmt* edge = SVFUtil::cast<NormalGepStmt>(*iter);
         addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
     }
 
@@ -118,7 +118,7 @@ void ConstraintGraph::buildCG()
     for (PAGEdge::PAGEdgeSetTy::iterator iter = vgeps.begin(), eiter =
                 vgeps.end(); iter != eiter; ++iter)
     {
-        VariantGepPE* edge = SVFUtil::cast<VariantGepPE>(*iter);
+        VariantGepStmt* edge = SVFUtil::cast<VariantGepStmt>(*iter);
         addVariantGepCGEdge(edge->getSrcID(),edge->getDstID());
     }
 
@@ -156,7 +156,7 @@ AddrCGEdge::AddrCGEdge(ConstraintNode* s, ConstraintNode* d, EdgeID id)
     // Retarget addr edges may lead s to be a dummy node
     PAGNode* node = SVFIR::getPAG()->getGNode(s->getId());
     if (!SVFModule::pagReadFromTXT())
-        assert(!SVFUtil::isa<DummyValPN>(node) && "a dummy node??");
+        assert(!SVFUtil::isa<DummyValVar>(node) && "a dummy node??");
 }
 
 /*!
@@ -643,7 +643,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
 
         if (briefDisplay)
         {
-            if (SVFUtil::isa<ValPN>(node))
+            if (SVFUtil::isa<ValVar>(node))
             {
                 if (nameDisplay)
                     rawstr << node->getId() << ":" << node->getValueName();
@@ -656,7 +656,7 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
         else
         {
             // print the whole value
-            if (!SVFUtil::isa<DummyValPN>(node) && !SVFUtil::isa<DummyObjPN>(node))
+            if (!SVFUtil::isa<DummyValVar>(node) && !SVFUtil::isa<DummyObjVar>(node))
                 rawstr << node->getId() << ":" << value2String(node->getValue());
             else
                 rawstr << node->getId() << ":";
@@ -669,22 +669,22 @@ struct DOTGraphTraits<ConstraintGraph*> : public DOTGraphTraits<SVFIR*>
     static std::string getNodeAttributes(NodeType *n, ConstraintGraph*)
     {
         PAGNode* node = SVFIR::getPAG()->getGNode(n->getId());
-        if (SVFUtil::isa<ValPN>(node))
+        if (SVFUtil::isa<ValVar>(node))
         {
-            if(SVFUtil::isa<GepValPN>(node))
+            if(SVFUtil::isa<GepValVar>(node))
                 return "shape=hexagon";
-            else if (SVFUtil::isa<DummyValPN>(node))
+            else if (SVFUtil::isa<DummyValVar>(node))
                 return "shape=diamond";
             else
                 return "shape=box";
         }
-        else if (SVFUtil::isa<ObjPN>(node))
+        else if (SVFUtil::isa<ObjVar>(node))
         {
             if(SVFUtil::isa<GepObjPN>(node))
                return "shape=doubleoctagon";
-            else if(SVFUtil::isa<FIObjPN>(node))
+            else if(SVFUtil::isa<FIObjVar>(node))
                 return "shape=box3d";
-            else if (SVFUtil::isa<DummyObjPN>(node))
+            else if (SVFUtil::isa<DummyObjVar>(node))
                 return "shape=tab";
             else
                 return "shape=component";

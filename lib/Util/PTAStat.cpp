@@ -151,7 +151,7 @@ void PTAStat::performStat()
     for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; ++it)
     {
         PAGNode* node = it->second;
-        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(node))
+        if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(node))
         {
             const MemObj* mem = obj->getMemObj();
             if (memObjSet.insert(mem->getId()).second == false)

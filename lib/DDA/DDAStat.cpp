@@ -208,7 +208,7 @@ void DDAStat::performStat()
     for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
     {
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjPN>(pagNode))
+        if(SVFUtil::isa<ObjVar>(pagNode))
         {
             if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
             {

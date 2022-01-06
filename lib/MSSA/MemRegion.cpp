@@ -107,7 +107,7 @@ void MRGenerator::collectGlobals()
     SVFIR* pag = pta->getPAG();
     for (SVFIR::iterator nIter = pag->begin(); nIter != pag->end(); ++nIter)
     {
-        if(ObjPN* obj = SVFUtil::dyn_cast<ObjPN>(nIter->second))
+        if(ObjVar* obj = SVFUtil::dyn_cast<ObjVar>(nIter->second))
         {
             if (obj->getMemObj()->isGlobalObj())
             {
@@ -196,7 +196,7 @@ void MRGenerator::collectModRefForLoadStore()
                 {
                     const PAGEdge* inst = *bit;
                     pagEdgeToFunMap[inst] = &fun;
-                    if (const StorePE *st = SVFUtil::dyn_cast<StorePE>(inst))
+                    if (const StoreStmt *st = SVFUtil::dyn_cast<StoreStmt>(inst))
                     {
                         NodeBS cpts(pta->getPts(st->getDstID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
@@ -206,7 +206,7 @@ void MRGenerator::collectModRefForLoadStore()
                         addCPtsToStore(cpts, st, &fun);
                     }
 
-                    else if (const LoadPE *ld = SVFUtil::dyn_cast<LoadPE>(inst))
+                    else if (const LoadStmt *ld = SVFUtil::dyn_cast<LoadStmt>(inst))
                     {
                         NodeBS cpts(pta->getPts(ld->getSrcID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
@@ -610,7 +610,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlock
                 ebit = pagEdgeList.end(); bit != ebit; ++bit)
         {
             const PAGEdge* edge = *bit;
-            if (const AddrPE* addr = SVFUtil::dyn_cast<AddrPE>(edge))
+            if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(edge))
                 mod.set(addr->getSrcID());
         }
     }
@@ -677,7 +677,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
                     pagEdgeList.end(); bit != ebit; ++bit)
         {
             const PAGEdge* edge = *bit;
-            if (const StorePE* st = SVFUtil::dyn_cast<StorePE>(edge))
+            if (const StoreStmt* st = SVFUtil::dyn_cast<StoreStmt>(edge))
                 mods |= pta->getPts(st->getDstID()).toNodeBS();
         }
         return mods;
@@ -701,7 +701,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
                     pagEdgeList.end(); bit != ebit; ++bit)
         {
             const PAGEdge* edge = *bit;
-            if (const LoadPE* ld = SVFUtil::dyn_cast<LoadPE>(edge))
+            if (const LoadStmt* ld = SVFUtil::dyn_cast<LoadStmt>(edge))
                 refs |= pta->getPts(ld->getSrcID()).toNodeBS();
         }
         return refs;

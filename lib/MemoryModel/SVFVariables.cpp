@@ -48,7 +48,7 @@ SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     case ValNode:
     case GepValNode:
     {
-        assert(val != nullptr && "value is nullptr for ValPN or GepValNode");
+        assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
         isTLPointer = val->getType()->isPointerTy();
         isATPointer = false;
         break;
@@ -108,10 +108,10 @@ void SVFVar::dump() const {
     outs() << this->toString() << "\n";
 }
 
-const std::string ValPN::toString() const {
+const std::string ValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ValPN ID: " << getId();
+    rawstr << "ValVar ID: " << getId();
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -119,10 +119,10 @@ const std::string ValPN::toString() const {
     return rawstr.str();
 }
 
-const std::string ObjPN::toString() const {
+const std::string ObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ObjPN ID: " << getId();
+    rawstr << "ObjVar ID: " << getId();
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -130,10 +130,10 @@ const std::string ObjPN::toString() const {
     return rawstr.str();
 }
 
-const std::string GepValPN::toString() const {
+const std::string GepValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepValPN ID: " << getId() << " with offset_" + llvm::utostr(getOffset());
+    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getOffset());
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -152,10 +152,10 @@ const std::string GepObjPN::toString() const {
     return rawstr.str();
 }
 
-const std::string FIObjPN::toString() const {
+const std::string FIObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "FIObjPN ID: " << getId() << " (base object)";
+    rawstr << "FIObjVar ID: " << getId() << " (base object)";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -177,38 +177,38 @@ const std::string VarArgPN::toString() const {
     return rawstr.str();
 }
 
-const std::string DummyValPN::toString() const {
+const std::string DummyValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "DummyValPN ID: " << getId();
+    rawstr << "DummyValVar ID: " << getId();
     return rawstr.str();
 }
 
-const std::string DummyObjPN::toString() const {
+const std::string DummyObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "DummyObjPN ID: " << getId();
+    rawstr << "DummyObjVar ID: " << getId();
     return rawstr.str();
 }
 
-const std::string CloneDummyObjPN::toString() const {
+const std::string CloneDummyObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CloneDummyObjPN ID: " << getId();
+    rawstr << "CloneDummyObjVar ID: " << getId();
     return rawstr.str();
 }
 
-const std::string CloneGepObjPN::toString() const {
+const std::string CloneGepObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CloneGepObjPN ID: " << getId();
+    rawstr << "CloneGepObjVar ID: " << getId();
     return rawstr.str();
 }
 
-const std::string CloneFIObjPN::toString() const {
+const std::string CloneFIObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CloneFIObjPN ID: " << getId();
+    rawstr << "CloneFIObjVar ID: " << getId();
     return rawstr.str();
 }
 

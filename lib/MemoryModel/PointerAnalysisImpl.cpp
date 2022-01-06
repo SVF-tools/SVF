@@ -164,7 +164,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         PAGNode* pagNode = it->second;
-        if (!isa<ObjPN>(pagNode)) continue;
+        if (!isa<ObjVar>(pagNode)) continue;
         NodeID n = pag->getBaseObjNode(it->first);
         if (NodeIDs.test(n)) continue;
         F.os() << n << " ";
@@ -353,7 +353,7 @@ void BVDataPTAImpl::dumpTopLevelPtsTo()
 
 
 /*!
- * Dump all points-to including top-level (ValPN) and address-taken (ObjPN) variables
+ * Dump all points-to including top-level (ValVar) and address-taken (ObjVar) variables
  */
 void BVDataPTAImpl::dumpAllPts()
 {
