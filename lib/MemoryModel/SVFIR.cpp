@@ -105,7 +105,7 @@ PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd)
 /*!
  * Add Compare edge
  */
-CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predicate)
 {
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
@@ -115,7 +115,7 @@ CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
     else
     {
         std::vector<SVFVar*> opnds = {op1Node, op2Node};
-        CmpStmt* cmp = new CmpStmt(dstNode, opnds, opcode);
+        CmpStmt* cmp = new CmpStmt(dstNode, opnds, predicate);
         addToStmt2TypeMap(cmp);
         addEdge(op1Node, dstNode, cmp);
         return cmp;
@@ -455,7 +455,7 @@ NodeID SVFIR::addFIObjNode(const MemObj* obj)
 /*!
  * Get all fields object nodes of an object
  */
-NodeBS& SVFIR::getAllFieldsObjNode(const MemObj* obj)
+NodeBS& SVFIR::getAllFieldsObjVars(const MemObj* obj)
 {
     NodeID base = obj->getId();
     return memToFieldsMap[base];
@@ -464,12 +464,12 @@ NodeBS& SVFIR::getAllFieldsObjNode(const MemObj* obj)
 /*!
  * Get all fields object nodes of an object
  */
-NodeBS& SVFIR::getAllFieldsObjNode(NodeID id)
+NodeBS& SVFIR::getAllFieldsObjVars(NodeID id)
 {
     const SVFVar* node = pag->getGNode(id);
     assert(SVFUtil::isa<ObjVar>(node) && "need an object node");
     const ObjVar* obj = SVFUtil::cast<ObjVar>(node);
-    return getAllFieldsObjNode(obj->getMemObj());
+    return getAllFieldsObjVars(obj->getMemObj());
 }
 
 /*!
@@ -489,7 +489,7 @@ NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
         return bs;
     }
     else
-        return getAllFieldsObjNode(mem);
+        return getAllFieldsObjVars(mem);
 }
 
 /*!

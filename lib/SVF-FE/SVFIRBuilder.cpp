@@ -644,8 +644,8 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
     NodeID op1Node = getValueNode(op1);
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
-    u32_t opcode = inst.getOpcode();
-    const CmpStmt* cmpPE = addCmpEdge(op1Node, op2Node, dst, opcode);
+    u32_t predicate = inst.getPredicate();
+    const CmpStmt* cmpPE = addCmpEdge(op1Node, op2Node, dst, predicate);
 }
 
 

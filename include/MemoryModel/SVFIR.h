@@ -61,7 +61,7 @@ public:
     typedef Map<const RetBlockNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
-    typedef Map<const ICFGNode*,SVFStmtList> Inst2PAGEdgesMap;
+    typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
     typedef std::pair<NodeID, Size_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
@@ -73,8 +73,8 @@ public:
 private:
     /// ValueNodes - This map indicates the Node that a particular Value* is
     /// represented by.  This contains entries for all pointers.
-    Inst2PAGEdgesMap inst2SVFStmtsMap;	///< Map a instruction to its PAGEdges
-    Inst2PAGEdgesMap inst2PTASVFStmtsMap;	///< Map a instruction to its PointerAnalysis related PAGEdges
+    ICFGNode2SVFStmtsMap icfgNode2SVFStmtsMap;	///< Map an ICFGNode to its SVFStmts
+    ICFGNode2SVFStmtsMap icfgNode2PTASVFStmtsMap;	///< Map an ICFGNode to its PointerAnalysis related SVFStmts
     GepValueVarMap GepValObjMap;	///< Map a pair<base,off> to a gep value node id
     NodeLocationSetMap GepObjVarMap;	///< Map a pair<base,off> to a gep obj node id
     MemObjToFieldsMap memToFieldsMap;	///< Map a mem object id to all its fields
@@ -171,29 +171,29 @@ public:
     /// Whether this instruction has SVFIR Edge
     inline bool hasSVFStmtList(const ICFGNode* inst) const
     {
-        return inst2SVFStmtsMap.find(inst)!=inst2SVFStmtsMap.end();
+        return icfgNode2SVFStmtsMap.find(inst)!=icfgNode2SVFStmtsMap.end();
     }
     inline bool hasPTASVFStmtList(const ICFGNode* inst) const
     {
-        return inst2PTASVFStmtsMap.find(inst)!=inst2PTASVFStmtsMap.end();
+        return icfgNode2PTASVFStmtsMap.find(inst)!=icfgNode2PTASVFStmtsMap.end();
     }
     /// Given an instruction, get all its PAGEdges
     inline SVFStmtList& getSVFStmtList(const ICFGNode* inst)
     {
-        return inst2SVFStmtsMap[inst];
+        return icfgNode2SVFStmtsMap[inst];
     }
     /// Given an instruction, get all its PTA PAGEdges
     inline SVFStmtList& getPTASVFStmtList(const ICFGNode* inst)
     {
-        return inst2PTASVFStmtsMap[inst];
+        return icfgNode2PTASVFStmtsMap[inst];
     }
     /// Add a SVFStmt into instruction map
     inline void addToSVFStmtList(ICFGNode* inst, SVFStmt* edge)
     {
         edge->setICFGNode(inst);
-        inst2SVFStmtsMap[inst].push_back(edge);
+        icfgNode2SVFStmtsMap[inst].push_back(edge);
         if (edge->isPTAEdge())
-            inst2PTASVFStmtsMap[inst].push_back(edge);
+            icfgNode2PTASVFStmtsMap[inst].push_back(edge);
     }
     /// Get global PAGEdges (not in a procedure)
     inline SVFStmtSet& getGlobalSVFStmtSet()
@@ -454,8 +454,8 @@ public:
 
     /// Get all fields of an object
     //@{
-    NodeBS& getAllFieldsObjNode(const MemObj* obj);
-    NodeBS& getAllFieldsObjNode(NodeID id);
+    NodeBS& getAllFieldsObjVars(const MemObj* obj);
+    NodeBS& getAllFieldsObjVars(NodeID id);
     NodeBS getFieldsAfterCollapse(NodeID id);
     //@}
     inline NodeID addDummyValNode()
@@ -631,7 +631,7 @@ private:
     /// Add phi node information
     PhiStmt*  addPhiStmt(NodeID res, NodeID opnd);
     /// Add Copy edge
-    CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
+    CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predict);
     /// Add Copy edge
     BinaryOPStmt* addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t opcode);
     /// Add Unary edge

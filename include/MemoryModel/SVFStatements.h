@@ -41,15 +41,15 @@ namespace SVF
 class SVFVar;
 
 /*
- * SVFIR edge between nodes
+ * SVFIR program statements (PAGEdges)
  */
 typedef GenericEdge<SVFVar> GenericPAGEdgeTy;
 class SVFStmt : public GenericPAGEdgeTy
 {
 
 public:
-    /// Thirteen kinds of SVFIR edges
-    /// Gep represents offset edge for field sensitivity
+    /// Types of SVFIR statements
+    /// Gep represents (base + offset) for field sensitivity
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
@@ -192,7 +192,7 @@ private:
 
 
 /*!
- * Copy edge
+ * Address statement (memory allocations)
  */
 class AddrStmt: public SVFStmt
 {
@@ -227,7 +227,7 @@ public:
 
 
 /*!
- * Copy edge
+ * Copy statements (simple assignment and casting)
  */
 class CopyStmt: public SVFStmt
 {
@@ -260,6 +260,9 @@ public:
     virtual const std::string toString() const override;
 };
 
+/*
+* Program statements with multiple operands including BinaryOPStmt, CmpStmt and PhiStmt
+*/
 class MultiOpndStmt : public SVFStmt{
 public:
     typedef std::vector<SVFVar*> OPVars;
@@ -324,7 +327,8 @@ public:
 };
 
 /*!
- * Phi instruction edge
+ * Phi statement (e.g., p = phi(q,r) which receives values from variables q and r from different paths)
+ * it is typically at a joint point of the control-flow graph
  */
 class PhiStmt: public MultiOpndStmt
 {
@@ -370,7 +374,7 @@ public:
 
 
 /*!
- * Compare instruction edge
+ * Comparison statement
  */
 class CmpStmt: public MultiOpndStmt
 {
@@ -383,7 +387,7 @@ private:
     SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
     SVFVar* getDstID();    ///< place holder, use getResID() instead
 
-    u32_t opcode;
+    u32_t predicate;
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -406,13 +410,13 @@ public:
     //@}
 
     /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), opcode(oc)
+    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), predicate(pre)
     {
     }
 
-    u32_t getOpcode() const
+    u32_t getPredicate() const
     {
-        return opcode;
+        return predicate;
     }
     
     virtual const std::string toString() const override;
@@ -420,7 +424,7 @@ public:
 
 
 /*!
- * Binary instruction edge
+ * Binary statement
  */
 class BinaryOPStmt: public MultiOpndStmt
 {
@@ -470,7 +474,7 @@ public:
 };
 
 /*!
- * Unary instruction edge
+ * Unary statement
  */
 class UnaryOPStmt: public SVFStmt
 {
@@ -587,7 +591,7 @@ public:
 };
 
 /*!
- * Store edge
+ * Store statement
  */
 class StoreStmt: public SVFStmt
 {
@@ -624,7 +628,7 @@ public:
 
 
 /*!
- * Load edge
+ * Load statement
  */
 class LoadStmt: public SVFStmt
 {
@@ -660,7 +664,7 @@ public:
 
 
 /*!
- * Gep edge
+ * Gep statement for field access and pointer arithmetic
  */
 class GepStmt: public SVFStmt
 {
@@ -700,7 +704,7 @@ protected:
 
 
 /*!
- * Gep edge with a fixed offset
+ * Gep statement with a fixed offset
  */
 class NormalGepStmt : public GepStmt
 {
@@ -750,7 +754,7 @@ public:
 };
 
 /*!
- * Gep edge with a variant offset
+ * Gep statement with a variant offset
  */
 class VariantGepStmt : public GepStmt
 {
@@ -789,7 +793,7 @@ public:
 
 
 /*!
- * Call edge
+ * Call 
  */
 class CallPE: public SVFStmt
 {
@@ -841,7 +845,7 @@ public:
 
 
 /*!
- * Return edge
+ * Return 
  */
 class RetPE: public SVFStmt
 {
@@ -893,7 +897,7 @@ public:
 
 
 /*!
- * Thread Fork Edge
+ * Thread Fork 
  */
 class TDForkPE: public CallPE
 {
@@ -931,7 +935,7 @@ public:
 
 
 /*!
- * Thread Join Edge
+ * Thread Join 
  */
 class TDJoinPE: public RetPE
 {

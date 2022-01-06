@@ -73,7 +73,7 @@ public:
     virtual bool processPhi(const PHISVFGNode* phi) override;
     virtual bool processCopy(const CopySVFGNode* copy) override;
 
-    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id) override;
+    virtual inline const NodeBS& getAllFieldsObjVars(NodeID id) override;
 
     virtual inline bool updateInFromIn(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
     virtual inline bool updateInFromOut(const SVFGNode* srcStmt, NodeID srcVar, const SVFGNode* dstStmt, NodeID dstVar) override;
