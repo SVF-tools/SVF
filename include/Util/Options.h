@@ -243,13 +243,15 @@ public:
     // TypeAnalysis.cpp
     static const llvm::cl::opt<bool> GenICFG;
 
-    //WPAPass.cpp
+    // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
     static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
 
+    // DOTGraphTraits
+    static const llvm::cl::opt<bool> ShowHiddenNode;
 };
 }  // namespace SVF
 

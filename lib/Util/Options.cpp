@@ -784,4 +784,10 @@ namespace SVF
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
+
+    const llvm::cl::opt<bool> Options::ShowHiddenNode(
+        "show-hidden-nodes", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
+    );
 } // namespace SVF.

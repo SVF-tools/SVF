@@ -33,6 +33,7 @@
 #include "Graphs/SVFGOPT.h"
 #include "Graphs/SVFGStat.h"
 #include "Graphs/ICFG.h"
+#include "Util/Options.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include <fstream>
 
@@ -766,11 +767,12 @@ struct DOTGraphTraits<SVFG*> : public DOTGraphTraits<SVFIR*>
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
 #if LLVM_VERSION_MAJOR >= 12
-    static bool isNodeHidden(SVFGNode *node, SVFG*) {
+    static bool isNodeHidden(SVFGNode *node, SVFG *){
 #else
     static bool isNodeHidden(SVFGNode *node) {
 #endif
-        return node->getInEdges().empty() && node->getOutEdges().empty();
+        if (Options::ShowHiddenNode) return false;
+        else return node->getInEdges().empty() && node->getOutEdges().empty();
     }
 
     std::string getNodeLabel(NodeType *node, SVFG *graph)

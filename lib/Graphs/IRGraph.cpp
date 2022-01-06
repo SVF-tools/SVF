@@ -28,6 +28,8 @@
  */
 
 #include "Graphs/IRGraph.h"
+#include "Util/Options.h"
+
 using namespace SVF;
 using namespace SVFUtil;
 
@@ -135,12 +137,13 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
     /// isNodeHidden - If the function returns true, the given node is not
     /// displayed in the graph
 #if LLVM_VERSION_MAJOR >= 12
-	static bool isNodeHidden(SVFVar *node, IRGraph*) {
+    static bool isNodeHidden(SVFVar *node, IRGraph *){
 #else
     static bool isNodeHidden(SVFVar *node) {
 #endif
-		return node->isIsolatedNode();
-	}
+        if (Options::ShowHiddenNode) return false;
+        else return node->isIsolatedNode();
+    }
 
     /// Return label of a VFG node with two display mode
     /// Either you can choose to display the name of the value or the whole instruction
