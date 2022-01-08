@@ -167,7 +167,10 @@ std::string ProgSlice::evalFinalCond() const
     {
         Condition* atom = pathAllocator->getCond(*it);
         const Instruction* tinst = pathAllocator->getCondInst(atom);
-        locations.insert(getSourceLoc(tinst));
+        if(pathAllocator->isNegCond(atom))
+            locations.insert(getSourceLoc(tinst)+"|False");
+        else
+            locations.insert(getSourceLoc(tinst)+"|True");
     }
     /// print leak path after eliminating duplicated element
     for(Set<std::string>::iterator iter = locations.begin(), eiter = locations.end();

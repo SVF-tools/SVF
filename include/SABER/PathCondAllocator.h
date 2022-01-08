@@ -138,6 +138,10 @@ public:
     }
     //@}
 
+    bool isNegCond(const Condition *condition) {
+        return condMgr->isNegCond(condition);
+    }
+
     /// Get dominators
     inline DominatorTree* getDT(const Function* fun)
     {

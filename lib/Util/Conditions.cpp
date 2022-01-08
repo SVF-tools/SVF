@@ -100,7 +100,7 @@ CondExpr* CondManager::createFreshBranchCond(const Instruction* inst)
         auto *cond = new BranchCondExpr(expr, branchCond);
         auto *negCond = NEG(cond);
         setCondInst(cond, inst);
-        setCondInst(negCond, inst);
+        setNegCondInst(negCond, inst);
         branchCondToCondExpr.emplace(branchCond, cond);
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
@@ -203,6 +203,10 @@ std::string CondManager::getMemUsage()
  */
 void CondManager::extractSubConds(const CondExpr* cond, NodeBS &support) const
 {
+    if (cond->getExpr().num_args() == 1 && isNegCond(cond)) {
+        support.set(cond->getExpr().id());
+        return;
+    }
     if (cond->getExpr().num_args() == 0)
         if (!cond->getExpr().is_true() && !cond->getExpr().is_false())
             support.set(cond->getExpr().id());

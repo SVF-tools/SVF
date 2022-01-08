@@ -287,6 +287,15 @@ public:
         assert(condToInstMap.find(cond)==condToInstMap.end() && "this should be a fresh condition");
         condToInstMap[cond] = inst;
     }
+
+    inline void setNegCondInst(const CondExpr *cond, const Instruction *inst) {
+        setCondInst(cond, inst);
+        negConds.set(cond->getId());
+    }
+
+    inline bool isNegCond(const CondExpr *cond) const {
+        return negConds.test(cond->getId());
+    }
     //@}
 
 private:
@@ -298,6 +307,7 @@ private:
     BranchCondToCondExprMap branchCondToCondExpr; ///< map branch condition to its Condition wrapper
     CondToTermInstMap condToInstMap; ///< map condition to llvm instruction
     BranchCondManager branchCondManager; ///< branch condition manager
+    NodeBS negConds;
 };
 
 } // End namespace SVF
