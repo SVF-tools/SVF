@@ -108,6 +108,15 @@ public:
         return tdAPI;
     }
 
+    static void destroy()
+    {
+        if(tdAPI != nullptr)
+        {
+            delete tdAPI;
+            tdAPI = nullptr;
+        }
+    }
+
     /// Return the callee/callsite/func
     //@{
     const SVFFunction* getCallee(const Instruction *inst) const;

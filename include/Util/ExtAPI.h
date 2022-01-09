@@ -120,6 +120,15 @@ public:
         return extAPI;
     }
 
+    static void destory()
+    {   
+        if (extAPI != nullptr)
+        {
+            delete extAPI;
+            extAPI = nullptr;
+        }
+    }
+
     //Return the extf_t of (F).
     extf_t get_type(const SVFFunction* F) const
     {

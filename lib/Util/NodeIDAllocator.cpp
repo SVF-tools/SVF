@@ -37,6 +37,7 @@ namespace SVF
         if (allocator != nullptr)
         {
             delete allocator;
+            allocator = nullptr;
         }
     }
 
