@@ -75,14 +75,9 @@ public:
     {
       for (auto * f : FunctionSet)
         delete f;
-
-      auto * extAPI = ExtAPI::getExtAPI();
-      delete extAPI;
-      extAPI = nullptr;
       NodeIDAllocator::unset();
-      auto * threadAPI = SVF::ThreadAPI::getThreadAPI();
-      delete threadAPI;
-      threadAPI = nullptr;
+      ThreadAPI::destroy();
+      ExtAPI::destory();
     }
 
     static inline void setPagFromTXT(std::string txt)
