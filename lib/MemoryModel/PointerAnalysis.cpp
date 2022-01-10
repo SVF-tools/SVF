@@ -53,7 +53,6 @@ using namespace SVFUtil;
 using namespace cppUtil;
 
 
-CommonCHGraph* PointerAnalysis::chgraph = nullptr;
 SVFIR* PointerAnalysis::pag = nullptr;
 
 const std::string PointerAnalysis::aliasTestMayAlias            = "MAYALIAS";
@@ -73,7 +72,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
-    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr)
+    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr), chgraph(nullptr)
 {
     pag = p;
 	OnTheFlyIterBudgetForStat = Options::StatBudget;
@@ -103,6 +102,9 @@ void PointerAnalysis::destroy()
 
     delete stat;
     stat = nullptr;
+
+    delete chgraph;
+    chgraph = nullptr;
 }
 
 /*!

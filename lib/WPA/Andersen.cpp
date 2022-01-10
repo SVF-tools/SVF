@@ -64,10 +64,6 @@ AndersenBase::~AndersenBase()
 {
   delete consCG;
   consCG = nullptr;
-
-  auto * chg = getCHGraph();
-  delete chg;
-  chg = nullptr;
 }
 
 /*!

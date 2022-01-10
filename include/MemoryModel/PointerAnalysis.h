@@ -160,7 +160,7 @@ protected:
     /// Interprocedural control-flow graph
     ICFG* icfg;
     /// CHGraph
-    static CommonCHGraph *chgraph;
+    CommonCHGraph *chgraph;
     /// TypeSystem
     TypeSystem *typeSystem;
 
