@@ -393,8 +393,14 @@ void SymbolTableInfo::destroy()
             delete iter->second;
     }
 
-    delete dl;
-    dl = nullptr;
+    if(dl){
+        delete dl;
+        dl = nullptr;
+    }
+    if(mod){
+        delete mod;
+        mod = nullptr;
+    }
 }
 
 /*!

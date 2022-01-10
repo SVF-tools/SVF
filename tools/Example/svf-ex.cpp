@@ -196,11 +196,10 @@ int main(int argc, char ** argv)
     delete vfg;
     delete svfg;
     AndersenWaveDiff::releaseAndersenWaveDiff();
-    SVFIR::releasePAG();
+    SVFIR::releaseSVFIR();
 
     LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
-    delete svfModule;
 
     llvm::llvm_shutdown();
     return 0;
