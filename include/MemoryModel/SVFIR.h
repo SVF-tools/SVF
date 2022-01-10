@@ -111,7 +111,7 @@ public:
         }
         return pag;
     }
-    static void releasePAG()
+    static void releaseSVFIR()
     {
         if (pag)
             delete pag;
