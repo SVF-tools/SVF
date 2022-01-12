@@ -204,7 +204,70 @@ void SVFIRBuilder::initialiseNodes()
  */
 bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
 {
-    return SymbolTableInfo::SymbolInfo()->computeGepOffset(V,ls);
+    assert(V);
+
+    const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
+    DataLayout * dataLayout = SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+    llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
+    if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
+    {
+        Size_t bo = byteOffset.getSExtValue();
+        ls.setByteOffset(bo + ls.getByteOffset());
+    }
+
+    for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
+            gi != ge; ++gi)
+    {
+
+        // Handling array types, skipe array handling here
+        // We treat whole array as one, then we can distinguish different field of an array of struct
+        // e.g. s[1].f1 is differet from s[0].f2
+        if(SVFUtil::isa<ArrayType>(*gi))
+            continue;
+
+        //The int-value object of the current index operand
+        //  (may not be constant for arrays).
+        ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
+
+        /// given a gep edge p = q + i,
+        if(!op)
+        {
+            return false;
+        }
+        //The actual index
+        Size_t idx = op->getSExtValue();
+
+
+        // Handling pointer types
+        // These GEP instructions are simply making address computations from the base pointer address
+        // e.g. idx = (char*) &p + 4,  at this case gep only one offset index (idx)
+        // Case 1: This operation is likely accessing an array through pointer p.
+        // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant)
+        // Since this is a field-index based memory model,
+        // for case 1: we consider the whole array as one element, This can be improved by LocMemModel as it can distinguish different
+        // elements of the same array.
+        // for case 2: we treat idx the same as &p by ignoring const 4 (This handling is unsound since the program itself is not ANSI-compliant).
+        if (SVFUtil::isa<PointerType>(*gi))
+        {
+            //off += idx;
+        }
+
+
+        // Handling struct here
+        if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+        {
+            assert(op && "non-const struct index in GEP");
+            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
+            if ((unsigned)idx >= so.size())
+            {
+                outs() << "!! Struct index out of bounds" << idx << "\n";
+                assert(0);
+            }
+            //add the translated offset
+            ls.setFldIdx(ls.getOffset() + so[idx]);
+        }
+    }
+    return true;
 }
 
 /*!
@@ -895,9 +958,54 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(Value *V, std::vector<LocationSet> &fields)
+const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields)
 {
-    return SymbolTableInfo::SymbolInfo()->getBaseTypeAndFlattenedFields(V, fields);
+    assert(V);
+    fields.push_back(LocationSet(0));
+
+    const Type *T = V->getType();
+    // Use the biggest struct type out of all operands.
+    if (const User *U = SVFUtil::dyn_cast<User>(V))
+    {
+        u32_t msz = 1;      //the max size seen so far
+        // In case of BitCast, try the target type itself
+        if (SVFUtil::isa<BitCastInst>(V))
+        {
+            u32_t sz = getFields(fields, T, msz);
+            if (msz < sz)
+            {
+                msz = sz;
+            }
+        }
+        // Try the types of all operands
+        for (User::const_op_iterator it = U->op_begin(), ie = U->op_end();
+                it != ie; ++it)
+        {
+            const Type *operandtype = it->get()->getType();
+
+            u32_t sz = getFields(fields, operandtype, msz);
+            if (msz < sz)
+            {
+                msz = sz;
+                T = operandtype;
+            }
+        }
+    }
+    // If V is a CE, the actual pointer type is its operand.
+    else if (const ConstantExpr *E = SVFUtil::dyn_cast<ConstantExpr>(V))
+    {
+        T = E->getOperand(0)->getType();
+        getFields(fields, T, 0);
+    }
+    // Handle Argument case
+    else if (SVFUtil::isa<Argument>(V))
+    {
+        getFields(fields, T, 0);
+    }
+
+    while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
+        T = ptype->getElementType();
+    return T;
 }
 
 /*!
@@ -1510,3 +1618,24 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 }
 
 
+/*!
+ * Replace fields with flatten fields of T if the number of its fields is larger than msz.
+ */
+u32_t SVFIRBuilder::getFields(std::vector<LocationSet>& fields, const Type* T, u32_t msz)
+{
+    if (!SVFUtil::isa<PointerType>(T))
+        return 0;
+
+    T = T->getContainedType(0);
+    const std::vector<FieldInfo>& stVec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(T);
+    u32_t sz = stVec.size();
+    if (msz < sz)
+    {
+        /// Replace fields with T's flatten fields.
+        fields.clear();
+        for(std::vector<FieldInfo>::const_iterator it = stVec.begin(), eit = stVec.end(); it!=eit; ++it)
+            fields.push_back(LocationSet(*it));
+    }
+
+    return sz;
+}

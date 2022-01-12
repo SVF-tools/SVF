@@ -371,12 +371,6 @@ public:
     const Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset);
     //@}
 
-    /// Compute gep offset
-    virtual bool computeGepOffset(const User *V, LocationSet& ls);
-    /// Get the base type and max offset
-    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields);
-    /// Replace fields with flatten fields of T if the number of its fields is larger than msz.
-    u32_t getFields(std::vector<LocationSet>& fields, const Type* T, u32_t msz);
     /// Collect type info
     void collectTypeInfo(const Type* T);
     /// Given an offset from a Gep Instruction, return it modulus offset by considering memory layout
