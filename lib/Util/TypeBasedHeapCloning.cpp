@@ -153,9 +153,9 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
     // totalOffset is the offset from the real base (i.e. base of base),
     // offset is the offset into base, whether it is a field itself or not.
     unsigned totalOffset = offset;
-    if (const GepObjPN *baseGep = SVFUtil::dyn_cast<GepObjPN>(baseNode))
+    if (const GepObjVar *baseGep = SVFUtil::dyn_cast<GepObjVar>(baseNode))
     {
-        totalOffset += baseGep->getLocationSet().getOffset();
+        totalOffset += baseGep->getOffset();
     }
 
     const DIType *baseType = getType(base);
@@ -184,12 +184,12 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
     {
         PAGNode *node = ppag->getGNode(gep);
         assert(node && "TBHC: expected gep node doesn't exist.");
-        assert((SVFUtil::isa<GepObjPN>(node) || SVFUtil::isa<FIObjVar>(node))
+        assert((SVFUtil::isa<GepObjVar>(node) || SVFUtil::isa<FIObjVar>(node))
                && "TBHC: expected a GEP or FI object.");
 
-        if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
+        if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         {
-            if (gepNode->getLocationSet().getOffset() == totalOffset)
+            if (gepNode->getOffset() == totalOffset)
             {
                 geps.set(gep);
             }
@@ -225,7 +225,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
             newGep = ppag->getGepObjVar(base, newLS);
         }
 
-        if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(ppag->getGNode(newGep)))
+        if (GepObjVar *gep = SVFUtil::dyn_cast<GepObjVar>(ppag->getGNode(newGep)))
         {
             gep->setBaseNode(base);
         }
@@ -412,9 +412,9 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
 {
     NodeID clone;
     const PAGNode *obj = ppag->getGNode(o);
-    if (const GepObjPN *gepObj = SVFUtil::dyn_cast<GepObjPN>(obj))
+    if (const GepObjVar *gepObj = SVFUtil::dyn_cast<GepObjVar>(obj))
     {
-        const NodeBS &clones = getGepObjClones(gepObj->getBaseNode(), gepObj->getLocationSet().getOffset());
+        const NodeBS &clones = getGepObjClones(gepObj->getBaseNode(), gepObj->getOffset());
         // TODO: a bit of repetition.
         for (NodeID clone : clones)
         {
@@ -427,7 +427,7 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
         clone = addCloneGepObjNode(gepObj->getMemObj(), gepObj->getLocationSet());
 
         // The base needs to know about the new clone.
-        addGepToObj(clone, gepObj->getBaseNode(), gepObj->getLocationSet().getOffset());
+        addGepToObj(clone, gepObj->getBaseNode(), gepObj->getOffset());
 
         addClone(o, clone);
         addClone(getOriginalObj(o), clone);
@@ -539,7 +539,7 @@ const DIType *TypeBasedHeapCloning::getTypeFromCTirMetadata(const Value *v)
 bool TypeBasedHeapCloning::isGep(const PAGNode *n) const
 {
     assert(n != nullptr && "TBHC: testing if null is a GEP object!");
-    return SVFUtil::isa<GepObjPN>(n);
+    return SVFUtil::isa<GepObjVar>(n);
 }
 
 /// Returns true if the function name matches MAYALIAS, NOALIAS, etc.

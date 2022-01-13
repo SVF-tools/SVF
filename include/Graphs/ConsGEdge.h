@@ -306,7 +306,7 @@ public:
     /// Get location set of the gep edge
     inline Size_t getOffset() const
     {
-        return ls.getOffset();
+        return ls.accumulateConstantOffset();
     }
 };
 

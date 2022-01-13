@@ -217,7 +217,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
-
+        ls.addOffsetValue(gi.getOperand());
         // Handling array types, skipe array handling here
         // We treat whole array as one, then we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
@@ -263,7 +263,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
                 assert(0);
             }
             //add the translated offset
-            ls.setFldIdx(ls.getOffset() + so[idx]);
+            ls.setFldIdx(ls.accumulateConstantOffset() + so[idx]);
         }
     }
     return true;
@@ -1289,7 +1289,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).getOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantOffset();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1313,7 +1313,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).getOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantOffset();
 
                 // We get all fields
                 vector<LocationSet> fields;

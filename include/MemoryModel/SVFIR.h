@@ -418,7 +418,7 @@ public:
         {
             return (fiNode->getMemObj()->hasPtrObj() == false);
         }
-        else if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
+        else if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         {
             return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
         }

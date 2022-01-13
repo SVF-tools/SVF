@@ -195,7 +195,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    Size_t offset = ls.getOffset();
+    Size_t offset = ls.accumulateConstantOffset();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");

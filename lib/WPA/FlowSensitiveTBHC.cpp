@@ -69,7 +69,7 @@ void FlowSensitiveTBHC::backPropagate(NodeID clone)
     assert(cloneObj && "FSTBHC: original object does not exist in SVFIR?");
     // Check the original object too because when reuse of a gep occurs, the new object
     // is an FI object.
-    if (SVFUtil::isa<CloneGepObjVar>(cloneObj) || SVFUtil::isa<GepObjPN>(originalObj))
+    if (SVFUtil::isa<CloneGepObjVar>(cloneObj) || SVFUtil::isa<GepObjVar>(originalObj))
     {
         // Since getGepObjClones is updated, some GEP nodes need to be redone.
         const NodeBS &retrievers = gepToSVFGRetrievers[getOriginalObj(clone)];
@@ -143,10 +143,10 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
             }
         }
 
-        if (GepObjPN *gep = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(o)))
+        if (GepObjVar *gep = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(o)))
         {
             // Want the geps which are at the same "level" as this one (same mem obj, same offset).
-            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getLocationSet().getOffset());
+            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getOffset());
             for (NodeID g : geps)
             {
                 const DIType *gepType = getType(g);
@@ -328,7 +328,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                 }
 
                 if (DCHGraph::isAgg(baseType) && baseType->getTag() != dwarf::DW_TAG_array_type
-                        && normalGep->getLocationSet().getOffset() >= dchg->getNumFields(baseType))
+                        && normalGep->getOffset() >= dchg->getNumFields(baseType))
                 {
                     // If the field offset is too high for this object, it is killed. It seems that a
                     // clone was made on this GEP but this is not the base (e.g. base->f1->f2), and SVF
@@ -342,7 +342,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                 else
                 {
                     // Operate on the field and all its clones.
-                    const NodeBS fieldClones = getGepObjClones(oq, normalGep->getLocationSet().getOffset());
+                    const NodeBS fieldClones = getGepObjClones(oq, normalGep->getOffset());
                     for (NodeID fc : fieldClones)
                     {
                         gepToSVFGRetrievers[getOriginalObj(fc)].set(gep->getId());
@@ -648,7 +648,7 @@ void FlowSensitiveTBHC::expandFIObjs(const PointsTo& pts, PointsTo& expandedPts)
     for (NodeID o : pts)
     {
         expandedPts |= getAllFieldsObjVars(o);
-        while (const GepObjPN *gepObj = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(o)))
+        while (const GepObjVar *gepObj = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(o)))
         {
             expandedPts |= getAllFieldsObjVars(o);
             o = gepObj->getBaseNode();

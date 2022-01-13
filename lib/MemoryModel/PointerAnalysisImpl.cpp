@@ -150,11 +150,11 @@ void BVDataPTAImpl::writeToFile(const string& filename)
     for (auto it = pag->begin(), ie = pag->end(); it != ie; ++it)
     {
         PAGNode* pagNode = it->second;
-        if (GepObjPN *gepObjPN = SVFUtil::dyn_cast<GepObjPN>(pagNode))
+        if (GepObjVar *gepObjPN = SVFUtil::dyn_cast<GepObjVar>(pagNode))
         {
             F.os() << it->first << " ";
             F.os() << pag->getBaseObjVar(it->first) << " ";
-            F.os() << gepObjPN->getLocationSet().getOffset() << "\n";
+            F.os() << gepObjPN->getOffset() << "\n";
         }
     }
 
@@ -411,7 +411,7 @@ void BVDataPTAImpl::normalizePointsTo() {
         assert(memObj && "Invalid memobj in memToFieldsMap");
         if (memObj->isFieldInsensitive()) {
             for (NodeID id : t.second) {
-                if (SVFUtil::isa<GepObjPN>(pag->getGNode(id))) {
+                if (SVFUtil::isa<GepObjVar>(pag->getGNode(id))) {
                     dropNodes.set(id);
                 } else
                     assert(id == base && "Not a GepObj Node or a baseObj Node?");
@@ -437,7 +437,7 @@ void BVDataPTAImpl::normalizePointsTo() {
     // and remove those nodes from pag
     for (NodeID n: dropNodes) {
         NodeID base = pag->getBaseObjVar(n);
-        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
+        GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         const LocationSet ls = gepNode->getLocationSet();
         GepObjVarMap.erase(std::make_pair(base, ls));
         memToFieldsMap[base].reset(n);

@@ -254,7 +254,7 @@ struct DOTGraphTraits<OfflineConsG*> : public DOTGraphTraits<SVFIR*>
             }
             else if (SVFUtil::isa<ObjVar>(node))
             {
-                if(SVFUtil::isa<GepObjPN>(node))
+                if(SVFUtil::isa<GepObjVar>(node))
                     return "shape=doubleoctagon";
                 else if(SVFUtil::isa<FIObjVar>(node))
                     return "shape=box3d";

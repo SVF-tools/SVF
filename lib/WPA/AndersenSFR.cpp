@@ -133,8 +133,8 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             const MemObj* obj = pag->getBaseObj(init);
             const Size_t maxLimit = obj->getMaxFieldOffsetLimit();
             Size_t initOffset;
-            if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(initPN))
-                initOffset = gepNode->getLocationSet().getOffset();
+            if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
+                initOffset = gepNode->getOffset();
             else if (SVFUtil::isa<FIObjVar>(initPN) || SVFUtil::isa<DummyObjVar>(initPN))
                 initOffset = 0;
             else

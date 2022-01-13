@@ -44,9 +44,6 @@ namespace SVF
  */
 class FlattenedFieldInfo
 {
-public:
-    typedef std::vector<NodePair > ElemNumStridePairVec;
-
 private:
     u32_t flattenedFldIdx;
     const Type* flattenedElemTy;
@@ -81,7 +78,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef FlattenedFieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
+    typedef std::vector<const Value* > OffsetValueVec;
 
     /// Constructor
     LocationSet(Size_t o = 0) : fldIdx(o)
@@ -107,18 +104,18 @@ public:
     inline LocationSet operator+ (const LocationSet& rhs) const
     {
         LocationSet ls(rhs);
-        ls.fldIdx += getOffset();
-        ElemNumStridePairVec::const_iterator it = getNumStridePair().begin();
-        ElemNumStridePairVec::const_iterator eit = getNumStridePair().end();
+        ls.fldIdx += accumulateConstantOffset();
+        OffsetValueVec::const_iterator it = getOffsetValueVec().begin();
+        OffsetValueVec::const_iterator eit = getOffsetValueVec().end();
         for (; it != eit; ++it)
-            ls.addElemNumStridePair(*it);
+            ls.addOffsetValue(*it);
 
         return ls;
     }
     inline const LocationSet& operator= (const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
-        numStridePair = rhs.getNumStridePair();
+        offsetValues = rhs.getOffsetValueVec();
         return *this;
     }
     inline bool operator< (const LocationSet& rhs) const
@@ -127,20 +124,17 @@ public:
             return (fldIdx < rhs.fldIdx);
         else
         {
-            const ElemNumStridePairVec& pairVec = getNumStridePair();
-            const ElemNumStridePairVec& rhsPairVec = rhs.getNumStridePair();
+            const OffsetValueVec& pairVec = getOffsetValueVec();
+            const OffsetValueVec& rhsPairVec = rhs.getOffsetValueVec();
             if (pairVec.size() != rhsPairVec.size())
                 return (pairVec.size() < rhsPairVec.size());
             else
             {
-                ElemNumStridePairVec::const_iterator it = pairVec.begin();
-                ElemNumStridePairVec::const_iterator rhsIt = rhsPairVec.begin();
+                OffsetValueVec::const_iterator it = pairVec.begin();
+                OffsetValueVec::const_iterator rhsIt = rhsPairVec.begin();
                 for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
                 {
-                    if ((*it).first != (*rhsIt).first)
-                        return ((*it).first < (*rhsIt).first);
-                    else if ((*it).second != (*rhsIt).second)
-                        return ((*it).second < (*rhsIt).second);
+                    return (*it) < (*rhsIt);
                 }
 
                 return false;
@@ -151,13 +145,13 @@ public:
     inline bool operator==(const LocationSet& rhs) const
     {
         return this->fldIdx == rhs.fldIdx
-               && this->numStridePair == rhs.numStridePair;
+               && this->offsetValues == rhs.offsetValues;
     }
     //@}
 
     /// Get methods
     //@{
-    inline Size_t getOffset() const
+    inline Size_t accumulateConstantOffset() const
     {
         return fldIdx;
     }
@@ -165,19 +159,16 @@ public:
     {
         fldIdx = idx;
     }
-    inline const ElemNumStridePairVec& getNumStridePair() const
+    inline const OffsetValueVec& getOffsetValueVec() const
     {
-        return numStridePair;
+        return offsetValues;
     }
     //@}
 
-    void addElemNumStridePair(const NodePair& pair);
+    bool addOffsetValue(const Value* offsetValue);
 
     /// Return TRUE if this is a constant location set.
-    inline bool isConstantOffset() const
-    {
-        return (numStridePair.size() == 0);
-    }
+    bool isConstantOffset() const;
 
     /// Return TRUE if we share any location in common with RHS
     inline bool intersects(const LocationSet& RHS) const
@@ -185,49 +176,13 @@ public:
         return computeAllLocations().intersects(RHS.computeAllLocations());
     }
 
-    /// Check relations of two location sets
-    static inline LSRelation checkRelation(const LocationSet& LHS, const LocationSet& RHS)
-    {
-        NodeBS lhsLocations = LHS.computeAllLocations();
-        NodeBS rhsLocations = RHS.computeAllLocations();
-        if (lhsLocations.intersects(rhsLocations))
-        {
-            if (lhsLocations == rhsLocations)
-                return Same;
-            else if (lhsLocations.contains(rhsLocations))
-                return Superset;
-            else if (rhsLocations.contains(lhsLocations))
-                return Subset;
-            else
-                return Overlap;
-        }
-        else
-        {
-            return NonOverlap;
-        }
-    }
-
     /// Dump location set
-    std::string dump() const
-    {
-        std::string str;
-        raw_string_ostream rawstr(str);
+    std::string dump() const;
 
-        rawstr << "LocationSet\tField_Index: " << getOffset();
-        rawstr << ",\tNum-Stride: {";
-        const ElemNumStridePairVec& vec = getNumStridePair();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
-        for (; it != eit; ++it)
-        {
-            rawstr << " (" << it->first << "," << it->second << ")";
-        }
-        rawstr << " }\n";
-        return rawstr.str();
-    }
 private:
-    /// Return TRUE if successfully increased any index by 1
-    bool increaseIfNotReachUpperBound(std::vector<NodeID>& indices,	const ElemNumStridePairVec& pairVec) const;
+
+    /// Check relations of two location sets
+    LSRelation checkRelation(const LocationSet& LHS, const LocationSet& RHS);
 
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
@@ -238,8 +193,8 @@ private:
         return (n2 == 0) ? n1 : gcd (n2, n1 % n2);
     }
 
-    Size_t fldIdx;	///< offset relative to base
-    ElemNumStridePairVec numStridePair;	///< element number and stride pair
+    Size_t fldIdx;	///< Accumulated Constant Offsets
+    OffsetValueVec offsetValues;	///< a vector of actual offset in the form of Values
 };
 
 } // End namespace SVF
@@ -247,8 +202,8 @@ private:
 template <> struct std::hash<SVF::LocationSet> {
     size_t operator()(const SVF::LocationSet &ls) const {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::LocationSet::ElemNumStridePairVec> v;
-        return h(std::make_pair(ls.getOffset(), v(ls.getNumStridePair())));
+        std::hash<SVF::LocationSet::OffsetValueVec> v;
+        return h(std::make_pair(ls.accumulateConstantOffset(), v(ls.getOffsetValueVec())));
     }
 };
 
