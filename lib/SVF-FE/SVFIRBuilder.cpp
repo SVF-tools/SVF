@@ -1613,7 +1613,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     }
 
     pag->addToSVFStmtList(icfgNode,edge);
-    icfgNode->addPAGEdge(edge);
+    icfgNode->addSVFStmt(edge);
 }
 
 

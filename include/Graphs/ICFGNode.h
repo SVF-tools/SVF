@@ -113,12 +113,12 @@ public:
 
     /// Set/Get methods of VFGNodes
     ///@{
-    inline void addPAGEdge(const SVFStmt *edge)
+    inline void addSVFStmt(const SVFStmt *edge)
     {
         pagEdges.push_back(edge);
     }
 
-    inline const SVFStmtList& getPAGEdges() const
+    inline const SVFStmtList& getSVFStmts() const
     {
         return pagEdges;
     }
