@@ -101,7 +101,7 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     }
 
     /// Array itself only has one field which is the inner most element
-    stinfo->addFldWithType(0, 0, elemTy);
+    stinfo->addFldWithType(0,elemTy);
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
@@ -110,12 +110,11 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     for (u32_t j = 0; j < nfE; j++)
     {
         u32_t idx = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
-        u32_t off = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
         const Type* fieldTy = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
         FieldInfo::ElemNumStridePairVec pair = elemStInfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
         /// append the additional number
         pair.push_back(std::make_pair(out_num, out_stride));
-        FieldInfo field(idx, off, fieldTy, pair);
+        FieldInfo field(idx, fieldTy, pair);
         stinfo->getFlattenFieldInfoVec().push_back(field);
     }
 }
@@ -139,12 +138,8 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
                 sty->element_end(); it != ie; ++it, ++field_idx)
     {
         const Type *et = *it;
-        // This offset is computed after alignment with the current struct
-        u64_t eOffsetInBytes = getTypeSizeInBytes(sty, field_idx);
-        //The offset is where this element will be placed in the exp. struct.
-        /// FIXME: As the layout size is uint_64, here we assume
         /// offset with uint_32 (Size_t) is large enough and will not cause overflow
-        stinfo->addFldWithType(nf, static_cast<u32_t>(eOffsetInBytes), et);
+        stinfo->addFldWithType(nf, et);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
@@ -154,11 +149,10 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
             for (u32_t j = 0; j < nfE; j++)
             {
                 u32_t fldIdx = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
-                u32_t off = eOffsetInBytes + subStinfo->getFlattenFieldInfoVec()[j].getFlattenByteOffset();
                 const Type* elemTy = subStinfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
                 FieldInfo::ElemNumStridePairVec pair = subStinfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
                 pair.push_back(std::make_pair(1, 0));
-                FieldInfo field(fldIdx, off,elemTy,pair);
+                FieldInfo field(fldIdx, elemTy,pair);
                 stinfo->getFlattenFieldInfoVec().push_back(field);
             }
             nf += nfE;
@@ -167,7 +161,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
         {
             FieldInfo::ElemNumStridePairVec pair;
             pair.push_back(std::make_pair(1,0));
-            FieldInfo field(nf, eOffsetInBytes, et,pair);
+            FieldInfo field(nf, et,pair);
             stinfo->getFlattenFieldInfoVec().push_back(field);
             ++nf;
         }
@@ -191,11 +185,11 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     typeToFieldInfo[ty] = stinfo;
 
     /// Only one field
-    stinfo->addFldWithType(0,0, ty);
+    stinfo->addFldWithType(0, ty);
 
     FieldInfo::ElemNumStridePairVec pair;
     pair.push_back(std::make_pair(1,0));
-    FieldInfo field(0, 0, ty, pair);
+    FieldInfo field(0, ty, pair);
     stinfo->getFlattenFieldInfoVec().push_back(field);
 }
 
@@ -342,11 +336,6 @@ const std::vector<u32_t>& SymbolTableInfo::getFattenFieldIdxVec(const Type *T)
     return getStructInfoIter(T)->second->getFieldIdxVec();
 }
 
-const std::vector<u32_t>& SymbolTableInfo::getFattenFieldOffsetVec(const Type *T)
-{
-    return getStructInfoIter(T)->second->getFieldOffsetVec();
-}
-
 const std::vector<FieldInfo>& SymbolTableInfo::getFlattenFieldInfoVec(const Type *T)
 {
     return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
@@ -355,11 +344,6 @@ const std::vector<FieldInfo>& SymbolTableInfo::getFlattenFieldInfoVec(const Type
 const Type* SymbolTableInfo::getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx)
 {
     return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
-}
-
-const Type* SymbolTableInfo::getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset)
-{
-    return getStructInfoIter(baseType)->second->getFieldTypeWithByteOffset(byteOffset);
 }
 
 /*
@@ -388,7 +372,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         for(std::vector<FieldInfo>::iterator it = finfo.begin(), eit = finfo.end();
                 it!=eit; ++it, field_idx++)
         {
-            outs() << " \tField_idx = " << (*it).getFlattenFldIdx() << " [offset: " << (*it).getFlattenByteOffset();
+            outs() << " \tField_idx = " << (*it).getFlattenFldIdx();
             outs() << ", field type: ";
             (*it).getFlattenElemTy()->print(outs());
             outs() << ", field size: " << getTypeSizeInBytes((*it).getFlattenElemTy());

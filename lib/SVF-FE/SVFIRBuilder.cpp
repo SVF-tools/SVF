@@ -212,7 +212,6 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
         Size_t bo = byteOffset.getSExtValue();
-        ls.setByteOffset(bo + ls.getByteOffset());
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);

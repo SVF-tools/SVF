@@ -365,10 +365,8 @@ public:
 
     ///Get a reference to the components of struct_info.
     const std::vector<u32_t>& getFattenFieldIdxVec(const Type *T);
-    const std::vector<u32_t>& getFattenFieldOffsetVec(const Type *T);
     const std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T);
     const Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx);
-    const Type* getOrigSubTypeWithByteOffset(const Type* baseType, u32_t byteOffset);
     //@}
 
     /// Collect type info
@@ -505,12 +503,8 @@ class StInfo
 private:
     /// flattened field indices of a struct
     std::vector<u32_t> fldIdxVec;
-    /// flattened field offsets of of a struct
-    std::vector<u32_t> foffset;
     /// Types of all fields of a struct
-    Map<u32_t, const llvm::Type*> fldIdx2TypeMap;
-    /// Types of all fields of a struct
-    Map<u32_t, const llvm::Type*> offset2TypeMap;
+    Map<u32_t, const Type*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FieldInfo> finfo;
 
@@ -543,17 +537,9 @@ public:
     {
         return fldIdx2TypeMap[fldIdx];
     }
-    inline const llvm::Type* getFieldTypeWithByteOffset(u32_t offset)
-    {
-        return offset2TypeMap[offset];
-    }
     inline std::vector<u32_t>& getFieldIdxVec()
     {
         return fldIdxVec;
-    }
-    inline std::vector<u32_t>& getFieldOffsetVec()
-    {
-        return foffset;
     }
     inline std::vector<FieldInfo>& getFlattenFieldInfoVec()
     {
@@ -562,12 +548,10 @@ public:
     //@}
 
     /// Add field (index and offset) with its corresponding type
-    inline void addFldWithType(u32_t fldIdx, u32_t offset, const llvm::Type* type)
+    inline void addFldWithType(u32_t fldIdx, const Type* type)
     {
         fldIdxVec.push_back(fldIdx);
-        foffset.push_back(offset);
         fldIdx2TypeMap[fldIdx] = type;
-        offset2TypeMap[offset] = type;
     }
 };
 

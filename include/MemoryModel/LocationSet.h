@@ -49,21 +49,16 @@ public:
 
 private:
     u32_t fldIdx;
-    u32_t byteOffset;
     const Type* elemTy;
     ElemNumStridePairVec elemNumStridePair;
 public:
-    FieldInfo(u32_t idx, u32_t byteOff, const Type* ty, ElemNumStridePairVec pa) :
-        fldIdx(idx), byteOffset(byteOff), elemTy(ty), elemNumStridePair(pa)
+    FieldInfo(u32_t idx, const Type* ty, ElemNumStridePairVec pa) :
+        fldIdx(idx), elemTy(ty), elemNumStridePair(pa)
     {
     }
     inline u32_t getFlattenFldIdx() const
     {
         return fldIdx;
-    }
-    inline u32_t getFlattenByteOffset() const
-    {
-        return byteOffset;
     }
     inline const Type* getFlattenElemTy() const
     {
@@ -102,12 +97,12 @@ public:
     typedef FieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
 
     /// Constructor
-    LocationSet(Size_t o = 0) : fldIdx(o), byteOffset(o)
+    LocationSet(Size_t o = 0) : fldIdx(o)
     {}
 
     /// Copy Constructor
     LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx), byteOffset(ls.byteOffset)
+        : fldIdx(ls.fldIdx)
     {
         const ElemNumStridePairVec& vec = ls.getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -118,7 +113,7 @@ public:
 
     /// Initialization from FieldInfo
     LocationSet(const FieldInfo& fi)
-        : fldIdx(fi.getFlattenFldIdx()), byteOffset(fi.getFlattenByteOffset())
+        : fldIdx(fi.getFlattenFldIdx())
     {
         const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
         ElemNumStridePairVec::const_iterator it = vec.begin();
@@ -136,7 +131,6 @@ public:
     {
         LocationSet ls(rhs);
         ls.fldIdx += getOffset();
-        ls.byteOffset += getByteOffset();
         ElemNumStridePairVec::const_iterator it = getNumStridePair().begin();
         ElemNumStridePairVec::const_iterator eit = getNumStridePair().end();
         for (; it != eit; ++it)
@@ -147,7 +141,6 @@ public:
     inline const LocationSet& operator= (const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
-        byteOffset = rhs.byteOffset;
         numStridePair = rhs.getNumStridePair();
         return *this;
     }
@@ -155,8 +148,6 @@ public:
     {
         if (fldIdx != rhs.fldIdx)
             return (fldIdx < rhs.fldIdx);
-//        else if (byteOffset != rhs.byteOffset)
-//            return (byteOffset < rhs.byteOffset);
         else
         {
             const ElemNumStridePairVec& pairVec = getNumStridePair();
@@ -183,7 +174,6 @@ public:
     inline bool operator==(const LocationSet& rhs) const
     {
         return this->fldIdx == rhs.fldIdx
-               && this->byteOffset == rhs.byteOffset
                && this->numStridePair == rhs.numStridePair;
     }
     //@}
@@ -194,17 +184,9 @@ public:
     {
         return fldIdx;
     }
-    inline Size_t getByteOffset() const
-    {
-        return byteOffset;
-    }
     inline void setFldIdx(Size_t idx)
     {
         fldIdx = idx;
-    }
-    inline void setByteOffset(Size_t os)
-    {
-        byteOffset = os;
     }
     inline const ElemNumStridePairVec& getNumStridePair() const
     {
@@ -255,8 +237,7 @@ public:
         raw_string_ostream rawstr(str);
 
         rawstr << "LocationSet\tField_Index: " << getOffset();
-        rawstr << "\tOffset: " << getByteOffset()
-               << ",\tNum-Stride: {";
+        rawstr << ",\tNum-Stride: {";
         const ElemNumStridePairVec& vec = getNumStridePair();
         ElemNumStridePairVec::const_iterator it = vec.begin();
         ElemNumStridePairVec::const_iterator eit = vec.end();
@@ -281,7 +262,6 @@ private:
     }
 
     Size_t fldIdx;	///< offset relative to base
-    Size_t byteOffset;	///< offset relative to base
     ElemNumStridePairVec numStridePair;	///< element number and stride pair
 };
 
@@ -289,8 +269,9 @@ private:
 
 template <> struct std::hash<SVF::LocationSet> {
     size_t operator()(const SVF::LocationSet &ls) const {
-        SVF::Hash<std::pair<SVF::Size_t, SVF::Size_t>> h;
-        return h(std::make_pair(ls.getOffset(), ls.getByteOffset()));
+        SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
+        std::hash<SVF::LocationSet::ElemNumStridePairVec> v;
+        return h(std::make_pair(ls.getOffset(), v(ls.getNumStridePair())));
     }
 };
 

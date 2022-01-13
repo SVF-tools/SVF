@@ -504,9 +504,9 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const llvm::Type* getType() const
+    inline virtual const Type* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+        return SymbolTableInfo::SymbolInfo()->getOrigSubTypeWithFldInx(mem->getType(), ls.getOffset());
     }
 
     /// Return name of a LLVM value
