@@ -106,16 +106,13 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = getStructInfo(elemTy);
-    u32_t nfE = elemStInfo->getFlattenFieldInfoVec().size();
+    u32_t nfE = elemStInfo->getFlattenedFieldInfoVec().size();
     for (u32_t j = 0; j < nfE; j++)
     {
-        u32_t idx = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
-        const Type* fieldTy = elemStInfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
-        FieldInfo::ElemNumStridePairVec pair = elemStInfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
-        /// append the additional number
-        pair.push_back(std::make_pair(out_num, out_stride));
-        FieldInfo field(idx, fieldTy, pair);
-        stinfo->getFlattenFieldInfoVec().push_back(field);
+        u32_t idx = elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenFldIdx();
+        const Type* fieldTy = elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy();
+        FlattenedFieldInfo field(idx, fieldTy);
+        stinfo->getFlattenedFieldInfoVec().push_back(field);
     }
 }
 
@@ -144,25 +141,21 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
             StInfo * subStinfo = getStructInfo(et);
-            u32_t nfE = subStinfo->getFlattenFieldInfoVec().size();
+            u32_t nfE = subStinfo->getFlattenedFieldInfoVec().size();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)
             {
-                u32_t fldIdx = nf + subStinfo->getFlattenFieldInfoVec()[j].getFlattenFldIdx();
-                const Type* elemTy = subStinfo->getFlattenFieldInfoVec()[j].getFlattenElemTy();
-                FieldInfo::ElemNumStridePairVec pair = subStinfo->getFlattenFieldInfoVec()[j].getElemNumStridePairVect();
-                pair.push_back(std::make_pair(1, 0));
-                FieldInfo field(fldIdx, elemTy,pair);
-                stinfo->getFlattenFieldInfoVec().push_back(field);
+                u32_t fldIdx = nf + subStinfo->getFlattenedFieldInfoVec()[j].getFlattenFldIdx();
+                const Type* elemTy = subStinfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy();
+                FlattenedFieldInfo field(fldIdx, elemTy);
+                stinfo->getFlattenedFieldInfoVec().push_back(field);
             }
             nf += nfE;
         }
         else     //simple type
         {
-            FieldInfo::ElemNumStridePairVec pair;
-            pair.push_back(std::make_pair(1,0));
-            FieldInfo field(nf, et,pair);
-            stinfo->getFlattenFieldInfoVec().push_back(field);
+            FlattenedFieldInfo field(nf, et);
+            stinfo->getFlattenedFieldInfoVec().push_back(field);
             ++nf;
         }
     }
@@ -187,10 +180,8 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     /// Only one field
     stinfo->addFldWithType(0, ty);
 
-    FieldInfo::ElemNumStridePairVec pair;
-    pair.push_back(std::make_pair(1,0));
-    FieldInfo field(0, ty, pair);
-    stinfo->getFlattenFieldInfoVec().push_back(field);
+    FlattenedFieldInfo field(0, ty);
+    stinfo->getFlattenedFieldInfoVec().push_back(field);
 }
 
 
@@ -288,10 +279,10 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val)
         else
         {
             StInfo *stInfo = getStructInfo(v->getInitializer()->getType());
-            const std::vector<FieldInfo> &fields = stInfo->getFlattenFieldInfoVec();
-            for (std::vector<FieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
+            const std::vector<FlattenedFieldInfo> &fields = stInfo->getFlattenedFieldInfoVec();
+            for (std::vector<FlattenedFieldInfo>::const_iterator it = fields.begin(), eit = fields.end(); it != eit; ++it)
             {
-                const FieldInfo &field = *it;
+                const FlattenedFieldInfo &field = *it;
                 const Type *elemTy = field.getFlattenElemTy();
                 assert(!SVFUtil::isa<FunctionType>(elemTy) && "Initializer of a global is a function?");
                 if (SVFUtil::isa<PointerType>(elemTy))
@@ -331,19 +322,23 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
     return memObj;
 }
 
-const std::vector<u32_t>& SymbolTableInfo::getFattenFieldIdxVec(const Type *T)
+const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const Type *T)
 {
-    return getStructInfoIter(T)->second->getFieldIdxVec();
+    return getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
 }
 
-const std::vector<FieldInfo>& SymbolTableInfo::getFlattenFieldInfoVec(const Type *T)
+const std::vector<FlattenedFieldInfo>& SymbolTableInfo::getFlattenedFieldInfoVec(const Type *T)
 {
-    return getStructInfoIter(T)->second->getFlattenFieldInfoVec();
+    return getStructInfoIter(T)->second->getFlattenedFieldInfoVec();
 }
 
-const Type* SymbolTableInfo::getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx)
+const Type* SymbolTableInfo::getOriginalFieldType(const Type* baseType, u32_t field_idx)
 {
-    return getStructInfoIter(baseType)->second->getFieldTypeWithFldIdx(field_idx);
+    return getStructInfoIter(baseType)->second->getOriginalFieldType(field_idx);
+}
+
+const Type* SymbolTableInfo::getFlatternedFieldType(const Type* baseType, u32_t field_idx){
+        return getStructInfoIter(baseType)->second->getFlatternedFieldType(field_idx);
 }
 
 /*
@@ -367,21 +362,15 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         outs() <<"  {Type: ";
         st->print(outs());
         outs() << "}\n";
-        std::vector<FieldInfo>& finfo = getStructInfo(st)->getFlattenFieldInfoVec();
+        std::vector<FlattenedFieldInfo>& finfo = getStructInfo(st)->getFlattenedFieldInfoVec();
         int field_idx = 0;
-        for(std::vector<FieldInfo>::iterator it = finfo.begin(), eit = finfo.end();
+        for(std::vector<FlattenedFieldInfo>::iterator it = finfo.begin(), eit = finfo.end();
                 it!=eit; ++it, field_idx++)
         {
             outs() << " \tField_idx = " << (*it).getFlattenFldIdx();
             outs() << ", field type: ";
             (*it).getFlattenElemTy()->print(outs());
             outs() << ", field size: " << getTypeSizeInBytes((*it).getFlattenElemTy());
-            outs() << ", field stride pair: ";
-            for(FieldInfo::ElemNumStridePairVec::const_iterator pit = (*it).elemStridePairBegin(),
-                    peit = (*it).elemStridePairEnd(); pit!=peit; ++pit)
-            {
-                outs() << "[ " << pit->first << ", " << pit->second << " ] ";
-            }
             outs() << "\n";
         }
         outs() << "\n";
@@ -560,12 +549,12 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
         bool hasIntersection = false;
-        const vector<FieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety);
-        vector<FieldInfo>::const_iterator it = infovec.begin();
-        vector<FieldInfo>::const_iterator eit = infovec.end();
+        const vector<FlattenedFieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ety);
+        vector<FlattenedFieldInfo>::const_iterator it = infovec.begin();
+        vector<FlattenedFieldInfo>::const_iterator eit = infovec.end();
         for (; it != eit; ++it)
         {
-            const FieldInfo& fieldLS = *it;
+            const FlattenedFieldInfo& fieldLS = *it;
             if (ls.intersects(LocationSet(fieldLS)))
             {
                 hasIntersection = true;

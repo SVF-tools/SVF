@@ -42,39 +42,26 @@ namespace SVF
 /*!
  * Field information of an aggregate object
  */
-class FieldInfo
+class FlattenedFieldInfo
 {
 public:
     typedef std::vector<NodePair > ElemNumStridePairVec;
 
 private:
-    u32_t fldIdx;
-    const Type* elemTy;
-    ElemNumStridePairVec elemNumStridePair;
+    u32_t flattenedFldIdx;
+    const Type* flattenedElemTy;
 public:
-    FieldInfo(u32_t idx, const Type* ty, ElemNumStridePairVec pa) :
-        fldIdx(idx), elemTy(ty), elemNumStridePair(pa)
+    FlattenedFieldInfo(u32_t idx, const Type* ty) :
+        flattenedFldIdx(idx), flattenedElemTy(ty)
     {
     }
     inline u32_t getFlattenFldIdx() const
     {
-        return fldIdx;
+        return flattenedFldIdx;
     }
     inline const Type* getFlattenElemTy() const
     {
-        return elemTy;
-    }
-    inline const ElemNumStridePairVec& getElemNumStridePairVect() const
-    {
-        return elemNumStridePair;
-    }
-    inline ElemNumStridePairVec::const_iterator elemStridePairBegin() const
-    {
-        return elemNumStridePair.begin();
-    }
-    inline ElemNumStridePairVec::const_iterator elemStridePairEnd() const
-    {
-        return elemNumStridePair.end();
+        return flattenedElemTy;
     }
 };
 
@@ -94,7 +81,7 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef FieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
+    typedef FlattenedFieldInfo::ElemNumStridePairVec ElemNumStridePairVec;
 
     /// Constructor
     LocationSet(Size_t o = 0) : fldIdx(o)
@@ -104,22 +91,12 @@ public:
     LocationSet(const LocationSet& ls)
         : fldIdx(ls.fldIdx)
     {
-        const ElemNumStridePairVec& vec = ls.getNumStridePair();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
-        for (; it != eit; ++it)
-            addElemNumStridePair(*it);
     }
 
-    /// Initialization from FieldInfo
-    LocationSet(const FieldInfo& fi)
+    /// Initialization from FlattenedFieldInfo
+    LocationSet(const FlattenedFieldInfo& fi)
         : fldIdx(fi.getFlattenFldIdx())
     {
-        const ElemNumStridePairVec& vec = fi.getElemNumStridePairVect();
-        ElemNumStridePairVec::const_iterator it = vec.begin();
-        ElemNumStridePairVec::const_iterator eit = vec.end();
-        for (; it != eit; ++it)
-            addElemNumStridePair(*it);
     }
 
     ~LocationSet() {}

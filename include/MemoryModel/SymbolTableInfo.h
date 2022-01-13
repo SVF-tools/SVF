@@ -364,9 +364,14 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    const std::vector<u32_t>& getFattenFieldIdxVec(const Type *T);
-    const std::vector<FieldInfo>& getFlattenFieldInfoVec(const Type *T);
-    const Type* getOrigSubTypeWithFldInx(const Type* baseType, u32_t field_idx);
+    const std::vector<u32_t>& getFlattenedFieldIdxVec(const Type *T);
+    const std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec(const Type *T);
+
+    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
+    ///  OriginalFieldType of b with field_idx 1 : Struct A
+    ///  FlatternedFieldType of b with field_idx 1 : int
+    const Type* getOriginalFieldType(const Type* baseType, u32_t field_idx);
+    const Type* getFlatternedFieldType(const Type* baseType, u32_t field_idx);
     //@}
 
     /// Collect type info
@@ -506,7 +511,7 @@ private:
     /// Types of all fields of a struct
     Map<u32_t, const Type*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
-    std::vector<FieldInfo> finfo;
+    std::vector<FlattenedFieldInfo> finfo;
 
     /// Max field limit
     static u32_t maxFieldLimit;
@@ -531,17 +536,30 @@ public:
         return maxFieldLimit;
     }
 
-    /// Get method for fields of a struct
+    ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
+    ///  OriginalFieldType of b with field_idx 1 : Struct A
+    ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
-    inline const llvm::Type* getFieldTypeWithFldIdx(u32_t fldIdx)
+    inline const Type* getOriginalFieldType(u32_t fldIdx)
     {
-        return fldIdx2TypeMap[fldIdx];
+        Map<u32_t, const Type*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
+        if(it!=fldIdx2TypeMap.end())
+            return it->second;
+        return nullptr;
     }
-    inline std::vector<u32_t>& getFieldIdxVec()
+    inline const Type* getFlatternedFieldType(u32_t fldIdx)
+    {
+        for(FlattenedFieldInfo& fallenedFld : finfo){
+            if(fallenedFld.getFlattenFldIdx() == fldIdx)
+                return fallenedFld.getFlattenElemTy();
+        }
+        return nullptr;
+    }
+    inline std::vector<u32_t>& getFlattenedFieldIdxVec()
     {
         return fldIdxVec;
     }
-    inline std::vector<FieldInfo>& getFlattenFieldInfoVec()
+    inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
     {
         return finfo;
     }
