@@ -212,13 +212,12 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
         Size_t bo = byteOffset.getSExtValue();
-        ls.setByteOffset(bo + ls.getByteOffset());
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
-
+        ls.addOffsetValue(gi.getOperand());
         // Handling array types, skipe array handling here
         // We treat whole array as one, then we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
@@ -257,14 +256,14 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
             assert(op && "non-const struct index in GEP");
-            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
+            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(ST);
             if ((unsigned)idx >= so.size())
             {
                 outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
             }
             //add the translated offset
-            ls.setFldIdx(ls.getOffset() + so[idx]);
+            ls.setFldIdx(ls.accumulateConstantOffset() + so[idx]);
         }
     }
     return true;
@@ -483,7 +482,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(sty);
+            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = offsetvect[i];
@@ -1290,7 +1289,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).getOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantOffset();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1314,7 +1313,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).getOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantOffset();
 
                 // We get all fields
                 vector<LocationSet> fields;
@@ -1523,7 +1522,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
          * 2. GlobalVariable
          */
         assert((SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
-        const std::vector<FieldInfo> &fieldinfo = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(baseType);
+        const std::vector<FlattenedFieldInfo> &fieldinfo = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(baseType);
         const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
@@ -1627,13 +1626,13 @@ u32_t SVFIRBuilder::getFields(std::vector<LocationSet>& fields, const Type* T, u
         return 0;
 
     T = T->getContainedType(0);
-    const std::vector<FieldInfo>& stVec = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(T);
+    const std::vector<FlattenedFieldInfo>& stVec = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(T);
     u32_t sz = stVec.size();
     if (msz < sz)
     {
         /// Replace fields with T's flatten fields.
         fields.clear();
-        for(std::vector<FieldInfo>::const_iterator it = stVec.begin(), eit = stVec.end(); it!=eit; ++it)
+        for(std::vector<FlattenedFieldInfo>::const_iterator it = stVec.begin(), eit = stVec.end(); it!=eit; ++it)
             fields.push_back(LocationSet(*it));
     }
 

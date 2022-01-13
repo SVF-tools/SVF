@@ -31,122 +31,80 @@
 
 #include "Util/Options.h"
 #include "MemoryModel/LocationSet.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
-
-
-/*!
- * Add element num and stride pair
- */
-void LocationSet::addElemNumStridePair(const NodePair& pair)
-{
-    /// The pair will not be added if any number of a stride is zero,
-    /// because they will not have effect on the locations represented by this LocationSet.
-    if (pair.first == 0 || pair.second == 0)
-        return;
-
-    if (Options::SingleStride)
-    {
-        if (numStridePair.empty())
-            numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),pair.second));
-        else
-        {
-            /// Find the GCD stride
-            NodeID existStride = (*numStridePair.begin()).second;
-            NodeID newStride = gcd(pair.second, existStride);
-            if (newStride != existStride)
-            {
-                numStridePair.pop_back();
-                numStridePair.push_back(std::make_pair(StInfo::getMaxFieldLimit(),newStride));
-            }
-        }
-    }
-    else
-    {
-        numStridePair.push_back(pair);
-    }
-}
-
+using namespace SVFUtil;
 
 /*!
- * Return TRUE if it successfully increases any index by 1
+ * Add offset value to vector offsetValues
  */
-bool LocationSet::increaseIfNotReachUpperBound(std::vector<NodeID>& indices,
-        const ElemNumStridePairVec& pairVec) const
+bool LocationSet::addOffsetValue(const Value* offsetVal)
 {
-    assert(indices.size() == pairVec.size() && "vector size not match");
-
-    /// Check if all indices reach upper bound
-    bool reachUpperBound = true;
-    for (u32_t i = 0; i < indices.size(); i++)
-    {
-        assert(pairVec[i].first > 0 && "number must be greater than 0");
-        if (indices[i] < (pairVec[i].first - 1))
-            reachUpperBound = false;
+    for(const Value* val : offsetValues){
+        if(val==offsetVal)
+            return false;
     }
-
-    /// Increase index if not reach upper bound
-    bool increased = false;
-    if (reachUpperBound == false)
-    {
-        u32_t i = 0;
-        while (increased == false)
-        {
-            if (indices[i] < (pairVec[i].first - 1))
-            {
-                indices[i] += 1;
-                increased = true;
-            }
-            else
-            {
-                indices[i] = 0;
-                i++;
-            }
-        }
-    }
-
-    return increased;
+    offsetValues.push_back(offsetVal);
+    return true;
 }
 
+/// Return TRUE if all offset values are constants
+bool LocationSet::isConstantOffset() const
+{
+    for(const Value* val : offsetValues){
+        if(SVFUtil::isa<ConstantInt>(val) == false)
+            return false;
+    }
+    return true;
+}
 
 /*!
  * Compute all possible locations according to offset and number-stride pairs.
  */
 NodeBS LocationSet::computeAllLocations() const
 {
-
     NodeBS result;
-    result.set(getOffset());
-
-    if (isConstantOffset() == false)
-    {
-        const ElemNumStridePairVec& lhsVec = getNumStridePair();
-        std::vector<NodeID> indices;
-        u32_t size = lhsVec.size();
-        while (size)
-        {
-            indices.push_back(0);
-            size--;
-        }
-
-        do
-        {
-            u32_t i = 0;
-            NodeID ofst = getOffset();
-            while (i < lhsVec.size())
-            {
-                ofst += (lhsVec[i].second * indices[i]);
-                i++;
-            }
-
-            result.set(ofst);
-
-        }
-        while (increaseIfNotReachUpperBound(indices, lhsVec));
-    }
-
+    result.set(accumulateConstantOffset());
     return result;
 }
 
+SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, const LocationSet& RHS)
+{
+    NodeBS lhsLocations = LHS.computeAllLocations();
+    NodeBS rhsLocations = RHS.computeAllLocations();
+    if (lhsLocations.intersects(rhsLocations))
+    {
+        if (lhsLocations == rhsLocations)
+            return Same;
+        else if (lhsLocations.contains(rhsLocations))
+            return Superset;
+        else if (rhsLocations.contains(lhsLocations))
+            return Subset;
+        else
+            return Overlap;
+    }
+    else
+    {
+        return NonOverlap;
+    }
+}
 
+/// Dump location set
+std::string LocationSet::dump() const
+{
+    std::string str;
+    raw_string_ostream rawstr(str);
 
+    rawstr << "LocationSet\tField_Index: " << accumulateConstantOffset();
+    rawstr << ",\tNum-Stride: {";
+    const OffsetValueVec& vec = getOffsetValueVec();
+    OffsetValueVec::const_iterator it = vec.begin();
+    OffsetValueVec::const_iterator eit = vec.end();
+    for (; it != eit; ++it)
+    {
+        rawstr << " (" << value2String(*it) << ")";
+    }
+    rawstr << " }\n";
+    return rawstr.str();
+}

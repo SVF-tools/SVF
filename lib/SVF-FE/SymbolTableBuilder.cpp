@@ -444,7 +444,7 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
     {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(sty);
+            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = offsetvect[i];
@@ -515,8 +515,8 @@ void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const 
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<FieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ST);
-        for(std::vector<FieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
+        const std::vector<FlattenedFieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ST);
+        for(std::vector<FlattenedFieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
             if((*it).getFlattenElemTy()->isPointerTy())
@@ -600,7 +600,7 @@ u32_t SymbolTableBuilder::getObjSize(const Value* val)
     u32_t numOfFields = 1;
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        numOfFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldInfoVec(ety).size();
+        numOfFields = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ety).size();
     }
     return numOfFields;
 }

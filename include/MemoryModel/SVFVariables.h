@@ -419,7 +419,7 @@ public:
     /// offset of the base value variable
     inline u32_t getOffset() const
     {
-        return ls.getOffset();
+        return ls.accumulateConstantOffset();
     }
 
     /// Return name of a LLVM value
@@ -448,7 +448,7 @@ public:
  * Gep Obj variable, this is dynamic generated for field sensitive analysis
  * Each gep obj variable is one field of a MemObj (base)
  */
-class GepObjPN: public ObjVar
+class GepObjVar: public ObjVar
 {
 private:
     LocationSet ls;
@@ -457,7 +457,7 @@ private:
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
-    static inline bool classof(const GepObjPN *)
+    static inline bool classof(const GepObjVar *)
     {
         return true;
     }
@@ -479,7 +479,7 @@ public:
     //@}
 
     /// Constructor
-    GepObjPN(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
+    GepObjVar(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = GepObjNode) :
         ObjVar(mem->getValue(), i, mem, ty), ls(l)
     {
         base = mem->getId();
@@ -489,6 +489,12 @@ public:
     inline const LocationSet& getLocationSet() const
     {
         return ls;
+    }
+
+    /// offset of the mem object
+    inline u32_t getOffset() const
+    {
+        return ls.accumulateConstantOffset();
     }
 
     /// Set the base object from which this GEP node came from.
@@ -504,17 +510,17 @@ public:
     }
 
     /// Return the type of this gep object
-    inline virtual const llvm::Type* getType() const
+    inline virtual const Type* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getOrigSubTypeWithByteOffset(mem->getType(), ls.getByteOffset());
+        return SymbolTableInfo::SymbolInfo()->getOriginalFieldType(mem->getType(), ls.accumulateConstantOffset());
     }
 
     /// Return name of a LLVM value
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + llvm::itostr(ls.getOffset());
-        return "offset_" + llvm::itostr(ls.getOffset());
+            return value->getName().str() + "_" + llvm::itostr(ls.accumulateConstantOffset());
+        return "offset_" + llvm::itostr(ls.accumulateConstantOffset());
     }
 
     virtual const std::string toString() const;
@@ -766,7 +772,7 @@ public:
 /*
  * Clone object for GEP objects.
  */
-class CloneGepObjVar : public GepObjPN
+class CloneGepObjVar : public GepObjVar
 {
 public:
     //@{ Methods to support type inquiry through isa, cast, and dyn_cast:
@@ -786,14 +792,14 @@ public:
 
     /// Constructor
     CloneGepObjVar(const MemObj* mem, NodeID i, const LocationSet& l, PNODEK ty = CloneGepObjNode) :
-        GepObjPN(mem, i, l, ty)
+        GepObjVar(mem, i, l, ty)
     {
     }
 
     /// Return name of this node
     inline const std::string getValueName() const
     {
-        return "clone (gep) of " + GepObjPN::getValueName();
+        return "clone (gep) of " + GepObjVar::getValueName();
     }
 
     virtual const std::string toString() const;

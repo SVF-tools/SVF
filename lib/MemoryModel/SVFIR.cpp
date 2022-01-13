@@ -383,7 +383,7 @@ NodeID SVFIR::addGepValNode(const Value* curInst,const Value* gepVal, const Loca
 NodeID SVFIR::getGepObjVar(NodeID id, const LocationSet& ls)
 {
     SVFVar* node = pag->getGNode(id);
-    if (GepObjPN* gepNode = SVFUtil::dyn_cast<GepObjPN>(node))
+    if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         return getGepObjVar(gepNode->getMemObj(), gepNode->getLocationSet() + ls);
     else if (FIObjVar* baseNode = SVFUtil::dyn_cast<FIObjVar>(node))
         return getGepObjVar(baseNode->getMemObj(), ls);
@@ -413,7 +413,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const LocationSet& ls)
     LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
-    if (Options::FirstFieldEqBase && newLS.getOffset() == 0) return base;
+    if (Options::FirstFieldEqBase && newLS.accumulateConstantOffset() == 0) return base;
 
     NodeLocationSetMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
     if (iter == GepObjVarMap.end())
@@ -433,9 +433,9 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjVarMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.getOffset(), StInfo::getMaxFieldLimit());
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantOffset(), StInfo::getMaxFieldLimit());
     GepObjVarMap[std::make_pair(base, ls)] = gepId;
-    GepObjPN *node = new GepObjPN(obj, gepId, ls);
+    GepObjVar *node = new GepObjVar(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
     return addObjNode(obj->getValue(), node, gepId);
 }

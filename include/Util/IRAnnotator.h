@@ -42,7 +42,7 @@ public:
         {
             auto nodeId = it->first;
             auto pagNode = it->second;
-            auto gepNode = SVFUtil::dyn_cast<GepObjPN>(pagNode);
+            auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pagNode);
 
             if (gepNode && writeFlag)
             {
@@ -61,10 +61,10 @@ public:
 private:
     // Write the PAGgepNode to the IR such that metadata name is the SVFIR node id and the operands
     // are its base node's id and location offset
-    void writePAGgepNode(SVF::NodeID nodeId, GepObjPN* gepNode)
+    void writePAGgepNode(SVF::NodeID nodeId, GepObjVar* gepNode)
     {
         auto baseNodeId = gepNode->getBaseNode();
-        auto locationSetOffset = gepNode->getLocationSet().getOffset();
+        auto locationSetOffset = gepNode->getOffset();
 
         LLVMContext &context = mainModule->getContext();
         llvm::SmallVector<llvm::Metadata *, 32> operands;

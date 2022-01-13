@@ -166,7 +166,7 @@ void AndersenBase::normalizePointsTo()
     // for redundant gepnodes and remove those nodes from pag
     for (NodeID n: redundantGepNodes) {
         NodeID base = pag->getBaseObjVar(n);
-        GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(pag->getGNode(n));
+        GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(n));
         assert(gepNode && "Not a gep node in redundantGepNodes set");
         const LocationSet ls = gepNode->getLocationSet();
         GepObjVarMap.erase(std::make_pair(base, ls));

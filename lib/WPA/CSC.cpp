@@ -107,7 +107,7 @@ void CSC::visit(NodeID nodeId, Size_t _w)
         if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
         {
             NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
-            Size_t _w = normalGep->getLocationSet().getOffset();
+            Size_t _w = normalGep->getOffset();
             Size_t _l = _D[nodeId] +_w - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)

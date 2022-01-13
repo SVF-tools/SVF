@@ -141,10 +141,10 @@ const std::string GepValVar::toString() const {
     return rawstr.str();
 }
 
-const std::string GepObjPN::toString() const {
+const std::string GepObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepObjPN ID: " << getId() << " with offset_" + llvm::itostr(ls.getOffset());
+    rawstr << "GepObjVar ID: " << getId() << " with offset_" + llvm::itostr(ls.accumulateConstantOffset());
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }

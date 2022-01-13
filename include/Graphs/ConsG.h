@@ -291,7 +291,7 @@ public:
     inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
     {
         if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            if (0 == normalGepCGEdge->getLocationSet().getOffset())
+            if (0 == normalGepCGEdge->getOffset())
                 return true;
         return false;
     }
