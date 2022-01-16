@@ -263,7 +263,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
                 assert(0);
             }
             //add the translated offset
-            ls.setFldIdx(ls.accumulateConstantOffset() + so[idx]);
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + so[idx]);
         }
     }
     return true;
@@ -1289,7 +1289,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1313,7 +1313,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantOffset();
+                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
 
                 // We get all fields
                 vector<LocationSet> fields;

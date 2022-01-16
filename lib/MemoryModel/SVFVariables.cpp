@@ -133,7 +133,7 @@ const std::string ObjVar::toString() const {
 const std::string GepValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getOffset());
+    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getFieldOffset());
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -144,7 +144,7 @@ const std::string GepValVar::toString() const {
 const std::string GepObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepObjVar ID: " << getId() << " with offset_" + llvm::itostr(ls.accumulateConstantOffset());
+    rawstr << "GepObjVar ID: " << getId() << " with offset_" + llvm::itostr(ls.accumulateConstantFieldIdx());
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }

@@ -304,9 +304,9 @@ public:
     }
 
     /// Get location set of the gep edge
-    inline Size_t getOffset() const
+    inline Size_t getFieldOffset() const
     {
-        return ls.accumulateConstantOffset();
+        return ls.accumulateConstantFieldIdx();
     }
 };
 

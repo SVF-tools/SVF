@@ -195,7 +195,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    Size_t offset = ls.accumulateConstantOffset();
+    Size_t offset = ls.accumulateConstantFieldIdx();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -582,7 +582,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
             //       as we simply return new offset by mod operation without checking its
             //       correctness in LocSymTableInfo::getModulusOffset(). So the following
             //       assertion may fail. Try to refine the new memory model.
-            //assert(ls.getOffset() == 0 && "cannot get a field from a non-struct type");
+            //assert(ls.getFieldOffset() == 0 && "cannot get a field from a non-struct type");
             return (hasPtrObj() == false);
         }
     }

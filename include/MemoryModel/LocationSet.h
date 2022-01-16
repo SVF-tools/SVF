@@ -104,7 +104,7 @@ public:
     inline LocationSet operator+ (const LocationSet& rhs) const
     {
         LocationSet ls(rhs);
-        ls.fldIdx += accumulateConstantOffset();
+        ls.fldIdx += accumulateConstantFieldIdx();
         OffsetValueVec::const_iterator it = getOffsetValueVec().begin();
         OffsetValueVec::const_iterator eit = getOffsetValueVec().end();
         for (; it != eit; ++it)
@@ -151,7 +151,7 @@ public:
 
     /// Get methods
     //@{
-    inline Size_t accumulateConstantOffset() const
+    inline Size_t accumulateConstantFieldIdx() const
     {
         return fldIdx;
     }
@@ -203,7 +203,7 @@ template <> struct std::hash<SVF::LocationSet> {
     size_t operator()(const SVF::LocationSet &ls) const {
         SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
         std::hash<SVF::LocationSet::OffsetValueVec> v;
-        return h(std::make_pair(ls.accumulateConstantOffset(), v(ls.getOffsetValueVec())));
+        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetValueVec())));
     }
 };
 

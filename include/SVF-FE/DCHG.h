@@ -46,18 +46,18 @@ public:
     {
     }
 
-    unsigned int getOffset(void) const
+    u32_t getFieldOffset(void) const
     {
         return offset;
     }
 
-    void setOffset(unsigned int offset)
+    void setOffset(u32_t offset)
     {
         this->offset = offset;
     }
 
 private:
-    unsigned int offset;
+    u32_t offset;
 };
 
 class DCHNode : public GenericNode<DCHNode, DCHEdge>

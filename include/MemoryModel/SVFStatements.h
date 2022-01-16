@@ -664,7 +664,7 @@ public:
 
 
 /*!
- * Gep statement for field access and pointer arithmetic
+ * Gep statement for struct field access, array access and pointer arithmetic
  */
 class GepStmt: public SVFStmt
 {
@@ -672,6 +672,8 @@ private:
     GepStmt();                      ///< place holder
     GepStmt(const GepStmt &);  ///< place holder
     void operator=(const GepStmt &); ///< place holder
+
+    LocationSet ls;	///< location set of the gep edge
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -692,19 +694,24 @@ public:
     }
     //@}
 
+    inline const LocationSet& getLocationSet() const
+    {
+        return ls;
+    }
+
 protected:
     /// constructor
-    GepStmt(SVFVar* s, SVFVar* d, PEDGEK k) : SVFStmt(s,d,k)
+    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, PEDGEK k) : SVFStmt(s,d,k), ls(l)
     {
-
     }
 
     virtual const std::string toString() const;
+
 };
 
 
 /*!
- * Gep statement with a fixed offset
+ * Gep statement with a fixed field index for struct field access 
  */
 class NormalGepStmt : public GepStmt
 {
@@ -712,8 +719,6 @@ private:
     NormalGepStmt(); ///< place holder
     NormalGepStmt(const NormalGepStmt&); ///< place holder
     void operator=(const NormalGepStmt&); ///< place holder
-
-    LocationSet ls;	///< location set of the gep edge
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -737,24 +742,20 @@ public:
     //@}
 
     /// constructor
-    NormalGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,SVFStmt::NormalGep), ls(l)
+    NormalGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,l, SVFStmt::NormalGep)
     {}
 
     /// offset of the gep edge
-    inline u32_t getOffset() const
+    inline u32_t getFieldOffset() const
     {
-        return ls.accumulateConstantOffset();
-    }
-    inline const LocationSet& getLocationSet() const
-    {
-        return ls;
+        return getLocationSet().accumulateConstantFieldIdx();
     }
 
     virtual const std::string toString() const override;
 };
 
 /*!
- * Gep statement with a variant offset
+ * Gep statement with a variant field index for struct field access 
  */
 class VariantGepStmt : public GepStmt
 {
@@ -785,7 +786,7 @@ public:
     //@}
 
     /// constructor
-    VariantGepStmt(SVFVar* s, SVFVar* d) : GepStmt(s,d,SVFStmt::VariantGep) {}
+    VariantGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,l, SVFStmt::VariantGep) {}
 
     virtual const std::string toString() const override;
 

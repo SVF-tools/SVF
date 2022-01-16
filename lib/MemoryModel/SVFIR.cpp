@@ -313,7 +313,7 @@ GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool c
     {
         /// Since the offset from base to src is variant,
         /// the new gep edge being created is also a VariantGepStmt edge.
-        return addVariantGepStmt(src, dst);
+        return addVariantGepStmt(src, dst, ls);
     }
     else
     {
@@ -333,7 +333,7 @@ NormalGepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet
         return SVFUtil::cast<NormalGepStmt>(edge);
     else
     {
-        NormalGepStmt* gepPE = new NormalGepStmt(baseNode, dstNode, ls+baseLS);
+        NormalGepStmt* gepPE = new NormalGepStmt(baseNode, dstNode, baseLS+ls);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -344,16 +344,16 @@ NormalGepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
  */
-VariantGepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst)
+VariantGepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
 {
-
+    const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValVar(src));
     SVFVar* dstNode = getGNode(dst);
     if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::VariantGep))
         return SVFUtil::cast<VariantGepStmt>(edge);
     else
     {
-        VariantGepStmt* gepPE = new VariantGepStmt(baseNode, dstNode);
+        VariantGepStmt* gepPE = new VariantGepStmt(baseNode, dstNode,baseLS+ls);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -413,7 +413,7 @@ NodeID SVFIR::getGepObjVar(const MemObj* obj, const LocationSet& ls)
     LocationSet newLS = SymbolTableInfo::SymbolInfo()->getModulusOffset(obj,ls);
 
     // Base and first field are the same memory location.
-    if (Options::FirstFieldEqBase && newLS.accumulateConstantOffset() == 0) return base;
+    if (Options::FirstFieldEqBase && newLS.accumulateConstantFieldIdx() == 0) return base;
 
     NodeLocationSetMap::iterator iter = GepObjVarMap.find(std::make_pair(base, newLS));
     if (iter == GepObjVarMap.end())
@@ -433,7 +433,7 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjVarMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantOffset(), StInfo::getMaxFieldLimit());
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), StInfo::getMaxFieldLimit());
     GepObjVarMap[std::make_pair(base, ls)] = gepId;
     GepObjVar *node = new GepObjVar(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
@@ -611,7 +611,7 @@ void SVFIR::print()
                 ngeps.end(); iter != eiter; ++iter)
     {
         NormalGepStmt* gep = SVFUtil::cast<NormalGepStmt>(*iter);
-        outs() << gep->getSrcID() << " -- NormalGep (" << gep->getOffset()
+        outs() << gep->getSrcID() << " -- NormalGep (" << gep->getFieldOffset()
                << ") --> " << gep->getDstID() << "\n";
     }
 

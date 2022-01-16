@@ -154,7 +154,7 @@ void BVDataPTAImpl::writeToFile(const string& filename)
         {
             F.os() << it->first << " ";
             F.os() << pag->getBaseObjVar(it->first) << " ";
-            F.os() << gepObjPN->getOffset() << "\n";
+            F.os() << gepObjPN->getFieldOffset() << "\n";
         }
     }
 

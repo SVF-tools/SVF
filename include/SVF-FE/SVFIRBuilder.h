@@ -381,9 +381,9 @@ public:
         return edge;
     }
     /// Add Variant(Gep) edge
-    inline VariantGepStmt* addVariantGepEdge(NodeID src, NodeID dst)
+    inline VariantGepStmt* addVariantGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        VariantGepStmt *edge = pag->addVariantGepStmt(src, dst);
+        VariantGepStmt *edge = pag->addVariantGepStmt(src, dst, ls);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

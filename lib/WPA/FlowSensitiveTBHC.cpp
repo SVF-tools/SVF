@@ -146,7 +146,7 @@ bool FlowSensitiveTBHC::propAlongIndirectEdge(const IndirectSVFGEdge* edge)
         if (GepObjVar *gep = SVFUtil::dyn_cast<GepObjVar>(pag->getGNode(o)))
         {
             // Want the geps which are at the same "level" as this one (same mem obj, same offset).
-            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getOffset());
+            const NodeBS &geps = getGepObjsFromMemObj(gep->getMemObj(), gep->getFieldOffset());
             for (NodeID g : geps)
             {
                 const DIType *gepType = getType(g);
@@ -328,7 +328,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                 }
 
                 if (DCHGraph::isAgg(baseType) && baseType->getTag() != dwarf::DW_TAG_array_type
-                        && normalGep->getOffset() >= dchg->getNumFields(baseType))
+                        && normalGep->getFieldOffset() >= dchg->getNumFields(baseType))
                 {
                     // If the field offset is too high for this object, it is killed. It seems that a
                     // clone was made on this GEP but this is not the base (e.g. base->f1->f2), and SVF
@@ -342,7 +342,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                 else
                 {
                     // Operate on the field and all its clones.
-                    const NodeBS fieldClones = getGepObjClones(oq, normalGep->getOffset());
+                    const NodeBS fieldClones = getGepObjClones(oq, normalGep->getFieldOffset());
                     for (NodeID fc : fieldClones)
                     {
                         gepToSVFGRetrievers[getOriginalObj(fc)].set(gep->getId());

@@ -155,7 +155,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
     unsigned totalOffset = offset;
     if (const GepObjVar *baseGep = SVFUtil::dyn_cast<GepObjVar>(baseNode))
     {
-        totalOffset += baseGep->getOffset();
+        totalOffset += baseGep->getFieldOffset();
     }
 
     const DIType *baseType = getType(base);
@@ -189,7 +189,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
         if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
         {
-            if (gepNode->getOffset() == totalOffset)
+            if (gepNode->getFieldOffset() == totalOffset)
             {
                 geps.set(gep);
             }
@@ -211,7 +211,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
         // No gep node has even be created, so create one.
         NodeID newGep;
         LocationSet newLS;
-        // fldIdx is what is returned by getOffset.
+        // fldIdx is what is returned by getFieldOffset.
         newLS.setFldIdx(totalOffset);
 
         if (isClone(base))
@@ -414,7 +414,7 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
     const PAGNode *obj = ppag->getGNode(o);
     if (const GepObjVar *gepObj = SVFUtil::dyn_cast<GepObjVar>(obj))
     {
-        const NodeBS &clones = getGepObjClones(gepObj->getBaseNode(), gepObj->getOffset());
+        const NodeBS &clones = getGepObjClones(gepObj->getBaseNode(), gepObj->getFieldOffset());
         // TODO: a bit of repetition.
         for (NodeID clone : clones)
         {
@@ -427,7 +427,7 @@ NodeID TypeBasedHeapCloning::cloneObject(NodeID o, const DIType *type, bool)
         clone = addCloneGepObjNode(gepObj->getMemObj(), gepObj->getLocationSet());
 
         // The base needs to know about the new clone.
-        addGepToObj(clone, gepObj->getBaseNode(), gepObj->getOffset());
+        addGepToObj(clone, gepObj->getBaseNode(), gepObj->getFieldOffset());
 
         addClone(o, clone);
         addClone(getOriginalObj(o), clone);

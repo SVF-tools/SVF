@@ -651,7 +651,7 @@ private:
     /// Add Offset(Gep) edge
     NormalGepStmt* addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Variant(Gep) edge
-    VariantGepStmt* addVariantGepStmt(NodeID src, NodeID dst);
+    VariantGepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Thread fork edge for parameter passing
     TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs);
     /// Add Thread join edge for parameter passing

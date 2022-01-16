@@ -562,7 +562,7 @@ void ConstraintGraph::print()
         }
         else if (NormalGepCGEdge* ngep = SVFUtil::dyn_cast<NormalGepCGEdge>(*iter))
         {
-            outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getOffset()
+            outs() << ngep->getSrcID() << " -- NormalGep (" << ngep->getFieldOffset()
                    << ") --> " << ngep->getDstID() << "\n";
         }
         else if (VariantGepCGEdge* vgep = SVFUtil::dyn_cast<VariantGepCGEdge>(*iter))

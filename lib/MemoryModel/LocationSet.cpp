@@ -65,7 +65,7 @@ bool LocationSet::isConstantOffset() const
 NodeBS LocationSet::computeAllLocations() const
 {
     NodeBS result;
-    result.set(accumulateConstantOffset());
+    result.set(accumulateConstantFieldIdx());
     return result;
 }
 
@@ -96,7 +96,7 @@ std::string LocationSet::dump() const
     std::string str;
     raw_string_ostream rawstr(str);
 
-    rawstr << "LocationSet\tField_Index: " << accumulateConstantOffset();
+    rawstr << "LocationSet\tField_Index: " << accumulateConstantFieldIdx();
     rawstr << ",\tNum-Stride: {";
     const OffsetValueVec& vec = getOffsetValueVec();
     OffsetValueVec::const_iterator it = vec.begin();
