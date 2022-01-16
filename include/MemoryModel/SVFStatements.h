@@ -190,16 +190,89 @@ private:
     static u64_t multiOpndLabelCounter;  ///< MultiOpndStmt counter
 };
 
+/*
+ Parent class of Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, ThreadFork, ThreadJoin
+ connecting RHS expression and LHS expression with an assignment  (e.g., LHSExpr = RHSExpr)
+ Only one operand on the right handside of an assignment
+*/
+class AssignStmt : public SVFStmt{
+
+private:
+    AssignStmt();                      ///< place holder
+    AssignStmt(const AssignStmt &);  ///< place holder
+    void operator=(const AssignStmt &); ///< place holder
+    SVFVar* getSrcNode();  ///< not allowed, use getRHSVar() instead
+    SVFVar* getDstNode();    ///< not allowed, use getLHSVar() instead
+    NodeID getSrcID();  ///< not allowed, use getRHSVarID() instead
+    NodeID getDstID();    ///< not allowed, use getLHSVarID() instead
+
+protected:
+    /// constructor
+    AssignStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) : SVFStmt(s,d,k)
+    {
+    }
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const AssignStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Addr ||
+               edge->getEdgeKind() == SVFStmt::Copy ||
+               edge->getEdgeKind() == SVFStmt::Store ||
+               edge->getEdgeKind() == SVFStmt::Load ||
+               edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::Ret ||
+               edge->getEdgeKind() == SVFStmt::NormalGep ||
+               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork ||
+               edge->getEdgeKind() == SVFStmt::ThreadJoin;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Addr ||
+               edge->getEdgeKind() == SVFStmt::Copy ||
+               edge->getEdgeKind() == SVFStmt::Store ||
+               edge->getEdgeKind() == SVFStmt::Load ||
+               edge->getEdgeKind() == SVFStmt::Call ||
+               edge->getEdgeKind() == SVFStmt::Ret ||
+               edge->getEdgeKind() == SVFStmt::NormalGep ||
+               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::ThreadFork ||
+               edge->getEdgeKind() == SVFStmt::ThreadJoin;
+    }
+    //@}
+
+    inline SVFVar* getRHSVar() const {
+        return SVFStmt::getSrcNode();
+    }  
+    inline SVFVar* getLHSVar() const {
+        return SVFStmt::getDstNode();
+    }  
+    inline NodeID getRHSVarID() const {
+        return SVFStmt::getSrcID();
+    }  
+    inline NodeID getLHSVarID() const {
+        return SVFStmt::getDstID();
+    }  
+
+    virtual const std::string toString() const = 0;
+};
 
 /*!
  * Address statement (memory allocations)
  */
-class AddrStmt: public SVFStmt
+class AddrStmt: public AssignStmt
 {
 private:
     AddrStmt();                      ///< place holder
     AddrStmt(const AddrStmt &);  ///< place holder
     void operator=(const AddrStmt &); ///< place holder
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -218,7 +291,7 @@ public:
     //@}
 
     /// constructor
-    AddrStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Addr)
+    AddrStmt(SVFVar* s, SVFVar* d) : AssignStmt(s,d,SVFStmt::Addr)
     {
     }
 
@@ -229,7 +302,7 @@ public:
 /*!
  * Copy statements (simple assignment and casting)
  */
-class CopyStmt: public SVFStmt
+class CopyStmt: public AssignStmt
 {
 private:
     CopyStmt();                      ///< place holder
@@ -253,347 +326,17 @@ public:
     //@}
 
     /// constructor
-    CopyStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Copy)
+    CopyStmt(SVFVar* s, SVFVar* d) : AssignStmt(s,d,SVFStmt::Copy)
     {
     }
 
-    virtual const std::string toString() const override;
-};
-
-/*
-* Program statements with multiple operands including BinaryOPStmt, CmpStmt and PhiStmt
-*/
-class MultiOpndStmt : public SVFStmt{
-public:
-    typedef std::vector<SVFVar*> OPVars;
-protected:
-    OPVars opVars;
-public:
-    /// Constructor, only used by subclassess but not external users
-    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(opnds.at(0), r, k), opVars(opnds)
-    {
-    }
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const MultiOpndStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *node)
-    {
-        return node->getEdgeKind() == Phi ||
-               node->getEdgeKind() == BinaryOp ||
-               node->getEdgeKind() == Cmp;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *node)
-    {
-        return node->getEdgeKind() == Phi ||
-               node->getEdgeKind() == BinaryOp ||
-               node->getEdgeKind() == Cmp;
-    }
-    //@}
-    /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and `r` is OpVar
-    //@{
-    /// Operand SVFVars
-    inline const SVFVar* getOpVar(u32_t pos) const
-    {
-        return opVars.at(pos);
-    }
-    /// Result SVFVar
-    inline const SVFVar* getRes() const
-    {
-        return getDstNode();
-    }
-    
-    NodeID getOpVarID(u32_t pos) const;
-    NodeID getResID() const;
-
-    inline u32_t getOpVarNum() const
-    {
-        return opVars.size();
-    }
-    inline const OPVars& getOpndVars() const{
-        return opVars;
-    }
-    inline OPVars::const_iterator opVarBegin() const
-    {
-        return opVars.begin();
-    }
-    inline OPVars::const_iterator opVerEnd() const
-    {
-        return opVars.end();
-    }
-    //@}
-};
-
-/*!
- * Phi statement (e.g., p = phi(q,r) which receives values from variables q and r from different paths)
- * it is typically at a joint point of the control-flow graph
- */
-class PhiStmt: public MultiOpndStmt
-{
-private:
-    PhiStmt();                      ///< place holder
-    PhiStmt(const PhiStmt &);  ///< place holder
-    void operator=(const PhiStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
-    SVFVar* getDstNode();    ///< place holder, use getRes() instead
-    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
-    SVFVar* getDstID();    ///< place holder, use getResID() instead
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const PhiStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Phi;
-    }
-    static inline bool classof(const MultiOpndStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Phi;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Phi;
-    }
-    //@}
-
-    /// constructor
-    PhiStmt(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
-    {
-    }
-    void addOpVar(SVFVar* op){
-        opVars.push_back(op);
-    }
-    virtual const std::string toString() const override;
-};
-
-
-/*!
- * Comparison statement
- */
-class CmpStmt: public MultiOpndStmt
-{
-private:
-    CmpStmt();                      ///< place holder
-    CmpStmt(const CmpStmt &);  ///< place holder
-    void operator=(const CmpStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
-    SVFVar* getDstNode();    ///< place holder, use getRes() instead
-    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
-    SVFVar* getDstID();    ///< place holder, use getResID() instead
-
-    u32_t predicate;
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const CmpStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Cmp;
-    }
-    static inline bool classof(const MultiOpndStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Cmp;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Cmp;
-    }
-    //@}
-
-    /// constructor
-    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), predicate(pre)
-    {
-    }
-
-    u32_t getPredicate() const
-    {
-        return predicate;
-    }
-    
-    virtual const std::string toString() const override;
-};
-
-
-/*!
- * Binary statement
- */
-class BinaryOPStmt: public MultiOpndStmt
-{
-private:
-    BinaryOPStmt();                      ///< place holder
-    BinaryOPStmt(const BinaryOPStmt &);  ///< place holder
-    void operator=(const BinaryOPStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, not allowed since this SVFStmt has multiple operands but not a single source
-    SVFVar* getDstNode();    ///< place holder, use getRes() instead
-    SVFVar* getSrcID();  ///< place holder, use getOpVarID(pos) instead
-    SVFVar* getDstID();    ///< place holder, use getResID() instead
-
-    u32_t opcode;
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const BinaryOPStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::BinaryOp;
-    }
-    static inline bool classof(const MultiOpndStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::BinaryOp;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::BinaryOp;
-    }
-    //@}
-
-    /// constructor
-    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
-    {
-    }
-
-    u32_t getOpcode() const
-    {
-        return opcode;
-    }
-
-    virtual const std::string toString() const override;
-};
-
-/*!
- * Unary statement
- */
-class UnaryOPStmt: public SVFStmt
-{
-private:
-    UnaryOPStmt();                      ///< place holder
-    UnaryOPStmt(const UnaryOPStmt &);  ///< place holder
-    void operator=(const UnaryOPStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, use getOpVar() instead
-    SVFVar* getDstNode();    ///< place holder, use getRes() instead
-    SVFVar* getSrcID();  ///< place holder, use getOpVarID() instead
-    SVFVar* getDstID();    ///< place holder, use getResID() instead
-
-    u32_t opcode;
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const UnaryOPStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::UnaryOp;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::UnaryOp;
-    }
-    //@}
-
-    /// constructor
-    UnaryOPStmt(SVFVar* s, SVFVar* d, u32_t oc) : SVFStmt(s,d,SVFStmt::UnaryOp), opcode(oc)
-    {
-    }
-
-    u32_t getOpcode() const
-    {
-        return opcode;
-    }
-    inline const SVFVar* getOpVar() const{
-        return SVFStmt::getSrcNode();
-    }
-    inline const SVFVar* getRes() const{
-        return SVFStmt::getDstNode();
-    }
-    NodeID getOpVarID() const;
-    NodeID getResID() const;
-
-    virtual const std::string toString() const override;
-};
-
-
-/*!
- * Branch statements including if/else and switch 
- */
-class BranchStmt: public SVFStmt
-{
-private:
-    BranchStmt();                      ///< place holder
-    BranchStmt(const BranchStmt &);  ///< place holder
-    void operator=(const BranchStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, not allowed 
-    SVFVar* getDstNode();    ///< place holder, not allowed 
-    SVFVar* getSrcID();  ///< place holder, not allowed 
-    SVFVar* getDstID();    ///< place holder, not allowed 
-
-    std::vector<const ICFGNode*> successors;
-    const SVFVar* cond;
-    const SVFVar* brInst;
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const BranchStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Branch;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::Branch;
-    }
-    //@}
-
-    /// constructor
-    BranchStmt(SVFVar* inst, SVFVar* c, const std::vector<const ICFGNode*>& succs) : SVFStmt(c,inst,SVFStmt::Branch), successors(succs), cond(c), brInst(inst)
-    {
-    }
-
-    /// The branch is unconditional if cond is a null value
-    bool isUnconditional() const;
-    /// The branch is conditional if cond is not a null value
-    bool isConditional() const;
-    /// Return the condition 
-    const SVFVar* getCondition() const;
-    const SVFVar* getBranchInst() const{
-        return brInst;
-    }
-    /// Successors of this branch statement
-    ///@{
-    u32_t getNumSuccessors() const{
-        return successors.size();
-    }
-    const std::vector<const ICFGNode*>& getSuccessors() const{
-        return successors;
-    }
-    const ICFGNode* getSuccessor (u32_t i) const{
-        return successors.at(i);
-    }
-    ///@}
     virtual const std::string toString() const override;
 };
 
 /*!
  * Store statement
  */
-class StoreStmt: public SVFStmt
+class StoreStmt: public AssignStmt
 {
 private:
     StoreStmt();                      ///< place holder
@@ -619,7 +362,7 @@ public:
 
     /// constructor
     StoreStmt(SVFVar* s, SVFVar* d, const IntraBlockNode* st) :
-        SVFStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
+        AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
     {
     }
 
@@ -630,7 +373,7 @@ public:
 /*!
  * Load statement
  */
-class LoadStmt: public SVFStmt
+class LoadStmt: public AssignStmt
 {
 private:
     LoadStmt();                      ///< place holder
@@ -655,7 +398,7 @@ public:
     //@}
 
     /// constructor
-    LoadStmt(SVFVar* s, SVFVar* d) : SVFStmt(s,d,SVFStmt::Load)
+    LoadStmt(SVFVar* s, SVFVar* d) : AssignStmt(s,d,SVFStmt::Load)
     {
     }
 
@@ -666,7 +409,7 @@ public:
 /*!
  * Gep statement for struct field access, array access and pointer arithmetic
  */
-class GepStmt: public SVFStmt
+class GepStmt: public AssignStmt
 {
 private:
     GepStmt();                      ///< place holder
@@ -701,7 +444,7 @@ public:
 
 protected:
     /// constructor
-    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, PEDGEK k) : SVFStmt(s,d,k), ls(l)
+    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, PEDGEK k) : AssignStmt(s,d,k), ls(l)
     {
     }
 
@@ -796,7 +539,7 @@ public:
 /*!
  * Call 
  */
-class CallPE: public SVFStmt
+class CallPE: public AssignStmt
 {
 private:
     CallPE();                      ///< place holder
@@ -825,7 +568,7 @@ public:
 
     /// constructor
     CallPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Call) :
-        SVFStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -848,7 +591,7 @@ public:
 /*!
  * Return 
  */
-class RetPE: public SVFStmt
+class RetPE: public AssignStmt
 {
 private:
     RetPE();                      ///< place holder
@@ -877,7 +620,7 @@ public:
 
     /// constructor
     RetPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Ret) :
-        SVFStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
@@ -893,6 +636,332 @@ public:
     }
     //@}
 
+    virtual const std::string toString() const override;
+};
+
+/*
+* Program statements with multiple operands including BinaryOPStmt, CmpStmt and PhiStmt
+*/
+class MultiOpndStmt : public SVFStmt{
+public:
+    typedef std::vector<SVFVar*> OPVars;
+private:
+    MultiOpndStmt();                      ///< place holder
+    MultiOpndStmt(const MultiOpndStmt &);  ///< place holder
+    void operator=(const MultiOpndStmt &); ///< place holder
+    SVFVar* getSrcNode();  ///< not allowed, use getOpVar(idx) instead
+    SVFVar* getDstNode();    ///< not allowed, use getRes() instead
+    NodeID getSrcID();  ///< not allowed, use getOpVarID(idx) instead
+    NodeID getDstID();    ///< not allowed, use getResID() instead
+
+protected:
+    OPVars opVars;
+    /// Constructor, only used by subclassess but not external users
+    MultiOpndStmt(SVFVar* r, const OPVars& opnds, GEdgeFlag k): SVFStmt(opnds.at(0), r, k), opVars(opnds)
+    {
+    }
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const MultiOpndStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *node)
+    {
+        return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == BinaryOp ||
+               node->getEdgeKind() == Cmp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *node)
+    {
+        return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == BinaryOp ||
+               node->getEdgeKind() == Cmp;
+    }
+    //@}
+    /// Operands and result at a BinaryNode e.g., p = q + r, `p` is resVar and `r` is OpVar
+    //@{
+    /// Operand SVFVars
+    inline const SVFVar* getOpVar(u32_t pos) const
+    {
+        return opVars.at(pos);
+    }
+    /// Result SVFVar
+    inline const SVFVar* getRes() const
+    {
+        return SVFStmt::getDstNode();
+    }
+    
+    NodeID getOpVarID(u32_t pos) const;
+    NodeID getResID() const;
+
+    inline u32_t getOpVarNum() const
+    {
+        return opVars.size();
+    }
+    inline const OPVars& getOpndVars() const{
+        return opVars;
+    }
+    inline OPVars::const_iterator opVarBegin() const
+    {
+        return opVars.begin();
+    }
+    inline OPVars::const_iterator opVerEnd() const
+    {
+        return opVars.end();
+    }
+    //@}
+};
+
+/*!
+ * Phi statement (e.g., p = phi(q,r) which receives values from variables q and r from different paths)
+ * it is typically at a joint point of the control-flow graph
+ */
+class PhiStmt: public MultiOpndStmt
+{
+private:
+    PhiStmt();                      ///< place holder
+    PhiStmt(const PhiStmt &);  ///< place holder
+    void operator=(const PhiStmt &); ///< place holder
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const PhiStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Phi;
+    }
+    //@}
+
+    /// constructor
+    PhiStmt(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
+    {
+    }
+    void addOpVar(SVFVar* op){
+        opVars.push_back(op);
+    }
+    virtual const std::string toString() const override;
+};
+
+
+/*!
+ * Comparison statement
+ */
+class CmpStmt: public MultiOpndStmt
+{
+private:
+    CmpStmt();                      ///< place holder
+    CmpStmt(const CmpStmt &);  ///< place holder
+    void operator=(const CmpStmt &); ///< place holder
+
+    u32_t predicate;
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const CmpStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Cmp;
+    }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Cmp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Cmp;
+    }
+    //@}
+
+    /// constructor
+    CmpStmt(SVFVar* s, const OPVars& opnds, u32_t pre) : MultiOpndStmt(s,opnds,SVFStmt::Cmp), predicate(pre)
+    {
+    }
+
+    u32_t getPredicate() const
+    {
+        return predicate;
+    }
+    
+    virtual const std::string toString() const override;
+};
+
+
+/*!
+ * Binary statement
+ */
+class BinaryOPStmt: public MultiOpndStmt
+{
+private:
+    BinaryOPStmt();                      ///< place holder
+    BinaryOPStmt(const BinaryOPStmt &);  ///< place holder
+    void operator=(const BinaryOPStmt &); ///< place holder
+    u32_t opcode;
+
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BinaryOPStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
+    }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::BinaryOp;
+    }
+    //@}
+
+    /// constructor
+    BinaryOPStmt(SVFVar* s, const OPVars& opnds, u32_t oc) : MultiOpndStmt(s,opnds,SVFStmt::BinaryOp), opcode(oc)
+    {
+    }
+
+    u32_t getOpcode() const
+    {
+        return opcode;
+    }
+
+    virtual const std::string toString() const override;
+};
+
+/*!
+ * Unary statement
+ */
+class UnaryOPStmt: public SVFStmt
+{
+private:
+    UnaryOPStmt();                      ///< place holder
+    UnaryOPStmt(const UnaryOPStmt &);  ///< place holder
+    void operator=(const UnaryOPStmt &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, use getOpVar() instead
+    SVFVar* getDstNode();    ///< place holder, use getRes() instead
+    NodeID getSrcID();  ///< place holder, use getOpVarID(pos) instead
+    NodeID getDstID();    ///< place holder, use getResID() instead
+
+    u32_t opcode;
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const UnaryOPStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::UnaryOp;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::UnaryOp;
+    }
+    //@}
+
+    /// constructor
+    UnaryOPStmt(SVFVar* s, SVFVar* d, u32_t oc) : SVFStmt(s,d,SVFStmt::UnaryOp), opcode(oc)
+    {
+    }
+
+    u32_t getOpcode() const
+    {
+        return opcode;
+    }
+    inline const SVFVar* getOpVar() const{
+        return SVFStmt::getSrcNode();
+    }
+    inline const SVFVar* getRes() const{
+        return SVFStmt::getDstNode();
+    }
+    NodeID getOpVarID() const;
+    NodeID getResID() const;
+
+    virtual const std::string toString() const override;
+};
+
+
+/*!
+ * Branch statements including if/else and switch 
+ */
+class BranchStmt: public SVFStmt
+{
+private:
+    BranchStmt();                      ///< place holder
+    BranchStmt(const BranchStmt &);  ///< place holder
+    void operator=(const BranchStmt &); ///< place holder
+    SVFVar* getSrcNode();  ///< place holder, not allowed 
+    SVFVar* getDstNode();    ///< place holder, not allowed 
+    NodeID getSrcID();  ///< place holder, use getOpVarID(pos) instead
+    NodeID getDstID();    ///< place holder, use getResID() instead
+
+    std::vector<const ICFGNode*> successors;
+    const SVFVar* cond;
+    const SVFVar* brInst;
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BranchStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Branch;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Branch;
+    }
+    //@}
+
+    /// constructor
+    BranchStmt(SVFVar* inst, SVFVar* c, const std::vector<const ICFGNode*>& succs) : SVFStmt(c,inst,SVFStmt::Branch), successors(succs), cond(c), brInst(inst)
+    {
+    }
+
+    /// The branch is unconditional if cond is a null value
+    bool isUnconditional() const;
+    /// The branch is conditional if cond is not a null value
+    bool isConditional() const;
+    /// Return the condition 
+    const SVFVar* getCondition() const;
+    const SVFVar* getBranchInst() const{
+        return brInst;
+    }
+    /// Successors of this branch statement
+    ///@{
+    u32_t getNumSuccessors() const{
+        return successors.size();
+    }
+    const std::vector<const ICFGNode*>& getSuccessors() const{
+        return successors;
+    }
+    const ICFGNode* getSuccessor (u32_t i) const{
+        return successors.at(i);
+    }
+    ///@}
     virtual const std::string toString() const override;
 };
 

@@ -68,7 +68,7 @@ const std::string SVFStmt::toString() const {
 const std::string AddrStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "AddrStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "AddrStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -79,7 +79,7 @@ const std::string AddrStmt::toString() const{
 const std::string CopyStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CopyStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CopyStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -149,7 +149,7 @@ const std::string BranchStmt::toString() const {
 const std::string LoadStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "LoadStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "LoadStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -160,7 +160,7 @@ const std::string LoadStmt::toString() const{
 const std::string StoreStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "StoreStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "StoreStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -171,7 +171,7 @@ const std::string StoreStmt::toString() const{
 const std::string GepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "GepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -182,7 +182,7 @@ const std::string GepStmt::toString() const{
 const std::string NormalGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "NormalGepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "NormalGepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -193,7 +193,7 @@ const std::string NormalGepStmt::toString() const{
 const std::string VariantGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "VariantGepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -204,7 +204,7 @@ const std::string VariantGepStmt::toString() const{
 const std::string CallPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "CallPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -215,7 +215,7 @@ const std::string CallPE::toString() const{
 const std::string RetPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "RetPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -226,7 +226,7 @@ const std::string RetPE::toString() const{
 const std::string TDForkPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDForkPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "TDForkPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -237,7 +237,7 @@ const std::string TDForkPE::toString() const{
 const std::string TDJoinPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDJoinPE: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "TDJoinPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }

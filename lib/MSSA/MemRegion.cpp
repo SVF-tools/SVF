@@ -198,7 +198,7 @@ void MRGenerator::collectModRefForLoadStore()
                     pagEdgeToFunMap[inst] = &fun;
                     if (const StoreStmt *st = SVFUtil::dyn_cast<StoreStmt>(inst))
                     {
-                        NodeBS cpts(pta->getPts(st->getDstID()).toNodeBS());
+                        NodeBS cpts(pta->getPts(st->getLHSVarID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -208,7 +208,7 @@ void MRGenerator::collectModRefForLoadStore()
 
                     else if (const LoadStmt *ld = SVFUtil::dyn_cast<LoadStmt>(inst))
                     {
-                        NodeBS cpts(pta->getPts(ld->getSrcID()).toNodeBS());
+                        NodeBS cpts(pta->getPts(ld->getRHSVarID()).toNodeBS());
                         // TODO: change this assertion check later when we have conditional points-to set
                         if (cpts.empty())
                             continue;
@@ -611,7 +611,7 @@ bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlock
         {
             const PAGEdge* edge = *bit;
             if (const AddrStmt* addr = SVFUtil::dyn_cast<AddrStmt>(edge))
-                mod.set(addr->getSrcID());
+                mod.set(addr->getRHSVarID());
         }
     }
     /// otherwise, we find the mod/ref sets from the callee function, who has definition and been processed
@@ -678,7 +678,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
         {
             const PAGEdge* edge = *bit;
             if (const StoreStmt* st = SVFUtil::dyn_cast<StoreStmt>(edge))
-                mods |= pta->getPts(st->getDstID()).toNodeBS();
+                mods |= pta->getPts(st->getLHSVarID()).toNodeBS();
         }
         return mods;
     }
@@ -702,7 +702,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
         {
             const PAGEdge* edge = *bit;
             if (const LoadStmt* ld = SVFUtil::dyn_cast<LoadStmt>(edge))
-                refs |= pta->getPts(ld->getSrcID()).toNodeBS();
+                refs |= pta->getPts(ld->getRHSVarID()).toNodeBS();
         }
         return refs;
     }
