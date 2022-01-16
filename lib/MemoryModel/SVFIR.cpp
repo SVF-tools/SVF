@@ -611,8 +611,8 @@ void SVFIR::print()
                 ngeps.end(); iter != eiter; ++iter)
     {
         NormalGepStmt* gep = SVFUtil::cast<NormalGepStmt>(*iter);
-        outs() << gep->getSrcID() << " -- NormalGep (" << gep->getFieldOffset()
-               << ") --> " << gep->getDstID() << "\n";
+        outs() << gep->getRHSVarID() << " -- NormalGep (" << gep->getFieldOffset()
+               << ") --> " << gep->getLHSVarID() << "\n";
     }
 
     SVFStmt::SVFStmtSetTy& vgeps = pag->getSVFStmtSet(SVFStmt::VariantGep);

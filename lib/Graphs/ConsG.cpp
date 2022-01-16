@@ -53,16 +53,16 @@ void ConstraintGraph::buildCG()
     for (PAGEdge::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addAddrCGEdge(edge->getSrcID(),edge->getDstID());
+        const AddrStmt* edge = SVFUtil::cast<AddrStmt>(*iter);
+        addAddrCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& copys = getPAGEdgeSet(PAGEdge::Copy);
     for (PAGEdge::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
+        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& phis = getPAGEdgeSet(PAGEdge::Phi);
@@ -78,32 +78,32 @@ void ConstraintGraph::buildCG()
     for (PAGEdge::SVFStmtSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        const CallPE* edge = SVFUtil::cast<CallPE>(*iter);
+        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& rets = getPAGEdgeSet(PAGEdge::Ret);
     for (PAGEdge::SVFStmtSetTy::iterator iter = rets.begin(), eiter =
                 rets.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        const RetPE* edge = SVFUtil::cast<RetPE>(*iter);
+        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& tdfks = getPAGEdgeSet(PAGEdge::ThreadFork);
     for (PAGEdge::SVFStmtSetTy::iterator iter = tdfks.begin(), eiter =
                 tdfks.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        const TDForkPE* edge = SVFUtil::cast<TDForkPE>(*iter);
+        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& tdjns = getPAGEdgeSet(PAGEdge::ThreadJoin);
     for (PAGEdge::SVFStmtSetTy::iterator iter = tdjns.begin(), eiter =
                 tdjns.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addCopyCGEdge(edge->getSrcID(),edge->getDstID());
+        const TDJoinPE* edge = SVFUtil::cast<TDJoinPE>(*iter);
+        addCopyCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
     PAGEdge::SVFStmtSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
@@ -111,7 +111,7 @@ void ConstraintGraph::buildCG()
                 ngeps.end(); iter != eiter; ++iter)
     {
         NormalGepStmt* edge = SVFUtil::cast<NormalGepStmt>(*iter);
-        addNormalGepCGEdge(edge->getSrcID(),edge->getDstID(),edge->getLocationSet());
+        addNormalGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID(),edge->getLocationSet());
     }
 
     PAGEdge::SVFStmtSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
@@ -119,23 +119,23 @@ void ConstraintGraph::buildCG()
                 vgeps.end(); iter != eiter; ++iter)
     {
         VariantGepStmt* edge = SVFUtil::cast<VariantGepStmt>(*iter);
-        addVariantGepCGEdge(edge->getSrcID(),edge->getDstID());
+        addVariantGepCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 
-    PAGEdge::SVFStmtSetTy& stores = getPAGEdgeSet(PAGEdge::Load);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
-                stores.end(); iter != eiter; ++iter)
-    {
-        PAGEdge* edge = *iter;
-        addLoadCGEdge(edge->getSrcID(),edge->getDstID());
-    }
-
-    PAGEdge::SVFStmtSetTy& loads = getPAGEdgeSet(PAGEdge::Store);
+    PAGEdge::SVFStmtSetTy& loads = getPAGEdgeSet(PAGEdge::Load);
     for (PAGEdge::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
-        PAGEdge* edge = *iter;
-        addStoreCGEdge(edge->getSrcID(),edge->getDstID());
+        LoadStmt* edge = SVFUtil::cast<LoadStmt>(*iter);
+        addLoadCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
+    }
+
+    PAGEdge::SVFStmtSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
+    for (PAGEdge::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
+                stores.end(); iter != eiter; ++iter)
+    {
+        StoreStmt* edge = SVFUtil::cast<StoreStmt>(*iter);
+        addStoreCGEdge(edge->getRHSVarID(),edge->getLHSVarID());
     }
 }
 

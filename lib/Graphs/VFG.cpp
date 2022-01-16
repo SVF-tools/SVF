@@ -389,7 +389,7 @@ void VFG::addVFGNodes()
                 forks.end(); iter != eiter; ++iter)
     {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-        addActualParmVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
+        addActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
     }
 
     // initialize actual parameter nodes
@@ -435,7 +435,7 @@ void VFG::addVFGNodes()
                             param->getIncomingEdgesEnd(PAGEdge::Call); cit != ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if (isInterestedPAGNode(callPE->getSrcNode()))
+                    if (isInterestedPAGNode(callPE->getRHSVar()))
                         callPEs.insert(callPE);
                 }
             }
@@ -455,7 +455,7 @@ void VFG::addVFGNodes()
                         ecit = varParam->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
-                    if(isInterestedPAGNode(callPE->getSrcNode()))
+                    if(isInterestedPAGNode(callPE->getRHSVar()))
                         callPEs.insert(callPE);
                 }
             }
@@ -478,7 +478,7 @@ void VFG::addVFGNodes()
                     cit != ecit; ++cit)
             {
                 const RetPE* retPE = SVFUtil::cast<RetPE>(*cit);
-                if (isInterestedPAGNode(retPE->getDstNode()))
+                if (isInterestedPAGNode(retPE->getLHSVar()))
                     retPEs.insert(retPE);
             }
         }
@@ -667,7 +667,7 @@ void VFG::connectDirectVFGEdges()
                     it!=eit; ++it)
             {
                 const CallBlockNode* cs = (*it)->getCallSite();
-                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getSrcNode(),cs);
+                ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
                 addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
             }
         }
@@ -679,7 +679,7 @@ void VFG::connectDirectVFGEdges()
             /// connect formal ret to actual ret
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
             {
-                ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getDstNode());
+                ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
                 const CallBlockNode* retBlockNode = (*it)->getCallSite();
                 CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
@@ -697,8 +697,8 @@ void VFG::connectDirectVFGEdges()
                 forks.end(); iter != eiter; ++iter)
         {
             TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
-            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getSrcNode(),forkedge->getCallSite());
-            FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getDstNode());
+            ActualParmVFGNode* acutalParm = getActualParmVFGNode(forkedge->getRHSVar(),forkedge->getCallSite());
+            FormalParmVFGNode* formalParm = getFormalParmVFGNode(forkedge->getLHSVar());
             addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
         }
         /// add join edge
@@ -707,8 +707,8 @@ void VFG::connectDirectVFGEdges()
                 joins.end(); iter != eiter; ++iter)
         {
             TDJoinPE* joinedge = SVFUtil::cast<TDJoinPE>(*iter);
-            NodeID callsiteRev = getDef(joinedge->getDstNode());
-            FormalRetVFGNode* calleeRet = getFormalRetVFGNode(joinedge->getSrcNode());
+            NodeID callsiteRev = getDef(joinedge->getLHSVar());
+            FormalRetVFGNode* calleeRet = getFormalRetVFGNode(joinedge->getRHSVar());
             addRetEdge(calleeRet->getId(),callsiteRev, getCallSiteID(joinedge->getCallSite(), calleeRet->getFun()));
         }
     }

@@ -487,28 +487,28 @@ protected:
     {
         AddrVFGNode* sNode = new AddrVFGNode(totalVFGNode++,addr);
         addStmtVFGNode(sNode, addr);
-        setDef(addr->getDstNode(),sNode);
+        setDef(addr->getLHSVar(),sNode);
     }
     /// Add a Copy VFG node
     inline void addCopyVFGNode(const CopyStmt* copy)
     {
         CopyVFGNode* sNode = new CopyVFGNode(totalVFGNode++,copy);
         addStmtVFGNode(sNode, copy);
-        setDef(copy->getDstNode(),sNode);
+        setDef(copy->getLHSVar(),sNode);
     }
     /// Add a Gep VFG node
     inline void addGepVFGNode(const GepStmt* gep)
     {
         GepVFGNode* sNode = new GepVFGNode(totalVFGNode++,gep);
         addStmtVFGNode(sNode, gep);
-        setDef(gep->getDstNode(),sNode);
+        setDef(gep->getLHSVar(),sNode);
     }
     /// Add a Load VFG node
     void addLoadVFGNode(const LoadStmt* load)
     {
         LoadVFGNode* sNode = new LoadVFGNode(totalVFGNode++,load);
         addStmtVFGNode(sNode, load);
-        setDef(load->getDstNode(),sNode);
+        setDef(load->getLHSVar(),sNode);
     }
     /// Add a Store VFG node,
     /// To be noted store does not create a new pointer, we do not set def for any SVFIR node
