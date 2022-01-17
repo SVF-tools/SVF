@@ -365,11 +365,11 @@ class CallBlockNode : public InterBlockNode
 {
 
 public:
-    typedef std::vector<const SVFVar *> ActualParmVFGNodeVec;
+    typedef std::vector<const SVFVar *> ActualParmNodeVec;
 private:
     const Instruction* cs;
     const RetBlockNode* ret;
-    ActualParmVFGNodeVec APNodes;
+    ActualParmNodeVec APNodes;
 public:
     CallBlockNode(NodeID id, const Instruction* c) : InterBlockNode(id, FunCallBlock), cs(c), ret(nullptr)
     {
@@ -415,7 +415,7 @@ public:
     }
 
     /// Return the set of actual parameters
-    inline const ActualParmVFGNodeVec &getActualParms() const
+    inline const ActualParmNodeVec &getActualParms() const
     {
         return APNodes;
     }

@@ -483,8 +483,15 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg("try to create an object with a non-pointer type.");
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
-        assert(false && "Memory object must be held by a pointer-typed ref value.");
-        abort();
+        if(symInfo->isConstantObjSym(val)){
+            ObjTypeInfo* typeInfo = new ObjTypeInfo(val, val->getType(), 0);
+            initTypeInfo(typeInfo,val);
+            return typeInfo;
+        }
+        else{
+            assert(false && "Memory object must be either (1) held by a pointer-typed ref value or (2) a constant value (e.g., 10).");
+            abort();
+        }
     }
 }
 
@@ -582,8 +589,14 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
         // user input data, label its field as infinite here
         objSize = -1;
     }
-    else
+    else if(SVFUtil::isConstantData(val))
+    {
+        typeinfo->setFlag(ObjTypeInfo::CONST_OBJ);
+    }
+    else{
         assert("what other object do we have??");
+        abort();
+    }
 
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
     if(objSize > 0 && typeinfo->getMaxFieldOffsetLimit() > objSize)
