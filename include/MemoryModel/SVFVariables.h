@@ -45,6 +45,9 @@ class SVFVar;
 typedef GenericNode<SVFVar,SVFStmt> GenericPAGNodeTy;
 class SVFVar : public GenericPAGNodeTy
 {
+friend class IRGraph;
+friend class SVFIR;
+friend class VFG;
 
 public:
     /// Nine kinds of SVFIR variables
@@ -162,13 +165,11 @@ public:
     {
         return InEdgeKindToSetMap[kind];
     }
-
     /// Get outgoing SVFIR statements (edges)
     inline SVFStmt::SVFStmtSetTy& getOutgoingEdges(SVFStmt::PEDGEK kind)
     {
         return OutEdgeKindToSetMap[kind];
     }
-
     /// Has incoming SVFIR statements (edges)
     inline bool hasIncomingEdges(SVFStmt::PEDGEK kind) const
     {
@@ -178,18 +179,16 @@ public:
         else
             return false;
     }
-
-    /// Has incoming VariantGepEdges
-    inline bool hasIncomingVariantGepEdge() const
+    /// Has outgoing SVFIR statements (edges)
+    inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
-        if (it != InEdgeKindToSetMap.end())
-        {
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
+        if (it != OutEdgeKindToSetMap.end())
             return (!it->second.empty());
-        }
-        return false;
+        else
+            return false;
     }
-
+    
     /// Get incoming SVFStmt iterator
     inline SVFStmt::SVFStmtSetTy::iterator getIncomingEdgesBegin(SVFStmt::PEDGEK kind) const
     {
@@ -204,16 +203,6 @@ public:
         SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(kind);
         assert(it!=InEdgeKindToSetMap.end() && "The node does not have such kind of edge");
         return it->second.end();
-    }
-
-    /// Has outgoing SVFIR statements (edges)
-    inline bool hasOutgoingEdges(SVFStmt::PEDGEK kind) const
-    {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = OutEdgeKindToSetMap.find(kind);
-        if (it != OutEdgeKindToSetMap.end())
-            return (!it->second.empty());
-        else
-            return false;
     }
 
     /// Get outgoing SVFStmt iterator
@@ -233,6 +222,7 @@ public:
     }
     //@}
 
+private:
     ///  add methods of the components
     //@{
     inline void addInEdge(SVFStmt* inEdge)
@@ -248,7 +238,18 @@ public:
         OutEdgeKindToSetMap[kind].insert(outEdge);
         addOutgoingEdge(outEdge);
     }
+    /// Has incoming VariantGepEdges
+    inline bool hasIncomingVariantGepEdge() const
+    {
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
+        if (it != InEdgeKindToSetMap.end())
+        {
+            return (!it->second.empty());
+        }
+        return false;
+    }
 
+public:
     virtual const std::string toString() const;
 
     /// Dump to console for debugging
