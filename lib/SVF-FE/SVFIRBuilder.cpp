@@ -278,14 +278,14 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             assert(op && "non-const index in an operand in GEP");
             //The actual index
             Size_t idx = op->getSExtValue();
-            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFattenFieldIdxVec(ST);
+            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(ST);
             if ((unsigned)idx >= so.size())
             {
                 outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
             }
             // add the translated offset
-            ls.setFldIdx(ls.getOffset() + so[idx]);
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + so[idx]);
         }
 
         if ((*gi)->isSingleValueType())
@@ -301,7 +301,6 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // infer the field offset based on the byte offset
             u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
             ls.setFldIdx(fieldOffset);
-            ls.setByteOffset(idx);
         }
     }
     return true;
