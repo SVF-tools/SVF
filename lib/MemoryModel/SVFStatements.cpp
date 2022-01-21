@@ -90,7 +90,10 @@ const std::string CopyStmt::toString() const{
 const std::string PhiStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PhiStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
+    rawstr << "PhiStmt: [" << getResID() << "<--(";
+    for(const SVFVar* op : getOpndVars())
+        rawstr << op->getId() << ",";
+    rawstr << ")]\t";
     if (Options::PAGDotGraphShorter) {
         rawstr << "\n";
     }
@@ -261,6 +264,12 @@ NodeID UnaryOPStmt::getOpVarID() const{
 }
 NodeID UnaryOPStmt::getResID() const{
     return getRes()->getId();
+}
+
+/// Return true if this is a phi at the function exit 
+/// to receive one or multiple return values of this function
+bool PhiStmt::isFunctionRetPhi() const{
+    return SVFUtil::isa<RetPN>(getRes());
 }
 
 

@@ -129,18 +129,6 @@ void PointerAnalysis::initialize()
 
     svfMod = pag->getModule();
 
-    // dump SVFIR
-    if (dumpGraph())
-        pag->dump("pag_initial");
-
-    // dump ICFG
-    if (Options::DumpICFG)
-    	pag->getICFG()->dump("icfg_initial");
-
-    // print to command line of the SVFIR graph
-    if (Options::PAGPrint)
-        pag->print();
-
     /// initialise pta call graph for every pointer analysis instance
     if(Options::EnableThreadCallGraph)
     {
@@ -192,14 +180,6 @@ void PointerAnalysis::resetObjFieldSensitive()
     }
 }
 
-/*!
- * Flag in order to dump graph
- */
-bool PointerAnalysis::dumpGraph()
-{
-    return Options::PAGDotGraph;
-}
-
 /*
  * Dump statistics
  */
@@ -225,7 +205,7 @@ void PointerAnalysis::finalize()
 
     SVFIR* pag = SVFIR::getPAG();
     // dump SVFIR
-    if (dumpGraph())
+    if (Options::PAGDotGraph)
         pag->dump("pag_final");
 
     // dump ICFG

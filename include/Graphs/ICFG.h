@@ -46,6 +46,8 @@ typedef GenericGraph<ICFGNode,ICFGEdge> GenericICFGTy;
 class ICFG : public GenericICFGTy
 {
 
+friend class ICFGBuilder;
+
 public:
 
     typedef Map<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
@@ -109,7 +111,7 @@ public:
     /// update ICFG for indirect calls
     void updateCallGraph(PTACallGraph* callgraph);
 
-public:
+protected:
     /// Remove a SVFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
     {
@@ -157,6 +159,7 @@ public:
         addGNode(node->getId(),node);
     }
 
+public:
     /// Get a basic block ICFGNode
     /// TODO:: need to fix the assertions
     //@{
@@ -172,11 +175,10 @@ public:
 
     FunExitBlockNode* getFunExitBlockNode(const SVFFunction*  fun);
 
-    GlobalBlockNode* getGlobalBlockNode() const
+    inline GlobalBlockNode* getGlobalBlockNode() const
     {
         return globalBlockNode;
     }
-    
     //@}
 
 private:

@@ -34,6 +34,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "Util/BasicTypes.h"
 #include "MemoryModel/PAGBuilderFromFile.h"
+#include "Util/Options.h"
 
 using namespace std;
 using namespace SVF;
@@ -118,6 +119,18 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     pag->initialiseCandidatePointers();
 
     pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+
+    // dump SVFIR
+    if (Options::PAGDotGraph)
+        pag->dump("svfir_initial");
+
+    // print to command line of the SVFIR graph
+    if (Options::PAGPrint)
+        pag->print();
+
+    // dump ICFG
+    if (Options::DumpICFG)
+    	pag->getICFG()->dump("icfg_initial");
 
     return pag;
 }

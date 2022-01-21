@@ -185,7 +185,9 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* ca
         icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
     }
 }
-
+/*
+* Add the global initialization statements immediately after the function entry of main
+*/
 void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
 {
     const SVFFunction* mainFunc = SVFUtil::getProgEntryFunction(svfModule);
@@ -196,7 +198,20 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
 
     FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
     GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
-    IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, entryNode);
+
+    std::vector<ICFGEdge*> toBeRemovedEdges;
+    for(ICFGEdge* edge : entryNode->getOutEdges())
+        toBeRemovedEdges.push_back(edge);
+    
+    for(ICFGEdge* edge : toBeRemovedEdges){
+        SVFUtil::outs() << edge->toString() << "\n";
+        assert(SVFUtil::isa<IntraCFGEdge>(edge) && "the outgoing edge of FunEntryBlockNode is not an intraCFGEdge?");
+        icfg->removeICFGEdge(edge);
+        IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, edge->getDstNode());
+        icfg->addICFGEdge(intraEdge); 
+    }
+
+    IntraCFGEdge* intraEdge = new IntraCFGEdge(entryNode, globalNode);
     icfg->addICFGEdge(intraEdge);
 }
 

@@ -753,6 +753,11 @@ public:
     void addOpVar(SVFVar* op){
         opVars.push_back(op);
     }
+
+    /// Return true if this is a phi at the function exit 
+    /// to receive one or multiple return values of this function
+    bool isFunctionRetPhi() const;
+
     virtual const std::string toString() const override;
 };
 

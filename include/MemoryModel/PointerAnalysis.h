@@ -293,9 +293,6 @@ protected:
     virtual void validateExpectedFailureTests(std::string fun);
     //@}
 
-    /// Whether to dump the graph for debugging purpose
-    bool dumpGraph();
-
     /// Reset all object node as field-sensitive.
     void resetObjFieldSensitive();
 
