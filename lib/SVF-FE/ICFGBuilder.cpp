@@ -204,7 +204,6 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
         toBeRemovedEdges.push_back(edge);
     
     for(ICFGEdge* edge : toBeRemovedEdges){
-        SVFUtil::outs() << edge->toString() << "\n";
         assert(SVFUtil::isa<IntraCFGEdge>(edge) && "the outgoing edge of FunEntryBlockNode is not an intraCFGEdge?");
         icfg->removeICFGEdge(edge);
         IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, edge->getDstNode());
