@@ -67,7 +67,7 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     double mrStart = stat->getClk(true);
     mrGen->generateMRs();
     double mrEnd = stat->getClk(true);
-    timeOfGeneratingMemRegions += (mrEnd - mrStart)/TIMEINTERVAL;
+    timeOfGeneratingMemRegions = (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
 SVFIR* MemSSA::getPAG()
