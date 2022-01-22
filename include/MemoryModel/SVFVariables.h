@@ -285,12 +285,16 @@ public:
     {
         return node->getNodeKind() == SVFVar::ValNode ||
                node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::RetNode ||
+               node->getNodeKind() == SVFVar::VarargNode ||
                node->getNodeKind() == SVFVar::DummyValNode;
     }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
         return node->getNodeKind() == SVFVar::ValNode ||
                node->getNodeKind() == SVFVar::GepValNode ||
+               node->getNodeKind() == SVFVar::RetNode ||
+               node->getNodeKind() == SVFVar::VarargNode ||
                node->getNodeKind() == SVFVar::DummyValNode;
     }
     //@}
@@ -578,7 +582,7 @@ public:
 /*
  * Unique Return node of a procedure
  */
-class RetPN: public SVFVar
+class RetPN: public ValVar
 {
 
 public:
@@ -592,6 +596,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::RetNode;
     }
+    static inline bool classof(const ValVar *node)
+    {
+        return node->getNodeKind() == SVFVar::RetNode;
+    }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
         return node->getNodeKind() == SVFVar::RetNode;
@@ -600,7 +608,7 @@ public:
 
     /// Constructor
     RetPN(const SVFFunction* val, NodeID i) :
-        SVFVar(val->getLLVMFun(), i, RetNode)
+        ValVar(val->getLLVMFun(), i, RetNode)
     {
     }
 
@@ -617,7 +625,7 @@ public:
 /*
  * Unique vararg node of a procedure
  */
-class VarArgPN: public SVFVar
+class VarArgPN: public ValVar
 {
 
 public:
@@ -631,6 +639,10 @@ public:
     {
         return node->getNodeKind() == SVFVar::VarargNode;
     }
+    static inline bool classof(const ValVar *node)
+    {
+        return node->getNodeKind() == SVFVar::VarargNode;
+    }
     static inline bool classof(const GenericPAGNodeTy *node)
     {
         return node->getNodeKind() == SVFVar::VarargNode;
@@ -639,7 +651,7 @@ public:
 
     /// Constructor
     VarArgPN(const SVFFunction* val, NodeID i) :
-        SVFVar(val->getLLVMFun(), i, VarargNode)
+        ValVar(val->getLLVMFun(), i, VarargNode)
     {
     }
 
@@ -669,6 +681,10 @@ public:
         return true;
     }
     static inline bool classof(const SVFVar *node)
+    {
+        return node->getNodeKind() == SVFVar::DummyValNode;
+    }
+    static inline bool classof(const ValVar *node)
     {
         return node->getNodeKind() == SVFVar::DummyValNode;
     }
@@ -708,6 +724,11 @@ public:
         return true;
     }
     static inline bool classof(const SVFVar *node)
+    {
+        return node->getNodeKind() == SVFVar::DummyObjNode
+               || node->getNodeKind() == SVFVar::CloneDummyObjNode;
+    }
+    static inline bool classof(const ObjVar *node)
     {
         return node->getNodeKind() == SVFVar::DummyObjNode
                || node->getNodeKind() == SVFVar::CloneDummyObjNode;

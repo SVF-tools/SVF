@@ -52,19 +52,19 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
     StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
 
-    // Object #0 is black hole the object that may point to any object
+    // Pointer #0 always represents the null pointer.
+    assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
+
+    // Pointer #1 always represents the pointer points-to black hole.
+    assert(symInfo->totalSymNum++ == SymbolTableInfo::BlkPtr && "Something changed!");
+
+    // Object #2 is black hole the object that may point to any object
     assert(symInfo->totalSymNum++ == SymbolTableInfo::BlackHole && "Something changed!");
     symInfo->createBlkObj(SymbolTableInfo::BlackHole);
 
-    // Object #1 always represents the constant
+    // Object #3 always represents the unique constant of a program (merging all constants if Options::ModelConsts is disabled)
     assert(symInfo->totalSymNum++ == SymbolTableInfo::ConstantObj && "Something changed!");
     symInfo->createConstantObj(SymbolTableInfo::ConstantObj);
-
-    // Pointer #2 always represents the pointer points-to black hole.
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::BlkPtr && "Something changed!");
-
-    // Pointer #3 always represents the null pointer.
-    assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
 
     // Add symbols for all the globals .
     for (SVFModule::global_iterator I = svfModule->global_begin(), E =

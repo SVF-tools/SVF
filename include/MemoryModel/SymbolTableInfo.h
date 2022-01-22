@@ -53,10 +53,10 @@ public:
     /// Symbol types
     enum SYMTYPE
     {
+        NullPtr,
+        BlkPtr,
         BlackHole,
         ConstantObj,
-        BlkPtr,
-        NullPtr,
         ValSymbol,
         ObjSymbol,
         RetSymbol,
