@@ -567,7 +567,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     {
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
         if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
-            typeinfo->setFlag(ObjTypeInfo::CONST_OBJ);
+            typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeGlobalStackObjType(typeinfo,val);
         objSize = getObjSize(val);
     }
@@ -591,7 +591,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     }
     else if(SVFUtil::isConstantData(val))
     {
-        typeinfo->setFlag(ObjTypeInfo::CONST_OBJ);
+        typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
     }
     else{
         assert("what other object do we have??");

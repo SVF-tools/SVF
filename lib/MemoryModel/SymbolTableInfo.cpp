@@ -268,7 +268,7 @@ bool SymbolTableInfo::isConstantObjSym(const Value *val)
 {
     if (const GlobalVariable* v = SVFUtil::dyn_cast<GlobalVariable>(val))
     {
-        if (cppUtil::isValVtbl(const_cast<GlobalVariable*>(v)))
+        if (cppUtil::isValVtbl(v))
             return false;
         else if (!v->hasInitializer()){
             if(v->isExternalLinkage(v->getLinkage()))
@@ -702,19 +702,24 @@ bool MemObj::isVarArray() const
     return typeInfo->isVarArray();
 }
 
-bool MemObj::isConstStruct() const
+bool MemObj::isConstantStruct() const
 {
-    return typeInfo->isConstStruct();
+    return typeInfo->isConstantStruct();
 }
 
-bool MemObj::isConstArray() const
+bool MemObj::isConstantArray() const
 {
-    return typeInfo->isConstArray();
+    return typeInfo->isConstantArray();
 }
 
-bool MemObj::isConstant() const
+bool MemObj::isConstDataOrConstGlobal() const
 {
-    return typeInfo->isConstant();
+    return typeInfo->isConstDataOrConstGlobal();
+}
+
+bool MemObj::isConstantData() const
+{
+    return typeInfo->isConstantData();
 }
 
 bool MemObj::hasPtrObj() const

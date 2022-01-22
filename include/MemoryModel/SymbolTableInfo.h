@@ -479,9 +479,10 @@ public:
     bool isArray() const;
     bool isVarStruct() const;
     bool isVarArray() const;
-    bool isConstStruct() const;
-    bool isConstArray() const;
-    bool isConstant() const;
+    bool isConstantStruct() const;
+    bool isConstantArray() const;
+    bool isConstDataOrConstGlobal() const;
+    bool isConstantData() const;
     bool hasPtrObj() const;
     bool isNonPtrFieldObj(const LocationSet& ls) const;
     //@}
@@ -591,8 +592,9 @@ public:
         VAR_ARRAY_OBJ = 0x40,  // object contains array
         CONST_STRUCT_OBJ = 0x80,  // constant struct
         CONST_ARRAY_OBJ = 0x100,  // constant array
-        CONST_OBJ = 0x200,  // constant object str e.g.
-        HASPTR_OBJ = 0x400		// non pointer object including compound type have field that is a pointer type
+        CONST_GLOBAL_OBJ = 0x200,  // global constant object
+        CONST_DATA = 0x400,  // constant object str e.g. 5, 10, 1.0
+        HASPTR_OBJ = 0x800		// the object stores a pointer address
     } MEMTYPE;
 
 private:
@@ -689,7 +691,7 @@ public:
     {
         return hasFlag(VAR_STRUCT_OBJ);
     }
-    inline bool isConstStruct()
+    inline bool isConstantStruct()
     {
         return hasFlag(CONST_STRUCT_OBJ);
     }
@@ -701,7 +703,7 @@ public:
     {
         return hasFlag(VAR_ARRAY_OBJ);
     }
-    inline bool isConstArray()
+    inline bool isConstantArray()
     {
         return  hasFlag(CONST_ARRAY_OBJ);
     }
@@ -709,9 +711,13 @@ public:
     {
         return hasFlag(VAR_ARRAY_OBJ) || hasFlag(CONST_ARRAY_OBJ);
     }
-    inline bool isConstant()
+    inline bool isConstDataOrConstGlobal()
     {
-        return hasFlag(CONST_OBJ);
+        return hasFlag(CONST_GLOBAL_OBJ) || hasFlag(CONST_DATA);
+    }
+    inline bool isConstantData()
+    {
+        return hasFlag(CONST_DATA);
     }
     inline bool hasPtrObj()
     {

@@ -170,13 +170,13 @@ void PTAStat::performStat()
                 numOfHasVarArray++;
             if(mem->isVarStruct())
                 numOfHasVarStruct++;
-            if(mem->isConstArray())
+            if(mem->isConstantArray())
                 numOfHasConstArray++;
-            if(mem->isConstStruct())
+            if(mem->isConstantStruct())
                 numOfHasConstStruct++;
             if(mem->hasPtrObj() == false)
                 numOfScalar++;
-            if(mem->isConstant())
+            if(mem->isConstDataOrConstGlobal())
                 numOfConstant++;
 
             if (mem->isFieldInsensitive())

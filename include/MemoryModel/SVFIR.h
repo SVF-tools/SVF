@@ -409,7 +409,7 @@ public:
     {
         const MemObj* obj = getObject(id);
         assert(obj && "not an object node?");
-        return SymbolTableInfo::isConstantObj(id) || obj->isConstant();
+        return SymbolTableInfo::isConstantObj(id) || obj->isConstDataOrConstGlobal();
     }
     inline bool isNonPointerObj(NodeID id) const
     {
