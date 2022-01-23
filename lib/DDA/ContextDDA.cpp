@@ -164,7 +164,7 @@ CxtPtSet ContextDDA::processGepPts(const GepSVFGNode* gep, const CxtPtSet& srcPt
     return tmpDstPts;
 }
 
-bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallBlockNode* cs)
+bool ContextDDA::testIndCallReachability(CxtLocDPItem& dpm, const SVFFunction* callee, const CallICFGNode* cs)
 {
     if(getPAG()->isIndirectCallSites(cs))
     {
@@ -194,7 +194,7 @@ CallSiteID ContextDDA::getCSIDAtCall(CxtLocDPItem&, const SVFGEdge* edge)
     else
         svfg_csId = SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId();
 
-    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getDstNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee))
@@ -218,7 +218,7 @@ CallSiteID ContextDDA::getCSIDAtRet(CxtLocDPItem&, const SVFGEdge* edge)
     else
         svfg_csId = SVFUtil::cast<RetIndSVFGEdge>(edge)->getCallSiteId();
 
-    const CallBlockNode* cbn = getSVFG()->getCallSite(svfg_csId);
+    const CallICFGNode* cbn = getSVFG()->getCallSite(svfg_csId);
     const SVFFunction* callee = edge->getSrcNode()->getFun();
 
     if(getPTACallGraph()->hasCallSiteID(cbn,callee))

@@ -206,7 +206,7 @@ void PCG::identifyFollowers()
                 // if this is an call/invoke instruction but not a spawn site
                 if ((SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst)) && !isSpawnsite(inst))
                 {
-                	CallBlockNode* cbn = getCallBlockNode(inst);
+                	CallICFGNode* cbn = getCallBlockNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
                         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),

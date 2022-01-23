@@ -104,13 +104,13 @@ public:
 
     /// Update call graph.
     //@{
-    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) override
+    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallICFGNode* cs,SVFGEdgeSet& svfgEdges) override
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++)
         {
-            const CallBlockNode* newcs = iter->first;
+            const CallICFGNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
             {

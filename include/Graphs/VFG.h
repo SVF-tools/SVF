@@ -41,7 +41,7 @@ namespace SVF
 
 class PointerAnalysis;
 class VFGStat;
-class CallBlockNode;
+class CallICFGNode;
 
 /*!
  * Interprocedural Control-Flow Graph (VFG)
@@ -60,7 +60,7 @@ public:
     typedef Map<NodeID, VFGNode *> VFGNodeIDToNodeMapTy;
     typedef Set<VFGNode*> VFGNodeSet;
     typedef Map<const PAGNode*, NodeID> PAGNodeToDefMapTy;
-    typedef Map<std::pair<NodeID,const CallBlockNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
+    typedef Map<std::pair<NodeID,const CallICFGNode*>, ActualParmVFGNode *> PAGNodeToActualParmMapTy;
     typedef Map<const PAGNode*, ActualRetVFGNode *> PAGNodeToActualRetMapTy;
     typedef Map<const PAGNode*, FormalParmVFGNode *> PAGNodeToFormalParmMapTy;
     typedef Map<const PAGNode*, FormalRetVFGNode *> PAGNodeToFormalRetMapTy;
@@ -171,15 +171,15 @@ public:
     void updateCallGraph(PointerAnalysis* pta);
 
     /// Connect VFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(const CallBlockNode* cs, const SVFFunction* callee, VFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, VFGEdgeSetTy& edges);
 
     /// Get callsite given a callsiteID
     //@{
-    inline CallSiteID getCallSiteID(const CallBlockNode* cs, const SVFFunction* func) const
+    inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* func) const
     {
         return callgraph->getCallSiteID(cs, func);
     }
-    inline const CallBlockNode* getCallSite(CallSiteID id) const
+    inline const CallICFGNode* getCallSite(CallSiteID id) const
     {
         return callgraph->getCallSite(id);
     }
@@ -232,7 +232,7 @@ public:
         assert(it != PAGNodeToCmpVFGNodeMap.end() && "CmpVFGNode can not be found??");
         return it->second;
     }
-    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,const CallBlockNode* cs) const
+    inline ActualParmVFGNode* getActualParmVFGNode(const PAGNode* aparm,const CallICFGNode* cs) const
     {
         PAGNodeToActualParmMapTy::const_iterator it = PAGNodeToActualParmMap.find(std::make_pair(aparm->getId(),cs));
         assert(it!=PAGNodeToActualParmMap.end() && "actual parameter VFG node can not be found??");
@@ -377,7 +377,7 @@ protected:
     /// Connect VFG nodes between caller and callee for indirect call site
     //@{
     /// Connect actual-param and formal param
-    virtual inline void connectAParamAndFParam(const PAGNode* csArg, const PAGNode* funArg, const CallBlockNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* csArg, const PAGNode* funArg, const CallICFGNode* cbn, CallSiteID csId, VFGEdgeSetTy& edges)
     {
         NodeID actualParam = getActualParmVFGNode(csArg, cbn)->getId();
         NodeID formalParam = getFormalParmVFGNode(funArg)->getId();
@@ -447,7 +447,7 @@ protected:
     void connectDirectVFGEdges();
 
     /// Create edges between VFG nodes across functions
-    void addVFGInterEdges(const CallBlockNode* cs, const SVFFunction* callee);
+    void addVFGInterEdges(const CallICFGNode* cs, const SVFFunction* callee);
 
     inline bool isPhiCopyEdge(const PAGEdge* copy) const
     {
@@ -521,7 +521,7 @@ protected:
     /// Add an actual parameter VFG node
     /// To be noted that multiple actual parameters may have same value (PAGNode)
     /// So we need to make a pair <PAGNodeID,CallSiteID> to find the right VFGParmNode
-    inline void addActualParmVFGNode(const PAGNode* aparm, const CallBlockNode* cs)
+    inline void addActualParmVFGNode(const PAGNode* aparm, const CallICFGNode* cs)
     {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
         addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite()));
@@ -561,7 +561,7 @@ protected:
 		}
     }
     /// Add a callsite Receive VFG node
-    inline void addActualRetVFGNode(const PAGNode* ret,const CallBlockNode* cs)
+    inline void addActualRetVFGNode(const PAGNode* ret,const CallICFGNode* cs)
     {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
         addVFGNode(sNode, pag->getICFG()->getRetBlockNode(cs->getCallSite()));

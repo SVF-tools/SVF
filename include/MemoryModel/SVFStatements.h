@@ -361,7 +361,7 @@ public:
     //@}
 
     /// constructor
-    StoreStmt(SVFVar* s, SVFVar* d, const IntraBlockNode* st) :
+    StoreStmt(SVFVar* s, SVFVar* d, const IntraICFGNode* st) :
         AssignStmt(s, d, makeEdgeFlagWithStoreInst(SVFStmt::Store, st))
     {
     }
@@ -546,7 +546,7 @@ private:
     CallPE(const CallPE &);  ///< place holder
     void operator=(const CallPE &); ///< place holder
 
-    const CallBlockNode* inst;		///< llvm instruction for this call
+    const CallICFGNode* inst;		///< llvm instruction for this call
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -567,18 +567,18 @@ public:
     //@}
 
     /// constructor
-    CallPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Call) :
+    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, GEdgeKind k = SVFStmt::Call) :
         AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
     /// Get method for the call instruction
     //@{
-    inline const CallBlockNode* getCallInst() const
+    inline const CallICFGNode* getCallInst() const
     {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return inst;
     }
@@ -598,7 +598,7 @@ private:
     RetPE(const RetPE &);  ///< place holder
     void operator=(const RetPE &); ///< place holder
 
-    const CallBlockNode* inst;		/// the callsite instruction return to
+    const CallICFGNode* inst;		/// the callsite instruction return to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -619,18 +619,18 @@ public:
     //@}
 
     /// constructor
-    RetPE(SVFVar* s, SVFVar* d, const CallBlockNode* i, GEdgeKind k = SVFStmt::Ret) :
+    RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, GEdgeKind k = SVFStmt::Ret) :
         AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
     {
     }
 
     /// Get method for call instruction at caller
     //@{
-    inline const CallBlockNode* getCallInst() const
+    inline const CallICFGNode* getCallInst() const
     {
         return inst;
     }
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return inst;
     }
@@ -999,7 +999,7 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(SVFVar* s, SVFVar* d, const CallBlockNode* i) :
+    TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i) :
         CallPE(s,d,i,SVFStmt::ThreadFork)
     {
     }
@@ -1037,7 +1037,7 @@ public:
     //@}
 
     /// Constructor
-    TDJoinPE(SVFVar* s, SVFVar* d, const CallBlockNode* i) :
+    TDJoinPE(SVFVar* s, SVFVar* d, const CallICFGNode* i) :
         RetPE(s,d,i,SVFStmt::ThreadJoin)
     {
     }

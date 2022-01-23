@@ -382,7 +382,7 @@ void BVDataPTAImpl::onTheFlyCallGraphSolve(const CallSiteToFunPtrMap& callsites,
 {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
-        const CallBlockNode* cs = iter->first;
+        const CallICFGNode* cs = iter->first;
 
         if (isVirtualCallSite(SVFUtil::getLLVMCallSite(cs->getCallSite())))
         {

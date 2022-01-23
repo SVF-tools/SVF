@@ -96,7 +96,7 @@ CallStrCxt MTAResultValidator::getCxtArg(const Instruction* inst, unsigned int a
         const SVFFunction* callee = SVFUtil::getFunction(y[1]);
         CallSite cs = SVFUtil::getLLVMCallSite(csnumToInstMap[atoi(y[0].c_str())]);
         assert(callee && "callee error");
-        CallBlockNode* cbn = mhp->getTCT()->getCallBlockNode(cs.getInstruction());
+        CallICFGNode* cbn = mhp->getTCT()->getCallBlockNode(cs.getInstruction());
         CallSiteID csId = tcg->getCallSiteID(cbn, callee);
         cxt.push_back(csId);
     }

@@ -33,8 +33,8 @@ public:
 		return _mod;
 	}
 private:
-	// Get CallBlockNode
-	inline CallBlockNode* getCBN(const Instruction* inst) {
+	// Get CallICFGNode
+	inline CallICFGNode* getCBN(const Instruction* inst) {
 		return _la->getTCT()->getCallBlockNode(inst);
 	}
 	const Instruction *getPreviousMemoryAccessInst( const Instruction *I) {

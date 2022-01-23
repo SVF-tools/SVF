@@ -130,7 +130,7 @@ bool ProgSlice::isSatisfiableForPairs()
     return true;
 }
 
-const CallBlockNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
+const CallICFGNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
 {
     assert(edge->isCallVFGEdge() && "not a call svfg edge?");
     if(const CallDirSVFGEdge* callEdge = SVFUtil::dyn_cast<CallDirSVFGEdge>(edge))
@@ -138,7 +138,7 @@ const CallBlockNode* ProgSlice::getCallSite(const SVFGEdge* edge) const
     else
         return getSVFG()->getCallSite(SVFUtil::cast<CallIndSVFGEdge>(edge)->getCallSiteId());
 }
-const CallBlockNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
+const CallICFGNode* ProgSlice::getRetSite(const SVFGEdge* edge) const
 {
     assert(edge->isRetVFGEdge() && "not a return svfg edge?");
     if(const RetDirSVFGEdge* callEdge = SVFUtil::dyn_cast<RetDirSVFGEdge>(edge))

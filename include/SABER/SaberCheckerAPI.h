@@ -105,7 +105,7 @@ public:
     {
         return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
     }
-    inline bool isMemAlloc(const CallBlockNode* cs) const
+    inline bool isMemAlloc(const CallICFGNode* cs) const
     {
         return isMemAlloc(cs->getCallSite());
     }
@@ -121,7 +121,7 @@ public:
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FREE;
     }
-    inline bool isMemDealloc(const CallBlockNode* cs) const
+    inline bool isMemDealloc(const CallICFGNode* cs) const
     {
         return isMemDealloc(cs->getCallSite());
     }
@@ -137,7 +137,7 @@ public:
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
     }
-    inline bool isFOpen(const CallBlockNode* cs) const
+    inline bool isFOpen(const CallICFGNode* cs) const
     {
         return isFOpen(cs->getCallSite());
     }
@@ -153,7 +153,7 @@ public:
     {
         return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
     }
-    inline bool isFClose(const CallBlockNode* cs) const
+    inline bool isFClose(const CallICFGNode* cs) const
     {
         return isFClose(cs->getCallSite());
     }

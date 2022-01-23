@@ -831,16 +831,16 @@ public:
 class ActualParmVFGNode : public ArgumentVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
 public:
     /// Constructor
-    ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+    ActualParmVFGNode(NodeID id, const PAGNode* n, const CallICFGNode* c) :
         ArgumentVFGNode(id, n, AParm), cs(c)
     {
     }
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -948,7 +948,7 @@ public:
 class ActualRetVFGNode: public ArgumentVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
 
     ActualRetVFGNode();                      ///< place holder
     ActualRetVFGNode(const ActualRetVFGNode &);  ///< place holder
@@ -956,12 +956,12 @@ private:
 
 public:
     /// Constructor
-    ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+    ActualRetVFGNode(NodeID id, const PAGNode* n, const CallICFGNode* c) :
         ArgumentVFGNode(id, n, ARet), cs(c)
     {
     }
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -1090,7 +1090,7 @@ public:
         return fun;
     }
 
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         assert(isActualRetPHI() && "expect a actual return phi");
         return callInst;
@@ -1120,7 +1120,7 @@ public:
 
 private:
     const SVFFunction* fun;
-    const CallBlockNode* callInst;
+    const CallICFGNode* callInst;
 };
 
 

@@ -661,7 +661,7 @@ bool FlowSensitive::updateCallGraph(const CallSiteToFunPtrMap& callsites)
     const CallEdgeMap &andersCallEdgeMap = ander->getIndCallMap();
     for (typename CallEdgeMap::value_type &csfs : newEdges)
     {
-        const CallBlockNode *potentialCallSite = csfs.first;
+        const CallICFGNode *potentialCallSite = csfs.first;
         FunctionSet &potentialFunctionSet = csfs.second;
 
         // Check this callsite even calls anything per Andersen's.
@@ -709,7 +709,7 @@ void FlowSensitive::connectCallerAndCallee(const CallEdgeMap& newEdges, SVFGEdge
     CallEdgeMap::const_iterator eiter = newEdges.end();
     for (; iter != eiter; iter++)
     {
-        const CallBlockNode* cs = iter->first;
+        const CallICFGNode* cs = iter->first;
         const FunctionSet & functions = iter->second;
         for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {

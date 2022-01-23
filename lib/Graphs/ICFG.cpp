@@ -38,7 +38,7 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunEntryBlock)
+FunEntryICFGNode::FunEntryICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunEntryBlock)
 {
     fun = f;
     // if function is implemented
@@ -47,7 +47,7 @@ FunEntryBlockNode::FunEntryBlockNode(NodeID id, const SVFFunction* f) : InterBlo
     }
 }
 
-FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlockNode(id, FunExitBlock), fun(f), formalRet(nullptr)
+FunExitICFGNode::FunExitICFGNode(NodeID id, const SVFFunction* f) : InterICFGNode(id, FunExitBlock), fun(f), formalRet(nullptr)
 {
     fun = f;
     // if function is implemented
@@ -69,20 +69,20 @@ void ICFGNode::dump() const {
     outs() << this->toString() << "\n";
 }
 
-const std::string GlobalBlockNode::toString() const {
+const std::string GlobalICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GlobalBlockNode" << getId();
+    rawstr << "GlobalICFGNode" << getId();
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
 
-const std::string IntraBlockNode::toString() const {
+const std::string IntraICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "IntraBlockNode" << getId();
+    rawstr << "IntraICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -92,10 +92,10 @@ const std::string IntraBlockNode::toString() const {
 }
 
 
-const std::string FunEntryBlockNode::toString() const {
+const std::string FunEntryICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "FunEntryBlockNode" << getId();
+    rawstr << "FunEntryICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
         rawstr << getSourceLoc(getFun()->getLLVMFun());
@@ -105,10 +105,10 @@ const std::string FunEntryBlockNode::toString() const {
     return rawstr.str();
 }
 
-const std::string FunExitBlockNode::toString() const {
+const std::string FunExitICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "FunExitBlockNode" << getId();
+    rawstr << "FunExitICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName();
     if (isExtCall(getFun())==false)
         rawstr << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
@@ -119,20 +119,20 @@ const std::string FunExitBlockNode::toString() const {
 }
 
 
-const std::string CallBlockNode::toString() const {
+const std::string CallICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallBlockNode" << getId();
+    rawstr << "CallICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
-const std::string RetBlockNode::toString() const {
+const std::string RetICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetBlockNode" << getId();
+    rawstr << "RetICFGNode" << getId();
     rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
     for (const SVFStmt *stmt : getSVFStmts())
         rawstr << "\n" << stmt->toString();
@@ -184,7 +184,7 @@ const std::string RetCFGEdge::toString() const {
 ICFG::ICFG(): totalICFGNode(0)
 {
     DBOUT(DGENERAL, outs() << pasMsg("\tCreate ICFG ...\n"));
-    globalBlockNode = new GlobalBlockNode(totalICFGNode++);
+    globalBlockNode = new GlobalICFGNode(totalICFGNode++);
     addICFGNode(globalBlockNode);
 }
 
@@ -206,51 +206,51 @@ ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
 }
 
 
-CallBlockNode* ICFG::getCallBlockNode(const Instruction* inst)
+CallICFGNode* ICFG::getCallBlockNode(const Instruction* inst)
 {
 	if(SVFUtil::isCallSite(inst) ==false)
 		outs() << *inst << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallBlockNode* node = getCallICFGNode(inst);
+    CallICFGNode* node = getCallICFGNode(inst);
     if(node==nullptr)
         node = addCallICFGNode(inst);
-    assert (node!=nullptr && "no CallBlockNode for this instruction?");
+    assert (node!=nullptr && "no CallICFGNode for this instruction?");
     return node;
 }
 
-RetBlockNode* ICFG::getRetBlockNode(const Instruction* inst)
+RetICFGNode* ICFG::getRetBlockNode(const Instruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetBlockNode* node = getRetICFGNode(inst);
+    RetICFGNode* node = getRetICFGNode(inst);
     if(node==nullptr)
         node = addRetICFGNode(inst);
-    assert (node!=nullptr && "no RetBlockNode for this instruction?");
+    assert (node!=nullptr && "no RetICFGNode for this instruction?");
     return node;
 }
 
-IntraBlockNode* ICFG::getIntraBlockNode(const Instruction* inst)
+IntraICFGNode* ICFG::getIntraBlockNode(const Instruction* inst)
 {
-    IntraBlockNode* node = getIntraBlockICFGNode(inst);
+    IntraICFGNode* node = getIntraBlockICFGNode(inst);
     if(node==nullptr)
         node = addIntraBlockICFGNode(inst);
     return node;
 }
 
 /// Add a function entry node
-FunEntryBlockNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
+FunEntryICFGNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
 {
-    FunEntryBlockNode* b = getFunEntryICFGNode(fun);
+    FunEntryICFGNode* b = getFunEntryICFGNode(fun);
     if (b == nullptr)
         return addFunEntryICFGNode(fun);
     else
         return b;
 }
 /// Add a function exit node
-FunExitBlockNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
+FunExitICFGNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
 {
-    FunExitBlockNode* b = getFunExitICFGNode(fun);
+    FunExitICFGNode* b = getFunExitICFGNode(fun);
     if (b == nullptr)
         return addFunExitICFGNode(fun);
     else
@@ -429,17 +429,17 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
     PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
-        const CallBlockNode* callBlock = iter->first;
+        const CallICFGNode* callBlock = iter->first;
         const Instruction* cs = callBlock->getCallSite();
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
         const PTACallGraph::FunctionSet & functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            CallBlockNode* callBlockNode = getCallBlockNode(cs);
-            RetBlockNode* retBlockNode = getRetBlockNode(cs);
-            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
-            FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+            CallICFGNode* callBlockNode = getCallBlockNode(cs);
+            RetICFGNode* retBlockNode = getRetBlockNode(cs);
+            FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
+            FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
             addCallEdge(callBlockNode, calleeEntryNode, cs);
             addRetEdge(calleeExitNode, retBlockNode, cs);
 
@@ -486,9 +486,9 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "NodeID: " << node->getId() << "\n";
-        if (IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
+        if (IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
         {
-            rawstr << "IntraBlockNode ID: " << bNode->getId() << " \t";
+            rawstr << "IntraICFGNode ID: " << bNode->getId() << " \t";
             SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getSVFStmtList(bNode);
             if (edges.empty()) {
                 rawstr << value2String(bNode->getInst()) << " \t";
@@ -501,23 +501,23 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
             }
             rawstr << " {fun: " << bNode->getFun()->getName() << "}";
         }
-        else if (FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
+        else if (FunEntryICFGNode* entry = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
         {
             rawstr << entry->toString();
         }
-        else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
+        else if (FunExitICFGNode* exit = SVFUtil::dyn_cast<FunExitICFGNode>(node))
         {
             rawstr << exit->toString();
         }
-        else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
+        else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
             rawstr << call->toString();
         }
-        else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
+        else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
         {
             rawstr << ret->toString();
         }
-        else if (GlobalBlockNode* glob  = SVFUtil::dyn_cast<GlobalBlockNode>(node) )
+        else if (GlobalICFGNode* glob  = SVFUtil::dyn_cast<GlobalICFGNode>(node) )
         {
             SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getSVFStmtList(glob);
             for (SVFIR::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
@@ -537,27 +537,27 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
         std::string str;
         raw_string_ostream rawstr(str);
 
-        if(SVFUtil::isa<IntraBlockNode>(node))
+        if(SVFUtil::isa<IntraICFGNode>(node))
         {
             rawstr <<  "color=black";
         }
-        else if(SVFUtil::isa<FunEntryBlockNode>(node))
+        else if(SVFUtil::isa<FunEntryICFGNode>(node))
         {
             rawstr <<  "color=yellow";
         }
-        else if(SVFUtil::isa<FunExitBlockNode>(node))
+        else if(SVFUtil::isa<FunExitICFGNode>(node))
         {
             rawstr <<  "color=green";
         }
-        else if(SVFUtil::isa<CallBlockNode>(node))
+        else if(SVFUtil::isa<CallICFGNode>(node))
         {
             rawstr <<  "color=red";
         }
-        else if(SVFUtil::isa<RetBlockNode>(node))
+        else if(SVFUtil::isa<RetICFGNode>(node))
         {
             rawstr <<  "color=blue";
         }
-        else if(SVFUtil::isa<GlobalBlockNode>(node))
+        else if(SVFUtil::isa<GlobalICFGNode>(node))
         {
             rawstr <<  "color=purple";
         }

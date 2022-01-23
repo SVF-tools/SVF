@@ -754,8 +754,8 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     DBOUT(DPAGBuild,
           outs() << "process callsite " << *cs.getInstruction() << "\n");
 
-    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
 
     pag->addCallSite(callBlockNode);
 
@@ -918,7 +918,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     if (!cs.getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(F);
-        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
@@ -940,7 +940,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
         addCallEdge(srcAA, dstFA, icfgNode);
     }
     //Any remaining actual args must be varargs.
@@ -952,7 +952,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         {
             Value *AA = *itA;
             NodeID vnAA = getValueNode(AA);
-            CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+            CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
             addCallEdge(vnAA,vaF, icfgNode);
         }
     }
@@ -1435,7 +1435,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     /// Connect actual parameter to formal parameter of the start routine
                     if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                     {
-                        CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
                         addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
                     }
                 }
@@ -1464,7 +1464,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 /// Connect actual parameter to formal parameter of the start routine
                 if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                 {
-                    CallBlockNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                    CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
                     addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
                 }
             }
@@ -1486,7 +1486,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
  */
 void SVFIRBuilder::handleIndCall(CallSite cs)
 {
-    const CallBlockNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    const CallICFGNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
     pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
 }
 

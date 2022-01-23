@@ -201,7 +201,7 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
  * Add Store edge
  * Note that two store instructions may share the same Store SVFStmt
  */
-StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraBlockNode* curVal)
+StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* curVal)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -219,7 +219,7 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraBlockNode* cur
 /*!
  * Add Call edge
  */
-CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs)
+CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -237,7 +237,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs)
 /*!
  * Add Return edge
  */
-RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs)
+RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -266,7 +266,7 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
 /*!
  * Add Thread fork edge for parameter passing from a spawner to its spawnees
  */
-TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs)
+TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -284,7 +284,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs
 /*!
  * Add Thread fork edge for parameter passing from a spawnee back to its spawners
  */
-TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs)
+TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);

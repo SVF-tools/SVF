@@ -565,7 +565,7 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
     for (u32_t i = 0; i < llvmModuleSet->getModuleNum(); ++i)
     {
         const SVFIR::CallSiteSet &callSites = ppag->getCallSiteSet();
-        for (const CallBlockNode *cbn : callSites)
+        for (const CallICFGNode *cbn : callSites)
         {
             const CallSite &cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
             const Function *fn = cs.getCalledFunction();

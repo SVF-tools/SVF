@@ -406,7 +406,7 @@ void LockAnalysis::handleFork(const CxtStmt& cts)
 {
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallICFGNode* cbn = tct->getCallBlockNode(call);
     if(getTCG()->hasThreadForkEdge(cbn))
     {
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(cbn),
@@ -429,7 +429,7 @@ void LockAnalysis::handleCall(const CxtStmt& cts)
 
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = tct->getCallBlockNode(call);
+	CallICFGNode* cbn = tct->getCallBlockNode(call);
     if (getTCG()->hasCallGraphEdge(cbn))
     {
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn), ecgIt = getTCG()->getCallEdgeEnd(cbn);
@@ -518,7 +518,7 @@ void LockAnalysis::pushCxt(CallStrCxt& cxt, const Instruction* call, const Funct
     const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcallee = tct->getSVFFun(callee);
     const SVFFunction* svfcaller = tct->getSVFFun(caller);
-    CallBlockNode* cbn = tct->getCallBlockNode(call);
+    CallICFGNode* cbn = tct->getCallBlockNode(call);
     CallSiteID csId = getTCG()->getCallSiteID(cbn, svfcallee);
 	
 //    /// handle calling context for candidate functions only
@@ -537,7 +537,7 @@ bool LockAnalysis::matchCxt(CallStrCxt& cxt, const Instruction* call, const Func
     const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcallee = tct->getSVFFun(callee);
     const SVFFunction* svfcaller = tct->getSVFFun(caller);
-    CallBlockNode* cbn = tct->getCallBlockNode(call);
+    CallICFGNode* cbn = tct->getCallBlockNode(call);
     CallSiteID csId = getTCG()->getCallSiteID(cbn, svfcallee);
 
 //    /// handle calling context for candidate functions only

@@ -666,7 +666,7 @@ void VFG::connectDirectVFGEdges()
             for(CallPESet::const_iterator it = formalParm->callPEBegin(), eit = formalParm->callPEEnd();
                     it!=eit; ++it)
             {
-                const CallBlockNode* cs = (*it)->getCallSite();
+                const CallICFGNode* cs = (*it)->getCallSite();
                 ActualParmVFGNode* acutalParm = getActualParmVFGNode((*it)->getRHSVar(),cs);
                 addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(cs, formalParm->getFun()));
             }
@@ -680,8 +680,8 @@ void VFG::connectDirectVFGEdges()
             for(RetPESet::const_iterator it = calleeRet->retPEBegin(), eit = calleeRet->retPEEnd(); it!=eit; ++it)
             {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
-                const CallBlockNode* retBlockNode = (*it)->getCallSite();
-                CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite());
+                const CallICFGNode* retBlockNode = (*it)->getCallSite();
+                CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
@@ -800,7 +800,7 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
     PointerAnalysis::CallEdgeMap::const_iterator eiter = pta->getIndCallMap().end();
     for (; iter != eiter; iter++)
     {
-        const CallBlockNode* newcs = iter->first;
+        const CallICFGNode* newcs = iter->first;
         assert(newcs->isIndirectCall() && "this is not an indirect call?");
         const PointerAnalysis::FunctionSet & functions = iter->second;
         for (PointerAnalysis::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
@@ -815,12 +815,12 @@ void VFG::updateCallGraph(PointerAnalysis* pta)
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void VFG::connectCallerAndCallee(const CallBlockNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
+void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFunction* callee, VFGEdgeSetTy& edges)
 {
     SVFIR * pag = SVFIR::getPAG();
     ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetBlockNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite());
+    RetICFGNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite());
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
     {

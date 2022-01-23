@@ -59,7 +59,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
 bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
 {
 
-    const CallBlockNode* cbn = getSVFG()->getCallSite(csId);
+    const CallICFGNode* cbn = getSVFG()->getCallSite(csId);
 
     if(getPAG()->isIndirectCallSites(cbn))
     {

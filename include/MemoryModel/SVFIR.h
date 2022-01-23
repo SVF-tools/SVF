@@ -49,16 +49,16 @@ friend class PAGBuilderFromFile;
 friend class TypeBasedHeapCloning;  
 
 public:
-    typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef OrderedMap<const CallBlockNode*,NodeID> CallSiteToFunPtrMap;
+    typedef Set<const CallICFGNode*> CallSiteSet;
+    typedef OrderedMap<const CallICFGNode*,NodeID> CallSiteToFunPtrMap;
     typedef Map<NodeID,CallSiteSet> FunPtrToCallSitesMap;
     typedef Map<NodeID,NodeBS> MemObjToFieldsMap;
     typedef std::vector<const SVFStmt*> SVFStmtList;
     typedef std::vector<const SVFVar*> SVFVarList;
     typedef Map<const SVFVar*,PhiStmt*> PHINodeMap;
     typedef Map<const SVFFunction*,SVFVarList> FunToArgsListMap;
-    typedef Map<const CallBlockNode*,SVFVarList> CSToArgsListMap;
-    typedef Map<const RetBlockNode*,const SVFVar*> CSToRetMap;
+    typedef Map<const CallICFGNode*,SVFVarList> CSToArgsListMap;
+    typedef Map<const RetICFGNode*,const SVFVar*> CSToRetMap;
     typedef Map<const SVFFunction*,const SVFVar*> FunToRetMap;
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
@@ -229,7 +229,7 @@ public:
         return it->second;
     }
     /// Callsite has argument list
-    inline bool hasCallSiteArgsMap(const CallBlockNode* cs) const
+    inline bool hasCallSiteArgsMap(const CallICFGNode* cs) const
     {
         return (callSiteArgsListMap.find(cs) != callSiteArgsListMap.end());
     }
@@ -239,7 +239,7 @@ public:
         return callSiteArgsListMap;
     }
     /// Get callsite argument list
-    inline const SVFVarList& getCallSiteArgsList(const CallBlockNode* cs) const
+    inline const SVFVarList& getCallSiteArgsList(const CallICFGNode* cs) const
     {
         CSToArgsListMap::const_iterator it = callSiteArgsListMap.find(cs);
         assert(it != callSiteArgsListMap.end() && "this call site doesn't have arguments");
@@ -251,13 +251,13 @@ public:
         return callSiteRetMap;
     }
     /// Get callsite return
-    inline const SVFVar* getCallSiteRet(const RetBlockNode* cs) const
+    inline const SVFVar* getCallSiteRet(const RetICFGNode* cs) const
     {
         CSToRetMap::const_iterator it = callSiteRetMap.find(cs);
         assert(it != callSiteRetMap.end() && "this call site doesn't have return");
         return it->second;
     }
-    inline bool callsiteHasRet(const RetBlockNode* cs) const
+    inline bool callsiteHasRet(const RetICFGNode* cs) const
     {
         return callSiteRetMap.find(cs) != callSiteRetMap.end();
     }
@@ -313,7 +313,7 @@ public:
     {
         return indCallSiteToFunPtrMap;
     }
-    inline NodeID getFunPtr(const CallBlockNode* cs) const
+    inline NodeID getFunPtr(const CallICFGNode* cs) const
     {
         CallSiteToFunPtrMap::const_iterator it = indCallSiteToFunPtrMap.find(cs);
         assert(it!=indCallSiteToFunPtrMap.end() && "indirect callsite not have a function pointer?");
@@ -325,7 +325,7 @@ public:
         assert(it!=funPtrToCallSitesMap.end() && "function pointer not used at any indirect callsite?");
         return it->second;
     }
-    inline bool isIndirectCallSites(const CallBlockNode* cs) const
+    inline bool isIndirectCallSites(const CallICFGNode* cs) const
     {
         return (indCallSiteToFunPtrMap.find(cs) != indCallSiteToFunPtrMap.end());
     }
@@ -493,31 +493,31 @@ private:
     /// Add function arguments
     inline void addFunArgs(const SVFFunction* fun, const SVFVar* arg)
     {
-        FunEntryBlockNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
+        FunEntryICFGNode* funEntryBlockNode = icfg->getFunEntryBlockNode(fun);
         funEntryBlockNode->addFormalParms(arg);
         funArgsListMap[fun].push_back(arg);
     }
     /// Add function returns
     inline void addFunRet(const SVFFunction* fun, const SVFVar* ret)
     {
-        FunExitBlockNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
+        FunExitICFGNode* funExitBlockNode = icfg->getFunExitBlockNode(fun);
         funExitBlockNode->addFormalRet(ret);
         funRetMap[fun] = ret;
     }
     /// Add callsite arguments
-    inline void addCallSiteArgs(CallBlockNode* callBlockNode,const SVFVar* arg)
+    inline void addCallSiteArgs(CallICFGNode* callBlockNode,const SVFVar* arg)
     {
         callBlockNode->addActualParms(arg);
         callSiteArgsListMap[callBlockNode].push_back(arg);
     }
     /// Add callsite returns
-    inline void addCallSiteRets(RetBlockNode* retBlockNode,const SVFVar* arg)
+    inline void addCallSiteRets(RetICFGNode* retBlockNode,const SVFVar* arg)
     {
         retBlockNode->addActualRet(arg);
         callSiteRetMap[retBlockNode]= arg;
     }
     /// Add indirect callsites
-    inline void addIndirectCallsites(const CallBlockNode* cs,NodeID funPtr)
+    inline void addIndirectCallsites(const CallICFGNode* cs,NodeID funPtr)
     {
         bool added = indCallSiteToFunPtrMap.insert(std::make_pair(cs,funPtr)).second;
         funPtrToCallSitesMap[funPtr].insert(cs);
@@ -618,7 +618,7 @@ private:
         globSVFStmtSet.insert(edge);
     }
     /// Add callsites
-    inline void addCallSite(const CallBlockNode* call)
+    inline void addCallSite(const CallICFGNode* call)
     {
         callSiteSet.insert(call);
     }
@@ -641,11 +641,11 @@ private:
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
     /// Add Store edge
-    StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraBlockNode* val);
+    StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* val);
     /// Add Call edge
-    CallPE* addCallPE(NodeID src, NodeID dst, const CallBlockNode* cs);
+    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs);
     /// Add Return edge
-    RetPE* addRetPE(NodeID src, NodeID dst, const CallBlockNode* cs);
+    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs);
     /// Add Gep edge
     GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
@@ -653,9 +653,9 @@ private:
     /// Add Variant(Gep) edge
     VariantGepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Thread fork edge for parameter passing
-    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallBlockNode* cs);
+    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs);
     /// Add Thread join edge for parameter passing
-    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallBlockNode* cs);
+    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)

@@ -73,8 +73,8 @@ public:
     //@{
     typedef Map<const LoadStmt*, MUSet> LoadToMUSetMap;
     typedef Map<const StoreStmt*, CHISet> StoreToChiSetMap;
-    typedef Map<const CallBlockNode*, MUSet> CallSiteToMUSetMap;
-    typedef Map<const CallBlockNode*, CHISet> CallSiteToCHISetMap;
+    typedef Map<const CallICFGNode*, MUSet> CallSiteToMUSetMap;
+    typedef Map<const CallICFGNode*, CHISet> CallSiteToCHISetMap;
     typedef Map<const BasicBlock*, PHISet> BBToPhiSetMap;
     //@}
 
@@ -190,12 +190,12 @@ private:
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddStoreCHI(bb,store,*iter);
     }
-    inline void AddCallSiteMU(const CallBlockNode* cs,  const MRSet& mrSet)
+    inline void AddCallSiteMU(const CallICFGNode* cs,  const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteMU(cs,*iter);
     }
-    inline void AddCallSiteCHI(const CallBlockNode* cs,  const MRSet& mrSet)
+    inline void AddCallSiteCHI(const CallICFGNode* cs,  const MRSet& mrSet)
     {
         for (MRSet::iterator iter = mrSet.begin(), eiter = mrSet.end(); iter != eiter; ++iter)
             AddCallSiteCHI(cs,*iter);
@@ -218,13 +218,13 @@ private:
         collectRegUses(mr);
         collectRegDefs(bb,mr);
     }
-    inline void AddCallSiteMU(const CallBlockNode* cs, const MemRegion* mr)
+    inline void AddCallSiteMU(const CallICFGNode* cs, const MemRegion* mr)
     {
         CALLMU* mu = new CALLMU(cs, mr);
         callsiteToMuSetMap[cs].insert(mu);
         collectRegUses(mr);
     }
-    inline void AddCallSiteCHI(const CallBlockNode* cs, const MemRegion* mr)
+    inline void AddCallSiteCHI(const CallICFGNode* cs, const MemRegion* mr)
     {
         CALLCHI* chi = new CALLCHI(cs, mr);
         callsiteToChiSetMap[cs].insert(chi);
@@ -352,11 +352,11 @@ public:
         else
             return false;
     }
-    inline bool hasMU(const CallBlockNode* cs) const
+    inline bool hasMU(const CallICFGNode* cs) const
     {
         return callsiteToMuSetMap.find(cs)!=callsiteToMuSetMap.end();
     }
-    inline bool hasCHI(const CallBlockNode* cs) const
+    inline bool hasCHI(const CallICFGNode* cs) const
     {
         return callsiteToChiSetMap.find(cs)!=callsiteToChiSetMap.end();
     }
@@ -393,11 +393,11 @@ public:
     {
         return store2ChiSetMap[st];
     }
-    inline MUSet& getMUSet(const CallBlockNode* cs)
+    inline MUSet& getMUSet(const CallICFGNode* cs)
     {
         return callsiteToMuSetMap[cs];
     }
-    inline CHISet& getCHISet(const CallBlockNode* cs)
+    inline CHISet& getCHISet(const CallICFGNode* cs)
     {
         return callsiteToChiSetMap[cs];
     }

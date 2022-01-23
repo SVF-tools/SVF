@@ -95,7 +95,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        const CallBlockNode* cbn = nIter->second;
+        const CallICFGNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn))
         {

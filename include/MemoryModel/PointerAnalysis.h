@@ -105,10 +105,10 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef Set<const CallBlockNode*> CallSiteSet;
+    typedef Set<const CallICFGNode*> CallSiteSet;
     typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef Set<const GlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
@@ -263,7 +263,7 @@ public:
     }
 
     /// Print targets of a function pointer
-    void printIndCSTargets(const CallBlockNode* cs, const FunctionSet& targets);
+    void printIndCSTargets(const CallICFGNode* cs, const FunctionSet& targets);
 
     // Debug purpose
     //@{
@@ -282,7 +282,7 @@ protected:
         return pag->getIndirectCallsites();
     }
     /// Return function pointer PAGNode at a callsite cs
-    inline NodeID getFunPtr(const CallBlockNode* cs) const
+    inline NodeID getFunPtr(const CallICFGNode* cs) const
     {
         return pag->getFunPtr(cs);
     }
@@ -389,20 +389,20 @@ public:
     {
         return getPTACallGraph()->getIndCallMap();
     }
-    inline bool hasIndCSCallees(const CallBlockNode* cs) const
+    inline bool hasIndCSCallees(const CallICFGNode* cs) const
     {
         return getPTACallGraph()->hasIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const
+    inline const FunctionSet& getIndCSCallees(const CallICFGNode* cs) const
     {
         return getPTACallGraph()->getIndCSCallees(cs);
     }
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = nullptr);
+    virtual void resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = nullptr);
     /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
+    bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{
@@ -446,10 +446,10 @@ public:
         return chgraph;
     }
 
-    void getVFnsFromCHA(const CallBlockNode* cs, VFunSet &vfns);
-    void getVFnsFromPts(const CallBlockNode* cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(const CallBlockNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
-    virtual void resolveCPPIndCalls(const CallBlockNode* cs,
+    void getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns);
+    void getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(const CallICFGNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
+    virtual void resolveCPPIndCalls(const CallICFGNode* cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges);
 

@@ -148,14 +148,14 @@ public:
     //@{
     typedef Map<const LoadStmt*, MRSet> LoadsToMRsMap;
     typedef Map<const StoreStmt*, MRSet> StoresToMRsMap;
-    typedef Map<const CallBlockNode*, MRSet> CallSiteToMRsMap;
+    typedef Map<const CallICFGNode*, MRSet> CallSiteToMRsMap;
     //@}
 
     /// Map loads/stores/callsites to their cpts set
     //@{
     typedef Map<const LoadStmt*, NodeBS> LoadsToPointsToMap;
     typedef Map<const StoreStmt*, NodeBS> StoresToPointsToMap;
-    typedef Map<const CallBlockNode*, NodeBS> CallSiteToPointsToMap;
+    typedef Map<const CallICFGNode*, NodeBS> CallSiteToPointsToMap;
     //@}
 
     /// Maps Mod-Ref analysis
@@ -163,7 +163,7 @@ public:
     /// Map a function to its indirect refs/mods of memory objects
     typedef Map<const SVFFunction*, NodeBS> FunToNodeBSMap;
     /// Map a callsite to its indirect refs/mods of memory objects
-    typedef Map<const CallBlockNode*, NodeBS> CallSiteToNodeBSMap;
+    typedef Map<const CallICFGNode*, NodeBS> CallSiteToNodeBSMap;
     //@}
 
     typedef Map<NodeID, NodeBS> NodeToPTSSMap;
@@ -242,18 +242,18 @@ private:
     void destroy();
 
     //Get all objects might pass into callee from a callsite
-    void collectCallSitePts(const CallBlockNode* cs);
+    void collectCallSitePts(const CallICFGNode* cs);
 
     //Recursive collect points-to chain
     NodeBS& CollectPtsChain(NodeID id);
 
     /// Return the pts chain of all callsite arguments
-    inline NodeBS& getCallSiteArgsPts(const CallBlockNode* cs)
+    inline NodeBS& getCallSiteArgsPts(const CallICFGNode* cs)
     {
         return csToCallSiteArgsPtsMap[cs];
     }
     /// Return the pts chain of the return parameter of the callsite
-    inline NodeBS& getCallSiteRetPts(const CallBlockNode* cs)
+    inline NodeBS& getCallSiteRetPts(const CallICFGNode* cs)
     {
         return csToCallSiteRetPtsMap[cs];
     }
@@ -329,7 +329,7 @@ protected:
     virtual void modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& worklist);
 
     /// Get Mod-Ref of a callee function
-    virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const SVFFunction* fun);
+    virtual bool handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* fun);
 
 
     /// Add cpts to store/load
@@ -346,12 +346,12 @@ protected:
         funToPointsToMap[fun].insert(cpts);
         addRefSideEffectOfFunction(fun,cpts);
     }
-    inline void addCPtsToCallSiteRefs(NodeBS& cpts, const CallBlockNode* cs)
+    inline void addCPtsToCallSiteRefs(NodeBS& cpts, const CallICFGNode* cs)
     {
         callsiteToRefPointsToMap[cs] |= cpts;
         funToPointsToMap[cs->getCaller()].insert(cpts);
     }
-    inline void addCPtsToCallSiteMods(NodeBS& cpts, const CallBlockNode* cs)
+    inline void addCPtsToCallSiteMods(NodeBS& cpts, const CallICFGNode* cs)
     {
         callsiteToModPointsToMap[cs] |= cpts;
         funToPointsToMap[cs->getCaller()].insert(cpts);
@@ -376,9 +376,9 @@ protected:
     /// Add indirect def an memory object in the function
     void addModSideEffectOfFunction(const SVFFunction* fun, const NodeBS& mods);
     /// Add indirect uses an memory object in the function
-    bool addRefSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& refs);
+    bool addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& refs);
     /// Add indirect def an memory object in the function
-    bool addModSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& mods);
+    bool addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods);
 
     /// Get indirect refs of a function
     inline const NodeBS& getRefSideEffectOfFunction(const SVFFunction* fun)
@@ -391,22 +391,22 @@ protected:
         return funToModsMap[fun];
     }
     /// Get indirect refs of a callsite
-    inline const NodeBS& getRefSideEffectOfCallSite(const CallBlockNode* cs)
+    inline const NodeBS& getRefSideEffectOfCallSite(const CallICFGNode* cs)
     {
         return csToRefsMap[cs];
     }
     /// Get indirect mods of a callsite
-    inline const NodeBS& getModSideEffectOfCallSite(const CallBlockNode* cs)
+    inline const NodeBS& getModSideEffectOfCallSite(const CallICFGNode* cs)
     {
         return csToModsMap[cs];
     }
     /// Has indirect refs of a callsite
-    inline bool hasRefSideEffectOfCallSite(const CallBlockNode* cs)
+    inline bool hasRefSideEffectOfCallSite(const CallICFGNode* cs)
     {
         return csToRefsMap.find(cs) != csToRefsMap.end();
     }
     /// Has indirect mods of a callsite
-    inline bool hasModSideEffectOfCallSite(const CallBlockNode* cs)
+    inline bool hasModSideEffectOfCallSite(const CallICFGNode* cs)
     {
         return csToModsMap.find(cs) != csToModsMap.end();
     }
@@ -448,19 +448,19 @@ public:
     {
         return storesToMRsMap[store];
     }
-    inline bool hasRefMRSet(const CallBlockNode* cs)
+    inline bool hasRefMRSet(const CallICFGNode* cs)
     {
         return callsiteToRefMRsMap.find(cs)!=callsiteToRefMRsMap.end();
     }
-    inline bool hasModMRSet(const CallBlockNode* cs)
+    inline bool hasModMRSet(const CallICFGNode* cs)
     {
         return callsiteToModMRsMap.find(cs)!=callsiteToModMRsMap.end();
     }
-    inline MRSet& getCallSiteRefMRSet(const CallBlockNode* cs)
+    inline MRSet& getCallSiteRefMRSet(const CallICFGNode* cs)
     {
         return callsiteToRefMRsMap[cs];
     }
-    inline MRSet& getCallSiteModMRSet(const CallBlockNode* cs)
+    inline MRSet& getCallSiteModMRSet(const CallICFGNode* cs)
     {
         return callsiteToModMRsMap[cs];
     }
@@ -473,11 +473,11 @@ public:
     /// getModRefInfo APIs
     //@{
     /// Collect mod ref for external callsite other than heap alloc external call
-    NodeBS getModInfoForCall(const CallBlockNode* cs);
-    NodeBS getRefInfoForCall(const CallBlockNode* cs);
-    ModRefInfo getModRefInfo(const CallBlockNode* cs);
-    ModRefInfo getModRefInfo(const CallBlockNode* cs, const Value* V);
-    ModRefInfo getModRefInfo(const CallBlockNode* cs1, const CallBlockNode* cs2);
+    NodeBS getModInfoForCall(const CallICFGNode* cs);
+    NodeBS getRefInfoForCall(const CallICFGNode* cs);
+    ModRefInfo getModRefInfo(const CallICFGNode* cs);
+    ModRefInfo getModRefInfo(const CallICFGNode* cs, const Value* V);
+    ModRefInfo getModRefInfo(const CallICFGNode* cs1, const CallICFGNode* cs2);
     //@}
 
 };

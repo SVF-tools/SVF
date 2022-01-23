@@ -91,11 +91,11 @@ class FormalINSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunEntryBlockNode* funEntryNode; 
+    const FunEntryICFGNode* funEntryNode; 
 
 public:
     /// Constructor
-    FormalINSVFGNode(NodeID id, const MRVer* resVer, const FunEntryBlockNode* funEntry): MRSVFGNode(id, FPIN)
+    FormalINSVFGNode(NodeID id, const MRVer* resVer, const FunEntryICFGNode* funEntry): MRSVFGNode(id, FPIN)
     {
         cpts = resVer->getMR()->getPointsTo();
         ver = resVer;
@@ -105,7 +105,7 @@ public:
     {
         return ver;
     }
-    inline const FunEntryBlockNode* getFunEntryNode() const
+    inline const FunEntryICFGNode* getFunEntryNode() const
     {
         return funEntryNode;
     }
@@ -136,13 +136,13 @@ class FormalOUTSVFGNode : public MRSVFGNode
 {
 private:
     const MRVer* ver;
-    const FunExitBlockNode* funExitNode; 
+    const FunExitICFGNode* funExitNode; 
 
 public:
     /// Constructor
-    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitBlockNode* funExitNode);
+    FormalOUTSVFGNode(NodeID id, const MRVer* ver, const FunExitICFGNode* funExitNode);
 
-    inline const FunExitBlockNode* getFunExitNode() const
+    inline const FunExitICFGNode* getFunExitNode() const
     {
         return funExitNode;
     }
@@ -177,18 +177,18 @@ public:
 class ActualINSVFGNode : public MRSVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
     const MRVer* ver;
 public:
     /// Constructor
-    ActualINSVFGNode(NodeID id, const CallBlockNode* c, const MRVer* mrver):
+    ActualINSVFGNode(NodeID id, const CallICFGNode* c, const MRVer* mrver):
         MRSVFGNode(id, APIN), cs(c)
     {
         cpts = mrver->getMR()->getPointsTo();
         ver = mrver;
     }
     /// Callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -226,19 +226,19 @@ public:
 class ActualOUTSVFGNode : public MRSVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
     const MRVer* ver;
 
 public:
     /// Constructor
-    ActualOUTSVFGNode(NodeID id, const CallBlockNode* cal, const MRVer* resVer):
+    ActualOUTSVFGNode(NodeID id, const CallICFGNode* cal, const MRVer* resVer):
         MRSVFGNode(id, APOUT), cs(cal)
     {
         cpts = resVer->getMR()->getPointsTo();
         ver = resVer;
     }
     /// Callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -425,7 +425,7 @@ public:
         return fun;
     }
 
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         assert(isActualOUTPHI() && "expect a actual return phi");
         return callInst;
@@ -459,7 +459,7 @@ public:
 
 private:
     const SVFFunction* fun;
-    const CallBlockNode* callInst;
+    const CallICFGNode* callInst;
 };
 
 /*

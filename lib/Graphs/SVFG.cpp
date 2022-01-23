@@ -163,7 +163,7 @@ const std::string ThreadMHPIndSVFGEdge::toString() const {
 }
 
 
-FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExitBlockNode* funExit): MRSVFGNode(id, FPOUT)
+FormalOUTSVFGNode::FormalOUTSVFGNode(NodeID id, const MRVer* mrVer, const FunExitICFGNode* funExit): MRSVFGNode(id, FPOUT)
 {
     cpts = mrVer->getMR()->getPointsTo();
     ver = mrVer;
@@ -326,7 +326,7 @@ void SVFG::connectIndirectSVFGEdges()
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
-                const CallBlockNode* cs = *it;
+                const CallICFGNode* cs = *it;
                 if(!mssa->hasMU(cs))
                     continue;
                 ActualINSVFGNodeSet& actualIns = getActualINSVFGNodes(cs);
@@ -344,7 +344,7 @@ void SVFG::connectIndirectSVFGEdges()
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
-                const CallBlockNode* cs = *it;
+                const CallICFGNode* cs = *it;
                 if(!mssa->hasCHI(cs))
                     continue;
                 ActualOUTSVFGNodeSet& actualOuts = getActualOUTSVFGNodes(cs);
@@ -564,10 +564,10 @@ std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite());
 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
@@ -638,7 +638,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallBlockNode* callBlockNode
  * Connect actual params/return to formal params/return for top-level variables.
  * Also connect indirect actual in/out and formal in/out.
  */
-void SVFG::connectCallerAndCallee(const CallBlockNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     VFG::connectCallerAndCallee(cs,callee,edges);
 
@@ -712,7 +712,7 @@ const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
 /*!
  * Whether this is an callsite return SVFGNode (actual return, actual out)
  */
-const CallBlockNode* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const
+const CallICFGNode* SVFG::isCallSiteRetSVFGNode(const SVFGNode* node) const
 {
     if(const ActualRetSVFGNode* ar = SVFUtil::dyn_cast<ActualRetSVFGNode>(node))
     {

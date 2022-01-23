@@ -53,7 +53,7 @@ public:
     typedef CxtDPItem DPIm;
     typedef Set<DPIm> DPImSet;							///< dpitem set
     typedef Map<const SVFGNode*, DPImSet> SVFGNodeToDPItemsMap; 	///< map a SVFGNode to its visited dpitems
-    typedef Set<const CallBlockNode*> CallSiteSet;
+    typedef Set<const CallICFGNode*> CallSiteSet;
     typedef NodeBS SVFGNodeBS;
     typedef ProgSlice::VFWorkList WorkList;
 

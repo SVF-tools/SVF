@@ -343,7 +343,7 @@ public:
     /// Add Store edge
     inline StoreStmt* addStoreEdge(NodeID src, NodeID dst)
     {
-        IntraBlockNode* node;
+        IntraICFGNode* node;
         if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
             node = pag->getICFG()->getIntraBlockNode(inst);
         else
@@ -353,14 +353,14 @@ public:
         return edge;
     }
     /// Add Call edge
-    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
     {
         CallPE *edge = pag->addCallPE(src, dst, cs);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Return edge
-    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
     {
         RetPE *edge = pag->addRetPE(src, dst, cs);
         setCurrentBBAndValueForPAGEdge(edge);
@@ -388,14 +388,14 @@ public:
         return edge;
     }
     /// Add Thread fork edge for parameter passing
-    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
     {
         TDForkPE *edge = pag->addThreadForkPE(src, dst, cs);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Thread join edge for parameter passing
-    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
     {
         TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs);
         setCurrentBBAndValueForPAGEdge(edge);

@@ -43,8 +43,8 @@ class LeakChecker : public SrcSnkDDA
 {
 
 public:
-    typedef Map<const SVFGNode*,const CallBlockNode*> SVFGNodeToCSIDMap;
-    typedef FIFOWorkList<const CallBlockNode*> CSWorkList;
+    typedef Map<const SVFGNode*,const CallICFGNode*> SVFGNodeToCSIDMap;
+    typedef FIFOWorkList<const CallICFGNode*> CSWorkList;
     typedef ProgSlice::VFWorkList WorkList;
     typedef NodeBS SVFGNodeBS;
     enum LEAK_TYPE
@@ -104,11 +104,11 @@ protected:
 
     /// Record a source to its callsite
     //@{
-    inline void addSrcToCSID(const SVFGNode* src, const CallBlockNode* cs)
+    inline void addSrcToCSID(const SVFGNode* src, const CallICFGNode* cs)
     {
         srcToCSIDMap[src] = cs;
     }
-    inline const CallBlockNode* getSrcCSID(const SVFGNode* src)
+    inline const CallICFGNode* getSrcCSID(const SVFGNode* src)
     {
         SVFGNodeToCSIDMap::iterator it =srcToCSIDMap.find(src);
         assert(it!=srcToCSIDMap.end() && "source node not at a callsite??");

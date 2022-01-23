@@ -136,7 +136,7 @@ void MRGenerator::generateMRs()
     /// collect mod-ref for loads/stores
     collectModRefForLoadStore();
 
-    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For const CallBlockNode*\n"));
+    DBOUT(DGENERAL, outs() << pasMsg("\tCollect ModRef For const CallICFGNode*\n"));
 
     /// collect mod-ref for calls
     collectModRefForCall();
@@ -259,7 +259,7 @@ void MRGenerator::collectModRefForCall()
 
     for (CallSite cs : SymbolTableInfo::SymbolInfo()->getCallSiteSet())
     {
-        const CallBlockNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs.getInstruction());
+        const CallICFGNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs.getInstruction());
         if(hasRefSideEffectOfCallSite(callBlockNode))
         {
             NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);
@@ -428,7 +428,7 @@ void MRGenerator::addModSideEffectOfFunction(const SVFFunction* fun, const NodeB
 /*!
  * Add indirect uses an memory object in the function
  */
-bool MRGenerator::addRefSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& refs)
+bool MRGenerator::addRefSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& refs)
 {
     if(!refs.empty())
     {
@@ -444,7 +444,7 @@ bool MRGenerator::addRefSideEffectOfCallSite(const CallBlockNode* cs, const Node
 /*!
  * Add indirect def an memory object in the function
  */
-bool MRGenerator::addModSideEffectOfCallSite(const CallBlockNode* cs, const NodeBS& mods)
+bool MRGenerator::addModSideEffectOfCallSite(const CallICFGNode* cs, const NodeBS& mods)
 {
     if(!mods.empty())
     {
@@ -476,13 +476,13 @@ void MRGenerator::getCallGraphSCCRevTopoOrder(WorkList& worklist)
 /*!
  * Get all objects might pass into and pass out of callee(s) from a callsite
  */
-void MRGenerator::collectCallSitePts(const CallBlockNode* cs)
+void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
 {
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
     SVFIR* pag = pta->getPAG();
-    CallBlockNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
-    RetBlockNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite());
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite());
 
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))
@@ -600,7 +600,7 @@ bool MRGenerator::isNonLocalObject(NodeID id, const SVFFunction* curFun) const
 /*!
  * Get Mod-Ref of a callee function
  */
-bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallBlockNode* cs, const SVFFunction* callee)
+bool MRGenerator::handleCallsiteModRef(NodeBS& mod, NodeBS& ref, const CallICFGNode* cs, const SVFFunction* callee)
 {
     /// if a callee is a heap allocator function, then its mod set of this callsite is the heap object.
     if(isHeapAllocExtCall(cs->getCallSite()))
@@ -646,7 +646,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
                 ecit = edge->getDirectCalls().end(); cit!=ecit; ++cit)
         {
             NodeBS mod, ref;
-            const CallBlockNode* cs = (*cit);
+            const CallICFGNode* cs = (*cit);
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
@@ -656,7 +656,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
                 ecit = edge->getIndirectCalls().end(); cit!=ecit; ++cit)
         {
             NodeBS mod, ref;
-            const CallBlockNode* cs = (*cit);
+            const CallICFGNode* cs = (*cit);
             bool modrefchanged = handleCallsiteModRef(mod, ref, cs, callGraphNode->getFunction());
             if(modrefchanged)
                 worklist.push(edge->getSrcID());
@@ -667,7 +667,7 @@ void MRGenerator::modRefAnalysis(PTACallGraphNode* callGraphNode, WorkList& work
 /*!
  * Obtain the mod sets for a call, used for external ModRefInfo queries
  */
-NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
+NodeBS MRGenerator::getModInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
@@ -691,7 +691,7 @@ NodeBS MRGenerator::getModInfoForCall(const CallBlockNode* cs)
 /*!
  * Obtain the ref sets for a call, used for external ModRefInfo queries
  */
-NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
+NodeBS MRGenerator::getRefInfoForCall(const CallICFGNode* cs)
 {
     if (isExtCall(cs->getCallSite()) && !isHeapAllocExtCall(cs->getCallSite()))
     {
@@ -716,7 +716,7 @@ NodeBS MRGenerator::getRefInfoForCall(const CallBlockNode* cs)
  * Determine whether a CallSite instruction can mod or ref
  * any memory location
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs)
 {
     bool ref = !getRefInfoForCall(cs).empty();
     bool mod = !getModInfoForCall(cs).empty();
@@ -732,10 +732,10 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs)
 }
 
 /*!
- * Determine whether a const CallBlockNode* instruction can mod or ref
+ * Determine whether a const CallICFGNode* instruction can mod or ref
  * a specific memory location pointed by V
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs, const Value* V)
 {
     bool ref = false;
     bool mod = false;
@@ -767,9 +767,9 @@ ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs, const Value* V)
 }
 
 /*!
- * Determine mod-ref relations between two const CallBlockNode* instructions
+ * Determine mod-ref relations between two const CallICFGNode* instructions
  */
-ModRefInfo MRGenerator::getModRefInfo(const CallBlockNode* cs1, const CallBlockNode* cs2)
+ModRefInfo MRGenerator::getModRefInfo(const CallICFGNode* cs1, const CallICFGNode* cs2)
 {
     bool ref = false;
     bool mod = false;

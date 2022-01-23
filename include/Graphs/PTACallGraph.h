@@ -52,7 +52,7 @@ class PTACallGraphEdge : public GenericCallGraphEdgeTy
 {
 
 public:
-    typedef Set<const CallBlockNode*> CallInstSet;
+    typedef Set<const CallICFGNode*> CallInstSet;
     enum CEDGEK
     {
         CallRetEdge,TDForkEdge,TDJoinEdge,HareParForEdge
@@ -112,9 +112,9 @@ public:
 
     /// Add direct and indirect callsite
     //@{
-    void addDirectCallSite(const CallBlockNode* call);
+    void addDirectCallSite(const CallICFGNode* call);
 
-    void addInDirectCallSite(const CallBlockNode* call);
+    void addInDirectCallSite(const CallICFGNode* call);
     //@}
 
     /// Iterators for direct and indirect callsites
@@ -221,12 +221,12 @@ class PTACallGraph : public GenericCallGraphTy
 public:
     typedef PTACallGraphEdge::CallGraphEdgeSet CallGraphEdgeSet;
     typedef Map<const SVFFunction*, PTACallGraphNode *> FunToCallGraphNodeMap;
-    typedef Map<const CallBlockNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
-    typedef std::pair<const CallBlockNode*, const SVFFunction*> CallSitePair;
+    typedef Map<const CallICFGNode*, CallGraphEdgeSet> CallInstToCallGraphEdgesMap;
+    typedef std::pair<const CallICFGNode*, const SVFFunction*> CallSitePair;
     typedef Map<CallSitePair, CallSiteID> CallSiteToIdMap;
     typedef Map<CallSiteID, CallSitePair> IdToCallSiteMap;
     typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef CallGraphEdgeSet::iterator CallGraphEdgeIter;
     typedef CallGraphEdgeSet::const_iterator CallGraphEdgeConstIter;
 
@@ -281,11 +281,11 @@ public:
     {
         return indirectCallMap;
     }
-    inline bool hasIndCSCallees(const CallBlockNode* cs) const
+    inline bool hasIndCSCallees(const CallICFGNode* cs) const
     {
         return (indirectCallMap.find(cs) != indirectCallMap.end());
     }
-    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const
+    inline const FunctionSet& getIndCSCallees(const CallICFGNode* cs) const
     {
         CallEdgeMap::const_iterator it = indirectCallMap.find(cs);
         assert(it!=indirectCallMap.end() && "not an indirect callsite!");
@@ -327,9 +327,9 @@ public:
 
     /// Add/Get CallSiteID
     //@{
-    inline CallSiteID addCallSite(const CallBlockNode* cs, const SVFFunction* callee)
+    inline CallSiteID addCallSite(const CallICFGNode* cs, const SVFFunction* callee)
     {
-        std::pair<const CallBlockNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
+        std::pair<const CallICFGNode*, const SVFFunction*> newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
         //assert(it == csToIdMap.end() && "cannot add a callsite twice");
         if(it == csToIdMap.end())
@@ -341,14 +341,14 @@ public:
         }
         return it->second;
     }
-    inline CallSiteID getCallSiteID(const CallBlockNode* cs, const SVFFunction* callee) const
+    inline CallSiteID getCallSiteID(const CallICFGNode* cs, const SVFFunction* callee) const
     {
         CallSitePair newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
         assert(it != csToIdMap.end() && "callsite id not found! This maybe a partially resolved callgraph, please check the indCallEdge limit");
         return it->second;
     }
-    inline bool hasCallSiteID(const CallBlockNode* cs, const SVFFunction* callee) const
+    inline bool hasCallSiteID(const CallICFGNode* cs, const SVFFunction* callee) const
     {
         CallSitePair newCS(std::make_pair(cs, callee));
         CallSiteToIdMap::const_iterator it = csToIdMap.find(newCS);
@@ -360,7 +360,7 @@ public:
         assert(it != idToCSMap.end() && "cannot find call site for this CallSiteID");
         return (it->second);
     }
-    inline const CallBlockNode* getCallSite(CallSiteID id) const
+    inline const CallICFGNode* getCallSite(CallSiteID id) const
     {
         return getCallSitePair(id).first;
     }
@@ -379,7 +379,7 @@ public:
     PTACallGraphEdge* getGraphEdge(PTACallGraphNode* src, PTACallGraphNode* dst,PTACallGraphEdge::CEDGEK kind, CallSiteID csId);
 
     /// Get all callees for a callsite
-    inline void getCallees(const CallBlockNode* cs, FunctionSet& callees)
+    inline void getCallees(const CallICFGNode* cs, FunctionSet& callees)
     {
         if(hasCallGraphEdge(cs))
         {
@@ -394,18 +394,18 @@ public:
     /// Get call graph edge via call instruction
     //@{
     /// whether this call instruction has a valid call graph edge
-    inline bool hasCallGraphEdge(const CallBlockNode* inst) const
+    inline bool hasCallGraphEdge(const CallICFGNode* inst) const
     {
         return callinstToCallGraphEdgesMap.find(inst)!=callinstToCallGraphEdgesMap.end();
     }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallBlockNode* inst) const
+    inline CallGraphEdgeSet::const_iterator getCallEdgeBegin(const CallICFGNode* inst) const
     {
         CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
                && "call instruction does not have a valid callee");
         return it->second.begin();
     }
-    inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(const CallBlockNode* inst) const
+    inline CallGraphEdgeSet::const_iterator getCallEdgeEnd(const CallICFGNode* inst) const
     {
         CallInstToCallGraphEdgesMap::const_iterator it = callinstToCallGraphEdgesMap.find(inst);
         assert(it!=callinstToCallGraphEdgesMap.end()
@@ -422,8 +422,8 @@ public:
 
     /// Add direct/indirect call edges
     //@{
-    void addDirectCallGraphEdge(const CallBlockNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
-    void addIndirectCallGraphEdge(const CallBlockNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    void addDirectCallGraphEdge(const CallICFGNode* call, const SVFFunction* callerFun, const SVFFunction* calleeFun);
+    void addIndirectCallGraphEdge(const CallICFGNode* cs,const SVFFunction* callerFun, const SVFFunction* calleeFun);
     //@}
 
     /// Get callsites invoking the callee

@@ -102,7 +102,7 @@ private:
 class FunptrDDAClient : public DDAClient
 {
 private:
-    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
 public:
     FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
@@ -133,7 +133,7 @@ public:
     virtual void performStat(PointerAnalysis* pta);
 
 private:
-    typedef OrderedMap<NodeID,const CallBlockNode*> VTablePtrToCallSiteMap;
+    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
     VTablePtrToCallSiteMap vtableToCallSiteMap;
     PAGNodeSet loadSrcNodes;
     PAGNodeSet storeDstNodes;

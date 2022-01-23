@@ -222,12 +222,12 @@ class CallMU : public MSSAMU<Cond>
 {
 
 private:
-    const CallBlockNode* callsite;
+    const CallICFGNode* callsite;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    CallMU(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
+    CallMU(const CallICFGNode* cs, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::CallMSSAMU,m,c), callsite(cs)
     {
     }
@@ -238,7 +238,7 @@ public:
     //@}
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return callsite;
     }
@@ -521,11 +521,11 @@ template<class Cond>
 class CallCHI : public MSSACHI<Cond>
 {
 private:
-    const CallBlockNode* callsite;
+    const CallICFGNode* callsite;
 public:
     /// Constructors for StoreCHI
     //@{
-    CallCHI(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
+    CallCHI(const CallICFGNode* cs, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs)
     {
     }
@@ -541,7 +541,7 @@ public:
     }
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return callsite;
     }

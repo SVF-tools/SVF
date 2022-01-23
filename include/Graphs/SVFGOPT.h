@@ -86,7 +86,7 @@ protected:
 
     /// Connect SVFG nodes between caller and callee for indirect call sites
     //@{
-    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void connectAParamAndFParam(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         NodeID phiId = getDef(fun_arg);
         SVFGEdge* edge = addCallEdge(getDef(cs_arg), phiId, csId);

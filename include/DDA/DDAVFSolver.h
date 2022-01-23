@@ -467,7 +467,7 @@ protected:
     /// resolve function pointer
     void resolveFunPtr(const DPIm& dpm)
     {
-        if(const CallBlockNode* cbn= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc()))
+        if(const CallICFGNode* cbn= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc()))
         {
             if(_pag->isIndirectCallSites(cbn))
             {
@@ -507,7 +507,7 @@ protected:
         return true;
     }
     /// Update call graph
-    virtual inline void updateCallGraphAndSVFG(const DPIm&, const CallBlockNode*, SVFGEdgeSet&) {}
+    virtual inline void updateCallGraphAndSVFG(const DPIm&, const CallICFGNode*, SVFGEdgeSet&) {}
     //@}
 
     ///Visited flags to avoid cycles

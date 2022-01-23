@@ -441,7 +441,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
     deltaMap.resize(svfg->getTotalNodeNum(), false);
 
     // Call block nodes corresponding to all delta nodes.
-    Set<const CallBlockNode *> deltaCBNs;
+    Set<const CallICFGNode *> deltaCBNs;
 
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -463,10 +463,10 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
             if (isDelta)
             {
                 // TODO: could we use deltaCBNs in the call above, avoiding this loop?
-                for (const CallBlockNode *cbn : callsites) deltaCBNs.insert(cbn);
+                for (const CallICFGNode *cbn : callsites) deltaCBNs.insert(cbn);
             }
         }
-        else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+        else if (const CallICFGNode *cbn = svfg->isCallSiteRetSVFGNode(s))
         {
             isDelta = cbn->isIndirectCall();
             if (isDelta) deltaCBNs.insert(cbn);
@@ -482,7 +482,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         const NodeID l = it->first;
         const SVFGNode *s = it->second;
 
-        if (const CallBlockNode *cbn = SVFUtil::dyn_cast<CallBlockNode>(s->getICFGNode()))
+        if (const CallICFGNode *cbn = SVFUtil::dyn_cast<CallICFGNode>(s->getICFGNode()))
         {
             if (deltaCBNs.find(cbn) != deltaCBNs.end()) deltaSourceMap[l] = true;
         }

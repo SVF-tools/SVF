@@ -31,7 +31,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         llvm::json::Object ICFGNode_Obj;
         ICFGNode_Obj["ICFG_ID"] = id;
         ICFGNode_Obj["Node Type"] = getICFGKind(node->getNodeKind());
-        if(IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
+        if(IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
             SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(bNode);
@@ -61,7 +61,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             llvm::json::Value PagEdge_value = llvm::json::Array{PAGEdge_array};
             ICFGNode_Obj["SVFIR Edges"] = PagEdge_value;
         }
-        else if(FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
+        else if(FunEntryICFGNode* entry = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
         {
             if (isExtCall(entry->getFun()))
                 ICFGNode_Obj["isExtCall"] = true;
@@ -72,7 +72,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             }
             ICFGNode_Obj["Function Name"] = entry->getFun()->getName();
         }
-        else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
+        else if (FunExitICFGNode* exit = SVFUtil::dyn_cast<FunExitICFGNode>(node))
         {
             if (isExtCall(exit->getFun()))
                 ICFGNode_Obj["isExtCall"] = true;
@@ -83,11 +83,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             }
             ICFGNode_Obj["Function Name"] = exit->getFun()->getName();
         }
-        else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
+        else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite());
         }
-        else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
+        else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite());
         }

@@ -46,7 +46,7 @@ void LeakChecker::initSrcs()
     for(SVFIR::CSToRetMap::iterator it = pag->getCallSiteRets().begin(),
             eit = pag->getCallSiteRets().end(); it!=eit; ++it)
     {
-        const RetBlockNode* cs = it->first;
+        const RetICFGNode* cs = it->first;
         /// if this callsite return reside in a dead function then we do not care about its leaks
         /// for example instruction `int* p = malloc(size)` is in a dead function, then program won't allocate this memory
         /// for example a customized malloc `int p = malloc()` returns an integer value, then program treat it as a system malloc
@@ -65,8 +65,8 @@ void LeakChecker::initSrcs()
                 worklist.push(it->first->getCallBlockNode());
                 while (!worklist.empty())
                 {
-                    const CallBlockNode* cs = worklist.pop();
-                    const RetBlockNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite());
+                    const CallICFGNode* cs = worklist.pop();
+                    const RetICFGNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite());
                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                     if (visited.test(node->getId()) == 0)
@@ -138,14 +138,14 @@ void LeakChecker::initSnks()
 
 void LeakChecker::reportNeverFree(const SVFGNode* src)
 {
-    const CallBlockNode* cs = getSrcCSID(src);
+    const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg1("\t NeverFree :") <<  " memory allocation at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
 void LeakChecker::reportPartialLeak(const SVFGNode* src)
 {
-    const CallBlockNode* cs = getSrcCSID(src);
+    const CallICFGNode* cs = getSrcCSID(src);
     SVFUtil::errs() << bugMsg2("\t PartialLeak :") <<  " memory allocation at : ("
                     << getSourceLoc(cs->getCallSite()) << ")\n";
 }
@@ -175,7 +175,7 @@ void LeakChecker::reportBug(ProgSlice* slice)
 void LeakChecker::testsValidation(const ProgSlice* slice)
 {
     const SVFGNode* source = slice->getSource();
-    const CallBlockNode* cs = getSrcCSID(source);
+    const CallICFGNode* cs = getSrcCSID(source);
     const SVFFunction* fun = getCallee(cs->getCallSite());
     if(fun==nullptr)
         return;
@@ -188,7 +188,7 @@ void LeakChecker::testsValidation(const ProgSlice* slice)
 void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction* fun)
 {
 
-    const CallBlockNode* cs = getSrcCSID(source);
+    const CallICFGNode* cs = getSrcCSID(source);
 
     bool success = false;
 
@@ -241,7 +241,7 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
 void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVFFunction* fun)
 {
 
-    const CallBlockNode* cs = getSrcCSID(source);
+    const CallICFGNode* cs = getSrcCSID(source);
 
     bool expectedFailure = false;
 

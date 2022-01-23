@@ -78,11 +78,11 @@ public:
         countStat();
 
         PTNumStatMap["ICFGNode"] = numOfNodes;
-        PTNumStatMap["IntraBlockNode"] = numOfIntraNodes;
-        PTNumStatMap["CallBlockNode"] = numOfCallNodes;
-        PTNumStatMap["RetBlockNode"] = numOfRetNodes;
-        PTNumStatMap["FunEntryBlockNode"] = numOfEntryNodes;
-        PTNumStatMap["FunExitBlockNode"] = numOfExitNodes;
+        PTNumStatMap["IntraICFGNode"] = numOfIntraNodes;
+        PTNumStatMap["CallICFGNode"] = numOfCallNodes;
+        PTNumStatMap["RetICFGNode"] = numOfRetNodes;
+        PTNumStatMap["FunEntryICFGNode"] = numOfEntryNodes;
+        PTNumStatMap["FunExitICFGNode"] = numOfExitNodes;
 
         PTNumStatMap["ICFGEdge"] = numOfEdges;
         PTNumStatMap["CallCFGEdge"] = numOfCallEdges;
@@ -97,7 +97,7 @@ public:
 
         countStat();
         PTNumStatMap["ICFGNode(N)"] = numOfNodes;
-        PTNumStatMap["CallBlockNode(Call)"] = numOfCallNodes;
+        PTNumStatMap["CallICFGNode(Call)"] = numOfCallNodes;
         PTNumStatMap["ICFGEdge(E)"] = numOfEdges;
         printStat("IFDS Stat");
     }
@@ -112,15 +112,15 @@ public:
 
             ICFGNode *node = it->second;
 
-            if (SVFUtil::isa<IntraBlockNode>(node))
+            if (SVFUtil::isa<IntraICFGNode>(node))
                 numOfIntraNodes++;
-            else if (SVFUtil::isa<CallBlockNode>(node))
+            else if (SVFUtil::isa<CallICFGNode>(node))
                 numOfCallNodes++;
-            else if (SVFUtil::isa<RetBlockNode>(node))
+            else if (SVFUtil::isa<RetICFGNode>(node))
                 numOfRetNodes++;
-            else if (SVFUtil::isa<FunEntryBlockNode>(node))
+            else if (SVFUtil::isa<FunEntryICFGNode>(node))
                 numOfEntryNodes++;
-            else if (SVFUtil::isa<FunExitBlockNode>(node))
+            else if (SVFUtil::isa<FunExitICFGNode>(node))
                 numOfExitNodes++;
 
 

@@ -61,8 +61,8 @@ public:
         return tct;
     }
 	
-	// Get CallBlockNode
-	inline CallBlockNode* getCBN(const Instruction* inst) {
+	// Get CallICFGNode
+	inline CallICFGNode* getCBN(const Instruction* inst) {
 		return tct->getCallBlockNode(inst);
 	}
 
@@ -379,8 +379,8 @@ private:
     {
         return tct->getPTA()->alias(getForkedThread(forkSite), getJoinedThread(joinSite)) && isSameSCEV(forkSite,joinSite);
     }
-    // Get CallBlockNode
-	inline CallBlockNode* getCBN(const Instruction* inst) {
+    // Get CallICFGNode
+	inline CallICFGNode* getCBN(const Instruction* inst) {
 		return tct->getCallBlockNode(inst);
 	}
     /// Mark thread flags for cxtStmt

@@ -147,8 +147,8 @@ public:
     {
         destroy();
     }
-    /// Get CallBlockNode given inst
-    CallBlockNode* getCallBlockNode(const Instruction* inst) {
+    /// Get CallICFGNode given inst
+    CallICFGNode* getCallBlockNode(const Instruction* inst) {
 		return pta->getICFG()->getCallBlockNode(inst);
 	}
 	/// Get SVFFuntion given Function 
