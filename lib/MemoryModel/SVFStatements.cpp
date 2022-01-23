@@ -61,76 +61,76 @@ bool SVFStmt::isPTAEdge() const
 const std::string SVFStmt::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "SVFStmt: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "SVFStmt: [Var" << getDstID() << " <-- Var" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
 const std::string AddrStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "AddrStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "AddrStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string CopyStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CopyStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "CopyStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string PhiStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PhiStmt: [" << getResID() << "<--(";
+    rawstr << "PhiStmt: [Var" << getResID() << " <-- (Var";
     for(const SVFVar* op : getOpndVars())
         rawstr << op->getId() << ",";
     rawstr << ")]\t";
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string CmpStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CmpStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "CmpStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " predicate" << getPredicate() << " Var" << getOpVarID(1) << ")]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string BinaryOPStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "BinaryOPStmt: [" << getResID() << "<--(" << getOpVarID(0) << "," << getOpVarID(1) << ")]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "BinaryOPStmt: [Var" << getResID() << " <-- (Var" << getOpVarID(0) << " opcode" << getOpcode() << " Var" << getOpVarID(1) << ")]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string UnaryOPStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "UnaryOPStmt: [" << getResID() << "<--" << getOpVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "UnaryOPStmt: [Var" << getResID() << " <-- " << " opcode" << getOpcode() << " Var" << getOpVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
@@ -138,13 +138,17 @@ const std::string BranchStmt::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     if(isConditional())
-        rawstr << "BranchStmt: [" <<  getCondition()->toString() << "]\t";
+        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]\t";
     else
         rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\t";
-    if (Options::PAGDotGraphShorter) {
+
+    for(u32_t i = 0; i < getNumSuccessors(); i++)
+        rawstr << "Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "\n";
+
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
@@ -152,99 +156,99 @@ const std::string BranchStmt::toString() const {
 const std::string LoadStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "LoadStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "LoadStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string StoreStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "StoreStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "StoreStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string GepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "GepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string NormalGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "NormalGepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "NormalGepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string VariantGepStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "VariantGepStmt: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "VariantGepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string CallPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "CallPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string RetPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "RetPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string TDForkPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDForkPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "TDForkPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 
 const std::string TDJoinPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "TDJoinPE: [" << getLHSVarID() << "<--" << getRHSVarID() << "]\t";
-    if (Options::PAGDotGraphShorter) {
+    rawstr << "TDJoinPE: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(getValue());
     }
-    rawstr << value2String(getValue());
     return rawstr.str();
 }
 

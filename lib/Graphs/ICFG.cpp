@@ -61,7 +61,7 @@ FunExitBlockNode::FunExitBlockNode(NodeID id, const SVFFunction* f) : InterBlock
 const std::string ICFGNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ICFGNode ID: " << getId();
+    rawstr << "ICFGNode" << getId();
     return rawstr.str();
 }
 
@@ -72,7 +72,9 @@ void ICFGNode::dump() const {
 const std::string GlobalBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GlobalBlockNode ID: " << getId();
+    rawstr << "GlobalBlockNode" << getId();
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
@@ -80,8 +82,12 @@ const std::string GlobalBlockNode::toString() const {
 const std::string IntraBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "IntraBlockNode ID: " << getId();
-    rawstr << value2String(getInst()) << " {fun: " << getFun()->getName() << "}";
+    rawstr << "IntraBlockNode" << getId();
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getInst()) << "}";
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
+    if(getSVFStmts().empty())
+        rawstr << "\n" << value2String(getInst());
     return rawstr.str();
 }
 
@@ -89,24 +95,26 @@ const std::string IntraBlockNode::toString() const {
 const std::string FunEntryBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "FunEntryBlockNode ID: " << getId();
-    if (isExtCall(getFun()))
-        rawstr << " Entry(" << ")\n";
-    else
-        rawstr << " Entry(" << getSourceLoc(getFun()->getLLVMFun()) << ")\n";
-    rawstr << " {fun: " << getFun()->getName() << "}";
+    rawstr << "FunEntryBlockNode" << getId();
+    rawstr << " {fun: " << getFun()->getName();
+    if (isExtCall(getFun())==false)
+        rawstr << getSourceLoc(getFun()->getLLVMFun());
+    rawstr << "}";
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
 const std::string FunExitBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "FunExitBlockNode ID: " << getId();
-    if (isExtCall(getFun()))
-        rawstr << " Exit(" << ")\n";
-    else
-        rawstr << " Exit(" << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI()) << ")\n";
-    rawstr << " {fun: " << getFun()->getName() << "}";
+    rawstr << "FunExitBlockNode" << getId();
+    rawstr << " {fun: " << getFun()->getName();
+    if (isExtCall(getFun())==false)
+        rawstr << getSourceLoc(getFunExitBB(getFun()->getLLVMFun())->getFirstNonPHI());
+    rawstr << "}";
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
@@ -114,23 +122,27 @@ const std::string FunExitBlockNode::toString() const {
 const std::string CallBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallBlockNode ID: " << getId();
-    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
+    rawstr << "CallBlockNode" << getId();
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
 const std::string RetBlockNode::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetBlockNode ID: " << getId();
-    rawstr << value2String(getCallSite()) << " {fun: " << getFun()->getName() << "}";
+    rawstr << "RetBlockNode" << getId();
+    rawstr << " {fun: " << getFun()->getName() << getSourceLoc(getCallSite()) << "}";
+    for (const SVFStmt *stmt : getSVFStmts())
+        rawstr << "\n" << stmt->toString();
     return rawstr.str();
 }
 
 const std::string ICFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "ICFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+    rawstr << "ICFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     return rawstr.str();
 }
 
@@ -138,9 +150,9 @@ const std::string IntraCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     if(brCondition.first == nullptr)
-        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "]\t";
+        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t";
     else
-        rawstr << "IntraCFGEdge: [" << getDstID() << "<--" << getSrcID() << "] with condition (" << *brCondition.first << "==" << brCondition.second << ") \t";
+        rawstr << "IntraCFGEdge: [ICFGNode" << getDstID() << " <-- ICFGNode" << getSrcID() << "] with condition (" << *brCondition.first << "==" << brCondition.second << ") \t";
 
     return rawstr.str();
 }
@@ -148,16 +160,16 @@ const std::string IntraCFGEdge::toString() const {
 const std::string CallCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "CallCFGEdge " << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
+    rawstr << "CallCFGEdge " << " [ICFGNode";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 
 const std::string RetCFGEdge::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "RetCFGEdge " << " [";
-    rawstr << getDstID() << "<--" << getSrcID() << "]\t CallSite: " << *cs << "\t";
+    rawstr << "RetCFGEdge " << " [ICFGNode";
+    rawstr << getDstID() << " <-- ICFGNode" << getSrcID() << "]\t CallSite: " << *cs << "\t";
     return rawstr.str();
 }
 

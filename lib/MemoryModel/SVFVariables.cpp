@@ -112,10 +112,10 @@ const std::string ValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ValVar ID: " << getId();
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(value);
     }
-    rawstr << value2String(value);
     return rawstr.str();
 }
 
@@ -123,10 +123,10 @@ const std::string ObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "ObjVar ID: " << getId();
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(value);
     }
-    rawstr << value2String(value);
     return rawstr.str();
 }
 
@@ -134,10 +134,10 @@ const std::string GepValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getFieldOffset());
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(value);
     }
-    rawstr << value2String(value);
     return rawstr.str();
 }
 
@@ -145,10 +145,10 @@ const std::string GepObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "GepObjVar ID: " << getId() << " with offset_" + llvm::itostr(ls.accumulateConstantFieldIdx());
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(value);
     }
-    rawstr << value2String(value);
     return rawstr.str();
 }
 
@@ -156,10 +156,10 @@ const std::string FIObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "FIObjVar ID: " << getId() << " (base object)";
-    if (Options::PAGDotGraphShorter) {
+    if (Options::ShowSVFIRValue) {
         rawstr << "\n";
+        rawstr << value2String(value);
     }
-    rawstr << value2String(value);
     return rawstr.str();
 }
 

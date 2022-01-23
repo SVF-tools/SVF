@@ -359,6 +359,8 @@ std::string SVFUtil::getSourceLoc(const Value* val)
     }
     rawstr << " }";
 
+    if(rawstr.str()=="{  }")
+        return "";
     return rawstr.str();
 }
 

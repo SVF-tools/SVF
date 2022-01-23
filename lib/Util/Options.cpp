@@ -296,10 +296,10 @@ namespace SVF
         llvm::cl::desc("Dump dot graph of SVFIR")
     );
 
-    const llvm::cl::opt<bool> Options::PAGDotGraphShorter(
-            "dump-pag-shorter",
+    const llvm::cl::opt<bool> Options::ShowSVFIRValue(
+            "show-ir-value",
             llvm::cl::init(true),
-            llvm::cl::desc("If dumping dot graph of SVFIR, use shorter lines")
+            llvm::cl::desc("Show values of SVFIR (e.g., when generating dot graph)")
     );
 
     const llvm::cl::opt<bool> Options::DumpICFG(

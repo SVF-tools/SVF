@@ -131,7 +131,7 @@ public:
     static const llvm::cl::opt<bool> PStat;
     static const llvm::cl::opt<unsigned> StatBudget;
     static const llvm::cl::opt<bool> PAGDotGraph;
-    static const llvm::cl::opt<bool> PAGDotGraphShorter;
+    static const llvm::cl::opt<bool> ShowSVFIRValue;
     static const llvm::cl::opt<bool> DumpICFG;
     static const llvm::cl::opt<bool> CallGraphDotGraph;
     static const llvm::cl::opt<bool> PAGPrint;
