@@ -259,7 +259,7 @@ private:
     {
         CallICFGNode* callBlockNode = getCallBlockNode(cs);
         RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs, callBlockNode);
-        callBlockNode->setRetBlockNode(sNode);
+        callBlockNode->setRetICFGNode(sNode);
         addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;
         return sNode;
