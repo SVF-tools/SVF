@@ -436,15 +436,20 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            CallBlockNode* CallBlockNode = getCallBlockNode(cs);
-            if (!isExtCall(callee))
-            {
-                FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
-                addCallEdge(CallBlockNode, calleeEntryNode, cs);
-                RetBlockNode* retBlockNode = getRetBlockNode(cs);
-                FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
-                addRetEdge(calleeExitNode, retBlockNode, cs);
-            }
+            CallBlockNode* callBlockNode = getCallBlockNode(cs);
+            RetBlockNode* retBlockNode = getRetBlockNode(cs);
+            FunEntryBlockNode* calleeEntryNode = getFunEntryICFGNode(callee);
+            FunExitBlockNode* calleeExitNode = getFunExitICFGNode(callee);
+            addCallEdge(callBlockNode, calleeEntryNode, cs);
+            addRetEdge(calleeExitNode, retBlockNode, cs);
+
+            /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
+            if (isExtCall(callee))
+                addIntraEdge(calleeEntryNode, calleeExitNode); 
+
+            /// Remove callBlockNode to retBlockNode intraICFGEdge since we found at least one inter procedural edge
+            if(ICFGEdge* edge = hasIntraICFGEdge(callBlockNode,retBlockNode, ICFGEdge::IntraCF))
+                removeICFGEdge(edge);
         }
     }
 }

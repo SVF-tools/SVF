@@ -106,7 +106,6 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 if (isNonInstricCallSite(inst))
                 {
                     RetBlockNode* retICFGNode = getOrAddRetICFGNode(inst);
-                    icfg->addIntraEdge(srcNode, retICFGNode);
                     srcNode = retICFGNode;
                 }
 
@@ -118,8 +117,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     else 
                         icfg->addIntraEdge(srcNode, dstNode);
                 }
-
-                if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst))
+                else if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst))
                 {
                     icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),branchID);
                 }
@@ -164,8 +162,7 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallBlockNode* callICFGNode = getOrAddCallICFGNode(inst);
-    if (const SVFFunction*  callee = getCallee(inst))
-        addICFGInterEdges(inst, callee);                       //creating interprocedural edges
+    addICFGInterEdges(inst, getCallee(inst));                       //creating interprocedural edges
     return callICFGNode;
 }
 
@@ -175,14 +172,23 @@ InterBlockNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* callee)
 {
     CallBlockNode* CallBlockNode = getOrAddCallICFGNode(cs);
-    FunEntryBlockNode* calleeEntryNode = icfg->getFunEntryBlockNode(callee);
-    icfg->addCallEdge(CallBlockNode, calleeEntryNode, cs);
+    RetBlockNode* retBlockNode = getOrAddRetICFGNode(cs);
 
-    if (!isExtCall(callee))
-    {
-        RetBlockNode* retBlockNode = getOrAddRetICFGNode(cs);
+    /// direct call  
+    if(callee){
+        FunEntryBlockNode* calleeEntryNode = icfg->getFunEntryBlockNode(callee);
         FunExitBlockNode* calleeExitNode = icfg->getFunExitBlockNode(callee);
+        icfg->addCallEdge(CallBlockNode, calleeEntryNode, cs);
         icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
+        /// if this is an external function (no function body)
+        if (isExtCall(callee))
+        {
+           icfg->addIntraEdge(calleeEntryNode, calleeExitNode); 
+        }
+    }
+    /// indirect call (don't know callee)
+    else{
+        icfg->addIntraEdge(CallBlockNode, retBlockNode); 
     }
 }
 /*
