@@ -54,6 +54,10 @@ namespace SVF
             // We allocate objects from 0(-ish, considering the special nodes) to # of objects.
             id = numObjects;
         }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = UINT_MAX - numObjects;
+        }
         else if (strategy == Strategy::SEQ)
         {
             // Everything is sequential and intermixed.
@@ -86,6 +90,10 @@ namespace SVF
         {
             // Nothing different to the other case.
             id =  numObjects;
+        }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = UINT_MAX - numObjects;
         }
         else if (strategy == Strategy::SEQ)
         {
@@ -127,6 +135,10 @@ namespace SVF
             // TODO: UINT_MAX does not allow for an easily changeable type
             //       of NodeID (though it is already in use elsewhere).
             id = UINT_MAX - numValues;
+        }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = numValues;
         }
         else if (strategy == Strategy::SEQ)
         {
