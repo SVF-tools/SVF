@@ -45,7 +45,7 @@ bool LocationSet::addOffsetValue(const Value* offsetVal, const Type* type)
     return true;
 }
 
-/// Return TRUE if all offset values are constants
+/// Return true if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
     for(auto it : offsetValues){
@@ -55,7 +55,7 @@ bool LocationSet::isConstantOffset() const
     return true;
 }
 
-/// Return element number given a type
+/// Return element number of a type
 /// (1) StructType, return flatterned number fields
 /// (2) ArrayType, return number of elements
 /// (3) PointerType, return the element number of the pointee 
@@ -102,6 +102,8 @@ u32_t LocationSet::getElementNum(const Type* type) const{
 /// 
 /// Given a vector: [(v1,t1), (v2,t2), (v3,t3)]
 /// totalConstOffset = v1 * sz(t2) + v2 * sz(t3) + v3 * 1
+/// If the vector only has one element (one gep operand), then it must be a pointer arithmetic and type must be a PointerType
+/// totalConstOffset = v1 * sz(t1) 
 s64_t LocationSet::accumulateConstantOffset() const{
     
     assert(isConstantOffset() && "not a constant offset");
