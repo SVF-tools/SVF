@@ -73,6 +73,7 @@ template <class T> struct Hash {
 };
 
 typedef unsigned u32_t;
+typedef signed s32_t;
 typedef unsigned long long u64_t;
 typedef signed s64_t;
 
