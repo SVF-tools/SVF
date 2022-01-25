@@ -74,8 +74,7 @@ template <class T> struct Hash {
 
 typedef unsigned u32_t;
 typedef unsigned long long u64_t;
-typedef signed s32_t;
-typedef signed long Size_t;
+typedef signed s64_t;
 
 typedef u32_t NodeID;
 typedef u32_t EdgeID;
@@ -183,7 +182,7 @@ class SVFValue
 {
 
 public:
-    typedef s32_t GNodeK;
+    typedef s64_t GNodeK;
 
     enum SVFValKind
     {

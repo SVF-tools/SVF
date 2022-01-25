@@ -63,7 +63,7 @@ public:
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, Size_t> NodeOffset;
+    typedef std::pair<NodeID, s64_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;
@@ -281,11 +281,11 @@ public:
 
     /// Node and edge statistics
     //@{
-    inline Size_t getFieldValNodeNum() const
+    inline u32_t getFieldValNodeNum() const
     {
         return GepValObjMap.size();
     }
-    inline Size_t getFieldObjNodeNum() const
+    inline u32_t getFieldObjNodeNum() const
     {
         return GepObjVarMap.size();
     }

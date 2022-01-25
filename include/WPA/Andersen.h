@@ -119,20 +119,20 @@ public:
 
     /// Statistics
     //@{
-    static Size_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static Size_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static Size_t numOfProcessedGep;    /// Number of processed Gep edge
-    static Size_t numOfProcessedLoad;   /// Number of processed Load edge
-    static Size_t numOfProcessedStore;  /// Number of processed Store edge
-    static Size_t numOfSfrs;
-    static Size_t numOfFieldExpand;
+    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
+    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
+    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
+    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
+    static u32_t numOfProcessedStore;  /// Number of processed Store edge
+    static u32_t numOfSfrs;
+    static u32_t numOfFieldExpand;
 
-    static Size_t numOfSCCDetection;
+    static u32_t numOfSCCDetection;
     static double timeOfSCCDetection;
     static double timeOfSCCMerges;
     static double timeOfCollapse;
-    static Size_t AveragePointsToSetSize;
-    static Size_t MaxPointsToSetSize;
+    static u32_t AveragePointsToSetSize;
+    static u32_t MaxPointsToSetSize;
     static double timeOfProcessCopyGep;
     static double timeOfProcessLoadStore;
     static double timeOfUpdateCallGraph;

@@ -38,21 +38,21 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-Size_t AndersenBase::numOfProcessedAddr = 0;
-Size_t AndersenBase::numOfProcessedCopy = 0;
-Size_t AndersenBase::numOfProcessedGep = 0;
-Size_t AndersenBase::numOfProcessedLoad = 0;
-Size_t AndersenBase::numOfProcessedStore = 0;
-Size_t AndersenBase::numOfSfrs = 0;
-Size_t AndersenBase::numOfFieldExpand = 0;
+u32_t AndersenBase::numOfProcessedAddr = 0;
+u32_t AndersenBase::numOfProcessedCopy = 0;
+u32_t AndersenBase::numOfProcessedGep = 0;
+u32_t AndersenBase::numOfProcessedLoad = 0;
+u32_t AndersenBase::numOfProcessedStore = 0;
+u32_t AndersenBase::numOfSfrs = 0;
+u32_t AndersenBase::numOfFieldExpand = 0;
 
-Size_t AndersenBase::numOfSCCDetection = 0;
+u32_t AndersenBase::numOfSCCDetection = 0;
 double AndersenBase::timeOfSCCDetection = 0;
 double AndersenBase::timeOfSCCMerges = 0;
 double AndersenBase::timeOfCollapse = 0;
 
-Size_t AndersenBase::AveragePointsToSetSize = 0;
-Size_t AndersenBase::MaxPointsToSetSize = 0;
+u32_t AndersenBase::AveragePointsToSetSize = 0;
+u32_t AndersenBase::MaxPointsToSetSize = 0;
 double AndersenBase::timeOfProcessCopyGep = 0;
 double AndersenBase::timeOfProcessLoadStore = 0;
 double AndersenBase::timeOfUpdateCallGraph = 0;
@@ -875,13 +875,13 @@ void Andersen::dumpTopLevelPtsTo()
             {
                 outs() << "\t\tPointsTo: { ";
 
-                multiset<Size_t> line;
+                multiset<u32_t> line;
                 for (PointsTo::iterator it = pts.begin(), eit = pts.end();
                         it != eit; ++it)
                 {
                     line.insert(*it);
                 }
-                for (multiset<Size_t>::const_iterator it = line.begin(); it != line.end(); ++it)
+                for (multiset<u32_t>::const_iterator it = line.begin(); it != line.end(); ++it)
                     outs() << *it << " ";
                 outs() << "}\n\n";
             }

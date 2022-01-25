@@ -67,7 +67,7 @@ SVFIR* PAGBuilderFromFile::build()
         {
             getline(myfile, line);
 
-            Size_t token_count = 0;
+            u32_t token_count = 0;
             string tmps;
             istringstream ss(line);
             while (ss.good())
@@ -103,7 +103,7 @@ SVFIR* PAGBuilderFromFile::build()
             {
                 NodeID nodeSrc;
                 NodeID nodeDst;
-                Size_t offsetOrCSId;
+                s64_t offsetOrCSId;
                 string edge;
                 istringstream ss(line);
                 ss >> nodeSrc;
@@ -144,7 +144,7 @@ SVFIR* PAGBuilderFromFile::build()
  * Add SVFIR edge according to a file format
  */
 void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 Size_t offsetOrCSId, std::string edge)
+                                 s64_t offsetOrCSId, std::string edge)
 {
 
     //check whether these two nodes available

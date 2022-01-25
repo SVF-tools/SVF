@@ -47,7 +47,7 @@ public:
     typedef MSSADEF MSSADef;
 private:
     /// ver ID 0 is reserved
-    static Size_t totalVERNum;
+    static u32_t totalVERNum;
     const MemRegion* mr;
     MRVERSION version;
     MRVERID vid;

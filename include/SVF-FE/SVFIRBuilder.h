@@ -73,7 +73,7 @@ public:
     //@{
     void initialiseNodes();
     void addEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind,
-                 Size_t offset = 0, Instruction* cs = nullptr);
+                 s64_t offset = 0, Instruction* cs = nullptr);
     // @}
 
     /// Sanity check for SVFIR
@@ -122,7 +122,7 @@ public:
     void processCE(const Value *val);
 
     /// Infer field index from byteoffset.
-    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx);
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx);
 
     /// Compute offset of a gep instruction or gep constant expression
     bool computeGepOffset(const User *V, LocationSet& ls);

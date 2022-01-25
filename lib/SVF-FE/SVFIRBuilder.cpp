@@ -210,11 +210,12 @@ void SVFIRBuilder::initialiseNodes()
 }
 
 /*
+    https://github.com/SVF-tools/SVF/issues/524
     Handling single value types, for constant index, including pointer, integer, etc 
     e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
     We can obtain the field index by inferring the byteoffset if %p is casted from a pointer to a struct
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
+u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx){
     auto srcptr = gepOp->getOperand(0);
     llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
     Type* sttype = nullptr;
@@ -262,23 +263,23 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
-        Size_t bo = byteOffset.getSExtValue();
+        s64_t bo = byteOffset.getSExtValue();
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
-        ls.addOffsetValue(gi.getOperand());
-        
+        ls.addOffsetValue(gi.getOperand(), *gi);
+
+        //The int value of the current index operand
+        ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
+
         // Handling array types, skipe array handling here
         // We treat whole array as one, but we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
         if(SVFUtil::isa<ArrayType>(*gi))
             continue;
 
-        //The int value of the current index operand
-        ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
- 
         // Handling struct here
         if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
@@ -289,7 +290,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             }
             assert(op && "non-const index in an operand in GEP");
             //The actual index
-            Size_t idx = op->getSExtValue();
+            s64_t idx = op->getSExtValue();
             const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(ST);
             if ((unsigned)idx >= so.size())
             {
@@ -308,7 +309,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
                 return false;
             }
             // The actual index
-            Size_t idx = op->getSExtValue();
+            s64_t idx = op->getSExtValue();
 
             // infer the field offset based on the byte offset
             u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
@@ -623,7 +624,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
 
     NodeID dst = getValueNode(&inst);
 
-    for (Size_t i = 0; i < inst.getNumIncomingValues(); ++i)
+    for (u32_t i = 0; i < inst.getNumIncomingValues(); ++i)
     {
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
@@ -1172,7 +1173,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 if(!SVFUtil::isa<PointerType>(inst->getType()))
                     break;
                 NodeID dstNode = getValueNode(inst);
-                Size_t arg_pos;
+                u32_t arg_pos;
                 switch(tF)
                 {
                 case ExtAPI::EFT_L_A1:
@@ -1338,7 +1339,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                s64_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1362,7 +1363,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                Size_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
+                s64_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
 
                 // We get all fields
                 vector<LocationSet> fields;

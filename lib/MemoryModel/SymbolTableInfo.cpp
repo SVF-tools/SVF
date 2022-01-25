@@ -135,7 +135,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
                 sty->element_end(); it != ie; ++it, ++field_idx)
     {
         const Type *et = *it;
-        /// offset with uint_32 (Size_t) is large enough and will not cause overflow
+        /// offset with int_32 (s64_t) is large enough and will not cause overflow
         stinfo->addFldWithType(nf, et);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
@@ -195,7 +195,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    Size_t offset = ls.accumulateConstantFieldIdx();
+    s64_t offset = ls.accumulateConstantFieldIdx();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -640,7 +640,7 @@ void MemObj::destroy()
 }
 
 /// Get max field offset limit
-Size_t MemObj::getMaxFieldOffsetLimit() const
+u32_t MemObj::getMaxFieldOffsetLimit() const
 {
     return typeInfo->getMaxFieldOffsetLimit();
 }

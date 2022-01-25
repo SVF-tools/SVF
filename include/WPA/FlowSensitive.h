@@ -288,19 +288,19 @@ protected:
 
     /// Statistics.
     //@{
-    Size_t numOfProcessedAddr;	/// Number of processed Addr node
-    Size_t numOfProcessedCopy;	/// Number of processed Copy node
-    Size_t numOfProcessedGep;	/// Number of processed Gep node
-    Size_t numOfProcessedPhi;	/// Number of processed Phi node
-    Size_t numOfProcessedLoad;	/// Number of processed Load node
-    Size_t numOfProcessedStore;	/// Number of processed Store node
-    Size_t numOfProcessedActualParam;	/// Number of processed actual param node
-    Size_t numOfProcessedFormalRet;	/// Number of processed formal ret node
-    Size_t numOfProcessedMSSANode;	/// Number of processed mssa node
+    u32_t numOfProcessedAddr;	/// Number of processed Addr node
+    u32_t numOfProcessedCopy;	/// Number of processed Copy node
+    u32_t numOfProcessedGep;	/// Number of processed Gep node
+    u32_t numOfProcessedPhi;	/// Number of processed Phi node
+    u32_t numOfProcessedLoad;	/// Number of processed Load node
+    u32_t numOfProcessedStore;	/// Number of processed Store node
+    u32_t numOfProcessedActualParam;	/// Number of processed actual param node
+    u32_t numOfProcessedFormalRet;	/// Number of processed formal ret node
+    u32_t numOfProcessedMSSANode;	/// Number of processed mssa node
 
-    Size_t maxSCCSize;
-    Size_t numOfSCC;
-    Size_t numOfNodesInSCC;
+    u32_t maxSCCSize;
+    u32_t numOfSCC;
+    u32_t numOfNodesInSCC;
 
     double solveTime;	///< time of solve.
     double sccTime;	///< time of SCC detection.

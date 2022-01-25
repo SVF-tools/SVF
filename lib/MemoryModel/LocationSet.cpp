@@ -39,26 +39,29 @@ using namespace SVFUtil;
 /*!
  * Add offset value to vector offsetValues
  */
-bool LocationSet::addOffsetValue(const Value* offsetVal)
+bool LocationSet::addOffsetValue(const Value* offsetVal, const Type* type)
 {
-    for(const Value* val : offsetValues){
-        if(val==offsetVal)
-            return false;
-    }
-    offsetValues.push_back(offsetVal);
+    offsetValues.push_back(std::make_pair(offsetVal,type));
     return true;
 }
 
 /// Return TRUE if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
-    for(const Value* val : offsetValues){
-        if(SVFUtil::isa<ConstantInt>(val) == false)
+    for(auto it : offsetValues){
+        if(SVFUtil::isa<ConstantInt>(it.first) == false)
             return false;
     }
     return true;
 }
 
+/// Return accmuated constant offset
+/// offsetValues: [(v1,t1), (v2,t2), (v3,t3)]
+/// v1*sz(t2) + v2*sz(t3) + v3 
+s64_t LocationSet::accumulateConstantOffset() const{
+
+    return 0;
+}
 /*!
  * Compute all possible locations according to offset and number-stride pairs.
  */
@@ -67,6 +70,43 @@ NodeBS LocationSet::computeAllLocations() const
     NodeBS result;
     result.set(accumulateConstantFieldIdx());
     return result;
+}
+
+LocationSet LocationSet::operator+ (const LocationSet& rhs) const
+{
+    LocationSet ls(rhs);
+    ls.fldIdx += accumulateConstantFieldIdx();
+    OffsetValueVec::const_iterator it = getOffsetValueVec().begin();
+    OffsetValueVec::const_iterator eit = getOffsetValueVec().end();
+    for (; it != eit; ++it)
+        ls.addOffsetValue(it->first, it->second);
+
+    return ls;
+}
+
+
+bool LocationSet::operator< (const LocationSet& rhs) const
+{
+    if (fldIdx != rhs.fldIdx)
+        return (fldIdx < rhs.fldIdx);
+    else
+    {
+        const OffsetValueVec& pairVec = getOffsetValueVec();
+        const OffsetValueVec& rhsPairVec = rhs.getOffsetValueVec();
+        if (pairVec.size() != rhsPairVec.size())
+            return (pairVec.size() < rhsPairVec.size());
+        else
+        {
+            OffsetValueVec::const_iterator it = pairVec.begin();
+            OffsetValueVec::const_iterator rhsIt = rhsPairVec.begin();
+            for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
+            {
+                return (*it) < (*rhsIt);
+            }
+
+            return false;
+        }
+    }
 }
 
 SVF::LocationSet::LSRelation LocationSet::checkRelation(const LocationSet& LHS, const LocationSet& RHS)
@@ -103,7 +143,7 @@ std::string LocationSet::dump() const
     OffsetValueVec::const_iterator eit = vec.end();
     for (; it != eit; ++it)
     {
-        rawstr << " (" << value2String(*it) << ")";
+        rawstr << " (value: " << value2String(it->first) << " type: " << it->second << ")";
     }
     rawstr << " }\n";
     return rawstr.str();

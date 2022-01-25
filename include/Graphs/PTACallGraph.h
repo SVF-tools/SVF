@@ -251,7 +251,7 @@ protected:
     CallInstToCallGraphEdgesMap callinstToCallGraphEdgesMap; ///< Map a call instruction to its corresponding call edges
 
     NodeID callGraphNodeNum;
-    Size_t numOfResolvedIndCallEdge;
+    u32_t numOfResolvedIndCallEdge;
 
     /// Clean up memory
     void destroy();
@@ -297,7 +297,7 @@ public:
         return totalCallSiteNum;
     }
 
-    inline Size_t getNumOfResolvedIndCallEdge() const
+    inline u32_t getNumOfResolvedIndCallEdge() const
     {
         return numOfResolvedIndCallEdge;
     }

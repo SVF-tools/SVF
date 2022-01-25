@@ -302,7 +302,7 @@ public:
  
     /// Statistics
     //@{
-    inline Size_t getTotalSymNum() const
+    inline u32_t getTotalSymNum() const
     {
         return totalSymNum;
     }
@@ -454,7 +454,7 @@ public:
     const Type* getType() const;
 
     /// Get max field offset limit
-    Size_t getMaxFieldOffsetLimit() const;
+    u32_t getMaxFieldOffsetLimit() const;
 
     /// Return true if its field limit is 0
     bool isFieldInsensitive() const;
@@ -601,7 +601,7 @@ private:
     /// LLVM type
     const Type* type;
     /// Type flags
-    Size_t flags;
+    u32_t flags;
     /// Max offset for flexible field sensitive analysis
     /// maximum number of field object can be created
     /// minimum number is 0 (field insensitive analysis)

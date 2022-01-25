@@ -78,10 +78,10 @@ public:
         NonOverlap, Overlap, Subset, Superset, Same
     };
 
-    typedef std::vector<const Value* > OffsetValueVec;
+    typedef std::vector<std::pair<const Value*, const Type*> > OffsetValueVec;
 
     /// Constructor
-    LocationSet(Size_t o = 0) : fldIdx(o)
+    LocationSet(s64_t o = 0) : fldIdx(o)
     {}
 
     /// Copy Constructor
@@ -98,50 +98,16 @@ public:
 
     ~LocationSet() {}
 
-
     /// Overload operators
     //@{
-    inline LocationSet operator+ (const LocationSet& rhs) const
-    {
-        LocationSet ls(rhs);
-        ls.fldIdx += accumulateConstantFieldIdx();
-        OffsetValueVec::const_iterator it = getOffsetValueVec().begin();
-        OffsetValueVec::const_iterator eit = getOffsetValueVec().end();
-        for (; it != eit; ++it)
-            ls.addOffsetValue(*it);
-
-        return ls;
-    }
+    LocationSet operator+ (const LocationSet& rhs) const;
+    bool operator< (const LocationSet& rhs) const;
     inline const LocationSet& operator= (const LocationSet& rhs)
     {
         fldIdx = rhs.fldIdx;
         offsetValues = rhs.getOffsetValueVec();
         return *this;
     }
-    inline bool operator< (const LocationSet& rhs) const
-    {
-        if (fldIdx != rhs.fldIdx)
-            return (fldIdx < rhs.fldIdx);
-        else
-        {
-            const OffsetValueVec& pairVec = getOffsetValueVec();
-            const OffsetValueVec& rhsPairVec = rhs.getOffsetValueVec();
-            if (pairVec.size() != rhsPairVec.size())
-                return (pairVec.size() < rhsPairVec.size());
-            else
-            {
-                OffsetValueVec::const_iterator it = pairVec.begin();
-                OffsetValueVec::const_iterator rhsIt = rhsPairVec.begin();
-                for (; it != pairVec.end() && rhsIt != rhsPairVec.end(); ++it, ++rhsIt)
-                {
-                    return (*it) < (*rhsIt);
-                }
-
-                return false;
-            }
-        }
-    }
-
     inline bool operator==(const LocationSet& rhs) const
     {
         return this->fldIdx == rhs.fldIdx
@@ -151,11 +117,11 @@ public:
 
     /// Get methods
     //@{
-    inline Size_t accumulateConstantFieldIdx() const
+    inline s64_t accumulateConstantFieldIdx() const
     {
         return fldIdx;
     }
-    inline void setFldIdx(Size_t idx)
+    inline void setFldIdx(s64_t idx)
     {
         fldIdx = idx;
     }
@@ -165,7 +131,9 @@ public:
     }
     //@}
 
-    bool addOffsetValue(const Value* offsetValue);
+    s64_t accumulateConstantOffset() const;
+
+    bool addOffsetValue(const Value* offsetValue, const Type* type);
 
     /// Return TRUE if this is a constant location set.
     bool isConstantOffset() const;
@@ -187,13 +155,7 @@ private:
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
 
-    /// Return greatest common divisor
-    inline unsigned gcd (unsigned n1, unsigned n2) const
-    {
-        return (n2 == 0) ? n1 : gcd (n2, n1 % n2);
-    }
-
-    Size_t fldIdx;	///< Accumulated Constant Offsets
+    s64_t fldIdx;	///< Accumulated Constant Offsets
     OffsetValueVec offsetValues;	///< a vector of actual offset in the form of Values
 };
 

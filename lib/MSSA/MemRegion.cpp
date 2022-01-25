@@ -36,8 +36,8 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-Size_t MemRegion::totalMRNum = 0;
-Size_t MRVer::totalVERNum = 0;
+u32_t MemRegion::totalMRNum = 0;
+u32_t MRVer::totalVERNum = 0;
 
 MRGenerator::MRGenerator(BVDataPTAImpl* p, bool ptrOnly) :
     pta(p), ptrOnlyMSSA(ptrOnly)

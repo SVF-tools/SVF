@@ -62,7 +62,7 @@ private:
     ICFGNode *icfgNode;   ///< ICFGNode
     EdgeID edgeId;					///< Edge ID
 public:
-    static Size_t totalEdgeNum;		///< Total edge number
+    static u32_t totalEdgeNum;		///< Total edge number
 
     /// Constructor
     SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k);
@@ -489,7 +489,7 @@ public:
     {}
 
     /// offset of the gep edge
-    inline u32_t getFieldOffset() const
+    inline s64_t getFieldOffset() const
     {
         return getLocationSet().accumulateConstantFieldIdx();
     }

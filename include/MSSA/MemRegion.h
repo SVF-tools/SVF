@@ -55,7 +55,7 @@ public:
     typedef bool Condition;
 private:
     /// region ID 0 is reserved
-    static Size_t totalMRNum;
+    static u32_t totalMRNum;
     MRID rid;
     const NodeBS cptsSet;
 
@@ -413,7 +413,7 @@ protected:
     //@}
 
 public:
-    inline Size_t getMRNum() const
+    inline u32_t getMRNum() const
     {
         return memRegSet.size();
     }

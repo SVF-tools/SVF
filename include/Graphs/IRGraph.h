@@ -166,11 +166,11 @@ public:
         return symInfo->getConstantObj();
     }
 
-    inline Size_t getValueNodeNum() const
+    inline u32_t getValueNodeNum() const
     {
         return symInfo->valSyms().size();
     }
-    inline Size_t getObjectNodeNum() const
+    inline u32_t getObjectNodeNum() const
     {
         return symInfo->idToObjMap().size();
     }
@@ -183,15 +183,15 @@ public:
         nodeNumAfterPAGBuild = num;
     }
 
-    inline Size_t getPAGNodeNum() const
+    inline u32_t getPAGNodeNum() const
     {
         return nodeNum;
     }
-    inline Size_t getPAGEdgeNum() const
+    inline u32_t getPAGEdgeNum() const
     {
         return edgeNum;
     }
-    inline Size_t getPTAPAGEdgeNum() const
+    inline u32_t getPTAPAGEdgeNum() const
     {
         return totalPTAPAGEdge;
     }

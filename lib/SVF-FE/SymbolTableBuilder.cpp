@@ -549,7 +549,7 @@ void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const 
  */
 void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
-    Size_t objSize = 1;
+    s64_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
     {

@@ -170,7 +170,7 @@ public:
 		return pag->getICFG();
 	}
     /// Return number of resolved indirect call edges
-    inline Size_t getNumOfResolvedIndCallEdge() const
+    inline u32_t getNumOfResolvedIndCallEdge() const
     {
         return getPTACallGraph()->getNumOfResolvedIndCallEdge();
     }

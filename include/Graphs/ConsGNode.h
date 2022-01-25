@@ -364,15 +364,15 @@ public:
     //{@
     inline void removeOutgoingAddrEdge(AddrCGEdge* outEdge)
     {
-        Size_t num1 = addressOutEdges.erase(outEdge);
-        Size_t num2 = removeOutgoingEdge(outEdge);
+        u32_t num1 = addressOutEdges.erase(outEdge);
+        u32_t num2 = removeOutgoingEdge(outEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
     inline void removeIncomingAddrEdge(AddrCGEdge* inEdge)
     {
-        Size_t num1 = addressInEdges.erase(inEdge);
-        Size_t num2 = removeIncomingEdge(inEdge);
+        u32_t num1 = addressInEdges.erase(inEdge);
+        u32_t num2 = removeIncomingEdge(inEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
@@ -382,8 +382,8 @@ public:
             gepOutEdges.erase(outEdge);
         else
             copyOutEdges.erase(outEdge);
-        Size_t num1 = directOutEdges.erase(outEdge);
-        Size_t num2 = removeOutgoingEdge(outEdge);
+        u32_t num1 = directOutEdges.erase(outEdge);
+        u32_t num2 = removeOutgoingEdge(outEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
@@ -393,36 +393,36 @@ public:
             gepInEdges.erase(inEdge);
         else
             copyInEdges.erase(inEdge);
-        Size_t num1 = directInEdges.erase(inEdge);
-        Size_t num2 = removeIncomingEdge(inEdge);
+        u32_t num1 = directInEdges.erase(inEdge);
+        u32_t num2 = removeIncomingEdge(inEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
     inline void removeOutgoingLoadEdge(LoadCGEdge* outEdge)
     {
-        Size_t num1 = loadOutEdges.erase(outEdge);
-        Size_t num2 = removeOutgoingEdge(outEdge);
+        u32_t num1 = loadOutEdges.erase(outEdge);
+        u32_t num2 = removeOutgoingEdge(outEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
     inline void removeIncomingLoadEdge(LoadCGEdge* inEdge)
     {
-        Size_t num1 = loadInEdges.erase(inEdge);
-        Size_t num2 = removeIncomingEdge(inEdge);
+        u32_t num1 = loadInEdges.erase(inEdge);
+        u32_t num2 = removeIncomingEdge(inEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
     inline void removeOutgoingStoreEdge(StoreCGEdge* outEdge)
     {
-        Size_t num1 = storeOutEdges.erase(outEdge);
-        Size_t num2 = removeOutgoingEdge(outEdge);
+        u32_t num1 = storeOutEdges.erase(outEdge);
+        u32_t num2 = removeOutgoingEdge(outEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
 
     inline void removeIncomingStoreEdge(StoreCGEdge* inEdge)
     {
-        Size_t num1 = storeInEdges.erase(inEdge);
-        Size_t num2 = removeIncomingEdge(inEdge);
+        u32_t num1 = storeInEdges.erase(inEdge);
+        u32_t num2 = removeIncomingEdge(inEdge);
         assert((num1 && num2) && "edge not in the set, can not remove!!!");
     }
     //@}

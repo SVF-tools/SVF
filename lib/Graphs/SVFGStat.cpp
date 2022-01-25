@@ -310,7 +310,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalInEdge += inEdges.size();
 
     // indirect in edge
-    Size_t indInEdges = 0;
+    u32_t indInEdges = 0;
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)
@@ -350,7 +350,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalOutEdge += outEdges.size();
 
     // indirect out edge
-    Size_t indOutEdges = 0;
+    u32_t indOutEdges = 0;
     edgeIt = outEdges.begin();
     edgeEit = outEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)

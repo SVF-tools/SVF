@@ -182,7 +182,7 @@ void CondManager::printModel()
     z3::model m = sol.get_model();
     for (u32_t i = 0; i < m.size(); i++)
     {
-        z3::func_decl v = m[static_cast<s32_t>(i)];
+        z3::func_decl v = m[static_cast<s64_t>(i)];
         std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
     }
 }
