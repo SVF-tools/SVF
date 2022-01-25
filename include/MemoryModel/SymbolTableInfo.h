@@ -364,7 +364,11 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    const std::vector<u32_t>& getFlattenedFieldIdxVec(const Type *T);
+    /// Flatterned full offset information of a struct including its array fields 
+    const std::vector<u32_t>& getFlattenedOffsetVec(const StructType *T);
+    /// Flatterned field index information of a struct ignoring any array field
+    const std::vector<u32_t>& getFlattenedFieldIdxVec(const StructType *T);
+
     const std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec(const Type *T);
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
@@ -501,25 +505,32 @@ public:
 
 
 /*!
- * Struct information
+ * Flatterned type information of StructType, ArrayType and SingleValueType
  */
 class StInfo
 {
 
 private:
-    /// flattened field indices of a struct
+    /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
+    /// flattened full offset (including array strides)
+    std::vector<u32_t> fullOffsetVec;
     /// Types of all fields of a struct
     Map<u32_t, const Type*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FlattenedFieldInfo> finfo;
-
+    /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
+    u32_t stride; 
     /// Max field limit
     static u32_t maxFieldLimit;
 
+    StInfo(); ///< place holder
+    StInfo(const StInfo& st); ///< place holder
+    void operator=(const StInfo&); ///< place holder
+
 public:
     /// Constructor
-    StInfo()
+    StInfo(u32_t s) : stride(s)
     {
     }
     /// Destructor
@@ -560,6 +571,10 @@ public:
     {
         return fldIdxVec;
     }
+    inline std::vector<u32_t>& getFlattenedOffsetVec()
+    {
+        return fullOffsetVec;
+    }
     inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
     {
         return finfo;
@@ -567,10 +582,16 @@ public:
     //@}
 
     /// Add field (index and offset) with its corresponding type
-    inline void addFldWithType(u32_t fldIdx, const Type* type)
+    inline void addFldWithType(u32_t fldIdx, const Type* type, u32_t fullOffset)
     {
         fldIdxVec.push_back(fldIdx);
+        fullOffsetVec.push_back(fullOffset);
         fldIdx2TypeMap[fldIdx] = type;
+    }
+
+    /// Array Type can have 
+    inline u32_t getStride() const {
+        return stride;
     }
 };
 

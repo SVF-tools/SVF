@@ -442,6 +442,11 @@ public:
         return ls;
     }
 
+    inline s64_t accumulateConstantOffset() const
+    {
+        return ls.accumulateConstantOffset();
+    }
+
 protected:
     /// constructor
     GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, PEDGEK k) : AssignStmt(s,d,k), ls(l)

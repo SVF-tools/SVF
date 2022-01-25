@@ -87,21 +87,19 @@ void SymbolTableInfo::collectTypeInfo(const Type* ty)
  */
 void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
 {
-    StInfo* stinfo = new StInfo();
-    typeToFieldInfo[ty] = stinfo;
-
     u64_t out_num = ty->getNumElements();
-    const llvm::Type* elemTy = ty->getElementType();
-    u32_t out_stride = getTypeSizeInBytes(elemTy);
+    const Type* elemTy = ty->getElementType();
     while (const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         out_num *= aty->getNumElements();
         elemTy = aty->getElementType();
-        out_stride = getTypeSizeInBytes(elemTy);
     }
+    
+    StInfo* stinfo = new StInfo(out_num);
+    typeToFieldInfo[ty] = stinfo;
 
     /// Array itself only has one field which is the inner most element
-    stinfo->addFldWithType(0,elemTy);
+    stinfo->addFldWithType(0, elemTy, 0);
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
@@ -124,19 +122,19 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
 void SymbolTableInfo::collectStructInfo(const StructType *sty)
 {
     /// The struct info should not be processed before
-    StInfo* stinfo = new StInfo();
+    StInfo* stinfo = new StInfo(1);
     typeToFieldInfo[sty] = stinfo;
 
     // Number of fields after flattening the struct
     u32_t nf = 0;
-    // field of the current struct
-    u32_t field_idx = 0;
+    // The offset when considering array stride info
+    u32_t strideOffset = 0;
     for (StructType::element_iterator it = sty->element_begin(), ie =
-                sty->element_end(); it != ie; ++it, ++field_idx)
+                sty->element_end(); it != ie; ++it)
     {
         const Type *et = *it;
         /// offset with int_32 (s64_t) is large enough and will not cause overflow
-        stinfo->addFldWithType(nf, et);
+        stinfo->addFldWithType(nf, et, strideOffset);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
@@ -151,12 +149,14 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
                 stinfo->getFlattenedFieldInfoVec().push_back(field);
             }
             nf += nfE;
+            strideOffset += nfE * subStinfo->getStride();
         }
         else     //simple type
         {
             FlattenedFieldInfo field(nf, et);
             stinfo->getFlattenedFieldInfoVec().push_back(field);
-            ++nf;
+            nf += 1;
+            strideOffset += 1;
         }
     }
 
@@ -174,11 +174,11 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
  */
 void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
 {
-    StInfo* stinfo = new StInfo();
+    StInfo* stinfo = new StInfo(1);
     typeToFieldInfo[ty] = stinfo;
 
     /// Only one field
-    stinfo->addFldWithType(0, ty);
+    stinfo->addFldWithType(0, ty, 0);
 
     FlattenedFieldInfo field(0, ty);
     stinfo->getFlattenedFieldInfoVec().push_back(field);
@@ -322,7 +322,14 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
     return memObj;
 }
 
-const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const Type *T)
+/// Flatterned full offset information of a struct including its array fields 
+const std::vector<u32_t>& SymbolTableInfo::getFlattenedOffsetVec(const StructType *T)
+{
+    return getStructInfoIter(T)->second->getFlattenedOffsetVec();
+}
+
+/// Flatterned field index information of a struct ignoring any array field
+const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const StructType *T)
 {
     return getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
 }
