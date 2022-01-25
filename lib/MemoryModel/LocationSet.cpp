@@ -56,7 +56,7 @@ bool LocationSet::isConstantOffset() const
 }
 
 /// Return element number of a type
-/// (1) StructType, return flatterned number fields
+/// (1) StructType, return flatterned number elements, i.e., the index of the last element (getFlattenedOffsetVec().back()) plus one.
 /// (2) ArrayType, return number of elements
 /// (3) PointerType, return the element number of the pointee 
 /// (4) non-pointer SingleValueType, return 1
@@ -75,19 +75,18 @@ u32_t LocationSet::getElementNum(const Type* type) const{
     else if (const StructType *sty = SVFUtil::dyn_cast<StructType>(type) )
     {
         const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedOffsetVec(sty);
-        sz = so.size();
+        sz = so.back() + 1;
     }
     else if (type->isSingleValueType())
     {
         /// This is a pointer arithmic
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type) ){
-            SVFUtil::outs() << "single value element type: "<< *pty->getElementType() << "\n";
             sz = getElementNum(pty->getElementType());
         }
     }
     else{
-        SVFUtil::outs() << " type: " << *type << "\n";
-        assert(false && "what other types we have?");
+        SVFUtil::outs() << "GepIter Type" << *type << "\n";
+        assert(false && "What other types for this gep?");
     }
     return sz;
 }
