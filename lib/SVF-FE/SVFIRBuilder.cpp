@@ -209,6 +209,44 @@ void SVFIRBuilder::initialiseNodes()
 
 }
 
+/*
+    Handling single value types, for constant index, including pointer, integer, etc 
+    e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
+    We can obtain the field index by inferring the byteoffset if %p is casted from a pointer to a struct
+*/
+u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx){
+    auto srcptr = gepOp->getOperand(0);
+    llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
+    Type* sttype = nullptr;
+    if(castop1 && castop1->getSrcTy()->isPointerTy() && castop1->getSrcTy()->getPointerElementType()->isStructTy()){
+        sttype = castop1->getSrcTy()->getPointerElementType();
+    }
+    else
+    {
+        for(auto user : srcptr->users()){
+            if(SVFUtil::isa<llvm::BitCastOperator>(user)){
+                llvm::BitCastOperator* castop2 = SVFUtil::dyn_cast<llvm::BitCastOperator>(user);
+                if(castop2 && castop2->getDestTy()->isPointerTy() && castop2->getDestTy()->getPointerElementType()->isStructTy()){
+                    sttype = castop2->getDestTy()->getPointerElementType();
+                    break;
+                }
+            }
+        }
+    }
+    if(sttype){
+        // Case 1: Access a field of a struct (which is not ANSI-compliant) 
+        // Case 2: A pointer-arithematic
+        // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
+        // We conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
+        // (This handling is unsound since the program itself is not ANSI-compliant)
+        const llvm::StructLayout* stdl = dl->getStructLayout(SVFUtil::dyn_cast<StructType>(sttype));
+        return stdl->getElementContainingOffset(idx);
+    }else{
+        // Case 2: This operation is likely accessing an array through pointer p.
+        return 0;
+    }
+}
+
 /*!
  * Return the object node offset according to GEP insn (V).
  * Given a gep edge p = q + i, if "i" is a constant then we return its offset size
@@ -231,52 +269,50 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             gi != ge; ++gi)
     {
         ls.addOffsetValue(gi.getOperand());
+        
         // Handling array types, skipe array handling here
-        // We treat whole array as one, then we can distinguish different field of an array of struct
+        // We treat whole array as one, but we can distinguish different field of an array of struct
         // e.g. s[1].f1 is differet from s[0].f2
         if(SVFUtil::isa<ArrayType>(*gi))
             continue;
 
-        //The int-value object of the current index operand
-        //  (may not be constant for arrays).
+        //The int value of the current index operand
         ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
-
-        /// given a gep edge p = q + i,
-        if(!op)
-        {
-            return false;
-        }
-        //The actual index
-        Size_t idx = op->getSExtValue();
-
-
-        // Handling pointer types
-        // These GEP instructions are simply making address computations from the base pointer address
-        // e.g. idx = (char*) &p + 4,  at this case gep only one offset index (idx)
-        // Case 1: This operation is likely accessing an array through pointer p.
-        // Case 2: It may also be used to access a field of a struct (which is not ANSI-compliant)
-        // Since this is a field-index based memory model,
-        // for case 1: we consider the whole array as one element, This can be improved by LocMemModel as it can distinguish different
-        // elements of the same array.
-        // for case 2: we treat idx the same as &p by ignoring const 4 (This handling is unsound since the program itself is not ANSI-compliant).
-        if (SVFUtil::isa<PointerType>(*gi))
-        {
-            //off += idx;
-        }
-
-
+ 
         // Handling struct here
         if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
-            assert(op && "non-const struct index in GEP");
+            // If the first operand is a non-constant, it is likely an array access 
+            // (e.g., %ptr = getelementptr struct_A, %struct_A* %1, i64 %idx)
+            if(!op && op == gepOp->getOperand(1)){
+                continue;
+            }
+            assert(op && "non-const index in an operand in GEP");
+            //The actual index
+            Size_t idx = op->getSExtValue();
             const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(ST);
             if ((unsigned)idx >= so.size())
             {
                 outs() << "!! Struct index out of bounds" << idx << "\n";
                 assert(0);
             }
-            //add the translated offset
+            // add the translated offset
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + so[idx]);
+        }
+
+        if ((*gi)->isSingleValueType())
+        {
+            if(!op){
+                // Handle non-constant index
+                // Given a gep edge p = q + idx, where idx is non-constant
+                return false;
+            }
+            // The actual index
+            Size_t idx = op->getSExtValue();
+
+            // infer the field offset based on the byte offset
+            u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
+            ls.setFldIdx(fieldOffset);
         }
     }
     return true;

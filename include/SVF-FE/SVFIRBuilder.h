@@ -121,6 +121,9 @@ public:
     /// Process constant expression
     void processCE(const Value *val);
 
+    /// Infer field index from byteoffset.
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, Size_t idx);
+
     /// Compute offset of a gep instruction or gep constant expression
     bool computeGepOffset(const User *V, LocationSet& ls);
 
