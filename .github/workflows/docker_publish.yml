@@ -1,0 +1,32 @@
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  docker-publish:
+
+    runs-on: ubuntu-latest
+
+    steps:
+     -
+        name: Checkout 
+        uses: actions/checkout@v2
+     -
+        name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{secrets.DOCKER_USER}}
+          password: ${{secrets.DOCKER_PASSWD}}
+     -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+     -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{secrets.DOCKER_USER}}/svf:latest
