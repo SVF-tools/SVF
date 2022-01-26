@@ -67,7 +67,7 @@ protected:
 
     void destroy();
 
-    PAGEdge::SVFStmtSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    SVFStmt::SVFStmtSetTy& getPAGEdgeSet(SVFStmt::PEDGEK kind)
     {
         return pag->getPTASVFStmtSet(kind);
     }
@@ -291,7 +291,7 @@ public:
     inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
     {
         if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            if (0 == normalGepCGEdge->getFieldOffset())
+            if (0 == normalGepCGEdge->getConstantFieldIdx())
                 return true;
         return false;
     }

@@ -50,10 +50,10 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
                 edge_obj["Edge Type"] = getPAGEdgeKindValue(edge->getEdgeKind());
                 edge_obj["srcValueName"] = edge->getSrcNode()->getValueName();
                 edge_obj["dstValueName"] = edge->getDstNode()->getValueName();
-                if(edge->getEdgeKind()==PAGEdge::NormalGep)
+                if(edge->getEdgeKind()==SVFStmt::Gep)
                 {
-                    const NormalGepStmt* gepEdge = SVFUtil::cast<NormalGepStmt>(edge);
-                    edge_obj["offset"] = gepEdge->getFieldOffset();
+                    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(edge);
+                    edge_obj["offset"] = gepEdge->getConstantFieldIdx();
                 }
                 llvm::json::Value edge_value = llvm::json::Object{edge_obj};
                 PAGEdge_array.push_back(edge_value);
@@ -169,31 +169,31 @@ std::string ICFGPrinter::getPAGNodeKindValue(int kind)
 {
     switch (kind)
     {
-    case (PAGNode::ValNode):
+    case (SVFVar::ValNode):
         return "ValNode";
         break;
-    case PAGNode::ObjNode:
+    case SVFVar::ObjNode:
         return "ObjNode";
         break;
-    case PAGNode::RetNode:
+    case SVFVar::RetNode:
         return "RetNode";
         break;
-    case PAGNode::VarargNode:
+    case SVFVar::VarargNode:
         return "VarargNode";
         break;
-    case PAGNode::GepValNode:
+    case SVFVar::GepValNode:
         return "GepValNode";
         break;
-    case PAGNode::GepObjNode:
+    case SVFVar::GepObjNode:
         return "GepObjNode";
         break;
-    case PAGNode::FIObjNode:
+    case SVFVar::FIObjNode:
         return "FIObjNode";
         break;
-    case PAGNode::DummyValNode:
+    case SVFVar::DummyValNode:
         return "DummyValNode";
         break;
-    case PAGNode::DummyObjNode:
+    case SVFVar::DummyObjNode:
         return "DummyObjNode";
         break;
     }
@@ -204,43 +204,40 @@ std::string ICFGPrinter::getPAGEdgeKindValue(int kind)
 {
     switch(kind)
     {
-    case (PAGEdge::Addr):
+    case (SVFStmt::Addr):
         return "Addr";
         break;
-    case (PAGEdge::Copy):
+    case (SVFStmt::Copy):
         return "Copy";
         break;
-    case (PAGEdge::Store):
+    case (SVFStmt::Store):
         return "Store";
         break;
-    case (PAGEdge::Load):
+    case (SVFStmt::Load):
         return "Load";
         break;
-    case (PAGEdge::Call):
+    case (SVFStmt::Call):
         return "Call";
         break;
-    case (PAGEdge::Ret):
+    case (SVFStmt::Ret):
         return "Ret";
         break;
-    case (PAGEdge::NormalGep):
+    case (SVFStmt::Gep):
         return "NormalGep";
         break;
-    case (PAGEdge::VariantGep):
-        return "VariantGep";
-        break;
-    case (PAGEdge::ThreadFork):
+    case (SVFStmt::ThreadFork):
         return "ThreadFork";
         break;
-    case (PAGEdge::ThreadJoin):
+    case (SVFStmt::ThreadJoin):
         return "ThreadJoin";
         break;
-    case (PAGEdge::Cmp):
+    case (SVFStmt::Cmp):
         return "Cmp";
         break;
-    case (PAGEdge::BinaryOp):
+    case (SVFStmt::BinaryOp):
         return "BinaryOp";
         break;
-    case (PAGEdge::UnaryOp):
+    case (SVFStmt::UnaryOp):
         return "UnaryOp";
         break;
     }

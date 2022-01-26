@@ -186,28 +186,6 @@ const std::string GepStmt::toString() const{
     return rawstr.str();
 }
 
-const std::string NormalGepStmt::toString() const{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "NormalGepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
-    if (Options::ShowSVFIRValue) {
-        rawstr << "\n";
-        rawstr << value2String(getValue());
-    }
-    return rawstr.str();
-}
-
-const std::string VariantGepStmt::toString() const{
-    std::string str;
-    raw_string_ostream rawstr(str);
-    rawstr << "VariantGepStmt: [Var" << getLHSVarID() << " <-- Var" << getRHSVarID() << "]\t";
-    if (Options::ShowSVFIRValue) {
-        rawstr << "\n";
-        rawstr << value2String(getValue());
-    }
-    return rawstr.str();
-}
-
 const std::string CallPE::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);

@@ -467,7 +467,7 @@ namespace SVF
 
     llvm::cl::opt<bool> Options::OPTSVFG(
         "opt-svfg", 
-        llvm::cl::init(true),
+        llvm::cl::init(false),
         llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
     );
 

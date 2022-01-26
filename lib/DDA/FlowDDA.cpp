@@ -126,18 +126,17 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             tmpDstPts.set(ptd);
         else
         {
-            if (SVFUtil::isa<VariantGepStmt>(gep->getPAGEdge()))
+            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
+            if (gepStmt->isVariantFieldGep())
             {
                 setObjFieldInsensitive(ptd);
                 tmpDstPts.set(getFIObjVar(ptd));
             }
-            else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(gep->getPAGEdge()))
+            else
             {
-                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	normalGep->getLocationSet());
+                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	gepStmt->getLocationSet());
                 tmpDstPts.set(fieldSrcPtdNode);
             }
-            else
-                assert(false && "new gep edge?");
         }
     }
     DBOUT(DDDA, outs() << "\t return created gep objs {");

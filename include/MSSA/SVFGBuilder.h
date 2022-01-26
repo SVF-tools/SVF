@@ -74,9 +74,7 @@ public:
     static SVFG* globalSvfg;
 
     SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
-    SVFG* buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta);
     SVFG* buildFullSVFG(BVDataPTAImpl* pta);
-    SVFG* buildFullSVFGWithoutOPT(BVDataPTAImpl* pta);
 
     /// Clean up
     static void releaseSVFG()

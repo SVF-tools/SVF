@@ -224,8 +224,8 @@ void SVFG::addSVFGNodesForAddrTakenVars()
 {
 
     // set defs for address-taken vars defined at store statements
-    PAGEdge::SVFStmtSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         StoreStmt* store = SVFUtil::cast<StoreStmt>(*iter);

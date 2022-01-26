@@ -589,7 +589,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
             //       as we simply return new offset by mod operation without checking its
             //       correctness in LocSymTableInfo::getModulusOffset(). So the following
             //       assertion may fail. Try to refine the new memory model.
-            //assert(ls.getFieldOffset() == 0 && "cannot get a field from a non-struct type");
+            //assert(ls.getConstantFieldIdx() == 0 && "cannot get a field from a non-struct type");
             return (hasPtrObj() == false);
         }
     }

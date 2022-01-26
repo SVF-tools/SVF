@@ -276,8 +276,8 @@ void FlowSensitiveStat::statNullPtr()
     {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
-        PAGEdge::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
-        PAGEdge::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
+        SVFStmt::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(SVFStmt::Store);
+        SVFStmt::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(SVFStmt::Load);
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
         {
             ///TODO: change the condition here to fetch the points-to set

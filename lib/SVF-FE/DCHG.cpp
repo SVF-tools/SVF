@@ -103,7 +103,7 @@ void DCHGraph::handleDIDerivedType(const DIDerivedType *derivedType)
         assert(SVFUtil::isa<DIType>(derivedType->getScope()) && "inheriting from non-type?");
         DCHEdge *edge = addEdge(SVFUtil::dyn_cast<DIType>(derivedType->getScope()),
                                 derivedType->getBaseType(), DCHEdge::INHERITANCE);
-        // If the offset does not exist (for primary base), getFieldOffset should return 0.
+        // If the offset does not exist (for primary base), getConstantFieldIdx should return 0.
         edge->setOffset(derivedType->getOffsetInBits());
         break;
     }
