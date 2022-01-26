@@ -131,7 +131,11 @@ public:
     }
     //@}
 
+    /// Return accumulated constant offset given OffsetValueVec
     s64_t accumulateConstantOffset() const;
+
+    /// Return element number of a type. 
+    u32_t getElementNum(const Type* type) const;
 
     bool addOffsetValue(const Value* offsetValue, const Type* type);
 

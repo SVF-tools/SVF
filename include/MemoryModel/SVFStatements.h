@@ -438,6 +438,10 @@ public:
         return ls;
     }
 
+    inline s64_t accumulateConstantOffset() const
+    {
+        return ls.accumulateConstantOffset();
+    }
     /// offset of the gep statement
     inline s64_t getConstantFieldIdx() const
     {

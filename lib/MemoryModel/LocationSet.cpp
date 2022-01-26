@@ -45,7 +45,7 @@ bool LocationSet::addOffsetValue(const Value* offsetVal, const Type* type)
     return true;
 }
 
-/// Return TRUE if all offset values are constants
+/// Return true if all offset values are constants
 bool LocationSet::isConstantOffset() const
 {
     for(auto it : offsetValues){
@@ -55,12 +55,74 @@ bool LocationSet::isConstantOffset() const
     return true;
 }
 
-/// Return accmuated constant offset
-/// offsetValues: [(v1,t1), (v2,t2), (v3,t3)]
-/// v1*sz(t2) + v2*sz(t3) + v3 
-s64_t LocationSet::accumulateConstantOffset() const{
+/// Return element number of a type
+/// (1) StructType, return flatterned number elements, i.e., the index of the last element (getFlattenedOffsetVec().back()) plus one.
+/// (2) ArrayType, return number of elements
+/// (3) PointerType, return the element number of the pointee 
+/// (4) non-pointer SingleValueType, return 1
+u32_t LocationSet::getElementNum(const Type* type) const{
+    u32_t sz = 1;
+    if(const ArrayType* aty = SVFUtil::dyn_cast<ArrayType>(type))
+    {
+        /// handle nested arrays
+        const Type* innerTy = aty;
+        while (const ArrayType* arr = SVFUtil::dyn_cast<ArrayType>(innerTy))
+        {
+            sz *= arr->getNumElements();
+            innerTy = arr->getElementType();
+        }
+    }
+    else if (const StructType *sty = SVFUtil::dyn_cast<StructType>(type) )
+    {
+        const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedOffsetVec(sty);
+        sz = so.back() + 1;
+    }
+    else if (type->isSingleValueType())
+    {
+        /// This is a pointer arithmic
+        if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type) ){
+            sz = getElementNum(pty->getElementType());
+        }
+    }
+    else{
+        SVFUtil::outs() << "GepIter Type" << *type << "\n";
+        assert(false && "What other types for this gep?");
+    }
+    return sz;
+}
 
-    return 0;
+/// Return accumulated constant offset
+/// 
+/// "value" is the offset variable (must be a constant)
+/// "type" is the location where we want to compute offset
+/// e.g., %3 = getelementptr inbounds [10 x i32], [10 x i32]* %1, i64 0, i64 5 
+/// offsetValues[0] value: i64 0, type: [10 x i32]*
+/// offsetValues[1] value: i64 5, type: [10 x i32]
+/// 
+/// Given a vector: [(v1,t1), (v2,t2), (v3,t3)]
+/// totalConstOffset = v1 * sz(t2) + v2 * sz(t3) + v3 * 1
+/// If the vector only has one element (one gep operand), then it must be a pointer arithmetic and type must be a PointerType
+/// totalConstOffset = v1 * sz(t1) 
+s64_t LocationSet::accumulateConstantOffset() const{
+    
+    assert(isConstantOffset() && "not a constant offset");
+
+    s64_t totalConstOffset = 0;
+    u32_t sz = 1;
+    for(int i = offsetValues.size() - 1; i >= 0; i--){
+        const Value* value = offsetValues[i].first;
+        const Type* type = offsetValues[i].second;
+        const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(value);
+        assert(op && "not a constant offset?");
+        /// if this gep only has one operand, the gepIterType must be the pointer type, and we will need to retrieve size of its elementType.
+        if(offsetValues.size()==1){
+            assert(SVFUtil::isa<PointerType>(type) && "If gep has only one operand, its gepIterType must be PointerType!");
+            sz = getElementNum(type);
+        }
+        totalConstOffset += op->getSExtValue() * sz; 
+        sz *= getElementNum(type);
+    }
+    return totalConstOffset;
 }
 /*!
  * Compute all possible locations according to offset and number-stride pairs.
