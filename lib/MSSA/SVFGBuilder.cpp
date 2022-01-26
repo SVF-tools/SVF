@@ -43,20 +43,13 @@ SVFG* SVFGBuilder::globalSvfg = nullptr;
 
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
-    return build(pta, VFG::PTRONLYSVFG_OPT);
-}
-
-SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta)
-{
-    return build(pta, VFG::PTRONLYSVFG);
+    if(Options::OPTSVFG)
+        return build(pta, VFG::PTRONLYSVFG_OPT);
+    else
+        return build(pta, VFG::PTRONLYSVFG);
 }
 
 SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
-{
-    return build(pta, VFG::FULLSVFG_OPT);
-}
-
-SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta)
 {
     return build(pta, VFG::FULLSVFG);
 }

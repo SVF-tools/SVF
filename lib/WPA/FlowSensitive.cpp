@@ -73,11 +73,9 @@ void FlowSensitive::initialize()
     }
 
     // When evaluating ctir aliases, we want the whole SVFG.
-    if(Options::OPTSVFG)
-        svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
-    else
-        svfg = memSSA.buildPTROnlySVFGWithoutOPT(ander);
-
+    
+    svfg = Options::CTirAliasEval ? memSSA.buildFullSVFG(ander) : memSSA.buildPTROnlySVFG(ander);
+    
     setGraph(svfg);
     //AndersenWaveDiff::releaseAndersenWaveDiff();
 }
