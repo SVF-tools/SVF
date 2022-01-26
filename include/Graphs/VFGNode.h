@@ -569,7 +569,7 @@ public:
     u32_t getNumSuccessors() const{
         return brstmt->getNumSuccessors();
     }
-    const std::vector<const ICFGNode*>& getSuccessors() const{
+    const BranchStmt::SuccAndCondPairVec& getSuccessors() const{
         return brstmt->getSuccessors();
     }
     const ICFGNode* getSuccessor (u32_t i) const{

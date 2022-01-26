@@ -164,7 +164,7 @@ UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
 /*
 * Add BranchStmt
 */
-BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGNode*> succs)
+BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec&  succs)
 {
     SVFVar* brNode = getGNode(br);
     SVFVar* condNode = getGNode(cond);

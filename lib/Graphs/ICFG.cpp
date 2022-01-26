@@ -452,6 +452,10 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
                 removeICFGEdge(edge);
         }
     }
+    // dump ICFG
+    if (Options::DumpICFG){
+		dump("icfg_final");
+    }
 }
 
 /*!

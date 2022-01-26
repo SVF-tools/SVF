@@ -208,12 +208,6 @@ void PointerAnalysis::finalize()
     if (Options::PAGDotGraph)
         pag->dump("pag_final");
 
-    // dump ICFG
-    if (Options::DumpICFG){
-		pag->getICFG()->updateCallGraph(ptaCallGraph);
-		pag->getICFG()->dump("icfg_final");
-    }
-
     /// Dump results
     if (Options::PTSPrint)
     {

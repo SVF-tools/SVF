@@ -331,7 +331,7 @@ public:
         return edge;
     }
     /// Add Branch statement 
-    inline BranchStmt* addBranchStmt(NodeID br, NodeID cond, const std::vector<const ICFGNode*> succs){
+    inline BranchStmt* addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec& succs){
         BranchStmt *edge = pag->addBranchStmt(br, cond, succs);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;

@@ -839,6 +839,8 @@ public:
  */
 class BranchStmt: public SVFStmt
 {
+public:
+    typedef std::vector<std::pair<const ICFGNode*, s64_t> > SuccAndCondPairVec;
 private:
     BranchStmt();                      ///< place holder
     BranchStmt(const BranchStmt &);  ///< place holder
@@ -848,9 +850,10 @@ private:
     NodeID getSrcID();  ///< place holder, use getOpVarID(pos) instead
     NodeID getDstID();    ///< place holder, use getResID() instead
 
-    std::vector<const ICFGNode*> successors;
+    SuccAndCondPairVec successors;
     const SVFVar* cond;
     const SVFVar* brInst;
+
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -869,7 +872,7 @@ public:
     //@}
 
     /// constructor
-    BranchStmt(SVFVar* inst, SVFVar* c, const std::vector<const ICFGNode*>& succs) : SVFStmt(c,inst,SVFStmt::Branch), successors(succs), cond(c), brInst(inst)
+    BranchStmt(SVFVar* inst, SVFVar* c, const SuccAndCondPairVec& succs) : SVFStmt(c,inst,SVFStmt::Branch), successors(succs), cond(c), brInst(inst)
     {
     }
 
@@ -882,18 +885,31 @@ public:
     const SVFVar* getBranchInst() const{
         return brInst;
     }
+    
+    /// For example if(c) {stmt1} else {stmt2}
+    /// successor(0): stmt1, 1
+    /// successor(1): stmt2, 0 
+
+    /// For example switch(c) case 0: {stmt1; break;} case 1: {stmt2; break;} default {stmt3: break}
+    /// successor(0): stmt1, 0
+    /// successor(1): stmt2, 1 
+    /// successor(3): stmt3, -1 
+
     /// Successors of this branch statement
     ///@{
     u32_t getNumSuccessors() const{
         return successors.size();
     }
-    const std::vector<const ICFGNode*>& getSuccessors() const{
+    const SuccAndCondPairVec& getSuccessors() const{
         return successors;
     }
     const ICFGNode* getSuccessor (u32_t i) const{
-        return successors.at(i);
+        return successors.at(i).first;
     }
-    ///@}
+    s64_t getSuccessorCondValue (u32_t i) const{ 
+        return successors.at(i).second;
+    }
+    //@}
     virtual const std::string toString() const override;
 };
 

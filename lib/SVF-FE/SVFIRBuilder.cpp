@@ -887,12 +887,14 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
 	else
 		cond = pag->getNullPtr();
 
-    std::vector<const ICFGNode*> successors;
+    assert(inst.getNumSuccessors() <= 2 && "if/else has more than two branches?");
+
+    BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
         const Instruction* succInst = &inst.getSuccessor(i)->front();
         const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
-        successors.push_back(icfgNode);
+        successors.push_back(std::make_pair(icfgNode, 1-i));
     }
     const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
 }
@@ -901,12 +903,15 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
     NodeID brinst = getValueNode(&inst);
     NodeID cond = getValueNode(inst.getCondition());
 
-    std::vector<const ICFGNode*> successors;
+    BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
         const Instruction* succInst = &inst.getSuccessor(i)->front();
+        const ConstantInt* condVal = inst.findCaseDest(inst.getSuccessor(i));
+        /// default case is set to -1;
+        s64_t val = condVal ? condVal->getSExtValue() : -1;
         const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
-        successors.push_back(icfgNode);
+        successors.push_back(std::make_pair(icfgNode,val));
     }
     const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
 }

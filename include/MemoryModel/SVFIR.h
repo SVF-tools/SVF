@@ -637,7 +637,7 @@ private:
     /// Add Unary edge
     UnaryOPStmt* addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode);
     /// Add BranchStmt
-    BranchStmt* addBranchStmt(NodeID br, NodeID cond, std::vector<const ICFGNode*> succs);
+    BranchStmt* addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec& succs);
     /// Add Load edge
     LoadStmt* addLoadStmt(NodeID src, NodeID dst);
     /// Add Store edge
