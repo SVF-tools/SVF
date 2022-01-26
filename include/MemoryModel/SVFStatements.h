@@ -53,7 +53,7 @@ public:
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, NormalGep, VariantGep, Phi, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
+        Addr, Copy, Store, Load, Call, Ret, Gep, Phi, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
     };
 
 private:
@@ -85,8 +85,7 @@ public:
                edge->getEdgeKind() == SVFStmt::Load ||
                edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
-               edge->getEdgeKind() == SVFStmt::NormalGep ||
-               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::Gep ||
                edge->getEdgeKind() == SVFStmt::Cmp ||
                edge->getEdgeKind() == SVFStmt::BinaryOp ||
                edge->getEdgeKind() == SVFStmt::UnaryOp  ||
@@ -227,8 +226,7 @@ public:
                edge->getEdgeKind() == SVFStmt::Load ||
                edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
-               edge->getEdgeKind() == SVFStmt::NormalGep ||
-               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::Gep ||
                edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
@@ -240,8 +238,7 @@ public:
                edge->getEdgeKind() == SVFStmt::Load ||
                edge->getEdgeKind() == SVFStmt::Call ||
                edge->getEdgeKind() == SVFStmt::Ret ||
-               edge->getEdgeKind() == SVFStmt::NormalGep ||
-               edge->getEdgeKind() == SVFStmt::VariantGep ||
+               edge->getEdgeKind() == SVFStmt::Gep ||
                edge->getEdgeKind() == SVFStmt::ThreadFork ||
                edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
@@ -417,7 +414,7 @@ private:
     void operator=(const GepStmt &); ///< place holder
 
     LocationSet ls;	///< location set of the gep edge
-
+    bool variantField;  ///< Gep statement with a variant field index (pointer arithmetic) for struct field access (e.g., p = &(q + f), where f is a variable)
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -427,111 +424,37 @@ public:
     }
     static inline bool classof(const SVFStmt *edge)
     {
-        return 	edge->getEdgeKind() == SVFStmt::NormalGep ||
-                edge->getEdgeKind() == SVFStmt::VariantGep;
+        return 	edge->getEdgeKind() == SVFStmt::Gep;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
-        return	edge->getEdgeKind() == SVFStmt::NormalGep ||
-                edge->getEdgeKind() == SVFStmt::VariantGep;
+        return	edge->getEdgeKind() == SVFStmt::Gep;
     }
     //@}
 
     inline const LocationSet& getLocationSet() const
     {
+        assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return ls;
     }
 
-protected:
+    /// offset of the gep statement
+    inline s64_t getConstantFieldIdx() const
+    {
+        return getLocationSet().accumulateConstantFieldIdx();
+    }
+    /// Gep statement with a variant field index (pointer arithmetic) for struct field access 
+    inline bool isVariantFieldGep() const
+    {
+        return variantField;
+    }   
+
     /// constructor
-    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, PEDGEK k) : AssignStmt(s,d,k), ls(l)
+    GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, bool varfld=false) : AssignStmt(s,d,SVFStmt::Gep), ls(l), variantField(varfld)
     {
     }
 
     virtual const std::string toString() const;
-
-};
-
-
-/*!
- * Gep statement with a fixed field index for struct field access 
- */
-class NormalGepStmt : public GepStmt
-{
-private:
-    NormalGepStmt(); ///< place holder
-    NormalGepStmt(const NormalGepStmt&); ///< place holder
-    void operator=(const NormalGepStmt&); ///< place holder
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const NormalGepStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const GepStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::NormalGep;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::NormalGep;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::NormalGep;
-    }
-    //@}
-
-    /// constructor
-    NormalGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,l, SVFStmt::NormalGep)
-    {}
-
-    /// offset of the gep edge
-    inline s64_t getFieldOffset() const
-    {
-        return getLocationSet().accumulateConstantFieldIdx();
-    }
-
-    virtual const std::string toString() const override;
-};
-
-/*!
- * Gep statement with a variant field index for struct field access 
- */
-class VariantGepStmt : public GepStmt
-{
-private:
-    VariantGepStmt(); ///< place holder
-    VariantGepStmt(const VariantGepStmt&); ///< place holder
-    void operator=(const VariantGepStmt&); ///< place holder
-
-public:
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const VariantGepStmt *)
-    {
-        return true;
-    }
-    static inline bool classof(const GepStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::VariantGep;
-    }
-    static inline bool classof(const SVFStmt *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::VariantGep;
-    }
-    static inline bool classof(const GenericPAGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == SVFStmt::VariantGep;
-    }
-    //@}
-
-    /// constructor
-    VariantGepStmt(SVFVar* s, SVFVar* d, const LocationSet& l) : GepStmt(s,d,l, SVFStmt::VariantGep) {}
-
-    virtual const std::string toString() const override;
 
 };
 

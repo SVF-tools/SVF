@@ -96,7 +96,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             for (NodeID ptd : srcInits)
                 sortSrcInits.insert(ptd);
 
-            s64_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getFieldOffset();
+            s64_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
             fieldExpand(sortSrcInits, offset, dst->strides, tmpDstPts);
         }
 
@@ -134,7 +134,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, 
             const u32_t maxLimit = obj->getMaxFieldOffsetLimit();
             s64_t initOffset;
             if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
-                initOffset = gepNode->getFieldOffset();
+                initOffset = gepNode->getConstantFieldIdx();
             else if (SVFUtil::isa<FIObjVar>(initPN) || SVFUtil::isa<DummyObjVar>(initPN))
                 initOffset = 0;
             else

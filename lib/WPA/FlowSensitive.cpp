@@ -472,7 +472,8 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
     const PointsTo& srcPts = getPts(edge->getPAGSrcNodeID());
 
     PointsTo tmpDstPts;
-    if (SVFUtil::isa<VariantGepStmt>(edge->getPAGEdge()))
+    const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(edge->getPAGEdge());
+    if (gepStmt->isVariantFieldGep())
     {
         for (NodeID o : srcPts)
         {
@@ -486,7 +487,7 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
             tmpDstPts.set(getFIObjVar(o));
         }
     }
-    else if (const NormalGepStmt* normalGep = SVFUtil::dyn_cast<NormalGepStmt>(edge->getPAGEdge()))
+    else 
     {
         for (NodeID o : srcPts)
         {
@@ -496,13 +497,9 @@ bool FlowSensitive::processGep(const GepSVFGNode* edge)
                 continue;
             }
 
-            NodeID fieldSrcPtdNode = getGepObjVar(o, normalGep->getLocationSet());
+            NodeID fieldSrcPtdNode = getGepObjVar(o, gepStmt->getLocationSet());
             tmpDstPts.set(fieldSrcPtdNode);
         }
-    }
-    else
-    {
-        assert(false && "FlowSensitive::processGep: New type GEP edge type?");
     }
 
     if (unionPts(edge->getPAGDstNodeID(), tmpDstPts))

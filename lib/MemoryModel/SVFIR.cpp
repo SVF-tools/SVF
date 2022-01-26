@@ -312,7 +312,7 @@ GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool c
     if (!constGep || node->hasIncomingVariantGepEdge())
     {
         /// Since the offset from base to src is variant,
-        /// the new gep edge being created is also a VariantGepStmt edge.
+        /// the new gep edge being created is also a Variant GepStmt edge.
         return addVariantGepStmt(src, dst, ls);
     }
     else
@@ -324,16 +324,16 @@ GepStmt* SVFIR::addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool c
 /*!
  * Add normal (Gep) edge
  */
-NormalGepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
+GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
 {
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValVar(src));
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::NormalGep))
-        return SVFUtil::cast<NormalGepStmt>(edge);
+    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
+        return SVFUtil::cast<GepStmt>(edge);
     else
     {
-        NormalGepStmt* gepPE = new NormalGepStmt(baseNode, dstNode, baseLS+ls);
+        GepStmt* gepPE = new GepStmt(baseNode, dstNode, baseLS+ls);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -344,16 +344,16 @@ NormalGepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet
  * Add variant(Gep) edge
  * Find the base node id of src and connect base node to dst node
  */
-VariantGepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
+GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
 {
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValVar(src));
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::VariantGep))
-        return SVFUtil::cast<VariantGepStmt>(edge);
+    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
+        return SVFUtil::cast<GepStmt>(edge);
     else
     {
-        VariantGepStmt* gepPE = new VariantGepStmt(baseNode, dstNode,baseLS+ls);
+        GepStmt* gepPE = new GepStmt(baseNode, dstNode,baseLS+ls, true);
         addToStmt2TypeMap(gepPE);
         addEdge(baseNode, dstNode, gepPE);
         return gepPE;
@@ -500,18 +500,13 @@ NodeBS SVFIR::getFieldsAfterCollapse(NodeID id)
 NodeID SVFIR::getBaseValVar(NodeID nodeId)
 {
     SVFVar* node  = getGNode(nodeId);
-    if (node->hasIncomingEdges(SVFStmt::NormalGep) ||  node->hasIncomingEdges(SVFStmt::VariantGep))
+    if (node->hasIncomingEdges(SVFStmt::Gep))
     {
-        SVFStmt::SVFStmtSetTy& ngeps = node->getIncomingEdges(SVFStmt::NormalGep);
-        SVFStmt::SVFStmtSetTy& vgeps = node->getIncomingEdges(SVFStmt::VariantGep);
+        SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
 
-        assert(((ngeps.size()+vgeps.size())==1) && "one node can only be connected by at most one gep edge!");
+        assert((geps.size()==1) && "one node can only be connected by at most one gep edge!");
 
-        SVFVar::iterator it;
-        if(!ngeps.empty())
-            it = ngeps.begin();
-        else
-            it = vgeps.begin();
+        SVFVar::iterator it = geps.begin();
 
         assert(SVFUtil::isa<GepStmt>(*it) && "not a gep edge??");
         return (*it)->getSrcID();
@@ -529,17 +524,18 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 LocationSet SVFIR::getLocationSetFromBaseNode(NodeID nodeId)
 {
     SVFVar* node  = getGNode(nodeId);
-    SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::NormalGep);
+    SVFStmt::SVFStmtSetTy& geps = node->getIncomingEdges(SVFStmt::Gep);
     /// if this node is already a base node
     if(geps.empty())
         return LocationSet(0);
 
     assert(geps.size()==1 && "one node can only be connected by at most one gep edge!");
     SVFVar::iterator it = geps.begin();
-    const SVFStmt* edge = *it;
-    assert(SVFUtil::isa<NormalGepStmt>(edge) && "not a get edge??");
-    const NormalGepStmt* gepEdge = SVFUtil::cast<NormalGepStmt>(edge);
-    return gepEdge->getLocationSet();
+    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(*it);
+    if(gepEdge->isVariantFieldGep())
+        return LocationSet(0);
+    else
+        return gepEdge->getLocationSet();
 }
 
 /*!
@@ -606,21 +602,17 @@ void SVFIR::print()
                << (*iter)->getDstID() << "\n";
     }
 
-    SVFStmt::SVFStmtSetTy& ngeps = pag->getSVFStmtSet(SVFStmt::NormalGep);
+    SVFStmt::SVFStmtSetTy& ngeps = pag->getSVFStmtSet(SVFStmt::Gep);
     for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        NormalGepStmt* gep = SVFUtil::cast<NormalGepStmt>(*iter);
-        outs() << gep->getRHSVarID() << " -- NormalGep (" << gep->getFieldOffset()
-               << ") --> " << gep->getLHSVarID() << "\n";
-    }
-
-    SVFStmt::SVFStmtSetTy& vgeps = pag->getSVFStmtSet(SVFStmt::VariantGep);
-    for (SVFStmt::SVFStmtSetTy::iterator iter = vgeps.begin(), eiter =
-                vgeps.end(); iter != eiter; ++iter)
-    {
-        outs() << (*iter)->getSrcID() << " -- VariantGep --> "
+        GepStmt* gep = SVFUtil::cast<GepStmt>(*iter);
+        if(gep->isVariantFieldGep())
+                outs() << (*iter)->getSrcID() << " -- VariantGep --> "
                << (*iter)->getDstID() << "\n";
+        else
+                outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantFieldIdx()
+               << ") --> " << gep->getLHSVarID() << "\n";
     }
 
     SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);

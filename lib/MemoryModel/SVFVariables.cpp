@@ -133,7 +133,7 @@ const std::string ObjVar::toString() const {
 const std::string GepValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getFieldOffset());
+    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getConstantFieldIdx());
     if (Options::ShowSVFIRValue) {
         rawstr << "\n";
         rawstr << value2String(value);

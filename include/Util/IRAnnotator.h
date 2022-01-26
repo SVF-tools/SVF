@@ -64,7 +64,7 @@ private:
     void writePAGgepNode(SVF::NodeID nodeId, GepObjVar* gepNode)
     {
         auto baseNodeId = gepNode->getBaseNode();
-        auto locationSetOffset = gepNode->getFieldOffset();
+        auto locationSetOffset = gepNode->getConstantFieldIdx();
 
         LLVMContext &context = mainModule->getContext();
         llvm::SmallVector<llvm::Metadata *, 32> operands;

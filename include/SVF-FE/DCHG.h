@@ -46,7 +46,7 @@ public:
     {
     }
 
-    u32_t getFieldOffset(void) const
+    u32_t getConstantFieldIdx(void) const
     {
         return offset;
     }

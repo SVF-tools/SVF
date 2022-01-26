@@ -48,7 +48,7 @@ const char* PTAStat:: TotalNumOfPointers = "TotalPointers";	///< SVFIR value nod
 const char* PTAStat:: TotalNumOfObjects = "TotalObjects";	///< Total SVFIR object node
 const char* PTAStat:: TotalNumOfFieldObjects = "TotalFieldObjects";	///< Total SVFIR field object node
 const char* PTAStat:: MaxStructSize = "MaxStructSize";	///< Max struct size (bytes)
-const char* PTAStat:: TotalNumOfEdges = "TotalPAGEdges";	///< Total SVFIR edge number
+const char* PTAStat:: TotalNumOfEdges = "TotalSVFStmts";	///< Total SVFIR edge number
 
 const char* PTAStat:: NumOfFunctionObjs = "FunctionObjs";	///< function numbers
 const char* PTAStat:: NumOfGlobalObjs = "GlobalObjs";	///< SVFIR global object node
@@ -198,17 +198,17 @@ void PTAStat::performStat()
     generalNumMap[TotalNumOfFieldObjects] = pag->getFieldObjNodeNum();
     generalNumMap[MaxStructSize] = SymbolTableInfo::SymbolInfo()->getMaxStructSize();
     generalNumMap[TotalNumOfEdges] = pag->getPAGEdgeNum();
-    generalNumMap["TotalPTAPAGEdges"] = pag->getPTAPAGEdgeNum();
+    generalNumMap["TotalPTASVFStmts"] = pag->getPTAPAGEdgeNum();
     generalNumMap[NumberOfFieldInsensitiveObj] = fiObjNumber;
     generalNumMap[NumberOfFieldSensitiveObj] = fsObjNumber;
 
-    generalNumMap[NumOfAddrs] = pag->getSVFStmtSet(PAGEdge::Addr).size();
-    generalNumMap[NumOfLoads] = pag->getSVFStmtSet(PAGEdge::Load).size();
-    generalNumMap[NumOfStores] = pag->getSVFStmtSet(PAGEdge::Store).size();
-    generalNumMap[NumOfCopys] =  pag->getSVFStmtSet(PAGEdge::Copy).size();
-    generalNumMap[NumOfGeps] =  pag->getSVFStmtSet(PAGEdge::NormalGep).size() + pag->getSVFStmtSet(PAGEdge::VariantGep).size();
-    generalNumMap[NumOfCalls] = pag->getSVFStmtSet(PAGEdge::Call).size();
-    generalNumMap[NumOfReturns] = pag->getSVFStmtSet(PAGEdge::Ret).size();
+    generalNumMap[NumOfAddrs] = pag->getSVFStmtSet(SVFStmt::Addr).size();
+    generalNumMap[NumOfLoads] = pag->getSVFStmtSet(SVFStmt::Load).size();
+    generalNumMap[NumOfStores] = pag->getSVFStmtSet(SVFStmt::Store).size();
+    generalNumMap[NumOfCopys] =  pag->getSVFStmtSet(SVFStmt::Copy).size();
+    generalNumMap[NumOfGeps] =  pag->getSVFStmtSet(SVFStmt::Gep).size();
+    generalNumMap[NumOfCalls] = pag->getSVFStmtSet(SVFStmt::Call).size();
+    generalNumMap[NumOfReturns] = pag->getSVFStmtSet(SVFStmt::Ret).size();
 
     generalNumMap[NumOfFunctionObjs] = numOfFunction;
     generalNumMap[NumOfGlobalObjs] = numOfGlobal;

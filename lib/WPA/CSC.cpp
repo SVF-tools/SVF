@@ -87,7 +87,7 @@ void CSC::visit(NodeID nodeId, s64_t _w)
     {
         s64_t offset;
         if (NormalGepCGEdge* gepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(*eit))
-            offset = gepCGEdge->getFieldOffset();
+            offset = gepCGEdge->getConstantFieldIdx();
         else
             offset = 0;
         NodeID dstId = (*eit)->getDstID();
@@ -107,7 +107,7 @@ void CSC::visit(NodeID nodeId, s64_t _w)
         if (_consG->hasEdge(node, backNode, ConstraintEdge::NormalGep))
         {
             NormalGepCGEdge* normalGep = SVFUtil::dyn_cast<NormalGepCGEdge>(_consG->getEdge(node, backNode, ConstraintEdge::NormalGep));
-            s64_t _w = normalGep->getFieldOffset();
+            s64_t _w = normalGep->getConstantFieldIdx();
             s64_t _l = _D[nodeId] +_w - _D[backNodeId];
             backNode->strides.set(_l);
             for (auto cNodeId : _C)

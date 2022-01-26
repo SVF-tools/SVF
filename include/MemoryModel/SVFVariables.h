@@ -241,10 +241,13 @@ private:
     /// Has incoming VariantGepEdges
     inline bool hasIncomingVariantGepEdge() const
     {
-        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::VariantGep);
+        SVFStmt::KindToSVFStmtMapTy::const_iterator it = InEdgeKindToSetMap.find(SVFStmt::Gep);
         if (it != InEdgeKindToSetMap.end())
         {
-            return (!it->second.empty());
+            for(auto gep : it->second){
+                if(SVFUtil::cast<GepStmt>(gep)->isVariantFieldGep())
+                    return true;
+            }
         }
         return false;
     }
@@ -422,7 +425,7 @@ public:
     }
 
     /// offset of the base value variable
-    inline s64_t getFieldOffset() const
+    inline s64_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }
@@ -431,8 +434,8 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + llvm::utostr(getFieldOffset());
-        return "offset_" + llvm::utostr(getFieldOffset());
+            return value->getName().str() + "_" + llvm::utostr(getConstantFieldIdx());
+        return "offset_" + llvm::utostr(getConstantFieldIdx());
     }
 
     inline const Type* getType() const
@@ -497,7 +500,7 @@ public:
     }
 
     /// offset of the mem object
-    inline s64_t getFieldOffset() const
+    inline s64_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }

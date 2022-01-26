@@ -336,16 +336,16 @@ void VFG::addVFGNodes()
     addNullPtrVFGNode(pag->getGNode(pag->getNullPtr()));
 
     // initialize address nodes
-    PAGEdge::SVFStmtSetTy& addrs = getPAGEdgeSet(PAGEdge::Addr);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& addrs = getPAGEdgeSet(SVFStmt::Addr);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = addrs.begin(), eiter =
                 addrs.end(); iter != eiter; ++iter)
     {
         addAddrVFGNode(SVFUtil::cast<AddrStmt>(*iter));
     }
 
     // initialize copy nodes
-    PAGEdge::SVFStmtSetTy& copys = getPAGEdgeSet(PAGEdge::Copy);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& copys = getPAGEdgeSet(SVFStmt::Copy);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = copys.begin(), eiter =
                 copys.end(); iter != eiter; ++iter)
     {
         const CopyStmt* edge = SVFUtil::cast<CopyStmt>(*iter);
@@ -354,38 +354,31 @@ void VFG::addVFGNodes()
     }
 
     // initialize gep nodes
-    PAGEdge::SVFStmtSetTy& ngeps = getPAGEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& ngeps = getPAGEdgeSet(SVFStmt::Gep);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = ngeps.begin(), eiter =
                 ngeps.end(); iter != eiter; ++iter)
     {
-        addGepVFGNode(SVFUtil::cast<NormalGepStmt>(*iter));
-    }
-
-    PAGEdge::SVFStmtSetTy& vgeps = getPAGEdgeSet(PAGEdge::VariantGep);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = vgeps.begin(), eiter =
-                vgeps.end(); iter != eiter; ++iter)
-    {
-        addGepVFGNode(SVFUtil::cast<VariantGepStmt>(*iter));
+        addGepVFGNode(SVFUtil::cast<GepStmt>(*iter));
     }
 
     // initialize load nodes
-    PAGEdge::SVFStmtSetTy& loads = getPAGEdgeSet(PAGEdge::Load);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& loads = getPAGEdgeSet(SVFStmt::Load);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
         addLoadVFGNode(SVFUtil::cast<LoadStmt>(*iter));
     }
 
     // initialize store nodes
-    PAGEdge::SVFStmtSetTy& stores = getPAGEdgeSet(PAGEdge::Store);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& stores = getPAGEdgeSet(SVFStmt::Store);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         addStoreVFGNode(SVFUtil::cast<StoreStmt>(*iter));
     }
 
-    PAGEdge::SVFStmtSetTy& forks = getPAGEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& forks = getPAGEdgeSet(SVFStmt::ThreadFork);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter)
     {
         TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
@@ -429,10 +422,10 @@ void VFG::addVFGNodes()
                 continue;
 
             CallPESet callPEs;
-            if (param->hasIncomingEdges(PAGEdge::Call))
+            if (param->hasIncomingEdges(SVFStmt::Call))
             {
-                for (PAGEdge::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(PAGEdge::Call), ecit =
-                            param->getIncomingEdgesEnd(PAGEdge::Call); cit != ecit; ++cit)
+                for (SVFStmt::SVFStmtSetTy::const_iterator cit = param->getIncomingEdgesBegin(SVFStmt::Call), ecit =
+                            param->getIncomingEdgesEnd(SVFStmt::Call); cit != ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
                     if (isInterestedPAGNode(callPE->getRHSVar()))
@@ -449,10 +442,10 @@ void VFG::addVFGNodes()
                 continue;
 
             CallPESet callPEs;
-            if (varParam->hasIncomingEdges(PAGEdge::Call))
+            if (varParam->hasIncomingEdges(SVFStmt::Call))
             {
-                for(PAGEdge::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(PAGEdge::Call),
-                        ecit = varParam->getIncomingEdgesEnd(PAGEdge::Call); cit!=ecit; ++cit)
+                for(SVFStmt::SVFStmtSetTy::const_iterator cit = varParam->getIncomingEdgesBegin(SVFStmt::Call),
+                        ecit = varParam->getIncomingEdgesEnd(SVFStmt::Call); cit!=ecit; ++cit)
                 {
                     CallPE* callPE = SVFUtil::cast<CallPE>(*cit);
                     if(isInterestedPAGNode(callPE->getRHSVar()))
@@ -471,10 +464,10 @@ void VFG::addVFGNodes()
         const PAGNode* uniqueFunRetNode = it->second;
 
         RetPESet retPEs;
-        if (uniqueFunRetNode->hasOutgoingEdges(PAGEdge::Ret))
+        if (uniqueFunRetNode->hasOutgoingEdges(SVFStmt::Ret))
         {
-            for (PAGEdge::SVFStmtSetTy::const_iterator cit = uniqueFunRetNode->getOutgoingEdgesBegin(PAGEdge::Ret),
-                    ecit = uniqueFunRetNode->getOutgoingEdgesEnd(PAGEdge::Ret);
+            for (SVFStmt::SVFStmtSetTy::const_iterator cit = uniqueFunRetNode->getOutgoingEdgesBegin(SVFStmt::Ret),
+                    ecit = uniqueFunRetNode->getOutgoingEdgesEnd(SVFStmt::Ret);
                     cit != ecit; ++cit)
             {
                 const RetPE* retPE = SVFUtil::cast<RetPE>(*cit);
@@ -488,8 +481,8 @@ void VFG::addVFGNodes()
     }
 
     // initialize llvm phi nodes (phi of top level pointers)
-    PAGEdge::SVFStmtSetTy& phis = getPAGEdgeSet(PAGEdge::Phi);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& phis = getPAGEdgeSet(SVFStmt::Phi);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = phis.begin(), eiter =
                 phis.end(); iter != eiter; ++iter)
     {
         const PhiStmt* edge = SVFUtil::cast<PhiStmt>(*iter);
@@ -497,8 +490,8 @@ void VFG::addVFGNodes()
             addIntraPHIVFGNode(edge);
     }
     // initialize llvm binary nodes (binary operators)
-    PAGEdge::SVFStmtSetTy& binaryops = getPAGEdgeSet(PAGEdge::BinaryOp);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = binaryops.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& binaryops = getPAGEdgeSet(SVFStmt::BinaryOp);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = binaryops.begin(), eiter =
                 binaryops.end(); iter != eiter; ++iter)
     {
         const BinaryOPStmt* edge = SVFUtil::cast<BinaryOPStmt>(*iter);
@@ -506,8 +499,8 @@ void VFG::addVFGNodes()
             addBinaryOPVFGNode(edge);
     }
     // initialize llvm unary nodes (unary operators)
-    PAGEdge::SVFStmtSetTy& unaryops = getPAGEdgeSet(PAGEdge::UnaryOp);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = unaryops.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& unaryops = getPAGEdgeSet(SVFStmt::UnaryOp);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = unaryops.begin(), eiter =
                 unaryops.end(); iter != eiter; ++iter)
     {
         const UnaryOPStmt* edge = SVFUtil::cast<UnaryOPStmt>(*iter);
@@ -515,8 +508,8 @@ void VFG::addVFGNodes()
             addUnaryOPVFGNode(edge);
     }
     // initialize llvm unary nodes (unary operators)
-    PAGEdge::SVFStmtSetTy& brs = getPAGEdgeSet(PAGEdge::Branch);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = brs.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& brs = getPAGEdgeSet(SVFStmt::Branch);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = brs.begin(), eiter =
                 brs.end(); iter != eiter; ++iter)
     {
         const BranchStmt* edge = SVFUtil::cast<BranchStmt>(*iter);
@@ -524,8 +517,8 @@ void VFG::addVFGNodes()
             addBranchVFGNode(edge);
     }
     // initialize llvm cmp nodes (comparision)
-    PAGEdge::SVFStmtSetTy& cmps = getPAGEdgeSet(PAGEdge::Cmp);
-    for (PAGEdge::SVFStmtSetTy::iterator iter = cmps.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& cmps = getPAGEdgeSet(SVFStmt::Cmp);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = cmps.begin(), eiter =
                 cmps.end(); iter != eiter; ++iter)
     {
         const CmpStmt* edge = SVFUtil::cast<CmpStmt>(*iter);
@@ -692,8 +685,8 @@ void VFG::connectDirectVFGEdges()
     /// connect direct value-flow edges (parameter passing) for thread fork/join
     if(Options::EnableThreadCallGraph){
         /// add fork edge
-        PAGEdge::SVFStmtSetTy& forks = getPAGEdgeSet(PAGEdge::ThreadFork);
-        for (PAGEdge::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
+        SVFStmt::SVFStmtSetTy& forks = getPAGEdgeSet(SVFStmt::ThreadFork);
+        for (SVFStmt::SVFStmtSetTy::iterator iter = forks.begin(), eiter =
                 forks.end(); iter != eiter; ++iter)
         {
             TDForkPE* forkedge = SVFUtil::cast<TDForkPE>(*iter);
@@ -702,8 +695,8 @@ void VFG::connectDirectVFGEdges()
             addInterEdgeFromAPToFP(acutalParm,formalParm,getCallSiteID(forkedge->getCallSite(), formalParm->getFun()));
         }
         /// add join edge
-        PAGEdge::SVFStmtSetTy& joins = getPAGEdgeSet(PAGEdge::ThreadJoin);
-        for (PAGEdge::SVFStmtSetTy::iterator iter = joins.begin(), eiter =
+        SVFStmt::SVFStmtSetTy& joins = getPAGEdgeSet(SVFStmt::ThreadJoin);
+        for (SVFStmt::SVFStmtSetTy::iterator iter = joins.begin(), eiter =
                 joins.end(); iter != eiter; ++iter)
         {
             TDJoinPE* joinedge = SVFUtil::cast<TDJoinPE>(*iter);

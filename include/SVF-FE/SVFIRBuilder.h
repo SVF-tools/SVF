@@ -72,7 +72,7 @@ public:
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
-    void addEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind,
+    void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
                  s64_t offset = 0, Instruction* cs = nullptr);
     // @}
 
@@ -377,16 +377,16 @@ public:
         return edge;
     }
     /// Add Offset(Gep) edge
-    inline NormalGepStmt* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline GepStmt* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        NormalGepStmt *edge = pag->addNormalGepStmt(src, dst, ls);
+        GepStmt *edge = pag->addNormalGepStmt(src, dst, ls);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Variant(Gep) edge
-    inline VariantGepStmt* addVariantGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline GepStmt* addVariantGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        VariantGepStmt *edge = pag->addVariantGepStmt(src, dst, ls);
+        GepStmt *edge = pag->addVariantGepStmt(src, dst, ls);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

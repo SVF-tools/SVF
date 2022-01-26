@@ -427,7 +427,7 @@ protected:
     void addVFGNodes();
 
     /// Get PAGEdge set
-    virtual inline PAGEdge::SVFStmtSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    virtual inline SVFStmt::SVFStmtSetTy& getPAGEdgeSet(SVFStmt::PEDGEK kind)
     {
         if (isPtrOnlySVFG())
             return pag->getPTASVFStmtSet(kind);
@@ -435,7 +435,7 @@ protected:
             return pag->getSVFStmtSet(kind);
     }
 
-    virtual inline bool isInterestedPAGNode(const PAGNode* node) const
+    virtual inline bool isInterestedPAGNode(const SVFVar* node) const
     {
         if (isPtrOnlySVFG())
             return node->isPointer();
