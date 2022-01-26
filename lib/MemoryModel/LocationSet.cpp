@@ -121,7 +121,6 @@ s64_t LocationSet::accumulateConstantOffset() const{
         }
         totalConstOffset += op->getSExtValue() * sz; 
         sz *= getElementNum(type);
-        SVFUtil::outs() << "Value: " << value2String(value) << " type: " << *type << "\n";
     }
     return totalConstOffset;
 }
