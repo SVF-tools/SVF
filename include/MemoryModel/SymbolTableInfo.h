@@ -344,18 +344,7 @@ public:
     /// Get struct info
     //@{
     ///Get an iterator for StructInfo, designed as internal methods
-    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T)
-    {
-        assert(T);
-        TypeToFieldInfoMap::iterator it = typeToFieldInfo.find(T);
-        if (it != typeToFieldInfo.end())
-            return it;
-        else
-        {
-            collectTypeInfo(T);
-            return typeToFieldInfo.find(T);
-        }
-    }
+    TypeToFieldInfoMap::iterator getStructInfoIter(const Type *T);
 
     ///Get a reference to StructInfo.
     inline StInfo* getStructInfo(const Type *T)
@@ -364,8 +353,12 @@ public:
     }
 
     ///Get a reference to the components of struct_info.
-    /// Flatterned full offset information of a struct including its array fields 
-    const std::vector<u32_t>& getFlattenedOffsetVec(const StructType *T);
+    /// Number of flattenned elements of an array or struct
+    const u32_t getNumOfFlattenElements(const Type *T);
+    /// Number of flattenned fields of a struct
+    const u32_t getNumOfFlattenFields(const StructType *T);
+    /// Flatterned element idx of an array or struct by considering stride
+    const std::vector<u32_t>& getFlattenedElemIdxVec(const Type *T);
     /// Flatterned field index information of a struct ignoring any array field
     const std::vector<u32_t>& getFlattenedFieldIdxVec(const StructType *T);
 
@@ -513,14 +506,18 @@ class StInfo
 private:
     /// flattened field indices of a struct (ignoring arrays)
     std::vector<u32_t> fldIdxVec;
-    /// flattened full offset (including array strides)
-    std::vector<u32_t> fullOffsetVec;
+    /// flattened element indices including structs and arrays by considering strides
+    std::vector<u32_t> elemIdxVec;
     /// Types of all fields of a struct
     Map<u32_t, const Type*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
     std::vector<FlattenedFieldInfo> finfo;
     /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
     u32_t stride; 
+    /// number of elements after flattenning (including array elements)
+    u32_t numOfFlattenElements; 
+    /// number of fields after flattenning (ignoring array elements)
+    u32_t numOfFlattenFields; 
     /// Max field limit
     static u32_t maxFieldLimit;
 
@@ -530,7 +527,7 @@ private:
 
 public:
     /// Constructor
-    StInfo(u32_t s) : stride(s)
+    StInfo(u32_t s) : stride(s), numOfFlattenElements(s), numOfFlattenFields(s)
     {
     }
     /// Destructor
@@ -552,28 +549,16 @@ public:
     ///  OriginalFieldType of b with field_idx 1 : Struct A
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
-    inline const Type* getOriginalFieldType(u32_t fldIdx)
-    {
-        Map<u32_t, const Type*>::const_iterator it = fldIdx2TypeMap.find(fldIdx);
-        if(it!=fldIdx2TypeMap.end())
-            return it->second;
-        return nullptr;
-    }
-    inline const Type* getFlatternedFieldType(u32_t fldIdx)
-    {
-        for(FlattenedFieldInfo& fallenedFld : finfo){
-            if(fallenedFld.getFlattenFldIdx() == fldIdx)
-                return fallenedFld.getFlattenElemTy();
-        }
-        return nullptr;
-    }
+    const Type* getOriginalFieldType(u32_t fldIdx);
+    const Type* getFlatternedFieldType(u32_t fldIdx);
+
     inline std::vector<u32_t>& getFlattenedFieldIdxVec()
     {
         return fldIdxVec;
     }
-    inline std::vector<u32_t>& getFlattenedOffsetVec()
+    inline std::vector<u32_t>& getFlattenedElemIdxVec()
     {
-        return fullOffsetVec;
+        return elemIdxVec;
     }
     inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
     {
@@ -581,16 +566,27 @@ public:
     }
     //@}
 
-    /// Add field (index and offset) with its corresponding type
-    inline void addFldWithType(u32_t fldIdx, const Type* type, u32_t fullOffset)
+    /// Add field index and element index and their corresponding type
+    void addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx);
+
+    /// Set number of fields and elements of an aggrate
+    inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
     {
-        fldIdxVec.push_back(fldIdx);
-        fullOffsetVec.push_back(fullOffset);
-        fldIdx2TypeMap[fldIdx] = type;
+        numOfFlattenFields = nf;
+        numOfFlattenElements = ne;
     }
 
-    /// Array Type can have 
-    inline u32_t getStride() const {
+    /// Return number of elements after flattenning (including array elements)
+    inline u32_t getNumOfFlattenElements() const {
+        return numOfFlattenElements;
+    }
+
+    /// Return the number of fields after flattenning (ignoring array elements)
+    inline u32_t getNumOfFlattenFields() const {
+        return numOfFlattenFields;
+    }
+    /// Return the stride
+    inline u32_t getStride() const{
         return stride;
     }
 };
