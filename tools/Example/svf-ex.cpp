@@ -79,7 +79,7 @@ std::string printPts(PointerAnalysis* pta, Value* val)
  */
 void traverseOnICFG(ICFG* icfg, const Instruction* inst)
 {
-    ICFGNode* iNode = icfg->getBlockICFGNode(inst);
+    ICFGNode* iNode = icfg->getICFGNode(inst);
     FIFOWorkList<const ICFGNode*> worklist;
     Set<const ICFGNode*> visited;
     worklist.push(iNode);
