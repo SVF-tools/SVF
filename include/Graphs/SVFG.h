@@ -397,7 +397,7 @@ protected:
     inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(nodeId, resVer, funEntry);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(funEntry->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()));
         setDef(resVer,sNode);
         funToFormalINMap[funEntry->getFun()].set(sNode->getId());
     }
@@ -406,7 +406,7 @@ protected:
     inline void addFormalOUTSVFGNode(const FunExitICFGNode* funExit, const MRVer* ver, const NodeID nodeId)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(nodeId, ver, funExit);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(funExit->getFun()));
+        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
         funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
     }
 
@@ -414,7 +414,7 @@ protected:
     inline void addActualINSVFGNode(const CallICFGNode* callsite, const MRVer* ver, const NodeID nodeId)
     {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(nodeId, callsite, ver);
-        addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(callsite->getCallSite()));
+        addSVFGNode(sNode,pag->getICFG()->getCallICFGNode(callsite->getCallSite()));
         callSiteToActualINMap[callsite].set(sNode->getId());
     }
 
@@ -422,7 +422,7 @@ protected:
     inline void addActualOUTSVFGNode(const CallICFGNode* callsite, const MRVer* resVer, const NodeID nodeId)
     {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(nodeId, callsite, resVer);
-        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(callsite->getCallSite()));
+        addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(callsite->getCallSite()));
         setDef(resVer,sNode);
         callSiteToActualOUTMap[callsite].set(sNode->getId());
     }

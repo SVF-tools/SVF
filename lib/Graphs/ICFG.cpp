@@ -190,69 +190,69 @@ ICFG::ICFG(): totalICFGNode(0)
 
 
 /// Get a basic block ICFGNode
-ICFGNode* ICFG::getBlockICFGNode(const Instruction* inst)
+ICFGNode* ICFG::getICFGNode(const Instruction* inst)
 {
     ICFGNode* node;
     if(SVFUtil::isNonInstricCallSite(inst))
-        node = getCallBlockNode(inst);
+        node = getCallICFGNode(inst);
     else if(SVFUtil::isIntrinsicInst(inst))
-        node = getIntraBlockNode(inst);
+        node = getIntraICFGNode(inst);
 //			assert (false && "associating an intrinsic instruction with an ICFGNode!");
     else
-        node = getIntraBlockNode(inst);
+        node = getIntraICFGNode(inst);
 
     assert (node!=nullptr && "no ICFGNode for this instruction?");
     return node;
 }
 
 
-CallICFGNode* ICFG::getCallBlockNode(const Instruction* inst)
+CallICFGNode* ICFG::getCallICFGNode(const Instruction* inst)
 {
 	if(SVFUtil::isCallSite(inst) ==false)
 		outs() << *inst << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallICFGNode* node = getCallICFGNode(inst);
+    CallICFGNode* node = getCallBlock(inst);
     if(node==nullptr)
-        node = addCallICFGNode(inst);
+        node = addCallBlock(inst);
     assert (node!=nullptr && "no CallICFGNode for this instruction?");
     return node;
 }
 
-RetICFGNode* ICFG::getRetBlockNode(const Instruction* inst)
+RetICFGNode* ICFG::getRetICFGNode(const Instruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    RetICFGNode* node = getRetICFGNode(inst);
+    RetICFGNode* node = getRetBlock(inst);
     if(node==nullptr)
-        node = addRetICFGNode(inst);
+        node = addRetBlock(inst);
     assert (node!=nullptr && "no RetICFGNode for this instruction?");
     return node;
 }
 
-IntraICFGNode* ICFG::getIntraBlockNode(const Instruction* inst)
+IntraICFGNode* ICFG::getIntraICFGNode(const Instruction* inst)
 {
-    IntraICFGNode* node = getIntraBlockICFGNode(inst);
+    IntraICFGNode* node = getIntraBlock(inst);
     if(node==nullptr)
-        node = addIntraBlockICFGNode(inst);
+        node = addIntraBlock(inst);
     return node;
 }
 
 /// Add a function entry node
-FunEntryICFGNode* ICFG::getFunEntryBlockNode(const SVFFunction*  fun)
+FunEntryICFGNode* ICFG::getFunEntryICFGNode(const SVFFunction*  fun)
 {
-    FunEntryICFGNode* b = getFunEntryICFGNode(fun);
+    FunEntryICFGNode* b = getFunEntryBlock(fun);
     if (b == nullptr)
-        return addFunEntryICFGNode(fun);
+        return addFunEntryBlock(fun);
     else
         return b;
 }
 /// Add a function exit node
-FunExitICFGNode* ICFG::getFunExitBlockNode(const SVFFunction*  fun)
+FunExitICFGNode* ICFG::getFunExitICFGNode(const SVFFunction*  fun)
 {
-    FunExitICFGNode* b = getFunExitICFGNode(fun);
+    FunExitICFGNode* b = getFunExitBlock(fun);
     if (b == nullptr)
-        return addFunExitICFGNode(fun);
+        return addFunExitBlock(fun);
     else
         return b;
 }
@@ -436,10 +436,10 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            CallICFGNode* callBlockNode = getCallBlockNode(cs);
-            RetICFGNode* retBlockNode = getRetBlockNode(cs);
-            FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
-            FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
+            CallICFGNode* callBlockNode = getCallICFGNode(cs);
+            RetICFGNode* retBlockNode = getRetICFGNode(cs);
+            FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
+            FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
             addCallEdge(callBlockNode, calleeEntryNode, cs);
             addRetEdge(calleeExitNode, retBlockNode, cs);
 

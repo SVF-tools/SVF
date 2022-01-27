@@ -348,7 +348,7 @@ public:
     {
         IntraICFGNode* node;
         if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
-            node = pag->getICFG()->getIntraBlockNode(inst);
+            node = pag->getICFG()->getIntraICFGNode(inst);
         else
             node = nullptr;
         StoreStmt *edge = pag->addStoreStmt(src, dst, node);

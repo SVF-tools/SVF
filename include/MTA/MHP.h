@@ -63,7 +63,7 @@ public:
 	
 	// Get CallICFGNode
 	inline CallICFGNode* getCBN(const Instruction* inst) {
-		return tct->getCallBlockNode(inst);
+		return tct->getCallICFGNode(inst);
 	}
 
     /// Whether the function is connected from main function in thread call graph
@@ -381,7 +381,7 @@ private:
     }
     // Get CallICFGNode
 	inline CallICFGNode* getCBN(const Instruction* inst) {
-		return tct->getCallBlockNode(inst);
+		return tct->getCallICFGNode(inst);
 	}
     /// Mark thread flags for cxtStmt
     //@{

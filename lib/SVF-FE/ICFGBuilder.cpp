@@ -58,7 +58,7 @@ void ICFGBuilder::build(SVFModule* svfModule)
  */
 void ICFGBuilder::processFunEntry(const SVFFunction*  fun, WorkList& worklist)
 {
-    FunEntryICFGNode* FunEntryICFGNode = icfg->getFunEntryBlockNode(fun);
+    FunEntryICFGNode* FunEntryICFGNode = icfg->getFunEntryICFGNode(fun);
     const Instruction* entryInst = &((fun->getLLVMFun()->getEntryBlock()).front());
     InstVec insts;
     if (isIntrinsicInst(entryInst))
@@ -92,7 +92,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             {
                 const Function* fun = inst->getFunction();
                 const SVFFunction* svfFun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
-                FunExitICFGNode* FunExitICFGNode = icfg->getFunExitBlockNode(svfFun);
+                FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(svfFun);
                 icfg->addIntraEdge(srcNode, FunExitICFGNode);
             }
             InstVec nextInsts;
@@ -105,7 +105,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 ICFGNode* dstNode = getOrAddBlockICFGNode(succ);
                 if (isNonInstricCallSite(inst))
                 {
-                    RetICFGNode* retICFGNode = getOrAddRetICFGNode(inst);
+                    RetICFGNode* retICFGNode = getRetICFGNode(inst);
                     srcNode = retICFGNode;
                 }
 
@@ -138,7 +138,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
  */
 void ICFGBuilder::processFunExit(const SVFFunction*  fun)
 {
-    FunExitICFGNode* FunExitICFGNode = icfg->getFunExitBlockNode(fun);
+    FunExitICFGNode* FunExitICFGNode = icfg->getFunExitICFGNode(fun);
 
     for (inst_iterator II = inst_begin(fun->getLLVMFun()), EE = inst_end(fun->getLLVMFun()); II != EE; ++II)
     {
@@ -161,7 +161,7 @@ InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
 {
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
-    CallICFGNode* callICFGNode = getOrAddCallICFGNode(inst);
+    CallICFGNode* callICFGNode = getCallICFGNode(inst);
     addICFGInterEdges(inst, getCallee(inst));                       //creating interprocedural edges
     return callICFGNode;
 }
@@ -171,8 +171,8 @@ InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
  */
 void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* callee)
 {
-    CallICFGNode* CallICFGNode = getOrAddCallICFGNode(cs);
-    RetICFGNode* retBlockNode = getOrAddRetICFGNode(cs);
+    CallICFGNode* CallICFGNode = getCallICFGNode(cs);
+    RetICFGNode* retBlockNode = getRetICFGNode(cs);
 
     /// direct call  
     if(callee){
@@ -184,8 +184,8 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* ca
         /// otherwise connect interprocedural edges 
         else
         {
-            FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryBlockNode(callee);
-            FunExitICFGNode* calleeExitNode = icfg->getFunExitBlockNode(callee);
+            FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryICFGNode(callee);
+            FunExitICFGNode* calleeExitNode = icfg->getFunExitICFGNode(callee);
             icfg->addCallEdge(CallICFGNode, calleeEntryNode, cs);
             icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
         }
@@ -206,8 +206,8 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
     if(mainFunc == nullptr)
         return;
 
-    FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
-    GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
+    FunEntryICFGNode* entryNode = icfg->getFunEntryICFGNode(mainFunc);
+    GlobalICFGNode* globalNode = icfg->getGlobalICFGNode();
     IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, entryNode);
     icfg->addICFGEdge(intraEdge);
 }

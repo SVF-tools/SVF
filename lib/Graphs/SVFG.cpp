@@ -242,7 +242,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(PHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             MemSSA::PHI* phi =  *pi;
-            addIntraMSSAPHISVFGNode(pag->getICFG()->getBlockICFGNode(&(phi->getBasicBlock()->front())), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
+            addIntraMSSAPHISVFGNode(pag->getICFG()->getICFGNode(&(phi->getBasicBlock()->front())), phi->opVerBegin(), phi->opVerEnd(),phi->getResVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA entry chi nodes
@@ -251,7 +251,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(CHISet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
             const MemSSA::ENTRYCHI* chi = SVFUtil::cast<ENTRYCHI>(*pi);
-            addFormalINSVFGNode(pag->getICFG()->getFunEntryBlockNode(chi->getFunction()), chi->getResVer(), totalVFGNode++);
+            addFormalINSVFGNode(pag->getICFG()->getFunEntryICFGNode(chi->getFunction()), chi->getResVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA return mu nodes
@@ -260,7 +260,7 @@ void SVFG::addSVFGNodesForAddrTakenVars()
     {
         for(MUSet::iterator pi = it->second.begin(), epi = it->second.end(); pi!=epi; ++pi){
               const MemSSA::RETMU* mu = SVFUtil::cast<RETMU>(*pi);
-              addFormalOUTSVFGNode(pag->getICFG()->getFunExitBlockNode(mu->getFunction()), mu->getMRVer(), totalVFGNode++);
+              addFormalOUTSVFGNode(pag->getICFG()->getFunExitICFGNode(mu->getFunction()), mu->getMRVer(), totalVFGNode++);
         }
     }
     /// initialize memory SSA callsite mu nodes
@@ -567,7 +567,7 @@ std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(callBlockNode->getCallSite());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(callBlockNode->getCallSite());
 
     // Find inter direct call edges between actual param and formal param.
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))

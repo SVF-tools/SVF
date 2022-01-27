@@ -479,7 +479,7 @@ protected:
     inline void addNullPtrVFGNode(const PAGNode* pagNode)
     {
         NullPtrVFGNode* sNode = new NullPtrVFGNode(totalVFGNode++,pagNode);
-        addVFGNode(sNode, pag->getICFG()->getGlobalBlockNode());
+        addVFGNode(sNode, pag->getICFG()->getGlobalICFGNode());
         setDef(pagNode,sNode);
     }
     /// Add an Address VFG node
@@ -524,7 +524,7 @@ protected:
     inline void addActualParmVFGNode(const PAGNode* aparm, const CallICFGNode* cs)
     {
         ActualParmVFGNode* sNode = new ActualParmVFGNode(totalVFGNode++,aparm,cs);
-        addVFGNode(sNode, pag->getICFG()->getCallBlockNode(cs->getCallSite()));
+        addVFGNode(sNode, pag->getICFG()->getCallICFGNode(cs->getCallSite()));
         PAGNodeToActualParmMap[std::make_pair(aparm->getId(),cs)] = sNode;
         /// do not set def here, this node is not a variable definition
     }
@@ -532,7 +532,7 @@ protected:
     inline void addFormalParmVFGNode(const PAGNode* fparm, const SVFFunction* fun, CallPESet& callPEs)
     {
         FormalParmVFGNode* sNode = new FormalParmVFGNode(totalVFGNode++,fparm,fun);
-        addVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fun));
+        addVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fun));
         for(CallPESet::const_iterator it = callPEs.begin(), eit=callPEs.end();
                 it!=eit; ++it)
             sNode->addCallPE(*it);
@@ -546,7 +546,7 @@ protected:
     inline void addFormalRetVFGNode(const PAGNode* uniqueFunRet, const SVFFunction* fun, RetPESet& retPEs)
     {
 		FormalRetVFGNode *sNode = new FormalRetVFGNode(totalVFGNode++, uniqueFunRet, fun);
-		addVFGNode(sNode, pag->getICFG()->getFunExitBlockNode(fun));
+		addVFGNode(sNode, pag->getICFG()->getFunExitICFGNode(fun));
 		for (RetPESet::const_iterator it = retPEs.begin(), eit = retPEs.end(); it != eit; ++it)
 			sNode->addRetPE(*it);
 
@@ -564,7 +564,7 @@ protected:
     inline void addActualRetVFGNode(const PAGNode* ret,const CallICFGNode* cs)
     {
         ActualRetVFGNode* sNode = new ActualRetVFGNode(totalVFGNode++,ret,cs);
-        addVFGNode(sNode, pag->getICFG()->getRetBlockNode(cs->getCallSite()));
+        addVFGNode(sNode, pag->getICFG()->getRetICFGNode(cs->getCallSite()));
         setDef(ret,sNode);
         PAGNodeToActualRetMap[ret] = sNode;
     }

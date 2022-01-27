@@ -152,18 +152,18 @@ bool MRGenerator::hasSVFStmtList(const Instruction* inst)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
-        return pag->hasPTASVFStmtList(pag->getICFG()->getBlockICFGNode(inst));
+        return pag->hasPTASVFStmtList(pag->getICFG()->getICFGNode(inst));
     else
-        return pag->hasSVFStmtList(pag->getICFG()->getBlockICFGNode(inst));
+        return pag->hasSVFStmtList(pag->getICFG()->getICFGNode(inst));
 }
 
 SVFIR::SVFStmtList& MRGenerator::getPAGEdgesFromInst(const Instruction* inst)
 {
     SVFIR* pag = pta->getPAG();
     if (ptrOnlyMSSA)
-        return pag->getPTASVFStmtList(pag->getICFG()->getBlockICFGNode(inst));
+        return pag->getPTASVFStmtList(pag->getICFG()->getICFGNode(inst));
     else
-        return pag->getSVFStmtList(pag->getICFG()->getBlockICFGNode(inst));
+        return pag->getSVFStmtList(pag->getICFG()->getICFGNode(inst));
 }
 
 /*!
@@ -259,7 +259,7 @@ void MRGenerator::collectModRefForCall()
 
     for (CallSite cs : SymbolTableInfo::SymbolInfo()->getCallSiteSet())
     {
-        const CallICFGNode* callBlockNode = pta->getPAG()->getICFG()->getCallBlockNode(cs.getInstruction());
+        const CallICFGNode* callBlockNode = pta->getPAG()->getICFG()->getCallICFGNode(cs.getInstruction());
         if(hasRefSideEffectOfCallSite(callBlockNode))
         {
             NodeBS refs = getRefSideEffectOfCallSite(callBlockNode);
@@ -481,8 +481,8 @@ void MRGenerator::collectCallSitePts(const CallICFGNode* cs)
     /// collect the pts chain of the callsite arguments
     NodeBS& argsPts = csToCallSiteArgsPtsMap[cs];
     SVFIR* pag = pta->getPAG();
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs->getCallSite());
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs->getCallSite());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs->getCallSite());
 
     WorkList worklist;
     if (pag->hasCallSiteArgsMap(callBlockNode))

@@ -54,7 +54,7 @@ void LeakChecker::initSrcs()
             continue;
 
         PTACallGraph::FunctionSet callees;
-        getCallgraph()->getCallees(cs->getCallBlockNode(),callees);
+        getCallgraph()->getCallees(cs->getCallICFGNode(),callees);
         for(PTACallGraph::FunctionSet::const_iterator cit = callees.begin(), ecit = callees.end(); cit!=ecit; cit++)
         {
             const SVFFunction* fun = *cit;
@@ -62,11 +62,11 @@ void LeakChecker::initSrcs()
             {
                 CSWorkList worklist;
                 SVFGNodeBS visited;
-                worklist.push(it->first->getCallBlockNode());
+                worklist.push(it->first->getCallICFGNode());
                 while (!worklist.empty())
                 {
                     const CallICFGNode* cs = worklist.pop();
-                    const RetICFGNode* retBlockNode = icfg->getRetBlockNode(cs->getCallSite());
+                    const RetICFGNode* retBlockNode = icfg->getRetICFGNode(cs->getCallSite());
                     const PAGNode* pagNode = pag->getCallSiteRet(retBlockNode);
                     const SVFGNode* node = getSVFG()->getDefSVFGNode(pagNode);
                     if (visited.test(node->getId()) == 0)

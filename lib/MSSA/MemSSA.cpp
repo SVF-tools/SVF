@@ -174,7 +174,7 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
             }
             if (isNonInstricCallSite(inst))
             {
-                const CallICFGNode* cs = pag->getICFG()->getCallBlockNode(inst);
+                const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
 
@@ -318,7 +318,7 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
         }
         if (isNonInstricCallSite(inst))
         {
-            const CallICFGNode* cs = pag->getICFG()->getCallBlockNode(inst);
+            const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
 
@@ -634,7 +634,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                 bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
                 if (isAppCall || isHeapAllocExtCall(&inst))
                 {
-                    const CallICFGNode* cs = pag->getICFG()->getCallBlockNode(&inst);
+                    const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(&inst);
                     if(hasMU(cs))
                     {
                         if (!last_is_chi)

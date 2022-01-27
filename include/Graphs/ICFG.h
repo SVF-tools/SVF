@@ -163,19 +163,19 @@ public:
     /// Get a basic block ICFGNode
     /// TODO:: need to fix the assertions
     //@{
-    ICFGNode* getBlockICFGNode(const Instruction* inst);
+    ICFGNode* getICFGNode(const Instruction* inst);
 
-    CallICFGNode* getCallBlockNode(const Instruction* inst);
+    CallICFGNode* getCallICFGNode(const Instruction* inst);
 
-    RetICFGNode* getRetBlockNode(const Instruction* inst);
+    RetICFGNode* getRetICFGNode(const Instruction* inst);
 
-    IntraICFGNode* getIntraBlockNode(const Instruction* inst);
+    IntraICFGNode* getIntraICFGNode(const Instruction* inst);
 
-    FunEntryICFGNode* getFunEntryBlockNode(const SVFFunction*  fun);
+    FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
 
-    FunExitICFGNode* getFunExitBlockNode(const SVFFunction*  fun);
+    FunExitICFGNode* getFunExitICFGNode(const SVFFunction*  fun);
 
-    inline GlobalICFGNode* getGlobalBlockNode() const
+    inline GlobalICFGNode* getGlobalICFGNode() const
     {
         return globalBlockNode;
     }
@@ -184,14 +184,14 @@ public:
 private:
 	
     /// Get/Add IntraBlock ICFGNode
-    inline IntraICFGNode* getIntraBlockICFGNode(const Instruction* inst)
+    inline IntraICFGNode* getIntraBlock(const Instruction* inst)
     {
         InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
         if (it == InstToBlockNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline IntraICFGNode* addIntraBlockICFGNode(const Instruction* inst)
+    inline IntraICFGNode* addIntraBlock(const Instruction* inst)
     {
         IntraICFGNode* sNode = new IntraICFGNode(totalICFGNode++,inst);
         addICFGNode(sNode);
@@ -200,14 +200,14 @@ private:
     }
 
     /// Get/Add a function entry node
-    inline FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction* fun)
+    inline FunEntryICFGNode* getFunEntryBlock(const SVFFunction* fun)
     {
         FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
         if (it == FunToFunEntryNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline FunEntryICFGNode* addFunEntryICFGNode(const SVFFunction* fun)
+    inline FunEntryICFGNode* addFunEntryBlock(const SVFFunction* fun)
     {
         FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,fun);
         addICFGNode(sNode);
@@ -216,14 +216,14 @@ private:
     }
 
     /// Get/Add a function exit node
-    inline FunExitICFGNode* getFunExitICFGNode(const SVFFunction* fun)
+    inline FunExitICFGNode* getFunExitBlock(const SVFFunction* fun)
     {
         FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
         if (it == FunToFunExitNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline FunExitICFGNode* addFunExitICFGNode(const SVFFunction* fun)
+    inline FunExitICFGNode* addFunExitBlock(const SVFFunction* fun)
     {
         FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, fun);
         addICFGNode(sNode);
@@ -232,14 +232,14 @@ private:
     }
 
     /// Get/Add a call node
-    inline CallICFGNode* addCallICFGNode(const Instruction* cs)
+    inline CallICFGNode* addCallBlock(const Instruction* cs)
     {
         CallICFGNode* sNode = new CallICFGNode(totalICFGNode++, cs);
         addICFGNode(sNode);
         CSToCallNodeMap[cs] = sNode;
         return sNode;
     }
-    inline CallICFGNode* getCallICFGNode(const Instruction* cs)
+    inline CallICFGNode* getCallBlock(const Instruction* cs)
     {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
         if (it == CSToCallNodeMap.end())
@@ -248,16 +248,16 @@ private:
     }
 
     /// Get/Add a return node
-    inline RetICFGNode* getRetICFGNode(const Instruction* cs)
+    inline RetICFGNode* getRetBlock(const Instruction* cs)
     {
         CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
         if (it == CSToRetNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline RetICFGNode* addRetICFGNode(const Instruction* cs)
+    inline RetICFGNode* addRetBlock(const Instruction* cs)
     {
-        CallICFGNode* callBlockNode = getCallBlockNode(cs);
+        CallICFGNode* callBlockNode = getCallICFGNode(cs);
         RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs, callBlockNode);
         callBlockNode->setRetICFGNode(sNode);
         addICFGNode(sNode);

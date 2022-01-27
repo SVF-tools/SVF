@@ -148,8 +148,8 @@ public:
         destroy();
     }
     /// Get CallICFGNode given inst
-    CallICFGNode* getCallBlockNode(const Instruction* inst) {
-		return pta->getICFG()->getCallBlockNode(inst);
+    CallICFGNode* getCallICFGNode(const Instruction* inst) {
+		return pta->getICFG()->getCallICFGNode(inst);
 	}
 	/// Get SVFFuntion given Function 
 	const SVFFunction* getSVFFun(const Function* fun) const {

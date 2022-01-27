@@ -654,7 +654,7 @@ bool Andersen::updateCallGraph(const CallSiteToFunPtrMap& callsites)
 void Andersen::heapAllocatorViaIndCall(CallSite cs, NodePairSet &cpySrcNodes)
 {
     assert(SVFUtil::getCallee(cs) == nullptr && "not an indirect callsite?");
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
     const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
     NodeID srcret;
     CallSite2DummyValPN::const_iterator it = callsite2DummyValPN.find(cs);
@@ -687,8 +687,8 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
 
     DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
 
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
 
     if(SVFUtil::isHeapAllocExtFunViaRet(F) && pag->callsiteHasRet(retBlockNode))
     {

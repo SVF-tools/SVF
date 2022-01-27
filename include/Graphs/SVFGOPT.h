@@ -244,7 +244,7 @@ private:
     inline InterPHISVFGNode* addInterPHIForFP(const FormalParmSVFGNode* fp)
     {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,fp);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(fp->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(fp->getFun()));
         resetDef(fp->getParam(),sNode);
         return sNode;
     }
@@ -252,7 +252,7 @@ private:
     inline InterPHISVFGNode* addInterPHIForAR(const ActualRetSVFGNode* ar)
     {
         InterPHISVFGNode* sNode = new InterPHISVFGNode(totalVFGNode++,ar);
-        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(ar->getCallSite()->getCallSite()));
+        addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(ar->getCallSite()->getCallSite()));
         resetDef(ar->getRev(),sNode);
         return sNode;
     }

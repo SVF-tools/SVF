@@ -407,7 +407,7 @@ void VFG::addVFGNodes()
         if(isInterestedPAGNode(it->second) == false || hasDef(it->second))
             continue;
 
-        addActualRetVFGNode(it->second,it->first->getCallBlockNode());
+        addActualRetVFGNode(it->second,it->first->getCallICFGNode());
     }
 
     // initialize formal parameter nodes
@@ -674,7 +674,7 @@ void VFG::connectDirectVFGEdges()
             {
                 ActualRetVFGNode* callsiteRev = getActualRetVFGNode((*it)->getLHSVar());
                 const CallICFGNode* retBlockNode = (*it)->getCallSite();
-                CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(retBlockNode->getCallSite());
+                CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(retBlockNode->getCallSite());
                 addInterEdgeFromFRToAR(calleeRet,callsiteRev, getCallSiteID(callBlockNode, calleeRet->getFun()));
             }
         }
@@ -813,7 +813,7 @@ void VFG::connectCallerAndCallee(const CallICFGNode* callBlockNode, const SVFFun
     SVFIR * pag = SVFIR::getPAG();
     ICFG * icfg = pag->getICFG();
     CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetICFGNode* retBlockNode = icfg->getRetBlockNode(callBlockNode->getCallSite());
+    RetICFGNode* retBlockNode = icfg->getRetICFGNode(callBlockNode->getCallSite());
     // connect actual and formal param
     if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
     {

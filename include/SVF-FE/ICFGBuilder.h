@@ -84,20 +84,20 @@ private:
     void addICFGInterEdges(const Instruction*  cs, const SVFFunction*  callee);
 
     /// Add a call node
-    inline CallICFGNode* getOrAddCallICFGNode(const Instruction*  cs)
+    inline CallICFGNode* getCallICFGNode(const Instruction*  cs)
     {
-        return icfg->getCallBlockNode(cs);
+        return icfg->getCallICFGNode(cs);
     }
     /// Add a return node
-    inline RetICFGNode* getOrAddRetICFGNode(const Instruction*  cs)
+    inline RetICFGNode* getRetICFGNode(const Instruction*  cs)
     {
-        return icfg->getRetBlockNode(cs);
+        return icfg->getRetICFGNode(cs);
     }
 
     /// Add and get IntraBlock ICFGNode
     IntraICFGNode* getOrAddIntraBlockICFGNode(const Instruction* inst)
     {
-        return icfg->getIntraBlockNode(inst);
+        return icfg->getIntraICFGNode(inst);
     }
 };
 

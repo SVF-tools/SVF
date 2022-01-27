@@ -515,7 +515,7 @@ void PointerAnalysis::connectVCallToVFns(const CallICFGNode* cs, const VFunSet &
         {
             newEdges[cs].insert(callee);
             getIndCallMap()[cs].insert(callee);
-            const CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs->getCallSite());
+            const CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs->getCallSite());
             ptaCallGraph->addIndirectCallGraphEdge(callBlockNode, cs->getCaller(),callee);
         }
     }

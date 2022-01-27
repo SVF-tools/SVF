@@ -239,7 +239,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn = icfg->getCallBlockNode(callInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
 }
 
@@ -250,7 +250,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn = icfg->getCallBlockNode(callInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
 }
 
@@ -261,7 +261,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst1, const CallInst* cal
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallICFGNode* cbn1 = icfg->getCallBlockNode(callInst1);
-    const CallICFGNode* cbn2 = icfg->getCallBlockNode(callInst2);
+    const CallICFGNode* cbn1 = icfg->getCallICFGNode(callInst1);
+    const CallICFGNode* cbn2 = icfg->getCallICFGNode(callInst2);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn1, cbn2);
 }

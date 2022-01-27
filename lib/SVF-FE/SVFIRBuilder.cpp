@@ -791,8 +791,8 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     DBOUT(DPAGBuild,
           outs() << "process callsite " << *cs.getInstruction() << "\n");
 
-    CallICFGNode* callBlockNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetBlockNode(cs.getInstruction());
+    CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
+    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
 
     pag->addCallSite(callBlockNode);
 
@@ -893,7 +893,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
         const Instruction* succInst = &inst.getSuccessor(i)->front();
-        const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
+        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, 1-i));
     }
     const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
@@ -910,7 +910,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
         const ConstantInt* condVal = inst.findCaseDest(inst.getSuccessor(i));
         /// default case is set to -1;
         s64_t val = condVal ? condVal->getSExtValue() : -1;
-        const ICFGNode* icfgNode = pag->getICFG()->getBlockICFGNode(succInst);
+        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode,val));
     }
     const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
@@ -960,7 +960,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     if (!cs.getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(F);
-        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
         addRetEdge(srcret, dstrec,icfgNode);
     }
     //Iterators for the actual and formal parameters
@@ -982,7 +982,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
-        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
         addCallEdge(srcAA, dstFA, icfgNode);
     }
     //Any remaining actual args must be varargs.
@@ -994,7 +994,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         {
             Value *AA = *itA;
             NodeID vnAA = getValueNode(AA);
-            CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+            CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
             addCallEdge(vnAA,vaF, icfgNode);
         }
     }
@@ -1477,7 +1477,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     /// Connect actual parameter to formal parameter of the start routine
                     if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                     {
-                        CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
                         addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
                     }
                 }
@@ -1506,7 +1506,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 /// Connect actual parameter to formal parameter of the start routine
                 if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                 {
-                    CallICFGNode* icfgNode = pag->getICFG()->getCallBlockNode(inst);
+                    CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
                     addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
                 }
             }
@@ -1528,7 +1528,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
  */
 void SVFIRBuilder::handleIndCall(CallSite cs)
 {
-    const CallICFGNode* cbn = pag->getICFG()->getCallBlockNode(cs.getInstruction());
+    const CallICFGNode* cbn = pag->getICFG()->getCallICFGNode(cs.getInstruction());
     pag->addIndirectCallsites(cbn,pag->getValueNode(cs.getCalledValue()));
 }
 
@@ -1618,7 +1618,7 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     edge->setValue(curVal);
     // backmap in valuToEdgeMap
     pag->mapValueToEdge(curVal, edge);
-    ICFGNode* icfgNode = pag->getICFG()->getGlobalBlockNode();
+    ICFGNode* icfgNode = pag->getICFG()->getGlobalICFGNode();
     if (const Instruction *curInst = SVFUtil::dyn_cast<Instruction>(curVal))
     {
         const Function* srcFun = edge->getSrcNode()->getFunction();
@@ -1637,23 +1637,23 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
         /// We will have one unique function exit ICFGNode for all returns
         if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curVal)){
             const SVFFunction *fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(retInst->getParent()->getParent());
-            icfgNode = pag->getICFG()->getFunExitBlockNode(fun);
+            icfgNode = pag->getICFG()->getFunExitICFGNode(fun);
         }
         else
-            icfgNode = pag->getICFG()->getBlockICFGNode(curInst);
+            icfgNode = pag->getICFG()->getICFGNode(curInst);
     }
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {
         assert(curBB && (&curBB->getParent()->getEntryBlock() == curBB));
         const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(arg->getParent());
-        icfgNode = pag->getICFG()->getFunEntryBlockNode(fun);
+        icfgNode = pag->getICFG()->getFunEntryICFGNode(fun);
     }
     else if (SVFUtil::isa<ConstantExpr>(curVal))
     {
         if (!curBB)
             pag->addGlobalPAGEdge(edge);
         else
-    		icfgNode = pag->getICFG()->getBlockICFGNode(&curBB->front());
+    		icfgNode = pag->getICFG()->getICFGNode(&curBB->front());
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
              SVFUtil::isa<Function>(curVal) ||
