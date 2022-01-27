@@ -206,21 +206,9 @@ void ICFGBuilder::connectGlobalToProgEntry(SVFModule* svfModule)
     if(mainFunc == nullptr)
         return;
 
-    FunEntryICFGNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
-    GlobalICFGNode* globalNode = icfg->getGlobalBlockNode();
-
-    std::vector<ICFGEdge*> toBeRemovedEdges;
-    for(ICFGEdge* edge : entryNode->getOutEdges())
-        toBeRemovedEdges.push_back(edge);
-    
-    for(ICFGEdge* edge : toBeRemovedEdges){
-        assert(SVFUtil::isa<IntraCFGEdge>(edge) && "the outgoing edge of FunEntryICFGNode is not an intraCFGEdge?");
-        icfg->removeICFGEdge(edge);
-        IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, edge->getDstNode());
-        icfg->addICFGEdge(intraEdge); 
-    }
-
-    IntraCFGEdge* intraEdge = new IntraCFGEdge(entryNode, globalNode);
+    FunEntryBlockNode* entryNode = icfg->getFunEntryBlockNode(mainFunc);
+    GlobalBlockNode* globalNode = icfg->getGlobalBlockNode();
+    IntraCFGEdge* intraEdge = new IntraCFGEdge(globalNode, entryNode);
     icfg->addICFGEdge(intraEdge);
 }
 
