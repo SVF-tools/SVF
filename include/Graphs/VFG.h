@@ -408,13 +408,13 @@ protected:
         }
         else
         {
-            assert((it->second == node->getId()) && "a SVFIR node can only have unique definition ");
+            assert((it->second == node->getId()) && "a SVFVar can only have unique definition ");
         }
     }
     inline NodeID getDef(const PAGNode* pagNode) const
     {
         PAGNodeToDefMapTy::const_iterator it = PAGNodeToDefMap.find(pagNode);
-        assert(it!=PAGNodeToDefMap.end() && "SVFIR node does not have a definition??");
+        assert(it!=PAGNodeToDefMap.end() && "SVFVar does not have a definition??");
         return it->second;
     }
     inline bool hasDef(const PAGNode* pagNode) const
