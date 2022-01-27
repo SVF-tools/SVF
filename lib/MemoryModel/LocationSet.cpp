@@ -84,14 +84,30 @@ u32_t LocationSet::getElementNum(const Type* type) const{
 /// 
 /// "value" is the offset variable (must be a constant)
 /// "type" is the location where we want to compute offset
-/// e.g., %3 = getelementptr inbounds [10 x i32], [10 x i32]* %1, i64 0, i64 5 
-/// offsetValues[0] value: i64 0, type: [10 x i32]*
-/// offsetValues[1] value: i64 5, type: [10 x i32]
-/// 
-/// Given a vector: [(v1,t1), (v2,t2), (v3,t3)]
-/// totalConstOffset = v1 * sz(t2) * sz(t3) + v2 * sz(t3) + v3 * 1
-/// If the vector only has one element (one gep operand), then it must be a pointer arithmetic and type must be a PointerType
-/// totalConstOffset = v1 * sz(t1) 
+/// Given a vector: [(value1,type1), (value2,type2), (value3,type3)]
+/// totalConstOffset = flattenOffset(value1,type1) * flattenOffset(type2,type2) + flattenOffset(type3,type3)
+/// For a pointer type (e.g., t1 is PointerType), we will retrieve the pointee type and times the offset, i.e., getElementNum(t1) X off1
+
+/// For example,
+// struct inner{ int rollNumber; float percentage;};
+// struct Student { struct inner rollNumber; char studentName[10][3];}
+// char x = studentRecord[1].studentName[3][2];
+
+/// %5 = getelementptr inbounds %struct.Student, %struct.Student* %4, i64 1
+///     value1: i64 1 type1: %struct.Student*  
+///     accumulateConstantOffset = 32
+/// %6 = getelementptr inbounds %struct.Student, %struct.Student* %5, i32 0, i32 1 
+///     value1: i32 0  type1: %struct.Student* 
+///     value2: i32 1  type2: %struct.Student = type { %struct.inner, [10 x [3 x i8]] }  
+///     accumulateConstantOffset = 2
+/// %7 = getelementptr inbounds [10 x [3 x i8]], [10 x [3 x i8]]* %6, i64 0, i64 3 
+///     value1: i64 0  type1: [10 x [3 x i8]]*
+///     value2: i64 3  type2: [10 x [3 x i8]]       
+///     accumulateConstantOffset = 9
+/// %8 = getelementptr inbounds [3 x i8], [3 x i8]* %7, i64 0, i64 2 
+///     value1: i64 0  type1: [3 x i8]*
+///     value2: i64 2  type2: [3 x i8]
+///     accumulateConstantOffset = 2
 s64_t LocationSet::accumulateConstantOffset() const{
     
     assert(isConstantOffset() && "not a constant offset");
