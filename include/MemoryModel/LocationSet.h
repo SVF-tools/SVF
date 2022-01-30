@@ -86,7 +86,7 @@ public:
 
     /// Copy Constructor
     LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx)
+        : fldIdx(ls.fldIdx), offsetValues(ls.getOffsetValueVec())
     {
     }
 

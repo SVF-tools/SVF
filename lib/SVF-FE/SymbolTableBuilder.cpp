@@ -613,7 +613,7 @@ u32_t SymbolTableBuilder::getObjSize(const Value* val)
     u32_t numOfFields = 1;
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        numOfFields = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ety).size();
+        numOfFields = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(ety);
     }
     return numOfFields;
 }
