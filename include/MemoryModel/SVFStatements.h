@@ -437,12 +437,20 @@ public:
         assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return ls;
     }
-
+    inline const LocationSet::OffsetValueVec& getOffsetValueVec() const
+    {
+        return getLocationSet().getOffsetValueVec();
+    }
+    /// Return TRUE if this is a constant location set.
+    inline bool isConstantOffset() const{
+        return getLocationSet().isConstantOffset();
+    }
+    /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
     inline s64_t accumulateConstantOffset() const
     {
-        return ls.accumulateConstantOffset();
+        return getLocationSet().accumulateConstantOffset();
     }
-    /// offset of the gep statement
+    /// Field index of the gep statement if it access the field of a struct
     inline s64_t getConstantFieldIdx() const
     {
         return getLocationSet().accumulateConstantFieldIdx();
