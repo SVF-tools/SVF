@@ -436,20 +436,25 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            CallICFGNode* callBlockNode = getCallICFGNode(cs);
+            CallICFGNode* callICFGNode = getCallICFGNode(cs);
             RetICFGNode* retBlockNode = getRetICFGNode(cs);
-            FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
-            FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-            addCallEdge(callBlockNode, calleeEntryNode, cs);
-            addRetEdge(calleeExitNode, retBlockNode, cs);
-
-            /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
+            /// if this is an external function (no function body or specified in ExAPI.cpp)
             if (isExtCall(callee))
-                addIntraEdge(calleeEntryNode, calleeExitNode); 
+            {
+                addIntraEdge(callICFGNode, retBlockNode); 
+            }
+            /// otherwise connect interprocedural edges 
+            else
+            {
+                FunEntryICFGNode* calleeEntryNode = getFunEntryICFGNode(callee);
+                FunExitICFGNode* calleeExitNode = getFunExitICFGNode(callee);
+                addCallEdge(callICFGNode, calleeEntryNode, cs);
+                addRetEdge(calleeExitNode, retBlockNode, cs);
 
-            /// Remove callBlockNode to retBlockNode intraICFGEdge since we found at least one inter procedural edge
-            if(ICFGEdge* edge = hasIntraICFGEdge(callBlockNode,retBlockNode, ICFGEdge::IntraCF))
-                removeICFGEdge(edge);
+                /// Remove callBlockNode to retBlockNode intraICFGEdge since we found at least one inter procedural edge
+                if(ICFGEdge* edge = hasIntraICFGEdge(callICFGNode,retBlockNode, ICFGEdge::IntraCF))
+                    removeICFGEdge(edge);
+            }
         }
     }
     // dump ICFG

@@ -171,7 +171,7 @@ InterICFGNode* ICFGBuilder::getOrAddInterBlockICFGNode(const Instruction* inst)
  */
 void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* callee)
 {
-    CallICFGNode* CallICFGNode = getCallICFGNode(cs);
+    CallICFGNode* callICFGNode = getCallICFGNode(cs);
     RetICFGNode* retBlockNode = getRetICFGNode(cs);
 
     /// direct call  
@@ -179,20 +179,20 @@ void ICFGBuilder::addICFGInterEdges(const Instruction* cs, const SVFFunction* ca
         /// if this is an external function (no function body)
         if (isExtCall(callee))
         {
-           icfg->addIntraEdge(CallICFGNode, retBlockNode); 
+           icfg->addIntraEdge(callICFGNode, retBlockNode); 
         }
         /// otherwise connect interprocedural edges 
         else
         {
             FunEntryICFGNode* calleeEntryNode = icfg->getFunEntryICFGNode(callee);
             FunExitICFGNode* calleeExitNode = icfg->getFunExitICFGNode(callee);
-            icfg->addCallEdge(CallICFGNode, calleeEntryNode, cs);
+            icfg->addCallEdge(callICFGNode, calleeEntryNode, cs);
             icfg->addRetEdge(calleeExitNode, retBlockNode, cs);
         }
     }
     /// indirect call (don't know callee)
     else{
-        icfg->addIntraEdge(CallICFGNode, retBlockNode); 
+        icfg->addIntraEdge(callICFGNode, retBlockNode); 
     }
 }
 /*
