@@ -489,6 +489,15 @@ void VFG::addVFGNodes()
         if(isInterestedPAGNode(edge->getRes()))
             addIntraPHIVFGNode(edge);
     }
+    // initialize select statement
+    SVFStmt::SVFStmtSetTy& selects = getPAGEdgeSet(SVFStmt::Select);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter =
+                selects.end(); iter != eiter; ++iter)
+    {
+        const MultiOpndStmt* edge = SVFUtil::cast<MultiOpndStmt>(*iter);
+        if(isInterestedPAGNode(edge->getRes()))
+            addIntraPHIVFGNode(edge);
+    }
     // initialize llvm binary nodes (binary operators)
     SVFStmt::SVFStmtSetTy& binaryops = getPAGEdgeSet(SVFStmt::BinaryOp);
     for (SVFStmt::SVFStmtSetTy::iterator iter = binaryops.begin(), eiter =

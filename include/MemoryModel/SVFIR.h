@@ -629,7 +629,9 @@ private:
     /// Add Copy edge
     CopyStmt* addCopyStmt(NodeID src, NodeID dst);
     /// Add phi node information
-    PhiStmt*  addPhiStmt(NodeID res, NodeID opnd);
+    PhiStmt*  addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred);
+    /// Add SelectStmt
+    SelectStmt*  addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond);
     /// Add Copy edge
     CmpStmt* addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predict);
     /// Add Copy edge

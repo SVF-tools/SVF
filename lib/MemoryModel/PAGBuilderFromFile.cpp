@@ -183,7 +183,9 @@ void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
     else if (edge == "unary-op")
         pag->addUnaryOPStmt(srcID, dstID, dstID);
     else if (edge == "phi")
-        pag->addPhiStmt(srcID, dstID);
+        assert(false && "fix phi here!");
+    else if (edge == "select")
+        assert(false && "fix select here!");
     else if (edge == "branch"){
         assert(false && "fix successors here!");
         //pag->addBranchStmt(srcID, dstID, nullptr);

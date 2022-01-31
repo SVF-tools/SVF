@@ -53,7 +53,7 @@ public:
     /// ThreadFork/ThreadJoin is to model parameter passings between thread spawners and spawnees.
     enum PEDGEK
     {
-        Addr, Copy, Store, Load, Call, Ret, Gep, Phi, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
+        Addr, Copy, Store, Load, Call, Ret, Gep, Phi, Select, Cmp, BinaryOp, UnaryOp, Branch, ThreadFork, ThreadJoin
     };
 
 private:
@@ -605,12 +605,14 @@ public:
     static inline bool classof(const SVFStmt *node)
     {
         return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == Select ||
                node->getEdgeKind() == BinaryOp ||
                node->getEdgeKind() == Cmp;
     }
     static inline bool classof(const GenericPAGEdgeTy *node)
     {
         return node->getEdgeKind() == Phi ||
+               node->getEdgeKind() == Select ||
                node->getEdgeKind() == BinaryOp ||
                node->getEdgeKind() == Cmp;
     }
@@ -627,7 +629,16 @@ public:
     {
         return SVFStmt::getDstNode();
     }
-    
+    /// Return the position of this op
+    const u32_t getOpPos(const SVFVar* op) const{
+        for(u32_t i = 0; i < getOpVarNum(); i++){
+            if(getOpVar(i)==op)
+                return i;
+        }
+        assert(false && "this operand not found!");
+        abort();
+    }
+
     NodeID getOpVarID(u32_t pos) const;
     NodeID getResID() const;
 
@@ -655,11 +666,15 @@ public:
  */
 class PhiStmt: public MultiOpndStmt
 {
+public:
+    typedef std::vector<const ICFGNode* > OpICFGNodeVec;
+
 private:
     PhiStmt();                      ///< place holder
     PhiStmt(const PhiStmt &);  ///< place holder
     void operator=(const PhiStmt &); ///< place holder
 
+    OpICFGNodeVec opICFGNodes;
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -682,11 +697,19 @@ public:
     //@}
 
     /// constructor
-    PhiStmt(SVFVar* s, const OPVars& opnds) : MultiOpndStmt(s,opnds,SVFStmt::Phi)
+    PhiStmt(SVFVar* s, const OPVars& opnds, const OpICFGNodeVec& icfgNodes) : MultiOpndStmt(s,opnds,SVFStmt::Phi), opICFGNodes(icfgNodes)
     {
+        assert(opnds.size()==icfgNodes.size() && "Numbers of operands and their ICFGNodes are not consistent?");
     }
-    void addOpVar(SVFVar* op){
+    void addOpVar(SVFVar* op, const ICFGNode* inode){
         opVars.push_back(op);
+        opICFGNodes.push_back(inode);
+        assert(opVars.size()==opICFGNodes.size() && "Numbers of operands and their ICFGNodes are not consistent?");
+    }
+
+    /// Return the corresponding ICFGNode of this operand
+    inline const ICFGNode* getOpICFGNode(const SVFVar* op) const{
+        return opICFGNodes.at(getOpPos(op));
     }
 
     /// Return true if this is a phi at the function exit 
@@ -696,6 +719,55 @@ public:
     virtual const std::string toString() const override;
 };
 
+/*!
+ * Select statement (e.g., p ? q: r which receives values from variables q and r based on condition p)
+ */
+class SelectStmt: public MultiOpndStmt
+{
+private:
+    SelectStmt();                      ///< place holder
+    SelectStmt(const SelectStmt &);  ///< place holder
+    void operator=(const SelectStmt &); ///< place holder
+
+    const SVFVar* condition;
+public:
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const SelectStmt *)
+    {
+        return true;
+    }
+    static inline bool classof(const SVFStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Select;
+    }
+    static inline bool classof(const MultiOpndStmt *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Select;
+    }
+    static inline bool classof(const GenericPAGEdgeTy *edge)
+    {
+        return edge->getEdgeKind() == SVFStmt::Select;
+    }
+    //@}
+
+    /// constructor
+    SelectStmt(SVFVar* s, const OPVars& opnds, const SVFVar* cond) : MultiOpndStmt(s,opnds,SVFStmt::Select), condition(cond)
+    {
+        assert(opnds.size()==2 && "SelectStmt can only have two operands!");
+    }
+    virtual const std::string toString() const override;
+
+    inline const SVFVar* getCondition() const{
+        return condition;
+    }
+    inline const SVFVar* getTrueValue() const{
+        return  getOpVar(0);
+    }
+    inline const SVFVar* getFalseValue() const{
+        return  getOpVar(1);
+    }
+};
 
 /*!
  * Comparison statement

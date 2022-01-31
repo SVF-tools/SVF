@@ -74,6 +74,15 @@ void ConstraintGraph::buildCG()
             addCopyCGEdge(opVar->getId(),edge->getResID());
     }
 
+    SVFStmt::SVFStmtSetTy& selects = getPAGEdgeSet(SVFStmt::Select);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = selects.begin(), eiter =
+                selects.end(); iter != eiter; ++iter)
+    {
+        const SelectStmt* edge = SVFUtil::cast<SelectStmt>(*iter);
+        for(const auto opVar : edge->getOpndVars())
+            addCopyCGEdge(opVar->getId(),edge->getResID());
+    }
+
     SVFStmt::SVFStmtSetTy& calls = getPAGEdgeSet(SVFStmt::Call);
     for (SVFStmt::SVFStmtSetTy::iterator iter = calls.begin(), eiter =
                 calls.end(); iter != eiter; ++iter)

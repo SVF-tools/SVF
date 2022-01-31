@@ -369,11 +369,11 @@ void SVFIRBuilder::processCE(const Value *val)
             const Value* cval = getCurrentValue();
             const BasicBlock* cbb = getCurrentBB();
             setCurrentLocation(selectce, nullptr);
+            NodeID cond = pag->getValueNode(selectce->getOperand(0));
             NodeID nsrc1 = pag->getValueNode(src1);
             NodeID nsrc2 = pag->getValueNode(src2);
             NodeID nres = pag->getValueNode(selectce);
-            addPhiStmt(nres,nsrc1);
-            addPhiStmt(nres,nsrc2);
+            addSelectStmt(nres,nsrc1, nsrc2, cond);
             setCurrentLocation(cval, cbb);
         }
         // if we meet a int2ptr, then it points-to black hole
@@ -629,9 +629,10 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
-
+        const Instruction* predInst = &inst.getIncomingBlock(i)->front();
+        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(predInst);
         NodeID src = getValueNode(val);
-        addPhiStmt(dst,src);
+        addPhiStmt(dst,src,icfgNode);
     }
 }
 
@@ -772,10 +773,9 @@ void SVFIRBuilder::visitSelectInst(SelectInst &inst)
     NodeID dst = getValueNode(&inst);
     NodeID src1 = getValueNode(inst.getTrueValue());
     NodeID src2 = getValueNode(inst.getFalseValue());
-
+    NodeID cond = getValueNode(inst.getCondition());
     /// Two operands have same incoming basic block, both are the current BB
-    addPhiStmt(dst,src1);
-    addPhiStmt(dst,src2);
+    addSelectStmt(dst,src1,src2, cond);
 }
 
 /*
@@ -841,8 +841,9 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
 
         NodeID rnF = getReturnNode(F);
         NodeID vnS = getValueNode(src);
+        const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(&inst);
         //vnS may be null if src is a null ptr
-        addPhiStmt(rnF,vnS);
+        addPhiStmt(rnF,vnS,icfgNode);
     }
 }
 
@@ -892,7 +893,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
     BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->front();
+        const Instruction* succInst = &inst.getSuccessor(i)->back();
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, 1-i));
     }

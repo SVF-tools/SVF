@@ -84,21 +84,42 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
 /*!
  * Add Phi statement 
  */
-PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd)
+PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
 {
     SVFVar* opNode = getGNode(opnd);
     SVFVar* resNode = getGNode(res);
     PHINodeMap::iterator it = phiNodeMap.find(resNode);
     if(it == phiNodeMap.end()){
-        PhiStmt* phi = new PhiStmt(resNode, {opNode});
+        PhiStmt* phi = new PhiStmt(resNode, {opNode}, {pred});
         addToStmt2TypeMap(phi);
         addEdge(opNode, resNode, phi);
         phiNodeMap[resNode] = phi;
         return phi;
     }
     else{
-        it->second->addOpVar(opNode);
+        it->second->addOpVar(opNode,pred);
         return it->second;
+    }
+}
+
+/*!
+ * Add Phi statement 
+ */
+SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond)
+{
+    SVFVar* op1Node = getGNode(op1);
+    SVFVar* op2Node = getGNode(op2);
+    SVFVar* dstNode = getGNode(res);
+    SVFVar* condNode = getGNode(cond);
+    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::Select, op2Node))
+        return SVFUtil::cast<SelectStmt>(edge);
+    else
+    {
+        std::vector<SVFVar*> opnds = {op1Node, op2Node};
+        SelectStmt* select = new SelectStmt(dstNode, opnds, condNode);
+        addToStmt2TypeMap(select);
+        addEdge(op1Node, dstNode, select);
+        return select;
     }
 }
 

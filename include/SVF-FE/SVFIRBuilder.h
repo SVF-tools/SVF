@@ -306,9 +306,16 @@ public:
         return edge;
     }
     /// Add Copy edge
-    inline PhiStmt* addPhiStmt(NodeID res, NodeID opnd)
+    inline PhiStmt* addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     {
-        PhiStmt *edge = pag->addPhiStmt(res,opnd);
+        PhiStmt *edge = pag->addPhiStmt(res,opnd,pred);
+        setCurrentBBAndValueForPAGEdge(edge);
+        return edge;
+    }
+    /// Add SelectStmt
+    inline SelectStmt* addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond)
+    {
+        SelectStmt *edge = pag->addSelectStmt(res,op1,op2,cond);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

@@ -101,6 +101,20 @@ const std::string PhiStmt::toString() const{
     return rawstr.str();
 }
 
+const std::string SelectStmt::toString() const{
+    std::string str;
+    raw_string_ostream rawstr(str);
+    rawstr << "SelectStmt: (Condition Var" <<  getCondition()->getId() << ") [Var" << getResID() << " <-- (Var";
+    for(const SVFVar* op : getOpndVars())
+        rawstr << op->getId() << ",";
+    rawstr << ")]\t";
+    if (Options::ShowSVFIRValue) {
+        rawstr << "\n";
+        rawstr << value2String(getValue());
+    }
+    return rawstr.str();
+}
+
 const std::string CmpStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);

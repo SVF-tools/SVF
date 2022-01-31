@@ -569,7 +569,7 @@ protected:
         PAGNodeToActualRetMap[ret] = sNode;
     }
     /// Add an llvm PHI VFG node
-    inline void addIntraPHIVFGNode(const PhiStmt* edge)
+    inline void addIntraPHIVFGNode(const MultiOpndStmt* edge)
     {
         IntraPHIVFGNode* sNode = new IntraPHIVFGNode(totalVFGNode++,edge->getRes());
         u32_t pos = 0;

@@ -130,6 +130,7 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
             {
                 collectSym(sel->getTrueValue());
                 collectSym(sel->getFalseValue());
+                collectSym(sel->getCondition());
             }
             else if (const BinaryOperator *binary = SVFUtil::dyn_cast<BinaryOperator>(inst))
             {
