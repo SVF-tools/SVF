@@ -1636,12 +1636,16 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             assert(curBB && "instruction does not have a basic block??");
 
         /// We will have one unique function exit ICFGNode for all returns
-        if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curVal)){
+        if(const ReturnInst* retInst = SVFUtil::dyn_cast<ReturnInst>(curInst)){
             const SVFFunction *fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(retInst->getParent()->getParent());
             icfgNode = pag->getICFG()->getFunExitICFGNode(fun);
         }
-        else
-            icfgNode = pag->getICFG()->getICFGNode(curInst);
+        else{
+            if(SVFUtil::isa<RetPE>(edge))
+                icfgNode = pag->getICFG()->getRetICFGNode(curInst);
+            else
+                icfgNode = pag->getICFG()->getICFGNode(curInst);
+        }
     }
     else if (const Argument* arg = SVFUtil::dyn_cast<Argument>(curVal))
     {
