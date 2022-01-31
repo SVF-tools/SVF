@@ -204,9 +204,6 @@ void PointerAnalysis::finalize()
     dumpStat();
 
     SVFIR* pag = SVFIR::getPAG();
-    // dump SVFIR
-    if (Options::PAGDotGraph)
-        pag->dump("pag_final");
 
     /// Dump results
     if (Options::PTSPrint)

@@ -1693,3 +1693,29 @@ u32_t SVFIRBuilder::getFields(std::vector<LocationSet>& fields, const Type* T, u
 
     return sz;
 }
+
+
+void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph){
+    PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();
+    PTACallGraph::CallEdgeMap::const_iterator eiter = callgraph->getIndCallMap().end();
+    for (; iter != eiter; iter++)
+    {
+        const CallICFGNode* callBlock = iter->first;
+        CallSite cs = getLLVMCallSite(callBlock->getCallSite());
+        setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
+        assert(callBlock->isIndirectCall() && "this is not an indirect call?");
+        const PTACallGraph::FunctionSet & functions = iter->second;
+        for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
+        {
+            const SVFFunction*  callee = *func_iter;
+            if (isExtCall(callee))
+                handleExtCall(cs, callee);
+            else
+                handleDirectCall(cs, callee);
+        }
+    }
+
+    // dump SVFIR
+    if (Options::PAGDotGraph)
+        pag->dump("svfir_final");
+}

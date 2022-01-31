@@ -139,6 +139,9 @@ public:
     /// Handle indirect call
     void handleIndCall(CallSite cs);
 
+    /// Update SVFIR given a call graph (creating new CallPE and RetPE for resolved indirect calls)
+    void updateCallGraph(PTACallGraph* callgraph);
+
     /// Handle external call
     //@{
     virtual void handleExtCall(CallSite cs, const SVFFunction *F);
