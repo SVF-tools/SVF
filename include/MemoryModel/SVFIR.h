@@ -645,9 +645,9 @@ private:
     /// Add Store edge
     StoreStmt* addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* val);
     /// Add Call edge
-    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs);
+    CallPE* addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
     /// Add Return edge
-    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs);
+    RetPE* addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
     /// Add Gep edge
     GepStmt* addGepStmt(NodeID src, NodeID dst, const LocationSet& ls, bool constGep);
     /// Add Offset(Gep) edge
@@ -655,9 +655,9 @@ private:
     /// Add Variant(Gep) edge
     GepStmt* addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls);
     /// Add Thread fork edge for parameter passing
-    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs);
+    TDForkPE* addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry);
     /// Add Thread join edge for parameter passing
-    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs);
+    TDJoinPE* addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit);
     //@}
 
     /// Set a pointer points-to black hole (e.g. int2ptr)

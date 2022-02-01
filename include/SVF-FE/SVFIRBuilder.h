@@ -366,16 +366,16 @@ public:
         return edge;
     }
     /// Add Call edge
-    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
+    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        CallPE *edge = pag->addCallPE(src, dst, cs);
+        CallPE *edge = pag->addCallPE(src, dst, cs, entry);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Return edge
-    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
+    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        RetPE *edge = pag->addRetPE(src, dst, cs);
+        RetPE *edge = pag->addRetPE(src, dst, cs, exit);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
@@ -401,16 +401,16 @@ public:
         return edge;
     }
     /// Add Thread fork edge for parameter passing
-    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
+    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        TDForkPE *edge = pag->addThreadForkPE(src, dst, cs);
+        TDForkPE *edge = pag->addThreadForkPE(src, dst, cs, entry);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add Thread join edge for parameter passing
-    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallICFGNode* cs)
+    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs);
+        TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs, exit);
         setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }

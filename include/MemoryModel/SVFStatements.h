@@ -481,7 +481,8 @@ private:
     CallPE(const CallPE &);  ///< place holder
     void operator=(const CallPE &); ///< place holder
 
-    const CallICFGNode* inst;		///< llvm instruction for this call
+    const CallICFGNode* call;		        /// the callsite statement calling from 
+    const FunEntryICFGNode* entry;		/// the function exit statement calling to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -502,8 +503,8 @@ public:
     //@}
 
     /// constructor
-    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, GEdgeKind k = SVFStmt::Call) :
-        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+    CallPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunEntryICFGNode* e, GEdgeKind k = SVFStmt::Call) :
+        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), call(i), entry(e)
     {
     }
 
@@ -511,11 +512,15 @@ public:
     //@{
     inline const CallICFGNode* getCallInst() const
     {
-        return inst;
+        return call;
     }
     inline const CallICFGNode* getCallSite() const
     {
-        return inst;
+        return call;
+    }
+    inline const FunEntryICFGNode* getFunEntryICFGNode() const
+    {
+        return entry;
     }
     //@}
 
@@ -533,7 +538,8 @@ private:
     RetPE(const RetPE &);  ///< place holder
     void operator=(const RetPE &); ///< place holder
 
-    const CallICFGNode* inst;		/// the callsite instruction return to
+    const CallICFGNode* call;		        /// the callsite statement returning to
+    const FunExitICFGNode* exit;		/// the function exit statement returned from
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -554,8 +560,8 @@ public:
     //@}
 
     /// constructor
-    RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, GEdgeKind k = SVFStmt::Ret) :
-        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), inst(i)
+    RetPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunExitICFGNode* e, GEdgeKind k = SVFStmt::Ret) :
+        AssignStmt(s,d,makeEdgeFlagWithCallInst(k,i)), call(i), exit(e)
     {
     }
 
@@ -563,11 +569,15 @@ public:
     //@{
     inline const CallICFGNode* getCallInst() const
     {
-        return inst;
+        return call;
     }
     inline const CallICFGNode* getCallSite() const
     {
-        return inst;
+        return call;
+    }
+    inline const FunExitICFGNode* getFunExitICFGNode() const
+    {
+        return exit;
     }
     //@}
 
@@ -1022,8 +1032,8 @@ public:
     //@}
 
     /// constructor
-    TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i) :
-        CallPE(s,d,i,SVFStmt::ThreadFork)
+    TDForkPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunEntryICFGNode* entry) :
+        CallPE(s,d,i,entry,SVFStmt::ThreadFork)
     {
     }
 
@@ -1060,8 +1070,8 @@ public:
     //@}
 
     /// Constructor
-    TDJoinPE(SVFVar* s, SVFVar* d, const CallICFGNode* i) :
-        RetPE(s,d,i,SVFStmt::ThreadJoin)
+    TDJoinPE(SVFVar* s, SVFVar* d, const CallICFGNode* i, const FunExitICFGNode* e) :
+        RetPE(s,d,i,e, SVFStmt::ThreadJoin)
     {
     }
 

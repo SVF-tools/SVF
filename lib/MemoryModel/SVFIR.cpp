@@ -240,7 +240,7 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* curV
 /*!
  * Add Call edge
  */
-CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs)
+CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -248,7 +248,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs)
         return SVFUtil::cast<CallPE>(edge);
     else
     {
-        CallPE* callPE = new CallPE(srcNode, dstNode, cs);
+        CallPE* callPE = new CallPE(srcNode, dstNode, cs,entry);
         addToStmt2TypeMap(callPE);
         addEdge(srcNode,dstNode, callPE);
         return callPE;
@@ -258,7 +258,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 /*!
  * Add Return edge
  */
-RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs)
+RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -266,7 +266,7 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs)
         return SVFUtil::cast<RetPE>(edge);
     else
     {
-        RetPE* retPE = new RetPE(srcNode, dstNode, cs);
+        RetPE* retPE = new RetPE(srcNode, dstNode, cs, exit);
         addToStmt2TypeMap(retPE);
         addEdge(srcNode,dstNode, retPE);
         return retPE;
@@ -287,7 +287,7 @@ SVFStmt* SVFIR::addBlackHoleAddrStmt(NodeID node)
 /*!
  * Add Thread fork edge for parameter passing from a spawner to its spawnees
  */
-TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs)
+TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -295,7 +295,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs)
         return SVFUtil::cast<TDForkPE>(edge);
     else
     {
-        TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs);
+        TDForkPE* forkPE = new TDForkPE(srcNode, dstNode, cs, entry);
         addToStmt2TypeMap(forkPE);
         addEdge(srcNode,dstNode, forkPE);
         return forkPE;
@@ -305,7 +305,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs)
 /*!
  * Add Thread fork edge for parameter passing from a spawnee back to its spawners
  */
-TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs)
+TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
@@ -313,7 +313,7 @@ TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs)
         return SVFUtil::cast<TDJoinPE>(edge);
     else
     {
-        TDJoinPE* joinPE = new TDJoinPE(srcNode, dstNode, cs);
+        TDJoinPE* joinPE = new TDJoinPE(srcNode, dstNode, cs, exit);
         addToStmt2TypeMap(joinPE);
         addEdge(srcNode,dstNode, joinPE);
         return joinPE;

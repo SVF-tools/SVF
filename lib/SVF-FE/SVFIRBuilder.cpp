@@ -961,8 +961,9 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     if (!cs.getType()->isVoidTy())
     {
         NodeID srcret = getReturnNode(F);
-        CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-        addRetEdge(srcret, dstrec,icfgNode);
+        CallICFGNode* callICFGNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
+        FunExitICFGNode* exitICFGNode = pag->getICFG()->getFunExitICFGNode(F);
+        addRetEdge(srcret, dstrec,callICFGNode, exitICFGNode);
     }
     //Iterators for the actual and formal parameters
     CallSite::arg_iterator itA = cs.arg_begin(), ieA = cs.arg_end();
@@ -984,7 +985,8 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);
         CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-        addCallEdge(srcAA, dstFA, icfgNode);
+        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
+        addCallEdge(srcAA, dstFA, icfgNode, entry);
     }
     //Any remaining actual args must be varargs.
     if (F->getLLVMFun()->isVarArg())
@@ -996,7 +998,8 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
             Value *AA = *itA;
             NodeID vnAA = getValueNode(AA);
             CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
-            addCallEdge(vnAA,vaF, icfgNode);
+            FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(F);
+            addCallEdge(vnAA,vaF, icfgNode,entry);
         }
     }
     if(itA != ieA)
@@ -1479,7 +1482,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                     if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                     {
                         CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                        addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
+                        FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(forkedFun));
+                        addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode, entry);
                     }
                 }
             }
@@ -1508,7 +1512,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 if(SVFUtil::isa<PointerType>(actualParm->getType()) && SVFUtil::isa<PointerType>(formalParm->getType()) )
                 {
                     CallICFGNode* icfgNode = pag->getICFG()->getCallICFGNode(inst);
-                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode);
+                    FunEntryICFGNode* entry = pag->getICFG()->getFunEntryICFGNode(LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(taskFunc));
+                    addThreadForkEdge(pag->getValueNode(actualParm), pag->getValueNode(formalParm),icfgNode, entry);
                 }
             }
             else
