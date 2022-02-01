@@ -74,7 +74,7 @@ SVFIR* SVFIRBuilder::build(SVFModule* svfModule)
     {
         const SVFFunction& fun = **fit;
         /// collect return node of function fun
-        if(!fun.isDeclaration())
+        if(!SVFUtil::isExtCall(&fun))
         {
             /// Return SVFIR node will not be created for function which can not
             /// reach the return instruction due to call to abort(), exit(),
