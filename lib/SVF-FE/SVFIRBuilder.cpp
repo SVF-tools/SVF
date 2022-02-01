@@ -1661,11 +1661,19 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
     		icfgNode = pag->getICFG()->getICFGNode(&curBB->front());
     }
     else if (SVFUtil::isa<GlobalVariable>(curVal) ||
-             SVFUtil::isa<Function>(curVal) ||
              SVFUtil::isa<Constant>(curVal) ||
 			 SVFUtil::isa<MetadataAsValue>(curVal))
     {
         pag->addGlobalPAGEdge(edge);
+    }
+    else if(const Function* fun = SVFUtil::dyn_cast<Function>(curVal)){
+        const SVFFunction* f = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+        if((&fun->getEntryBlock() == curBB) && isExtCall(f)){
+            /// all external function connected to a indirect call, we will put SVFStmts in the FunctionEntryICFGNode
+            icfgNode = pag->getICFG()->getFunEntryICFGNode(f);
+        }
+        else
+            pag->addGlobalPAGEdge(edge);
     }
     else
     {
@@ -1707,16 +1715,19 @@ void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph){
     {
         const CallICFGNode* callBlock = iter->first;
         CallSite cs = getLLVMCallSite(callBlock->getCallSite());
-        setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
         assert(callBlock->isIndirectCall() && "this is not an indirect call?");
         const PTACallGraph::FunctionSet & functions = iter->second;
         for (PTACallGraph::FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
         {
             const SVFFunction*  callee = *func_iter;
-            if (isExtCall(callee))
+            if (isExtCall(callee)){
+                setCurrentLocation(callee->getLLVMFun(), &callee->getLLVMFun()->getEntryBlock());
                 handleExtCall(cs, callee);
-            else
+            }
+            else{
+                setCurrentLocation(callBlock->getCallSite(), callBlock->getCallSite()->getParent());
                 handleDirectCall(cs, callee);
+            }
         }
     }
 
