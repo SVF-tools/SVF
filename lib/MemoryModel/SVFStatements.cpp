@@ -90,9 +90,9 @@ const std::string CopyStmt::toString() const{
 const std::string PhiStmt::toString() const{
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "PhiStmt: [Var" << getResID() << " <-- (Var";
-    for(const SVFVar* op : getOpndVars())
-        rawstr << op->getId() << ",";
+    rawstr << "PhiStmt: [Var" << getResID() << " <-- (";
+    for(u32_t i = 0; i < getOpVarNum(); i++)
+        rawstr << "[Var" << getOpVar(i)->getId() << ", ICFGNode" << getOpICFGNode(i)->getId() <<  "],";
     rawstr << ")]\t";
     if (Options::ShowSVFIRValue) {
         rawstr << "\n";
@@ -152,12 +152,12 @@ const std::string BranchStmt::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
     if(isConditional())
-        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]\t";
+        rawstr << "BranchStmt: [Condition Var" <<  getCondition()->getId() << "]\n";
     else
-        rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\t";
+        rawstr << "BranchStmt: [" <<  " Unconditional branch" << "]\n";
 
     for(u32_t i = 0; i < getNumSuccessors(); i++)
-        rawstr << "Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "\n";
+        rawstr << "Successor " << i << " ICFGNode" << getSuccessor(i)->getId() << "   ";
 
     if (Options::ShowSVFIRValue) {
         rawstr << "\n";

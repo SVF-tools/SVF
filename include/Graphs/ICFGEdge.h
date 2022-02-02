@@ -112,15 +112,8 @@ class IntraCFGEdge : public ICFGEdge
 {
 
 public:
-    /// the first element is a boolean (for if/else) or numeric condition value (for switch)
-    /// the second element is the value when this condition should hold to execute this CFGEdge.
-    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
-    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
-
-    typedef std::pair<const Value*,NodeID> BranchCondition;
-
     /// Constructor
-    IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF)
+    IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF), conditionVar(nullptr), branchCondVal(0)
     {
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -139,19 +132,29 @@ public:
     }
     //@}
 
-    const BranchCondition& getBranchCondtion() const{
-        return brCondition;
+    const Value* getCondition() const{
+        return conditionVar;
     }
 
-    void setBranchCondtion(const Value* pNode, NodeID branchID){
-        brCondition = std::make_pair(pNode,branchID);
+    const s64_t getSuccessorCondValue() const{
+        assert(getCondition() && "this is not a conditional branch edge");
+        return branchCondVal;
+    }
+
+    void setBranchCondition(const Value* c, s64_t bVal){
+        conditionVar = c;
+        branchCondVal = bVal;
     }
 
     virtual const std::string toString() const;
 
 private:
-    BranchCondition brCondition;
-
+    /// conditionVar is a boolean (for if/else) or numeric condition variable (for switch)
+    /// branchCondVal is the value when this condition should hold to execute this CFGEdge.
+    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
+    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
+    const Value* conditionVar;
+    s64_t branchCondVal;
 };
 
 

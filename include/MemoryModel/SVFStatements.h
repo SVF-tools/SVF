@@ -639,15 +639,6 @@ public:
     {
         return SVFStmt::getDstNode();
     }
-    /// Return the position of this op
-    const u32_t getOpPos(const SVFVar* op) const{
-        for(u32_t i = 0; i < getOpVarNum(); i++){
-            if(getOpVar(i)==op)
-                return i;
-        }
-        assert(false && "this operand not found!");
-        abort();
-    }
 
     NodeID getOpVarID(u32_t pos) const;
     NodeID getResID() const;
@@ -718,8 +709,8 @@ public:
     }
 
     /// Return the corresponding ICFGNode of this operand
-    inline const ICFGNode* getOpICFGNode(const SVFVar* op) const{
-        return opICFGNodes.at(getOpPos(op));
+    inline const ICFGNode* getOpICFGNode(u32_t op_idx) const{
+        return opICFGNodes.at(op_idx);
     }
 
     /// Return true if this is a phi at the function exit 

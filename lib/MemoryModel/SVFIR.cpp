@@ -98,7 +98,8 @@ PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     }
     else{
         it->second->addOpVar(opNode,pred);
-        return it->second;
+        /// return null if we already added this PhiStmt
+        return nullptr;
     }
 }
 

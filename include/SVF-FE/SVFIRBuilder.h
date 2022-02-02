@@ -309,7 +309,9 @@ public:
     inline PhiStmt* addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     {
         PhiStmt *edge = pag->addPhiStmt(res,opnd,pred);
-        setCurrentBBAndValueForPAGEdge(edge);
+        /// If we already added this phi node, then skip this adding
+        if(edge)
+            setCurrentBBAndValueForPAGEdge(edge);
         return edge;
     }
     /// Add SelectStmt

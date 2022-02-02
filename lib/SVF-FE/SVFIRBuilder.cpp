@@ -629,7 +629,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
         const Value* val = inst.getIncomingValue(i);
         const Instruction* incomingInst = SVFUtil::dyn_cast<Instruction>(val);
         assert((incomingInst==nullptr) || (incomingInst->getFunction() == inst.getFunction()));
-        const Instruction* predInst = &inst.getIncomingBlock(i)->front();
+        const Instruction* predInst = &inst.getIncomingBlock(i)->back();
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(predInst);
         NodeID src = getValueNode(val);
         addPhiStmt(dst,src,icfgNode);
@@ -893,7 +893,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
     BranchStmt::SuccAndCondPairVec successors;
     for (u32_t i = 0; i < inst.getNumSuccessors(); ++i)
     {
-        const Instruction* succInst = &inst.getSuccessor(i)->back();
+        const Instruction* succInst = &inst.getSuccessor(i)->front();
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, 1-i));
     }

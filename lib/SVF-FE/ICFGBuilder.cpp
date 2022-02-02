@@ -97,7 +97,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
             }
             InstVec nextInsts;
             getNextInsts(inst, nextInsts);
-            NodeID branchID = 0;
+            u32_t branchID = 0;
             for (InstVec::const_iterator nit = nextInsts.begin(), enit =
                         nextInsts.end(); nit != enit; ++nit)
             {
@@ -112,14 +112,19 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                 
                 if (const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(inst))
                 {
+                    assert(branchID <= 2 && "if/else has more than two branches?");
                     if(br->isConditional())
-                        icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), branchID);
+                        icfg->addConditionalIntraEdge(srcNode, dstNode, br->getCondition(), 1 - branchID);
                     else 
                         icfg->addIntraEdge(srcNode, dstNode);
                 }
                 else if (const SwitchInst* si = SVFUtil::dyn_cast<SwitchInst>(inst))
                 {
-                    icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),branchID);
+                    /// branch condition value
+                    const ConstantInt* condVal = const_cast<SwitchInst*>(si)->findCaseDest(const_cast<BasicBlock*>(succ->getParent()));
+                    /// default case is set to -1;
+                    s64_t val = condVal ? condVal->getSExtValue() : -1;
+                    icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),val);
                 }
                 else
                     icfg->addIntraEdge(srcNode, dstNode);
