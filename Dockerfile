@@ -17,7 +17,7 @@ ENV lib_deps="make g++-8 gcc-8 git zlib1g-dev libncurses5-dev build-essential li
 ENV build_deps="wget xz-utils cmake python git gdb tcl"
 
 # Fetch dependencies.
-RUN apt-get update
+RUN apt-get update --fix-missing
 RUN apt-get install -y $build_deps $lib_deps
 
 # Fetch and build SVF source.
