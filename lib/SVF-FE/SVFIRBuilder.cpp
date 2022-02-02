@@ -1687,6 +1687,18 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
 
     pag->addToSVFStmtList(icfgNode,edge);
     icfgNode->addSVFStmt(edge);
+    if(const CallPE* callPE = SVFUtil::dyn_cast<CallPE>(edge)){
+        CallICFGNode* callNode = const_cast<CallICFGNode*>(callPE->getCallSite());
+        FunEntryICFGNode* entryNode = const_cast<FunEntryICFGNode*>(callPE->getFunEntryICFGNode());
+        if(ICFGEdge* edge = pag->getICFG()->hasInterICFGEdge(callNode,entryNode, ICFGEdge::CallCF))
+            SVFUtil::cast<CallCFGEdge>(edge)->addCallPE(callPE);
+    }
+    else if(const RetPE* retPE = SVFUtil::dyn_cast<RetPE>(edge)){
+        RetICFGNode* retNode = const_cast<RetICFGNode*>(retPE->getCallSite()->getRetICFGNode());
+        FunExitICFGNode* exitNode = const_cast<FunExitICFGNode*>(retPE->getFunExitICFGNode());
+        if(ICFGEdge* edge = pag->getICFG()->hasInterICFGEdge(exitNode, retNode, ICFGEdge::RetCF))
+            SVFUtil::cast<RetCFGEdge>(edge)->addRetPE(retPE);
+    }
 }
 
 

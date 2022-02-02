@@ -632,7 +632,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
                     return false;
             }
         }
-        assert(hasIntersection && "cannot find field of specified offset");
+        //assert(hasIntersection && "cannot find field of specified offset");
         return true;
     }
     else

@@ -384,7 +384,7 @@ public:
     }
 
     /// Return callsite
-    inline const RetICFGNode* getRetBlock() const
+    inline const RetICFGNode* getRetICFGNode() const
     {
     	assert(ret && "RetICFGNode not set?");
         return ret;

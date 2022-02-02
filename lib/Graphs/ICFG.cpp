@@ -440,9 +440,24 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
             RetICFGNode* retBlockNode = getRetICFGNode(cs);
             FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
             FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-            addCallEdge(callBlockNode, calleeEntryNode, cs);
-            addRetEdge(calleeExitNode, retBlockNode, cs);
-
+            if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs)){
+                for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
+                {
+                    if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt)){
+                        if(callPE->getFunEntryICFGNode() == calleeEntryNode)
+                            SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(callPE);
+                    }
+                }
+            }
+            if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs)){
+                for (const SVFStmt *stmt : retBlockNode->getSVFStmts())
+                {
+                    if(const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt)){
+                        if(retPE->getFunExitICFGNode() == calleeExitNode)
+                            SVFUtil::cast<RetCFGEdge>(retEdge)->addRetPE(retPE);
+                    }
+                }
+            }
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))
                 addIntraEdge(calleeEntryNode, calleeExitNode); 

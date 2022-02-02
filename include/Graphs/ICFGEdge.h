@@ -34,6 +34,8 @@ namespace SVF
 {
 
 class ICFGNode;
+class CallPE;
+class RetPE;
 
 /*!
  * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
@@ -157,8 +159,6 @@ private:
     s64_t branchCondVal;
 };
 
-
-
 /*!
  * Call ICFG edge representing parameter passing/return from a caller to a callee
  */
@@ -167,6 +167,7 @@ class CallCFGEdge : public ICFGEdge
 
 private:
 	const Instruction*  cs;
+    std::vector<const CallPE*> callPEs;
 public:
     /// Constructor
     CallCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
@@ -177,6 +178,14 @@ public:
     inline const Instruction*  getCallSite() const
     {
         return cs;
+    }
+    /// Add call parameter edge to this CallCFGEdge
+    inline void addCallPE(const CallPE* callPE){
+        callPEs.push_back(callPE);
+    }
+    /// Add get parameter edge to this CallCFGEdge
+    inline const std::vector<const CallPE*>& getCallPEs() const{
+        return callPEs;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -204,16 +213,26 @@ class RetCFGEdge : public ICFGEdge
 
 private:
 	const Instruction*  cs;
+    const RetPE* retPE;
 public:
     /// Constructor
     RetCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
-        ICFGEdge(s,d,RetCF),cs(c)
+        ICFGEdge(s,d,RetCF),cs(c),retPE(nullptr)
     {
     }
     /// Return callsite ID
     inline const Instruction*  getCallSite() const
     {
         return cs;
+    }
+    /// Add call parameter edge to this CallCFGEdge
+    inline void addRetPE(const RetPE* ret){
+        assert(retPE==nullptr && "we can only have one retPE for each RetCFGEdge");
+        retPE = ret;
+    }
+    /// Add get parameter edge to this CallCFGEdge
+    inline const RetPE* getRetPE() const{
+        return retPE;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
