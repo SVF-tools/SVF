@@ -139,7 +139,7 @@ public:
             funName = "llvm." + F->getName().split('.').second.split('.').first.str();
         }
         llvm::StringMap<extf_t>::const_iterator it= info.find(funName);
-        if(it == info.end() || !F->isDeclaration())
+        if(it == info.end())
             return EFT_OTHER;
         else
             return it->second;

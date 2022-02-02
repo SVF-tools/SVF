@@ -461,7 +461,6 @@ static const ei_pair ei_pairs[]=
     {"SSLv23_client_method", ExtAPI::EFT_ALLOC},
     {"SyGetmem", ExtAPI::EFT_ALLOC},
     {"TLSv1_client_method", ExtAPI::EFT_ALLOC},
-    {"Void_ExtendCore", ExtAPI::EFT_ALLOC},
     {"XAddExtension", ExtAPI::EFT_ALLOC},
     {"XAllocClassHint", ExtAPI::EFT_ALLOC},
     {"XAllocSizeHints", ExtAPI::EFT_ALLOC},
