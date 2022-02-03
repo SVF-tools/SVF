@@ -502,53 +502,7 @@ struct DOTGraphTraits<ICFG*> : public DOTGraphTraits<SVFIR*>
     /// Return the label of an ICFG node
     static std::string getSimpleNodeLabel(NodeType *node, ICFG*)
     {
-        std::string str;
-        raw_string_ostream rawstr(str);
-        rawstr << "NodeID: " << node->getId() << "\n";
-        if (IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
-        {
-            rawstr << "IntraICFGNode ID: " << bNode->getId() << " \t";
-            SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getSVFStmtList(bNode);
-            if (edges.empty()) {
-                rawstr << value2String(bNode->getInst()) << " \t";
-            } else {
-                for (SVFIR::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-                {
-                    const PAGEdge* edge = *it;
-                    rawstr << edge->toString();
-                }
-            }
-            rawstr << " {fun: " << bNode->getFun()->getName() << "}";
-        }
-        else if (FunEntryICFGNode* entry = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
-        {
-            rawstr << entry->toString();
-        }
-        else if (FunExitICFGNode* exit = SVFUtil::dyn_cast<FunExitICFGNode>(node))
-        {
-            rawstr << exit->toString();
-        }
-        else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
-        {
-            rawstr << call->toString();
-        }
-        else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
-        {
-            rawstr << ret->toString();
-        }
-        else if (GlobalICFGNode* glob  = SVFUtil::dyn_cast<GlobalICFGNode>(node) )
-        {
-            SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getSVFStmtList(glob);
-            for (SVFIR::SVFStmtList::iterator it = edges.begin(), eit = edges.end(); it != eit; ++it)
-            {
-                const PAGEdge* edge = *it;
-                rawstr << edge->toString();
-            }
-        }
-        else
-            assert(false && "what else kinds of nodes do we have??");
-
-        return rawstr.str();
+        return node->toString();
     }
 
     static std::string getNodeAttributes(NodeType *node, ICFG*)

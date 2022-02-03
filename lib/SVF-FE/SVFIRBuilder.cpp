@@ -542,7 +542,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else
     {
-        //TODO:assert(false,"what else do we have");
+        //TODO:assert(SVFUtil::isa<ConstantData>(C) || SVFUtil::isa<ConstantVector>(C),"what else do we have");
     }
 }
 
@@ -730,7 +730,7 @@ void SVFIRBuilder::visitBinaryOperator(BinaryOperator &inst)
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
     u32_t opcode = inst.getOpcode();
-    const BinaryOPStmt* binayPE = addBinaryOPEdge(op1Node, op2Node, dst, opcode);
+    addBinaryOPEdge(op1Node, op2Node, dst, opcode);
 }
 
 /*!
@@ -743,7 +743,7 @@ void SVFIRBuilder::visitUnaryOperator(UnaryOperator &inst)
     Value* opnd = inst.getOperand(0);
     NodeID src = getValueNode(opnd);
     u32_t opcode = inst.getOpcode();
-    const UnaryOPStmt* unaryPE = addUnaryOPEdge(src, dst, opcode);
+    addUnaryOPEdge(src, dst, opcode);
 }
 
 /*!
@@ -758,7 +758,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
     Value* op2 = inst.getOperand(1);
     NodeID op2Node = getValueNode(op2);
     u32_t predicate = inst.getPredicate();
-    const CmpStmt* cmpPE = addCmpEdge(op1Node, op2Node, dst, predicate);
+    addCmpEdge(op1Node, op2Node, dst, predicate);
 }
 
 
@@ -897,7 +897,7 @@ void SVFIRBuilder::visitBranchInst(BranchInst &inst){
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode, 1-i));
     }
-    const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
+    addBranchStmt(brinst, cond,successors);
 }
 
 void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
@@ -914,7 +914,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode,val));
     }
-    const BranchStmt *brStmt = addBranchStmt(brinst, cond,successors);
+    addBranchStmt(brinst, cond,successors);
 }
 
 ///   %ap = alloca %struct.va_list
@@ -1016,16 +1016,23 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
-const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields)
+const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
     const Value * value = stripAllCasts(V);
     assert(value && "null ptr?");
+    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
+        value = gep->getPointerOperand();
+
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = ptype->getElementType();
-    
+
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
+    /// use user-specified size for this copy operation if the size is a constaint int
+    if(szValue && SVFUtil::isa<ConstantInt>(szValue))
+        numOfElems = SVFUtil::cast<ConstantInt>(szValue)->getSExtValue();
+
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t elementIdx = 0; elementIdx < numOfElems; elementIdx++){
         u32_t fldIdx = SVFUtil::isa<ArrayType>(T) ? 0: elementIdx;
@@ -1042,7 +1049,7 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
  * Add the load/store constraints and temp. nodes for the complex constraint
  * *D = *S (where D/S may point to structs).
  */
-void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
+void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue)
 {
     assert(D && S);
     NodeID vnD= getValueNode(D), vnS= getValueNode(S);
@@ -1054,18 +1061,16 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, u32_t sz)
     //Get the max possible size of the copy, unless it was provided.
     std::vector<LocationSet> srcFields;
     std::vector<LocationSet> dstFields;
-    const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields);
-    const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields);
+    const Type *stype = getBaseTypeAndFlattenedFields(S, srcFields, szValue);
+    const Type *dtype = getBaseTypeAndFlattenedFields(D, dstFields, szValue);
     if(srcFields.size() > dstFields.size())
         fields = dstFields;
     else
         fields = srcFields;
 
     /// If sz is 0, we will add edges for all fields.
-    if (sz == 0)
-        sz = fields.size();
+    u32_t sz = fields.size();
 
-    assert(fields.size() >= sz && "the number of flattened fields is smaller than size");
     if (fields.size() == 1 && (isConstantData(D) || isConstantData(S))) {
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(vnD,dummy);
@@ -1192,7 +1197,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_L_A0__A0R_A1R:
             {
-                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+                addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
                 //memcpy returns the dest.
                 if(SVFUtil::isa<PointerType>(inst->getType()))
                 {
@@ -1201,7 +1206,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 break;
             }
             case ExtAPI::EFT_A1R_A0R:
-                addComplexConsForExt(cs.getArgument(1), cs.getArgument(0));
+                addComplexConsForExt(cs.getArgument(1), cs.getArgument(0), cs.getArgument(2));
                 break;
             case ExtAPI::EFT_L_A1__FunPtr:
             {
@@ -1221,7 +1226,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_A3R_A1R_NS:
                 //These func. are never used to copy structs, so the size is 1.
-                addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), 1);
+                addComplexConsForExt(cs.getArgument(3), cs.getArgument(1), nullptr);
                 break;
             case ExtAPI::EFT_A1R_A0:
             {
@@ -1324,7 +1329,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
-                const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields);
+                const Type *type = getBaseTypeAndFlattenedFields(vArg3, fields, nullptr);
                 assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
@@ -1348,7 +1353,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 // We get all fields
                 vector<LocationSet> fields;
-                const Type *type = getBaseTypeAndFlattenedFields(vArg,fields);
+                const Type *type = getBaseTypeAndFlattenedFields(vArg,fields,nullptr);
                 assert(fields.size() >= 4 && "_Rb_tree_node_base should have at least 4 fields.\n");
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
@@ -1555,15 +1560,13 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
          * 2. GlobalVariable
          */
         assert((SVFUtil::isa<Instruction>(curVal) || SVFUtil::isa<GlobalVariable>(curVal)) && "curVal not an instruction or a globalvariable?");
-        const std::vector<FlattenedFieldInfo> &fieldinfo = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(baseType);
-        const Type *type = fieldinfo[fieldidx].getFlattenElemTy();
 
         // We assume every GepValNode and its GepEdge to the baseNode are unique across the whole program
         // We preserve the current BB information to restore it after creating the gepNode
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),type,fieldidx);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),baseType,fieldidx);
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;
