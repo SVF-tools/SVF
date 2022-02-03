@@ -523,16 +523,20 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray>(C))
     {
-        if (cppUtil::isValVtbl(gvar) == false)
-            for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-                InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset);
-
+        const ArrayType *aty = SVFUtil::cast<ArrayType>(C->getType());
+        const std::vector<u32_t>& offsetvect =
+            SymbolTableInfo::SymbolInfo()->getFlattenedElemIdxVec(aty);
+        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
+        {
+            u32_t off = offsetvect[i];
+            InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
+        }
     }
     else if (SVFUtil::isa<ConstantStruct>(C))
     {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
+            SymbolTableInfo::SymbolInfo()->getFlattenedElemIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = offsetvect[i];
@@ -540,9 +544,22 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         }
 
     }
-    else
+    else if(ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
-        //TODO:assert(SVFUtil::isa<ConstantData>(C) || SVFUtil::isa<ConstantVector>(C),"what else do we have");
+        if(Options::ModelConsts){
+            if(ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
+                for(u32_t i = 0; i < seq->getNumElements(); i++){
+                    Constant* ct = seq->getElementAsConstant(i);
+                    InitialGlobal(gvar, ct, offset + i);
+                }
+            }
+            else{
+                InitialGlobal(gvar, data, offset);
+            }
+        }
+    }
+    else{
+        //TODO:assert(SVFUtil::isa<ConstantVector>(C),"what else do we have");
     }
 }
 

@@ -453,6 +453,23 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
                                       offset + off);
         }
     }
+    else if(const ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
+    {
+        if(Options::ModelConsts){
+            if(const ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
+                for(u32_t i = 0; i < seq->getNumElements(); i++){
+                    const Constant* ct = seq->getElementAsConstant(i);
+                    handleGlobalInitializerCE(ct, offset + i);
+                }
+            }
+            else{
+                handleGlobalInitializerCE(data, offset);
+            }
+        }
+    }
+    else{
+        //TODO:assert(SVFUtil::isa<ConstantVector>(C),"what else do we have");
+    }
 }
 
 /*
