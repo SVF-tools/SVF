@@ -709,7 +709,7 @@ void SVFIRBuilder::visitCastInst(CastInst &inst)
     }
     else
     {
-        Value * opnd = inst.getOperand(0);
+        const Value * opnd = inst.getOperand(0);
         if (!SVFUtil::isa<PointerType>(opnd->getType()))
             opnd = stripAllCasts(opnd);
 
@@ -1019,50 +1019,22 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields)
 {
     assert(V);
-    fields.push_back(LocationSet(0));
-
-    const Type *T = V->getType();
-    // Use the biggest struct type out of all operands.
-    if (const User *U = SVFUtil::dyn_cast<User>(V))
-    {
-        u32_t msz = 1;      //the max size seen so far
-        // In case of BitCast, try the target type itself
-        if (SVFUtil::isa<BitCastInst>(V))
-        {
-            u32_t sz = getFields(fields, T, msz);
-            if (msz < sz)
-            {
-                msz = sz;
-            }
-        }
-        // Try the types of all operands
-        for (User::const_op_iterator it = U->op_begin(), ie = U->op_end();
-                it != ie; ++it)
-        {
-            const Type *operandtype = it->get()->getType();
-
-            u32_t sz = getFields(fields, operandtype, msz);
-            if (msz < sz)
-            {
-                msz = sz;
-                T = operandtype;
-            }
-        }
-    }
-    // If V is a CE, the actual pointer type is its operand.
-    else if (const ConstantExpr *E = SVFUtil::dyn_cast<ConstantExpr>(V))
-    {
-        T = E->getOperand(0)->getType();
-        getFields(fields, T, 0);
-    }
-    // Handle Argument case
-    else if (SVFUtil::isa<Argument>(V))
-    {
-        getFields(fields, T, 0);
-    }
-
+    const Value * value = stripAllCasts(V);
+    assert(value && "null ptr?");
+    const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = ptype->getElementType();
+    
+    u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
+    LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
+    for(u32_t elementIdx = 0; elementIdx < numOfElems; elementIdx++){
+        u32_t fldIdx = SVFUtil::isa<ArrayType>(T) ? 0: elementIdx;
+        LocationSet ls(fldIdx); 
+        // make a ConstantInt and create char for the content type due to byte-wise copy 
+        const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, elementIdx));
+        ls.addOffsetValue(offset, nullptr);
+        fields.push_back(ls);
+    }
     return T;
 }
 
@@ -1700,30 +1672,6 @@ void SVFIRBuilder::setCurrentBBAndValueForPAGEdge(PAGEdge* edge)
             SVFUtil::cast<RetCFGEdge>(edge)->addRetPE(retPE);
     }
 }
-
-
-/*!
- * Replace fields with flatten fields of T if the number of its fields is larger than msz.
- */
-u32_t SVFIRBuilder::getFields(std::vector<LocationSet>& fields, const Type* T, u32_t msz)
-{
-    if (!SVFUtil::isa<PointerType>(T))
-        return 0;
-
-    T = T->getContainedType(0);
-    const std::vector<FlattenedFieldInfo>& stVec = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(T);
-    u32_t sz = stVec.size();
-    if (msz < sz)
-    {
-        /// Replace fields with T's flatten fields.
-        fields.clear();
-        for(std::vector<FlattenedFieldInfo>::const_iterator it = stVec.begin(), eit = stVec.end(); it!=eit; ++it)
-            fields.push_back(LocationSet(*it));
-    }
-
-    return sz;
-}
-
 
 void SVFIRBuilder::updateCallGraph(PTACallGraph* callgraph){
     PTACallGraph::CallEdgeMap::const_iterator iter = callgraph->getIndCallMap().begin();

@@ -360,7 +360,7 @@ public:
     /// Flatterned element idx of an array or struct by considering stride
     const std::vector<u32_t>& getFlattenedElemIdxVec(const Type *T);
     /// Flatterned field index information of a struct ignoring any array field
-    const std::vector<u32_t>& getFlattenedFieldIdxVec(const StructType *T);
+    const std::vector<u32_t>& getFlattenedFieldIdxVec(const Type *T);
 
     const std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec(const Type *T);
 

@@ -130,9 +130,6 @@ public:
     /// Get the base type and max offset
     const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields);
 
-    /// Replace fields with flatten fields of T if the number of its fields is larger than msz.
-    u32_t getFields(std::vector<LocationSet>& fields, const Type* T, u32_t msz);
-
     /// Handle direct call
     void handleDirectCall(CallSite cs, const SVFFunction *F);
 
