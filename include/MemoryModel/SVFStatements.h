@@ -434,7 +434,6 @@ public:
 
     inline const LocationSet& getLocationSet() const
     {
-        assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return ls;
     }
     inline const LocationSet::OffsetValueVec& getOffsetValueVec() const
@@ -453,6 +452,7 @@ public:
     /// Field index of the gep statement if it access the field of a struct
     inline s64_t getConstantFieldIdx() const
     {
+        assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return getLocationSet().accumulateConstantFieldIdx();
     }
     /// Gep statement with a variant field index (pointer arithmetic) for struct field access 

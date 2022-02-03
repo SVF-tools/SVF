@@ -259,7 +259,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
         setType(newGep, newGepType);
         // We call the object created in the non-TBHC analysis the original object.
-        setOriginalObj(newGep, ppag->getGepObjVar(baseNode->getMemObj(), offset));
+        setOriginalObj(newGep, ppag->getGepObjVar(baseNode->getId(), offset));
         setAllocationSite(newGep, 0);
 
         geps.set(newGep);

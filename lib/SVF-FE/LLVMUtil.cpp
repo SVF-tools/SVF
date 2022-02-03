@@ -188,15 +188,15 @@ const Value * SVFUtil::stripConstantCasts(const Value *val)
 /*!
  * Strip all casts
  */
-Value * SVFUtil::stripAllCasts(Value *val)
+const Value * SVFUtil::stripAllCasts(const Value *val)
 {
     while (true)
     {
-        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
+        if (const CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
         {
             val = ci->getOperand(0);
         }
-        else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
+        else if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
         {
             if(ce->isCast())
                 val = ce->getOperand(0);

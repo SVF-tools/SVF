@@ -90,12 +90,6 @@ public:
     {
     }
 
-    /// Initialization from FlattenedFieldInfo
-    LocationSet(const FlattenedFieldInfo& fi)
-        : fldIdx(fi.getFlattenFldIdx())
-    {
-    }
-
     ~LocationSet() {}
 
     /// Overload operators

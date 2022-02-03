@@ -118,6 +118,11 @@ s64_t LocationSet::accumulateConstantOffset() const{
         const Type* type = offsetValues[i].second;
         const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(value);
         assert(op && "not a constant offset?");
+        if(type==nullptr){
+            totalConstOffset += op->getSExtValue();
+            continue;
+        }
+
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
             totalConstOffset += op->getSExtValue() * getElementNum(pty->getElementType());
         else{

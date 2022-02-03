@@ -510,7 +510,7 @@ inline const BasicBlock* getFunExitBB(const Function* fun)
 const Value * stripConstantCasts(const Value *val);
 
 /// Strip off the all casts
-Value *stripAllCasts(Value *val) ;
+const Value *stripAllCasts(const Value *val) ;
 
 /// Get the type of the heap allocation
 const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;

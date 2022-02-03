@@ -392,7 +392,7 @@ const std::vector<u32_t>& SymbolTableInfo::getFlattenedElemIdxVec(const Type *T)
 }
 
 /// Flatterned field index information of a struct ignoring any array field
-const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const StructType *T)
+const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const Type *T)
 {
     return getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
 }
@@ -625,7 +625,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         for (; it != eit; ++it)
         {
             const FlattenedFieldInfo& fieldLS = *it;
-            if (ls.intersects(LocationSet(fieldLS)))
+            if (ls.intersects(LocationSet(fieldLS.getFlattenFldIdx())))
             {
                 hasIntersection = true;
                 if (fieldLS.getFlattenElemTy()->isPointerTy())
