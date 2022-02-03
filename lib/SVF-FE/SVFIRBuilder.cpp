@@ -523,20 +523,16 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
     }
     else if (SVFUtil::isa<ConstantArray>(C))
     {
-        const ArrayType *aty = SVFUtil::cast<ArrayType>(C->getType());
-        const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFlattenedElemIdxVec(aty);
-        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-        {
-            u32_t off = offsetvect[i];
-            InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
-        }
+        if (cppUtil::isValVtbl(gvar) == false)
+            for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
+                InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset);
+
     }
     else if (SVFUtil::isa<ConstantStruct>(C))
     {
         const StructType *sty = SVFUtil::cast<StructType>(C->getType());
         const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFlattenedElemIdxVec(sty);
+            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
             u32_t off = offsetvect[i];
