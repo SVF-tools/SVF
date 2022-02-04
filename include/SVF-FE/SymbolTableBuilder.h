@@ -69,7 +69,7 @@ public:
     /// Handle constant expression
     // @{
     void handleGlobalCE(const GlobalVariable *G);
-    void handleGlobalInitializerCE(const Constant *C, u32_t offset);
+    void handleGlobalInitializerCE(const Constant *C);
     void handleCE(const Value *val);
     // @}
 

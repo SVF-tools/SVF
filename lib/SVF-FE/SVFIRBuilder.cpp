@@ -1022,7 +1022,6 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     }
 }
 
-
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
