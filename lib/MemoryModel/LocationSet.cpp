@@ -127,9 +127,8 @@ s64_t LocationSet::accumulateConstantOffset() const{
             totalConstOffset += op->getSExtValue() * getElementNum(pty->getElementType());
         else{
             s64_t offset = op->getSExtValue();
-            const std::vector<u32_t>& so = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdxVec(type); 
-            assert((u32_t)offset <= so.size() && "out of bounds or offset is a negative value?");
-            totalConstOffset += so[op->getSExtValue()];
+            u32_t flattenOffset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offset); 
+            totalConstOffset += flattenOffset;
         }
     }
     return totalConstOffset;

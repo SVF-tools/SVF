@@ -269,17 +269,23 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
             gi != ge; ++gi)
     {
-        ls.addOffsetValue(gi.getOperand(), *gi);
+        const Type* gepTy = *gi;
+        const Value* offsetVal = gi.getOperand();
+        ls.addOffsetValue(offsetVal, gepTy);
 
         //The int value of the current index operand
-        ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand());
+        const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(offsetVal);
 
-        // Handling array types, skipe array handling here
-        // We treat whole array as one, but we can distinguish different field of an array of struct
-        // e.g. s[1].f1 is differet from s[0].f2
-        if(SVFUtil::isa<ArrayType>(*gi))
-            continue;
-        else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+        // if Options::ModelConsts is disabled. We will treat whole array as one, 
+        // but we can distinguish different field of an array of struct, e.g. s[1].f1 is differet from s[0].f2
+        if(SVFUtil::isa<ArrayType>(gepTy)){
+            if(!op) 
+                continue;
+            s64_t idx = op->getSExtValue();
+            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(gepTy, idx);
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);  
+        }
+        else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
             // If the first operand is a non-constant, it is likely an array access 
             // (e.g., %ptr = getelementptr struct_A, %struct_A* %1, i64 %idx)
@@ -289,28 +295,21 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             assert(op && "non-const index in an operand in GEP");
             //The actual index
             s64_t idx = op->getSExtValue();
-            const vector<u32_t> &so = SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(ST);
-            if ((unsigned)idx >= so.size())
-            {
-                outs() << "!! Struct index out of bounds" << idx << "\n";
-                assert(0);
-            }
-            // add the translated offset
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + so[idx]);
+            u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(ST, idx);
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
-        else if ((*gi)->isSingleValueType())
+        else if (gepTy->isSingleValueType())
         {
-            if(!op){
-                // Handle non-constant index
-                // Given a gep edge p = q + idx, where idx is non-constant
+            // Handle non-constant index
+            // Given a gep edge p = q + idx, where idx is non-constant
+            if(!op)
                 return false;
-            }
             // The actual index
             s64_t idx = op->getSExtValue();
 
             // infer the field offset based on the byte offset
             u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
-            ls.setFldIdx(fieldOffset);
+            ls.setFldIdx(ls.accumulateConstantFieldIdx() + fieldOffset);
         }
     }
     return true;
@@ -518,32 +517,21 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                 addCopyEdge(pag->getNullPtr(), src);
         }
     }
-    else if (SVFUtil::isa<ConstantArray>(C))
+    else if (SVFUtil::isa<ConstantArray>(C) || SVFUtil::isa<ConstantStruct>(C))
     {
-        if (cppUtil::isValVtbl(gvar) == false)
-            for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-                InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset);
-
-    }
-    else if (SVFUtil::isa<ConstantStruct>(C))
-    {
-        const StructType *sty = SVFUtil::cast<StructType>(C->getType());
-        const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
-        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
-        {
-            u32_t off = offsetvect[i];
+        for (u32_t i = 0, e = C->getNumOperands(); i != e; i++){
+            u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
             InitialGlobal(gvar, SVFUtil::cast<Constant>(C->getOperand(i)), offset + off);
         }
-
     }
     else if(ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
     {
         if(Options::ModelConsts){
             if(ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
                 for(u32_t i = 0; i < seq->getNumElements(); i++){
+                    u32_t off = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(C->getType(), i);
                     Constant* ct = seq->getElementAsConstant(i);
-                    InitialGlobal(gvar, ct, offset + i);
+                    InitialGlobal(gvar, ct, offset + off);
                 }
             }
             else{
@@ -1043,11 +1031,10 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
         numOfElems = SVFUtil::cast<ConstantInt>(szValue)->getSExtValue();
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
-    for(u32_t elementIdx = 0; elementIdx < numOfElems; elementIdx++){
-        u32_t fldIdx = SVFUtil::isa<ArrayType>(T) ? 0: elementIdx;
-        LocationSet ls(fldIdx); 
+    for(u32_t ei = 0; ei < numOfElems; ei++){
+        LocationSet ls(ei); 
         // make a ConstantInt and create char for the content type due to byte-wise copy 
-        const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, elementIdx));
+        const ConstantInt* offset = ConstantInt::get(context, llvm::APInt(32, ei));
         ls.addOffsetValue(offset, nullptr);
         fields.push_back(ls);
     }

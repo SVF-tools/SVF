@@ -140,6 +140,15 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     StInfo* stinfo = new StInfo(totalElemNum);
     typeToFieldInfo[ty] = stinfo;
 
+    /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
+    if(totalElemNum==0){
+        stinfo->addFldWithType(0, elemTy, 0);
+        stinfo->setNumOfFieldsAndElems(1, 1);
+        FlattenedFieldInfo field(0, elemTy);
+        stinfo->getFlattenedFieldInfoVec().push_back(field);
+        return;
+    }
+
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = getStructInfo(elemTy);
@@ -374,27 +383,34 @@ const MemObj* SymbolTableInfo::createDummyObj(SymID symId, const Type* type)
 }
 
 /// Number of flattenned elements of an array or struct
-const u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
+u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
 {
-    return getStructInfoIter(T)->second->getNumOfFlattenElements();
+    if(Options::ModelArrays)
+        return getStructInfoIter(T)->second->getNumOfFlattenElements();
+    else
+        return getStructInfoIter(T)->second->getNumOfFlattenFields();
 }
 
-/// Number of flattenned fields of a struct
-const u32_t SymbolTableInfo::getNumOfFlattenFields(const StructType *T)
+/// Flatterned offset information of a struct or an array including its array fields 
+u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, s64_t origId)
 {
-    return getStructInfoIter(T)->second->getNumOfFlattenFields();
-}
-
-/// Flatterned full offset information of a struct including its array fields 
-const std::vector<u32_t>& SymbolTableInfo::getFlattenedElemIdxVec(const Type *T)
-{
-    return getStructInfoIter(T)->second->getFlattenedElemIdxVec();
-}
-
-/// Flatterned field index information of a struct ignoring any array field
-const std::vector<u32_t>& SymbolTableInfo::getFlattenedFieldIdxVec(const Type *T)
-{
-    return getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
+    if(Options::ModelArrays){
+        std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();
+        assert ((unsigned)origId <= so.size() && !so.empty() && "Array index out of bounds, can't get flattened index!");
+        return so[origId];
+    }
+    else{
+        if(SVFUtil::isa<StructType>(T)){
+            std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedFieldIdxVec();
+            assert ((unsigned)origId <= so.size() && !so.empty() && "Struct index out of bounds, can't get flattened index!");
+            return so[origId];
+        }
+        else{
+            /// When Options::ModelArrays is disabled, any element index Array is modeled as the base
+            assert(SVFUtil::isa<ArrayType>(T) && "Only accept struct or array type if Options::ModelArrays is disabled!");
+            return 0;
+        }
+    }
 }
 
 const std::vector<FlattenedFieldInfo>& SymbolTableInfo::getFlattenedFieldInfoVec(const Type *T)

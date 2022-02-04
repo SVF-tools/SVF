@@ -354,13 +354,9 @@ public:
 
     ///Get a reference to the components of struct_info.
     /// Number of flattenned elements of an array or struct
-    const u32_t getNumOfFlattenElements(const Type *T);
-    /// Number of flattenned fields of a struct
-    const u32_t getNumOfFlattenFields(const StructType *T);
+    u32_t getNumOfFlattenElements(const Type *T);
     /// Flatterned element idx of an array or struct by considering stride
-    const std::vector<u32_t>& getFlattenedElemIdxVec(const Type *T);
-    /// Flatterned field index information of a struct ignoring any array field
-    const std::vector<u32_t>& getFlattenedFieldIdxVec(const Type *T);
+    u32_t getFlattenedElemIdx(const Type *T, s64_t origId);
 
     const std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec(const Type *T);
 
