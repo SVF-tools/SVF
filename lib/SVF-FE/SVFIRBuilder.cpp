@@ -279,9 +279,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         // e.g. s[1].f1 is differet from s[0].f2
         if(SVFUtil::isa<ArrayType>(*gi))
             continue;
-
-        // Handling struct here
-        if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
+        else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(*gi) )
         {
             // If the first operand is a non-constant, it is likely an array access 
             // (e.g., %ptr = getelementptr struct_A, %struct_A* %1, i64 %idx)
@@ -300,8 +298,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             // add the translated offset
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + so[idx]);
         }
-
-        if ((*gi)->isSingleValueType())
+        else if ((*gi)->isSingleValueType())
         {
             if(!op){
                 // Handle non-constant index
@@ -463,7 +460,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
         const Type *gvartype = gvar->getType();
         while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
             gvartype = ptype->getElementType();
-        return getGepValVar(gvar, LocationSet(offset), gvartype, offset);
+        return getGepValVar(gvar, LocationSet(offset), gvartype);
     }
 }
 
@@ -1094,8 +1091,8 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        NodeID dField = getGepValVar(D,fields[index],dtype,index);
-        NodeID sField = getGepValVar(S,fields[index],stype,index);
+        NodeID dField = getGepValVar(D,fields[index],dtype);
+        NodeID sField = getGepValVar(S,fields[index],stype);
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
@@ -1349,7 +1346,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnD = getGepValVar(vArg3, fields[i], type, i);
+                    NodeID vnD = getGepValVar(vArg3, fields[i], type);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
@@ -1373,7 +1370,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnS = getGepValVar(vArg, fields[i], type, i);
+                    NodeID vnS = getGepValVar(vArg, fields[i], type);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
                 }
@@ -1557,7 +1554,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);
@@ -1579,7 +1576,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),baseType,fieldidx);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),baseType);
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

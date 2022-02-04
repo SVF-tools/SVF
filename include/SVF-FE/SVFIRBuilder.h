@@ -277,7 +277,7 @@ public:
 
 public:
 
-    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

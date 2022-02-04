@@ -143,7 +143,7 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
     StInfo* elemStInfo = getStructInfo(elemTy);
-    u32_t nfE = elemStInfo->getFlattenedFieldInfoVec().size();
+    u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
     {
         u32_t idx = elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenFldIdx();
@@ -186,7 +186,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
         {
             StInfo * subStinfo = getStructInfo(et);
-            u32_t nfE = subStinfo->getFlattenedFieldInfoVec().size();
+            u32_t nfE = subStinfo->getNumOfFlattenFields();
             //Copy ST's info, whose element 0 is the size of ST itself.
             for (u32_t j = 0; j < nfE; j++)
             {

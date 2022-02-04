@@ -395,7 +395,6 @@ class GepValVar: public ValVar
 private:
     LocationSet ls;	// LocationSet
     const Type *gepValType;
-    u32_t fieldIdx;
 
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -419,8 +418,8 @@ public:
     //@}
 
     /// Constructor
-    GepValVar(const Value* val, NodeID i, const LocationSet& l, const Type *ty, u32_t idx) :
-        ValVar(val, i, GepValNode), ls(l), gepValType(ty), fieldIdx(idx)
+    GepValVar(const Value* val, NodeID i, const LocationSet& l, const Type *ty) :
+        ValVar(val, i, GepValNode), ls(l), gepValType(ty)
     {
     }
 
@@ -441,11 +440,6 @@ public:
     inline const Type* getType() const
     {
         return gepValType;
-    }
-
-    u32_t getFieldIdx() const
-    {
-        return fieldIdx;
     }
 
     virtual const std::string toString() const;
