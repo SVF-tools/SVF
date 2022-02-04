@@ -412,15 +412,14 @@ void SymbolTableBuilder::handleGlobalCE(const GlobalVariable *G)
 
     if (G->hasInitializer())
     {
-        handleGlobalInitializerCE(G->getInitializer(), 0);
+        handleGlobalInitializerCE(G->getInitializer());
     }
 }
 
 /*!
  * Handle global variable initialization
  */
-void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
-        u32_t offset)
+void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
 {
 
     if (C->getType()->isSingleValueType())
@@ -438,19 +437,14 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
     {
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            handleGlobalInitializerCE(SVFUtil::cast<Constant>(C->getOperand(i)), offset);
+            handleGlobalInitializerCE(SVFUtil::cast<Constant>(C->getOperand(i)));
         }
     }
     else if (SVFUtil::isa<ConstantStruct>(C))
     {
-        const StructType *sty = SVFUtil::cast<StructType>(C->getType());
-        const std::vector<u32_t>& offsetvect =
-            SymbolTableInfo::SymbolInfo()->getFlattenedFieldIdxVec(sty);
         for (u32_t i = 0, e = C->getNumOperands(); i != e; i++)
         {
-            u32_t off = offsetvect[i];
-            handleGlobalInitializerCE(SVFUtil::cast<Constant>(C->getOperand(i)),
-                                      offset + off);
+            handleGlobalInitializerCE(SVFUtil::cast<Constant>(C->getOperand(i)));
         }
     }
     else if(const ConstantData* data = SVFUtil::dyn_cast<ConstantData>(C))
@@ -459,11 +453,11 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C,
             if(const ConstantDataSequential* seq = SVFUtil::dyn_cast<ConstantDataSequential>(data)){
                 for(u32_t i = 0; i < seq->getNumElements(); i++){
                     const Constant* ct = seq->getElementAsConstant(i);
-                    handleGlobalInitializerCE(ct, offset + i);
+                    handleGlobalInitializerCE(ct);
                 }
             }
             else{
-                handleGlobalInitializerCE(data, offset);
+                handleGlobalInitializerCE(data);
             }
         }
     }

@@ -553,7 +553,7 @@ private:
     }
 
     /// Add a temp field value node, this method can only invoked by getGepValVar
-    NodeID addGepValNode(const Value* curInst,const Value* val, const LocationSet& ls, NodeID i, const Type *type, u32_t fieldidx);
+    NodeID addGepValNode(const Value* curInst,const Value* val, const LocationSet& ls, NodeID i, const Type *type);
     /// Add a field obj node, this method can only invoked by getGepObjVar
     NodeID addGepObjNode(const MemObj* obj, const LocationSet& ls);
     /// Add a field-insensitive node, this method can only invoked by getFIGepObjNode

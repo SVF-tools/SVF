@@ -636,6 +636,12 @@ namespace SVF
         llvm::cl::desc("Modeling individual constant objects")
     );
 
+    const llvm::cl::opt<bool> Options::ModelArrays(
+        "model-arrays", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Modeling Gep offsets for array accesses")
+    );
+
     const llvm::cl::opt<bool> Options::SymTabPrint(
             "print-symbol-table", llvm::cl::init(false),
             llvm::cl::desc("Print Symbol Table to command line")

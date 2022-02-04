@@ -109,41 +109,9 @@ public:
         return pag->getVarargNode(func);
     }
     //@}
-
-    /// Handle globals including (global variable and functions)
-    //@{
-    void visitGlobal(SVFModule* svfModule);
-    void InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                       u32_t offset);
-    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset);
-    //@}
-
-    /// Process constant expression
-    void processCE(const Value *val);
-
-    /// Infer field index from byteoffset.
-    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx);
-
-    /// Compute offset of a gep instruction or gep constant expression
-    bool computeGepOffset(const User *V, LocationSet& ls);
-
-    /// Get the base type and max offset
-    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);
-
-    /// Handle direct call
-    void handleDirectCall(CallSite cs, const SVFFunction *F);
-
-    /// Handle indirect call
-    void handleIndCall(CallSite cs);
-
     /// Update SVFIR given a call graph (creating new CallPE and RetPE for resolved indirect calls)
     void updateCallGraph(PTACallGraph* callgraph);
 
-    /// Handle external call
-    //@{
-    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
-    //@}
 
     /// Our visit overrides.
     //@{
@@ -238,6 +206,39 @@ public:
     }
     //}@
 
+protected:
+    /// Handle globals including (global variable and functions)
+    //@{
+    void visitGlobal(SVFModule* svfModule);
+    void InitialGlobal(const GlobalVariable *gvar, Constant *C,
+                       u32_t offset);
+    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset);
+    //@}
+
+    /// Process constant expression
+    void processCE(const Value *val);
+
+    /// Infer field index from byteoffset.
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx);
+
+    /// Compute offset of a gep instruction or gep constant expression
+    bool computeGepOffset(const User *V, LocationSet& ls);
+
+    /// Get the base type and max offset
+    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);
+
+    /// Handle direct call
+    void handleDirectCall(CallSite cs, const SVFFunction *F);
+
+    /// Handle indirect call
+    void handleIndCall(CallSite cs);
+
+    /// Handle external call
+    //@{
+    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
+    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    //@}
+
     /// Set current basic block in order to keep track of control flow information
     inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
     {
@@ -275,9 +276,7 @@ public:
         return nullPtr;
     }
 
-public:
-
-    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 

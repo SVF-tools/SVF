@@ -211,6 +211,7 @@ public:
     // SymbolTableInfo.cpp
     static const llvm::cl::opt<bool> LocMemModel;
     static const llvm::cl::opt<bool> ModelConsts;
+    static const llvm::cl::opt<bool> ModelArrays;
     static const llvm::cl::opt<bool> SymTabPrint;
 
     // Conditions.cpp
