@@ -81,8 +81,7 @@ protected:
     const Value* value; ///< value of this SVFIR node
     SVFStmt::KindToSVFStmtMapTy InEdgeKindToSetMap;
     SVFStmt::KindToSVFStmtMapTy OutEdgeKindToSetMap;
-    bool isTLPointer;	/// top-level pointer
-    bool isATPointer;	/// address-taken pointer
+    bool isPtr;	/// whether it is a pointer (top-level or address-taken)
 
 public:
     /// Constructor
@@ -117,17 +116,7 @@ public:
     /// Whether it is a pointer
     virtual inline bool isPointer() const
     {
-        return isTopLevelPtr() || isAddressTakenPtr();
-    }
-    /// Whether it is a top-level pointer
-    inline bool isTopLevelPtr() const
-    {
-        return isTLPointer;
-    }
-    /// Whether it is an address-taken pointer
-    inline bool isAddressTakenPtr() const
-    {
-        return isATPointer;
+        return isPtr;
     }
     /// Whether it is constant data, i.e., "0", "1.001", "str"
     /// or llvm's metadata, i.e., metadata !4087

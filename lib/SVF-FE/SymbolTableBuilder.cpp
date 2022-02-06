@@ -507,11 +507,10 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     }
 }
 
-
 /*!
  * Analyse types of all flattened fields of this object
  */
-void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const Value* val)
+void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
@@ -522,13 +521,10 @@ void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const 
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         elemTy = AT->getElementType();
-        if(elemTy->isPointerTy())
-            isPtrObj = true;
+        isPtrObj = elemTy->isPointerTy();
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
                 && SVFUtil::isa<ConstantArray>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
-        {
             typeinfo->setFlag(ObjTypeInfo::CONST_ARRAY_OBJ);
-        }
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
     }
@@ -538,8 +534,7 @@ void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const 
         for(std::vector<FlattenedFieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
-            if((*it).getFlattenElemTy()->isPointerTy())
-                isPtrObj = true;
+            isPtrObj = (*it).getFlattenElemTy()->isPointerTy();
         }
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
                 && SVFUtil::isa<ConstantStruct>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
@@ -547,13 +542,61 @@ void SymbolTableBuilder::analyzeGlobalStackObjType(ObjTypeInfo* typeinfo, const 
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
     }
-    else if (elemTy->isPointerTy())
+    else if (elemTy->isSingleValueType())
     {
-        isPtrObj = true;
+        isPtrObj = elemTy->isPointerTy();
     }
 
     if(isPtrObj)
         typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+}
+
+/*!
+ * Analyse types of heap and static objects
+ */
+void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
+{
+    if(const Value* castUse = getUniqueUseViaCastInst(val)){
+        analyzeObjType(typeinfo,castUse);
+        typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+    }
+    else{
+        typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    }
+}
+
+/*!
+ * Analyse types of heap and static objects
+ */
+void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val)
+{
+    if(const Value* castUse = getUniqueUseViaCastInst(val)){
+        analyzeObjType(typeinfo,castUse);
+        typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
+    }
+    else{
+        typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeinfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    }
+}
+
+/*
+ * Get the first dominated cast instruction for heap allocations since they typically come from void* (i8*) 
+ * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
+ * return %5 whose type is i32* but not %4 whose type is i8*
+ */
+const Value* SymbolTableBuilder::getUniqueUseViaCastInst(const Value* val){
+    const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
+    assert(SVFUtil::isa<PointerType>(type) && "this value should be a pointer type!");
+    /// If type is void* (i8*) and val is only used at a bitcast instruction
+    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(type->getPointerElementType())){
+        if (IT->getBitWidth() == 8 && val->getNumUses()==1){
+            const Use *u = &*val->use_begin();
+            return SVFUtil::dyn_cast<BitCastInst>(u->getUser());
+        }
+    }
+    return nullptr;
 }
 
 /*!
@@ -566,13 +609,13 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     if (SVFUtil::isa<Function>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
-        analyzeGlobalStackObjType(typeinfo,val);
+        analyzeObjType(typeinfo,val);
         objSize = getObjSize(val);
     }
     else if(SVFUtil::isa<AllocaInst>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STACK_OBJ);
-        analyzeGlobalStackObjType(typeinfo,val);
+        analyzeObjType(typeinfo,val);
         objSize = getObjSize(val);
     }
     else if(SVFUtil::isa<GlobalVariable>(val))
@@ -580,24 +623,24 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
         typeinfo->setFlag(ObjTypeInfo::GLOBVAR_OBJ);
         if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
-        analyzeGlobalStackObjType(typeinfo,val);
+        analyzeObjType(typeinfo,val);
         objSize = getObjSize(val);
     }
     else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
     {
-        typeinfo->analyzeHeapObjType(val->getType());
+        analyzeHeapObjType(typeinfo,val);
         // Heap object, label its field as infinite here
         objSize = -1;
     }
     else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val)))
     {
-        typeinfo->analyzeStaticObjType(val->getType());
+        analyzeStaticObjType(typeinfo,val);
         // static object allocated before main, label its field as infinite here
         objSize = -1;
     }
     else if(ArgInProgEntryFunction(val))
     {
-        typeinfo->analyzeStaticObjType(val->getType());
+        analyzeStaticObjType(typeinfo,val);
         // user input data, label its field as infinite here
         objSize = -1;
     }

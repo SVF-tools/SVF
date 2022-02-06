@@ -389,7 +389,7 @@ protected:
     virtual void collectSimpleTypeInfo(const Type* T);
 
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
-    ObjTypeInfo* createObjTypeInfo(const Type *type = nullptr);
+    ObjTypeInfo* createObjTypeInfo(const Type *type);
 
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
@@ -636,13 +636,7 @@ public:
     {
 
     }
-
-    /// Analyse types of heap and static objects
-    void analyzeHeapObjType(const Type* type);
-
-    /// Analyse types of heap and static objects
-    void analyzeStaticObjType(const Type* type);
-
+    
     /// Get LLVM type
     inline const Type* getType() const
     {

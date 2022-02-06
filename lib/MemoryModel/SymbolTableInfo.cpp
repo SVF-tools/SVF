@@ -91,7 +91,10 @@ SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
 {
     ObjTypeInfo* typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
-    typeInfo->analyzeHeapObjType(type);
+    if(type && type->isPointerTy()){
+        typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    }
     return typeInfo;
 }
 
@@ -360,7 +363,7 @@ MemObj* SymbolTableInfo::createBlkObj(SymID symId)
 {
     assert(isBlkObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(nullptr));
     objMap[symId] = obj;
     return obj;
 }
@@ -369,7 +372,7 @@ MemObj* SymbolTableInfo::createConstantObj(SymID symId)
 {
     assert(isConstantObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(nullptr));
     objMap[symId] = obj;
     return obj;
 }
@@ -594,29 +597,6 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
         return stTySL->getElementOffset(field_idx);
 }
 
-
-
-/*!
- * Analyse types of heap and static objects
- */
-void ObjTypeInfo::analyzeHeapObjType(const Type*)
-{
-    // TODO: Heap and static objects are considered as pointers right now.
-    //       Refine this function to get more details about heap and static objects.
-    setFlag(HEAP_OBJ);
-    setFlag(HASPTR_OBJ);
-}
-
-/*!
- * Analyse types of heap and static objects
- */
-void ObjTypeInfo::analyzeStaticObjType(const Type*)
-{
-    // TODO: Heap and static objects are considered as pointers right now.
-    //       Refine this function to get more details about heap and static objects.
-    setFlag(STATIC_OBJ);
-    setFlag(HASPTR_OBJ);
-}
 
 /*!
  * Whether a location set is a pointer type or not
