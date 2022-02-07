@@ -1111,7 +1111,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 NodeID vnArg = getValueNode(arg);
                 NodeID dummy = pag->addDummyValNode();
-                NodeID obj = pag->addDummyObjNode();
+                NodeID obj = pag->addDummyObjNode(arg->getType());
                 if (vnArg && dummy && obj)
                 {
                     addAddrEdge(obj, dummy);
