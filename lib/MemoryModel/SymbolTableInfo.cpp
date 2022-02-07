@@ -644,24 +644,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     }
     else
     {
-        if (isStaticObj() || isHeap())
-        {
-            // TODO: Objects which cannot find proper field for a certain offset including
-            //       arguments in main(), static objects allocated before main and heap
-            //       objects. Right now they're considered to have infinite fields and we
-            //       treat each field as pointers conservatively.
-            //       Try to model static and heap objects more accurately in the future.
-            return false;
-        }
-        else
-        {
-            // TODO: Using new memory model (locMM) may create objects with spurious offset
-            //       as we simply return new offset by mod operation without checking its
-            //       correctness in LocSymTableInfo::getModulusOffset(). So the following
-            //       assertion may fail. Try to refine the new memory model.
-            //assert(ls.getConstantFieldIdx() == 0 && "cannot get a field from a non-struct type");
-            return (hasPtrObj() == false);
-        }
+        return (hasPtrObj() == false);
     }
 }
 

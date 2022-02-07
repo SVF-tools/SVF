@@ -696,7 +696,7 @@ bool SVFIR::isNonPointerObj(NodeID id) const
     SVFVar* node = getGNode(id);
     if (const FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
     {
-        return (fiNode->getMemObj()->hasPtrObj() == false);
+        return (fiNode->getMemObj()->isNonPtrFieldObj(0));
     }
     else if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
     {
@@ -704,7 +704,7 @@ bool SVFIR::isNonPointerObj(NodeID id) const
     }
     else if (const DummyObjVar* dummyNode = SVFUtil::dyn_cast<DummyObjVar>(node))
     {
-        return false;
+        return (dummyNode->getMemObj()->hasPtrObj()==false);
     }
     else
     {
