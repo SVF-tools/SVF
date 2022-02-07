@@ -430,7 +430,7 @@ public:
     {
         return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
-    inline NodeID addDummyObjNode(const Type* type = nullptr)
+    inline NodeID addDummyObjNode(const Type* type)
     {
         return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }

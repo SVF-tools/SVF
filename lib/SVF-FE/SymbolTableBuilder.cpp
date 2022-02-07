@@ -521,7 +521,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(elemTy))
     {
         elemTy = AT->getElementType();
-        isPtrObj = elemTy->isPointerTy();
+        if(elemTy->isPointerTy())
+            isPtrObj = true;
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
                 && SVFUtil::isa<ConstantArray>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
             typeinfo->setFlag(ObjTypeInfo::CONST_ARRAY_OBJ);
@@ -534,7 +535,8 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         for(std::vector<FlattenedFieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
-            isPtrObj = (*it).getFlattenElemTy()->isPointerTy();
+            if((*it).getFlattenElemTy()->isPointerTy())
+                isPtrObj = true;
         }
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()
                 && SVFUtil::isa<ConstantStruct>(SVFUtil::cast<GlobalVariable>(val)->getInitializer()))
@@ -542,9 +544,9 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
         else
             typeinfo->setFlag(ObjTypeInfo::VAR_STRUCT_OBJ);
     }
-    else if (elemTy->isSingleValueType())
+    else if (elemTy->isPointerTy())
     {
-        isPtrObj = elemTy->isPointerTy();
+        isPtrObj = true;
     }
 
     if(isPtrObj)
