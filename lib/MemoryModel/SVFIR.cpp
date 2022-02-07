@@ -694,22 +694,22 @@ void SVFIR::initialiseCandidatePointers()
 bool SVFIR::isNonPointerObj(NodeID id) const
 {
     SVFVar* node = getGNode(id);
-    if (FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
+    if (const FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
     {
         return (fiNode->getMemObj()->hasPtrObj() == false);
     }
-    else if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
+    else if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
     {
         return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
     }
-    else if (SVFUtil::isa<DummyObjVar>(node))
+    else if (const DummyObjVar* dummyNode = SVFUtil::dyn_cast<DummyObjVar>(node))
     {
         return false;
     }
     else
     {
         assert(false && "expecting a object node");
-        return false;
+        abort();
     }
 }
 /*

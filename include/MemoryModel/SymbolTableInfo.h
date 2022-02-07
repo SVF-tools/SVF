@@ -592,7 +592,7 @@ public:
  */
 class ObjTypeInfo
 {
-
+friend class SymbolTableBuilder;
 public:
     typedef enum
     {
@@ -619,22 +619,16 @@ private:
     /// maximum number of field object can be created
     /// minimum number is 0 (field insensitive analysis)
     u32_t maxOffsetLimit;
+
+    void resetTypeForHeapStaticObj(const Type* type);
 public:
 
     /// Constructors
-    ObjTypeInfo(const Value*, const Type* t, u32_t max) :
-        type(t), flags(0), maxOffsetLimit(max)
-    {
-    }
-    /// Constructor
-    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max)
-    {
+    ObjTypeInfo(const Type* t, u32_t max);
 
-    }
     /// Destructor
     virtual ~ObjTypeInfo()
     {
-
     }
     
     /// Get LLVM type

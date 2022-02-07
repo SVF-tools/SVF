@@ -486,7 +486,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
     if (refTy)
     {
         Type *objTy = refTy->getElementType();
-        ObjTypeInfo* typeInfo = new ObjTypeInfo(val, objTy, Options::MaxFieldLimit);
+        ObjTypeInfo* typeInfo = new ObjTypeInfo(objTy, Options::MaxFieldLimit);
         initTypeInfo(typeInfo,val);
         return typeInfo;
     }
@@ -496,7 +496,7 @@ ObjTypeInfo* SymbolTableBuilder::createObjTypeInfo(const Value *val)
         writeWrnMsg(val->getName().str());
         writeWrnMsg("(" + getSourceLoc(val) + ")");
         if(symInfo->isConstantObjSym(val)){
-            ObjTypeInfo* typeInfo = new ObjTypeInfo(val, val->getType(), 0);
+            ObjTypeInfo* typeInfo = new ObjTypeInfo(val->getType(), 0);
             initTypeInfo(typeInfo,val);
             return typeInfo;
         }
@@ -514,7 +514,7 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
 
     const PointerType * refty = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(SVFUtil::isa<PointerType>(refty) && "this value should be a pointer type!");
+    assert(refty && "this value should be a pointer type!");
     Type* elemTy = refty->getElementType();
     bool isPtrObj = false;
     // Find the inter nested array element
@@ -559,8 +559,9 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
 void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
     if(const Value* castUse = getUniqueUseViaCastInst(val)){
-        analyzeObjType(typeinfo,castUse);
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeinfo->resetTypeForHeapStaticObj(castUse->getType());
+        analyzeObjType(typeinfo,castUse);
     }
     else{
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
@@ -574,8 +575,9 @@ void SymbolTableBuilder::analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* 
 void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val)
 {
     if(const Value* castUse = getUniqueUseViaCastInst(val)){
-        analyzeObjType(typeinfo,castUse);
         typeinfo->setFlag(ObjTypeInfo::STATIC_OBJ);
+        typeinfo->resetTypeForHeapStaticObj(castUse->getType());
+        analyzeObjType(typeinfo,castUse);
     }
     else{
         typeinfo->setFlag(ObjTypeInfo::HEAP_OBJ);
@@ -590,7 +592,7 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
  */
 const Value* SymbolTableBuilder::getUniqueUseViaCastInst(const Value* val){
     const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(SVFUtil::isa<PointerType>(type) && "this value should be a pointer type!");
+    assert(type && "this value should be a pointer type!");
     /// If type is void* (i8*) and val is only used at a bitcast instruction
     if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(type->getPointerElementType())){
         if (IT->getBitWidth() == 8 && val->getNumUses()==1){

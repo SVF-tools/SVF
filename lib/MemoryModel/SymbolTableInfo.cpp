@@ -44,6 +44,17 @@ SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 u32_t StInfo::maxFieldLimit = 0;
 
 
+ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max)
+{
+    assert(t && "no type information for this object?");
+}
+
+
+void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t){
+    assert((isStaticObj() || isHeap()) && "can only reset the inferred type for heap and static objects!");
+    type = t;
+}
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx)
 {
@@ -90,7 +101,7 @@ SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter
  */
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
 {
-    ObjTypeInfo* typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, StInfo::getMaxFieldLimit());
     if(type && type->isPointerTy()){
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
@@ -363,7 +374,7 @@ MemObj* SymbolTableInfo::createBlkObj(SymID symId)
 {
     assert(isBlkObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo(nullptr));
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
     objMap[symId] = obj;
     return obj;
 }
@@ -372,7 +383,7 @@ MemObj* SymbolTableInfo::createConstantObj(SymID symId)
 {
     assert(isConstantObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo(nullptr));
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
     objMap[symId] = obj;
     return obj;
 }
