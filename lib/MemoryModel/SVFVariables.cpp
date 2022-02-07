@@ -40,36 +40,28 @@ using namespace SVFUtil;
 SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     GenericPAGNodeTy(i,k), value(val)
 {
-
     assert( ValNode <= k && k <= CloneDummyObjNode && "new SVFIR node kind?");
-
     switch (k)
     {
     case ValNode:
     case GepValNode:
     {
         assert(val != nullptr && "value is nullptr for ValVar or GepValNode");
-        isTLPointer = val->getType()->isPointerTy();
-        isATPointer = false;
+        isPtr = val->getType()->isPointerTy();
         break;
     }
-
     case RetNode:
     {
         assert(val != nullptr && "value is nullptr for RetNode");
-        isTLPointer = SVFUtil::cast<Function>(val)->getReturnType()->isPointerTy();
-        isATPointer = false;
+        isPtr = SVFUtil::cast<Function>(val)->getReturnType()->isPointerTy();
         break;
     }
-
     case VarargNode:
     case DummyValNode:
     {
-        isTLPointer = true;
-        isATPointer = false;
+        isPtr = true;
         break;
     }
-
     case ObjNode:
     case GepObjNode:
     case FIObjNode:
@@ -78,8 +70,9 @@ SVFVar::SVFVar(const Value* val, NodeID i, PNODEK k) :
     case CloneFIObjNode:
     case CloneDummyObjNode:
     {
-        isTLPointer = false;
-        isATPointer = true;
+        isPtr = true;
+        if(val)
+            isPtr = val->getType()->isPointerTy();
         break;
     }
     }

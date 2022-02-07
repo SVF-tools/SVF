@@ -292,20 +292,7 @@ public:
     //@}
 
     /// Due to constaint expression, curInst is used to distinguish different instructions (e.g., memorycpy) when creating GepValVar.
-    inline NodeID getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const
-    {
-        GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
-        if(iter==GepValObjMap.end()){
-            return UINT_MAX;
-        }
-        else{
-            NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
-            if(lit==iter->second.end())
-                return UINT_MAX;
-            else
-                return lit->second;
-        }
-    }
+    NodeID getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const;
 
     /// Add/get indirect callsites
     //@{
@@ -411,27 +398,8 @@ public:
         assert(obj && "not an object node?");
         return SymbolTableInfo::isConstantObj(id) || obj->isConstDataOrConstGlobal();
     }
-    inline bool isNonPointerObj(NodeID id) const
-    {
-        SVFVar* node = getGNode(id);
-        if (FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
-        {
-            return (fiNode->getMemObj()->hasPtrObj() == false);
-        }
-        else if (GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
-        {
-            return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
-        }
-        else if (SVFUtil::isa<DummyObjVar>(node))
-        {
-            return false;
-        }
-        else
-        {
-            assert(false && "expecting a object node");
-            return false;
-        }
-    }
+    /// Whether an object can point to any other object or any of its fields is a pointer type.
+    bool isNonPointerObj(NodeID id) const;
     //@}
 
     /// Base and Offset methods for Value and Object node
@@ -462,7 +430,7 @@ public:
     {
         return addDummyValNode(NodeIDAllocator::get()->allocateValueId());
     }
-    inline NodeID addDummyObjNode(const Type* type = nullptr)
+    inline NodeID addDummyObjNode(const Type* type)
     {
         return addDummyObjNode(NodeIDAllocator::get()->allocateObjectId(), type);
     }

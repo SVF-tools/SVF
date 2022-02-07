@@ -226,7 +226,7 @@ void AndersenStat::statNullPtr()
     {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
-        if (pagNode->isTopLevelPtr() == false)
+        if (SVFUtil::isa<ValVar>(pagNode) == false)
             continue;
         SVFStmt::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(SVFStmt::Store);
         SVFStmt::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(SVFStmt::Load);

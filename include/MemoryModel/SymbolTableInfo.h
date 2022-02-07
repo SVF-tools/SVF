@@ -389,7 +389,7 @@ protected:
     virtual void collectSimpleTypeInfo(const Type* T);
 
     /// Create an objectInfo based on LLVM type (value is null, and type could be null, representing a dummy object)
-    ObjTypeInfo* createObjTypeInfo(const Type *type = nullptr);
+    ObjTypeInfo* createObjTypeInfo(const Type *type);
 
     /// Every type T is mapped to StInfo
     /// which contains size (fsize) , offset(foffset)
@@ -592,7 +592,7 @@ public:
  */
 class ObjTypeInfo
 {
-
+friend class SymbolTableBuilder;
 public:
     typedef enum
     {
@@ -619,30 +619,18 @@ private:
     /// maximum number of field object can be created
     /// minimum number is 0 (field insensitive analysis)
     u32_t maxOffsetLimit;
+
+    void resetTypeForHeapStaticObj(const Type* type);
 public:
 
     /// Constructors
-    ObjTypeInfo(const Value*, const Type* t, u32_t max) :
-        type(t), flags(0), maxOffsetLimit(max)
-    {
-    }
-    /// Constructor
-    ObjTypeInfo(u32_t max, const Type* t) : type(t), flags(0), maxOffsetLimit(max)
-    {
+    ObjTypeInfo(const Type* t, u32_t max);
 
-    }
     /// Destructor
     virtual ~ObjTypeInfo()
     {
-
     }
-
-    /// Analyse types of heap and static objects
-    void analyzeHeapObjType(const Type* type);
-
-    /// Analyse types of heap and static objects
-    void analyzeStaticObjType(const Type* type);
-
+    
     /// Get LLVM type
     inline const Type* getType() const
     {

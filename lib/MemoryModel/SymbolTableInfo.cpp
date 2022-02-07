@@ -44,6 +44,17 @@ SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 u32_t StInfo::maxFieldLimit = 0;
 
 
+ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max)
+{
+    assert(t && "no type information for this object?");
+}
+
+
+void ObjTypeInfo::resetTypeForHeapStaticObj(const Type* t){
+    assert((isStaticObj() || isHeap()) && "can only reset the inferred type for heap and static objects!");
+    type = t;
+}
+
 /// Add field (index and offset) with its corresponding type
 void StInfo::addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx)
 {
@@ -90,8 +101,11 @@ SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter
  */
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
 {
-    ObjTypeInfo* typeInfo = new ObjTypeInfo(StInfo::getMaxFieldLimit(),type);
-    typeInfo->analyzeHeapObjType(type);
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, StInfo::getMaxFieldLimit());
+    if(type && type->isPointerTy()){
+        typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
+        typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
+    }
     return typeInfo;
 }
 
@@ -360,7 +374,7 @@ MemObj* SymbolTableInfo::createBlkObj(SymID symId)
 {
     assert(isBlkObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
     objMap[symId] = obj;
     return obj;
 }
@@ -369,7 +383,7 @@ MemObj* SymbolTableInfo::createConstantObj(SymID symId)
 {
     assert(isConstantObj(symId));
     assert(objMap.find(symId)==objMap.end());
-    MemObj* obj = new MemObj(symId, createObjTypeInfo());
+    MemObj* obj = new MemObj(symId, createObjTypeInfo(IntegerType::get(LLVMModuleSet::getLLVMModuleSet()->getContext(), 32)));
     objMap[symId] = obj;
     return obj;
 }
@@ -595,36 +609,13 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
 }
 
 
-
-/*!
- * Analyse types of heap and static objects
- */
-void ObjTypeInfo::analyzeHeapObjType(const Type*)
-{
-    // TODO: Heap and static objects are considered as pointers right now.
-    //       Refine this function to get more details about heap and static objects.
-    setFlag(HEAP_OBJ);
-    setFlag(HASPTR_OBJ);
-}
-
-/*!
- * Analyse types of heap and static objects
- */
-void ObjTypeInfo::analyzeStaticObjType(const Type*)
-{
-    // TODO: Heap and static objects are considered as pointers right now.
-    //       Refine this function to get more details about heap and static objects.
-    setFlag(STATIC_OBJ);
-    setFlag(HASPTR_OBJ);
-}
-
 /*!
  * Whether a location set is a pointer type or not
  */
 bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 {
-    if (isHeap() || isStaticObj())
-        return false;
+    if (hasPtrObj() == false)
+        return true;
 
     const Type* ety = getType();
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
@@ -653,27 +644,9 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
     }
     else
     {
-        if (isStaticObj() || isHeap())
-        {
-            // TODO: Objects which cannot find proper field for a certain offset including
-            //       arguments in main(), static objects allocated before main and heap
-            //       objects. Right now they're considered to have infinite fields and we
-            //       treat each field as pointers conservatively.
-            //       Try to model static and heap objects more accurately in the future.
-            return false;
-        }
-        else
-        {
-            // TODO: Using new memory model (locMM) may create objects with spurious offset
-            //       as we simply return new offset by mod operation without checking its
-            //       correctness in LocSymTableInfo::getModulusOffset(). So the following
-            //       assertion may fail. Try to refine the new memory model.
-            //assert(ls.getConstantFieldIdx() == 0 && "cannot get a field from a non-struct type");
-            return (hasPtrObj() == false);
-        }
+        return (hasPtrObj() == false);
     }
 }
-
 
 /*!
  * Set mem object to be field sensitive (up to maximum field limit)

@@ -538,6 +538,24 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 }
 
 /*!
+ * It is used to create a dummy GepValVar during global initiailzation.
+ */
+NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const
+{
+    GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
+    if(iter==GepValObjMap.end()){
+        return UINT_MAX;
+    }
+    else{
+        NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
+        if(lit==iter->second.end())
+            return UINT_MAX;
+        else
+            return lit->second;
+    }
+}
+
+/*!
  * Get a base SVFVar given a pointer
  * Return the source node of its connected normal gep edge
  * Otherwise return the node id itself
@@ -669,7 +687,37 @@ void SVFIR::initialiseCandidatePointers()
         candidatePointers.insert(nodeId);
     }
 }
-
+/*!
+ * Return true if FIObjVar can point to any object 
+ * Or a field GepObjVar can point to any object.
+ */
+bool SVFIR::isNonPointerObj(NodeID id) const
+{
+    SVFVar* node = getGNode(id);
+    if (const FIObjVar* fiNode = SVFUtil::dyn_cast<FIObjVar>(node))
+    {
+        if(Options::FirstFieldEqBase)
+            return fiNode->getMemObj()->isNonPtrFieldObj(0);
+        else
+            return (fiNode->getMemObj()->hasPtrObj()==false);
+    }
+    else if (const GepObjVar* gepNode = SVFUtil::dyn_cast<GepObjVar>(node))
+    {
+        return (gepNode->getMemObj()->isNonPtrFieldObj(gepNode->getLocationSet()));
+    }
+    else if (const DummyObjVar* dummyNode = SVFUtil::dyn_cast<DummyObjVar>(node))
+    {
+        if(Options::FirstFieldEqBase)
+            return dummyNode->getMemObj()->isNonPtrFieldObj(0);
+        else
+            return (dummyNode->getMemObj()->hasPtrObj()==false);
+    }
+    else
+    {
+        assert(false && "expecting a object node");
+        abort();
+    }
+}
 /*
  * If this is a dummy node or node does not have incoming edges we assume it is not a pointer here
  */
@@ -683,7 +731,7 @@ bool SVFIR::isValidPointer(NodeID nodeId) const
 
 bool SVFIR::isValidTopLevelPtr(const SVFVar* node)
 {
-    if (node->isTopLevelPtr())
+    if (SVFUtil::isa<ValVar>(node))
     {
         if (isValidPointer(node->getId()) && node->hasValue())
         {
