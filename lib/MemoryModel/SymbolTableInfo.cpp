@@ -614,8 +614,8 @@ u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx
  */
 bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 {
-    if (isHeap() || isStaticObj())
-        return false;
+    if (hasPtrObj() == false)
+        return true;
 
     const Type* ety = getType();
     while (const ArrayType *AT= SVFUtil::dyn_cast<ArrayType>(ety))
@@ -647,7 +647,6 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
         return (hasPtrObj() == false);
     }
 }
-
 
 /*!
  * Set mem object to be field sensitive (up to maximum field limit)
