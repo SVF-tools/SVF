@@ -1024,8 +1024,9 @@ const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vec
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
-    if(szValue && SVFUtil::isa<ConstantInt>(szValue))
-        numOfElems = SVFUtil::cast<ConstantInt>(szValue)->getSExtValue();
+    if(szValue && SVFUtil::isa<ConstantInt>(szValue)){
+        numOfElems = (numOfElems > SVFUtil::cast<ConstantInt>(szValue)->getSExtValue()) ? SVFUtil::cast<ConstantInt>(szValue)->getSExtValue() : numOfElems;
+    }
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++){
