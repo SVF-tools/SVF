@@ -205,16 +205,14 @@ public:
         // TODO: ignore here:
     }
     //}@
-    /// Compute offset of a gep instruction or gep constant expression
-    bool computeGepOffset(const User *V, LocationSet& ls);
-    
+
 protected:
     /// Handle globals including (global variable and functions)
     //@{
     void visitGlobal(SVFModule* svfModule);
     void InitialGlobal(const GlobalVariable *gvar, Constant *C,
                        u32_t offset);
-    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset);
+    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy);
     //@}
 
     /// Process constant expression
@@ -222,6 +220,9 @@ protected:
 
     /// Infer field index from byteoffset.
     u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx);
+
+    /// Compute offset of a gep instruction or gep constant expression
+    bool computeGepOffset(const User *V, LocationSet& ls);
 
     /// Get the base type and max offset
     const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);

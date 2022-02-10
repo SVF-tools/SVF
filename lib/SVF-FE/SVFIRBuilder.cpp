@@ -444,7 +444,7 @@ void SVFIRBuilder::processCE(const Value *val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
+NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -456,10 +456,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
     /// then we need to create a gep node for this field
     else
     {
-        const Type *gvartype = gvar->getType();
-        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
-            gvartype = ptype->getElementType();
-        return getGepValVar(gvar, LocationSet(offset), gvartype);
+        return getGepValVar(gvar, LocationSet(offset), tpy);
     }
 }
 
@@ -486,7 +483,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         setCurrentLocation(gvar, nullptr);
-        NodeID field = getGlobalVarField(gvar, offset);
+        NodeID field = getGlobalVarField(gvar, offset, C->getType()->getPointerTo());
 
         if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
         {
