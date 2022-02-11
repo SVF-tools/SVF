@@ -514,6 +514,8 @@ private:
     u32_t numOfFlattenElements; 
     /// number of fields after flattenning (ignoring array elements)
     u32_t numOfFlattenFields; 
+    /// Type vector of fields
+    std::vector<const Type*> flattenElementTypes;
     /// Max field limit
     static u32_t maxFieldLimit;
 
@@ -556,6 +558,10 @@ public:
     {
         return elemIdxVec;
     }
+    inline std::vector<const Type*> getFlattenElementTypes()
+    {
+        return flattenElementTypes;
+    }
     inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
     {
         return finfo;
@@ -566,10 +572,11 @@ public:
     void addFldWithType(u32_t fldIdx, const Type* type, u32_t elemIdx);
 
     /// Set number of fields and elements of an aggrate
-    inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne)
+    inline void setNumOfFieldsAndElems(u32_t nf, u32_t ne, std::vector<const Type*> vt)
     {
         numOfFlattenFields = nf;
         numOfFlattenElements = ne;
+        flattenElementTypes = vt;
     }
 
     /// Return number of elements after flattenning (including array elements)

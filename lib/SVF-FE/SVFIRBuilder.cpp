@@ -1086,8 +1086,10 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        NodeID dField = getGepValVar(D,fields[index],dtype);
-        NodeID sField = getGepValVar(S,fields[index],stype);
+        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
+        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(stype, index);
+        NodeID dField = getGepValVar(D,fields[index],dElementType->getPointerTo());
+        NodeID sField = getGepValVar(S,fields[index],sElementType->getPointerTo());
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
@@ -1341,7 +1343,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnD = getGepValVar(vArg3, fields[i], type);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    NodeID vnD = getGepValVar(vArg3, fields[i], elementType->getPointerTo());
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
@@ -1365,7 +1368,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnS = getGepValVar(vArg, fields[i], type);
+                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    NodeID vnS = getGepValVar(vArg, fields[i], elementType->getPointerTo());
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
                 }
