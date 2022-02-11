@@ -1202,7 +1202,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 //For each field (i), add store edge *(arg0 + i) = arg1
                 for (u32_t index = 0; index < sz; index++)
                 {
-                    NodeID dField = getGepValVar(cs.getArgument(0),dstFields[index],dtype);
+                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
+                    NodeID dField = getGepValVar(cs.getArgument(0), dstFields[index], dElementType->getPointerTo());
                     addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
                 }
                 if(SVFUtil::isa<PointerType>(inst->getType()))
@@ -1375,7 +1376,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
                     NodeID vnS = getGepValVar(vArg, fields[i], elementType->getPointerTo());
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
