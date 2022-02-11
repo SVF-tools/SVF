@@ -43,11 +43,13 @@ SVFStmt::Var2LabelMap SVFStmt::var2LabelMap;
 /*!
  * SVFStmt constructor
  */
-SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k) :
-    GenericPAGEdgeTy(s,d,k),value(nullptr),basicBlock(nullptr),icfgNode(nullptr)
-{
-    edgeId = SVFIR::getPAG()->getTotalEdgeNum();
-    SVFIR::getPAG()->incEdgeNum();
+SVFStmt::SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real) :
+    GenericPAGEdgeTy(s,d,k),value(nullptr),basicBlock(nullptr),icfgNode(nullptr),edgeId(UINT_MAX)
+{   
+    if(real){
+        edgeId = SVFIR::getPAG()->getTotalEdgeNum();
+        SVFIR::getPAG()->incEdgeNum();
+    }
 }
 
 /*!

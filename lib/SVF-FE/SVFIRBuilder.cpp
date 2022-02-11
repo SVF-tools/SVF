@@ -444,7 +444,7 @@ void SVFIRBuilder::processCE(const Value *val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
+NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -456,10 +456,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
     /// then we need to create a gep node for this field
     else
     {
-        const Type *gvartype = gvar->getType();
-        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
-            gvartype = ptype->getElementType();
-        return getGepValVar(gvar, LocationSet(offset), gvartype);
+        return getGepValVar(gvar, LocationSet(offset), tpy);
     }
 }
 
@@ -486,7 +483,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         setCurrentLocation(gvar, nullptr);
-        NodeID field = getGlobalVarField(gvar, offset);
+        NodeID field = getGlobalVarField(gvar, offset, C->getType()->getPointerTo());
 
         if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
         {
@@ -1010,25 +1007,37 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     }
 }
 
+const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V){
+    const Value * value = stripAllCasts(V);
+    assert(value && "null ptr?");
+    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value)){
+        s64_t totalidx = 0;
+        for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi){
+            if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+                totalidx += op->getSExtValue();
+        }
+        if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
+            value = gep->getPointerOperand();
+    }
+    return value;
+}
+
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
 const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
-    const Value * value = stripAllCasts(V);
-    assert(value && "null ptr?");
-    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
-        value = gep->getPointerOperand();
-
+    const Value* value = getBaseValueForExtArg(V);
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = ptype->getElementType();
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
-    if(szValue && SVFUtil::isa<ConstantInt>(szValue))
-        numOfElems = SVFUtil::cast<ConstantInt>(szValue)->getSExtValue();
+    if(szValue && SVFUtil::isa<ConstantInt>(szValue)){
+        numOfElems = (numOfElems > SVFUtil::cast<ConstantInt>(szValue)->getSExtValue()) ? SVFUtil::cast<ConstantInt>(szValue)->getSExtValue() : numOfElems;
+    }
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++){

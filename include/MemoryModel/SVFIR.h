@@ -329,7 +329,7 @@ public:
     }
     inline SVFStmt* getIntraPAGEdge(SVFVar* src, SVFVar* dst, SVFStmt::PEDGEK kind)
     {
-        SVFStmt edge(src,dst,kind);
+        SVFStmt edge(src,dst,kind, false);
         const SVFStmt::SVFStmtSetTy& edgeSet = getSVFStmtSet(kind);
         SVFStmt::SVFStmtSetTy::const_iterator it = edgeSet.find(&edge);
         assert(it != edgeSet.end() && "can not find pag edge");
