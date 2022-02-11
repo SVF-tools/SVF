@@ -1194,10 +1194,17 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_L_A0__A0R_A1:
             {
-				// this is only for memset(void *str, int c, size_t n)
-				// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
-				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+		// this is for memset(void *str, int c, size_t n)
+		// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+                std::vector<LocationSet> dstFields;
+                const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(0), dstFields, cs.getArgument(2));
+                u32_t sz = dstFields.size();
+                //For each field (i), add store edge *(arg0 + i) = arg1
+                for (u32_t index = 0; index < sz; index++)
+                {
+                    NodeID dField = getGepValVar(cs.getArgument(0),dstFields[index],dtype);
+                    addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
+                }
                 if(SVFUtil::isa<PointerType>(inst->getType()))
                     addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
