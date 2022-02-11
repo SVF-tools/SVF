@@ -224,6 +224,9 @@ protected:
     /// Compute offset of a gep instruction or gep constant expression
     bool computeGepOffset(const User *V, LocationSet& ls);
 
+    /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
+    const Value* getBaseValueForExtArg(const Value* V);
+
     /// Get the base type and max offset
     const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);
 

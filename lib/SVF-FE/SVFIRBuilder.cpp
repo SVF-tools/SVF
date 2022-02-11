@@ -1007,17 +1007,28 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     }
 }
 
+const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V){
+    const Value * value = stripAllCasts(V);
+    assert(value && "null ptr?");
+    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value)){
+        s64_t totalidx = 0;
+        for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi){
+            if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+                totalidx += op->getSExtValue();
+        }
+        if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
+            value = gep->getPointerOperand();
+    }
+    return value;
+}
+
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
 const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
-    const Value * value = stripAllCasts(V);
-    assert(value && "null ptr?");
-    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
-        value = gep->getPointerOperand();
-
+    const Value* value = getBaseValueForExtArg(V);
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = ptype->getElementType();
