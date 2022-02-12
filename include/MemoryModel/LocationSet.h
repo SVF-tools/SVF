@@ -39,30 +39,6 @@
 namespace SVF
 {
 
-/*!
- * Field information of an aggregate object
- */
-class FlattenedFieldInfo
-{
-private:
-    u32_t flattenedFldIdx;
-    const Type* flattenedElemTy;
-public:
-    FlattenedFieldInfo(u32_t idx, const Type* ty) :
-        flattenedFldIdx(idx), flattenedElemTy(ty)
-    {
-    }
-    inline u32_t getFlattenFldIdx() const
-    {
-        return flattenedFldIdx;
-    }
-    inline const Type* getFlattenElemTy() const
-    {
-        return flattenedElemTy;
-    }
-};
-
-
 /*
  * Location set represents a set of locations in a memory block with following offsets:
  *     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }

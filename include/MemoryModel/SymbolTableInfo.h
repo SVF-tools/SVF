@@ -358,13 +358,12 @@ public:
     /// Flatterned element idx of an array or struct by considering stride
     u32_t getFlattenedElemIdx(const Type *T, s64_t origId);
 
-    const std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec(const Type *T);
-
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
-    ///  OriginalFieldType of b with field_idx 1 : Struct A
-    ///  FlatternedFieldType of b with field_idx 1 : int
-    const Type* getOriginalFieldType(const Type* baseType, u32_t field_idx);
-    const Type* getFlatternedFieldType(const Type* baseType, u32_t field_idx);
+    ///  OriginalElemType of b with field_idx 1 : Struct A
+    ///  FlatternedElemType of b with field_idx 1 : int
+    const Type* getOriginalElemType(const Type* baseType, u32_t origId);
+    /// Return the type of a flattened element given a flattened index
+    const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
     //@}
 
     /// Collect type info
@@ -381,6 +380,9 @@ public:
     virtual void dump();
 
 protected:
+    /// Return the flattened field type for struct type only
+    const std::vector<const Type*>& getFlattenFieldTypes(const StructType *T);
+
     /// Collect the struct info
     virtual void collectStructInfo(const StructType *T);
     /// Collect the array info
@@ -507,7 +509,7 @@ private:
     /// Types of all fields of a struct
     Map<u32_t, const Type*> fldIdx2TypeMap;
     /// All field infos after flattening a struct
-    std::vector<FlattenedFieldInfo> finfo;
+    std::vector<const Type*> finfo;
     /// stride represents the number of repetitive elements if this StInfo represent an ArrayType. stride is 1 by default.
     u32_t stride; 
     /// number of elements after flattenning (including array elements)
@@ -547,8 +549,7 @@ public:
     ///  OriginalFieldType of b with field_idx 1 : Struct A
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
-    const Type* getOriginalFieldType(u32_t fldIdx);
-    const Type* getFlatternedFieldType(u32_t fldIdx);
+    const Type* getOriginalElemType(u32_t fldIdx);
 
     inline std::vector<u32_t>& getFlattenedFieldIdxVec()
     {
@@ -562,7 +563,7 @@ public:
     {
         return flattenElementTypes;
     }
-    inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
+    inline std::vector<const Type*>& getFlattenFieldTypes()
     {
         return finfo;
     }
