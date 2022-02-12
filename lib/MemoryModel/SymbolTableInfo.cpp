@@ -154,21 +154,18 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     StInfo* stinfo = new StInfo(totalElemNum);
     typeToFieldInfo[ty] = stinfo;
 
-    std::vector<const Type*> typeForDummyElement;
-    typeForDummyElement.push_back(elemTy);
-
     /// array without any element (this is not true in C/C++ arrays) we assume there is an empty dummy element
     if(totalElemNum==0){
         stinfo->addFldWithType(0, elemTy, 0);
-        stinfo->setNumOfFieldsAndElems(1, 1, typeForDummyElement);
+        stinfo->setNumOfFieldsAndElems(1, 1);
         FlattenedFieldInfo field(0, elemTy);
         stinfo->getFlattenedFieldInfoVec().push_back(field);
+        stinfo->getFlattenElementTypes().push_back(elemTy);
         return;
     }
 
     /// Array's flatten field infor is the same as its element's
     /// flatten infor.
-    std::vector<const Type*> typeForElement;
     StInfo* elemStInfo = getStructInfo(elemTy);
     u32_t nfE = elemStInfo->getNumOfFlattenFields();
     for (u32_t j = 0; j < nfE; j++)
@@ -177,7 +174,6 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
         const Type* fieldTy = elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy();
         FlattenedFieldInfo field(idx, fieldTy);
         stinfo->getFlattenedFieldInfoVec().push_back(field);
-        typeForElement.push_back(fieldTy);
     }
 
     /// Flatten arrays, map each array element index `i` to flattened index `(i * nfE * totalElemNum)/outArrayElemNum`
@@ -186,17 +182,15 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     for(u32_t i = 0; i < outArrayElemNum; i++)
         stinfo->addFldWithType(0, elemTy, (i * nfE * totalElemNum)/outArrayElemNum);
 
-    std::vector<const Type*>typeForArray;
     for(u32_t i = 0; i < totalElemNum; i++){
         for(u32_t j = 0; j < nfE; j++){
-            typeForArray.push_back(typeForElement[j]);
+            stinfo->getFlattenElementTypes().push_back(elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy());
         }
     }
 
-    assert(typeForArray.size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
+    assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
 
-
-    stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum, typeForArray);
+    stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
 }
 
 
@@ -214,8 +208,6 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
     u32_t nf = 0;
     // The offset when considering array stride info
     u32_t strideOffset = 0;
-
-    std::vector<const Type*> typeForStruct;
     for (StructType::element_iterator it = sty->element_begin(), ie =
                 sty->element_end(); it != ie; ++it)
     {
@@ -228,20 +220,18 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
             StInfo * subStinfo = getStructInfo(et);
             u32_t nfE = subStinfo->getNumOfFlattenFields();
             //Copy ST's info, whose element 0 is the size of ST itself.
-            std::vector<const Type*> typeForSubStruct;
             for (u32_t j = 0; j < nfE; j++)
             {
                 u32_t fldIdx = nf + subStinfo->getFlattenedFieldInfoVec()[j].getFlattenFldIdx();
                 const Type* elemTy = subStinfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy();
                 FlattenedFieldInfo field(fldIdx, elemTy);
                 stinfo->getFlattenedFieldInfoVec().push_back(field);
-                typeForSubStruct.push_back(elemTy);
             }
             nf += nfE;
             strideOffset += nfE * subStinfo->getStride();
             for(u32_t tpi = 0; tpi < subStinfo->getStride(); tpi++){
                 for(u32_t tpj = 0; tpj < nfE; tpj++){
-                    typeForStruct.push_back(typeForSubStruct[tpj]);
+                    stinfo->getFlattenElementTypes().push_back(subStinfo->getFlattenedFieldInfoVec()[tpj].getFlattenElemTy());
                 }
             }
         }
@@ -251,11 +241,13 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
             stinfo->getFlattenedFieldInfoVec().push_back(field);
             nf += 1;
             strideOffset += 1;
-            typeForStruct.push_back(et);
+            stinfo->getFlattenElementTypes().push_back(et);
         }
     }
-    assert(typeForStruct.size() == strideOffset && "typeForStruct size incorrect!");
-    stinfo->setNumOfFieldsAndElems(nf, strideOffset, typeForStruct);
+
+    assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
+
+    stinfo->setNumOfFieldsAndElems(nf,strideOffset);
 
     //Record the size of the complete struct and update max_struct.
     if (nf > maxStSize)
@@ -280,10 +272,9 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
     FlattenedFieldInfo field(0, ty);
     stinfo->getFlattenedFieldInfoVec().push_back(field);
 
-    std::vector<const Type*> typeForSimple;
-    typeForSimple.push_back(ty);
+    stinfo->getFlattenElementTypes().push_back(ty);
 
-    stinfo->setNumOfFieldsAndElems(1, 1, typeForSimple);
+    stinfo->setNumOfFieldsAndElems(1,1);
 }
 
 
