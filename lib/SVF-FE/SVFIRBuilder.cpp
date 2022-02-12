@@ -214,38 +214,12 @@ void SVFIRBuilder::initialiseNodes()
     Handling single value types, for constant index, including pointer, integer, etc 
     e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
     We can obtain the field index by inferring the byteoffset if %p is casted from a pointer to a struct
+    For another example, the following can be an array access.
+    e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
+
 */
 u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx){
-    auto srcptr = gepOp->getOperand(0);
-    llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
-    Type* sttype = nullptr;
-    if(castop1 && castop1->getSrcTy()->isPointerTy() && castop1->getSrcTy()->getPointerElementType()->isStructTy()){
-        sttype = castop1->getSrcTy()->getPointerElementType();
-    }
-    else
-    {
-        for(auto user : srcptr->users()){
-            if(SVFUtil::isa<llvm::BitCastOperator>(user)){
-                llvm::BitCastOperator* castop2 = SVFUtil::dyn_cast<llvm::BitCastOperator>(user);
-                if(castop2 && castop2->getDestTy()->isPointerTy() && castop2->getDestTy()->getPointerElementType()->isStructTy()){
-                    sttype = castop2->getDestTy()->getPointerElementType();
-                    break;
-                }
-            }
-        }
-    }
-    if(sttype){
-        // Case 1: Access a field of a struct (which is not ANSI-compliant) 
-        // Case 2: A pointer-arithematic
-        // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
-        // We conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
-        // (This handling is unsound since the program itself is not ANSI-compliant)
-        const llvm::StructLayout* stdl = dl->getStructLayout(SVFUtil::dyn_cast<StructType>(sttype));
-        return stdl->getElementContainingOffset(idx);
-    }else{
-        // Case 2: This operation is likely accessing an array through pointer p.
-        return 0;
-    }
+    return 0;
 }
 
 /*!
@@ -305,11 +279,11 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
             if(!op)
                 return false;
             // The actual index
-            s64_t idx = op->getSExtValue();
+            //s64_t idx = op->getSExtValue();
 
-            // infer the field offset based on the byte offset
-            u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + fieldOffset);
+            // For pointer arithmetic we ignore the byte offset
+            // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ls,idx)?
+            // ls.setFldIdx(ls.accumulateConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
         }
     }
     return true;
