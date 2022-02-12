@@ -1086,8 +1086,8 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
-        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(stype, index);
+        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
+        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
         NodeID dField = getGepValVar(D,fields[index],dElementType);
         NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
@@ -1202,7 +1202,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 //For each field (i), add store edge *(arg0 + i) = arg1
                 for (u32_t index = 0; index < sz; index++)
                 {
-                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
+                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
                     NodeID dField = getGepValVar(cs.getArgument(0), dstFields[index], dElementType);
                     addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
                 }
@@ -1351,7 +1351,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
@@ -1376,7 +1376,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnS = getGepValVar(vArg, fields[i], elementType);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);

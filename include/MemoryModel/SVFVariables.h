@@ -503,7 +503,7 @@ public:
     /// Return the type of this gep object
     inline virtual const Type* getType() const
     {
-        return SymbolTableInfo::SymbolInfo()->getOriginalFieldType(mem->getType(), ls.accumulateConstantFieldIdx());
+        return SymbolTableInfo::SymbolInfo()->getFlatternedElemType(mem->getType(), ls.accumulateConstantFieldIdx());
     }
 
     /// Return name of a LLVM value

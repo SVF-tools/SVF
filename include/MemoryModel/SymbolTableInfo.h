@@ -362,9 +362,10 @@ public:
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalFieldType of b with field_idx 1 : Struct A
-    ///  FlatternedFieldType of b with field_idx 1 : int
+    ///  FlatternedElemType of b with field_idx 1 : int
     const Type* getOriginalFieldType(const Type* baseType, u32_t field_idx);
-    const Type* getFlatternedFieldType(const Type* baseType, u32_t field_idx);
+    /// Return the type of a flattened element given a flattened index
+    const Type* getFlatternedElemType(const Type* baseType, u32_t flatten_idx);
     //@}
 
     /// Collect type info
@@ -548,7 +549,6 @@ public:
     ///  FlatternedFieldType of b with field_idx 1 : int
     //{@
     const Type* getOriginalFieldType(u32_t fldIdx);
-    const Type* getFlatternedFieldType(u32_t fldIdx);
 
     inline std::vector<u32_t>& getFlattenedFieldIdxVec()
     {

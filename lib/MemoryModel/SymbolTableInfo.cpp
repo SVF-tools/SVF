@@ -74,14 +74,6 @@ const Type* StInfo::getOriginalFieldType(u32_t fldIdx)
         return it->second;
     return nullptr;
 }
-const Type* StInfo::getFlatternedFieldType(u32_t fldIdx)
-{
-    for(FlattenedFieldInfo& fallenedFld : finfo){
-        if(fallenedFld.getFlattenFldIdx() == fldIdx)
-            return fallenedFld.getFlattenElemTy();
-    }
-    return nullptr;
-}
 
 SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter(const Type *T)
 {
@@ -189,7 +181,6 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     }
 
     assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
-
     stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
 }
 
@@ -246,7 +237,6 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
     }
 
     assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
-
     stinfo->setNumOfFieldsAndElems(nf,strideOffset);
 
     //Record the size of the complete struct and update max_struct.
@@ -271,9 +261,7 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
 
     FlattenedFieldInfo field(0, ty);
     stinfo->getFlattenedFieldInfoVec().push_back(field);
-
     stinfo->getFlattenElementTypes().push_back(ty);
-
     stinfo->setNumOfFieldsAndElems(1,1);
 }
 
@@ -429,7 +417,7 @@ u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, s64_t origId)
 {
     if(Options::ModelArrays){
         std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();
-        assert ((unsigned)origId <= so.size() && !so.empty() && "Array index out of bounds, can't get flattened index!");
+        assert ((unsigned)origId <= so.size() && !so.empty() && "element index out of bounds, can't get flattened index!");
         return so[origId];
     }
     else{
@@ -456,8 +444,18 @@ const Type* SymbolTableInfo::getOriginalFieldType(const Type* baseType, u32_t fi
     return getStructInfoIter(baseType)->second->getOriginalFieldType(field_idx);
 }
 
-const Type* SymbolTableInfo::getFlatternedFieldType(const Type* baseType, u32_t field_idx){
-        return getStructInfoIter(baseType)->second->getFlattenElementTypes()[field_idx];
+/// Return the type of a flattened element given a flattened index
+const Type* SymbolTableInfo::getFlatternedElemType(const Type* baseType, u32_t flatten_idx){
+    if(Options::ModelArrays){
+        const std::vector<const Type*>& so = getStructInfoIter(baseType)->second->getFlattenElementTypes();
+        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        return so[flatten_idx];
+    }
+    else{
+        const std::vector<FlattenedFieldInfo>& so = getStructInfoIter(baseType)->second->getFlattenedFieldInfoVec();
+        assert (flatten_idx <= so.size() && !so.empty() && "element index out of bounds, can't get element type!");
+        return so[flatten_idx].getFlattenElemTy();
+    }
 }
 
 /*
