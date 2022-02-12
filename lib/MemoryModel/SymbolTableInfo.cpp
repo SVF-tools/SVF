@@ -642,22 +642,11 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
 
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
-        bool hasIntersection = false;
-        const vector<FlattenedFieldInfo> &infovec = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ety);
-        vector<FlattenedFieldInfo>::const_iterator it = infovec.begin();
-        vector<FlattenedFieldInfo>::const_iterator eit = infovec.end();
-        for (; it != eit; ++it)
-        {
-            const FlattenedFieldInfo& fieldLS = *it;
-            if (ls.intersects(LocationSet(fieldLS.getFlattenFldIdx())))
-            {
-                hasIntersection = true;
-                if (fieldLS.getFlattenElemTy()->isPointerTy())
-                    return false;
-            }
-        }
-        //assert(hasIntersection && "cannot find field of specified offset");
-        return true;
+        const Type* elemTy = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(ety, ls.accumulateConstantFieldIdx());
+        if(elemTy->isPointerTy())
+            return false;
+        else
+            return true;
     }
     else
     {
