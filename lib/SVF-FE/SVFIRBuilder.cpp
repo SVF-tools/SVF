@@ -1086,8 +1086,10 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        NodeID dField = getGepValVar(D,fields[index],dtype);
-        NodeID sField = getGepValVar(S,fields[index],stype);
+        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
+        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(stype, index);
+        NodeID dField = getGepValVar(D,fields[index],dElementType);
+        NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
@@ -1200,7 +1202,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 //For each field (i), add store edge *(arg0 + i) = arg1
                 for (u32_t index = 0; index < sz; index++)
                 {
-                    NodeID dField = getGepValVar(cs.getArgument(0),dstFields[index],dtype);
+                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(dtype, index);
+                    NodeID dField = getGepValVar(cs.getArgument(0), dstFields[index], dElementType);
                     addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
                 }
                 if(SVFUtil::isa<PointerType>(inst->getType()))
@@ -1348,7 +1351,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnD = getGepValVar(vArg3, fields[i], type);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
@@ -1372,7 +1376,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnS = getGepValVar(vArg, fields[i], type);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedFieldType(type, i);
+                    NodeID vnS = getGepValVar(vArg, fields[i], elementType);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
                 }
@@ -1556,7 +1561,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *elementType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);
@@ -1578,7 +1583,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),baseType);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

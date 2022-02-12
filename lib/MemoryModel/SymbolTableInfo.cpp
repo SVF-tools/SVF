@@ -160,6 +160,7 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
         stinfo->setNumOfFieldsAndElems(1, 1);
         FlattenedFieldInfo field(0, elemTy);
         stinfo->getFlattenedFieldInfoVec().push_back(field);
+        stinfo->getFlattenElementTypes().push_back(elemTy);
         return;
     }
 
@@ -180,6 +181,14 @@ void SymbolTableInfo::collectArrayInfo(const ArrayType* ty)
     u32_t outArrayElemNum = ty->getNumElements();
     for(u32_t i = 0; i < outArrayElemNum; i++)
         stinfo->addFldWithType(0, elemTy, (i * nfE * totalElemNum)/outArrayElemNum);
+
+    for(u32_t i = 0; i < totalElemNum; i++){
+        for(u32_t j = 0; j < nfE; j++){
+            stinfo->getFlattenElementTypes().push_back(elemStInfo->getFlattenedFieldInfoVec()[j].getFlattenElemTy());
+        }
+    }
+
+    assert(stinfo->getFlattenElementTypes().size() == nfE * totalElemNum && "typeForArray size incorrect!!!");
 
     stinfo->setNumOfFieldsAndElems(nfE, nfE * totalElemNum);
 }
@@ -220,6 +229,11 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
             }
             nf += nfE;
             strideOffset += nfE * subStinfo->getStride();
+            for(u32_t tpi = 0; tpi < subStinfo->getStride(); tpi++){
+                for(u32_t tpj = 0; tpj < nfE; tpj++){
+                    stinfo->getFlattenElementTypes().push_back(subStinfo->getFlattenedFieldInfoVec()[tpj].getFlattenElemTy());
+                }
+            }
         }
         else     //simple type
         {
@@ -227,8 +241,11 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
             stinfo->getFlattenedFieldInfoVec().push_back(field);
             nf += 1;
             strideOffset += 1;
+            stinfo->getFlattenElementTypes().push_back(et);
         }
     }
+
+    assert(stinfo->getFlattenElementTypes().size() == strideOffset && "typeForStruct size incorrect!");
 
     stinfo->setNumOfFieldsAndElems(nf,strideOffset);
 
@@ -254,6 +271,8 @@ void SymbolTableInfo::collectSimpleTypeInfo(const Type* ty)
 
     FlattenedFieldInfo field(0, ty);
     stinfo->getFlattenedFieldInfoVec().push_back(field);
+
+    stinfo->getFlattenElementTypes().push_back(ty);
 
     stinfo->setNumOfFieldsAndElems(1,1);
 }
@@ -438,7 +457,7 @@ const Type* SymbolTableInfo::getOriginalFieldType(const Type* baseType, u32_t fi
 }
 
 const Type* SymbolTableInfo::getFlatternedFieldType(const Type* baseType, u32_t field_idx){
-        return getStructInfoIter(baseType)->second->getFlatternedFieldType(field_idx);
+        return getStructInfoIter(baseType)->second->getFlattenElementTypes()[field_idx];
 }
 
 /*

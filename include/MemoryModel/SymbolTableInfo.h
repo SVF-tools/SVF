@@ -514,6 +514,8 @@ private:
     u32_t numOfFlattenElements; 
     /// number of fields after flattenning (ignoring array elements)
     u32_t numOfFlattenFields; 
+    /// Type vector of fields
+    std::vector<const Type*> flattenElementTypes;
     /// Max field limit
     static u32_t maxFieldLimit;
 
@@ -555,6 +557,10 @@ public:
     inline std::vector<u32_t>& getFlattenedElemIdxVec()
     {
         return elemIdxVec;
+    }
+    inline std::vector<const Type*>& getFlattenElementTypes()
+    {
+        return flattenElementTypes;
     }
     inline std::vector<FlattenedFieldInfo>& getFlattenedFieldInfoVec()
     {
