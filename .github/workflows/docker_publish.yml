@@ -40,7 +40,7 @@ jobs:
       steps:
       -
         name: dispatch
-        uses: docker/repository-dispatch@1
+        uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.yulei_git_key }}
           repository: ${{ matrix.repo }}
