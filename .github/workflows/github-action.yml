@@ -47,10 +47,10 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "${{github.event_name == 'push'}}" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ]; then 
+          if [ ${{github.event_name == 'push'}} ] && [ ${{github.repository == 'SVF-tools/SVF'}} ]; then 
             git stash --all 
             npm_version=`npm v svf-tools version`  
-            if [ "$RUNNER_OS" = "Linux" ]; then
+            if [ ${{"$RUNNER_OS" == "Linux"}} ]; then
               sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
               git add . 
               if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
