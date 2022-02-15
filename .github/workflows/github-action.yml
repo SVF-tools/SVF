@@ -76,7 +76,11 @@ jobs:
 
       # update doxygen
       - name: update-doxygen
-        if: ${{ github.event_name == 'push' && github.repository == 'SVF-tools/SVF' && runner.os == 'Linux' }}
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
         run: |
             cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
@@ -89,7 +93,11 @@ jobs:
       
       # update-svf-lib
       - name: update-svf-lib
-        if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
         run: |
             cd $GITHUB_WORKSPACE        
             cd ..     
@@ -113,8 +121,11 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - name: publish-svf
-        if: ${{ github.event_name == 'push' && github.repository == 'SVF-tools/SVF' && runner.os == 'Linux' }}
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'     
+        run:  npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-        run: |
-          npm publish
