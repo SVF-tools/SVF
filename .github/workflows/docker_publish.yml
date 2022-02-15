@@ -6,7 +6,7 @@ on:
 
 jobs:
   docker-publish:
-
+    if: github.repository == 'SVF-tools/SVF'
     runs-on: ubuntu-latest
 
     steps:
@@ -30,3 +30,18 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{secrets.DOCKER_USER}}/svf:latest
+          
+  dispatch:
+      needs: docker-publish
+      runs-on: ubuntu-latest
+      strategy: 
+        matrix:
+          repo: ['SVF-tools/Teaching-Software-Analysis']
+      steps:
+      -
+        name: dispatch
+        uses: docker/repository-dispatch@1
+        with:
+          token: ${{ secrets.yulei_git_key }}
+          repository: ${{ matrix.repo }}
+          event-type: new-commit-from-SVF
