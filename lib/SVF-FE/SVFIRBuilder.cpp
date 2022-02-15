@@ -261,12 +261,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
-            // If the first operand is a non-constant, it is likely an array access 
-            // (e.g., %ptr = getelementptr struct_A, %struct_A* %1, i64 %idx)
-            if(!op && op == gepOp->getOperand(1)){
-                continue;
-            }
-            assert(op && "non-const index in an operand in GEP");
+            assert(op && "non-const offset accessing a struct");
             //The actual index
             s64_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(ST, idx);
@@ -274,10 +269,12 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         }
         else if (gepTy->isSingleValueType())
         {
-            // Handle non-constant index
-            // Given a gep edge p = q + idx, where idx is non-constant
-            if(!op)
-                return false;
+            // If it's a non-constant offset access
+            // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
+            // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
+            if(!op && gepTy->isPointerTy() && gepTy->getPointerElementType()->isSingleValueType())
+                return false;              
+            
             // The actual index
             //s64_t idx = op->getSExtValue();
 
