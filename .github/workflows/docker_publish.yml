@@ -8,7 +8,7 @@ jobs:
   docker-publish:
 
     runs-on: ubuntu-latest
-
+    if: github.ref == 'SVF-tools/SVF'
     steps:
      -
         name: Checkout 
