@@ -37,7 +37,7 @@ jobs:
       - name: env-setup
         run: |
           echo $RUNNER_OS
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ]; then 
             git config --global user.email ${{secrets.npm_email}}
             git config --global user.name "GitHub Actions Build"
           fi
@@ -47,7 +47,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ]; then 
             git stash --all 
             npm_version=`npm v svf-tools version`  
             if [ "$RUNNER_OS" = "Linux" ]; then
@@ -79,7 +79,7 @@ jobs:
       # update doxygen
       - name: update-doxygen
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then 
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ] && [ "$RUNNER_OS" = "Linux" ]; then 
             cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
             cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
@@ -92,7 +92,7 @@ jobs:
       # update-svf-lib
       - name: update-svf-lib
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
+          if [ "${{github.event_name}}" = "push" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ]; then 
             cd $GITHUB_WORKSPACE        
             cd ..     
             git clone https://github.com/SVF-tools/SVF-npm.git
@@ -116,7 +116,7 @@ jobs:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - name: publish-svf
-        run: if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then npm publish; fi
+        run: if [ "${{github.event_name}}" = "push" ] && [ "${{github.repository == 'SVF-tools/SVF'}}" ] && [ "$RUNNER_OS" = "Linux" ]; then npm publish; fi
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
