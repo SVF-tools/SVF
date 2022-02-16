@@ -94,7 +94,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
+    friend OutStream& operator<< (OutStream &o, const VFGNode &node)
     {
         o << node.toString();
         return o;

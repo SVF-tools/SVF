@@ -700,18 +700,18 @@ namespace SVF
               EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;
-        std::cout.flags(std::ios::left);
-        std::cout << "****Clusterer Statistics: " << subtitle << "****\n";
+        SVFUtil::outs().flags(std::ios::left);
+        SVFUtil::outs() << "****Clusterer Statistics: " << subtitle << "****\n";
         for (const std::string &statKey : statKeys)
         {
             Map<std::string, std::string>::const_iterator stat = stats.find(statKey);
             if (stat != stats.end())
             {
-                std::cout << std::setw(fieldWidth) << statKey << " " << stat->second << "\n";
+                SVFUtil::outs() << std::setw(fieldWidth) << statKey << " " << stat->second << "\n";
             }
         }
 
-        std::cout.flush();
+        SVFUtil::outs().flush();
     }
 
 };  // namespace SVF.

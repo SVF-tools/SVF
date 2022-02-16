@@ -96,7 +96,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const ICFGEdge &edge)
+    friend OutStream& operator<< (OutStream &o, const ICFGEdge &edge)
     {
         o << edge.toString();
         return o;

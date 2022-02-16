@@ -145,16 +145,16 @@ public:
     void printStat(string statname)
     {
 
-        std::cout << "\n************ " << statname << " ***************\n";
-        std::cout.flags(std::ios::left);
+        SVFUtil::outs() << "\n************ " << statname << " ***************\n";
+        SVFUtil::outs().flags(std::ios::left);
         unsigned field_width = 20;
         for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
         }
         PTNumStatMap.clear();
-        std::cout.flush();
+        SVFUtil::outs().flush();
     }
 };
 

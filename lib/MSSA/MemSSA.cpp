@@ -592,7 +592,7 @@ u32_t MemSSA::getBBPhiNum() const
 /*!
  * Print SSA
  */
-void MemSSA::dumpMSSA(raw_ostream& Out)
+void MemSSA::dumpMSSA(OutStream& Out)
 {
     SVFIR* pag = pta->getPAG();
 
@@ -619,7 +619,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
         {
             BasicBlock& bb = *bit;
             if (bb.hasName())
-                Out << bb.getName() << "\n";
+                Out << bb.getName().str() << "\n";
             PHISet& phiSet = getPHISet(&bb);
             for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)
             {
@@ -648,7 +648,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                         }
                     }
 
-                    Out << inst << "\n";
+                    // TODO-os Out << inst << "\n";
 
                     if(hasCHI(cs))
                     {
@@ -686,7 +686,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                         }
                     }
 
-                    Out << inst << "\n";
+                    // TODO-os Out << inst << "\n";
 
                     bool has_chi = false;
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();

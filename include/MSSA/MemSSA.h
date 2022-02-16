@@ -451,7 +451,7 @@ public:
     //@}
 
     /// Print Memory SSA
-    void dumpMSSA(raw_ostream & Out = SVFUtil::outs());
+    void dumpMSSA(OutStream & Out = SVFUtil::outs());
 };
 
 } // End namespace SVF

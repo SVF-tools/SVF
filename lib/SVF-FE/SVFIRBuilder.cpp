@@ -30,6 +30,7 @@
 #include "SVF-FE/SVFIRBuilder.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/BasicTypes.h"
@@ -324,8 +325,7 @@ void SVFIRBuilder::processCE(const Value *val)
     {
         if (const ConstantExpr* gepce = isGepConstantExpr(ref))
         {
-            DBOUT(DPAGBuild,
-                  outs() << "handle gep constant expression " << *ref << "\n");
+            DBOUT(DPAGBuild, outs() << "handle gep constant expression " << SVFUtil::value2String(ref) << "\n");
             const Constant* opnd = gepce->getOperand(0);
             // handle recursive constant express case (gep (bitcast (gep X 1)) 1)
             processCE(opnd);
@@ -344,8 +344,7 @@ void SVFIRBuilder::processCE(const Value *val)
         }
         else if (const ConstantExpr* castce = isCastConstantExpr(ref))
         {
-            DBOUT(DPAGBuild,
-                  outs() << "handle cast constant expression " << *ref << "\n");
+            DBOUT(DPAGBuild, outs() << "handle cast constant expression " << SVFUtil::value2String(ref) << "\n");
             const Constant* opnd = castce->getOperand(0);
             processCE(opnd);
             const Value* cval = getCurrentValue();
@@ -356,8 +355,7 @@ void SVFIRBuilder::processCE(const Value *val)
         }
         else if (const ConstantExpr* selectce = isSelectConstantExpr(ref))
         {
-            DBOUT(DPAGBuild,
-                  outs() << "handle select constant expression " << *ref << "\n");
+            DBOUT(DPAGBuild, outs() << "handle select constant expression " << SVFUtil::value2String(ref) << "\n");
             const Constant* src1 = selectce->getOperand(1);
             const Constant* src2 = selectce->getOperand(2);
             processCE(src1);
@@ -477,10 +475,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
 void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                u32_t offset)
 {
-    DBOUT(DPAGBuild,
-          outs() << "global " << *gvar << " constant initializer: " << *C
-          << "\n");
-
+    // TODO-os DBOUT(DPAGBuild, outs() << "global " << gvar << " constant initializer: " << *C << "\n"); 
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);
@@ -564,7 +559,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
         if (gvar->hasInitializer())
         {
             Constant *C = gvar->getInitializer();
-            DBOUT(DPAGBuild, outs() << "add global var node " << *gvar << "\n");
+            DBOUT(DPAGBuild, outs() << "add global var node " << SVFUtil::value2String(gvar) << "\n");
             InitialGlobal(gvar, C, 0);
         }
     }
@@ -577,7 +572,7 @@ void SVFIRBuilder::visitGlobal(SVFModule* svfModule)
         NodeID idx = getValueNode(fun);
         NodeID obj = getObjectNode(fun);
 
-        DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName() << "\n");
+        DBOUT(DPAGBuild, outs() << "add global function node " << fun->getName().str() << "\n");
         setCurrentLocation(fun, nullptr);
         addAddrEdge(obj, idx);
     }
@@ -603,7 +598,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
     // AllocaInst should always be a pointer type
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process alloca  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process alloca  " << inst << " \n");
     NodeID dst = getValueNode(&inst);
 
     NodeID src = getObjectNode(&inst);
@@ -618,7 +613,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 void SVFIRBuilder::visitPHINode(PHINode &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -639,7 +634,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
  */
 void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 {
-    DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -656,7 +651,7 @@ void SVFIRBuilder::visitStoreInst(StoreInst &inst)
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
 
     NodeID dst = getValueNode(inst.getPointerOperand());
 
@@ -683,7 +678,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
@@ -698,7 +693,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 void SVFIRBuilder::visitCastInst(CastInst &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
     NodeID dst = getValueNode(&inst);
 
     if (SVFUtil::isa<IntToPtrInst>(&inst))
@@ -766,7 +761,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 void SVFIRBuilder::visitSelectInst(SelectInst &inst)
 {
 
-    DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
 
     NodeID dst = getValueNode(&inst);
     NodeID src1 = getValueNode(inst.getTrueValue());
@@ -786,8 +781,8 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     if(isIntrinsicInst(cs.getInstruction()))
         return;
 
-    DBOUT(DPAGBuild,
-          outs() << "process callsite " << *cs.getInstruction() << "\n");
+    // TODO-os DBOUT(DPAGBuild,
+    //      outs() << "process callsite " << *cs.getInstruction() << "\n");
 
     CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
@@ -831,7 +826,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
     // ReturnInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
+    // TODO-os DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
 
     if(Value *src = inst.getReturnValue())
     {
@@ -950,8 +945,8 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 
     assert(F);
 
-    DBOUT(DPAGBuild,
-          outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
+    // TODO-os DBOUT(DPAGBuild,
+    //       outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
@@ -978,7 +973,7 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
         }
         const Value *AA = *itA, *FA = &*itF; //current actual/formal arg
 
-        DBOUT(DPAGBuild, outs() << "process actual parm  " << *AA << " \n");
+        DBOUT(DPAGBuild, outs() << "process actual parm  " << SVFUtil::value2String(AA) << " \n");
 
         NodeID dstFA = getValueNode(FA);
         NodeID srcAA = getValueNode(AA);

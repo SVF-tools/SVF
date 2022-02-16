@@ -32,6 +32,7 @@
 
 #include "MemoryModel/SVFIR.h"
 #include "Util/ExtAPI.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/ICFGBuilder.h"
 
 namespace SVF

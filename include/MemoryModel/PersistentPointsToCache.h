@@ -296,31 +296,31 @@ public:
     void printStats(const std::string subtitle) const
     {
         static const unsigned fieldWidth = 25;
-        std::cout.flags(std::ios::left);
+        SVFUtil::outs().flags(std::ios::left);
 
-        std::cout << "****Persistent Points-To Cache Statistics: " << subtitle << "****\n";
+        SVFUtil::outs() << "****Persistent Points-To Cache Statistics: " << subtitle << "****\n";
 
-        std::cout << std::setw(fieldWidth) << "UniquePointsToSets"      << idToPts.size()          << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniquePointsToSets"      << idToPts.size()          << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalUnions"             << totalUnions             << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyUnions"          << propertyUnions          << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueUnions"            << uniqueUnions            << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupUnions"            << lookupUnions            << "\n";
-        std::cout << std::setw(fieldWidth) << "PreemptiveUnions"        << preemptiveUnions        << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalUnions"             << totalUnions             << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyUnions"          << propertyUnions          << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueUnions"            << uniqueUnions            << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupUnions"            << lookupUnions            << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveUnions"        << preemptiveUnions        << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalComplements"        << totalComplements        << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyComplements"     << propertyComplements     << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueComplements"       << uniqueComplements       << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupComplements"       << lookupComplements       << "\n";
-        std::cout << std::setw(fieldWidth) << "PreemptiveComplements"   << preemptiveComplements   << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalComplements"        << totalComplements        << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyComplements"     << propertyComplements     << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueComplements"       << uniqueComplements       << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupComplements"       << lookupComplements       << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveComplements"   << preemptiveComplements   << "\n";
 
-        std::cout << std::setw(fieldWidth) << "TotalIntersections"      << totalIntersections      << "\n";
-        std::cout << std::setw(fieldWidth) << "PropertyIntersections"   << propertyIntersections   << "\n";
-        std::cout << std::setw(fieldWidth) << "UniqueIntersections"     << uniqueIntersections     << "\n";
-        std::cout << std::setw(fieldWidth) << "LookupIntersections"     << lookupIntersections     << "\n";
-        std::cout << std::setw(fieldWidth) << "PreemptiveIntersections" << preemptiveIntersections << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "TotalIntersections"      << totalIntersections      << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PropertyIntersections"   << propertyIntersections   << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "UniqueIntersections"     << uniqueIntersections     << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "LookupIntersections"     << lookupIntersections     << "\n";
+        SVFUtil::outs() << std::setw(fieldWidth) << "PreemptiveIntersections" << preemptiveIntersections << "\n";
 
-        std::cout.flush();
+        SVFUtil::outs().flush();
     }
 
     /// Returns all points-to sets stored by this cache as keys to a map.

@@ -250,7 +250,7 @@ public:
     //@}
     /// Overloading operator << for dumping SVFVar value
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const SVFVar &node)
+    friend OutStream& operator<< (OutStream &o, const SVFVar &node)
     {
         o << node.toString();
         return o;

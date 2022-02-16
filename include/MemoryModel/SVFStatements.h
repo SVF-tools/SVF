@@ -167,7 +167,7 @@ public:
     //@}
     /// Overloading operator << for dumping SVFVar value
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const SVFStmt &edge)
+    friend OutStream& operator<< (OutStream &o, const SVFStmt &edge)
     {
         o << edge.toString();
         return o;

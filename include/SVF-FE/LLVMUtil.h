@@ -30,7 +30,9 @@
 #ifndef INCLUDE_SVF_FE_LLVMUTIL_H_
 #define INCLUDE_SVF_FE_LLVMUTIL_H_
 
+#include "SVF-FE/BasicTypes.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "Util/BasicTypes.h"
 #include "Util/ExtAPI.h"
 #include "Util/ThreadAPI.h"
@@ -416,12 +418,12 @@ inline bool ArgInDeadFunction (const Value * val)
 /// Return true if this is a program entry function (e.g. main)
 inline bool isProgEntryFunction (const SVFFunction * fun)
 {
-    return fun && fun->getName().str() == "main";
+    return fun && fun->getName() == "main";
 }
 
 inline bool isProgEntryFunction (const Function * fun)
 {
-    return fun && fun->getName().str() == "main";
+    return fun && fun->getName() == "main";
 }
 
 /// Get program entry function from module.
@@ -462,9 +464,9 @@ bool isPtrInDeadFunction (const Value * value);
 //@{
 inline bool isProgExitFunction (const SVFFunction * fun)
 {
-    return fun && (fun->getName().str() == "exit" ||
-                   fun->getName().str() == "__assert_rtn" ||
-                   fun->getName().str() == "__assert_fail" );
+    return fun && (fun->getName() == "exit" ||
+                   fun->getName() == "__assert_rtn" ||
+                   fun->getName() == "__assert_fail" );
 }
 
 inline bool isProgExitCall(const CallSite cs)

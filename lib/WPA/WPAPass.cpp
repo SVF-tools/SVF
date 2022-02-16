@@ -50,10 +50,6 @@ using namespace SVF;
 
 char WPAPass::ID = 0;
 
-static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
-        "Whole Program Pointer AnalysWPAis Pass");
-
-
 /*!
  * Destructor
  */
@@ -177,9 +173,9 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
             AliasResult result = pta->alias(node1->getId(), node2->getId());
             SVFUtil::outs()	<< (result == AliasResult::NoAlias ? "NoAlias" : "MayAlias")
                             << " var" << node1->getId() << "[" << node1->getValueName()
-                            << "@" << (fun1==nullptr?"":fun1->getName()) << "] --"
+                            << "@" << (fun1==nullptr?"":fun1->getName().str()) << "] --"
                             << " var" << node2->getId() << "[" << node2->getValueName()
-                            << "@" << (fun2==nullptr?"":fun2->getName()) << "]\n";
+                            << "@" << (fun2==nullptr?"":fun2->getName().str()) << "]\n";
         }
     }
 }
@@ -191,7 +187,7 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 AliasResult WPAPass::alias(const Value* V1, const Value* V2)
 {
 
-    AliasResult result = llvm::AliasResult::MayAlias;
+    AliasResult result = AliasResult::MayAlias;
 
     SVFIR* pag = _pta->getPAG();
 
@@ -206,25 +202,25 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2)
         if (Options::AliasRule.getBits() == 0 || Options::AliasRule.isSet(Veto))
         {
             /// Return NoAlias if any PTA gives NoAlias result
-            result = llvm::AliasResult::MayAlias;
+            result = AliasResult::MayAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::AliasResult::NoAlias)
-                    result = llvm::AliasResult::NoAlias;
+                if ((*it)->alias(V1, V2) == AliasResult::NoAlias)
+                    result = AliasResult::NoAlias;
             }
         }
         else if (Options::AliasRule.isSet(Conservative))
         {
             /// Return MayAlias if any PTA gives MayAlias result
-            result = llvm::AliasResult::NoAlias;
+            result = AliasResult::NoAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::AliasResult::MayAlias)
-                    result = llvm::AliasResult::MayAlias;
+                if ((*it)->alias(V1, V2) == AliasResult::MayAlias)
+                    result = AliasResult::MayAlias;
             }
         }
     }

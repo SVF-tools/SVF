@@ -21,8 +21,6 @@ using namespace SVFUtil;
 
 char DDAPass::ID = 0;
 
-static llvm::RegisterPass<DDAPass> DDAPA("dda", "Demand-driven Pointer Analysis Pass");
-
 DDAPass::~DDAPass()
 {
     // _pta->dumpStat();
@@ -304,7 +302,7 @@ AliasResult DDAPass::alias(const Value* V1, const Value* V2)
         return _pta->alias(V1,V2);
     }
 
-    return llvm::AliasResult::MayAlias;
+    return AliasResult::MayAlias;
 }
 
 /*!

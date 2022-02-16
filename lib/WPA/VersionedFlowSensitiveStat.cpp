@@ -145,7 +145,7 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["AverageSCCSize"]   = (vfspta->numOfSCC == 0) ? 0 :
                                       ((double)vfspta->numOfNodesInSCC / vfspta->numOfSCC);
 
-    std::cout << "\n****Versioned Flow-Sensitive Pointer Analysis Statistics****\n";
+    SVFUtil::outs() << "\n****Versioned Flow-Sensitive Pointer Analysis Statistics****\n";
     PTAStat::printStat();
 }
 

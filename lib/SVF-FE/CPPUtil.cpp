@@ -343,11 +343,11 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
     else
     {
-        for (const User *thisU : thisPtr1->users())
+        for (const Value *thisU : thisPtr1->users())
         {
             if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
             {
-                for (const User *storeU : store->getPointerOperand()->users())
+                for (const Value *storeU : store->getPointerOperand()->users())
                 {
                     if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                     {

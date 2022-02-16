@@ -74,7 +74,7 @@ u32_t LocationSet::getElementNum(const Type* type) const{
             return 1;
     }
     else{
-        SVFUtil::outs() << "GepIter Type" << *type << "\n";
+        // TODO-os SVFUtil::outs() << "GepIter Type" << *type << "\n";
         assert(false && "What other types for this gep?");
         abort();
     }

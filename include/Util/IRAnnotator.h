@@ -138,8 +138,8 @@ private:
         }
         else
         {
-            std::cout << "Value is NOT a Instruction, Argument, Function, GlobalVariable, BasicBlock, Constant or InlineAsm" << std::endl;
-            SVFUtil::outs() << *value << "\n";
+            SVFUtil::outs() << "Value is NOT a Instruction, Argument, Function, GlobalVariable, BasicBlock, Constant or InlineAsm" << std::endl;
+            SVFUtil::outs() << SVFUtil::value2String(value) << "\n";
         }
     }
 

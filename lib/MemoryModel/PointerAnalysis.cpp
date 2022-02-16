@@ -266,7 +266,7 @@ void PointerAnalysis::dumpAllTypes()
         if (SVFUtil::isa<DummyObjVar>(node) || SVFUtil::isa<DummyValVar>(node))
             continue;
 
-        outs() << "##<" << node->getValue()->getName() << "> ";
+        outs() << "##<" << node->getValue()->getName().str() << "> ";
         outs() << "Source Loc: " << getSourceLoc(node->getValue());
         outs() << "\nNodeID " << node->getId() << "\n";
 
@@ -291,7 +291,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     }
     else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT()) {
 		if (node->hasValue()) {
-			outs() << "##<" << node->getValue()->getName() << "> ";
+			outs() << "##<" << node->getValue()->getName().str() << "> ";
 			outs() << "Source Loc: " << getSourceLoc(node->getValue());
 		}
 	}
@@ -327,7 +327,7 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
 		else {
 			if (!SVFModule::pagReadFromTXT()) {
 				if (node->hasValue()) {
-					outs() << "<" << pagNode->getValue()->getName() << "> ";
+					outs() << "<" << pagNode->getValue()->getName().str() << "> ";
 					outs() << "Source Loc: "
 							<< getSourceLoc(pagNode->getValue()) << "] \n";
 				}
@@ -343,7 +343,7 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    cs->getCallSite()->print(outs());
+    // TODO-os cs->getCallSite()->print(outs());
     outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
     outs() << "\t with Targets: ";
 
@@ -391,7 +391,7 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            cs->getCallSite()->print(outs());
+            // TODO-os cs->getCallSite()->print(outs());
             outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
             outs() << "\n\t!!!has no targets!!!\n";
         }
@@ -403,7 +403,7 @@ void PointerAnalysis::printIndCSTargets()
 /*!
  * Resolve indirect calls
  */
-void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges, LLVMCallGraph*)
+void PointerAnalysis::resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges)
 {
 
     assert(pag->isIndirectCallSites(cs) && "not an indirect callsite?");
@@ -559,24 +559,24 @@ void PointerAnalysis::validateSuccessTests(std::string fun)
                 bool checkSuccessful = false;
                 if (fun == aliasTestMayAlias || fun == aliasTestMayAliasMangled)
                 {
-                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::MustAlias)
+                    if (aliasRes == AliasResult::MayAlias || aliasRes == AliasResult::MustAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestNoAlias || fun == aliasTestNoAliasMangled)
                 {
-                    if (aliasRes == llvm::AliasResult::NoAlias)
+                    if (aliasRes == AliasResult::NoAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestMustAlias || fun == aliasTestMustAliasMangled)
                 {
                     // change to must alias when our analysis support it
-                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::MustAlias)
+                    if (aliasRes == AliasResult::MayAlias || aliasRes == AliasResult::MustAlias)
                         checkSuccessful = true;
                 }
                 else if (fun == aliasTestPartialAlias || fun == aliasTestPartialAliasMangled)
                 {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == llvm::AliasResult::MayAlias)
+                    if (aliasRes == AliasResult::MayAlias)
                         checkSuccessful = true;
                 }
                 else
@@ -627,13 +627,13 @@ void PointerAnalysis::validateExpectedFailureTests(std::string fun)
                 if (fun == aliasTestFailMayAlias || fun == aliasTestFailMayAliasMangled)
                 {
                     // change to must alias when our analysis support it
-                    if (aliasRes == llvm::AliasResult::NoAlias)
+                    if (aliasRes == AliasResult::NoAlias)
                         expectedFailure = true;
                 }
                 else if (fun == aliasTestFailNoAlias || fun == aliasTestFailNoAliasMangled)
                 {
                     // change to partial alias when our analysis support it
-                    if (aliasRes == llvm::AliasResult::MayAlias || aliasRes == llvm::AliasResult::PartialAlias || aliasRes == llvm::AliasResult::MustAlias)
+                    if (aliasRes == AliasResult::MayAlias || aliasRes == AliasResult::PartialAlias || aliasRes == AliasResult::MustAlias)
                         expectedFailure = true;
                 }
                 else

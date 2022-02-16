@@ -209,7 +209,7 @@ ICFGNode* ICFG::getICFGNode(const Instruction* inst)
 CallICFGNode* ICFG::getCallICFGNode(const Instruction* inst)
 {
 	if(SVFUtil::isCallSite(inst) ==false)
-		outs() << *inst << "\n";
+    // TODO-os outs() << *inst << "\n";
     assert(SVFUtil::isCallSite(inst) && "not a call instruction?");
     assert(SVFUtil::isNonInstricCallSite(inst) && "associating an intrinsic debug instruction with an ICFGNode!");
     CallICFGNode* node = getCallBlock(inst);

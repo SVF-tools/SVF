@@ -32,10 +32,10 @@
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
-#include <llvm/Support/raw_ostream.h>	// for output
 #include <llvm/Support/CommandLine.h>	// for command line options
 #include <llvm/ADT/StringMap.h>	// for StringMap
 
+#include <iostream>
 #include <vector>
 #include <list>
 #include <set>
@@ -71,6 +71,8 @@ template <class T> struct Hash {
         return h(t);
     }
 };
+
+typedef std::ostream OutStream;
 
 typedef unsigned u32_t;
 typedef signed s32_t;
@@ -179,6 +181,22 @@ template <> struct Hash<NodePair>
 /// Size of native integer that we'll use for bit vectors, in bits.
 #define NATIVE_INT_SIZE (sizeof(unsigned long long) * CHAR_BIT)
 
+enum ModRefInfo
+{
+    ModRef,
+    Ref,
+    Mod,
+    NoModRef,
+};
+
+enum AliasResult
+{
+    MustAlias,
+    MayAlias,
+    PartialAlias,
+    NoAlias,
+};
+
 class SVFValue
 {
 
@@ -228,7 +246,7 @@ public:
     }
     //@}
 
-    const llvm::StringRef getName() const
+    const std::string getName() const
     {
         return value;
     }
@@ -240,7 +258,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node)
+    friend OutStream& operator<< (OutStream &o, const SVFValue &node)
     {
         o << node.getName();
         return o;

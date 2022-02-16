@@ -90,7 +90,7 @@ private:
     {
         if(F)
         {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName().str());
+            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
             if(it != tdAPIMap.end())
                 return it->second;
         }

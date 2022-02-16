@@ -124,7 +124,7 @@ public:
     ///@}
 
 protected:
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    virtual inline void dumpPts(const PtsMap & ptsSet,OutStream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {
@@ -598,14 +598,14 @@ public:
                 if (this->hasDFInSet(loc))
                 {
                     osm << "Loc:" << loc << " IN:{";
-                    this->dumpPts(this->getDFInPtsMap(loc), osm);
+                    // TODO-os this->dumpPts(this->getDFInPtsMap(loc), osm);
                     osm << "}\n";
                 }
 
                 if (this->hasDFOutSet(loc))
                 {
                     osm << "Loc:" << loc << " OUT:{";
-                    this->dumpPts(this->getDFOutPtsMap(loc), osm);
+                    // TODO-os this->dumpPts(this->getDFOutPtsMap(loc), osm);
                     osm << "}\n";
                 }
             }
@@ -621,7 +621,7 @@ public:
         F.os().clear_error();
     }
 
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    virtual inline void dumpPts(const PtsMap & ptsSet,OutStream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {
