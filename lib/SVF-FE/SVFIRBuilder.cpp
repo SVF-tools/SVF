@@ -1185,10 +1185,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
                 //memcpy returns the dest.
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                {
-                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-                }
+                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
             }
             case ExtAPI::EFT_A1R_A0R:
@@ -1240,20 +1237,12 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
 			case ExtAPI::EFT_L_A0__A1_A0:
 			{
-				/// this case is for strcpy(dst,src); to maintain its semantics
-				/// we will store src to the base of dst instead of dst.
-				/// dst = load base
-				/// store src base
-				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
-					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
-					if (SVFUtil::isa<PointerType>(inst->getType()))
-						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
-				}
-//				else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(0))) {
-//					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(cs.getArgument(0)));
-//					if (SVFUtil::isa<PointerType>(inst->getType()))
-//						addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-//				}
+                if(cs.arg_size()>=3)
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
+                else
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
+                //strcpy returns the dest.
+                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
 				break;
 			}
             case ExtAPI::EFT_L_A0__A2R_A0:
