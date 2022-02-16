@@ -532,11 +532,11 @@ void SymbolTableBuilder::analyzeObjType(ObjTypeInfo* typeinfo, const Value* val)
     }
     if (const StructType *ST= SVFUtil::dyn_cast<StructType>(elemTy))
     {
-        const std::vector<FlattenedFieldInfo>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenedFieldInfoVec(ST);
-        for(std::vector<FlattenedFieldInfo>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
+        const std::vector<const Type*>& flattenFields = SymbolTableInfo::SymbolInfo()->getFlattenFieldTypes(ST);
+        for(std::vector<const Type*>::const_iterator it = flattenFields.begin(), eit = flattenFields.end();
                 it!=eit; ++it)
         {
-            if((*it).getFlattenElemTy()->isPointerTy())
+            if((*it)->isPointerTy())
                 isPtrObj = true;
         }
         if(SVFUtil::isa<GlobalVariable>(val) && SVFUtil::cast<GlobalVariable>(val)->hasInitializer()

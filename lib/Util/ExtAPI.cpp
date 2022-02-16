@@ -727,6 +727,7 @@ static const ei_pair ei_pairs[]=
     {"llvm.memset", ExtAPI::EFT_L_A0__A0R_A1},
     {"llvm.memset.p0i8.i32", ExtAPI::EFT_L_A0__A0R_A1},
     {"llvm.memset.p0i8.i64", ExtAPI::EFT_L_A0__A0R_A1},
+    {"__memset_chk", ExtAPI::EFT_L_A0__A0R_A1},
     {"llvm.memcpy", ExtAPI::EFT_L_A0__A0R_A1R},
     {"llvm.memcpy.p0i8.p0i8.i32", ExtAPI::EFT_L_A0__A0R_A1R},
     {"llvm.memcpy.p0i8.p0i8.i64", ExtAPI::EFT_L_A0__A0R_A1R},

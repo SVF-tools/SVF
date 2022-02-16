@@ -215,38 +215,12 @@ void SVFIRBuilder::initialiseNodes()
     Handling single value types, for constant index, including pointer, integer, etc 
     e.g. field_idx = getelementptr i8, %i8* %p, i64 -4
     We can obtain the field index by inferring the byteoffset if %p is casted from a pointer to a struct
+    For another example, the following can be an array access.
+    e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
+
 */
 u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx){
-    auto srcptr = gepOp->getOperand(0);
-    llvm::BitCastOperator* castop1 = SVFUtil::dyn_cast<llvm::BitCastOperator>(srcptr);
-    Type* sttype = nullptr;
-    if(castop1 && castop1->getSrcTy()->isPointerTy() && castop1->getSrcTy()->getPointerElementType()->isStructTy()){
-        sttype = castop1->getSrcTy()->getPointerElementType();
-    }
-    else
-    {
-        for(auto user : srcptr->users()){
-            if(SVFUtil::isa<llvm::BitCastOperator>(user)){
-                llvm::BitCastOperator* castop2 = SVFUtil::dyn_cast<llvm::BitCastOperator>(user);
-                if(castop2 && castop2->getDestTy()->isPointerTy() && castop2->getDestTy()->getPointerElementType()->isStructTy()){
-                    sttype = castop2->getDestTy()->getPointerElementType();
-                    break;
-                }
-            }
-        }
-    }
-    if(sttype){
-        // Case 1: Access a field of a struct (which is not ANSI-compliant) 
-        // Case 2: A pointer-arithematic
-        // Since this is a field-index based memory model, for both cases, we set field-index to 0, but we set constant offset to byte offset
-        // We conside the whole array of object as one element for field-sensitive analysis, but byteoffset can be used for handling pointer arithematic
-        // (This handling is unsound since the program itself is not ANSI-compliant)
-        const llvm::StructLayout* stdl = dl->getStructLayout(SVFUtil::dyn_cast<StructType>(sttype));
-        return stdl->getElementContainingOffset(idx);
-    }else{
-        // Case 2: This operation is likely accessing an array through pointer p.
-        return 0;
-    }
+    return 0;
 }
 
 /*!
@@ -288,12 +262,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         }
         else if (const StructType *ST = SVFUtil::dyn_cast<StructType>(gepTy))
         {
-            // If the first operand is a non-constant, it is likely an array access 
-            // (e.g., %ptr = getelementptr struct_A, %struct_A* %1, i64 %idx)
-            if(!op && op == gepOp->getOperand(1)){
-                continue;
-            }
-            assert(op && "non-const index in an operand in GEP");
+            assert(op && "non-const offset accessing a struct");
             //The actual index
             s64_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(ST, idx);
@@ -301,16 +270,18 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         }
         else if (gepTy->isSingleValueType())
         {
-            // Handle non-constant index
-            // Given a gep edge p = q + idx, where idx is non-constant
-            if(!op)
-                return false;
+            // If it's a non-constant offset access
+            // If its point-to target is struct or array, it's likely an array accessing (%result = gep %struct.A* %a, i32 %non-const-index)
+            // If its point-to target is single value (pointer arithmetic), then it's a variant gep (%result = gep i8* %p, i32 %non-const-index)
+            if(!op && gepTy->isPointerTy() && gepTy->getPointerElementType()->isSingleValueType())
+                return false;              
+            
             // The actual index
-            s64_t idx = op->getSExtValue();
+            //s64_t idx = op->getSExtValue();
 
-            // infer the field offset based on the byte offset
-            u32_t fieldOffset = inferFieldIdxFromByteOffset(gepOp, dataLayout, ls, idx);
-            ls.setFldIdx(ls.accumulateConstantFieldIdx() + fieldOffset);
+            // For pointer arithmetic we ignore the byte offset
+            // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ls,idx)?
+            // ls.setFldIdx(ls.accumulateConstantFieldIdx() + inferFieldIdxFromByteOffset(geopOp,idx));
         }
     }
     return true;
@@ -442,7 +413,7 @@ void SVFIRBuilder::processCE(const Value *val)
  * FIXME:Here we only get the field that actually used in the program
  * We ignore the initialization of global variable field that not used in the program
  */
-NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
+NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy)
 {
 
     // if the global variable do not have any field needs to be initialized
@@ -454,10 +425,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset)
     /// then we need to create a gep node for this field
     else
     {
-        const Type *gvartype = gvar->getType();
-        while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(gvartype))
-            gvartype = ptype->getElementType();
-        return getGepValVar(gvar, LocationSet(offset), gvartype);
+        return getGepValVar(gvar, LocationSet(offset), tpy);
     }
 }
 
@@ -481,7 +449,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
         NodeID src = getValueNode(C);
         // get the field value if it is avaiable, otherwise we create a dummy field node.
         setCurrentLocation(gvar, nullptr);
-        NodeID field = getGlobalVarField(gvar, offset);
+        NodeID field = getGlobalVarField(gvar, offset, C->getType());
 
         if (SVFUtil::isa<GlobalVariable>(C) || SVFUtil::isa<Function>(C))
         {
@@ -1005,25 +973,37 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
     }
 }
 
+const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V){
+    const Value * value = stripAllCasts(V);
+    assert(value && "null ptr?");
+    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value)){
+        s64_t totalidx = 0;
+        for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi){
+            if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
+                totalidx += op->getSExtValue();
+        }
+        if(totalidx == 0 && !SVFUtil::isa<StructType>(value->getType()))
+            value = gep->getPointerOperand();
+    }
+    return value;
+}
+
 /*!
  * Find the base type and the max possible offset of an object pointed to by (V).
  */
 const Type *SVFIRBuilder::getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* szValue)
 {
     assert(V);
-    const Value * value = stripAllCasts(V);
-    assert(value && "null ptr?");
-    if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value))
-        value = gep->getPointerOperand();
-
+    const Value* value = getBaseValueForExtArg(V);
     const Type *T = value->getType();
     while (const PointerType *ptype = SVFUtil::dyn_cast<PointerType>(T))
         T = ptype->getElementType();
 
     u32_t numOfElems = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(T);
     /// use user-specified size for this copy operation if the size is a constaint int
-    if(szValue && SVFUtil::isa<ConstantInt>(szValue))
-        numOfElems = SVFUtil::cast<ConstantInt>(szValue)->getSExtValue();
+    if(szValue && SVFUtil::isa<ConstantInt>(szValue)){
+        numOfElems = (numOfElems > SVFUtil::cast<ConstantInt>(szValue)->getSExtValue()) ? SVFUtil::cast<ConstantInt>(szValue)->getSExtValue() : numOfElems;
+    }
 
     LLVMContext& context = LLVMModuleSet::getLLVMModuleSet()->getContext();
     for(u32_t ei = 0; ei < numOfElems; ei++){
@@ -1072,8 +1052,10 @@ void SVFIRBuilder::addComplexConsForExt(Value *D, Value *S, const Value* szValue
     //For each field (i), add (Ti = *S + i) and (*D + i = Ti).
     for (u32_t index = 0; index < sz; index++)
     {
-        NodeID dField = getGepValVar(D,fields[index],dtype);
-        NodeID sField = getGepValVar(S,fields[index],stype);
+        const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, fields[index].accumulateConstantFieldIdx());
+        const Type* sElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(stype, fields[index].accumulateConstantFieldIdx());
+        NodeID dField = getGepValVar(D,fields[index],dElementType);
+        NodeID sField = getGepValVar(S,fields[index],sElementType);
         NodeID dummy = pag->addDummyValNode();
         addLoadEdge(sField,dummy);
         addStoreEdge(dummy,dField);
@@ -1178,10 +1160,18 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
             case ExtAPI::EFT_L_A0__A0R_A1:
             {
-				// this is only for memset(void *str, int c, size_t n)
-				// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
-				// However, the second argument is non-pointer, thus we can not use addComplexConsForExt
-				// addComplexConsForExt(cs.getArgument(0), cs.getArgument(1));
+		// this is for memset(void *str, int c, size_t n)
+		// which copies the character c (an unsigned char) to the first n characters of the string pointed to, by the argument str
+                std::vector<LocationSet> dstFields;
+                const Type *dtype = getBaseTypeAndFlattenedFields(cs.getArgument(0), dstFields, cs.getArgument(2));
+                u32_t sz = dstFields.size();
+                //For each field (i), add store edge *(arg0 + i) = arg1
+                for (u32_t index = 0; index < sz; index++)
+                {
+                    const Type* dElementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(dtype, dstFields[index].accumulateConstantFieldIdx());
+                    NodeID dField = getGepValVar(cs.getArgument(0), dstFields[index], dElementType);
+                    addStoreEdge(pag->getValueNode(cs.getArgument(1)),dField);
+                }
                 if(SVFUtil::isa<PointerType>(inst->getType()))
                     addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
@@ -1190,10 +1180,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             {
                 addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
                 //memcpy returns the dest.
-                if(SVFUtil::isa<PointerType>(inst->getType()))
-                {
-                    addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-                }
+                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
                 break;
             }
             case ExtAPI::EFT_A1R_A0R:
@@ -1245,20 +1232,13 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             }
 			case ExtAPI::EFT_L_A0__A1_A0:
 			{
-				/// this case is for strcpy(dst,src); to maintain its semantics
-				/// we will store src to the base of dst instead of dst.
-				/// dst = load base
-				/// store src base
-				if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(cs.getArgument(0))) {
-					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(load->getPointerOperand()));
-					if (SVFUtil::isa<PointerType>(inst->getType()))
-						addLoadEdge(getValueNode(load->getPointerOperand()), getValueNode(inst));
-				}
-//				else if (const GetElementPtrInst *gep = SVFUtil::dyn_cast<GetElementPtrInst>(cs.getArgument(0))) {
-//					addStoreEdge(getValueNode(cs.getArgument(1)), getValueNode(cs.getArgument(0)));
-//					if (SVFUtil::isa<PointerType>(inst->getType()))
-//						addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
-//				}
+                /// handle strcpy
+                if(cs.arg_size()>=3)
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
+                else
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
+                //strcpy returns the dest.
+                addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
 				break;
 			}
             case ExtAPI::EFT_L_A0__A2R_A0:
@@ -1327,7 +1307,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnD = getGepValVar(vArg3, fields[i], type);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                    NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                     NodeID vnS = getValueNode(vArg1);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
@@ -1351,7 +1332,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    NodeID vnS = getGepValVar(vArg, fields[i], type);
+                    const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
+                    NodeID vnS = getGepValVar(vArg, fields[i], elementType);
                     if(vnD && vnS)
                         addStoreEdge(vnS,vnD);
                 }
@@ -1535,7 +1517,7 @@ void SVFIRBuilder::sanityCheck()
  * Add a temp field value node according to base value and offset
  * this node is after the initial node method, it is out of scope of symInfo table
  */
-NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType)
+NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const Type *elementType)
 {
     NodeID base = pag->getBaseValVar(getValueNode(val));
     NodeID gepval = pag->getGepValVar(curVal, base, ls);
@@ -1557,7 +1539,7 @@ NodeID SVFIRBuilder::getGepValVar(const Value* val, const LocationSet& ls, const
         const Value* cval = getCurrentValue();
         const BasicBlock* cbb = getCurrentBB();
         setCurrentLocation(curVal, nullptr);
-        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),baseType);
+        NodeID gepNode= pag->addGepValNode(curVal, val,ls, NodeIDAllocator::get()->allocateValueId(),elementType->getPointerTo());
         addGepEdge(base, gepNode, ls, true);
         setCurrentLocation(cval, cbb);
         return gepNode;

@@ -65,7 +65,7 @@ public:
     static u32_t totalEdgeNum;		///< Total edge number
 
     /// Constructor
-    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k);
+    SVFStmt(SVFVar* s, SVFVar* d, GEdgeFlag k, bool real=true);
     /// Destructor
     ~SVFStmt()
     {

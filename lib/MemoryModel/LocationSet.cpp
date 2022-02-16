@@ -112,6 +112,9 @@ s64_t LocationSet::accumulateConstantOffset() const{
     
     assert(isConstantOffset() && "not a constant offset");
 
+    if(offsetValues.empty())
+        return accumulateConstantFieldIdx();
+
     s64_t totalConstOffset = 0;
     for(int i = offsetValues.size() - 1; i >= 0; i--){
         const Value* value = offsetValues[i].first;
