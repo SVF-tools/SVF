@@ -1238,12 +1238,10 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 			case ExtAPI::EFT_L_A0__A1_A0:
 			{
                 /// handle strcpy
-                if(Options::ModelConsts){
-                    if(cs.arg_size()>=3)
-                        addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
-                    else
-                        addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
-                }
+                if(cs.arg_size()>=3)
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), cs.getArgument(2));
+                else
+                    addComplexConsForExt(cs.getArgument(0), cs.getArgument(1), nullptr);
                 //strcpy returns the dest.
                 addCopyEdge(getValueNode(cs.getArgument(0)), getValueNode(inst));
 				break;
