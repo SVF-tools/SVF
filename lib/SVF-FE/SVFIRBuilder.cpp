@@ -443,7 +443,7 @@ NodeID SVFIRBuilder::getGlobalVarField(const GlobalVariable *gvar, u32_t offset,
 void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                                u32_t offset)
 {
-    // TODO-os DBOUT(DPAGBuild, outs() << "global " << gvar << " constant initializer: " << *C << "\n"); 
+    DBOUT(DPAGBuild, outs() << "global " << SVFUtil::value2String(gvar) << " constant initializer: " << SVFUtil::value2String(C) << "\n"); 
     if (C->getType()->isSingleValueType())
     {
         NodeID src = getValueNode(C);

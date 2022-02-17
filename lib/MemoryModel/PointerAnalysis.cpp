@@ -343,7 +343,7 @@ void PointerAnalysis::printIndCSTargets(const CallICFGNode* cs, const FunctionSe
 {
     outs() << "\nNodeID: " << getFunPtr(cs);
     outs() << "\nCallSite: ";
-    // TODO-os cs->getCallSite()->print(outs());
+    outs() << SVFUtil::value2String(cs->getCallSite());
     outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
     outs() << "\t with Targets: ";
 
@@ -391,7 +391,7 @@ void PointerAnalysis::printIndCSTargets()
         {
             outs() << "\nNodeID: " << csIt->second;
             outs() << "\nCallSite: ";
-            // TODO-os cs->getCallSite()->print(outs());
+            outs() << SVFUtil::value2String(cs->getCallSite());
             outs() << "\tLocation: " << SVFUtil::getSourceLoc(cs->getCallSite());
             outs() << "\n\t!!!has no targets!!!\n";
         }

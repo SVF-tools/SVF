@@ -227,15 +227,15 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
 
     if (success)
     {
-        // TODO-os outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-        // TODO-os        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
-        // TODO-os        << getSourceLoc(cs->getCallSite()) << ")\n";
+        outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
+               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     }
     else
     {
-        // TODO-os SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-        // TODO-os                 << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
-        // TODO-os                 << getSourceLoc(cs->getCallSite()) << ")\n";
+        SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
+                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }
@@ -277,16 +277,16 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
 
     if (expectedFailure)
     {
-        // TODO-os outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-        // TODO-os        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
-        // TODO-os        << getSourceLoc(cs->getCallSite()) << ")\n";
+        outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
+               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
+               << getSourceLoc(cs->getCallSite()) << ")\n";
     }
     else
     {
-        // TODO-os SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
-        // TODO-os                 << " check <src id:" << source->getId()
-        // TODO-os                 << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
-        // TODO-os                 << getSourceLoc(cs->getCallSite()) << ")\n";
+        SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
+                        << " check <src id:" << source->getId()
+                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
+                        << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
 }
