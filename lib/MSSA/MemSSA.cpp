@@ -648,7 +648,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    // TODO-os Out << inst << "\n";
+                    Out << SVFUtil::value2String(&inst) << "\n";
 
                     if(hasCHI(cs))
                     {
@@ -686,7 +686,7 @@ void MemSSA::dumpMSSA(OutStream& Out)
                         }
                     }
 
-                    // TODO-os Out << inst << "\n";
+                    Out << SVFUtil::value2String(&inst) << "\n";
 
                     bool has_chi = false;
                     for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();

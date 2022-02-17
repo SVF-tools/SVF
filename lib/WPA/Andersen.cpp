@@ -685,7 +685,7 @@ void Andersen::connectCaller2CalleeParams(CallSite cs, const SVFFunction* F, Nod
 {
     assert(F);
 
-    // TODO-os DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << *cs.getInstruction() << " to callee " << *F << "\n");
+    DBOUT(DAndersen, outs() << "connect parameters from indirect callsite " << SVFUtil::value2String(cs.getInstruction()) << " to callee " << *F << "\n");
 
     CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());

@@ -566,7 +566,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
     // AllocaInst should always be a pointer type
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process alloca  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process alloca  " << SVFUtil::value2String(&inst) << " \n");
     NodeID dst = getValueNode(&inst);
 
     NodeID src = getObjectNode(&inst);
@@ -581,7 +581,7 @@ void SVFIRBuilder::visitAllocaInst(AllocaInst &inst)
 void SVFIRBuilder::visitPHINode(PHINode &inst)
 {
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process phi " << inst << "  \n");
+    DBOUT(DPAGBuild, outs() << "process phi " << SVFUtil::value2String(&inst) << "  \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -602,7 +602,7 @@ void SVFIRBuilder::visitPHINode(PHINode &inst)
  */
 void SVFIRBuilder::visitLoadInst(LoadInst &inst)
 {
-    // TODO-os DBOUT(DPAGBuild, outs() << "process load  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process load  " << SVFUtil::value2String(&inst) << " \n");
 
     NodeID dst = getValueNode(&inst);
 
@@ -619,7 +619,7 @@ void SVFIRBuilder::visitStoreInst(StoreInst &inst)
     // StoreInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process store " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process store " << SVFUtil::value2String(&inst) << " \n");
 
     NodeID dst = getValueNode(inst.getPointerOperand());
 
@@ -646,7 +646,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 
     assert(SVFUtil::isa<PointerType>(inst.getType()));
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process gep  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process gep  " << SVFUtil::value2String(&inst) << " \n");
 
     NodeID src = getValueNode(inst.getPointerOperand());
 
@@ -661,7 +661,7 @@ void SVFIRBuilder::visitGetElementPtrInst(GetElementPtrInst &inst)
 void SVFIRBuilder::visitCastInst(CastInst &inst)
 {
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process cast  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process cast  " << SVFUtil::value2String(&inst) << " \n");
     NodeID dst = getValueNode(&inst);
 
     if (SVFUtil::isa<IntToPtrInst>(&inst))
@@ -729,7 +729,7 @@ void SVFIRBuilder::visitCmpInst(CmpInst &inst)
 void SVFIRBuilder::visitSelectInst(SelectInst &inst)
 {
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process select  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process select  " << SVFUtil::value2String(&inst) << " \n");
 
     NodeID dst = getValueNode(&inst);
     NodeID src1 = getValueNode(inst.getTrueValue());
@@ -749,8 +749,8 @@ void SVFIRBuilder::visitCallSite(CallSite cs)
     if(isIntrinsicInst(cs.getInstruction()))
         return;
 
-    // TODO-os DBOUT(DPAGBuild,
-    //      outs() << "process callsite " << *cs.getInstruction() << "\n");
+    DBOUT(DPAGBuild,
+          outs() << "process callsite " << SVFUtil::value2String(cs.getInstruction()) << "\n");
 
     CallICFGNode* callBlockNode = pag->getICFG()->getCallICFGNode(cs.getInstruction());
     RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(cs.getInstruction());
@@ -794,7 +794,7 @@ void SVFIRBuilder::visitReturnInst(ReturnInst &inst)
     // ReturnInst itself should always not be a pointer type
     assert(!SVFUtil::isa<PointerType>(inst.getType()));
 
-    // TODO-os DBOUT(DPAGBuild, outs() << "process return  " << inst << " \n");
+    DBOUT(DPAGBuild, outs() << "process return  " << SVFUtil::value2String(&inst) << " \n");
 
     if(Value *src = inst.getReturnValue())
     {
@@ -913,8 +913,8 @@ void SVFIRBuilder::handleDirectCall(CallSite cs, const SVFFunction *F)
 
     assert(F);
 
-    // TODO-os DBOUT(DPAGBuild,
-    //       outs() << "handle direct call " << *cs.getInstruction() << " callee " << *F << "\n");
+    DBOUT(DPAGBuild,
+           outs() << "handle direct call " << SVFUtil::value2String(cs.getInstruction()) << " callee " << *F << "\n");
 
     //Only handle the ret.val. if it's used as a ptr.
     NodeID dstrec = getValueNode(cs.getInstruction());
