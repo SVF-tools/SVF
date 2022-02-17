@@ -638,6 +638,12 @@ bool isIRFile(const std::string &filename);
 void processArguments(int argc, char **argv, int &arg_num, char **arg_value,
                       std::vector<std::string> &moduleNameVec);
 
+/// Helper method to get the size of the type from target data layout
+//@{
+u32_t getTypeSizeInBytes(const Type* type);
+u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
+//@}
+
 } // End namespace SVFUtil
 
 } // End namespace SVF
