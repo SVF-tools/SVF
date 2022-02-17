@@ -108,7 +108,7 @@ public:
     /// Dump CxtStmt
     inline void dump() const
     {
-        // TODO-os SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
@@ -174,7 +174,7 @@ public:
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        // TODO-os SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -282,8 +282,8 @@ public:
 
         if(forksite)
         {
-            //TODO-os SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << *forksite  << "\t Contexts: " << cxtToStr()
-            //TODO-os                << loop << cycle <<"  ]\n";
+            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << SVFUtil::value2String(forksite)  << "\t Contexts: " << cxtToStr()
+                            << loop << cycle <<"  ]\n";
         }
         else
         {
