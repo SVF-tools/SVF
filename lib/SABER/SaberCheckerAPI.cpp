@@ -96,6 +96,7 @@ static const ei_pair ei_pairs[]=
     {"xfree", SaberCheckerAPI::CK_FREE},
     {"SSL_CTX_free", SaberCheckerAPI::CK_FREE},
     {"SSL_free", SaberCheckerAPI::CK_FREE},
+    {"XFree", SaberCheckerAPI::CK_FREE},
 
     {"fopen", SaberCheckerAPI::CK_FOPEN},
     {"\01_fopen", SaberCheckerAPI::CK_FOPEN},

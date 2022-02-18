@@ -1293,6 +1293,25 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
             case ExtAPI::EFT_NOOP:
             case ExtAPI::EFT_FREE:
                 break;
+            case ExtAPI::EFT_FREE_MULTILEVEL:
+            {
+                // For any argument with 2-level pointer passing too a free function e.g., XFree(void** p), 
+                // we will need to add a load edge (dummy = *p) and a store edge (*dummy = nullptr).
+                for(u32_t i = 0; i < cs.arg_size(); i++)
+                {
+                    Value *arg = cs.getArgument(i);
+                    if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(arg->getType()))
+                    {
+                        if(pty->getElementType()->isPointerTy())
+                        {
+                            NodeID dummy = pag->addDummyValNode();
+                            addLoadEdge(pag->getValueNode(arg),dummy);
+                            addStoreEdge(pag->getNullPtr(),dummy);
+                        }
+                    }
+                }
+                break;
+            }  
             case ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE:
             {
                 Value *vArg1 = cs.getArgument(1);

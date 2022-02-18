@@ -128,7 +128,15 @@ void LeakChecker::initSnks()
 					if (pagNode->isPointer()) {
 						const SVFGNode *snk = getSVFG()->getActualParmVFGNode(pagNode, it->first);
 						addToSinks(snk);
-					}
+
+                        // For any multi-level pointer e.g., XFree(void** pagNode) that passed into a ExtAPI::EFT_FREE_MULTILEVEL function (e.g., XFree),
+                        // we will add the DstNode of a load edge, i.e., dummy = *pagNode
+                        SVFStmt::SVFStmtSetTy& loads = const_cast<PAGNode*>(pagNode)->getOutgoingEdges(SVFStmt::Load);
+                        for(const SVFStmt* ld : loads){
+                            if(SVFUtil::isa<DummyValVar>(ld->getDstNode()))
+                                addToSinks(getSVFG()->getStmtVFGNode(ld));
+                        }
+                    }
 				}
 			}
         }

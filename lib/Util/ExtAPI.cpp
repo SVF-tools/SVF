@@ -66,13 +66,6 @@ static const ei_pair ei_pairs[]=
     {"XDrawText", ExtAPI::EFT_NOOP},
     {"XFillRectangle", ExtAPI::EFT_NOOP},
     {"XFillRectangles", ExtAPI::EFT_NOOP},
-    {"XFree", ExtAPI::EFT_NOOP},
-    {"XFreeColormap", ExtAPI::EFT_NOOP},
-    {"XFreeColors", ExtAPI::EFT_NOOP},
-    {"XFreeFont", ExtAPI::EFT_NOOP},
-    {"XFreeFontNames", ExtAPI::EFT_NOOP},
-    {"XFreeGC", ExtAPI::EFT_NOOP},
-    {"XFreePixmap", ExtAPI::EFT_NOOP},
     {"XGetGCValues", ExtAPI::EFT_NOOP},
     {"XGetGeometry", ExtAPI::EFT_NOOP},
     {"XInternAtom", ExtAPI::EFT_NOOP},
@@ -690,9 +683,18 @@ static const ei_pair ei_pairs[]=
     {"vim_free", ExtAPI::EFT_FREE},
     {"xfree", ExtAPI::EFT_FREE},
     {"fclose", ExtAPI::EFT_FREE},
+    {"XFreeColormap", ExtAPI::EFT_FREE},
+    {"XFreeColors", ExtAPI::EFT_FREE},
+    {"XFreeFont", ExtAPI::EFT_FREE},
+    {"XFreeFontNames", ExtAPI::EFT_FREE},
+    {"XFreeGC", ExtAPI::EFT_FREE},
+    {"XFreePixmap", ExtAPI::EFT_FREE},
     //C++ functions
     {"_ZdaPv", ExtAPI::EFT_FREE},	// delete
     {"_ZdlPv", ExtAPI::EFT_FREE},	// delete []
+
+    {"XFree", ExtAPI::EFT_FREE_MULTILEVEL},
+    {"VOS_MemFree", ExtAPI::EFT_FREE_MULTILEVEL}, 
 
     {"__rawmemchr", ExtAPI::EFT_L_A0},
     {"cairo_surface_reference", ExtAPI::EFT_L_A0},
