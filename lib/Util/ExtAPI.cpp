@@ -689,12 +689,11 @@ static const ei_pair ei_pairs[]=
     {"XFreeFontNames", ExtAPI::EFT_FREE},
     {"XFreeGC", ExtAPI::EFT_FREE},
     {"XFreePixmap", ExtAPI::EFT_FREE},
+    {"XFree", ExtAPI::EFT_FREE},
+    {"VOS_MemFree", ExtAPI::EFT_FREE}, 
     //C++ functions
     {"_ZdaPv", ExtAPI::EFT_FREE},	// delete
     {"_ZdlPv", ExtAPI::EFT_FREE},	// delete []
-
-    {"XFree", ExtAPI::EFT_FREE_MULTILEVEL},
-    {"VOS_MemFree", ExtAPI::EFT_FREE_MULTILEVEL}, 
 
     {"__rawmemchr", ExtAPI::EFT_L_A0},
     {"cairo_surface_reference", ExtAPI::EFT_L_A0},
