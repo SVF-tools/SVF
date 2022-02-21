@@ -644,6 +644,8 @@ u32_t getTypeSizeInBytes(const Type* type);
 u32_t getTypeSizeInBytes(const StructType *sty, u32_t field_index);
 //@}
 
+const std::string type2String(const Type* type);
+
 } // End namespace SVFUtil
 
 } // End namespace SVF

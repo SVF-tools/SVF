@@ -460,7 +460,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     if(const ArrayType *at = SVFUtil::dyn_cast<ArrayType> (type))
     {
         outs() <<"  {Type: ";
-        // TODO-os at->print(outs());
+        outs() << type2String(at);
         outs() << "}\n";
         outs() << "\tarray type ";
         outs() << "\t [element size = " << getNumOfFlattenElements(at) << "]\n";
@@ -470,7 +470,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     else if(const StructType *st = SVFUtil::dyn_cast<StructType> (type))
     {
         outs() <<"  {Type: ";
-        // TODO-os st->print(outs());
+        outs() << type2String(st);
         outs() << "}\n";
         std::vector<const Type*>& finfo = getStructInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
@@ -479,7 +479,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         {
             outs() << " \tField_idx = " << field_idx;
             outs() << ", field type: ";
-            // TODO-os (*it)->print(outs());
+            outs() << type2String(*it);
             outs() << "\n";
         }
         outs() << "\n";
@@ -489,7 +489,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     {
         u32_t eSize = getNumOfFlattenElements(pt->getElementType());
         outs() << "  {Type: ";
-        // TODO-os pt->print(outs());
+        outs() << type2String(pt);
         outs() << "}\n";
         outs() <<"\t [target size = " << eSize << "]\n";
         outs() << "\n";
@@ -498,7 +498,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     else if ( const FunctionType* fu= SVFUtil::dyn_cast<FunctionType> (type))
     {
         outs() << "  {Type: ";
-        // TODO-os fu->getReturnType()->print(outs());
+        outs() << type2String(fu->getReturnType());
         outs() << "(Function)}\n\n";
     }
 
@@ -508,7 +508,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         /// All rest types are scalar type?
         u32_t eSize = getNumOfFlattenElements(type);
         outs() <<"  {Type: ";
-        // TODO-os type->print(outs());
+        outs() << type2String(type);
         outs() << "}\n";
         outs() <<"\t [object size = " << eSize << "]\n";
         outs() << "\n";
