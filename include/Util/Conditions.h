@@ -162,7 +162,7 @@ public:
     void ddClearFlag(BranchCond * f) const;
     void BddSupportStep( BranchCond * f,  NodeBS &support) const;
     void extractSubConds( BranchCond * f,  NodeBS &support) const;
-    void dump(BranchCond* lhs, raw_ostream & O);
+    void dump(BranchCond* lhs, OutStream & O);
     std::string dumpStr(BranchCond* lhs) const;
 
 private:

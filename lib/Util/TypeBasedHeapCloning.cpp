@@ -656,42 +656,42 @@ void TypeBasedHeapCloning::validateTBHCTests(SVFModule*)
             if (fn->getName() == PointerAnalysis::aliasTestMayAlias
                     || fn->getName() == PointerAnalysis::aliasTestMayAliasMangled)
             {
-                passed = res == llvm::AliasResult::MayAlias || res == llvm::AliasResult::MustAlias;
+                passed = res == AliasResult::MayAlias || res == AliasResult::MustAlias;
                 testName = PointerAnalysis::aliasTestMayAlias;
             }
             else if (fn->getName() == PointerAnalysis::aliasTestNoAlias
                      || fn->getName() == PointerAnalysis::aliasTestNoAliasMangled)
             {
-                passed = res == llvm::AliasResult::NoAlias;
+                passed = res == AliasResult::NoAlias;
                 testName = PointerAnalysis::aliasTestNoAlias;
             }
             else if (fn->getName() == PointerAnalysis::aliasTestMustAlias
                      || fn->getName() == PointerAnalysis::aliasTestMustAliasMangled)
             {
-                passed = res == llvm::AliasResult::MustAlias || res == llvm::AliasResult::MayAlias;
+                passed = res == AliasResult::MustAlias || res == AliasResult::MayAlias;
                 testName = PointerAnalysis::aliasTestMustAlias;
             }
             else if (fn->getName() == PointerAnalysis::aliasTestPartialAlias
                      || fn->getName() == PointerAnalysis::aliasTestPartialAliasMangled)
             {
-                passed = res == llvm::AliasResult::MayAlias || res == llvm::AliasResult::PartialAlias;
+                passed = res == AliasResult::MayAlias || res == AliasResult::PartialAlias;
                 testName = PointerAnalysis::aliasTestPartialAlias;
             }
             else if (fn->getName() == PointerAnalysis::aliasTestFailMayAlias
                      || fn->getName() == PointerAnalysis::aliasTestFailMayAliasMangled)
             {
-                passed = res != llvm::AliasResult::MayAlias && res != llvm::AliasResult::MustAlias && res != llvm::AliasResult::PartialAlias;
+                passed = res != AliasResult::MayAlias && res != AliasResult::MustAlias && res != AliasResult::PartialAlias;
                 testName = PointerAnalysis::aliasTestFailMayAlias;
             }
             else if (fn->getName() == PointerAnalysis::aliasTestFailNoAlias
                      || fn->getName() == PointerAnalysis::aliasTestFailNoAliasMangled)
             {
-                passed = res != llvm::AliasResult::NoAlias;
+                passed = res != AliasResult::NoAlias;
                 testName = PointerAnalysis::aliasTestFailNoAlias;
             }
 
             SVFUtil::outs() << "[" << pta->PTAName() << "] Checking " << testName << "\n";
-            raw_ostream &msgStream = passed ? SVFUtil::outs() : SVFUtil::errs();
+            OutStream &msgStream = passed ? SVFUtil::outs() : SVFUtil::errs();
             msgStream << (passed ? SVFUtil::sucMsg("\t SUCCESS") : SVFUtil::errMsg("\t FAILURE"))
                       << " : " << testName
                       << " check <id:" << p << ", id:" << q << "> "

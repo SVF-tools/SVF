@@ -42,7 +42,7 @@ static llvm::cl::opt<std::string> InputFilename(cl::Positional,
 /*!
  * An example to query alias results of two LLVM values
  */
-AliasResult aliasQuery(PointerAnalysis* pta, Value* v1, Value* v2)
+SVF::AliasResult aliasQuery(PointerAnalysis* pta, Value* v1, Value* v2)
 {
     return pta->alias(v1,v2);
 }

@@ -46,7 +46,6 @@
 #include <llvm/Analysis/CallGraph.h>	// call graph
 #include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
 
-#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
 #include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
 #include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
 #include <llvm/IRReader/IRReader.h>	// IR reader for bit file
@@ -70,7 +69,6 @@ class BddCond;
 
 
 /// LLVM Basic classes
-typedef llvm::SMDiagnostic SMDiagnostic;
 typedef llvm::LLVMContext LLVMContext;
 typedef llvm::Type Type;
 typedef llvm::Function Function;
@@ -82,7 +80,6 @@ typedef llvm::GlobalObject GlobalObject;
 typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
-typedef llvm::CallGraph LLVMCallGraph;
 typedef llvm::User User;
 typedef llvm::Use Use;
 typedef llvm::Loop Loop;
@@ -93,10 +90,8 @@ typedef llvm::LoopInfo LoopInfo;
     typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 typedef llvm::ModulePass ModulePass;
-typedef llvm::AnalysisUsage AnalysisUsage;
 
 /// LLVM outputs
-typedef llvm::raw_ostream raw_ostream;
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
 typedef llvm::StringRef StringRef;
@@ -108,8 +103,6 @@ typedef llvm::ArrayType ArrayType;
 typedef llvm::PointerType PointerType;
 typedef llvm::FunctionType FunctionType;
 typedef llvm::VectorType VectorType;
-typedef llvm::MetadataAsValue MetadataAsValue;
-typedef llvm::BlockAddress BlockAddress;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
@@ -122,8 +115,6 @@ typedef llvm::MemoryLocation MemoryLocation;
 typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
 typedef llvm::ConstantData ConstantData;
-typedef llvm::ConstantAggregate ConstantAggregate;
-typedef llvm::ConstantAggregateZero ConstantAggregateZero;
 typedef llvm::ConstantDataSequential ConstantDataSequential;
 typedef llvm::ConstantInt ConstantInt;
 typedef llvm::ConstantFP ConstantFP;
@@ -132,9 +123,6 @@ typedef llvm::ConstantExpr ConstantExpr;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
-typedef llvm::AliasResult AliasResult;
-typedef llvm::ModRefInfo ModRefInfo;
-typedef llvm::AnalysisID AnalysisID;
 typedef llvm::ConstantDataArray ConstantDataArray;
 
 /// LLVM metadata
@@ -160,13 +148,11 @@ typedef llvm::IntToPtrInst IntToPtrInst;
 typedef llvm::CmpInst CmpInst;
 typedef llvm::BranchInst BranchInst;
 typedef llvm::SwitchInst SwitchInst;
-typedef llvm::ExtractValueInst  ExtractValueInst;
 typedef llvm::InsertValueInst InsertValueInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::PtrToIntInst PtrToIntInst;
 typedef llvm::VAArgInst VAArgInst;
-typedef llvm::ExtractElementInst ExtractElementInst;
 typedef llvm::InsertElementInst InsertElementInst;
 typedef llvm::ShuffleVectorInst ShuffleVectorInst;
 typedef llvm::LandingPadInst LandingPadInst;
@@ -332,7 +318,7 @@ public:
 };
 
 template <typename F, typename S>
-raw_ostream& operator<< (raw_ostream &o, const std::pair<F, S> &var)
+OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 {
     o << "<" << var.first << ", " << var.second << ">";
     return o;

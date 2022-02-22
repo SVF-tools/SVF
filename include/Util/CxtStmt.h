@@ -108,7 +108,7 @@ public:
     /// Dump CxtStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 protected:
@@ -174,7 +174,7 @@ public:
     /// Dump CxtThreadStmt
     inline void dump() const
     {
-        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << *inst << "\t Contexts: " << cxtToStr() << "  ]\n";
+        SVFUtil::outs() << "[ Current Thread id: " << tid << "  Stmt: " << SVFUtil::getSourceLoc(inst) << " " << SVFUtil::value2String(inst) << "\t Contexts: " << cxtToStr() << "  ]\n";
     }
 
 private:
@@ -281,11 +281,15 @@ public:
         std::string cycle = incycle?", incycle":"";
 
         if(forksite)
-            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << *forksite  << "\t Contexts: " << cxtToStr()
+        {
+            SVFUtil::outs() << "[ Thread: $" << SVFUtil::getSourceLoc(forksite) << "$ " << SVFUtil::value2String(forksite)  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
+        }
         else
+        {
             SVFUtil::outs() << "[ Thread: " << "main   "  << "\t Contexts: " << cxtToStr()
                             << loop << cycle <<"  ]\n";
+        }
     }
 protected:
     CallStrCxt cxt;

@@ -555,7 +555,7 @@ protected:
 		/// we will set this phi node's def later
 		/// Ideally, every function uniqueFunRet should be a PhiNode (SVFIRBuilder.cpp), unless it does not have ret instruction
 		if (!pag->isPhiNode(uniqueFunRet)){
-			std::string warn = fun->getName().str();
+			std::string warn = fun->getName();
 			SVFUtil::writeWrnMsg(warn + " does not have any ret instruction!");
 			setDef(uniqueFunRet, sNode);
 		}

@@ -254,18 +254,18 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
 
     if (timeStatMap.empty() == false && NumPerQueryStatMap.empty() == false)
     {
-        std::cout.flags(std::ios::left);
+        SVFUtil::outs().flags(std::ios::left);
         unsigned field_width = 20;
-        std::cout << "---------------------Stat Per Query--------------------------------\n";
+        SVFUtil::outs() << "---------------------Stat Per Query--------------------------------\n";
         for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
         }
         for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
         }
     }
     getPTA()->dumpPts(ptr, pts);
@@ -285,6 +285,6 @@ void DDAStat::printStat()
         contextDDA->getSVFG()->getStat()->performSCCStat(contextDDA->getInsensitiveEdgeSet());
     }
 
-    std::cout << "\n****Demand-Driven Pointer Analysis Statistics****\n";
+    SVFUtil::outs() << "\n****Demand-Driven Pointer Analysis Statistics****\n";
     PTAStat::printStat();
 }

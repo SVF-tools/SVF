@@ -231,16 +231,18 @@ void LeakChecker::validateSuccessTests(const SVFGNode* source, const SVFFunction
         return;
     }
 
-    std::string funName = source->getFun()->getName().str();
+    std::string funName = source->getFun()->getName();
 
     if (success)
+    {
         outs() << sucMsg("\t SUCCESS :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
                << getSourceLoc(cs->getCallSite()) << ")\n";
+    }
     else
     {
         SVFUtil::errs() << errMsg("\t FAILURE :") << funName << " check <src id:" << source->getId()
-                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
                         << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }
@@ -279,17 +281,19 @@ void LeakChecker::validateExpectedFailureTests(const SVFGNode* source, const SVF
         return;
     }
 
-    std::string funName = source->getFun()->getName().str();
+    std::string funName = source->getFun()->getName();
 
     if (expectedFailure)
+    {
         outs() << sucMsg("\t EXPECTED-FAILURE :") << funName << " check <src id:" << source->getId()
-               << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+               << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
                << getSourceLoc(cs->getCallSite()) << ")\n";
+    }
     else
     {
         SVFUtil::errs() << errMsg("\t UNEXPECTED FAILURE :") << funName
                         << " check <src id:" << source->getId()
-                        << ", cs id:" << *getSrcCSID(source)->getCallSite() << "> at ("
+                        << ", cs id:" << SVFUtil::value2String(getSrcCSID(source)->getCallSite()) << "> at ("
                         << getSourceLoc(cs->getCallSite()) << ")\n";
         assert(false && "test case failed!");
     }

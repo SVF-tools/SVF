@@ -536,15 +536,15 @@ public:
         CPtSet cpts2;
         expandFIObjs(pts2,cpts2);
         if (containBlackHoleNode(cpts1) || containBlackHoleNode(cpts2))
-            return llvm::AliasResult::MayAlias;
+            return AliasResult::MayAlias;
         else if(this->getAnalysisTy()==PathS_DDA && contains(cpts1,cpts2) && contains(cpts2,cpts1))
         {
-            return llvm::AliasResult::MustAlias;
+            return AliasResult::MustAlias;
         }
         else if(overlap(cpts1,cpts2))
-            return llvm::AliasResult::MayAlias;
+            return AliasResult::MayAlias;
         else
-            return llvm::AliasResult::NoAlias;
+            return AliasResult::NoAlias;
     }
     /// Test blk node for cpts
     inline bool containBlackHoleNode(const CPtSet& cpts)
@@ -583,7 +583,7 @@ public:
                 }
                 else if (!SVFUtil::isa<DummyValVar>(node))
                 {
-                    SVFUtil::outs() << "##<" << node->getValue()->getName() << "> ";
+                    SVFUtil::outs() << "##<" << node->getValue()->getName().str() << "> ";
                     //SVFUtil::outs() << "Source Loc: " << SVFUtil::getSourceLoc(node->getValue());
                 }
 

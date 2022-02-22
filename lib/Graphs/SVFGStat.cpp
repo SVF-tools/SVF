@@ -127,7 +127,7 @@ void MemSSAStat::performStat()
 void MemSSAStat::printStat()
 {
 
-    std::cout << "\n****Memory SSA Statistics****\n";
+    SVFUtil::outs() << "\n****Memory SSA Statistics****\n";
     PTAStat::printStat();
 }
 
@@ -491,7 +491,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     PTNumStatMap["InsenRetEdge"] = insensitiveRetEdge;
 
 
-    std::cout << "\n****SVFG SCC Stat****\n";
+    SVFUtil::outs() << "\n****SVFG SCC Stat****\n";
     PTAStat::printStat();
 
     delete svfgSCC;
@@ -500,6 +500,6 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
 
 void SVFGStat::printStat()
 {
-    std::cout << "\n****SVFG Statistics****\n";
+    SVFUtil::outs() << "\n****SVFG Statistics****\n";
     PTAStat::printStat();
 }

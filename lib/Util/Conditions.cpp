@@ -178,12 +178,12 @@ CondExpr* CondManager::NEG(CondExpr* lhs){
  */
 void CondManager::printModel()
 {
-    std::cout << sol.check() << "\n";
+    SVFUtil::outs() << sol.check() << "\n";
     z3::model m = sol.get_model();
     for (u32_t i = 0; i < m.size(); i++)
     {
         z3::func_decl v = m[static_cast<s64_t>(i)];
-        std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
+        SVFUtil::outs() << v.name() << " = " << m.get_const_interp(v) << "\n";
     }
 }
 
@@ -241,7 +241,7 @@ bool CondManager::isAllPathReachable(const CondExpr* e){
  */
 inline void CondManager::printDbg(const CondExpr *e)
 {
-    std::cout << e->getExpr() << "\n";
+    SVFUtil::outs() << e->getExpr() << "\n";
 }
 
 /*!
@@ -360,7 +360,7 @@ void BranchCondManager::extractSubConds(BranchCond * f, NodeBS &support) const
 /*!
  * Dump BDD
  */
-void BranchCondManager::dump(BranchCond* lhs, raw_ostream & O)
+void BranchCondManager::dump(BranchCond* lhs, OutStream & O)
 {
     if (lhs == getTrueCond())
         O << "T";

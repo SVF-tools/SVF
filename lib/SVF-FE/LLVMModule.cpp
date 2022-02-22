@@ -31,6 +31,7 @@
 #include <queue>
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
 
@@ -184,7 +185,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
-            Err.print("SVFModuleLoader", SVFUtil::errs());
+            Err.print("SVFModuleLoader", llvm::errs());
             continue;
         }
         modules.emplace_back(*mod);

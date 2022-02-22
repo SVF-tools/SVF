@@ -460,17 +460,17 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     if(const ArrayType *at = SVFUtil::dyn_cast<ArrayType> (type))
     {
         outs() <<"  {Type: ";
-        at->print(outs());
+        outs() << type2String(at);
         outs() << "}\n";
         outs() << "\tarray type ";
-        outs() << "\t [element size = " << getTypeSizeInBytes(at->getElementType()) << "]\n";
+        outs() << "\t [element size = " << getNumOfFlattenElements(at) << "]\n";
         outs() << "\n";
     }
 
     else if(const StructType *st = SVFUtil::dyn_cast<StructType> (type))
     {
         outs() <<"  {Type: ";
-        st->print(outs());
+        outs() << type2String(st);
         outs() << "}\n";
         std::vector<const Type*>& finfo = getStructInfo(st)->getFlattenFieldTypes();
         int field_idx = 0;
@@ -479,8 +479,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
         {
             outs() << " \tField_idx = " << field_idx;
             outs() << ", field type: ";
-            (*it)->print(outs());
-            outs() << ", field size: " << getTypeSizeInBytes((*it));
+            outs() << type2String(*it);
             outs() << "\n";
         }
         outs() << "\n";
@@ -488,12 +487,10 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
 
     else if (const PointerType* pt= SVFUtil::dyn_cast<PointerType> (type))
     {
-        u32_t sizeInBits = getTypeSizeInBytes(type);
-        u32_t eSize = getTypeSizeInBytes(pt->getElementType());
+        u32_t eSize = getNumOfFlattenElements(pt->getElementType());
         outs() << "  {Type: ";
-        pt->print(outs());
+        outs() << type2String(pt);
         outs() << "}\n";
-        outs() <<"\t [pointer size = " << sizeInBits << "]";
         outs() <<"\t [target size = " << eSize << "]\n";
         outs() << "\n";
     }
@@ -501,7 +498,7 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     else if ( const FunctionType* fu= SVFUtil::dyn_cast<FunctionType> (type))
     {
         outs() << "  {Type: ";
-        fu->getReturnType()->print(outs());
+        outs() << type2String(fu->getReturnType());
         outs() << "(Function)}\n\n";
     }
 
@@ -509,9 +506,9 @@ void SymbolTableInfo::printFlattenFields(const Type* type)
     {
         assert(type->isSingleValueType() && "not a single value type, then what else!!");
         /// All rest types are scalar type?
-        u32_t eSize = getTypeSizeInBytes(type);
+        u32_t eSize = getNumOfFlattenElements(type);
         outs() <<"  {Type: ";
-        type->print(outs());
+        outs() << type2String(type);
         outs() << "}\n";
         outs() <<"\t [object size = " << eSize << "]\n";
         outs() << "\n";
@@ -593,31 +590,6 @@ void SymbolTableInfo::dump()
     }
     outs() << "}\n";
 }
-
-/*
- * Get the type size given a target data layout
- */
-u32_t SymbolTableInfo::getTypeSizeInBytes(const Type* type)
-{
-
-    // if the type has size then simply return it, otherwise just return 0
-    if(type->isSized())
-        return  getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
-    else
-        return 0;
-}
-
-u32_t SymbolTableInfo::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
-{
-
-    const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
-    /// if this struct type does not have any element, i.e., opaque
-    if(sty->isOpaque())
-        return 0;
-    else
-        return stTySL->getElementOffset(field_idx);
-}
-
 
 /*!
  * Whether a location set is a pointer type or not

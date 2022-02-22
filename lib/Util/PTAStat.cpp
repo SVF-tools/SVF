@@ -294,29 +294,29 @@ void PTAStat::printStat(string statname)
     StringRef name = fullName.split('/').second;
     moduleName = name.split('.').first.str();
 
-    std::cout << "\n*********" << statname << "***************\n";
-    std::cout << "################ (program : " << moduleName << ")###############\n";
-    std::cout.flags(std::ios::left);
+    SVFUtil::outs() << "\n*********" << statname << "***************\n";
+    SVFUtil::outs() << "################ (program : " << moduleName << ")###############\n";
+    SVFUtil::outs().flags(std::ios::left);
     unsigned field_width = 20;
     for(NUMStatMap::iterator it = generalNumMap.begin(), eit = generalNumMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
         std::cout << std::setw(field_width) << it->first << it->second << "\n";
     }
-    std::cout << "-------------------------------------------------------\n";
+    SVFUtil::outs() << "-------------------------------------------------------\n";
     for(TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
     }
     for(NUMStatMap::iterator it = PTNumStatMap.begin(), eit = PTNumStatMap.end(); it!=eit; ++it)
     {
         // format out put with width 20 space
-        std::cout << std::setw(field_width) << it->first << it->second << "\n";
+        SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
     }
 
-    std::cout << "#######################################################" << std::endl;
-    std::cout.flush();
+    SVFUtil::outs() << "#######################################################" << std::endl;
+    SVFUtil::outs().flush();
     generalNumMap.clear();
     PTNumStatMap.clear();
     timeStatMap.clear();

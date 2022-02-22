@@ -120,7 +120,7 @@ void CHGraph::getVFnsFromVtbls(CallSite cs, const VTableSet &vtbls, VFunSet &vir
                 if (!checkArgTypes(cs, callee->getLLVMFun()))
                     continue;
 
-                cppUtil::DemangledName dname = cppUtil::demangle(callee->getName().str());
+                cppUtil::DemangledName dname = cppUtil::demangle(callee->getName());
                 string calleeName = dname.funcName;
 
                 /*

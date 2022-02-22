@@ -146,7 +146,7 @@ void SVFUtil::dumpAliasSet(unsigned node, NodeBS bs)
 /*!
  * Dump bit vector set
  */
-void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
+void SVFUtil::dumpSet(NodeBS bs, OutStream & O)
 {
     for (NodeBS::iterator ii = bs.begin(), ie = bs.end();
             ii != ie; ii++)
@@ -155,7 +155,7 @@ void SVFUtil::dumpSet(NodeBS bs, raw_ostream & O)
     }
 }
 
-void SVFUtil::dumpSet(PointsTo pt, raw_ostream &o)
+void SVFUtil::dumpSet(PointsTo pt, OutStream &o)
 {
     for (NodeID n : pt)
     {
@@ -166,7 +166,7 @@ void SVFUtil::dumpSet(PointsTo pt, raw_ostream &o)
 /*!
  * Print memory usage
  */
-void SVFUtil::reportMemoryUsageKB(const std::string& infor, raw_ostream & O)
+void SVFUtil::reportMemoryUsageKB(const std::string& infor, OutStream & O)
 {
     u32_t vmrss, vmsize;
     if (getMemoryUsageKB(&vmrss, &vmsize))
@@ -414,7 +414,6 @@ void SVFFunction::viewCFGOnly() {
 
 void SVFUtil::timeLimitReached(int)
 {
-    std::cout.flush();
     SVFUtil::outs().flush();
     // TODO: output does not indicate which time limit is reached.
     //       This can be better in the future.

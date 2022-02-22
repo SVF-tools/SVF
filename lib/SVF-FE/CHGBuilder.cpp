@@ -192,7 +192,7 @@ void CHGBuilder::connectInheritEdgeViaCall(const SVFFunction* callerfun, CallSit
 
 void CHGBuilder::connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* storeInst)
 {
-    struct DemangledName dname = demangle(caller->getName().str());
+    struct DemangledName dname = demangle(caller->getName());
     if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(storeInst->getValueOperand()))
     {
         if (ce->getOpcode() == Instruction::BitCast)
@@ -459,7 +459,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                             {
                                 const SVFFunction* func = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f);
                                 addFuncToFuncVector(virtualFunctions, func);
-                                if (func->getName().str().compare(pureVirtualFunName) == 0)
+                                if (func->getName().compare(pureVirtualFunName) == 0)
                                 {
                                     pure_abstract &= true;
                                 }
@@ -467,7 +467,7 @@ void CHGBuilder::analyzeVTables(const Module &M)
                                 {
                                     pure_abstract &= false;
                                 }
-                                struct DemangledName dname = demangle(func->getName().str());
+                                struct DemangledName dname = demangle(func->getName());
                                 if (dname.className.size() > 0 &&
                                         vtblClassName.compare(dname.className) != 0)
                                 {
@@ -625,7 +625,7 @@ void CHGBuilder::buildVirtualFunctionToIDMap()
                 feit = virtualFunctions.end(); fit != feit; ++fit)
         {
             const SVFFunction* f = *fit;
-            struct DemangledName dname = demangle(f->getName().str());
+            struct DemangledName dname = demangle(f->getName());
             fNameSet.insert(pair<string, const SVFFunction*>(dname.funcName, f));
         }
         for (set<pair<string, const SVFFunction*>>::iterator it = fNameSet.begin(),

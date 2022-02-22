@@ -4,6 +4,8 @@
 #ifndef MUTABLE_POINTSTO_H_
 #define MUTABLE_POINTSTO_H_
 
+#include<fstream>
+
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "Util/SVFBasicTypes.h"
 #include "Util/SVFUtil.h"
@@ -124,7 +126,7 @@ public:
     ///@}
 
 protected:
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    virtual inline void dumpPts(const PtsMap & ptsSet,OutStream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {
@@ -581,10 +583,9 @@ public:
         mutPTData.dumpPTData();
         /// dump points-to of address-taken variables
         std::error_code ErrInfo;
-        ToolOutputFile F("svfg_pts.data", ErrInfo, llvm::sys::fs::OF_None);
-        if (!ErrInfo)
+        std::fstream f("svfg_pts.data", std::ios_base::out);
+        if (f.good())
         {
-            raw_fd_ostream & osm = F.os();
             NodeBS locs;
             for(DFPtsMapconstIter it = dfInPtsMap.begin(), eit = dfInPtsMap.end(); it!=eit; ++it)
                 locs.set(it->first);
@@ -597,31 +598,29 @@ public:
                 LocID loc = *it;
                 if (this->hasDFInSet(loc))
                 {
-                    osm << "Loc:" << loc << " IN:{";
-                    this->dumpPts(this->getDFInPtsMap(loc), osm);
-                    osm << "}\n";
+                    f << "Loc:" << loc << " IN:{";
+                    this->dumpPts(this->getDFInPtsMap(loc), f);
+                    f << "}\n";
                 }
 
                 if (this->hasDFOutSet(loc))
                 {
-                    osm << "Loc:" << loc << " OUT:{";
-                    this->dumpPts(this->getDFOutPtsMap(loc), osm);
-                    osm << "}\n";
+                    f << "Loc:" << loc << " OUT:{";
+                    this->dumpPts(this->getDFOutPtsMap(loc), f);
+                    f << "}\n";
                 }
             }
-            F.os().close();
-            if (!F.os().has_error())
+            f.close();
+            if (f.good())
             {
                 SVFUtil::outs() << "\n";
-                F.keep();
                 return;
             }
         }
         SVFUtil::outs() << "  error opening file for writing!\n";
-        F.os().clear_error();
     }
 
-    virtual inline void dumpPts(const PtsMap & ptsSet,raw_ostream & O = SVFUtil::outs()) const
+    virtual inline void dumpPts(const PtsMap & ptsSet,OutStream & O = SVFUtil::outs()) const
     {
         for (PtsMapConstIter nodeIt = ptsSet.begin(); nodeIt != ptsSet.end(); nodeIt++)
         {

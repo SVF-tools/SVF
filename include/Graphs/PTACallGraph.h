@@ -154,7 +154,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const PTACallGraphEdge &edge)
+    friend OutStream& operator<< (OutStream &o, const PTACallGraphEdge &edge)
     {
         o << edge.toString();
         return o;
@@ -201,7 +201,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const PTACallGraphNode &node)
+    friend OutStream& operator<< (OutStream &o, const PTACallGraphNode &node)
     {
         o << node.toString();
         return o;

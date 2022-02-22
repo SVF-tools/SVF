@@ -54,7 +54,7 @@ public:
      *  Write the graph into dot file for debugging purpose
      */
     template<class GraphType>
-    static void WriteGraphToFile(llvm::raw_ostream &O,
+    static void WriteGraphToFile(SVF::OutStream &O,
                                  const std::string &GraphName, const GraphType &GT, bool simple = false)
     {
         // Filename of the output dot file
@@ -83,7 +83,7 @@ public:
      * Print the graph to command line
      */
     template<class GraphType>
-    static void PrintGraph(llvm::raw_ostream &O, const std::string &GraphName,
+    static void PrintGraph(SVF::OutStream &O, const std::string &GraphName,
                            const GraphType &GT)
     {
         ///Define the GTraits and node iterator for printing

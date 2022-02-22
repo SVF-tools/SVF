@@ -679,10 +679,10 @@ void FlowSensitiveTBHC::countAliases(Set<std::pair<NodeID, NodeID>> cmp, unsigne
 
             switch (alias(aPts, bPts))
             {
-            case llvm::AliasResult::NoAlias:
+            case AliasResult::NoAlias:
                 ++(*noAliases);
                 break;
-            case llvm::AliasResult::MayAlias:
+            case AliasResult::MayAlias:
                 ++(*mayAliases);
                 break;
             default:

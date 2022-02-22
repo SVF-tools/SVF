@@ -68,14 +68,6 @@ public:
 
     void dump(Module &module, MHP *mhp, LockAnalysis *lsa);
 
-    /// Get analysis usage
-    inline virtual void getAnalysisUsage(AnalysisUsage& au) const
-    {
-        /// do not intend to change the IR in this pass,
-        au.setPreservesAll();
-        au.addRequired<ScalarEvolutionWrapperPass>();
-    }
-
     // Get ScalarEvolution for Function F.
     static inline ScalarEvolution* getSE(const Function *F)
     {

@@ -134,10 +134,12 @@ public:
     extf_t get_type(const SVFFunction* F) const
     {
         assert(F);
-        std::string funName = F->getName().str();
+        std::string funName = F->getName();
         if(F->isIntrinsic())
         {
-            funName = "llvm." + F->getName().split('.').second.split('.').first.str();
+            unsigned start = funName.find('.');
+            unsigned end = funName.substr(start + 1).find('.');
+            funName = "llvm." + funName.substr(start + 1, end);
         }
         llvm::StringMap<extf_t>::const_iterator it= info.find(funName);
         if(it == info.end())
