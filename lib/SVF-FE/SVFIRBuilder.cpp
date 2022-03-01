@@ -1326,7 +1326,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    if(i >= field.size())
+                    if(i >= fields.size())
                         break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
@@ -1353,7 +1353,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
-                    if(i >= field.size())
+                    if(i >= fields.size())
                         break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnS = getGepValVar(vArg, fields[i], elementType);
