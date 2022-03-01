@@ -205,10 +205,10 @@ void DDAStat::performStat()
 
     getNumOfOOBQuery();
 
-    for (PAG::const_iterator nodeIt = PAG::getPAG()->begin(), nodeEit = PAG::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
+    for (SVFIR::const_iterator nodeIt = SVFIR::getPAG()->begin(), nodeEit = SVFIR::getPAG()->end(); nodeIt != nodeEit; nodeIt++)
     {
         PAGNode* pagNode = nodeIt->second;
-        if(SVFUtil::isa<ObjPN>(pagNode))
+        if(SVFUtil::isa<ObjVar>(pagNode))
         {
             if(getPTA()->isLocalVarInRecursiveFun(nodeIt->first))
             {
@@ -242,7 +242,7 @@ void DDAStat::performStat()
     PTNumStatMap["PointsToBlkPtr"] = _NumOfBlackholePtr;
     PTNumStatMap["NumOfMustAA"] = _TotalNumOfMustAliases;
     PTNumStatMap["NumOfInfePath"] = _TotalNumOfInfeasiblePath;
-    PTNumStatMap["NumOfStore"] = PAG::getPAG()->getPTAEdgeSet(PAGEdge::Store).size();
+    PTNumStatMap["NumOfStore"] = SVFIR::getPAG()->getPTASVFStmtSet(SVFStmt::Store).size();
     PTNumStatMap["MemoryUsageVmrss"] = _vmrssUsageAfter - _vmrssUsageBefore;
     PTNumStatMap["MemoryUsageVmsize"] = _vmsizeUsageAfter - _vmsizeUsageBefore;
 
@@ -254,18 +254,18 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
 
     if (timeStatMap.empty() == false && NumPerQueryStatMap.empty() == false)
     {
-        std::cout.flags(std::ios::left);
+        SVFUtil::outs().flags(std::ios::left);
         unsigned field_width = 20;
-        std::cout << "---------------------Stat Per Query--------------------------------\n";
+        SVFUtil::outs() << "---------------------Stat Per Query--------------------------------\n";
         for (TIMEStatMap::iterator it = timeStatMap.begin(), eit = timeStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
         }
         for (NUMStatMap::iterator it = NumPerQueryStatMap.begin(), eit = NumPerQueryStatMap.end(); it != eit; ++it)
         {
             // format out put with width 20 space
-            std::cout << std::setw(field_width) << it->first << it->second << "\n";
+            SVFUtil::outs() << std::setw(field_width) << it->first << it->second << "\n";
         }
     }
     getPTA()->dumpPts(ptr, pts);
@@ -285,6 +285,6 @@ void DDAStat::printStat()
         contextDDA->getSVFG()->getStat()->performSCCStat(contextDDA->getInsensitiveEdgeSet());
     }
 
-    std::cout << "\n****Demand-Driven Pointer Analysis Statistics****\n";
+    SVFUtil::outs() << "\n****Demand-Driven Pointer Analysis Statistics****\n";
     PTAStat::printStat();
 }

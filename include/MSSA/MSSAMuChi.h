@@ -47,7 +47,7 @@ public:
     typedef MSSADEF MSSADef;
 private:
     /// ver ID 0 is reserved
-    static Size_t totalVERNum;
+    static u32_t totalVERNum;
     const MemRegion* mr;
     MRVERSION version;
     MRVERID vid;
@@ -166,13 +166,13 @@ class LoadMU : public MSSAMU<Cond>
 {
 
 private:
-    const LoadPE* inst;
+    const LoadStmt* inst;
     const BasicBlock* bb;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    LoadMU(const BasicBlock* b,const LoadPE* i, const MemRegion* m, Cond c = true) :
+    LoadMU(const BasicBlock* b,const LoadStmt* i, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::LoadMSSAMU,m,c), inst(i), bb(b)
     {
     }
@@ -183,7 +183,7 @@ public:
     //@}
 
     /// Return load instruction
-    inline const LoadPE* getLoadInst() const
+    inline const LoadStmt* getLoadInst() const
     {
         return inst;
     }
@@ -222,12 +222,12 @@ class CallMU : public MSSAMU<Cond>
 {
 
 private:
-    const CallBlockNode* callsite;
+    const CallICFGNode* callsite;
 
 public:
     /// Constructor/Destructor for MU
     //@{
-    CallMU(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
+    CallMU(const CallICFGNode* cs, const MemRegion* m, Cond c = true) :
         MSSAMU<Cond>(MSSAMU<Cond>::CallMSSAMU,m,c), callsite(cs)
     {
     }
@@ -238,7 +238,7 @@ public:
     //@}
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return callsite;
     }
@@ -462,11 +462,11 @@ class StoreCHI : public MSSACHI<Cond>
 {
 private:
     const BasicBlock* bb;
-    const StorePE* inst;
+    const StoreStmt* inst;
 public:
     /// Constructors for StoreCHI
     //@{
-    StoreCHI(const BasicBlock* b, const StorePE* i, const MemRegion* m, Cond c = true) :
+    StoreCHI(const BasicBlock* b, const StoreStmt* i, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::StoreMSSACHI,m,c), bb(b), inst(i)
     {
     }
@@ -482,7 +482,7 @@ public:
     }
 
     /// Get store instruction
-    inline const StorePE* getStoreInst() const
+    inline const StoreStmt* getStoreInst() const
     {
         return inst;
     }
@@ -521,11 +521,11 @@ template<class Cond>
 class CallCHI : public MSSACHI<Cond>
 {
 private:
-    const CallBlockNode* callsite;
+    const CallICFGNode* callsite;
 public:
     /// Constructors for StoreCHI
     //@{
-    CallCHI(const CallBlockNode* cs, const MemRegion* m, Cond c = true) :
+    CallCHI(const CallICFGNode* cs, const MemRegion* m, Cond c = true) :
         MSSACHI<Cond>(MSSADEF::CallMSSACHI,m,c), callsite(cs)
     {
     }
@@ -541,7 +541,7 @@ public:
     }
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return callsite;
     }

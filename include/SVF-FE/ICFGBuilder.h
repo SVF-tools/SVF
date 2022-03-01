@@ -69,7 +69,7 @@ private:
     void connectGlobalToProgEntry(SVFModule* svfModule);
 
     /// Add/Get an inter block ICFGNode
-    InterBlockNode* getOrAddInterBlockICFGNode(const Instruction* inst);
+    InterICFGNode* getOrAddInterBlockICFGNode(const Instruction* inst);
 
     /// Add/Get a basic block ICFGNode
     inline ICFGNode* getOrAddBlockICFGNode(const Instruction* inst)
@@ -84,20 +84,20 @@ private:
     void addICFGInterEdges(const Instruction*  cs, const SVFFunction*  callee);
 
     /// Add a call node
-    inline CallBlockNode* getOrAddCallICFGNode(const Instruction*  cs)
+    inline CallICFGNode* getCallICFGNode(const Instruction*  cs)
     {
-        return icfg->getCallBlockNode(cs);
+        return icfg->getCallICFGNode(cs);
     }
     /// Add a return node
-    inline RetBlockNode* getOrAddRetICFGNode(const Instruction*  cs)
+    inline RetICFGNode* getRetICFGNode(const Instruction*  cs)
     {
-        return icfg->getRetBlockNode(cs);
+        return icfg->getRetICFGNode(cs);
     }
 
     /// Add and get IntraBlock ICFGNode
-    IntraBlockNode* getOrAddIntraBlockICFGNode(const Instruction* inst)
+    IntraICFGNode* getOrAddIntraBlockICFGNode(const Instruction* inst)
     {
-        return icfg->getIntraBlockNode(inst);
+        return icfg->getIntraICFGNode(inst);
     }
 };
 

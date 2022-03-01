@@ -41,7 +41,7 @@ void VersionedFlowSensitiveStat::performStat()
 
     clearStat();
 
-    PAG *pag = vfspta->getPAG();
+    SVFIR *pag = vfspta->getPAG();
 
     versionStat();
     ptsSizeStat();
@@ -49,14 +49,14 @@ void VersionedFlowSensitiveStat::performStat()
     u32_t fiObjNumber = 0;
     u32_t fsObjNumber = 0;
     Set<SymID> nodeSet;
-    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
         NodeID nodeId = it->first;
         PAGNode* pagNode = it->second;
-        if (SVFUtil::isa<ObjPN>(pagNode))
+        if (SVFUtil::isa<ObjVar>(pagNode))
         {
             const MemObj *memObj = pag->getBaseObj(nodeId);
-            SymID baseId = memObj->getSymId();
+            SymID baseId = memObj->getId();
             if (nodeSet.insert(baseId).second)
             {
                 if (memObj->isFieldInsensitive()) fiObjNumber++;
@@ -145,7 +145,7 @@ void VersionedFlowSensitiveStat::performStat()
     timeStatMap["AverageSCCSize"]   = (vfspta->numOfSCC == 0) ? 0 :
                                       ((double)vfspta->numOfNodesInSCC / vfspta->numOfSCC);
 
-    std::cout << "\n****Versioned Flow-Sensitive Pointer Analysis Statistics****\n";
+    SVFUtil::outs() << "\n****Versioned Flow-Sensitive Pointer Analysis Statistics****\n";
     PTAStat::printStat();
 }
 
@@ -194,7 +194,7 @@ void VersionedFlowSensitiveStat::ptsSizeStat()
 {
     u32_t totalValidTopLvlPointers = 0;
     u32_t totalTopLvlPtsSize = 0;
-    for (PAG::iterator it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
+    for (SVFIR::iterator it = vfspta->getPAG()->begin(); it != vfspta->getPAG()->end(); ++it)
     {
         if (!vfspta->getPAG()->isValidTopLevelPtr(it->second)) continue;
 

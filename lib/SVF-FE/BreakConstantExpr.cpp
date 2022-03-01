@@ -65,11 +65,6 @@ char MergeFunctionRets::ID = 0;
 STATISTIC (GEPChanges,   "Number of Converted GEP Constant Expressions");
 STATISTIC (TotalChanges, "Number of Converted Constant Expressions");
 
-// Register the pass
-static llvm::RegisterPass<BreakConstantGEPs> BP ("break-constgeps",
-        "Remove GEP Constant Expressions");
-static llvm::RegisterPass<MergeFunctionRets> MP ("merge-rets",
-        "Merge function rets into one");
 //
 // Function: hasConstantGEP()
 //

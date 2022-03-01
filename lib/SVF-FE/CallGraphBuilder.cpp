@@ -55,7 +55,7 @@ PTACallGraph* CallGraphBuilder::buildCallGraph(SVFModule* svfModule)
             {
                 if(const SVFFunction* callee = getCallee(inst))
                 {
-                    const CallBlockNode* callBlockNode = icfg->getCallBlockNode(inst);
+                    const CallICFGNode* callBlockNode = icfg->getCallICFGNode(inst);
                     const SVFFunction* caller = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
                     callgraph->addDirectCallGraphEdge(callBlockNode,caller,callee);
                 }
@@ -83,7 +83,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
             const Instruction *inst = &*II;
             if (tdAPI->isTDFork(inst))
             {
-                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                 cg->addForksite(cs);
                 const Function* forkee = SVFUtil::dyn_cast<Function>(tdAPI->getForkedFun(inst));
                 if (forkee)
@@ -98,7 +98,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
             }
             else if (tdAPI->isHareParFor(inst))
             {
-                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                 cg->addParForSite(cs);
                 const Function* taskFunc = SVFUtil::dyn_cast<Function>(tdAPI->getTaskFuncAtHareParForSite(inst));
                 if (taskFunc)
@@ -122,7 +122,7 @@ PTACallGraph* ThreadCallGraphBuilder::buildThreadCallGraph(SVFModule* svfModule)
             const Instruction *inst = &*II;
             if (tdAPI->isTDJoin(inst))
             {
-                const CallBlockNode* cs = icfg->getCallBlockNode(inst);
+                const CallICFGNode* cs = icfg->getCallICFGNode(inst);
                 cg->addJoinsite(cs);
             }
         }

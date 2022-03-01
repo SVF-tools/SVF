@@ -27,6 +27,9 @@ public:
         /// If [****...*****] is the space of unsigned integers, we allocate as,
         /// [ssssooooooo...vvvvvvv] (o = object, v = value, s = special).
         DENSE,
+        /// Like dense, but with order flipped:
+        /// [ssssvvvvvvv...ooooooo]
+        REVERSE_DENSE,
         /// Allocate objects objects and values sequentially, intermixed.
         SEQ,
         /// Allocate values and objects as they come in with a single counter.
@@ -68,7 +71,7 @@ public:
     NodeID allocateValueId(void);
 
     /// Notify the allocator that all symbols have had IDs allocated.
-    void endSymbolAllocation(void);
+    NodeID endSymbolAllocation(void);
 
     /// Returns the total number of memory objects.
     NodeID getNumObjects(void) const { return numObjects; }

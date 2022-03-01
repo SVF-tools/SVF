@@ -86,7 +86,7 @@ void PCG::initFromThreadAPI(SVFModule* module)
                 else
                 {
                     writeWrnMsg("pthread create");
-                    outs() << *inst << "\n";
+                    outs() << SVFUtil::value2String(inst) << "\n";
                     writeWrnMsg("invoke spawnee indirectly");
                 }
             }
@@ -206,7 +206,7 @@ void PCG::identifyFollowers()
                 // if this is an call/invoke instruction but not a spawn site
                 if ((SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst)) && !isSpawnsite(inst))
                 {
-                	CallBlockNode* cbn = getCallBlockNode(inst);
+                	CallICFGNode* cbn = getCallICFGNode(inst);
                     if (callgraph->hasCallGraphEdge(cbn))
                     {
                         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = callgraph->getCallEdgeBegin(cbn),
@@ -334,6 +334,6 @@ void PCG::printTDFuns()
         std::string isSpawner = isSpawnerFun(fun) ? " SPAWNER " : "";
         std::string isSpawnee = isSpawneeFun(fun) ? " CHILDREN " : "";
         std::string isFollower = isFollowerFun(fun) ? " FOLLOWER " : "";
-        outs() << fun->getName() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
+        outs() << fun->getName().str() << " [" << isSpawner << isSpawnee << isFollower << "]\n";
     }
 }

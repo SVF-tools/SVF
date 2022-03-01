@@ -169,12 +169,6 @@ public:
     {
     }
 
-    virtual void getAnalysisUsage(AnalysisUsage &AU) const
-    {
-        AU.setPreservesAll();
-        // AU.addRequired<DominanceFrontier>();
-    }
-
 //	virtual bool runOnFunction(Function &m) {
 //		Frontiers.clear();
 //		DF = &getAnalysis<DominanceFrontier>();

@@ -1,4 +1,4 @@
-//===- PAGBuilderFromFile.cpp -- PAG builder-------------------------------//
+//===- PAGBuilderFromFile.cpp -- SVFIR builder-------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -38,7 +38,7 @@ using namespace SVFUtil;
 static u32_t gepNodeNumIndex = 100000;
 
 /*
- * You can build a PAG from a file written by yourself
+ * You can build a SVFIR from a file written by yourself
  *
  * The file should follow the format:
  * Node:  nodeID Nodetype
@@ -56,7 +56,7 @@ static u32_t gepNodeNumIndex = 100000;
 6 store 8 0
 8 load 9 0
  */
-PAG* PAGBuilderFromFile::build()
+SVFIR* PAGBuilderFromFile::build()
 {
 
     string line;
@@ -67,7 +67,7 @@ PAG* PAGBuilderFromFile::build()
         {
             getline(myfile, line);
 
-            Size_t token_count = 0;
+            u32_t token_count = 0;
             string tmps;
             istringstream ss(line);
             while (ss.good())
@@ -103,7 +103,7 @@ PAG* PAGBuilderFromFile::build()
             {
                 NodeID nodeSrc;
                 NodeID nodeDst;
-                Size_t offsetOrCSId;
+                s64_t offsetOrCSId;
                 string edge;
                 istringstream ss(line);
                 ss >> nodeSrc;
@@ -141,47 +141,55 @@ PAG* PAGBuilderFromFile::build()
 }
 
 /*!
- * Add PAG edge according to a file format
+ * Add SVFIR edge according to a file format
  */
 void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 Size_t offsetOrCSId, std::string edge)
+                                 s64_t offsetOrCSId, std::string edge)
 {
 
     //check whether these two nodes available
-    PAGNode* srcNode = pag->getPAGNode(srcID);
-    PAGNode* dstNode = pag->getPAGNode(dstID);
+    PAGNode* srcNode = pag->getGNode(srcID);
+    PAGNode* dstNode = pag->getGNode(dstID);
 
-    /// sanity check for PAG from txt
-    assert(SVFUtil::isa<ValPN>(dstNode) && "dst not an value node?");
+    /// sanity check for SVFIR from txt
+    assert(SVFUtil::isa<ValVar>(dstNode) && "dst not an value node?");
     if(edge=="addr")
-        assert(SVFUtil::isa<ObjPN>(srcNode) && "src not an value node?");
+        assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");
     else
-        assert(!SVFUtil::isa<ObjPN>(srcNode) && "src not an object node?");
+        assert(!SVFUtil::isa<ObjVar>(srcNode) && "src not an object node?");
 
     if (edge == "addr")
     {
-        pag->addAddrPE(srcID, dstID);
+        pag->addAddrStmt(srcID, dstID);
     }
     else if (edge == "copy")
-        pag->addCopyPE(srcID, dstID);
+        pag->addCopyStmt(srcID, dstID);
     else if (edge == "load")
-        pag->addLoadPE(srcID, dstID);
+        pag->addLoadStmt(srcID, dstID);
     else if (edge == "store")
-        pag->addStorePE(srcID, dstID, nullptr);
+        pag->addStoreStmt(srcID, dstID, nullptr);
     else if (edge == "gep")
-        pag->addNormalGepPE(srcID, dstID, LocationSet(offsetOrCSId));
+        pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
     else if (edge == "variant-gep")
-        pag->addVariantGepPE(srcID, dstID);
+        pag->addVariantGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
     else if (edge == "call")
-        pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr));
+        pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr, nullptr));
     else if (edge == "ret")
-        pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr));
+        pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr,nullptr));
     else if (edge == "cmp")
-        pag->addCmpPE(srcID, dstID);
+        pag->addCmpStmt(srcID, dstID, dstID, dstID);
     else if (edge == "binary-op")
-        pag->addBinaryOPPE(srcID, dstID);
+        pag->addBinaryOPStmt(srcID, dstID, dstID, dstID);
     else if (edge == "unary-op")
-        pag->addUnaryOPPE(srcID, dstID);
+        pag->addUnaryOPStmt(srcID, dstID, dstID);
+    else if (edge == "phi")
+        assert(false && "fix phi here!");
+    else if (edge == "select")
+        assert(false && "fix select here!");
+    else if (edge == "branch"){
+        assert(false && "fix successors here!");
+        //pag->addBranchStmt(srcID, dstID, nullptr);
+    }
     else
         assert(false && "format not support, can not create such edge");
 }

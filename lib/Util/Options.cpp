@@ -25,9 +25,10 @@ namespace SVF
         llvm::cl::init(NodeIDAllocator::Strategy::SEQ),
         llvm::cl::desc("Method of allocating (LLVM) values and memory objects as node IDs"),
         llvm::cl::values(
-            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together and values together, separately"),
-            clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed"),
-            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets (default)")));
+            clEnumValN(NodeIDAllocator::Strategy::DENSE, "dense", "allocate objects together [0-n] and values together [m-MAX], separately"),
+            clEnumValN(NodeIDAllocator::Strategy::REVERSE_DENSE, "reverse-dense", "like dense but flipped, objects are [m-MAX], values are [0-n]"),
+            clEnumValN(NodeIDAllocator::Strategy::SEQ, "seq", "allocate values and objects sequentially, intermixed (default)"),
+            clEnumValN(NodeIDAllocator::Strategy::DEBUG, "debug", "allocate value and objects sequentially, intermixed, except GEP objects as offsets")));
 
     const llvm::cl::opt<unsigned> Options::MaxFieldLimit(
         "field-limit",
@@ -203,7 +204,7 @@ namespace SVF
     );
 
     
-    // Program Assignment Graph for pointer analysis (PAG.cpp)
+    // Program Assignment Graph for pointer analysis (SVFIR.cpp)
     llvm::cl::opt<bool> Options::HandBlackHole(
         "blk", 
         llvm::cl::init(false),
@@ -293,13 +294,13 @@ namespace SVF
     const llvm::cl::opt<bool> Options::PAGDotGraph(
         "dump-pag", 
         llvm::cl::init(false),
-        llvm::cl::desc("Dump dot graph of PAG")
+        llvm::cl::desc("Dump dot graph of SVFIR")
     );
 
-    const llvm::cl::opt<bool> Options::PAGDotGraphShorter(
-            "dump-pag-shorter",
+    const llvm::cl::opt<bool> Options::ShowSVFIRValue(
+            "show-ir-value",
             llvm::cl::init(true),
-            llvm::cl::desc("If dumping dot graph of PAG, use shorter lines")
+            llvm::cl::desc("Show values of SVFIR (e.g., when generating dot graph)")
     );
 
     const llvm::cl::opt<bool> Options::DumpICFG(
@@ -317,7 +318,7 @@ namespace SVF
     const llvm::cl::opt<bool> Options::PAGPrint(
         "print-pag", 
         llvm::cl::init(false),
-        llvm::cl::desc("Print PAG to command line")
+        llvm::cl::desc("Print SVFIR to command line")
     );
 
     const llvm::cl::opt<unsigned> Options::IndirectCallLimit(
@@ -466,7 +467,7 @@ namespace SVF
 
     llvm::cl::opt<bool> Options::OPTSVFG(
         "opt-svfg", 
-        llvm::cl::init(true),
+        llvm::cl::init(false),
         llvm::cl::desc("Optimize SVFG to eliminate formal-in and actual-out")
     );
 
@@ -620,7 +621,7 @@ namespace SVF
     const llvm::cl::opt<std::string> Options::Graphtxt(
         "graph-txt", 
         llvm::cl::value_desc("filename"),
-        llvm::cl::desc("graph txt file to build PAG")
+        llvm::cl::desc("graph txt file to build SVFIR")
     );
 
     const llvm::cl::opt<bool> Options::SVFMain(
@@ -629,18 +630,16 @@ namespace SVF
         llvm::cl::desc("add svf.main()")
     );
 
-    
-    // SymbolTableInfo.cpp
-    const llvm::cl::opt<bool> Options::LocMemModel(
-        "loc-mm", 
-        llvm::cl::init(false),
-        llvm::cl::desc("Bytes/bits modeling of memory locations")
-    );
-
     const llvm::cl::opt<bool> Options::ModelConsts(
         "model-consts", 
         llvm::cl::init(false),
         llvm::cl::desc("Modeling individual constant objects")
+    );
+
+    const llvm::cl::opt<bool> Options::ModelArrays(
+        "model-arrays", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Modeling Gep offsets for array accesses")
     );
 
     const llvm::cl::opt<bool> Options::SymTabPrint(
@@ -783,7 +782,7 @@ namespace SVF
             clEnumValN(PointerAnalysis::FSSPARSE_WPA, "fspta", "Sparse flow sensitive pointer analysis"),
             clEnumValN(PointerAnalysis::FSTBHC_WPA, "fstbhc", "Sparse flow-sensitive type-based heap cloning pointer analysis"),
             clEnumValN(PointerAnalysis::VFS_WPA, "vfspta", "Versioned sparse flow-sensitive points-to analysis"),
-            clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, PAG and CHA")
+            clEnumValN(PointerAnalysis::TypeCPP_WPA, "type", "Type-based fast analysis for Callgraph, SVFIR and CHA")
         ));
 
 
@@ -792,4 +791,10 @@ namespace SVF
             clEnumValN(WPAPass::Conservative, "conservative", "return MayAlias if any pta says alias"),
             clEnumValN(WPAPass::Veto, "veto", "return NoAlias if any pta says no alias")
         ));
+
+    const llvm::cl::opt<bool> Options::ShowHiddenNode(
+        "show-hidden-nodes", 
+        llvm::cl::init(false),
+        llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
+    );
 } // namespace SVF.

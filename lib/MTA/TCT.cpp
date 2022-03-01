@@ -476,7 +476,7 @@ void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* call
     const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcaller = getSVFFun(caller);
     const SVFFunction* svfcallee = getSVFFun(callee);
-    CallSiteID csId = tcg->getCallSiteID(getCallBlockNode(call), svfcallee);
+    CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), svfcallee);
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)
@@ -498,7 +498,7 @@ bool TCT::matchCxt(CallStrCxt& cxt, const Instruction* call, const Function* cal
 
     const Function* caller = call->getParent()->getParent();
     const SVFFunction* svfcallee = getSVFFun(callee);
-    CallSiteID csId = tcg->getCallSiteID(getCallBlockNode(call), svfcallee);
+    CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), svfcallee);
 
     /// handle calling context for candidate functions only
     if(isCandidateFun(caller) == false)

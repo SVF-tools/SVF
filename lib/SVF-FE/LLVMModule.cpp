@@ -31,6 +31,7 @@
 #include <queue>
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/LLVMUtil.h"
 #include "SVF-FE/BreakConstantExpr.h"
 
@@ -147,7 +148,7 @@ void LLVMModuleSet::prePassSchedule()
 void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
 {
 
-        // We read PAG from LLVM IR
+        // We read SVFIR from LLVM IR
     if(Options::Graphtxt.getValue().empty())
     {
         if(moduleNameVec.empty())
@@ -157,7 +158,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         }
         //assert(!moduleNameVec.empty() && "no LLVM bc file is found!");
     }
-    // We read PAG from a user-defined txt instead of parsing PAG from LLVM IR
+    // We read SVFIR from a user-defined txt instead of parsing SVFIR from LLVM IR
     else
         SVFModule::setPagFromTXT(Options::Graphtxt.getValue());
         
@@ -184,8 +185,8 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         if (mod == nullptr)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
-            Err.print("SVFModuleLoader", SVFUtil::errs());
-            continue;
+            Err.print("SVFModuleLoader", llvm::errs());
+            abort();
         }
         modules.emplace_back(*mod);
         owned_modules.emplace_back(std::move(mod));

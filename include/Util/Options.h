@@ -108,7 +108,7 @@ public:
     // Offline constraint graph (OfflineConsG.cpp)
     static const llvm::cl::opt<bool> OCGDotGraph;
 
-    // Program Assignment Graph for pointer analysis (PAG.cpp)
+    // Program Assignment Graph for pointer analysis (SVFIR.cpp)
     static llvm::cl::opt<bool> HandBlackHole;
     static const llvm::cl::opt<bool> FirstFieldEqBase;
 
@@ -131,7 +131,7 @@ public:
     static const llvm::cl::opt<bool> PStat;
     static const llvm::cl::opt<unsigned> StatBudget;
     static const llvm::cl::opt<bool> PAGDotGraph;
-    static const llvm::cl::opt<bool> PAGDotGraphShorter;
+    static const llvm::cl::opt<bool> ShowSVFIRValue;
     static const llvm::cl::opt<bool> DumpICFG;
     static const llvm::cl::opt<bool> CallGraphDotGraph;
     static const llvm::cl::opt<bool> PAGPrint;
@@ -211,6 +211,7 @@ public:
     // SymbolTableInfo.cpp
     static const llvm::cl::opt<bool> LocMemModel;
     static const llvm::cl::opt<bool> ModelConsts;
+    static const llvm::cl::opt<bool> ModelArrays;
     static const llvm::cl::opt<bool> SymTabPrint;
 
     // Conditions.cpp
@@ -243,13 +244,15 @@ public:
     // TypeAnalysis.cpp
     static const llvm::cl::opt<bool> GenICFG;
 
-    //WPAPass.cpp
+    // WPAPass.cpp
     static const llvm::cl::opt<bool> AnderSVFG;
     static const llvm::cl::opt<bool> SABERFULLSVFG;
     static const llvm::cl::opt<bool> PrintAliases;
     static llvm::cl::bits<PointerAnalysis::PTATY> PASelected;
     static llvm::cl::bits<WPAPass::AliasCheckRule> AliasRule;
 
+    // DOTGraphTraits
+    static const llvm::cl::opt<bool> ShowHiddenNode;
 };
 }  // namespace SVF
 

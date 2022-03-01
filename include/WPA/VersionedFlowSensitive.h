@@ -47,7 +47,7 @@ public:
     static VersionedVar atKey(NodeID, Version);
 
     /// Constructor
-    VersionedFlowSensitive(PAG *_pag, PTATY type = VFS_WPA);
+    VersionedFlowSensitive(SVFIR *_pag, PTATY type = VFS_WPA);
 
     /// Initialize analysis
     virtual void initialize() override;
@@ -74,7 +74,7 @@ public:
     //@}
 
     /// Create single instance of versioned flow-sensitive points-to analysis.
-    static VersionedFlowSensitive *createVFSWPA(PAG *_pag)
+    static VersionedFlowSensitive *createVFSWPA(SVFIR *_pag)
     {
         if (vfspta == nullptr)
         {
@@ -223,8 +223,8 @@ private:
 
     /// Additional statistics.
     //@{
-    Size_t numPrelabeledNodes;  ///< Number of prelabeled nodes.
-    Size_t numPrelabelVersions; ///< Number of versions created during prelabeling.
+    u32_t numPrelabeledNodes;  ///< Number of prelabeled nodes.
+    u32_t numPrelabelVersions; ///< Number of versions created during prelabeling.
 
     double prelabelingTime;  ///< Time to prelabel SVFG.
     double meldLabelingTime; ///< Time to meld label SVFG.

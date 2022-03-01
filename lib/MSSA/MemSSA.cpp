@@ -67,10 +67,10 @@ MemSSA::MemSSA(BVDataPTAImpl* p, bool ptrOnlyMSSA) : df(nullptr),dt(nullptr)
     double mrStart = stat->getClk(true);
     mrGen->generateMRs();
     double mrEnd = stat->getClk(true);
-    timeOfGeneratingMemRegions += (mrEnd - mrStart)/TIMEINTERVAL;
+    timeOfGeneratingMemRegions = (mrEnd - mrStart)/TIMEINTERVAL;
 }
 
-PAG* MemSSA::getPAG()
+SVFIR* MemSSA::getPAG()
 {
     return pta->getPAG();
 }
@@ -126,7 +126,7 @@ void MemSSA::buildMemSSA(const SVFFunction& fun, DominanceFrontier* f, Dominator
 void MemSSA::createMUCHI(const SVFFunction& fun)
 {
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
 
     DBOUT(DMSSA,
           outs() << "\t creating mu chi for function " << fun.getName()
@@ -159,22 +159,22 @@ void MemSSA::createMUCHI(const SVFFunction& fun)
                 it != eit; ++it)
         {
             const Instruction* inst = &*it;
-            if(mrGen->hasPAGEdgeList(inst))
+            if(mrGen->hasSVFStmtList(inst))
             {
-                PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
-                for (PAGEdgeList::const_iterator bit = pagEdgeList.begin(),
+                SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+                for (SVFStmtList::const_iterator bit = pagEdgeList.begin(),
                         ebit = pagEdgeList.end(); bit != ebit; ++bit)
                 {
                     const PAGEdge* inst = *bit;
-                    if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
+                    if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(inst))
                         AddLoadMU(bb, load, mrGen->getLoadMRSet(load));
-                    else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
+                    else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(inst))
                         AddStoreCHI(bb, store, mrGen->getStoreMRSet(store));
                 }
             }
             if (isNonInstricCallSite(inst))
             {
-                const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
+                const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(inst);
                 if(mrGen->hasRefMRSet(cs))
                     AddCallSiteMU(cs,mrGen->getCallSiteRefMRSet(cs));
 
@@ -279,7 +279,7 @@ void MemSSA::SSARename(const SVFFunction& fun)
 void MemSSA::SSARenameBB(const BasicBlock& bb)
 {
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     // record which mem region needs to pop stack
     MRVector memRegs;
 
@@ -301,24 +301,24 @@ void MemSSA::SSARenameBB(const BasicBlock& bb)
             it != eit; ++it)
     {
         const Instruction* inst = &*it;
-        if(mrGen->hasPAGEdgeList(inst))
+        if(mrGen->hasSVFStmtList(inst))
         {
-            PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
-            for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+            SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(inst);
+            for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                     bit!=ebit; ++bit)
             {
                 const PAGEdge* inst = *bit;
-                if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(inst))
+                if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(inst))
                     RenameMuSet(getMUSet(load));
 
-                else if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(inst))
+                else if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(inst))
                     RenameChiSet(getCHISet(store),memRegs);
 
             }
         }
         if (isNonInstricCallSite(inst))
         {
-            const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(inst);
+            const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(inst);
             if(mrGen->hasRefMRSet(cs))
                 RenameMuSet(getMUSet(cs));
 
@@ -592,9 +592,9 @@ u32_t MemSSA::getBBPhiNum() const
 /*!
  * Print SSA
  */
-void MemSSA::dumpMSSA(raw_ostream& Out)
+void MemSSA::dumpMSSA(OutStream& Out)
 {
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
 
     for (SVFModule::iterator fit = pta->getModule()->begin(), efit = pta->getModule()->end();
             fit != efit; ++fit)
@@ -619,7 +619,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
         {
             BasicBlock& bb = *bit;
             if (bb.hasName())
-                Out << bb.getName() << "\n";
+                Out << bb.getName().str() << "\n";
             PHISet& phiSet = getPHISet(&bb);
             for(PHISet::iterator pi = phiSet.begin(), epi = phiSet.end(); pi !=epi; ++pi)
             {
@@ -634,7 +634,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                 bool isAppCall = isNonInstricCallSite(&inst) && !isExtCall(&inst);
                 if (isAppCall || isHeapAllocExtCall(&inst))
                 {
-                    const CallBlockNode* cs = pag->getICFG()->getCallBlockNode(&inst);
+                    const CallICFGNode* cs = pag->getICFG()->getCallICFGNode(&inst);
                     if(hasMU(cs))
                     {
                         if (!last_is_chi)
@@ -648,7 +648,7 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                         }
                     }
 
-                    Out << inst << "\n";
+                    Out << SVFUtil::value2String(&inst) << "\n";
 
                     if(hasCHI(cs))
                     {
@@ -666,12 +666,12 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                 else
                 {
                     bool dump_preamble = false;
-                    PAGEdgeList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
-                    for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+                    SVFStmtList& pagEdgeList = mrGen->getPAGEdgesFromInst(&inst);
+                    for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;
-                        if (const LoadPE* load = SVFUtil::dyn_cast<LoadPE>(edge))
+                        if (const LoadStmt* load = SVFUtil::dyn_cast<LoadStmt>(edge))
                         {
                             MUSet& muSet = getMUSet(load);
                             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
@@ -686,14 +686,14 @@ void MemSSA::dumpMSSA(raw_ostream& Out)
                         }
                     }
 
-                    Out << inst << "\n";
+                    Out << SVFUtil::value2String(&inst) << "\n";
 
                     bool has_chi = false;
-                    for(PAGEdgeList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
+                    for(SVFStmtList::const_iterator bit = pagEdgeList.begin(), ebit= pagEdgeList.end();
                             bit!=ebit; ++bit)
                     {
                         const PAGEdge* edge = *bit;
-                        if (const StorePE* store = SVFUtil::dyn_cast<StorePE>(edge))
+                        if (const StoreStmt* store = SVFUtil::dyn_cast<StoreStmt>(edge))
                         {
                             CHISet& chiSet = getCHISet(store);
                             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)

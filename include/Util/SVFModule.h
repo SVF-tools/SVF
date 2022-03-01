@@ -31,6 +31,9 @@
 #define SVFMODULE_H_
 
 #include "Util/BasicTypes.h"
+#include "Util/ExtAPI.h"
+#include "Util/NodeIDAllocator.h"
+#include "Util/ThreadAPI.h"
 
 namespace SVF
 {
@@ -68,6 +71,14 @@ public:
     {
     }
 
+    ~SVFModule()
+    {
+      for (auto * f : FunctionSet)
+        delete f;
+      NodeIDAllocator::unset();
+      ThreadAPI::destroy();
+      ExtAPI::destory();
+    }
 
     static inline void setPagFromTXT(std::string txt)
     {

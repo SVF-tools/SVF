@@ -1,4 +1,4 @@
-//===- PAGBuilder.h -- Building PAG-------------------------------------------//
+//===- SVFIRBuilder.h -- Building SVFIR-------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * PAGBuilder.h
+ * SVFIRBuilder.h
  *
  *  Created on: Nov 1, 2013
  *      Author: Yulei Sui
@@ -30,8 +30,9 @@
 #ifndef PAGBUILDER_H_
 #define PAGBUILDER_H_
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Util/ExtAPI.h"
+#include "SVF-FE/BasicTypes.h"
 #include "SVF-FE/ICFGBuilder.h"
 
 namespace SVF
@@ -39,32 +40,32 @@ namespace SVF
 
 class SVFModule;
 /*!
- *  PAG Builder
+ *  SVFIR Builder to create SVF variables and statements and PAG
  */
-class PAGBuilder: public llvm::InstVisitor<PAGBuilder>
+class SVFIRBuilder: public llvm::InstVisitor<SVFIRBuilder>
 {
 
 private:
-    PAG* pag;
+    SVFIR* pag;
     SVFModule* svfMod;
-    const BasicBlock* curBB;	///< Current basic block during PAG construction when visiting the module
-    const Value* curVal;	///< Current Value during PAG construction when visiting the module
+    const BasicBlock* curBB;	///< Current basic block during SVFIR construction when visiting the module
+    const Value* curVal;	///< Current Value during SVFIR construction when visiting the module
 
 public:
     /// Constructor
-    PAGBuilder(): pag(PAG::getPAG()), svfMod(nullptr), curBB(nullptr),curVal(nullptr)
+    SVFIRBuilder(): pag(SVFIR::getPAG()), svfMod(nullptr), curBB(nullptr),curVal(nullptr)
     {
     }
     /// Destructor
-    virtual ~PAGBuilder()
+    virtual ~SVFIRBuilder()
     {
     }
 
-    /// Start building PAG here
-    virtual PAG* build(SVFModule* svfModule);
+    /// Start building SVFIR here
+    virtual SVFIR* build(SVFModule* svfModule);
 
-    /// Return PAG
-    PAG* getPAG() const
+    /// Return SVFIR
+    SVFIR* getPAG() const
     {
         return pag;
     }
@@ -72,11 +73,11 @@ public:
     /// Initialize nodes and edges
     //@{
     void initialiseNodes();
-    void addEdge(NodeID src, NodeID dst, PAGEdge::PEDGEK kind,
-                 Size_t offset = 0, Instruction* cs = nullptr);
+    void addEdge(NodeID src, NodeID dst, SVFStmt::PEDGEK kind,
+                 s64_t offset = 0, Instruction* cs = nullptr);
     // @}
 
-    /// Sanity check for PAG
+    /// Sanity check for SVFIR
     void sanityCheck();
 
     /// Get different kinds of node
@@ -109,33 +110,9 @@ public:
         return pag->getVarargNode(func);
     }
     //@}
+    /// Update SVFIR given a call graph (creating new CallPE and RetPE for resolved indirect calls)
+    void updateCallGraph(PTACallGraph* callgraph);
 
-    /// Handle globals including (global variable and functions)
-    //@{
-    void visitGlobal(SVFModule* svfModule);
-    void InitialGlobal(const GlobalVariable *gvar, Constant *C,
-                       u32_t offset);
-    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset);
-    //@}
-
-    /// Process constant expression
-    void processCE(const Value *val);
-
-    /// Compute offset of a gep instruction or gep constant expression
-    bool computeGepOffset(const User *V, LocationSet& ls);
-
-    /// Handle direct call
-    void handleDirectCall(CallSite cs, const SVFFunction *F);
-
-    /// Handle indirect call
-    void handleIndCall(CallSite cs);
-
-    /// Handle external call
-    //@{
-    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
-    const Type *getBaseTypeAndFlattenedFields(Value* v, std::vector<LocationSet> &fields);
-    void addComplexConsForExt(Value *D, Value *S,u32_t sz = 0);
-    //@}
 
     /// Our visit overrides.
     //@{
@@ -230,6 +207,42 @@ public:
     }
     //}@
 
+protected:
+    /// Handle globals including (global variable and functions)
+    //@{
+    void visitGlobal(SVFModule* svfModule);
+    void InitialGlobal(const GlobalVariable *gvar, Constant *C,
+                       u32_t offset);
+    NodeID getGlobalVarField(const GlobalVariable *gvar, u32_t offset, Type* tpy);
+    //@}
+
+    /// Process constant expression
+    void processCE(const Value *val);
+
+    /// Infer field index from byteoffset.
+    u32_t inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx);
+
+    /// Compute offset of a gep instruction or gep constant expression
+    bool computeGepOffset(const User *V, LocationSet& ls);
+
+    /// Get the base value of (i8* src and i8* dst) for external argument (e.g. memcpy(i8* dst, i8* src, int size))
+    const Value* getBaseValueForExtArg(const Value* V);
+
+    /// Get the base type and max offset
+    const Type *getBaseTypeAndFlattenedFields(const Value *V, std::vector<LocationSet> &fields, const Value* sz);
+
+    /// Handle direct call
+    void handleDirectCall(CallSite cs, const SVFFunction *F);
+
+    /// Handle indirect call
+    void handleIndCall(CallSite cs);
+
+    /// Handle external call
+    //@{
+    virtual void handleExtCall(CallSite cs, const SVFFunction *F);
+    void addComplexConsForExt(Value *D, Value *S, const Value* sz);
+    //@}
+
     /// Set current basic block in order to keep track of control flow information
     inline void setCurrentLocation(const Value* val, const BasicBlock* bb)
     {
@@ -267,119 +280,128 @@ public:
         return nullPtr;
     }
 
-    NodeID getGepValNode(const Value* val, const LocationSet& ls, const Type *baseType, u32_t fieldidx);
+    NodeID getGepValVar(const Value* val, const LocationSet& ls, const Type *baseType);
 
     void setCurrentBBAndValueForPAGEdge(PAGEdge* edge);
 
-    inline PAGEdge* addBlackHoleAddrEdge(NodeID node)
+    inline void addBlackHoleAddrEdge(NodeID node)
     {
-        PAGEdge *edge = pag->addBlackHoleAddrPE(node);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(PAGEdge *edge = pag->addBlackHoleAddrStmt(node))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
 
     /// Add Address edge
-    inline AddrPE* addAddrEdge(NodeID src, NodeID dst)
+    inline AddrStmt* addAddrEdge(NodeID src, NodeID dst)
     {
-        AddrPE *edge = pag->addAddrPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(AddrStmt *edge = pag->addAddrStmt(src, dst)){
+            setCurrentBBAndValueForPAGEdge(edge);
+            return edge;
+        }
+        return nullptr;
     }
     /// Add Copy edge
-    inline CopyPE* addCopyEdge(NodeID src, NodeID dst)
+    inline CopyStmt* addCopyEdge(NodeID src, NodeID dst)
     {
-        CopyPE *edge = pag->addCopyPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(CopyStmt *edge = pag->addCopyStmt(src, dst)){
+            setCurrentBBAndValueForPAGEdge(edge);
+            return edge;
+        }
+        return nullptr;
     }
     /// Add Copy edge
-    inline CmpPE* addCmpEdge(NodeID src, NodeID dst)
+    inline void addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
     {
-        CmpPE *edge = pag->addCmpPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        /// If we already added this phi node, then skip this adding
+        if(PhiStmt *edge = pag->addPhiStmt(res,opnd,pred))
+            setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add SelectStmt
+    inline void addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond)
+    {
+        if(SelectStmt *edge = pag->addSelectStmt(res,op1,op2,cond))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Copy edge
-    inline BinaryOPPE* addBinaryOPEdge(NodeID src, NodeID dst)
+    inline void addCmpEdge(NodeID op1, NodeID op2, NodeID dst, u32_t predict)
     {
-        BinaryOPPE *edge = pag->addBinaryOPPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(CmpStmt *edge = pag->addCmpStmt(op1, op2, dst, predict))
+            setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Copy edge
+    inline void addBinaryOPEdge(NodeID op1, NodeID op2, NodeID dst, u32_t opcode)
+    {
+        if(BinaryOPStmt *edge = pag->addBinaryOPStmt(op1, op2, dst, opcode))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Unary edge
-    inline UnaryOPPE* addUnaryOPEdge(NodeID src, NodeID dst)
+    inline void addUnaryOPEdge(NodeID src, NodeID dst, u32_t opcode)
     {
-        UnaryOPPE *edge = pag->addUnaryOPPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(UnaryOPStmt *edge = pag->addUnaryOPStmt(src, dst, opcode))
+            setCurrentBBAndValueForPAGEdge(edge);
+    }
+    /// Add Branch statement 
+    inline void addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccAndCondPairVec& succs){
+        if(BranchStmt *edge = pag->addBranchStmt(br, cond, succs))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Load edge
-    inline LoadPE* addLoadEdge(NodeID src, NodeID dst)
+    inline void addLoadEdge(NodeID src, NodeID dst)
     {
-        LoadPE *edge = pag->addLoadPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(LoadStmt *edge = pag->addLoadStmt(src, dst))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Store edge
-    inline StorePE* addStoreEdge(NodeID src, NodeID dst)
+    inline void addStoreEdge(NodeID src, NodeID dst)
     {
-        IntraBlockNode* node;
+        IntraICFGNode* node;
         if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(curVal))
-            node = pag->getICFG()->getIntraBlockNode(inst);
+            node = pag->getICFG()->getIntraICFGNode(inst);
         else
             node = nullptr;
-        StorePE *edge = pag->addStorePE(src, dst, node);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(StoreStmt *edge = pag->addStoreStmt(src, dst, node))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Call edge
-    inline CallPE* addCallEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline void addCallEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        CallPE *edge = pag->addCallPE(src, dst, cs);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(CallPE *edge = pag->addCallPE(src, dst, cs, entry))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Return edge
-    inline RetPE* addRetEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline void addRetEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        RetPE *edge = pag->addRetPE(src, dst, cs);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(RetPE *edge = pag->addRetPE(src, dst, cs, exit))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Gep edge
-    inline GepPE* addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
+    inline void addGepEdge(NodeID src, NodeID dst, const LocationSet& ls, bool constGep)
     {
-        GepPE *edge = pag->addGepPE(src, dst, ls, constGep);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(GepStmt *edge = pag->addGepStmt(src, dst, ls, constGep))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Offset(Gep) edge
-    inline NormalGepPE* addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
+    inline void addNormalGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        NormalGepPE *edge = pag->addNormalGepPE(src, dst, ls);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(GepStmt *edge = pag->addNormalGepStmt(src, dst, ls))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Variant(Gep) edge
-    inline VariantGepPE* addVariantGepEdge(NodeID src, NodeID dst)
+    inline void addVariantGepEdge(NodeID src, NodeID dst, const LocationSet& ls)
     {
-        VariantGepPE *edge = pag->addVariantGepPE(src, dst);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(GepStmt *edge = pag->addVariantGepStmt(src, dst, ls))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Thread fork edge for parameter passing
-    inline TDForkPE* addThreadForkEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline void addThreadForkEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunEntryICFGNode* entry)
     {
-        TDForkPE *edge = pag->addThreadForkPE(src, dst, cs);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(TDForkPE *edge = pag->addThreadForkPE(src, dst, cs, entry))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     /// Add Thread join edge for parameter passing
-    inline TDJoinPE* addThreadJoinEdge(NodeID src, NodeID dst, const CallBlockNode* cs)
+    inline void addThreadJoinEdge(NodeID src, NodeID dst, const CallICFGNode* cs, const FunExitICFGNode* exit)
     {
-        TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs);
-        setCurrentBBAndValueForPAGEdge(edge);
-        return edge;
+        if(TDJoinPE *edge = pag->addThreadJoinPE(src, dst, cs, exit))
+            setCurrentBBAndValueForPAGEdge(edge);
     }
     //@}
 

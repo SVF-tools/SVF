@@ -44,15 +44,11 @@
 #include "WPA/VersionedFlowSensitive.h"
 #include "WPA/TypeAnalysis.h"
 #include "WPA/Steensgaard.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 
 using namespace SVF;
 
 char WPAPass::ID = 0;
-
-static llvm::RegisterPass<WPAPass> WHOLEPROGRAMPA("wpa",
-        "Whole Program Pointer AnalysWPAis Pass");
-
 
 /*!
  * Destructor
@@ -97,9 +93,9 @@ bool WPAPass::runOnModule(Module& module)
  */
 void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 {
-	/// Build PAG
-	PAGBuilder builder;
-	PAG* pag = builder.build(svfModule);
+	/// Build SVFIR
+	SVFIRBuilder builder;
+	SVFIR* pag = builder.build(svfModule);
     /// Initialize pointer analysis.
     switch (kind)
     {
@@ -123,9 +119,6 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
         break;
     case PointerAnalysis::AndersenWaveDiff_WPA:
         _pta = new AndersenWaveDiff(pag);
-        break;
-    case PointerAnalysis::AndersenWaveDiffWithType_WPA:
-        _pta = new AndersenWaveDiffWithType(pag);
         break;
     case PointerAnalysis::Steensgaard_WPA:
         _pta = new Steensgaard(pag);
@@ -153,15 +146,7 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
     {
         SVFGBuilder memSSA(true);
         assert(SVFUtil::isa<AndersenBase>(_pta) && "supports only andersen/steensgaard for pre-computed SVFG");
-        SVFG *svfg;
-        if (Options::OPTSVFG)
-        {
-            svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
-        } else
-        {
-            svfg = memSSA.buildFullSVFGWithoutOPT((BVDataPTAImpl*)_pta);
-        }
-
+        SVFG *svfg = memSSA.buildFullSVFG((BVDataPTAImpl*)_pta);
         /// support mod-ref queries only for -ander
         if (Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA))
             _svfg = svfg;
@@ -173,12 +158,12 @@ void WPAPass::runPointerAnalysis(SVFModule* svfModule, u32_t kind)
 
 void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 {
-    PAG* pag = pta->getPAG();
-    for (PAG::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
+    SVFIR* pag = pta->getPAG();
+    for (SVFIR::iterator lit = pag->begin(), elit = pag->end(); lit != elit; ++lit)
     {
         PAGNode* node1 = lit->second;
         PAGNode* node2 = node1;
-        for (PAG::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
+        for (SVFIR::iterator rit = lit, erit = pag->end(); rit != erit; ++rit)
         {
             node2 = rit->second;
             if(node1==node2)
@@ -188,9 +173,9 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
             AliasResult result = pta->alias(node1->getId(), node2->getId());
             SVFUtil::outs()	<< (result == AliasResult::NoAlias ? "NoAlias" : "MayAlias")
                             << " var" << node1->getId() << "[" << node1->getValueName()
-                            << "@" << (fun1==nullptr?"":fun1->getName()) << "] --"
+                            << "@" << (fun1==nullptr?"":fun1->getName().str()) << "] --"
                             << " var" << node2->getId() << "[" << node2->getValueName()
-                            << "@" << (fun2==nullptr?"":fun2->getName()) << "]\n";
+                            << "@" << (fun2==nullptr?"":fun2->getName().str()) << "]\n";
         }
     }
 }
@@ -202,14 +187,14 @@ void WPAPass::PrintAliasPairs(PointerAnalysis* pta)
 AliasResult WPAPass::alias(const Value* V1, const Value* V2)
 {
 
-    AliasResult result = llvm::AliasResult::MayAlias;
+    AliasResult result = AliasResult::MayAlias;
 
-    PAG* pag = _pta->getPAG();
+    SVFIR* pag = _pta->getPAG();
 
     /// TODO: When this method is invoked during compiler optimizations, the IR
     ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding PAG node. In this case, we only check alias
-    ///       between two Values if they both have PAG nodes. Otherwise, MayAlias
+    ///       find corresponding SVFIR node. In this case, we only check alias
+    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
     ///       will be returned.
     if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
     {
@@ -217,25 +202,25 @@ AliasResult WPAPass::alias(const Value* V1, const Value* V2)
         if (Options::AliasRule.getBits() == 0 || Options::AliasRule.isSet(Veto))
         {
             /// Return NoAlias if any PTA gives NoAlias result
-            result = llvm::AliasResult::MayAlias;
+            result = AliasResult::MayAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::AliasResult::NoAlias)
-                    result = llvm::AliasResult::NoAlias;
+                if ((*it)->alias(V1, V2) == AliasResult::NoAlias)
+                    result = AliasResult::NoAlias;
             }
         }
         else if (Options::AliasRule.isSet(Conservative))
         {
             /// Return MayAlias if any PTA gives MayAlias result
-            result = llvm::AliasResult::NoAlias;
+            result = AliasResult::NoAlias;
 
             for (PTAVector::const_iterator it = ptaVector.begin(), eit = ptaVector.end();
                     it != eit; ++it)
             {
-                if ((*it)->alias(V1, V2) == llvm::AliasResult::MayAlias)
-                    result = llvm::AliasResult::MayAlias;
+                if ((*it)->alias(V1, V2) == AliasResult::MayAlias)
+                    result = AliasResult::MayAlias;
             }
         }
     }
@@ -250,7 +235,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallBlockNode* cbn = icfg->getCallBlockNode(callInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn);
 }
 
@@ -261,7 +246,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst, const Value* V)
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallBlockNode* cbn = icfg->getCallBlockNode(callInst);
+    const CallICFGNode* cbn = icfg->getCallICFGNode(callInst);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn, V);
 }
 
@@ -272,7 +257,7 @@ ModRefInfo WPAPass::getModRefInfo(const CallInst* callInst1, const CallInst* cal
 {
     assert(Options::PASelected.isSet(PointerAnalysis::AndersenWaveDiff_WPA) && Options::AnderSVFG && "mod-ref query is only support with -ander and -svfg turned on");
     ICFG* icfg = _svfg->getPAG()->getICFG();
-    const CallBlockNode* cbn1 = icfg->getCallBlockNode(callInst1);
-    const CallBlockNode* cbn2 = icfg->getCallBlockNode(callInst2);
+    const CallICFGNode* cbn1 = icfg->getCallICFGNode(callInst1);
+    const CallICFGNode* cbn2 = icfg->getCallICFGNode(callInst2);
     return _svfg->getMSSA()->getMRGenerator()->getModRefInfo(cbn1, cbn2);
 }

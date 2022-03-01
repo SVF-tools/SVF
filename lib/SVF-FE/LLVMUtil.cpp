@@ -28,6 +28,7 @@
  */
 
 #include "SVF-FE/LLVMUtil.h"
+#include "MemoryModel/SymbolTableInfo.h"
 
 using namespace SVF;
 
@@ -188,15 +189,15 @@ const Value * SVFUtil::stripConstantCasts(const Value *val)
 /*!
  * Strip all casts
  */
-Value * SVFUtil::stripAllCasts(Value *val)
+const Value * SVFUtil::stripAllCasts(const Value *val)
 {
     while (true)
     {
-        if (CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
+        if (const CastInst *ci = SVFUtil::dyn_cast<CastInst>(val))
         {
             val = ci->getOperand(0);
         }
-        else if (ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
+        else if (const ConstantExpr *ce = SVFUtil::dyn_cast<ConstantExpr>(val))
         {
             if(ce->isCast())
                 val = ce->getOperand(0);
@@ -370,7 +371,7 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
                                std::vector<std::string> &moduleNameVec)
 {
     bool first_ir_file = true;
-    for (s32_t i = 0; i < argc; ++i)
+    for (s64_t i = 0; i < argc; ++i)
     {
         std::string argument(argv[i]);
         if (SVFUtil::isIRFile(argument))
@@ -393,3 +394,32 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
     }
 }
 
+u32_t SVFUtil::getTypeSizeInBytes(const Type* type)
+{
+
+    // if the type has size then simply return it, otherwise just return 0
+    if(type->isSized())
+        return SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
+    else
+        return 0;
+}
+
+u32_t SVFUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
+{
+
+    const StructLayout *stTySL = SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
+    /// if this struct type does not have any element, i.e., opaque
+    if(sty->isOpaque())
+        return 0;
+    else
+        return stTySL->getElementOffset(field_idx);
+}
+
+const std::string SVFUtil::type2String(const Type* type)
+{
+    std::string str;
+    llvm::raw_string_ostream rawstr(str);
+    assert(type != nullptr && "Given null type!");
+    rawstr << *type;
+    return rawstr.str();
+}

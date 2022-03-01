@@ -37,6 +37,7 @@ namespace SVF
         if (allocator != nullptr)
         {
             delete allocator;
+            allocator = nullptr;
         }
     }
 
@@ -52,6 +53,10 @@ namespace SVF
         {
             // We allocate objects from 0(-ish, considering the special nodes) to # of objects.
             id = numObjects;
+        }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = UINT_MAX - numObjects;
         }
         else if (strategy == Strategy::SEQ)
         {
@@ -85,6 +90,10 @@ namespace SVF
         {
             // Nothing different to the other case.
             id =  numObjects;
+        }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = UINT_MAX - numObjects;
         }
         else if (strategy == Strategy::SEQ)
         {
@@ -127,6 +136,10 @@ namespace SVF
             //       of NodeID (though it is already in use elsewhere).
             id = UINT_MAX - numValues;
         }
+        else if (strategy == Strategy::REVERSE_DENSE)
+        {
+            id = numValues;
+        }
         else if (strategy == Strategy::SEQ)
         {
             // Everything is sequential and intermixed.
@@ -148,9 +161,10 @@ namespace SVF
         return id;
     }
 
-    void NodeIDAllocator::endSymbolAllocation(void)
+    NodeID NodeIDAllocator::endSymbolAllocation(void)
     {
         numSymbols = numNodes;
+        return numSymbols;
     }
 
     const std::string NodeIDAllocator::Clusterer::NumObjects = "NumObjects";
@@ -686,18 +700,18 @@ namespace SVF
               EvalTime, TotalTime, BestCandidate };
 
         const unsigned fieldWidth = 20;
-        std::cout.flags(std::ios::left);
-        std::cout << "****Clusterer Statistics: " << subtitle << "****\n";
+        SVFUtil::outs().flags(std::ios::left);
+        SVFUtil::outs() << "****Clusterer Statistics: " << subtitle << "****\n";
         for (const std::string &statKey : statKeys)
         {
             Map<std::string, std::string>::const_iterator stat = stats.find(statKey);
             if (stat != stats.end())
             {
-                std::cout << std::setw(fieldWidth) << statKey << " " << stat->second << "\n";
+                SVFUtil::outs() << std::setw(fieldWidth) << statKey << " " << stat->second << "\n";
             }
         }
 
-        std::cout.flush();
+        SVFUtil::outs().flush();
     }
 
 };  // namespace SVF.

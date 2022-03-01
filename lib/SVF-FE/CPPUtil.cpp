@@ -55,7 +55,7 @@ const string structName = "struct.";
 
 static bool isOperOverload(const string name)
 {
-    s32_t leftnum = 0, rightnum = 0;
+    s64_t leftnum = 0, rightnum = 0;
     string subname = name;
     size_t leftpos, rightpos;
     leftpos = subname.find("<");
@@ -88,7 +88,7 @@ static string getBeforeParenthesis(const string &name)
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
 
-    s32_t paren_num = 1, pos;
+    s64_t paren_num = 1, pos;
     for (pos = lastRightParen - 1; pos >= 0; pos--)
     {
         if (name[pos] == ')')
@@ -107,7 +107,7 @@ string cppUtil::getBeforeBrackets(const string &name)
     {
         return name;
     }
-    s32_t bracket_num = 1, pos;
+    s64_t bracket_num = 1, pos;
     for (pos = name.size() - 2; pos >= 0; pos--)
     {
         if (name[pos] == '>')
@@ -183,7 +183,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
     struct cppUtil::DemangledName dname;
     dname.isThunkFunc = false;
 
-    s32_t status;
+    s64_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
     if (realname == nullptr)
     {
@@ -215,6 +215,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
                 dname.funcName = beforeParenthesis.substr(colon + 2);
             }
         }
+        std::free(realname);
     }
 
     handleThunkFunction(dname);
@@ -227,7 +228,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     const Value *loadSrc = loadInst->getPointerOperand();
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
-    for (s32_t i = 0; i < 3; ++i)
+    for (s64_t i = 0; i < 3; ++i)
     {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = ptrTy->getElementType();
@@ -342,11 +343,11 @@ bool cppUtil::isSameThisPtrInConstructor(const Argument* thisPtr1, const Value* 
     }
     else
     {
-        for (const User *thisU : thisPtr1->users())
+        for (const Value *thisU : thisPtr1->users())
         {
             if (const StoreInst *store = SVFUtil::dyn_cast<StoreInst>(thisU))
             {
-                for (const User *storeU : store->getPointerOperand()->users())
+                for (const Value *storeU : store->getPointerOperand()->users())
                 {
                     if (const LoadInst *load = SVFUtil::dyn_cast<LoadInst>(storeU))
                     {
@@ -434,7 +435,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     string className = "";
 
     string vtblName = value->getName().str();
-    s32_t status;
+    s64_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
     if (realname != nullptr)
     {
@@ -444,6 +445,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
         {
             className = realnameStr.substr(vtblLabelAfterDemangle.size());
         }
+        std::free(realname);
     }
     return className;
 }

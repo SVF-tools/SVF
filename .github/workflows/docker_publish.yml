@@ -1,0 +1,47 @@
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  docker-publish:
+    if: github.repository == 'SVF-tools/SVF'
+    runs-on: ubuntu-latest
+
+    steps:
+     -
+        name: Checkout 
+        uses: actions/checkout@v2
+     -
+        name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{secrets.DOCKER_USER}}
+          password: ${{secrets.DOCKER_PASSWD}}
+     -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+     -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{secrets.DOCKER_USER}}/svf:latest
+          
+  dispatch:
+      needs: docker-publish
+      runs-on: ubuntu-latest
+      strategy: 
+        matrix:
+          repo: ['SVF-tools/Teaching-Software-Analysis','SVF-tools/SVF-example','SVF-tools/Teaching-Software-Verification']
+      steps:
+      -
+        name: dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.yulei_git_key }}
+          repository: ${{ matrix.repo }}
+          event-type: new-commit-from-SVF

@@ -32,10 +32,10 @@
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
-#include <llvm/Support/raw_ostream.h>	// for output
 #include <llvm/Support/CommandLine.h>	// for command line options
 #include <llvm/ADT/StringMap.h>	// for StringMap
 
+#include <iostream>
 #include <vector>
 #include <list>
 #include <set>
@@ -72,10 +72,12 @@ template <class T> struct Hash {
     }
 };
 
+typedef std::ostream OutStream;
+
 typedef unsigned u32_t;
-typedef unsigned long long u64_t;
 typedef signed s32_t;
-typedef signed long Size_t;
+typedef unsigned long long u64_t;
+typedef signed s64_t;
 
 typedef u32_t NodeID;
 typedef u32_t EdgeID;
@@ -138,7 +140,9 @@ template <> struct Hash<NodePair>
         // and u64_t. If NodeID is not actually u32_t or size_t
         // is not u64_t we should be fine since we get a
         // consistent result.
-        return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
+        uint32_t first = (uint32_t)(p.first);
+        uint32_t second = (uint32_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
     }
 };
 
@@ -177,11 +181,27 @@ template <> struct Hash<NodePair>
 /// Size of native integer that we'll use for bit vectors, in bits.
 #define NATIVE_INT_SIZE (sizeof(unsigned long long) * CHAR_BIT)
 
+enum ModRefInfo
+{
+    ModRef,
+    Ref,
+    Mod,
+    NoModRef,
+};
+
+enum AliasResult
+{
+    MustAlias,
+    MayAlias,
+    PartialAlias,
+    NoAlias,
+};
+
 class SVFValue
 {
 
 public:
-    typedef s32_t GNodeK;
+    typedef s64_t GNodeK;
 
     enum SVFValKind
     {
@@ -226,7 +246,7 @@ public:
     }
     //@}
 
-    const llvm::StringRef getName() const
+    const std::string getName() const
     {
         return value;
     }
@@ -238,7 +258,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend llvm::raw_ostream& operator<< (llvm::raw_ostream &o, const SVFValue &node)
+    friend OutStream& operator<< (OutStream &o, const SVFValue &node)
     {
         o << node.getName();
         return o;
@@ -266,7 +286,7 @@ template <> struct std::hash<SVF::NodePair> {
         // consistent result.
         uint32_t first = (uint32_t)(p.first);
         uint32_t second = (uint32_t)(p.second);
-        return ((uint64_t)(p.first) << 32) | (uint64_t)(p.second);
+        return ((uint64_t)(first) << 32) | (uint64_t)(second);
     }
 };
 

@@ -26,13 +26,13 @@ public:
     typedef Map<NodeID, Set<NodeID>> NodeToSubsMap;
 
     /// Constructor
-    Steensgaard(PAG* _pag)
+    Steensgaard(SVFIR* _pag)
         :  AndersenBase(_pag, Steensgaard_WPA, true)
     {
     }
 
     /// Create an singleton instance
-    static Steensgaard* createSteensgaard(PAG* _pag)
+    static Steensgaard* createSteensgaard(SVFIR* _pag)
     {
         if(steens==nullptr)
         {

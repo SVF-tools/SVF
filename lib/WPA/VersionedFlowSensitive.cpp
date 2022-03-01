@@ -27,16 +27,16 @@ VersionedVar VersionedFlowSensitive::atKey(NodeID var, Version version)
     return std::make_pair(var, version);
 }
 
-VersionedFlowSensitive::VersionedFlowSensitive(PAG *_pag, PTATY type)
+VersionedFlowSensitive::VersionedFlowSensitive(SVFIR *_pag, PTATY type)
     : FlowSensitive(_pag, type)
 {
     numPrelabeledNodes = numPrelabelVersions = 0;
     prelabelingTime = meldLabelingTime = versionPropTime = 0.0;
     // We'll grab vPtD in initialize.
 
-    for (PAG::const_iterator it = pag->begin(); it != pag->end(); ++it)
+    for (SVFIR::const_iterator it = pag->begin(); it != pag->end(); ++it)
     {
-        if (SVFUtil::isa<ObjPN>(it->second)) equivalentObject[it->first] = it->first;
+        if (SVFUtil::isa<ObjVar>(it->second)) equivalentObject[it->first] = it->first;
     }
 
     assert(!Options::OPTSVFG && "VFS: -opt-svfg not currently supported with VFS.");
@@ -441,7 +441,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
     deltaMap.resize(svfg->getTotalNodeNum(), false);
 
     // Call block nodes corresponding to all delta nodes.
-    Set<const CallBlockNode *> deltaCBNs;
+    Set<const CallICFGNode *> deltaCBNs;
 
     for (SVFG::const_iterator it = svfg->begin(); it != svfg->end(); ++it)
     {
@@ -463,10 +463,10 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
             if (isDelta)
             {
                 // TODO: could we use deltaCBNs in the call above, avoiding this loop?
-                for (const CallBlockNode *cbn : callsites) deltaCBNs.insert(cbn);
+                for (const CallICFGNode *cbn : callsites) deltaCBNs.insert(cbn);
             }
         }
-        else if (const CallBlockNode *cbn = svfg->isCallSiteRetSVFGNode(s))
+        else if (const CallICFGNode *cbn = svfg->isCallSiteRetSVFGNode(s))
         {
             isDelta = cbn->isIndirectCall();
             if (isDelta) deltaCBNs.insert(cbn);
@@ -482,7 +482,7 @@ void VersionedFlowSensitive::buildDeltaMaps(void)
         const NodeID l = it->first;
         const SVFGNode *s = it->second;
 
-        if (const CallBlockNode *cbn = SVFUtil::dyn_cast<CallBlockNode>(s->getICFGNode()))
+        if (const CallICFGNode *cbn = SVFUtil::dyn_cast<CallICFGNode>(s->getICFGNode()))
         {
             if (deltaCBNs.find(cbn) != deltaCBNs.end()) deltaSourceMap[l] = true;
         }
@@ -641,7 +641,7 @@ bool VersionedFlowSensitive::processLoad(const LoadSVFGNode* load)
         {
             /// If o is a field-insensitive object, we should also get all field nodes'
             /// points-to sets and pass them to p.
-            const NodeBS& fields = getAllFieldsObjNode(o);
+            const NodeBS& fields = getAllFieldsObjVars(o);
             for (NodeID of : fields)
             {
                 const Version c = getConsume(l, of);
@@ -744,7 +744,7 @@ bool VersionedFlowSensitive::processStore(const StoreSVFGNode* store)
 void VersionedFlowSensitive::cluster(void)
 {
     std::vector<std::pair<unsigned, unsigned>> keys;
-    for (PAG::iterator pit = pag->begin(); pit != pag->end(); ++pit)
+    for (SVFIR::iterator pit = pag->begin(); pit != pag->end(); ++pit)
     {
         unsigned occ = 1;
         unsigned v = pit->first;

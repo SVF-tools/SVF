@@ -73,10 +73,10 @@ void AndersenStat::collectCycleInfo(ConstraintGraph* consCG)
         for (NodeBS::iterator it = subNodes.begin(), eit = subNodes.end(); it != eit; ++it)
         {
             NodeID nodeId = *it;
-            PAGNode* pagNode = pta->getPAG()->getPAGNode(nodeId);
-            if (SVFUtil::isa<ObjPN>(pagNode) && pta->isFieldInsensitive(nodeId))
+            PAGNode* pagNode = pta->getPAG()->getGNode(nodeId);
+            if (SVFUtil::isa<ObjVar>(pagNode) && pta->isFieldInsensitive(nodeId))
             {
-                NodeID baseId = consCG->getBaseObjNode(nodeId);
+                NodeID baseId = consCG->getBaseObjVar(nodeId);
                 clone.reset(nodeId);
                 clone.set(baseId);
             }
@@ -145,7 +145,7 @@ void AndersenStat::constraintGraphStat()
         if(nodeIt->second->getInEdges().empty() && nodeIt->second->getOutEdges().empty())
             continue;
         cgNodeNumber++;
-        if(SVFUtil::isa<ObjPN>(pta->getPAG()->getPAGNode(nodeIt->first)))
+        if(SVFUtil::isa<ObjVar>(pta->getPAG()->getGNode(nodeIt->first)))
             objNodeNumber++;
 
         u32_t nCopyIn = nodeIt->second->getDirectInEdges().size();
@@ -221,15 +221,15 @@ void AndersenStat::statNullPtr()
 {
 
     _NumOfNullPtr = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID pagNodeId = iter->first;
         PAGNode* pagNode = iter->second;
-        if (pagNode->isTopLevelPtr() == false)
+        if (SVFUtil::isa<ValVar>(pagNode) == false)
             continue;
-        PAGEdge::PAGEdgeSetTy& inComingStore = pagNode->getIncomingEdges(PAGEdge::Store);
-        PAGEdge::PAGEdgeSetTy& outGoingLoad = pagNode->getOutgoingEdges(PAGEdge::Load);
+        SVFStmt::SVFStmtSetTy& inComingStore = pagNode->getIncomingEdges(SVFStmt::Store);
+        SVFStmt::SVFStmtSetTy& outGoingLoad = pagNode->getOutgoingEdges(SVFStmt::Load);
         if (inComingStore.empty()==false || outGoingLoad.empty()==false)
         {
             ///TODO: change the condition here to fetch the points-to set
@@ -244,7 +244,7 @@ void AndersenStat::statNullPtr()
             {
                 std::string str;
                 raw_string_ostream rawstr(str);
-                if (!SVFUtil::isa<DummyValPN>(pagNode) && !SVFUtil::isa<DummyObjPN>(pagNode) )
+                if (!SVFUtil::isa<DummyValVar>(pagNode) && !SVFUtil::isa<DummyObjVar>(pagNode) )
                 {
                     // if a pointer is in dead function, we do not care
                     if(isPtrInDeadFunction(pagNode->getValue()) == false)
@@ -277,7 +277,7 @@ void AndersenStat::performStat()
     assert(SVFUtil::isa<AndersenBase>(pta) && "not an andersen pta pass!! what else??");
     endClk();
 
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     ConstraintGraph* consCG = pta->getConstraintGraph();
 
     // collect constraint graph cycles
@@ -290,7 +290,7 @@ void AndersenStat::performStat()
     u32_t totalTopLevPointers = 0;
     u32_t totalPtsSize = 0;
     u32_t totalTopLevPtsSize = 0;
-    for (PAG::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
+    for (SVFIR::iterator iter = pta->getPAG()->begin(), eiter = pta->getPAG()->end();
             iter != eiter; ++iter)
     {
         NodeID node = iter->first;
@@ -299,7 +299,7 @@ void AndersenStat::performStat()
         totalPointers++;
         totalPtsSize+=size;
 
-        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getPAGNode(node)))
+        if(pta->getPAG()->isValidTopLevelPtr(pta->getPAG()->getGNode(node)))
         {
             totalTopLevPointers++;
             totalTopLevPtsSize+=size;

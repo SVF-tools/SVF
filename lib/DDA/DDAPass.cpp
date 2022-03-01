@@ -11,7 +11,7 @@
 #include "DDA/FlowDDA.h"
 #include "DDA/ContextDDA.h"
 #include "DDA/DDAClient.h"
-#include "SVF-FE/PAGBuilder.h"
+#include "SVF-FE/SVFIRBuilder.h"
 
 #include <sstream>
 #include <limits.h>
@@ -20,8 +20,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 char DDAPass::ID = 0;
-
-static llvm::RegisterPass<DDAPass> DDAPA("dda", "Demand-driven Pointer Analysis Pass");
 
 DDAPass::~DDAPass()
 {
@@ -93,8 +91,8 @@ void DDAPass::selectClient(SVFModule* module)
 void DDAPass::runPointerAnalysis(SVFModule* module, u32_t kind)
 {
 
-	PAGBuilder builder;
-	PAG* pag = builder.build(module);
+	SVFIRBuilder builder;
+	SVFIR* pag = builder.build(module);
 
     ContextCond::setMaxPathLen(Options::MaxPathLen);
     ContextCond::setMaxCxtLen(Options::MaxContextLen);
@@ -268,12 +266,12 @@ void DDAPass::collectCxtInsenEdgeForVFCycle(PointerAnalysis* pta, const SVFG* sv
 
 AliasResult DDAPass::alias(NodeID node1, NodeID node2)
 {
-    PAG* pag = _pta->getPAG();
+    SVFIR* pag = _pta->getPAG();
 
-    if(pag->isValidTopLevelPtr(pag->getPAGNode(node1)))
+    if(pag->isValidTopLevelPtr(pag->getGNode(node1)))
         _pta->computeDDAPts(node1);
 
-    if(pag->isValidTopLevelPtr(pag->getPAGNode(node2)))
+    if(pag->isValidTopLevelPtr(pag->getGNode(node2)))
         _pta->computeDDAPts(node2);
 
     return _pta->alias(node1,node2);
@@ -284,27 +282,27 @@ AliasResult DDAPass::alias(NodeID node1, NodeID node2)
  */
 AliasResult DDAPass::alias(const Value* V1, const Value* V2)
 {
-    PAG* pag = _pta->getPAG();
+    SVFIR* pag = _pta->getPAG();
 
     /// TODO: When this method is invoked during compiler optimizations, the IR
     ///       used for pointer analysis may been changed, so some Values may not
-    ///       find corresponding PAG node. In this case, we only check alias
-    ///       between two Values if they both have PAG nodes. Otherwise, MayAlias
+    ///       find corresponding SVFIR node. In this case, we only check alias
+    ///       between two Values if they both have SVFIR nodes. Otherwise, MayAlias
     ///       will be returned.
     if (pag->hasValueNode(V1) && pag->hasValueNode(V2))
     {
-        PAGNode* node1 = pag->getPAGNode(pag->getValueNode(V1));
+        PAGNode* node1 = pag->getGNode(pag->getValueNode(V1));
         if(pag->isValidTopLevelPtr(node1))
             _pta->computeDDAPts(node1->getId());
 
-        PAGNode* node2 = pag->getPAGNode(pag->getValueNode(V2));
+        PAGNode* node2 = pag->getGNode(pag->getValueNode(V2));
         if(pag->isValidTopLevelPtr(node2))
             _pta->computeDDAPts(node2->getId());
 
         return _pta->alias(V1,V2);
     }
 
-    return llvm::AliasResult::MayAlias;
+    return AliasResult::MayAlias;
 }
 
 /*!

@@ -37,7 +37,7 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     for (OrderedNodeSet::iterator nIter = candidateQueries.begin();
             nIter != candidateQueries.end(); ++nIter,++count)
     {
-        PAGNode* node = pta->getPAG()->getPAGNode(*nIter);
+        PAGNode* node = pta->getPAG()->getGNode(*nIter);
         if(pta->getPAG()->isValidTopLevelPtr(node))
         {
             DBOUT(DGENERAL,outs() << "\n@@Computing PointsTo for :" << node->getId() <<
@@ -54,10 +54,10 @@ void DDAClient::answerQueries(PointerAnalysis* pta)
     stat->setMemUsageAfter(vmrss, vmsize);
 }
 
-OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(PAG* p)
+OrderedNodeSet& FunptrDDAClient::collectCandidateQueries(SVFIR* p)
 {
     setPAG(p);
-    for(PAG::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
+    for(SVFIR::CallSiteToFunPtrMap::const_iterator it = pag->getIndirectCallsites().begin(),
             eit = pag->getIndirectCallsites().end(); it!=eit; ++it)
     {
         if (cppUtil::isVirtualCallSite(SVFUtil::getLLVMCallSite(it->first->getCallSite())))
@@ -95,7 +95,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
         const PointsTo& anderPts = ander->getPts(vtptr);
 
         PTACallGraph* callgraph = ander->getPTACallGraph();
-        const CallBlockNode* cbn = nIter->second;
+        const CallICFGNode* cbn = nIter->second;
 
         if(!callgraph->hasIndCSCallees(cbn))
         {
@@ -124,7 +124,7 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
         ++morePreciseCallsites;
         outs() << "============more precise callsite =================\n";
-        outs() << *(nIter->second)->getCallSite() << "\n";
+        outs() << SVFUtil::value2String((nIter->second)->getCallSite()) << "\n";
         outs() << getSourceLoc((nIter->second)->getCallSite()) << "\n";
         outs() << "\n";
         outs() << "------ander pts or vtable num---(" << anderPts.count()  << ")--\n";
@@ -152,11 +152,11 @@ void FunptrDDAClient::performStat(PointerAnalysis* pta)
 
 
 /// Only collect function pointers as query candidates.
-OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
+OrderedNodeSet& AliasDDAClient::collectCandidateQueries(SVFIR* pag)
 {
     setPAG(pag);
-    PAGEdge::PAGEdgeSetTy& loads = pag->getEdgeSet(PAGEdge::Load);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = loads.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = loads.begin(), eiter =
                 loads.end(); iter != eiter; ++iter)
     {
         PAGNode* loadsrc = (*iter)->getSrcNode();
@@ -164,16 +164,16 @@ OrderedNodeSet& AliasDDAClient::collectCandidateQueries(PAG* pag)
         addCandidate(loadsrc->getId());
     }
 
-    PAGEdge::PAGEdgeSetTy& stores = pag->getEdgeSet(PAGEdge::Store);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& stores = pag->getSVFStmtSet(SVFStmt::Store);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
         PAGNode* storedst = (*iter)->getDstNode();
         storeDstNodes.insert(storedst);
         addCandidate(storedst->getId());
     }
-    PAGEdge::PAGEdgeSetTy& geps = pag->getEdgeSet(PAGEdge::NormalGep);
-    for (PAGEdge::PAGEdgeSetTy::iterator iter = geps.begin(), eiter =
+    SVFStmt::SVFStmtSetTy& geps = pag->getSVFStmtSet(SVFStmt::Gep);
+    for (SVFStmt::SVFStmtSetTy::iterator iter = geps.begin(), eiter =
                 geps.end(); iter != eiter; ++iter)
     {
         PAGNode* gepsrc = (*iter)->getSrcNode();
@@ -197,8 +197,8 @@ void AliasDDAClient::performStat(PointerAnalysis* pta)
                 AliasResult result = pta->alias(node1->getId(),node2->getId());
 
                 outs() << "\n=================================================\n";
-                outs() << "Alias Query for (" << *node1->getValue() << ",";
-                outs() << *node2->getValue() << ") \n";
+                outs() << "Alias Query for (" << SVFUtil::value2String(node1->getValue()) << ",";
+                outs() << SVFUtil::value2String(node2->getValue()) << ") \n";
                 outs() << "[NodeID:" << node1->getId() <<  ", NodeID:" << node2->getId() << " " << result << "]\n";
                 outs() << "=================================================\n";
 

@@ -23,7 +23,7 @@ void FlowDDA::computeDDAPts(NodeID id)
     resetQuery();
     LocDPItem::setMaxBudget(Options::FlowBudget);
 
-    PAGNode* node = getPAG()->getPAGNode(id);
+    PAGNode* node = getPAG()->getGNode(id);
     LocDPItem dpm = getDPIm(node->getId(),getDefSVFGNode(node));
 
     /// start DDA analysis
@@ -59,7 +59,7 @@ void FlowDDA::handleOutOfBudgetDpm(const LocDPItem& dpm)
 bool FlowDDA::testIndCallReachability(LocDPItem&, const SVFFunction* callee, CallSiteID csId)
 {
 
-    const CallBlockNode* cbn = getSVFG()->getCallSite(csId);
+    const CallICFGNode* cbn = getSVFG()->getCallSite(csId);
 
     if(getPAG()->isIndirectCallSites(cbn))
     {
@@ -126,18 +126,17 @@ PointsTo FlowDDA::processGepPts(const GepSVFGNode* gep, const PointsTo& srcPts)
             tmpDstPts.set(ptd);
         else
         {
-            if (SVFUtil::isa<VariantGepPE>(gep->getPAGEdge()))
+            const GepStmt* gepStmt = SVFUtil::cast<GepStmt>(gep->getPAGEdge());
+            if (gepStmt->isVariantFieldGep())
             {
                 setObjFieldInsensitive(ptd);
-                tmpDstPts.set(getFIObjNode(ptd));
-            }
-            else if (const NormalGepPE* normalGep = SVFUtil::dyn_cast<NormalGepPE>(gep->getPAGEdge()))
-            {
-                NodeID fieldSrcPtdNode = getGepObjNode(ptd,	normalGep->getLocationSet());
-                tmpDstPts.set(fieldSrcPtdNode);
+                tmpDstPts.set(getFIObjVar(ptd));
             }
             else
-                assert(false && "new gep edge?");
+            {
+                NodeID fieldSrcPtdNode = getGepObjVar(ptd,	gepStmt->getLocationSet());
+                tmpDstPts.set(fieldSrcPtdNode);
+            }
         }
     }
     DBOUT(DDDA, outs() << "\t return created gep objs {");
@@ -159,7 +158,7 @@ bool FlowDDA::isHeapCondMemObj(const NodeID& var, const StoreSVFGNode*)
     assert(mem && "memory object is null??");
     if(mem->isHeap())
     {
-//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getRefVal())) {
+//        if(const Instruction* mallocSite = SVFUtil::dyn_cast<Instruction>(mem->getValue())) {
 //            const SVFFunction* fun = mallocSite->getParent()->getParent();
 //            const SVFFunction* curFun = store->getBB() ? store->getBB()->getParent() : nullptr;
 //            if(fun!=curFun)

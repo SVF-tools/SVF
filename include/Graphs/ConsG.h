@@ -52,7 +52,7 @@ public:
     typedef FIFOWorkList<NodeID> WorkList;
 
 protected:
-    PAG*pag;
+    SVFIR*pag;
     NodeToRepMap nodeToRepMap;
     NodeToSubsMap nodeToSubsMap;
     WorkList nodesToBeCollapsed;
@@ -67,9 +67,9 @@ protected:
 
     void destroy();
 
-    PAGEdge::PAGEdgeSetTy& getPAGEdgeSet(PAGEdge::PEDGEK kind)
+    SVFStmt::SVFStmtSetTy& getPAGEdgeSet(SVFStmt::PEDGEK kind)
     {
-        return pag->getPTAEdgeSet(kind);
+        return pag->getPTASVFStmtSet(kind);
     }
 
     /// Wappers used internally, not expose to Andernsen Pass
@@ -92,7 +92,7 @@ protected:
 
 public:
     /// Constructor
-    ConstraintGraph(PAG* p): pag(p), edgeIndex(0)
+    ConstraintGraph(SVFIR* p): pag(p), edgeIndex(0)
     {
         buildCG();
     }
@@ -172,7 +172,7 @@ public:
         }
     }
 
-    ///Add a PAG edge into Edge map
+    ///Add a SVFIR edge into Edge map
     //@{
     /// Add Address edge
     AddrCGEdge* addAddrCGEdge(NodeID src, NodeID dst);
@@ -187,7 +187,7 @@ public:
     StoreCGEdge* addStoreCGEdge(NodeID src, NodeID dst);
     //@}
 
-    ///Get PAG edge
+    ///Get SVFIR edge
     //@{
     /// Get Address edges
     inline ConstraintEdge::ConstraintEdgeSetTy& getAddrCGEdges()
@@ -291,14 +291,14 @@ public:
     inline bool isZeroOffsettedGepCGEdge(ConstraintEdge *edge) const
     {
         if (NormalGepCGEdge *normalGepCGEdge = SVFUtil::dyn_cast<NormalGepCGEdge>(edge))
-            if (0 == normalGepCGEdge->getLocationSet().getOffset())
+            if (0 == normalGepCGEdge->getConstantFieldIdx())
                 return true;
         return false;
     }
 
-    /// Wrappers for invoking PAG methods
+    /// Wrappers for invoking SVFIR methods
     //@{
-    inline const PAG::CallSiteToFunPtrMap& getIndirectCallsites() const
+    inline const SVFIR::CallSiteToFunPtrMap& getIndirectCallsites() const
     {
         return pag->getIndirectCallsites();
     }
@@ -310,13 +310,13 @@ public:
     {
         return pag->isBlkObjOrConstantObj(id);
     }
-    inline NodeBS& getAllFieldsObjNode(NodeID id)
+    inline NodeBS& getAllFieldsObjVars(NodeID id)
     {
-        return pag->getAllFieldsObjNode(id);
+        return pag->getAllFieldsObjVars(id);
     }
-    inline NodeID getBaseObjNode(NodeID id)
+    inline NodeID getBaseObjVar(NodeID id)
     {
-        return pag->getBaseObjNode(id);
+        return pag->getBaseObjVar(id);
     }
     inline bool isSingleFieldObj(NodeID id) const
     {
@@ -324,18 +324,18 @@ public:
         return (mem->getMaxFieldOffsetLimit() == 1);
     }
     /// Get a field of a memory object
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
     {
-        NodeID gep =  pag->getGepObjNode(id,ls);
+        NodeID gep =  pag->getGepObjVar(id,ls);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if(sccRepNode(gep)==gep && hasConstraintNode(gep)==false)
             addConstraintNode(new ConstraintNode(gep),gep);
         return gep;
     }
     /// Get a field-insensitive node of a memory object
-    inline NodeID getFIObjNode(NodeID id)
+    inline NodeID getFIObjVar(NodeID id)
     {
-        NodeID fi = pag->getFIObjNode(id);
+        NodeID fi = pag->getFIObjVar(id);
         /// Create a node when it is (1) not exist on graph and (2) not merged
         if (sccRepNode(fi) == fi && hasConstraintNode(fi)==false)
             addConstraintNode(new ConstraintNode(fi),fi);

@@ -65,16 +65,16 @@ void SaberSVFGBuilder::buildSVFG()
  */
 void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
 {
-    PAG* pag = svfg->getPAG();
+    SVFIR* pag = svfg->getPAG();
     NodeVector worklist;
-    for(PAG::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
+    for(SVFIR::iterator it = pag->begin(), eit = pag->end(); it!=eit; it++)
     {
         PAGNode* pagNode = it->second;
-        if(SVFUtil::isa<DummyValPN>(pagNode) || SVFUtil::isa<DummyObjPN>(pagNode))
+        if(SVFUtil::isa<DummyValVar>(pagNode) || SVFUtil::isa<DummyObjVar>(pagNode))
             continue;
 
-        if(GepObjPN* gepobj = SVFUtil::dyn_cast<GepObjPN>(pagNode)) {
-            if(SVFUtil::isa<DummyObjPN>(pag->getPAGNode(gepobj->getBaseNode())))
+        if(GepObjVar* gepobj = SVFUtil::dyn_cast<GepObjVar>(pagNode)) {
+            if(SVFUtil::isa<DummyObjVar>(pag->getGNode(gepobj->getBaseNode())))
                 continue;
         }
         if(const Value* val = pagNode->getValue())
@@ -100,9 +100,9 @@ void SaberSVFGBuilder::collectGlobals(BVDataPTAImpl* pta)
 
 PointsTo& SaberSVFGBuilder::CollectPtsChain(BVDataPTAImpl* pta,NodeID id, NodeToPTSSMap& cachedPtsMap)
 {
-    PAG* pag = svfg->getPAG();
+    SVFIR* pag = svfg->getPAG();
 
-    NodeID baseId = pag->getBaseObjNode(id);
+    NodeID baseId = pag->getBaseObjVar(id);
     NodeToPTSSMap::iterator it = cachedPtsMap.find(baseId);
     if(it!=cachedPtsMap.end())
         return it->second;
@@ -198,7 +198,7 @@ bool SaberSVFGBuilder::isStrongUpdate(const SVFGNode* node, NodeID& singleton, B
 
             // Strong update can be made if this points-to target is not heap, array or field-insensitive.
             if (!pta->isHeapMemObj(singleton) && !pta->isArrayMemObj(singleton)
-                && PAG::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
+                && SVFIR::getPAG()->getBaseObj(singleton)->isFieldInsensitive() == false
                 && !pta->isLocalVarInRecursiveFun(singleton))
             {
                 isSU = true;
@@ -251,8 +251,8 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
 /// Add actual parameter SVFGNode for 1st argument of a deallocation like external function
 void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
 {
-    PAG* pag = PAG::getPAG();
-    for(PAG::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
+    SVFIR* pag = SVFIR::getPAG();
+    for(SVFIR::CSToArgsListMap::iterator it = pag->getCallSiteArgsMap().begin(),
             eit = pag->getCallSiteArgsMap().end(); it!=eit; ++it)
     {
         PTACallGraph::FunctionSet callees;
@@ -265,8 +265,8 @@ void SaberSVFGBuilder::AddExtActualParmSVFGNodes(PTACallGraph* callgraph)
             if (SaberCheckerAPI::getCheckerAPI()->isMemDealloc(fun)
                     || SaberCheckerAPI::getCheckerAPI()->isFClose(fun))
             {
-                PAG::PAGNodeList& arglist = it->second;
-                for(PAG::PAGNodeList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
+                SVFIR::SVFVarList& arglist = it->second;
+                for(SVFIR::SVFVarList::const_iterator ait = arglist.begin(), aeit = arglist.end(); ait!=aeit; ++ait){
 					const PAGNode *pagNode = *ait;
 					if (pagNode->isPointer()) {
 						addActualParmVFGNode(pagNode, it->first);

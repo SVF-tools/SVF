@@ -127,7 +127,7 @@ void MemSSAStat::performStat()
 void MemSSAStat::printStat()
 {
 
-    std::cout << "\n****Memory SSA Statistics****\n";
+    SVFUtil::outs() << "\n****Memory SSA Statistics****\n";
     PTAStat::printStat();
 }
 
@@ -310,7 +310,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalInEdge += inEdges.size();
 
     // indirect in edge
-    Size_t indInEdges = 0;
+    u32_t indInEdges = 0;
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeIt = inEdges.begin();
     SVFGEdge::SVFGEdgeSetTy::const_iterator edgeEit = inEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)
@@ -350,7 +350,7 @@ void SVFGStat::calculateNodeDegrees(SVFGNode* node, NodeSet& nodeHasIndInEdge, N
     totalOutEdge += outEdges.size();
 
     // indirect out edge
-    Size_t indOutEdges = 0;
+    u32_t indOutEdges = 0;
     edgeIt = outEdges.begin();
     edgeEit = outEdges.end();
     for (; edgeIt != edgeEit; ++edgeIt)
@@ -491,7 +491,7 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
     PTNumStatMap["InsenRetEdge"] = insensitiveRetEdge;
 
 
-    std::cout << "\n****SVFG SCC Stat****\n";
+    SVFUtil::outs() << "\n****SVFG SCC Stat****\n";
     PTAStat::printStat();
 
     delete svfgSCC;
@@ -500,6 +500,6 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
 
 void SVFGStat::printStat()
 {
-    std::cout << "\n****SVFG Statistics****\n";
+    SVFUtil::outs() << "\n****SVFG Statistics****\n";
     PTAStat::printStat();
 }

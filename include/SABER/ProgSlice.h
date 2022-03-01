@@ -162,8 +162,8 @@ public:
 
     /// Get callsite ID and get returnsiteID from SVFGEdge
     //@{
-    const CallBlockNode* getCallSite(const SVFGEdge* edge) const;
-    const CallBlockNode* getRetSite(const SVFGEdge* edge) const;
+    const CallICFGNode* getCallSite(const SVFGEdge* edge) const;
+    const CallICFGNode* getRetSite(const SVFGEdge* edge) const;
     //@}
 
     /// Condition operations

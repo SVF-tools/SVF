@@ -1,5 +1,5 @@
 #include "llvm/Support/JSON.h"
-
+#include "MemoryModel/SVFIR.h"
 #include "SVF-FE/Graph2Json.h"
 
 #include <fstream>	// for ICFGBuilderFromFile
@@ -31,14 +31,14 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
         llvm::json::Object ICFGNode_Obj;
         ICFGNode_Obj["ICFG_ID"] = id;
         ICFGNode_Obj["Node Type"] = getICFGKind(node->getNodeKind());
-        if(IntraBlockNode* bNode = SVFUtil::dyn_cast<IntraBlockNode>(node))
+        if(IntraICFGNode* bNode = SVFUtil::dyn_cast<IntraICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(bNode->getInst());
-            PAG::PAGEdgeList&  edges = PAG::getPAG()->getInstPTAPAGEdgeList(bNode);
+            SVFIR::SVFStmtList&  edges = SVFIR::getPAG()->getPTASVFStmtList(bNode);
             llvm::json::Array PAGEdge_array;
 
             //dump pag edges
-            for (PAG::PAGEdgeList::iterator it = edges.begin(),
+            for (SVFIR::SVFStmtList::iterator it = edges.begin(),
                     eit = edges.end(); it != eit; ++it)
             {
                 const PAGEdge* edge = *it;
@@ -50,18 +50,18 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
                 edge_obj["Edge Type"] = getPAGEdgeKindValue(edge->getEdgeKind());
                 edge_obj["srcValueName"] = edge->getSrcNode()->getValueName();
                 edge_obj["dstValueName"] = edge->getDstNode()->getValueName();
-                if(edge->getEdgeKind()==PAGEdge::NormalGep)
+                if(edge->getEdgeKind()==SVFStmt::Gep)
                 {
-                    const NormalGepPE* gepEdge = SVFUtil::cast<NormalGepPE>(edge);
-                    edge_obj["offset"] = gepEdge->getOffset();
+                    const GepStmt* gepEdge = SVFUtil::cast<GepStmt>(edge);
+                    edge_obj["offset"] = gepEdge->getConstantFieldIdx();
                 }
                 llvm::json::Value edge_value = llvm::json::Object{edge_obj};
                 PAGEdge_array.push_back(edge_value);
             }
             llvm::json::Value PagEdge_value = llvm::json::Array{PAGEdge_array};
-            ICFGNode_Obj["PAG Edges"] = PagEdge_value;
+            ICFGNode_Obj["SVFIR Edges"] = PagEdge_value;
         }
-        else if(FunEntryBlockNode* entry = SVFUtil::dyn_cast<FunEntryBlockNode>(node))
+        else if(FunEntryICFGNode* entry = SVFUtil::dyn_cast<FunEntryICFGNode>(node))
         {
             if (isExtCall(entry->getFun()))
                 ICFGNode_Obj["isExtCall"] = true;
@@ -72,7 +72,7 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             }
             ICFGNode_Obj["Function Name"] = entry->getFun()->getName();
         }
-        else if (FunExitBlockNode* exit = SVFUtil::dyn_cast<FunExitBlockNode>(node))
+        else if (FunExitICFGNode* exit = SVFUtil::dyn_cast<FunExitICFGNode>(node))
         {
             if (isExtCall(exit->getFun()))
                 ICFGNode_Obj["isExtCall"] = true;
@@ -83,11 +83,11 @@ void ICFGPrinter::printICFGToJson(const std::string& filename)
             }
             ICFGNode_Obj["Function Name"] = exit->getFun()->getName();
         }
-        else if (CallBlockNode* call = SVFUtil::dyn_cast<CallBlockNode>(node))
+        else if (CallICFGNode* call = SVFUtil::dyn_cast<CallICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(call->getCallSite());
         }
-        else if (RetBlockNode* ret = SVFUtil::dyn_cast<RetBlockNode>(node))
+        else if (RetICFGNode* ret = SVFUtil::dyn_cast<RetICFGNode>(node))
         {
             ICFGNode_Obj["Source Location"] = getSourceLoc(ret->getCallSite());
         }
@@ -169,31 +169,31 @@ std::string ICFGPrinter::getPAGNodeKindValue(int kind)
 {
     switch (kind)
     {
-    case (PAGNode::ValNode):
+    case (SVFVar::ValNode):
         return "ValNode";
         break;
-    case PAGNode::ObjNode:
+    case SVFVar::ObjNode:
         return "ObjNode";
         break;
-    case PAGNode::RetNode:
+    case SVFVar::RetNode:
         return "RetNode";
         break;
-    case PAGNode::VarargNode:
+    case SVFVar::VarargNode:
         return "VarargNode";
         break;
-    case PAGNode::GepValNode:
+    case SVFVar::GepValNode:
         return "GepValNode";
         break;
-    case PAGNode::GepObjNode:
+    case SVFVar::GepObjNode:
         return "GepObjNode";
         break;
-    case PAGNode::FIObjNode:
+    case SVFVar::FIObjNode:
         return "FIObjNode";
         break;
-    case PAGNode::DummyValNode:
+    case SVFVar::DummyValNode:
         return "DummyValNode";
         break;
-    case PAGNode::DummyObjNode:
+    case SVFVar::DummyObjNode:
         return "DummyObjNode";
         break;
     }
@@ -204,43 +204,40 @@ std::string ICFGPrinter::getPAGEdgeKindValue(int kind)
 {
     switch(kind)
     {
-    case (PAGEdge::Addr):
+    case (SVFStmt::Addr):
         return "Addr";
         break;
-    case (PAGEdge::Copy):
+    case (SVFStmt::Copy):
         return "Copy";
         break;
-    case (PAGEdge::Store):
+    case (SVFStmt::Store):
         return "Store";
         break;
-    case (PAGEdge::Load):
+    case (SVFStmt::Load):
         return "Load";
         break;
-    case (PAGEdge::Call):
+    case (SVFStmt::Call):
         return "Call";
         break;
-    case (PAGEdge::Ret):
+    case (SVFStmt::Ret):
         return "Ret";
         break;
-    case (PAGEdge::NormalGep):
+    case (SVFStmt::Gep):
         return "NormalGep";
         break;
-    case (PAGEdge::VariantGep):
-        return "VariantGep";
-        break;
-    case (PAGEdge::ThreadFork):
+    case (SVFStmt::ThreadFork):
         return "ThreadFork";
         break;
-    case (PAGEdge::ThreadJoin):
+    case (SVFStmt::ThreadJoin):
         return "ThreadJoin";
         break;
-    case (PAGEdge::Cmp):
+    case (SVFStmt::Cmp):
         return "Cmp";
         break;
-    case (PAGEdge::BinaryOp):
+    case (SVFStmt::BinaryOp):
         return "BinaryOp";
         break;
-    case (PAGEdge::UnaryOp):
+    case (SVFStmt::UnaryOp):
         return "UnaryOp";
         break;
     }

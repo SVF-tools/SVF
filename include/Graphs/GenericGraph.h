@@ -50,7 +50,7 @@ public:
     ///	(1) 0-7 bits encode an edge kind (allow maximum 16 kinds)
     /// (2) 8-63 bits encode a callsite instruction
     typedef u64_t GEdgeFlag;
-    typedef s32_t GEdgeKind;
+    typedef s64_t GEdgeKind;
 private:
     NodeTy* src;		///< source node
     NodeTy* dst;		///< destination node
@@ -108,7 +108,7 @@ public:
         }
     } equalGEdge;
 
-    inline bool operator==(const GenericEdge<NodeType>* rhs) const
+    virtual inline bool operator==(const GenericEdge<NodeType>* rhs) const
     {
         return (rhs->edgeFlag == this->edgeFlag && rhs->getSrcID() == this->getSrcID()
                 && rhs->getDstID() == this->getDstID());
@@ -132,7 +132,7 @@ public:
     typedef NodeTy NodeType;
     typedef EdgeTy EdgeType;
     /// Edge kind
-    typedef s32_t GNodeK;
+    typedef s64_t GNodeK;
     typedef OrderedSet<EdgeType*, typename EdgeType::equalGEdge> GEdgeSetTy;
     /// Edge iterator
     ///@{
@@ -157,7 +157,8 @@ public:
     /// Destructor
     virtual ~GenericNode()
     {
-
+      for (auto * edge : OutEdges)
+        delete edge;
     }
 
     /// Get ID
@@ -283,13 +284,13 @@ public:
 
     /// Remove incoming and outgoing edges
     ///@{
-    inline Size_t removeIncomingEdge(EdgeType* edge)
+    inline u32_t removeIncomingEdge(EdgeType* edge)
     {
         iterator it = InEdges.find(edge);
         assert(it != InEdges.end() && "can not find in edge in SVFG node");
         return InEdges.erase(edge);
     }
-    inline Size_t removeOutgoingEdge(EdgeType* edge)
+    inline u32_t removeOutgoingEdge(EdgeType* edge)
     {
         iterator it = OutEdges.find(edge);
         assert(it != OutEdges.end() && "can not find out edge in SVFG node");
@@ -352,13 +353,8 @@ public:
     /// Release memory
     void destroy()
     {
-        for (iterator I = IDToNodeMap.begin(), E = IDToNodeMap.end(); I != E; ++I){
-            // NodeType* node = I->second;
-            // for(typename NodeType::iterator it = node->InEdgeBegin(), eit = node->InEdgeEnd(); it!=eit; ++it)
-            //         delete *it;
-        }
-        for (iterator I = IDToNodeMap.begin(), E = IDToNodeMap.end(); I != E; ++I)
-            delete I->second;
+        for (auto &entry : IDToNodeMap)
+          delete entry.second;
     }
     /// Iterators
     //@{
@@ -411,6 +407,7 @@ public:
         iterator it = IDToNodeMap.find(node->getId());
         assert(it != IDToNodeMap.end() && "can not find the node");
         IDToNodeMap.erase(it);
+        delete node;
     }
 
     /// Get total number of node/edge

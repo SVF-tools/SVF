@@ -30,7 +30,7 @@ public:
     typedef BVDataPTAImpl::CallEdgeMap	CallEdgeMap;
     typedef BVDataPTAImpl::FunctionSet	FunctionSet;
     /// Constructor
-    FlowDDA(PAG* _pag, DDAClient* client): BVDataPTAImpl(_pag, PointerAnalysis::FlowS_DDA),
+    FlowDDA(SVFIR* _pag, DDAClient* client): BVDataPTAImpl(_pag, PointerAnalysis::FlowS_DDA),
         DDAVFSolver<NodeID,PointsTo,LocDPItem>(),
         _client(client)
     {
@@ -93,7 +93,7 @@ public:
         NodeID srcID = addr->getPAGSrcNodeID();
         /// whether this object is set field-insensitive during pre-analysis
         if (isFieldInsensitive(srcID))
-            srcID = getFIObjNode(srcID);
+            srcID = getFIObjVar(srcID);
 
         addDDAPts(pts,srcID);
         DBOUT(DDDA, SVFUtil::outs() << "\t add points-to target " << srcID << " to dpm ");
@@ -104,13 +104,13 @@ public:
 
     /// Update call graph.
     //@{
-    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallBlockNode* cs,SVFGEdgeSet& svfgEdges) override
+    virtual void updateCallGraphAndSVFG(const LocDPItem& dpm,const CallICFGNode* cs,SVFGEdgeSet& svfgEdges) override
     {
         CallEdgeMap newEdges;
         resolveIndCalls(cs, getCachedPointsTo(dpm), newEdges);
         for (CallEdgeMap::const_iterator iter = newEdges.begin(),eiter = newEdges.end(); iter != eiter; iter++)
         {
-            const CallBlockNode* newcs = iter->first;
+            const CallICFGNode* newcs = iter->first;
             const FunctionSet & functions = iter->second;
             for (FunctionSet::const_iterator func_iter = functions.begin(); func_iter != functions.end(); func_iter++)
             {

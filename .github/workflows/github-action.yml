@@ -7,6 +7,7 @@ on: [push, pull_request]
 env:
   SVF_CTIR: 1 
   SVF_Z3: 1
+  SVF_DIR: $GITHUB_WORKSPACE
 
 jobs:
   build:
@@ -34,31 +35,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz
       - name: env-setup
+        if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
           echo $RUNNER_OS
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
-            git config --global user.email ${{secrets.npm_email}}
-            git config --global user.name "GitHub Actions Build"
-          fi
+          git config --global user.email ${{secrets.npm_email}}
+          git config --global user.name "GitHub Actions Build"
       
       # build-svf
       - name: build-svf
         run: |
           cd $GITHUB_WORKSPACE
           echo $(pwd)
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
-            git stash --all 
-            npm_version=`npm v svf-tools version`  
-            if [ "$RUNNER_OS" = "Linux" ]; then
-              sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
-              git add . 
-              if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
-              npm version patch
-            fi 
-          fi
           git clone "https://github.com/SVF-tools/Test-Suite.git";
-          ${{github.workspace}}/build.sh
-
+          source ${{github.workspace}}/build.sh
       # run ctest
       - name: ctest points-to
         working-directory: ${{github.workspace}}/Release-build
@@ -77,8 +66,12 @@ jobs:
 
       # update doxygen
       - name: update-doxygen
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then 
             cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
             cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
@@ -86,37 +79,53 @@ jobs:
             git add .       
             if [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       
-          fi
+          
       
       # update-svf-lib
       - name: update-svf-lib
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            github.ref == 'refs/heads/master'
         run: |
-          if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ]; then 
             cd $GITHUB_WORKSPACE        
             cd ..     
             git clone https://github.com/SVF-tools/SVF-npm.git
-            if [ "$RUNNER_OS" = "Linux" ]; then export osVersion="linux"; fi
-            if [ "$RUNNER_OS" = "macOS" ]; then export osVersion="osx"; fi
+            if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux"; fi
+            if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
             echo $osVersion  
-            cp -rf $GITHUB_WORKSPACE/include ./SVF-npm/SVF-${osVersion}/       
-            cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-npm/SVF-${osVersion}/Release-build/lib        
-            cp $GITHUB_WORKSPACE/Release-build/lib/CUDD/libCudd.a ./SVF-npm/SVF-${osVersion}/Release-build/lib/CUDD       
-            cd SVF-npm
+            cd ./SVF-npm
+            git fetch origin
+            git rebase origin/master
+            cp -rf $GITHUB_WORKSPACE/include ./SVF-${osVersion}/       
+            cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-${osVersion}/Release-build/lib        
+            cp $GITHUB_WORKSPACE/Release-build/lib/CUDD/libCudd.a ./SVF-${osVersion}/Release-build/lib/CUDD       
             git add .      
             if [ -n "$(git status -s)" ]; then git commit -m'update svflib' ; fi
             npm version patch     
             git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master
             cd $GITHUB_WORKSPACE      
-          fi
-
+          
       # publish svf
       - uses: actions/setup-node@v2
         with:
           node-version: 12
           registry-url: https://registry.npmjs.org/
       - name: publish-svf
-        run: if [ "${{github.event_name}}" = "push" ] && [ "${{github.ref == 'refs/heads/master' }}" ] && [ "$RUNNER_OS" = "Linux" ]; then npm publish; fi
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'     
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          git stash --all 
+          npm_version=`npm v svf-tools version`  
+          sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
+          git add . 
+          if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
+          npm version patch
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-
-  

@@ -90,7 +90,7 @@ private:
     {
         if(F)
         {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName().str());
+            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
             if(it != tdAPIMap.end())
                 return it->second;
         }
@@ -106,6 +106,15 @@ public:
             tdAPI = new ThreadAPI();
         }
         return tdAPI;
+    }
+
+    static void destroy()
+    {
+        if(tdAPI != nullptr)
+        {
+            delete tdAPI;
+            tdAPI = nullptr;
+        }
     }
 
     /// Return the callee/callsite/func

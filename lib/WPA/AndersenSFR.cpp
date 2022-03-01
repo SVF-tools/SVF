@@ -96,7 +96,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             for (NodeID ptd : srcInits)
                 sortSrcInits.insert(ptd);
 
-            Size_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getOffset();
+            s64_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
             fieldExpand(sortSrcInits, offset, dst->strides, tmpDstPts);
         }
 
@@ -116,7 +116,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 /*!
  *
  */
-void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts)
+void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, PointsTo& expandPts)
 {
     numOfFieldExpand++;
 
@@ -129,18 +129,18 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             expandPts.set(init);
         else
         {
-            PAGNode* initPN = pag->getPAGNode(init);
+            PAGNode* initPN = pag->getGNode(init);
             const MemObj* obj = pag->getBaseObj(init);
-            const Size_t maxLimit = obj->getMaxFieldOffsetLimit();
-            Size_t initOffset;
-            if (GepObjPN *gepNode = SVFUtil::dyn_cast<GepObjPN>(initPN))
-                initOffset = gepNode->getLocationSet().getOffset();
-            else if (SVFUtil::isa<FIObjPN>(initPN) || SVFUtil::isa<DummyObjPN>(initPN))
+            const u32_t maxLimit = obj->getMaxFieldOffsetLimit();
+            s64_t initOffset;
+            if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
+                initOffset = gepNode->getConstantFieldIdx();
+            else if (SVFUtil::isa<FIObjVar>(initPN) || SVFUtil::isa<DummyObjVar>(initPN))
                 initOffset = 0;
             else
                 assert(false && "Not an object node!!");
 
-            Set<Size_t> offsets;
+            Set<s64_t> offsets;
             offsets.insert(offset);
 
             // calculate offsets
@@ -151,7 +151,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
                 for (auto _f : offsets)
                     for (auto _s : strides)
                     {
-                        Size_t _f1 = _f + _s;
+                        s64_t _f1 = _f + _s;
                         loopFlag = (offsets.find(_f1) == offsets.end()) && (initOffset + _f1 < maxLimit);
                         if (loopFlag)
                             offsets.insert(_f1);
@@ -159,9 +159,9 @@ void AndersenSFR::fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides,
             }
 
             // get gep objs
-            for (Size_t _f : offsets)
+            for (s64_t _f : offsets)
             {
-                NodeID gepId = consCG->getGepObjNode(init, LocationSet(_f));
+                NodeID gepId = consCG->getGepObjVar(init, LocationSet(_f));
                 initials.erase(gepId);  // gep id in initials should be removed to avoid redundant derivation
                 expandPts.set(gepId);
             }

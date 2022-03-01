@@ -8,7 +8,7 @@
 #ifndef IRANNOTATOR_H_
 #define IRANNOTATOR_H_
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "Util/SVFUtil.h"
 #include "llvm/IR/Metadata.h"
@@ -28,7 +28,7 @@ public:
     {}
     ~IRAnnotator() {}
 
-    void processAndersenResults(PAG *pag, BVDataPTAImpl *ptsTo, bool writeFlag)
+    void processAndersenResults(SVFIR *pag, BVDataPTAImpl *ptsTo, bool writeFlag)
     {
         this->ptsTo = ptsTo;
         mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
@@ -36,13 +36,13 @@ public:
         // Add a named metadata node used to check whether or not 
         // this IR has been annotated with Andersen information
         if (writeFlag)
-            mainModule->getOrInsertNamedMetadata("PAG-Annotated");
+            mainModule->getOrInsertNamedMetadata("SVFIR-Annotated");
 
         for (auto it = pag->begin(); it != pag->end(); ++it)
         {
             auto nodeId = it->first;
             auto pagNode = it->second;
-            auto gepNode = SVFUtil::dyn_cast<GepObjPN>(pagNode);
+            auto gepNode = SVFUtil::dyn_cast<GepObjVar>(pagNode);
 
             if (gepNode && writeFlag)
             {
@@ -59,12 +59,12 @@ public:
     }
 
 private:
-    // Write the PAGgepNode to the IR such that metadata name is the PAG node id and the operands
+    // Write the PAGgepNode to the IR such that metadata name is the SVFIR node id and the operands
     // are its base node's id and location offset
-    void writePAGgepNode(SVF::NodeID nodeId, GepObjPN* gepNode)
+    void writePAGgepNode(SVF::NodeID nodeId, GepObjVar* gepNode)
     {
         auto baseNodeId = gepNode->getBaseNode();
-        auto locationSetOffset = gepNode->getLocationSet().getOffset();
+        auto locationSetOffset = gepNode->getConstantFieldIdx();
 
         LLVMContext &context = mainModule->getContext();
         llvm::SmallVector<llvm::Metadata *, 32> operands;
@@ -77,15 +77,15 @@ private:
         mainModule->getOrInsertNamedMetadata(label)->addOperand(metadata);
     }
 
-    // Reads the PAGGepNodes in the annotated IR and creates a new PAG Node based on the
+    // Reads the PAGGepNodes in the annotated IR and creates a new SVFIR Node based on the
     // data contained in the operands of the metadata node
-    void readPAGgepNodes(PAG *pag)
+    void readPAGgepNodes(SVFIR *pag)
     {
         for (auto it = mainModule->named_metadata_begin(); it != mainModule->named_metadata_end(); ++it)
         {
             std::string label = it->getName().str();
             std::string toErase = "gepnode-";
-            SVF::Size_t pos = label.find(toErase);
+            SVF::s64_t pos = label.find(toErase);
             if (pos == std::string::npos)
             {
                 continue;
@@ -96,10 +96,10 @@ private:
             auto mdNode = it->getOperand(0);
 
             SVF::NodeID baseNodeId = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(0))->getString().str());
-            SVF::Size_t locationSetOffset = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(1))->getString().str());
+            SVF::s64_t locationSetOffset = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(1))->getString().str());
 
             LocationSet locationSet = LocationSet(locationSetOffset);
-            SVF::NodeID gepnodeId = pag->getGepObjNode(baseNodeId, locationSet);
+            SVF::NodeID gepnodeId = pag->getGepObjVar(baseNodeId, locationSet);
 
             assert(nodeId == gepnodeId && "nodeId != gepnodeId");
         }
@@ -138,8 +138,8 @@ private:
         }
         else
         {
-            std::cout << "Value is NOT a Instruction, Argument, Function, GlobalVariable, BasicBlock, Constant or InlineAsm" << std::endl;
-            SVFUtil::outs() << *value << "\n";
+            SVFUtil::outs() << "Value is NOT a Instruction, Argument, Function, GlobalVariable, BasicBlock, Constant or InlineAsm" << std::endl;
+            SVFUtil::outs() << SVFUtil::value2String(value) << "\n";
         }
     }
 

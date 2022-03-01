@@ -33,15 +33,14 @@
 #include "Graphs/GenericGraph.h"
 #include "Graphs/VFGEdge.h"
 #include "Graphs/ICFGNode.h"
-#include "Graphs/PAGNode.h"
-#include "Graphs/PAGEdge.h"
+#include "MemoryModel/SVFIR.h"
 
 namespace SVF
 {
 
 /*!
  * Interprocedural control-flow graph node, representing different kinds of program statements
- * including top-level pointers (ValPN) and address-taken objects (ObjPN)
+ * including top-level pointers (ValVar) and address-taken objects (ObjVar)
  */
 typedef GenericNode<VFGNode,VFGEdge> GenericVFGNodeTy;
 class VFGNode : public GenericVFGNodeTy
@@ -52,7 +51,7 @@ public:
     /// Gep represents offset edge for field sensitivity
     enum VFGNodeK
     {
-        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, TPhi, TIntraPhi, TInterPhi,
+        Addr, Copy, Gep, Store, Load, Cmp, BinaryOp, UnaryOp, Branch, TPhi, TIntraPhi, TInterPhi,
         MPhi, MIntraPhi, MInterPhi, FRet, ARet, AParm, FParm,
         FunRet, APIN, APOUT, FPIN, FPOUT, NPtr, DummyVProp
     };
@@ -95,7 +94,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const VFGNode &node)
+    friend OutStream& operator<< (OutStream &o, const VFGNode &node)
     {
         o << node.toString();
         return o;
@@ -203,7 +202,7 @@ private:
 
 public:
     /// Constructor
-    LoadVFGNode(NodeID id, const LoadPE* edge): StmtVFGNode(id, edge,Load)
+    LoadVFGNode(NodeID id, const LoadStmt* edge): StmtVFGNode(id, edge,Load)
     {
 
     }
@@ -242,7 +241,7 @@ private:
 
 public:
     /// Constructor
-    StoreVFGNode(NodeID id,const StorePE* edge): StmtVFGNode(id,edge,Store)
+    StoreVFGNode(NodeID id,const StoreStmt* edge): StmtVFGNode(id,edge,Store)
     {
 
     }
@@ -281,7 +280,7 @@ private:
 
 public:
     /// Constructor
-    CopyVFGNode(NodeID id,const CopyPE* copy): StmtVFGNode(id,copy,Copy)
+    CopyVFGNode(NodeID id,const CopyStmt* copy): StmtVFGNode(id,copy,Copy)
     {
 
     }
@@ -331,7 +330,7 @@ public:
     CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
     {
         const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
-        assert(cmp && "not a binary operator?");
+        assert(cmp && "not a compare operator?");
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -474,10 +473,7 @@ public:
     /// Constructor
 	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
 		const Value *val = r->getValue();
-		bool unop = (SVFUtil::isa<UnaryOperator>(val)
-				|| SVFUtil::isa<BranchInst>(val)
-				|| SVFUtil::isa<SwitchInst>(val));
-		assert(unop && "not a unary operator or a BranchInst or a SwitchInst?");
+		assert(SVFUtil::isa<UnaryOperator>(val) && "not a unary instruction ?");
 	}
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -510,6 +506,11 @@ public:
     {
         return res;
     }
+    inline const PAGNode* getOpVar() const
+    {
+        assert(getOpVerNum()==1 && "UnaryNode can only have one operand!");
+        return getOpVer(0);
+    }
     inline u32_t getOpVerNum() const
     {
         return opVers.size();
@@ -527,6 +528,57 @@ public:
     virtual const std::string toString() const;
 };
 
+/*
+* Branch VFGNode including if/else and switch statements
+*/
+class BranchVFGNode: public VFGNode
+{
+private:
+    BranchVFGNode();                      ///< place holder
+    BranchVFGNode(const BranchVFGNode &);  ///< place holder
+    void operator=(const BranchVFGNode &); ///< place holder
+    const BranchStmt* brstmt;
+public:
+    /// Constructor
+	BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) {
+		const Value *val = r->getValue();
+		assert((SVFUtil::isa<BranchInst>(val) || SVFUtil::isa<SwitchInst>(val)) && "not a BranchInst or a SwitchInst?");
+	}
+    /// Methods for support type inquiry through isa, cast, and dyn_cast:
+    //@{
+    static inline bool classof(const BranchVFGNode *)
+    {
+        return true;
+    }
+    static inline bool classof(const VFGNode *node)
+    {
+        return node->getNodeKind() == Branch;
+    }
+    static inline bool classof(const GenericVFGNodeTy *node)
+    {
+        return node->getNodeKind() == Branch;
+    }
+    //@}
+
+    /// Return the branch statement 
+    const BranchStmt* getBranchStmt() const{
+        return brstmt;
+    }
+    /// Successors of this branch statement
+    ///@{
+    u32_t getNumSuccessors() const{
+        return brstmt->getNumSuccessors();
+    }
+    const BranchStmt::SuccAndCondPairVec& getSuccessors() const{
+        return brstmt->getSuccessors();
+    }
+    const ICFGNode* getSuccessor (u32_t i) const{
+        return brstmt->getSuccessor(i);
+    }
+    ///@}
+    virtual const std::string toString() const override;
+};
+
 /*!
  * VFGNode for Gep
  */
@@ -539,7 +591,7 @@ private:
 
 public:
     /// Constructor
-    GepVFGNode(NodeID id,const GepPE* edge): StmtVFGNode(id,edge,Gep)
+    GepVFGNode(NodeID id,const GepStmt* edge): StmtVFGNode(id,edge,Gep)
     {
 
     }
@@ -701,7 +753,7 @@ private:
 
 public:
     /// Constructor
-    AddrVFGNode(NodeID id, const AddrPE* edge): StmtVFGNode(id, edge,Addr)
+    AddrVFGNode(NodeID id, const AddrStmt* edge): StmtVFGNode(id, edge,Addr)
     {
 
     }
@@ -779,16 +831,16 @@ public:
 class ActualParmVFGNode : public ArgumentVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
 public:
     /// Constructor
-    ActualParmVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+    ActualParmVFGNode(NodeID id, const PAGNode* n, const CallICFGNode* c) :
         ArgumentVFGNode(id, n, AParm), cs(c)
     {
     }
 
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -896,7 +948,7 @@ public:
 class ActualRetVFGNode: public ArgumentVFGNode
 {
 private:
-    const CallBlockNode* cs;
+    const CallICFGNode* cs;
 
     ActualRetVFGNode();                      ///< place holder
     ActualRetVFGNode(const ActualRetVFGNode &);  ///< place holder
@@ -904,12 +956,12 @@ private:
 
 public:
     /// Constructor
-    ActualRetVFGNode(NodeID id, const PAGNode* n, const CallBlockNode* c) :
+    ActualRetVFGNode(NodeID id, const PAGNode* n, const CallICFGNode* c) :
         ArgumentVFGNode(id, n, ARet), cs(c)
     {
     }
     /// Return callsite
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         return cs;
     }
@@ -1038,7 +1090,7 @@ public:
         return fun;
     }
 
-    inline const CallBlockNode* getCallSite() const
+    inline const CallICFGNode* getCallSite() const
     {
         assert(isActualRetPHI() && "expect a actual return phi");
         return callInst;
@@ -1068,7 +1120,7 @@ public:
 
 private:
     const SVFFunction* fun;
-    const CallBlockNode* callInst;
+    const CallICFGNode* callInst;
 };
 
 

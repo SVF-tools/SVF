@@ -40,7 +40,7 @@ class TypeAnalysis:  public AndersenBase
 
 public:
     /// Constructor
-    TypeAnalysis(PAG* pag)
+    TypeAnalysis(SVFIR* pag)
         :  AndersenBase(pag, TypeCPP_WPA)
     {
     }

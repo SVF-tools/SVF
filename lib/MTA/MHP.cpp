@@ -244,7 +244,7 @@ void MHP::handleFork(const CxtThreadStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
-    CallBlockNode* cbn = getCBN(call);
+    CallICFGNode* cbn = getCBN(call);
     if(tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
     	
@@ -294,7 +294,7 @@ void MHP::handleJoin(const CxtThreadStmt& cts, NodeID rootTid)
         else
         {
             rmInterleavingThread(cts,joinedTids,call);
-            DBOUT(DMTA,outs() << "\n\t match join site " << *call <<  " for thread " << rootTid << "\n");
+            DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  " for thread " << rootTid << "\n");
         }
     }
     /// for the join site in a loop loop which does not join the current thread
@@ -324,7 +324,7 @@ void MHP::handleCall(const CxtThreadStmt& cts, NodeID rootTid)
 
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = getCBN(call);
+	CallICFGNode* cbn = getCBN(call);
     if(tct->getThreadCallGraph()->hasCallGraphEdge(cbn))
     {
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = tcg->getCallEdgeBegin(cbn),
@@ -689,7 +689,7 @@ void MHP::printInterleaving()
 {
     for(ThreadStmtToThreadInterleav::const_iterator it = threadStmtToTheadInterLeav.begin(), eit = threadStmtToTheadInterLeav.end(); it!=eit; ++it)
     {
-        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << *(it->first.getStmt()) << " ) ==> [";
+        outs() << "( t" << it->first.getTid() << " , $" << SVFUtil::getSourceLoc(it->first.getStmt()) << "$" << SVFUtil::value2String(it->first.getStmt()) << " ) ==> [";
         for (NodeBS::iterator ii = it->second.begin(), ie = it->second.end();
                 ii != ie; ii++)
         {
@@ -830,7 +830,7 @@ void ForkJoinAnalysis::handleFork(const CxtStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDFork(call));
-	CallBlockNode* cbn = getCBN(call);
+	CallICFGNode* cbn = getCBN(call);
     if(getTCG()->hasThreadForkEdge(cbn))
     {
         for (ThreadCallGraph::ForkEdgeSet::const_iterator cgIt = getTCG()->getForkEdgeBegin(cbn),
@@ -856,7 +856,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
     const CallStrCxt& curCxt = cts.getContext();
 
     assert(isTDJoin(call));
-	CallBlockNode* cbn = getCBN(call);
+	CallICFGNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
     {
         const Instruction* forkSite = tct->getTCTNode(rootTid)->getCxtThread().getThread();
@@ -886,7 +886,7 @@ void ForkJoinAnalysis::handleJoin(const CxtStmt& cts, NodeID rootTid)
             {
                 markCxtStmtFlag(cts,TDDead);
                 addDirectlyJoinTID(cts,rootTid);
-                DBOUT(DMTA,outs() << "\n\t match join site " << *call <<  "for thread " << rootTid << "\n");
+                DBOUT(DMTA,outs() << "\n\t match join site " << SVFUtil::value2String(call) <<  "for thread " << rootTid << "\n");
             }
         }
         /// for the join site in a loop loop which does not join the current thread
@@ -915,7 +915,7 @@ void ForkJoinAnalysis::handleCall(const CxtStmt& cts, NodeID rootTid)
 
     const CallInst* call = SVFUtil::cast<CallInst>(cts.getStmt());
     const CallStrCxt& curCxt = cts.getContext();
-	CallBlockNode* cbn = getCBN(call);
+	CallICFGNode* cbn = getCBN(call);
     if(getTCG()->hasCallGraphEdge(cbn))
     {
         for (PTACallGraph::CallGraphEdgeSet::const_iterator cgIt = getTCG()->getCallEdgeBegin(cbn),
@@ -1045,7 +1045,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     {
         if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
         {
-            Size_t idx = ci->getSExtValue();
+            s64_t idx = ci->getSExtValue();
             ptr1vec.push_back(idx);
         }
         else
@@ -1058,7 +1058,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     {
         if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
         {
-            Size_t idx = ci->getSExtValue();
+            s64_t idx = ci->getSExtValue();
             ptr2vec.push_back(idx);
         }
         else

@@ -33,14 +33,13 @@
 #include "MemoryModel/PointerAnalysisImpl.h"
 #include "WPA/WPAStat.h"
 #include "WPA/WPASolver.h"
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "Graphs/ConsG.h"
 #include "Graphs/OfflineConsG.h"
 
 namespace SVF
 {
 
-class PTAType;
 class SVFModule;
 
 /*!
@@ -53,19 +52,14 @@ class AndersenBase:  public WPAConstraintSolver, public BVDataPTAImpl
 public:
 
     /// Constructor
-	AndersenBase(PAG* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
+    AndersenBase(SVFIR* _pag, PTATY type = Andersen_BASE, bool alias_check = true)
         :  BVDataPTAImpl(_pag, type, alias_check), consCG(nullptr)
     {
         iterationForPrintStat = OnTheFlyIterBudgetForStat;
     }
 
     /// Destructor
-    virtual ~AndersenBase()
-    {
-        if (consCG != nullptr)
-            delete consCG;
-        consCG = nullptr;
-    }
+    ~AndersenBase() override;
 
     /// Andersen analysis
     virtual void analyze() override;
@@ -125,20 +119,20 @@ public:
 
     /// Statistics
     //@{
-    static Size_t numOfProcessedAddr;   /// Number of processed Addr edge
-    static Size_t numOfProcessedCopy;   /// Number of processed Copy edge
-    static Size_t numOfProcessedGep;    /// Number of processed Gep edge
-    static Size_t numOfProcessedLoad;   /// Number of processed Load edge
-    static Size_t numOfProcessedStore;  /// Number of processed Store edge
-    static Size_t numOfSfrs;
-    static Size_t numOfFieldExpand;
+    static u32_t numOfProcessedAddr;   /// Number of processed Addr edge
+    static u32_t numOfProcessedCopy;   /// Number of processed Copy edge
+    static u32_t numOfProcessedGep;    /// Number of processed Gep edge
+    static u32_t numOfProcessedLoad;   /// Number of processed Load edge
+    static u32_t numOfProcessedStore;  /// Number of processed Store edge
+    static u32_t numOfSfrs;
+    static u32_t numOfFieldExpand;
 
-    static Size_t numOfSCCDetection;
+    static u32_t numOfSCCDetection;
     static double timeOfSCCDetection;
     static double timeOfSCCMerges;
     static double timeOfCollapse;
-    static Size_t AveragePointsToSetSize;
-    static Size_t MaxPointsToSetSize;
+    static u32_t AveragePointsToSetSize;
+    static u32_t MaxPointsToSetSize;
     static double timeOfProcessCopyGep;
     static double timeOfProcessLoadStore;
     static double timeOfUpdateCallGraph;
@@ -161,7 +155,7 @@ public:
     typedef OrderedMap<CallSite, NodeID> CallSite2DummyValPN;
 
     /// Constructor
-    Andersen(PAG* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
+    Andersen(SVFIR* _pag, PTATY type = Andersen_WPA, bool alias_check = true)
         :  AndersenBase(_pag, type, alias_check), pwcOpt(false), diffOpt(true)
     {
     }
@@ -389,7 +383,7 @@ protected:
 
             for (NodeID o : fldInsenObjs)
             {
-                const NodeBS &allFields = consCG->getAllFieldsObjNode(o);
+                const NodeBS &allFields = consCG->getAllFieldsObjVars(o);
                 for (NodeID f : allFields) addPts(it->first, f);
             }
         }
@@ -430,10 +424,10 @@ private:
     static AndersenWaveDiff* diffWave; // static instance
 
 public:
-    AndersenWaveDiff(PAG* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
+    AndersenWaveDiff(SVFIR* _pag, PTATY type = AndersenWaveDiff_WPA, bool alias_check = true): Andersen(_pag, type, alias_check) {}
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiff* createAndersenWaveDiff(PAG* _pag)
+    static AndersenWaveDiff* createAndersenWaveDiff(SVFIR* _pag)
     {
         if(diffWave==nullptr)
         {
@@ -469,94 +463,6 @@ protected:
 };
 
 
-
-/**
- * Wave propagation with diff points-to set with type filter.
- */
-class AndersenWaveDiffWithType : public AndersenWaveDiff
-{
-
-private:
-
-    typedef Map<NodeID, Set<const GepCGEdge*>> TypeMismatchedObjToEdgeTy;
-
-    TypeMismatchedObjToEdgeTy typeMismatchedObjToEdges;
-
-    void recordTypeMismatchedGep(NodeID obj, const GepCGEdge* gepEdge)
-    {
-        TypeMismatchedObjToEdgeTy::iterator it = typeMismatchedObjToEdges.find(obj);
-        if (it != typeMismatchedObjToEdges.end())
-        {
-            Set<const GepCGEdge*> &edges = it->second;
-            edges.insert(gepEdge);
-        }
-        else
-        {
-            Set<const GepCGEdge*> edges;
-            edges.insert(gepEdge);
-            typeMismatchedObjToEdges[obj] = edges;
-        }
-    }
-
-    static AndersenWaveDiffWithType* diffWaveWithType; // static instance
-
-    /// Handle diff points-to set.
-    //@{
-    virtual inline void computeDiffPts(NodeID id)
-    {
-        NodeID rep = sccRepNode(id);
-        getDiffPTDataTy()->computeDiffPts(rep, getDiffPTDataTy()->getPts(rep));
-    }
-    virtual inline const PointsTo& getDiffPts(NodeID id)
-    {
-        NodeID rep = sccRepNode(id);
-        return getDiffPTDataTy()->getDiffPts(rep);
-    }
-    //@}
-
-public:
-    AndersenWaveDiffWithType(PAG* _pag, PTATY type = AndersenWaveDiffWithType_WPA): AndersenWaveDiff(_pag,type)
-    {
-        assert(getTypeSystem()!=nullptr && "a type system is required for this pointer analysis");
-    }
-
-    /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenWaveDiffWithType* createAndersenWaveDiffWithType(PAG* p)
-    {
-        if(diffWaveWithType==nullptr)
-        {
-            diffWaveWithType = new AndersenWaveDiffWithType(p);
-            diffWaveWithType->analyze();
-            return diffWaveWithType;
-        }
-        return diffWaveWithType;
-    }
-    static void releaseAndersenWaveDiffWithType()
-    {
-        if (diffWaveWithType)
-            delete diffWaveWithType;
-        diffWaveWithType = nullptr;
-    }
-
-protected:
-    /// SCC detection
-    virtual NodeStack& SCCDetect();
-    /// merge types of nodes in a cycle
-    void mergeTypeOfNodes(const NodeBS &nodes);
-    /// process "bitcast" CopyCGEdge
-    virtual void processCast(const ConstraintEdge *edge);
-    /// update type of objects when process "bitcast" CopyCGEdge
-    void updateObjType(const Type *type, const PointsTo &objs);
-    /// process mismatched gep edges
-    void processTypeMismatchedGep(NodeID obj, const Type *type);
-    /// match types for Gep Edges
-    virtual bool matchType(NodeID ptrid, NodeID objid, const NormalGepCGEdge *normalGepEdge);
-    /// add type for newly created GepObjNode
-    virtual void addTypeForGepObjNode(NodeID id, const NormalGepCGEdge* normalGepEdge);
-};
-
-
-
 /*
  * Lazy Cycle Detection Based Andersen Analysis
  */
@@ -569,13 +475,13 @@ private:
     NodeSet lcdCandidates;
 
 public:
-    AndersenLCD(PAG* _pag, PTATY type = AndersenLCD_WPA) :
+    AndersenLCD(SVFIR* _pag, PTATY type = AndersenLCD_WPA) :
         Andersen(_pag, type), metEdges({}), lcdCandidates( {})
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenLCD* createAndersenLCD(PAG* _pag)
+    static AndersenLCD* createAndersenLCD(SVFIR* _pag)
     {
         if (lcdAndersen == nullptr)
         {
@@ -651,13 +557,13 @@ private:
     OfflineConsG* oCG;
 
 public:
-    AndersenHCD(PAG* _pag, PTATY type = AndersenHCD_WPA) :
+    AndersenHCD(SVFIR* _pag, PTATY type = AndersenHCD_WPA) :
         Andersen(_pag, type), oCG(nullptr)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHCD *createAndersenHCD(PAG* _pag)
+    static AndersenHCD *createAndersenHCD(SVFIR* _pag)
     {
         if (hcdAndersen == nullptr)
         {
@@ -722,13 +628,13 @@ private:
     static AndersenHLCD* hlcdAndersen;
 
 public:
-    AndersenHLCD(PAG* _pag, PTATY type = AndersenHLCD_WPA) :
+    AndersenHLCD(SVFIR* _pag, PTATY type = AndersenHLCD_WPA) :
         Andersen(_pag, type), AndersenHCD(_pag, type), AndersenLCD(_pag, type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenHLCD *createAndersenHLCD(PAG* _pag)
+    static AndersenHLCD *createAndersenHLCD(SVFIR* _pag)
     {
         if (hlcdAndersen == nullptr)
         {

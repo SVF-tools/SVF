@@ -100,7 +100,7 @@ CondExpr* CondManager::createFreshBranchCond(const Instruction* inst)
         auto *cond = new BranchCondExpr(expr, branchCond);
         auto *negCond = NEG(cond);
         setCondInst(cond, inst);
-        setCondInst(negCond, inst);
+        setNegCondInst(negCond, inst);
         branchCondToCondExpr.emplace(branchCond, cond);
         return allocatedConds.emplace(expr.id(), cond).first->second;
     }
@@ -178,12 +178,12 @@ CondExpr* CondManager::NEG(CondExpr* lhs){
  */
 void CondManager::printModel()
 {
-    std::cout << sol.check() << "\n";
+    SVFUtil::outs() << sol.check() << "\n";
     z3::model m = sol.get_model();
     for (u32_t i = 0; i < m.size(); i++)
     {
-        z3::func_decl v = m[static_cast<s32_t>(i)];
-        std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
+        z3::func_decl v = m[static_cast<s64_t>(i)];
+        SVFUtil::outs() << v.name() << " = " << m.get_const_interp(v) << "\n";
     }
 }
 
@@ -203,6 +203,10 @@ std::string CondManager::getMemUsage()
  */
 void CondManager::extractSubConds(const CondExpr* cond, NodeBS &support) const
 {
+    if (cond->getExpr().num_args() == 1 && isNegCond(cond)) {
+        support.set(cond->getExpr().id());
+        return;
+    }
     if (cond->getExpr().num_args() == 0)
         if (!cond->getExpr().is_true() && !cond->getExpr().is_false())
             support.set(cond->getExpr().id());
@@ -237,7 +241,7 @@ bool CondManager::isAllPathReachable(const CondExpr* e){
  */
 inline void CondManager::printDbg(const CondExpr *e)
 {
-    std::cout << e->getExpr() << "\n";
+    SVFUtil::outs() << e->getExpr() << "\n";
 }
 
 /*!
@@ -356,7 +360,7 @@ void BranchCondManager::extractSubConds(BranchCond * f, NodeBS &support) const
 /*!
  * Dump BDD
  */
-void BranchCondManager::dump(BranchCond* lhs, raw_ostream & O)
+void BranchCondManager::dump(BranchCond* lhs, OutStream & O)
 {
     if (lhs == getTrueCond())
         O << "T";

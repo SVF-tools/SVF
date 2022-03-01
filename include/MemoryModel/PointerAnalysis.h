@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#include "Graphs/PAG.h"
+#include "MemoryModel/SVFIR.h"
 #include "MemoryModel/ConditionalPT.h"
 #include "MemoryModel/AbstractPointsToDS.h"
 #include "MemoryModel/MutablePointsToDS.h"
@@ -105,10 +105,10 @@ public:
     /// Indirect call edges type, map a callsite to a set of callees
     //@{
     typedef llvm::AliasAnalysis AliasAnalysis;
-    typedef Set<const CallBlockNode*> CallSiteSet;
-    typedef PAG::CallSiteToFunPtrMap CallSiteToFunPtrMap;
+    typedef Set<const CallICFGNode*> CallSiteSet;
+    typedef SVFIR::CallSiteToFunPtrMap CallSiteToFunPtrMap;
     typedef Set<const SVFFunction*> FunctionSet;
-    typedef OrderedMap<const CallBlockNode*, FunctionSet> CallEdgeMap;
+    typedef OrderedMap<const CallICFGNode*, FunctionSet> CallEdgeMap;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef Set<const GlobalValue*> VTableSet;
     typedef Set<const SVFFunction*> VFunSet;
@@ -143,8 +143,8 @@ protected:
     u32_t OnTheFlyIterBudgetForStat;
     //@}
 
-    /// PAG
-    static PAG* pag;
+    /// SVFIR
+    static SVFIR* pag;
     /// Module
     SVFModule* svfMod;
     /// Pointer analysis Type
@@ -160,7 +160,7 @@ protected:
     /// Interprocedural control-flow graph
     ICFG* icfg;
     /// CHGraph
-    static CommonCHGraph *chgraph;
+    CommonCHGraph *chgraph;
     /// TypeSystem
     TypeSystem *typeSystem;
 
@@ -170,7 +170,7 @@ public:
 		return pag->getICFG();
 	}
     /// Return number of resolved indirect call edges
-    inline Size_t getNumOfResolvedIndCallEdge() const
+    inline u32_t getNumOfResolvedIndCallEdge() const
     {
         return getPTACallGraph()->getNumOfResolvedIndCallEdge();
     }
@@ -186,7 +186,7 @@ public:
     }
 
     /// Constructor
-    PointerAnalysis(PAG* pag, PTATY ty = Default_PTA, bool alias_check = true);
+    PointerAnalysis(SVFIR* pag, PTATY ty = Default_PTA, bool alias_check = true);
 
     /// Type of pointer analysis
     inline PTATY getAnalysisTy() const
@@ -200,9 +200,9 @@ public:
         return ptaImplTy;
     }
 
-    /// Get/set PAG
+    /// Get/set SVFIR
     ///@{
-    inline PAG* getPAG() const
+    inline SVFIR* getPAG() const
     {
         return pag;
     }
@@ -227,7 +227,7 @@ public:
     /// Destructor
     virtual ~PointerAnalysis();
 
-    /// Initialization of a pointer analysis, including building symbol table and PAG etc.
+    /// Initialization of a pointer analysis, including building symbol table and SVFIR etc.
     virtual void initialize();
 
     /// Finalization of a pointer analysis, including checking alias correctness
@@ -263,7 +263,7 @@ public:
     }
 
     /// Print targets of a function pointer
-    void printIndCSTargets(const CallBlockNode* cs, const FunctionSet& targets);
+    void printIndCSTargets(const CallICFGNode* cs, const FunctionSet& targets);
 
     // Debug purpose
     //@{
@@ -282,7 +282,7 @@ protected:
         return pag->getIndirectCallsites();
     }
     /// Return function pointer PAGNode at a callsite cs
-    inline NodeID getFunPtr(const CallBlockNode* cs) const
+    inline NodeID getFunPtr(const CallICFGNode* cs) const
     {
         return pag->getFunPtr(cs);
     }
@@ -292,9 +292,6 @@ protected:
     virtual void validateSuccessTests(std::string fun);
     virtual void validateExpectedFailureTests(std::string fun);
     //@}
-
-    /// Whether to dump the graph for debugging purpose
-    bool dumpGraph();
 
     /// Reset all object node as field-sensitive.
     void resetObjFieldSensitive();
@@ -344,23 +341,23 @@ public:
     ///@{
     inline bool isFIObjNode(NodeID id) const
     {
-        return (SVFUtil::isa<FIObjPN>(pag->getPAGNode(id)));
+        return (SVFUtil::isa<FIObjVar>(pag->getGNode(id)));
     }
-    inline NodeID getBaseObjNode(NodeID id)
+    inline NodeID getBaseObjVar(NodeID id)
     {
-        return pag->getBaseObjNode(id);
+        return pag->getBaseObjVar(id);
     }
-    inline NodeID getFIObjNode(NodeID id)
+    inline NodeID getFIObjVar(NodeID id)
     {
-        return pag->getFIObjNode(id);
+        return pag->getFIObjVar(id);
     }
-    inline NodeID getGepObjNode(NodeID id, const LocationSet& ls)
+    inline NodeID getGepObjVar(NodeID id, const LocationSet& ls)
     {
-        return pag->getGepObjNode(id,ls);
+        return pag->getGepObjVar(id,ls);
     }
-    virtual inline const NodeBS& getAllFieldsObjNode(NodeID id)
+    virtual inline const NodeBS& getAllFieldsObjVars(NodeID id)
     {
-        return pag->getAllFieldsObjNode(id);
+        return pag->getAllFieldsObjVars(id);
     }
     inline void setObjFieldInsensitive(NodeID id)
     {
@@ -392,20 +389,20 @@ public:
     {
         return getPTACallGraph()->getIndCallMap();
     }
-    inline bool hasIndCSCallees(const CallBlockNode* cs) const
+    inline bool hasIndCSCallees(const CallICFGNode* cs) const
     {
         return getPTACallGraph()->hasIndCSCallees(cs);
     }
-    inline const FunctionSet& getIndCSCallees(const CallBlockNode* cs) const
+    inline const FunctionSet& getIndCSCallees(const CallICFGNode* cs) const
     {
         return getPTACallGraph()->getIndCSCallees(cs);
     }
     //@}
 
     /// Resolve indirect call edges
-    virtual void resolveIndCalls(const CallBlockNode* cs, const PointsTo& target, CallEdgeMap& newEdges,LLVMCallGraph* callgraph = nullptr);
+    virtual void resolveIndCalls(const CallICFGNode* cs, const PointsTo& target, CallEdgeMap& newEdges);
     /// Match arguments for callsite at caller and callee
-    bool matchArgs(const CallBlockNode* cs, const SVFFunction* callee);
+    bool matchArgs(const CallICFGNode* cs, const SVFFunction* callee);
 
     /// CallGraph SCC related methods
     //@{
@@ -449,10 +446,10 @@ public:
         return chgraph;
     }
 
-    void getVFnsFromCHA(const CallBlockNode* cs, VFunSet &vfns);
-    void getVFnsFromPts(const CallBlockNode* cs, const PointsTo &target, VFunSet &vfns);
-    void connectVCallToVFns(const CallBlockNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
-    virtual void resolveCPPIndCalls(const CallBlockNode* cs,
+    void getVFnsFromCHA(const CallICFGNode* cs, VFunSet &vfns);
+    void getVFnsFromPts(const CallICFGNode* cs, const PointsTo &target, VFunSet &vfns);
+    void connectVCallToVFns(const CallICFGNode* cs, const VFunSet &vfns, CallEdgeMap& newEdges);
+    virtual void resolveCPPIndCalls(const CallICFGNode* cs,
                                     const PointsTo& target,
                                     CallEdgeMap& newEdges);
 

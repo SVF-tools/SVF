@@ -29,7 +29,7 @@ public:
     typedef SCCDetection<SVFG*> SVFGSCC;
     typedef SCCDetection<PTACallGraph*> CallGraphSCC;
     typedef PTACallGraphEdge::CallInstSet CallInstSet;
-    typedef PAG::CallSiteSet CallSiteSet;
+    typedef SVFIR::CallSiteSet CallSiteSet;
     typedef OrderedSet<DPIm> DPTItemSet;
     typedef OrderedMap<DPIm, CPtSet> DPImToCPtSetMap;
     typedef OrderedMap<DPIm,CVar> DPMToCVarMap;
@@ -287,10 +287,10 @@ protected:
     }
 
     /// Build SVFG
-    virtual inline void buildSVFG(PAG* pag)
+    virtual inline void buildSVFG(SVFIR* pag)
     {
         _ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
-        _svfg = svfgBuilder.buildPTROnlySVFGWithoutOPT(_ander);
+        _svfg = svfgBuilder.buildPTROnlySVFG(_ander);
         _pag = _svfg->getPAG();
     }
     /// Reset visited map for next points-to query
@@ -448,7 +448,7 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack())
         {
-            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getRefVal()))
+            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
             {
                 const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
                 return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId());
@@ -467,13 +467,13 @@ protected:
     /// resolve function pointer
     void resolveFunPtr(const DPIm& dpm)
     {
-        if(const CallBlockNode* cbn= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc()))
+        if(const CallICFGNode* cbn= getSVFG()->isCallSiteRetSVFGNode(dpm.getLoc()))
         {
             if(_pag->isIndirectCallSites(cbn))
             {
                 NodeID funPtr = _pag->getFunPtr(cbn);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -486,7 +486,7 @@ protected:
             {
                 NodeID funPtr = _pag->getFunPtr(*it);
                 DPIm funPtrDpm(dpm);
-                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getPAGNode(funPtr)),funPtr);
+                funPtrDpm.setLocVar(getSVFG()->getDefSVFGNode(_pag->getGNode(funPtr)),funPtr);
                 findPT(funPtrDpm);
             }
         }
@@ -507,7 +507,7 @@ protected:
         return true;
     }
     /// Update call graph
-    virtual inline void updateCallGraphAndSVFG(const DPIm&, const CallBlockNode*, SVFGEdgeSet&) {}
+    virtual inline void updateCallGraphAndSVFG(const DPIm&, const CallICFGNode*, SVFGEdgeSet&) {}
     //@}
 
     ///Visited flags to avoid cycles
@@ -750,7 +750,7 @@ protected:
     }
 
     bool outOfBudgetQuery;			///< Whether the current query is out of step limits
-    PAG* _pag;						///< PAG
+    SVFIR* _pag;						///< SVFIR
     SVFG* _svfg;					///< SVFG
     AndersenWaveDiff* _ander;		///< Andersen's analysis
     NodeBS candidateQueries;		///< candidate pointers;

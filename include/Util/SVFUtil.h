@@ -46,20 +46,20 @@ namespace SVFUtil
 {
 
 /// Overwrite llvm::outs()
-inline raw_ostream &outs()
+inline std::ostream &outs()
 {
-    return llvm::outs();
+    return std::cout;
 }
 
 /// Overwrite llvm::errs()
-inline raw_ostream &errs()
+inline std::ostream  &errs()
 {
-    return llvm::errs();
+    return std::cerr;
 }
 
 /// Dump sparse bitvector set
-void dumpSet(NodeBS To, raw_ostream & O = SVFUtil::outs());
-void dumpSet(PointsTo To, raw_ostream & O = SVFUtil::outs());
+void dumpSet(NodeBS To, OutStream & O = SVFUtil::outs());
+void dumpSet(PointsTo To, OutStream & O = SVFUtil::outs());
 
 /// Dump points-to set
 void dumpPointsToSet(unsigned node, NodeBS To) ;
@@ -89,7 +89,7 @@ std::string  bugMsg3(std::string msg);
 std::string  pasMsg(std::string msg);
 
 /// Print memory usage in KB.
-void reportMemoryUsageKB(const std::string& infor, raw_ostream & O = SVFUtil::outs());
+void reportMemoryUsageKB(const std::string& infor, OutStream & O = SVFUtil::outs());
 
 /// Get memory usage from system file. Return TRUE if succeed.
 bool getMemoryUsageKB(u32_t* vmrss_kb, u32_t* vmsize_kb);
@@ -239,6 +239,17 @@ inline const SVFFunction* getFunction(StringRef name)
         }
     }
     return nullptr;
+}
+
+/// find the unique defined global across multiple modules
+inline const Value* getGlobalRep(const Value* val) 
+{
+    if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
+    {
+        if (LLVMModuleSet::getLLVMModuleSet()->hasGlobalRep(gvar))
+            val = LLVMModuleSet::getLLVMModuleSet()->getGlobalRep(gvar);
+    }
+    return val;
 }
 
 /// Get the definition of a function across multiple modules

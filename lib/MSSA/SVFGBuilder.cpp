@@ -43,20 +43,13 @@ SVFG* SVFGBuilder::globalSvfg = nullptr;
 
 SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
 {
-    return build(pta, VFG::PTRONLYSVFG_OPT);
-}
-
-SVFG* SVFGBuilder::buildPTROnlySVFGWithoutOPT(BVDataPTAImpl* pta)
-{
-    return build(pta, VFG::PTRONLYSVFG);
+    if(Options::OPTSVFG)
+        return build(pta, VFG::PTRONLYSVFG_OPT);
+    else
+        return build(pta, VFG::PTRONLYSVFG);
 }
 
 SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
-{
-    return build(pta, VFG::FULLSVFG_OPT);
-}
-
-SVFG* SVFGBuilder::buildFullSVFGWithoutOPT(BVDataPTAImpl* pta)
 {
     return build(pta, VFG::FULLSVFG);
 }
@@ -69,8 +62,6 @@ void SVFGBuilder::buildSVFG()
 {
     MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
-    if(mssa->getPTA()->printStat())
-        svfg->performStat();
 }
 
 /// Create DDA SVFG
@@ -104,6 +95,9 @@ SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
     /// Update call graph using pre-analysis results
     if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
         svfg->updateCallGraph(pta);
+
+    if(mssa->getPTA()->printStat())
+        svfg->performStat();
 
     if(Options::DumpVFG)
         svfg->dump("svfg_final");

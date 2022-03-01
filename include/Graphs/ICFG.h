@@ -46,6 +46,8 @@ typedef GenericGraph<ICFGNode,ICFGEdge> GenericICFGTy;
 class ICFG : public GenericICFGTy
 {
 
+friend class ICFGBuilder;
+
 public:
 
     typedef Map<NodeID, ICFGNode *> ICFGNodeIDToNodeMapTy;
@@ -53,21 +55,21 @@ public:
     typedef ICFGNodeIDToNodeMapTy::iterator iterator;
     typedef ICFGNodeIDToNodeMapTy::const_iterator const_iterator;
 
-    typedef Map<const SVFFunction*, FunEntryBlockNode *> FunToFunEntryNodeMapTy;
-    typedef Map<const SVFFunction*, FunExitBlockNode *> FunToFunExitNodeMapTy;
-    typedef Map<const Instruction*, CallBlockNode *> CSToCallNodeMapTy;
-    typedef Map<const Instruction*, RetBlockNode *> CSToRetNodeMapTy;
-    typedef Map<const Instruction*, IntraBlockNode *> InstToBlockNodeMapTy;
+    typedef Map<const SVFFunction*, FunEntryICFGNode *> FunToFunEntryNodeMapTy;
+    typedef Map<const SVFFunction*, FunExitICFGNode *> FunToFunExitNodeMapTy;
+    typedef Map<const Instruction*, CallICFGNode *> CSToCallNodeMapTy;
+    typedef Map<const Instruction*, RetICFGNode *> CSToRetNodeMapTy;
+    typedef Map<const Instruction*, IntraICFGNode *> InstToBlockNodeMapTy;
 
     NodeID totalICFGNode;
 
 private:
-    FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitBlockNode
-    FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryBlockNode
-    CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallBlockNode
-    CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetBlockNode
+    FunToFunEntryNodeMapTy FunToFunEntryNodeMap; ///< map a function to its FunExitICFGNode
+    FunToFunExitNodeMapTy FunToFunExitNodeMap; ///< map a function to its FunEntryICFGNode
+    CSToCallNodeMapTy CSToCallNodeMap; ///< map a callsite to its CallICFGNode
+    CSToRetNodeMapTy CSToRetNodeMap; ///< map a callsite to its RetICFGNode
     InstToBlockNodeMapTy InstToBlockNodeMap; ///< map a basic block to its ICFGNode
-    GlobalBlockNode* globalBlockNode; ///< unique basic block for all globals
+    GlobalICFGNode* globalBlockNode; ///< unique basic block for all globals
 
 public:
     /// Constructor
@@ -109,7 +111,7 @@ public:
     /// update ICFG for indirect calls
     void updateCallGraph(PTACallGraph* callgraph);
 
-public:
+protected:
     /// Remove a SVFG edge
     inline void removeICFGEdge(ICFGEdge* edge)
     {
@@ -126,7 +128,7 @@ public:
     /// Add control-flow edges for top level pointers
     //@{
     ICFGEdge* addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode);
-    ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, NodeID branchID);
+    ICFGEdge* addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s64_t branchCondVal);
     ICFGEdge* addCallEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
     ICFGEdge* addRetEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Instruction* cs);
     //@}
@@ -157,87 +159,87 @@ public:
         addGNode(node->getId(),node);
     }
 
+public:
     /// Get a basic block ICFGNode
     /// TODO:: need to fix the assertions
     //@{
-    ICFGNode* getBlockICFGNode(const Instruction* inst);
+    ICFGNode* getICFGNode(const Instruction* inst);
 
-    CallBlockNode* getCallBlockNode(const Instruction* inst);
+    CallICFGNode* getCallICFGNode(const Instruction* inst);
 
-    RetBlockNode* getRetBlockNode(const Instruction* inst);
+    RetICFGNode* getRetICFGNode(const Instruction* inst);
 
-    IntraBlockNode* getIntraBlockNode(const Instruction* inst);
+    IntraICFGNode* getIntraICFGNode(const Instruction* inst);
 
-    FunEntryBlockNode* getFunEntryBlockNode(const SVFFunction*  fun);
+    FunEntryICFGNode* getFunEntryICFGNode(const SVFFunction*  fun);
 
-    FunExitBlockNode* getFunExitBlockNode(const SVFFunction*  fun);
+    FunExitICFGNode* getFunExitICFGNode(const SVFFunction*  fun);
 
-    GlobalBlockNode* getGlobalBlockNode() const
+    inline GlobalICFGNode* getGlobalICFGNode() const
     {
         return globalBlockNode;
     }
-    
     //@}
 
 private:
 	
     /// Get/Add IntraBlock ICFGNode
-    inline IntraBlockNode* getIntraBlockICFGNode(const Instruction* inst)
+    inline IntraICFGNode* getIntraBlock(const Instruction* inst)
     {
         InstToBlockNodeMapTy::const_iterator it = InstToBlockNodeMap.find(inst);
         if (it == InstToBlockNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline IntraBlockNode* addIntraBlockICFGNode(const Instruction* inst)
+    inline IntraICFGNode* addIntraBlock(const Instruction* inst)
     {
-        IntraBlockNode* sNode = new IntraBlockNode(totalICFGNode++,inst);
+        IntraICFGNode* sNode = new IntraICFGNode(totalICFGNode++,inst);
         addICFGNode(sNode);
         InstToBlockNodeMap[inst] = sNode;
         return sNode;
     }
 
     /// Get/Add a function entry node
-    inline FunEntryBlockNode* getFunEntryICFGNode(const SVFFunction* fun)
+    inline FunEntryICFGNode* getFunEntryBlock(const SVFFunction* fun)
     {
         FunToFunEntryNodeMapTy::const_iterator it = FunToFunEntryNodeMap.find(fun);
         if (it == FunToFunEntryNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline FunEntryBlockNode* addFunEntryICFGNode(const SVFFunction* fun)
+    inline FunEntryICFGNode* addFunEntryBlock(const SVFFunction* fun)
     {
-        FunEntryBlockNode* sNode = new FunEntryBlockNode(totalICFGNode++,fun);
+        FunEntryICFGNode* sNode = new FunEntryICFGNode(totalICFGNode++,fun);
         addICFGNode(sNode);
         FunToFunEntryNodeMap[fun] = sNode;
         return sNode;
     }
 
     /// Get/Add a function exit node
-    inline FunExitBlockNode* getFunExitICFGNode(const SVFFunction* fun)
+    inline FunExitICFGNode* getFunExitBlock(const SVFFunction* fun)
     {
         FunToFunExitNodeMapTy::const_iterator it = FunToFunExitNodeMap.find(fun);
         if (it == FunToFunExitNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline FunExitBlockNode* addFunExitICFGNode(const SVFFunction* fun)
+    inline FunExitICFGNode* addFunExitBlock(const SVFFunction* fun)
     {
-        FunExitBlockNode* sNode = new FunExitBlockNode(totalICFGNode++, fun);
+        FunExitICFGNode* sNode = new FunExitICFGNode(totalICFGNode++, fun);
         addICFGNode(sNode);
         FunToFunExitNodeMap[fun] = sNode;
         return sNode;
     }
 
     /// Get/Add a call node
-    inline CallBlockNode* addCallICFGNode(const Instruction* cs)
+    inline CallICFGNode* addCallBlock(const Instruction* cs)
     {
-        CallBlockNode* sNode = new CallBlockNode(totalICFGNode++, cs);
+        CallICFGNode* sNode = new CallICFGNode(totalICFGNode++, cs);
         addICFGNode(sNode);
         CSToCallNodeMap[cs] = sNode;
         return sNode;
     }
-    inline CallBlockNode* getCallICFGNode(const Instruction* cs)
+    inline CallICFGNode* getCallBlock(const Instruction* cs)
     {
         CSToCallNodeMapTy::const_iterator it = CSToCallNodeMap.find(cs);
         if (it == CSToCallNodeMap.end())
@@ -246,18 +248,18 @@ private:
     }
 
     /// Get/Add a return node
-    inline RetBlockNode* getRetICFGNode(const Instruction* cs)
+    inline RetICFGNode* getRetBlock(const Instruction* cs)
     {
         CSToRetNodeMapTy::const_iterator it = CSToRetNodeMap.find(cs);
         if (it == CSToRetNodeMap.end())
             return nullptr;
         return it->second;
     }
-    inline RetBlockNode* addRetICFGNode(const Instruction* cs)
+    inline RetICFGNode* addRetBlock(const Instruction* cs)
     {
-        CallBlockNode* callBlockNode = getCallBlockNode(cs);
-        RetBlockNode* sNode = new RetBlockNode(totalICFGNode++, cs, callBlockNode);
-        callBlockNode->setRetBlockNode(sNode);
+        CallICFGNode* callBlockNode = getCallICFGNode(cs);
+        RetICFGNode* sNode = new RetICFGNode(totalICFGNode++, cs, callBlockNode);
+        callBlockNode->setRetICFGNode(sNode);
         addICFGNode(sNode);
         CSToRetNodeMap[cs] = sNode;
         return sNode;

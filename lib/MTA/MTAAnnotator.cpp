@@ -117,13 +117,13 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
         return;
 
     DBOUT(DGENERAL, outs() << pasMsg("Run annotator prune thread local pairs\n"));
-    PAG* pag = pta->getPAG();
+    SVFIR* pag = pta->getPAG();
     PointsTo nonlocalobjs;
     PointsTo worklist;
 
     /// find fork arguments' objects
-    const PAGEdge::PAGEdgeSetTy& forkedges = pag->getPTAEdgeSet(PAGEdge::ThreadFork);
-    for (PAGEdge::PAGEdgeSetTy::const_iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
+    const SVFStmt::SVFStmtSetTy& forkedges = pag->getPTASVFStmtSet(SVFStmt::ThreadFork);
+    for (SVFStmt::SVFStmtSetTy::const_iterator it = forkedges.begin(), eit = forkedges.end(); it != eit; ++it)
     {
         PAGEdge* edge = *it;
         worklist |= pta->getPts(edge->getDstID());
@@ -131,11 +131,11 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
     }
 
     /// find global pointer-to objects
-    const PAG::PAGEdgeSet& globaledges = pag->getGlobalPAGEdgeSet();
-    for (PAG::PAGEdgeSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
+    const SVFIR::SVFStmtSet& globaledges = pag->getGlobalSVFStmtSet();
+    for (SVFIR::SVFStmtSet::const_iterator it = globaledges.begin(), eit = globaledges.end(); it != eit; ++it)
     {
         const PAGEdge* edge = *it;
-        if (edge->getEdgeKind() == PAGEdge::Addr)
+        if (edge->getEdgeKind() == SVFStmt::Addr)
         {
             worklist.set(edge->getSrcID());
         }
@@ -153,7 +153,7 @@ void MTAAnnotator::pruneThreadLocal(PointerAnalysis* pta)
             if (!nonlocalobjs.test(*pit))
                 worklist.set(*pit);
         }
-        NodeBS fields = pag->getAllFieldsObjNode(obj);
+        NodeBS fields = pag->getAllFieldsObjVars(obj);
         for (NodeBS::iterator pit = fields.begin(), epit = fields.end(); pit != epit; ++pit)
         {
             if (!nonlocalobjs.test(*pit))

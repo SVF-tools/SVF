@@ -15,7 +15,7 @@
 #define DCHG_H_
 
 #include "Graphs/GenericGraph.h"
-#include "SVF-FE/CommonCHG.h"
+#include "Graphs/CHG.h"
 #include "SVF-FE/CPPUtil.h"
 #include "Util/SVFModule.h"
 #include "Util/SVFUtil.h"
@@ -46,18 +46,18 @@ public:
     {
     }
 
-    unsigned int getOffset(void) const
+    u32_t getConstantFieldIdx(void) const
     {
         return offset;
     }
 
-    void setOffset(unsigned int offset)
+    void setOffset(u32_t offset)
     {
         this->offset = offset;
     }
 
 private:
-    unsigned int offset;
+    u32_t offset;
 };
 
 class DCHNode : public GenericNode<DCHNode, DCHEdge>

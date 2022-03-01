@@ -52,13 +52,13 @@ protected:
     NodeToNodeMap pwcReps;
 
 public:
-    AndersenSCD(PAG* _pag, PTATY type = AndersenSCD_WPA) :
+    AndersenSCD(SVFIR* _pag, PTATY type = AndersenSCD_WPA) :
         Andersen(_pag,type)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSCD *createAndersenSCD(PAG* _pag)
+    static AndersenSCD *createAndersenSCD(SVFIR* _pag)
     {
         if (scdAndersen == nullptr)
         {
@@ -114,13 +114,13 @@ private:
     FieldReps fieldReps;
 
 public:
-    AndersenSFR(PAG* _pag, PTATY type = AndersenSFR_WPA) :
+    AndersenSFR(SVFIR* _pag, PTATY type = AndersenSFR_WPA) :
         AndersenSCD(_pag, type), csc(nullptr)
     {
     }
 
     /// Create an singleton instance directly instead of invoking llvm pass manager
-    static AndersenSFR *createAndersenSFR(PAG* _pag)
+    static AndersenSFR *createAndersenSFR(SVFIR* _pag)
     {
         if (sfrAndersen == nullptr)
         {
@@ -149,7 +149,7 @@ public:
 protected:
     void initialize();
     void PWCDetect();
-    void fieldExpand(NodeSet& initials, Size_t offset, NodeBS& strides, PointsTo& expandPts);
+    void fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, PointsTo& expandPts);
     bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
 

@@ -30,7 +30,7 @@
 #include "Util/Options.h"
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/ICFGBuilder.h"
-#include "SVF-FE/CHG.h"
+#include "Graphs/CHG.h"
 #include "WPA/TypeAnalysis.h"
 #include "MemoryModel/PTAStat.h"
 #include "Graphs/ICFGStat.h"
@@ -48,7 +48,7 @@ void TypeAnalysis::initialize()
 	AndersenBase::initialize();
     if (Options::GenICFG)
     {
-        icfg = PAG::getPAG()->getICFG();
+        icfg = SVFIR::getPAG()->getICFG();
         icfg->dump("icfg_initial");
         icfg->dump("vfg_initial");
         if (print_stat)
@@ -79,7 +79,7 @@ void TypeAnalysis::callGraphSolveBasedOnCHA(const CallSiteToFunPtrMap& callsites
 {
     for(CallSiteToFunPtrMap::const_iterator iter = callsites.begin(), eiter = callsites.end(); iter!=eiter; ++iter)
     {
-        const CallBlockNode* cbn = iter->first;
+        const CallICFGNode* cbn = iter->first;
         CallSite cs = SVFUtil::getLLVMCallSite(cbn->getCallSite());
         if (isVirtualCallSite(cs))
         {
@@ -104,7 +104,7 @@ void TypeAnalysis::dumpCHAStats()
         return;
     }
 
-    s32_t pure_abstract_class_num = 0,
+    s64_t pure_abstract_class_num = 0,
           multi_inheritance_class_num = 0;
     for (CHGraph::const_iterator it = chgraph->begin(), eit = chgraph->end();
             it != eit; ++it)
@@ -127,7 +127,7 @@ void TypeAnalysis::dumpCHAStats()
      * vtbl max vfunction
      * pure abstract class
      */
-    s32_t vtblnum = 0,
+    s64_t vtblnum = 0,
           vfunc_total = 0,
           vtbl_max = 0,
           pure_abstract = 0;
@@ -139,7 +139,7 @@ void TypeAnalysis::dumpCHAStats()
         if (node->isPureAbstract())
             pure_abstract++;
 
-        s32_t vfuncs_size = 0;
+        s64_t vfuncs_size = 0;
         const vector<CHNode::FuncVector>& vecs = node->getVirtualFunctionVectors();
         for (vector<CHNode::FuncVector>::const_iterator vit = vecs.begin(),
                 veit = vecs.end(); vit != veit; ++vit)

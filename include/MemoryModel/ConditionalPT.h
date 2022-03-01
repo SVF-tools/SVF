@@ -31,7 +31,6 @@
 #define CONDVAR_H_
 
 #include "Util/SVFUtil.h"
-#include "llvm/Support/raw_ostream.h"
 #include "MemoryModel/PointsTo.h"
 
 namespace SVF
@@ -114,7 +113,7 @@ public:
         return rawstr.str();
     }
 
-    friend raw_ostream& operator<< (raw_ostream &o, const CondVar<Cond> &cvar)
+    friend OutStream& operator<< (OutStream &o, const CondVar<Cond> &cvar)
     {
         o << cvar.toString();
         return o;
@@ -708,7 +707,7 @@ public:
 
     // Print all points-to targets
     //@{
-    inline void dump(raw_ostream & O) const
+    inline void dump(OutStream & O) const
     {
         CondPtsConstIter it = cptsBegin();
         CondPtsConstIter eit = cptsEnd();

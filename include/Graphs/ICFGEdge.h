@@ -34,6 +34,8 @@ namespace SVF
 {
 
 class ICFGNode;
+class CallPE;
+class RetPE;
 
 /*!
  * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
@@ -94,7 +96,7 @@ public:
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
-    friend raw_ostream& operator<< (raw_ostream &o, const ICFGEdge &edge)
+    friend OutStream& operator<< (OutStream &o, const ICFGEdge &edge)
     {
         o << edge.toString();
         return o;
@@ -112,15 +114,8 @@ class IntraCFGEdge : public ICFGEdge
 {
 
 public:
-    /// the first element is a boolean (for if/else) or numeric condition value (for switch)
-    /// the second element is the value when this condition should hold to execute this CFGEdge.
-    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
-    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
-
-    typedef std::pair<const Value*,NodeID> BranchCondition;
-
     /// Constructor
-    IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF)
+    IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF), conditionVar(nullptr), branchCondVal(0)
     {
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -139,22 +134,30 @@ public:
     }
     //@}
 
-    const BranchCondition& getBranchCondtion() const{
-        return brCondition;
+    const Value* getCondition() const{
+        return conditionVar;
     }
 
-    void setBranchCondtion(const Value* pNode, NodeID branchID){
-        brCondition = std::make_pair(pNode,branchID);
+    const s64_t getSuccessorCondValue() const{
+        assert(getCondition() && "this is not a conditional branch edge");
+        return branchCondVal;
+    }
+
+    void setBranchCondition(const Value* c, s64_t bVal){
+        conditionVar = c;
+        branchCondVal = bVal;
     }
 
     virtual const std::string toString() const;
 
 private:
-    BranchCondition brCondition;
-
+    /// conditionVar is a boolean (for if/else) or numeric condition variable (for switch)
+    /// branchCondVal is the value when this condition should hold to execute this CFGEdge.
+    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
+    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
+    const Value* conditionVar;
+    s64_t branchCondVal;
 };
-
-
 
 /*!
  * Call ICFG edge representing parameter passing/return from a caller to a callee
@@ -164,6 +167,7 @@ class CallCFGEdge : public ICFGEdge
 
 private:
 	const Instruction*  cs;
+    std::vector<const CallPE*> callPEs;
 public:
     /// Constructor
     CallCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
@@ -174,6 +178,14 @@ public:
     inline const Instruction*  getCallSite() const
     {
         return cs;
+    }
+    /// Add call parameter edge to this CallCFGEdge
+    inline void addCallPE(const CallPE* callPE){
+        callPEs.push_back(callPE);
+    }
+    /// Add get parameter edge to this CallCFGEdge
+    inline const std::vector<const CallPE*>& getCallPEs() const{
+        return callPEs;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
@@ -201,16 +213,26 @@ class RetCFGEdge : public ICFGEdge
 
 private:
 	const Instruction*  cs;
+    const RetPE* retPE;
 public:
     /// Constructor
     RetCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
-        ICFGEdge(s,d,RetCF),cs(c)
+        ICFGEdge(s,d,RetCF),cs(c),retPE(nullptr)
     {
     }
     /// Return callsite ID
     inline const Instruction*  getCallSite() const
     {
         return cs;
+    }
+    /// Add call parameter edge to this CallCFGEdge
+    inline void addRetPE(const RetPE* ret){
+        assert(retPE==nullptr && "we can only have one retPE for each RetCFGEdge");
+        retPE = ret;
+    }
+    /// Add get parameter edge to this CallCFGEdge
+    inline const RetPE* getRetPE() const{
+        return retPE;
     }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{

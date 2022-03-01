@@ -79,8 +79,8 @@ public:
     typedef NodeBS ActualOUTSVFGNodeSet;
     typedef NodeBS FormalINSVFGNodeSet;
     typedef NodeBS FormalOUTSVFGNodeSet;
-    typedef Map<const CallBlockNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
-    typedef Map<const CallBlockNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
+    typedef Map<const CallICFGNode*, ActualINSVFGNodeSet>  CallSiteToActualINsMapTy;
+    typedef Map<const CallICFGNode*, ActualOUTSVFGNodeSet>  CallSiteToActualOUTsMapTy;
     typedef Map<const SVFFunction*, FormalINSVFGNodeSet>  FunctionToFormalINsMapTy;
     typedef Map<const SVFFunction*, FormalOUTSVFGNodeSet>  FunctionToFormalOUTsMapTy;
     typedef MemSSA::MUSet MUSet;
@@ -159,13 +159,13 @@ public:
     }
 
     /// Get all inter value flow edges of a indirect call site
-    void getInterVFEdgesForIndirectCallSite(const CallBlockNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges);
+    void getInterVFEdgesForIndirectCallSite(const CallICFGNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges);
 
     /// Dump graph into dot file
     void dump(const std::string& file, bool simple = false);
 
     /// Connect SVFG nodes between caller and callee for indirect call site
-    virtual void connectCallerAndCallee(const CallBlockNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges);
+    virtual void connectCallerAndCallee(const CallICFGNode* cs, const SVFFunction* callee, SVFGEdgeSetTy& edges);
 
     /// Given a pagNode, return its definition site
     inline const SVFGNode* getDefSVFGNode(const PAGNode* pagNode) const
@@ -183,12 +183,12 @@ public:
 
     /// Has a SVFGNode
     //@{
-    inline bool hasActualINSVFGNodes(const CallBlockNode* cs) const
+    inline bool hasActualINSVFGNodes(const CallICFGNode* cs) const
     {
         return callSiteToActualINMap.find(cs)!=callSiteToActualINMap.end();
     }
 
-    inline bool hasActualOUTSVFGNodes(const CallBlockNode* cs) const
+    inline bool hasActualOUTSVFGNodes(const CallICFGNode* cs) const
     {
         return callSiteToActualOUTMap.find(cs)!=callSiteToActualOUTMap.end();
     }
@@ -206,12 +206,12 @@ public:
 
     /// Get SVFGNode set
     //@{
-    inline ActualINSVFGNodeSet& getActualINSVFGNodes(const CallBlockNode* cs)
+    inline ActualINSVFGNodeSet& getActualINSVFGNodes(const CallICFGNode* cs)
     {
         return callSiteToActualINMap[cs];
     }
 
-    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(const CallBlockNode* cs)
+    inline ActualOUTSVFGNodeSet& getActualOUTSVFGNodes(const CallICFGNode* cs)
     {
         return callSiteToActualOUTMap[cs];
     }
@@ -231,7 +231,7 @@ public:
     const SVFFunction* isFunEntrySVFGNode(const SVFGNode* node) const;
 
     /// Whether a node is callsite return SVFGNode
-    const CallBlockNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
+    const CallICFGNode* isCallSiteRetSVFGNode(const SVFGNode* node) const;
 
     /// Remove a SVFG edge
     inline void removeSVFGEdge(SVFGEdge* edge)
@@ -301,7 +301,7 @@ protected:
 
     /// Get inter value flow edges between indirect call site and callee.
     //@{
-    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallBlockNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
+    virtual inline void getInterVFEdgeAtIndCSFromAPToFP(const PAGNode* cs_arg, const PAGNode* fun_arg, const CallICFGNode*, CallSiteID csId, SVFGEdgeSetTy& edges)
     {
         SVFGNode* actualParam = getSVFGNode(getDef(cs_arg));
         SVFGNode* formalParam = getSVFGNode(getDef(fun_arg));
@@ -369,7 +369,7 @@ protected:
         }
         else
         {
-            assert((it->second == node->getId()) && "a PAG node can only have unique definition ");
+            assert((it->second == node->getId()) && "a SVFIR node can only have unique definition ");
         }
     }
     inline NodeID getDef(const MRVer* mvar) const
@@ -394,35 +394,35 @@ protected:
     }
 
     /// Add memory Function entry chi SVFG node
-    inline void addFormalINSVFGNode(const FunEntryBlockNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
+    inline void addFormalINSVFGNode(const FunEntryICFGNode* funEntry,  const MRVer* resVer, const NodeID nodeId)
     {
         FormalINSVFGNode* sNode = new FormalINSVFGNode(nodeId, resVer, funEntry);
-        addSVFGNode(sNode, pag->getICFG()->getFunEntryBlockNode(funEntry->getFun()));
+        addSVFGNode(sNode, pag->getICFG()->getFunEntryICFGNode(funEntry->getFun()));
         setDef(resVer,sNode);
         funToFormalINMap[funEntry->getFun()].set(sNode->getId());
     }
 
     /// Add memory Function return mu SVFG node
-    inline void addFormalOUTSVFGNode(const FunExitBlockNode* funExit, const MRVer* ver, const NodeID nodeId)
+    inline void addFormalOUTSVFGNode(const FunExitICFGNode* funExit, const MRVer* ver, const NodeID nodeId)
     {
         FormalOUTSVFGNode* sNode = new FormalOUTSVFGNode(nodeId, ver, funExit);
-        addSVFGNode(sNode,pag->getICFG()->getFunExitBlockNode(funExit->getFun()));
+        addSVFGNode(sNode,pag->getICFG()->getFunExitICFGNode(funExit->getFun()));
         funToFormalOUTMap[funExit->getFun()].set(sNode->getId());
     }
 
     /// Add memory callsite mu SVFG node
-    inline void addActualINSVFGNode(const CallBlockNode* callsite, const MRVer* ver, const NodeID nodeId)
+    inline void addActualINSVFGNode(const CallICFGNode* callsite, const MRVer* ver, const NodeID nodeId)
     {
         ActualINSVFGNode* sNode = new ActualINSVFGNode(nodeId, callsite, ver);
-        addSVFGNode(sNode,pag->getICFG()->getCallBlockNode(callsite->getCallSite()));
+        addSVFGNode(sNode,pag->getICFG()->getCallICFGNode(callsite->getCallSite()));
         callSiteToActualINMap[callsite].set(sNode->getId());
     }
 
     /// Add memory callsite chi SVFG node
-    inline void addActualOUTSVFGNode(const CallBlockNode* callsite, const MRVer* resVer, const NodeID nodeId)
+    inline void addActualOUTSVFGNode(const CallICFGNode* callsite, const MRVer* resVer, const NodeID nodeId)
     {
         ActualOUTSVFGNode* sNode = new ActualOUTSVFGNode(nodeId, callsite, resVer);
-        addSVFGNode(sNode, pag->getICFG()->getRetBlockNode(callsite->getCallSite()));
+        addSVFGNode(sNode, pag->getICFG()->getRetICFGNode(callsite->getCallSite()));
         setDef(resVer,sNode);
         callSiteToActualOUTMap[callsite].set(sNode->getId());
     }
@@ -448,11 +448,11 @@ protected:
     {
         return (funToFormalOUTMap.find(func) != funToFormalOUTMap.end());
     }
-    inline bool hasCallSiteChi(const CallBlockNode* cs) const
+    inline bool hasCallSiteChi(const CallICFGNode* cs) const
     {
         return (callSiteToActualOUTMap.find(cs) != callSiteToActualOUTMap.end());
     }
-    inline bool hasCallSiteMu(const CallBlockNode* cs) const
+    inline bool hasCallSiteMu(const CallICFGNode* cs) const
     {
         return (callSiteToActualINMap.find(cs) != callSiteToActualINMap.end());
     }
