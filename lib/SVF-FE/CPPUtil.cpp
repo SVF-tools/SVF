@@ -183,7 +183,7 @@ struct cppUtil::DemangledName cppUtil::demangle(const string &name)
     struct cppUtil::DemangledName dname;
     dname.isThunkFunc = false;
 
-    s64_t status;
+    s32_t status;
     char *realname = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
     if (realname == nullptr)
     {
@@ -435,7 +435,7 @@ string cppUtil::getClassNameFromVtblObj(const Value *value)
     string className = "";
 
     string vtblName = value->getName().str();
-    s64_t status;
+    s32_t status;
     char *realname = abi::__cxa_demangle(vtblName.c_str(), 0, 0, &status);
     if (realname != nullptr)
     {
