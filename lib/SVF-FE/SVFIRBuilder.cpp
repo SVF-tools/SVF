@@ -1124,7 +1124,14 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 }
                 break;
             }
-            case ExtAPI::EFT_L_A0:
+            case ExtAPI::EFT_L_A0: {
+                NodeID dstNode = getValueNode(inst);
+                Value *src= cs.getArgument(0);
+                NodeID srcNode = getValueNode(src);
+                addCopyEdge(srcNode, dstNode);
+                break;
+            }
+
             case ExtAPI::EFT_L_A1:
             case ExtAPI::EFT_L_A2:
             case ExtAPI::EFT_L_A8:
