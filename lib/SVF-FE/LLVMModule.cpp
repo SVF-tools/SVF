@@ -186,7 +186,7 @@ void LLVMModuleSet::loadModules(const std::vector<std::string> &moduleNameVec)
         {
             SVFUtil::errs() << "load module: " << moduleName << "failed!!\n\n";
             Err.print("SVFModuleLoader", llvm::errs());
-            continue;
+            abort();
         }
         modules.emplace_back(*mod);
         owned_modules.emplace_back(std::move(mod));
