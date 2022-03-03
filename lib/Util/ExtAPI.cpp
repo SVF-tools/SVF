@@ -71,7 +71,7 @@ void ExtAPI::init()
     // source ./setup.sh (assert if env variables are not set up)
     // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
 
-    // get SVF_DIR environment variable
+    // check if SVF_DIR environment variable is set
     const char* env = std::getenv("SVF_DIR");
     assert(env != nullptr && "getting environment variable unsuccessful");
     
@@ -134,7 +134,7 @@ void ExtAPI::init()
     for(auto data_iter = data.begin(); data_iter != data.end(); data_iter++){
         // check for duplicate side effects on the same external function name
         const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
-        ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));
+        ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));             // construct ei_pair with external function name and extf_t type
     } 
 
     for(auto p= ei_pairs.begin(); p != ei_pairs.end(); ++p)
