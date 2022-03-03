@@ -200,7 +200,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
                 sty->element_end(); it != ie; ++it)
     {
         const Type *et = *it;
-        /// offset with int_32 (s64_t) is large enough and will not cause overflow
+        /// offset with int_32 (s32_t) is large enough and will not cause overflow
         stinfo->addFldWithType(nf, et, strideOffset);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
@@ -269,7 +269,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s64_t offset = ls.accumulateConstantFieldIdx();
+    s32_t offset = ls.accumulateConstantFieldIdx();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -405,7 +405,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
 }
 
 /// Flatterned offset information of a struct or an array including its array fields 
-u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, s64_t origId)
+u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
 {
     if(Options::ModelArrays){
         std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();

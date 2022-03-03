@@ -609,7 +609,7 @@ const Value* SymbolTableBuilder::getUniqueUseViaCastInst(const Value* val){
  */
 void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
-    s64_t objSize = 1;
+    u32_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
     {

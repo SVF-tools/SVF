@@ -559,7 +559,7 @@ NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet&
  * Get a base SVFVar given a pointer
  * Return the source node of its connected normal gep edge
  * Otherwise return the node id itself
- * s64_t offset : gep offset
+ * s32_t offset : gep offset
  */
 LocationSet SVFIR::getLocationSetFromBaseNode(NodeID nodeId)
 {

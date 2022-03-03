@@ -413,7 +413,7 @@ public:
     }
 
     /// offset of the base value variable
-    inline s64_t getConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }
@@ -483,7 +483,7 @@ public:
     }
 
     /// offset of the mem object
-    inline s64_t getConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }

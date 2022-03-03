@@ -350,7 +350,7 @@ public:
     /// Number of flattenned elements of an array or struct
     u32_t getNumOfFlattenElements(const Type *T);
     /// Flatterned element idx of an array or struct by considering stride
-    u32_t getFlattenedElemIdx(const Type *T, s64_t origId);
+    u32_t getFlattenedElemIdx(const Type *T, u32_t origId);
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalElemType of b with field_idx 1 : Struct A
