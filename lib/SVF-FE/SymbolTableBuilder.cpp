@@ -51,8 +51,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
     symInfo->setModule(svfModule);
 
-    StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
-
     // Pointer #0 always represents the null pointer.
     assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
 
@@ -609,7 +607,7 @@ const Value* SymbolTableBuilder::getUniqueUseViaCastInst(const Value* val){
  */
 void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
-    u32_t objSize = 1;
+    s32_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
     {
@@ -652,6 +650,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     else if(SVFUtil::isConstantData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
+        objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());
     }
     else{
         assert("what other object do we have??");
@@ -660,7 +659,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
 
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
     if(objSize > 0 && typeinfo->getMaxFieldOffsetLimit() > objSize)
-        typeinfo->setMaxFieldOffsetLimit(objSize);
+        typeinfo->setNumOfElements(objSize);
 }
 
 /*!

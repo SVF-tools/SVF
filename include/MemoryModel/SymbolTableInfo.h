@@ -98,9 +98,6 @@ private:
     /// Module
     SVFModule* mod;
 
-    /// Max field limit
-    static u32_t maxFieldLimit;
-
     /// Clean up memory
     void destroy();
 
@@ -513,7 +510,6 @@ private:
     /// Type vector of fields
     std::vector<const Type*> flattenElementTypes;
     /// Max field limit
-    static u32_t maxFieldLimit;
 
     StInfo(); ///< place holder
     StInfo(const StInfo& st); ///< place holder
@@ -527,16 +523,6 @@ public:
     /// Destructor
     ~StInfo()
     {
-    }
-
-    static inline void setMaxFieldLimit(u32_t limit)
-    {
-        maxFieldLimit = limit;
-    }
-
-    static inline u32_t getMaxFieldLimit()
-    {
-        return maxFieldLimit;
     }
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
@@ -620,6 +606,8 @@ private:
     /// maximum number of field object can be created
     /// minimum number is 0 (field insensitive analysis)
     u32_t maxOffsetLimit;
+    /// Size of the object or number of elements
+    u32_t elemNum;
 
     void resetTypeForHeapStaticObj(const Type* type);
 public:
@@ -648,6 +636,19 @@ public:
     inline void setMaxFieldOffsetLimit(u32_t limit)
     {
         maxOffsetLimit = limit;
+    }
+
+    /// Set the number of elements of this object 
+    inline void setNumOfElements(u32_t num)
+    {
+        elemNum = num;
+        setMaxFieldOffsetLimit(num);
+    }
+
+    /// Get the number of elements of this object 
+    inline u32_t getNumOfElements()
+    {
+        return elemNum;
     }
 
     /// Flag for this object type

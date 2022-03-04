@@ -455,7 +455,7 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjVarMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), StInfo::getMaxFieldLimit());
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), Options::MaxFieldLimit);
     GepObjVarMap[std::make_pair(base, ls)] = gepId;
     GepObjVar *node = new GepObjVar(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);

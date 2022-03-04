@@ -41,10 +41,9 @@ using namespace SVFUtil;
 
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
-u32_t StInfo::maxFieldLimit = 0;
 
 
-ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max)
+ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(1)
 {
     assert(t && "no type information for this object?");
 }
@@ -93,7 +92,7 @@ SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter
  */
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
 {
-    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, StInfo::getMaxFieldLimit());
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit);
     if(type && type->isPointerTy()){
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
@@ -624,7 +623,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
  */
 void MemObj::setFieldSensitive()
 {
-    typeInfo->setMaxFieldOffsetLimit(StInfo::getMaxFieldLimit());
+    typeInfo->setMaxFieldOffsetLimit(typeInfo->getNumOfElements());
 }
 
 
