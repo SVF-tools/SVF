@@ -84,8 +84,6 @@ public:
     void analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
     /// Analyse types of heap and static objects
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
-    /// Return the bitcast instruction which is val's only use site, otherwise return nullptr
-    const Value* getUniqueUseViaCastInst(const Value* val);
 
     /// Return size of this object based on LLVM value
     u32_t getObjSize(const Value* val);
