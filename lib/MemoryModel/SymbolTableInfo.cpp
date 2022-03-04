@@ -647,17 +647,7 @@ bool MemObj::isBlackHoleObj() const
 /// Get obj type info
 const Type* MemObj::getType() const
 {
-    if (isHeap() == false)
-    {
-        if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
-            return type->getElementType();
-        else
-            return typeInfo->getType();
-    }
-    else if (getValue() && SVFUtil::isa<Instruction>(getValue()))
-        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(getValue()));
-    else
-        return typeInfo->getType();
+    return typeInfo->getType();
 }
 /*
  * Destroy the fields of the memory object

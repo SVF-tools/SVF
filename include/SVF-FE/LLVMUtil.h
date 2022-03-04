@@ -517,6 +517,9 @@ const Value *stripAllCasts(const Value *val) ;
 /// Get the type of the heap allocation
 const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
 
+/// Return the bitcast instruction which is val's only use site, otherwise return nullptr
+const Value* getUniqueUseViaCastInst(const Value* val);
+
 /// Return corresponding constant expression, otherwise return nullptr
 //@{
 inline const ConstantExpr *isGepConstantExpr(const Value *val)
