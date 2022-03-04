@@ -14,82 +14,83 @@
 
 namespace SVF
 {
+typedef char LabelType;      // edge labels
+typedef short LabelIdx;    // indices of labels
+typedef std::pair<LabelType, LabelIdx> Label;
 
 /*!
  *
  */
-class CFGNodeBSTmpl
+class CFLGraph
 {
 public:
-    typedef char Type;      // edge labels
-    typedef short Index;    // indices of labels
     typedef std::unordered_map<NodeID, NodeBS> AdjacencyList;
-    typedef std::unordered_map<Index, AdjacencyList> IndexList;
+    typedef std::unordered_map<LabelIdx, AdjacencyList> IndexList;
 
 protected:
     IndexList *predMap[MAX_SYMBOL_LIMIT];   // four layers: label-->index-->adjacency list
-    IndexList *succMap[MAX_SYMBOL_LIMIT];
+    IndexList *succMap[MAX_SYMBOL_LIMIT];   // TODO: vectorize
     const NodeBS emptyNodeBS;
     NodeBS diff;
 
     // union/add data
     //@{
-    inline bool addPred(const NodeID key, const NodeID val, const Type ty, const Index ind)
+    inline bool addPred(const NodeID key, const NodeID val, const LabelType ty, const LabelIdx idx)
     {
-        return (*predMap[ty])[ind][key].test_and_set(val);
+        return (*predMap[ty])[idx][key].test_and_set(val);
     };
 
-    inline bool addSucc(const NodeID key, const NodeID val, const Type ty, const Index ind)
+    inline bool addSucc(const NodeID key, const NodeID val, const LabelType ty, const LabelIdx idx)
     {
-        return (*succMap[ty])[ind][key].test_and_set(val);
+        return (*succMap[ty])[idx][key].test_and_set(val);
     };
 
-    inline bool addPreds(const NodeID key, const NodeBS &data, const Type ty, const Index ind)
+    inline bool addPreds(const NodeID key, const NodeBS &data, const LabelType ty, const LabelIdx idx)
     {
         if (data.empty())
             return false;
-        return (*predMap[ty])[ind][key] |= data;
+        return (*predMap[ty])[idx][key] |= data;
     }
 
-    inline bool addSuccs(const NodeID key, const NodeBS &data, const Type ty, const Index ind)
+    inline bool addSuccs(const NodeID key, const NodeBS &data, const LabelType ty, const LabelIdx idx)
     {
         if (data.empty())
             return false;
-        return (*succMap[ty])[ind][key] |= data;
+        return (*succMap[ty])[idx][key] |= data;
     }
 
-    inline void removePred(const NodeID key, const NodeID val, const Type ty, const Index ind)
+    inline void removePred(const NodeID key, const NodeID val, const LabelType ty, const LabelIdx idx)
     {
-        if ((*predMap[ty])[ind].find(key) == (*predMap[ty])[ind].end())
+        if ((*predMap[ty])[idx].find(key) == (*predMap[ty])[idx].end())
             return;
-        (*predMap[ty])[ind][key].reset(val);
+        (*predMap[ty])[idx][key].reset(val);
     }
 
-    inline void removeSucc(const NodeID key, const NodeID val, const Type ty, const Index ind)
+    inline void removeSucc(const NodeID key, const NodeID val, const LabelType ty, const LabelIdx idx)
     {
-        if ((*succMap[ty])[ind].find(key) == (*succMap[ty])[ind].end())
+        if ((*succMap[ty])[idx].find(key) == (*succMap[ty])[idx].end())
             return;
-        (*succMap[ty])[ind][key].reset(val);
+        (*succMap[ty])[idx][key].reset(val);
     }
 
-    inline void removePreds(const NodeID key, const NodeBS &data, const Type ty, const Index ind)
+    inline void removePreds(const NodeID key, const NodeBS &data, const LabelType ty, const LabelIdx idx)
     {
-        if ((*predMap[ty])[ind].find(key) == (*predMap[ty])[ind].end())
+        if ((*predMap[ty])[idx].find(key) == (*predMap[ty])[idx].end())
             return;
-        (*predMap[ty])[ind][key].intersectWithComplement(data);
+        (*predMap[ty])[idx][key].intersectWithComplement(data);
     }
 
-    inline void removeSuccs(const NodeID key, const NodeBS &data, const Type ty, const Index ind)
+    inline void removeSuccs(const NodeID key, const NodeBS &data, const LabelType ty, const LabelIdx idx)
     {
-        if ((*succMap[ty])[ind].find(key) == (*succMap[ty])[ind].end())
+        if ((*succMap[ty])[idx].find(key) == (*succMap[ty])[idx].end())
             return;
-        (*succMap[ty])[ind][key].intersectWithComplement(data);
+        (*succMap[ty])[idx][key].intersectWithComplement(data);
     }
     //@}
 
 public:
     // Constructor
-    CFGNodeBSTmpl()
+    CFLGraph()
     {
         for (char i = 0; i < MAX_SYMBOL_LIMIT; ++i) {
             predMap[i] = new IndexList();
@@ -98,7 +99,7 @@ public:
     }
 
     // Destructor
-    virtual ~CFGNodeBSTmpl()
+    virtual ~CFLGraph()
     {
         for (char i = 0; i < MAX_SYMBOL_LIMIT; ++i) {
             delete predMap[i];
@@ -108,85 +109,69 @@ public:
 
     // lookups
     //@{
-    inline const NodeBS &getPreds(const NodeID key, const Type ty, const Index ind)
+    inline IndexList& getPredIndList(char ty)
     {
-        if ((*predMap[ty])[ind].find(key) == (*predMap[ty])[ind].end())
-            return emptyNodeBS;
-        return (*predMap[ty])[ind][key];
+        return (*predMap[ty]);
     }
 
-    inline const NodeBS &getSuccs(const NodeID key, const Type ty, const Index ind)
+    inline IndexList& getSuccIndList(char ty)
     {
-        if ((*succMap[ty])[ind].find(key) == (*succMap[ty])[ind].end())
+        return (*succMap[ty]);
+    }
+
+    inline const NodeBS &getPreds(const NodeID key, const LabelType ty, const LabelIdx idx)
+    {
+        if ((*predMap[ty])[idx].find(key) == (*predMap[ty])[idx].end())
             return emptyNodeBS;
-        return (*succMap[ty])[ind][key];
+        return (*predMap[ty])[idx][key];
+    }
+
+    inline const NodeBS &getSuccs(const NodeID key, const LabelType ty, const LabelIdx idx)
+    {
+        if ((*succMap[ty])[idx].find(key) == (*succMap[ty])[idx].end())
+            return emptyNodeBS;
+        return (*succMap[ty])[idx][key];
     }
     //@}
 
     // Edge operations
     //@{
-    inline void addEdge(const NodeID src, const NodeID dst, const Type ty, const Index ind = 0)
+    inline bool hasEdge(const NodeID src, const NodeID dst, const LabelType ty, const LabelIdx idx)
     {
-        addPred(dst, src, ty, ind);
-        addSucc(src, dst, ty, ind);
-    }
-
-    inline void addEdges(const NodeID src, const NodeBS &dstNodeBS, const Type ty, const Index ind = 0)
-    {
-        if (addSuccs(src, dstNodeBS, ty, ind)) {
-            for (const NodeID datum: dstNodeBS)
-                addPred(datum, src, ty, ind);
-        }
-    }
-
-    inline void addEdges(const NodeBS &srcNodeBS, const NodeID dst, const Type ty, const Index ind = 0)
-    {
-        if (addPreds(dst, srcNodeBS, ty, ind)) {
-            for (const NodeID datum: srcNodeBS)
-                addSucc(datum, dst, ty, ind);
-        }
-    }
-
-    inline bool hasEdge(const NodeID src, const NodeID dst, const Type ty, const Index ind)
-    {
-        auto it = (*succMap[ty])[ind].find(src);
-        if (it == (*succMap[ty])[ind].end())
+        auto it = (*succMap[ty])[idx].find(src);
+        if (it == (*succMap[ty])[idx].end())
             return false;
-        return (*succMap[ty])[ind][src].test(dst);
+        return (*succMap[ty])[idx][src].test(dst);
+    }
+
+    inline bool addEdge(const NodeID src, const NodeID dst, const LabelType ty, const LabelIdx idx = 0)
+    {
+        addPred(dst, src, ty, idx);
+        return addSucc(src, dst, ty, idx);
+    }
+
+    inline NodeBS addEdges(const NodeID src, const NodeBS &dstNodeBS, const LabelType ty, const LabelIdx idx = 0)
+    {
+        NodeBS newDsts;
+        if (addSuccs(src, dstNodeBS, ty, idx)) {
+            for (const NodeID datum: dstNodeBS)
+                if (addPred(datum, src, ty, idx))
+                    newDsts.set(datum);
+        }
+        return newDsts;
+    }
+
+    inline NodeBS addEdges(const NodeBS &srcNodeBS, const NodeID dst, const LabelType ty, const LabelIdx idx = 0)
+    {
+        NodeBS newSrcs;
+        if (addPreds(dst, srcNodeBS, ty, idx)) {
+            for (const NodeID datum: srcNodeBS)
+                if (addSucc(datum, dst, ty, idx))
+                    newSrcs.set(datum);
+        }
+        return newSrcs;
     }
     //@}
-
-    /* Diff operations */
-    //@{
-    inline NodeBS &getDiffNodeBS()
-    {
-        diff.clear();
-        return diff;
-    }
-
-    inline NodeBS &computeDiffNodeBS(const NodeID src, const NodeID dst, const Type ty, const Index ind)
-    {
-        diff.clear();
-        if (!hasEdge(src, dst, ty, ind))
-            diff.set(dst);
-        return diff;
-    }
-
-    inline NodeBS &computeDiffNodeBS(const NodeID src, const NodeBS &dstNodeBS, const Type ty, const Index ind)
-    {
-        diff.clear();
-        diff.intersectWithComplement(dstNodeBS, getSuccs(src, ty, ind));
-        return diff;
-    }
-
-    inline NodeBS &computeDiffNodeBS(const NodeBS &srcNodeBS, const NodeID dst, const Type ty, const Index ind)
-    {
-        diff.clear();
-        diff.intersectWithComplement(srcNodeBS, getPreds(dst, ty, ind));
-        return diff;
-    }
-    //@}
-
 };
 
 
