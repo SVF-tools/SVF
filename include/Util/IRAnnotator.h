@@ -85,7 +85,7 @@ private:
         {
             std::string label = it->getName().str();
             std::string toErase = "gepnode-";
-            SVF::s64_t pos = label.find(toErase);
+            SVF::s32_t pos = label.find(toErase);
             if (pos == std::string::npos)
             {
                 continue;
@@ -96,7 +96,7 @@ private:
             auto mdNode = it->getOperand(0);
 
             SVF::NodeID baseNodeId = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(0))->getString().str());
-            SVF::s64_t locationSetOffset = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(1))->getString().str());
+            SVF::s32_t locationSetOffset = std::stoi(llvm::cast<llvm::MDString>(mdNode->getOperand(1))->getString().str());
 
             LocationSet locationSet = LocationSet(locationSetOffset);
             SVF::NodeID gepnodeId = pag->getGepObjVar(baseNodeId, locationSet);

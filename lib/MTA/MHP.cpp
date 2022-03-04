@@ -1045,7 +1045,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     {
         if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
         {
-            s64_t idx = ci->getSExtValue();
+            s32_t idx = ci->getSExtValue();
             ptr1vec.push_back(idx);
         }
         else
@@ -1058,7 +1058,7 @@ static bool accessSameArrayIndex(const GetElementPtrInst* ptr1, const GetElement
     {
         if(ConstantInt* ci = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
         {
-            s64_t idx = ci->getSExtValue();
+            s32_t idx = ci->getSExtValue();
             ptr2vec.push_back(idx);
         }
         else

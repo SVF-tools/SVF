@@ -123,7 +123,7 @@ void ICFGBuilder::processFunBody(WorkList& worklist)
                     /// branch condition value
                     const ConstantInt* condVal = const_cast<SwitchInst*>(si)->findCaseDest(const_cast<BasicBlock*>(succ->getParent()));
                     /// default case is set to -1;
-                    s64_t val = condVal ? condVal->getSExtValue() : -1;
+                    s32_t val = condVal ? condVal->getSExtValue() : -1;
                     icfg->addConditionalIntraEdge(srcNode, dstNode, si->getCondition(),val);
                 }
                 else

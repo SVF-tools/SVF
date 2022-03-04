@@ -371,7 +371,7 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
                                std::vector<std::string> &moduleNameVec)
 {
     bool first_ir_file = true;
-    for (s64_t i = 0; i < argc; ++i)
+    for (u32_t i = 0; i < argc; ++i)
     {
         std::string argument(argv[i]);
         if (SVFUtil::isIRFile(argument))

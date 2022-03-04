@@ -455,7 +455,7 @@ NodeID SVFIR::addGepObjNode(const MemObj* obj, const LocationSet& ls)
     assert(0==GepObjVarMap.count(std::make_pair(base, ls))
            && "this node should not be created before");
 
-    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), StInfo::getMaxFieldLimit());
+    NodeID gepId = NodeIDAllocator::get()->allocateGepObjectId(base, ls.accumulateConstantFieldIdx(), Options::MaxFieldLimit);
     GepObjVarMap[std::make_pair(base, ls)] = gepId;
     GepObjVar *node = new GepObjVar(obj, gepId, ls);
     memToFieldsMap[base].set(gepId);
@@ -559,7 +559,7 @@ NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet&
  * Get a base SVFVar given a pointer
  * Return the source node of its connected normal gep edge
  * Otherwise return the node id itself
- * s64_t offset : gep offset
+ * s32_t offset : gep offset
  */
 LocationSet SVFIR::getLocationSetFromBaseNode(NodeID nodeId)
 {

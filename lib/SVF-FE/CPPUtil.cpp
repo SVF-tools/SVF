@@ -55,7 +55,7 @@ const string structName = "struct.";
 
 static bool isOperOverload(const string name)
 {
-    s64_t leftnum = 0, rightnum = 0;
+    u32_t leftnum = 0, rightnum = 0;
     string subname = name;
     size_t leftpos, rightpos;
     leftpos = subname.find("<");
@@ -88,7 +88,7 @@ static string getBeforeParenthesis(const string &name)
     size_t lastRightParen = name.rfind(")");
     assert(lastRightParen > 0);
 
-    s64_t paren_num = 1, pos;
+    s32_t paren_num = 1, pos;
     for (pos = lastRightParen - 1; pos >= 0; pos--)
     {
         if (name[pos] == ')')
@@ -107,7 +107,7 @@ string cppUtil::getBeforeBrackets(const string &name)
     {
         return name;
     }
-    s64_t bracket_num = 1, pos;
+    s32_t bracket_num = 1, pos;
     for (pos = name.size() - 2; pos >= 0; pos--)
     {
         if (name[pos] == '>')
@@ -228,7 +228,7 @@ bool cppUtil::isLoadVtblInst(const LoadInst *loadInst)
     const Value *loadSrc = loadInst->getPointerOperand();
     const Type *valTy = loadSrc->getType();
     const Type *elemTy = valTy;
-    for (s64_t i = 0; i < 3; ++i)
+    for (u32_t i = 0; i < 3; ++i)
     {
         if (const PointerType *ptrTy = SVFUtil::dyn_cast<PointerType>(elemTy))
             elemTy = ptrTy->getElementType();
