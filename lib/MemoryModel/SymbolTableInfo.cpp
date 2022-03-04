@@ -43,7 +43,7 @@ DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 
-ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(1)
+ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
 }
