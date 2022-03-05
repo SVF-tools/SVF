@@ -1,4 +1,4 @@
-//===- CFLSolver.h -- CFL reachability solver---------------------------------//
+//===- GraphReachSolver.h -- Generic graph reachability solver---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -21,7 +21,7 @@
 //===----------------------------------------------------------------------===//
 
 /*
- * CFLSolver.h
+ * GraphReachSolver.h
  *
  *  Created on: Apr 1, 2014
  *      Author: Yulei Sui
@@ -37,11 +37,11 @@ namespace SVF
 {
 
 /*
- * Generic CFL solver for demand-driven analysis based on different graphs (e.g. SVFIR, VFG, ThreadVFG)
+ * Generic Graph Reachability solver for demand-driven analysis based on different graphs (e.g. SVFIR, VFG, ThreadVFG)
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
 template<class GraphType, class DPIm = DPItem>
-class CFLSolver
+class GraphReachSolver
 {
 
 public:
@@ -62,11 +62,11 @@ public:
 protected:
 
     /// Constructor
-    CFLSolver(): _graph(nullptr)
+    GraphReachSolver(): _graph(nullptr)
     {
     }
     /// Destructor
-    virtual ~CFLSolver()
+    virtual ~GraphReachSolver()
     {
     }
     /// Get/Set graph methods
