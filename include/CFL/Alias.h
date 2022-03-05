@@ -7,7 +7,7 @@
 #define SVF_ALIAS_H
 
 #include "CFLSolver.h"
-#include "Graphs/ConsG.h"
+
 
 namespace SVF
 {
@@ -18,11 +18,29 @@ namespace SVF
 class AliasSolver : public CFLRSolver
 {
 public:
+    enum aliasLabels {
+        fault,      // a fault label
+        epsilon,
+        a,
+        abar,
+        d,
+        dbar,
+        f,
+        fbar,
+        A,
+        Abar,
+        F,
+        DV,     // dbar V
+        FV,     // fbar V
+        M,
+        V
+    };
+
     void buildGraph();      // build graph from constraint graph
 
     // Context-free grammar operations
     //@{
-    virtual std::set<Label> unaryDerivation(Label lbl);         // A ::= B
+    virtual Label unaryDerivation(Label lbl);         // A ::= B
     virtual Label binaryDerivation(Label llbl, Label rlbl);     // A ::= B C
     //@}
 };

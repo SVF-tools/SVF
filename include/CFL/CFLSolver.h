@@ -124,7 +124,7 @@ public:
 
     // Context-free grammar operations
     //@{
-    virtual std::set<Label> unaryDerivation(Label lbl) = 0;         // A ::= B
+    virtual Label unaryDerivation(Label lbl) = 0;         // A ::= B
     virtual Label binaryDerivation(Label llbl, Label rlbl) = 0;     // A ::= B C
     //@}
 
@@ -138,30 +138,29 @@ public:
 
     virtual void processCFLItem(CFLItem item)   // item: v_1 --> v_2
     {
-        for (auto lbl: unaryDerivation(item.lbl))
-            if (graph()->addEdge(item.src, item.dst, lbl.first, lbl.second))
-                pushIntoWorklist(item.src, item.dst, lbl.first, lbl.second);
-
+        Label newLbl = unaryDerivation(item.lbl);
+        if (newLbl.first && graph()->addEdge(item.src, item.dst, newLbl.first, newLbl.second))
+            pushIntoWorklist(item.src, item.dst, newLbl.first, newLbl.second);
 
         for (LabelType ty = 0; ty < numOfTypes; ++ty) {
             // process v_3 --> v_1 --> v_2
             for (auto it: graph()->getPredIndList(ty)) {
                 Label lbl = std::make_pair(ty, it.first);
-                Label newLbl = binaryDerivation(lbl, item.lbl);
-                if (!newLbl.first)
+                newLbl = binaryDerivation(lbl, item.lbl);
+                if (!newLbl.first)      // not process false label
                     continue;
                 NodeBS newSrcs = graph()->addEdges(it.second[item.src], item.dst, newLbl.first, newLbl.second);
-                for (NodeID src : newSrcs)
+                for (NodeID src: newSrcs)
                     pushIntoWorklist(src, item.dst, newLbl.first, newLbl.second);
             }
             // process v_1 --> v_2 --> v_3
             for (auto &it: graph()->getSuccIndList(ty)) {
                 Label lbl = std::make_pair(ty, it.first);
-                Label newLbl = binaryDerivation(item.lbl, lbl);
-                if (!newLbl.first)
+                newLbl = binaryDerivation(item.lbl, lbl);
+                if (!newLbl.first)      // not process false label
                     continue;
                 NodeBS newDsts = graph()->addEdges(item.src, it.second[item.dst], newLbl.first, newLbl.second);
-                for (NodeID dst : newDsts)
+                for (NodeID dst: newDsts)
                     pushIntoWorklist(item.src, dst, newLbl.first, newLbl.second);
             }
         }
@@ -177,15 +176,18 @@ public:
 /*!
  * hash function
  */
-template <> struct std::hash<SVF::CFLItem> {
-    size_t operator()(const SVF::CFLItem &item) const {
+template<>
+struct std::hash<SVF::CFLItem>
+{
+    size_t operator()(const SVF::CFLItem &item) const
+    {
         // Make sure our assumptions are sound: use u32_t
         // and u64_t. If NodeID is not actually u32_t or size_t
         // is not u64_t we should be fine since we get a
         // consistent result.
-        uint32_t first = (uint32_t)(item.src);
-        uint32_t second = (uint32_t)(item.dst);
-        return ((uint64_t)(first) << 32) | (uint64_t)(second);
+        uint32_t first = (uint32_t) (item.src);
+        uint32_t second = (uint32_t) (item.dst);
+        return ((uint64_t) (first) << 32) | (uint64_t) (second);
     }
 };
 
