@@ -89,11 +89,38 @@ public:
 
     virtual const CFLEdge* hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label);
 
+    void dump(const std::string& filename);
+
+    void view();
+
     /// Build graph from file
     void build(std::string filename);
-
+    
 private:
     CFLEdgeSet cflEdgeSet;
 };
 
 }
+
+namespace llvm
+{
+/* !
+ * GraphTraits specializations for generic graph algorithms.
+ * Provide graph traits for traversing from a constraint node using standard graph traversals.
+ */
+template<> struct GraphTraits<SVF::CFLNode*> : public GraphTraits<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>*  >
+{
+};
+
+/// Inverse GraphTraits specializations for call graph node, it is used for inverse traversal.
+template<>
+struct GraphTraits<Inverse<SVF::CFLNode *> > : public GraphTraits<Inverse<SVF::GenericNode<SVF::CFLNode,SVF::CFLEdge>* > >
+{
+};
+
+template<> struct GraphTraits<SVF::CFLGraph*> : public GraphTraits<SVF::GenericGraph<SVF::CFLNode,SVF::CFLEdge>* >
+{
+    typedef SVF::CFLNode *NodeRef;
+};
+
+} // End namespace llvm

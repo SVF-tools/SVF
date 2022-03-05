@@ -29,9 +29,14 @@
  */
 
 #include "Graphs/CFLGraph.h"
+#include "Util/SVFUtil.h"
 
 using namespace SVF;
 
+//// Build graph from file
+void CFLGraph::build(std::string filename){
+
+}
 
 void CFLGraph::addCFLNode(NodeID id, CFLNode* node){
     addGNode(id, node);
@@ -54,7 +59,67 @@ const CFLEdge* CFLGraph::hasEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag 
         return nullptr;
 }
 
+void CFLGraph::dump(const std::string& filename)
+{
+    GraphPrinter::WriteGraphToFile(SVFUtil::outs(), filename, this);
+}
 
-void CFLGraph::build(std::string filename){
+void CFLGraph::view()
+{
+    llvm::ViewGraph(this, "CFL Graph");
+}
+
+
+namespace llvm
+{
+/*!
+ * Write value flow graph into dot file for debugging
+ */
+template<>
+struct DOTGraphTraits<CFLGraph*> : public DefaultDOTGraphTraits
+{
+
+    typedef CFLNode NodeType;
+
+    DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple)
+    {
+    }
+
+    /// Return name of the graph
+    static std::string getGraphName(CFLGraph*)
+    {
+        return "CFL Reachability Graph";
+    }
+    /// Return function name;
+    static std::string getNodeLabel(CFLNode *node, CFLGraph*)
+    {
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "Node ID: " << node->getId() << " ";
+        return rawstr.str();
+    }
+
+    static std::string getNodeAttributes(CFLNode *node, CFLGraph*)
+    {
+        return "shape=box";
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeAttributes(CFLNode*, EdgeIter EI, CFLGraph*)
+    {
+        return "style=solid";
+    }
+
+    template<class EdgeIter>
+    static std::string getEdgeSourceLabel(NodeType*, EdgeIter EI)
+    {
+        CFLEdge* edge = *(EI.getCurrent());
+        assert(edge && "No edge found!!");
+        std::string str;
+        raw_string_ostream rawstr(str);
+        rawstr << "Edge label: " << edge->getEdgeKind() << " ";
+        return rawstr.str();
+    }
+};
 
 }
