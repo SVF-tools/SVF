@@ -41,7 +41,7 @@ namespace SVF
  * Extend this class for sophisticated CFL-reachability resolution (e.g. field, flow, path)
  */
 template<class GraphType, class DPIm = DPItem>
-class CFLSolver
+class DPSolver
 {
 
 public:
@@ -62,11 +62,11 @@ public:
 protected:
 
     /// Constructor
-    CFLSolver(): _graph(nullptr)
+    DPSolver(): _graph(nullptr)
     {
     }
     /// Destructor
-    virtual ~CFLSolver()
+    virtual ~DPSolver()
     {
     }
     /// Get/Set graph methods
