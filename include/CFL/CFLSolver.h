@@ -50,11 +50,6 @@ public:
     {
         return src == rhs.src && dst == rhs.dst && lbl == rhs.lbl;
     }
-
-//    inline bool operator!=(const CFLItem &rhs) const
-//    {
-//        return !(*this == rhs);
-//    }
 };
 
 
@@ -127,11 +122,10 @@ public:
     }
     //@}
 
-    //CFL graph operations
+    // Context-free grammar operations
     //@{
-    virtual std::set<Label> unaryDerivation(Label lbl) = 0;
-
-    virtual Label binaryDerivation(Label llbl, Label rlbl) = 0;
+    virtual std::set<Label> unaryDerivation(Label lbl) = 0;         // A ::= B
+    virtual Label binaryDerivation(Label llbl, Label rlbl) = 0;     // A ::= B C
     //@}
 
     virtual void solveWorklist()
@@ -173,6 +167,8 @@ public:
         }
     };
 
+    // TODO:
+    virtual void solve() = 0;
 };
 
 }   // end namespace
