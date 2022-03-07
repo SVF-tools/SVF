@@ -86,7 +86,7 @@ public:
     void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
 
     /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Value* val);
+    u32_t getObjSize(const Type* type);
 };
 
 }

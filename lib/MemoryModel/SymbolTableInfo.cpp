@@ -643,6 +643,11 @@ bool MemObj::isBlackHoleObj() const
     return SymbolTableInfo::isBlkObj(getId());
 }
 
+/// Get the number of elements of this object 
+u32_t MemObj::getNumOfElements() const
+{
+    return typeInfo->getNumOfElements();
+}
 
 /// Get obj type info
 const Type* MemObj::getType() const
