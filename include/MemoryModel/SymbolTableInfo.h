@@ -439,6 +439,9 @@ public:
     /// Get obj type
     const Type* getType() const;
 
+    /// Get the number of elements of this object 
+    u32_t getNumOfElements() const;
+
     /// Get max field offset limit
     u32_t getMaxFieldOffsetLimit() const;
 
@@ -646,7 +649,7 @@ public:
     }
 
     /// Get the number of elements of this object 
-    inline u32_t getNumOfElements()
+    inline u32_t getNumOfElements() const
     {
         return elemNum;
     }

@@ -589,19 +589,24 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
  */
 void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
-    s32_t objSize = 1;
+    u32_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::FUNCTION_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(val);
+        objSize = getObjSize(typeinfo->getType());
     }
-    else if(SVFUtil::isa<AllocaInst>(val))
+    else if(const AllocaInst* allocaInst = SVFUtil::dyn_cast<AllocaInst>(val))
     {
         typeinfo->setFlag(ObjTypeInfo::STACK_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(val);
+        /// This is for `alloca <ty> <NumElements>`. For example, `alloca i64 3` allocates 3 i64 on the stack (objSize=3)
+        /// In most cases, `NumElements` is not specified in the instruction, which means there is only one element (objSize=1).
+        if(const ConstantInt *sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize()))
+            objSize = sz->getZExtValue();
+        else
+            objSize = getObjSize(typeinfo->getType());
     }
     else if(SVFUtil::isa<GlobalVariable>(val))
     {
@@ -609,25 +614,25 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
         if(SymbolTableInfo::SymbolInfo()->isConstantObjSym(val))
             typeinfo->setFlag(ObjTypeInfo::CONST_GLOBAL_OBJ);
         analyzeObjType(typeinfo,val);
-        objSize = getObjSize(val);
+        objSize = getObjSize(typeinfo->getType());
     }
     else if (SVFUtil::isa<Instruction>(val) && isHeapAllocExtCall(SVFUtil::cast<Instruction>(val)))
     {
         analyzeHeapObjType(typeinfo,val);
         // Heap object, label its field as infinite here
-        objSize = -1;
+        objSize = typeinfo->getMaxFieldOffsetLimit();
     }
     else if (SVFUtil::isa<Instruction>(val) && isStaticExtCall(SVFUtil::cast<Instruction>(val)))
     {
         analyzeStaticObjType(typeinfo,val);
         // static object allocated before main, label its field as infinite here
-        objSize = -1;
+        objSize = typeinfo->getMaxFieldOffsetLimit();
     }
     else if(ArgInProgEntryFunction(val))
     {
         analyzeStaticObjType(typeinfo,val);
         // user input data, label its field as infinite here
-        objSize = -1;
+        objSize = typeinfo->getMaxFieldOffsetLimit();
     }
     else if(SVFUtil::isConstantData(val))
     {
@@ -640,17 +645,16 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     }
 
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
-    if(objSize > 0 && typeinfo->getMaxFieldOffsetLimit() > objSize)
+    if(typeinfo->getMaxFieldOffsetLimit() > objSize)
         typeinfo->setNumOfElements(objSize);
 }
 
 /*!
  * Return size of this Object
  */
-u32_t SymbolTableBuilder::getObjSize(const Value* val)
+u32_t SymbolTableBuilder::getObjSize(const Type* ety)
 {
-
-    Type* ety  = SVFUtil::cast<PointerType>(val->getType())->getElementType();
+    assert(ety && "type is null?");
     u32_t numOfFields = 1;
     if (SVFUtil::isa<StructType>(ety) || SVFUtil::isa<ArrayType>(ety))
     {
