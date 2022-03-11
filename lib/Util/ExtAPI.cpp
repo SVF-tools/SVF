@@ -502,6 +502,7 @@ static const ei_pair ei_pairs[]=
     {"cairo_pattern_create_for_surface", ExtAPI::EFT_ALLOC},
     {"cairo_surface_create_similar", ExtAPI::EFT_ALLOC},
     {"calloc", ExtAPI::EFT_ALLOC},
+    {"zmalloc", ExtAPI::EFT_ALLOC},
     {"fopen", ExtAPI::EFT_ALLOC},
     {"fopen64", ExtAPI::EFT_ALLOC},
     {"fopencookie", ExtAPI::EFT_ALLOC},
