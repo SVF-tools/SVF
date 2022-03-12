@@ -85,7 +85,7 @@ private:
         {
             std::string label = it->getName().str();
             std::string toErase = "gepnode-";
-            SVF::u32_t pos = label.find(toErase);
+            std::size_t pos = label.find(toErase);
             if (pos == std::string::npos)
             {
                 continue;
