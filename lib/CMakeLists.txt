@@ -24,7 +24,6 @@ file (GLOB SOURCES
 )
 
 add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd ${Z3_LIBRARIES})
-set_target_properties(Svf PROPERTIES COMPILE_FLAGS "-Wall")
 
 link_directories(${CMAKE_BINARY_DIR}/lib/Cudd)
 
