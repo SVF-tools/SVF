@@ -152,7 +152,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, 
                     for (auto _s : strides)
                     {
                         s32_t _f1 = _f + _s;
-                        loopFlag = (offsets.find(_f1) == offsets.end()) && (initOffset + _f1 < maxLimit);
+                        loopFlag = (offsets.find(_f1) == offsets.end()) && ( (u32_t)(initOffset + _f1) < maxLimit);
                         if (loopFlag)
                             offsets.insert(_f1);
                     }

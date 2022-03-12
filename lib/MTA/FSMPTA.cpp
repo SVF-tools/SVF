@@ -682,10 +682,9 @@ void MTASVFGBuilder::readPrecision()
 
 void MTASVFGBuilder::connectMHPEdges(PointerAnalysis* pta)
 {
-    PCG* pcg;
-    if (ADDEDGE_NONSPARSE==Options::AddModelFlag)
+    PCG* pcg = new PCG(pta);
+    if ((ADDEDGE_NONSPARSE==Options::AddModelFlag) && Options::UsePCG)
     {
-        pcg= new PCG(pta);
         pcg->analyze();
     }
     collectLoadStoreSVFGNodes();

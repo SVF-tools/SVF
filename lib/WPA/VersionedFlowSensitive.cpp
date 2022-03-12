@@ -306,7 +306,7 @@ void VersionedFlowSensitive::meldLabel(void)
             Map<MeldVersion, Version> mvv;
             std::vector<Version> sccToVersion(numSCCs, invalidVersion);
             Version curVersion = 0;
-            for (int scc = 0; scc < sccToMeldVersion.size(); ++scc)
+            for (u32_t scc = 0; scc < sccToMeldVersion.size(); ++scc)
             {
                 const MeldVersion &mv = sccToMeldVersion[scc];
                 Map<MeldVersion, Version>::const_iterator foundVersion = mvv.find(mv);
@@ -334,7 +334,7 @@ void VersionedFlowSensitive::meldLabel(void)
 
             // 6. From SCC reliance, determine version reliances.
             Map<Version, std::vector<Version>> &osVersionReliance = this->versionReliance.at(o);
-            for (int scc = 0; scc < numSCCs; ++scc)
+            for (u32_t scc = 0; scc < numSCCs; ++scc)
             {
                 if (sccReliance[scc].empty()) continue;
 

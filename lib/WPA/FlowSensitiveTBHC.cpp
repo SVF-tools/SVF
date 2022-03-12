@@ -329,7 +329,7 @@ bool FlowSensitiveTBHC::processGep(const GepSVFGNode* gep)
                 }
 
                 if (DCHGraph::isAgg(baseType) && baseType->getTag() != dwarf::DW_TAG_array_type
-                        && gepStmt->getConstantFieldIdx() >= dchg->getNumFields(baseType))
+                        && ((u32_t)gepStmt->getConstantFieldIdx() >= dchg->getNumFields(baseType)))
                 {
                     // If the field offset is too high for this object, it is killed. It seems that a
                     // clone was made on this GEP but this is not the base (e.g. base->f1->f2), and SVF
