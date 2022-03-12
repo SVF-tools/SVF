@@ -318,7 +318,7 @@ void VersionedFlowSensitive::meldLabel(void)
 
             // Same for storesYieldedMeldVersion.
             Map<NodeID, Version> storesYieldedVersion;
-            for (const std::pair<NodeID, MeldVersion> &nmv : storesYieldedMeldVersion)
+            for (auto const& nmv : storesYieldedMeldVersion)
             {
                 const NodeID n = nmv.first;
                 const MeldVersion &mv = nmv.second;
@@ -818,7 +818,7 @@ void VersionedFlowSensitive::dumpReliances(void) const
     {
         NodeID o = ovrv.first;
         SVFUtil::outs() << "  Object " << o << "\n";
-        for (const Map<Version, std::vector<Version>>::value_type vrv : ovrv.second)
+        for (const Map<Version, std::vector<Version>>::value_type& vrv : ovrv.second)
         {
             Version v = vrv.first;
             SVFUtil::outs() << "    Version " << v << " is a reliance for: ";

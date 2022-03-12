@@ -302,7 +302,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 void BVDataPTAImpl::writeToModule()
 {
     auto irAnnotator = std::make_unique<IRAnnotator>();
-    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
 
     irAnnotator->processAndersenResults(pag, this, true);
 }

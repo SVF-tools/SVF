@@ -272,7 +272,7 @@ void DDAStat::printStatPerQuery(NodeID ptr, const PointsTo& pts)
 }
 
 
-void DDAStat::printStat()
+void DDAStat::printStat(string str)
 {
 
     if(flowDDA)
@@ -286,5 +286,5 @@ void DDAStat::printStat()
     }
 
     SVFUtil::outs() << "\n****Demand-Driven Pointer Analysis Statistics****\n";
-    PTAStat::printStat();
+    PTAStat::printStat(str);
 }

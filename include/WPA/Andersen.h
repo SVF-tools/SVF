@@ -534,7 +534,7 @@ protected:
     // Solve constraints of each nodes
     virtual void handleCopyGep(ConstraintNode* node);
     // Collapse nodes and fields based on 'lcdCandidates'
-    virtual void mergeSCC();
+    void mergeSCC();
     // AndersenLCD specified SCC detector, need to input a nodeStack 'lcdCandidate'
     NodeStack& SCCDetect();
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);

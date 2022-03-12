@@ -80,7 +80,7 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
 /*!
  * Propagate point-to set via a gep edge, using SFR
  */
-bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();

@@ -150,7 +150,7 @@ protected:
     void initialize();
     void PWCDetect();
     void fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, PointsTo& expandPts);
-    bool processGepPts(PointsTo& pts, const GepCGEdge* edge);
+    bool processGepPts(const PointsTo& pts, const GepCGEdge* edge);
     bool mergeSrcToTgt(NodeID nodeId, NodeID newRepId);
 
 };

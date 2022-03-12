@@ -238,7 +238,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
-        s32_t bo = byteOffset.getSExtValue();
+        //s32_t bo = byteOffset.getSExtValue();
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);

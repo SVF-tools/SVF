@@ -80,9 +80,9 @@ public:
     {
 
     }
-    virtual void performStat();
+    virtual void performStat() override;
 
-    virtual void printStat();
+    virtual void printStat(std::string str = "") override;
 
 private:
     MemSSA* mssa;
@@ -100,9 +100,9 @@ public:
 
     virtual ~SVFGStat() {}
 
-    virtual void performStat();
+    virtual void performStat() override;
 
-    virtual void printStat();
+    virtual void printStat(std::string str = "") override;
 
     virtual void performSCCStat(SVFGEdgeSet insensitiveCalRetEdges);
 
