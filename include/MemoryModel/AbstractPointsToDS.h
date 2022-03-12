@@ -268,6 +268,12 @@ public:
                || ptd->getPTDTY() == PTDataTy::MutVersioned
                || ptd->getPTDTY() == PTDataTy::PersVersioned;
     }
+private:
+    using BasePTData::getPts;
+    using BasePTData::addPts;
+    using BasePTData::unionPts;
+    using BasePTData::clearPts;
+    using BasePTData::clearFullPts;
     ///@}
 };
 

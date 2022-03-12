@@ -238,7 +238,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
-        s32_t bo = byteOffset.getSExtValue();
+        //s32_t bo = byteOffset.getSExtValue();
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
@@ -1331,9 +1331,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 // We summarize the side effects: arg3->parent = arg1, arg3->left = arg1, arg3->right = arg1
                 // Note that arg0 is aligned with "offset".
-                for (int i = offset + 1; i <= offset + 3; ++i)
+                for (s32_t i = offset + 1; i <= offset + 3; ++i)
                 {
-                    if(i >= fields.size())
+                    if((u32_t)i >= fields.size())
                         break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
@@ -1358,9 +1358,9 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 // We summarize the side effects: ret = arg->parent, ret = arg->left, ret = arg->right
                 // Note that arg0 is aligned with "offset".
-                for (int i = offset + 1; i <= offset + 3; ++i)
+                for (s32_t i = offset + 1; i <= offset + 3; ++i)
                 {
-                    if(i >= fields.size())
+                    if((u32_t)i >= fields.size())
                         break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnS = getGepValVar(vArg, fields[i], elementType);

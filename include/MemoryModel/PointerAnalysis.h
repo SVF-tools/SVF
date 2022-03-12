@@ -257,11 +257,6 @@ public:
     /// Similar to getPts, this also needs to be implemented in child classes.
     virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
 
-    /// Clear points-to data
-    virtual void clearPts()
-    {
-    }
-
     /// Print targets of a function pointer
     void printIndCSTargets(const CallICFGNode* cs, const FunctionSet& targets);
 

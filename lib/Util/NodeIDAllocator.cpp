@@ -191,7 +191,6 @@ namespace SVF
         assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
         Map<std::string, std::string> overallStats;
-        double totalTime = 0.0;
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
         double dendrogramTraversalTime = 0.0;

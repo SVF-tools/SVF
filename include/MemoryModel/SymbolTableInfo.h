@@ -411,13 +411,13 @@ private:
     const Value *refVal;
     /// The unique id to represent this symbol
     SymID symId;
-public:
 
+public:
     /// Constructor
     MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
 
     /// Destructor
-    ~MemObj()
+    virtual ~MemObj()
     {
         destroy();
     }

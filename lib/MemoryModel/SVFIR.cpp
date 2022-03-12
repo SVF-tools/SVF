@@ -52,7 +52,7 @@ AddrStmt* SVFIR::addAddrStmt(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Addr))
+    if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Addr))
         return nullptr;
     else
     {
@@ -70,7 +70,7 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
+    if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Copy))
         return nullptr;
     else
     {
@@ -112,7 +112,7 @@ SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond
     SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(res);
     SVFVar* condNode = getGNode(cond);
-    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::Select, op2Node))
+    if(hasLabeledEdge(op1Node, dstNode, SVFStmt::Select, op2Node))
         return nullptr;
     else
     {
@@ -132,7 +132,7 @@ CmpStmt* SVFIR::addCmpStmt(NodeID op1, NodeID op2, NodeID dst, u32_t predicate)
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::Cmp, op2Node))
+    if(hasLabeledEdge(op1Node, dstNode, SVFStmt::Cmp, op2Node))
         return nullptr;
     else
     {
@@ -153,7 +153,7 @@ BinaryOPStmt* SVFIR::addBinaryOPStmt(NodeID op1, NodeID op2, NodeID dst, u32_t o
     SVFVar* op1Node = getGNode(op1);
     SVFVar* op2Node = getGNode(op2);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(op1Node, dstNode, SVFStmt::BinaryOp, op2Node))
+    if(hasLabeledEdge(op1Node, dstNode, SVFStmt::BinaryOp, op2Node))
         return nullptr;
     else
     {
@@ -172,7 +172,7 @@ UnaryOPStmt* SVFIR::addUnaryOPStmt(NodeID src, NodeID dst, u32_t opcode)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::UnaryOp))
+    if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::UnaryOp))
         return nullptr;
     else
     {
@@ -190,7 +190,7 @@ BranchStmt* SVFIR::addBranchStmt(NodeID br, NodeID cond, const BranchStmt::SuccA
 {
     SVFVar* brNode = getGNode(br);
     SVFVar* condNode = getGNode(cond);
-    if(SVFStmt* edge = hasNonlabeledEdge(condNode,brNode, SVFStmt::Branch))
+    if(hasNonlabeledEdge(condNode,brNode, SVFStmt::Branch))
         return nullptr;
     else
     {
@@ -208,7 +208,7 @@ LoadStmt* SVFIR::addLoadStmt(NodeID src, NodeID dst)
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Load))
+    if(hasNonlabeledEdge(srcNode,dstNode, SVFStmt::Load))
         return nullptr;
     else
     {
@@ -227,7 +227,7 @@ StoreStmt* SVFIR::addStoreStmt(NodeID src, NodeID dst, const IntraICFGNode* curV
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Store, curVal))
+    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::Store, curVal))
         return nullptr;
     else
     {
@@ -245,7 +245,7 @@ CallPE* SVFIR::addCallPE(NodeID src, NodeID dst, const CallICFGNode* cs, const F
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Call, cs))
+    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::Call, cs))
         return nullptr;
     else
     {
@@ -263,7 +263,7 @@ RetPE* SVFIR::addRetPE(NodeID src, NodeID dst, const CallICFGNode* cs, const Fun
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::Ret, cs))
+    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::Ret, cs))
         return nullptr;
     else
     {
@@ -292,7 +292,7 @@ TDForkPE* SVFIR::addThreadForkPE(NodeID src, NodeID dst, const CallICFGNode* cs,
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadFork, cs))
+    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadFork, cs))
         return nullptr;
     else
     {
@@ -310,7 +310,7 @@ TDJoinPE* SVFIR::addThreadJoinPE(NodeID src, NodeID dst, const CallICFGNode* cs,
 {
     SVFVar* srcNode = getGNode(src);
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadJoin, cs))
+    if(hasLabeledEdge(srcNode,dstNode, SVFStmt::ThreadJoin, cs))
         return nullptr;
     else
     {
@@ -351,7 +351,7 @@ GepStmt* SVFIR::addNormalGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValVar(src));
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
+    if(hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
         return nullptr;
     else
     {
@@ -371,7 +371,7 @@ GepStmt* SVFIR::addVariantGepStmt(NodeID src, NodeID dst, const LocationSet& ls)
     const LocationSet& baseLS = getLocationSetFromBaseNode(src);
     SVFVar* baseNode = getGNode(getBaseValVar(src));
     SVFVar* dstNode = getGNode(dst);
-    if(SVFStmt* edge = hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
+    if(hasNonlabeledEdge(baseNode, dstNode, SVFStmt::Gep))
         return nullptr;
     else
     {

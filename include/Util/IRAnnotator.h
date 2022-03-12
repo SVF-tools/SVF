@@ -85,7 +85,7 @@ private:
         {
             std::string label = it->getName().str();
             std::string toErase = "gepnode-";
-            SVF::s32_t pos = label.find(toErase);
+            std::size_t pos = label.find(toErase);
             if (pos == std::string::npos)
             {
                 continue;
@@ -128,7 +128,7 @@ private:
         {
             processBasicBlockNode(basicBlock, nodeId, writeFlag);
         }
-        else if (auto constant = const_cast<Constant *>(SVFUtil::dyn_cast<Constant>(value)))
+        else if (SVFUtil::isa<Constant>(value))
         {
             processConstantNode(nodeId, writeFlag);
         }

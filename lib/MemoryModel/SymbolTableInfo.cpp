@@ -631,7 +631,7 @@ void MemObj::setFieldSensitive()
  * Constructor of a memory object
  */
 MemObj::MemObj(SymID id, ObjTypeInfo* ti, const Value *val) :
-    symId(id), refVal(val), typeInfo(ti)
+    typeInfo(ti), refVal(val), symId(id)
 {
 }
 

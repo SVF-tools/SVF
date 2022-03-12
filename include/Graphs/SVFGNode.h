@@ -347,16 +347,14 @@ class IntraMSSAPHISVFGNode : public MSSAPHISVFGNode
 {
 
 public:
-    const MRVer* resVer;
     /// Constructor
     IntraMSSAPHISVFGNode(NodeID id, const MRVer* resVer): MSSAPHISVFGNode(id, resVer, MIntraPhi)
     {
-        resVer = resVer; 
     }
 
-     inline const MRVer* getMRVer() const
+    inline const MRVer* getMRVer() const
     {
-        return resVer;
+        return getResVer();
     }
 
     inline OPVers::const_iterator opVerBegin() const

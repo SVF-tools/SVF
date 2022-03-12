@@ -88,8 +88,8 @@ void traverseOnICFG(ICFG* icfg, const Instruction* inst)
     while (!worklist.empty())
     {
         const ICFGNode* vNode = worklist.pop();
-        for (ICFGNode::const_iterator it = iNode->OutEdgeBegin(), eit =
-                    iNode->OutEdgeEnd(); it != eit; ++it)
+        for (ICFGNode::const_iterator it = vNode->OutEdgeBegin(), eit =
+                    vNode->OutEdgeEnd(); it != eit; ++it)
         {
             ICFGEdge* edge = *it;
             ICFGNode* succNode = edge->getDstNode();
@@ -135,7 +135,7 @@ void traverseOnVFG(const SVFG* vfg, Value* val)
     /// Collect all LLVM Values
     for(Set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it)
     {
-        const VFGNode* node = *it;
+        // const VFGNode* node = *it;
         /// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
         /// PAGNode* pNode = vfg->getLHSTopLevPtr(node);
         /// Value* val = pNode->getValue();
@@ -178,6 +178,7 @@ int main(int argc, char ** argv)
 
     /// ICFG
     ICFG* icfg = pag->getICFG();
+    icfg->dump("icfg");
 
     /// Value-Flow Graph (VFG)
     VFG* vfg = new VFG(callgraph);

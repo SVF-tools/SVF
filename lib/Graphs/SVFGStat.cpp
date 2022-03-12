@@ -124,11 +124,11 @@ void MemSSAStat::performStat()
 /*!
  * Print statistics
  */
-void MemSSAStat::printStat()
+void MemSSAStat::printStat(string str)
 {
 
     SVFUtil::outs() << "\n****Memory SSA Statistics****\n";
-    PTAStat::printStat();
+    PTAStat::printStat(str);
 }
 
 /*!
@@ -498,8 +498,8 @@ void SVFGStat::performSCCStat(SVFGEdgeSet insensitiveCalRetEdges)
 
 }
 
-void SVFGStat::printStat()
+void SVFGStat::printStat(string str)
 {
     SVFUtil::outs() << "\n****SVFG Statistics****\n";
-    PTAStat::printStat();
+    PTAStat::printStat(str);
 }

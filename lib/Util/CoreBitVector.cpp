@@ -197,7 +197,7 @@ bool CoreBitVector::operator|=(const CoreBitVector &rhs)
 
     // Can start counting from 0 because we took the addresses of both
     // word vectors at the correct index.
-    #pragma omp simd
+    // #pragma omp simd
     for (size_t i = 0 ; i < length; ++i)
     {
         const Word oldWord = thisWords[i];

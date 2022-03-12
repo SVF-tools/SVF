@@ -17,42 +17,6 @@ using namespace SVF;
 using namespace SVFUtil;
 
 
-/*!
- * Get the base pointer from any GEP.
- */
-static const Value *getBasePtr(const Value *v)
-{
-    const GetElementPtrInst *GEP = SVFUtil::dyn_cast<GetElementPtrInst>(v);
-    while (GEP)
-    {
-        v = GEP->getOperand(0);
-        GEP = SVFUtil::dyn_cast<GetElementPtrInst>(v);
-    }
-    return v;
-}
-
-
-/*!
- * Compute a SCEV that represents the subtraction of two given SCEVs.
- */
-static const SCEV *getSCEVMinusExpr(const SCEV *s1,const SCEV *s2, ScalarEvolution *SE)
-{
-    if (SE->getCouldNotCompute() == s1 || SE->getCouldNotCompute() == s2)
-        return SE->getCouldNotCompute();
-
-    Type *t1 = SE->getEffectiveSCEVType(s1->getType());
-    Type *t2 = SE->getEffectiveSCEVType(s2->getType());
-    if (t1 != t2)
-    {
-        if (SE->getTypeSizeInBits(t1) < SE->getTypeSizeInBits(t2))
-            s1 = SE->getSignExtendExpr(s1, t2);
-        else
-            s2 = SE->getSignExtendExpr(s2, t1);
-    }
-
-    return SE->getMinusSCEV(s1, s2);
-}
-
 namespace SVF
 {
 

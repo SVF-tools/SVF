@@ -80,7 +80,7 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
 /*!
  * Propagate point-to set via a gep edge, using SFR
  */
-bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();
@@ -152,7 +152,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, 
                     for (auto _s : strides)
                     {
                         s32_t _f1 = _f + _s;
-                        loopFlag = (offsets.find(_f1) == offsets.end()) && (initOffset + _f1 < maxLimit);
+                        loopFlag = (offsets.find(_f1) == offsets.end()) && ( (u32_t)(initOffset + _f1) < maxLimit);
                         if (loopFlag)
                             offsets.insert(_f1);
                     }
