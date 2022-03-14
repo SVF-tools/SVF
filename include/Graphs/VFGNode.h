@@ -31,7 +31,7 @@
 #define INCLUDE_UTIL_VFGNODE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "Graphs/VFGEdge.h"
+#include "Graphs/SVFGEdge.h"
 #include "Graphs/ICFGNode.h"
 #include "MemoryModel/SVFIR.h"
 
@@ -91,6 +91,9 @@ public:
     {
         return nullptr;
     }
+
+    /// Return the left hand side SVF Vars
+    virtual const NodeBS getDefSVFVars() const = 0;
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
@@ -226,6 +229,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -265,6 +270,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -303,6 +310,8 @@ public:
         return node->getNodeKind() == Copy;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -376,6 +385,9 @@ public:
         return opVers.end();
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
+
     const Value* getValue() const override;
     const std::string toString() const override;
 };
@@ -448,6 +460,8 @@ public:
         return opVers.end();
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const Value* getValue() const override;
     const std::string toString() const override;
@@ -525,7 +539,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const NodeBS getDefSVFVars() const override;
+
+    virtual const std::string toString() const override;
 };
 
 /*
@@ -560,7 +576,7 @@ public:
     }
     //@}
 
-    /// Return the branch statement 
+    /// Return the branch statement
     const BranchStmt* getBranchStmt() const{
         return brstmt;
     }
@@ -576,6 +592,9 @@ public:
         return brstmt->getSuccessor(i);
     }
     ///@}
+
+    const NodeBS getDefSVFVars() const override;
+
     virtual const std::string toString() const override;
 };
 
@@ -614,6 +633,8 @@ public:
         return node->getNodeKind() == Gep;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -685,6 +706,8 @@ public:
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const Value* getValue() const override;
     const std::string toString() const override;
@@ -776,6 +799,8 @@ public:
         return node->getNodeKind() == Addr;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -871,6 +896,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -939,6 +966,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -994,6 +1023,8 @@ public:
         return node->getNodeKind() == ARet;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -1058,6 +1089,8 @@ public:
         return node->getNodeKind() == FRet;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -1163,6 +1196,8 @@ public:
         return node->getNodeKind() == NPtr;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
