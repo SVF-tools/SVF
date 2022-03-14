@@ -41,6 +41,9 @@
 using namespace SVF;
 using namespace SVFUtil;
 
+const NodeBS MRSVFGNode::getDefSVFVars() const {
+    return getPointsTo();
+}
 
 const std::string MRSVFGNode::toString() const {
     std::string str;
@@ -111,6 +114,12 @@ const std::string IntraMSSAPHISVFGNode::toString() const {
     rawstr << "IntraMSSAPHISVFGNode ID: " << getId() << " {fun: " << getFun()->getName() << "}";
     rawstr << MSSAPHISVFGNode::toString();
     return rawstr.str();
+}
+
+const NodeBS DummyVersionPropSVFGNode::getDefSVFVars() const {
+    NodeBS nb;
+    nb.set(object);
+    return nb;
 }
 
 const std::string InterMSSAPHISVFGNode::toString() const {
