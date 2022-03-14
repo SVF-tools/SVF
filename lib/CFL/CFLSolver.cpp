@@ -44,7 +44,8 @@ void CFLSolver::solve(){
         for(auto it = graph->begin(); it!= graph->end(); it++){
             Symbol X = grammar->getLHSSymbol(prod);
             CFLNode* i = (*it).second;
-            graph->addCFLEdge(i, i, X);
+            if(const CFLEdge* edge = graph->addCFLEdge(i, i, X))
+                pushIntoWorklist(edge);
         }
     }
 

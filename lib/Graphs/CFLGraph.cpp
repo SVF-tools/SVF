@@ -44,8 +44,11 @@ void CFLGraph::addCFLNode(NodeID id, CFLNode* node){
 
 const CFLEdge* CFLGraph::addCFLEdge(CFLNode* src, CFLNode* dst, CFLEdge::GEdgeFlag label){
     CFLEdge* edge = new CFLEdge(src,dst,label);
-    if(cflEdgeSet.insert(edge).second)
+    if(cflEdgeSet.insert(edge).second){
+        src->addOutgoingEdge(edge);
+        dst->addIncomingEdge(edge);
         return edge;
+    }
     else
         return nullptr;
 }
