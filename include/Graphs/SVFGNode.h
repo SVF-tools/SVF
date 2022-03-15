@@ -53,6 +53,9 @@ public:
     {
         return cpts;
     }
+
+    inline const NodeBS getDefSVFVars() const override;
+
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const MRSVFGNode *)
@@ -81,7 +84,7 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    virtual const std::string toString() const override;
 };
 
 /*
@@ -490,6 +493,8 @@ public:
         return node->getNodeKind() == DummyVProp;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
 private:
     const NodeID object;
