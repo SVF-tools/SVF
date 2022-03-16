@@ -121,19 +121,15 @@ void AndersenStat::constraintGraphStat()
     u32_t cgNodeNumber = 0;
     u32_t objNodeNumber = 0;
     u32_t addrtotalIn = 0;
-    u32_t addrtotalOut = 0;
     u32_t addrmaxIn = 0;
     u32_t addrmaxOut = 0;
     u32_t copytotalIn = 0;
-    u32_t copytotalOut = 0;
     u32_t copymaxIn = 0;
     u32_t copymaxOut = 0;
     u32_t loadtotalIn = 0;
-    u32_t loadtotalOut = 0;
     u32_t loadmaxIn = 0;
     u32_t loadmaxOut = 0;
     u32_t storetotalIn = 0;
-    u32_t storetotalOut = 0;
     u32_t storemaxIn = 0;
     u32_t storemaxOut = 0;
 
@@ -155,7 +151,6 @@ void AndersenStat::constraintGraphStat()
         u32_t nCopyOut = nodeIt->second->getDirectOutEdges().size();
         if(nCopyOut > copymaxOut)
             copymaxOut = nCopyOut;
-        copytotalOut +=nCopyOut;
         u32_t nLoadIn = nodeIt->second->getLoadInEdges().size();
         if(nLoadIn > loadmaxIn)
             loadmaxIn = nLoadIn;
@@ -163,7 +158,6 @@ void AndersenStat::constraintGraphStat()
         u32_t nLoadOut = nodeIt->second->getLoadOutEdges().size();
         if(nLoadOut > loadmaxOut)
             loadmaxOut = nLoadOut;
-        loadtotalOut +=nLoadOut;
         u32_t nStoreIn = nodeIt->second->getStoreInEdges().size();
         if(nStoreIn > storemaxIn)
             storemaxIn = nStoreIn;
@@ -171,7 +165,6 @@ void AndersenStat::constraintGraphStat()
         u32_t nStoreOut = nodeIt->second->getStoreOutEdges().size();
         if(nStoreOut > storemaxOut)
             storemaxOut = nStoreOut;
-        storetotalOut +=nStoreOut;
         u32_t nAddrIn = nodeIt->second->getAddrInEdges().size();
         if(nAddrIn > addrmaxIn)
             addrmaxIn = nAddrIn;
@@ -179,7 +172,6 @@ void AndersenStat::constraintGraphStat()
         u32_t nAddrOut = nodeIt->second->getAddrOutEdges().size();
         if(nAddrOut > addrmaxOut)
             addrmaxOut = nAddrOut;
-        addrtotalOut +=nAddrOut;
     }
     double storeavgIn = (double)storetotalIn/cgNodeNumber;
     double loadavgIn = (double)loadtotalIn/cgNodeNumber;
