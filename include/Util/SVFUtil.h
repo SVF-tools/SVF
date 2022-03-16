@@ -161,7 +161,7 @@ inline NodeBS ptsToNodeBS(const PointsTo &pts)
     return nbs;
 }
 
-typedef OrderedSet<PointsTo, equalNodeBS> PointsToList;
+typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
 inline bool isIntrinsicFun(const Function* func)
