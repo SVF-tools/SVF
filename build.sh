@@ -148,7 +148,7 @@ then
     then
         if [[ `uname -m` == "aarch64" ]]
         then
-            build_z3_from_source "$Z3_GIT" "$SVFHOME/$Z3Home"
+            build_z3_from_source "$Z3Git" "$SVFHOME/$Z3Home"
         else
             echo "Downloading Z3 binary for $OSDisplayName"
             generic_download_file "$urlZ3" z3.zip
