@@ -253,6 +253,10 @@ public:
         return getLLVMFun()->arg_size();
     }
 
+    const Value* getArg(u32_t idx) {
+        return getLLVMFun()->getArg(idx);
+    }
+
     inline bool isVarArg() const
     {
         return getLLVMFun()->isVarArg();

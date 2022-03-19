@@ -227,6 +227,10 @@ struct DOTGraphTraits<IRGraph*> : public DefaultDOTGraphTraits
         {
             return "color=grey";
         }
+        else if (SVFUtil::isa<SelectStmt>(edge))
+        {
+            return "color=grey";
+        }
         else if (SVFUtil::isa<CmpStmt>(edge))
         {
             return "color=grey";
