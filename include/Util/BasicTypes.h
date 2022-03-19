@@ -253,7 +253,8 @@ public:
         return getLLVMFun()->arg_size();
     }
 
-    const Value* getArg(u32_t idx) {
+    const Value* getArg(u32_t idx) const
+    {
         return getLLVMFun()->getArg(idx);
     }
 
