@@ -713,7 +713,7 @@ const SVFFunction* SVFG::isFunEntrySVFGNode(const SVFGNode* node) const
     else if(const InterMSSAPHISVFGNode* mphi = SVFUtil::dyn_cast<InterMSSAPHISVFGNode>(node))
     {
         if(mphi->isFormalINPHI())
-            return phi->getFun();
+            return mphi->getFun();
     }
     return nullptr;
 }
