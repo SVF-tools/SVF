@@ -36,279 +36,385 @@
 #include "CUDD/cuddInt.h"
 #include "z3++.h"
 
-namespace SVF
-{
+namespace SVF {
 
-class CondExpr{
-public:
+    class CondExpr {
+    public:
 
-    enum CondExprKind
-    {
-        BranchK
+        enum CondExprKind {
+            BDDK, Z3K
+        };
+
+        CondExpr(CondExprKind _k) : condExprK(_k) {
+        }
+
+        virtual ~CondExpr() {
+
+        }
+
+        /// get Condition kind
+        inline CondExprKind getCondKind() const {
+            return condExprK;
+        }
+
+    private:
+        CondExprKind condExprK;
     };
 
-    CondExpr(const z3::expr &_e, CondExprKind _k) : e(_e), condExprK(_k) {
-    }
-    virtual ~CondExpr(){
+    class Z3CondExpr : public CondExpr {
+    public:
+        typedef z3::expr Z3Cond;
 
-    }
-    const z3::expr& getExpr() const{
-        return e;
-    }
+        Z3CondExpr(const z3::expr &_e) : CondExpr(Z3K), e(_e) {
+        }
 
-    /// get ctx
-    inline z3::context& getContext() const {
-        return getExpr().ctx();
-    }
+        virtual ~Z3CondExpr() {
 
-    /// get id
-    inline u32_t getId() const {
-        return getExpr().id();
-    }
+        }
 
-    /// get Condition kind
-    inline CondExprKind getCondKind() const{
-        return condExprK;
-    }
+        const Z3Cond &getExpr() const {
+            return e;
+        }
 
-private:
-    z3::expr e;
-    CondExprKind condExprK;
-};
+        /// get ctx
+        inline z3::context &getContext() const {
+            return getExpr().ctx();
+        }
 
-class BranchCondExpr: public CondExpr{
+        /// get id
+        inline NodeID getId() const {
+            return getExpr().id();
+        }
 
-public:
-    typedef DdNode BranchCond;
-    BranchCondExpr(const z3::expr& _e, BranchCond* _branchCond): CondExpr(_e, BranchK), branchCond(_branchCond){
-    }
+        /// Methods for support type inquiry through isa, cast, and dyn_cast:
+        //@{
+        static inline bool classof(const Z3CondExpr *) {
+            return true;
+        }
 
-    /// get branch condition
-    BranchCond* getBranchCond() const{
-        return branchCond;
-    }
+        static inline bool classof(const CondExpr *cond) {
+            return cond->getCondKind() == Z3K;
+        }
+        //@}
 
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const BranchCondExpr *)
-    {
-        return true;
-    }
+    private:
+        Z3Cond e;
 
-    static inline bool classof(const CondExpr *cond)
-    {
-        return cond->getCondKind() == BranchK;
-    }
-    //@}
+    };
+
+    class BDDCondExpr : public CondExpr {
+
+    public:
+        typedef DdNode BDDCond;
+
+        BDDCondExpr(BDDCond *_bddCond) : CondExpr(BDDK), bddCond(_bddCond) {
+        }
+
+        /// get BDD condition
+        BDDCond *getBDDCond() const {
+            return bddCond;
+        }
+
+        /// Methods for support type inquiry through isa, cast, and dyn_cast:
+        //@{
+        static inline bool classof(const BDDCondExpr *) {
+            return true;
+        }
+
+        static inline bool classof(const CondExpr *cond) {
+            return cond->getCondKind() == BDDK;
+        }
+        //@}
 
 
-private:
-    BranchCond* branchCond;
+    private:
+        BDDCond *bddCond;
 
-};
+    };
+
+    class CondManager {
+
+    public:
+        enum CondMgrKind {
+            BDDMgrK, Z3MgrK
+        };
+
+    private:
+        static CondManager *condMgr;
+
+    protected:
+        /// Constructor
+        CondManager() {}
+
+    public:
+        typedef Map<const CondExpr *, const Instruction *> CondToTermInstMap;    // map a condition to its branch instruction
+        static u32_t totalCondNum; // a counter for fresh condition
+        /// Singleton design here to make sure we only have one instance during any analysis
+        //@{
+        static CondManager *getCondMgr(CondMgrKind _condMgrKind);
+
+        static void releaseCondMgr() {
+            delete condMgr;
+            condMgr = nullptr;
+        }
+        //@}
+
+        /// Destructor
+        virtual ~CondManager() {};
+
+        /// Create a fresh condition to encode each program branch
+        virtual CondExpr *createFreshBranchCond(const Instruction *inst) = 0;
+
+        /// Return the number of condition expressions
+        virtual u32_t getCondNumber() = 0;
+
+        /// Return the unique true condition
+        inline CondExpr *getTrueCond() const {
+            return trueCond;
+        }
+
+        /// Return the unique false condition
+        inline CondExpr *getFalseCond() const {
+            return falseCond;
+        }
+
+        /// Operations on conditions.
+        //@{
+        virtual CondExpr *AND(CondExpr *lhs, CondExpr *rhs) = 0;
+
+        virtual CondExpr *OR(CondExpr *lhs, CondExpr *rhs) = 0;
+
+        virtual CondExpr *NEG(CondExpr *lhs) = 0;
+        //@}
+
+        virtual bool isNegCond(const CondExpr *cond) const = 0;
+
+        /// Whether the condition is satisfiable
+        virtual bool isSatisfiable(const CondExpr *cond) = 0;
+
+        /// Whether lhs and rhs are equivalent branch conditions
+        virtual bool isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) = 0;
+
+        /// Whether **All Paths** are reachable
+        bool isAllPathReachable(const CondExpr *e);
+
+        /// Get condition using condition id (z3 ast id)
+        virtual CondExpr *getCond(u32_t id) const = 0;
+
+        /// Get/Set llvm conditional expression
+        //{@
+        inline const Instruction *getCondInst(const CondExpr *cond) const {
+            CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
+            assert(it != condToInstMap.end() && "this should be a fresh condition");
+            return it->second;
+        }
+
+        inline void setCondInst(const CondExpr *cond, const Instruction *inst) {
+            assert(condToInstMap.find(cond) == condToInstMap.end() && "this should be a fresh condition");
+            condToInstMap[cond] = inst;
+        }
+        //@}
+
+        /// Return memory usage for this condition manager
+        virtual std::string getMemUsage() = 0;
+
+        /// Return string format of this expression
+        virtual std::string dumpStr(const CondExpr *e) const = 0;
+
+        /// Extract sub conditions of this expression
+        virtual void extractSubConds(const CondExpr *cond, NodeBS &support) const = 0;
+
+    protected:
+        static CondExpr *trueCond;
+        static CondExpr *falseCond;
+
+    private:
+
+        CondToTermInstMap condToInstMap; ///< map condition to llvm instruction
+
+    };
+
+/**
+ * Z3 Condition Manager
+ */
+    class Z3CondManager : public CondManager {
+        friend class CondManager;
+
+    public:
+        typedef Z3CondExpr::Z3Cond Z3Cond;
+        typedef Map<u32_t, Z3CondExpr *> IDToCondExprMap;
+
+    private:
+        /// Constructor
+        Z3CondManager();
+
+        IDToCondExprMap idToCondExprMap;
+        z3::context cxt;
+        z3::solver sol;
+        NodeBS negConds;
+
+    public:
+
+        /// Destructor
+        virtual ~Z3CondManager();
+
+
+        inline u32_t getCondNumber() override {
+            return sol.get_model().size();
+        }
+
+        /// Preprocess the condition, e.g., Compressing using And-Inverter-Graph
+        z3::expr simplify(const z3::expr &expr) const;
+
+        /// Given an id, get its condition
+        CondExpr *getCond(u32_t i) const override {
+            auto it = idToCondExprMap.find(i);
+            assert(it != idToCondExprMap.end() && "condition not found!");
+            return it->second;
+        }
+
+        CondExpr *createFreshBranchCond(const Instruction *inst) override;
+
+        Z3CondExpr *getOrAddZ3Cond(const Z3Cond &z3Cond);
+
+        /// Operations on conditions.
+        //@{
+        CondExpr *AND(CondExpr *lhs, CondExpr *rhs) override;
+
+        CondExpr *OR(CondExpr *lhs, CondExpr *rhs) override;
+
+        CondExpr *NEG(CondExpr *lhs) override;
+        //@}
+
+        bool isSatisfiable(const CondExpr *cond) override;
+
+        bool isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) override;
+
+        inline void setNegCondInst(const CondExpr *cond, const Instruction *inst) {
+            setCondInst(cond, inst);
+            const Z3CondExpr *z3CondExpr = SVFUtil::dyn_cast<Z3CondExpr>(cond);
+            assert(z3CondExpr && "not z3 condition.");
+            negConds.set(z3CondExpr->getId());
+        }
+
+        bool isNegCond(const CondExpr *cond) const override {
+            const Z3CondExpr *z3CondExpr = SVFUtil::dyn_cast<Z3CondExpr>(cond);
+            assert(z3CondExpr && "not z3 condition.");
+            return negConds.test(z3CondExpr->getId());
+        }
+
+        void extractSubConds(const CondExpr *f, NodeBS &support) const override;
+
+        std::string dumpStr(const CondExpr *e) const override;
+
+        inline std::string getMemUsage() override {
+            return "";
+        }
+
+        /// Print out one particular expression
+        void printDbg(const CondExpr *e);
+
+        /// Dump out all expressions
+        void printModel();
+    };
 
 
 /**
- * Branch Condition Manager
+ * BDD Condition Manager
  */
-class BranchCondManager
-{
-public:
-    typedef BranchCondExpr::BranchCond BranchCond;
-    /// Constructor
-    BranchCondManager()
-    {
-        m_bdd_mgr = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
-    }
+    class BDDCondManager : public CondManager {
+        friend class CondManager;
 
-    /// Destructor
-    ~BranchCondManager()
-    {
-        Cudd_Quit(m_bdd_mgr);
-    }
+    public:
+        typedef BDDCondExpr::BDDCond BDDCond;
+        typedef Map<BDDCond *, BDDCondExpr *> BDDToBDDCondExpr;
+        typedef Map<u32_t, BDDCond *> IndexToBDDCond;
 
-    BranchCond* createCond(u32_t i)
-    {
-        return Cudd_bddIthVar(m_bdd_mgr, i);
-    }
-    inline BranchCond* getTrueCond() const
-    {
-        return BddOne();
-    }
-    inline BranchCond* getFalseCond() const
-    {
-        return BddZero();
-    }
+    private:
 
-    inline std::string getMemUsage()
-    {
-        return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
-    }
-    inline u32_t getCondNumber()
-    {
-        return Cudd_ReadNodeCount(m_bdd_mgr);
-    }
-    /// Operations on conditions.
-    //@{
-    BranchCond* AND(BranchCond* lhs, BranchCond* rhs);
-    BranchCond* OR(BranchCond* lhs, BranchCond* rhs);
-    BranchCond* NEG(BranchCond* lhs);
-    //@}
+        /// Constructor
+        BDDCondManager();
 
-    /**
-     * Utilities for dumping conditions. These methods use global functions from CUDD
-     * package and they can be removed outside this class scope to be used by others.
-     */
-    void ddClearFlag(BranchCond * f) const;
-    void BddSupportStep( BranchCond * f,  NodeBS &support) const;
-    void extractSubConds( BranchCond * f,  NodeBS &support) const;
-    void dump(BranchCond* lhs, OutStream & O);
-    std::string dumpStr(BranchCond* lhs) const;
-
-private:
-    inline BranchCond* BddOne() const
-    {
-        return Cudd_ReadOne(m_bdd_mgr);
-    }
-    inline BranchCond* BddZero() const
-    {
-        return Cudd_ReadLogicZero(m_bdd_mgr);
-    }
-
-    DdManager *m_bdd_mgr;
-};
-
-class CondManager{
-
-private:
-    static CondManager* condMgr;
-
-    /// Constructor
-    CondManager();
-
-public:
-    typedef BranchCondExpr::BranchCond BranchCond;
-    typedef Map<const CondExpr*, const Instruction* > CondToTermInstMap;	// map a condition to its branch instruction
-    static u32_t totalCondNum; // a counter for fresh condition
-    /// Singleton design here to make sure we only have one instance during any analysis
-    //@{
-    static inline CondManager* getCondMgr()
-    {
-        if (condMgr == nullptr)
-        {
-            condMgr = new CondManager();
+        inline BDDCond *BddOne() const {
+            return Cudd_ReadOne(m_bdd_mgr);
         }
-        return condMgr;
-    }
-    static void releaseCondMgr()
-    {
-        delete condMgr;
-        condMgr = nullptr;
-    }
-    //@}
 
-    typedef Map<u32_t, CondExpr*> IDToCondExprMap;
-    typedef Map<BranchCond*, CondExpr*> BranchCondToCondExprMap;
+        inline BDDCond *BddZero() const {
+            return Cudd_ReadLogicZero(m_bdd_mgr);
+        }
 
-    /// Destructor
-    ~CondManager();
+        DdManager *m_bdd_mgr;
+        BDDToBDDCondExpr bddToBddCondExprMap;
+        IndexToBDDCond indexToBddCondMap;
 
-    /// Create a fresh condition to encode each program branch
-    CondExpr* createFreshBranchCond(const Instruction* inst);
+    public:
 
-    /// Get or add a single branch condition, e.g., when doing condition conjunction
-    CondExpr* getOrAddBranchCond(const z3::expr& e, BranchCond* branchCond);
+        /// Destructor
+        virtual ~BDDCondManager();
 
-    /// Return the number of condition expressions
-    u32_t getCondNumber();
+        BDDCond *createCond(u32_t i) {
+            assert(indexToBddCondMap.find(i) == indexToBddCondMap.end() &&
+                   "This should be fresh index to create new BDD");
+            BDDCond *bddCond = Cudd_bddIthVar(m_bdd_mgr, i);
+            return indexToBddCondMap.emplace(i, bddCond).first->second;
+        }
 
-    /// Return the unique true condition
-    inline CondExpr* getTrueCond() const
-    {
-        return trueCond;
-    }
-    /// Return the unique false condition
-    inline CondExpr* getFalseCond() const
-    {
-        return falseCond;
-    }
+        /// Given an index, get its condition
+        CondExpr *getCond(u32_t i) const override {
+            auto it = indexToBddCondMap.find(i);
+            assert(it != indexToBddCondMap.end() && "condition not found!");
+            auto it2 = bddToBddCondExprMap.find(it->second);
+            assert(it2 != bddToBddCondExprMap.end() && "condition not found!");
+            return it2->second;
+        }
 
-    /// Preprocess the condition, e.g., Compressing using And-Inverter-Graph
-    z3::expr simplify(const z3::expr& expr) const;
-    /// Operations on conditions.
-    //@{
-    CondExpr* AND(CondExpr* lhs, CondExpr* rhs);
-    CondExpr* OR(CondExpr* lhs, CondExpr* rhs);
-    CondExpr* NEG(CondExpr* lhs);
-    //@}
+        CondExpr *createFreshBranchCond(const Instruction *inst) override;
 
-    /// Return memory usage for this condition manager
-    std::string getMemUsage();
+        inline u32_t getCondNumber() override {
+            return Cudd_ReadNodeCount(m_bdd_mgr);
+        }
 
-    /// Dump out all expressions
-    void printModel();
+        BDDCondExpr *getOrAddBranchCond(BDDCond *bddCond);
 
-    /// Print out one particular expression
-    void printDbg(const CondExpr* e);
+        /// Operations on conditions.
+        //@{
+        CondExpr *AND(CondExpr *lhs, CondExpr *rhs) override;
 
-    /// Return string format of this expression
-    std::string dumpStr(const CondExpr* e) const;
+        CondExpr *OR(CondExpr *lhs, CondExpr *rhs) override;
 
-    /// Extract sub conditions of this expression
-    void extractSubConds(const CondExpr* cond,  NodeBS &support) const;
+        CondExpr *NEG(CondExpr *lhs) override;
+        //@}
 
-    /// Whether the condition is satisfiable
-    bool isSatisfiable(const CondExpr* cond);
+        bool isNegCond(const CondExpr *cond) const override {
+            return false;
+        }
 
-    /// Whether lhs and rhs are equivalent branch conditions
-    inline bool isEquivalentBranchCond(const CondExpr* lhs, const CondExpr* rhs) const{
-        return SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond() ==
-               SVFUtil::dyn_cast<BranchCondExpr>(rhs)->getBranchCond();
-    }
-    /// Whether **All Paths** are reachable
-    bool isAllPathReachable(const CondExpr* e);
+        bool isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) override {
+            return lhs == rhs;
+        }
 
-    /// Get condition using condition id (z3 ast id)
-    inline CondExpr* getCond(u32_t id) const {
-        const IDToCondExprMap::const_iterator it = allocatedConds.find(id);
-        assert(it!=allocatedConds.end() && "condition not found!");
-        return it->second;
-    }
+        bool isSatisfiable(const CondExpr *cond) override;
 
-    /// Get/Set llvm conditional expression
-    //{@
-    inline const Instruction* getCondInst(const CondExpr* cond) const
-    {
-        CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
-        assert(it!=condToInstMap.end() && "this should be a fresh condition");
-        return it->second;
-    }
-    inline void setCondInst(const CondExpr* cond, const Instruction* inst){
-        assert(condToInstMap.find(cond)==condToInstMap.end() && "this should be a fresh condition");
-        condToInstMap[cond] = inst;
-    }
+        /**
+         * Utilities for dumping conditions. These methods use global functions from CUDD
+         * package and they can be removed outside this class scope to be used by others.
+         */
+        void ddClearFlag(BDDCond *f) const;
 
-    inline void setNegCondInst(const CondExpr *cond, const Instruction *inst) {
-        setCondInst(cond, inst);
-        negConds.set(cond->getId());
-    }
+        void BddSupportStep(BDDCond *f, NodeBS &support) const;
 
-    inline bool isNegCond(const CondExpr *cond) const {
-        return negConds.test(cond->getId());
-    }
-    //@}
+        void extractSubConds(const CondExpr *f, NodeBS &support) const override;
 
-private:
-    z3::context cxt;
-    z3::solver sol;
-    static CondExpr* trueCond;
-    static CondExpr* falseCond;
-    IDToCondExprMap allocatedConds; ///< map condition id (z3 ast id) to its Condition wrapper
-    BranchCondToCondExprMap branchCondToCondExpr; ///< map branch condition to its Condition wrapper
-    CondToTermInstMap condToInstMap; ///< map condition to llvm instruction
-    BranchCondManager branchCondManager; ///< branch condition manager
-    NodeBS negConds;
-};
+        void dump(const CondExpr *lhs, OutStream &O);
+
+        std::string dumpStr(const CondExpr *e) const override;
+
+        inline std::string getMemUsage() override {
+            return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
+        }
+
+    };
+
 
 } // End namespace SVF
 
