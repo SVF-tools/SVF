@@ -43,9 +43,9 @@ u32_t CondManager::totalCondNum = 0;
 CondManager *CondManager::getCondMgr(CondMgrKind _condMgrKind) {
     if (condMgr == nullptr) {
         if (_condMgrKind == BDDMgrK)
-            condMgr = new BDDCondManager();
+            condMgr = new BDDManager();
         else if (_condMgrKind == Z3MgrK)
-            condMgr = new Z3CondManager();
+            condMgr = new Z3Manager();
         else
             assert(false && "invalid condition manager kind!");
     }
@@ -59,33 +59,33 @@ bool CondManager::isAllPathReachable(const CondExpr *e) {
     return isEquivalentBranchCond(e, getTrueCond());
 }
 
-Z3CondExpr *Z3CondManager::getOrAddZ3Cond(const Z3Cond &z3Cond) {
+Z3Expr *Z3Manager::getOrAddZ3Cond(const Z3Cond &z3Cond) {
     auto it = idToCondExprMap.find(z3Cond.id());
     if (it != idToCondExprMap.end()) {
         return it->second;
     } else {
-        Z3CondExpr *z3CondExpr = new Z3CondExpr(z3Cond);
+        Z3Expr *z3CondExpr = new Z3Expr(z3Cond);
         return idToCondExprMap.emplace(z3Cond.id(), z3CondExpr).first->second;
     }
 }
 
-Z3CondManager::Z3CondManager() : sol(cxt) {
+Z3Manager::Z3Manager() : sol(cxt) {
     const z3::expr &trueExpr = cxt.bool_val(true);
     trueCond = getOrAddZ3Cond(trueExpr);
     const z3::expr &falseExpr = cxt.bool_val(false);
     falseCond = getOrAddZ3Cond(falseExpr);
 }
 
-Z3CondManager::~Z3CondManager() {
+Z3Manager::~Z3Manager() {
     for (const auto &it: idToCondExprMap) {
         delete it.second;
     }
 }
 
-inline bool Z3CondManager::isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) {
+inline bool Z3Manager::isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) {
     sol.push();
-    const Z3CondExpr *z3lhs = dyn_cast<Z3CondExpr>(lhs);
-    const Z3CondExpr *z3rhs = dyn_cast<Z3CondExpr>(rhs);
+    const Z3Expr *z3lhs = dyn_cast<Z3Expr>(lhs);
+    const Z3Expr *z3rhs = dyn_cast<Z3Expr>(rhs);
     assert(z3lhs && z3rhs && "not z3 condition?");
     sol.add(z3lhs->getExpr() != z3rhs->getExpr());
     z3::check_result res = sol.check();
@@ -95,9 +95,9 @@ inline bool Z3CondManager::isEquivalentBranchCond(const CondExpr *lhs, const Con
 
 /// Operations on conditions.
 //@{
-CondExpr *Z3CondManager::AND(CondExpr *lhs, CondExpr *rhs) {
-    auto *z3lhs = dyn_cast<Z3CondExpr>(lhs);
-    auto *z3rhs = dyn_cast<Z3CondExpr>(rhs);
+CondExpr *Z3Manager::AND(CondExpr *lhs, CondExpr *rhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
+    auto *z3rhs = dyn_cast<Z3Expr>(rhs);
     assert(z3lhs && z3rhs && "not z3 condition?");
     if (z3lhs == getFalseCond() || z3rhs == getFalseCond())
         return getFalseCond();
@@ -111,9 +111,9 @@ CondExpr *Z3CondManager::AND(CondExpr *lhs, CondExpr *rhs) {
     }
 }
 
-CondExpr *Z3CondManager::OR(CondExpr *lhs, CondExpr *rhs) {
-    auto *z3lhs = dyn_cast<Z3CondExpr>(lhs);
-    auto *z3rhs = dyn_cast<Z3CondExpr>(rhs);
+CondExpr *Z3Manager::OR(CondExpr *lhs, CondExpr *rhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
+    auto *z3rhs = dyn_cast<Z3Expr>(rhs);
     assert(z3lhs && z3rhs && "not z3 condition?");
     if (z3lhs == getTrueCond() || z3rhs == getTrueCond())
         return getTrueCond();
@@ -127,8 +127,8 @@ CondExpr *Z3CondManager::OR(CondExpr *lhs, CondExpr *rhs) {
     }
 }
 
-CondExpr *Z3CondManager::NEG(CondExpr *lhs) {
-    auto *z3lhs = dyn_cast<Z3CondExpr>(lhs);
+CondExpr *Z3Manager::NEG(CondExpr *lhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
     assert(z3lhs && "not z3 condition?");
     if (z3lhs == getTrueCond())
         return getFalseCond();
@@ -141,14 +141,14 @@ CondExpr *Z3CondManager::NEG(CondExpr *lhs) {
 }
 //@}
 
-CondExpr *Z3CondManager::createFreshBranchCond(const Instruction *inst) {
+CondExpr *Z3Manager::createFreshBranchCond(const Instruction *inst) {
     u32_t condCountIdx = totalCondNum++;
     const z3::expr &expr = cxt.bool_const(("c" + std::to_string(condCountIdx)).c_str());
     auto it = idToCondExprMap.find(expr.id());
     if (it != idToCondExprMap.end())
         return it->second;
     else {
-        auto *cond = new Z3CondExpr(expr);
+        auto *cond = new Z3Expr(expr);
         auto *negCond = NEG(cond);
         setCondInst(cond, inst);
         setNegCondInst(negCond, inst);
@@ -159,8 +159,8 @@ CondExpr *Z3CondManager::createFreshBranchCond(const Instruction *inst) {
 /*!
  * Extract sub conditions of this expression
  */
-void Z3CondManager::extractSubConds(const CondExpr *cond, NodeBS &support) const {
-    const auto *z3CondExpr = dyn_cast<Z3CondExpr>(cond);
+void Z3Manager::extractSubConds(const CondExpr *cond, NodeBS &support) const {
+    const auto *z3CondExpr = dyn_cast<Z3Expr>(cond);
     assert(z3CondExpr && "not z3 condition?");
     if (z3CondExpr->getExpr().num_args() == 1 && isNegCond(z3CondExpr)) {
         support.set(z3CondExpr->getExpr().id());
@@ -178,9 +178,9 @@ void Z3CondManager::extractSubConds(const CondExpr *cond, NodeBS &support) const
 /*!
  * Whether the condition is satisfiable
  */
-bool Z3CondManager::isSatisfiable(const CondExpr *cond) {
+bool Z3Manager::isSatisfiable(const CondExpr *cond) {
     sol.push();
-    const Z3CondExpr *z3CondExpr = dyn_cast<Z3CondExpr>(cond);
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(cond);
     assert(z3CondExpr && "not z3 condition?");
     sol.add(z3CondExpr->getExpr());
     z3::check_result result = sol.check();
@@ -195,7 +195,7 @@ bool Z3CondManager::isSatisfiable(const CondExpr *cond) {
  *  Preprocess the condition,
  *  e.g., Compressing using And-Inverter-Graph, Gaussian Elimination
  */
-z3::expr Z3CondManager::simplify(const z3::expr &expr) const {
+z3::expr Z3Manager::simplify(const z3::expr &expr) const {
     z3::goal g(expr.ctx());
     z3::tactic qe =
             z3::tactic(expr.ctx(), "aig");
@@ -216,7 +216,7 @@ z3::expr Z3CondManager::simplify(const z3::expr &expr) const {
 /*!
  * Print the expressions in this model
  */
-void Z3CondManager::printModel() {
+void Z3Manager::printModel() {
     SVFUtil::outs() << sol.check() << "\n";
     z3::model m = sol.get_model();
     for (u32_t i = 0; i < m.size(); i++) {
@@ -228,8 +228,8 @@ void Z3CondManager::printModel() {
 /*!
  * Print out one particular expression
  */
-inline void Z3CondManager::printDbg(const CondExpr *e) {
-    const Z3CondExpr *z3CondExpr = dyn_cast<Z3CondExpr>(e);
+inline void Z3Manager::printDbg(const CondExpr *e) {
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(e);
     assert(z3CondExpr && "not z3 condition?");
     SVFUtil::outs() << z3CondExpr->getExpr() << "\n";
 }
@@ -237,9 +237,9 @@ inline void Z3CondManager::printDbg(const CondExpr *e) {
 /*!
  * Return string format of this expression
  */
-std::string Z3CondManager::dumpStr(const CondExpr *e) const {
+std::string Z3Manager::dumpStr(const CondExpr *e) const {
     std::ostringstream out;
-    const Z3CondExpr *z3CondExpr = dyn_cast<Z3CondExpr>(e);
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(e);
     assert(z3CondExpr && "not z3 condition?");
     out << z3CondExpr->getExpr();
     return out.str();
@@ -250,37 +250,37 @@ std::string Z3CondManager::dumpStr(const CondExpr *e) const {
  * Get or add a single branch condition,
  * e.g., when doing condition conjunction
  */
-BDDCondExpr *BDDCondManager::getOrAddBranchCond(BDDCond *bddCond) {
+BDDExpr *BDDManager::getOrAddBranchCond(BDDCond *bddCond) {
     auto it = bddToBddCondExprMap.find(bddCond);
     if (it != bddToBddCondExprMap.end())
         return it->second;
     else {
-        auto *cond = new BDDCondExpr(bddCond);
+        auto *cond = new BDDExpr(bddCond);
         return bddToBddCondExprMap.emplace(bddCond, cond).first->second;
     }
 }
 
-BDDCondManager::BDDCondManager() {
+BDDManager::BDDManager() {
     m_bdd_mgr = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
     trueCond = getOrAddBranchCond(BddOne());
     falseCond = getOrAddBranchCond(BddZero());
 }
 
-BDDCondManager::~BDDCondManager() {
+BDDManager::~BDDManager() {
     for (const auto &it: bddToBddCondExprMap) {
         delete it.second;
     }
     Cudd_Quit(m_bdd_mgr);
 }
 
-CondExpr *BDDCondManager::createFreshBranchCond(const Instruction *inst) {
+CondExpr *BDDManager::createFreshBranchCond(const Instruction *inst) {
     u32_t condCountIdx = totalCondNum++;
     BDDCond *bddCond = createCond(condCountIdx);
     auto it = bddToBddCondExprMap.find(bddCond);
     if (it != bddToBddCondExprMap.end())
         return it->second;
     else {
-        auto *cond = new BDDCondExpr(bddCond);
+        auto *cond = new BDDExpr(bddCond);
         setCondInst(cond, inst);
         auto *negCond = NEG(cond);
         setCondInst(negCond, inst);
@@ -291,9 +291,9 @@ CondExpr *BDDCondManager::createFreshBranchCond(const Instruction *inst) {
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
-CondExpr *BDDCondManager::AND(CondExpr *lhs, CondExpr *rhs) {
-    auto *bddlhs = dyn_cast<BDDCondExpr>(lhs);
-    auto *bddrhs = dyn_cast<BDDCondExpr>(rhs);
+CondExpr *BDDManager::AND(CondExpr *lhs, CondExpr *rhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
+    auto *bddrhs = dyn_cast<BDDExpr>(rhs);
     assert(bddlhs && bddrhs && "not bdd condition?");
     if (bddlhs == getFalseCond() || bddrhs == getFalseCond())
         return getFalseCond();
@@ -317,9 +317,9 @@ CondExpr *BDDCondManager::AND(CondExpr *lhs, CondExpr *rhs) {
 /*!
  * Use Cudd_bddOrLimit interface to avoid bdds blow up
  */
-CondExpr *BDDCondManager::OR(CondExpr *lhs, CondExpr *rhs) {
-    auto *bddlhs = dyn_cast<BDDCondExpr>(lhs);
-    auto *bddrhs = dyn_cast<BDDCondExpr>(rhs);
+CondExpr *BDDManager::OR(CondExpr *lhs, CondExpr *rhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
+    auto *bddrhs = dyn_cast<BDDExpr>(rhs);
     assert(bddlhs && bddrhs && "not bdd condition?");
 
     if (bddlhs == getTrueCond() || bddrhs == getTrueCond())
@@ -341,8 +341,8 @@ CondExpr *BDDCondManager::OR(CondExpr *lhs, CondExpr *rhs) {
     }
 }
 
-CondExpr *BDDCondManager::NEG(CondExpr *lhs) {
-    auto *bddlhs = dyn_cast<BDDCondExpr>(lhs);
+CondExpr *BDDManager::NEG(CondExpr *lhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
     assert(bddlhs && "not bdd condition?");
 
     if (bddlhs == getTrueCond())
@@ -357,7 +357,7 @@ CondExpr *BDDCondManager::NEG(CondExpr *lhs) {
 /*!
  * Whether the condition is satisfiable
  */
-bool BDDCondManager::isSatisfiable(const CondExpr *cond) {
+bool BDDManager::isSatisfiable(const CondExpr *cond) {
     return cond != getFalseCond();
 }
 
@@ -365,7 +365,7 @@ bool BDDCondManager::isSatisfiable(const CondExpr *cond) {
  * Utilities for dumping conditions. These methods use global functions from CUDD
  * package and they can be removed outside this class scope to be used by others.
  */
-void BDDCondManager::ddClearFlag(BDDCond *f) const {
+void BDDManager::ddClearFlag(BDDCond *f) const {
     if (!Cudd_IsComplement(f->next))
         return;
     /* Clear visited flag. */
@@ -377,7 +377,7 @@ void BDDCondManager::ddClearFlag(BDDCond *f) const {
     return;
 }
 
-void BDDCondManager::BddSupportStep(BDDCond *f, NodeBS &support) const {
+void BDDManager::BddSupportStep(BDDCond *f, NodeBS &support) const {
     if (cuddIsConstant(f) || Cudd_IsComplement(f->next))
         return;
 
@@ -389,8 +389,8 @@ void BDDCondManager::BddSupportStep(BDDCond *f, NodeBS &support) const {
     f->next = Cudd_Complement(f->next);
 }
 
-void BDDCondManager::extractSubConds(const CondExpr *f, NodeBS &support) const {
-    const auto *bddCondExpr = dyn_cast<BDDCondExpr>(f);
+void BDDManager::extractSubConds(const CondExpr *f, NodeBS &support) const {
+    const auto *bddCondExpr = dyn_cast<BDDExpr>(f);
     assert(bddCondExpr && "not bdd condition?");
     BddSupportStep(Cudd_Regular(bddCondExpr->getBDDCond()), support);
     ddClearFlag(Cudd_Regular(bddCondExpr->getBDDCond()));
@@ -399,7 +399,7 @@ void BDDCondManager::extractSubConds(const CondExpr *f, NodeBS &support) const {
 /*!
  * Dump BDD
  */
-void BDDCondManager::dump(const CondExpr *lhs, OutStream &O) {
+void BDDManager::dump(const CondExpr *lhs, OutStream &O) {
     if (lhs == getTrueCond())
         O << "T";
     else {
@@ -417,8 +417,8 @@ void BDDCondManager::dump(const CondExpr *lhs, OutStream &O) {
 /*!
  * Dump BDD
  */
-std::string BDDCondManager::dumpStr(const CondExpr *e) const {
-    const auto *bddCondExpr = dyn_cast<BDDCondExpr>(e);
+std::string BDDManager::dumpStr(const CondExpr *e) const {
+    const auto *bddCondExpr = dyn_cast<BDDExpr>(e);
     assert(bddCondExpr && "not bdd condition?");
     std::string str;
     if (bddCondExpr == getTrueCond())
