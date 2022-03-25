@@ -7,6 +7,27 @@
 #
 # Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
 
+function usage {
+   echo "Use this by ${0} [-j <job count>]"
+   echo "  * job count: value passed to make."
+}
+
+#########
+# Parse arguments
+#########
+while [[ $# -gt 0 ]]; do
+  case "${1}" in
+    -h|--help)  usage; exit 0 ;;
+    -j|--jobs)  shift; jobs="$1" ;;
+    *) usage; exit 0 ;;
+  esac
+  shift
+done
+
+# "getconf _NPROCESSORS_ONLN" should be compatible on linux & mac, but just in case, default to 4
+[[ -z ${jobs} ]] && jobs=`getconf _NPROCESSORS_ONLN`
+[[ -z ${jobs} ]] && jobs=4
+
 #########
 # VARs and Links
 ########
@@ -38,7 +59,7 @@ function build_z3_from_source {
     mkdir -p build && cd build
     # We need a static library, so set the build option
     cmake -DZ3_BUILD_LIBZ3_SHARED=FALSE ..
-    make -j `nproc` && cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -P cmake_install.cmake
+    make -j ${jobs} && cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -P cmake_install.cmake
     echo "Z3 installed to ${INSTALL_DIR}.  Temporary build dir `pwd` can be removed."
     popd
 }
@@ -200,7 +221,7 @@ else
     cd ./'Release-build'
     cmake ../
     fi
-make -j `nproc`
+make -j ${jobs}
 
 ########
 # Set up environment variables of SVF
