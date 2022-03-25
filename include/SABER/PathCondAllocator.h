@@ -59,9 +59,8 @@ public:
 
 
     /// Constructor
-    PathCondAllocator(): condMgr(CondManager::getCondMgr())
-    {
-    }
+    PathCondAllocator();
+
     /// Destructor
     virtual ~PathCondAllocator()
     {

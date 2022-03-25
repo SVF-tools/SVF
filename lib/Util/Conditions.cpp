@@ -30,43 +30,172 @@
 
 #include "Util/Options.h"
 #include "Util/Conditions.h"
-#include "Util/SVFUtil.h"
 
 using namespace SVF;
+using namespace SVFUtil;
 
 
-CondExpr* CondManager::trueCond = nullptr;
-CondExpr* CondManager::falseCond = nullptr;
-CondManager* CondManager::condMgr = nullptr;
+CondExpr *CondManager::trueCond = nullptr;
+CondExpr *CondManager::falseCond = nullptr;
+CondManager *CondManager::condMgr = nullptr;
 u32_t CondManager::totalCondNum = 0;
 
-/*!
- * Constructor
- */
-CondManager::CondManager() : sol(cxt)
-{
-    const z3::expr &trueExpr = cxt.bool_val(true);
-    trueCond = getOrAddBranchCond(trueExpr, branchCondManager.getTrueCond());
-    const z3::expr &falseExpr = cxt.bool_val(false);
-    falseCond = getOrAddBranchCond(falseExpr, branchCondManager.getFalseCond());
+CondManager *CondManager::getCondMgr(CondMgrKind _condMgrKind) {
+    if (condMgr == nullptr) {
+        if (_condMgrKind == BDDMgrK)
+            condMgr = new BDDManager();
+        else if (_condMgrKind == Z3MgrK)
+            condMgr = new Z3Manager();
+        else
+            assert(false && "invalid condition manager kind!");
+    }
+    return condMgr;
 }
 
 /*!
- * Destructor
+ * Whether **All Paths** are reachable
  */
-CondManager::~CondManager()
-{
-    for (const auto& it : allocatedConds)
-    {
+bool CondManager::isAllPathReachable(const CondExpr *e) {
+    return isEquivalentBranchCond(e, getTrueCond());
+}
+
+Z3Expr *Z3Manager::getOrAddZ3Cond(const Z3Cond &z3Cond) {
+    auto it = idToCondExprMap.find(z3Cond.id());
+    if (it != idToCondExprMap.end()) {
+        return it->second;
+    } else {
+        Z3Expr *z3CondExpr = new Z3Expr(z3Cond);
+        return idToCondExprMap.emplace(z3Cond.id(), z3CondExpr).first->second;
+    }
+}
+
+Z3Manager::Z3Manager() : sol(cxt) {
+    const z3::expr &trueExpr = cxt.bool_val(true);
+    trueCond = getOrAddZ3Cond(trueExpr);
+    const z3::expr &falseExpr = cxt.bool_val(false);
+    falseCond = getOrAddZ3Cond(falseExpr);
+}
+
+Z3Manager::~Z3Manager() {
+    for (const auto &it: idToCondExprMap) {
         delete it.second;
     }
+}
+
+inline bool Z3Manager::isEquivalentBranchCond(const CondExpr *lhs, const CondExpr *rhs) {
+    sol.push();
+    const Z3Expr *z3lhs = dyn_cast<Z3Expr>(lhs);
+    const Z3Expr *z3rhs = dyn_cast<Z3Expr>(rhs);
+    assert(z3lhs && z3rhs && "not z3 condition?");
+    sol.add(z3lhs->getExpr() != z3rhs->getExpr());
+    z3::check_result res = sol.check();
+    sol.pop();
+    return res == z3::unsat;
+}
+
+/// Operations on conditions.
+//@{
+CondExpr *Z3Manager::AND(CondExpr *lhs, CondExpr *rhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
+    auto *z3rhs = dyn_cast<Z3Expr>(rhs);
+    assert(z3lhs && z3rhs && "not z3 condition?");
+    if (z3lhs == getFalseCond() || z3rhs == getFalseCond())
+        return getFalseCond();
+    else if (z3lhs == getTrueCond())
+        return z3rhs;
+    else if (z3rhs == getTrueCond())
+        return z3lhs;
+    else {
+        const z3::expr &expr = z3lhs->getExpr() && z3rhs->getExpr();
+        return getOrAddZ3Cond(expr);
+    }
+}
+
+CondExpr *Z3Manager::OR(CondExpr *lhs, CondExpr *rhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
+    auto *z3rhs = dyn_cast<Z3Expr>(rhs);
+    assert(z3lhs && z3rhs && "not z3 condition?");
+    if (z3lhs == getTrueCond() || z3rhs == getTrueCond())
+        return getTrueCond();
+    else if (z3lhs == getFalseCond())
+        return z3rhs;
+    else if (z3rhs == getFalseCond())
+        return z3lhs;
+    else {
+        const z3::expr &expr = z3lhs->getExpr() || z3rhs->getExpr();
+        return getOrAddZ3Cond(expr);
+    }
+}
+
+CondExpr *Z3Manager::NEG(CondExpr *lhs) {
+    auto *z3lhs = dyn_cast<Z3Expr>(lhs);
+    assert(z3lhs && "not z3 condition?");
+    if (z3lhs == getTrueCond())
+        return getFalseCond();
+    else if (z3lhs == getFalseCond())
+        return getTrueCond();
+    else {
+        const z3::expr &expr = !z3lhs->getExpr();
+        return getOrAddZ3Cond(expr);
+    }
+}
+//@}
+
+CondExpr *Z3Manager::createFreshBranchCond(const Instruction *inst) {
+    u32_t condCountIdx = totalCondNum++;
+    const z3::expr &expr = cxt.bool_const(("c" + std::to_string(condCountIdx)).c_str());
+    auto it = idToCondExprMap.find(expr.id());
+    if (it != idToCondExprMap.end())
+        return it->second;
+    else {
+        auto *cond = new Z3Expr(expr);
+        auto *negCond = NEG(cond);
+        setCondInst(cond, inst);
+        setNegCondInst(negCond, inst);
+        return idToCondExprMap.emplace(expr.id(), cond).first->second;
+    }
+}
+
+/*!
+ * Extract sub conditions of this expression
+ */
+void Z3Manager::extractSubConds(const CondExpr *cond, NodeBS &support) const {
+    const auto *z3CondExpr = dyn_cast<Z3Expr>(cond);
+    assert(z3CondExpr && "not z3 condition?");
+    if (z3CondExpr->getExpr().num_args() == 1 && isNegCond(z3CondExpr)) {
+        support.set(z3CondExpr->getExpr().id());
+        return;
+    }
+    if (z3CondExpr->getExpr().num_args() == 0)
+        if (!z3CondExpr->getExpr().is_true() && !z3CondExpr->getExpr().is_false())
+            support.set(z3CondExpr->getExpr().id());
+    for (u32_t i = 0; i < z3CondExpr->getExpr().num_args(); ++i) {
+        const z3::expr &expr = z3CondExpr->getExpr().arg(i);
+        extractSubConds(getCond(expr.id()), support);
+    }
+}
+
+/*!
+ * Whether the condition is satisfiable
+ */
+bool Z3Manager::isSatisfiable(const CondExpr *cond) {
+    sol.push();
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(cond);
+    assert(z3CondExpr && "not z3 condition?");
+    sol.add(z3CondExpr->getExpr());
+    z3::check_result result = sol.check();
+    sol.pop();
+    if (result == z3::sat || result == z3::unknown)
+        return true;
+    else
+        return false;
 }
 
 /*!
  *  Preprocess the condition,
  *  e.g., Compressing using And-Inverter-Graph, Gaussian Elimination
  */
-z3::expr CondManager::simplify(const z3::expr& expr) const{
+z3::expr Z3Manager::simplify(const z3::expr &expr) const {
     z3::goal g(expr.ctx());
     z3::tactic qe =
             z3::tactic(expr.ctx(), "aig");
@@ -84,200 +213,103 @@ z3::expr CondManager::simplify(const z3::expr& expr) const{
 }
 
 
-
-/*!
- * Create a fresh condition to encode each program branch
- */
-CondExpr* CondManager::createFreshBranchCond(const Instruction* inst)
-{
-    u32_t condCountIdx = totalCondNum++;
-    const z3::expr &expr = cxt.bool_const(("c" + std::to_string(condCountIdx)).c_str());
-    IDToCondExprMap::const_iterator it = allocatedConds.find(expr.id());
-    if (it != allocatedConds.end())
-        return it->second;
-    else{
-        BranchCond *branchCond = branchCondManager.createCond(condCountIdx);
-        auto *cond = new BranchCondExpr(expr, branchCond);
-        auto *negCond = NEG(cond);
-        setCondInst(cond, inst);
-        setNegCondInst(negCond, inst);
-        branchCondToCondExpr.emplace(branchCond, cond);
-        return allocatedConds.emplace(expr.id(), cond).first->second;
-    }
-}
-
-/*!
- * Get or add a single branch condition,
- * e.g., when doing condition conjunction
- */
-CondExpr* CondManager::getOrAddBranchCond(const z3::expr& e, BranchCond* branchCond)
-{
-    auto it = branchCondToCondExpr.find(branchCond);
-    if(it != branchCondToCondExpr.end())
-        return it->second;
-    else{
-        auto *cond = new BranchCondExpr(e, branchCond);
-        branchCondToCondExpr.emplace(branchCond, cond);
-        return allocatedConds.emplace(e.id(), cond).first->second;
-    }
-}
-
-/*!
- * Return the number of condition expressions
- */
-u32_t CondManager::getCondNumber()
-{
-    return sol.get_model().size();
-}
-/// Operations on conditions.
-//@{
-CondExpr* CondManager::AND(CondExpr* lhs, CondExpr* rhs){
-    if (lhs == getFalseCond() || rhs == getFalseCond())
-        return getFalseCond();
-    else if (lhs == getTrueCond())
-        return rhs;
-    else if (rhs == getTrueCond())
-        return lhs;
-    else {
-        BranchCond *branchCond = branchCondManager.AND(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond(),
-                                                       SVFUtil::dyn_cast<BranchCondExpr>(rhs)->getBranchCond());
-        const z3::expr &expr = lhs->getExpr() && rhs->getExpr();
-        return getOrAddBranchCond(expr, branchCond);
-    }
-}
-
-CondExpr* CondManager::OR(CondExpr* lhs, CondExpr* rhs){
-    if (lhs == getTrueCond() || rhs == getTrueCond())
-        return getTrueCond();
-    else if (lhs == getFalseCond())
-        return rhs;
-    else if (rhs == getFalseCond())
-        return lhs;
-    else{
-        BranchCond *branchCond = branchCondManager.OR(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond(),
-                                              SVFUtil::dyn_cast<BranchCondExpr>(rhs)->getBranchCond());
-        const z3::expr &expr = lhs->getExpr() || rhs->getExpr();
-        return getOrAddBranchCond(expr, branchCond);
-    }
-}
-CondExpr* CondManager::NEG(CondExpr* lhs){
-    if (lhs == getTrueCond())
-        return getFalseCond();
-    else if (lhs == getFalseCond())
-        return getTrueCond();
-    else{
-        BranchCond *branchCond = branchCondManager.NEG(SVFUtil::dyn_cast<BranchCondExpr>(lhs)->getBranchCond());
-        const z3::expr &expr = !lhs->getExpr();
-        return getOrAddBranchCond(expr, branchCond);
-    }
-}
-//@}
-
 /*!
  * Print the expressions in this model
  */
-void CondManager::printModel()
-{
+void Z3Manager::printModel() {
     SVFUtil::outs() << sol.check() << "\n";
     z3::model m = sol.get_model();
-    for (u32_t i = 0; i < m.size(); i++)
-    {
+    for (u32_t i = 0; i < m.size(); i++) {
         z3::func_decl v = m[i];
         SVFUtil::outs() << v.name() << " = " << m.get_const_interp(v) << "\n";
     }
 }
 
 /*!
- * Return memory usage for this condition manager
- */
-std::string CondManager::getMemUsage()
-{
-    //std::ostringstream os;
-    //memory::display_max_usage(os);
-    //return os.str();
-    return "";
-}
-
-/*!
- * Extract sub conditions of this expression
- */
-void CondManager::extractSubConds(const CondExpr* cond, NodeBS &support) const
-{
-    if (cond->getExpr().num_args() == 1 && isNegCond(cond)) {
-        support.set(cond->getExpr().id());
-        return;
-    }
-    if (cond->getExpr().num_args() == 0)
-        if (!cond->getExpr().is_true() && !cond->getExpr().is_false())
-            support.set(cond->getExpr().id());
-    for (u32_t i = 0; i < cond->getExpr().num_args(); ++i) {
-        const z3::expr &expr = cond->getExpr().arg(i);
-        extractSubConds(getCond(expr.id()), support);
-    }
-}
-
-/*!
- * Whether the condition is satisfiable
- */
-bool CondManager::isSatisfiable(const CondExpr* cond){
-    sol.reset();
-    sol.add(cond->getExpr());
-    z3::check_result result = sol.check();
-    if (result == z3::sat || result == z3::unknown)
-        return true;
-    else
-        return false;
-}
-
-/*!
- * Whether **All Paths** are reachable
- */
-bool CondManager::isAllPathReachable(const CondExpr* e){
-    return isEquivalentBranchCond(e, getTrueCond());
-}
-
-/*!
  * Print out one particular expression
  */
-inline void CondManager::printDbg(const CondExpr *e)
-{
-    SVFUtil::outs() << e->getExpr() << "\n";
+inline void Z3Manager::printDbg(const CondExpr *e) {
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(e);
+    assert(z3CondExpr && "not z3 condition?");
+    SVFUtil::outs() << z3CondExpr->getExpr() << "\n";
 }
 
 /*!
  * Return string format of this expression
  */
-std::string CondManager::dumpStr(const CondExpr *e) const
-{
+std::string Z3Manager::dumpStr(const CondExpr *e) const {
     std::ostringstream out;
-    out << e->getExpr();
+    const Z3Expr *z3CondExpr = dyn_cast<Z3Expr>(e);
+    assert(z3CondExpr && "not z3 condition?");
+    out << z3CondExpr->getExpr();
     return out.str();
+}
+
+
+/*!
+ * Get or add a single branch condition,
+ * e.g., when doing condition conjunction
+ */
+BDDExpr *BDDManager::getOrAddBranchCond(BDDCond *bddCond) {
+    auto it = bddToBddCondExprMap.find(bddCond);
+    if (it != bddToBddCondExprMap.end())
+        return it->second;
+    else {
+        auto *cond = new BDDExpr(bddCond);
+        return bddToBddCondExprMap.emplace(bddCond, cond).first->second;
+    }
+}
+
+BDDManager::BDDManager() {
+    m_bdd_mgr = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
+    trueCond = getOrAddBranchCond(BddOne());
+    falseCond = getOrAddBranchCond(BddZero());
+}
+
+BDDManager::~BDDManager() {
+    for (const auto &it: bddToBddCondExprMap) {
+        delete it.second;
+    }
+    Cudd_Quit(m_bdd_mgr);
+}
+
+CondExpr *BDDManager::createFreshBranchCond(const Instruction *inst) {
+    u32_t condCountIdx = totalCondNum++;
+    BDDCond *bddCond = createCond(condCountIdx);
+    auto it = bddToBddCondExprMap.find(bddCond);
+    if (it != bddToBddCondExprMap.end())
+        return it->second;
+    else {
+        auto *cond = new BDDExpr(bddCond);
+        setCondInst(cond, inst);
+        auto *negCond = NEG(cond);
+        setCondInst(negCond, inst);
+        return bddToBddCondExprMap.emplace(bddCond, cond).first->second;
+    }
 }
 
 /// Operations on conditions.
 //@{
 /// use Cudd_bddAndLimit interface to avoid bdds blow up
-BranchCondManager::BranchCond* BranchCondManager::AND(BranchCond* lhs, BranchCond* rhs)
-{
-    if (lhs == getFalseCond() || rhs == getFalseCond())
+CondExpr *BDDManager::AND(CondExpr *lhs, CondExpr *rhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
+    auto *bddrhs = dyn_cast<BDDExpr>(rhs);
+    assert(bddlhs && bddrhs && "not bdd condition?");
+    if (bddlhs == getFalseCond() || bddrhs == getFalseCond())
         return getFalseCond();
-    else if (lhs == getTrueCond())
-        return rhs;
-    else if (rhs == getTrueCond())
-        return lhs;
-    else
-    {
-        BranchCond* tmp = Cudd_bddAndLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
-        if(tmp==nullptr)
-        {
+    else if (bddlhs == getTrueCond())
+        return bddrhs;
+    else if (bddrhs == getTrueCond())
+        return bddlhs;
+    else {
+        BDDCond *tmp = Cudd_bddAndLimit(m_bdd_mgr, bddlhs->getBDDCond(), bddrhs->getBDDCond(), Options::MaxBddSize);
+        if (tmp == nullptr) {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             ///drop the rhs condition
-            return lhs;
-        }
-        else
-        {
+            return bddlhs;
+        } else {
             Cudd_Ref(tmp);
-            return tmp;
+            return getOrAddBranchCond(tmp);
         }
     }
 }
@@ -285,48 +317,55 @@ BranchCondManager::BranchCond* BranchCondManager::AND(BranchCond* lhs, BranchCon
 /*!
  * Use Cudd_bddOrLimit interface to avoid bdds blow up
  */
-BranchCondManager::BranchCond* BranchCondManager::OR(BranchCond* lhs, BranchCond* rhs)
-{
-    if (lhs == getTrueCond() || rhs == getTrueCond())
+CondExpr *BDDManager::OR(CondExpr *lhs, CondExpr *rhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
+    auto *bddrhs = dyn_cast<BDDExpr>(rhs);
+    assert(bddlhs && bddrhs && "not bdd condition?");
+
+    if (bddlhs == getTrueCond() || bddrhs == getTrueCond())
         return getTrueCond();
-    else if (lhs == getFalseCond())
-        return rhs;
-    else if (rhs == getFalseCond())
-        return lhs;
-    else
-    {
-        BranchCond* tmp = Cudd_bddOrLimit(m_bdd_mgr, lhs, rhs, Options::MaxBddSize);
-        if(tmp==nullptr)
-        {
+    else if (bddlhs == getFalseCond())
+        return bddrhs;
+    else if (bddrhs == getFalseCond())
+        return bddlhs;
+    else {
+        BDDCond *tmp = Cudd_bddOrLimit(m_bdd_mgr, bddlhs->getBDDCond(), bddrhs->getBDDCond(), Options::MaxBddSize);
+        if (tmp == nullptr) {
             SVFUtil::writeWrnMsg("exceeds max bdd size \n");
             /// drop the two conditions here
             return getTrueCond();
-        }
-        else
-        {
+        } else {
             Cudd_Ref(tmp);
-            return tmp;
+            return getOrAddBranchCond(tmp);
         }
     }
 }
 
-BranchCondManager::BranchCond* BranchCondManager::NEG(BranchCond* lhs)
-{
-    if (lhs == getTrueCond())
+CondExpr *BDDManager::NEG(CondExpr *lhs) {
+    auto *bddlhs = dyn_cast<BDDExpr>(lhs);
+    assert(bddlhs && "not bdd condition?");
+
+    if (bddlhs == getTrueCond())
         return getFalseCond();
-    else if (lhs == getFalseCond())
+    else if (bddlhs == getFalseCond())
         return getTrueCond();
     else
-        return Cudd_Not(lhs);
+        return getOrAddBranchCond(Cudd_Not(bddlhs->getBDDCond()));
 }
 //@}
+
+/*!
+ * Whether the condition is satisfiable
+ */
+bool BDDManager::isSatisfiable(const CondExpr *cond) {
+    return cond != getFalseCond();
+}
 
 /*!
  * Utilities for dumping conditions. These methods use global functions from CUDD
  * package and they can be removed outside this class scope to be used by others.
  */
-void BranchCondManager::ddClearFlag(BranchCond * f) const
-{
+void BDDManager::ddClearFlag(BDDCond *f) const {
     if (!Cudd_IsComplement(f->next))
         return;
     /* Clear visited flag. */
@@ -338,8 +377,7 @@ void BranchCondManager::ddClearFlag(BranchCond * f) const
     return;
 }
 
-void BranchCondManager::BddSupportStep(BranchCond * f, NodeBS &support) const
-{
+void BDDManager::BddSupportStep(BDDCond *f, NodeBS &support) const {
     if (cuddIsConstant(f) || Cudd_IsComplement(f->next))
         return;
 
@@ -351,47 +389,45 @@ void BranchCondManager::BddSupportStep(BranchCond * f, NodeBS &support) const
     f->next = Cudd_Complement(f->next);
 }
 
-void BranchCondManager::extractSubConds(BranchCond * f, NodeBS &support) const
-{
-    BddSupportStep( Cudd_Regular(f), support);
-    ddClearFlag(Cudd_Regular(f));
+void BDDManager::extractSubConds(const CondExpr *f, NodeBS &support) const {
+    const auto *bddCondExpr = dyn_cast<BDDExpr>(f);
+    assert(bddCondExpr && "not bdd condition?");
+    BddSupportStep(Cudd_Regular(bddCondExpr->getBDDCond()), support);
+    ddClearFlag(Cudd_Regular(bddCondExpr->getBDDCond()));
 }
 
 /*!
  * Dump BDD
  */
-void BranchCondManager::dump(BranchCond* lhs, OutStream & O)
-{
+void BDDManager::dump(const CondExpr *lhs, OutStream &O) {
     if (lhs == getTrueCond())
         O << "T";
-    else
-    {
+    else {
         NodeBS support;
         extractSubConds(lhs, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter)
-        {
+             ++iter) {
             unsigned rid = *iter;
             O << rid << " ";
         }
     }
 }
 
+
 /*!
  * Dump BDD
  */
-std::string BranchCondManager::dumpStr(BranchCond* lhs) const
-{
+std::string BDDManager::dumpStr(const CondExpr *e) const {
+    const auto *bddCondExpr = dyn_cast<BDDExpr>(e);
+    assert(bddCondExpr && "not bdd condition?");
     std::string str;
-    if (lhs == getTrueCond())
+    if (bddCondExpr == getTrueCond())
         str += "T";
-    else
-    {
+    else {
         NodeBS support;
-        extractSubConds(lhs, support);
+        extractSubConds(bddCondExpr, support);
         for (NodeBS::iterator iter = support.begin(); iter != support.end();
-                ++iter)
-        {
+             ++iter) {
             unsigned rid = *iter;
             char int2str[16];
             sprintf(int2str, "%d", rid);

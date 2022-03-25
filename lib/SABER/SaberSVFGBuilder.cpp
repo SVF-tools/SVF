@@ -155,9 +155,10 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             if(SVFUtil::isa<StoreSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGDstNode());
-                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
-                assert(edge && "Edge not found!");
-                svfg->removeSVFGEdge(edge);
+                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
+                    svfg->removeSVFGEdge(edge);
+                else
+                    assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
 
                 if(accessGlobal(pta,stmtNode->getPAGDstNode()))
                 {
@@ -167,9 +168,10 @@ void SaberSVFGBuilder::rmDerefDirSVFGEdges(BVDataPTAImpl* pta)
             else if(SVFUtil::isa<LoadSVFGNode>(stmtNode))
             {
                 const SVFGNode* def = svfg->getDefSVFGNode(stmtNode->getPAGSrcNode());
-                SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF);
-                assert(edge && "Edge not found!");
-                svfg->removeSVFGEdge(edge);
+                if(SVFGEdge* edge = svfg->getIntraVFGEdge(def,stmtNode,SVFGEdge::IntraDirectVF))
+                    svfg->removeSVFGEdge(edge);
+                else
+                    assert((svfg->getKind()==VFG::FULLSVFG_OPT || svfg->getKind()==VFG::PTRONLYSVFG_OPT)  && "Edge not found!");
 
                 if(accessGlobal(pta,stmtNode->getPAGSrcNode()))
                 {
