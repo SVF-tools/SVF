@@ -24,12 +24,29 @@ UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64
 SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 MacCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-macos10.15.zip"
 UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-ubuntu18.04.zip"
+Z3Git="--branch z3-4.8.14 https://github.com/Z3Prover/z3.git"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
 LLVMHome="llvm-13.0.0.obj"
 Z3Home="z3.obj"
 CTIRHome="ctir.obj"
+
+
+function build_z3_from_source {
+    readonly GIT_SRC="${1}"
+    readonly INSTALL_DIR="${2}"
+
+    mkdir -p z3-src
+    pushd z3-src
+    git clone ${GIT_SRC} .
+    mkdir -p build && cd build
+    # We need a static library, so set the build option
+    cmake -DZ3_BUILD_LIBZ3_SHARED=FALSE ..
+    make -j ${jobs} && cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -P cmake_install.cmake
+    echo "Z3 installed to ${INSTALL_DIR}.  Temporary build dir `pwd` can be removed."
+    popd
+}
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
 # depending on OS.
