@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
-# type './build.sh'  for release build
-# type './build.sh debug'  for debug build
+# type './build.sh'    for release build
+# type './build.sh -d' for debug build
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
+#
+# Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
+
+jobs=4
 
 #########
 # VARs and Links
 ########
 SVFHOME=$(pwd)
 sysOS=$(uname -s)
+arch=$(uname -m)
 MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-x86_64-apple-darwin.tar.xz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-aarch64-linux-gnu.tar.xz"
+SourceLLVM="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-13.0.0.zip"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
+SourceZ3="https://github.com/Z3Prover/z3/archive/refs/tags/z3-4.8.8.zip"
 MacCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-macos10.15.zip"
 UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-ubuntu18.04.zip"
 
@@ -75,6 +83,47 @@ function check_xz {
     fi
 }
 
+function build_z3_from_source {
+    mkdir "$Z3Home"
+    echo "Downloading Z3 source..."
+    generic_download_file "$SourceZ3" z3.zip
+    check_zip
+    echo "Unzipping Z3 source..."
+    mkdir z3-source
+    unzip z3.zip -d z3-source
+
+    echo "Building Z3..."
+    mkdir z3-build
+    cd z3-build
+    # /* is a dirty hack to get z3-version...
+    cmake -DCMAKE_INSTALL_PREFIX="$SVFHOME/$Z3Home" -DZ3_BUILD_LIBZ3_SHARED=false ../z3-source/*
+    make -j${jobs}
+    make install
+
+    cd ..
+    rm -r z3-source z3-build z3.zip
+}
+
+function build_llvm_from_source {
+    mkdir "$LLVMHome"
+    echo "Downloading LLVM source..."
+    generic_download_file "$SourceLLVM" llvm.zip
+    check_unzip
+    echo "Unzipping LLVM source..."
+    mkdir llvm-source
+    unzip llvm.zip -d llvm-source
+
+    echo "Building LLVM..."
+    mkdir llvm-build
+    cd llvm-build
+    # /*/ is a dirty hack to get llvm-project-llvmorg-version...
+    cmake -DCMAKE_INSTALL_PREFIX="$SVFHOME/$LLVMHome" ../llvm-source/*/llvm
+    make -j${jobs}
+    make install
+
+    cd ..
+    rm -r llvm-source llvm-build llvm.zip
+}
 
 # OS-specific values.
 urlLLVM=""
@@ -93,7 +142,7 @@ then
     OSDisplayName="macOS"
 elif [[ $sysOS == "Linux" ]]
 then
-    urlLLVM="$UbuntuLLVM"
+    [[ "$arch" == "aarch64" ]] && urlLLVM="$UbuntuArmLLVM" || urlLLVM="$UbuntuLLVM"
     urlZ3="$UbuntuZ3"
     urlCTIR="$UbuntuCTIR"
     OSDisplayName="Ubuntu"
@@ -108,12 +157,17 @@ if [ ! -d "$LLVM_DIR" ]
 then
     if [ ! -d "$LLVMHome" ]
     then
-        echo "Downloading LLVM binary for $OSDisplayName"
-        generic_download_file "$urlLLVM" llvm.tar.xz
-        check_xz
-	echo "Unzipping llvm package..."
-        mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
-        rm llvm.tar.xz
+        if [ "$sysOS" = "Darwin" ] && [ "$arch" = "arm64" ]
+        then
+            build_llvm_from_source
+        else
+            echo "Downloading LLVM binary for $OSDisplayName"
+            generic_download_file "$urlLLVM" llvm.tar.xz
+            check_xz
+            echo "Unzipping llvm package..."
+            mkdir -p "./$LLVMHome" && tar -xf llvm.tar.xz -C "./$LLVMHome" --strip-components 1
+            rm llvm.tar.xz
+        fi
     fi
 
     export LLVM_DIR="$SVFHOME/$LLVMHome"
@@ -126,12 +180,18 @@ if [ ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
-        echo "Downloading Z3 binary for $OSDisplayName"
-        generic_download_file "$urlZ3" z3.zip
-        check_unzip
-	echo "Unzipping z3 package..."
-        unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
-        rm z3.zip
+        # M1 Macs give back arm64, some Linuxes can give aarch64.
+        if [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]
+        then
+            build_z3_from_source
+        else
+            echo "Downloading Z3 binary for $OSDisplayName"
+            generic_download_file "$urlZ3" z3.zip
+            check_unzip
+            echo "Unzipping z3 package..."
+            unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
+            rm z3.zip
+        fi
     fi
 
     export Z3_DIR="$SVFHOME/$Z3Home"
@@ -175,7 +235,7 @@ else
     cd ./'Release-build'
     cmake ../
     fi
-make -j 4
+make -j ${jobs}
 
 ########
 # Set up environment variables of SVF
