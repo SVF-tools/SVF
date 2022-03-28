@@ -4,6 +4,29 @@
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
+#
+# Dependencies include: build-essential libncurses5 libncurses-dev cmake zlib1g-dev
+
+function usage {
+   echo "Use this by ${0} [-j <job count>]"
+   echo "  * job count: value passed to make."
+}
+
+#########
+# Parse arguments
+#########
+while [[ $# -gt 0 ]]; do
+  case "${1}" in
+    -h|--help)  usage; exit 0 ;;
+    -j|--jobs)  shift; jobs="$1" ;;
+    *) usage; exit 0 ;;
+  esac
+  shift
+done
+
+# "getconf _NPROCESSORS_ONLN" should be compatible on linux & mac, but just in case, default to 4
+[[ -z ${jobs} ]] && jobs=`getconf _NPROCESSORS_ONLN`
+[[ -z ${jobs} ]] && jobs=4
 
 #########
 # VARs and Links
@@ -12,16 +35,34 @@ SVFHOME=$(pwd)
 sysOS=$(uname -s)
 MacLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-x86_64-apple-darwin.tar.xz"
 UbuntuLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+UbuntuArmLLVM="https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.0/clang+llvm-13.0.0-aarch64-linux-gnu.tar.xz"
 MacZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-osx-10.14.6.zip"
 UbuntuZ3="https://github.com/Z3Prover/z3/releases/download/z3-4.8.8/z3-4.8.8-x64-ubuntu-16.04.zip"
 MacCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-macos10.15.zip"
 UbuntuCTIR="https://github.com/mbarbar/ctir/releases/download/ctir-10.c3/ctir-clang-v10.c3-ubuntu18.04.zip"
+Z3Git="--branch z3-4.8.14 https://github.com/Z3Prover/z3.git"
 
 # Keep LLVM version suffix for version checking and better debugging
 # keep the version consistent with LLVM_DIR in setup.sh and llvm_version in Dockerfile
 LLVMHome="llvm-13.0.0.obj"
 Z3Home="z3.obj"
 CTIRHome="ctir.obj"
+
+
+function build_z3_from_source {
+    readonly GIT_SRC="${1}"
+    readonly INSTALL_DIR="${2}"
+
+    mkdir -p z3-src
+    pushd z3-src
+    git clone ${GIT_SRC} .
+    mkdir -p build && cd build
+    # We need a static library, so set the build option
+    cmake -DZ3_BUILD_LIBZ3_SHARED=FALSE ..
+    make -j ${jobs} && cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -P cmake_install.cmake
+    echo "Z3 installed to ${INSTALL_DIR}.  Temporary build dir `pwd` can be removed."
+    popd
+}
 
 # Downloads $1 (URL) to $2 (target destination) using wget or curl,
 # depending on OS.
@@ -93,7 +134,7 @@ then
     OSDisplayName="macOS"
 elif [[ $sysOS == "Linux" ]]
 then
-    urlLLVM="$UbuntuLLVM"
+    [[ `uname -m` == "aarch64" ]] && urlLLVM="$UbuntuArmLLVM" || urlLLVM="$UbuntuLLVM"
     urlZ3="$UbuntuZ3"
     urlCTIR="$UbuntuCTIR"
     OSDisplayName="Ubuntu"
@@ -126,12 +167,17 @@ if [ ! -d "$Z3_DIR" ]
 then
     if [ ! -d "$Z3Home" ]
     then
-        echo "Downloading Z3 binary for $OSDisplayName"
-        generic_download_file "$urlZ3" z3.zip
-        check_unzip
-	echo "Unzipping z3 package..."
-        unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
-        rm z3.zip
+        if [[ `uname -m` == "aarch64" ]]
+        then
+            build_z3_from_source "$Z3Git" "$SVFHOME/$Z3Home"
+        else
+            echo "Downloading Z3 binary for $OSDisplayName"
+            generic_download_file "$urlZ3" z3.zip
+            check_unzip
+            echo "Unzipping z3 package..."
+            unzip -q "z3.zip" && mv ./z3-* ./$Z3Home
+            rm z3.zip
+        fi
     fi
 
     export Z3_DIR="$SVFHOME/$Z3Home"
@@ -175,7 +221,7 @@ else
     cd ./'Release-build'
     cmake ../
     fi
-make -j 4
+make -j ${jobs}
 
 ########
 # Set up environment variables of SVF
