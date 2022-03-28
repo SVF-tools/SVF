@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# type './build.sh'    for release build
-# type './build.sh -d' for debug build
+# type './build.sh'       for release build
+# type './build.sh debug' for debug build
 # set the SVF_CTIR environment variable to build and run FSTBHC tests, e.g., `. build.sh SVF_CTIR=1 `.
 # if the CTIR_DIR variable is not set, ctir Clang will be downloaded (only if SVF_CTIR is set).
 # if the LLVM_DIR variable is not set, LLVM will be downloaded.
