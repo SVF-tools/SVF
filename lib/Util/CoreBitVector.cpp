@@ -422,7 +422,7 @@ const CoreBitVector::CoreBitVectorIterator CoreBitVector::CoreBitVectorIterator:
     return old;
 }
 
-const u32_t CoreBitVector::CoreBitVectorIterator::operator*(void) const
+u32_t CoreBitVector::CoreBitVectorIterator::operator*(void) const
 {
     assert(!atEnd() && "CoreBitVectorIterator::*: dereferencing end!");
     size_t wordsIndex = wordIt - cbv->words.begin();

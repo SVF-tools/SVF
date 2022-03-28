@@ -138,7 +138,7 @@ public:
         return conditionVar;
     }
 
-    const s32_t getSuccessorCondValue() const{
+    s32_t getSuccessorCondValue() const{
         assert(getCondition() && "this is not a conditional branch edge");
         return branchCondVal;
     }
