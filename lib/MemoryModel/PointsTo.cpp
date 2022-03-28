@@ -385,7 +385,7 @@ PointsTo::PointsToIterator::PointsToIterator(const PointsTo *pt, bool end)
     {
         new (&bvIt) BitVector::iterator(end ? pt->bv.end() : pt->bv.begin());
     }
-    else 
+    else
     {
         assert(false && "PointsToIterator::PointsToIterator: unknown type");
         abort();
@@ -495,7 +495,7 @@ const PointsTo::PointsToIterator PointsTo::PointsToIterator::operator++(int)
     return old;
 }
 
-const NodeID PointsTo::PointsToIterator::operator*(void) const
+NodeID PointsTo::PointsToIterator::operator*(void) const
 {
     assert(!atEnd() && "PointsToIterator: dereferencing end!");
     if (pt->type == Type::CBV) return pt->getExternalNode(*cbvIt);
