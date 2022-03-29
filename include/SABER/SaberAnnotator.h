@@ -30,7 +30,7 @@
 #ifndef SABERANNOTATOR_H_
 #define SABERANNOTATOR_H_
 
-#include "Util/BasicTypes.h"
+#include <MemoryModel/SVFStatements.h>
 #include "Util/Annotator.h"
 
 namespace SVF
@@ -60,10 +60,10 @@ public:
     //@{
     void annotateSource();
     void annotateSinks();
-    void annotateFeasibleBranch(const BranchInst *brInst, u32_t succPos);
-    void annotateInfeasibleBranch(const BranchInst *brInst, u32_t succPos);
+    void annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
+    void annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
 
-    void annotateSwitch(SwitchInst *brInst, u32_t succPos);
+    void annotateSwitch(const BranchStmt *swithStmt, u32_t succPos);
     //@}
 };
 

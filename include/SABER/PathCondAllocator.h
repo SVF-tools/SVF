@@ -202,6 +202,10 @@ public:
         return condMgr->isEquivalentBranchCond(lhs, rhs);
     }
 
+    inline ICFG* getICFG() const {
+        return PAG::getPAG()->getICFG();
+    }
+
 private:
 
     /// Allocate path condition for every basic block
@@ -269,9 +273,7 @@ private:
     }
     //@}
 
-    inline ICFG* getICFG() const {
-        return PAG::getPAG()->getICFG();
-    }
+
 
     /// Release memory
     void destroy(){

@@ -197,10 +197,13 @@ void ProgSlice::annotatePaths()
     {
         Condition* atom = pathAllocator->getCond(*it);
         const Instruction* tinst = pathAllocator->getCondInst(atom);
-        if(const BranchInst* br = SVFUtil::dyn_cast<BranchInst>(tinst))
-        {
-            annotator.annotateFeasibleBranch(br,0);
-            annotator.annotateFeasibleBranch(br,1);
+        if (ICFGNode *icfgNode = pathAllocator->getICFG()->getICFGNode(tinst)) {
+            for (const auto &svfStmt: icfgNode->getSVFStmts()) {
+                if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt)) {
+                    annotator.annotateFeasibleBranch(branchStmt,0);
+                    annotator.annotateFeasibleBranch(branchStmt,1);
+                }
+            }
         }
     }
 }
