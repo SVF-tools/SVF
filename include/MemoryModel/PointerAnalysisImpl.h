@@ -217,10 +217,6 @@ private:
     PersistentPointsToCache<PointsTo> ptCache;
 
 public:
-    /// Interface expose to users of our pointer analysis, given Location infos
-    virtual AliasResult alias(const MemoryLocation  &LocA,
-                              const MemoryLocation  &LocB);
-
     /// Interface expose to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,
                               const Value* V2);
@@ -507,12 +503,6 @@ public:
         return objToNSRevPtsMap[obj];
     }
 
-    /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasResult alias(const MemoryLocation &LocA,
-                                     const MemoryLocation  &LocB)
-    {
-        return alias(LocA.Ptr, LocB.Ptr);
-    }
     /// Interface expose to users of our pointer analysis, given Value infos
     virtual inline AliasResult alias(const Value* V1, const Value* V2)
     {

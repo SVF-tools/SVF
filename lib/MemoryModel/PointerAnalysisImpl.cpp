@@ -448,15 +448,6 @@ void BVDataPTAImpl::normalizePointsTo() {
 /*!
  * Return alias results based on our points-to/alias analysis
  */
-AliasResult BVDataPTAImpl::alias(const MemoryLocation &LocA,
-                                 const MemoryLocation &LocB)
-{
-    return alias(LocA.Ptr, LocB.Ptr);
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
 AliasResult BVDataPTAImpl::alias(const Value* V1,
                                  const Value* V2)
 {

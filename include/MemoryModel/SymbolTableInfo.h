@@ -81,9 +81,6 @@ public:
     //@}
 
 private:
-    /// Data layout on a target machine
-    static DataLayout *dl;
-
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap;		///< return  map
@@ -160,14 +157,6 @@ public:
     inline void setModule(SVFModule* m)
     {
         mod = m;
-    }
-
-    /// Get target machine data layout
-    inline static DataLayout* getDataLayout(Module* mod)
-    {
-        if(dl==nullptr)
-            return dl = new DataLayout(mod);
-        return dl;
     }
 
     /// special value

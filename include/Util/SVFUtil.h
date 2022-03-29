@@ -192,7 +192,7 @@ inline bool isIntrinsicInst(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Instruction* inst)
 {
-    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst) || SVFUtil::isa<CallBrInst>(inst);
+    return SVFUtil::isa<CallBase>(inst);
 }
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)

@@ -105,7 +105,6 @@ typedef llvm::VectorType VectorType;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
-typedef llvm::MemoryLocation MemoryLocation;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
@@ -126,20 +125,11 @@ typedef llvm::MDNode MDNode;
 /// LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::CallInst CallInst;
-typedef llvm::InvokeInst InvokeInst;
-typedef llvm::CallBrInst CallBrInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
-typedef llvm::PHINode PHINode;
-typedef llvm::GetElementPtrInst GetElementPtrInst;
-typedef llvm::CastInst CastInst;
-typedef llvm::BitCastInst BitCastInst;
 typedef llvm::ReturnInst ReturnInst;
-typedef llvm::CmpInst CmpInst;
 typedef llvm::BranchInst BranchInst;
 typedef llvm::SwitchInst SwitchInst;
-typedef llvm::BinaryOperator BinaryOperator;
-typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
 
 #if (LLVM_VERSION_MAJOR >= 9)

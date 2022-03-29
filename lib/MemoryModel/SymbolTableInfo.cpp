@@ -39,7 +39,6 @@ using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 
-DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 
@@ -304,10 +303,6 @@ void SymbolTableInfo::destroy()
             delete iter->second;
     }
 
-    if(dl){
-        delete dl;
-        dl = nullptr;
-    }
     if(mod){
         delete mod;
         mod = nullptr;
