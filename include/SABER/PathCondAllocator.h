@@ -223,9 +223,9 @@ private:
     /// Evaluate loop exit branch
     Condition* evaluateLoopExitBranch(const BasicBlock * bb, const BasicBlock *succ);
     /// Return branch condition after evaluating test null like expression
-    Condition* evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ);
+    Condition* evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ);
     /// Return condition when there is a branch calls program exit
-    Condition* evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ);
+    Condition* evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ);
     /// Collect basic block contains program exit function call
     void collectBBCallingProgExit(const BasicBlock& bb);
     bool isBBCallsProgExit(const BasicBlock* bb);
@@ -268,6 +268,10 @@ private:
         return it->second;
     }
     //@}
+
+    inline ICFG* getICFG() const {
+        return PAG::getPAG()->getICFG();
+    }
 
     /// Release memory
     void destroy(){

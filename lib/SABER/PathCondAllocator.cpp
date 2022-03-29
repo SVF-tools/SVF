@@ -177,12 +177,12 @@ void PathCondAllocator::setBranchCond(const BasicBlock *bb, const BasicBlock *su
 /*!
  * Evaluate null like expression for source-sink related bug detection in SABER
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchInst* brInst, const BasicBlock *succ)
+PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const BranchStmt* branchStmt, const BasicBlock *succ)
 {
 
-    const BasicBlock* succ1 = brInst->getSuccessor(0);
+    const BasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
 
-    if(isTestNullExpr(brInst->getCondition()))
+    if(isTestNullExpr(branchStmt->getCondition()->getValue()))
     {
         // succ is then branch
         if(succ1 == succ)
@@ -191,7 +191,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         else
             return getTrueCond();
     }
-    if(isTestNotNullExpr(brInst->getCondition()))
+    if(isTestNotNullExpr(branchStmt->getCondition()->getValue()))
     {
         // succ is then branch
         if(succ1 == succ)
@@ -207,10 +207,10 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
 /*!
  * Evaluate condition for program exit (e.g., exit(0))
  */
-PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchInst* brInst, const BasicBlock *succ)
+PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchStmt* branchStmt, const BasicBlock *succ)
 {
-    const BasicBlock* succ1 = brInst->getSuccessor(0);
-    const BasicBlock* succ2 = brInst->getSuccessor(1);
+    const BasicBlock *succ1 = branchStmt->getSuccessor(0)->getBB();
+    const BasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
 
     bool branch1 = isBBCallsProgExit(succ1);
     bool branch2 = isBBCallsProgExit(succ2);
@@ -299,26 +299,31 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
         return getTrueCond();
     }
 
-    if(const BranchInst* brInst = SVFUtil::dyn_cast<BranchInst>(bb->getTerminator()))
-    {
-        assert(brInst->getNumSuccessors() == 2 && "not a two successors branch??");
-        const BasicBlock* succ1 = brInst->getSuccessor(0);
-        const BasicBlock* succ2 = brInst->getSuccessor(1);
-        assert((succ1 == succ || succ2 == succ) && "not a successor??");
+    if (ICFGNode *icfgNode = getICFG()->getICFGNode(bb->getTerminator())) {
+        for (const auto &svfStmt: icfgNode->getSVFStmts()) {
+            if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt)) {
+                if(branchStmt->getNumSuccessors() == 2) {
+                    const BasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
+                    const BasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
+                    assert((succ1 == succ || succ2 == succ) && "not a successor??");
 
-        Condition* evalLoopExit = evaluateLoopExitBranch(bb,succ);
-        if(evalLoopExit)
-            return evalLoopExit;
+                    Condition* evalLoopExit = evaluateLoopExitBranch(bb,succ);
+                    if(evalLoopExit)
+                        return evalLoopExit;
 
-        Condition* evalProgExit = evaluateProgExit(brInst,succ);
-        if(evalProgExit)
-            return evalProgExit;
+                    Condition* evalProgExit = evaluateProgExit(branchStmt,succ);
+                    if(evalProgExit)
+                        return evalProgExit;
 
-        Condition* evalTestNullLike = evaluateTestNullLikeExpr(brInst,succ);
-        if(evalTestNullLike)
-            return evalTestNullLike;
-
+                    Condition* evalTestNullLike = evaluateTestNullLikeExpr(branchStmt,succ);
+                    if(evalTestNullLike)
+                        return evalTestNullLike;
+                    break;
+                }
+            }
+        }
     }
+
     return getBranchCond(bb, succ);
 }
 
