@@ -36,7 +36,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
-#include <llvm/Support/commandLine.h>	// for command line options
+#include <llvm/Support/CommandLine.h>	// for command line options
 #include <llvm/ADT/StringMap.h>	// for StringMap
 
 #include <iostream>
