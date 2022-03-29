@@ -617,6 +617,13 @@ inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
 }
 //@}
 
+inline static DataLayout* getDataLayout(Module* mod)
+{
+    static DataLayout *dl = nullptr;
+    if (dl == nullptr) dl = new DataLayout(mod);
+    return dl;
+}
+
 /// Get the next instructions following control flow
 void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);
 

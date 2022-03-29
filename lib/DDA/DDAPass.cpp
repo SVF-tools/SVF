@@ -32,7 +32,7 @@ DDAPass::~DDAPass()
 void DDAPass::runOnModule(SVFModule* module)
 {
     /// initialization for llvm alias analyzer
-    //InitializeAliasAnalysis(this, SymbolTableInfo::getDataLayout(&module));
+    //InitializeAliasAnalysis(this, getDataLayout(&module));
 
     selectClient(module);
 

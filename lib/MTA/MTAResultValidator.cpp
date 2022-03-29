@@ -6,6 +6,7 @@
  */
 
 #include "Util/Options.h"
+#include "SVF-FE/BasicTypes.h"
 #include <string>
 #include <sstream>
 

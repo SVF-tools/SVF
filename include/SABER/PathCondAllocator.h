@@ -32,6 +32,7 @@
 
 #include "Util/SVFModule.h"
 #include "SVF-FE/DataFlowUtil.h"
+#include "SVF-FE/BasicTypes.h"
 #include "Util/Conditions.h"
 #include "Util/WorkList.h"
 #include "Graphs/SVFG.h"

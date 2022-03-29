@@ -397,7 +397,7 @@ void PathCondAllocator::collectBBCallingProgExit(const BasicBlock & bb)
     for(BasicBlock::const_iterator it = bb.begin(), eit = bb.end(); it!=eit; it++)
     {
         const Instruction* inst = &*it;
-        if(SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst))
+        if(SVFUtil::isa<CallBase>(inst))
             if(SVFUtil::isProgExitCall(inst))
             {
                 funToExitBBsMap[bb.getParent()].insert(&bb);

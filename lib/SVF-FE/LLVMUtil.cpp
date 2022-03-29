@@ -411,12 +411,13 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
     }
 }
 
+
 u32_t SVFUtil::getTypeSizeInBytes(const Type* type)
 {
 
     // if the type has size then simply return it, otherwise just return 0
     if(type->isSized())
-        return SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
+        return getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getTypeStoreSize(const_cast<Type*>(type));
     else
         return 0;
 }
@@ -424,7 +425,7 @@ u32_t SVFUtil::getTypeSizeInBytes(const Type* type)
 u32_t SVFUtil::getTypeSizeInBytes(const StructType *sty, u32_t field_idx)
 {
 
-    const StructLayout *stTySL = SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
+    const StructLayout *stTySL = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule())->getStructLayout( const_cast<StructType *>(sty) );
     /// if this struct type does not have any element, i.e., opaque
     if(sty->isOpaque())
         return 0;

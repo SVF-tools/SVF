@@ -31,6 +31,10 @@
 #ifndef INCLUDE_UTIL_SVFBASICTYPES_H_
 #define INCLUDE_UTIL_SVFBASICTYPES_H_
 
+// TODO: these are just for SmallBBVector.
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/ADT/SmallVector.h>
+
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/Support/CommandLine.h>	// for command line options
 #include <llvm/ADT/StringMap.h>	// for StringMap
@@ -108,9 +112,7 @@ template<typename Key, typename Value, typename Compare = std::less<Key>,
          typename Allocator = std::allocator<std::pair<const Key, Value>>>
 using OrderedMap = std::map<Key, Value, Compare, Allocator>;
 
-template <typename T, unsigned N>
-using SmallVector = llvm::SmallVector<T, N>;
-
+typedef llvm::SmallVector<llvm::BasicBlock*, 8> SmallBBVector;
 typedef std::pair<NodeID, NodeID> NodePair;
 typedef OrderedSet<NodeID> OrderedNodeSet;
 typedef Set<NodeID> NodeSet;
@@ -121,10 +123,8 @@ typedef std::vector<EdgeID> EdgeVector;
 typedef std::stack<NodeID> NodeStack;
 typedef std::list<NodeID> NodeList;
 typedef std::deque<NodeID> NodeDeque;
-typedef SmallVector<u32_t,16> SmallVector16;
-typedef SmallVector<u32_t,8> SmallVector8;
 typedef NodeSet EdgeSet;
-typedef SmallVector16 CallStrCxt;
+typedef std::vector<u32_t> CallStrCxt;
 typedef llvm::StringMap<u32_t> StringMap;
 
 typedef unsigned Version;
@@ -287,27 +287,6 @@ template <> struct std::hash<SVF::NodePair> {
         uint32_t first = (uint32_t)(p.first);
         uint32_t second = (uint32_t)(p.second);
         return ((uint64_t)(first) << 32) | (uint64_t)(second);
-    }
-};
-
-/// Specialise hash for SmallVectors.
-template <typename T, unsigned N>
-struct std::hash<SVF::SmallVector<T, N>>
-{
-    size_t operator()(const SVF::SmallVector<T, N> &sv) const {
-        if (sv.empty()) return 0;
-        if (sv.size() == 1) return sv[0];
-
-        // Iterate and accumulate the hash.
-        size_t hash = 0;
-        SVF::Hash<std::pair<T, size_t>> hts;
-        std::hash<T> ht;
-        for (const T &t : sv)
-        {
-            hash = hts(std::make_pair(ht(t), hash));
-        }
-
-        return hash;
     }
 };
 

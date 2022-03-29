@@ -34,7 +34,6 @@
 #include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Graphs/GraphPrinter.h"
 #include "Util/Casting.h"
-#include <llvm/ADT/SmallVector.h>		// for small vector
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/InstVisitor.h>	// for instruction visitor
@@ -106,20 +105,12 @@ typedef llvm::VectorType VectorType;
 
 /// LLVM data layout
 typedef llvm::DataLayout DataLayout;
-typedef llvm::StructLayout StructLayout;
-typedef llvm::SmallVector<BasicBlock*, 8> SmallBBVector;
-typedef llvm::ConstantStruct ConstantStruct;
-typedef llvm::MemoryLocation MemoryLocation;
 
 /// LLVM Aliases and constants
 typedef llvm::Argument Argument;
 typedef llvm::Constant Constant;
 typedef llvm::ConstantData ConstantData;
-typedef llvm::ConstantDataSequential ConstantDataSequential;
 typedef llvm::ConstantInt ConstantInt;
-typedef llvm::ConstantFP ConstantFP;
-typedef llvm::ConstantTokenNone ConstantTokenNone;
-typedef llvm::ConstantExpr ConstantExpr;
 typedef llvm::ConstantPointerNull ConstantPointerNull;
 typedef llvm::ConstantArray ConstantArray;
 typedef llvm::GlobalAlias GlobalAlias;
@@ -134,38 +125,12 @@ typedef llvm::MDNode MDNode;
 /// LLVM Instructions
 typedef llvm::AllocaInst AllocaInst;
 typedef llvm::CallInst CallInst;
-typedef llvm::InvokeInst InvokeInst;
-typedef llvm::CallBrInst CallBrInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
-typedef llvm::PHINode PHINode;
-typedef llvm::GetElementPtrInst GetElementPtrInst;
-typedef llvm::CastInst CastInst;
-typedef llvm::BitCastInst BitCastInst;
 typedef llvm::ReturnInst ReturnInst;
-typedef llvm::SelectInst SelectInst;
-typedef llvm::IntToPtrInst IntToPtrInst;
-typedef llvm::CmpInst CmpInst;
 typedef llvm::BranchInst BranchInst;
 typedef llvm::SwitchInst SwitchInst;
-typedef llvm::InsertValueInst InsertValueInst;
-typedef llvm::BinaryOperator BinaryOperator;
-typedef llvm::UnaryOperator UnaryOperator;
-typedef llvm::PtrToIntInst PtrToIntInst;
-typedef llvm::VAArgInst VAArgInst;
-typedef llvm::InsertElementInst InsertElementInst;
-typedef llvm::ShuffleVectorInst ShuffleVectorInst;
-typedef llvm::LandingPadInst LandingPadInst;
-typedef llvm::ResumeInst ResumeInst;
-typedef llvm::UnreachableInst UnreachableInst;
-typedef llvm::FenceInst FenceInst;
-typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
-typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::UndefValue UndefValue;
-typedef llvm::VACopyInst VACopyInst;
-typedef llvm::VAEndInst VAEndInst;
-typedef llvm::VAStartInst VAStartInst;
-typedef llvm::FreezeInst FreezeInst;
 
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
