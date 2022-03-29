@@ -644,6 +644,12 @@ u32_t MemObj::getNumOfElements() const
     return typeInfo->getNumOfElements();
 }
 
+/// Set the number of elements of this object
+void MemObj::setNumOfElements(u32_t num)
+{
+    return typeInfo->setNumOfElements(num);
+}
+
 /// Get obj type info
 const Type* MemObj::getType() const
 {

@@ -431,6 +431,9 @@ public:
     /// Get the number of elements of this object 
     u32_t getNumOfElements() const;
 
+    /// Set the number of elements of this object
+    void setNumOfElements(u32_t num);
+
     /// Get max field offset limit
     u32_t getMaxFieldOffsetLimit() const;
 
