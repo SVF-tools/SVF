@@ -30,6 +30,8 @@ typedef llvm::ConstantExpr ConstantExpr;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::BitCastInst BitCastInst;
+typedef llvm::BranchInst BranchInst;
+typedef llvm::SwitchInst SwitchInst;
 typedef llvm::CallBrInst CallBrInst;
 typedef llvm::CastInst CastInst;
 typedef llvm::CmpInst CmpInst;

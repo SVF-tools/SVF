@@ -128,8 +128,6 @@ typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
 typedef llvm::ReturnInst ReturnInst;
-typedef llvm::BranchInst BranchInst;
-typedef llvm::SwitchInst SwitchInst;
 typedef llvm::UndefValue UndefValue;
 
 #if (LLVM_VERSION_MAJOR >= 9)
