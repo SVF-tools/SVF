@@ -155,14 +155,14 @@ void PointerAnalysis::initialize()
  */
 bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
 {
-    const MemObj* obj = this->pag->getObject(id);
+    const MemObj* obj = pag->getObject(id);
     assert(obj && "object not found!!");
     if(obj->isStack())
     {
-        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
+        if(const Function* fun = pag->getGNode(id)->getFunction())
         {
-            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
-            return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(fun)->getId());
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(svffun)->getId());
         }
     }
     return false;
