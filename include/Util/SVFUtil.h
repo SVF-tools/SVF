@@ -209,11 +209,6 @@ inline bool isNonInstricCallSite(const Instruction* inst)
         return false;
     return isCallSite(inst);
 }
-/// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst)
-{
-    return SVFUtil::isa<ReturnInst>(inst);
-}
 
 /// Return LLVM callsite given a instruction
 inline CallSite getLLVMCallSite(const Instruction* inst)

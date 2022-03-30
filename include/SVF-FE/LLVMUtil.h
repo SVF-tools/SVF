@@ -78,6 +78,12 @@ inline bool isExtCall(const Instruction *inst)
 }
 //@}
 
+/// Whether an instruction is a return instruction
+inline bool isReturn(const Instruction* inst)
+{
+    return SVFUtil::isa<ReturnInst>(inst);
+}
+
 /// Return true if the call is a heap allocator/reallocator
 //@{
 /// note that these two functions are not suppose to be used externally
