@@ -322,14 +322,6 @@ bool SymbolTableInfo::isNullPtrSym(const Value *val)
 }
 
 /*!
- * Check whether this value is a black hole
- */
-bool SymbolTableInfo::isBlackholeSym(const Value *val)
-{
-    return (SVFUtil::isa<UndefValue>(val));
-}
-
-/*!
  * Check whether this value points-to a constant object
  */
 bool SymbolTableInfo::isConstantObjSym(const Value *val)

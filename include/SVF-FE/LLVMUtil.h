@@ -59,6 +59,13 @@ inline const Function* getLLVMFunction(const Value* val)
 }
 
 
+/// Check whether this value is a black hole
+inline bool isBlackholeSym(const Value *val)
+{
+    return (SVFUtil::isa<UndefValue>(val));
+}
+
+
 /// Return true if the call is an external call (external library in function summary table)
 /// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{

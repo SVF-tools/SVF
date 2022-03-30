@@ -58,5 +58,6 @@ typedef llvm::VAEndInst VAEndInst;
 typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
+typedef llvm::UndefValue UndefValue;
 
 #endif  // SVF_FE_BASIC_TYPES_H

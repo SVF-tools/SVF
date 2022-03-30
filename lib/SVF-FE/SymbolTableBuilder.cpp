@@ -204,7 +204,7 @@ void SymbolTableBuilder::collectSym(const Value *val)
     DBOUT(DMemModel, outs() << "collect sym from ##" << SVFUtil::value2String(val) << " \n");
 
     // special sym here
-    if (symInfo->isNullPtrSym(val) || symInfo->isBlackholeSym(val))
+    if (symInfo->isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
         return;
 
     //TODO handle constant expression value here??

@@ -126,7 +126,6 @@ typedef llvm::MDNode MDNode;
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
 typedef llvm::LoadInst LoadInst;
-typedef llvm::UndefValue UndefValue;
 
 #if (LLVM_VERSION_MAJOR >= 9)
 typedef llvm::FunctionCallee FunctionCallee;
