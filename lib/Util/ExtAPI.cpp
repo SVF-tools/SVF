@@ -8,7 +8,7 @@
 */
 
 #include "Util/ExtAPI.h"
-#include "Util/SVFUtil.h"
+#include "Util/SVFUtil.h"   // for debugging
 #include <stdio.h>
 #include <cstdlib>          // for getenv
 #include <map>
@@ -17,6 +17,7 @@
 #include <utility>
 #include <string>
 #include <fstream>          // to read extAPI.txt
+#include <sys/stat.h>       // for chmod
 
 using namespace std;
 using namespace SVF;
@@ -67,20 +68,24 @@ void ExtAPI::init()
     vector<ei_pair> ei_pairs;           
     vector<pair<std::string,std::string>> data;   // to preprocess extAPI.txt
 
-    // source ./setup.sh (assert if env variables are not set up)
     // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
-
+ 
     // check if SVF_DIR environment variable is set
-    char* env = std::getenv("SVF_DIR"); // root folder of SVF
-        
-    string svf_path(env);               // convert to string
-    
-    std::string file_name = svf_path + "/lib/extAPI.txt";        // extAPI.txt path
-    std::fstream file;     // read in txt file
+    const char* env = std::getenv("SVF_DIR"); // root folder of SVF
+    assert(env != nullptr && "SVF_DIR not set");
 
+    string file_name;
+    const char* txt_path = "/lib/extAPI.txt";
+
+    file_name += env;
+    file_name += txt_path;
+    ifstream file;                          // read in extAPI.txt
+
+    chmod(file_name.c_str(), S_IRWXU);      // Read, write, and search, or execute, for the file owner
     file.open(file_name);
-    assert(file.is_open() && "file cannot be opened");    //  assert if file cannot be opened
-    // SVFUtil::outs() << "file is open: " << file_name << endl;
+    assert(file.is_open() && "file cannot be opened");  
+    
+    // SVFUtil::outs() << "File is open: " << file_name << "\n";
 
     if(file.is_open()){
         string ID;                      // the external API function name
@@ -89,7 +94,6 @@ void ExtAPI::init()
             data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
         }
     }
-
     file.close();
 
     assert(!data.empty() && "Migrating extAPI.txt file data unsuccesful");
@@ -139,7 +143,6 @@ void ExtAPI::init()
         const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
         ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));             // construct ei_pair with external function name and extf_t type
     }
-
     assert(!ei_pairs.empty() && "ei_pairs vector is empty");
 
     for(auto p= ei_pairs.begin(); p != ei_pairs.end(); ++p)
