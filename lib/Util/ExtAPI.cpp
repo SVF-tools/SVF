@@ -79,13 +79,18 @@ void ExtAPI::init()
 
     file_name += env;
     file_name += txt_path;
+
+    SVFUtil::outs() << "Filename: " << file_name << "\n";
+
     ifstream file;                          // read in extAPI.txt
 
     chmod(file_name.c_str(), S_IRWXU);      // Read, write, and search, or execute, for the file owner
     file.open(file_name);
+
+    assert(!file_name.empty() && "file name is empty");
     assert(file.is_open() && "file cannot be opened");  
     
-    // SVFUtil::outs() << "File is open: " << file_name << "\n";
+    SVFUtil::outs() << "File is open: " << file_name << "\n";
 
     if(file.is_open()){
         string ID;                      // the external API function name
