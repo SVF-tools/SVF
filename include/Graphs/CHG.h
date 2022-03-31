@@ -238,18 +238,18 @@ public:
     void view();
     void printCH();
 
-    inline s64_t getVirtualFunctionID(const SVFFunction* vfn) const
+    inline u32_t getVirtualFunctionID(const SVFFunction* vfn) const
     {
-        Map<const SVFFunction*, s64_t>::const_iterator it =
+        Map<const SVFFunction*, u32_t>::const_iterator it =
             virtualFunctionToIDMap.find(vfn);
         if (it != virtualFunctionToIDMap.end())
             return it->second;
         else
             return -1;
     }
-    inline const SVFFunction* getVirtualFunctionBasedonID(s64_t id) const
+    inline const SVFFunction* getVirtualFunctionBasedonID(u32_t id) const
     {
-        Map<const SVFFunction*, s64_t>::const_iterator it, eit;
+        Map<const SVFFunction*, u32_t>::const_iterator it, eit;
         for (it = virtualFunctionToIDMap.begin(), eit =
                     virtualFunctionToIDMap.end(); it != eit; ++it)
         {
@@ -309,7 +309,7 @@ public:
 private:
     SVFModule* svfMod;
     u32_t classNum;
-    s64_t vfID;
+    u32_t vfID;
     double buildingCHGTime;
     Map<std::string, CHNode *> classNameToNodeMap;
     NameToCHNodesMap classNameToDescendantsMap;
@@ -318,7 +318,7 @@ private:
     NameToCHNodesMap templateNameToInstancesMap;
     CallSiteToCHNodesMap csToClassesMap;
 
-    Map<const SVFFunction*, s64_t> virtualFunctionToIDMap;
+    Map<const SVFFunction*, u32_t> virtualFunctionToIDMap;
     CallSiteToVTableSetMap csToCHAVtblsMap;
     CallSiteToVFunSetMap csToCHAVFnsMap;
 };

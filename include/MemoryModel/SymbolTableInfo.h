@@ -32,6 +32,7 @@
 
 
 #include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 namespace SVF
@@ -81,9 +82,6 @@ public:
     //@}
 
 private:
-    /// Data layout on a target machine
-    static DataLayout *dl;
-
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap;		///< return  map
@@ -97,9 +95,6 @@ private:
 
     /// Module
     SVFModule* mod;
-
-    /// Max field limit
-    static u32_t maxFieldLimit;
 
     /// Clean up memory
     void destroy();
@@ -165,19 +160,9 @@ public:
         mod = m;
     }
 
-    /// Get target machine data layout
-    inline static DataLayout* getDataLayout(Module* mod)
-    {
-        if(dl==nullptr)
-            return dl = new DataLayout(mod);
-        return dl;
-    }
-
     /// special value
     // @{
     static bool isNullPtrSym(const Value *val);
-
-    static bool isBlackholeSym(const Value *val);
 
     bool isConstantObjSym(const Value *val);
 
@@ -246,7 +231,7 @@ public:
 
         if(isNullPtrSym(val))
             return nullPtrSymID();
-        else if(isBlackholeSym(val))
+        else if (SVFUtil::isBlackholeSym(val))
             return blkPtrSymID();
         else
         {
@@ -258,7 +243,7 @@ public:
 
     inline bool hasValSym(const Value* val)
     {
-        if (isNullPtrSym(val) || isBlackholeSym(val))
+        if (isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
             return true;
         else
             return (valSymMap.find(val) != valSymMap.end());
@@ -350,7 +335,7 @@ public:
     /// Number of flattenned elements of an array or struct
     u32_t getNumOfFlattenElements(const Type *T);
     /// Flatterned element idx of an array or struct by considering stride
-    u32_t getFlattenedElemIdx(const Type *T, s64_t origId);
+    u32_t getFlattenedElemIdx(const Type *T, u32_t origId);
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
     ///  OriginalElemType of b with field_idx 1 : Struct A
@@ -414,13 +399,13 @@ private:
     const Value *refVal;
     /// The unique id to represent this symbol
     SymID symId;
-public:
 
+public:
     /// Constructor
     MemObj(SymID id, ObjTypeInfo* ti, const Value *val = nullptr);
 
     /// Destructor
-    ~MemObj()
+    virtual ~MemObj()
     {
         destroy();
     }
@@ -441,6 +426,12 @@ public:
 
     /// Get obj type
     const Type* getType() const;
+
+    /// Get the number of elements of this object 
+    u32_t getNumOfElements() const;
+
+    /// Set the number of elements of this object
+    void setNumOfElements(u32_t num);
 
     /// Get max field offset limit
     u32_t getMaxFieldOffsetLimit() const;
@@ -513,7 +504,6 @@ private:
     /// Type vector of fields
     std::vector<const Type*> flattenElementTypes;
     /// Max field limit
-    static u32_t maxFieldLimit;
 
     StInfo(); ///< place holder
     StInfo(const StInfo& st); ///< place holder
@@ -527,16 +517,6 @@ public:
     /// Destructor
     ~StInfo()
     {
-    }
-
-    static inline void setMaxFieldLimit(u32_t limit)
-    {
-        maxFieldLimit = limit;
-    }
-
-    static inline u32_t getMaxFieldLimit()
-    {
-        return maxFieldLimit;
     }
 
     ///  struct A { int id; int salary; }; struct B { char name[20]; struct A a;}   B b;
@@ -620,6 +600,8 @@ private:
     /// maximum number of field object can be created
     /// minimum number is 0 (field insensitive analysis)
     u32_t maxOffsetLimit;
+    /// Size of the object or number of elements
+    u32_t elemNum;
 
     void resetTypeForHeapStaticObj(const Type* type);
 public:
@@ -648,6 +630,19 @@ public:
     inline void setMaxFieldOffsetLimit(u32_t limit)
     {
         maxOffsetLimit = limit;
+    }
+
+    /// Set the number of elements of this object 
+    inline void setNumOfElements(u32_t num)
+    {
+        elemNum = num;
+        setMaxFieldOffsetLimit(num);
+    }
+
+    /// Get the number of elements of this object 
+    inline u32_t getNumOfElements() const
+    {
+        return elemNum;
     }
 
     /// Flag for this object type

@@ -5,6 +5,7 @@
  */
 
 #include "Util/Options.h"
+#include "SVF-FE/BasicTypes.h"
 #include <string>
 #include <sstream>
 #include "MTA/LockResultValidator.h"
@@ -69,7 +70,7 @@ inline std::string LockResultValidator::getOutput(const char *scenario, LOCK_FLA
 }
 
 bool LockResultValidator::collectLockTargets() {
-	const Function* F;
+	const Function* F = nullptr;
 	for(auto it = getModule()->llvmFunBegin(); it != getModule()->llvmFunEnd(); it++) {
     	const std::string fName = (*it)->getName().str();
     	if(fName.find(LOCK) != std::string::npos) {

@@ -448,10 +448,10 @@ protected:
         assert(obj && "object not found!!");
         if(obj->isStack())
         {
-            if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
+            if(const Function* fun = _pag->getGNode(id)->getFunction())
             {
-                const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
-                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(fun)->getId());
+                const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+                return _callGraphSCC->isInCycle(_callGraph->getCallGraphNode(svffun)->getId());
             }
         }
         return false;

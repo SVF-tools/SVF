@@ -239,10 +239,6 @@ public:
     /// Compute points-to results on-demand, overridden by derived classes
     virtual void computeDDAPts(NodeID) {}
 
-    /// Interface exposed to users of our pointer analysis, given Location infos
-    virtual AliasResult alias(const MemoryLocation &LocA,
-                              const MemoryLocation &LocB) = 0;
-
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,
                               const Value* V2) = 0;
@@ -256,11 +252,6 @@ public:
     /// Given an object, get all the nodes having whose pointsto contains the object.
     /// Similar to getPts, this also needs to be implemented in child classes.
     virtual const NodeSet& getRevPts(NodeID nodeId) = 0;
-
-    /// Clear points-to data
-    virtual void clearPts()
-    {
-    }
 
     /// Print targets of a function pointer
     void printIndCSTargets(const CallICFGNode* cs, const FunctionSet& targets);

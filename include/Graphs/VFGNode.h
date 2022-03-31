@@ -31,7 +31,7 @@
 #define INCLUDE_UTIL_VFGNODE_H_
 
 #include "Graphs/GenericGraph.h"
-#include "Graphs/VFGEdge.h"
+#include "Graphs/SVFGEdge.h"
 #include "Graphs/ICFGNode.h"
 #include "MemoryModel/SVFIR.h"
 
@@ -91,6 +91,9 @@ public:
     {
         return nullptr;
     }
+
+    /// Return the left hand side SVF Vars
+    virtual const NodeBS getDefSVFVars() const = 0;
 
     /// Overloading operator << for dumping ICFG node ID
     //@{
@@ -226,6 +229,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -264,6 +269,8 @@ public:
         return node->getNodeKind() == Store;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -304,6 +311,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -327,11 +336,7 @@ private:
 
 public:
     /// Constructor
-    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
-    {
-        const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
-        assert(cmp && "not a compare operator?");
-    }
+    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CmpVFGNode *)
@@ -376,6 +381,9 @@ public:
         return opVers.end();
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
+
     const Value* getValue() const override;
     const std::string toString() const override;
 };
@@ -399,11 +407,7 @@ private:
 
 public:
     /// Constructor
-    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r)
-    {
-        const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
-        assert(binary && "not a binary operator?");
-    }
+    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const BinaryOPVFGNode *)
@@ -449,6 +453,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const Value* getValue() const override;
     const std::string toString() const override;
 };
@@ -471,10 +477,7 @@ private:
 
 public:
     /// Constructor
-	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
-		const Value *val = r->getValue();
-		assert(SVFUtil::isa<UnaryOperator>(val) && "not a unary instruction ?");
-	}
+    UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const UnaryOPVFGNode *)
@@ -525,7 +528,9 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const;
+    const NodeBS getDefSVFVars() const override;
+
+    virtual const std::string toString() const override;
 };
 
 /*
@@ -540,10 +545,7 @@ private:
     const BranchStmt* brstmt;
 public:
     /// Constructor
-	BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) {
-		const Value *val = r->getValue();
-		assert((SVFUtil::isa<BranchInst>(val) || SVFUtil::isa<SwitchInst>(val)) && "not a BranchInst or a SwitchInst?");
-	}
+    BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const BranchVFGNode *)
@@ -560,7 +562,7 @@ public:
     }
     //@}
 
-    /// Return the branch statement 
+    /// Return the branch statement
     const BranchStmt* getBranchStmt() const{
         return brstmt;
     }
@@ -576,6 +578,9 @@ public:
         return brstmt->getSuccessor(i);
     }
     ///@}
+
+    const NodeBS getDefSVFVars() const override;
+
     virtual const std::string toString() const override;
 };
 
@@ -614,6 +619,8 @@ public:
         return node->getNodeKind() == Gep;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -685,6 +692,8 @@ public:
         return (node->getNodeKind() == TPhi || node->getNodeKind() == TIntraPhi || node->getNodeKind() == TInterPhi);
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const Value* getValue() const override;
     const std::string toString() const override;
@@ -776,6 +785,8 @@ public:
         return node->getNodeKind() == Addr;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -871,6 +882,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -939,6 +952,8 @@ public:
     }
     //@}
 
+    const NodeBS getDefSVFVars() const override;
+
     const std::string toString() const override;
 };
 
@@ -994,6 +1009,8 @@ public:
         return node->getNodeKind() == ARet;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -1058,6 +1075,8 @@ public:
         return node->getNodeKind() == FRet;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };
@@ -1163,6 +1182,8 @@ public:
         return node->getNodeKind() == NPtr;
     }
     //@}
+
+    const NodeBS getDefSVFVars() const override;
 
     const std::string toString() const override;
 };

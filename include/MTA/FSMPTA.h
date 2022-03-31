@@ -217,6 +217,7 @@ private:
     static FSMPTA* mfspta;
     MHP* mhp;
     LockAnalysis* lockana;
+    using FlowSensitive::initialize;
 };
 
 } // End namespace SVF

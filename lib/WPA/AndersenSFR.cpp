@@ -80,7 +80,7 @@ bool AndersenSFR::mergeSrcToTgt(NodeID nodeId, NodeID newRepId)
 /*!
  * Propagate point-to set via a gep edge, using SFR
  */
-bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
+bool AndersenSFR::processGepPts(const PointsTo& pts, const GepCGEdge* edge)
 {
     ConstraintNode* dst = edge->getDstNode();
     NodeID dstId = dst->getId();
@@ -96,7 +96,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
             for (NodeID ptd : srcInits)
                 sortSrcInits.insert(ptd);
 
-            s64_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
+            s32_t offset = SVFUtil::dyn_cast<NormalGepCGEdge>(edge)->getConstantFieldIdx();
             fieldExpand(sortSrcInits, offset, dst->strides, tmpDstPts);
         }
 
@@ -116,7 +116,7 @@ bool AndersenSFR::processGepPts(PointsTo& pts, const GepCGEdge* edge)
 /*!
  *
  */
-void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, PointsTo& expandPts)
+void AndersenSFR::fieldExpand(NodeSet& initials, s32_t offset, NodeBS& strides, PointsTo& expandPts)
 {
     numOfFieldExpand++;
 
@@ -132,7 +132,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, 
             PAGNode* initPN = pag->getGNode(init);
             const MemObj* obj = pag->getBaseObj(init);
             const u32_t maxLimit = obj->getMaxFieldOffsetLimit();
-            s64_t initOffset;
+            s32_t initOffset;
             if (GepObjVar *gepNode = SVFUtil::dyn_cast<GepObjVar>(initPN))
                 initOffset = gepNode->getConstantFieldIdx();
             else if (SVFUtil::isa<FIObjVar>(initPN) || SVFUtil::isa<DummyObjVar>(initPN))
@@ -140,7 +140,7 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, 
             else
                 assert(false && "Not an object node!!");
 
-            Set<s64_t> offsets;
+            Set<s32_t> offsets;
             offsets.insert(offset);
 
             // calculate offsets
@@ -151,15 +151,15 @@ void AndersenSFR::fieldExpand(NodeSet& initials, s64_t offset, NodeBS& strides, 
                 for (auto _f : offsets)
                     for (auto _s : strides)
                     {
-                        s64_t _f1 = _f + _s;
-                        loopFlag = (offsets.find(_f1) == offsets.end()) && (initOffset + _f1 < maxLimit);
+                        s32_t _f1 = _f + _s;
+                        loopFlag = (offsets.find(_f1) == offsets.end()) && ( (u32_t)(initOffset + _f1) < maxLimit);
                         if (loopFlag)
                             offsets.insert(_f1);
                     }
             }
 
             // get gep objs
-            for (s64_t _f : offsets)
+            for (s32_t _f : offsets)
             {
                 NodeID gepId = consCG->getGepObjVar(init, LocationSet(_f));
                 initials.erase(gepId);  // gep id in initials should be removed to avoid redundant derivation

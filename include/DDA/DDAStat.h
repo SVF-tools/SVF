@@ -43,13 +43,13 @@ public:
 
     NodeBS _StrongUpdateStores;
 
-    void performStatPerQuery(NodeID ptr);
+    void performStatPerQuery(NodeID ptr) override;
 
-    void performStat();
+    void performStat() override;
 
-    void printStat();
+    void printStat(std::string str = "") override;
 
-    void printStatPerQuery(NodeID ptr, const PointsTo& pts);
+    void printStatPerQuery(NodeID ptr, const PointsTo& pts) override;
 
     void getNumOfOOBQuery();
 

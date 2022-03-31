@@ -63,7 +63,7 @@ public:
     typedef Map<const SVFFunction*,SVFStmtSet> FunToPAGEdgeSetMap;
     typedef Map<const ICFGNode*,SVFStmtList> ICFGNode2SVFStmtsMap;
     typedef Map<NodeID, NodeID> NodeToNodeMap;
-    typedef std::pair<NodeID, s64_t> NodeOffset;
+    typedef std::pair<NodeID, s32_t> NodeOffset;
     typedef std::pair<NodeID, LocationSet> NodeLocationSet;
     typedef Map<NodeOffset,NodeID> NodeOffsetMap;
     typedef Map<NodeLocationSet,NodeID> NodeLocationSetMap;

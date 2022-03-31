@@ -302,7 +302,6 @@ bool BVDataPTAImpl::readFromFile(const string& filename)
 void BVDataPTAImpl::writeToModule()
 {
     auto irAnnotator = std::make_unique<IRAnnotator>();
-    auto mainModule = SVF::LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
 
     irAnnotator->processAndersenResults(pag, this, true);
 }
@@ -444,15 +443,6 @@ void BVDataPTAImpl::normalizePointsTo() {
 
         pag->removeGNode(gepNode);
     }
-}
-
-/*!
- * Return alias results based on our points-to/alias analysis
- */
-AliasResult BVDataPTAImpl::alias(const MemoryLocation &LocA,
-                                 const MemoryLocation &LocB)
-{
-    return alias(LocA.Ptr, LocB.Ptr);
 }
 
 /*!

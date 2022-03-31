@@ -44,7 +44,7 @@ class VFGStat;
 class CallICFGNode;
 
 /*!
- * Interprocedural Control-Flow Graph (VFG)
+ *  Value Flow Graph (VFG)
  */
 typedef GenericGraph<VFGNode,VFGEdge> GenericVFGTy;
 class VFG : public GenericVFGTy

@@ -60,7 +60,6 @@ SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
  */
 void SVFGBuilder::buildSVFG()
 {
-    MemSSA* mssa = svfg->getMSSA();
     svfg->buildSVFG();
 }
 

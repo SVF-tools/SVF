@@ -352,7 +352,7 @@ ICFGEdge* ICFG::addIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode)
 /*!
  * Add conditional intraprocedural edges between two nodes
  */
-ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s64_t branchCondVal){
+ICFGEdge* ICFG::addConditionalIntraEdge(ICFGNode* srcNode, ICFGNode* dstNode, const Value* condition, s32_t branchCondVal){
 
     checkIntraEdgeParents(srcNode, dstNode);
     if(ICFGEdge* edge = hasIntraICFGEdge(srcNode,dstNode, ICFGEdge::IntraCF))
@@ -438,33 +438,36 @@ void ICFG::updateCallGraph(PTACallGraph* callgraph)
             const SVFFunction*  callee = *func_iter;
             CallICFGNode* callBlockNode = getCallICFGNode(cs);
             RetICFGNode* retBlockNode = getRetICFGNode(cs);
-            FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
-            FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
-            if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs)){
-                for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
-                {
-                    if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt)){
-                        if(callPE->getFunEntryICFGNode() == calleeEntryNode)
-                            SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(callPE);
-                    }
-                }
-            }
-            if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs)){
-                for (const SVFStmt *stmt : retBlockNode->getSVFStmts())
-                {
-                    if(const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt)){
-                        if(retPE->getFunExitICFGNode() == calleeExitNode)
-                            SVFUtil::cast<RetCFGEdge>(retEdge)->addRetPE(retPE);
-                    }
-                }
-            }
             /// if this is an external function (no function body), connect calleeEntryNode to calleeExitNode
             if (isExtCall(callee))
-                addIntraEdge(calleeEntryNode, calleeExitNode); 
+                addIntraEdge(callBlockNode, retBlockNode);
+            else {
+                FunEntryICFGNode* calleeEntryNode = getFunEntryBlock(callee);
+                FunExitICFGNode* calleeExitNode = getFunExitBlock(callee);
+                if(ICFGEdge* callEdge = addCallEdge(callBlockNode, calleeEntryNode, cs)){
+                    for (const SVFStmt *stmt : callBlockNode->getSVFStmts())
+                    {
+                        if(const CallPE *callPE = SVFUtil::dyn_cast<CallPE>(stmt)){
+                            if(callPE->getFunEntryICFGNode() == calleeEntryNode)
+                                SVFUtil::cast<CallCFGEdge>(callEdge)->addCallPE(callPE);
+                        }
+                    }
+                }
+                if(ICFGEdge* retEdge = addRetEdge(calleeExitNode, retBlockNode, cs)){
+                    for (const SVFStmt *stmt : retBlockNode->getSVFStmts())
+                    {
+                        if(const RetPE *retPE = SVFUtil::dyn_cast<RetPE>(stmt)){
+                            if(retPE->getFunExitICFGNode() == calleeExitNode)
+                                SVFUtil::cast<RetCFGEdge>(retEdge)->addRetPE(retPE);
+                        }
+                    }
+                }
 
-            /// Remove callBlockNode to retBlockNode intraICFGEdge since we found at least one inter procedural edge
-            if(ICFGEdge* edge = hasIntraICFGEdge(callBlockNode,retBlockNode, ICFGEdge::IntraCF))
-                removeICFGEdge(edge);
+                /// Remove callBlockNode to retBlockNode intraICFGEdge since we found at least one inter procedural edge
+                if(ICFGEdge* edge = hasIntraICFGEdge(callBlockNode,retBlockNode, ICFGEdge::IntraCF))
+                    removeICFGEdge(edge);
+            }
+
         }
     }
     // dump ICFG

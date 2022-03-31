@@ -59,6 +59,13 @@ inline const Function* getLLVMFunction(const Value* val)
 }
 
 
+/// Check whether this value is a black hole
+inline bool isBlackholeSym(const Value *val)
+{
+    return (SVFUtil::isa<UndefValue>(val));
+}
+
+
 /// Return true if the call is an external call (external library in function summary table)
 /// If the libary function is redefined in the application code (e.g., memcpy), it will return false and will not be treated as an external call.
 //@{
@@ -77,6 +84,12 @@ inline bool isExtCall(const Instruction *inst)
     return isExtCall(getCallee(inst));
 }
 //@}
+
+/// Whether an instruction is a return instruction
+inline bool isReturn(const Instruction* inst)
+{
+    return SVFUtil::isa<ReturnInst>(inst);
+}
 
 /// Return true if the call is a heap allocator/reallocator
 //@{
@@ -517,6 +530,9 @@ const Value *stripAllCasts(const Value *val) ;
 /// Get the type of the heap allocation
 const Type *getTypeOfHeapAlloc(const llvm::Instruction *inst) ;
 
+/// Return the bitcast instruction which is val's only use site, otherwise return nullptr
+const Value* getUniqueUseViaCastInst(const Value* val);
+
 /// Return corresponding constant expression, otherwise return nullptr
 //@{
 inline const ConstantExpr *isGepConstantExpr(const Value *val)
@@ -613,6 +629,13 @@ inline const ConstantExpr *isUnaryConstantExpr(const Value *val)
     return nullptr;
 }
 //@}
+
+inline static DataLayout* getDataLayout(Module* mod)
+{
+    static DataLayout *dl = nullptr;
+    if (dl == nullptr) dl = new DataLayout(mod);
+    return dl;
+}
 
 /// Get the next instructions following control flow
 void getNextInsts(const Instruction* curInst, std::vector<const Instruction*>& instList);

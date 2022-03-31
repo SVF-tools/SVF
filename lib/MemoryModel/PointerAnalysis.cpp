@@ -72,7 +72,7 @@ const std::string PointerAnalysis::aliasTestFailNoAliasMangled  = "_Z20EXPECTEDF
  * Constructor
  */
 PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
-    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),typeSystem(nullptr), chgraph(nullptr)
+    svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr),typeSystem(nullptr)
 {
     pag = p;
 	OnTheFlyIterBudgetForStat = Options::StatBudget;
@@ -155,14 +155,14 @@ void PointerAnalysis::initialize()
  */
 bool PointerAnalysis::isLocalVarInRecursiveFun(NodeID id) const
 {
-    const MemObj* obj = this->pag->getObject(id);
+    const MemObj* obj = pag->getObject(id);
     assert(obj && "object not found!!");
     if(obj->isStack())
     {
-        if(const AllocaInst* local = SVFUtil::dyn_cast<AllocaInst>(obj->getValue()))
+        if(const Function* fun = pag->getGNode(id)->getFunction())
         {
-            const SVFFunction* fun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(local->getFunction());
-            return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(fun)->getId());
+            const SVFFunction* svffun = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(fun);
+            return callGraphSCC->isInCycle(getPTACallGraph()->getCallGraphNode(svffun)->getId());
         }
     }
     return false;

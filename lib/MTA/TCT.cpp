@@ -474,7 +474,6 @@ void TCT::pushCxt(CallStrCxt& cxt, const Instruction* call, const Function* call
 {
 
     const Function* caller = call->getParent()->getParent();
-    const SVFFunction* svfcaller = getSVFFun(caller);
     const SVFFunction* svfcallee = getSVFFun(callee);
     CallSiteID csId = tcg->getCallSiteID(getCallICFGNode(call), svfcallee);
 

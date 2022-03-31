@@ -152,7 +152,7 @@ const NodeBS TypeBasedHeapCloning::getGepObjClones(NodeID base, unsigned offset)
 
     // totalOffset is the offset from the real base (i.e. base of base),
     // offset is the offset into base, whether it is a field itself or not.
-    s64_t totalOffset = offset;
+    s32_t totalOffset = offset;
     if (const GepObjVar *baseGep = SVFUtil::dyn_cast<GepObjVar>(baseNode))
     {
         totalOffset += baseGep->getConstantFieldIdx();

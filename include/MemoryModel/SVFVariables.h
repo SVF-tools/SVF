@@ -413,7 +413,7 @@ public:
     }
 
     /// offset of the base value variable
-    inline s64_t getConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }
@@ -422,8 +422,8 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + llvm::utostr(getConstantFieldIdx());
-        return "offset_" + llvm::utostr(getConstantFieldIdx());
+            return value->getName().str() + "_" + std::to_string(getConstantFieldIdx());
+        return "offset_" + std::to_string(getConstantFieldIdx());
     }
 
     inline const Type* getType() const
@@ -483,7 +483,7 @@ public:
     }
 
     /// offset of the mem object
-    inline s64_t getConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         return ls.accumulateConstantFieldIdx();
     }
@@ -510,8 +510,8 @@ public:
     inline const std::string getValueName() const
     {
         if (value && value->hasName())
-            return value->getName().str() + "_" + llvm::itostr(ls.accumulateConstantFieldIdx());
-        return "offset_" + llvm::itostr(ls.accumulateConstantFieldIdx());
+            return value->getName().str() + "_" + std::to_string(ls.accumulateConstantFieldIdx());
+        return "offset_" + std::to_string(ls.accumulateConstantFieldIdx());
     }
 
     virtual const std::string toString() const;

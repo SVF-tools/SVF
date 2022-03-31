@@ -191,7 +191,6 @@ namespace SVF
         assert(Options::NodeAllocStrat == Strategy::DENSE && "Clusterer::cluster: only dense allocation clustering currently supported");
 
         Map<std::string, std::string> overallStats;
-        double totalTime = 0.0;
         double fastClusterTime = 0.0;
         double distanceMatrixTime = 0.0;
         double dendrogramTraversalTime = 0.0;
@@ -257,7 +256,7 @@ namespace SVF
 
         // Size of the return node mapping. It is potentially larger than the number of
         // objects because we align each region to NATIVE_INT_SIZE.
-        size_t numMappings = 0;
+        // size_t numMappings = 0;
 
         // Maps a region to a mapping which maps 0 to n to all objects
         // in that region.
@@ -283,7 +282,7 @@ namespace SVF
             // to start assigning from 0 rounded up to the fewest needed
             // native ints. This is added to the number of mappings since
             // we align each region to a native int.
-            numMappings += requiredBits(regionsObjects[region].size());
+            // numMappings += requiredBits(regionsObjects[region].size());
         }
 
         // Points-to sets which are relevant to a region, i.e., those whose elements

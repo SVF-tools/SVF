@@ -34,12 +34,6 @@ public:
     DDAPass() : _pta(nullptr), _client(nullptr) {}
     ~DDAPass();
 
-    /// Interface expose to users of our pointer analysis, given Location infos
-    virtual inline AliasResult alias(const MemoryLocation &LocA, const MemoryLocation &LocB)
-    {
-        return alias(LocA.Ptr, LocB.Ptr);
-    }
-
     /// Interface expose to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,	const Value* V2);
 

@@ -34,7 +34,6 @@ struct ei_pair
 
 } // End anonymous namespace
 
-
 /*  FIXME:
  *  SSL_CTX_ctrl, SSL_ctrl - may set the ptr field arg0->x
  *  SSL_CTX_set_verify - sets the function ptr field arg0->x

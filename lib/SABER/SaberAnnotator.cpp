@@ -75,7 +75,7 @@ void SaberAnnotator::annotateSinks()
 /*!
  * Annotate branch instruction and its corresponding feasible path
  */
-void SaberAnnotator::annotateFeasibleBranch(const BranchInst *brInst, u32_t succPos)
+void SaberAnnotator::annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t succPos)
 {
 
     assert((succPos == 0 || succPos == 1) && "branch instruction should only have two successors");
@@ -83,14 +83,14 @@ void SaberAnnotator::annotateFeasibleBranch(const BranchInst *brInst, u32_t succ
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_FESIBLE << _curSlice->getSource()->getId();
-    BranchInst* br = const_cast<BranchInst*>(brInst);
-    addMDTag(br,br->getCondition(),rawstr.str());
+    addMDTag(const_cast<Instruction *>(branchStmt->getInst()),
+             const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 
 /*!
  * Annotate branch instruction and its corresponding infeasible path
  */
-void SaberAnnotator::annotateInfeasibleBranch(const BranchInst *brInst, u32_t succPos)
+void SaberAnnotator::annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_t succPos)
 {
 
     assert((succPos == 0 || succPos == 1) && "branch instruction should only have two successors");
@@ -98,17 +98,17 @@ void SaberAnnotator::annotateInfeasibleBranch(const BranchInst *brInst, u32_t su
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << SB_INFESIBLE << _curSlice->getSource()->getId();
-    BranchInst* br = const_cast<BranchInst*>(brInst);
-    addMDTag(br,br->getCondition(),rawstr.str());
+    addMDTag(const_cast<Instruction *>(branchStmt->getInst()),
+             const_cast<Value *>(branchStmt->getCondition()->getValue()), rawstr.str());
 }
 
 
 /*!
  * Annotate switch instruction and its corresponding feasible path
  */
-void SaberAnnotator::annotateSwitch(SwitchInst *switchInst, u32_t succPos)
+void SaberAnnotator::annotateSwitch(const BranchStmt *swithStmt, u32_t succPos)
 {
-    assert(succPos < switchInst->getNumSuccessors() && "successor position not correct!");
+    assert(succPos < swithStmt->getNumSuccessors() && "successor position not correct!");
 }
 
 
