@@ -72,15 +72,8 @@ void ExtAPI::init()
 
     // check if SVF_DIR environment variable is set
     char* env = std::getenv("SVF_DIR"); // root folder of SVF
-    
-    // if SVF_DIR is not set, run setup.sh
-    if(env == nullptr){
-        system("source ./setup.sh");
-        env = std::getenv("SVF_DIR");
-    }
-    assert(env != nullptr && "getting environment variable unsuccessful");
-    
-    string svf_path(env);
+        
+    string svf_path(env);               // convert to string
     
     std::string file_name = svf_path + "/lib/extAPI.txt";        // extAPI.txt path
     std::fstream file;     // read in txt file
