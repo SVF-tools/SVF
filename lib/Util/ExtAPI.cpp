@@ -72,15 +72,23 @@ void ExtAPI::init()
     // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
 
     // check if SVF_DIR environment variable is set
-    const char* env = std::getenv("SVF_DIR");
+    char* env = std::getenv("SVF_DIR"); // root folder of SVF
+    
+    // if SVF_DIR is not set, run setup.sh
+    if(env == nullptr){
+        system("source ./setup.sh");
+        env = std::getenv("SVF_DIR");
+    }
     assert(env != nullptr && "getting environment variable unsuccessful");
     
-    string svf_dir(env);
-    std::string file_name = svf_dir + "/lib/extAPI.txt";        // extAPI.txt path
+    string svf_path(env);
+    
+    std::string file_name = svf_path + "/lib/extAPI.txt";        // extAPI.txt path
     std::fstream file;     // read in txt file
 
     file.open(file_name);
-    assert(file.is_open() && "file cannot be opened");    // assert if file cannot be opened
+    assert(file.is_open() && "file cannot be opened");    //  assert if file cannot be opened
+    // SVFUtil::outs() << "file is open: " << file_name << endl;
 
     if(file.is_open()){
         string ID;                      // the external API function name
@@ -89,7 +97,10 @@ void ExtAPI::init()
             data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
         }
     }
+
     file.close();
+
+    assert(!data.empty() && "Migrating extAPI.txt file data unsuccesful");
 
     // transform line from txt file to its corresponding extf_t type
     map<string, ExtAPI::extf_t> extf_map = {
@@ -135,7 +146,9 @@ void ExtAPI::init()
         // check for duplicate side effects on the same external function name
         const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
         ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));             // construct ei_pair with external function name and extf_t type
-    } 
+    }
+
+    assert(!ei_pairs.empty() && "ei_pairs vector is empty");
 
     for(auto p= ei_pairs.begin(); p != ei_pairs.end(); ++p)
     {
