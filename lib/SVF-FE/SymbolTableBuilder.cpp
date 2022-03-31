@@ -606,7 +606,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
         if(const ConstantInt *sz = SVFUtil::dyn_cast<ConstantInt>(allocaInst->getArraySize())){
             objSize = sz->getZExtValue() * getObjSize(typeinfo->getType());
             if(sz->getZExtValue() > 1)
-                typeinfo->setFlag(ObjTypeInfo::CONST_ARRAY_OBJ);
+                typeinfo->setFlag(ObjTypeInfo::VAR_ARRAY_OBJ);
         }
         else
             objSize = getObjSize(typeinfo->getType());
