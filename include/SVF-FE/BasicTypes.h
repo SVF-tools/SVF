@@ -27,10 +27,14 @@ typedef llvm::ConstantDataSequential ConstantDataSequential;
 typedef llvm::ConstantExpr ConstantExpr;
 
 // LLVM Instructions
+typedef llvm::AllocaInst AllocaInst;
 typedef llvm::AtomicCmpXchgInst AtomicCmpXchgInst;
 typedef llvm::AtomicRMWInst AtomicRMWInst;
 typedef llvm::BitCastInst BitCastInst;
+typedef llvm::BranchInst BranchInst;
+typedef llvm::SwitchInst SwitchInst;
 typedef llvm::CallBrInst CallBrInst;
+typedef llvm::ReturnInst ReturnInst;
 typedef llvm::CastInst CastInst;
 typedef llvm::CmpInst CmpInst;
 typedef llvm::ExtractValueInst  ExtractValueInst;
@@ -54,5 +58,6 @@ typedef llvm::VAEndInst VAEndInst;
 typedef llvm::VAStartInst VAStartInst;
 typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
+typedef llvm::UndefValue UndefValue;
 
 #endif  // SVF_FE_BASIC_TYPES_H

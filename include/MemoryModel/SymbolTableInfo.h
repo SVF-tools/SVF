@@ -32,6 +32,7 @@
 
 
 #include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 namespace SVF
@@ -163,8 +164,6 @@ public:
     // @{
     static bool isNullPtrSym(const Value *val);
 
-    static bool isBlackholeSym(const Value *val);
-
     bool isConstantObjSym(const Value *val);
 
     static inline bool isBlkPtr(NodeID id)
@@ -232,7 +231,7 @@ public:
 
         if(isNullPtrSym(val))
             return nullPtrSymID();
-        else if(isBlackholeSym(val))
+        else if (SVFUtil::isBlackholeSym(val))
             return blkPtrSymID();
         else
         {
@@ -244,7 +243,7 @@ public:
 
     inline bool hasValSym(const Value* val)
     {
-        if (isNullPtrSym(val) || isBlackholeSym(val))
+        if (isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
             return true;
         else
             return (valSymMap.find(val) != valSymMap.end());
