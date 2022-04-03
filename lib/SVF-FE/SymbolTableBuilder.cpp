@@ -456,7 +456,8 @@ void SymbolTableBuilder::handleGlobalInitializerCE(const Constant *C)
                 }
             }
             else{
-                handleGlobalInitializerCE(data);
+                assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
+                abort();
             }
         }
     }
