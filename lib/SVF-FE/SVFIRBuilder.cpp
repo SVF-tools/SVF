@@ -499,7 +499,6 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
             }
             else{
                 assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
-                abort();
             }
         }
     }
