@@ -292,7 +292,7 @@ void SVFG::writeToFile(const string& filename)
                 // opvers
             F.os() << " >= MVER: {";
             F.os() << *phiNode->getResVer();
-            F.os() << "} >= ICFGNodeID: " << pag->getICFG()->getBlockICFGNode(&(phiNode->getICFGNode()->getBB()->front()))->getId();
+            F.os() << "} >= ICFGNodeID: " << pag->getICFG()->getICFGNode(&(phiNode->getICFGNode()->getBB()->front()))->getId();
             F.os() << " >= OPVers: {";
             for (auto x: opvers) 
             {
@@ -312,7 +312,7 @@ void SVFG::writeToFile(const string& filename)
         if(const LoadSVFGNode* loadNode = SVFUtil::dyn_cast<LoadSVFGNode>(node))
         {
             // F.os() << nodeId << ">=" << "LoadNode"<< ">=Edges: (";
-            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadPE>(loadNode->getPAGEdge()));
+            MUSet& muSet = mssa->getMUSet(SVFUtil::cast<LoadStmt>(loadNode->getPAGEdge()));
             for(MUSet::iterator it = muSet.begin(), eit = muSet.end(); it!=eit; ++it)
             {
                 if(LOADMU* mu = SVFUtil::dyn_cast<LOADMU>(*it))
@@ -324,7 +324,7 @@ void SVFG::writeToFile(const string& filename)
         }
         else if(const StoreSVFGNode* storeNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StorePE>(storeNode->getPAGEdge()));
+            CHISet& chiSet = mssa->getCHISet(SVFUtil::cast<StoreStmt>(storeNode->getPAGEdge()));
             for(CHISet::iterator it = chiSet.begin(), eit = chiSet.end(); it!=eit; ++it)
             {
                 if(STORECHI* chi = SVFUtil::dyn_cast<STORECHI>(*it))
@@ -340,7 +340,7 @@ void SVFG::writeToFile(const string& filename)
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalIn->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
-                const CallBlockNode* cs = *it;
+                const CallICFGNode* cs = *it;
                 if(!mssa->hasMU(cs))
                     continue;
                 ActualINSVFGNodeSet& actualIns = getActualINSVFGNodes(cs);
@@ -357,7 +357,7 @@ void SVFG::writeToFile(const string& filename)
             mssa->getPTA()->getPTACallGraph()->getDirCallSitesInvokingCallee(formalOut->getFun(),callInstSet);
             for(PTACallGraphEdge::CallInstSet::iterator it = callInstSet.begin(), eit = callInstSet.end(); it!=eit; ++it)
             {
-                const CallBlockNode* cs = *it;
+                const CallICFGNode* cs = *it;
                 if(!mssa->hasCHI(cs))
                     continue;
                 ActualOUTSVFGNodeSet& actualOuts = getActualOUTSVFGNodes(cs);
@@ -411,7 +411,7 @@ void SVFG::readFile(const string& filename){
     for (PAGEdge::PAGEdgeSetTy::iterator iter = stores.begin(), eiter =
                 stores.end(); iter != eiter; ++iter)
     {
-        StorePE* store = SVFUtil::cast<StorePE>(*iter);
+        StoreStmt* store = SVFUtil::cast<StoreStmt>(*iter);
         const StmtSVFGNode* sNode = getStmtVFGNode(store);
         for(CHISet::iterator pi = mssa->getCHISet(store).begin(), epi = mssa->getCHISet(store).end(); pi!=epi; ++pi)
             setDef((*pi)->getResVer(),sNode);
@@ -434,7 +434,7 @@ void SVFG::readFile(const string& filename){
         int index = 0;
         //implement delimiter to split string using ">="
         size_t next = 0; size_t last = 0; size_t outer_last = 0; 
-        size_t nextTemp; size_t lastTemp;
+        size_t nextTemp; //size_t lastTemp;
         NodeID id; 
         string type;
         string MR;
@@ -469,22 +469,22 @@ void SVFG::readFile(const string& filename){
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID FunID = atoi(s.substr(outer_last).c_str());
-            addFormalINSVFGNode(SVFUtil::dyn_cast<FunEntryBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
+            addFormalINSVFGNode(SVFUtil::dyn_cast<FunEntryICFGNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
         } else if(type == "FormalOUTSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID FunID =  atoi(s.substr(outer_last).c_str());
-            addFormalOUTSVFGNode(SVFUtil::dyn_cast<FunExitBlockNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
+            addFormalOUTSVFGNode(SVFUtil::dyn_cast<FunExitICFGNode>(pag->getICFG()->getICFGNode(FunID)), tempMRVer, id);
         } else if(type == "ActualINSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
-            addActualINSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
+            addActualINSVFGNode(SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
         } else if(type == "ActualOUTSVFGNode")
         {
             outer_last = s.find("ICFGNodeID: ") + 12;
             NodeID CallSiteID = atoi(s.substr(outer_last).c_str());
-            addActualOUTSVFGNode(SVFUtil::dyn_cast<CallBlockNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
+            addActualOUTSVFGNode(SVFUtil::dyn_cast<CallICFGNode>(pag->getICFG()->getICFGNode(CallSiteID)), tempMRVer, id);
         } else if (type == "PHISVFGNode") 
         {
             opVer =  s.substr(outer_last); 
@@ -527,8 +527,8 @@ void SVFG::readFile(const string& filename){
         std::string s = line; 
         std::string delimiter = " >= ";
         string temp; 
-        int index = 0;
-        size_t last = 0; size_t next = 0; size_t outer_last = 0;
+        // int index = 0;
+        size_t last = 0; size_t next = 0; // size_t outer_last = 0;
         string edge;
         string attributes;
         
@@ -984,15 +984,15 @@ std::set<const SVFGNode*> SVFG::fromValue(const llvm::Value* value) const
 /**
  * Get all inter value flow edges at this indirect call site, including call and return edges.
  */
-void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
+void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callICFGNode, const SVFFunction* callee, SVFGEdgeSetTy& edges)
 {
-    CallSiteID csId = getCallSiteID(callBlockNode, callee);
-    RetICFGNode* retBlockNode = pag->getICFG()->getRetICFGNode(callBlockNode->getCallSite());
+    CallSiteID csId = getCallSiteID(callICFGNode, callee);
+    RetICFGNode* retICFGNode = pag->getICFG()->getRetICFGNode(callICFGNode->getCallSite());
 
     // Find inter direct call edges between actual param and formal param.
-    if (pag->hasCallSiteArgsMap(callBlockNode) && pag->hasFunArgsList(callee))
+    if (pag->hasCallSiteArgsMap(callICFGNode) && pag->hasFunArgsList(callee))
     {
-        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callBlockNode);
+        const SVFIR::SVFVarList& csArgList = pag->getCallSiteArgsList(callICFGNode);
         const SVFIR::SVFVarList& funArgList = pag->getFunArgsList(callee);
         SVFIR::SVFVarList::const_iterator csArgIt = csArgList.begin(), csArgEit = csArgList.end();
         SVFIR::SVFVarList::const_iterator funArgIt = funArgList.begin(), funArgEit = funArgList.end();
@@ -1001,7 +1001,7 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode,
             const PAGNode *cs_arg = *csArgIt;
             const PAGNode *fun_arg = *funArgIt;
             if (fun_arg->isPointer() && cs_arg->isPointer())
-                getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callBlockNode, csId, edges);
+                getInterVFEdgeAtIndCSFromAPToFP(cs_arg, fun_arg, callICFGNode, csId, edges);
         }
         assert(funArgIt == funArgEit && "function has more arguments than call site");
         if (callee->getLLVMFun()->isVarArg())
@@ -1014,25 +1014,25 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode,
                 {
                     const PAGNode *cs_arg = *csArgIt;
                     if (cs_arg->isPointer())
-                        getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callBlockNode, csId, edges);
+                        getInterVFEdgeAtIndCSFromAPToFP(cs_arg, varFunArgNode, callICFGNode, csId, edges);
                 }
             }
         }
     }
 
     // Find inter direct return edges between actual return and formal return.
-    if (pag->funHasRet(callee) && pag->callsiteHasRet(retBlockNode))
+    if (pag->funHasRet(callee) && pag->callsiteHasRet(retICFGNode))
     {
-        const PAGNode* cs_return = pag->getCallSiteRet(retBlockNode);
+        const PAGNode* cs_return = pag->getCallSiteRet(retICFGNode);
         const PAGNode* fun_return = pag->getFunRet(callee);
         if (cs_return->isPointer() && fun_return->isPointer())
             getInterVFEdgeAtIndCSFromFRToAR(fun_return, cs_return, csId, edges);
     }
 
     // Find inter indirect call edges between actual-in and formal-in svfg nodes.
-    if (hasFuncEntryChi(callee) && hasCallSiteMu(callBlockNode))
+    if (hasFuncEntryChi(callee) && hasCallSiteMu(callICFGNode))
     {
-        SVFG::ActualINSVFGNodeSet& actualInNodes = getActualINSVFGNodes(callBlockNode);
+        SVFG::ActualINSVFGNodeSet& actualInNodes = getActualINSVFGNodes(callICFGNode);
         for(SVFG::ActualINSVFGNodeSet::iterator ai_it = actualInNodes.begin(),
                 ai_eit = actualInNodes.end(); ai_it!=ai_eit; ++ai_it)
         {
@@ -1042,9 +1042,9 @@ void SVFG::getInterVFEdgesForIndirectCallSite(const CallICFGNode* callBlockNode,
     }
 
     // Find inter indirect return edges between actual-out and formal-out svfg nodes.
-    if (hasFuncRetMu(callee) && hasCallSiteChi(callBlockNode))
+    if (hasFuncRetMu(callee) && hasCallSiteChi(callICFGNode))
     {
-        SVFG::ActualOUTSVFGNodeSet& actualOutNodes = getActualOUTSVFGNodes(callBlockNode);
+        SVFG::ActualOUTSVFGNodeSet& actualOutNodes = getActualOUTSVFGNodes(callICFGNode);
         for(SVFG::ActualOUTSVFGNodeSet::iterator ao_it = actualOutNodes.begin(),
                 ao_eit = actualOutNodes.end(); ao_it!=ao_eit; ++ao_it)
         {
