@@ -435,7 +435,7 @@ void SVFG::readFile(const string& filename){
         //implement delimiter to split string using ">="
         size_t next = 0; size_t last = 0; size_t outer_last = 0; 
         size_t nextTemp; //size_t lastTemp;
-        NodeID id; 
+        NodeID id = 0; 
         string type;
         string MR;
         string basicBlock; 
@@ -463,7 +463,9 @@ void SVFG::readFile(const string& filename){
         if(!MR.empty())
         {
             tempMRVer = getMRVERFromString(MR);
-        } 
+        } else {
+            tempMRVer = getMRVERFromString("");
+        }
         //add nodes using the variables we extracted
         if(type == "FormalINSVFGNode")
         {
