@@ -234,7 +234,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     assert(V);
 
     const llvm::GEPOperator *gepOp = SVFUtil::dyn_cast<const llvm::GEPOperator>(V);
-    DataLayout * dataLayout = SymbolTableInfo::getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
+    DataLayout * dataLayout = getDataLayout(LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule());
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
@@ -498,7 +498,7 @@ void SVFIRBuilder::InitialGlobal(const GlobalVariable *gvar, Constant *C,
                 }
             }
             else{
-                InitialGlobal(gvar, data, offset);
+                assert(SVFUtil::isa<ConstantAggregateZero>(data) && "Single value type data should have been handled!");
             }
         }
     }

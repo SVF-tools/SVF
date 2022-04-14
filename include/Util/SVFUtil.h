@@ -161,7 +161,7 @@ inline NodeBS ptsToNodeBS(const PointsTo &pts)
     return nbs;
 }
 
-typedef OrderedSet<PointsTo, equalNodeBS> PointsToList;
+typedef OrderedSet<PointsTo, equalPointsTo> PointsToList;
 void dumpPointsToList(const PointsToList& ptl);
 
 inline bool isIntrinsicFun(const Function* func)
@@ -192,7 +192,7 @@ inline bool isIntrinsicInst(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Instruction* inst)
 {
-    return SVFUtil::isa<CallInst>(inst) || SVFUtil::isa<InvokeInst>(inst) || SVFUtil::isa<CallBrInst>(inst);
+    return SVFUtil::isa<CallBase>(inst);
 }
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
@@ -208,11 +208,6 @@ inline bool isNonInstricCallSite(const Instruction* inst)
     if(isIntrinsicInst(inst))
         return false;
     return isCallSite(inst);
-}
-/// Whether an instruction is a return instruction
-inline bool isReturn(const Instruction* inst)
-{
-    return SVFUtil::isa<ReturnInst>(inst);
 }
 
 /// Return LLVM callsite given a instruction

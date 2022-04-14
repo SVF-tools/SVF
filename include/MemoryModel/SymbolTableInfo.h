@@ -32,6 +32,7 @@
 
 
 #include "Util/SVFUtil.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "MemoryModel/LocationSet.h"
 #include "Util/SVFModule.h"
 namespace SVF
@@ -81,9 +82,6 @@ public:
     //@}
 
 private:
-    /// Data layout on a target machine
-    static DataLayout *dl;
-
     ValueToIDMapTy valSymMap;	///< map a value to its sym id
     ValueToIDMapTy objSymMap;	///< map a obj reference to its sym id
     FunToIDMapTy returnSymMap;		///< return  map
@@ -162,19 +160,9 @@ public:
         mod = m;
     }
 
-    /// Get target machine data layout
-    inline static DataLayout* getDataLayout(Module* mod)
-    {
-        if(dl==nullptr)
-            return dl = new DataLayout(mod);
-        return dl;
-    }
-
     /// special value
     // @{
     static bool isNullPtrSym(const Value *val);
-
-    static bool isBlackholeSym(const Value *val);
 
     bool isConstantObjSym(const Value *val);
 
@@ -243,7 +231,7 @@ public:
 
         if(isNullPtrSym(val))
             return nullPtrSymID();
-        else if(isBlackholeSym(val))
+        else if (SVFUtil::isBlackholeSym(val))
             return blkPtrSymID();
         else
         {
@@ -255,7 +243,7 @@ public:
 
     inline bool hasValSym(const Value* val)
     {
-        if (isNullPtrSym(val) || isBlackholeSym(val))
+        if (isNullPtrSym(val) || SVFUtil::isBlackholeSym(val))
             return true;
         else
             return (valSymMap.find(val) != valSymMap.end());
@@ -441,6 +429,9 @@ public:
 
     /// Get the number of elements of this object 
     u32_t getNumOfElements() const;
+
+    /// Set the number of elements of this object
+    void setNumOfElements(u32_t num);
 
     /// Get max field offset limit
     u32_t getMaxFieldOffsetLimit() const;

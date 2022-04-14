@@ -239,10 +239,6 @@ public:
     /// Compute points-to results on-demand, overridden by derived classes
     virtual void computeDDAPts(NodeID) {}
 
-    /// Interface exposed to users of our pointer analysis, given Location infos
-    virtual AliasResult alias(const MemoryLocation &LocA,
-                              const MemoryLocation &LocB) = 0;
-
     /// Interface exposed to users of our pointer analysis, given Value infos
     virtual AliasResult alias(const Value* V1,
                               const Value* V2) = 0;

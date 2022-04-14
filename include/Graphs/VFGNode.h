@@ -336,11 +336,7 @@ private:
 
 public:
     /// Constructor
-    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r)
-    {
-        const CmpInst* cmp = SVFUtil::dyn_cast<CmpInst>(r->getValue());
-        assert(cmp && "not a compare operator?");
-    }
+    CmpVFGNode(NodeID id,const PAGNode* r): VFGNode(id,Cmp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const CmpVFGNode *)
@@ -411,11 +407,7 @@ private:
 
 public:
     /// Constructor
-    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r)
-    {
-        const BinaryOperator* binary = SVFUtil::dyn_cast<BinaryOperator>(r->getValue());
-        assert(binary && "not a binary operator?");
-    }
+    BinaryOPVFGNode(NodeID id,const PAGNode* r): VFGNode(id,BinaryOp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const BinaryOPVFGNode *)
@@ -485,10 +477,7 @@ private:
 
 public:
     /// Constructor
-	UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) {
-		const Value *val = r->getValue();
-		assert(SVFUtil::isa<UnaryOperator>(val) && "not a unary instruction ?");
-	}
+    UnaryOPVFGNode(NodeID id, const PAGNode *r) : VFGNode(id, UnaryOp), res(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const UnaryOPVFGNode *)
@@ -556,10 +545,7 @@ private:
     const BranchStmt* brstmt;
 public:
     /// Constructor
-	BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) {
-		const Value *val = r->getValue();
-		assert((SVFUtil::isa<BranchInst>(val) || SVFUtil::isa<SwitchInst>(val)) && "not a BranchInst or a SwitchInst?");
-	}
+    BranchVFGNode(NodeID id, const BranchStmt* r) : VFGNode(id, Branch), brstmt(r) { }
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
     //@{
     static inline bool classof(const BranchVFGNode *)

@@ -224,7 +224,7 @@ void PTAStat::performStat()
     generalNumMap[NumOfIndirectCallSites] = pag->getIndirectCallsites().size();
     generalNumMap["TotalCallSite"] = pag->getCallSiteSet().size();
     generalNumMap["LocalVarInRecur"] = localVarInRecursion.count();
-    bitcastInstStat();
+    // REFACTOR-TODO bitcastInstStat();
     branchStat();
 
     printStat("General Stats");
@@ -323,6 +323,7 @@ void PTAStat::printStat(string statname)
 }
 
 
+/* REFACTOR-TODO
 void PTAStat::bitcastInstStat()
 {
     SVFModule* module = pta->getModule();
@@ -350,6 +351,7 @@ void PTAStat::bitcastInstStat()
 
     generalNumMap["BitCastNumber"] = numberOfBitCast;
 }
+*/
 
 void PTAStat::branchStat()
 {

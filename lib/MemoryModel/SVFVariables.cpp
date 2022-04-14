@@ -126,7 +126,7 @@ const std::string ObjVar::toString() const {
 const std::string GepValVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepValVar ID: " << getId() << " with offset_" + llvm::utostr(getConstantFieldIdx());
+    rawstr << "GepValVar ID: " << getId() << " with offset_" + std::to_string(getConstantFieldIdx());
     if (Options::ShowSVFIRValue) {
         rawstr << "\n";
         rawstr << value2String(value);
@@ -137,7 +137,7 @@ const std::string GepValVar::toString() const {
 const std::string GepObjVar::toString() const {
     std::string str;
     raw_string_ostream rawstr(str);
-    rawstr << "GepObjVar ID: " << getId() << " with offset_" + llvm::itostr(ls.accumulateConstantFieldIdx());
+    rawstr << "GepObjVar ID: " << getId() << " with offset_" + std::to_string(ls.accumulateConstantFieldIdx());
     if (Options::ShowSVFIRValue) {
         rawstr << "\n";
         rawstr << value2String(value);

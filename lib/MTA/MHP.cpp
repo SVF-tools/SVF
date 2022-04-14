@@ -12,6 +12,7 @@
 #include "MTA/MTAResultValidator.h"
 #include "Util/SVFUtil.h"
 #include "MemoryModel/PTAStat.h"
+#include "SVF-FE/BasicTypes.h"
 
 using namespace SVF;
 using namespace SVFUtil;

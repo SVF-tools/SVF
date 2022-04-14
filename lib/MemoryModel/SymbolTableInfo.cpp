@@ -39,7 +39,6 @@ using namespace std;
 using namespace SVF;
 using namespace SVFUtil;
 
-DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
 
 
@@ -304,10 +303,6 @@ void SymbolTableInfo::destroy()
             delete iter->second;
     }
 
-    if(dl){
-        delete dl;
-        dl = nullptr;
-    }
     if(mod){
         delete mod;
         mod = nullptr;
@@ -324,14 +319,6 @@ bool SymbolTableInfo::isNullPtrSym(const Value *val)
         return v->isNullValue() && v->getType()->isPointerTy();
     }
     return false;
-}
-
-/*!
- * Check whether this value is a black hole
- */
-bool SymbolTableInfo::isBlackholeSym(const Value *val)
-{
-    return (SVFUtil::isa<UndefValue>(val));
 }
 
 /*!
@@ -647,6 +634,12 @@ bool MemObj::isBlackHoleObj() const
 u32_t MemObj::getNumOfElements() const
 {
     return typeInfo->getNumOfElements();
+}
+
+/// Set the number of elements of this object
+void MemObj::setNumOfElements(u32_t num)
+{
+    return typeInfo->setNumOfElements(num);
 }
 
 /// Get obj type info

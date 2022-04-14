@@ -199,7 +199,7 @@ public:
         const PointsToIterator operator++(int);
 
         /// Dereference: *it.
-        const u32_t operator*(void) const;
+        u32_t operator*(void) const;
 
         /// Equality: *this == rhs.
         bool operator==(const PointsToIterator &rhs) const;
