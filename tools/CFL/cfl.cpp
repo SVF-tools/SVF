@@ -28,10 +28,9 @@
 
 
 #include "SVF-FE/LLVMUtil.h"
-#include "CFL/CFLSolver.h"
+#include "CFL/CFLAlias.h"
 #include "Util/Options.h"
 #include "SVF-FE/SVFIRBuilder.h"
-#include "Graphs/ConsG.h"
 
 using namespace llvm;
 using namespace SVF;
@@ -63,18 +62,10 @@ int main(int argc, char ** argv)
 
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder;
-    SVFIR* pag = builder.build(svfModule);
-    ConstraintGraph* consCG = new ConstraintGraph(pag);
-    CFLGraph* cflGraph = new CFLGraph();
-    cflGraph->build(consCG);
-    CFLGrammar* cflGrammar = new CFLGrammar();
-    CFLSolver *cfl = new CFLSolver(cflGraph, cflGrammar);
-    cfl->solve();
-
-    delete consCG;
-    delete cflGraph;
-    delete cflGrammar;
-    delete cfl;
+    SVFIR* svfir = builder.build(svfModule);
+    CFLAlias cflaa = CFLAlias(svfir);
+    cflaa->analyze();
+    delete alias;
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 

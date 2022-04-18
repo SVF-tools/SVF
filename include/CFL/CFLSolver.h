@@ -53,6 +53,16 @@ public:
     /// Start solving
     void solve();
 
+    /// Return CFL Graph
+    inline const CFLGraph* getGraph() const {
+        return graph;
+    }
+
+    /// Return CFL Grammar
+    inline const CFLGrammar* getGrammar() const {
+        return grammar;
+    }
+
 protected:
     /// Worklist operations
     //@{
