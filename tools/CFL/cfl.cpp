@@ -63,9 +63,9 @@ int main(int argc, char ** argv)
     /// Build Program Assignment Graph (SVFIR)
     SVFIRBuilder builder;
     SVFIR* svfir = builder.build(svfModule);
-    CFLAlias cflaa = CFLAlias(svfir);
+    CFLAlias* cflaa = new CFLAlias(svfir);
     cflaa->analyze();
-    delete alias;
+    delete cflaa;
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 

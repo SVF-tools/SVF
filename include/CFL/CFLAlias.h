@@ -37,7 +37,7 @@ namespace SVF{
 class CFLAlias : public PointerAnalysis{
 
 public:
-    CFLAlias(SVFIR* ir) : PointerAnalysis(ir, PointerAnalysis::CFLFICI_WPA) svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr){
+    CFLAlias(SVFIR* ir) : PointerAnalysis(ir, PointerAnalysis::CFLFICI_WPA), svfir(ir), graph(nullptr), grammar(nullptr), solver(nullptr){
     }
 
     /// Destructor
