@@ -31,12 +31,10 @@
 #include "CFL/CFLAlias.h"
 #include "Util/Options.h"
 #include "SVF-FE/SVFIRBuilder.h"
+#include "CFL/CFGNormalizer.h"
 
 using namespace llvm;
 using namespace SVF;
-
-static cl::opt<std::string> InputFilename(cl::Positional,
-        cl::desc("<input bitcode>"), cl::init("-"));
 
 static cl::opt<bool>
 StandardCompileOpts("std-compile-opts",
@@ -44,7 +42,6 @@ StandardCompileOpts("std-compile-opts",
 
 int main(int argc, char ** argv)
 {
-
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
@@ -56,16 +53,24 @@ int main(int argc, char ** argv)
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
+    if (Options::GraphIsFromDot == false){
+        SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        svfModule->buildSymbolTableInfo();
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
+        /// Build Program Assignment Graph (SVFIR)
+        SVFIRBuilder builder;
+        SVFIR* svfir = builder.build(svfModule);
+        CFLAlias* cflaa = new CFLAlias(svfir);
+        cflaa->analyze();
+        delete cflaa;
+    }
+    else {
+        SVFIR* svfir = nullptr;
+        CFLAlias* cflaa = new CFLAlias(svfir);
+        cflaa->analyze();
+        delete cflaa;
+    }
 
-    /// Build Program Assignment Graph (SVFIR)
-    SVFIRBuilder builder;
-    SVFIR* svfir = builder.build(svfModule);
-    CFLAlias* cflaa = new CFLAlias(svfir);
-    cflaa->analyze();
-    delete cflaa;
     SVFIR::releaseSVFIR();
     SVF::LLVMModuleSet::releaseLLVMModuleSet();
 

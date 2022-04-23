@@ -53,7 +53,7 @@ public:
 
 protected:
     SVFStmt::KindToSVFStmtMapTy KindToSVFStmtSetMap;  // < SVFIR edge map containing all PAGEdges
-    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both RHS and RHS are of pointer type
+    SVFStmt::KindToSVFStmtMapTy KindToPTASVFStmtSetMap;  // < SVFIR edge map containing only pointer-related edges, i.e, both LHS and RHS are of pointer type
     bool fromFile; ///< Whether the SVFIR is built according to user specified data from a txt file
     NodeID nodeNumAfterPAGBuild; // initial node number after building SVFIR, excluding later added nodes, e.g., gepobj nodes
     u32_t totalPTAPAGEdge;

@@ -29,8 +29,11 @@
 
 
 #include "CFL/CFLSolver.h"
+#include "CFL/CFGNormalizer.h"
+#include "CFL/GrammarBuilder.h"
 #include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/ConsG.h"
+#include "Util/Options.h"
 
 namespace SVF{
 
@@ -49,14 +52,38 @@ public:
 
     /// Start Analysis here (main part of pointer analysis). 
     virtual void analyze(){
-        ConstraintGraph* consCG = new ConstraintGraph(pag);
-        graph = new CFLGraph();
-        graph->build(consCG);
-        delete consCG;
+        GrammarBuilder * gReader = new GrammarBuilder(Options::GrammarFilename);
+        CFGNormalizer *normalizer = new CFGNormalizer();
         
-        grammar = new CFLGrammar();
+        graph = new CFLGraph();
+        if (Options::GraphIsFromDot == false){
+            // Maybe could put in SVFIR Class 
+            // In memory Graph does not have string type label
+            Map<std::string, SVF::CFLGraph::Symbol> PAGMap = {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Call", 4},
+                {"Ret", 5},{"Gep", 6},{"Phi", 7},{"Select", 8},{"Cmp", 9},
+                {"BinaryOp", 10},{"UnaryOp",11}, {"Branch",12}, {"ThreadFork",13},{"ThreadJoin",14},
+                {"Addrbar",15}, {"Copybar", 16},{"Storebar", 17},{"Loadbar", 18},{"Callbar", 19},
+                {"Retbar", 20},{"Gepbar", 21},{"Phibar", 22},{"Selectbar", 23},{"Cmpbar", 24},
+                {"BinaryOpbar", 25},{"UnaryOpbar",26}, {"Branchbar",27}, {"ThreadForkbar",28},{"ThreadJoinbar",29}};
+            ConstraintGraph *consCG = new ConstraintGraph(svfir);
+            // Can be put in build, copy from general graph
+            graph->label2SymMap = PAGMap;
+            graph->build(consCG);
+            delete consCG;
+            GrammarBase *generalGrammar = gReader->build(&PAGMap);
+            grammar = normalizer->normalize(generalGrammar);
+            graph->setMap(&grammar->terminals, &grammar->nonterminals);
+        }
+        else {
+            GrammarBase *generalGrammar = gReader->build();
+            grammar = normalizer->normalize(generalGrammar);
+            graph->setMap(&grammar->terminals, &grammar->nonterminals);
+            graph->buildFromDot(Options::InputFilename);     
+        }
+        graph->startSymbol = grammar->startSymbol;
         solver = new CFLSolver(graph, grammar);
         solver->solve();
+        graph->dump("map");
     }
 
     /// Interface exposed to users of our pointer analysis, given Value infos
@@ -69,7 +96,7 @@ public:
     /// Interface exposed to users of our pointer analysis, given PAGNodeID
     virtual AliasResult alias(NodeID node1, NodeID node2) {
         /// TODO:: Fix the edge label for a reachable alias relation if it is not 1;
-        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), 1))
+        if(graph->hasEdge(graph->getGNode(node1), graph->getGNode(node2), graph->startSymbol))
             return AliasResult::MayAlias;
         else
             return AliasResult::NoAlias;
@@ -77,11 +104,14 @@ public:
 
     /// Get points-to targets of a pointer.
     virtual const PointsTo& getPts(NodeID ptr) {
+        /// Check Outgoing edge Dst of ptr
+        //PointsTo * ps;
         abort(); // to be implemented
     }
 
     /// Given an object, get all the nodes having whose pointsto contains the object
     virtual const NodeSet& getRevPts(NodeID nodeId) {
+        /// Check Outgoing flowtobar edge dst of ptr
         abort(); // to be implemented
     }
 

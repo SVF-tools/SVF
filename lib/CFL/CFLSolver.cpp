@@ -58,34 +58,49 @@ void CFLSolver::solve(){
         /// For each production X -> Y
         ///     add X(i,j) if not exist to E and to worklist
         Symbol Y = Y_edge->getEdgeKind();
-        for(const Production& prod : grammar->getProdsFromSingleRHS(Y)){
-            Symbol X = grammar->getLHSSymbol(prod);
-            if(const CFLEdge* newEdge = graph->addCFLEdge(i, j, X))
-                pushIntoWorklist(newEdge);
-        }
+        if (grammar->hasProdsFromSingleRHS(Y))
+            for(const Production& prod : grammar->getProdsFromSingleRHS(Y)){
+                Symbol X = grammar->getLHSSymbol(prod);
+                if(const CFLEdge* newEdge = graph->addCFLEdge(i, j, X))
+                {
+                    pushIntoWorklist(newEdge);
+                }
+            }
 
         /// For each production X -> Y Z
         /// Foreach outgoing edge Z(j,k) from node j do
         ///     add X(i,k) if not exist to E and to worklist
-        for(const Production& prod : grammar->getProdsFromFirstRHS(Y)){
-            Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : j->getOutEdges()){
-                CFLNode* k = Z_edge->getDstNode();
-                if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
-                    pushIntoWorklist(newEdge);
+        if (grammar->hasProdsFromFirstRHS(Y))
+            for(const Production& prod : grammar->getProdsFromFirstRHS(Y)){
+                Symbol X = grammar->getLHSSymbol(prod);
+                for(const CFLEdge* Z_edge : j->getOutEdges()){
+                    if (Z_edge->getEdgeKind() == prod[2])
+                    {
+                        CFLNode* k = Z_edge->getDstNode();
+                        if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
+                        {
+                            pushIntoWorklist(newEdge);
+                        }
+                    }
+                }
             }
-        }
 
         /// For each production X -> Z Y
         /// Foreach incoming edge Z(k,i) to node i do
         ///     add X(k,j) if not exist to E and to worklist
-        for(const Production& prod : grammar->getProdsFromSecondRHS(Y)){
-            Symbol X = grammar->getLHSSymbol(prod);
-            for(const CFLEdge* Z_edge : i->getInEdges()){
-                CFLNode* k = Z_edge->getSrcNode();
-                if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
-                    pushIntoWorklist(newEdge);
+        if(grammar->hasProdsFromSecondRHS(Y))
+            for(const Production& prod : grammar->getProdsFromSecondRHS(Y)){
+                Symbol X = grammar->getLHSSymbol(prod);
+                for(const CFLEdge* Z_edge : i->getInEdges()){
+                    if(Z_edge->getEdgeKind() == prod[1])
+                    {
+                        CFLNode* k = Z_edge->getSrcNode();
+                        if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))
+                        {
+                            pushIntoWorklist(newEdge);
+                        }
+                    }
+                }
             }
-        }
     }
 }

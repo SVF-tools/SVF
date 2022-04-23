@@ -32,58 +32,70 @@
 
 using namespace SVF;
 
+GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const{
 
-CFLGrammar::CFLGrammar(){
-
-}
-/// Read grammar from file
-/// Each string format terminal or nonterminal read from file is mapped to a Symbol (int)
-void CFLGrammar::readGrammar(std::string filename){
-    u32_t totalSymbols = 0;
-
-    startSymbol = totalSymbols++;
-    ternimals["S"] = totalSymbols++;
-    ternimals["epsilon"] = totalSymbols++;
-    nonternimals["X"] = totalSymbols++;
-    nonternimals["Y"] = totalSymbols++;
-    nonternimals["Z"] = totalSymbols++;
-
-    /// map strings to symbols
-    /// check existence of ternimal and nonterminals before making productions
-    Symbol e = str2Sym("epsilon");
-    Symbol x = str2Sym("X");
-    Symbol y = str2Sym("Y");
-    Symbol z = str2Sym("Z");
-
-    /// create productions 
-    /// x -> y is represented as a vector {x, y}
-    /// x -> y z is represented as a vector {x, y, z}
-    /// Normalized grammar can only allows three elements in a production.
-
-    Production prod1 = {x, e};
-    epsilonProds.insert(prod1);
-
-    Production prod2 = {x, y};
-    singleRHS2Prods[y].insert(prod2);
-
-    Production prod3 = {x, y, z};
-    firstRHS2Prods[y].insert(prod3);
-    
-    Production prod4 = {x, z, y};
-    secondRHS2Prods[y].insert(prod4);
-
-}
-
-CFLGrammar::Symbol CFLGrammar::str2Sym(std::string str) const{
-
-    auto tit = ternimals.find(str);
-    if(tit!=ternimals.end())
+    auto tit = terminals.find(str);
+    if(tit!=terminals.end())
         return tit->second;
 
-    auto nit = nonternimals.find(str);
-    if(nit!=nonternimals.end())
+    auto nit = nonterminals.find(str);
+    if(nit!=nonterminals.end())
         return nit->second;
 
     assert(false && "symbol not found!");
     abort();
 }
+
+std::string GrammarBase::sym2Str(Symbol sym) const
+{
+
+    std::string key = "";
+    for (auto &i : terminals)
+    {
+        if (i.second == sym)
+        {
+            key = i.first;
+            return key;
+        }
+    }
+
+    std::string nkey = "";
+    for (auto &ni : nonterminals)
+    {
+        if (ni.second == sym)
+        {
+            nkey = ni.first;
+            return nkey;
+        }
+    }
+
+    return "";
+}
+
+GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit){
+    Symbol sym;
+    if (terminals.find(strLit) == terminals.end()) {
+        sym = totalSymbol++;
+        terminals.insert({strLit, sym});
+    }
+    else{
+        sym = str2Sym(strLit);
+    }
+    return sym;
+}
+GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit){
+    Symbol sym;
+    if (nonterminals.find(strLit) == nonterminals.end()) {
+        sym = totalSymbol++;
+        nonterminals.insert({strLit, sym});
+    }
+    else{
+        sym = str2Sym(strLit);
+    }
+    return sym;
+}
+
+CFLGrammar::CFLGrammar(){
+
+}
+
