@@ -11,6 +11,7 @@
 #include "Util/SVFUtil.h"   // for debugging
 #include <dirent.h>         // to interact with directories
 #include <stdio.h>
+#include <stdlib.h>
 #include <cstdlib>          // for getenv
 #include <cstring>
 #include <map>
@@ -21,6 +22,7 @@
 #include <fstream>          // to read extAPI.txt
 #include <sys/stat.h>       // for chmod
 #include <limits.h>
+#include <sys/types.h>
 
 using namespace std;
 using namespace SVF;
@@ -90,7 +92,14 @@ void ExtAPI::init()
 
     DIR *pdir = NULL;                       // declare a pointer to a directory
     struct dirent *pent = nullptr;           // a struct used when reading a directory
-    pdir = opendir(dir);                     // open the directory
+    std::cout << "dir =>" << dir << "\n";
+    pdir = opendir(file_path.c_str());                     // open the directory
+    if(pdir == NULL){
+        string com = "chmod 755 ";
+        com.append(file_path);
+        system(com.c_str());
+    }
+    pdir = opendir(file_path.c_str());                  // attempt again
     assert(pdir != NULL && "directory pointer could not be initialised correctly!");
 
     while((pent = readdir(pdir))){
