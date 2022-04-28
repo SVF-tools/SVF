@@ -84,14 +84,14 @@ void ExtAPI::init()
 
     const char* dir = file_path.c_str();    // convert string path to const char*
     assert(dir != nullptr && "SVF_DIR/lib pointer was not initialised correctly");
-    
+
     const char* full_path = nullptr;       // store full path to extAPI.txt to open it
     char buffer[PATH_MAX];                 // helper for getting full path
 
-    DIR *pdir = nullptr;                     // declare a pointer to a directory
+    DIR *pdir = NULL;                       // declare a pointer to a directory
     struct dirent *pent = nullptr;           // a struct used when reading a directory
     pdir = opendir(dir);                     // open the directory
-    // assert(pdir != nullptr && "directory pointer could not be initialised correctly!");
+    assert(pdir != NULL && "directory pointer could not be initialised correctly!");
 
     while((pent = readdir(pdir))){
         assert(pent != nullptr && "Reading file in a directory unsucessful");
