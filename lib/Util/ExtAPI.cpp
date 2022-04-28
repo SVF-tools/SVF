@@ -9,8 +9,10 @@
 
 #include "Util/ExtAPI.h"
 #include "Util/SVFUtil.h"   // for debugging
+#include <dirent.h>         // to interact with directories
 #include <stdio.h>
 #include <cstdlib>          // for getenv
+#include <cstring>
 #include <map>
 #include <set>
 #include <vector>
@@ -18,6 +20,7 @@
 #include <string>
 #include <fstream>          // to read extAPI.txt
 #include <sys/stat.h>       // for chmod
+#include <limits.h>
 
 using namespace std;
 using namespace SVF;
@@ -72,34 +75,46 @@ void ExtAPI::init()
  
     // check if SVF_DIR environment variable is set
     const char* env = std::getenv("SVF_DIR"); // root folder of SVF
+    const char* lib = "/lib";
     assert(env != nullptr && "SVF_DIR not set");
 
-    string file_name;
-    const char* txt_path = "/lib/extAPI.txt";
+    string file_path(env);
+    string lib_str(lib);
+    file_path.append(lib_str);              // path to SVF "lib" folder
 
-    file_name += env;
-    file_name += txt_path;
+    const char* dir = file_path.c_str();    // convert string path to const char*
+    const char* full_path = nullptr;       // store full path to extAPI.txt to open it
+    char buffer[PATH_MAX];                 // helper for getting full path
 
-    SVFUtil::outs() << "Filename: " << file_name << "\n";
+    DIR *pdir = nullptr;                     // declare a pointer to a directory
+    struct dirent *pent = nullptr;           // a struct used when reading a directory
+    pdir = opendir(dir);                     // open the directory
+    assert(pdir != nullptr && "directory pointer could not be initialised correctly!");
 
-    ifstream file;                          // read in extAPI.txt
+    while((pent = readdir(pdir))){
+        assert(pent != nullptr && "Reading file in a directory unsucessful");
+        if(strcmp(pent->d_name,"extAPI.txt") == 0){
+            full_path = realpath(dir,buffer);         // store directory path (does not contain extAPI.txt yet)
+            string full_path_str(full_path);                // convert to string for append capabilities
+            full_path_str.append("/");
+            string extapi_file(pent->d_name);               // this should be extAPI.txt according to assertion
+            full_path_str.append(extapi_file);
 
-    chmod(file_name.c_str(), S_IRWXU);      // Read, write, and search, or execute, for the file owner
-    file.open(file_name);
-
-    assert(!file_name.empty() && "file name is empty");
-    assert(file.is_open() && "file cannot be opened");  
-    
-    SVFUtil::outs() << "File is open: " << file_name << "\n";
-
-    if(file.is_open()){
-        string ID;                      // the external API function name
-        string effect;                  // the corresponding extf enum
-        while(getline(file,ID,',') && getline(file,effect)){
-            data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
+            std::ifstream file;
+            file.open(full_path_str.c_str());               // convert to char*
+            assert(file.is_open() && "File cannot be opened");
+            
+            if(file.is_open()){
+                string ID;                      // the external API function name
+                string effect;                  // the corresponding extf enum
+                while(getline(file,ID,',') && getline(file,effect)){
+                    data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
+                }
+            }
+            file.close();
         }
     }
-    file.close();
+    closedir(pdir);
 
     assert(!data.empty() && "Migrating extAPI.txt file data unsuccesful");
 
