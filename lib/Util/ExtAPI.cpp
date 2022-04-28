@@ -77,7 +77,7 @@ void ExtAPI::init()
  
     // check if SVF_DIR environment variable is set
     const char* env = std::getenv("SVF_DIR"); // root folder of SVF
-    const char* lib = "/lib";
+    const char* lib = "/lib/";
     assert(env != nullptr && "SVF_DIR not set");
 
     string file_path(env);
@@ -90,15 +90,15 @@ void ExtAPI::init()
     const char* full_path = nullptr;       // store full path to extAPI.txt to open it
     char buffer[PATH_MAX];                 // helper for getting full path
 
-    DIR *pdir = NULL;                       // declare a pointer to a directory
+    DIR *pdir;                       // declare a pointer to a directory
     struct dirent *pent = nullptr;           // a struct used when reading a directory
-    pdir = opendir(file_path.c_str());                     // open the directory
-    if(pdir == NULL){
-        int res = chmod(file_path.c_str(),S_IRWXU|S_IRWXG);
-        assert(res == 0 && "chmod unsucessful");
-    }
-    pdir = opendir(file_path.c_str());                  // attempt again after setting permissions
-    assert(pdir != NULL && "directory pointer could not be initialised correctly!");
+    pdir = opendir(dir);                     // open the directory
+    // if(pdir == NULL){
+    //     int res = chmod(file_path.c_str(),S_IRWXU|S_IRWXG);
+    //     assert(res == 0 && errno);
+    // }
+    // pdir = opendir(file_path.c_str());                  // attempt again after setting permissions
+    assert(pdir != NULL && errno);
 
     while((pent = readdir(pdir))){
         assert(pent != nullptr && "Reading file in a directory unsucessful");
