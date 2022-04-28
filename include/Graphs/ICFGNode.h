@@ -309,7 +309,6 @@ class FunExitICFGNode : public InterICFGNode
 {
 
 private:
-    const SVFFunction* fun;
     const SVFVar *formalRet;
 public:
     FunExitICFGNode(NodeID id, const SVFFunction* f);

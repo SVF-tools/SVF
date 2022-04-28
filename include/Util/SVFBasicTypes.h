@@ -191,10 +191,10 @@ enum ModRefInfo
 
 enum AliasResult
 {
-    MustAlias,
-    MayAlias,
-    PartialAlias,
     NoAlias,
+    MayAlias,
+    MustAlias,
+    PartialAlias,
 };
 
 class SVFValue
