@@ -57,7 +57,7 @@ public:
     typedef std::vector<std::pair<const Value*, const Type*> > OffsetValueVec;
 
     /// Constructor
-    LocationSet(s64_t o = 0) : fldIdx(o)
+    LocationSet(s32_t o = 0) : fldIdx(o)
     {}
 
     /// Copy Constructor
@@ -87,11 +87,11 @@ public:
 
     /// Get methods
     //@{
-    inline s64_t accumulateConstantFieldIdx() const
+    inline s32_t accumulateConstantFieldIdx() const
     {
         return fldIdx;
     }
-    inline void setFldIdx(s64_t idx)
+    inline void setFldIdx(s32_t idx)
     {
         fldIdx = idx;
     }
@@ -102,7 +102,7 @@ public:
     //@}
 
     /// Return accumulated constant offset given OffsetValueVec
-    s64_t accumulateConstantOffset() const;
+    s32_t accumulateConstantOffset() const;
 
     /// Return element number of a type. 
     u32_t getElementNum(const Type* type) const;
@@ -129,7 +129,7 @@ private:
     /// Compute all possible locations according to offset and number-stride pairs.
     NodeBS computeAllLocations() const;
 
-    s64_t fldIdx;	///< Accumulated Constant Offsets
+    s32_t fldIdx;	///< Accumulated Constant Offsets
     OffsetValueVec offsetValues;	///< a vector of actual offset in the form of Values
 };
 

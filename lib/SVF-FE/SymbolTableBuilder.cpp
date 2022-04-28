@@ -51,8 +51,6 @@ void SymbolTableBuilder::buildMemModel(SVFModule* svfModule)
 
     symInfo->setModule(svfModule);
 
-    StInfo::setMaxFieldLimit(Options::MaxFieldLimit);
-
     // Pointer #0 always represents the null pointer.
     assert(symInfo->totalSymNum++ == SymbolTableInfo::NullPtr && "Something changed!");
 
@@ -586,30 +584,12 @@ void SymbolTableBuilder::analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value
     }
 }
 
-/*
- * Get the first dominated cast instruction for heap allocations since they typically come from void* (i8*) 
- * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
- * return %5 whose type is i32* but not %4 whose type is i8*
- */
-const Value* SymbolTableBuilder::getUniqueUseViaCastInst(const Value* val){
-    const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
-    assert(type && "this value should be a pointer type!");
-    /// If type is void* (i8*) and val is only used at a bitcast instruction
-    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(type->getPointerElementType())){
-        if (IT->getBitWidth() == 8 && val->getNumUses()==1){
-            const Use *u = &*val->use_begin();
-            return SVFUtil::dyn_cast<BitCastInst>(u->getUser());
-        }
-    }
-    return nullptr;
-}
-
 /*!
  * Initialize the type info of an object
  */
 void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     
-    s64_t objSize = 1;
+    s32_t objSize = 1;
     // Global variable
     if (SVFUtil::isa<Function>(val))
     {
@@ -652,6 +632,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
     else if(SVFUtil::isConstantData(val))
     {
         typeinfo->setFlag(ObjTypeInfo::CONST_DATA);
+        objSize = SymbolTableInfo::SymbolInfo()->getNumOfFlattenElements(val->getType());
     }
     else{
         assert("what other object do we have??");
@@ -660,7 +641,7 @@ void SymbolTableBuilder::initTypeInfo(ObjTypeInfo* typeinfo, const Value* val){
 
     // Reset maxOffsetLimit if it is over the total fieldNum of this object
     if(objSize > 0 && typeinfo->getMaxFieldOffsetLimit() > objSize)
-        typeinfo->setMaxFieldOffsetLimit(objSize);
+        typeinfo->setNumOfElements(objSize);
 }
 
 /*!

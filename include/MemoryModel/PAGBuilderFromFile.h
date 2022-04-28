@@ -71,7 +71,7 @@ public:
     SVFIR* build();
 
     // Add edges
-    void addEdge(NodeID nodeSrc, NodeID nodeDst, s64_t offset,
+    void addEdge(NodeID nodeSrc, NodeID nodeDst, s32_t offset,
                  std::string edge);
 };
 

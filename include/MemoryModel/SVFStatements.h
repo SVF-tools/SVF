@@ -445,12 +445,12 @@ public:
         return getLocationSet().isConstantOffset();
     }
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
-    inline s64_t accumulateConstantOffset() const
+    inline s32_t accumulateConstantOffset() const
     {
         return getLocationSet().accumulateConstantOffset();
     }
     /// Field index of the gep statement if it access the field of a struct
-    inline s64_t getConstantFieldIdx() const
+    inline s32_t getConstantFieldIdx() const
     {
         assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return getLocationSet().accumulateConstantFieldIdx();
@@ -921,7 +921,7 @@ public:
 class BranchStmt: public SVFStmt
 {
 public:
-    typedef std::vector<std::pair<const ICFGNode*, s64_t> > SuccAndCondPairVec;
+    typedef std::vector<std::pair<const ICFGNode*, s32_t> > SuccAndCondPairVec;
 private:
     BranchStmt();                      ///< place holder
     BranchStmt(const BranchStmt &);  ///< place holder
@@ -987,7 +987,7 @@ public:
     const ICFGNode* getSuccessor (u32_t i) const{
         return successors.at(i).first;
     }
-    s64_t getSuccessorCondValue (u32_t i) const{ 
+    s32_t getSuccessorCondValue (u32_t i) const{ 
         return successors.at(i).second;
     }
     //@}

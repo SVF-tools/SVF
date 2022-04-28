@@ -219,7 +219,7 @@ void SVFIRBuilder::initialiseNodes()
     e.g. field_idx = getelementptr i8, %struct_type %p, i64 1
 
 */
-u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s64_t idx){
+u32_t SVFIRBuilder::inferFieldIdxFromByteOffset(const llvm::GEPOperator* gepOp, DataLayout *dl, LocationSet& ls, s32_t idx){
     return 0;
 }
 
@@ -238,7 +238,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
     llvm::APInt byteOffset(dataLayout->getIndexSizeInBits(gepOp->getPointerAddressSpace()),0,true);
     if(gepOp && dataLayout && gepOp->accumulateConstantOffset(*dataLayout,byteOffset))
     {
-        s64_t bo = byteOffset.getSExtValue();
+        s32_t bo = byteOffset.getSExtValue();
     }
 
     for (bridge_gep_iterator gi = bridge_gep_begin(*V), ge = bridge_gep_end(*V);
@@ -256,7 +256,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         if(SVFUtil::isa<ArrayType>(gepTy)){
             if(!op) 
                 continue;
-            s64_t idx = op->getSExtValue();
+            s32_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(gepTy, idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);  
         }
@@ -264,7 +264,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
         {
             assert(op && "non-const offset accessing a struct");
             //The actual index
-            s64_t idx = op->getSExtValue();
+            s32_t idx = op->getSExtValue();
             u32_t offset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(ST, idx);
             ls.setFldIdx(ls.accumulateConstantFieldIdx() + offset);
         }
@@ -277,7 +277,7 @@ bool SVFIRBuilder::computeGepOffset(const User *V, LocationSet& ls)
                 return false;              
             
             // The actual index
-            //s64_t idx = op->getSExtValue();
+            //s32_t idx = op->getSExtValue();
 
             // For pointer arithmetic we ignore the byte offset
             // consider using inferFieldIdxFromByteOffset(geopOp,dataLayout,ls,idx)?
@@ -871,7 +871,7 @@ void SVFIRBuilder::visitSwitchInst(SwitchInst &inst){
         const Instruction* succInst = &inst.getSuccessor(i)->front();
         const ConstantInt* condVal = inst.findCaseDest(inst.getSuccessor(i));
         /// default case is set to -1;
-        s64_t val = condVal ? condVal->getSExtValue() : -1;
+        s32_t val = condVal ? condVal->getSExtValue() : -1;
         const ICFGNode* icfgNode = pag->getICFG()->getICFGNode(succInst);
         successors.push_back(std::make_pair(icfgNode,val));
     }
@@ -977,7 +977,7 @@ const Value* SVFIRBuilder::getBaseValueForExtArg(const Value* V){
     const Value * value = stripAllCasts(V);
     assert(value && "null ptr?");
     if(const GetElementPtrInst* gep = SVFUtil::dyn_cast<GetElementPtrInst>(value)){
-        s64_t totalidx = 0;
+        s32_t totalidx = 0;
         for (bridge_gep_iterator gi = bridge_gep_begin(gep), ge = bridge_gep_end(gep); gi != ge; ++gi){
             if(const ConstantInt *op = SVFUtil::dyn_cast<ConstantInt>(gi.getOperand()))
                 totalidx += op->getSExtValue();
@@ -1124,7 +1124,14 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 }
                 break;
             }
-            case ExtAPI::EFT_L_A0:
+            case ExtAPI::EFT_L_A0: {
+                NodeID dstNode = getValueNode(inst);
+                Value *src= cs.getArgument(0);
+                NodeID srcNode = getValueNode(src);
+                addCopyEdge(srcNode, dstNode);
+                break;
+            }
+
             case ExtAPI::EFT_L_A1:
             case ExtAPI::EFT_L_A2:
             case ExtAPI::EFT_L_A8:
@@ -1315,7 +1322,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // We have vArg3 points to the entry of _Rb_tree_node_base { color; parent; left; right; }.
                 // Now we calculate the offset from base to vArg3
                 NodeID vnArg3 = pag->getValueNode(vArg3);
-                s64_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
+                s32_t offset = pag->getLocationSetFromBaseNode(vnArg3).accumulateConstantFieldIdx();
 
                 // We get all flattened fields of base
                 vector<LocationSet> fields;
@@ -1326,6 +1333,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
+                    if(i >= fields.size())
+                        break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnD = getGepValVar(vArg3, fields[i], elementType);
                     NodeID vnS = getValueNode(vArg1);
@@ -1340,7 +1349,7 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
 
                 Value *vArg = cs.getArgument(0);
                 NodeID vnArg = pag->getValueNode(vArg);
-                s64_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
+                s32_t offset = pag->getLocationSetFromBaseNode(vnArg).accumulateConstantFieldIdx();
 
                 // We get all fields
                 vector<LocationSet> fields;
@@ -1351,6 +1360,8 @@ void SVFIRBuilder::handleExtCall(CallSite cs, const SVFFunction *callee)
                 // Note that arg0 is aligned with "offset".
                 for (int i = offset + 1; i <= offset + 3; ++i)
                 {
+                    if(i >= fields.size())
+                        break;
                     const Type* elementType = SymbolTableInfo::SymbolInfo()->getFlatternedElemType(type, fields[i].accumulateConstantFieldIdx());
                     NodeID vnS = getGepValVar(vArg, fields[i], elementType);
                     if(vnD && vnS)

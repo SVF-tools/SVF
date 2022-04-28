@@ -41,10 +41,9 @@ using namespace SVFUtil;
 
 DataLayout* SymbolTableInfo::dl = nullptr;
 SymbolTableInfo* SymbolTableInfo::symInfo = nullptr;
-u32_t StInfo::maxFieldLimit = 0;
 
 
-ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max)
+ObjTypeInfo::ObjTypeInfo(const Type* t, u32_t max) : type(t), flags(0), maxOffsetLimit(max), elemNum(max)
 {
     assert(t && "no type information for this object?");
 }
@@ -93,7 +92,7 @@ SymbolTableInfo::TypeToFieldInfoMap::iterator SymbolTableInfo::getStructInfoIter
  */
 ObjTypeInfo* SymbolTableInfo::createObjTypeInfo(const Type* type)
 {
-    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, StInfo::getMaxFieldLimit());
+    ObjTypeInfo* typeInfo = new ObjTypeInfo(type, Options::MaxFieldLimit);
     if(type && type->isPointerTy()){
         typeInfo->setFlag(ObjTypeInfo::HEAP_OBJ);
         typeInfo->setFlag(ObjTypeInfo::HASPTR_OBJ);
@@ -200,7 +199,7 @@ void SymbolTableInfo::collectStructInfo(const StructType *sty)
                 sty->element_end(); it != ie; ++it)
     {
         const Type *et = *it;
-        /// offset with int_32 (s64_t) is large enough and will not cause overflow
+        /// offset with int_32 (s32_t) is large enough and will not cause overflow
         stinfo->addFldWithType(nf, et, strideOffset);
 
         if (SVFUtil::isa<StructType>(et) || SVFUtil::isa<ArrayType>(et))
@@ -269,7 +268,7 @@ LocationSet SymbolTableInfo::getModulusOffset(const MemObj* obj, const LocationS
     /// of current struct. Make the offset positive so we can still get a node within current
     /// struct to represent this obj.
 
-    s64_t offset = ls.accumulateConstantFieldIdx();
+    s32_t offset = ls.accumulateConstantFieldIdx();
     if(offset < 0)
     {
         writeWrnMsg("try to create a gep node with negative offset.");
@@ -405,7 +404,7 @@ u32_t SymbolTableInfo::getNumOfFlattenElements(const Type *T)
 }
 
 /// Flatterned offset information of a struct or an array including its array fields 
-u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, s64_t origId)
+u32_t SymbolTableInfo::getFlattenedElemIdx(const Type *T, u32_t origId)
 {
     if(Options::ModelArrays){
         std::vector<u32_t>& so = getStructInfoIter(T)->second->getFlattenedElemIdxVec();
@@ -624,7 +623,7 @@ bool ObjTypeInfo::isNonPtrFieldObj(const LocationSet& ls)
  */
 void MemObj::setFieldSensitive()
 {
-    typeInfo->setMaxFieldOffsetLimit(StInfo::getMaxFieldLimit());
+    typeInfo->setMaxFieldOffsetLimit(typeInfo->getNumOfElements());
 }
 
 
@@ -648,17 +647,7 @@ bool MemObj::isBlackHoleObj() const
 /// Get obj type info
 const Type* MemObj::getType() const
 {
-    if (isHeap() == false)
-    {
-        if(const PointerType* type = SVFUtil::dyn_cast<PointerType>(typeInfo->getType()))
-            return type->getElementType();
-        else
-            return typeInfo->getType();
-    }
-    else if (getValue() && SVFUtil::isa<Instruction>(getValue()))
-        return SVFUtil::getTypeOfHeapAlloc(SVFUtil::cast<Instruction>(getValue()));
-    else
-        return typeInfo->getType();
+    return typeInfo->getType();
 }
 /*
  * Destroy the fields of the memory object

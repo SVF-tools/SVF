@@ -108,14 +108,14 @@ u32_t LocationSet::getElementNum(const Type* type) const{
 ///     value1: i64 0  type1: [3 x i8]*
 ///     value2: i64 2  type2: [3 x i8]
 ///     accumulateConstantOffset = 2
-s64_t LocationSet::accumulateConstantOffset() const{
+s32_t LocationSet::accumulateConstantOffset() const{
     
     assert(isConstantOffset() && "not a constant offset");
 
     if(offsetValues.empty())
         return accumulateConstantFieldIdx();
 
-    s64_t totalConstOffset = 0;
+    s32_t totalConstOffset = 0;
     for(int i = offsetValues.size() - 1; i >= 0; i--){
         const Value* value = offsetValues[i].first;
         const Type* type = offsetValues[i].second;
@@ -129,7 +129,7 @@ s64_t LocationSet::accumulateConstantOffset() const{
         if(const PointerType* pty = SVFUtil::dyn_cast<PointerType>(type))
             totalConstOffset += op->getSExtValue() * getElementNum(pty->getElementType());
         else{
-            s64_t offset = op->getSExtValue();
+            s32_t offset = op->getSExtValue();
             u32_t flattenOffset = SymbolTableInfo::SymbolInfo()->getFlattenedElemIdx(type, offset); 
             totalConstOffset += flattenOffset;
         }

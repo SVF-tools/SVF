@@ -21,6 +21,7 @@ file (GLOB SOURCES
         SABER/*.cpp
         DDA/*.cpp
         FastCluster/*.cpp
+        CFL/*.cpp
 )
 
 add_llvm_library(Svf STATIC ${SOURCES} LINK_LIBS Cudd ${Z3_LIBRARIES})

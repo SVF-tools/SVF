@@ -263,6 +263,23 @@ void SVFUtil::getPrevInsts(const Instruction* curInst, std::vector<const Instruc
     }
 }
 
+/*
+ * Get the first dominated cast instruction for heap allocations since they typically come from void* (i8*) 
+ * for example, %4 = call align 16 i8* @malloc(i64 10); %5 = bitcast i8* %4 to i32*
+ * return %5 whose type is i32* but not %4 whose type is i8*
+ */
+const Value* SVFUtil::getUniqueUseViaCastInst(const Value* val){
+    const PointerType * type = SVFUtil::dyn_cast<PointerType>(val->getType());
+    assert(type && "this value should be a pointer type!");
+    /// If type is void* (i8*) and val is only used at a bitcast instruction
+    if (IntegerType *IT = SVFUtil::dyn_cast<IntegerType>(type->getPointerElementType())){
+        if (IT->getBitWidth() == 8 && val->getNumUses()==1){
+            const Use *u = &*val->use_begin();
+            return SVFUtil::dyn_cast<BitCastInst>(u->getUser());
+        }
+    }
+    return nullptr;
+}
 
 /*!
  * Return the type of the object from a heap allocation
@@ -273,10 +290,10 @@ const Type* SVFUtil::getTypeOfHeapAlloc(const Instruction *inst)
 
     if(isHeapAllocExtCallViaRet(inst))
     {
-        const Instruction* nextInst = inst->getNextNode();
-        if(nextInst && nextInst->getOpcode() == Instruction::BitCast)
-            // we only consider bitcast instructions and ignore others (e.g., IntToPtr and ZExt)
-            type = SVFUtil::dyn_cast<PointerType>(inst->getNextNode()->getType());
+        if(const Value* v = getUniqueUseViaCastInst(inst)){
+            if(const PointerType* newTy = SVFUtil::dyn_cast<PointerType>(v->getType()))
+                type = newTy;
+        }
     }
     else if(isHeapAllocExtCallViaArg(inst))
     {
@@ -371,7 +388,7 @@ void SVFUtil::processArguments(int argc, char **argv, int &arg_num, char **arg_v
                                std::vector<std::string> &moduleNameVec)
 {
     bool first_ir_file = true;
-    for (s64_t i = 0; i < argc; ++i)
+    for (u32_t i = 0; i < argc; ++i)
     {
         std::string argument(argv[i]);
         if (SVFUtil::isIRFile(argument))

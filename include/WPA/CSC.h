@@ -69,7 +69,7 @@ public:
         : _consG(g), _scc(c), _I(0) {}
 
     void find(NodeStack& candidates);
-    void visit(NodeID nodeId, s64_t _w);
+    void visit(NodeID nodeId, s32_t _w);
     void clear();
 
     bool isVisited(NodeID nId)
