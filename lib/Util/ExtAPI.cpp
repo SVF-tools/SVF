@@ -92,13 +92,10 @@ void ExtAPI::init()
 
     DIR *pdir = NULL;                       // declare a pointer to a directory
     struct dirent *pent = nullptr;           // a struct used when reading a directory
-    std::cout << "dir =>" << dir << "\n";
     pdir = opendir(file_path.c_str());                     // open the directory
     if(pdir == NULL){
-        string com = "chmod 755 ";
-        com.append(file_path);
-        int res = system(com.c_str());
-        assert(res != 0 && "chmod unsucessful");
+        int res = chmod(file_path.c_str(),755);
+        assert(res == 0 && "chmod unsucessful");
     }
     pdir = opendir(file_path.c_str());                  // attempt again
     assert(pdir != NULL && "directory pointer could not be initialised correctly!");
