@@ -595,6 +595,9 @@ void SVFG::readFile(const string& filename){
     
 MRVer* SVFG::getMRVERFromString(const string& s) 
 {
+    if(s == "") {
+        return NULL;
+    }
     string temp;
     size_t last = 0; size_t next = 0; 
     MRVer* tempMRVer; 
