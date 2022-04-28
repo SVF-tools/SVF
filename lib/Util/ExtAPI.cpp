@@ -97,7 +97,8 @@ void ExtAPI::init()
     if(pdir == NULL){
         string com = "chmod 755 ";
         com.append(file_path);
-        system(com.c_str());
+        int res = system(com.c_str());
+        assert(res != 0 && "chmod unsucessful");
     }
     pdir = opendir(file_path.c_str());                  // attempt again
     assert(pdir != NULL && "directory pointer could not be initialised correctly!");
