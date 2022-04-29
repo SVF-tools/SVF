@@ -30,7 +30,7 @@
 #ifndef SRCSNKANALYSIS_H_
 #define SRCSNKANALYSIS_H_
 
-#include "Util/CFLSolver.h"
+#include "SrcSnkSolver.h"
 #include "Graphs/SVFGOPT.h"
 #include "SABER/ProgSlice.h"
 #include "SABER/SaberSVFGBuilder.h"
@@ -38,7 +38,7 @@
 namespace SVF
 {
 
-typedef CFLSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
+typedef SrcSnkSolver<SVFG*,CxtDPItem> CFLSrcSnkSolver;
 
 /*!
  * General source-sink analysis, which serves as a base analysis to be extended for various clients

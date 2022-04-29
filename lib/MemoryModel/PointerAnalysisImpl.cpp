@@ -10,7 +10,7 @@
 #include "SVF-FE/CPPUtil.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/Options.h"
-#include "Util/IRAnnotator.h"
+#include "SVF-FE/IRAnnotator.h"
 #include <fstream>
 #include <sstream>
 
