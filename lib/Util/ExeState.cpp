@@ -86,7 +86,7 @@ void ExeState::initObjVar(const ObjVar *objVar, Z3Expr &e) {
                 }
             } else if (const llvm::ConstantFP *consFP = SVFUtil::dyn_cast<llvm::ConstantFP>(obj->getValue()))
                 e = getContext().int_val(static_cast<u32_t>(consFP->getValue().convertToFloat()));
-            else if (const ConstantPointerNull *nptr = SVFUtil::dyn_cast<ConstantPointerNull>(obj->getValue()))
+            else if (SVFUtil::isa<ConstantPointerNull>(obj->getValue()))
                 e = getContext().int_val(0);
             else if (SVFUtil::isa<GlobalVariable>(obj->getValue()))
                 e = getContext().int_val(getVirtualMemAddress(objVar->getId()));

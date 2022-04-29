@@ -30,7 +30,7 @@
 #include "Util/Options.h"
 #include "SVF-FE/DCHG.h"
 #include "Util/SVFModule.h"
-#include "Util/TypeBasedHeapCloning.h"
+#include "WPA/TypeBasedHeapCloning.h"
 #include "WPA/WPAStat.h"
 #include "WPA/FlowSensitive.h"
 #include "WPA/Andersen.h"
