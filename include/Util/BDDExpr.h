@@ -1,4 +1,4 @@
-//===- Conditions.h -- Context/Path BDD conditions----------------------------//
+//===- BDDExpr.h -- Context/Path BDD conditions----------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
