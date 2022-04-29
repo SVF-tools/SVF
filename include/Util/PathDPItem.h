@@ -39,7 +39,7 @@ class VFPathCond : public ContextCond
 {
 
 public:
-    typedef CondExpr PathCond;
+    typedef BDDExpr PathCond;
     typedef std::vector<std::pair<NodeID,NodeID> > EdgeSet;
 
 public:

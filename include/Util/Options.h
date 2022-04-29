@@ -10,7 +10,6 @@
 #include "Util/NodeIDAllocator.h"
 #include "MSSA/MemSSA.h"
 #include "WPA/WPAPass.h"
-#include "Util/Conditions.h"
 
 namespace SVF
 {
@@ -255,8 +254,6 @@ public:
     // DOTGraphTraits
     static const llvm::cl::opt<bool> ShowHiddenNode;
 
-    // Conditions
-    static const llvm::cl::opt<CondManager::CondMgrKind> ConditionType;
 };
 }  // namespace SVF
 
