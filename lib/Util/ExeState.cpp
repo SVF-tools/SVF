@@ -150,6 +150,8 @@ bool ExeState::operator==(const ExeState &rhs) const {
     // return false if path constraint is not equivalent
     if (!eq(pathConstraint, rhs.getPathConstraint()))
         return false;
+    if(varToVal.size() != rhs.getVarToVal().size() || locToVal.size() != rhs.getLocToVal().size())
+         return false;
     for (const auto &item: varToVal) {
         auto it = rhs.getVarToVal().find(item.first);
         // return false if SVFVar not exists in rhs
@@ -180,6 +182,8 @@ bool ExeState::operator<(const ExeState &rhs) const {
     // judge from path constraint
     if (!eq(pathConstraint, rhs.getPathConstraint()))
         return pathConstraint.id() < rhs.getPathConstraint().id();
+    if(varToVal.size() < rhs.getVarToVal().size() || locToVal.size() < rhs.getLocToVal().size())
+        return true;
     for (const auto &item: varToVal) {
         auto it = rhs.getVarToVal().find(item.first);
         // lhs > rhs if SVFVar not exists in rhs
