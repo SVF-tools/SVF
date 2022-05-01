@@ -160,10 +160,8 @@ bool ExeState::operator<(const ExeState &rhs) const {
     // judge from path constraint
     if (!eq(pathConstraint, rhs.getPathConstraint()))
         return pathConstraint.id() < rhs.getPathConstraint().id();
-    if(!eqVarToValMap(varToVal, rhs.getVarToVal()))
-        return lessThanVarToValMap(varToVal, rhs.getVarToVal());
-    if(!eqVarToValMap(locToVal, rhs.getLocToVal()))
-        return lessThanVarToValMap(locToVal, rhs.getLocToVal());
+    if (lessThanVarToValMap(varToVal, rhs.getVarToVal()) || lessThanVarToValMap(locToVal, rhs.getLocToVal()))
+        return true;
     return false;
 }
 
