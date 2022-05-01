@@ -147,30 +147,8 @@ ExeState &ExeState::operator=(const ExeState &rhs) {
  * @return
  */
 bool ExeState::operator==(const ExeState &rhs) const {
-    // return false if path constraint is not equivalent
-    if (!eq(pathConstraint, rhs.getPathConstraint()))
-        return false;
-    if(varToVal.size() != rhs.getVarToVal().size() || locToVal.size() != rhs.getLocToVal().size())
-         return false;
-    for (const auto &item: varToVal) {
-        auto it = rhs.getVarToVal().find(item.first);
-        // return false if SVFVar not exists in rhs
-        if (it == rhs.getVarToVal().end())
-            return false;
-        // return false if Z3Expr is not equivalent
-        if (!eq(item.second, it->second))
-            return false;
-    }
-    for (const auto &item: locToVal) {
-        auto it = rhs.getLocToVal().find(item.first);
-        // return false if location not exists in rhs
-        if (it == rhs.getLocToVal().end())
-            return false;
-        // return false if Z3Expr is not equivalent
-        if (!eq(item.second, it->second))
-            return false;
-    }
-    return true;
+    return eq(pathConstraint, rhs.getPathConstraint()) && eqVarToValMap(varToVal, rhs.getVarToVal()) &&
+           eqVarToValMap(locToVal, rhs.getLocToVal());
 }
 
 /*!
@@ -182,21 +160,28 @@ bool ExeState::operator<(const ExeState &rhs) const {
     // judge from path constraint
     if (!eq(pathConstraint, rhs.getPathConstraint()))
         return pathConstraint.id() < rhs.getPathConstraint().id();
-    if(varToVal.size() < rhs.getVarToVal().size() || locToVal.size() < rhs.getLocToVal().size())
+    if (lessThanVarToValMap(varToVal, rhs.getVarToVal()) || lessThanVarToValMap(locToVal, rhs.getLocToVal()))
         return true;
-    for (const auto &item: varToVal) {
-        auto it = rhs.getVarToVal().find(item.first);
-        // lhs > rhs if SVFVar not exists in rhs
-        if (it == rhs.getVarToVal().end())
+    return false;
+}
+
+bool ExeState::eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const {
+    if(lhs.size() != rhs.size()) return false;
+    for (const auto &item: lhs) {
+        auto it = rhs.find(item.first);
+        // return false if SVFVar not exists in rhs or z3Expr not equal
+        if (it == rhs.end() || !eq(item.second, it->second))
             return false;
-        // judge from expr id
-        if (!eq(item.second, it->second))
-            return item.second.id() < it->second.id();
     }
-    for (const auto &item: locToVal) {
-        auto it = rhs.getLocToVal().find(item.first);
+    return true;
+}
+
+bool ExeState::lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const {
+    if(lhs.size() != rhs.size()) return lhs.size() < rhs.size();
+    for (const auto &item: lhs) {
+        auto it = rhs.find(item.first);
         // lhs > rhs if SVFVar not exists in rhs
-        if (it == rhs.getLocToVal().end())
+        if (it == rhs.end())
             return false;
         // judge from expr id
         if (!eq(item.second, it->second))
@@ -204,7 +189,6 @@ bool ExeState::operator<(const ExeState &rhs) const {
     }
     return false;
 }
-
 /*!
  * Store value to location
  * @param loc location, e.g., int_val(0x7f..01)
