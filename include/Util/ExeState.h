@@ -39,7 +39,7 @@ namespace SVF {
 class ExeState {
 public:
     typedef Map<u32_t, Z3Expr> VarToValMap;
-    typedef Map<u32_t, Z3Expr> LocToValMap;
+    typedef VarToValMap LocToValMap;
 
 protected:
     VarToValMap varToVal;
@@ -72,6 +72,9 @@ public:
 
     /// Overloading Operator==
     bool operator<(const ExeState &rhs) const;
+
+    bool eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
+    bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
 
     z3::context &getContext() {
         return Z3Expr::getContext();
