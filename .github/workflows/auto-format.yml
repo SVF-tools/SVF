@@ -1,0 +1,26 @@
+name: auto-clang-format
+
+# Triggers the workflow on push or pull request events
+on: [push, pull_request]
+
+jobs: 
+  lint:
+      name: clang-format Code Formatter
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.13
+        with:
+          source: '.'
+          # You may manually exclude some folders
+          exclude: './lib/CUDD'
+          extensions: 'h,cpp,c'
+          clangFormatVersion: 13
+          inplace: True
+      - uses: EndBug/add-and-commit@v4
+        with:
+          author_name: github-actions
+          author_email: github-actions@users.noreply.github.com
+          message: 'Committing clang-format changes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.yulei_git_key }}
