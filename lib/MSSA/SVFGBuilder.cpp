@@ -26,124 +26,105 @@
  *  Created on: Apr 15, 2014
  *      Author: Yulei Sui
  */
+#include "MSSA/SVFGBuilder.h"
+#include "Graphs/SVFG.h"
+#include "MSSA/MemSSA.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "Util/Options.h"
 #include "Util/SVFModule.h"
-#include "SVF-FE/LLVMUtil.h"
-#include "MSSA/MemSSA.h"
-#include "Graphs/SVFG.h"
-#include "MSSA/SVFGBuilder.h"
 #include "WPA/Andersen.h"
 
 using namespace SVF;
 using namespace SVFUtil;
 
+SVFG *SVFGBuilder::globalSvfg = nullptr;
 
-SVFG* SVFGBuilder::globalSvfg = nullptr;
-
-
-SVFG* SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl* pta)
-{
-    if(Options::OPTSVFG)
-        return build(pta, VFG::PTRONLYSVFG_OPT);
-    else
-        return build(pta, VFG::PTRONLYSVFG);
+SVFG *SVFGBuilder::buildPTROnlySVFG(BVDataPTAImpl *pta) {
+  if (Options::OPTSVFG)
+    return build(pta, VFG::PTRONLYSVFG_OPT);
+  else
+    return build(pta, VFG::PTRONLYSVFG);
 }
 
-SVFG* SVFGBuilder::buildFullSVFG(BVDataPTAImpl* pta)
-{
-    return build(pta, VFG::FULLSVFG);
+SVFG *SVFGBuilder::buildFullSVFG(BVDataPTAImpl *pta) {
+  return build(pta, VFG::FULLSVFG);
 }
-
 
 /*!
  * Create SVFG
  */
-void SVFGBuilder::buildSVFG()
-{
-    svfg->buildSVFG();
-}
+void SVFGBuilder::buildSVFG() { svfg->buildSVFG(); }
 
 /// Create DDA SVFG
-SVFG* SVFGBuilder::build(BVDataPTAImpl* pta, VFG::VFGK kind)
-{
+SVFG *SVFGBuilder::build(BVDataPTAImpl *pta, VFG::VFGK kind) {
 
-    MemSSA* mssa = buildMSSA(pta, (VFG::PTRONLYSVFG==kind || VFG::PTRONLYSVFG_OPT==kind));
+  MemSSA *mssa = buildMSSA(
+      pta, (VFG::PTRONLYSVFG == kind || VFG::PTRONLYSVFG_OPT == kind));
 
-    DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
-    if(Options::SingleVFG)
-    {
-        if(globalSvfg==nullptr)
-        {
-            /// Note that we use callgraph from andersen analysis here
-            if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
-                svfg = globalSvfg = new SVFGOPT(mssa, kind);
-            else
-                svfg = globalSvfg = new SVFG(mssa, kind);
-            buildSVFG();
-        }
+  DBOUT(DGENERAL, outs() << pasMsg("Build Sparse Value-Flow Graph \n"));
+  if (Options::SingleVFG) {
+    if (globalSvfg == nullptr) {
+      /// Note that we use callgraph from andersen analysis here
+      if (kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
+        svfg = globalSvfg = new SVFGOPT(mssa, kind);
+      else
+        svfg = globalSvfg = new SVFG(mssa, kind);
+      buildSVFG();
     }
+  } else {
+    if (kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
+      svfg = new SVFGOPT(mssa, kind);
     else
-    {
-        if(kind == VFG::FULLSVFG_OPT || kind == VFG::PTRONLYSVFG_OPT)
-            svfg = new SVFGOPT(mssa, kind);
-        else
-            svfg = new SVFG(mssa,kind);
-        buildSVFG();
-    }
+      svfg = new SVFG(mssa, kind);
+    buildSVFG();
+  }
 
-    /// Update call graph using pre-analysis results
-    if(Options::SVFGWithIndirectCall || SVFGWithIndCall)
-        svfg->updateCallGraph(pta);
+  /// Update call graph using pre-analysis results
+  if (Options::SVFGWithIndirectCall || SVFGWithIndCall)
+    svfg->updateCallGraph(pta);
 
-    if(mssa->getPTA()->printStat())
-        svfg->performStat();
+  if (mssa->getPTA()->printStat())
+    svfg->performStat();
 
-    if(Options::DumpVFG)
-        svfg->dump("svfg_final");
+  if (Options::DumpVFG)
+    svfg->dump("svfg_final");
 
-    return svfg;
+  return svfg;
 }
 
 /*!
  * Release memory
  */
-void SVFGBuilder::releaseMemory()
-{
-    svfg->clearMSSA();
+void SVFGBuilder::releaseMemory() { svfg->clearMSSA(); }
+
+MemSSA *SVFGBuilder::buildMSSA(BVDataPTAImpl *pta, bool ptrOnlyMSSA) {
+
+  DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
+
+  MemSSA *mssa = new MemSSA(pta, ptrOnlyMSSA);
+
+  DominatorTree dt;
+  MemSSADF df;
+
+  SVFModule *svfModule = mssa->getPTA()->getModule();
+  for (SVFModule::const_iterator iter = svfModule->begin(),
+                                 eiter = svfModule->end();
+       iter != eiter; ++iter) {
+
+    const SVFFunction *fun = *iter;
+    if (isExtCall(fun))
+      continue;
+
+    dt.recalculate(*fun->getLLVMFun());
+    df.runOnDT(dt);
+
+    mssa->buildMemSSA(*fun, &df, &dt);
+  }
+
+  mssa->performStat();
+  if (Options::DumpMSSA) {
+    mssa->dumpMSSA();
+  }
+
+  return mssa;
 }
-
-MemSSA* SVFGBuilder::buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA)
-{
-
-    DBOUT(DGENERAL, outs() << pasMsg("Build Memory SSA \n"));
-
-    MemSSA* mssa = new MemSSA(pta, ptrOnlyMSSA);
-
-    DominatorTree dt;
-    MemSSADF df;
-
-    SVFModule* svfModule = mssa->getPTA()->getModule();
-    for (SVFModule::const_iterator iter = svfModule->begin(), eiter = svfModule->end();
-            iter != eiter; ++iter)
-    {
-
-        const SVFFunction *fun = *iter;
-        if (isExtCall(fun))
-            continue;
-
-        dt.recalculate(*fun->getLLVMFun());
-        df.runOnDT(dt);
-
-        mssa->buildMemSSA(*fun, &df, &dt);
-    }
-
-    mssa->performStat();
-    if (Options::DumpMSSA)
-    {
-        mssa->dumpMSSA();
-    }
-
-    return mssa;
-}
-
-

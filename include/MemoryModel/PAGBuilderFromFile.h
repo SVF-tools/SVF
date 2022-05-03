@@ -1,4 +1,5 @@
-//===- PAGBuilderFromFile.h -- Building SVFIR from File--------------------------------//
+//===- PAGBuilderFromFile.h -- Building SVFIR from
+//File--------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -32,47 +33,34 @@
 
 #include "MemoryModel/SVFIR.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /*!
  * Build SVFIR from a user specified file (for debugging purpose)
  */
-class PAGBuilderFromFile
-{
+class PAGBuilderFromFile {
 
 private:
-    SVFIR* pag;
-    std::string file;
+  SVFIR *pag;
+  std::string file;
+
 public:
-    /// Constructor
-    PAGBuilderFromFile(std::string f) :
-        pag(SVFIR::getPAG(true)), file(f)
-    {
-    }
-    /// Destructor
-    ~PAGBuilderFromFile()
-    {
-    }
+  /// Constructor
+  PAGBuilderFromFile(std::string f) : pag(SVFIR::getPAG(true)), file(f) {}
+  /// Destructor
+  ~PAGBuilderFromFile() {}
 
-    /// Return SVFIR
-    SVFIR* getPAG() const
-    {
-        return pag;
-    }
+  /// Return SVFIR
+  SVFIR *getPAG() const { return pag; }
 
-    /// Return file name
-    std::string getFileName() const
-    {
-        return file;
-    }
+  /// Return file name
+  std::string getFileName() const { return file; }
 
-    /// Start building
-    SVFIR* build();
+  /// Start building
+  SVFIR *build();
 
-    // Add edges
-    void addEdge(NodeID nodeSrc, NodeID nodeDst, s32_t offset,
-                 std::string edge);
+  // Add edges
+  void addEdge(NodeID nodeSrc, NodeID nodeDst, s32_t offset, std::string edge);
 };
 
 } // End namespace SVF

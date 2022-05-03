@@ -28,9 +28,9 @@
  */
 
 #include "MemoryModel/PAGBuilderFromFile.h"
-#include <fstream>	// for PAGBuilderFromFile
-#include <string>	// for PAGBuilderFromFile
-#include <sstream>	// for PAGBuilderFromFile
+#include <fstream> // for PAGBuilderFromFile
+#include <sstream> // for PAGBuilderFromFile
+#include <string>  // for PAGBuilderFromFile
 
 using namespace std;
 using namespace SVF;
@@ -56,141 +56,128 @@ static u32_t gepNodeNumIndex = 100000;
 6 store 8 0
 8 load 9 0
  */
-SVFIR* PAGBuilderFromFile::build()
-{
+SVFIR *PAGBuilderFromFile::build() {
 
-    string line;
-    ifstream myfile(file.c_str());
-    if (myfile.is_open())
-    {
-        while (myfile.good())
-        {
-            getline(myfile, line);
+  string line;
+  ifstream myfile(file.c_str());
+  if (myfile.is_open()) {
+    while (myfile.good()) {
+      getline(myfile, line);
 
-            u32_t token_count = 0;
-            string tmps;
-            istringstream ss(line);
-            while (ss.good())
-            {
-                ss >> tmps;
-                token_count++;
-            }
+      u32_t token_count = 0;
+      string tmps;
+      istringstream ss(line);
+      while (ss.good()) {
+        ss >> tmps;
+        token_count++;
+      }
 
-            if (token_count == 0)
-                continue;
+      if (token_count == 0)
+        continue;
 
-            else if (token_count == 2)
-            {
-                NodeID nodeId;
-                string nodetype;
-                istringstream ss(line);
-                ss >> nodeId;
-                ss >> nodetype;
-                outs() << "reading node :" << nodeId << "\n";
-                if (nodetype == "v")
-                    pag->addDummyValNode(nodeId);
-                else if (nodetype == "o")
-                {
-                    const MemObj* mem = pag->addDummyMemObj(nodeId, nullptr);
-                    pag->addFIObjNode(mem);
-                }
-                else
-                    assert(false && "format not support, pls specify node type");
-            }
+      else if (token_count == 2) {
+        NodeID nodeId;
+        string nodetype;
+        istringstream ss(line);
+        ss >> nodeId;
+        ss >> nodetype;
+        outs() << "reading node :" << nodeId << "\n";
+        if (nodetype == "v")
+          pag->addDummyValNode(nodeId);
+        else if (nodetype == "o") {
+          const MemObj *mem = pag->addDummyMemObj(nodeId, nullptr);
+          pag->addFIObjNode(mem);
+        } else
+          assert(false && "format not support, pls specify node type");
+      }
 
-            // do consider gep edge
-            else if (token_count == 4)
-            {
-                NodeID nodeSrc;
-                NodeID nodeDst;
-                s32_t offsetOrCSId;
-                string edge;
-                istringstream ss(line);
-                ss >> nodeSrc;
-                ss >> edge;
-                ss >> nodeDst;
-                ss >> offsetOrCSId;
-                outs() << "reading edge :" << nodeSrc << " " << edge << " "
-                       << nodeDst << " offsetOrCSId=" << offsetOrCSId << " \n";
-                addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
-            }
-            else
-            {
-                if (!line.empty())
-                {
-                    outs() << "format not supported, token count = "
-                           << token_count << "\n";
-                    assert(false && "format not supported");
-                }
-            }
+      // do consider gep edge
+      else if (token_count == 4) {
+        NodeID nodeSrc;
+        NodeID nodeDst;
+        s32_t offsetOrCSId;
+        string edge;
+        istringstream ss(line);
+        ss >> nodeSrc;
+        ss >> edge;
+        ss >> nodeDst;
+        ss >> offsetOrCSId;
+        outs() << "reading edge :" << nodeSrc << " " << edge << " " << nodeDst
+               << " offsetOrCSId=" << offsetOrCSId << " \n";
+        addEdge(nodeSrc, nodeDst, offsetOrCSId, edge);
+      } else {
+        if (!line.empty()) {
+          outs() << "format not supported, token count = " << token_count
+                 << "\n";
+          assert(false && "format not supported");
         }
-        myfile.close();
+      }
     }
+    myfile.close();
+  }
 
-    else
-        outs() << "Unable to open file\n";
+  else
+    outs() << "Unable to open file\n";
 
-    /// new gep node's id from lower bound, nodeNum may not reflect the total nodes.
-    u32_t lower_bound = gepNodeNumIndex;
-    for(u32_t i = 0; i < lower_bound; i++)
-        pag->incNodeNum();
+  /// new gep node's id from lower bound, nodeNum may not reflect the total
+  /// nodes.
+  u32_t lower_bound = gepNodeNumIndex;
+  for (u32_t i = 0; i < lower_bound; i++)
+    pag->incNodeNum();
 
-    pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
+  pag->setNodeNumAfterPAGBuild(pag->getTotalNodeNum());
 
-    return pag;
+  return pag;
 }
 
 /*!
  * Add SVFIR edge according to a file format
  */
-void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID,
-                                 s32_t offsetOrCSId, std::string edge)
-{
+void PAGBuilderFromFile::addEdge(NodeID srcID, NodeID dstID, s32_t offsetOrCSId,
+                                 std::string edge) {
 
-    //check whether these two nodes available
-    PAGNode* srcNode = pag->getGNode(srcID);
-    PAGNode* dstNode = pag->getGNode(dstID);
+  // check whether these two nodes available
+  PAGNode *srcNode = pag->getGNode(srcID);
+  PAGNode *dstNode = pag->getGNode(dstID);
 
-    /// sanity check for SVFIR from txt
-    assert(SVFUtil::isa<ValVar>(dstNode) && "dst not an value node?");
-    if(edge=="addr")
-        assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");
-    else
-        assert(!SVFUtil::isa<ObjVar>(srcNode) && "src not an object node?");
+  /// sanity check for SVFIR from txt
+  assert(SVFUtil::isa<ValVar>(dstNode) && "dst not an value node?");
+  if (edge == "addr")
+    assert(SVFUtil::isa<ObjVar>(srcNode) && "src not an value node?");
+  else
+    assert(!SVFUtil::isa<ObjVar>(srcNode) && "src not an object node?");
 
-    if (edge == "addr")
-    {
-        pag->addAddrStmt(srcID, dstID);
-    }
-    else if (edge == "copy")
-        pag->addCopyStmt(srcID, dstID);
-    else if (edge == "load")
-        pag->addLoadStmt(srcID, dstID);
-    else if (edge == "store")
-        pag->addStoreStmt(srcID, dstID, nullptr);
-    else if (edge == "gep")
-        pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
-    else if (edge == "variant-gep")
-        pag->addVariantGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
-    else if (edge == "call")
-        pag->addEdge(srcNode, dstNode, new CallPE(srcNode, dstNode, nullptr, nullptr));
-    else if (edge == "ret")
-        pag->addEdge(srcNode, dstNode, new RetPE(srcNode, dstNode, nullptr,nullptr));
-    else if (edge == "cmp")
-        pag->addCmpStmt(srcID, dstID, dstID, dstID);
-    else if (edge == "binary-op")
-        pag->addBinaryOPStmt(srcID, dstID, dstID, dstID);
-    else if (edge == "unary-op")
-        pag->addUnaryOPStmt(srcID, dstID, dstID);
-    else if (edge == "phi")
-        assert(false && "fix phi here!");
-    else if (edge == "select")
-        assert(false && "fix select here!");
-    else if (edge == "branch"){
-        assert(false && "fix successors here!");
-        //pag->addBranchStmt(srcID, dstID, nullptr);
-    }
-    else
-        assert(false && "format not support, can not create such edge");
+  if (edge == "addr") {
+    pag->addAddrStmt(srcID, dstID);
+  } else if (edge == "copy")
+    pag->addCopyStmt(srcID, dstID);
+  else if (edge == "load")
+    pag->addLoadStmt(srcID, dstID);
+  else if (edge == "store")
+    pag->addStoreStmt(srcID, dstID, nullptr);
+  else if (edge == "gep")
+    pag->addNormalGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+  else if (edge == "variant-gep")
+    pag->addVariantGepStmt(srcID, dstID, LocationSet(offsetOrCSId));
+  else if (edge == "call")
+    pag->addEdge(srcNode, dstNode,
+                 new CallPE(srcNode, dstNode, nullptr, nullptr));
+  else if (edge == "ret")
+    pag->addEdge(srcNode, dstNode,
+                 new RetPE(srcNode, dstNode, nullptr, nullptr));
+  else if (edge == "cmp")
+    pag->addCmpStmt(srcID, dstID, dstID, dstID);
+  else if (edge == "binary-op")
+    pag->addBinaryOPStmt(srcID, dstID, dstID, dstID);
+  else if (edge == "unary-op")
+    pag->addUnaryOPStmt(srcID, dstID, dstID);
+  else if (edge == "phi")
+    assert(false && "fix phi here!");
+  else if (edge == "select")
+    assert(false && "fix select here!");
+  else if (edge == "branch") {
+    assert(false && "fix successors here!");
+    // pag->addBranchStmt(srcID, dstID, nullptr);
+  } else
+    assert(false && "format not support, can not create such edge");
 }
-

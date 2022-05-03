@@ -1,4 +1,5 @@
-//===- saber.cpp -- Source-sink bug checker------------------------------------//
+//===- saber.cpp -- Source-sink bug
+//checker------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -26,58 +27,59 @@
  // Author: Yulei Sui,
  */
 
-#include "SVF-FE/LLVMUtil.h"
-#include "SABER/LeakChecker.h"
-#include "SABER/FileChecker.h"
 #include "SABER/DoubleFreeChecker.h"
+#include "SABER/FileChecker.h"
+#include "SABER/LeakChecker.h"
+#include "SVF-FE/LLVMUtil.h"
 #include "Util/Options.h"
 
 using namespace llvm;
 using namespace SVF;
 
-static llvm::cl::opt<std::string> InputFilename(cl::Positional,
-        llvm::cl::desc("<input bitcode>"), llvm::cl::init("-"));
+static llvm::cl::opt<std::string>
+    InputFilename(cl::Positional, llvm::cl::desc("<input bitcode>"),
+                  llvm::cl::init("-"));
 
 static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
                                        llvm::cl::desc("Memory Leak Detection"));
 
-static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
-                                       llvm::cl::desc("File Open/Close Detection"));
+static llvm::cl::opt<bool>
+    FILECHECKER("fileck", llvm::cl::init(false),
+                llvm::cl::desc("File Open/Close Detection"));
 
-static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
-                                        llvm::cl::desc("Double Free Detection"));
+static llvm::cl::opt<bool>
+    DFREECHECKER("dfree", llvm::cl::init(false),
+                 llvm::cl::desc("Double Free Detection"));
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
 
-    int arg_num = 0;
-    char **arg_value = new char*[argc];
-    std::vector<std::string> moduleNameVec;
-    SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
-    cl::ParseCommandLineOptions(arg_num, arg_value,
-                                "Source-Sink Bug Detector\n");
+  int arg_num = 0;
+  char **arg_value = new char *[argc];
+  std::vector<std::string> moduleNameVec;
+  SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
+  cl::ParseCommandLineOptions(arg_num, arg_value, "Source-Sink Bug Detector\n");
 
-    if (Options::WriteAnder == "ir_annotator")
-    {
-        LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
-    }
+  if (Options::WriteAnder == "ir_annotator") {
+    LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
+  }
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
+  SVFModule *svfModule =
+      LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+  svfModule->buildSymbolTableInfo();
 
-    LeakChecker *saber;
+  LeakChecker *saber;
 
-    if(LEAKCHECKER)
-        saber = new LeakChecker();
-    else if(FILECHECKER)
-        saber = new FileChecker();
-    else if(DFREECHECKER)
-        saber = new DoubleFreeChecker();
-    else
-        saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
+  if (LEAKCHECKER)
+    saber = new LeakChecker();
+  else if (FILECHECKER)
+    saber = new FileChecker();
+  else if (DFREECHECKER)
+    saber = new DoubleFreeChecker();
+  else
+    saber = new LeakChecker(); // if no checker is specified, we use leak
+                               // checker as the default one.
 
-    saber->runOnModule(svfModule);
+  saber->runOnModule(svfModule);
 
-    return 0;
-
+  return 0;
 }

@@ -1,4 +1,5 @@
-//===- AndersenHLCD.cpp -- HLCD based Field-sensitive Andersen's analysis-------------------//
+//===- AndersenHLCD.cpp -- HLCD based Field-sensitive Andersen's
+//analysis-------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -34,12 +35,11 @@ using namespace SVFUtil;
 
 AndersenHLCD *AndersenHLCD::hlcdAndersen = nullptr;
 
-
 /*!
- * Collapse nodes and fields based on the result of both offline and online SCC detection
+ * Collapse nodes and fields based on the result of both offline and online SCC
+ * detection
  */
-void AndersenHLCD::mergeSCC(NodeID nodeId)
-{
-    AndersenHCD::mergeSCC(nodeId);
-    AndersenLCD::mergeSCC();
+void AndersenHLCD::mergeSCC(NodeID nodeId) {
+  AndersenHCD::mergeSCC(nodeId);
+  AndersenLCD::mergeSCC();
 }

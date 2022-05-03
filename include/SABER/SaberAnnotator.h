@@ -30,41 +30,34 @@
 #ifndef SABERANNOTATOR_H_
 #define SABERANNOTATOR_H_
 
-#include <MemoryModel/SVFStatements.h>
 #include "Util/Annotator.h"
+#include <MemoryModel/SVFStatements.h>
 
-namespace SVF
-{
+namespace SVF {
 
 class ProgSlice;
 /*!
  * Saber annotation
  */
-class SaberAnnotator : public Annotator
-{
+class SaberAnnotator : public Annotator {
 
 private:
-    const ProgSlice* _curSlice;
+  const ProgSlice *_curSlice;
+
 public:
-    /// Constructor
-    SaberAnnotator(ProgSlice* slice): _curSlice(slice)
-    {
+  /// Constructor
+  SaberAnnotator(ProgSlice *slice) : _curSlice(slice) {}
+  /// Destructor
+  virtual ~SaberAnnotator() {}
+  /// Annotation
+  //@{
+  void annotateSource();
+  void annotateSinks();
+  void annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
+  void annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
 
-    }
-    /// Destructor
-    virtual ~SaberAnnotator()
-    {
-
-    }
-    /// Annotation
-    //@{
-    void annotateSource();
-    void annotateSinks();
-    void annotateFeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
-    void annotateInfeasibleBranch(const BranchStmt *branchStmt, u32_t succPos);
-
-    void annotateSwitch(const BranchStmt *swithStmt, u32_t succPos);
-    //@}
+  void annotateSwitch(const BranchStmt *swithStmt, u32_t succPos);
+  //@}
 };
 
 } // End namespace SVF

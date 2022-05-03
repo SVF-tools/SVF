@@ -30,65 +30,62 @@
 #ifndef SymbolTableBuilder_H_
 #define SymbolTableBuilder_H_
 
-#include "SVF-FE/LLVMModule.h"
 #include "MemoryModel/SymbolTableInfo.h"
+#include "SVF-FE/LLVMModule.h"
 
 /*
-* This class is to build SymbolTableInfo, MemObjs and ObjTypeInfo
-*/
-namespace SVF
-{
+ * This class is to build SymbolTableInfo, MemObjs and ObjTypeInfo
+ */
+namespace SVF {
 
-class SymbolTableBuilder 
-{
+class SymbolTableBuilder {
 
 private:
-    SymbolTableInfo* symInfo;
+  SymbolTableInfo *symInfo;
 
 public:
-    /// Constructor
-    SymbolTableBuilder(SymbolTableInfo* si): symInfo(si){
-    }
+  /// Constructor
+  SymbolTableBuilder(SymbolTableInfo *si) : symInfo(si) {}
 
-    /// Start building memory model
-    void buildMemModel(SVFModule* svfModule);
+  /// Start building memory model
+  void buildMemModel(SVFModule *svfModule);
 
-    /// collect the syms
-    //@{
-    void collectSym(const Value *val);
+  /// collect the syms
+  //@{
+  void collectSym(const Value *val);
 
-    void collectVal(const Value *val);
+  void collectVal(const Value *val);
 
-    void collectObj(const Value *val);
+  void collectObj(const Value *val);
 
-    void collectRet(const Function *val);
+  void collectRet(const Function *val);
 
-    void collectVararg(const Function *val);
-    //@}
+  void collectVararg(const Function *val);
+  //@}
 
-    /// Handle constant expression
-    // @{
-    void handleGlobalCE(const GlobalVariable *G);
-    void handleGlobalInitializerCE(const Constant *C);
-    void handleCE(const Value *val);
-    // @}
+  /// Handle constant expression
+  // @{
+  void handleGlobalCE(const GlobalVariable *G);
+  void handleGlobalInitializerCE(const Constant *C);
+  void handleCE(const Value *val);
+  // @}
 
-    /// Create an objectInfo based on LLVM value
-    ObjTypeInfo* createObjTypeInfo(const Value *val);
+  /// Create an objectInfo based on LLVM value
+  ObjTypeInfo *createObjTypeInfo(const Value *val);
 
-    /// Initialize TypeInfo based on LLVM Value
-    void initTypeInfo(ObjTypeInfo* typeinfo, const Value* value);
-    /// Analyse types of all flattened fields of this object
-    void analyzeObjType(ObjTypeInfo* typeinfo, const Value* val);
-    /// Analyse types of heap and static objects
-    void analyzeHeapObjType(ObjTypeInfo* typeinfo, const Value* val);
-    /// Analyse types of heap and static objects
-    void analyzeStaticObjType(ObjTypeInfo* typeinfo, const Value* val);
+  /// Initialize TypeInfo based on LLVM Value
+  void initTypeInfo(ObjTypeInfo *typeinfo, const Value *value);
+  /// Analyse types of all flattened fields of this object
+  void analyzeObjType(ObjTypeInfo *typeinfo, const Value *val);
+  /// Analyse types of heap and static objects
+  void analyzeHeapObjType(ObjTypeInfo *typeinfo, const Value *val);
+  /// Analyse types of heap and static objects
+  void analyzeStaticObjType(ObjTypeInfo *typeinfo, const Value *val);
 
-    /// Return size of this object based on LLVM value
-    u32_t getObjSize(const Type* type);
+  /// Return size of this object based on LLVM value
+  u32_t getObjSize(const Type *type);
 };
 
-}
+} // namespace SVF
 
 #endif /* SymbolTableBuilder_H_ */

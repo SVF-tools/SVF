@@ -32,23 +32,21 @@
 using namespace std;
 using namespace SVF;
 
-SaberCheckerAPI* SaberCheckerAPI::ckAPI = nullptr;
+SaberCheckerAPI *SaberCheckerAPI::ckAPI = nullptr;
 
 namespace {
 
 /// string and type pair
-struct ei_pair
-{
-    const char *n;
-    SaberCheckerAPI::CHECKER_TYPE t;
+struct ei_pair {
+  const char *n;
+  SaberCheckerAPI::CHECKER_TYPE t;
 };
 
 } // End anonymous namespace
 
-//Each (name, type) pair will be inserted into the map.
-//All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]=
-{
+// Each (name, type) pair will be inserted into the map.
+// All entries of the same type must occur together (for error detection).
+static const ei_pair ei_pairs[] = {
     {"alloc", SaberCheckerAPI::CK_ALLOC},
     {"alloc_check", SaberCheckerAPI::CK_ALLOC},
     {"alloc_clear", SaberCheckerAPI::CK_ALLOC},
@@ -75,9 +73,9 @@ static const ei_pair ei_pairs[]=
     {"xmalloc", SaberCheckerAPI::CK_ALLOC},
     {"SSL_CTX_new", SaberCheckerAPI::CK_ALLOC},
     {"SSL_new", SaberCheckerAPI::CK_ALLOC},
-	{"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
+    {"VOS_MemAlloc", SaberCheckerAPI::CK_ALLOC},
 
-	{"VOS_MemFree", SaberCheckerAPI::CK_FREE},
+    {"VOS_MemFree", SaberCheckerAPI::CK_FREE},
     {"cfree", SaberCheckerAPI::CK_FREE},
     {"free", SaberCheckerAPI::CK_FREE},
     {"free_all_mem", SaberCheckerAPI::CK_FREE},
@@ -118,7 +116,6 @@ static const ei_pair ei_pairs[]=
     {"gcry_md_open", SaberCheckerAPI::CK_FOPEN},
     {"gcry_cipher_open", SaberCheckerAPI::CK_FOPEN},
 
-
     {"fclose", SaberCheckerAPI::CK_FCLOSE},
     {"XCloseDisplay", SaberCheckerAPI::CK_FCLOSE},
     {"XtCloseDisplay", SaberCheckerAPI::CK_FCLOSE},
@@ -131,45 +128,35 @@ static const ei_pair ei_pairs[]=
     {"gcry_md_close", SaberCheckerAPI::CK_FCLOSE},
     {"gcry_cipher_close", SaberCheckerAPI::CK_FCLOSE},
 
-    //This must be the last entry.
+    // This must be the last entry.
     {0, SaberCheckerAPI::CK_DUMMY}
 
 };
 
-
 /*!
  * initialize the map
  */
-void SaberCheckerAPI::init()
-{
-    set<CHECKER_TYPE> t_seen;
-    CHECKER_TYPE prev_t= CK_DUMMY;
-    t_seen.insert(CK_DUMMY);
-    for(const ei_pair *p= ei_pairs; p->n; ++p)
-    {
-        if(p->t != prev_t)
-        {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t))
-            {
-                fputs(p->n, stderr);
-                putc('\n', stderr);
-                assert(!"ei_pairs not grouped by type");
-            }
-            t_seen.insert(p->t);
-            prev_t= p->t;
-        }
-        if(tdAPIMap.count(p->n))
-        {
-            fputs(p->n, stderr);
-            putc('\n', stderr);
-            assert(!"duplicate name in ei_pairs");
-        }
-        tdAPIMap[p->n]= p->t;
+void SaberCheckerAPI::init() {
+  set<CHECKER_TYPE> t_seen;
+  CHECKER_TYPE prev_t = CK_DUMMY;
+  t_seen.insert(CK_DUMMY);
+  for (const ei_pair *p = ei_pairs; p->n; ++p) {
+    if (p->t != prev_t) {
+      // This will detect if you move an entry to another block
+      //  but forget to change the type.
+      if (t_seen.count(p->t)) {
+        fputs(p->n, stderr);
+        putc('\n', stderr);
+        assert(!"ei_pairs not grouped by type");
+      }
+      t_seen.insert(p->t);
+      prev_t = p->t;
     }
+    if (tdAPIMap.count(p->n)) {
+      fputs(p->n, stderr);
+      putc('\n', stderr);
+      assert(!"duplicate name in ei_pairs");
+    }
+    tdAPIMap[p->n] = p->t;
+  }
 }
-
-
-
-

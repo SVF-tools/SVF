@@ -5,7 +5,7 @@
 
 /*
  * Modified by Yulei Sui 2013
-*/
+ */
 
 #include "Util/ExtAPI.h"
 #include <stdio.h>
@@ -13,23 +13,21 @@
 using namespace std;
 using namespace SVF;
 
-ExtAPI* ExtAPI::extAPI = nullptr;
+ExtAPI *ExtAPI::extAPI = nullptr;
 
 namespace {
 
-struct ei_pair
-{
-    const char *n;
-    ExtAPI::extf_t t;
+struct ei_pair {
+  const char *n;
+  ExtAPI::extf_t t;
 };
 
 } // End anonymous namespace
 
-//Each (name, type) pair will be inserted into the map.
-//All entries of the same type must occur together (for error detection).
-static const ei_pair ei_pairs[]=
-{
-    //The current llvm-gcc puts in the \01.
+// Each (name, type) pair will be inserted into the map.
+// All entries of the same type must occur together (for error detection).
+static const ei_pair ei_pairs[] = {
+    // The current llvm-gcc puts in the \01.
     {"\01creat64", ExtAPI::EFT_NOOP},
     {"\01fseeko64", ExtAPI::EFT_NOOP},
     {"\01fstat64", ExtAPI::EFT_NOOP},
@@ -461,7 +459,7 @@ static const ei_pair ei_pairs[]=
     {"XCreateFontSet", ExtAPI::EFT_ALLOC},
     {"XCreateImage", ExtAPI::EFT_ALLOC},
     {"XCreateGC", ExtAPI::EFT_ALLOC},
-    //Returns the prev. defined handler.
+    // Returns the prev. defined handler.
     {"XESetCloseDisplay", ExtAPI::EFT_ALLOC},
     {"XGetImage", ExtAPI::EFT_ALLOC},
     {"XGetModifierMapping", ExtAPI::EFT_ALLOC},
@@ -473,12 +471,12 @@ static const ei_pair ei_pairs[]=
     {"XRenderFindStandardFormat", ExtAPI::EFT_ALLOC},
     {"XRenderFindVisualFormat", ExtAPI::EFT_ALLOC},
     {"XOpenDisplay", ExtAPI::EFT_ALLOC},
-    //These 2 return the previous handler.
+    // These 2 return the previous handler.
     {"XSetErrorHandler", ExtAPI::EFT_ALLOC},
     {"XSetIOErrorHandler", ExtAPI::EFT_ALLOC},
     {"XShapeGetRectangles", ExtAPI::EFT_ALLOC},
     {"XShmCreateImage", ExtAPI::EFT_ALLOC},
-    //This returns the handler last passed to XSetAfterFunction().
+    // This returns the handler last passed to XSetAfterFunction().
     {"XSynchronize", ExtAPI::EFT_ALLOC},
     {"XcursorImageCreate", ExtAPI::EFT_ALLOC},
     {"XcursorLibraryLoadImages", ExtAPI::EFT_ALLOC},
@@ -494,7 +492,7 @@ static const ei_pair ei_pairs[]=
     {"art_svp_from_vpath", ExtAPI::EFT_ALLOC},
     {"art_svp_vpath_stroke", ExtAPI::EFT_ALLOC},
     {"art_svp_writer_rewind_new", ExtAPI::EFT_ALLOC},
-    //FIXME: returns arg0->svp
+    // FIXME: returns arg0->svp
     {"art_svp_writer_rewind_reap", ExtAPI::EFT_ALLOC},
     {"art_vpath_dash", ExtAPI::EFT_ALLOC},
     {"cairo_create", ExtAPI::EFT_ALLOC},
@@ -518,7 +516,7 @@ static const ei_pair ei_pairs[]=
     {"nhalloc", ExtAPI::EFT_ALLOC},
     {"oballoc", ExtAPI::EFT_ALLOC},
     {"pango_cairo_font_map_create_context", ExtAPI::EFT_ALLOC},
-    //This may also point *arg2 to a new string.
+    // This may also point *arg2 to a new string.
     {"pcre_compile", ExtAPI::EFT_ALLOC},
     {"pcre_study", ExtAPI::EFT_ALLOC},
     {"permalloc", ExtAPI::EFT_ALLOC},
@@ -537,7 +535,7 @@ static const ei_pair ei_pairs[]=
     {"savealloc", ExtAPI::EFT_ALLOC},
     {"setmntent", ExtAPI::EFT_ALLOC},
     {"shmat", ExtAPI::EFT_ALLOC},
-    //These 2 return the previous handler.
+    // These 2 return the previous handler.
     {"__sysv_signal", ExtAPI::EFT_ALLOC},
     {"signal", ExtAPI::EFT_ALLOC},
     {"sigset", ExtAPI::EFT_ALLOC},
@@ -547,12 +545,12 @@ static const ei_pair ei_pairs[]=
     {"xalloc", ExtAPI::EFT_ALLOC},
     {"xcalloc", ExtAPI::EFT_ALLOC},
     {"xmalloc", ExtAPI::EFT_ALLOC},
-    //C++ functions
-    {"_Znwm", ExtAPI::EFT_ALLOC},	// new
-    {"_Znam", ExtAPI::EFT_ALLOC},	// new []
-    {"_Znaj", ExtAPI::EFT_ALLOC},	// new
-    {"_Znwj", ExtAPI::EFT_ALLOC},	// new []
-    {"__cxa_allocate_exception", ExtAPI::EFT_ALLOC},	// allocate an exception
+    // C++ functions
+    {"_Znwm", ExtAPI::EFT_ALLOC},                    // new
+    {"_Znam", ExtAPI::EFT_ALLOC},                    // new []
+    {"_Znaj", ExtAPI::EFT_ALLOC},                    // new
+    {"_Znwj", ExtAPI::EFT_ALLOC},                    // new []
+    {"__cxa_allocate_exception", ExtAPI::EFT_ALLOC}, // allocate an exception
     {"aligned_alloc", ExtAPI::EFT_ALLOC},
     {"memalign", ExtAPI::EFT_ALLOC},
     {"valloc", ExtAPI::EFT_ALLOC},
@@ -560,7 +558,7 @@ static const ei_pair ei_pairs[]=
     {"VOS_MemAlloc", ExtAPI::EFT_ALLOC},
 
     {"\01mmap64", ExtAPI::EFT_NOSTRUCT_ALLOC},
-    //FIXME: this is like realloc but with arg1.
+    // FIXME: this is like realloc but with arg1.
     {"X509_NAME_oneline", ExtAPI::EFT_NOSTRUCT_ALLOC},
     {"X509_verify_cert_error_string", ExtAPI::EFT_NOSTRUCT_ALLOC},
     {"XBaseFontNameListOfFontSet", ExtAPI::EFT_NOSTRUCT_ALLOC},
@@ -615,7 +613,7 @@ static const ei_pair ei_pairs[]=
     {"asctime", ExtAPI::EFT_STAT},
     {"bindtextdomain", ExtAPI::EFT_STAT},
     {"bind_textdomain_codeset", ExtAPI::EFT_STAT},
-    //This is L_A0 when arg0 is not null.
+    // This is L_A0 when arg0 is not null.
     {"ctermid", ExtAPI::EFT_STAT},
     {"dcgettext", ExtAPI::EFT_STAT},
     {"dgettext", ExtAPI::EFT_STAT},
@@ -658,10 +656,10 @@ static const ei_pair ei_pairs[]=
     {"safe_realloc", ExtAPI::EFT_REALLOC},
     {"saferealloc", ExtAPI::EFT_REALLOC},
     {"safexrealloc", ExtAPI::EFT_REALLOC},
-    //FIXME: when arg0 is null, the return points into the string that was
+    // FIXME: when arg0 is null, the return points into the string that was
     //  last passed in arg0 (rather than a new string, as for realloc).
     {"strtok", ExtAPI::EFT_REALLOC},
-    //As above, but also stores the last string into *arg2.
+    // As above, but also stores the last string into *arg2.
     {"strtok_r", ExtAPI::EFT_REALLOC},
     {"xrealloc", ExtAPI::EFT_REALLOC},
 
@@ -691,17 +689,17 @@ static const ei_pair ei_pairs[]=
     {"XFreeGC", ExtAPI::EFT_FREE},
     {"XFreePixmap", ExtAPI::EFT_FREE},
     {"XFree", ExtAPI::EFT_FREE},
-    {"VOS_MemFree", ExtAPI::EFT_FREE}, 
-    //C++ functions
-    {"_ZdaPv", ExtAPI::EFT_FREE},	// delete
-    {"_ZdlPv", ExtAPI::EFT_FREE},	// delete []
+    {"VOS_MemFree", ExtAPI::EFT_FREE},
+    // C++ functions
+    {"_ZdaPv", ExtAPI::EFT_FREE}, // delete
+    {"_ZdlPv", ExtAPI::EFT_FREE}, // delete []
 
     {"__rawmemchr", ExtAPI::EFT_L_A0},
     {"cairo_surface_reference", ExtAPI::EFT_L_A0},
     {"fgets", ExtAPI::EFT_L_A0},
     {"jpeg_std_error", ExtAPI::EFT_L_A0},
     {"memchr", ExtAPI::EFT_L_A0},
-    //This may return a new ptr if the region was moved.
+    // This may return a new ptr if the region was moved.
     {"mremap", ExtAPI::EFT_L_A0},
     {"strchr", ExtAPI::EFT_L_A0},
     {"strerror_r", ExtAPI::EFT_L_A0},
@@ -710,7 +708,7 @@ static const ei_pair ei_pairs[]=
     {"strrchr", ExtAPI::EFT_L_A0},
     {"strstr", ExtAPI::EFT_L_A0},
     {"tmpnam_r", ExtAPI::EFT_L_A0},
-    //cctype
+    // cctype
     {"isalnum", ExtAPI::EFT_L_A0},
     {"isalpha", ExtAPI::EFT_L_A0},
     {"isblank", ExtAPI::EFT_L_A0},
@@ -731,7 +729,7 @@ static const ei_pair ei_pairs[]=
     {"localtime_r", ExtAPI::EFT_L_A1},
     {"realpath", ExtAPI::EFT_L_A1},
     {"\01freopen64", ExtAPI::EFT_L_A2},
-    //FIXME: may do L_A3 if arg5 > 0.
+    // FIXME: may do L_A3 if arg5 > 0.
     {"_XGetAsyncReply", ExtAPI::EFT_L_A2},
     {"freopen", ExtAPI::EFT_L_A2},
     {"freopen64", ExtAPI::EFT_L_A2},
@@ -771,7 +769,7 @@ static const ei_pair ei_pairs[]=
     {"strncat", ExtAPI::EFT_L_A0__A1_A0},
     {"strncpy", ExtAPI::EFT_L_A0__A1_A0},
 
-    //These also set arg1->pw_name etc. to new strings.
+    // These also set arg1->pw_name etc. to new strings.
     {"getpwnam_r", ExtAPI::EFT_A4R_A1},
     {"getpwuid_r", ExtAPI::EFT_A4R_A1},
 
@@ -792,49 +790,61 @@ static const ei_pair ei_pairs[]=
     {"XGetWindowProperty", ExtAPI::EFT_A11R_NEW},
 
     // C++ STL functions
-    // std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
-    {"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_", ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
+    // std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*,
+    // std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+    {"_ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_",
+     ExtAPI::EFT_STD_RB_TREE_INSERT_AND_REBALANCE},
 
     // std::_Rb_tree_increment   and   std::_Rb_tree_decrement
     // TODO: the following side effects seem not to be necessary
-//    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
-//    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base", ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+    //    {"_ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base",
+    //    ExtAPI::EFT_STD_RB_TREE_INCREMENT},
+    //    {"_ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base",
+    //    ExtAPI::EFT_STD_RB_TREE_INCREMENT},
 
     {"_ZNSt8__detail15_List_node_base7_M_hookEPS0_", ExtAPI::EFT_STD_LIST_HOOK},
 
-
     /// string constructor: string (const char *s)
     {"_ZNSsC1EPKcRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcRKS3_",
+     ExtAPI::CPP_EFT_A0R_A1}, // c++11
 
     /// string constructor: string (const char *s, size_t n)
     {"_ZNSsC1EPKcmRKSaIcE", ExtAPI::CPP_EFT_A0R_A1}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1EPKcmRKS3_",
+     ExtAPI::CPP_EFT_A0R_A1}, // c++11
 
     /// string operator=: operator= (const char *s)
     {"_ZNSsaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc", ExtAPI::CPP_EFT_A0R_A1}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSEPKc",
+     ExtAPI::CPP_EFT_A0R_A1}, // c++11
 
     /// string constructor: string (const string &str)
     {"_ZNSsC1ERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_",
+     ExtAPI::CPP_EFT_A0R_A1R}, // c++11
 
     /// string constructor: string (const string &str, size_t pos, size_t len)
     {"_ZNSsC1ERKSsmm", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1ERKS4_mm",
+     ExtAPI::CPP_EFT_A0R_A1R}, // c++11
 
     /// string operator=: operator= (const string &str)
     {"_ZNSsaSERKSs", ExtAPI::CPP_EFT_A0R_A1R}, // c++98
-    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_", ExtAPI::CPP_EFT_A0R_A1R}, // c++11
+    {"_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEaSERKS4_",
+     ExtAPI::CPP_EFT_A0R_A1R}, // c++11
 
     /// std::operator<<: operator<< (const string &str)
-    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_T1_E", ExtAPI::CPP_EFT_A1R}, // c++98
-    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__cxx1112basic_stringIS4_S5_T1_EE", ExtAPI::CPP_EFT_A1R}, // c++11
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKSbIS4_S5_"
+     "T1_E",
+     ExtAPI::CPP_EFT_A1R}, // c++98
+    {"_ZStlsIcSt11char_traitsIcESaIcEERSt13basic_ostreamIT_T0_ES7_RKNSt7__"
+     "cxx1112basic_stringIS4_S5_T1_EE",
+     ExtAPI::CPP_EFT_A1R}, // c++11
 
-    //This must be the last entry.
+    // This must be the last entry.
     {"__dynamic_cast", ExtAPI::CPP_EFT_DYNAMIC_CAST},
-    {0, ExtAPI::EFT_NOOP}
-};
+    {0, ExtAPI::EFT_NOOP}};
 
 /*  FIXME:
  *  SSL_CTX_ctrl, SSL_ctrl - may set the ptr field arg0->x
@@ -860,34 +870,27 @@ static const ei_pair ei_pairs[]=
  *  hasmntopt - returns arg0->mnt_opts
  */
 
-
-void ExtAPI::init()
-{
-    set<extf_t> t_seen;
-    extf_t prev_t= EFT_NOOP;
-    t_seen.insert(EFT_NOOP);
-    for(const ei_pair *p= ei_pairs; p->n; ++p)
-    {
-        if(p->t != prev_t)
-        {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t))
-            {
-                fputs(p->n, stderr);
-                putc('\n', stderr);
-                assert(!"ei_pairs not grouped by type");
-            }
-            t_seen.insert(p->t);
-            prev_t= p->t;
-        }
-        if(info.count(p->n))
-        {
-            fputs(p->n, stderr);
-            putc('\n', stderr);
-            assert(!"duplicate name in ei_pairs");
-        }
-        info[p->n]= p->t;
+void ExtAPI::init() {
+  set<extf_t> t_seen;
+  extf_t prev_t = EFT_NOOP;
+  t_seen.insert(EFT_NOOP);
+  for (const ei_pair *p = ei_pairs; p->n; ++p) {
+    if (p->t != prev_t) {
+      // This will detect if you move an entry to another block
+      //  but forget to change the type.
+      if (t_seen.count(p->t)) {
+        fputs(p->n, stderr);
+        putc('\n', stderr);
+        assert(!"ei_pairs not grouped by type");
+      }
+      t_seen.insert(p->t);
+      prev_t = p->t;
     }
+    if (info.count(p->n)) {
+      fputs(p->n, stderr);
+      putc('\n', stderr);
+      assert(!"duplicate name in ei_pairs");
+    }
+    info[p->n] = p->t;
+  }
 }
-

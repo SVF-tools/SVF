@@ -20,21 +20,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #include "Util/SVFModule.h"
 #include "SVF-FE/SymbolTableBuilder.h"
 #include "Util/SVFUtil.h"
 
 using namespace SVF;
 
-void SVFModule::buildSymbolTableInfo()
-{
-    if (!pagReadFromTXT())
-    {
-        /// building symbol table
-        DBOUT(DGENERAL, SVFUtil::outs() << SVFUtil::pasMsg("Building Symbol table ...\n"));
-        SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
-        SymbolTableBuilder builder(symInfo);
-        builder.buildMemModel(this);
-    }
+void SVFModule::buildSymbolTableInfo() {
+  if (!pagReadFromTXT()) {
+    /// building symbol table
+    DBOUT(DGENERAL, SVFUtil::outs()
+                        << SVFUtil::pasMsg("Building Symbol table ...\n"));
+    SymbolTableInfo *symInfo = SymbolTableInfo::SymbolInfo();
+    SymbolTableBuilder builder(symInfo);
+    builder.buildMemModel(this);
+  }
 }
