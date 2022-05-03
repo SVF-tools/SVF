@@ -30,93 +30,86 @@
 #ifndef ANDERSENMEMSSA_H_
 #define ANDERSENMEMSSA_H_
 
-#include "MemoryModel/PointerAnalysis.h"
 #include "Graphs/SVFGOPT.h"
+#include "MemoryModel/PointerAnalysis.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /*!
  * Dominator frontier used in MSSA
  */
-class MemSSADF : public DominanceFrontier
-{
+class MemSSADF : public DominanceFrontier {
 public:
-    MemSSADF() : DominanceFrontier()
-    {}
+  MemSSADF() : DominanceFrontier() {}
 
-    bool runOnDT(DominatorTree& dt)
-    {
-        releaseMemory();
-        analyze(dt);
-        return false;
-    }
+  bool runOnDT(DominatorTree &dt) {
+    releaseMemory();
+    analyze(dt);
+    return false;
+  }
 };
 
 /*!
  * SVFG Builder
  */
-class SVFGBuilder
-{
+class SVFGBuilder {
 
 public:
-    typedef PointerAnalysis::CallSiteSet CallSiteSet;
-    typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
-    typedef PointerAnalysis::FunctionSet FunctionSet;
-    typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
+  typedef PointerAnalysis::CallSiteSet CallSiteSet;
+  typedef PointerAnalysis::CallEdgeMap CallEdgeMap;
+  typedef PointerAnalysis::FunctionSet FunctionSet;
+  typedef SVFG::SVFGEdgeSetTy SVFGEdgeSet;
 
-    /// Constructor
-    SVFGBuilder(bool _SVFGWithIndCall = false): svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
+  /// Constructor
+  SVFGBuilder(bool _SVFGWithIndCall = false)
+      : svfg(nullptr), SVFGWithIndCall(_SVFGWithIndCall) {}
 
-    /// Destructor
-    virtual ~SVFGBuilder() {}
+  /// Destructor
+  virtual ~SVFGBuilder() {}
 
-    static SVFG* globalSvfg;
+  static SVFG *globalSvfg;
 
-    SVFG* buildPTROnlySVFG(BVDataPTAImpl* pta);
-    SVFG* buildFullSVFG(BVDataPTAImpl* pta);
+  SVFG *buildPTROnlySVFG(BVDataPTAImpl *pta);
+  SVFG *buildFullSVFG(BVDataPTAImpl *pta);
 
-    /// Clean up
-    static void releaseSVFG()
-    {
-        if (globalSvfg)
-            delete globalSvfg;
-        globalSvfg = nullptr;
-    }
-    /// Get SVFG instance
-    inline SVFG* getSVFG() const
-    {
-        return svfg;
-    }
+  /// Clean up
+  static void releaseSVFG() {
+    if (globalSvfg)
+      delete globalSvfg;
+    globalSvfg = nullptr;
+  }
+  /// Get SVFG instance
+  inline SVFG *getSVFG() const { return svfg; }
 
-    /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
-    inline void markValidVFEdge(SVFGEdgeSet& edges)
-    {
-        for(SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it!=eit; ++it)
-            vfEdgesAtIndCallSite.erase(*it);
-    }
-    /// Return true if this is an VF Edge pre-connected by Andersen's analysis
-    inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge* edge)
-    {
-        return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge*>(edge))!=vfEdgesAtIndCallSite.end();
-    }
+  /// Mark feasible VF edge by removing it from set vfEdgesAtIndCallSite
+  inline void markValidVFEdge(SVFGEdgeSet &edges) {
+    for (SVFGEdgeSet::iterator it = edges.begin(), eit = edges.end(); it != eit;
+         ++it)
+      vfEdgesAtIndCallSite.erase(*it);
+  }
+  /// Return true if this is an VF Edge pre-connected by Andersen's analysis
+  inline bool isSpuriousVFEdgeAtIndCallSite(const SVFGEdge *edge) {
+    return vfEdgesAtIndCallSite.find(const_cast<SVFGEdge *>(edge)) !=
+           vfEdgesAtIndCallSite.end();
+  }
 
-    /// Build Memory SSA
-    virtual MemSSA* buildMSSA(BVDataPTAImpl* pta, bool ptrOnlyMSSA);
+  /// Build Memory SSA
+  virtual MemSSA *buildMSSA(BVDataPTAImpl *pta, bool ptrOnlyMSSA);
 
 protected:
-    /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless withAOFI is set true.
-    SVFG* build(BVDataPTAImpl* pta, VFG::VFGK kind);
-    /// Can be rewritten by subclasses
-    virtual void buildSVFG();
-    /// Release global SVFG
-    virtual void releaseMemory();
+  /// Create a DDA SVFG. By default actualOut and FormalIN are removed, unless
+  /// withAOFI is set true.
+  SVFG *build(BVDataPTAImpl *pta, VFG::VFGK kind);
+  /// Can be rewritten by subclasses
+  virtual void buildSVFG();
+  /// Release global SVFG
+  virtual void releaseMemory();
 
-    /// SVFG Edges connected at indirect call/ret sites
-    SVFGEdgeSet vfEdgesAtIndCallSite;
-    SVFG* svfg;
-    /// SVFG with precomputed indirect call edges
-    bool SVFGWithIndCall;
+  /// SVFG Edges connected at indirect call/ret sites
+  SVFGEdgeSet vfEdgesAtIndCallSite;
+  SVFG *svfg;
+  /// SVFG with precomputed indirect call edges
+  bool SVFGWithIndCall;
 };
 
 } // End namespace SVF

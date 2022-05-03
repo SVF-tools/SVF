@@ -61,8 +61,8 @@
 /* Nested includes                                                           */
 /*---------------------------------------------------------------------------*/
 
-#include "mtr.h"
 #include "epd.h"
+#include "mtr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,11 +84,11 @@ extern "C" {
 
 #define CUDD_TRUE 1
 
-#define CUDD_VALUE_TYPE		double
-#define CUDD_OUT_OF_MEM		-1
+#define CUDD_VALUE_TYPE double
+#define CUDD_OUT_OF_MEM -1
 /* The sizes of the subtables and the cache must be powers of two. */
-#define CUDD_UNIQUE_SLOTS	256	/* initial size of subtables */
-#define CUDD_CACHE_SLOTS	262144	/* default size of the cache */
+#define CUDD_UNIQUE_SLOTS 256   /* initial size of subtables */
+#define CUDD_CACHE_SLOTS 262144 /* default size of the cache */
 
 /* Constants for residue functions. */
 
@@ -97,14 +97,14 @@ extern "C" {
 ** number.
 */
 #if SIZEOF_VOID_P == 8 && SIZEOF_INT == 4
-#define CUDD_MAXINDEX		(((DdHalfWord) ~0) >> 1)
+#define CUDD_MAXINDEX (((DdHalfWord)~0) >> 1)
 #else
-#define CUDD_MAXINDEX		((DdHalfWord) ~0)
+#define CUDD_MAXINDEX ((DdHalfWord)~0)
 #endif
 
 /* CUDD_CONST_INDEX is the index of constant nodes.  Currently this
 ** is a synonim for CUDD_MAXINDEX. */
-#define CUDD_CONST_INDEX	CUDD_MAXINDEX
+#define CUDD_CONST_INDEX CUDD_MAXINDEX
 
 /* These constants define the digits used in the representation of
 ** arbitrary precision integers.  The configurations tested use 8, 16,
@@ -112,20 +112,19 @@ extern "C" {
 ** with these definitions.
 */
 #if SIZEOF_LONG == 8
-#define DD_APA_BITS	32
-#define DD_APA_BASE	(1L << DD_APA_BITS)
-#define DD_APA_HEXPRINT	"%08x"
+#define DD_APA_BITS 32
+#define DD_APA_BASE (1L << DD_APA_BITS)
+#define DD_APA_HEXPRINT "%08x"
 #else
-#define DD_APA_BITS	16
-#define DD_APA_BASE	(1 << DD_APA_BITS)
-#define DD_APA_HEXPRINT	"%04x"
+#define DD_APA_BITS 16
+#define DD_APA_BASE (1 << DD_APA_BITS)
+#define DD_APA_HEXPRINT "%04x"
 #endif
-#define DD_APA_MASK	(DD_APA_BASE - 1)
+#define DD_APA_MASK (DD_APA_BASE - 1)
 
 /*---------------------------------------------------------------------------*/
 /* Stucture declarations                                                     */
 /*---------------------------------------------------------------------------*/
-
 
 /*---------------------------------------------------------------------------*/
 /* Type declarations                                                         */
@@ -139,30 +138,29 @@ extern "C" {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_REORDER_SAME,
-    CUDD_REORDER_NONE,
-    CUDD_REORDER_RANDOM,
-    CUDD_REORDER_RANDOM_PIVOT,
-    CUDD_REORDER_SIFT,
-    CUDD_REORDER_SIFT_CONVERGE,
-    CUDD_REORDER_SYMM_SIFT,
-    CUDD_REORDER_SYMM_SIFT_CONV,
-    CUDD_REORDER_WINDOW2,
-    CUDD_REORDER_WINDOW3,
-    CUDD_REORDER_WINDOW4,
-    CUDD_REORDER_WINDOW2_CONV,
-    CUDD_REORDER_WINDOW3_CONV,
-    CUDD_REORDER_WINDOW4_CONV,
-    CUDD_REORDER_GROUP_SIFT,
-    CUDD_REORDER_GROUP_SIFT_CONV,
-    CUDD_REORDER_ANNEALING,
-    CUDD_REORDER_GENETIC,
-    CUDD_REORDER_LINEAR,
-    CUDD_REORDER_LINEAR_CONVERGE,
-    CUDD_REORDER_LAZY_SIFT,
-    CUDD_REORDER_EXACT
+  CUDD_REORDER_SAME,
+  CUDD_REORDER_NONE,
+  CUDD_REORDER_RANDOM,
+  CUDD_REORDER_RANDOM_PIVOT,
+  CUDD_REORDER_SIFT,
+  CUDD_REORDER_SIFT_CONVERGE,
+  CUDD_REORDER_SYMM_SIFT,
+  CUDD_REORDER_SYMM_SIFT_CONV,
+  CUDD_REORDER_WINDOW2,
+  CUDD_REORDER_WINDOW3,
+  CUDD_REORDER_WINDOW4,
+  CUDD_REORDER_WINDOW2_CONV,
+  CUDD_REORDER_WINDOW3_CONV,
+  CUDD_REORDER_WINDOW4_CONV,
+  CUDD_REORDER_GROUP_SIFT,
+  CUDD_REORDER_GROUP_SIFT_CONV,
+  CUDD_REORDER_ANNEALING,
+  CUDD_REORDER_GENETIC,
+  CUDD_REORDER_LINEAR,
+  CUDD_REORDER_LINEAR_CONVERGE,
+  CUDD_REORDER_LAZY_SIFT,
+  CUDD_REORDER_EXACT
 } Cudd_ReorderingType;
-
 
 /**Enum************************************************************************
 
@@ -172,18 +170,17 @@ typedef enum {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_NO_CHECK,
-    CUDD_GROUP_CHECK,
-    CUDD_GROUP_CHECK2,
-    CUDD_GROUP_CHECK3,
-    CUDD_GROUP_CHECK4,
-    CUDD_GROUP_CHECK5,
-    CUDD_GROUP_CHECK6,
-    CUDD_GROUP_CHECK7,
-    CUDD_GROUP_CHECK8,
-    CUDD_GROUP_CHECK9
+  CUDD_NO_CHECK,
+  CUDD_GROUP_CHECK,
+  CUDD_GROUP_CHECK2,
+  CUDD_GROUP_CHECK3,
+  CUDD_GROUP_CHECK4,
+  CUDD_GROUP_CHECK5,
+  CUDD_GROUP_CHECK6,
+  CUDD_GROUP_CHECK7,
+  CUDD_GROUP_CHECK8,
+  CUDD_GROUP_CHECK9
 } Cudd_AggregationType;
-
 
 /**Enum************************************************************************
 
@@ -193,12 +190,11 @@ typedef enum {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_PRE_GC_HOOK,
-    CUDD_POST_GC_HOOK,
-    CUDD_PRE_REORDERING_HOOK,
-    CUDD_POST_REORDERING_HOOK
+  CUDD_PRE_GC_HOOK,
+  CUDD_POST_GC_HOOK,
+  CUDD_PRE_REORDERING_HOOK,
+  CUDD_POST_REORDERING_HOOK
 } Cudd_HookType;
-
 
 /**Enum************************************************************************
 
@@ -208,15 +204,14 @@ typedef enum {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_NO_ERROR,
-    CUDD_MEMORY_OUT,
-    CUDD_TOO_MANY_NODES,
-    CUDD_MAX_MEM_EXCEEDED,
-    CUDD_TIMEOUT_EXPIRED,
-    CUDD_INVALID_ARG,
-    CUDD_INTERNAL_ERROR
+  CUDD_NO_ERROR,
+  CUDD_MEMORY_OUT,
+  CUDD_TOO_MANY_NODES,
+  CUDD_MAX_MEM_EXCEEDED,
+  CUDD_TIMEOUT_EXPIRED,
+  CUDD_INVALID_ARG,
+  CUDD_INTERNAL_ERROR
 } Cudd_ErrorType;
-
 
 /**Enum************************************************************************
 
@@ -226,12 +221,11 @@ typedef enum {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_LAZY_NONE,
-    CUDD_LAZY_SOFT_GROUP,
-    CUDD_LAZY_HARD_GROUP,
-    CUDD_LAZY_UNGROUP
+  CUDD_LAZY_NONE,
+  CUDD_LAZY_SOFT_GROUP,
+  CUDD_LAZY_HARD_GROUP,
+  CUDD_LAZY_UNGROUP
 } Cudd_LazyGroupType;
-
 
 /**Enum************************************************************************
 
@@ -241,14 +235,13 @@ typedef enum {
 
 ******************************************************************************/
 typedef enum {
-    CUDD_VAR_PRIMARY_INPUT,
-    CUDD_VAR_PRESENT_STATE,
-    CUDD_VAR_NEXT_STATE
+  CUDD_VAR_PRIMARY_INPUT,
+  CUDD_VAR_PRESENT_STATE,
+  CUDD_VAR_NEXT_STATE
 } Cudd_VariableType;
 
-
 #if SIZEOF_VOID_P == 8 && SIZEOF_INT == 4
-typedef unsigned int   DdHalfWord;
+typedef unsigned int DdHalfWord;
 #else
 typedef unsigned short DdHalfWord;
 #endif
@@ -256,19 +249,19 @@ typedef unsigned short DdHalfWord;
 typedef struct DdNode DdNode;
 
 typedef struct DdChildren {
-    struct DdNode *T;
-    struct DdNode *E;
+  struct DdNode *T;
+  struct DdNode *E;
 } DdChildren;
 
 /* The DdNode structure is the only one exported out of the package */
 struct DdNode {
-    DdHalfWord index;
-    DdHalfWord ref;		/* reference count */
-    DdNode *next;		/* next pointer for unique table */
-    union {
-	CUDD_VALUE_TYPE value;	/* for constant nodes */
-	DdChildren kids;	/* for internal nodes */
-    } type;
+  DdHalfWord index;
+  DdHalfWord ref; /* reference count */
+  DdNode *next;   /* next pointer for unique table */
+  union {
+    CUDD_VALUE_TYPE value; /* for constant nodes */
+    DdChildren kids;       /* for internal nodes */
+  } type;
 };
 
 typedef struct DdManager DdManager;
@@ -294,8 +287,8 @@ typedef int (*DD_HFP)(DdManager *, const char *, void *);
 /* Type of apply operator. */
 /* Type of monadic apply operator. */
 /* Types of cache tag functions. */
-typedef DdNode * (*DD_CTFP)(DdManager *, DdNode *, DdNode *);
-typedef DdNode * (*DD_CTFP1)(DdManager *, DdNode *);
+typedef DdNode *(*DD_CTFP)(DdManager *, DdNode *, DdNode *);
+typedef DdNode *(*DD_CTFP1)(DdManager *, DdNode *);
 /* Type of memory-out function. */
 typedef void (*DD_OOMFP)(long);
 /* Type of comparison function for qsort. */
@@ -305,11 +298,9 @@ typedef int (*DD_QSFP)(const void *, const void *);
 /* Variable declarations                                                     */
 /*---------------------------------------------------------------------------*/
 
-
 /*---------------------------------------------------------------------------*/
 /* Macro declarations                                                        */
 /*---------------------------------------------------------------------------*/
-
 
 /**Macro***********************************************************************
 
@@ -327,7 +318,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_IsConstant(node) ((Cudd_Regular(node))->index == CUDD_CONST_INDEX)
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Complements a DD.]
@@ -342,7 +332,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_Not(node) ((DdNode *)((long)(node) ^ 01))
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Complements a DD if a condition is true.]
@@ -356,8 +345,7 @@ typedef int (*DD_QSFP)(const void *, const void *);
   SeeAlso      [Cudd_Not]
 
 ******************************************************************************/
-#define Cudd_NotCond(node,c) ((DdNode *)((long)(node) ^ (c)))
-
+#define Cudd_NotCond(node, c) ((DdNode *)((long)(node) ^ (c)))
 
 /**Macro***********************************************************************
 
@@ -372,7 +360,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_Regular(node) ((DdNode *)((unsigned long)(node) & ~01))
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Returns the complemented version of a pointer.]
@@ -386,7 +373,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_Complement(node) ((DdNode *)((unsigned long)(node) | 01))
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Returns 1 if a pointer is complemented.]
@@ -398,8 +384,7 @@ typedef int (*DD_QSFP)(const void *, const void *);
   SeeAlso      [Cudd_Regular Cudd_Complement]
 
 ******************************************************************************/
-#define Cudd_IsComplement(node)	((int) ((long) (node) & 01))
-
+#define Cudd_IsComplement(node) ((int)((long)(node)&01))
 
 /**Macro***********************************************************************
 
@@ -415,7 +400,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_T(node) ((Cudd_Regular(node))->type.kids.T)
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Returns the else child of an internal node.]
@@ -430,7 +414,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
 ******************************************************************************/
 #define Cudd_E(node) ((Cudd_Regular(node))->type.kids.E)
 
-
 /**Macro***********************************************************************
 
   Synopsis     [Returns the value of a constant node.]
@@ -443,7 +426,6 @@ typedef int (*DD_QSFP)(const void *, const void *);
   SeeAlso      [Cudd_T Cudd_E]
 
 ******************************************************************************/
-
 
 /**Macro***********************************************************************
 
@@ -459,8 +441,7 @@ typedef int (*DD_QSFP)(const void *, const void *);
   SeeAlso      [Cudd_ReadPerm]
 
 ******************************************************************************/
-#define Cudd_ReadIndex(dd,index) (Cudd_ReadPerm(dd,index))
-
+#define Cudd_ReadIndex(dd, index) (Cudd_ReadPerm(dd, index))
 
 /**Macro***********************************************************************
 
@@ -491,11 +472,10 @@ typedef int (*DD_QSFP)(const void *, const void *);
   Cudd_IsGenEmpty Cudd_AutodynDisable]
 
 ******************************************************************************/
-#define Cudd_ForeachCube(manager, f, gen, cube, value)\
-    for((gen) = Cudd_FirstCube(manager, f, &cube, &value);\
-	Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;\
-	(void) Cudd_NextCube(gen, &cube, &value))
-
+#define Cudd_ForeachCube(manager, f, gen, cube, value)                         \
+  for ((gen) = Cudd_FirstCube(manager, f, &cube, &value);                      \
+       Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;                   \
+       (void)Cudd_NextCube(gen, &cube, &value))
 
 /**Macro***********************************************************************
 
@@ -523,11 +503,10 @@ typedef int (*DD_QSFP)(const void *, const void *);
   Cudd_IsGenEmpty]
 
 ******************************************************************************/
-#define Cudd_ForeachPrime(manager, l, u, gen, cube)\
-    for((gen) = Cudd_FirstPrime(manager, l, u, &cube);\
-	Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;\
-	(void) Cudd_NextPrime(gen, &cube))
-
+#define Cudd_ForeachPrime(manager, l, u, gen, cube)                            \
+  for ((gen) = Cudd_FirstPrime(manager, l, u, &cube);                          \
+       Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;                   \
+       (void)Cudd_NextPrime(gen, &cube))
 
 /**Macro***********************************************************************
 
@@ -557,11 +536,10 @@ typedef int (*DD_QSFP)(const void *, const void *);
   Cudd_IsGenEmpty Cudd_AutodynDisable]
 
 ******************************************************************************/
-#define Cudd_ForeachNode(manager, f, gen, node)\
-    for((gen) = Cudd_FirstNode(manager, f, &node);\
-	Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;\
-	(void) Cudd_NextNode(gen, &node))
-
+#define Cudd_ForeachNode(manager, f, gen, node)                                \
+  for ((gen) = Cudd_FirstNode(manager, f, &node);                              \
+       Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;                   \
+       (void)Cudd_NextNode(gen, &node))
 
 /**Macro***********************************************************************
 
@@ -591,12 +569,10 @@ typedef int (*DD_QSFP)(const void *, const void *);
   Cudd_IsGenEmpty Cudd_AutodynDisable]
 
 ******************************************************************************/
-#define Cudd_zddForeachPath(manager, f, gen, path)\
-    for((gen) = Cudd_zddFirstPath(manager, f, &path);\
-	Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;\
-	(void) Cudd_zddNextPath(gen, &path))
-
-
+#define Cudd_zddForeachPath(manager, f, gen, path)                             \
+  for ((gen) = Cudd_zddFirstPath(manager, f, &path);                           \
+       Cudd_IsGenEmpty(gen) ? Cudd_GenFree(gen) : CUDD_TRUE;                   \
+       (void)Cudd_zddNextPath(gen, &path))
 
 /**AutomaticStart*************************************************************/
 
@@ -604,71 +580,82 @@ typedef int (*DD_QSFP)(const void *, const void *);
 /* Function prototypes                                                       */
 /*---------------------------------------------------------------------------*/
 
-extern DdNode * Cudd_bddIthVar (DdManager *dd, int i);
-extern DdNode * Cudd_ReadOne (DdManager *dd);
-extern DdNode * Cudd_ReadLogicZero (DdManager *dd);
-extern void Cudd_SetMinHit (DdManager *dd, unsigned int hr);
-extern int Cudd_ReadSize (DdManager *dd);
-extern void Cudd_FreeTree (DdManager *dd);
-extern void Cudd_FreeZddTree (DdManager *dd);
-extern int Cudd_ReadPerm (DdManager *dd, int i);
-extern CUDD_VALUE_TYPE Cudd_ReadEpsilon (DdManager *dd);
-extern void Cudd_SetEpsilon (DdManager *dd, CUDD_VALUE_TYPE ep);
-extern unsigned long Cudd_ReadMemoryInUse (DdManager *dd);
-extern long Cudd_ReadNodeCount (DdManager *dd);
-extern int Cudd_RemoveHook (DdManager *dd, DD_HFP f, Cudd_HookType where);
-extern DdNode * Cudd_addIteConstant (DdManager *dd, DdNode *f, DdNode *g, DdNode *h);
-extern DdNode * Cudd_addEvalConst (DdManager *dd, DdNode *f, DdNode *g);
-extern int Cudd_addLeq (DdManager * dd, DdNode * f, DdNode * g);
-extern DdNode * Cudd_addCmpl (DdManager *dd, DdNode *f);
-extern DdNode * Cudd_bddExistAbstract (DdManager *manager, DdNode *f, DdNode *cube);
-extern int Cudd_bddVarIsDependent (DdManager *dd, DdNode *f, DdNode *var);
-extern DdNode * Cudd_bddIteConstant (DdManager *dd, DdNode *f, DdNode *g, DdNode *h);
-extern DdNode * Cudd_bddIntersect (DdManager *dd, DdNode *f, DdNode *g);
-extern DdNode * Cudd_bddAnd (DdManager *dd, DdNode *f, DdNode *g);
-extern DdNode * Cudd_bddAndLimit (DdManager *dd, DdNode *f, DdNode *g, unsigned int limit);
-extern DdNode * Cudd_bddOrLimit (DdManager *dd, DdNode *f, DdNode *g, unsigned int limit);
-extern DdNode * Cudd_bddXor (DdManager *dd, DdNode *f, DdNode *g);
-extern int Cudd_bddLeq (DdManager *dd, DdNode *f, DdNode *g);
-extern int Cudd_DebugCheck (DdManager *table);
-extern int Cudd_CheckKeys (DdManager *table);
-extern DdNode * Cudd_Cofactor (DdManager *dd, DdNode *f, DdNode *g);
-extern int Cudd_CheckCube (DdManager *dd, DdNode *g);
-extern DdManager * Cudd_Init (unsigned int numVars, unsigned int numVarsZ, unsigned int numSlots, unsigned int cacheSize, unsigned long maxMemory);
-extern void Cudd_Quit (DdManager *unique);
-extern int Cudd_PrintLinear (DdManager *table);
-extern void Cudd_Ref (DdNode *n);
-extern void Cudd_RecursiveDeref (DdManager *table, DdNode *n);
-extern void Cudd_IterDerefBdd (DdManager *table, DdNode *n);
-extern void Cudd_RecursiveDerefZdd (DdManager *table, DdNode *n);
-extern void Cudd_Deref (DdNode *node);
-extern int Cudd_ReduceHeap (DdManager *table, Cudd_ReorderingType heuristic, int minsize);
-extern DdNode * Cudd_LargestCube (DdManager *manager, DdNode *f, int *length);
-extern DdNode * Cudd_Decreasing (DdManager *dd, DdNode *f, int i);
-extern int Cudd_EquivDC (DdManager *dd, DdNode *F, DdNode *G, DdNode *D);
-extern int Cudd_bddLeqUnless (DdManager *dd, DdNode *f, DdNode *g, DdNode *D);
-extern int Cudd_EqualSupNorm (DdManager *dd, DdNode *f, DdNode *g, CUDD_VALUE_TYPE tolerance, int pr);
-extern DdNode * Cudd_bddMakePrime (DdManager *dd, DdNode *cube, DdNode *f);
-extern double Cudd_CountMinterm (DdManager *manager, DdNode *node, int nvars);
-extern DdGen * Cudd_FirstCube (DdManager *dd, DdNode *f, int **cube, CUDD_VALUE_TYPE *value);
-extern int Cudd_NextCube (DdGen *gen, int **cube, CUDD_VALUE_TYPE *value);
-extern DdGen * Cudd_FirstPrime(DdManager *dd, DdNode *l, DdNode *u, int **cube);
+extern DdNode *Cudd_bddIthVar(DdManager *dd, int i);
+extern DdNode *Cudd_ReadOne(DdManager *dd);
+extern DdNode *Cudd_ReadLogicZero(DdManager *dd);
+extern void Cudd_SetMinHit(DdManager *dd, unsigned int hr);
+extern int Cudd_ReadSize(DdManager *dd);
+extern void Cudd_FreeTree(DdManager *dd);
+extern void Cudd_FreeZddTree(DdManager *dd);
+extern int Cudd_ReadPerm(DdManager *dd, int i);
+extern CUDD_VALUE_TYPE Cudd_ReadEpsilon(DdManager *dd);
+extern void Cudd_SetEpsilon(DdManager *dd, CUDD_VALUE_TYPE ep);
+extern unsigned long Cudd_ReadMemoryInUse(DdManager *dd);
+extern long Cudd_ReadNodeCount(DdManager *dd);
+extern int Cudd_RemoveHook(DdManager *dd, DD_HFP f, Cudd_HookType where);
+extern DdNode *Cudd_addIteConstant(DdManager *dd, DdNode *f, DdNode *g,
+                                   DdNode *h);
+extern DdNode *Cudd_addEvalConst(DdManager *dd, DdNode *f, DdNode *g);
+extern int Cudd_addLeq(DdManager *dd, DdNode *f, DdNode *g);
+extern DdNode *Cudd_addCmpl(DdManager *dd, DdNode *f);
+extern DdNode *Cudd_bddExistAbstract(DdManager *manager, DdNode *f,
+                                     DdNode *cube);
+extern int Cudd_bddVarIsDependent(DdManager *dd, DdNode *f, DdNode *var);
+extern DdNode *Cudd_bddIteConstant(DdManager *dd, DdNode *f, DdNode *g,
+                                   DdNode *h);
+extern DdNode *Cudd_bddIntersect(DdManager *dd, DdNode *f, DdNode *g);
+extern DdNode *Cudd_bddAnd(DdManager *dd, DdNode *f, DdNode *g);
+extern DdNode *Cudd_bddAndLimit(DdManager *dd, DdNode *f, DdNode *g,
+                                unsigned int limit);
+extern DdNode *Cudd_bddOrLimit(DdManager *dd, DdNode *f, DdNode *g,
+                               unsigned int limit);
+extern DdNode *Cudd_bddXor(DdManager *dd, DdNode *f, DdNode *g);
+extern int Cudd_bddLeq(DdManager *dd, DdNode *f, DdNode *g);
+extern int Cudd_DebugCheck(DdManager *table);
+extern int Cudd_CheckKeys(DdManager *table);
+extern DdNode *Cudd_Cofactor(DdManager *dd, DdNode *f, DdNode *g);
+extern int Cudd_CheckCube(DdManager *dd, DdNode *g);
+extern DdManager *Cudd_Init(unsigned int numVars, unsigned int numVarsZ,
+                            unsigned int numSlots, unsigned int cacheSize,
+                            unsigned long maxMemory);
+extern void Cudd_Quit(DdManager *unique);
+extern int Cudd_PrintLinear(DdManager *table);
+extern void Cudd_Ref(DdNode *n);
+extern void Cudd_RecursiveDeref(DdManager *table, DdNode *n);
+extern void Cudd_IterDerefBdd(DdManager *table, DdNode *n);
+extern void Cudd_RecursiveDerefZdd(DdManager *table, DdNode *n);
+extern void Cudd_Deref(DdNode *node);
+extern int Cudd_ReduceHeap(DdManager *table, Cudd_ReorderingType heuristic,
+                           int minsize);
+extern DdNode *Cudd_LargestCube(DdManager *manager, DdNode *f, int *length);
+extern DdNode *Cudd_Decreasing(DdManager *dd, DdNode *f, int i);
+extern int Cudd_EquivDC(DdManager *dd, DdNode *F, DdNode *G, DdNode *D);
+extern int Cudd_bddLeqUnless(DdManager *dd, DdNode *f, DdNode *g, DdNode *D);
+extern int Cudd_EqualSupNorm(DdManager *dd, DdNode *f, DdNode *g,
+                             CUDD_VALUE_TYPE tolerance, int pr);
+extern DdNode *Cudd_bddMakePrime(DdManager *dd, DdNode *cube, DdNode *f);
+extern double Cudd_CountMinterm(DdManager *manager, DdNode *node, int nvars);
+extern DdGen *Cudd_FirstCube(DdManager *dd, DdNode *f, int **cube,
+                             CUDD_VALUE_TYPE *value);
+extern int Cudd_NextCube(DdGen *gen, int **cube, CUDD_VALUE_TYPE *value);
+extern DdGen *Cudd_FirstPrime(DdManager *dd, DdNode *l, DdNode *u, int **cube);
 extern int Cudd_NextPrime(DdGen *gen, int **cube);
-extern int Cudd_BddToCubeArray (DdManager *dd, DdNode *cube, int *array);
-extern DdGen * Cudd_FirstNode (DdManager *dd, DdNode *f, DdNode **node);
-extern int Cudd_NextNode (DdGen *gen, DdNode **node);
-extern int Cudd_GenFree (DdGen *gen);
-extern int Cudd_IsGenEmpty (DdGen *gen);
-extern long Cudd_Random (void);
-extern void Cudd_Srandom (long seed);
-extern void Cudd_OutOfMem (long size);
-extern int Cudd_zddReduceHeap (DdManager *table, Cudd_ReorderingType heuristic, int minsize);
-extern DdNode * Cudd_zddDiffConst (DdManager *zdd, DdNode *P, DdNode *Q);
-extern DdGen * Cudd_zddFirstPath (DdManager *zdd, DdNode *f, int **path);
-extern int Cudd_zddNextPath (DdGen *gen, int **path);
-extern int Cudd_bddReadPairIndex (DdManager *dd, int index);
-extern int Cudd_bddIsVarToBeGrouped (DdManager *dd, int index);
-extern int Cudd_bddIsVarToBeUngrouped (DdManager *dd, int index);
+extern int Cudd_BddToCubeArray(DdManager *dd, DdNode *cube, int *array);
+extern DdGen *Cudd_FirstNode(DdManager *dd, DdNode *f, DdNode **node);
+extern int Cudd_NextNode(DdGen *gen, DdNode **node);
+extern int Cudd_GenFree(DdGen *gen);
+extern int Cudd_IsGenEmpty(DdGen *gen);
+extern long Cudd_Random(void);
+extern void Cudd_Srandom(long seed);
+extern void Cudd_OutOfMem(long size);
+extern int Cudd_zddReduceHeap(DdManager *table, Cudd_ReorderingType heuristic,
+                              int minsize);
+extern DdNode *Cudd_zddDiffConst(DdManager *zdd, DdNode *P, DdNode *Q);
+extern DdGen *Cudd_zddFirstPath(DdManager *zdd, DdNode *f, int **path);
+extern int Cudd_zddNextPath(DdGen *gen, int **path);
+extern int Cudd_bddReadPairIndex(DdManager *dd, int index);
+extern int Cudd_bddIsVarToBeGrouped(DdManager *dd, int index);
+extern int Cudd_bddIsVarToBeUngrouped(DdManager *dd, int index);
 
 /**AutomaticEnd***************************************************************/
 

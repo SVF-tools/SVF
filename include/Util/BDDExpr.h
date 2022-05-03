@@ -40,142 +40,130 @@ namespace SVF {
 
 class BDDExprManager {
 public:
-    typedef DdNode BDDExpr;
-    typedef Map<u32_t, BDDExpr *> IndexToBDDExpr;
+  typedef DdNode BDDExpr;
+  typedef Map<u32_t, BDDExpr *> IndexToBDDExpr;
+
 private:
-    static BDDExprManager *bddExprMgr;
-    IndexToBDDExpr indexToBddCondMap;
-    DdManager *m_bdd_mgr;
+  static BDDExprManager *bddExprMgr;
+  IndexToBDDExpr indexToBddCondMap;
+  DdManager *m_bdd_mgr;
 
-    inline BDDExpr *BddOne() const {
-        return Cudd_ReadOne(m_bdd_mgr);
-    }
+  inline BDDExpr *BddOne() const { return Cudd_ReadOne(m_bdd_mgr); }
 
-    inline BDDExpr *BddZero() const {
-        return Cudd_ReadLogicZero(m_bdd_mgr);
-    }
+  inline BDDExpr *BddZero() const { return Cudd_ReadLogicZero(m_bdd_mgr); }
 
-    /// Constructor
-    BDDExprManager();
+  /// Constructor
+  BDDExprManager();
 
 public:
-    typedef Map<const BDDExpr *, const Instruction *> CondToTermInstMap;    // map a condition to its branch instruction
-    static u32_t totalCondNum; // a counter for fresh condition
-    /// Singleton design here to make sure we only have one instance during any analysis
-    //@{
-    static BDDExprManager *getBDDExprMgr();
+  typedef Map<const BDDExpr *, const Instruction *>
+      CondToTermInstMap;     // map a condition to its branch instruction
+  static u32_t totalCondNum; // a counter for fresh condition
+  /// Singleton design here to make sure we only have one instance during any
+  /// analysis
+  //@{
+  static BDDExprManager *getBDDExprMgr();
 
-    static void releaseBDDExprMgr() {
-        delete bddExprMgr;
-        bddExprMgr = nullptr;
-    }
-    //@}
+  static void releaseBDDExprMgr() {
+    delete bddExprMgr;
+    bddExprMgr = nullptr;
+  }
+  //@}
 
-    /// Destructor
-    virtual ~BDDExprManager();
+  /// Destructor
+  virtual ~BDDExprManager();
 
-    BDDExpr *createCond(u32_t i) {
-        assert(indexToBddCondMap.find(i) == indexToBddCondMap.end() &&
-               "This should be fresh index to create new BDD");
-        BDDExpr *bddCond = Cudd_bddIthVar(m_bdd_mgr, i);
-        return indexToBddCondMap.emplace(i, bddCond).first->second;
-    }
+  BDDExpr *createCond(u32_t i) {
+    assert(indexToBddCondMap.find(i) == indexToBddCondMap.end() &&
+           "This should be fresh index to create new BDD");
+    BDDExpr *bddCond = Cudd_bddIthVar(m_bdd_mgr, i);
+    return indexToBddCondMap.emplace(i, bddCond).first->second;
+  }
 
-    /// Create a fresh condition to encode each program branch
-    virtual BDDExpr *createFreshBranchCond(const Instruction *inst);
+  /// Create a fresh condition to encode each program branch
+  virtual BDDExpr *createFreshBranchCond(const Instruction *inst);
 
-    /// Return the number of condition expressions
-    virtual inline u32_t getCondNumber() {
-        return Cudd_ReadNodeCount(m_bdd_mgr);
-    }
+  /// Return the number of condition expressions
+  virtual inline u32_t getCondNumber() { return Cudd_ReadNodeCount(m_bdd_mgr); }
 
+  /// Return the unique true condition
+  inline BDDExpr *getTrueCond() const { return trueCond; }
 
-    /// Return the unique true condition
-    inline BDDExpr *getTrueCond() const {
-        return trueCond;
-    }
+  /// Return the unique false condition
+  inline BDDExpr *getFalseCond() const { return falseCond; }
 
-    /// Return the unique false condition
-    inline BDDExpr *getFalseCond() const {
-        return falseCond;
-    }
+  /// Operations on conditions.
+  //@{
+  virtual BDDExpr *AND(BDDExpr *lhs, BDDExpr *rhs);
 
-    /// Operations on conditions.
-    //@{
-    virtual BDDExpr *AND(BDDExpr *lhs, BDDExpr *rhs);
+  virtual BDDExpr *OR(BDDExpr *lhs, BDDExpr *rhs);
 
-    virtual BDDExpr *OR(BDDExpr *lhs, BDDExpr *rhs);
+  virtual BDDExpr *NEG(BDDExpr *lhs);
+  //@}
 
-    virtual BDDExpr *NEG(BDDExpr *lhs);
-    //@}
+  virtual bool isNegCond(const BDDExpr *cond) { return false; }
 
-    virtual bool isNegCond(const BDDExpr *cond) {
-        return false;
-    }
+  /// Whether the condition is satisfiable
+  virtual bool isSatisfiable(const BDDExpr *cond) {
+    return cond != getFalseCond();
+  }
 
-    /// Whether the condition is satisfiable
-    virtual bool isSatisfiable(const BDDExpr *cond) {
-        return cond != getFalseCond();
-    }
+  /// Whether lhs and rhs are equivalent branch conditions
+  virtual bool isEquivalentBranchCond(const BDDExpr *lhs, const BDDExpr *rhs) {
+    return lhs == rhs;
+  }
 
-    /// Whether lhs and rhs are equivalent branch conditions
-    virtual bool isEquivalentBranchCond(const BDDExpr *lhs, const BDDExpr *rhs){
-        return lhs == rhs;
-    }
+  /// Whether **All Paths** are reachable
+  bool isAllPathReachable(const BDDExpr *e);
 
-    /// Whether **All Paths** are reachable
-    bool isAllPathReachable(const BDDExpr *e);
+  /// Get condition using condition id (z3 ast id)
+  virtual BDDExpr *getCond(u32_t id) {
+    auto it = indexToBddCondMap.find(id);
+    assert(it != indexToBddCondMap.end() && "condition not found!");
+    return it->second;
+  }
 
-    /// Get condition using condition id (z3 ast id)
-    virtual BDDExpr *getCond(u32_t id) {
-        auto it = indexToBddCondMap.find(id);
-        assert(it != indexToBddCondMap.end() && "condition not found!");
-        return it->second;
-    }
+  /// Get/Set llvm conditional expression
+  //{@
+  inline const Instruction *getCondInst(const BDDExpr *cond) const {
+    CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
+    assert(it != condToInstMap.end() && "this should be a fresh condition");
+    return it->second;
+  }
 
-    /// Get/Set llvm conditional expression
-    //{@
-    inline const Instruction *getCondInst(const BDDExpr *cond) const {
-        CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
-        assert(it != condToInstMap.end() && "this should be a fresh condition");
-        return it->second;
-    }
+  inline void setCondInst(const BDDExpr *cond, const Instruction *inst) {
+    assert(condToInstMap.find(cond) == condToInstMap.end() &&
+           "this should be a fresh condition");
+    condToInstMap[cond] = inst;
+  }
+  //@}
 
-    inline void setCondInst(const BDDExpr *cond, const Instruction *inst) {
-        assert(condToInstMap.find(cond) == condToInstMap.end() && "this should be a fresh condition");
-        condToInstMap[cond] = inst;
-    }
-    //@}
+  /**
+   * Utilities for dumping conditions. These methods use global functions from
+   * CUDD package and they can be removed outside this class scope to be used by
+   * others.
+   */
+  void ddClearFlag(BDDExpr *f) const;
 
-    /**
-     * Utilities for dumping conditions. These methods use global functions from CUDD
-     * package and they can be removed outside this class scope to be used by others.
-     */
-    void ddClearFlag(BDDExpr *f) const;
+  void BddSupportStep(BDDExpr *f, NodeBS &support) const;
 
-    void BddSupportStep(BDDExpr *f, NodeBS &support) const;
+  void extractSubConds(const BDDExpr *f, NodeBS &support) const;
 
-    void extractSubConds(const BDDExpr *f, NodeBS &support) const;
+  void dump(const BDDExpr *lhs, OutStream &O);
 
-    void dump(const BDDExpr *lhs, OutStream &O);
+  std::string dumpStr(const BDDExpr *e) const;
 
-    std::string dumpStr(const BDDExpr *e) const;
-
-    inline std::string getMemUsage() {
-        return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
-    }
+  inline std::string getMemUsage() {
+    return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
+  }
 
 protected:
-    static BDDExpr *trueCond;
-    static BDDExpr *falseCond;
+  static BDDExpr *trueCond;
+  static BDDExpr *falseCond;
 
 private:
-
-    CondToTermInstMap condToInstMap; ///< map condition to llvm instruction
-
+  CondToTermInstMap condToInstMap; ///< map condition to llvm instruction
 };
-
-
 
 } // End namespace SVF
 

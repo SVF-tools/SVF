@@ -14,8 +14,7 @@
 
 #include <Util/CoreBitVector.h>
 
-namespace SVF
-{
+namespace SVF {
 
 /// A contiguous bit vector in which trailing 0s are stripped.
 /// Does not shrink - only grows. This isn't a problem for
@@ -28,28 +27,27 @@ namespace SVF
 /// always contain a word for 0 till the last ever set bit.
 /// TODO: if we change the CBV to shrink, we need to modify this
 ///       implementation accordingly.
-class BitVector : public CoreBitVector
-{
+class BitVector : public CoreBitVector {
 public:
-    /// Construct empty BV.
-    BitVector(void);
+  /// Construct empty BV.
+  BitVector(void);
 
-    /// Construct empty BV with space reserved for n Words.
-    BitVector(size_t n);
+  /// Construct empty BV with space reserved for n Words.
+  BitVector(size_t n);
 
-    /// Copy constructor.
-    BitVector(const BitVector &bv);
+  /// Copy constructor.
+  BitVector(const BitVector &bv);
 
-    /// Move constructor.
-    BitVector(BitVector &&bv);
+  /// Move constructor.
+  BitVector(BitVector &&bv);
 
-    /// Copy assignment.
-    BitVector &operator=(const BitVector &rhs);
+  /// Copy assignment.
+  BitVector &operator=(const BitVector &rhs);
 
-    /// Move assignment.
-    BitVector &operator=(BitVector &&rhs);
+  /// Move assignment.
+  BitVector &operator=(BitVector &&rhs);
 };
 
-};  // namespace SVF
+}; // namespace SVF
 
-#endif  // BITVECTOR_H_
+#endif // BITVECTOR_H_

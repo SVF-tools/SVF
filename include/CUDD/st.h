@@ -44,49 +44,48 @@ extern "C" {
 /* Stucture declarations                                                     */
 /*---------------------------------------------------------------------------*/
 
-
 /*---------------------------------------------------------------------------*/
 /* Type declarations                                                         */
 /*---------------------------------------------------------------------------*/
 
 typedef struct st_table_entry st_table_entry;
 struct st_table_entry {
-    char *key;
-    char *record;
-    st_table_entry *next;
+  char *key;
+  char *record;
+  st_table_entry *next;
 };
 
 typedef struct st_table st_table;
 struct st_table {
-    int (*compare)(const char *, const char *);
-    int (*hash)(char *, int);
-    int num_bins;
-    int num_entries;
-    int max_density;
-    int reorder_flag;
-    double grow_factor;
-    st_table_entry **bins;
+  int (*compare)(const char *, const char *);
+  int (*hash)(char *, int);
+  int num_bins;
+  int num_entries;
+  int max_density;
+  int reorder_flag;
+  double grow_factor;
+  st_table_entry **bins;
 };
 
 typedef struct st_generator st_generator;
 struct st_generator {
-    st_table *table;
-    st_table_entry *entry;
-    int index;
+  st_table *table;
+  st_table_entry *entry;
+  int index;
 };
 
-enum st_retval {ST_CONTINUE, ST_STOP, ST_DELETE};
+enum st_retval { ST_CONTINUE, ST_STOP, ST_DELETE };
 
 typedef enum st_retval (*ST_PFSR)(char *, char *, char *);
 
-typedef int (*ST_PFICPCP)(const char *, const char *); /* type for comparison function */
+typedef int (*ST_PFICPCP)(const char *,
+                          const char *); /* type for comparison function */
 
-typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
+typedef int (*ST_PFICPI)(char *, int); /* type for hash function */
 
 /*---------------------------------------------------------------------------*/
 /* Variable declarations                                                     */
 /*---------------------------------------------------------------------------*/
-
 
 /*---------------------------------------------------------------------------*/
 /* Macro declarations                                                        */
@@ -104,8 +103,7 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
   SeeAlso     [st_lookup]
 
 ******************************************************************************/
-#define st_is_member(table,key) st_lookup(table,key,(char **) 0)
-
+#define st_is_member(table, key) st_lookup(table, key, (char **)0)
 
 /**Macro***********************************************************************
 
@@ -120,7 +118,6 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
 ******************************************************************************/
 #define st_count(table) ((table)->num_entries)
 
-
 /**Macro***********************************************************************
 
   Synopsis    [Iteration macro.]
@@ -130,20 +127,20 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
   associated value (if it is not nil). `gen' is a generator variable
   used internally. Sample usage:
   <pre>
-     	char *key, *value;
+        char *key, *value;
   </pre>
   <pre>
-	st_generator *gen;
+        st_generator *gen;
   </pre>
   <pre>
 
-	st_foreach_item(table, gen, &key, &value) {
+        st_foreach_item(table, gen, &key, &value) {
   </pre>
   <pre>
-	    process_item(value);
+            process_item(value);
   </pre>
   <pre>
-	}
+        }
   </pre>
   ]
 
@@ -152,9 +149,9 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
   SeeAlso     [st_foreach_item_int st_foreach]
 
 ******************************************************************************/
-#define st_foreach_item(table, gen, key, value) \
-    for(gen=st_init_gen(table); st_gen(gen,key,value) || (st_free_gen(gen),0);)
-
+#define st_foreach_item(table, gen, key, value)                                \
+  for (gen = st_init_gen(table);                                               \
+       st_gen(gen, key, value) || (st_free_gen(gen), 0);)
 
 /**Macro***********************************************************************
 
@@ -166,23 +163,23 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
   pointer to an integer.  `gen' is a generator variable used
   internally. Sample usage:
   <pre>
-     	char *key;
+        char *key;
   </pre>
   <pre>
-	int value;
+        int value;
   </pre>
   <pre>
-	st_generator *gen;
+        st_generator *gen;
   </pre>
   <pre>
 
-	st_foreach_item_int(table, gen, &key, &value) {
+        st_foreach_item_int(table, gen, &key, &value) {
   </pre>
   <pre>
-	    process_item(value);
+            process_item(value);
   </pre>
   <pre>
-	}
+        }
   </pre>
   ]
 
@@ -191,8 +188,9 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
   SeeAlso     [st_foreach_item st_foreach]
 
 ******************************************************************************/
-#define st_foreach_item_int(table, gen, key, value) \
-    for(gen=st_init_gen(table); st_gen_int(gen,key,value) || (st_free_gen(gen),0);)
+#define st_foreach_item_int(table, gen, key, value)                            \
+  for (gen = st_init_gen(table);                                               \
+       st_gen_int(gen, key, value) || (st_free_gen(gen), 0);)
 
 /**AutomaticStart*************************************************************/
 
@@ -200,23 +198,24 @@ typedef int (*ST_PFICPI)(char *, int);     /* type for hash function */
 /* Function prototypes                                                       */
 /*---------------------------------------------------------------------------*/
 
-extern st_table *st_init_table_with_params (ST_PFICPCP, ST_PFICPI, int, int, double, int);
-extern st_table *st_init_table (ST_PFICPCP, ST_PFICPI); 
-extern void st_free_table (st_table *);
-extern int st_lookup (st_table *, void *, void *);
-extern int st_lookup_int (st_table *, void *, int *);
-extern int st_insert (st_table *, void *, void *);
-extern int st_add_direct (st_table *, void *, void *);
-extern int st_delete (st_table *, void *, void *);
-extern int st_foreach (st_table *, ST_PFSR, char *);
-extern int st_numhash (char *, int);
-extern int st_ptrhash (char *, int);
-extern int st_numcmp (const char *, const char *);
-extern int st_ptrcmp (const char *, const char *);
-extern st_generator *st_init_gen (st_table *);
-extern int st_gen (st_generator *, void *, void *);
-extern int st_gen_int (st_generator *, void *, int *);
-extern void st_free_gen (st_generator *);
+extern st_table *st_init_table_with_params(ST_PFICPCP, ST_PFICPI, int, int,
+                                           double, int);
+extern st_table *st_init_table(ST_PFICPCP, ST_PFICPI);
+extern void st_free_table(st_table *);
+extern int st_lookup(st_table *, void *, void *);
+extern int st_lookup_int(st_table *, void *, int *);
+extern int st_insert(st_table *, void *, void *);
+extern int st_add_direct(st_table *, void *, void *);
+extern int st_delete(st_table *, void *, void *);
+extern int st_foreach(st_table *, ST_PFSR, char *);
+extern int st_numhash(char *, int);
+extern int st_ptrhash(char *, int);
+extern int st_numcmp(const char *, const char *);
+extern int st_ptrcmp(const char *, const char *);
+extern st_generator *st_init_gen(st_table *);
+extern int st_gen(st_generator *, void *, void *);
+extern int st_gen_int(st_generator *, void *, int *);
+extern void st_free_gen(st_generator *);
 
 /**AutomaticEnd***************************************************************/
 

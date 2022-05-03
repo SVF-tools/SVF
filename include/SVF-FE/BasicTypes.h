@@ -1,10 +1,10 @@
 #ifndef SVF_FE_BASIC_TYPES_H
 #define SVF_FE_BASIC_TYPES_H
 
+#include <llvm/IR/DataLayout.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Metadata.h>
-#include <llvm/IR/DataLayout.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 
@@ -37,7 +37,7 @@ typedef llvm::CallBrInst CallBrInst;
 typedef llvm::ReturnInst ReturnInst;
 typedef llvm::CastInst CastInst;
 typedef llvm::CmpInst CmpInst;
-typedef llvm::ExtractValueInst  ExtractValueInst;
+typedef llvm::ExtractValueInst ExtractValueInst;
 typedef llvm::ExtractElementInst ExtractElementInst;
 typedef llvm::GetElementPtrInst GetElementPtrInst;
 typedef llvm::InvokeInst InvokeInst;
@@ -60,4 +60,4 @@ typedef llvm::BinaryOperator BinaryOperator;
 typedef llvm::UnaryOperator UnaryOperator;
 typedef llvm::UndefValue UndefValue;
 
-#endif  // SVF_FE_BASIC_TYPES_H
+#endif // SVF_FE_BASIC_TYPES_H

@@ -30,135 +30,112 @@
 #ifndef SABERCHECKERAPI_H_
 #define SABERCHECKERAPI_H_
 
-#include "Util/SVFUtil.h"
 #include "Graphs/ICFGNode.h"
+#include "Util/SVFUtil.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /*
  * Saber Checker API class contains interfaces for various bug checking
  * memory leak detection e.g., alloc free
  * incorrect file operation detection, e.g., fopen, fclose
  */
-class SaberCheckerAPI
-{
+class SaberCheckerAPI {
 
 public:
-    enum CHECKER_TYPE
-    {
-        CK_DUMMY = 0,		/// dummy type
-        CK_ALLOC,		/// memory allocation
-        CK_FREE,      /// memory deallocation
-        CK_FOPEN,		/// File open
-        CK_FCLOSE		/// File close
-    };
+  enum CHECKER_TYPE {
+    CK_DUMMY = 0, /// dummy type
+    CK_ALLOC,     /// memory allocation
+    CK_FREE,      /// memory deallocation
+    CK_FOPEN,     /// File open
+    CK_FCLOSE     /// File close
+  };
 
-    typedef llvm::StringMap<CHECKER_TYPE> TDAPIMap;
+  typedef llvm::StringMap<CHECKER_TYPE> TDAPIMap;
 
 private:
-    /// API map, from a string to threadAPI type
-    TDAPIMap tdAPIMap;
+  /// API map, from a string to threadAPI type
+  TDAPIMap tdAPIMap;
 
-    /// Constructor
-    SaberCheckerAPI ()
-    {
-        init();
+  /// Constructor
+  SaberCheckerAPI() { init(); }
+
+  /// Initialize the map
+  void init();
+
+  /// Static reference
+  static SaberCheckerAPI *ckAPI;
+
+  /// Get the function type of a function
+  inline CHECKER_TYPE getType(const SVFFunction *F) const {
+    if (F) {
+      TDAPIMap::const_iterator it = tdAPIMap.find(F->getName());
+      if (it != tdAPIMap.end())
+        return it->second;
     }
-
-    /// Initialize the map
-    void init();
-
-    /// Static reference
-    static SaberCheckerAPI* ckAPI;
-
-    /// Get the function type of a function
-    inline CHECKER_TYPE getType(const SVFFunction* F) const
-    {
-        if(F)
-        {
-            TDAPIMap::const_iterator it= tdAPIMap.find(F->getName());
-            if(it != tdAPIMap.end())
-                return it->second;
-        }
-        return CK_DUMMY;
-    }
+    return CK_DUMMY;
+  }
 
 public:
-    /// Return a static reference
-    static SaberCheckerAPI* getCheckerAPI()
-    {
-        if(ckAPI == nullptr)
-        {
-            ckAPI = new SaberCheckerAPI();
-        }
-        return ckAPI;
+  /// Return a static reference
+  static SaberCheckerAPI *getCheckerAPI() {
+    if (ckAPI == nullptr) {
+      ckAPI = new SaberCheckerAPI();
     }
+    return ckAPI;
+  }
 
-    /// Return true if this call is a memory allocation
-    //@{
-    inline bool isMemAlloc(const SVFFunction* fun) const
-    {
-        return getType(fun) == CK_ALLOC;
-    }
-    inline bool isMemAlloc(const Instruction *inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
-    }
-    inline bool isMemAlloc(const CallICFGNode* cs) const
-    {
-        return isMemAlloc(cs->getCallSite());
-    }
-    //@}
+  /// Return true if this call is a memory allocation
+  //@{
+  inline bool isMemAlloc(const SVFFunction *fun) const {
+    return getType(fun) == CK_ALLOC;
+  }
+  inline bool isMemAlloc(const Instruction *inst) const {
+    return getType(SVFUtil::getCallee(inst)) == CK_ALLOC;
+  }
+  inline bool isMemAlloc(const CallICFGNode *cs) const {
+    return isMemAlloc(cs->getCallSite());
+  }
+  //@}
 
-    /// Return true if this call is a memory deallocation
-    //@{
-    inline bool isMemDealloc(const SVFFunction* fun) const
-    {
-        return getType(fun) == CK_FREE;
-    }
-    inline bool isMemDealloc(const Instruction *inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FREE;
-    }
-    inline bool isMemDealloc(const CallICFGNode* cs) const
-    {
-        return isMemDealloc(cs->getCallSite());
-    }
-    //@}
+  /// Return true if this call is a memory deallocation
+  //@{
+  inline bool isMemDealloc(const SVFFunction *fun) const {
+    return getType(fun) == CK_FREE;
+  }
+  inline bool isMemDealloc(const Instruction *inst) const {
+    return getType(SVFUtil::getCallee(inst)) == CK_FREE;
+  }
+  inline bool isMemDealloc(const CallICFGNode *cs) const {
+    return isMemDealloc(cs->getCallSite());
+  }
+  //@}
 
-    /// Return true if this call is a file open
-    //@{
-    inline bool isFOpen(const SVFFunction* fun) const
-    {
-        return getType(fun) == CK_FOPEN;
-    }
-    inline bool isFOpen(const Instruction *inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
-    }
-    inline bool isFOpen(const CallICFGNode* cs) const
-    {
-        return isFOpen(cs->getCallSite());
-    }
-    //@}
+  /// Return true if this call is a file open
+  //@{
+  inline bool isFOpen(const SVFFunction *fun) const {
+    return getType(fun) == CK_FOPEN;
+  }
+  inline bool isFOpen(const Instruction *inst) const {
+    return getType(SVFUtil::getCallee(inst)) == CK_FOPEN;
+  }
+  inline bool isFOpen(const CallICFGNode *cs) const {
+    return isFOpen(cs->getCallSite());
+  }
+  //@}
 
-    /// Return true if this call is a file close
-    //@{
-    inline bool isFClose(const SVFFunction* fun) const
-    {
-        return getType(fun) == CK_FCLOSE;
-    }
-    inline bool isFClose(const Instruction *inst) const
-    {
-        return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
-    }
-    inline bool isFClose(const CallICFGNode* cs) const
-    {
-        return isFClose(cs->getCallSite());
-    }
-    //@}
-
+  /// Return true if this call is a file close
+  //@{
+  inline bool isFClose(const SVFFunction *fun) const {
+    return getType(fun) == CK_FCLOSE;
+  }
+  inline bool isFClose(const Instruction *inst) const {
+    return getType(SVFUtil::getCallee(inst)) == CK_FCLOSE;
+  }
+  inline bool isFClose(const CallICFGNode *cs) const {
+    return isFClose(cs->getCallSite());
+  }
+  //@}
 };
 
 } // End namespace SVF
