@@ -1,80 +1,75 @@
 /* LINTLIBRARY */
 
-#include <stdio.h>
 #include "CUDD/util.h"
+#include <stdio.h>
 
-#ifdef IBM_WATC		/* IBM Waterloo-C compiler (same as bsd 4.2) */
+#ifdef IBM_WATC /* IBM Waterloo-C compiler (same as bsd 4.2) */
 #define void int
 #define BSD
 #endif
 
 #ifdef BSD
-#include <sys/types.h>
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #endif
 
 #if defined(UNIX60) || defined(UNIX100) || defined(__CYGWIN32__)
-#include <sys/types.h>
 #include <sys/times.h>
+#include <sys/types.h>
 #endif
 
-#ifdef vms		/* VAX/C compiler -- times() with 100 HZ clock */
-#include <types.h>
+#ifdef vms /* VAX/C compiler -- times() with 100 HZ clock */
 #include <time.h>
+#include <types.h>
 #endif
-
-
 
 /*
  *   util_cpu_time -- return a long which represents the elapsed processor
  *   time in milliseconds since some constant reference
  */
-long
-util_cpu_time()
-{
-    long t = 0;
+long util_cpu_time() {
+  long t = 0;
 
 #ifdef BSD
-    struct rusage rusage;
-    (void) getrusage(RUSAGE_SELF, &rusage);
-    t = (long) rusage.ru_utime.tv_sec*1000 + rusage.ru_utime.tv_usec/1000;
+  struct rusage rusage;
+  (void)getrusage(RUSAGE_SELF, &rusage);
+  t = (long)rusage.ru_utime.tv_sec * 1000 + rusage.ru_utime.tv_usec / 1000;
 #endif
 
 #ifdef IBMPC
-    long ltime;
-    (void) time(&ltime);
-    t = ltime * 1000;
+  long ltime;
+  (void)time(&ltime);
+  t = ltime * 1000;
 #endif
 
-#ifdef UNIX60			/* times() with 60 Hz resolution */
-    struct tms buffer;
-    times(&buffer);
-    t = buffer.tms_utime * 16.6667;
+#ifdef UNIX60 /* times() with 60 Hz resolution */
+  struct tms buffer;
+  times(&buffer);
+  t = buffer.tms_utime * 16.6667;
 #endif
 
 #ifdef UNIX100
-    struct tms buffer;		/* times() with 100 Hz resolution */
-    times(&buffer);
-    t = buffer.tms_utime * 10;
+  struct tms buffer; /* times() with 100 Hz resolution */
+  times(&buffer);
+  t = buffer.tms_utime * 10;
 #endif
 
 #ifdef __CYGWIN32__
-    /* Works under Windows NT but not Windows 95. */
-    struct tms buffer;		/* times() with 1000 Hz resolution */
-    times(&buffer);
-    t = buffer.tms_utime;
+  /* Works under Windows NT but not Windows 95. */
+  struct tms buffer; /* times() with 1000 Hz resolution */
+  times(&buffer);
+  t = buffer.tms_utime;
 #endif
 
 #ifdef vms
-    tbuffer_t buffer;	/* times() with 100 Hz resolution */
-    times(&buffer);
-    t = buffer.proc_user_time * 10;
+  tbuffer_t buffer; /* times() with 100 Hz resolution */
+  times(&buffer);
+  t = buffer.proc_user_time * 10;
 #endif
 
-    return t;
+  return t;
 }
-
 
 /*
  *  These are interface routines to be placed between a program and the
@@ -108,58 +103,55 @@ void (*MMoutOfMemory)(long) = MMout_of_memory;
 }
 #endif
 
-
 /* MMout_of_memory -- out of memory for lazy people, flush and exit */
-void
-MMout_of_memory(long size)
-{
-    (void) fflush(stdout);
-    (void) fprintf(stderr, "\nout of memory allocating %lu bytes\n",
-                   (unsigned long) size);
-    exit(1);
+void MMout_of_memory(long size) {
+  (void)fflush(stdout);
+  (void)fprintf(stderr, "\nout of memory allocating %lu bytes\n",
+                (unsigned long)size);
+  exit(1);
 }
 
-
-char *
-MMalloc(long size)
-{
-    char *p;
+char *MMalloc(long size) {
+  char *p;
 
 #ifdef IBMPC
-    if (size > 65000L) {
-	if (MMoutOfMemory != (void (*)(long)) 0 ) (*MMoutOfMemory)(size);
-	return NIL(char);
-    }
+  if (size > 65000L) {
+    if (MMoutOfMemory != (void (*)(long))0)
+      (*MMoutOfMemory)(size);
+    return NIL(char);
+  }
 #endif
-    if (size == 0) size = sizeof(long);
-    if ((p = (char *) malloc((unsigned long) size)) == NIL(char)) {
-        if (MMoutOfMemory != 0 ) (*MMoutOfMemory)(size);
-        return NIL(char);
-    }
-    return p;
+  if (size == 0)
+    size = sizeof(long);
+  if ((p = (char *)malloc((unsigned long)size)) == NIL(char)) {
+    if (MMoutOfMemory != 0)
+      (*MMoutOfMemory)(size);
+    return NIL(char);
+  }
+  return p;
 }
 
-
-char *
-MMrealloc(char *obj, long size)
-{
-    char *p;
+char *MMrealloc(char *obj, long size) {
+  char *p;
 
 #ifdef IBMPC
-    if (size > 65000L) {
-	if (MMoutOfMemory != 0 ) (*MMoutOfMemory)(size);
-	return NIL(char);
-    }
+  if (size > 65000L) {
+    if (MMoutOfMemory != 0)
+      (*MMoutOfMemory)(size);
+    return NIL(char);
+  }
 #endif
-    if (obj == NIL(char)) return MMalloc(size);
-    if (size <= 0) size = sizeof(long);
-    if ((p = (char *) realloc(obj, (unsigned long) size)) == NIL(char)) {
-        if (MMoutOfMemory != 0 ) (*MMoutOfMemory)(size);
-        return NIL(char);
-    }
-    return p;
+  if (obj == NIL(char))
+    return MMalloc(size);
+  if (size <= 0)
+    size = sizeof(long);
+  if ((p = (char *)realloc(obj, (unsigned long)size)) == NIL(char)) {
+    if (MMoutOfMemory != 0)
+      (*MMoutOfMemory)(size);
+    return NIL(char);
+  }
+  return p;
 }
-
 
 /* $Id: datalimit.c,v 1.5 2007/08/24 18:17:31 fabio Exp fabio $ */
 
@@ -181,33 +173,31 @@ MMrealloc(char *obj, long size)
 #endif
 
 #ifndef RLIMIT_DATA_DEFAULT
-#define RLIMIT_DATA_DEFAULT 67108864	/* assume 64MB by default */
+#define RLIMIT_DATA_DEFAULT 67108864 /* assume 64MB by default */
 #endif
 
 #ifndef EXTERN
-#   ifdef __cplusplus
-#	define EXTERN extern "C"
-#   else
-#	define EXTERN extern
-#   endif
+#ifdef __cplusplus
+#define EXTERN extern "C"
+#else
+#define EXTERN extern
+#endif
 #endif
 
 EXTERN unsigned long getSoftDataLimit(void);
 
-unsigned long
-getSoftDataLimit(void)
-{
+unsigned long getSoftDataLimit(void) {
 #if HAVE_SYS_RESOURCE_H == 1 && HAVE_GETRLIMIT == 1 && defined(RLIMIT_DATA)
-    struct rlimit rl;
-    int result;
+  struct rlimit rl;
+  int result;
 
-    result = getrlimit(RLIMIT_DATA, &rl);
-    if (result != 0 || rl.rlim_cur == RLIM_INFINITY)
-        return((unsigned long) RLIMIT_DATA_DEFAULT);
-    else
-        return((unsigned long) rl.rlim_cur);
+  result = getrlimit(RLIMIT_DATA, &rl);
+  if (result != 0 || rl.rlim_cur == RLIM_INFINITY)
+    return ((unsigned long)RLIMIT_DATA_DEFAULT);
+  else
+    return ((unsigned long)rl.rlim_cur);
 #else
-    return((unsigned long) RLIMIT_DATA_DEFAULT);
+  return ((unsigned long)RLIMIT_DATA_DEFAULT);
 #endif
 
 } /* end of getSoftDataLimit */

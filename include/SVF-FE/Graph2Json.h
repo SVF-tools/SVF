@@ -1,28 +1,26 @@
 #ifndef INCLUDE_SVF_FE_GRAPH2JSON_H_
 #define INCLUDE_SVF_FE_GRAPH2JSON_H_
 
-#include "MemoryModel/SVFIR.h"
 #include "Graphs/ICFG.h"
-#include "Graphs/ICFGNode.h"
 #include "Graphs/ICFGEdge.h"
+#include "Graphs/ICFGNode.h"
+#include "MemoryModel/SVFIR.h"
 #include "SVF-FE/LLVMUtil.h"
 
-namespace SVF
-{
+namespace SVF {
 
 class GraphWriter;
-class ICFGPrinter : public ICFG
-{
+class ICFGPrinter : public ICFG {
 public:
-    ICFGPrinter();
+  ICFGPrinter();
 
-    void printICFGToJson(const std::string& filename);
+  void printICFGToJson(const std::string &filename);
 
-    std::string getPAGNodeKindValue(int kind);
+  std::string getPAGNodeKindValue(int kind);
 
-    std::string getPAGEdgeKindValue(int kind);
+  std::string getPAGEdgeKindValue(int kind);
 
-    std::string getICFGKind(const int kind);
+  std::string getICFGKind(const int kind);
 };
 
 } // End namespace SVF

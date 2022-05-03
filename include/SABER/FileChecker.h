@@ -32,49 +32,39 @@
 
 #include "SABER/LeakChecker.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /*!
  * File open/close checker to check consistency of file operations
  */
 
-class FileChecker : public LeakChecker
-{
+class FileChecker : public LeakChecker {
 
 public:
+  /// Constructor
+  FileChecker() : LeakChecker() {}
 
-    /// Constructor
-    FileChecker(): LeakChecker()
-    {
-    }
+  /// Destructor
+  virtual ~FileChecker() {}
 
-    /// Destructor
-    virtual ~FileChecker()
-    {
-    }
+  /// We start from here
+  virtual bool runOnModule(SVFModule *module) {
+    /// start analysis
+    analyze(module);
+    return false;
+  }
 
-    /// We start from here
-    virtual bool runOnModule(SVFModule* module)
-    {
-        /// start analysis
-        analyze(module);
-        return false;
-    }
-
-    inline bool isSourceLikeFun(const SVFFunction* fun)
-    {
-        return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun);
-    }
-    /// Whether the function is a heap deallocator (free/release memory)
-    inline bool isSinkLikeFun(const SVFFunction* fun)
-    {
-        return SaberCheckerAPI::getCheckerAPI()->isFClose(fun);
-    }
-    /// Report file/close bugs
-    void reportBug(ProgSlice* slice);
-    void reportNeverClose(const SVFGNode* src);
-    void reportPartialClose(const SVFGNode* src);
+  inline bool isSourceLikeFun(const SVFFunction *fun) {
+    return SaberCheckerAPI::getCheckerAPI()->isFOpen(fun);
+  }
+  /// Whether the function is a heap deallocator (free/release memory)
+  inline bool isSinkLikeFun(const SVFFunction *fun) {
+    return SaberCheckerAPI::getCheckerAPI()->isFClose(fun);
+  }
+  /// Report file/close bugs
+  void reportBug(ProgSlice *slice);
+  void reportNeverClose(const SVFGNode *src);
+  void reportPartialClose(const SVFGNode *src);
 };
 
 } // End namespace SVF

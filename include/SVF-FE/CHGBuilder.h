@@ -1,4 +1,5 @@
-//===----- CHGBuiler.h -- Class hierarchy graph builder ---------------------------//
+//===----- CHGBuiler.h -- Class hierarchy graph builder
+//---------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -29,41 +30,40 @@
 
 #include "Graphs/CHG.h"
 
-namespace SVF{
+namespace SVF {
 
-class CHGBuilder{
+class CHGBuilder {
 
 private:
-    CHGraph* chg;
+  CHGraph *chg;
 
 public:
-    typedef CHGraph::CHNodeSetTy CHNodeSetTy;
-    typedef CHGraph::WorkList WorkList;
+  typedef CHGraph::CHNodeSetTy CHNodeSetTy;
+  typedef CHGraph::WorkList WorkList;
 
-    CHGBuilder(CHGraph* c): chg(c)
-    {
+  CHGBuilder(CHGraph *c) : chg(c) {}
+  void buildCHG();
+  void buildCHGNodes(const GlobalValue *V);
+  void buildCHGNodes(const SVFFunction *F);
+  void buildCHGEdges(const SVFFunction *F);
+  void buildInternalMaps();
+  void readInheritanceMetadataFromModule(const Module &M);
 
-    }
-    void buildCHG();
-    void buildCHGNodes(const GlobalValue *V);
-    void buildCHGNodes(const SVFFunction* F);
-    void buildCHGEdges(const SVFFunction* F);
-    void buildInternalMaps();
-    void readInheritanceMetadataFromModule(const Module &M);
+  CHNode *createNode(const std::string name);
 
-    CHNode *createNode(const std::string name);
+  void connectInheritEdgeViaCall(const SVFFunction *caller, CallSite cs);
+  void connectInheritEdgeViaStore(const SVFFunction *caller,
+                                  const StoreInst *store);
 
-    void connectInheritEdgeViaCall(const SVFFunction* caller, CallSite cs);
-    void connectInheritEdgeViaStore(const SVFFunction* caller, const StoreInst* store);
+  void buildClassNameToAncestorsDescendantsMap();
+  const CHGraph::CHNodeSetTy &
+  getInstancesAndDescendants(const std::string className);
 
-    void buildClassNameToAncestorsDescendantsMap();
-    const CHGraph::CHNodeSetTy& getInstancesAndDescendants(const std::string className);
-
-    void analyzeVTables(const Module &M);
-    void buildVirtualFunctionToIDMap();
-    void buildCSToCHAVtblsAndVfnsMap();
-    const CHNodeSetTy& getCSClasses(CallSite cs);
-    void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
+  void analyzeVTables(const Module &M);
+  void buildVirtualFunctionToIDMap();
+  void buildCSToCHAVtblsAndVfnsMap();
+  const CHNodeSetTy &getCSClasses(CallSite cs);
+  void addFuncToFuncVector(CHNode::FuncVector &v, const SVFFunction *f);
 };
 
-}
+} // namespace SVF

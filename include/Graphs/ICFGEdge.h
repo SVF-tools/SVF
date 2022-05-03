@@ -30,226 +30,181 @@
 #ifndef ICFGEdge_H_
 #define ICFGEdge_H_
 
-namespace SVF
-{
+namespace SVF {
 
 class ICFGNode;
 class CallPE;
 class RetPE;
 
 /*!
- * Interprocedural control-flow and value-flow edge, representing the control- and value-flow dependence between two nodes
+ * Interprocedural control-flow and value-flow edge, representing the control-
+ * and value-flow dependence between two nodes
  */
 typedef GenericEdge<ICFGNode> GenericICFGEdgeTy;
-class ICFGEdge : public GenericICFGEdgeTy
-{
+class ICFGEdge : public GenericICFGEdgeTy {
 
 public:
-    /// ten types of ICFG edge
-    /// three types of control-flow edges
-    /// seven types of value-flow edges
-    enum ICFGEdgeK
-    {
-        IntraCF,
-        CallCF,
-        RetCF,
-    };
+  /// ten types of ICFG edge
+  /// three types of control-flow edges
+  /// seven types of value-flow edges
+  enum ICFGEdgeK {
+    IntraCF,
+    CallCF,
+    RetCF,
+  };
 
-    typedef ICFGEdgeK SVFGEdgeK;
-
-public:
-    /// Constructor
-    ICFGEdge(ICFGNode* s, ICFGNode* d, GEdgeFlag k) : GenericICFGEdgeTy(s,d,k)
-    {
-    }
-    /// Destructor
-    ~ICFGEdge()
-    {
-    }
-
-    /// Get methods of the components
-    //@{
-    inline bool isCFGEdge() const
-    {
-        return getEdgeKind() == IntraCF || getEdgeKind() == CallCF || getEdgeKind() == RetCF;
-    }
-    inline bool isCallCFGEdge() const
-    {
-        return getEdgeKind() == CallCF;
-    }
-    inline bool isRetCFGEdge() const
-    {
-        return getEdgeKind() == RetCF;
-    }
-    inline bool isIntraCFGEdge() const
-    {
-        return getEdgeKind() == IntraCF;
-    }
-    //@}
-    typedef GenericNode<ICFGNode,ICFGEdge>::GEdgeSetTy ICFGEdgeSetTy;
-    typedef ICFGEdgeSetTy SVFGEdgeSetTy;
-    /// Compute the unique edgeFlag value from edge kind and CallSiteID.
-    static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs)
-    {
-        return (cs << EdgeKindMaskBits) | k;
-    }
-
-    /// Overloading operator << for dumping ICFG node ID
-    //@{
-    friend OutStream& operator<< (OutStream &o, const ICFGEdge &edge)
-    {
-        o << edge.toString();
-        return o;
-    }
-    //@}
-
-    virtual const std::string toString() const;
-};
-
-
-/*!
- * Intra ICFG edge representing control-flows between basic blocks within a function
- */
-class IntraCFGEdge : public ICFGEdge
-{
+  typedef ICFGEdgeK SVFGEdgeK;
 
 public:
-    /// Constructor
-    IntraCFGEdge(ICFGNode* s, ICFGNode* d): ICFGEdge(s,d,IntraCF), conditionVar(nullptr), branchCondVal(0)
-    {
-    }
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const IntraCFGEdge *)
-    {
-        return true;
-    }
-    static inline bool classof(const ICFGEdge *edge)
-    {
-        return edge->getEdgeKind() == IntraCF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == IntraCF;
-    }
-    //@}
+  /// Constructor
+  ICFGEdge(ICFGNode *s, ICFGNode *d, GEdgeFlag k)
+      : GenericICFGEdgeTy(s, d, k) {}
+  /// Destructor
+  ~ICFGEdge() {}
 
-    const Value* getCondition() const{
-        return conditionVar;
-    }
+  /// Get methods of the components
+  //@{
+  inline bool isCFGEdge() const {
+    return getEdgeKind() == IntraCF || getEdgeKind() == CallCF ||
+           getEdgeKind() == RetCF;
+  }
+  inline bool isCallCFGEdge() const { return getEdgeKind() == CallCF; }
+  inline bool isRetCFGEdge() const { return getEdgeKind() == RetCF; }
+  inline bool isIntraCFGEdge() const { return getEdgeKind() == IntraCF; }
+  //@}
+  typedef GenericNode<ICFGNode, ICFGEdge>::GEdgeSetTy ICFGEdgeSetTy;
+  typedef ICFGEdgeSetTy SVFGEdgeSetTy;
+  /// Compute the unique edgeFlag value from edge kind and CallSiteID.
+  static inline GEdgeFlag makeEdgeFlagWithInvokeID(GEdgeKind k, CallSiteID cs) {
+    return (cs << EdgeKindMaskBits) | k;
+  }
 
-    s32_t getSuccessorCondValue() const{
-        assert(getCondition() && "this is not a conditional branch edge");
-        return branchCondVal;
-    }
+  /// Overloading operator << for dumping ICFG node ID
+  //@{
+  friend OutStream &operator<<(OutStream &o, const ICFGEdge &edge) {
+    o << edge.toString();
+    return o;
+  }
+  //@}
 
-    void setBranchCondition(const Value* c, s32_t bVal){
-        conditionVar = c;
-        branchCondVal = bVal;
-    }
-
-    virtual const std::string toString() const;
-
-private:
-    /// conditionVar is a boolean (for if/else) or numeric condition variable (for switch)
-    /// branchCondVal is the value when this condition should hold to execute this CFGEdge.
-    /// e.g., Inst1: br %cmp label 0, label 1,  Inst2 is label 0 and Inst 3 is label 1;
-    /// for edge between Inst1 and Inst 2, the first element is %cmp and second element is 0
-    const Value* conditionVar;
-    s32_t branchCondVal;
+  virtual const std::string toString() const;
 };
 
 /*!
- * Call ICFG edge representing parameter passing/return from a caller to a callee
+ * Intra ICFG edge representing control-flows between basic blocks within a
+ * function
  */
-class CallCFGEdge : public ICFGEdge
-{
+class IntraCFGEdge : public ICFGEdge {
+
+public:
+  /// Constructor
+  IntraCFGEdge(ICFGNode *s, ICFGNode *d)
+      : ICFGEdge(s, d, IntraCF), conditionVar(nullptr), branchCondVal(0) {}
+  /// Methods for support type inquiry through isa, cast, and dyn_cast:
+  //@{
+  static inline bool classof(const IntraCFGEdge *) { return true; }
+  static inline bool classof(const ICFGEdge *edge) {
+    return edge->getEdgeKind() == IntraCF;
+  }
+  static inline bool classof(const GenericICFGEdgeTy *edge) {
+    return edge->getEdgeKind() == IntraCF;
+  }
+  //@}
+
+  const Value *getCondition() const { return conditionVar; }
+
+  s32_t getSuccessorCondValue() const {
+    assert(getCondition() && "this is not a conditional branch edge");
+    return branchCondVal;
+  }
+
+  void setBranchCondition(const Value *c, s32_t bVal) {
+    conditionVar = c;
+    branchCondVal = bVal;
+  }
+
+  virtual const std::string toString() const;
 
 private:
-	const Instruction*  cs;
-    std::vector<const CallPE*> callPEs;
-public:
-    /// Constructor
-    CallCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
-        ICFGEdge(s,d,CallCF),cs(c)
-    {
-    }
-    /// Return callsite ID
-    inline const Instruction*  getCallSite() const
-    {
-        return cs;
-    }
-    /// Add call parameter edge to this CallCFGEdge
-    inline void addCallPE(const CallPE* callPE){
-        callPEs.push_back(callPE);
-    }
-    /// Add get parameter edge to this CallCFGEdge
-    inline const std::vector<const CallPE*>& getCallPEs() const{
-        return callPEs;
-    }
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const CallCFGEdge *)
-    {
-        return true;
-    }
-    static inline bool classof(const ICFGEdge *edge)
-    {
-        return edge->getEdgeKind() == CallCF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == CallCF;
-    }
-    //@}
-    virtual const std::string toString() const;
+  /// conditionVar is a boolean (for if/else) or numeric condition variable (for
+  /// switch) branchCondVal is the value when this condition should hold to
+  /// execute this CFGEdge. e.g., Inst1: br %cmp label 0, label 1,  Inst2 is
+  /// label 0 and Inst 3 is label 1; for edge between Inst1 and Inst 2, the
+  /// first element is %cmp and second element is 0
+  const Value *conditionVar;
+  s32_t branchCondVal;
 };
 
 /*!
- * Return ICFG edge representing parameter/return passing from a callee to a caller
+ * Call ICFG edge representing parameter passing/return from a caller to a
+ * callee
  */
-class RetCFGEdge : public ICFGEdge
-{
+class CallCFGEdge : public ICFGEdge {
 
 private:
-	const Instruction*  cs;
-    const RetPE* retPE;
+  const Instruction *cs;
+  std::vector<const CallPE *> callPEs;
+
 public:
-    /// Constructor
-    RetCFGEdge(ICFGNode* s, ICFGNode* d, const Instruction*  c):
-        ICFGEdge(s,d,RetCF),cs(c),retPE(nullptr)
-    {
-    }
-    /// Return callsite ID
-    inline const Instruction*  getCallSite() const
-    {
-        return cs;
-    }
-    /// Add call parameter edge to this CallCFGEdge
-    inline void addRetPE(const RetPE* ret){
-        assert(retPE==nullptr && "we can only have one retPE for each RetCFGEdge");
-        retPE = ret;
-    }
-    /// Add get parameter edge to this CallCFGEdge
-    inline const RetPE* getRetPE() const{
-        return retPE;
-    }
-    /// Methods for support type inquiry through isa, cast, and dyn_cast:
-    //@{
-    static inline bool classof(const RetCFGEdge *)
-    {
-        return true;
-    }
-    static inline bool classof(const ICFGEdge *edge)
-    {
-        return edge->getEdgeKind() == RetCF;
-    }
-    static inline bool classof(const GenericICFGEdgeTy *edge)
-    {
-        return edge->getEdgeKind() == RetCF;
-    }
-    //@}
-    virtual const std::string toString() const;
+  /// Constructor
+  CallCFGEdge(ICFGNode *s, ICFGNode *d, const Instruction *c)
+      : ICFGEdge(s, d, CallCF), cs(c) {}
+  /// Return callsite ID
+  inline const Instruction *getCallSite() const { return cs; }
+  /// Add call parameter edge to this CallCFGEdge
+  inline void addCallPE(const CallPE *callPE) { callPEs.push_back(callPE); }
+  /// Add get parameter edge to this CallCFGEdge
+  inline const std::vector<const CallPE *> &getCallPEs() const {
+    return callPEs;
+  }
+  /// Methods for support type inquiry through isa, cast, and dyn_cast:
+  //@{
+  static inline bool classof(const CallCFGEdge *) { return true; }
+  static inline bool classof(const ICFGEdge *edge) {
+    return edge->getEdgeKind() == CallCF;
+  }
+  static inline bool classof(const GenericICFGEdgeTy *edge) {
+    return edge->getEdgeKind() == CallCF;
+  }
+  //@}
+  virtual const std::string toString() const;
+};
+
+/*!
+ * Return ICFG edge representing parameter/return passing from a callee to a
+ * caller
+ */
+class RetCFGEdge : public ICFGEdge {
+
+private:
+  const Instruction *cs;
+  const RetPE *retPE;
+
+public:
+  /// Constructor
+  RetCFGEdge(ICFGNode *s, ICFGNode *d, const Instruction *c)
+      : ICFGEdge(s, d, RetCF), cs(c), retPE(nullptr) {}
+  /// Return callsite ID
+  inline const Instruction *getCallSite() const { return cs; }
+  /// Add call parameter edge to this CallCFGEdge
+  inline void addRetPE(const RetPE *ret) {
+    assert(retPE == nullptr &&
+           "we can only have one retPE for each RetCFGEdge");
+    retPE = ret;
+  }
+  /// Add get parameter edge to this CallCFGEdge
+  inline const RetPE *getRetPE() const { return retPE; }
+  /// Methods for support type inquiry through isa, cast, and dyn_cast:
+  //@{
+  static inline bool classof(const RetCFGEdge *) { return true; }
+  static inline bool classof(const ICFGEdge *edge) {
+    return edge->getEdgeKind() == RetCF;
+  }
+  static inline bool classof(const GenericICFGEdgeTy *edge) {
+    return edge->getEdgeKind() == RetCF;
+  }
+  //@}
+  virtual const std::string toString() const;
 };
 
 } // End namespace SVF

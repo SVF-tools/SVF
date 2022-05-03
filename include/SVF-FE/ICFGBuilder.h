@@ -1,4 +1,5 @@
-//===- ICFGBuilder.h ----------------------------------------------------------------//
+//===- ICFGBuilder.h
+//----------------------------------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -33,72 +34,62 @@
 #include "Graphs/ICFG.h"
 #include "Util/WorkList.h"
 
-namespace SVF
-{
+namespace SVF {
 
-class ICFGBuilder
-{
+class ICFGBuilder {
 
 public:
-
-    typedef std::vector<const Instruction*> InstVec;
-    typedef Set<const Instruction*> BBSet;
+  typedef std::vector<const Instruction *> InstVec;
+  typedef Set<const Instruction *> BBSet;
 
 private:
-    ICFG* icfg;
+  ICFG *icfg;
 
 public:
-    typedef FIFOWorkList<const Instruction*> WorkList;
+  typedef FIFOWorkList<const Instruction *> WorkList;
 
-    ICFGBuilder(ICFG* i): icfg(i)
-    {
-
-    }
-    void build(SVFModule* svfModule);
+  ICFGBuilder(ICFG *i) : icfg(i) {}
+  void build(SVFModule *svfModule);
 
 private:
-    /// Create edges between ICFG nodes within a function
-    ///@{
-    void processFunEntry(const SVFFunction*  fun, WorkList& worklist);
+  /// Create edges between ICFG nodes within a function
+  ///@{
+  void processFunEntry(const SVFFunction *fun, WorkList &worklist);
 
-    void processFunBody(WorkList& worklist);
+  void processFunBody(WorkList &worklist);
 
-    void processFunExit(const SVFFunction*  fun);
-    //@}
+  void processFunExit(const SVFFunction *fun);
+  //@}
 
-    void connectGlobalToProgEntry(SVFModule* svfModule);
+  void connectGlobalToProgEntry(SVFModule *svfModule);
 
-    /// Add/Get an inter block ICFGNode
-    InterICFGNode* getOrAddInterBlockICFGNode(const Instruction* inst);
+  /// Add/Get an inter block ICFGNode
+  InterICFGNode *getOrAddInterBlockICFGNode(const Instruction *inst);
 
-    /// Add/Get a basic block ICFGNode
-    inline ICFGNode* getOrAddBlockICFGNode(const Instruction* inst)
-    {
-        if(SVFUtil::isNonInstricCallSite(inst))
-            return getOrAddInterBlockICFGNode(inst);
-        else
-            return getOrAddIntraBlockICFGNode(inst);
-    }
+  /// Add/Get a basic block ICFGNode
+  inline ICFGNode *getOrAddBlockICFGNode(const Instruction *inst) {
+    if (SVFUtil::isNonInstricCallSite(inst))
+      return getOrAddInterBlockICFGNode(inst);
+    else
+      return getOrAddIntraBlockICFGNode(inst);
+  }
 
-    /// Create edges between ICFG nodes across functions
-    void addICFGInterEdges(const Instruction*  cs, const SVFFunction*  callee);
+  /// Create edges between ICFG nodes across functions
+  void addICFGInterEdges(const Instruction *cs, const SVFFunction *callee);
 
-    /// Add a call node
-    inline CallICFGNode* getCallICFGNode(const Instruction*  cs)
-    {
-        return icfg->getCallICFGNode(cs);
-    }
-    /// Add a return node
-    inline RetICFGNode* getRetICFGNode(const Instruction*  cs)
-    {
-        return icfg->getRetICFGNode(cs);
-    }
+  /// Add a call node
+  inline CallICFGNode *getCallICFGNode(const Instruction *cs) {
+    return icfg->getCallICFGNode(cs);
+  }
+  /// Add a return node
+  inline RetICFGNode *getRetICFGNode(const Instruction *cs) {
+    return icfg->getRetICFGNode(cs);
+  }
 
-    /// Add and get IntraBlock ICFGNode
-    IntraICFGNode* getOrAddIntraBlockICFGNode(const Instruction* inst)
-    {
-        return icfg->getIntraICFGNode(inst);
-    }
+  /// Add and get IntraBlock ICFGNode
+  IntraICFGNode *getOrAddIntraBlockICFGNode(const Instruction *inst) {
+    return icfg->getIntraICFGNode(inst);
+  }
 };
 
 } // End namespace SVF

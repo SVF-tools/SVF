@@ -30,42 +30,40 @@
 #ifndef BASICTYPES_H_
 #define BASICTYPES_H_
 
-#include "Util/SVFBasicTypes.h"
-#include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Graphs/GraphPrinter.h"
+#include "SVF-FE/GEPTypeBridgeIterator.h"
 #include "Util/Casting.h"
+#include "Util/SVFBasicTypes.h"
 #include <llvm/ADT/SparseBitVector.h>
-#include <llvm/IR/Instructions.h>
-#include <llvm/IR/InstVisitor.h>	// for instruction visitor
-#include <llvm/IR/InstIterator.h>	// for inst iteration
-#include <llvm/IR/GetElementPtrTypeIterator.h>	//for gep iterator
-#include <llvm/Analysis/ScalarEvolution.h>
-#include <llvm/ADT/StringExtras.h>	// for utostr_32
+#include <llvm/ADT/StringExtras.h> // for utostr_32
 #include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/Analysis/CallGraph.h>	// call graph
-#include <llvm/IR/GlobalVariable.h>	// for GlobalVariable
+#include <llvm/Analysis/CallGraph.h> // call graph
+#include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h> //for gep iterator
+#include <llvm/IR/GlobalVariable.h>            // for GlobalVariable
+#include <llvm/IR/InstIterator.h>              // for inst iteration
+#include <llvm/IR/InstVisitor.h>               // for instruction visitor
+#include <llvm/IR/Instructions.h>
 
-#include <llvm/Bitcode/BitcodeWriter.h>		// for WriteBitcodeToFile
-#include <llvm/Bitcode/BitcodeReader.h>     /// for isBitcode
-#include <llvm/IRReader/IRReader.h>	// IR reader for bit file
-#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
+#include <llvm/ADT/GraphTraits.h> // for Graphtraits
 #include <llvm/Analysis/DominanceFrontier.h>
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
-#include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/Support/GraphWriter.h>		// for graph write
-#include <llvm/IR/IRBuilder.h>		// for instrument svf.main
-#include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
+#include <llvm/Bitcode/BitcodeReader.h> /// for isBitcode
+#include <llvm/Bitcode/BitcodeWriter.h> // for WriteBitcodeToFile
 #include <llvm/IR/DebugInfo.h>
+#include <llvm/IR/IRBuilder.h>           // for instrument svf.main
+#include <llvm/IRReader/IRReader.h>      // IR reader for bit file
+#include <llvm/Support/GraphWriter.h>    // for graph write
+#include <llvm/Transforms/Utils/Local.h> // for FindDbgAddrUses
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/CFG.h"
 
-namespace SVF
-{
+namespace SVF {
 
 class BddCond;
-
 
 /// LLVM Basic classes
 typedef llvm::LLVMContext LLVMContext;
@@ -84,9 +82,9 @@ typedef llvm::Use Use;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
 #if LLVM_VERSION_MAJOR >= 12
-    typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
+typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
 #else
-    typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 typedef llvm::ModulePass ModulePass;
 
@@ -121,7 +119,6 @@ typedef llvm::NamedMDNode NamedMDNode;
 typedef llvm::MDString MDString;
 typedef llvm::MDNode MDNode;
 
-
 /// LLVM Instructions
 typedef llvm::CallInst CallInst;
 typedef llvm::StoreInst StoreInst;
@@ -150,9 +147,9 @@ typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 /// LLVM Iterators
 typedef llvm::inst_iterator inst_iterator;
 #if LLVM_VERSION_MAJOR >= 11
-    typedef llvm::const_succ_iterator succ_const_iterator;
+typedef llvm::const_succ_iterator succ_const_iterator;
 #else
-    typedef llvm::succ_const_iterator succ_const_iterator;
+typedef llvm::succ_const_iterator succ_const_iterator;
 #endif
 typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::const_pred_iterator const_pred_iterator;
@@ -176,127 +173,101 @@ typedef llvm::DINodeArray DINodeArray;
 typedef llvm::DITypeRefArray DITypeRefArray;
 namespace dwarf = llvm::dwarf;
 
-class SVFFunction : public SVFValue
-{
+class SVFFunction : public SVFValue {
 private:
-    bool isDecl;
-    bool isIntri;
-    Function* fun;
+  bool isDecl;
+  bool isIntri;
+  Function *fun;
+
 public:
-    SVFFunction(const std::string& val): SVFValue(val,SVFValue::SVFFunc),
-        isDecl(false), isIntri(false), fun(nullptr)
-    {
-    }
+  SVFFunction(const std::string &val)
+      : SVFValue(val, SVFValue::SVFFunc), isDecl(false), isIntri(false),
+        fun(nullptr) {}
 
-    SVFFunction(Function* f): SVFValue(f->getName(),SVFValue::SVFFunc),
-        isDecl(f->isDeclaration()), isIntri(f->isIntrinsic()), fun(f)
-    {
-    }
-    inline Function* getLLVMFun() const
-    {
-        assert(fun && "no LLVM Function found!");
-        return fun;
-    }
+  SVFFunction(Function *f)
+      : SVFValue(f->getName(), SVFValue::SVFFunc), isDecl(f->isDeclaration()),
+        isIntri(f->isIntrinsic()), fun(f) {}
+  inline Function *getLLVMFun() const {
+    assert(fun && "no LLVM Function found!");
+    return fun;
+  }
 
-    inline bool isDeclaration() const
-    {
-        return isDecl;
-    }
+  inline bool isDeclaration() const { return isDecl; }
 
-    inline bool isIntrinsic() const
-    {
-        return isIntri;
-    }
+  inline bool isIntrinsic() const { return isIntri; }
 
-    inline u32_t arg_size() const
-    {
-        return getLLVMFun()->arg_size();
-    }
+  inline u32_t arg_size() const { return getLLVMFun()->arg_size(); }
 
-    const Value* getArg(u32_t idx) const
-    {
-        return getLLVMFun()->getArg(idx);
-    }
+  const Value *getArg(u32_t idx) const { return getLLVMFun()->getArg(idx); }
 
-    inline bool isVarArg() const
-    {
-        return getLLVMFun()->isVarArg();
-    }
+  inline bool isVarArg() const { return getLLVMFun()->isVarArg(); }
 
-    // Dump Control Flow Graph of llvm function, with instructions
-    void viewCFG();
+  // Dump Control Flow Graph of llvm function, with instructions
+  void viewCFG();
 
-    // Dump Control Flow Graph of llvm function, without instructions
-    void viewCFGOnly();
-
+  // Dump Control Flow Graph of llvm function, without instructions
+  void viewCFGOnly();
 };
 
-class SVFGlobal : public SVFValue
-{
+class SVFGlobal : public SVFValue {
 
 public:
-    SVFGlobal(const std::string& val): SVFValue(val,SVFValue::SVFGlob)
-    {
-    }
-
+  SVFGlobal(const std::string &val) : SVFValue(val, SVFValue::SVFGlob) {}
 };
 
-class SVFBasicBlock : public SVFValue
-{
+class SVFBasicBlock : public SVFValue {
 
 public:
-    SVFBasicBlock(const std::string& val): SVFValue(val,SVFValue::SVFBB)
-    {
-    }
-
+  SVFBasicBlock(const std::string &val) : SVFValue(val, SVFValue::SVFBB) {}
 };
 
 class CallSite {
 private:
-    CallBase *CB;
+  CallBase *CB;
+
 public:
-    CallSite(Instruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
-    CallSite(Value *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
+  CallSite(Instruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
+  CallSite(Value *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
 
-    CallBase *getInstruction() const { return CB; }
-    using arg_iterator = User::const_op_iterator;
-    Value *getArgument(unsigned ArgNo) const { return CB->getArgOperand(ArgNo);}
-    Type *getType() const { return CB->getType(); }
-    User::const_op_iterator arg_begin() const { return CB->arg_begin();}
-    User::const_op_iterator arg_end() const { return CB->arg_end();}
-    unsigned arg_size() const { return CB->arg_size(); }
-    bool arg_empty() const { return CB->arg_empty(); }
-    Value *getArgOperand(unsigned i) const { return CB->getArgOperand(i); }
-    unsigned getNumArgOperands() const { return CB->arg_size(); }
-    Function *getCalledFunction() const { return CB->getCalledFunction(); }
-    Value *getCalledValue() const { return CB->getCalledOperand(); }
-    Function *getCaller() const { return CB->getCaller(); }
-    FunctionType *getFunctionType() const { return CB->getFunctionType(); }
-    bool paramHasAttr(unsigned ArgNo, llvm::Attribute::AttrKind Kind) const { return CB->paramHasAttr(ArgNo, Kind); }
+  CallBase *getInstruction() const { return CB; }
+  using arg_iterator = User::const_op_iterator;
+  Value *getArgument(unsigned ArgNo) const { return CB->getArgOperand(ArgNo); }
+  Type *getType() const { return CB->getType(); }
+  User::const_op_iterator arg_begin() const { return CB->arg_begin(); }
+  User::const_op_iterator arg_end() const { return CB->arg_end(); }
+  unsigned arg_size() const { return CB->arg_size(); }
+  bool arg_empty() const { return CB->arg_empty(); }
+  Value *getArgOperand(unsigned i) const { return CB->getArgOperand(i); }
+  unsigned getNumArgOperands() const { return CB->arg_size(); }
+  Function *getCalledFunction() const { return CB->getCalledFunction(); }
+  Value *getCalledValue() const { return CB->getCalledOperand(); }
+  Function *getCaller() const { return CB->getCaller(); }
+  FunctionType *getFunctionType() const { return CB->getFunctionType(); }
+  bool paramHasAttr(unsigned ArgNo, llvm::Attribute::AttrKind Kind) const {
+    return CB->paramHasAttr(ArgNo, Kind);
+  }
 
-    bool operator==(const CallSite &CS) const { return CB == CS.CB; }
-    bool operator!=(const CallSite &CS) const { return CB != CS.CB; }
-    bool operator<(const CallSite &CS) const {
-        return getInstruction() < CS.getInstruction();
-    }
-
+  bool operator==(const CallSite &CS) const { return CB == CS.CB; }
+  bool operator!=(const CallSite &CS) const { return CB != CS.CB; }
+  bool operator<(const CallSite &CS) const {
+    return getInstruction() < CS.getInstruction();
+  }
 };
 
 template <typename F, typename S>
-OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
-{
-    o << "<" << var.first << ", " << var.second << ">";
-    return o;
+OutStream &operator<<(OutStream &o, const std::pair<F, S> &var) {
+  o << "<" << var.first << ", " << var.second << ">";
+  return o;
 }
 
 } // End namespace SVF
 
 /// Specialise hash for CallSites.
 template <> struct std::hash<SVF::CallSite> {
-    size_t operator()(const SVF::CallSite &cs) const {
-        std::hash<SVF::Instruction *> h;
-        return h(cs.getInstruction());
-    }
+  size_t operator()(const SVF::CallSite &cs) const {
+    std::hash<SVF::Instruction *> h;
+    return h(cs.getInstruction());
+  }
 };
 
 #endif /* BASICTYPES_H_ */
