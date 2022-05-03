@@ -13,7 +13,7 @@ env:
 
 jobs:
   publish:
-  if: github.repository == 'SVF-tools/SVF'
+    if: github.repository == 'SVF-tools/SVF'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
