@@ -1,5 +1,5 @@
 //===- CSC.h -- Cycle Stride Calculation
-//algorithm---------------------------------------//
+// algorithm---------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

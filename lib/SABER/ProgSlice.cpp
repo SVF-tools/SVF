@@ -205,11 +205,11 @@ void ProgSlice::annotatePaths() {
 void ProgSlice::destroy() {
   /// TODO: how to clean bdd memory
   //	for(SVFGNodeToCondMap::const_iterator it = svfgNodeToCondMap.begin(),
-  //eit = svfgNodeToCondMap.end(); it!=eit; ++it){
+  // eit = svfgNodeToCondMap.end(); it!=eit; ++it){
   //		pathAllocator->markForRelease(it->second);
   //	}
   //	for(BBToCondMap::const_iterator it = bbToCondMap.begin(), eit =
-  //bbToCondMap.end(); it!=eit; ++it){
+  // bbToCondMap.end(); it!=eit; ++it){
   //		pathAllocator->markForRelease(it->second);
   //	}
 }

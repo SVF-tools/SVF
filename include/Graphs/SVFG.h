@@ -461,7 +461,7 @@ namespace llvm {
 // };
 //
 ///// Inverse GraphTraits specializations for Value flow node, it is used for
-///inverse traversal.
+/// inverse traversal.
 // template<>
 // struct GraphTraits<Inverse<SVF::SVFGNode *> > : public
 // GraphTraits<Inverse<SVF::GenericNode<SVF::SVFGNode,SVF::SVFGEdge>* > > {

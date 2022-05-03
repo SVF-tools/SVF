@@ -1,5 +1,5 @@
 //===- SymbolTableInfo.cpp -- Symbol information from
-//IR------------------------//
+// IR------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

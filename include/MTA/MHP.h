@@ -506,7 +506,7 @@ private:
       partialJoin; ///< t1 partially joins t2 along some program path(s)
   PTACFInfoBuilder ptaCFInfo;            ///< PTA control flow info
   forkjoinToPTASCEVMap fkjnToPTASCEVMap; //< map a pointer at a fork/join site
-                                         //to its corresponing scev expression
+                                         // to its corresponing scev expression
 };
 
 } // End namespace SVF

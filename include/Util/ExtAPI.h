@@ -53,10 +53,10 @@ public:
     EFT_FREE_MULTILEVEL, // any argument with 2-level pointer passing too a free
                          // wrapper function e.g., XFree(void**) which frees
                          // memory for void* and void**
-    EFT_NOSTRUCT_ALLOC, // like ALLOC but only allocates non-struct data
-    EFT_STAT,           // retval points to an unknown static var X
-    EFT_STAT2,          // ret -> X -> Y (X, Y - external static vars)
-    EFT_L_A0,           // copies arg0, arg1, or arg2 into LHS
+    EFT_NOSTRUCT_ALLOC,  // like ALLOC but only allocates non-struct data
+    EFT_STAT,            // retval points to an unknown static var X
+    EFT_STAT2,           // ret -> X -> Y (X, Y - external static vars)
+    EFT_L_A0,            // copies arg0, arg1, or arg2 into LHS
     EFT_L_A1,
     EFT_L_A2,
     EFT_L_A8,
@@ -64,8 +64,8 @@ public:
                       // for memset)
     EFT_L_A0__A0R_A1R, // copies the data that arg1 points to into the location
     EFT_L_A1__FunPtr,  // obtain the address of a symbol based on the arg1
-                      // (char*) and parse a function to LHS (e.g., void
-                      // *dlsym(void *handle, char *funname);)
+                       // (char*) and parse a function to LHS (e.g., void
+                       // *dlsym(void *handle, char *funname);)
     //  arg0 points to; note that several fields may be
     //  copied at once if both point to structs.
     //  Returns arg0.

@@ -1,5 +1,5 @@
 //===- SVFModule.h -- SVFModule*
-//class-----------------------------------------//
+// class-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

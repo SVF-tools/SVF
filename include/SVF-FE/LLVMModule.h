@@ -1,5 +1,5 @@
 //===- LLVMModule.h -- LLVM Module
-//class-----------------------------------------//
+// class-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

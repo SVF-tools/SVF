@@ -1,5 +1,5 @@
 //===- WPAPass.cpp -- Whole program analysis
-//pass------------------------------//
+// pass------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //

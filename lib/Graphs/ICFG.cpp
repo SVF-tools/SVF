@@ -197,8 +197,8 @@ ICFGNode *ICFG::getICFGNode(const Instruction *inst) {
     node = getCallICFGNode(inst);
   else if (SVFUtil::isIntrinsicInst(inst))
     node = getIntraICFGNode(inst);
-  //			assert (false && "associating an intrinsic instruction with an
-  //ICFGNode!");
+  //			assert (false && "associating an intrinsic instruction with
+  //an ICFGNode!");
   else
     node = getIntraICFGNode(inst);
 

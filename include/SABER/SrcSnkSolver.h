@@ -1,5 +1,5 @@
 //===- SrcSnkSolver.h -- CFL reachability
-//solver---------------------------------//
+// solver---------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
