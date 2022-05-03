@@ -1,4 +1,5 @@
-//===- SVFModule.h -- SVFModule* class-----------------------------------------//
+//===- SVFModule.h -- SVFModule*
+//class-----------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
@@ -35,180 +36,110 @@
 #include "Util/NodeIDAllocator.h"
 #include "Util/ThreadAPI.h"
 
-namespace SVF
-{
+namespace SVF {
 
-class SVFModule
-{
+class SVFModule {
 public:
-    typedef std::vector<const SVFFunction*> FunctionSetType;
-    typedef std::vector<Function*> LLVMFunctionSetType;
-    typedef std::vector<GlobalVariable*> GlobalSetType;
-    typedef std::vector<GlobalAlias*> AliasSetType;
-    typedef Map<const Function*,const SVFFunction*> LLVMFun2SVFFunMap;
+  typedef std::vector<const SVFFunction *> FunctionSetType;
+  typedef std::vector<Function *> LLVMFunctionSetType;
+  typedef std::vector<GlobalVariable *> GlobalSetType;
+  typedef std::vector<GlobalAlias *> AliasSetType;
+  typedef Map<const Function *, const SVFFunction *> LLVMFun2SVFFunMap;
 
-    /// Iterators type def
-    typedef FunctionSetType::iterator iterator;
-    typedef FunctionSetType::const_iterator const_iterator;
-    typedef LLVMFunctionSetType::iterator llvm_iterator;
-    typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
-    typedef GlobalSetType::iterator global_iterator;
-    typedef GlobalSetType::const_iterator const_global_iterator;
-    typedef AliasSetType::iterator alias_iterator;
-    typedef AliasSetType::const_iterator const_alias_iterator;
+  /// Iterators type def
+  typedef FunctionSetType::iterator iterator;
+  typedef FunctionSetType::const_iterator const_iterator;
+  typedef LLVMFunctionSetType::iterator llvm_iterator;
+  typedef LLVMFunctionSetType::const_iterator llvm_const_iterator;
+  typedef GlobalSetType::iterator global_iterator;
+  typedef GlobalSetType::const_iterator const_global_iterator;
+  typedef AliasSetType::iterator alias_iterator;
+  typedef AliasSetType::const_iterator const_alias_iterator;
 
 private:
-    static std::string pagReadFromTxt;
-    std::string moduleIdentifier;
-    FunctionSetType FunctionSet;  ///< The Functions in the module
-    LLVMFunctionSetType LLVMFunctionSet;  ///< The Functions in the module
-    GlobalSetType GlobalSet;      ///< The Global Variables in the module
-    AliasSetType AliasSet;        ///< The Aliases in the module
-    LLVMFun2SVFFunMap LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
+  static std::string pagReadFromTxt;
+  std::string moduleIdentifier;
+  FunctionSetType FunctionSet;         ///< The Functions in the module
+  LLVMFunctionSetType LLVMFunctionSet; ///< The Functions in the module
+  GlobalSetType GlobalSet;             ///< The Global Variables in the module
+  AliasSetType AliasSet;               ///< The Aliases in the module
+  LLVMFun2SVFFunMap
+      LLVMFunc2SVFFunc; ///< Map an LLVM Function to an SVF Function
 public:
-    /// Constructors
-    SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName)
-    {
-    }
+  /// Constructors
+  SVFModule(std::string moduleName = "") : moduleIdentifier(moduleName) {}
 
-    ~SVFModule()
-    {
-      for (auto * f : FunctionSet)
-        delete f;
-      NodeIDAllocator::unset();
-      ThreadAPI::destroy();
-      ExtAPI::destory();
-    }
+  ~SVFModule() {
+    for (auto *f : FunctionSet)
+      delete f;
+    NodeIDAllocator::unset();
+    ThreadAPI::destroy();
+    ExtAPI::destory();
+  }
 
-    static inline void setPagFromTXT(std::string txt)
-    {
-        pagReadFromTxt = txt;
-    }
+  static inline void setPagFromTXT(std::string txt) { pagReadFromTxt = txt; }
 
-    static inline std::string pagFileName()
-    {
-        return pagReadFromTxt;
-    }
+  static inline std::string pagFileName() { return pagReadFromTxt; }
 
-    static inline bool pagReadFromTXT()
-    {
-        if(pagReadFromTxt.empty())
-            return false;
-        else
-            return true;
-    }
+  static inline bool pagReadFromTXT() {
+    if (pagReadFromTxt.empty())
+      return false;
+    else
+      return true;
+  }
 
-    void buildSymbolTableInfo();
+  void buildSymbolTableInfo();
 
-    ///@{
-    inline void addFunctionSet(Function* fun)
-    {
-        SVFFunction* svfFunc = new SVFFunction(fun);
-        FunctionSet.push_back(svfFunc);
-        LLVMFunctionSet.push_back(fun);
-        LLVMFunc2SVFFunc[fun] = svfFunc;
-    }
-    inline void addGlobalSet(GlobalVariable* glob)
-    {
-        GlobalSet.push_back(glob);
-    }
-    inline void addAliasSet(GlobalAlias* alias)
-    {
-        AliasSet.push_back(alias);
-    }
-    ///@}
+  ///@{
+  inline void addFunctionSet(Function *fun) {
+    SVFFunction *svfFunc = new SVFFunction(fun);
+    FunctionSet.push_back(svfFunc);
+    LLVMFunctionSet.push_back(fun);
+    LLVMFunc2SVFFunc[fun] = svfFunc;
+  }
+  inline void addGlobalSet(GlobalVariable *glob) { GlobalSet.push_back(glob); }
+  inline void addAliasSet(GlobalAlias *alias) { AliasSet.push_back(alias); }
+  ///@}
 
-    inline const SVFFunction* getSVFFunction(const Function* fun) const
-    {
-        LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
-        assert(it!=LLVMFunc2SVFFunc.end() && "SVF Function not found!");
-        return it->second;
-    }
+  inline const SVFFunction *getSVFFunction(const Function *fun) const {
+    LLVMFun2SVFFunMap::const_iterator it = LLVMFunc2SVFFunc.find(fun);
+    assert(it != LLVMFunc2SVFFunc.end() && "SVF Function not found!");
+    return it->second;
+  }
 
-    /// Iterators
-    ///@{
-    llvm_iterator llvmFunBegin()
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_const_iterator llvmFunBegin() const
-    {
-        return LLVMFunctionSet.begin();
-    }
-    llvm_iterator llvmFunEnd()
-    {
-        return LLVMFunctionSet.end();
-    }
-    llvm_const_iterator llvmFunEnd() const
-    {
-        return LLVMFunctionSet.end();
-    }
+  /// Iterators
+  ///@{
+  llvm_iterator llvmFunBegin() { return LLVMFunctionSet.begin(); }
+  llvm_const_iterator llvmFunBegin() const { return LLVMFunctionSet.begin(); }
+  llvm_iterator llvmFunEnd() { return LLVMFunctionSet.end(); }
+  llvm_const_iterator llvmFunEnd() const { return LLVMFunctionSet.end(); }
 
-    iterator begin()
-    {
-        return FunctionSet.begin();
-    }
-    const_iterator begin() const
-    {
-        return FunctionSet.begin();
-    }
-    iterator end()
-    {
-        return FunctionSet.end();
-    }
-    const_iterator end() const
-    {
-        return FunctionSet.end();
-    }
+  iterator begin() { return FunctionSet.begin(); }
+  const_iterator begin() const { return FunctionSet.begin(); }
+  iterator end() { return FunctionSet.end(); }
+  const_iterator end() const { return FunctionSet.end(); }
 
-    global_iterator global_begin()
-    {
-        return GlobalSet.begin();
-    }
-    const_global_iterator global_begin() const
-    {
-        return GlobalSet.begin();
-    }
-    global_iterator global_end()
-    {
-        return GlobalSet.end();
-    }
-    const_global_iterator global_end() const
-    {
-        return GlobalSet.end();
-    }
+  global_iterator global_begin() { return GlobalSet.begin(); }
+  const_global_iterator global_begin() const { return GlobalSet.begin(); }
+  global_iterator global_end() { return GlobalSet.end(); }
+  const_global_iterator global_end() const { return GlobalSet.end(); }
 
-    alias_iterator alias_begin()
-    {
-        return AliasSet.begin();
-    }
-    const_alias_iterator alias_begin() const
-    {
-        return AliasSet.begin();
-    }
-    alias_iterator alias_end()
-    {
-        return AliasSet.end();
-    }
-    const_alias_iterator alias_end() const
-    {
-        return AliasSet.end();
-    }
-    ///@}
+  alias_iterator alias_begin() { return AliasSet.begin(); }
+  const_alias_iterator alias_begin() const { return AliasSet.begin(); }
+  alias_iterator alias_end() { return AliasSet.end(); }
+  const_alias_iterator alias_end() const { return AliasSet.end(); }
+  ///@}
 
-    const std::string& getModuleIdentifier() const
-    {
-        if (pagReadFromTxt.empty())
-        {
-            assert(moduleIdentifier.empty()==false && "No LLVM module found! Are you reading from a file other than LLVM-IR?");
-            return moduleIdentifier;
-        }
-        else
-        {
-            return pagReadFromTxt;
-        }
+  const std::string &getModuleIdentifier() const {
+    if (pagReadFromTxt.empty()) {
+      assert(moduleIdentifier.empty() == false &&
+             "No LLVM module found! Are you reading from a file other than "
+             "LLVM-IR?");
+      return moduleIdentifier;
+    } else {
+      return pagReadFromTxt;
     }
-
+  }
 };
 
 } // End namespace SVF

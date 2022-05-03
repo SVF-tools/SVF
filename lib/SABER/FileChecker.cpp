@@ -32,33 +32,28 @@
 using namespace SVF;
 using namespace SVFUtil;
 
-
-void FileChecker::reportNeverClose(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg1("\t FileNeverClose :") <<  " file open location at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+void FileChecker::reportNeverClose(const SVFGNode *src) {
+  const CallICFGNode *cs = getSrcCSID(src);
+  SVFUtil::errs() << bugMsg1("\t FileNeverClose :")
+                  << " file open location at : ("
+                  << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
-void FileChecker::reportPartialClose(const SVFGNode* src)
-{
-    const CallICFGNode* cs = getSrcCSID(src);
-    SVFUtil::errs() << bugMsg2("\t PartialFileClose :") <<  " file open location at : ("
-                    << getSourceLoc(cs->getCallSite()) << ")\n";
+void FileChecker::reportPartialClose(const SVFGNode *src) {
+  const CallICFGNode *cs = getSrcCSID(src);
+  SVFUtil::errs() << bugMsg2("\t PartialFileClose :")
+                  << " file open location at : ("
+                  << getSourceLoc(cs->getCallSite()) << ")\n";
 }
 
-void FileChecker::reportBug(ProgSlice* slice)
-{
+void FileChecker::reportBug(ProgSlice *slice) {
 
-    if(isAllPathReachable() == false && isSomePathReachable() == false)
-    {
-        reportNeverClose(slice->getSource());
-    }
-    else if (isAllPathReachable() == false && isSomePathReachable() == true)
-    {
-        reportPartialClose(slice->getSource());
-        SVFUtil::errs() << "\t\t conditional file close path: \n" << slice->evalFinalCond() << "\n";
-        slice->annotatePaths();
-    }
-
+  if (isAllPathReachable() == false && isSomePathReachable() == false) {
+    reportNeverClose(slice->getSource());
+  } else if (isAllPathReachable() == false && isSomePathReachable() == true) {
+    reportPartialClose(slice->getSource());
+    SVFUtil::errs() << "\t\t conditional file close path: \n"
+                    << slice->evalFinalCond() << "\n";
+    slice->annotatePaths();
+  }
 }

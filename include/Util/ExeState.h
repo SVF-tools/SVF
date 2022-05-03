@@ -28,150 +28,135 @@
 
 #ifndef SVF_EXESTATE_H
 #define SVF_EXESTATE_H
-#include "Util/Z3Expr.h"
 #include "MemoryModel/SVFVariables.h"
+#include "Util/Z3Expr.h"
 
 namespace SVF {
 
 #define AddressMask 0x7f000000
-#define FlippedAddressMask (AddressMask^0xffffffff)
+#define FlippedAddressMask (AddressMask ^ 0xffffffff)
 
 class ExeState {
 public:
-    typedef Map<u32_t, Z3Expr> VarToValMap;
-    typedef VarToValMap LocToValMap;
+  typedef Map<u32_t, Z3Expr> VarToValMap;
+  typedef VarToValMap LocToValMap;
 
 protected:
-    VarToValMap varToVal;
-    LocToValMap locToVal;
-    Z3Expr pathConstraint;
+  VarToValMap varToVal;
+  LocToValMap locToVal;
+  Z3Expr pathConstraint;
 
 public:
-    ExeState() : pathConstraint(getContext().bool_val(true)) {}
+  ExeState() : pathConstraint(getContext().bool_val(true)) {}
 
-    ExeState(const Z3Expr &_pc, VarToValMap &_varToValMap, LocToValMap &_locToValMap) : varToVal(_varToValMap),
-                                                                                        locToVal(_locToValMap),
-                                                                                        pathConstraint(_pc) {}
+  ExeState(const Z3Expr &_pc, VarToValMap &_varToValMap,
+           LocToValMap &_locToValMap)
+      : varToVal(_varToValMap), locToVal(_locToValMap), pathConstraint(_pc) {}
 
-    ExeState(const ExeState &rhs) : varToVal(rhs.getVarToVal()), locToVal(rhs.getLocToVal()),
-                                    pathConstraint(rhs.getPathConstraint()) {
+  ExeState(const ExeState &rhs)
+      : varToVal(rhs.getVarToVal()), locToVal(rhs.getLocToVal()),
+        pathConstraint(rhs.getPathConstraint()) {}
 
-    }
+  virtual ~ExeState() = default;
 
-    virtual ~ExeState() = default;
+  ExeState &operator=(const ExeState &rhs);
 
-    ExeState &operator=(const ExeState &rhs);
+  /// Overloading Operator==
+  bool operator==(const ExeState &rhs) const;
 
-    /// Overloading Operator==
-    bool operator==(const ExeState &rhs) const;
+  /// Overloading Operator!=
+  inline bool operator!=(const ExeState &rhs) const { return !(*this == rhs); }
 
-    /// Overloading Operator!=
-    inline bool operator!=(const ExeState &rhs) const {
-        return !(*this == rhs);
-    }
+  /// Overloading Operator==
+  bool operator<(const ExeState &rhs) const;
 
-    /// Overloading Operator==
-    bool operator<(const ExeState &rhs) const;
+  z3::context &getContext() { return Z3Expr::getContext(); }
 
+  const VarToValMap &getVarToVal() const { return varToVal; }
 
+  const LocToValMap &getLocToVal() const { return locToVal; }
 
-    z3::context &getContext() {
-        return Z3Expr::getContext();
-    }
+  const Z3Expr &getPathConstraint() const { return pathConstraint; }
 
-    const VarToValMap &getVarToVal() const {
-        return varToVal;
-    }
+  void setPathConstraint(const Z3Expr &pc) { pathConstraint = pc.simplify(); }
 
-    const LocToValMap &getLocToVal() const {
-        return locToVal;
-    }
+  inline Z3Expr &operator[](u32_t varId) { return getZ3Expr(varId); }
 
-    const Z3Expr &getPathConstraint() const {
-        return pathConstraint;
-    }
+  /// Init Z3Expr for ValVar
+  void initValVar(const ValVar *valVar, Z3Expr &e);
 
-    void setPathConstraint(const Z3Expr &pc) {
-        pathConstraint = pc.simplify();
-    }
+  /// Init Z3Expr for ObjVar
+  void initObjVar(const ObjVar *objVar, Z3Expr &e);
 
-    inline Z3Expr &operator[](u32_t varId) {
-        return getZ3Expr(varId);
-    }
+  /// Return Z3 expression based on SVFVar ID
+  Z3Expr &getZ3Expr(u32_t varId);
 
-    /// Init Z3Expr for ValVar
-    void initValVar(const ValVar *valVar, Z3Expr &e);
+  /// Store value to location
+  void store(const Z3Expr &loc, const Z3Expr &value);
 
-    /// Init Z3Expr for ObjVar
-    void initObjVar(const ObjVar *objVar, Z3Expr &e);
+  /// Load value at location
+  Z3Expr &load(const Z3Expr &loc);
 
-    /// Return Z3 expression based on SVFVar ID
-    Z3Expr &getZ3Expr(u32_t varId);
+  /// The physical address starts with 0x7f...... + idx
+  inline u32_t getVirtualMemAddress(u32_t idx) const {
+    return AddressMask + idx;
+  }
 
-    /// Store value to location
-    void store(const Z3Expr &loc, const Z3Expr &value);
+  /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
+  inline bool isVirtualMemAddress(u32_t val) {
+    return (val & 0xff000000) == AddressMask;
+  }
 
-    /// Load value at location
-    Z3Expr &load(const Z3Expr &loc);
+  /// Return the internal index if idx is an address otherwise return the value
+  /// of idx
+  inline u32_t getInternalID(u32_t idx) const {
+    return (idx & FlippedAddressMask);
+  }
 
-    /// The physical address starts with 0x7f...... + idx
-    inline u32_t getVirtualMemAddress(u32_t idx) const {
-        return AddressMask + idx;
-    }
+  /// Return int value from an expression if it is a numeral, otherwise return
+  /// an approximate value
+  inline s32_t z3Expr2NumValue(const Z3Expr &e) {
+    assert(e.is_numeral() && "not numeral?");
+    return e.get_numeral_int64();
+  }
 
-    /// Check bit value of val start with 0x7F000000, filter by 0xFF000000
-    inline bool isVirtualMemAddress(u32_t val) {
-        return (val & 0xff000000) == AddressMask;
-    }
-
-    /// Return the internal index if idx is an address otherwise return the value of idx
-    inline u32_t getInternalID(u32_t idx) const {
-        return (idx & FlippedAddressMask);
-    }
-
-    /// Return int value from an expression if it is a numeral, otherwise return an approximate value
-    inline s32_t z3Expr2NumValue(const Z3Expr &e) {
-        assert(e.is_numeral() && "not numeral?");
-        return e.get_numeral_int64();
-    }
-
-    /// Print values of all expressions
-    void printExprValues();
+  /// Print values of all expressions
+  void printExprValues();
 
 private:
-    bool eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
-    bool lessThanVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
+  bool eqVarToValMap(const VarToValMap &lhs, const VarToValMap &rhs) const;
+  bool lessThanVarToValMap(const VarToValMap &lhs,
+                           const VarToValMap &rhs) const;
+
 protected:
-    inline void store(u32_t objId, const Z3Expr &z3Expr) {
-        locToVal[objId] = z3Expr.simplify();
-    }
+  inline void store(u32_t objId, const Z3Expr &z3Expr) {
+    locToVal[objId] = z3Expr.simplify();
+  }
 
-    inline Z3Expr &load(u32_t objId) {
-        return locToVal[objId];
-    }
+  inline Z3Expr &load(u32_t objId) { return locToVal[objId]; }
 };
-}
+} // namespace SVF
 
-template<>
-struct std::hash<SVF::ExeState> {
-    size_t operator()(const SVF::ExeState &exeState) const {
+template <> struct std::hash<SVF::ExeState> {
+  size_t operator()(const SVF::ExeState &exeState) const {
 
-        size_t h = exeState.getVarToVal().size() * 2;
-        SVF::Hash<SVF::u32_t> hf;
-        for (const auto &t: exeState.getVarToVal()) {
-            h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= hf(t.second.id()) + 0x9e3779b9 + (h << 6) + (h >> 2);
-        }
-
-        size_t h2 = exeState.getVarToVal().size() * 2;
-
-        for (const auto &t: exeState.getLocToVal()) {
-            h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
-            h2 ^= hf(t.second.id()) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
-        }
-        SVF::Hash<std::pair<SVF::u32_t, SVF::u32_t>> pairH;
-
-        return pairH(make_pair(pairH(make_pair(h, h2)), exeState.getPathConstraint().id()));
+    size_t h = exeState.getVarToVal().size() * 2;
+    SVF::Hash<SVF::u32_t> hf;
+    for (const auto &t : exeState.getVarToVal()) {
+      h ^= hf(t.first) + 0x9e3779b9 + (h << 6) + (h >> 2);
+      h ^= hf(t.second.id()) + 0x9e3779b9 + (h << 6) + (h >> 2);
     }
+
+    size_t h2 = exeState.getVarToVal().size() * 2;
+
+    for (const auto &t : exeState.getLocToVal()) {
+      h2 ^= hf(t.first) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
+      h2 ^= hf(t.second.id()) + 0x9e3779b9 + (h2 << 6) + (h2 >> 2);
+    }
+    SVF::Hash<std::pair<SVF::u32_t, SVF::u32_t>> pairH;
+
+    return pairH(
+        make_pair(pairH(make_pair(h, h2)), exeState.getPathConstraint().id()));
+  }
 };
-#endif //SVF_EXESTATE_H
+#endif // SVF_EXESTATE_H

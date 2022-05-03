@@ -29,118 +29,100 @@
  *
  */
 
-
 #ifndef LOCATIONSET_H_
 #define LOCATIONSET_H_
 
-
 #include "Util/BasicTypes.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /*
- * Location set represents a set of locations in a memory block with following offsets:
- *     { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i }
- * where N is the size of number-stride pair vector, M_i (stride_i) is i-th number (stride)
- * in the number-stride pair vector.
+ * Location set represents a set of locations in a memory block with following
+ * offsets: { offset + \sum_{i=0}^N (stride_i * j_i) | 0 \leq j_i < M_i } where
+ * N is the size of number-stride pair vector, M_i (stride_i) is i-th number
+ * (stride) in the number-stride pair vector.
  */
-class LocationSet
-{
-    friend class SymbolTableInfo;
+class LocationSet {
+  friend class SymbolTableInfo;
+
 public:
-    enum LSRelation
-    {
-        NonOverlap, Overlap, Subset, Superset, Same
-    };
+  enum LSRelation { NonOverlap, Overlap, Subset, Superset, Same };
 
-    typedef std::vector<std::pair<const Value*, const Type*> > OffsetValueVec;
+  typedef std::vector<std::pair<const Value *, const Type *>> OffsetValueVec;
 
-    /// Constructor
-    LocationSet(s32_t o = 0) : fldIdx(o)
-    {}
+  /// Constructor
+  LocationSet(s32_t o = 0) : fldIdx(o) {}
 
-    /// Copy Constructor
-    LocationSet(const LocationSet& ls)
-        : fldIdx(ls.fldIdx), offsetValues(ls.getOffsetValueVec())
-    {
-    }
+  /// Copy Constructor
+  LocationSet(const LocationSet &ls)
+      : fldIdx(ls.fldIdx), offsetValues(ls.getOffsetValueVec()) {}
 
-    ~LocationSet() {}
+  ~LocationSet() {}
 
-    /// Overload operators
-    //@{
-    LocationSet operator+ (const LocationSet& rhs) const;
-    bool operator< (const LocationSet& rhs) const;
-    inline const LocationSet& operator= (const LocationSet& rhs)
-    {
-        fldIdx = rhs.fldIdx;
-        offsetValues = rhs.getOffsetValueVec();
-        return *this;
-    }
-    inline bool operator==(const LocationSet& rhs) const
-    {
-        return this->fldIdx == rhs.fldIdx
-               && this->offsetValues == rhs.offsetValues;
-    }
-    //@}
+  /// Overload operators
+  //@{
+  LocationSet operator+(const LocationSet &rhs) const;
+  bool operator<(const LocationSet &rhs) const;
+  inline const LocationSet &operator=(const LocationSet &rhs) {
+    fldIdx = rhs.fldIdx;
+    offsetValues = rhs.getOffsetValueVec();
+    return *this;
+  }
+  inline bool operator==(const LocationSet &rhs) const {
+    return this->fldIdx == rhs.fldIdx && this->offsetValues == rhs.offsetValues;
+  }
+  //@}
 
-    /// Get methods
-    //@{
-    inline s32_t accumulateConstantFieldIdx() const
-    {
-        return fldIdx;
-    }
-    inline void setFldIdx(s32_t idx)
-    {
-        fldIdx = idx;
-    }
-    inline const OffsetValueVec& getOffsetValueVec() const
-    {
-        return offsetValues;
-    }
-    //@}
+  /// Get methods
+  //@{
+  inline s32_t accumulateConstantFieldIdx() const { return fldIdx; }
+  inline void setFldIdx(s32_t idx) { fldIdx = idx; }
+  inline const OffsetValueVec &getOffsetValueVec() const {
+    return offsetValues;
+  }
+  //@}
 
-    /// Return accumulated constant offset given OffsetValueVec
-    s32_t accumulateConstantOffset() const;
+  /// Return accumulated constant offset given OffsetValueVec
+  s32_t accumulateConstantOffset() const;
 
-    /// Return element number of a type. 
-    u32_t getElementNum(const Type* type) const;
+  /// Return element number of a type.
+  u32_t getElementNum(const Type *type) const;
 
-    bool addOffsetValue(const Value* offsetValue, const Type* type);
+  bool addOffsetValue(const Value *offsetValue, const Type *type);
 
-    /// Return TRUE if this is a constant location set.
-    bool isConstantOffset() const;
+  /// Return TRUE if this is a constant location set.
+  bool isConstantOffset() const;
 
-    /// Return TRUE if we share any location in common with RHS
-    inline bool intersects(const LocationSet& RHS) const
-    {
-        return computeAllLocations().intersects(RHS.computeAllLocations());
-    }
+  /// Return TRUE if we share any location in common with RHS
+  inline bool intersects(const LocationSet &RHS) const {
+    return computeAllLocations().intersects(RHS.computeAllLocations());
+  }
 
-    /// Dump location set
-    std::string dump() const;
+  /// Dump location set
+  std::string dump() const;
 
 private:
+  /// Check relations of two location sets
+  LSRelation checkRelation(const LocationSet &LHS, const LocationSet &RHS);
 
-    /// Check relations of two location sets
-    LSRelation checkRelation(const LocationSet& LHS, const LocationSet& RHS);
+  /// Compute all possible locations according to offset and number-stride
+  /// pairs.
+  NodeBS computeAllLocations() const;
 
-    /// Compute all possible locations according to offset and number-stride pairs.
-    NodeBS computeAllLocations() const;
-
-    s32_t fldIdx;	///< Accumulated Constant Offsets
-    OffsetValueVec offsetValues;	///< a vector of actual offset in the form of Values
+  s32_t fldIdx; ///< Accumulated Constant Offsets
+  OffsetValueVec
+      offsetValues; ///< a vector of actual offset in the form of Values
 };
 
 } // End namespace SVF
 
 template <> struct std::hash<SVF::LocationSet> {
-    size_t operator()(const SVF::LocationSet &ls) const {
-        SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
-        std::hash<SVF::LocationSet::OffsetValueVec> v;
-        return h(std::make_pair(ls.accumulateConstantFieldIdx(), v(ls.getOffsetValueVec())));
-    }
+  size_t operator()(const SVF::LocationSet &ls) const {
+    SVF::Hash<std::pair<SVF::NodeID, SVF::NodeID>> h;
+    std::hash<SVF::LocationSet::OffsetValueVec> v;
+    return h(std::make_pair(ls.accumulateConstantFieldIdx(),
+                            v(ls.getOffsetValueVec())));
+  }
 };
 
 #endif /* LOCATIONSET_H_ */

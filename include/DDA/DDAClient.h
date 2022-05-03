@@ -7,137 +7,121 @@
  *
  */
 
-
 #ifndef DDACLIENT_H_
 #define DDACLIENT_H_
 
-#include "MemoryModel/SVFIR.h"
-#include "MemoryModel/PointerAnalysisImpl.h"
 #include "Graphs/SVFG.h"
+#include "MemoryModel/PointerAnalysisImpl.h"
+#include "MemoryModel/SVFIR.h"
 #include "Util/BasicTypes.h"
 
-namespace SVF
-{
+namespace SVF {
 
 /**
  * General DDAClient which queries all top level pointers by default.
  */
-class DDAClient
-{
+class DDAClient {
 public:
-    DDAClient(SVFModule* mod) : pag(nullptr), module(mod), curPtr(0), solveAll(true) {}
+  DDAClient(SVFModule *mod)
+      : pag(nullptr), module(mod), curPtr(0), solveAll(true) {}
 
-    virtual ~DDAClient() {}
+  virtual ~DDAClient() {}
 
-    virtual inline void initialise(SVFModule*) {}
+  virtual inline void initialise(SVFModule *) {}
 
-    /// Collect candidate pointers for query.
-    virtual inline OrderedNodeSet& collectCandidateQueries(SVFIR* p)
-    {
-        setPAG(p);
-        if (solveAll)
-            candidateQueries = pag->getAllValidPtrs();
-        else
-        {
-            for (OrderedNodeSet::iterator it = userInput.begin(), eit = userInput.end(); it != eit; ++it)
-                addCandidate(*it);
-        }
-        return candidateQueries;
+  /// Collect candidate pointers for query.
+  virtual inline OrderedNodeSet &collectCandidateQueries(SVFIR *p) {
+    setPAG(p);
+    if (solveAll)
+      candidateQueries = pag->getAllValidPtrs();
+    else {
+      for (OrderedNodeSet::iterator it = userInput.begin(),
+                                    eit = userInput.end();
+           it != eit; ++it)
+        addCandidate(*it);
     }
-    /// Get candidate queries
-    inline const OrderedNodeSet& getCandidateQueries() const
-    {
-        return candidateQueries;
-    }
+    return candidateQueries;
+  }
+  /// Get candidate queries
+  inline const OrderedNodeSet &getCandidateQueries() const {
+    return candidateQueries;
+  }
 
-    /// Call back used by DDAVFSolver.
-    virtual inline void handleStatement(const SVFGNode*, NodeID) {}
-    /// Set SVFIR graph.
-    inline void setPAG(SVFIR* g)
-    {
-        pag = g;
-    }
-    /// Set the pointer being queried.
-    void setCurrentQueryPtr(NodeID ptr)
-    {
-        curPtr = ptr;
-    }
-    /// Set pointer to be queried by DDA analysis.
-    void setQuery(NodeID ptr)
-    {
-        userInput.insert(ptr);
-        solveAll = false;
-    }
-    /// Get LLVM module
-    inline SVFModule* getModule() const
-    {
-        return module;
-    }
-    virtual void answerQueries(PointerAnalysis* pta);
+  /// Call back used by DDAVFSolver.
+  virtual inline void handleStatement(const SVFGNode *, NodeID) {}
+  /// Set SVFIR graph.
+  inline void setPAG(SVFIR *g) { pag = g; }
+  /// Set the pointer being queried.
+  void setCurrentQueryPtr(NodeID ptr) { curPtr = ptr; }
+  /// Set pointer to be queried by DDA analysis.
+  void setQuery(NodeID ptr) {
+    userInput.insert(ptr);
+    solveAll = false;
+  }
+  /// Get LLVM module
+  inline SVFModule *getModule() const { return module; }
+  virtual void answerQueries(PointerAnalysis *pta);
 
-    virtual inline void performStat(PointerAnalysis*) {}
+  virtual inline void performStat(PointerAnalysis *) {}
 
-    virtual inline void collectWPANum(SVFModule*) {}
+  virtual inline void collectWPANum(SVFModule *) {}
+
 protected:
-    void addCandidate(NodeID id)
-    {
-        if (pag->isValidTopLevelPtr(pag->getGNode(id)))
-            candidateQueries.insert(id);
-    }
+  void addCandidate(NodeID id) {
+    if (pag->isValidTopLevelPtr(pag->getGNode(id)))
+      candidateQueries.insert(id);
+  }
 
-    SVFIR*   pag;					///< SVFIR graph used by current DDA analysis
-    SVFModule* module;		///< LLVM module
-    NodeID curPtr;				///< current pointer being queried
-    OrderedNodeSet candidateQueries;	///< store all candidate pointers to be queried
+  SVFIR *pag;        ///< SVFIR graph used by current DDA analysis
+  SVFModule *module; ///< LLVM module
+  NodeID curPtr;     ///< current pointer being queried
+  OrderedNodeSet
+      candidateQueries; ///< store all candidate pointers to be queried
 
 private:
-    OrderedNodeSet userInput;           ///< User input queries
-    bool solveAll;				///< TRUE if all top level pointers are being queried
+  OrderedNodeSet userInput; ///< User input queries
+  bool solveAll; ///< TRUE if all top level pointers are being queried
 };
-
 
 /**
  * DDA client with function pointers as query candidates.
  */
-class FunptrDDAClient : public DDAClient
-{
+class FunptrDDAClient : public DDAClient {
 private:
-    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
-    VTablePtrToCallSiteMap vtableToCallSiteMap;
+  typedef OrderedMap<NodeID, const CallICFGNode *> VTablePtrToCallSiteMap;
+  VTablePtrToCallSiteMap vtableToCallSiteMap;
+
 public:
-    FunptrDDAClient(SVFModule* module) : DDAClient(module) {}
-    ~FunptrDDAClient() {}
+  FunptrDDAClient(SVFModule *module) : DDAClient(module) {}
+  ~FunptrDDAClient() {}
 
-    /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(SVFIR* p);
-    virtual void performStat(PointerAnalysis* pta);
+  /// Only collect function pointers as query candidates.
+  virtual OrderedNodeSet &collectCandidateQueries(SVFIR *p);
+  virtual void performStat(PointerAnalysis *pta);
 };
-
-
 
 /**
  * DDA client with function pointers as query candidates.
  */
-class AliasDDAClient : public DDAClient
-{
+class AliasDDAClient : public DDAClient {
 
 public:
-    typedef OrderedSet<const PAGNode*> PAGNodeSet;
+  typedef OrderedSet<const PAGNode *> PAGNodeSet;
 
-    AliasDDAClient(SVFModule* module) : DDAClient(module) {}
-    ~AliasDDAClient() {}
+  AliasDDAClient(SVFModule *module) : DDAClient(module) {}
+  ~AliasDDAClient() {}
 
-    /// Only collect function pointers as query candidates.
-    virtual OrderedNodeSet& collectCandidateQueries(SVFIR* pag);
+  /// Only collect function pointers as query candidates.
+  virtual OrderedNodeSet &collectCandidateQueries(SVFIR *pag);
 
-    virtual void performStat(PointerAnalysis* pta);
+  virtual void performStat(PointerAnalysis *pta);
 
 private:
-    typedef OrderedMap<NodeID,const CallICFGNode*> VTablePtrToCallSiteMap;
-    VTablePtrToCallSiteMap vtableToCallSiteMap;
-    PAGNodeSet loadSrcNodes;
-    PAGNodeSet storeDstNodes;
-    PAGNodeSet gepSrcNodes;
+  typedef OrderedMap<NodeID, const CallICFGNode *> VTablePtrToCallSiteMap;
+  VTablePtrToCallSiteMap vtableToCallSiteMap;
+  PAGNodeSet loadSrcNodes;
+  PAGNodeSet storeDstNodes;
+  PAGNodeSet gepSrcNodes;
 };
 
 } // End namespace SVF

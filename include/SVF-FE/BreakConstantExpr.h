@@ -17,8 +17,7 @@
 
 #include "Util/BasicTypes.h"
 
-namespace SVF
-{
+namespace SVF {
 
 //
 // Pass: BreakConstantGEPs
@@ -27,66 +26,56 @@ namespace SVF
 //  This pass modifies a function so that it uses GEP instructions instead of
 //  GEP constant expressions.
 //
-class BreakConstantGEPs : public ModulePass
-{
+class BreakConstantGEPs : public ModulePass {
 private:
-    // Private methods
+  // Private methods
 
-    // Private variables
+  // Private variables
 
 public:
-    static char ID;
-    BreakConstantGEPs() : ModulePass(ID) {}
-    StringRef getPassName() const
-    {
-        return "Remove Constant GEP Expressions";
-    }
-    virtual bool runOnModule (Module & M);
+  static char ID;
+  BreakConstantGEPs() : ModulePass(ID) {}
+  StringRef getPassName() const { return "Remove Constant GEP Expressions"; }
+  virtual bool runOnModule(Module &M);
 };
-
 
 //
 // Pass: MergeFunctionRets
 //
 // Description:
-//  This pass modifies a function so that each function only have one unified exit basic block
+//  This pass modifies a function so that each function only have one unified
+//  exit basic block
 //
-class MergeFunctionRets : public ModulePass
-{
+class MergeFunctionRets : public ModulePass {
 private:
-    // Private methods
+  // Private methods
 
-    // Private variables
+  // Private variables
 
 public:
-    static char ID;
-    MergeFunctionRets() : ModulePass(ID) {}
-    StringRef getPassName() const
-    {
-        return "unify function exit into one dummy exit basic block";
+  static char ID;
+  MergeFunctionRets() : ModulePass(ID) {}
+  StringRef getPassName() const {
+    return "unify function exit into one dummy exit basic block";
+  }
+  virtual bool runOnModule(Module &M) {
+    UnifyFunctionExit(M);
+    return true;
+  }
+  inline void UnifyFunctionExit(Module &module) {
+    for (Module::const_iterator iter = module.begin(), eiter = module.end();
+         iter != eiter; ++iter) {
+      const Function &fun = *iter;
+      if (fun.isDeclaration())
+        continue;
+      getUnifyExit(fun)->runOnFunction(const_cast<Function &>(fun));
     }
-    virtual bool runOnModule (Module & M)
-    {
-        UnifyFunctionExit(M);
-        return true;
-    }
-    inline void UnifyFunctionExit(Module& module)
-    {
-        for (Module::const_iterator iter = module.begin(), eiter = module.end();
-                iter != eiter; ++iter)
-        {
-            const Function& fun = *iter;
-            if(fun.isDeclaration())
-                continue;
-            getUnifyExit(fun)->runOnFunction(const_cast<Function&>(fun));
-        }
-    }
-    /// Get Unified Exit basic block node
-    inline UnifyFunctionExitNodes* getUnifyExit(const Function& fn)
-    {
-        assert(!fn.isDeclaration() && "external function does not have DF");
-        return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function&>(fn));
-    }
+  }
+  /// Get Unified Exit basic block node
+  inline UnifyFunctionExitNodes *getUnifyExit(const Function &fn) {
+    assert(!fn.isDeclaration() && "external function does not have DF");
+    return &getAnalysis<UnifyFunctionExitNodes>(const_cast<Function &>(fn));
+  }
 };
 
 } // End namespace SVF
