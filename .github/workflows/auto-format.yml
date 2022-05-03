@@ -15,7 +15,7 @@ jobs:
           # You may manually exclude some folders
           exclude: './lib/CUDD'
           extensions: 'h,cpp,c'
-          clangFormatVersion: 13
+          clangFormatVersion: 11
           inplace: True
       - uses: EndBug/add-and-commit@v4
         with:
