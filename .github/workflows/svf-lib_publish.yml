@@ -1,0 +1,119 @@
+name: svf-publish
+
+# Triggers the publish workflow only on master
+on:
+  push:
+    branches: [ master ]
+
+# Customize the env variable
+env:
+  SVF_CTIR: 1 
+  SVF_Z3: 1
+  SVF_DIR: $GITHUB_WORKSPACE
+
+jobs:
+  publish:
+  if: github.repository == 'SVF-tools/SVF'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-11]
+    steps:
+      # checkout the repo
+      - uses: actions/checkout@v2
+      # setup the environment
+      - name: mac-setup
+        if: runner.os == 'macOS'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 12.5.1
+      - name: mac-setup-workaround
+        if: runner.os == 'macOS'
+        run: ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
+      - name: ubuntu-setup
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install cmake gcc g++ nodejs doxygen graphviz
+      - name: env-setup
+        if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
+        run: |
+          echo $RUNNER_OS
+          git config --global user.email ${{secrets.npm_email}}
+          git config --global user.name "GitHub Actions Build"
+      
+      # build-svf
+      - name: build-svf
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          git clone "https://github.com/SVF-tools/Test-Suite.git";
+          source ${{github.workspace}}/build.sh
+
+      # update doxygen
+      - name: update-doxygen
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'
+        run: |
+            cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
+            cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
+            cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
+            cd $GITHUB_WORKSPACE/SVF-doxygen       
+            git add .       
+            if [ -n "$(git status -s)" ]; then git commit -m"update SVF doxygen"       ; fi
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-doxygen.git   HEAD:master       
+          
+      
+      # update-svf-lib
+      - name: update-svf-lib
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            github.ref == 'refs/heads/master'
+        run: |
+            cd $GITHUB_WORKSPACE        
+            cd ..     
+            git clone https://github.com/SVF-tools/SVF-npm.git
+            if [ "$RUNNER_OS" == "Linux" ]; then export osVersion="linux"; fi
+            if [ "$RUNNER_OS" == "macOS" ]; then export osVersion="osx"; fi
+            echo $osVersion  
+            cd ./SVF-npm
+            git fetch origin
+            git rebase origin/master
+            cp -rf $GITHUB_WORKSPACE/include ./SVF-${osVersion}/       
+            cp $GITHUB_WORKSPACE/Release-build/lib/libSvf.a ./SVF-${osVersion}/Release-build/lib        
+            cp $GITHUB_WORKSPACE/Release-build/lib/CUDD/libCudd.a ./SVF-${osVersion}/Release-build/lib/CUDD       
+            git add .      
+            if [ -n "$(git status -s)" ]; then git commit -m'update svflib' ; fi
+            npm version patch     
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF-npm.git   HEAD:master
+            cd $GITHUB_WORKSPACE      
+          
+      # publish svf
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org/
+      - name: publish-svf
+        if: |
+            github.event_name == 'push' && 
+            github.repository == 'SVF-tools/SVF' && 
+            runner.os == 'Linux' &&
+            github.ref == 'refs/heads/master'     
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          git stash --all 
+          npm_version=`npm v svf-tools version`  
+          sed  -i '/version/s/[^:]*$/'"\"${npm_version}\",/" package.json
+          git add . 
+          if [ -n "$(git status -s)" ]; then git commit -m'update version'  ; fi
+          npm version patch
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
