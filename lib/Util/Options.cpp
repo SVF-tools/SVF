@@ -808,4 +808,35 @@ namespace SVF
                     clEnumValN(CondManager::CondMgrKind::Z3MgrK, "z3", "z3 condition")
             )
     );
+
+    const llvm::cl::opt<std::string> Options::InputFilename(
+        llvm::cl::Positional,
+        llvm::cl::desc("<input bitcode>"), 
+        llvm::cl::init("-")
+    );
+
+    const llvm::cl::opt<std::string> Options::GrammarFilename(
+        llvm::cl::Positional, 
+        llvm::cl::desc("<Grammar textfile>"), 
+        llvm::cl::init("-")
+    );
+
+    const llvm::cl::opt<bool> Options::GraphIsFromDot(
+        "dot-graph", 
+        llvm::cl::init(false), 
+        llvm::cl::desc("Dot text as graph input")
+    );
+
+    const llvm::cl::opt<bool> Options::GrammarIsEBNF(
+        "ebnf-grammar", 
+        llvm::cl::init(false), 
+        llvm::cl::desc("EBNF grammar as grammar input")
+    );
+
+    const llvm::cl::opt<bool> Options::FlexSymMap(
+        "flex-symmap", 
+        llvm::cl::init(false), 
+        llvm::cl::desc("extend exist sym map while read graph from dot if sym not in map.")
+    );
+
 } // namespace SVF.

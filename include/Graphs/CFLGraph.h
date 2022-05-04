@@ -27,6 +27,14 @@
  *      Author: Yulei Sui
  */
 
+#ifndef CFLG_H_
+#define CFLG_H_
+
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <regex>
+#include "CFL/CFLGrammar.h"
 #include "Graphs/GenericGraph.h"
 
 namespace SVF
@@ -62,7 +70,10 @@ typedef GenericGraph<CFLNode,CFLEdge> GenericCFLGraphTy;
 class CFLGraph: public GenericCFLGraphTy
 {
 public:
+    typedef u32_t Symbol;
     typedef GenericNode<CFLNode,CFLEdge>::GEdgeSetTy CFLEdgeSet;
+    Map<std::string, Symbol> label2SymMap;
+    Symbol startSymbol;
 
     CFLGraph()
     {
@@ -79,7 +90,35 @@ public:
         for(auto it = graph->begin(); it!= graph->end(); it++){
             N* node = (*it).second;
             for(E* edge : node->getOutEdges())
+            {
                 addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edge->getEdgeKind());
+            }
+        }
+    }
+
+    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    template<class N, class E> 
+    void buildBigraph(GenericGraph<N,E>* graph){
+        for(auto it = graph->begin(); it!= graph->end(); it++){
+            CFLNode* node = new CFLNode((*it).first);
+            addCFLNode((*it).first, node);
+        }
+        for(auto it = graph->begin(); it!= graph->end(); it++){
+            N* node = (*it).second;
+            for(E* edge : node->getOutEdges())
+            {
+                addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edge->getEdgeKind());
+                std::string key = "";                
+                for (auto &i : this->label2SymMap)
+                {
+                    if (i.second == edge->getEdgeKind())
+                    {
+                        key = i.first;
+                    }
+                }
+                key.append("bar");
+                addCFLEdge(getGNode(edge->getDstID()), getGNode(edge->getSrcID()), this->label2SymMap[key]);
+            }
         }
     }
 
@@ -96,8 +135,16 @@ public:
     /// Build graph from file
     void build(std::string filename);
     
+    /// Build graph from Dot
+    void buildFromDot(std::string filename);
+
+    /// Set label2Sym from External
+    void setMap(Map<std::string, Symbol>* terminals, Map<std::string, Symbol>* nonterminals);
+
 private:
     CFLEdgeSet cflEdgeSet;
+    Symbol current;
+    bool externMap;
 };
 
 }
@@ -124,3 +171,5 @@ template<> struct GraphTraits<SVF::CFLGraph*> : public GraphTraits<SVF::GenericG
 };
 
 } // End namespace llvm
+
+#endif /* CFLG_H_ */

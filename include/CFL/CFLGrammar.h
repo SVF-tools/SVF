@@ -25,34 +25,59 @@
  *
  *  Created on: March 5, 2022
  *      Author: Yulei Sui
- */  
+ */
+#ifndef CFLGrammar_H_
+#define CFLGrammar_H_  
 #include "Util/BasicTypes.h"
 
 namespace SVF{
 
-class CFLGrammar{
-
+class GrammarBase{
 public:
     typedef u32_t Symbol;
     typedef std::vector<Symbol> Production;
     typedef Set<Production> Productions;
+    Map<std::string, Symbol> terminals;
+    Map<std::string, Symbol> nonterminals;
 
+    Symbol str2Sym(std::string str) const;
+    
+    std::string sym2Str(Symbol sym) const;
+
+    Symbol getSymbol(const Production& prod, u32_t pos){
+        return prod.at(pos);
+    }
+
+    Symbol insertTerminalSymbol(std::string strLit);
+    Symbol insertNonTerminalSymbol(std::string strLit);
+
+    Symbol startSymbol;
+    Symbol totalSymbol;
+    Map<Symbol, Productions> rawProductions;
+};
+
+class CFLGrammar : public GrammarBase{
+
+public:
+    Set<Production > epsilonProds;
+    Map<Symbol, Productions> singleRHS2Prods;
+    Map<Symbol, Productions> firstRHS2Prods;
+    Map<Symbol, Productions> secondRHS2Prods;
+    Symbol newTerminalSubscript;
     CFLGrammar();
-
-    void readGrammar(std::string filename);
 
     const Productions& getEpsilonProds() const{
         return epsilonProds;
     }
 
     const bool hasProdsFromFirstRHS(Symbol sym) const{
-        auto it = singleRHS2Prods.find(sym);
-        return it!=singleRHS2Prods.end();
+        auto it = firstRHS2Prods.find(sym);
+        return it!=firstRHS2Prods.end();
     }
 
     const bool hasProdsFromSingleRHS(Symbol sym) const{
-        auto it = firstRHS2Prods.find(sym);
-        return it!=firstRHS2Prods.end();
+        auto it = singleRHS2Prods.find(sym);
+        return it!=singleRHS2Prods.end();
     }
 
     const bool hasProdsFromSecondRHS(Symbol sym) const{
@@ -78,26 +103,25 @@ public:
         return it->second;
     }
 
-    Symbol str2Sym(std::string str) const;
-
     Symbol getLHSSymbol(const Production& prod){
         return prod.at(0);
     }
 
-    Symbol getSymbol(const Production& prod, u32_t pos){
-        return prod.at(pos);
+    Symbol getFirstRHSSymbol(const Production& prod){
+        return prod.at(1);
     }
 
-private:
-    Symbol startSymbol;
-    Map<std::string, Symbol> ternimals;
-    Map<std::string, Symbol> nonternimals;
-    Set<Production > epsilonProds;
-    Map<Symbol, Productions> singleRHS2Prods;
-    Map<Symbol, Productions> firstRHS2Prods;
-    Map<Symbol, Productions> secondRHS2Prods;
+    Symbol getSecondRHSSymbol(const Production& prod){
+        return prod.at(2);
+    }
+
+    inline int num_generator()
+    {
+        return newTerminalSubscript++;
+    }
 
 };
 
 
 }
+#endif /* CFLGrammar_H_ */
