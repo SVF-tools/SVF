@@ -13,7 +13,7 @@
 #include "SVF-FE/DCHG.h"
 #include "Graphs/SVFGOPT.h"
 #include "MSSA/SVFGBuilder.h"
-#include "Util/TypeBasedHeapCloning.h"
+#include "TypeBasedHeapCloning.h"
 #include "WPA/FlowSensitive.h"
 #include "MemoryModel/PointsTo.h"
 

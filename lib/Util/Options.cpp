@@ -798,7 +798,6 @@ namespace SVF
         llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
     );
 
-
     const llvm::cl::opt<CondManager::CondMgrKind> Options::ConditionType(
             "cond-type",
             llvm::cl::init(CondManager::CondMgrKind::BDDMgrK),

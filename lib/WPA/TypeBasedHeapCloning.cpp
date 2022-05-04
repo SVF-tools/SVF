@@ -8,7 +8,7 @@
  */
 
 #include "SVF-FE/CPPUtil.h"
-#include "Util/TypeBasedHeapCloning.h"
+#include "WPA/TypeBasedHeapCloning.h"
 #include "MemoryModel/PointerAnalysisImpl.h"
 
 using namespace SVF;
