@@ -563,18 +563,22 @@ public:
     //@}
 
     /// Return the branch statement
-    const BranchStmt* getBranchStmt() const{
+    const BranchStmt* getBranchStmt() const
+    {
         return brstmt;
     }
     /// Successors of this branch statement
     ///@{
-    u32_t getNumSuccessors() const{
+    u32_t getNumSuccessors() const
+    {
         return brstmt->getNumSuccessors();
     }
-    const BranchStmt::SuccAndCondPairVec& getSuccessors() const{
+    const BranchStmt::SuccAndCondPairVec& getSuccessors() const
+    {
         return brstmt->getSuccessors();
     }
-    const ICFGNode* getSuccessor (u32_t i) const{
+    const ICFGNode* getSuccessor (u32_t i) const
+    {
         return brstmt->getSuccessor(i);
     }
     ///@}

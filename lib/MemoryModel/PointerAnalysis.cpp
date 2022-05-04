@@ -75,7 +75,7 @@ PointerAnalysis::PointerAnalysis(SVFIR* p, PTATY ty, bool alias_check) :
     svfMod(nullptr),ptaTy(ty),stat(nullptr),ptaCallGraph(nullptr),callGraphSCC(nullptr),icfg(nullptr),chgraph(nullptr),typeSystem(nullptr)
 {
     pag = p;
-	OnTheFlyIterBudgetForStat = Options::StatBudget;
+    OnTheFlyIterBudgetForStat = Options::StatBudget;
     print_stat = Options::PStat;
     ptaImplTy = BaseImpl;
     alias_validation = (alias_check && Options::EnableAliasCheck);
@@ -112,20 +112,24 @@ void PointerAnalysis::destroy()
  */
 void PointerAnalysis::initialize()
 {
-	assert(pag && "SVFIR has not been built!");
-	if (chgraph == nullptr) {
-		if (LLVMModuleSet::getLLVMModuleSet()->allCTir()) {
-			DCHGraph *dchg = new DCHGraph(pag->getModule());
-			// TODO: we might want to have an option for extending.
-			dchg->buildCHG(true);
-			chgraph = dchg;
-		} else {
-			CHGraph *chg = new CHGraph(pag->getModule());
+    assert(pag && "SVFIR has not been built!");
+    if (chgraph == nullptr)
+    {
+        if (LLVMModuleSet::getLLVMModuleSet()->allCTir())
+        {
+            DCHGraph *dchg = new DCHGraph(pag->getModule());
+            // TODO: we might want to have an option for extending.
+            dchg->buildCHG(true);
+            chgraph = dchg;
+        }
+        else
+        {
+            CHGraph *chg = new CHGraph(pag->getModule());
             CHGBuilder builder(chg);
-			builder.buildCHG();
-			chgraph = chg;
-		}
-	}
+            builder.buildCHG();
+            chgraph = chg;
+        }
+    }
 
     svfMod = pag->getModule();
 
@@ -145,8 +149,8 @@ void PointerAnalysis::initialize()
     callGraphSCCDetection();
 
     // dump callgraph
-	if (Options::CallGraphDotGraph)
-		getPTACallGraph()->dump("callgraph_initial");
+    if (Options::CallGraphDotGraph)
+        getPTACallGraph()->dump("callgraph_initial");
 }
 
 
@@ -224,8 +228,8 @@ void PointerAnalysis::finalize()
 
     getPTACallGraph()->verifyCallGraph();
 
-	if (Options::CallGraphDotGraph)
-		getPTACallGraph()->dump("callgraph_final");
+    if (Options::CallGraphDotGraph)
+        getPTACallGraph()->dump("callgraph_final");
 
     // FSTBHC has its own TBHC-specific test validation.
     if(!pag->isBuiltFromFile() && alias_validation
@@ -289,12 +293,14 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
     {
         outs() << "##<Dummy Obj > id:" << node->getId();
     }
-    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT()) {
-		if (node->hasValue()) {
-			outs() << "##<" << node->getValue()->getName().str() << "> ";
-			outs() << "Source Loc: " << getSourceLoc(node->getValue());
-		}
-	}
+    else if (!SVFUtil::isa<DummyValVar>(node) && !SVFModule::pagReadFromTXT())
+    {
+        if (node->hasValue())
+        {
+            outs() << "##<" << node->getValue()->getName().str() << "> ";
+            outs() << "Source Loc: " << getSourceLoc(node->getValue());
+        }
+    }
     outs() << "\nPtr " << node->getId() << " ";
 
     if (pts.empty())
@@ -324,15 +330,18 @@ void PointerAnalysis::dumpPts(NodeID ptr, const PointsTo& pts)
             outs() << "DummyVal\n";
         else if (SVFUtil::isa<DummyObjVar>(node))
             outs() << "Dummy Obj id: " << node->getId() << "]\n";
-		else {
-			if (!SVFModule::pagReadFromTXT()) {
-				if (node->hasValue()) {
-					outs() << "<" << pagNode->getValue()->getName().str() << "> ";
-					outs() << "Source Loc: "
-							<< getSourceLoc(pagNode->getValue()) << "] \n";
-				}
-			}
-		}
+        else
+        {
+            if (!SVFModule::pagReadFromTXT())
+            {
+                if (node->hasValue())
+                {
+                    outs() << "<" << pagNode->getValue()->getName().str() << "> ";
+                    outs() << "Source Loc: "
+                           << getSourceLoc(pagNode->getValue()) << "] \n";
+                }
+            }
+        }
     }
 }
 

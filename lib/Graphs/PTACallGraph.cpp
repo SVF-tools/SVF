@@ -55,7 +55,8 @@ void PTACallGraphEdge::addInDirectCallSite(const CallICFGNode* call)
 }
 //@}
 
-const std::string PTACallGraphEdge::toString() const {
+const std::string PTACallGraphEdge::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallSite ID: " << getCallSiteID();
@@ -67,7 +68,8 @@ const std::string PTACallGraphEdge::toString() const {
     return rawstr.str();
 }
 
-const std::string PTACallGraphNode::toString() const {
+const std::string PTACallGraphNode::toString() const
+{
     std::string str;
     raw_string_ostream rawstr(str);
     rawstr << "CallGraphNode ID: " << getId() << " {fun: " << fun->getName() << "}";
@@ -313,7 +315,7 @@ bool PTACallGraph::isReachableBetweenFunctions(const SVFFunction* srcFn, const S
  */
 void PTACallGraph::dump(const std::string& filename)
 {
-      GraphPrinter::WriteGraphToFile(outs(), filename, this);
+    GraphPrinter::WriteGraphToFile(outs(), filename, this);
 }
 
 void PTACallGraph::view()

@@ -41,8 +41,8 @@ using namespace SVFUtil;
 /// Initialize analysis
 void SrcSnkDDA::initialize(SVFModule* module)
 {
-	SVFIRBuilder builder;
-	SVFIR* pag = builder.build(module);
+    SVFIRBuilder builder;
+    SVFIR* pag = builder.build(module);
 
     AndersenWaveDiff* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
     if(Options::SABERFULLSVFG)
@@ -159,10 +159,11 @@ bool SrcSnkDDA::isInAWrapper(const SVFGNode* src, CallSiteSet& csIdSet)
             else
             {
                 const SVFGNode* succ = edge->getDstNode();
-                if(SVFUtil::isa<IntraDirSVFGEdge>(edge)){
+                if(SVFUtil::isa<IntraDirSVFGEdge>(edge))
+                {
                     if (SVFUtil::isa<CopySVFGNode>(succ) || SVFUtil::isa<GepSVFGNode>(succ)
-                        || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
-                        || SVFUtil::isa<ActualRetSVFGNode>(succ) || SVFUtil::isa<StoreSVFGNode>(succ))
+                            || SVFUtil::isa<PHISVFGNode>(succ) || SVFUtil::isa<FormalRetSVFGNode>(succ)
+                            || SVFUtil::isa<ActualRetSVFGNode>(succ) || SVFUtil::isa<StoreSVFGNode>(succ))
                     {
                         worklist.push(succ);
                     }

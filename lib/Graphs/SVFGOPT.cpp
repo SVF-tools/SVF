@@ -497,7 +497,7 @@ void SVFGOPT::bypassMSSAPHINode(const MSSAPHISVFGNode* node)
             const SVFGEdge* succEdge = *outEdgeIt;
             const SVFGNode* dstNode = (*outEdgeIt)->getDstNode();
             if (srcNode->getId() != dstNode->getId()
-                && addNewSVFGEdge(srcNode->getId(), dstNode->getId(), preEdge, succEdge))
+                    && addNewSVFGEdge(srcNode->getId(), dstNode->getId(), preEdge, succEdge))
                 added = true;
             else
             {

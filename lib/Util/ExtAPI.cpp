@@ -15,7 +15,8 @@ using namespace SVF;
 
 ExtAPI* ExtAPI::extAPI = nullptr;
 
-namespace {
+namespace
+{
 
 struct ei_pair
 {
@@ -691,7 +692,7 @@ static const ei_pair ei_pairs[]=
     {"XFreeGC", ExtAPI::EFT_FREE},
     {"XFreePixmap", ExtAPI::EFT_FREE},
     {"XFree", ExtAPI::EFT_FREE},
-    {"VOS_MemFree", ExtAPI::EFT_FREE}, 
+    {"VOS_MemFree", ExtAPI::EFT_FREE},
     //C++ functions
     {"_ZdaPv", ExtAPI::EFT_FREE},	// delete
     {"_ZdlPv", ExtAPI::EFT_FREE},	// delete []

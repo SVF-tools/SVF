@@ -67,7 +67,8 @@ public:
     }
     //@}
 
-    virtual const std::string toString() const {
+    virtual const std::string toString() const
+    {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "ThreadForkEdge ";
@@ -106,7 +107,8 @@ public:
         return edge->getEdgeKind() == PTACallGraphEdge::TDJoinEdge;
     }
 
-    virtual const std::string toString() const {
+    virtual const std::string toString() const
+    {
         std::string str;
         raw_string_ostream rawstr(str);
         rawstr << "ThreadJoinEdge ";

@@ -46,7 +46,8 @@ PTACFInfoBuilder::PTACFInfoBuilder()
 //    PM.run(*mod);
 }
 
-PTACFInfoBuilder::~PTACFInfoBuilder(){
+PTACFInfoBuilder::~PTACFInfoBuilder()
+{
     for(FunToLoopInfoMap::iterator it = funToLoopInfoMap.begin(), eit = funToLoopInfoMap.end(); it!=eit; ++it)
     {
         if(it->second != nullptr)
@@ -73,7 +74,7 @@ PTACFInfoBuilder::~PTACFInfoBuilder(){
 /// Get loop info of a function
 LoopInfo* PTACFInfoBuilder::getLoopInfo(const Function* f)
 {
-	assert(f->isDeclaration()==false && "external function (without body) does not have a loopInfo");
+    assert(f->isDeclaration()==false && "external function (without body) does not have a loopInfo");
     Function* fun = const_cast<Function*>(f);
     FunToLoopInfoMap::iterator it = funToLoopInfoMap.find(fun);
     if(it==funToLoopInfoMap.end())
@@ -90,11 +91,11 @@ LoopInfo* PTACFInfoBuilder::getLoopInfo(const Function* f)
 /// Get post dominator tree of a function
 PostDominatorTree* PTACFInfoBuilder::getPostDT(const Function* f)
 {
-	assert(f->isDeclaration()==false && "external function (without body) does not have a PostDominatorTree");
+    assert(f->isDeclaration()==false && "external function (without body) does not have a PostDominatorTree");
 
     Function* fun = const_cast<Function*>(f);
-	if(f->isDeclaration())
-		return nullptr;
+    if(f->isDeclaration())
+        return nullptr;
     FunToPostDTMap::iterator it = funToPDTMap.find(fun);
     if(it==funToPDTMap.end())
     {

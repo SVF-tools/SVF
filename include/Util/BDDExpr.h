@@ -36,9 +36,11 @@
 #include "CUDD/cuddInt.h"
 #include "z3++.h"
 
-namespace SVF {
+namespace SVF
+{
 
-class BDDExprManager {
+class BDDExprManager
+{
 public:
     typedef DdNode BDDExpr;
     typedef Map<u32_t, BDDExpr *> IndexToBDDExpr;
@@ -47,11 +49,13 @@ private:
     IndexToBDDExpr indexToBddCondMap;
     DdManager *m_bdd_mgr;
 
-    inline BDDExpr *BddOne() const {
+    inline BDDExpr *BddOne() const
+    {
         return Cudd_ReadOne(m_bdd_mgr);
     }
 
-    inline BDDExpr *BddZero() const {
+    inline BDDExpr *BddZero() const
+    {
         return Cudd_ReadLogicZero(m_bdd_mgr);
     }
 
@@ -65,7 +69,8 @@ public:
     //@{
     static BDDExprManager *getBDDExprMgr();
 
-    static void releaseBDDExprMgr() {
+    static void releaseBDDExprMgr()
+    {
         delete bddExprMgr;
         bddExprMgr = nullptr;
     }
@@ -74,7 +79,8 @@ public:
     /// Destructor
     virtual ~BDDExprManager();
 
-    BDDExpr *createCond(u32_t i) {
+    BDDExpr *createCond(u32_t i)
+    {
         assert(indexToBddCondMap.find(i) == indexToBddCondMap.end() &&
                "This should be fresh index to create new BDD");
         BDDExpr *bddCond = Cudd_bddIthVar(m_bdd_mgr, i);
@@ -85,18 +91,21 @@ public:
     virtual BDDExpr *createFreshBranchCond(const Instruction *inst);
 
     /// Return the number of condition expressions
-    virtual inline u32_t getCondNumber() {
+    virtual inline u32_t getCondNumber()
+    {
         return Cudd_ReadNodeCount(m_bdd_mgr);
     }
 
 
     /// Return the unique true condition
-    inline BDDExpr *getTrueCond() const {
+    inline BDDExpr *getTrueCond() const
+    {
         return trueCond;
     }
 
     /// Return the unique false condition
-    inline BDDExpr *getFalseCond() const {
+    inline BDDExpr *getFalseCond() const
+    {
         return falseCond;
     }
 
@@ -109,17 +118,20 @@ public:
     virtual BDDExpr *NEG(BDDExpr *lhs);
     //@}
 
-    virtual bool isNegCond(const BDDExpr *cond) {
+    virtual bool isNegCond(const BDDExpr *cond)
+    {
         return false;
     }
 
     /// Whether the condition is satisfiable
-    virtual bool isSatisfiable(const BDDExpr *cond) {
+    virtual bool isSatisfiable(const BDDExpr *cond)
+    {
         return cond != getFalseCond();
     }
 
     /// Whether lhs and rhs are equivalent branch conditions
-    virtual bool isEquivalentBranchCond(const BDDExpr *lhs, const BDDExpr *rhs){
+    virtual bool isEquivalentBranchCond(const BDDExpr *lhs, const BDDExpr *rhs)
+    {
         return lhs == rhs;
     }
 
@@ -127,7 +139,8 @@ public:
     bool isAllPathReachable(const BDDExpr *e);
 
     /// Get condition using condition id (z3 ast id)
-    virtual BDDExpr *getCond(u32_t id) {
+    virtual BDDExpr *getCond(u32_t id)
+    {
         auto it = indexToBddCondMap.find(id);
         assert(it != indexToBddCondMap.end() && "condition not found!");
         return it->second;
@@ -135,13 +148,15 @@ public:
 
     /// Get/Set llvm conditional expression
     //{@
-    inline const Instruction *getCondInst(const BDDExpr *cond) const {
+    inline const Instruction *getCondInst(const BDDExpr *cond) const
+    {
         CondToTermInstMap::const_iterator it = condToInstMap.find(cond);
         assert(it != condToInstMap.end() && "this should be a fresh condition");
         return it->second;
     }
 
-    inline void setCondInst(const BDDExpr *cond, const Instruction *inst) {
+    inline void setCondInst(const BDDExpr *cond, const Instruction *inst)
+    {
         assert(condToInstMap.find(cond) == condToInstMap.end() && "this should be a fresh condition");
         condToInstMap[cond] = inst;
     }
@@ -161,7 +176,8 @@ public:
 
     std::string dumpStr(const BDDExpr *e) const;
 
-    inline std::string getMemUsage() {
+    inline std::string getMemUsage()
+    {
         return std::to_string(Cudd_ReadMemoryInUse(m_bdd_mgr));
     }
 

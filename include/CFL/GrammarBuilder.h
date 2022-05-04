@@ -31,13 +31,14 @@
 #include "CFL/CFLGrammar.h"
 #include "Graphs/CFLGraph.h"
 
-namespace SVF{
+namespace SVF
+{
 
 /*!
  * Build Grammar from a user specified grammar text
  * Input Format:
  *      Start:              // Special string 'epsilon' for empty RHS
- *      M                   // Specify Start Symbol in Second Line 
+ *      M                   // Specify Start Symbol in Second Line
  *      Productions:        // Each Symbol seperate by 'Space', production end with ';'
  *      M -> V d;           // Terminal in NonCapital
  *      M -> dbar V d;      // NonTerminal in Capital
@@ -45,21 +46,23 @@ namespace SVF{
  *      V -> ( M ? abar ) * M ? ( a M ? ) *;    // Support '(' ')' '?' '*' four regular expression sign
  * Note:
  *      When provide EBNF form text (i.e Last production above),
- *      Please specify -ebnf flag, otherwise regular experssion sign will treat as NonTerminal. 
+ *      Please specify -ebnf flag, otherwise regular experssion sign will treat as NonTerminal.
  */
 
-class GrammarBuilder{
+class GrammarBuilder
+{
 public:
     std::string fileName;
     GrammarBase *grammar;
 
-    GrammarBuilder(std::string fileName): fileName(fileName), grammar(nullptr){
+    GrammarBuilder(std::string fileName): fileName(fileName), grammar(nullptr)
+    {
         grammar = new GrammarBase();
     };
 
-    GrammarBase* build(); 
+    GrammarBase* build();
 
     GrammarBase* build(Map<std::string, SVF::CFLGraph::Symbol> *preMap);
 };
 
-} // SVF 
+} // SVF

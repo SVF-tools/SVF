@@ -84,9 +84,9 @@ typedef llvm::Use Use;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
 #if LLVM_VERSION_MAJOR >= 12
-    typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
+typedef llvm::UnifyFunctionExitNodesLegacyPass UnifyFunctionExitNodes;
 #else
-    typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
+typedef llvm::UnifyFunctionExitNodes UnifyFunctionExitNodes;
 #endif
 typedef llvm::ModulePass ModulePass;
 
@@ -150,9 +150,9 @@ typedef llvm::LoopInfoWrapperPass LoopInfoWrapperPass;
 /// LLVM Iterators
 typedef llvm::inst_iterator inst_iterator;
 #if LLVM_VERSION_MAJOR >= 11
-    typedef llvm::const_succ_iterator succ_const_iterator;
+typedef llvm::const_succ_iterator succ_const_iterator;
 #else
-    typedef llvm::succ_const_iterator succ_const_iterator;
+typedef llvm::succ_const_iterator succ_const_iterator;
 #endif
 typedef llvm::const_inst_iterator const_inst_iterator;
 typedef llvm::const_pred_iterator const_pred_iterator;
@@ -251,32 +251,82 @@ public:
 
 };
 
-class CallSite {
+class CallSite
+{
 private:
     CallBase *CB;
 public:
     CallSite(Instruction *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
     CallSite(Value *I) : CB(SVFUtil::dyn_cast<CallBase>(I)) {}
 
-    CallBase *getInstruction() const { return CB; }
+    CallBase *getInstruction() const
+    {
+        return CB;
+    }
     using arg_iterator = User::const_op_iterator;
-    Value *getArgument(unsigned ArgNo) const { return CB->getArgOperand(ArgNo);}
-    Type *getType() const { return CB->getType(); }
-    User::const_op_iterator arg_begin() const { return CB->arg_begin();}
-    User::const_op_iterator arg_end() const { return CB->arg_end();}
-    unsigned arg_size() const { return CB->arg_size(); }
-    bool arg_empty() const { return CB->arg_empty(); }
-    Value *getArgOperand(unsigned i) const { return CB->getArgOperand(i); }
-    unsigned getNumArgOperands() const { return CB->arg_size(); }
-    Function *getCalledFunction() const { return CB->getCalledFunction(); }
-    Value *getCalledValue() const { return CB->getCalledOperand(); }
-    Function *getCaller() const { return CB->getCaller(); }
-    FunctionType *getFunctionType() const { return CB->getFunctionType(); }
-    bool paramHasAttr(unsigned ArgNo, llvm::Attribute::AttrKind Kind) const { return CB->paramHasAttr(ArgNo, Kind); }
+    Value *getArgument(unsigned ArgNo) const
+    {
+        return CB->getArgOperand(ArgNo);
+    }
+    Type *getType() const
+    {
+        return CB->getType();
+    }
+    User::const_op_iterator arg_begin() const
+    {
+        return CB->arg_begin();
+    }
+    User::const_op_iterator arg_end() const
+    {
+        return CB->arg_end();
+    }
+    unsigned arg_size() const
+    {
+        return CB->arg_size();
+    }
+    bool arg_empty() const
+    {
+        return CB->arg_empty();
+    }
+    Value *getArgOperand(unsigned i) const
+    {
+        return CB->getArgOperand(i);
+    }
+    unsigned getNumArgOperands() const
+    {
+        return CB->arg_size();
+    }
+    Function *getCalledFunction() const
+    {
+        return CB->getCalledFunction();
+    }
+    Value *getCalledValue() const
+    {
+        return CB->getCalledOperand();
+    }
+    Function *getCaller() const
+    {
+        return CB->getCaller();
+    }
+    FunctionType *getFunctionType() const
+    {
+        return CB->getFunctionType();
+    }
+    bool paramHasAttr(unsigned ArgNo, llvm::Attribute::AttrKind Kind) const
+    {
+        return CB->paramHasAttr(ArgNo, Kind);
+    }
 
-    bool operator==(const CallSite &CS) const { return CB == CS.CB; }
-    bool operator!=(const CallSite &CS) const { return CB != CS.CB; }
-    bool operator<(const CallSite &CS) const {
+    bool operator==(const CallSite &CS) const
+    {
+        return CB == CS.CB;
+    }
+    bool operator!=(const CallSite &CS) const
+    {
+        return CB != CS.CB;
+    }
+    bool operator<(const CallSite &CS) const
+    {
         return getInstruction() < CS.getInstruction();
     }
 
@@ -292,8 +342,10 @@ OutStream& operator<< (OutStream &o, const std::pair<F, S> &var)
 } // End namespace SVF
 
 /// Specialise hash for CallSites.
-template <> struct std::hash<SVF::CallSite> {
-    size_t operator()(const SVF::CallSite &cs) const {
+template <> struct std::hash<SVF::CallSite>
+{
+    size_t operator()(const SVF::CallSite &cs) const
+    {
         std::hash<SVF::Instruction *> h;
         return h(cs.getInstruction());
     }

@@ -25,7 +25,7 @@
  *
  *  Created on: Apr 13, 2016
  *      Author: Xiaokang Fan
- * 
+ *
  * Created on: Aug 24, 2019
  *      Author: Mohamad Barbar
  */
@@ -207,7 +207,7 @@ private:
 typedef GenericGraph<CHNode,CHEdge> GenericCHGraphTy;
 class CHGraph: public CommonCHGraph, public GenericCHGraphTy
 {
-friend class CHGBuilder;
+    friend class CHGBuilder;
 
 public:
     typedef Set<const CHNode*> CHNodeSetTy;

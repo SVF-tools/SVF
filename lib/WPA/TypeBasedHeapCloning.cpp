@@ -303,7 +303,7 @@ bool TypeBasedHeapCloning::init(NodeID loc, NodeID p, const DIType *tildet, bool
         }
 
         const Set<const DIType *> &aggs = dchg->isAgg(tp)
-                                             ? dchg->getAggs(tp) : Set<const DIType *>();
+                                          ? dchg->getAggs(tp) : Set<const DIType *>();
 
         NodeID prop;
         bool filter = false;

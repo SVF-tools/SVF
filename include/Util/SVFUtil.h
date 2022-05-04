@@ -170,8 +170,9 @@ inline bool isIntrinsicFun(const Function* func)
                  func->getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
                  func->getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
                  func->getIntrinsicID() == llvm::Intrinsic::dbg_label ||
-                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value)) {
-            return true;
+                 func->getIntrinsicID() == llvm::Intrinsic::dbg_value))
+    {
+        return true;
     }
     return false;
 }
@@ -179,9 +180,11 @@ inline bool isIntrinsicFun(const Function* func)
 /// Return true if it is an intrinsic instruction
 inline bool isIntrinsicInst(const Instruction* inst)
 {
-    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst)) {
+    if (const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(inst))
+    {
         const Function* func = call->getCalledFunction();
-        if (isIntrinsicFun(func)) {
+        if (isIntrinsicFun(func))
+        {
             return true;
         }
     }
@@ -197,10 +200,10 @@ inline bool isCallSite(const Instruction* inst)
 /// Whether an instruction is a call or invoke instruction
 inline bool isCallSite(const Value* val)
 {
-	if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
-		return SVFUtil::isCallSite(inst);
-	else
-		return false;
+    if(const Instruction* inst = SVFUtil::dyn_cast<Instruction>(val))
+        return SVFUtil::isCallSite(inst);
+    else
+        return false;
 }
 /// Whether an instruction is a callsite in the application code, excluding llvm intrinsic calls
 inline bool isNonInstricCallSite(const Instruction* inst)
@@ -237,7 +240,7 @@ inline const SVFFunction* getFunction(StringRef name)
 }
 
 /// find the unique defined global across multiple modules
-inline const Value* getGlobalRep(const Value* val) 
+inline const Value* getGlobalRep(const Value* val)
 {
     if(const GlobalVariable* gvar = SVFUtil::dyn_cast<GlobalVariable>(val))
     {

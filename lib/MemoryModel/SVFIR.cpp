@@ -82,21 +82,23 @@ CopyStmt* SVFIR::addCopyStmt(NodeID src, NodeID dst)
 }
 
 /*!
- * Add Phi statement 
+ * Add Phi statement
  */
 PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
 {
     SVFVar* opNode = getGNode(opnd);
     SVFVar* resNode = getGNode(res);
     PHINodeMap::iterator it = phiNodeMap.find(resNode);
-    if(it == phiNodeMap.end()){
+    if(it == phiNodeMap.end())
+    {
         PhiStmt* phi = new PhiStmt(resNode, {opNode}, {pred});
         addToStmt2TypeMap(phi);
         addEdge(opNode, resNode, phi);
         phiNodeMap[resNode] = phi;
         return phi;
     }
-    else{
+    else
+    {
         it->second->addOpVar(opNode,pred);
         /// return null if we already added this PhiStmt
         return nullptr;
@@ -104,7 +106,7 @@ PhiStmt* SVFIR::addPhiStmt(NodeID res, NodeID opnd, const ICFGNode* pred)
 }
 
 /*!
- * Add Phi statement 
+ * Add Phi statement
  */
 SelectStmt* SVFIR::addSelectStmt(NodeID res, NodeID op1, NodeID op2, NodeID cond)
 {
@@ -543,10 +545,12 @@ NodeID SVFIR::getBaseValVar(NodeID nodeId)
 NodeID SVFIR::getGepValVar(const Value* curInst, NodeID base, const LocationSet& ls) const
 {
     GepValueVarMap::const_iterator iter = GepValObjMap.find(curInst);
-    if(iter==GepValObjMap.end()){
+    if(iter==GepValObjMap.end())
+    {
         return UINT_MAX;
     }
-    else{
+    else
+    {
         NodeLocationSetMap::const_iterator lit = iter->second.find(std::make_pair(base, ls));
         if(lit==iter->second.end())
             return UINT_MAX;
@@ -648,11 +652,11 @@ void SVFIR::print()
     {
         GepStmt* gep = SVFUtil::cast<GepStmt>(*iter);
         if(gep->isVariantFieldGep())
-                outs() << (*iter)->getSrcID() << " -- VariantGep --> "
-               << (*iter)->getDstID() << "\n";
+            outs() << (*iter)->getSrcID() << " -- VariantGep --> "
+                   << (*iter)->getDstID() << "\n";
         else
-                outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantFieldIdx()
-               << ") --> " << gep->getLHSVarID() << "\n";
+            outs() << gep->getRHSVarID() << " -- Gep (" << gep->getConstantFieldIdx()
+                   << ") --> " << gep->getLHSVarID() << "\n";
     }
 
     SVFStmt::SVFStmtSetTy& loads = pag->getSVFStmtSet(SVFStmt::Load);
@@ -674,7 +678,7 @@ void SVFIR::print()
 
 }
 
-    /// Initialize candidate pointers
+/// Initialize candidate pointers
 void SVFIR::initialiseCandidatePointers()
 {
     // collect candidate pointers for demand-driven analysis
@@ -688,7 +692,7 @@ void SVFIR::initialiseCandidatePointers()
     }
 }
 /*!
- * Return true if FIObjVar can point to any object 
+ * Return true if FIObjVar can point to any object
  * Or a field GepObjVar can point to any object.
  */
 bool SVFIR::isNonPointerObj(NodeID id) const

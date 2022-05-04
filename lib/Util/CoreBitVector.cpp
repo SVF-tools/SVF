@@ -151,7 +151,7 @@ bool CoreBitVector::operator==(const CoreBitVector &rhs) const
         // If the first bit is not the same in the word or words are different,
         // then we have a mismatch.
         if (lhsSetIndex * WordSize + offset != rhsSetIndex * WordSize + rhs.offset
-            || words[lhsSetIndex] != rhs.words[rhsSetIndex])
+                || words[lhsSetIndex] != rhs.words[rhsSetIndex])
         {
             return false;
         }

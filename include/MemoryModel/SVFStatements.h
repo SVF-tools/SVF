@@ -194,7 +194,8 @@ private:
  connecting RHS expression and LHS expression with an assignment  (e.g., LHSExpr = RHSExpr)
  Only one operand on the right handside of an assignment
 */
-class AssignStmt : public SVFStmt{
+class AssignStmt : public SVFStmt
+{
 
 private:
     AssignStmt();                      ///< place holder
@@ -244,18 +245,22 @@ public:
     }
     //@}
 
-    inline SVFVar* getRHSVar() const {
+    inline SVFVar* getRHSVar() const
+    {
         return SVFStmt::getSrcNode();
-    }  
-    inline SVFVar* getLHSVar() const {
+    }
+    inline SVFVar* getLHSVar() const
+    {
         return SVFStmt::getDstNode();
-    }  
-    inline NodeID getRHSVarID() const {
+    }
+    inline NodeID getRHSVarID() const
+    {
         return SVFStmt::getSrcID();
-    }  
-    inline NodeID getLHSVarID() const {
+    }
+    inline NodeID getLHSVarID() const
+    {
         return SVFStmt::getDstID();
-    }  
+    }
 
     virtual const std::string toString() const = 0;
 };
@@ -441,7 +446,8 @@ public:
         return getLocationSet().getOffsetValueVec();
     }
     /// Return TRUE if this is a constant location set.
-    inline bool isConstantOffset() const{
+    inline bool isConstantOffset() const
+    {
         return getLocationSet().isConstantOffset();
     }
     /// Return accumulated constant offset (when accessing array or struct) if this offset is a constant.
@@ -455,11 +461,11 @@ public:
         assert(isVariantFieldGep()==false && "Can't retrieve the LocationSet if using a variable field index (pointer arithmetic) for struct field access ");
         return getLocationSet().accumulateConstantFieldIdx();
     }
-    /// Gep statement with a variant field index (pointer arithmetic) for struct field access 
+    /// Gep statement with a variant field index (pointer arithmetic) for struct field access
     inline bool isVariantFieldGep() const
     {
         return variantField;
-    }   
+    }
 
     /// constructor
     GepStmt(SVFVar* s, SVFVar* d, const LocationSet& l, bool varfld=false) : AssignStmt(s,d,SVFStmt::Gep), ls(l), variantField(varfld)
@@ -472,7 +478,7 @@ public:
 
 
 /*!
- * Call 
+ * Call
  */
 class CallPE: public AssignStmt
 {
@@ -481,7 +487,7 @@ private:
     CallPE(const CallPE &);  ///< place holder
     void operator=(const CallPE &); ///< place holder
 
-    const CallICFGNode* call;		        /// the callsite statement calling from 
+    const CallICFGNode* call;		        /// the callsite statement calling from
     const FunEntryICFGNode* entry;		/// the function exit statement calling to
 public:
     /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -493,12 +499,12 @@ public:
     static inline bool classof(const SVFStmt *edge)
     {
         return edge->getEdgeKind() == SVFStmt::Call
-        	|| edge->getEdgeKind() == SVFStmt::ThreadFork;
+               || edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
         return edge->getEdgeKind() == SVFStmt::Call
-        	|| edge->getEdgeKind() == SVFStmt::ThreadFork;
+               || edge->getEdgeKind() == SVFStmt::ThreadFork;
     }
     //@}
 
@@ -529,7 +535,7 @@ public:
 
 
 /*!
- * Return 
+ * Return
  */
 class RetPE: public AssignStmt
 {
@@ -550,12 +556,12 @@ public:
     static inline bool classof(const SVFStmt *edge)
     {
         return edge->getEdgeKind() == SVFStmt::Ret
-			|| edge->getEdgeKind() == SVFStmt::ThreadJoin;
+               || edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     static inline bool classof(const GenericPAGEdgeTy *edge)
     {
         return edge->getEdgeKind() == SVFStmt::Ret
-    		|| edge->getEdgeKind() == SVFStmt::ThreadJoin;
+               || edge->getEdgeKind() == SVFStmt::ThreadJoin;
     }
     //@}
 
@@ -587,7 +593,8 @@ public:
 /*
 * Program statements with multiple operands including BinaryOPStmt, CmpStmt and PhiStmt
 */
-class MultiOpndStmt : public SVFStmt{
+class MultiOpndStmt : public SVFStmt
+{
 public:
     typedef std::vector<SVFVar*> OPVars;
 private:
@@ -647,7 +654,8 @@ public:
     {
         return opVars.size();
     }
-    inline const OPVars& getOpndVars() const{
+    inline const OPVars& getOpndVars() const
+    {
         return opVars;
     }
     inline OPVars::const_iterator opVarBegin() const
@@ -702,18 +710,20 @@ public:
     {
         assert(opnds.size()==icfgNodes.size() && "Numbers of operands and their ICFGNodes are not consistent?");
     }
-    void addOpVar(SVFVar* op, const ICFGNode* inode){
+    void addOpVar(SVFVar* op, const ICFGNode* inode)
+    {
         opVars.push_back(op);
         opICFGNodes.push_back(inode);
         assert(opVars.size()==opICFGNodes.size() && "Numbers of operands and their ICFGNodes are not consistent?");
     }
 
     /// Return the corresponding ICFGNode of this operand
-    inline const ICFGNode* getOpICFGNode(u32_t op_idx) const{
+    inline const ICFGNode* getOpICFGNode(u32_t op_idx) const
+    {
         return opICFGNodes.at(op_idx);
     }
 
-    /// Return true if this is a phi at the function exit 
+    /// Return true if this is a phi at the function exit
     /// to receive one or multiple return values of this function
     bool isFunctionRetPhi() const;
 
@@ -759,13 +769,16 @@ public:
     }
     virtual const std::string toString() const override;
 
-    inline const SVFVar* getCondition() const{
+    inline const SVFVar* getCondition() const
+    {
         return condition;
     }
-    inline const SVFVar* getTrueValue() const{
+    inline const SVFVar* getTrueValue() const
+    {
         return  getOpVar(0);
     }
-    inline const SVFVar* getFalseValue() const{
+    inline const SVFVar* getFalseValue() const
+    {
         return  getOpVar(1);
     }
 };
@@ -811,7 +824,7 @@ public:
     {
         return predicate;
     }
-    
+
     virtual const std::string toString() const override;
 };
 
@@ -902,10 +915,12 @@ public:
     {
         return opcode;
     }
-    inline const SVFVar* getOpVar() const{
+    inline const SVFVar* getOpVar() const
+    {
         return SVFStmt::getSrcNode();
     }
-    inline const SVFVar* getRes() const{
+    inline const SVFVar* getRes() const
+    {
         return SVFStmt::getDstNode();
     }
     NodeID getOpVarID() const;
@@ -916,7 +931,7 @@ public:
 
 
 /*!
- * Branch statements including if/else and switch 
+ * Branch statements including if/else and switch
  */
 class BranchStmt: public SVFStmt
 {
@@ -926,8 +941,8 @@ private:
     BranchStmt();                      ///< place holder
     BranchStmt(const BranchStmt &);  ///< place holder
     void operator=(const BranchStmt &); ///< place holder
-    SVFVar* getSrcNode();  ///< place holder, not allowed 
-    SVFVar* getDstNode();    ///< place holder, not allowed 
+    SVFVar* getSrcNode();  ///< place holder, not allowed
+    SVFVar* getDstNode();    ///< place holder, not allowed
     NodeID getSrcID();  ///< place holder, use getOpVarID(pos) instead
     NodeID getDstID();    ///< place holder, use getResID() instead
 
@@ -961,33 +976,38 @@ public:
     bool isUnconditional() const;
     /// The branch is conditional if cond is not a null value
     bool isConditional() const;
-    /// Return the condition 
+    /// Return the condition
     const SVFVar* getCondition() const;
-    const SVFVar* getBranchInst() const{
+    const SVFVar* getBranchInst() const
+    {
         return brInst;
     }
-    
+
     /// For example if(c) {stmt1} else {stmt2}
     /// successor(0): stmt1, 1
-    /// successor(1): stmt2, 0 
+    /// successor(1): stmt2, 0
 
     /// For example switch(c) case 0: {stmt1; break;} case 1: {stmt2; break;} default {stmt3: break}
     /// successor(0): stmt1, 0
-    /// successor(1): stmt2, 1 
-    /// successor(3): stmt3, -1 
+    /// successor(1): stmt2, 1
+    /// successor(3): stmt3, -1
 
     /// Successors of this branch statement
     ///@{
-    u32_t getNumSuccessors() const{
+    u32_t getNumSuccessors() const
+    {
         return successors.size();
     }
-    const SuccAndCondPairVec& getSuccessors() const{
+    const SuccAndCondPairVec& getSuccessors() const
+    {
         return successors;
     }
-    const ICFGNode* getSuccessor (u32_t i) const{
+    const ICFGNode* getSuccessor (u32_t i) const
+    {
         return successors.at(i).first;
     }
-    s32_t getSuccessorCondValue (u32_t i) const{ 
+    s32_t getSuccessorCondValue (u32_t i) const
+    {
         return successors.at(i).second;
     }
     //@}
@@ -996,7 +1016,7 @@ public:
 
 
 /*!
- * Thread Fork 
+ * Thread Fork
  */
 class TDForkPE: public CallPE
 {
@@ -1034,7 +1054,7 @@ public:
 
 
 /*!
- * Thread Join 
+ * Thread Join
  */
 class TDJoinPE: public RetPE
 {

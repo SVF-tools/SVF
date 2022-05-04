@@ -45,7 +45,8 @@ u32_t ContextCond::maximumPathLen = 0;
 u32_t ContextCond::maximumPath = 0;
 
 
-PathCondAllocator::PathCondAllocator() : condMgr(BDDExprManager::getBDDExprMgr()) {
+PathCondAllocator::PathCondAllocator() : condMgr(BDDExprManager::getBDDExprMgr())
+{
 
 }
 /*!
@@ -99,8 +100,8 @@ void PathCondAllocator::allocateForBB(const BasicBlock & bb)
 
         // iterate each successor
         for (succ_const_iterator succ_it = succ_begin(&bb);
-             succ_it != succ_end(&bb);
-             succ_it++, succ_index++)
+                succ_it != succ_end(&bb);
+                succ_it++, succ_index++)
         {
 
             const BasicBlock* succ = *succ_it;
@@ -187,7 +188,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
-            // succ is else branch
+        // succ is else branch
         else
             return getTrueCond();
     }
@@ -196,7 +197,7 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateTestNullLikeExpr(const 
         // succ is then branch
         if(succ1 == succ)
             return getTrueCond();
-            // succ is else branch
+        // succ is else branch
         else
             return getFalseCond();
     }
@@ -221,26 +222,26 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateProgExit(const BranchSt
         // succ is then branch
         if(succ1 == succ)
             return getFalseCond();
-            // succ is else branch
+        // succ is else branch
         else
             return getTrueCond();
     }
-        /// else branch calls program exit
+    /// else branch calls program exit
     else if(!branch1 && branch2)
     {
         // succ is else branch
         if(succ2 == succ)
             return getFalseCond();
-            // succ is then branch
+        // succ is then branch
         else
             return getTrueCond();
     }
-        // two branches both call program exit
+    // two branches both call program exit
     else if(branch1 && branch2)
     {
         return getFalseCond();
     }
-        /// no branch call program exit
+    /// no branch call program exit
     else
         return nullptr;
 
@@ -299,10 +300,14 @@ PathCondAllocator::Condition* PathCondAllocator::evaluateBranchCond(const BasicB
         return getTrueCond();
     }
 
-    if (ICFGNode *icfgNode = getICFG()->getICFGNode(bb->getTerminator())) {
-        for (const auto &svfStmt: icfgNode->getSVFStmts()) {
-            if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt)) {
-                if(branchStmt->getNumSuccessors() == 2) {
+    if (ICFGNode *icfgNode = getICFG()->getICFGNode(bb->getTerminator()))
+    {
+        for (const auto &svfStmt: icfgNode->getSVFStmts())
+        {
+            if (const BranchStmt *branchStmt = SVFUtil::dyn_cast<BranchStmt>(svfStmt))
+            {
+                if(branchStmt->getNumSuccessors() == 2)
+                {
                     const BasicBlock* succ1 = branchStmt->getSuccessor(0)->getBB();
                     const BasicBlock* succ2 = branchStmt->getSuccessor(1)->getBB();
                     assert((succ1 == succ || succ2 == succ) && "not a successor??");
@@ -372,18 +377,25 @@ bool PathCondAllocator::isTestContainsNullAndTheValue(const CmpInst* cmp) const
 
     const Value *op0 = cmp->getOperand(0);
     const Value *op1 = cmp->getOperand(1);
-    if (SVFUtil::isa<ConstantPointerNull>(op1)) {
+    if (SVFUtil::isa<ConstantPointerNull>(op1))
+    {
         Set<const Value *> inDirVal;
-        for (const auto &it: getCurEvalSVFGNode()->getOutEdges()) {
-            if (it->isIndirectVFGEdge()) {
+        for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
+        {
+            if (it->isIndirectVFGEdge())
+            {
                 inDirVal.insert(it->getDstNode()->getValue());
             }
         }
         return inDirVal.find(op0) != inDirVal.end();
-    } else if (SVFUtil::isa<ConstantPointerNull>(op0)) {
+    }
+    else if (SVFUtil::isa<ConstantPointerNull>(op0))
+    {
         Set<const Value *> inDirVal;
-        for (const auto &it: getCurEvalSVFGNode()->getOutEdges()) {
-            if (it->isIndirectVFGEdge()) {
+        for (const auto &it: getCurEvalSVFGNode()->getOutEdges())
+        {
+            if (it->isIndirectVFGEdge())
+            {
                 inDirVal.insert(it->getDstNode()->getValue());
             }
         }
@@ -508,7 +520,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
 
 
         for (succ_const_iterator succ_it = succ_begin(bb);
-             succ_it != succ_end(bb); succ_it++)
+                succ_it != succ_end(bb); succ_it++)
         {
             const BasicBlock* succ = *succ_it;
             /// calculate the branch condition
@@ -522,7 +534,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
                 brCond = getEvalBrCond(bb, succ);
 
             DBOUT(DSaber, outs() << " bb (" << bb->getName().str() <<
-                                 ") --> " << "succ_bb (" << succ->getName().str() << ") condition: " << brCond << "\n");
+                  ") --> " << "succ_bb (" << succ->getName().str() << ") condition: " << brCond << "\n");
             Condition* succPathCond = condAnd(cond, brCond);
             if(setCFCond(succ, condOr(getCFCond(succ), succPathCond)))
                 worklist.push(succ);
@@ -530,7 +542,7 @@ PathCondAllocator::Condition* PathCondAllocator::ComputeIntraVFGGuard(const Basi
     }
 
     DBOUT(DSaber, outs() << " src_bb (" << srcBB->getName().str() <<
-                         ") --> " << "dst_bb (" << dstBB->getName().str() << ") condition: " << getCFCond(dstBB) << "\n");
+          ") --> " << "dst_bb (" << dstBB->getName().str() << ") condition: " << getCFCond(dstBB) << "\n");
 
     return getCFCond(dstBB);
 }

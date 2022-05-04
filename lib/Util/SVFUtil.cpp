@@ -125,7 +125,7 @@ void SVFUtil::dumpPointsToList(const PointsToList& ptl)
 {
     outs() << "{";
     for (PointsToList::const_iterator ii = ptl.begin(), ie = ptl.end();
-         ii != ie; ii++)
+            ii != ie; ii++)
     {
         auto bs = *ii;
         dumpSet(bs);
@@ -238,7 +238,7 @@ void SVFUtil::increaseStackSize()
             rl.rlim_cur = kStackSize;
             result = setrlimit(RLIMIT_STACK, &rl);
             if (result != 0)
-            	writeWrnMsg("setrlimit returned result !=0 \n");
+                writeWrnMsg("setrlimit returned result !=0 \n");
         }
     }
 }
@@ -295,13 +295,15 @@ std::string SVFUtil::getSourceLoc(const Value* val)
             unsigned Column = Loc->getColumn();
             StringRef File = Loc->getFilename();
             //StringRef Dir = Loc.getDirectory();
-            if(File.str().empty() || Line == 0) {
+            if(File.str().empty() || Line == 0)
+            {
                 auto inlineLoc = Loc->getInlinedAt();
-                if(inlineLoc) {
+                if(inlineLoc)
+                {
                     Line = inlineLoc->getLine();
                     Column = inlineLoc->getColumn();
                     File = inlineLoc->getFilename();
-                }   
+                }
             }
             rawstr << "ln: " << Line << "  cl: " << Column << "  fl: " << File;
         }
@@ -387,10 +389,12 @@ std::string SVFUtil::hclustMethodToString(hclust_fast_methods method)
 /*!
  * return string of an LLVM Value
  */
-const std::string SVFUtil::value2String(const Value* value) {
+const std::string SVFUtil::value2String(const Value* value)
+{
     std::string str;
     raw_string_ostream rawstr(str);
-    if(value){
+    if(value)
+    {
         if(const SVF::Function* fun = SVFUtil::dyn_cast<Function>(value))
             rawstr << " " << fun->getName() << " ";
         else
@@ -400,14 +404,18 @@ const std::string SVFUtil::value2String(const Value* value) {
     return rawstr.str();
 }
 
-void SVFFunction::viewCFG() {
-    if (fun != nullptr) {
+void SVFFunction::viewCFG()
+{
+    if (fun != nullptr)
+    {
         fun->viewCFG();
     }
 }
 
-void SVFFunction::viewCFGOnly() {
-    if (fun != nullptr) {
+void SVFFunction::viewCFGOnly()
+{
+    if (fun != nullptr)
+    {
         fun->viewCFGOnly();
     }
 }

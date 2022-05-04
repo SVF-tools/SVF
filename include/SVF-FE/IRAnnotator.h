@@ -33,7 +33,7 @@ public:
         this->ptsTo = ptsTo;
         mainModule = LLVMModuleSet::getLLVMModuleSet()->getMainLLVMModule();
 
-        // Add a named metadata node used to check whether or not 
+        // Add a named metadata node used to check whether or not
         // this IR has been annotated with Andersen information
         if (writeFlag)
             mainModule->getOrInsertNamedMetadata("SVFIR-Annotated");
@@ -146,7 +146,7 @@ private:
     void processInstructionNode(Instruction *instruction, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "inode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = instruction->getContext();
@@ -164,7 +164,7 @@ private:
     void processArgumentNode(Argument *argument, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "anode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = argument->getContext();
@@ -182,7 +182,7 @@ private:
     void processFunctionNode(Function *function, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "fnode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = function->getContext();
@@ -200,7 +200,7 @@ private:
     void processGlobalVarNode(GlobalVariable *globalVar, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "gnode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = globalVar->getContext();
@@ -218,7 +218,7 @@ private:
     void processBasicBlockNode(BasicBlock *basicBlock, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "bnode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = basicBlock->getContext();
@@ -236,7 +236,7 @@ private:
     void processConstantNode(const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "cnode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = mainModule->getContext();
@@ -254,7 +254,7 @@ private:
     void processInlineAsmNode(llvm::InlineAsm *inlineAsm, const SVF::NodeID &nodeId, bool writeFlag)
     {
         std::string label = "iAsmnode-" + std::to_string(nodeId);
-        
+
         if (writeFlag)
         {
             LLVMContext &context = mainModule->getContext();

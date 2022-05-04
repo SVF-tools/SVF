@@ -32,20 +32,23 @@
 
 #include "CFLGrammar.h"
 
-namespace SVF{
+namespace SVF
+{
 
 /*!
  *  Normalize Grammar from a grammarbase
  */
 
-class CFGNormalizer {
+class CFGNormalizer
+{
 
 public:
     typedef u32_t Symbol;
     typedef std::vector<Symbol> Production;
     typedef Set<Production> Productions;
 
-    CFGNormalizer(){
+    CFGNormalizer()
+    {
     }
 
     /// Start Normalize (BIN Only)

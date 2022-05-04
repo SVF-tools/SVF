@@ -34,7 +34,10 @@ public:
     // TODO: an unordered pair type may be better.
     typedef Map<std::pair<PointsToID, PointsToID>, PointsToID> OpCache;
 
-    static PointsToID emptyPointsToId(void) { return 0; };
+    static PointsToID emptyPointsToId(void)
+    {
+        return 0;
+    };
 
 public:
     PersistentPointsToCache(void) : idCounter(1)
@@ -48,13 +51,13 @@ public:
     /// Clear the cache.
     void clear()
     {
-      for (const Data *d : idToPts) delete d;
-      idToPts.clear();
-      ptsToId.clear();
+        for (const Data *d : idToPts) delete d;
+        idToPts.clear();
+        ptsToId.clear();
 
-      unionCache.clear();
-      complementCache.clear();
-      intersectionCache.clear();
+        unionCache.clear();
+        complementCache.clear();
+        intersectionCache.clear();
     }
 
     /// Resets the cache removing everything except the emptyData it was initialised with.
@@ -108,7 +111,10 @@ public:
     /// Unions lhs and rhs and returns their union's ID.
     PointsToID unionPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp unionOp = [](const Data &lhs, const Data &rhs) { return lhs | rhs; };
+        static const DataOp unionOp = [](const Data &lhs, const Data &rhs)
+        {
+            return lhs | rhs;
+        };
 
         ++totalUnions;
 
@@ -155,7 +161,8 @@ public:
                 ++preemptiveUnions;
                 ++totalUnions;
             }
-        } else ++lookupUnions;
+        }
+        else ++lookupUnions;
 
         return result;
     }
@@ -163,7 +170,10 @@ public:
     /// Relatively complements lhs and rhs (lhs \ rhs) and returns it's ID.
     PointsToID complementPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp complementOp = [](const Data &lhs, const Data &rhs) { return lhs - rhs; };
+        static const DataOp complementOp = [](const Data &lhs, const Data &rhs)
+        {
+            return lhs - rhs;
+        };
 
         ++totalComplements;
 
@@ -214,7 +224,8 @@ public:
                 ++preemptiveComplements;
                 ++totalComplements;
             }
-        } else ++lookupComplements;
+        }
+        else ++lookupComplements;
 
         return result;
     }
@@ -222,7 +233,10 @@ public:
     /// Intersects lhs and rhs (lhs AND rhs) and returns the intersection's ID.
     PointsToID intersectPts(PointsToID lhs, PointsToID rhs)
     {
-        static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs) { return lhs & rhs; };
+        static const DataOp intersectionOp = [](const Data &lhs, const Data &rhs)
+        {
+            return lhs & rhs;
+        };
 
         ++totalIntersections;
 
@@ -287,7 +301,8 @@ public:
                     ++totalUnions;
                 }
             }
-        } else ++lookupIntersections;
+        }
+        else ++lookupIntersections;
 
         return result;
     }

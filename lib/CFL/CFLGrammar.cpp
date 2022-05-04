@@ -32,7 +32,8 @@
 
 using namespace SVF;
 
-GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const{
+GrammarBase::Symbol GrammarBase::str2Sym(std::string str) const
+{
 
     auto tit = terminals.find(str);
     if(tit!=terminals.end())
@@ -72,30 +73,37 @@ std::string GrammarBase::sym2Str(Symbol sym) const
     return "";
 }
 
-GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit){
+GrammarBase::Symbol GrammarBase::insertTerminalSymbol(std::string strLit)
+{
     Symbol sym;
-    if (terminals.find(strLit) == terminals.end()) {
+    if (terminals.find(strLit) == terminals.end())
+    {
         sym = totalSymbol++;
         terminals.insert({strLit, sym});
     }
-    else{
+    else
+    {
         sym = str2Sym(strLit);
     }
     return sym;
 }
-GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit){
+GrammarBase::Symbol GrammarBase::insertNonTerminalSymbol(std::string strLit)
+{
     Symbol sym;
-    if (nonterminals.find(strLit) == nonterminals.end()) {
+    if (nonterminals.find(strLit) == nonterminals.end())
+    {
         sym = totalSymbol++;
         nonterminals.insert({strLit, sym});
     }
-    else{
+    else
+    {
         sym = str2Sym(strLit);
     }
     return sym;
 }
 
-CFLGrammar::CFLGrammar(){
+CFLGrammar::CFLGrammar()
+{
 
 }
 
