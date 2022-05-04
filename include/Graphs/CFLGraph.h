@@ -92,6 +92,22 @@ public:
             for(E* edge : node->getOutEdges())
             {
                 addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edge->getEdgeKind());
+            }
+        }
+    }
+
+    /// Build Bidirectional graph by copying nodes and edges from any graph inherited from GenericGraph
+    template<class N, class E> 
+    void buildBigraph(GenericGraph<N,E>* graph){
+        for(auto it = graph->begin(); it!= graph->end(); it++){
+            CFLNode* node = new CFLNode((*it).first);
+            addCFLNode((*it).first, node);
+        }
+        for(auto it = graph->begin(); it!= graph->end(); it++){
+            N* node = (*it).second;
+            for(E* edge : node->getOutEdges())
+            {
+                addCFLEdge(getGNode(edge->getSrcID()), getGNode(edge->getDstID()), edge->getEdgeKind());
                 std::string key = "";                
                 for (auto &i : this->label2SymMap)
                 {

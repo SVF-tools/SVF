@@ -74,7 +74,7 @@ void CFLSolver::solve(){
             for(const Production& prod : grammar->getProdsFromFirstRHS(Y)){
                 Symbol X = grammar->getLHSSymbol(prod);
                 for(const CFLEdge* Z_edge : j->getOutEdges()){
-                    if (Z_edge->getEdgeKind() == prod[2])
+                    if (Z_edge->getEdgeKind() == grammar->getSecondRHSSymbol(prod))
                     {
                         CFLNode* k = Z_edge->getDstNode();
                         if(const CFLEdge* newEdge = graph->addCFLEdge(i, k, X))
@@ -92,7 +92,7 @@ void CFLSolver::solve(){
             for(const Production& prod : grammar->getProdsFromSecondRHS(Y)){
                 Symbol X = grammar->getLHSSymbol(prod);
                 for(const CFLEdge* Z_edge : i->getInEdges()){
-                    if(Z_edge->getEdgeKind() == prod[1])
+                    if(Z_edge->getEdgeKind() == grammar->getFirstRHSSymbol(prod))
                     {
                         CFLNode* k = Z_edge->getSrcNode();
                         if(const CFLEdge* newEdge = graph->addCFLEdge(k, j, X))

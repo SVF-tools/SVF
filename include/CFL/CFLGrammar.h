@@ -107,6 +107,14 @@ public:
         return prod.at(0);
     }
 
+    Symbol getFirstRHSSymbol(const Production& prod){
+        return prod.at(1);
+    }
+
+    Symbol getSecondRHSSymbol(const Production& prod){
+        return prod.at(2);
+    }
+
     inline int num_generator()
     {
         return newTerminalSubscript++;
