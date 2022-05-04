@@ -52,6 +52,7 @@ public:
 
     /// Start Analysis here (main part of pointer analysis). 
     virtual void analyze(){
+        PointerAnalysis::initialize();
         GrammarBuilder * gReader = new GrammarBuilder(Options::GrammarFilename);
         CFGNormalizer *normalizer = new CFGNormalizer();
         
@@ -59,18 +60,23 @@ public:
         if (Options::GraphIsFromDot == false){
             // Maybe could put in SVFIR Class 
             // In memory Graph does not have string type label
+            /*
             Map<std::string, SVF::CFLGraph::Symbol> PAGMap = {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Call", 4},
                 {"Ret", 5},{"Gep", 6},{"Phi", 7},{"Select", 8},{"Cmp", 9},
                 {"BinaryOp", 10},{"UnaryOp",11}, {"Branch",12}, {"ThreadFork",13},{"ThreadJoin",14},
                 {"Addrbar",15}, {"Copybar", 16},{"Storebar", 17},{"Loadbar", 18},{"Callbar", 19},
                 {"Retbar", 20},{"Gepbar", 21},{"Phibar", 22},{"Selectbar", 23},{"Cmpbar", 24},
                 {"BinaryOpbar", 25},{"UnaryOpbar",26}, {"Branchbar",27}, {"ThreadForkbar",28},{"ThreadJoinbar",29}};
+            */
+            Map<std::string, SVF::CFLGraph::Symbol> ConstMap =  {{"Addr",0}, {"Copy", 1},{"Store", 2},{"Load", 3},{"Gep", 4},{"Vgep", 5},{"Addrbar",6}, {"Copybar", 7},{"Storebar", 8},{"Loadbar", 9},{"Gepbar", 10},{"Vgepbar", 11}};
             ConstraintGraph *consCG = new ConstraintGraph(svfir);
+            svfir->dump("SVFIR");
             // Can be put in build, copy from general graph
-            graph->label2SymMap = PAGMap;
+            graph->label2SymMap = ConstMap;
             graph->build(consCG);
+            graph->dump("PAG");
             delete consCG;
-            GrammarBase *generalGrammar = gReader->build(&PAGMap);
+            GrammarBase *generalGrammar = gReader->build(&ConstMap);
             grammar = normalizer->normalize(generalGrammar);
             graph->setMap(&grammar->terminals, &grammar->nonterminals);
         }
@@ -84,6 +90,7 @@ public:
         solver = new CFLSolver(graph, grammar);
         solver->solve();
         graph->dump("map");
+        PointerAnalysis::finalize();
     }
 
     /// Interface exposed to users of our pointer analysis, given Value infos
