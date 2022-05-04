@@ -29,7 +29,9 @@ jobs:
           xcode-version: 12.5.1
       - name: mac-setup-workaround
         if: runner.os == 'macOS'
-        run: ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
+        run: |
+          ln -sfn /Applications/Xcode_12.5.1.app /Applications/Xcode.app
+          brew install astyle
       - name: ubuntu-setup
         if: runner.os == 'Linux'
         run: |
@@ -37,6 +39,8 @@ jobs:
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           sudo apt-get install cmake gcc g++ nodejs doxygen graphviz
+          sudo apt-get update
+          sudo apt-get install -y astyle
       - name: env-setup
         if: github.event_name == 'push' && github.repository == 'SVF-tools/SVF'
         run: |
@@ -44,22 +48,31 @@ jobs:
           git config --global user.email ${{secrets.npm_email}}
           git config --global user.name "GitHub Actions Build"
       
-      # build-svf
-      - name: build-svf
+      # code-format and build-svf
+      - name: code-format-and-build-svf
         run: |
           cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          astyle --style=allman -n -r "*.h" "*.cpp"
           echo $(pwd)
           git clone "https://github.com/SVF-tools/Test-Suite.git";
           source ${{github.workspace}}/build.sh
 
-      # update doxygen
-      - name: update-doxygen
+      # update formatting code and doxygen
+      - name: update-formatting-code-and-doxygen
         if: |
             github.event_name == 'push' && 
             github.repository == 'SVF-tools/SVF' && 
             runner.os == 'Linux' &&
             github.ref == 'refs/heads/master'
         run: |
+            cd $GITHUB_WORKSPACE
+            echo $(pwd)
+            git status
+            git add .
+            git status
+            if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
+            git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
             cd $GITHUB_WORKSPACE/doc && doxygen doxygen.config
             cd $GITHUB_WORKSPACE  && git clone https://github.com/SVF-tools/SVF-doxygen.git       
             cp -r $GITHUB_WORKSPACE/doc/generated-doc/html $GITHUB_WORKSPACE/SVF-doxygen/html       
