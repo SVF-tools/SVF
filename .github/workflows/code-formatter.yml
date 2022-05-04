@@ -1,0 +1,44 @@
+name: code-formatter
+
+# Triggers the workflow on push or pull request events
+on:
+  push:
+    branches: [ master ]
+
+env:
+  SVF_CTIR: 1 
+  SVF_Z3: 1
+  SVF_DIR: $GITHUB_WORKSPACE
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+    steps:
+      # checkout the repo
+      - uses: actions/checkout@v2
+      - name: ubuntu-setup
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y astyle
+      - name: astyle-format
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          astyle --style=allman -n -r "*.h" "*.cpp"
+          
+      - name: commit-and-push
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo $(pwd)
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@users.noreply.github.com'
+          git status
+          git add .
+          if [ -n "$(git status -s)" ]; then git commit -m"SVF code formatter"; fi
+          git push https://yuleisui:${{secrets.yulei_git_key}}@github.com/SVF-tools/SVF.git   HEAD:master
