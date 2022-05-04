@@ -798,16 +798,6 @@ namespace SVF
         llvm::cl::desc("Show hidden nodes on DOT Graphs (e.g., isolated node on a graph)")
     );
 
-    const llvm::cl::opt<CondManager::CondMgrKind> Options::ConditionType(
-            "cond-type",
-            llvm::cl::init(CondManager::CondMgrKind::BDDMgrK),
-            llvm::cl::desc("condition type used in path-sensitive analysis"),
-            llvm::cl::values(
-                    clEnumValN(CondManager::CondMgrKind::BDDMgrK, "bdd", "BDD condition"),
-                    clEnumValN(CondManager::CondMgrKind::Z3MgrK, "z3", "z3 condition")
-            )
-    );
-
     const llvm::cl::opt<std::string> Options::InputFilename(
         llvm::cl::Positional,
         llvm::cl::desc("<input bitcode>"), 
