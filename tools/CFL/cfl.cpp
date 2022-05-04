@@ -1,8 +1,8 @@
-//===- saber.cpp -- Source-sink bug checker------------------------------------//
+//===- cfl.cpp -- A driver of CFL Reachability Analysis-------------------------------------//
 //
 //                     SVF: Static Value-Flow Analysis
 //
-// Copyright (C) <2013-2017>  <Yulei Sui>
+// Copyright (C) <2013->  <Yulei Sui>
 //
 
 // This program is free software: you can redistribute it and/or modify
@@ -21,60 +21,60 @@
 //===-----------------------------------------------------------------------===//
 
 /*
- // Saber: Software Bug Check.
+ //  A driver of CFL Reachability Analysis
  //
  // Author: Yulei Sui,
  */
 
+
 #include "SVF-FE/LLVMUtil.h"
-#include "SABER/LeakChecker.h"
-#include "SABER/FileChecker.h"
-#include "SABER/DoubleFreeChecker.h"
+#include "CFL/CFLAlias.h"
 #include "Util/Options.h"
+#include "SVF-FE/SVFIRBuilder.h"
+#include "CFL/CFGNormalizer.h"
 
 using namespace llvm;
 using namespace SVF;
 
-static llvm::cl::opt<bool> LEAKCHECKER("leak", llvm::cl::init(false),
-                                       llvm::cl::desc("Memory Leak Detection"));
-
-static llvm::cl::opt<bool> FILECHECKER("fileck", llvm::cl::init(false),
-                                       llvm::cl::desc("File Open/Close Detection"));
-
-static llvm::cl::opt<bool> DFREECHECKER("dfree", llvm::cl::init(false),
-                                        llvm::cl::desc("Double Free Detection"));
+static cl::opt<bool>
+StandardCompileOpts("std-compile-opts",
+                    cl::desc("Include the standard compile time optimizations"));
 
 int main(int argc, char ** argv)
 {
-
     int arg_num = 0;
     char **arg_value = new char*[argc];
     std::vector<std::string> moduleNameVec;
     SVFUtil::processArguments(argc, argv, arg_num, arg_value, moduleNameVec);
     cl::ParseCommandLineOptions(arg_num, arg_value,
-                                "Source-Sink Bug Detector\n");
+                                "CFL Reachability Analysis\n");
 
     if (Options::WriteAnder == "ir_annotator")
     {
         LLVMModuleSet::getLLVMModuleSet()->preProcessBCs(moduleNameVec);
     }
+    if (Options::GraphIsFromDot == false){
+        SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
+        svfModule->buildSymbolTableInfo();
 
-    SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(moduleNameVec);
-    svfModule->buildSymbolTableInfo();
+        /// Build Program Assignment Graph (SVFIR)
+        SVFIRBuilder builder;
+        SVFIR* svfir = builder.build(svfModule);
+        CFLAlias* cflaa = new CFLAlias(svfir);
+        cflaa->analyze();
+        delete cflaa;
+    }
+    else {
+        SVFIR* svfir = nullptr;
+        CFLAlias* cflaa = new CFLAlias(svfir);
+        cflaa->analyze();
+        delete cflaa;
+    }
 
-    LeakChecker *saber;
-
-    if(LEAKCHECKER)
-        saber = new LeakChecker();
-    else if(FILECHECKER)
-        saber = new FileChecker();
-    else if(DFREECHECKER)
-        saber = new DoubleFreeChecker();
-    else
-        saber = new LeakChecker();  // if no checker is specified, we use leak checker as the default one.
-
-    saber->runOnModule(svfModule);
+    SVFIR::releaseSVFIR();
+    SVF::LLVMModuleSet::releaseLLVMModuleSet();
 
     return 0;
 
 }
+

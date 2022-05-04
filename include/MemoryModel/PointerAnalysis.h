@@ -79,9 +79,9 @@ public:
         FSTBHC_WPA,		///< Sparse flow-sensitive type-based heap cloning WPA
         VFS_WPA,		///< Versioned sparse flow-sensitive WPA
         FSCS_WPA,			///< Flow-, context- sensitive WPA
-        FSCSPS_WPA,		///< Flow-, context-, path- sensitive WPA
-        ADAPTFSCS_WPA,		///< Adaptive Flow-, context-, sensitive WPA
-        ADAPTFSCSPS_WPA,	///< Adaptive Flow-, context-, path- sensitive WPA
+        CFLFICI_WPA,		///< Flow-, context-, insensitive CFL-reachability-based analysis
+        CFLFSCI_WPA,		///< Flow-insensitive, context-sensitive  CFL-reachability-based analysis
+        CFLFSCS_WPA,	///< Flow-, context-, CFL-reachability-based analysis
         TypeCPP_WPA, ///<  Type-based analysis for C++
 
         // Demand driven analysis
