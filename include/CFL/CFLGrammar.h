@@ -59,15 +59,22 @@ public:
 class CFLGrammar : public GrammarBase{
 
 public:
-    Set<Production > epsilonProds;
-    Map<Symbol, Productions> singleRHS2Prods;
-    Map<Symbol, Productions> firstRHS2Prods;
-    Map<Symbol, Productions> secondRHS2Prods;
-    Symbol newTerminalSubscript;
     CFLGrammar();
 
-    const Productions& getEpsilonProds() const{
+    Productions& getEpsilonProds() {
         return epsilonProds;
+    }
+
+    Map<Symbol, Productions>& getSingleRHS2Prods() {
+        return singleRHS2Prods;
+    }
+
+    Map<Symbol, Productions>& getFirstRHS2Prods() {
+        return firstRHS2Prods;
+    }
+
+    Map<Symbol, Productions>& getSecondRHS2Prods()  {
+        return secondRHS2Prods;
     }
 
     const bool hasProdsFromFirstRHS(Symbol sym) const{
@@ -102,6 +109,7 @@ public:
         assert(it!=secondRHS2Prods.end() && "production (X -> Y sym) not found for sym!!");
         return it->second;
     }
+    
 
     Symbol getLHSSymbol(const Production& prod){
         return prod.at(0);
@@ -120,6 +128,12 @@ public:
         return newTerminalSubscript++;
     }
 
+private:
+    Set<Production> epsilonProds;
+    Map<Symbol, Productions> singleRHS2Prods;
+    Map<Symbol, Productions> firstRHS2Prods;
+    Map<Symbol, Productions> secondRHS2Prods;
+    Symbol newTerminalSubscript;
 };
 
 

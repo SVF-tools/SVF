@@ -93,19 +93,19 @@ CFLGrammar* CFGNormalizer::normalize(GrammarBase *generalGrammar){
 
     for(auto symProdsPair: generalGrammar->rawProductions){
         for(auto prod: symProdsPair.second){
-            Production tempP = prod;
+            GrammarBase::Production tempP = prod;
             tempP.insert(tempP.begin(), symProdsPair.first);
             if (prod.size() == 1){
                 if ((std::find(tempP.begin(), tempP.end(), grammar->str2Sym("epsilon")) != tempP.end()))
                 {
-                    if (std::find(grammar->epsilonProds.begin(), grammar->epsilonProds.end(), tempP) == grammar->epsilonProds.end())
-                        grammar->epsilonProds.insert(tempP);
+                    if (std::find(grammar->getEpsilonProds().begin(), grammar->getEpsilonProds().end(), tempP) == grammar->getEpsilonProds().end())
+                        grammar->getEpsilonProds().insert(tempP);
                 }
-                grammar->singleRHS2Prods[tempP[1]].insert(tempP);
+                grammar->getSingleRHS2Prods()[tempP[1]].insert(tempP);
             } 
             if (prod.size() == 2){
-                grammar->firstRHS2Prods[tempP[1]].insert(tempP);
-                grammar->secondRHS2Prods[tempP[2]].insert(tempP);
+                grammar->getFirstRHS2Prods()[tempP[1]].insert(tempP);
+                grammar->getSecondRHS2Prods()[tempP[2]].insert(tempP);
             }
         }
     }
