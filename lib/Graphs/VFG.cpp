@@ -1076,7 +1076,7 @@ const Value* PHIVFGNode::getValue() const
 
 const Value* ArgumentVFGNode::getValue() const
 {
-    return param->getValue();
+    return param->hasValue() ? param->getValue() : nullptr;
 }
 
 /*!
