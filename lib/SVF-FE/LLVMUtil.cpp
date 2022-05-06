@@ -201,6 +201,8 @@ const Value * SVFUtil::stripAllCasts(const Value *val)
         {
             if(ce->isCast())
                 val = ce->getOperand(0);
+            else
+                return val;
         }
         else
         {
