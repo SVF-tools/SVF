@@ -3,12 +3,16 @@
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Metadata.h>
 #include <llvm/IR/DataLayout.h>
 
 #include <llvm/Analysis/MemoryLocation.h>
 
 #include <llvm/Support/SourceMgr.h>
+
+typedef llvm::LLVMContext LLVMContext;
+typedef llvm::Use Use;
 
 typedef llvm::SMDiagnostic SMDiagnostic;
 

@@ -67,7 +67,6 @@ class BddCond;
 
 
 /// LLVM Basic classes
-typedef llvm::LLVMContext LLVMContext;
 typedef llvm::Type Type;
 typedef llvm::Function Function;
 typedef llvm::BasicBlock BasicBlock;
@@ -79,7 +78,6 @@ typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
 typedef llvm::User User;
-typedef llvm::Use Use;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
 #if LLVM_VERSION_MAJOR >= 12
