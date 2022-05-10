@@ -67,60 +67,60 @@ struct ei_pair
 void ExtAPI::init()
 {
     set<extf_t> t_seen;
-    extf_t prev_t= EFT_NOOP;
-    t_seen.insert(EFT_NOOP);
+    // extf_t prev_t= EFT_NOOP;
+    // t_seen.insert(EFT_NOOP);
 
     vector<ei_pair> ei_pairs;           
  
     const char* env = std::getenv("SVF_DIR");
-    const char* lib = "/lib";
+    // const char* lib = "/lib";
 
     std::string env_str(env);
-    std::string lib_str(lib);
+    // std::string lib_str(lib);
 
-    env_str.append(lib_str);
+    // env_str.append(lib_str);
 
     const char* file_name = env_str.c_str();        // convert string to const char*
-    const char* full_path;
+    // const char* full_path;
     
     DIR *pdir = nullptr;                    // declare a pointer to a directory
-    struct dirent *pent = nullptr;          // a struct used when reading a directory
+    // struct dirent *pent = nullptr;          // a struct used when reading a directory
     pdir = opendir(file_name);
     SVFUtil::outs() << "Opening " << file_name << "\n";
     assert(pdir != nullptr && "directory pointer could not be initialised correctly!");
-    char buffer[PATH_MAX];
+    // char buffer[PATH_MAX];
     
-    std::vector<std::pair<std::string,std::string>> data;       // to preprocess extAPI.txt
+    // std::vector<std::pair<std::string,std::string>> data;       // to preprocess extAPI.txt
 
-    while((pent = readdir(pdir))){
-        assert(pent != nullptr && "Reading file in a directory unsucessful");
-        // std::cout << pent->d_name << "\n";
-        // find extAPI.txt in lib and open it if found
-        if(strcmp(pent->d_name,"extAPI.txt")==0){
-            full_path = realpath(file_name,buffer);
-            std::string full_path_str(full_path);
-            full_path_str.append("/");
-            std::string extapi_file(pent->d_name);
-            full_path_str.append(extapi_file);
-            SVFUtil::outs() << "Full path to extAPI.txt " << full_path_str << "\n";
+    // while((pent = readdir(pdir))){
+    //     assert(pent != nullptr && "Reading file in a directory unsucessful");
+    //     // std::cout << pent->d_name << "\n";
+    //     // find extAPI.txt in lib and open it if found
+    //     if(strcmp(pent->d_name,"extAPI.txt")==0){
+    //         full_path = realpath(file_name,buffer);
+    //         std::string full_path_str(full_path);
+    //         full_path_str.append("/");
+    //         std::string extapi_file(pent->d_name);
+    //         full_path_str.append(extapi_file);
+    //         SVFUtil::outs() << "Full path to extAPI.txt " << full_path_str << "\n";
 
-            std::ifstream file;
-            file.open(full_path_str.c_str());
+    //         std::ifstream file;
+    //         file.open(full_path_str.c_str());
 
-            assert(file.is_open() && "File cannot be opened");
-            if(file.is_open()){
-                SVFUtil::outs() << "Sucessfully opened " << full_path_str.c_str() << "\n";
-                std::string ID;
-                std::string effect;
-                while(getline(file,ID,',') && getline(file,effect)){
-                    data.push_back(make_pair(ID,effect));
-                }
-            }
-            file.close();
-        }
-    }
-    closedir(pdir);
-    assert(!data.empty() && "Migrating extAPI.txt unss");
+    //         assert(file.is_open() && "File cannot be opened");
+    //         if(file.is_open()){
+    //             SVFUtil::outs() << "Sucessfully opened " << full_path_str.c_str() << "\n";
+    //             std::string ID;
+    //             std::string effect;
+    //             while(getline(file,ID,',') && getline(file,effect)){
+    //                 data.push_back(make_pair(ID,effect));
+    //             }
+    //         }
+    //         file.close();
+    //     }
+    // }
+    // closedir(pdir);
+    // assert(!data.empty() && "Migrating extAPI.txt unss");
     // check if SVF_DIR environment variable is set
     // const char* env = std::getenv("SVF_DIR"); // root folder of SVF
     // // const char* lib = "/lib";
@@ -219,34 +219,34 @@ void ExtAPI::init()
     };
 
     // construct ei_pairs and store ei_pairs to ei_pairs vector
-    for(auto data_iter = data.begin(); data_iter != data.end(); data_iter++){
-        // check for duplicate side effects on the same external function name
-        const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
-        ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));             // construct ei_pair with external function name and extf_t type
-    }
-    assert(!ei_pairs.empty() && "ei_pairs vector is empty");
+    // for(auto data_iter = data.begin(); data_iter != data.end(); data_iter++){
+    //     // check for duplicate side effects on the same external function name
+    //     const char* c = data_iter->first.c_str();                               // convert from std::string to const char* as per struct member
+    //     ei_pairs.push_back(ei_pair(c,extf_map[data_iter->second]));             // construct ei_pair with external function name and extf_t type
+    // }
+    // assert(!ei_pairs.empty() && "ei_pairs vector is empty");
 
-    for(auto p= ei_pairs.begin(); p != ei_pairs.end(); ++p)
-    {
-        if(p->t != prev_t)
-        {
-            //This will detect if you move an entry to another block
-            //  but forget to change the type.
-            if(t_seen.count(p->t))
-            {
-                fputs(p->n, stderr);
-                putc('\n', stderr);
-                assert(!"ei_pairs not grouped by type");
-            }
-            t_seen.insert(p->t);
-            prev_t= p->t;
-        }
-        if(info.count(p->n))
-        {
-            fputs(p->n, stderr);
-            putc('\n', stderr);
-            assert(!"duplicate name in ei_pairs");
-        }
-        info[p->n]= p->t;
-    }
+    // for(auto p= ei_pairs.begin(); p != ei_pairs.end(); ++p)
+    // {
+    //     if(p->t != prev_t)
+    //     {
+    //         //This will detect if you move an entry to another block
+    //         //  but forget to change the type.
+    //         if(t_seen.count(p->t))
+    //         {
+    //             fputs(p->n, stderr);
+    //             putc('\n', stderr);
+    //             assert(!"ei_pairs not grouped by type");
+    //         }
+    //         t_seen.insert(p->t);
+    //         prev_t= p->t;
+    //     }
+    //     if(info.count(p->n))
+    //     {
+    //         fputs(p->n, stderr);
+    //         putc('\n', stderr);
+    //         assert(!"duplicate name in ei_pairs");
+    //     }
+    //     info[p->n]= p->t;
+    // }
 }   // end init() function
