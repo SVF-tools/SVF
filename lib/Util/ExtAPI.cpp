@@ -71,61 +71,113 @@ void ExtAPI::init()
     t_seen.insert(EFT_NOOP);
 
     vector<ei_pair> ei_pairs;           
-    vector<pair<std::string,std::string>> data;   // to preprocess extAPI.txt
-
-    // env variable SVF_DIR and prepend to file_name (assert if empty string is received, go to setup.sh)
  
-    // check if SVF_DIR environment variable is set
-    const char* env = std::getenv("SVF_DIR"); // root folder of SVF
-    const char* lib = "/lib/";
-    assert(env != nullptr && "SVF_DIR not set");
+    const char* env = std::getenv("SVF_DIR");
+    const char* lib = "/lib";
 
-    string file_path(env);
-    string lib_str(lib);
-    file_path.append(lib_str);              // path to SVF "lib" folder
+    std::string env_str(env);
+    std::string lib_str(lib);
 
-    const char* dir = file_path.c_str();    // convert string path to const char*
-    assert(dir != nullptr && "SVF_DIR/lib pointer was not initialised correctly");
+    env_str.append(lib_str);
 
-    const char* full_path = nullptr;       // store full path to extAPI.txt to open it
-    char buffer[PATH_MAX];                 // helper for getting full path
-
-    DIR *pdir;                       // declare a pointer to a directory
-    struct dirent *pent = nullptr;           // a struct used when reading a directory
-    pdir = opendir(dir);                     // open the directory
-    // if(pdir == NULL){
-    //     int res = chmod(file_path.c_str(),S_IRWXU|S_IRWXG);
-    //     assert(res == 0 && errno);
-    // }
-    // pdir = opendir(file_path.c_str());                  // attempt again after setting permissions
-    assert(pdir != NULL && errno);
+    const char* file_name = env_str.c_str();        // convert string to const char*
+    const char* full_path;
+    
+    DIR *pdir = nullptr;                    // declare a pointer to a directory
+    struct dirent *pent = nullptr;          // a struct used when reading a directory
+    pdir = opendir(file_name);
+    SVFUtil::outs() << "Opening " << file_name << "\n";
+    assert(pdir != nullptr && "directory pointer could not be initialised correctly!");
+    char buffer[PATH_MAX];
+    
+    std::vector<std::pair<std::string,std::string>> data;       // to preprocess extAPI.txt
 
     while((pent = readdir(pdir))){
         assert(pent != nullptr && "Reading file in a directory unsucessful");
-        if(strcmp(pent->d_name,"extAPI.txt") == 0){
-            full_path = realpath(dir,buffer);         // store directory path (does not contain extAPI.txt yet)
-            string full_path_str(full_path);                // convert to string for append capabilities
+        // std::cout << pent->d_name << "\n";
+        // find extAPI.txt in lib and open it if found
+        if(strcmp(pent->d_name,"extAPI.txt")==0){
+            full_path = realpath(file_name,buffer);
+            std::string full_path_str(full_path);
             full_path_str.append("/");
-            string extapi_file(pent->d_name);               // this should be extAPI.txt according to assertion
+            std::string extapi_file(pent->d_name);
             full_path_str.append(extapi_file);
+            SVFUtil::outs() << "Full path to extAPI.txt " << full_path_str << "\n";
 
             std::ifstream file;
-            file.open(full_path_str.c_str());               // convert to char*
+            file.open(full_path_str.c_str());
+
             assert(file.is_open() && "File cannot be opened");
-            
             if(file.is_open()){
-                string ID;                      // the external API function name
-                string effect;                  // the corresponding extf enum
+                SVFUtil::outs() << "Sucessfully opened " << full_path_str.c_str() << "\n";
+                std::string ID;
+                std::string effect;
                 while(getline(file,ID,',') && getline(file,effect)){
-                    data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
+                    data.push_back(make_pair(ID,effect));
                 }
             }
             file.close();
         }
     }
     closedir(pdir);
+    assert(!data.empty() && "Migrating extAPI.txt unss");
+    // check if SVF_DIR environment variable is set
+    // const char* env = std::getenv("SVF_DIR"); // root folder of SVF
+    // // const char* lib = "/lib";
+    // assert(env != nullptr && "SVF_DIR not set");
 
-    assert(!data.empty() && "Migrating extAPI.txt file data unsuccesful");
+    // string file_path(env);
+    // string lib_str(lib);
+    // file_path.append(lib_str);              // path to SVF "lib" folder
+
+    // const char* dir = file_path.c_str();    // convert string path to const char*
+    // assert(dir != nullptr && "SVF_DIR/lib pointer was not initialised correctly");
+    // SVFUtil::outs() << "path to directory is set to " << dir << "\n";
+
+    // // const char* full_path = nullptr;       // store full path to extAPI.txt to open it
+    // // char buffer[PATH_MAX];                 // helper for getting full path
+
+    // DIR *pdir = NULL;                               // declare a pointer to a directory
+    // // struct dirent *pent = NULL;                     // a struct used when reading a directory
+    // pdir = opendir(".");                            // open the directory
+    // if(pdir == NULL){
+    //     SVFUtil::outs() << "pdir is NULL" << "\n";
+    // }
+    // assert(pdir != NULL && errno);
+    // if(pdir == NULL){
+    //     int res = chmod(file_path.c_str(),S_IRWXU|S_IRWXG);
+    //     assert(res == 0 && errno);
+    // }
+    // pdir = opendir(file_path.c_str());                  // attempt again after setting permissions
+    
+
+
+    // while((pent = readdir(pdir))){
+    //     assert(pent != nullptr && "Reading file in a directory unsucessful");
+    //     if(strcmp(pent->d_name,"extAPI.txt") == 0){
+    //         full_path = realpath(dir,buffer);         // store directory path (does not contain extAPI.txt yet)
+    //         string full_path_str(full_path);                // convert to string for append capabilities
+    //         full_path_str.append("/");
+    //         string extapi_file(pent->d_name);               // this should be extAPI.txt according to assertion
+    //         full_path_str.append(extapi_file);
+
+    //         std::ifstream file;
+    //         file.open(full_path_str.c_str());               // convert to char*
+    //         assert(file.is_open() && "File cannot be opened");
+            
+    //         if(file.is_open()){
+    //             string ID;                      // the external API function name
+    //             string effect;                  // the corresponding extf enum
+    //             while(getline(file,ID,',') && getline(file,effect)){
+    //                 data.push_back(make_pair(ID,effect));                 // store the pair data from the .txt file
+    //             }
+    //         }
+    //         file.close();
+    //     }
+    // }
+    // closedir(pdir);
+
+    // assert(!data.empty() && "Migrating extAPI.txt file data unsuccesful");
 
     // transform line from txt file to its corresponding extf_t type
     map<string, ExtAPI::extf_t> extf_map = {
