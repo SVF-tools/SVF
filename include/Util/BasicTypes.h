@@ -53,7 +53,6 @@
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/Support/GraphWriter.h>		// for graph write
 #include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
@@ -94,7 +93,6 @@ typedef llvm::ModulePass ModulePass;
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
 typedef llvm::StringRef StringRef;
-typedef llvm::ToolOutputFile ToolOutputFile;
 
 /// LLVM types
 typedef llvm::StructType StructType;

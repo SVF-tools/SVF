@@ -228,9 +228,9 @@ void SaberSVFGBuilder::rmIncomingEdgeForSUStore(BVDataPTAImpl* pta)
     {
         const SVFGNode* node = it->second;
 
-        if(const StmtSVFGNode* stmtNode = SVFUtil::dyn_cast<StmtSVFGNode>(node))
+        if(const StoreSVFGNode* stmtNode = SVFUtil::dyn_cast<StoreSVFGNode>(node))
         {
-            if(SVFUtil::isa<StoreSVFGNode>(stmtNode) && SVFUtil::isa<StoreInst>(stmtNode->getValue()))
+            if(SVFUtil::isa<StoreInst>(stmtNode->getValue()))
             {
                 NodeID singleton;
                 if(isStrongUpdate(node, singleton, pta))
