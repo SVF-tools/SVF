@@ -76,8 +76,9 @@ void ExtAPI::init()
     
     const char* env = std::getenv("SVF_DIR");
     string env_str(env);
-    env_str.append("/lib");
+    // env_str.append("/lib");
     int r = chdir(env_str.c_str());
+    SVFUtil::outs() << "r value: " << r << "\n";
     assert(r == 0 && "Changing directory unsuccesful");
 
     // transform line from txt file to its corresponding extf_t type
