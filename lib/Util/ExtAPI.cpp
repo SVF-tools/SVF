@@ -23,6 +23,8 @@
 #include <sys/stat.h>       // for chmod
 #include <limits.h>
 #include <sys/types.h>
+#include<unistd.h> 
+
 
 using namespace std;
 using namespace SVF;
@@ -72,11 +74,11 @@ void ExtAPI::init()
 
     vector<ei_pair> ei_pairs;           
     
-    string command = "ls ";
-    const char* env = getenv("SVF_DIR");
+    const char* env = std::getenv("SVF_DIR");
     string env_str(env);
-    command += env_str + "/lib";
-    system(command.c_str());
+    env_str.append("/lib");
+    int r = chdir(env_str.c_str());
+    assert(r == 0 && "Changing directory unsuccesful");
 
     // transform line from txt file to its corresponding extf_t type
     map<string, ExtAPI::extf_t> extf_map = {
