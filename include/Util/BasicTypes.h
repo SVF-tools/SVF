@@ -53,7 +53,6 @@
 #include <llvm/Analysis/PostDominators.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/ADT/GraphTraits.h>		// for Graphtraits
-#include <llvm/Support/GraphWriter.h>		// for graph write
 #include <llvm/IR/IRBuilder.h>		// for instrument svf.main
 #include <llvm/Transforms/Utils/Local.h>	// for FindDbgAddrUses
 #include <llvm/IR/DebugInfo.h>
@@ -68,7 +67,6 @@ class BddCond;
 
 
 /// LLVM Basic classes
-typedef llvm::LLVMContext LLVMContext;
 typedef llvm::Type Type;
 typedef llvm::Function Function;
 typedef llvm::BasicBlock BasicBlock;
@@ -80,7 +78,6 @@ typedef llvm::GlobalValue GlobalValue;
 typedef llvm::GlobalVariable GlobalVariable;
 typedef llvm::Module Module;
 typedef llvm::User User;
-typedef llvm::Use Use;
 typedef llvm::Loop Loop;
 typedef llvm::LoopInfo LoopInfo;
 #if LLVM_VERSION_MAJOR >= 12
@@ -94,7 +91,6 @@ typedef llvm::ModulePass ModulePass;
 typedef llvm::raw_string_ostream raw_string_ostream;
 typedef llvm::raw_fd_ostream raw_fd_ostream;
 typedef llvm::StringRef StringRef;
-typedef llvm::ToolOutputFile ToolOutputFile;
 
 /// LLVM types
 typedef llvm::StructType StructType;

@@ -33,6 +33,7 @@
 
 #include <system_error>
 #include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/GraphWriter.h>		// for graph write
 #include <llvm/Support/FileSystem.h>		// for file open flag
 #include <llvm/ADT/GraphTraits.h>
 

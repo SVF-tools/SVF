@@ -37,7 +37,6 @@
 
 #include <llvm/ADT/SparseBitVector.h>	// for points-to
 #include <llvm/Support/CommandLine.h>	// for command line options
-#include <llvm/ADT/StringMap.h>	// for StringMap
 
 #include <iostream>
 #include <vector>
@@ -129,7 +128,6 @@ template<typename Key, typename Value, typename Hash = Hash<Key>,
                   typedef std::deque<NodeID> NodeDeque;
                   typedef NodeSet EdgeSet;
                   typedef std::vector<u32_t> CallStrCxt;
-                  typedef llvm::StringMap<u32_t> StringMap;
 
                   typedef unsigned Version;
                   typedef Set<Version> VersionSet;

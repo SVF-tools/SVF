@@ -67,7 +67,7 @@ public:
         HARE_PAR_FOR
     };
 
-    typedef llvm::StringMap<TD_TYPE> TDAPIMap;
+    typedef Map<std::string, TD_TYPE> TDAPIMap;
 
 private:
     /// API map, from a string to threadAPI type
@@ -333,7 +333,7 @@ public:
     //@}
 
     void performAPIStat(SVFModule* m);
-    void statInit(llvm::StringMap<u32_t>& tdAPIStatMap);
+    void statInit(Map<std::string, u32_t>& tdAPIStatMap);
 };
 
 } // End namespace SVF

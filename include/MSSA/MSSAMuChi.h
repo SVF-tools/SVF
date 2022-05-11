@@ -183,7 +183,7 @@ public:
     //@}
 
     /// Return load instruction
-    inline const LoadStmt* getLoadInst() const
+    inline const LoadStmt* getLoadStmt() const
     {
         return inst;
     }
@@ -482,7 +482,7 @@ public:
     }
 
     /// Get store instruction
-    inline const StoreStmt* getStoreInst() const
+    inline const StoreStmt* getStoreStmt() const
     {
         return inst;
     }
