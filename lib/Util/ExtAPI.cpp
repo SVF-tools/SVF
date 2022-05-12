@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h> //for chdir
+#include <fstream>
 
 
 using namespace std;
@@ -874,15 +875,14 @@ void ExtAPI::init()
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
     string env_str(env);
-    assert(env != nullptr && "SVF_DIR is not set");
-    cout << "env is set as " << env << endl;
-    // if (chdir(env) != 0){
-    //     perror("chdir() to /usr failed");
-    // } 
-    char **s = environ;
-    for (; *s; s++) {
-        printf("%s\n", *s);
+    env_str.append("/lib/extAPI.txt");
+
+    ifstream file;
+    file.open(env_str.c_str());
+    if(!file.is_open()){
+        cerr << "Error: " << strerror(errno);
     }
+
     
     // DIR *pdir = nullptr;
     // if((pdir  = opendir(env_str.c_str())) == NULL) {
