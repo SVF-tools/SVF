@@ -876,9 +876,13 @@ void ExtAPI::init()
     env_str.append("/");
     assert(env != nullptr && "SVF_DIR is not set");
     DIR *pdir = nullptr;
+    struct dirent *ent;
     // open current directory
-    if((pdir  = opendir(".")) == NULL) {
+    if((pdir  = opendir(std::getenv("SVF_DIR"))) == NULL) {
         cout << "Error(" << errno << ") opening " << pdir << endl;
+    }
+    while((ent = readdir(pdir)) != NULL){
+        cout << "Printing something... " << ent->d_name << endl; 
     }
     // string env_str(env);
     // string command = "ls ";
