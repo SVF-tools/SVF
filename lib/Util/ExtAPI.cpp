@@ -870,8 +870,9 @@ void ExtAPI::init()
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
     DIR *pdir = nullptr;
-    pdir = opendir(env);                    // try to open SVF_DIR directory
-    assert(pdir != nullptr && "pdir returning nullptr");
+    if((pdir  = opendir(env)) == NULL) {
+        cout << "Error(" << errno << ") opening " << pdir << endl;
+    }
     // string env_str(env);
     // string command = "ls ";
     // command.append(env_str);
