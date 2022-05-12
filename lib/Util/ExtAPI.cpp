@@ -12,7 +12,11 @@
 #include <dirent.h>
 #include <assert.h>
 #include <stdlib.h>
+<<<<<<< HEAD
 #include <unistd.h> //for chdir
+=======
+#include <unistd.h>
+>>>>>>> 9900fdf02845305b4bbe28d50f5f459d2194576a
 
 
 using namespace std;
