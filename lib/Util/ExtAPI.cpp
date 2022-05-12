@@ -878,8 +878,8 @@ void ExtAPI::init()
     DIR *pdir = nullptr;
     struct dirent *ent;
     // open current directory
-    if((pdir  = opendir(std::getenv("SVF_DIR"))) == NULL) {
-        cout << "Error(" << errno << ") opening " << pdir << endl;
+    if((pdir  = opendir(env_str.c_str())) == NULL) {
+        cout << "Error(" << errno << ") opening " << env_str << endl;
     }
     while((ent = readdir(pdir)) != NULL){
         cout << "Printing something... " << ent->d_name << endl; 
