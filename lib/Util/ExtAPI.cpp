@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <unistd.h> //for chdir
 
 
 using namespace std;
@@ -865,7 +866,7 @@ static const ei_pair ei_pairs[]=
  *  hasmntopt - returns arg0->mnt_opts
  */
 
-
+extern char **environ;
 void ExtAPI::init()
 {
     set<extf_t> t_seen;
@@ -873,12 +874,16 @@ void ExtAPI::init()
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
     string env_str(env);
-    env_str.append("/");
     assert(env != nullptr && "SVF_DIR is not set");
-    DIR *pdir = nullptr;
-    if((pdir  = opendir(env_str.c_str())) == NULL) {
-        cout << "Error(" << errno << ") opening " << pdir << endl;
-    }
+    cout << "env is set as " << env << endl;
+    if (chdir(env) != 0){
+        perror("chdir() to /usr failed");
+    } 
+    
+    // DIR *pdir = nullptr;
+    // if((pdir  = opendir(env_str.c_str())) == NULL) {
+    //     cout << "Error(" << errno << ") opening " << pdir << endl;
+    // }
     // string env_str(env);
     // string command = "ls ";
     // command.append(env_str);
