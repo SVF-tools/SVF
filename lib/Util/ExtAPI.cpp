@@ -876,9 +876,13 @@ void ExtAPI::init()
     string env_str(env);
     assert(env != nullptr && "SVF_DIR is not set");
     cout << "env is set as " << env << endl;
-    if (chdir(env) != 0){
-        perror("chdir() to /usr failed");
-    } 
+    // if (chdir(env) != 0){
+    //     perror("chdir() to /usr failed");
+    // } 
+    char **s = environ;
+    for (; *s; s++) {
+        printf("%s\n", *s);
+    }
     
     // DIR *pdir = nullptr;
     // if((pdir  = opendir(env_str.c_str())) == NULL) {
