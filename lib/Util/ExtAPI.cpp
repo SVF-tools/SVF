@@ -9,6 +9,7 @@
 
 #include "Util/ExtAPI.h"
 #include <stdio.h>
+#include <dirent.h>
 
 using namespace std;
 using namespace SVF;
@@ -868,10 +869,13 @@ void ExtAPI::init()
     extf_t prev_t= EFT_NOOP;
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
-    string env_str(env);
-    string command = "ls ";
-    command.append(env_str);
-    std::system(command.c_str());
+    DIR *pdir = nullptr;
+    pdir = opendir(env);                    // try to open SVF_DIR directory
+    assert(pdir != nullptr && "pdir returning nullptr");
+    // string env_str(env);
+    // string command = "ls ";
+    // command.append(env_str);
+    // std::system(command.c_str());
     
     for(const ei_pair *p= ei_pairs; p->n; ++p)
     {
