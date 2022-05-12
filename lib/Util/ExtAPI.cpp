@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 
 using namespace std;
@@ -875,19 +876,20 @@ void ExtAPI::init()
     string env_str(env);
     env_str.append("/");
     assert(env != nullptr && "SVF_DIR is not set");
+
+    // if(chdir(env_str.c_str()) != 0){
+    //     perror("chdir() to path failed");
+    // }
+
     DIR *pdir = nullptr;
     struct dirent *ent;
     // open current directory
-    if((pdir  = opendir(env_str.c_str())) == NULL) {
+    if((pdir  = opendir(".")) == NULL) {
         cout << "Error(" << errno << ") opening " << env_str << endl;
     }
     while((ent = readdir(pdir)) != NULL){
         cout << "Printing something... " << ent->d_name << endl; 
     }
-    // string env_str(env);
-    // string command = "ls ";
-    // command.append(env_str);
-    // std::system(command.c_str());
     
     for(const ei_pair *p= ei_pairs; p->n; ++p)
     {
