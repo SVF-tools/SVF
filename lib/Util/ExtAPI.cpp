@@ -882,17 +882,21 @@ void ExtAPI::init()
     //     printf("%s\n", *s);
     // }
 
-    ifstream file;
-    file.open(env_str.c_str());
-    if(!file.is_open()){
-        cerr << "Error: " << strerror(errno);
-    }
+    // ifstream file;
+    // file.open(env_str.c_str());
+    // if(!file.is_open()){
+    //     cerr << "Error: " << strerror(errno);
+    // }
 
     
-    // DIR *pdir = nullptr;
-    // if((pdir  = opendir(env_str.c_str())) == NULL) {
-    //     cout << "Error(" << errno << ") opening " << pdir << endl;
-    // }
+    DIR *pdir = nullptr;
+    struct dirent *pent = nullptr;
+    if((pdir  = opendir("../../lib")) == NULL) {
+        cout << "Error(" << errno << ") opening " << pdir << endl;
+    }
+    while((pent = readdir(pdir))){
+        cout << pent->d_name << endl;
+    }
     // string env_str(env);
     // string command = "ls ";
     // command.append(env_str);
