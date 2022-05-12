@@ -875,7 +875,12 @@ void ExtAPI::init()
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
     string env_str(env);
-    env_str.append("/z3.obj/LICENSE.txt");
+    env_str.append("/SVF/lib/extAPI.txt");
+
+    // char **s = environ;
+    // for (; *s; s++) {
+    //     printf("%s\n", *s);
+    // }
 
     ifstream file;
     file.open(env_str.c_str());
