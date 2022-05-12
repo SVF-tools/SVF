@@ -10,6 +10,9 @@
 #include "Util/ExtAPI.h"
 #include <stdio.h>
 #include <dirent.h>
+#include <assert.h>
+#include <stdlib.h>
+
 
 using namespace std;
 using namespace SVF;
@@ -869,8 +872,11 @@ void ExtAPI::init()
     extf_t prev_t= EFT_NOOP;
     t_seen.insert(EFT_NOOP);
     const char* env = std::getenv("SVF_DIR");
+    string env_str(env);
+    env_str.append("/");
+    assert(env != nullptr && "SVF_DIR is not set");
     DIR *pdir = nullptr;
-    if((pdir  = opendir(env)) == NULL) {
+    if((pdir  = opendir(env_str.c_str())) == NULL) {
         cout << "Error(" << errno << ") opening " << pdir << endl;
     }
     // string env_str(env);
