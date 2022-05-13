@@ -54,15 +54,15 @@ jobs:
         run: 
           ctest -R points-to -VV
       
-      # - name: ctest differential analysis
-      #   working-directory: ${{github.workspace}}/Release-build
-      #   run: 
-      #     ctest -R diff_tests -VV
+      - name: ctest differential analysis
+        working-directory: ${{github.workspace}}/Release-build
+        run: 
+          ctest -R diff_tests -VV
 
-      # - name: ctest mem_leak
-      #   working-directory: ${{github.workspace}}/Release-build
-      #   run:
-      #     ctest -R mem_leak -VV
+      - name: ctest mem_leak
+        working-directory: ${{github.workspace}}/Release-build
+        run:
+          ctest -R mem_leak -VV
 
       # update doxygen
       # - name: update-doxygen
